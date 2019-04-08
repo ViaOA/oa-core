@@ -24,7 +24,7 @@ Full software systems can be visually designed and then automatically generated 
 
 Visit [www.viaoa.com](www.viaoa.com) for more information.
 
-Visit [OA github pages](http://viaoa.github.io/oa)
+Visit [OA github pages](http://viaoa.github.io/oa-core)
 
 Visit [OA Javadoc](http://viaoa.github.io/oa-core/docs/index.html)
 
