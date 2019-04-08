@@ -63,7 +63,7 @@ public class OACalcInfo implements java.io.Serializable {
      *  true if this calcProp is for the whole Hub, and the method has a static method with a Hub param
      */
     boolean bIsForHub;  
-    private Method editQueryMethod;
+    private transient Method editQueryMethod;
     private boolean isHtml;
 
     private String[] viewDependentProperties;

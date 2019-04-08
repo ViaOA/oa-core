@@ -67,7 +67,7 @@ public class OATriggerDelegate {
         getExecutorService().submit(r);
     }
     
-    private static ThreadPoolExecutor executorService;
+    private static volatile ThreadPoolExecutor executorService;
     
     // thread pool to handle tasks that can run in the background.
     protected static ExecutorService getExecutorService() {

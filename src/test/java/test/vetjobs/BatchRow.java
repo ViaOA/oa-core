@@ -29,7 +29,7 @@ public class BatchRow extends OAObject {
     protected String origCategory5;
     protected String contract;
     protected boolean errorFlag;
-    protected boolean newFlag;
+    protected boolean isNew;
     protected String error;
     protected String fulltime;
     
@@ -260,13 +260,13 @@ public class BatchRow extends OAObject {
         firePropertyChange("errorFlag",old,errorFlag);
     }
     
-    public boolean getNewFlag() {
-        return newFlag;
+    public boolean getIsNew() {
+        return isNew;
     }
-    public void setNewFlag(boolean newFlag) {
-        boolean old = this.newFlag;
-        this.newFlag = newFlag;
-        firePropertyChange("newFlag",old,newFlag);
+    public void setIsFlag(boolean newFlag) {
+        boolean old = this.isNew;
+        this.isNew = newFlag;
+        firePropertyChange("isNew",old,newFlag);
     }
     
     public String getError() {

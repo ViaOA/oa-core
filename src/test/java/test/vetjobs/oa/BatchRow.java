@@ -39,7 +39,7 @@ public class BatchRow extends OAObject {
     public static final String P_OrigCategory5 = "OrigCategory5";
     public static final String P_Contract = "Contract";
     public static final String P_ErrorFlag = "ErrorFlag";
-    public static final String P_NewFlag = "NewFlag";
+    public static final String P_IsNew = "isNew";
     public static final String P_Error = "Error";
     public static final String P_FullTime = "FullTime";
      
@@ -72,7 +72,7 @@ public class BatchRow extends OAObject {
     protected String origCategory5;
     protected String contract;
     protected boolean errorFlag;
-    protected boolean newFlag;
+    protected boolean isNew;
     protected String error;
     protected String fullTime;
      
@@ -380,14 +380,14 @@ public class BatchRow extends OAObject {
      
     @OAProperty(displayName = "New Flag", displayLength = 7)
     @OAColumn(sqlType = java.sql.Types.BOOLEAN)
-    public boolean getNewFlag() {
-        return newFlag;
+    public boolean getIsNew() {
+        return isNew;
     }
     
-    public void setNewFlag(boolean newValue) {
-        boolean old = newFlag;
+    public void setIsNew(boolean newValue) {
+        boolean old = isNew;
         this.newFlag = newValue;
-        firePropertyChange(P_NewFlag, old, this.newFlag);
+        firePropertyChange(P_IsNew, old, this.isNew);
     }
     
      

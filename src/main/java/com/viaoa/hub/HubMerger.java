@@ -2000,7 +2000,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         return bUseAll;
     }
     
-    private static ExecutorService executorService;
+    private static volatile ExecutorService executorService;
     private static final AtomicInteger aiThreadCnt = new AtomicInteger();
     protected static ExecutorService getExecutorService() {
         if (executorService == null) {

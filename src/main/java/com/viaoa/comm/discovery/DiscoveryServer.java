@@ -31,7 +31,7 @@ public class DiscoveryServer {
     private static Logger LOG = Logger.getLogger(DiscoveryServer.class.getName());
     private int portReceive;
     private int portSend;
-    private DatagramSocket sockSend, sockReceive;
+    private volatile DatagramSocket sockSend, sockReceive;
     private InetAddress iaBroadcast;
     private String msg;
     private volatile boolean bStarted;

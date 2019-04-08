@@ -35,8 +35,8 @@ public class Resource {
     public static final String[] STARTUP_TYPES = new String[] { "CLIENT", "JWSCLIENT", "SERVER", "SERVICE" };
     private static int runType;
     
-    private static OAProperties serverProperties;   
-    private static OAProperties clientProperties; 
+    private static volatile OAProperties serverProperties;   
+    private static volatile OAProperties clientProperties; 
     
     private static boolean bServerPropChanged;
     private static boolean bClientPropChanged;

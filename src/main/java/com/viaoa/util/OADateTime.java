@@ -286,7 +286,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
     public OADateTime(Calendar c) {
         if (c == null) this._time = System.currentTimeMillis();
         else this._time = c.getTimeInMillis();
-        this.timeZone = c.getTimeZone();
+        if (c != null) this.timeZone = c.getTimeZone();
     }
 
     /**

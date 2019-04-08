@@ -20,7 +20,7 @@ import com.viaoa.util.*;
 
 public class OAObjectLogDelegate {
     private static Logger LOG = Logger.getLogger(OAObjectLogDelegate.class.getName());
-    private static OAXMLWriter writerXml;
+    private static volatile OAXMLWriter writerXml;
 
     // methods to handle writing save/delete to log file.
     public static void createXMLLogFile(String fname) {

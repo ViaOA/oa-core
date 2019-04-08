@@ -400,8 +400,9 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
         recursiveLinkInfos = propertyPath.getRecursiveLinkInfos();
         methods = propertyPath.getMethods();
         
-                
-        if (linkInfos.length != methods.length) {
+            
+        int x = linkInfos == null ? 0 : linkInfos.length; 
+        if (x != methods.length) {
             // oafinder is to get from one OAObj/Hub to another, not a property/etc
             throw new RuntimeException("propertyPath "+strPropertyPath+" must end in an OAObject/Hub");
         }
@@ -423,8 +424,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
         Object[] values = propertyPath.getFilterParamValues();
         Constructor[] constructors = propertyPath.getFilterConstructors();
 
-        int x = names.length;
-
+        x = names.length;
         for (int i = 0; i < x; i++) {
             if (constructors[i] == null) continue;
             try {

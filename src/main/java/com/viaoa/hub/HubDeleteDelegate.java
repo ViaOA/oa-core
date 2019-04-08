@@ -57,12 +57,10 @@ public class HubDeleteDelegate {
             for (Object obj : objs) {
                 OAObjectDeleteDelegate.delete((OAObject)obj, cascade);
             }
+            for (Object obj : objs) {
+                HubAddRemoveDelegate.remove(thisHub, obj, false, false, true, false, false, true); 
+            }
         }
-        
-        for (Object obj : objs) {
-            HubAddRemoveDelegate.remove(thisHub, obj, false, false, true, false, false, true); 
-        }
-        
     }
     
     

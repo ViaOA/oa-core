@@ -29,7 +29,7 @@ public class OAMethodInfo implements java.io.Serializable {
     private String contextVisibleProperty;
     private boolean contextVisibleValue;
     
-    private Method editQueryMethod;
+    private transient Method editQueryMethod;
     private OAMethod oaMethod;
     
     

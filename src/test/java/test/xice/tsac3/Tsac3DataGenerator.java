@@ -144,7 +144,7 @@ public class Tsac3DataGenerator {
             if (server == null) continue;
             server.setName("Server cnt=" + cnt);
 
-            switch (((int)Math.random() * 8)) {
+            switch ( (int) (Math.random() * 8)) {
             case 0:
                 h.move(0, 1);
                 break;

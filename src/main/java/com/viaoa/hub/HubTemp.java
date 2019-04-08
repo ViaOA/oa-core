@@ -75,6 +75,7 @@ public class HubTemp {
             WeakReference ref = (WeakReference) hash.get(hubObject);
             if (ref == null) return 0;
             HubTemp ht = (HubTemp) ref.get();
+            if (ht == null) return 0;
             return ht.cnt;
         }
     }

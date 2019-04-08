@@ -323,7 +323,8 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         recursiveLinkInfos = propertyPath.getRecursiveLinkInfos();
         methods = propertyPath.getMethods();
 
-        if (linkInfos.length != methods.length) {
+        int x = linkInfos == null ? 0 : linkInfos.length; 
+        if (x != methods.length) {
             // oafinder is to get from one OAObj/Hub to another, not a property/etc
             throw new RuntimeException("propertyPath " + strPropertyPath + " must end in an OAObject/Hub");
         }

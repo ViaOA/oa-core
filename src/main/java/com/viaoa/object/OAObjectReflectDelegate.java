@@ -507,26 +507,28 @@ public class OAObjectReflectDelegate {
 
             // sort, seq, asc
             boolean bSortAsc = true;
-            String seqProperty;
-            if (bSequence) {
-                String s = linkInfo.getSeqProperty();
-                if (OAString.notEmpty(s)) seqProperty = s;
-                else seqProperty = sortOrder;
-                if (OAString.isEmpty(seqProperty)) {
-                    bSequence = false;
+            String seqProperty = null;
+            if (linkInfo != null) {
+                if (bSequence) {
+                    String s = linkInfo.getSeqProperty();
+                    if (OAString.notEmpty(s)) seqProperty = s;
+                    else seqProperty = sortOrder;
+                    if (OAString.isEmpty(seqProperty)) {
+                        bSequence = false;
+                    }
                 }
-            }
-            else {
-                seqProperty = linkInfo.getSeqProperty();
-                bSequence = OAString.notEmpty(seqProperty);
-            }
-            if (bSequence) {
-                sortOrder = null;
-                bSortAsc = false;
-            }
-            else if (OAString.isEmpty(sortOrder)) {
-                sortOrder = linkInfo.getSortProperty();
-                bSortAsc = linkInfo.isSortAsc();
+                else {
+                    seqProperty = linkInfo.getSeqProperty();
+                    bSequence = OAString.notEmpty(seqProperty);
+                }
+                if (bSequence) {
+                    sortOrder = null;
+                    bSortAsc = false;
+                }
+                else if (OAString.isEmpty(sortOrder)) {
+                    sortOrder = linkInfo.getSortProperty();
+                    bSortAsc = linkInfo.isSortAsc();
+                }
             }
             
             if (OASync.isServer(oaObj)) {
@@ -631,24 +633,26 @@ public class OAObjectReflectDelegate {
       
         // sort, seq, asc
         boolean bSortAsc = true;
-        String seqProperty;
-        if (bSequence) {
-            String s = linkInfo.getSeqProperty();
-            if (OAString.notEmpty(s)) seqProperty = s;
-            else seqProperty = sortOrder;
-            if (OAString.isEmpty(seqProperty)) {
-                bSequence = false;
+        String seqProperty = null;
+        if (linkInfo != null) {
+            if (bSequence) {
+                String s = linkInfo.getSeqProperty();
+                if (OAString.notEmpty(s)) seqProperty = s;
+                else seqProperty = sortOrder;
+                if (OAString.isEmpty(seqProperty)) {
+                    bSequence = false;
+                }
             }
-        }
-        else {
-            seqProperty = linkInfo.getSeqProperty();
-            bSequence = OAString.notEmpty(seqProperty);
+            else {
+                seqProperty = linkInfo.getSeqProperty();
+                bSequence = OAString.notEmpty(seqProperty);
+            }
         }
         if (bSequence) {
             sortOrder = seqProperty;
             bSortAsc = true;
         }
-        else if (OAString.isEmpty(sortOrder)) {
+        else if (OAString.isEmpty(sortOrder) && linkInfo != null) {
             sortOrder = linkInfo.getSortProperty();
             bSortAsc = linkInfo.isSortAsc();
         }

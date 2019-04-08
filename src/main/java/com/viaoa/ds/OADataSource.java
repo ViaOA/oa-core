@@ -70,6 +70,7 @@ public abstract class OADataSource implements OADataSourceInterface {
     }
     public static OADataSource getDataSource(Class clazz, OAFilter filter) {
         OADataSource[] ds = getDataSources();
+        if (ds == null) return null;
         int x = ds.length;
         OADataSource dsFound = null;
         for (int i=0; ds != null &&  i<x; i++) {

@@ -41,11 +41,11 @@ public class Resource {
     public static final String[] STARTUP_TYPES = new String[] 
             { "CLIENT", "JWSCLIENT", "SERVER", "SERVICE" };
 	
-    private static OAProperties propsRuntime;   
-    private static OAProperties propsSystem;   
-    private static OAProperties propsServer; 	
-    private static OAProperties propsClient; 	
-    private static OAProperties propsBundle;   
+    private static volatile OAProperties propsRuntime;   
+    private static volatile OAProperties propsSystem;   
+    private static volatile OAProperties propsServer; 	
+    private static volatile OAProperties propsClient; 	
+    private static volatile OAProperties propsBundle;   
     private static ResourceBundle resourceBundle;
 
     private static boolean bServerPropChanged;

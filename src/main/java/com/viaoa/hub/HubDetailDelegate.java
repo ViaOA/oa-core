@@ -156,7 +156,7 @@ public class HubDetailDelegate {
         }
         
         if (Hub.class.isAssignableFrom(method.getReturnType())) {
-            if (detailObject instanceof OAObjectKey) return;
+            //if (detailObject instanceof OAObjectKey) return;
             
             // 20140616 if hub is not loaded and isClient, then dont need to load
             if (!OASyncDelegate.isServer(thisHub)) {

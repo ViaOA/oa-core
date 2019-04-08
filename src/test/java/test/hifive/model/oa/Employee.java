@@ -318,7 +318,7 @@ public class Employee extends OAObject {
         setId(id);
     }
 
-    public OAObjectEditQuery TestEditQuery_Class;
+    public transient OAObjectEditQuery TestEditQuery_Class;
     
     @OAEditQuery(enabledProperty = "inactiveDate", enabledValue = false)
     public void onEditQuery(OAObjectEditQuery eq) {

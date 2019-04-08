@@ -38,7 +38,7 @@ public class OAPropertyInfo implements java.io.Serializable {
     private boolean isPassword;
     private Hub<String> hubNameValue;
     private boolean isCurrency;
-    private Method editQueryMethod;
+    private transient Method editQueryMethod;
     private boolean isProcessed;
     private boolean isHtml;
     private boolean isTimestamp;

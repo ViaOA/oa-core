@@ -604,7 +604,8 @@ public class Hub<TYPE> implements Serializable, Cloneable, Comparable<TYPE>, Ite
      * Note: dataunique (listeners, etc.) and dataactive (active object) are not
      * cloned. Objects are not cloned.
      */
-    public Object clone() {
+    public Object clone() throws CloneNotSupportedException {
+        super.clone();
         HubSelectDelegate.loadAllData(this);
         Hub h = new Hub(this.getObjectClass());
         HubDataDelegate._clone(this, h);

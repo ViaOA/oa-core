@@ -66,12 +66,11 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
 
     @Override
     public void afterAdd(T obj) {
+        if (obj == null) return;
         if (obj.isLoading()) return;
-        if (obj != null) {
-            if (isUsed(obj)) {
-                Hub<T> h = wfHub.get();
-                if (h != null) h.add(obj);
-            }
+        if (isUsed(obj)) {
+            Hub<T> h = wfHub.get();
+            if (h != null) h.add(obj);
         }
     }
     
