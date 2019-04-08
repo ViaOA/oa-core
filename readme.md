@@ -12,7 +12,7 @@ This allows for a Model Driven approach, that defines the entities, relationship
 *   observable objects and collections - core for reactive object graphs (OAObject & Hub collection)
 *   property paths - dot separated paths for interacting with object graphs
 *   remoting/distributed - allows scaling, failover, where everything works like a single application.
-*   datasource independent, ORM, XML, JSON, yaml, REST, ... - any data, anywhere
+*   datasource independent, ORM, RDBMS/JDBC, XML, JSON, yaml, REST, ... - any data, anywhere
 *   desktop UI - automated rich components - rich UI and reporting
 *   web UI - componenized web apps.
 *   reflective - techniques for automating interactions using object graphs, components and code.
