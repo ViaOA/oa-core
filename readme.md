@@ -1,8 +1,7 @@
-
-
-OA core is a Java library for automating how objects can automatically work together.
+OA core is a Java library for automating how objects automatically work together.
 
 The core of OA is the object model that is an object-relational, observable, reactive, functional, distributed object graph. 
+
 This graph of objects and collections automatically work with persistence layers, frameworks, UI, reporting, microservices, and more.
 
 The Model Driven approach defines the entities, relationships, persistence, business logic, security, UI, endpoint access, work-flow and more.
@@ -19,6 +18,7 @@ The Model Driven approach defines the entities, relationships, persistence, busi
 *   reflective - techniques for automating interactions using object graphs, components and code.
 *   metadata - object data, discovery, and includes business rules, security, callbacks, so that the model is the core.
 *   functional - realtime filtering, merging, object graph, visiting, joins, groups, more.
+
 
 Full software systems can be visually designed and then automatically generated using the OA library, OABuilder visual modeling tool, along with the OA.G2 code generation
 
