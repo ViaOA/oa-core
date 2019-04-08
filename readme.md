@@ -7,7 +7,7 @@ This graph of objects and collections automatically work with persistence layers
 The Model Driven approach defines the entities, relationships, persistence, business logic, security, UI, endpoint access, work-flow and more.
 
 
-## Key Concepts
+### Key Concepts
 
 *   observable objects and collections - core for reactive object graphs (OAObject & Hub collection)
 *   property paths - dot separated paths for interacting with object graphs
