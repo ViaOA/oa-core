@@ -4,7 +4,7 @@ The core of OA is the object model that is an object-relational, observable, rea
 
 This graph of objects and collections automatically work with persistence layers, frameworks, UI, reporting, microservices, and more.
 
-The Model Driven approach defines the entities, relationships, persistence, business logic, security, UI, endpoint access, work-flow and more.
+This allows for a Model Driven approach, that defines the entities, relationships, persistence, business logic, security, UI, endpoint access, work-flow and more.
 
 
 ### Key Concepts
