@@ -26,3 +26,10 @@ Visit [www.viaoa.com](www.viaoa.com) for more information.
 
 Visit [OA-Core Javadoc](http://viaoa.github.io/oa-core/docs/index.html)
 
+Current release on Maven Central:
+
+<dependency>
+  <groupId>com.viaoa</groupId>
+  <artifactId>oa-core</artifactId>
+  <version>3.5.56</version>
+</dependency>
