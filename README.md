@@ -31,5 +31,5 @@ Current release on Maven Central:
 <dependency>
   <groupId>com.viaoa</groupId>
   <artifactId>oa-core</artifactId>
-  <version>3.5.56</version>
+  <version>3.5.57</version>
 </dependency>
