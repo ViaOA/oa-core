@@ -61,6 +61,9 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
     private Hub<OAGroupBy<F, G>> hubCombined;
     private String propertyPath;
     
+    // optional name of Hub property in groupBy object
+    private String hubPropertyName;
+    
     // internal calc prop created (if needed)
     private String listenPropertyName;
     
@@ -93,6 +96,24 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
         this(hubB, propertyPath, true);
     }
 
+    /**
+     * 
+     * @param hubB hub to use as the root.
+     * @param propertyPath to the groupBy property
+     * @param hubPropertyName hub method for linkMany w/ type=groupBy
+     */
+    public HubGroupBy(Hub<F> hubB, String propertyPath, String hubPropertyName) {
+        this.hubGroupBy = null;
+        this.hubFrom = hubB;
+        this.classFrom = hubB.getObjectClass();
+        this.classGroupBy = null;
+        
+        this.propertyPath = propertyPath;
+        this.hubPropertyName = hubPropertyName;
+        this.bCreateNullList = false; 
+        setup();
+    }
+    
     /**
      * Create a hub on objects that are based on hubB, and are grouped by hubA. This allows the
      * combined hub to have a full list like a left-join.
@@ -1698,6 +1719,11 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
         OAGroupBy<F,G> gb = new OAGroupBy<F, G>();
         if (grpBy != null) gb.setGroupBy(grpBy);
         HubDelegate.setObjectClass(gb.getHub(), classFrom);
+        
+        // 20190418 if hubPropertyName!=null, then use a HubCopy
+        if (OAString.isNotEmpty(hubPropertyName)) {
+            new HubCopy(gb.getHub(), (Hub) grpBy.getProperty(hubPropertyName), false);
+        }
         return gb;
     }
     
