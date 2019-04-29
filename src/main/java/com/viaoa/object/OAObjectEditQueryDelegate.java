@@ -264,8 +264,11 @@ public class OAObjectEditQueryDelegate {
         if (editQuery == null) return;
         OAObject user = OAContext.getContext();
         if (user == null) {
-            editQuery.setResponse("processed=true, and user=null");
-            editQuery.setAllowed(false);
+            // 20190429
+            if (!OASync.isServer()) {
+                editQuery.setResponse("processed=true, and user=null");
+                editQuery.setAllowed(false);
+            }
         }
         else if (!OAContext.canEditProcessed()) {
             String sx = OAContext.getAllowEditProcessedPropertyPath();
@@ -288,10 +291,13 @@ public class OAObjectEditQueryDelegate {
             processEditQueryForHubListeners(editQuery, hub, null, null, null, null);
         }
         else {
-            String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
-            editQuery.setName(propertyName);
-            processEditQuery(editQuery, hub, null, objMaster, propertyName, null, null, bProcessedCheck);
-            //was: processEditQuery(editQuery, null, null, objMaster, propertyName, null, null, bProcessedCheck);
+            // 20190429
+            if (!li.getCalculated()) {
+                String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+                editQuery.setName(propertyName);
+                processEditQuery(editQuery, hub, null, objMaster, propertyName, null, null, bProcessedCheck);
+                //was: processEditQuery(editQuery, null, null, objMaster, propertyName, null, null, bProcessedCheck);
+            }
         }
         return editQuery;
     }
@@ -328,9 +334,12 @@ public class OAObjectEditQueryDelegate {
             processEditQueryForHubListeners(editQuery, hub, null, null, null, null);
         }
         else {
-            String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
-            editQuery.setName(propertyName);
-            processEditQuery(editQuery, null, null, objMaster, propertyName, null, null, bProcessedCheck);
+            // 20190429
+            if (!li.getCalculated()) {
+                String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+                editQuery.setName(propertyName);
+                processEditQuery(editQuery, null, null, objMaster, propertyName, null, null, bProcessedCheck);
+            }
         }
         return editQuery;
     }
@@ -668,7 +677,12 @@ public class OAObjectEditQueryDelegate {
             }
             if (editQuery.getAllowed() && OAString.isNotEmpty(sx)) {
                 OAObject user = OAContext.getContext();
-                if (user == null) editQuery.setAllowed(false);
+                if (user == null) {
+                    // 20190429
+                    if (!OASync.isServer()) {
+                        editQuery.setAllowed(false);
+                    }
+                }
                 else {
                     Object valx = OAObjectReflectDelegate.getProperty(user, sx);
                     editQuery.setAllowed(bx == OAConv.toBoolean(valx));
@@ -759,7 +773,12 @@ public class OAObjectEditQueryDelegate {
             }
             if (editQuery.getAllowed() && OAString.isNotEmpty(enabledName)) {
                 OAObject user = OAContext.getContext();
-                if (user == null) editQuery.setAllowed(false);
+                if (user == null) {
+                    // 20190429
+                    if (!OASync.isServer()) {
+                        editQuery.setAllowed(false);
+                    }
+                }
                 else {
                     Object valx = OAObjectReflectDelegate.getProperty(user, enabledName);
                     editQuery.setAllowed(enabledValue == OAConv.toBoolean(valx));
@@ -848,7 +867,12 @@ public class OAObjectEditQueryDelegate {
             if (bPassed && OAString.isNotEmpty(pp)) {
                 b = oi.getContextVisibleValue();
                 OAObject user = OAContext.getContext();
-                if (user == null) bPassed = false;
+                if (user == null) {
+                    // 20190429
+                    if (!OASync.isServer()) {
+                        bPassed = false;
+                    }
+                }
                 else {
                     valx = OAObjectReflectDelegate.getProperty(user, pp);
                     bPassed = (b == OAConv.toBoolean(valx));
@@ -888,7 +912,12 @@ public class OAObjectEditQueryDelegate {
                 if (OAString.isNotEmpty(pp)) {
                     b = li.getContextVisibleValue();
                     OAObject user = OAContext.getContext();
-                    if (user == null) bPassed = false;
+                    if (user == null) {
+                        // 20190429
+                        if (!OASync.isServer()) {
+                            bPassed = false;
+                        }
+                    }
                     else {
                         valx = OAObjectReflectDelegate.getProperty(user, pp);
                         bPassed = (b == OAConv.toBoolean(valx));
@@ -929,7 +958,12 @@ public class OAObjectEditQueryDelegate {
             if (bPassed && OAString.isNotEmpty(pp)) {
                 b = oi.getContextEnabledValue();
                 OAObject user = OAContext.getContext();
-                if (user == null) bPassed = false;
+                if (user == null) {
+                    // 20190429
+                    if (!OASync.isServer()) {
+                        bPassed = false;
+                    }
+                }
                 else {
                     valx = OAObjectReflectDelegate.getProperty(user, pp);
                     bPassed = (b == OAConv.toBoolean(valx));
@@ -974,7 +1008,12 @@ public class OAObjectEditQueryDelegate {
                 if (OAString.isNotEmpty(pp)) {
                     b = li.getContextEnabledValue();
                     OAObject user = OAContext.getContext();
-                    if (user == null) bPassed = false;
+                    if (user == null) {
+                        // 20190429
+                        if (!OASync.isServer()) {
+                            bPassed = false;
+                        }
+                    }
                     else {
                         valx = OAObjectReflectDelegate.getProperty(user, pp);
                         bPassed = (b == OAConv.toBoolean(valx));
