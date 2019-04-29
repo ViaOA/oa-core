@@ -18,7 +18,7 @@ import com.viaoa.util.*;
  * another component.
  * 
  * @author vincevia
- * @deprecated  use OAObjectChangeListener instead
+ * @deprecated  use OAJfcController instead
  */
 public abstract class HubPropController {
     protected HubProp[] hubProps = new HubProp[0];

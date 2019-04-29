@@ -1,4 +1,4 @@
-OA core is a Java library for automating how objects automatically work together.
+OA core is a Java library for automating software development.
 
 The core of OA is the object model that is an object-relational, observable, reactive, functional, distributed object graph. 
 
@@ -26,7 +26,8 @@ Visit [www.viaoa.com](www.viaoa.com) for more information.
 
 Visit [OA-Core Javadoc](http://viaoa.github.io/oa-core/docs/index.html)
 
-Current release on Maven Central:
+Read [OA Object Graph](doc/OAObjectGraph.pdf)
+
 
 Current release on Maven Central: 
     Group Id: com.viaoa
