@@ -11,6 +11,8 @@
 package com.viaoa.remote.multiplexer;
 
 import java.util.logging.Logger;
+
+import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.multiplexer.info.RequestInfo;
 
 /**
@@ -112,6 +114,9 @@ public class OARemoteThread extends Thread {
         startedNextThread = false;
         watingOnLock = false;
         msStartNextThread = 0l;
+        
+        OAThreadLocalDelegate.setContext(null);
+        OAThreadLocalDelegate.setEnableEditQuery(true);
     }
 
 }

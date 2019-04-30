@@ -29,6 +29,8 @@ public @interface OACalculatedProperty {
     String description() default "";
 
     String outputFormat() default "";
+    
+    // dependent property path(s)
     String[] properties() default {};
 
     int displayLength() default 0;

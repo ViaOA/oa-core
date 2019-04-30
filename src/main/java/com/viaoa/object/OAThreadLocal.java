@@ -113,7 +113,13 @@ public class OAThreadLocal {
 
     // current HubEvent that is being processed
     public ArrayList<HubEvent> alHubEvent;
-    
+
+    // flag to enable if editQueries are being used.
     public boolean enableEditQuery=true;
+
+    // used for OAContext, to get the object/value associated with this thread
+    public Object context;
+    
+    
 }
 

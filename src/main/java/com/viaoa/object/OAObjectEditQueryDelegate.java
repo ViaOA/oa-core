@@ -262,15 +262,7 @@ public class OAObjectEditQueryDelegate {
     
     protected static void updateEditProcessed(OAObjectEditQuery editQuery) {
         if (editQuery == null) return;
-        OAObject user = OAContext.getContext();
-        if (user == null) {
-            // 20190429
-            if (!OASync.isServer()) {
-                editQuery.setResponse("processed=true, and user=null");
-                editQuery.setAllowed(false);
-            }
-        }
-        else if (!OAContext.canEditProcessed()) {
+        if (!OAContext.canEditProcessed()) {
             String sx = OAContext.getAllowEditProcessedPropertyPath();
             editQuery.setResponse("User."+sx+"=false");
             editQuery.setAllowed(false);
@@ -527,8 +519,9 @@ public class OAObjectEditQueryDelegate {
             editQuery.setAllowed(true);
         }
         else if ((!editQuery.getAllowed() || editQuery.getThrowable() != null)) {
-            // allow admin or server to be valid
-            if (OAContext.canAdminEdit() || ((OASync.isServer() && OAContext.getContext() == null) && !OASync.isSingleUser())) {
+            // allow server to be valid
+//qqqqqqqqqqqqqqqq will need a way to get the ThreadLocal context            
+            if (OASync.isServer()) {
                 editQuery.setThrowable(null);
                 editQuery.setAllowed(true);
             }
@@ -676,9 +669,8 @@ public class OAObjectEditQueryDelegate {
                 }
             }
             if (editQuery.getAllowed() && OAString.isNotEmpty(sx)) {
-                OAObject user = OAContext.getContext();
+                OAObject user = OAContext.getContextObject();
                 if (user == null) {
-                    // 20190429
                     if (!OASync.isServer()) {
                         editQuery.setAllowed(false);
                     }
@@ -772,9 +764,8 @@ public class OAObjectEditQueryDelegate {
                 }
             }
             if (editQuery.getAllowed() && OAString.isNotEmpty(enabledName)) {
-                OAObject user = OAContext.getContext();
+                OAObject user = OAContext.getContextObject();
                 if (user == null) {
-                    // 20190429
                     if (!OASync.isServer()) {
                         editQuery.setAllowed(false);
                     }
@@ -866,9 +857,8 @@ public class OAObjectEditQueryDelegate {
             pp = oi.getContextVisibleProperty();
             if (bPassed && OAString.isNotEmpty(pp)) {
                 b = oi.getContextVisibleValue();
-                OAObject user = OAContext.getContext();
+                OAObject user = OAContext.getContextObject();
                 if (user == null) {
-                    // 20190429
                     if (!OASync.isServer()) {
                         bPassed = false;
                     }
@@ -911,9 +901,8 @@ public class OAObjectEditQueryDelegate {
                 pp = li.getContextVisibleProperty();
                 if (OAString.isNotEmpty(pp)) {
                     b = li.getContextVisibleValue();
-                    OAObject user = OAContext.getContext();
+                    OAObject user = OAContext.getContextObject();
                     if (user == null) {
-                        // 20190429
                         if (!OASync.isServer()) {
                             bPassed = false;
                         }
@@ -957,9 +946,8 @@ public class OAObjectEditQueryDelegate {
             pp = oi.getContextEnabledProperty();
             if (bPassed && OAString.isNotEmpty(pp)) {
                 b = oi.getContextEnabledValue();
-                OAObject user = OAContext.getContext();
+                OAObject user = OAContext.getContextObject();
                 if (user == null) {
-                    // 20190429
                     if (!OASync.isServer()) {
                         bPassed = false;
                     }
@@ -1007,9 +995,8 @@ public class OAObjectEditQueryDelegate {
                 pp = li.getContextEnabledProperty();
                 if (OAString.isNotEmpty(pp)) {
                     b = li.getContextEnabledValue();
-                    OAObject user = OAContext.getContext();
+                    OAObject user = OAContext.getContextObject();
                     if (user == null) {
-                        // 20190429
                         if (!OASync.isServer()) {
                             bPassed = false;
                         }

@@ -121,7 +121,7 @@ public class OAObjectDelegate {
                 
                 // 20190205 set default linkOne 
                 if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultContextPropertyPath())) {
-                    OAObject objx = OAContext.getContext();
+                    OAObject objx = OAContext.getContextObject();
                     if (objx != null) {
                         OAFinder hf = new OAFinder(li.getDefaultContextPropertyPath());
                         objx = hf.findFirst(objx);

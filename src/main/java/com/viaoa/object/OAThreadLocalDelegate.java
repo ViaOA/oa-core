@@ -19,6 +19,7 @@ import java.util.logging.*;
 import com.viaoa.remote.multiplexer.OARemoteThread;
 import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
 import com.viaoa.remote.multiplexer.info.RequestInfo;
+import com.viaoa.context.OAContext;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.undo.OAUndoManager;
@@ -1189,6 +1190,9 @@ static volatile int unlockCnt;
     }
 
 
+    /**
+     * Used to enable EditQuery to be used (default=true)
+     */
     public static boolean isEditQueryEnabled() {
         boolean b; 
         if (OAThreadLocalDelegate.TotalEnableEditQuery.get() == 0) {
@@ -1215,6 +1219,23 @@ static volatile int unlockCnt;
             else OAThreadLocalDelegate.TotalEnableEditQuery.decrementAndGet();
         }
         return bx;
+    }
+    
+    /**
+     * Get the context that can be used to call OAContext.getContext
+     */
+    public static Object getContext() {
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        return ti.context;
+    }
+    /**
+     * Sets the context that is being used for this Thread.
+     * 
+     * @see OAContext#getContextObject()
+     */
+    public static void setContext(Object context) {
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        ti.context = context;
     }
 }
 
