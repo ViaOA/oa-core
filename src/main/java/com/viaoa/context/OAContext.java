@@ -33,7 +33,7 @@ public class OAContext {
 
     private static final Object NullContext = new Object();
 
-    private static String allowAdminEditPropertyPath = "EditProcessed"; 
+    private static String adminPropertyPath = "Admin"; 
     private static String allowEditProcessedPropertyPath = "EditProcessed"; 
     
     /**
@@ -50,18 +50,23 @@ public class OAContext {
     /**
      * Does the current thread have rights to edit processed objects.
      */
-    public static boolean canEditProcessed() {
+    public static boolean getAllowEditProcessed() {
         Object context = OAThreadLocalDelegate.getContext();
-        return canEditProcessed(context);
+        return getAllowEditProcessed(context);
     }
     /**
      * Does the context have rights to edit processed objects.
      */
-    public static boolean canEditProcessed(Object context) {
+    public static boolean getAllowEditProcessed(Object context) {
         if (context == null) context = NullContext;
 
         // default for main server thread (context=null) is always true
         if (context == NullContext && OASync.isServer()) return true;
+        
+        if (OAThreadLocalDelegate.getAllowEditProcessed()) {
+            return true;
+        }
+        
         if (OAString.isEmpty(allowEditProcessedPropertyPath)) return true;
         OAObject oaObj = getContextObject(context);
         if (oaObj == null) return false;
@@ -76,35 +81,34 @@ public class OAContext {
      * Property path used to find the user property for allowing users to have admin rights.
      * Defaults to "EditProcessed"
      */
-    public static void setAllowAdminEditPropertyPath(String pp) {
-        OAContext.allowAdminEditPropertyPath = pp;
+    public static void setAdminPropertyPath(String pp) {
+        OAContext.adminPropertyPath = pp;
     }
-    public static String getAllowAdminEditPropertyPath() {
-        return OAContext.allowAdminEditPropertyPath;
+    public static String getAdminPropertyPath() {
+        return OAContext.adminPropertyPath;
     }
     /**
      * Does the context have admin rights.
      */
-    public static boolean canAdminEdit() {
-        Object context = OAThreadLocalDelegate.getContext();
-        return canAdminEdit(context);
-    }
     public static boolean isAdmin() {
-        return canAdminEdit();
+        Object context = OAThreadLocalDelegate.getContext();
+        return isAdmin(context);
     }
     public static boolean isAdmin(Object context) {
-        return canAdminEdit(context);
-    }
-    public static boolean canAdminEdit(Object context) {
         if (context == null) context = NullContext;
-        
+
         // default for main server thread (context=null) is always true
         if (context == NullContext && OASync.isServer()) return true;
-        if (OAString.isEmpty(allowAdminEditPropertyPath)) return true;
+        
+        if (OAThreadLocalDelegate.isAdmin()) {
+            return true;
+        }
+        
+        if (OAString.isEmpty(adminPropertyPath)) return true;
         OAObject oaObj = getContextObject(context);
         if (oaObj == null) return false;
         
-        Object val = oaObj.getProperty(OAContext.allowAdminEditPropertyPath);
+        Object val = oaObj.getProperty(OAContext.adminPropertyPath);
         boolean b = OAConv.toBoolean(val);
         return b;
     }

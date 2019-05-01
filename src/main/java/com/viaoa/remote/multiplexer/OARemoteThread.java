@@ -114,9 +114,11 @@ public class OARemoteThread extends Thread {
         startedNextThread = false;
         watingOnLock = false;
         msStartNextThread = 0l;
-        
+
+        // reset thread local
         OAThreadLocalDelegate.setContext(null);
-        OAThreadLocalDelegate.setEnableEditQuery(true);
+        OAThreadLocalDelegate.setIsAdmin(false);
+        OAThreadLocalDelegate.setAllowEditProcessed(false);
     }
 
 }

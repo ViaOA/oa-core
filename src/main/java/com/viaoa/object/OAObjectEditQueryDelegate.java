@@ -262,7 +262,7 @@ public class OAObjectEditQueryDelegate {
     
     protected static void updateEditProcessed(OAObjectEditQuery editQuery) {
         if (editQuery == null) return;
-        if (!OAContext.canEditProcessed()) {
+        if (!OAContext.getAllowEditProcessed()) {
             String sx = OAContext.getAllowEditProcessedPropertyPath();
             editQuery.setResponse("User."+sx+"=false");
             editQuery.setAllowed(false);
@@ -510,7 +510,6 @@ public class OAObjectEditQueryDelegate {
     }
     
     protected static void processEditQuery(OAObjectEditQuery editQuery, final Hub hubThis, final Class<? extends OAObject> clazz, final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue, final boolean bProcessedCheck) {
-        if (!OAThreadLocalDelegate.isEditQueryEnabled()) return;
         _processEditQuery(true, editQuery, hubThis, clazz, oaObj, propertyName, oldValue, newValue, bProcessedCheck);
         
         // if allowed=false, then allow override
@@ -520,7 +519,6 @@ public class OAObjectEditQueryDelegate {
         }
         else if ((!editQuery.getAllowed() || editQuery.getThrowable() != null)) {
             // allow server to be valid
-//qqqqqqqqqqqqqqqq will need a way to get the ThreadLocal context            
             if (OASync.isServer()) {
                 editQuery.setThrowable(null);
                 editQuery.setAllowed(true);

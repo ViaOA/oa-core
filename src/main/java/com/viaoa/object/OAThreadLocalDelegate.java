@@ -57,8 +57,6 @@ public class OAThreadLocalDelegate {
     
     private static AtomicInteger TotalHubListenerTreeCount = new AtomicInteger();
     private static final AtomicInteger TotalHubEvent = new AtomicInteger();
-    private static final AtomicInteger TotalEnableEditQuery = new AtomicInteger();
-    
 
     public static final HashMap<Object, OAThreadLocal[]> hmLock = new HashMap<Object, OAThreadLocal[]>(53, .75f);
     
@@ -1190,36 +1188,6 @@ static volatile int unlockCnt;
     }
 
 
-    /**
-     * Used to enable EditQuery to be used (default=true)
-     */
-    public static boolean isEditQueryEnabled() {
-        boolean b; 
-        if (OAThreadLocalDelegate.TotalEnableEditQuery.get() == 0) {
-            b = true;
-        }
-        else {
-            b = isEditQueryEnabled(OAThreadLocalDelegate.getThreadLocal(false));
-        }
-        return b;
-    }
-    protected static boolean isEditQueryEnabled(OAThreadLocal ti) {
-        if (ti == null) return false;
-        return ti.enableEditQuery;
-    }
-    public static boolean setEnableEditQuery(boolean b) {
-        return setEnableEditQuery(OAThreadLocalDelegate.getThreadLocal(b), b);
-    }
-    protected static boolean setEnableEditQuery(OAThreadLocal ti, boolean b) {
-        if (ti == null) return false;
-        boolean bx = ti.enableEditQuery;
-        if (b != bx) {
-            ti.enableEditQuery = b;
-            if (b) OAThreadLocalDelegate.TotalEnableEditQuery.incrementAndGet();
-            else OAThreadLocalDelegate.TotalEnableEditQuery.decrementAndGet();
-        }
-        return bx;
-    }
     
     /**
      * Get the context that can be used to call OAContext.getContext
@@ -1236,6 +1204,52 @@ static volatile int unlockCnt;
     public static void setContext(Object context) {
         OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
         ti.context = context;
+    }
+    
+    public static boolean setAdmin(boolean b) {
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        return setIsAdmin(ti, b);
+    }
+    public static boolean setIsAdmin(boolean b) {
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        return setIsAdmin(ti, b);
+    }
+    public static boolean setIsAdmin(OAThreadLocal ti, boolean b) {
+        if (ti == null) return false;
+        boolean b2 = ti.isAdmin;
+        ti.isAdmin = b;
+        return b2;
+    }
+    public static boolean isAdmin() {
+        return getIsAdmin();
+    }
+    public static boolean getIsAdmin() {
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        return getIsAdmin(ti);
+    }
+    public static boolean getIsAdmin(OAThreadLocal ti) {
+        if (ti == null) return false;
+        return ti.isAdmin;
+    }
+    
+    
+    public static boolean setAllowEditProcessed(boolean b) {
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        return setIsAdmin(ti, b);
+    }
+    public static boolean setAllowEditProcessed(OAThreadLocal ti, boolean b) {
+        if (ti == null) return false;
+        boolean b2 = ti.allowEditProcessed;
+        ti.allowEditProcessed = b;
+        return b2;
+    }
+    public static boolean getAllowEditProcessed() {
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        return getAllowEditProcessed(ti);
+    }
+    public static boolean getAllowEditProcessed(OAThreadLocal ti) {
+        if (ti == null) return false;
+        return ti.allowEditProcessed;
     }
 }
 

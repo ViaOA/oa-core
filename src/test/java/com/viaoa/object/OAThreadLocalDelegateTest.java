@@ -176,5 +176,17 @@ public class OAThreadLocalDelegateTest extends OAUnitTest {
         assertFalse(OAThreadLocalDelegate.isLocked(lockB));
     }
     
+    @Test
+    public void lockTestA() {
+        boolean b = OAThreadLocalDelegate.setIsAdmin(true);
+        assertFalse(b);
+        b = OAThreadLocalDelegate.setIsAdmin(false);
+        assertTrue(b);
+        
+        b = OAThreadLocalDelegate.setAllowEditProcessed(true);
+        assertFalse(b);
+        b = OAThreadLocalDelegate.setAllowEditProcessed(false);
+        assertTrue(b);
+    }
     
 }
