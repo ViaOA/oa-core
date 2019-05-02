@@ -63,7 +63,7 @@ public class OAContext {
         // default for main server thread (context=null) is always true
         if (context == NullContext && OASync.isServer()) return true;
         
-        if (OAThreadLocalDelegate.getAllowEditProcessed()) {
+        if (OAThreadLocalDelegate.getAlwaysAllowEditProcessed()) {
             return true;
         }
         
@@ -113,6 +113,34 @@ public class OAContext {
         return b;
     }
     
+    
+    /**
+     * Check to see if context (user) property path is equal to bEqualTo.
+     */
+    public static boolean isEnabled(final String pp, final boolean bEqualTo) {
+        Object context = OAThreadLocalDelegate.getContext();
+        return isEnabled(context, pp, bEqualTo);
+    }
+    public static boolean isEnabled(Object context, final String pp, final boolean bEqualTo) {
+        if (context == null) context = NullContext;
+
+        // default for main server thread (context=null) is always true
+        if (context == NullContext && OASync.isServer()) return true;
+        
+        if (OAThreadLocalDelegate.getAlwaysAllowEnabled()) {
+            return true;
+        }
+        
+        if (OAString.isEmpty(pp)) return true;
+        OAObject oaObj = getContextObject(context);
+        if (oaObj == null) return false;
+        
+        Object val = oaObj.getProperty(pp);
+        boolean b = OAConv.toBoolean(val);
+        return b == bEqualTo;
+    }
+    
+    
     /**
      * Associated an object value with a context. 
      * @param context is value used to lookup obj
@@ -126,6 +154,9 @@ public class OAContext {
         h.add(obj);
         h.setAO(obj);
         setContextHub(context, h);
+    }
+    public static void setContext(Object context, OAObject obj) {
+        setContextObject(context, obj);
     }
     
     /**
@@ -157,6 +188,12 @@ public class OAContext {
         if (context == null) context = NullContext;
         hmContextHub.remove(context);
     }
+    public static void removeContext(Object context) {
+        removeContextHub(context);
+    }
+    public static void removeContext() {
+        removeContextHub(null);
+    }
 
     public static Hub<? extends OAObject> getContextHub() {
         return getContextHub(null);
@@ -166,5 +203,8 @@ public class OAContext {
         if (context == null) context = NullContext;
         return hmContextHub.get(context); 
     }
+
+    
+    
     
 }

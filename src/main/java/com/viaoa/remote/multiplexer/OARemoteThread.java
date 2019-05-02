@@ -117,8 +117,10 @@ public class OARemoteThread extends Thread {
 
         // reset thread local
         OAThreadLocalDelegate.setContext(null);
-        OAThreadLocalDelegate.setIsAdmin(false);
-        OAThreadLocalDelegate.setAllowEditProcessed(false);
+        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
+        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
+        OAThreadLocalDelegate.setAdmin(false);
+        
     }
 
 }

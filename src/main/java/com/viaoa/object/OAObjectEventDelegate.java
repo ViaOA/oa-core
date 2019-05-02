@@ -12,15 +12,12 @@ package com.viaoa.object;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
-import com.viaoa.ds.OADataSource;
-import com.viaoa.ds.objectcache.OADataSourceObjectCache;
 import com.viaoa.hub.*;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.undo.OAUndoableEdit;
@@ -88,11 +85,10 @@ public class OAObjectEventDelegate {
     	            long ms = System.currentTimeMillis();
     	            ++cntError;
     	            if (ms > msThrottle + 5000) {
-    	                LOG.warning(cntError+") " + msg);
+    	                LOG.warning(cntError+") " + msg+", will continue without throwing an exception");
     	                msThrottle = ms;
     	            }
-    	            
-/** 20181018 dont reject, can put this in later after more confidence.  OAJfcController will make call verify to make sure user/UI is using rules.           
+/** 20181018, 20190502 dont throw an exception until there is more confidence.             
     	            throw new RuntimeException(msg, em.getThrowable());
 */    	            
     	        }

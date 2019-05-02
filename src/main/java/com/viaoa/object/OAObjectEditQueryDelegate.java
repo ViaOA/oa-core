@@ -64,11 +64,14 @@ public class OAObjectEditQueryDelegate {
     public static boolean getAllowEnabled(OAObject obj, String name) {
         return getAllowEnabled(obj, name, false);
     }
+    public static boolean getAllowEnabled(OAObject obj) {
+        return getAllowEnabled(obj, null, false);
+    }
     public static boolean getAllowEnabled(Hub hub, OAObject obj, String name, boolean bProcessedCheck) {
         return getAllowEnabledEditQuery(hub, obj, name, bProcessedCheck).getAllowed();
     }
-    public static boolean getAllowEnabled(OAObject obj, String name, boolean bProcessedCheck) {
-        return getAllowEnabledEditQuery(null, obj, name, bProcessedCheck).getAllowed();
+    public static boolean getAllowEnabled(OAObject obj, String propertyName, boolean bProcessedCheck) {
+        return getAllowEnabledEditQuery(null, obj, propertyName, bProcessedCheck).getAllowed();
     }
     public static boolean getAllowEnabled(Hub hub) {
         return getAllowEnabledEditQuery(hub).getAllowed();
@@ -517,13 +520,15 @@ public class OAObjectEditQueryDelegate {
             editQuery.setThrowable(null);
             editQuery.setAllowed(true);
         }
+        /*
         else if ((!editQuery.getAllowed() || editQuery.getThrowable() != null)) {
             // allow server to be valid
-            if (OASync.isServer()) {
+            if (OASync.isServer() && OAThreadLocalDelegate.getContext() == null) {
                 editQuery.setThrowable(null);
                 editQuery.setAllowed(true);
             }
         }
+        */
     }
     
     
@@ -724,12 +729,14 @@ public class OAObjectEditQueryDelegate {
             }
             
             if (editQuery.getAllowed() && OAString.isNotEmpty(enabledName)) {
-                Object valx = OAObjectReflectDelegate.getProperty(oaObj, enabledName);
-                editQuery.setAllowed(enabledValue == OAConv.toBoolean(valx));
-                if (!editQuery.getAllowed() && OAString.isEmpty(editQuery.getResponse())) {
-                    editQuery.setAllowed(false);
-                    String s = "Not enabled, "+oaObj.getClass().getSimpleName()+"."+enabledName+" is not "+enabledValue;
-                    editQuery.setResponse(s);
+                if (!OAThreadLocalDelegate.getAlwaysAllowEnabled()) {
+                    Object valx = OAObjectReflectDelegate.getProperty(oaObj, enabledName);
+                    editQuery.setAllowed(enabledValue == OAConv.toBoolean(valx));
+                    if (!editQuery.getAllowed() && OAString.isEmpty(editQuery.getResponse())) {
+                        editQuery.setAllowed(false);
+                        String s = "Not enabled, "+oaObj.getClass().getSimpleName()+"."+enabledName+" is not "+enabledValue;
+                        editQuery.setResponse(s);
+                    }
                 }
             }
             
@@ -762,21 +769,15 @@ public class OAObjectEditQueryDelegate {
                 }
             }
             if (editQuery.getAllowed() && OAString.isNotEmpty(enabledName)) {
-                OAObject user = OAContext.getContextObject();
-                if (user == null) {
-                    if (!OASync.isServer()) {
-                        editQuery.setAllowed(false);
-                    }
-                }
-                else {
-                    Object valx = OAObjectReflectDelegate.getProperty(user, enabledName);
-                    editQuery.setAllowed(enabledValue == OAConv.toBoolean(valx));
-                }
-                if (!editQuery.getAllowed() && OAString.isEmpty(editQuery.getResponse())) {
+                if (!OAContext.isEnabled(enabledName, enabledValue)) {
                     editQuery.setAllowed(false);
-                    String s = user == null ? "User" : user.getClass().getSimpleName();
-                    s = "Not enabled, "+s+"."+enabledName+" is not "+enabledValue;
-                    editQuery.setResponse(s);
+                    if (OAString.isEmpty(editQuery.getResponse())) {
+                        editQuery.setAllowed(false);
+                        OAObject user = OAContext.getContextObject();
+                        String s = user == null ? "User" : user.getClass().getSimpleName();
+                        s = "Not enabled, "+s+"."+enabledName+" is not "+enabledValue;
+                        editQuery.setResponse(s);
+                    }
                 }
             }
         }
@@ -929,34 +930,28 @@ public class OAObjectEditQueryDelegate {
                 }
             }
         }
-        else if (editQuery.getType() == Type.AllowEnabled || editQuery.getType().checkEnabledFirst) {
-            pp = oi.getEnabledProperty();
-            if (bPassed && OAString.isNotEmpty(pp)) {
-                b = oi.getEnabledValue();
-                valx = OAObjectReflectDelegate.getProperty(oaObj, pp);
-                bPassed = (b == OAConv.toBoolean(valx));
-                if (!bPassed) {
-                    editQuery.setAllowed(false);
-                    String s = "Not enabled, rule for "+oaObj.getClass().getSimpleName()+", "+pp+" != "+b;
-                    editQuery.setResponse(s);
+        else if ( (editQuery.getType() == Type.AllowEnabled || editQuery.getType().checkEnabledFirst) && !(OASync.isServer() && OAThreadLocalDelegate.getContext() == null)) {
+            if (!OAThreadLocalDelegate.getAlwaysAllowEnabled()) {
+                pp = oi.getEnabledProperty();
+                if (bPassed && OAString.isNotEmpty(pp)) {
+                    b = oi.getEnabledValue();
+                    valx = OAObjectReflectDelegate.getProperty(oaObj, pp);
+                    bPassed = (b == OAConv.toBoolean(valx));
+                    if (!bPassed) {
+                        editQuery.setAllowed(false);
+                        String s = "Not enabled, rule for "+oaObj.getClass().getSimpleName()+", "+pp+" != "+b;
+                        editQuery.setResponse(s);
+                    }
                 }
             }
             pp = oi.getContextEnabledProperty();
             if (bPassed && OAString.isNotEmpty(pp)) {
                 b = oi.getContextEnabledValue();
-                OAObject user = OAContext.getContextObject();
-                if (user == null) {
-                    if (!OASync.isServer()) {
-                        bPassed = false;
-                    }
-                }
-                else {
-                    valx = OAObjectReflectDelegate.getProperty(user, pp);
-                    bPassed = (b == OAConv.toBoolean(valx));
-                }
-                if (!bPassed) {
+                if (!OAContext.isEnabled(pp, b)) {
+                    bPassed = false;
                     editQuery.setAllowed(false);
                     String s = "Not enabled, user rule for "+oaObj.getClass().getSimpleName()+", ";
+                    OAObject user = OAContext.getContextObject();
                     if (user == null) s = "OAAuthDelegate.getUser returned null";
                     else s = "User."+pp+" must be "+b;
                     editQuery.setResponse(s);
@@ -977,7 +972,7 @@ public class OAObjectEditQueryDelegate {
 
             if (li != null && bPassed) {
                 pp = li.getEnabledProperty();
-                if (OAString.isNotEmpty(pp)) {
+                if (OAString.isNotEmpty(pp) && !OAThreadLocalDelegate.getAlwaysAllowEnabled()) {
                     b = li.getEnabledValue();
                     valx = OAObjectReflectDelegate.getProperty(oaObj, pp);
                     bPassed = (b == OAConv.toBoolean(valx));
@@ -993,17 +988,8 @@ public class OAObjectEditQueryDelegate {
                 pp = li.getContextEnabledProperty();
                 if (OAString.isNotEmpty(pp)) {
                     b = li.getContextEnabledValue();
-                    OAObject user = OAContext.getContextObject();
-                    if (user == null) {
-                        if (!OASync.isServer()) {
-                            bPassed = false;
-                        }
-                    }
-                    else {
-                        valx = OAObjectReflectDelegate.getProperty(user, pp);
-                        bPassed = (b == OAConv.toBoolean(valx));
-                    }
-                    if (!bPassed) {
+                    if (!OAContext.isEnabled(pp, b)) {
+                        OAObject user = OAContext.getContextObject();
                         editQuery.setAllowed(false);
                         String s = "Not enabled, user rule for "+oaObj.getClass().getSimpleName()+"."+propertyName+", ";
                         if (user == null) s = "OAAuthDelegate.getUser returned null";

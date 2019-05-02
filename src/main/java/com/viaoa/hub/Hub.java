@@ -558,14 +558,16 @@ public class Hub<TYPE> implements Serializable, Cloneable, Comparable<TYPE>, Ite
      * @see OAObject#save
      */
     public void saveAll() {
-        boolean b1 = OAThreadLocalDelegate.setAllowEditProcessed(true);
-        boolean b2 = OAThreadLocalDelegate.setAdmin(true);
+        boolean b1 = OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
+        boolean b2 = OAThreadLocalDelegate.setAlwaysAllowEnabled(true);
+        boolean b3 = OAThreadLocalDelegate.setAdmin(true);
         try {
             HubSaveDelegate.saveAll(this, OAObject.CASCADE_LINK_RULES);
         }
         finally {
-            OAThreadLocalDelegate.setAllowEditProcessed(b1);
-            OAThreadLocalDelegate.setAdmin(b2);
+            OAThreadLocalDelegate.setAlwaysAllowEditProcessed(b1);
+            OAThreadLocalDelegate.setAlwaysAllowEnabled(b2);
+            OAThreadLocalDelegate.setAdmin(b3);
         }
     }
 

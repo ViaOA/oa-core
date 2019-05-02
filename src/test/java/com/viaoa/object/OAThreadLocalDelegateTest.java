@@ -1,10 +1,18 @@
 package com.viaoa.object;
 
 
+import com.cdi.model.oa.*;
 import com.viaoa.OAUnitTest;
+import com.viaoa.context.OAContext;
+import com.viaoa.util.OADate;
+
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class OAThreadLocalDelegateTest extends OAUnitTest {
     
@@ -177,16 +185,66 @@ public class OAThreadLocalDelegateTest extends OAUnitTest {
     }
     
     @Test
-    public void lockTestA() {
+    public void testForContext() {
         boolean b = OAThreadLocalDelegate.setIsAdmin(true);
         assertFalse(b);
         b = OAThreadLocalDelegate.setIsAdmin(false);
         assertTrue(b);
         
-        b = OAThreadLocalDelegate.setAllowEditProcessed(true);
+        b = OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
         assertFalse(b);
-        b = OAThreadLocalDelegate.setAllowEditProcessed(false);
+        b = OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
         assertTrue(b);
     }
+
+
+    @Test
+    public void test5() throws Exception {
+        final CountDownLatch cd = new CountDownLatch(1);
+        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
+        final OAThreadLocal tl = OAThreadLocalDelegate.getOAThreadLocal();
+       
+        final AtomicBoolean ab = new AtomicBoolean(false);
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                OAThreadLocalDelegate.initialize(tl);
+                ab.set(OAThreadLocalDelegate.getAlwaysAllowEditProcessed());
+                cd.countDown();
+            }
+        });
+        t.start();
+        cd.await(5, TimeUnit.SECONDS);
+        assertTrue(ab.get());
+        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
+    }
     
+    
+    @Test
+    public void test6() throws Exception {
+        OAThreadLocalDelegate.setContext(null);
+        assertNull(OAThreadLocalDelegate.getContext());
+        Object context = new Object();
+        OAThreadLocalDelegate.setContext(context);
+        assertEquals(context, OAThreadLocalDelegate.getContext());
+        OAThreadLocalDelegate.setContext(null);
+        assertNull(OAThreadLocalDelegate.getContext());
+        
+        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
+        assertFalse(OAThreadLocalDelegate.getAlwaysAllowEditProcessed());
+        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
+        assertTrue(OAThreadLocalDelegate.getAlwaysAllowEditProcessed());
+        
+        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
+        assertFalse(OAThreadLocalDelegate.getAlwaysAllowEnabled());
+        OAThreadLocalDelegate.setAlwaysAllowEnabled(true);
+        assertTrue(OAThreadLocalDelegate.getAlwaysAllowEnabled());
+
+        
+        
+        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
+        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
+        OAContext.removeContext(context);
+        OAContext.removeContext();
+    }
 }

@@ -11,11 +11,9 @@
 package com.viaoa.object;
 
 import java.util.ArrayList;
-import java.util.Stack;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubMerger;
 import com.viaoa.remote.multiplexer.info.RequestInfo;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.Tuple3;
@@ -115,18 +113,23 @@ public class OAThreadLocal {
     public ArrayList<HubEvent> alHubEvent;
 
 
-    
-    
     // used for OAContext, to get the object/value associated with this thread
     public Object context;
     
     /**
-     * used by OAContext, to automatically allow isAdmin to return true    
+     * used by OAContext, to automatically allow OAContext.isAdmin() to return true    
      */
     public boolean isAdmin;
+    
     /**
-     * used by OAContext, to automatically allow allowEditProcessed to return true    
+     * used by OAContext, to automatically allow OAContext.getAllowEditProcessed() to return true    
      */
-    public boolean allowEditProcessed;
+    public boolean alwaysAllowEditProcessed;
+    
+    
+    /**
+     *  If true, then used by OAContext.isEnabled(), and by OAEditQuery
+     */
+    public boolean alwaysAllowEnabled;
 }
 

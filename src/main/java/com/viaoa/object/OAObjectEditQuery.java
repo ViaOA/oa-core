@@ -66,7 +66,7 @@ public class OAObjectEditQuery {
         AllowCopy(false),
         
         // verify command before calling
-        VerifyPropertyChange(true, false),// use: value to get new value, name, response, throwable - set allowEnablede=false, or throwable!=null to cancel
+        VerifyPropertyChange(true, true),// use: value to get new value, name, response, throwable - set allowEnablede=false, or throwable!=null to cancel
         VerifyAdd(true, true),           // use: value to get added object, allowAdd, throwable - set allowed=false, or throwable!=null to cancel
         VerifyRemove(true, true),        // use: value to get removed object, allowRemove, throwable - set allowRemove=false, or throwable!=null to cancel
         VerifyRemoveAll(true, true),     // use: allowRemoveAll, response, throwable - set allowRemoveAll=false, or throwable!=null to cancel

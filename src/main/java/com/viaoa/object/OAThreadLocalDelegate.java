@@ -1233,23 +1233,59 @@ static volatile int unlockCnt;
     }
     
     
-    public static boolean setAllowEditProcessed(boolean b) {
+    /**
+     *  If true, then used by OAContext.getAllowEditProcessed() will return true
+     */
+    public static boolean setAlwaysAllowEditProcessed(boolean b) {
         OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
-        return setIsAdmin(ti, b);
+        return setAlwaysAllowEditProcessed(ti, b);
     }
-    public static boolean setAllowEditProcessed(OAThreadLocal ti, boolean b) {
+    public static boolean setAlwaysAllowEditProcessed(OAThreadLocal ti, boolean b) {
         if (ti == null) return false;
-        boolean b2 = ti.allowEditProcessed;
-        ti.allowEditProcessed = b;
+        boolean b2 = ti.alwaysAllowEditProcessed;
+        ti.alwaysAllowEditProcessed = b;
         return b2;
     }
-    public static boolean getAllowEditProcessed() {
+    public static boolean getAlwaysAllowEditProcessed() {
         OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
-        return getAllowEditProcessed(ti);
+        return getAlwaysAllowEditProcessed(ti);
     }
-    public static boolean getAllowEditProcessed(OAThreadLocal ti) {
+    public static boolean getAlwaysAllowEditProcessed(OAThreadLocal ti) {
         if (ti == null) return false;
-        return ti.allowEditProcessed;
+        return ti.alwaysAllowEditProcessed;
     }
+    
+
+    /**
+     *  If true, then used by OAContext.isEnabled(), and by OAEditQuery
+     */
+    public static boolean setAlwaysAllowEnabled(boolean b) {
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        return setAlwaysAllowEnabled(ti, b);
+    }
+    public static boolean setAlwaysAllowEnabled(OAThreadLocal ti, boolean b) {
+        if (ti == null) return false;
+        boolean b2 = ti.alwaysAllowEnabled;
+        ti.alwaysAllowEnabled = b;
+        return b2;
+    }
+    public static boolean getAlwaysAllowEnabled() {
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        return getAlwaysAllowEnabled(ti);
+    }
+    public static boolean getAlwaysAllowEnabled(OAThreadLocal ti) {
+        if (ti == null) return false;
+        return ti.alwaysAllowEnabled;
+    }
+
+    public static void initialize(OAThreadLocal tl) {
+        if (tl == null) return;
+        OAThreadLocal tlx = getThreadLocal(true);
+        tlx.alwaysAllowEditProcessed = tl.alwaysAllowEditProcessed;
+        tlx.alwaysAllowEnabled = tl.alwaysAllowEnabled;
+        tlx.isAdmin = tl.isAdmin;
+        tlx.context = tl.context;
+    }
+    
 }
 
