@@ -725,6 +725,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
         }
         return m;
     }
+
+    /**
+     * returns quarter from 0-3
+     * @return
+     */
+    public int getQuarter() {
+        int x = getMonth();
+        x /= 3;
+        return x;
+    }
+    
     /**
         Set month, values between 0-11.
         @param month must be between <b>0-11</b>.
@@ -1790,6 +1801,42 @@ public class OADateTime implements java.io.Serializable, Comparable {
             return s;
         }
         return null;
+    }
+    
+
+    public boolean isLastDayOfMonth() {
+        return getDay() == getDaysInMonth();
+    }
+    
+    public boolean isFirstWeekDayOfMonth(int weekday) {
+        int day = getDay();
+        if (day > 7) return false;
+        return (getDayOfWeek() == weekday);
+    }
+    
+    public boolean isLastWeekDayOfMonth(int weekday) {
+        int d = getDay();
+        if (d + 7 <= getDaysInMonth()) return false; 
+        return (getDayOfWeek() == weekday);
+    }
+    
+    public int getLastWeekDayOfMonth(int weekday) {
+        OADateTime dt = new OADateTime(this);
+        int x = getDaysInMonth();
+        for (int i=0; i<7; i++) {
+            dt.setDay(x - i);
+            if (dt.getDayOfWeek() == weekday) return (x - i); 
+        }
+        return -1;  // error
+    }
+    
+    public int getFirstWeekDayOfMonth(int weekday) {
+        OADateTime dt = new OADateTime(this);
+        for (int i=0; i<7; i++) {
+            dt.setDay(i+1);
+            if (dt.getDayOfWeek() == weekday) return (i+1); 
+        }
+        return -1;  // error
     }
     
     public static void main(String[] args) {

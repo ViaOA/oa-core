@@ -348,5 +348,89 @@ public class OADateTimeTest extends OAUnitTest {
         int xx = 4;
         xx++;
     }
+
+    @Test
+    public void isLastDayOfMonthTest() {
+        OADateTime dt = new OADateTime("04/01/2015");
+        assertFalse(dt.isLastDayOfMonth());
+       
+        dt = dt.addDays(-1);
+        assertTrue(dt.isLastDayOfMonth());
+        
+        dt = dt.addDays(-21);
+        assertFalse(dt.isLastDayOfMonth());
+        
+        dt.setDay(1);
+        dt = dt.addMonths(15);
+        assertFalse(dt.isLastDayOfMonth());
+        
+        
+        dt = dt.addDays(-1);
+        assertTrue(dt.isLastDayOfMonth());
+    }
+
+    @Test
+    public void isFirstWeekDayOfMonthTest() {
+        OADateTime dt = new OADateTime("04/21/2015");
+        
+        assertFalse(dt.isFirstWeekDayOfMonth(Calendar.MONDAY));
+
+        dt.setDay(1);
+        for (int i=0; i<7; i++) {
+            int dow = dt.getDayOfWeek();
+            assertTrue(dt.isFirstWeekDayOfMonth(dow));
+            dt = dt.addDays(1);
+        }
+        int dow = dt.getDayOfWeek();
+        assertFalse(dt.isFirstWeekDayOfMonth(dow));
+    }
+    @Test
+    public void getFirstWeekDayOfMonthTest() {
+        OADateTime dt = new OADateTime("04/1/2019");
+        
+        for (int i=0; i<7; i++) { 
+            int dow = dt.getDayOfWeek();
+            assertEquals(dt.getDay(), dt.getFirstWeekDayOfMonth(dow));
+            dt = dt.addDays(1);
+        }
+        
+        for (int i=0; i<57; i++) { 
+            int dow = dt.getDayOfWeek();
+            assertTrue(dt.getFirstWeekDayOfMonth(dow) < 8);
+            dt = dt.addDays(1);
+        }
+    }
+    
+    @Test
+    public void isLastWeekDayOfMonthTest() {
+        OADateTime dt = new OADateTime("04/21/2015");
+        assertFalse(dt.isLastWeekDayOfMonth(Calendar.MONDAY));
+
+        dt.setDay(1);
+        dt = dt.addDays(-1);
+        for (int i=0; i<7; i++) {
+            int dow = dt.getDayOfWeek();
+            assertTrue(dt.isLastWeekDayOfMonth(dow));
+            dt = dt.addDays(-1);
+        }
+        int dow = dt.getDayOfWeek();
+        assertFalse(dt.isLastWeekDayOfMonth(dow));
+    }
+
+    @Test
+    public void getLastWeekDayOfMonthTest() {
+        OADateTime dt = new OADateTime("03/01/2015");
+        
+        for (int i=0; i<157; i++) { 
+            int dow = dt.getDayOfWeek();
+            
+            int x = dt.getLastWeekDayOfMonth(dow);
+            int x2 = dt.getDaysInMonth();
+            
+            assertTrue(x >= x2-6);
+            
+            dt = dt.addDays(1);
+        }
+    }
 }
 
