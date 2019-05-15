@@ -427,22 +427,35 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
             }
         }
         
-        
-        // onEditQueryXxx 
+        /*
+         *  check for any methods that have one param OAObjectEditQuery, and method name matching either onEditQuery*  or *Callback
+         * 
+         *  example:
+         *  @OAEditQuery   // (not required, but helpful)
+         *  public void lastNameCallback(OAObjectEditQuery)
+         *     -or-
+         *  @OAEditQuery
+         *  public void onEditQueryLastName(OAObjectEditQuery)
+         */
+        // onEditQueryXxx   or  xxxCallback
         for (final Method m : methods) {
             String name = m.getName();
             final OAEditQuery eq = (OAEditQuery) m.getAnnotation(OAEditQuery.class);
             final Class[] cs = m.getParameterTypes();
             if (eq == null) {
-                s = name.toUpperCase();
-                if (s.indexOf("EDITQUERY") >= 0 && s.indexOf("$") < 0) {
-                    if (!s.endsWith("MODEL") && !s.startsWith("GET") && !s.startsWith("SET")) {
-                        s = "missing @OAEditQuery() annotation, class="+clazz+", method="+m;
-                        LOG.log(Level.WARNING, s, new Exception(s));
-                    }
+                if (cs != null && cs.length == 1 && cs[0].equals(OAObjectEditQuery.class)) {
                 }
                 else {
-                    continue;
+                    s = name.toUpperCase();
+                    if (s.indexOf("EDITQUERY") >= 0 && s.indexOf("$") < 0) {
+                        if (!s.endsWith("MODEL") && !s.startsWith("GET") && !s.startsWith("SET")) {
+                            s = "missing @OAEditQuery() annotation, class="+clazz+", method="+m+", will continue";
+                            LOG.log(Level.WARNING, s, new Exception(s));
+                        }
+                    }
+                    else {
+                        continue;
+                    }
                 }
             }
             if (oi.getMethodInfo(name) != null) {
@@ -461,11 +474,23 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
                 if (b) continue;
             }
             
-            final String s2 = "onEditQuery";
-            if (!name.startsWith(s2)) {
-                s = "OAEditQuery annotation, class="+clazz+", method="+m+", should be named onEditQuery*";
-                LOG.log(Level.WARNING, s, new Exception(s));
+            String prefixName = "onEditQuery";
+            String suffixName = null;
+            if (!name.startsWith(prefixName)) {
+                // can also be xXX"Callback"(..)
+                if (name.endsWith("Callback")) {
+                    suffixName = "Callback";
+                    prefixName = null;
+                }
+                else {
+                    if (eq != null) {
+                        s = "OAEditQuery annotation, class="+clazz+", method="+m+", should be named onEditQuery*, or *Callback";
+                        LOG.log(Level.WARNING, s, new Exception(s));
+                    }
+                    continue;
+                }
             }
+            
             boolean b = (cs != null && cs.length == 1);
             if (b) {
                 b = cs[0].equals(OAObjectEditQuery.class);
@@ -475,12 +500,18 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
                 }
                 if (!b && cs[0].isAssignableFrom(OAObjectModel.class)) {
                     // public static void onEditQueryAddressesModel(OAObjectModel model)
-                    if (!name.endsWith("Model")) {
-                        s = "OAEditQuery annotation, class="+clazz+", method="+m+", should be named onEditQuery*Model";
-                        LOG.log(Level.WARNING, s, new Exception(s));
-                    }
-                    s = name.substring(s2.length());
+                    // public static void addressesModelCallback(OAObjectModel model)
+                    s = name.substring(prefixName.length());
                     s = s.substring(0, s.length()-5);
+                    if (!name.endsWith("Model")) {
+                        if (name.endsWith("ModelCallback")) {
+                            s = s.substring(0, s.length()-13);
+                        }
+                        else {
+                            s = "OAEditQuery annotation, class="+clazz+", method="+m+", should be named onEditQuery*Model or *ModelCallback";
+                            LOG.log(Level.WARNING, s, new Exception(s));
+                        }
+                    }
                     OALinkInfo lix = oi.getLinkInfo(s);
                     if (lix == null) {
                         s = "OAEditQuery annotation, class="+clazz+", method="+m+", link not found, name="+s;
@@ -498,10 +529,12 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
                 }
             }
             if (!b) {
+                if (eq == null) continue;
                 s = "OAEditQuery annotation, class="+clazz+", method="+m+", should have one param of OAObjectEditQuery";
                 LOG.log(Level.WARNING, s, new Exception(s));
             }
-            name = name.substring(s2.length());
+            if (prefixName != null) name = name.substring(prefixName.length());
+            else name = name.substring(0, name.length() - prefixName.length());
             
             oi.addEditQueryMethod(name, m);
             

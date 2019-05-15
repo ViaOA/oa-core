@@ -338,7 +338,7 @@ public class OAObject implements java.io.Serializable, Comparable {
     }
 
 
-    // allows other components to interact with OAObject property, by call onEditQueryXxxx method(s)
+    // allows other components to interact with OAObject property, by call onEditQueryXxxx or xxxCallback  method(s)
     public boolean isValidPropertyChange(String propertyName, Object oldValue, Object newValue) {
         return OAObjectEditQueryDelegate.getVerifyPropertyChange(this, propertyName, oldValue, newValue);
     }

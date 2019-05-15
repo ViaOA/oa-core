@@ -32,7 +32,7 @@ import com.viaoa.util.OAString;
  * and interactions with other compenents.  
  * 
  * Works with OAObject and Hub to determine what is allowed/permitted.
- * Uses OAObject annoations, specific methods (onEditQuery*), and HubListeners.
+ * Uses OAObject annoations, specific methods (onEditQuery*, *Callback), and HubListeners.
  * 
  * Used to query objects, and find out if certain functions are enabled/visible/allowed,
  * along with other interactive settings/data.
@@ -1109,10 +1109,9 @@ public class OAObjectEditQueryDelegate {
     protected static void callEditQuery(final OAObject oaObj, String propertyName, final OAObjectEditQuery em) {
         OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
         
-        if (propertyName == null) propertyName = "";  // blank will be class onEditQuery(..)
+        if (propertyName == null) propertyName = "";  // blank will be method for class level:   onEditQuery(..)  or callback(OAObjectEditQuery)
         
         Method method = oi.getEditQueryMethod(propertyName);
-        //was: Method method = OAObjectInfoDelegate.getMethod(oi, "onEditQuery"+propertyName, 1);
         if (method == null) return;
             //Class[] cs = method.getParameterTypes();
             //if (cs[0].equals(OAObjectEditQuery.class)) {
@@ -1137,6 +1136,9 @@ public class OAObjectEditQueryDelegate {
         if (clazz == null || OAString.isEmpty(property) || model == null) return;
         OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
         Method m = OAObjectInfoDelegate.getMethod(oi, "onEditQuery" + property + "Model", 1);
+        if (m == null) {
+            m = OAObjectInfoDelegate.getMethod(oi, property + "ModelCallback", 1);
+        }
         if (m != null) {
             Class[] cs = m.getParameterTypes();
             if (cs[0].equals(OAObjectModel.class)) {
@@ -1144,7 +1146,7 @@ public class OAObjectEditQueryDelegate {
                     m.invoke(null, new Object[] {model});
                 }
                 catch (Exception e) {
-                    throw new RuntimeException("Exception calling static method onEditQuery"+property, e);
+                    throw new RuntimeException("Exception calling static method "+m, e);
                 }
             }
         }
