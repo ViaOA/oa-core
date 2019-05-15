@@ -132,7 +132,7 @@ public class OAAnnotationDelegate {
         }
         oi.setPropertyIds(ss);
 
-/*qqq test        
+/* used for debugging        
 if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
     int xx = 4;
     xx++;
@@ -697,6 +697,28 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
                         }
                     }
                 }
+            }
+        }
+        
+        /* 20190515
+         *  check for any methods that have one param OAScheduler, and method name matching or *Callback
+         *  example:
+         *  public void calendarCallback(OAScheduler)
+         */
+        for (final Method m : methods) {
+            String name = m.getName();
+
+            final Class[] cs = m.getParameterTypes();
+            if (cs == null) continue;
+            if (cs.length != 1 || !cs[0].getSimpleName().equals("OAScheduler")) {
+                continue;
+            }
+            s = "Callback";
+            if (!name.endsWith(s)) continue;
+            s = name.substring(0, name.length()-s.length());
+            OALinkInfo li = oi.getLinkInfo(s);
+            if (li != null) {
+                li.setSchedulerMethod(m);
             }
         }        
     }

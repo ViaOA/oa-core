@@ -74,6 +74,9 @@ public class OALinkInfo { //implements java.io.Serializable {
 
     private String defaultContextPropertyPath;
     
+    private Method schedulerMethod;
+    
+    
     public OALinkInfo(String name, Class toClass, int type) {
         this(name, toClass, type, false, false, null, false);
     }
@@ -481,6 +484,13 @@ public class OALinkInfo { //implements java.io.Serializable {
         return editQueryMethod;
     }
 
+    public void setSchedulerMethod(Method m) {
+        this.schedulerMethod = m;
+    }
+    public Method getSchedulerMethod() {
+        return schedulerMethod;
+    }
+    
     public String getDefaultPropertyPath() {
         return defaultPropertyPath;
     }
