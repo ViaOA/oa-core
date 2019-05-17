@@ -482,6 +482,10 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
                     suffixName = "Callback";
                     prefixName = null;
                 }
+                else if (name.equals("callback")) {
+                    suffixName = "callback";
+                    prefixName = null;
+                }
                 else {
                     if (eq != null) {
                         s = "OAEditQuery annotation, class="+clazz+", method="+m+", should be named onEditQuery*, or *Callback";
@@ -534,7 +538,7 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
                 LOG.log(Level.WARNING, s, new Exception(s));
             }
             if (prefixName != null) name = name.substring(prefixName.length());
-            else name = name.substring(0, name.length() - prefixName.length());
+            else name = name.substring(0, name.length() - suffixName.length());
             
             oi.addEditQueryMethod(name, m);
             

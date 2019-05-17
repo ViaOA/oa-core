@@ -451,7 +451,7 @@ if (li == null || li.getReverseLinkInfo() == null) {//qqqqqqqqqqqqqqqqq See if t
             catch (Exception e) {
                 String s = ("cant find dependent prop, hub="+hub+", prop="+origPropertyName+", dependendProp="+dependentPropertyNames[i]);
                 LOG.warning(s);
-                throw new RuntimeException(s);
+                throw new RuntimeException(s, e);
             }
             if (oaPropPath.hasPrivateLink()) {
                 String s = ("propPath has private method, hub="+hub+", prop="+origPropertyName+", dependendProp="+dependentPropertyNames[i]);

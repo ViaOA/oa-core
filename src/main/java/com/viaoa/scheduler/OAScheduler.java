@@ -2,6 +2,7 @@ package com.viaoa.scheduler;
 
 import java.util.ArrayList;
 
+import com.viaoa.object.OAObject;
 import com.viaoa.util.OADateTime;
 
 /**
@@ -9,17 +10,23 @@ import com.viaoa.util.OADateTime;
  * 
  * @author vvia
  */
-public class OAScheduler {
+public class OAScheduler<T extends OAObject> {
 
     private OADateTime dtBegin, dtEnd;
     private ArrayList<OASchedulerPlan> alSchedulePlan;
+    private T objSearch;
     
     /**
      * Set the begin and end datetime.
      */
-    public OAScheduler(OADateTime dtBegin, OADateTime dtEnd) {
+    public OAScheduler(T objSearch, OADateTime dtBegin, OADateTime dtEnd) {
+        this.objSearch = objSearch;
         this.dtBegin = dtBegin;
         this.dtEnd = dtEnd;
+    }
+    
+    public T getSearchObject() {
+        return objSearch;
     }
     
     public OADateTime getBegin() {
@@ -36,8 +43,6 @@ public class OAScheduler {
     }
     
     public void calculate() {
-        
-        
     }
     
     public ArrayList<OASchedulerPlan> getSchedulePlans() {
