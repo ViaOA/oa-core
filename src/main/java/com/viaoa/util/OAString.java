@@ -2819,6 +2819,14 @@ public class OAString {
         return concat(orig, append, sep);
     }
 
+    public static String prepend(String orig, String prepend, String sep) {
+        if (orig == null) orig = "";
+        if (sep != null && orig.length() > 0) orig = sep + orig;
+        orig = prepend + orig;
+        return orig;
+    }
+    
+    
     /*  See:  OACompare
     public static boolean isLike(String value, String matchValue) {
         return OACompare.isLike(value, matchValue);        
