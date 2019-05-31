@@ -520,15 +520,13 @@ public class OAObjectEditQueryDelegate {
             editQuery.setThrowable(null);
             editQuery.setAllowed(true);
         }
-        /*
         else if ((!editQuery.getAllowed() || editQuery.getThrowable() != null)) {
-            // allow server to be valid
-            if (OASync.isServer() && OAThreadLocalDelegate.getContext() == null) {
+            // allow AppUser.admin=true to always be valid
+            if (OAContext.isSuperAdmin()) {  // allow all if super admin
                 editQuery.setThrowable(null);
                 editQuery.setAllowed(true);
             }
         }
-        */
     }
     
     

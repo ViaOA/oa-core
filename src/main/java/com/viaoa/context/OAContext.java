@@ -33,7 +33,9 @@ public class OAContext {
 
     private static final Object NullContext = new Object();
 
+    // by default, this property is in AppUser
     private static String adminPropertyPath = "Admin"; 
+    private static String superAdminPropertyPath = "SuperAdmin"; 
     private static String allowEditProcessedPropertyPath = "EditProcessed"; 
     
     /**
@@ -79,7 +81,7 @@ public class OAContext {
 
     /**
      * Property path used to find the user property for allowing users to have admin rights.
-     * Defaults to "EditProcessed"
+     * Defaults to "Admin"
      */
     public static void setAdminPropertyPath(String pp) {
         OAContext.adminPropertyPath = pp;
@@ -109,6 +111,37 @@ public class OAContext {
         if (oaObj == null) return false;
         
         Object val = oaObj.getProperty(OAContext.adminPropertyPath);
+        boolean b = OAConv.toBoolean(val);
+        return b;
+    }
+    
+
+    /**
+     * Property path used to find the user property for allowing users to have super admin rights.
+     * If true, then the user will have all EditQuery.allowed=true 
+     * Defaults to "SuperAdmin"
+     */
+    public static void setSuperAdminPropertyPath(String pp) {
+        OAContext.superAdminPropertyPath = pp;
+    }
+    public static String getSuperAdminPropertyPath() {
+        return OAContext.superAdminPropertyPath;
+    }
+    /**
+     * Does the context have super admin rights.
+     */
+    public static boolean isSuperAdmin() {
+        Object context = OAThreadLocalDelegate.getContext();
+        return isSuperAdmin(context);
+    }
+    public static boolean isSuperAdmin(Object context) {
+        if (context == null) context = NullContext;
+
+        if (OAString.isEmpty(superAdminPropertyPath)) return false;
+        OAObject oaObj = getContextObject(context);
+        if (oaObj == null) return false;
+        
+        Object val = oaObj.getProperty(OAContext.superAdminPropertyPath);
         boolean b = OAConv.toBoolean(val);
         return b;
     }

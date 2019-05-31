@@ -669,8 +669,7 @@ public abstract class HubChangeListener {
             }
 
             Object value = (bValid) ? hub.getAO() : null;
-            
-//qqqqqqqqqqqqqqq 20190203 if !bAoOnly, then check all objects qqqqqqqqqqqqq
+//qqqqqqq 20190203 if !bAoOnly, then check all objects qqqqqqqqqqqqq
             if (compareValue == Type.EditQueryEnabled) {
                 if (!bValid) return false;
                 if (value != null && !(value instanceof OAObject)) return true;
