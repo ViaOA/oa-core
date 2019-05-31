@@ -13,7 +13,7 @@ import com.viaoa.util.OADateTime;
 public class OAScheduler<T extends OAObject> {
 
     private OADateTime dtBegin, dtEnd;
-    private ArrayList<OASchedulerPlan> alSchedulePlan;
+    private ArrayList<OASchedulerPlan<T>> alSchedulePlan;
     private T objSearch;
     
     /**
@@ -45,9 +45,15 @@ public class OAScheduler<T extends OAObject> {
     public void calculate() {
     }
     
-    public ArrayList<OASchedulerPlan> getSchedulePlans() {
+    public ArrayList<OASchedulerPlan<T>> getSchedulePlans() {
         if (alSchedulePlan == null) alSchedulePlan = new ArrayList<>();
         return alSchedulePlan;
     }
     
+    public boolean isAvailable(OADateTime dt) {
+        for (OASchedulerPlan sp : getSchedulePlans()) {
+            if (!sp.isAvailable(dt)) return false;
+        }
+        return true;
+    }
 }

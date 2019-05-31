@@ -115,4 +115,42 @@ public class OASchedulerPlan<R> {
         }
         return schScheduled;
     }
+    
+    public boolean isAvailable(OADateTime dt) {
+        if (dt == null) return false;
+        
+        if (dt.before(dtBegin)) return false;
+        
+        if (dt.after(dtEnd)) return false;
+        
+        OASchedule<R> sch;
+        
+        boolean b = false;
+        sch = getOpenSchedule();
+        if (!sch.isRangeAdded(dt)) {
+            sch = getOpenSoftSchedule();
+            if (!sch.isRangeAdded(dt)) {
+                return false;
+            }
+        }
+        
+        sch = getBlockedSchedule();
+        if (sch.isRangeAdded(dt)) {
+            return false;
+        }
+        
+        sch = getBlockedSoftSchedule();
+        if (sch.isRangeAdded(dt)) {
+            return false;
+        }
+        
+        sch = getScheduledSchedule();
+        if (sch.isRangeAdded(dt)) {
+            return false;
+        }
+        
+        return true;
+        
+    }
+
 }

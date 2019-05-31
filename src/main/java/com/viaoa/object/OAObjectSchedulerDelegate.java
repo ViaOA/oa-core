@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 
 import com.viaoa.scheduler.OAScheduler;
 import com.viaoa.util.OADate;
+import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
@@ -22,7 +23,13 @@ public class OAObjectSchedulerDelegate {
         OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(objThis);
         if (oi == null) return null;
         OALinkInfo li = oi.getLinkInfo(property);
-        if (li == null) return null;
+        if (li == null) {
+            if (property.indexOf(".") < 0) return null;
+            OAPropertyPath pp = new OAPropertyPath(objThis.getClass(), property);
+            OALinkInfo[] lis = pp.getLinkInfos();
+            if (lis == null || lis.length == 0) return null;
+            li = lis[0];
+        }
         
         Method method = li.getSchedulerMethod();
         if (method == null) return null;

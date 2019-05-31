@@ -239,10 +239,24 @@ public class OASchedule<R> implements Iterable<OADateTimeRange<R>> {
 
             @Override
             public OADateTimeRange<R> next() {
-                return next();
+                return OASchedule.this.next();
             }
         };
         return iter;
     }
+    
+    public boolean isRangeAdded(OADateTime dt) {
+        if (dt == null) return false;
+        for (OADateTimeRange dtr : this) {
+            OADateTime dt1 = dtr.getBegin();
+            OADateTime dt2 = dtr.getEnd();
+            if (dt.compareTo(dt1) >= 0 && dt.compareTo(dt2) <= 0) {
+                return true;
+            }
+        }
+        reset();
+        return false;
+    }
+    
     
 }
