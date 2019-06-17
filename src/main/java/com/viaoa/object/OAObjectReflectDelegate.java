@@ -884,11 +884,12 @@ public class OAObjectReflectDelegate {
             }
          */       
         if ((bThisIsServer || (bIsCalc && !bIsServerSideCalc)) && sortOrder != null && sortOrder.length() > 0) {
+            String s = bSortAsc ? "" : " DESC"; 
             if (hub.getSelect() != null) {
-                hub.setSelectOrder(sortOrder);
+                hub.setSelectOrder(sortOrder+s);
             }
             else if (select != null) {
-                select.setOrder(sortOrder);
+                select.setOrder(sortOrder+s);
             }
         }
 
