@@ -39,6 +39,7 @@ public class DBMetaData extends OAObject {
     public final static int ACCESS = 4;
     public final static int MYSQL = 5;
     public final static int BRIDGE = 6;
+    public final static int POSTGRES = 7;
 	
     public int databaseType; 
     public String note;
@@ -61,6 +62,7 @@ public class DBMetaData extends OAObject {
     public String lowerCaseFunction;
     public boolean supportsAutoAssign;  // if true, db assigns id
     public String autoAssignValue;
+    public String autoAssignType;
 	public String maxString;  // use "?" to have the max amount entered
     public String guid;
     public boolean allowStatementPooling = true;
@@ -360,6 +362,16 @@ public class DBMetaData extends OAObject {
 		this.autoAssignValue = autoAssignValue;
 	    firePropertyChange("autoAssignValue", old, this.autoAssignValue);
 	}
+
+    public String getAutoAssignType() {
+        return autoAssignType;
+    }
+    public void setAutoAssignType(String autoAssignType) {
+        String old = this.autoAssignType;
+        this.autoAssignType = autoAssignType;
+        firePropertyChange("autoAssignType", old, this.autoAssignType);
+    }
+	
 	
 	public String getMaxString() {
 		return maxString;

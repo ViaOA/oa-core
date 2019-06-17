@@ -114,6 +114,25 @@ public class DBMetaDataDelegate {
 	        case DBMetaData.BRIDGE:
 	        	dbmd.setName("ODBC-JDBC Bridge");
 	        	break;
+            case DBMetaData.POSTGRES:
+                dbmd.setName("Postgres Database");
+                dbmd.setUseBracket(false);
+                dbmd.setDatesIncludeTime(false);
+                dbmd.setFkeysAutoCreateIndex(false);
+  
+                dbmd.setSupportsAutoAssign(true);
+//qqqqqqqqqq add to code gen qqqqqqqqqqqq for primary autoassigned columns/properties                
+                dbmd.setAutoAssignType("SERIAL");
+                
+                dbmd.setMaxVarcharLength( (int) Math.pow(1000, 3));// 1GB
+                
+                dbmd.setCaseSensitive(true);
+                dbmd.setLowerCaseFunction("LOWER");
+                
+                dbmd.setBlanksAsNulls(false);
+                dbmd.setUseExists(true);
+                
+                break;
 	    }
     	dbmd.setDistinctKeyword(distinctKeyword);
 	}
