@@ -12,6 +12,7 @@ package com.viaoa.hub;
 
 import java.util.ArrayList;
 
+import com.viaoa.context.OAContext;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectDelegate;
@@ -47,6 +48,7 @@ public abstract class HubChangeListener {
         AoNotNull(true),
         AlwaysTrue(true),
         AlwaysFalse(true),
+        OnlySuperAdmin(true),  // OAContext.isSuperAdmin must be true
         PropertyNull(true),
         PropertyNotNull(true),
         EditQueryEnabled(true),
@@ -131,6 +133,14 @@ public abstract class HubChangeListener {
     public HubProp addAlwaysFalse() {
         return add(null, null, true, Type.AlwaysFalse);
     }
+
+    public HubProp addOnlySuperAdmin(Hub hub) {
+        return add(hub, null, true, Type.OnlySuperAdmin);
+    }
+    public HubProp addOnlySuperAdmin() {
+        return add(null, null, true, Type.OnlySuperAdmin);
+    }
+    
     
     public HubProp addPropertyNull(Hub hub, String prop) {
         return add(hub, prop, true, Type.PropertyNull);
@@ -665,6 +675,12 @@ public abstract class HubChangeListener {
                     failureReason = "always false";
                     return false;
                 }
+                if (compareValue == Type.OnlySuperAdmin) {
+                    if (OAContext.isSuperAdmin()) return true;
+                    failureReason = "only SuperAdmin";
+                    return false;
+                }
+                
                 if (compareValue == Type.Unknown) return true;
             }
 

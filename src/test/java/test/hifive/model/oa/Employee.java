@@ -2,12 +2,21 @@
 package test.hifive.model.oa;
  
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
 import com.viaoa.object.*;
 import com.viaoa.object.OAObjectEditQuery.Type;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
 
+import test.hifive.FunctionalTest;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  
@@ -1895,5 +1904,61 @@ if (objectKey != null) {
     public void onEditQueryCommand(OAObjectEditQuery eq) {
         
     }
+    public static void main(String[] args) {
+        Comparator<String> comparator = (String a, String b) -> {
+            return a.compareTo(b);
+        };
+
+        FunctionalTest ft = (x) -> {
+            return x;
+        };
+
+        List<String> list = new ArrayList<>();
+        list.add("One");
+        list.add("Abc");
+        list.add("BCD");        
+        
+        Comparator<String> comparatorReversed = comparator.reversed();
+
+        Collections.sort(list, comparatorReversed);
+
+        System.out.println(list);
+
+        Function func;
+
+        Function<Long, Long> adderLambda = (value) -> value + 3;
+        Long resultLambda = adderLambda.apply((long) 8);
+        
+        Predicate predicate = (value) -> value != null;
+        
+        Stream<String> stream = list.stream();
+        Stream<String> stringStream =
+            stream.map((value) -> { return value.toLowerCase(); });        
+        stringStream.count();
+        
+        
+        
+        ArrayList<Employee> alEmp = new ArrayList<>();
+        Employee emp = new Employee();
+        emp.setLastName("lname1");
+        alEmp.add(emp);
+        emp = new Employee();
+        emp.setLastName("lname2");
+        alEmp.add(emp);
+        
+        Stream<Employee> streamEmp = alEmp.stream();
+
+//        streamEmp.filter((empx) -> empx.getLastName() != null).map((empx) -> empx.getLastName()).collect().forEach((val) -> System.out.println(val));
+        
+        //streamEmp.map((emp) -> emp.getLastName()).findFirst((ln) -> ln == null);
+        
+        int xx = 4;
+        xx++;
+    }
+    
 }
  
+
+
+
+

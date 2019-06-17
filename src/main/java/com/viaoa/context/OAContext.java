@@ -75,6 +75,7 @@ public class OAContext {
         
         Object val = oaObj.getProperty(OAContext.allowEditProcessedPropertyPath);
         boolean b = OAConv.toBoolean(val);
+        b = b || isSuperAdmin(context);
         return b;
     }
     
@@ -170,7 +171,9 @@ public class OAContext {
         
         Object val = oaObj.getProperty(pp);
         boolean b = OAConv.toBoolean(val);
-        return b == bEqualTo;
+        b = (b == bEqualTo);
+        b = b || isSuperAdmin(context);
+        return b;
     }
     
     

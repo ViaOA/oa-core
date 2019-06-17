@@ -514,8 +514,6 @@ public class OAObjectEditQueryDelegate {
     
     protected static void processEditQuery(OAObjectEditQuery editQuery, final Hub hubThis, final Class<? extends OAObject> clazz, final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue, final boolean bProcessedCheck) {
         _processEditQuery(true, editQuery, hubThis, clazz, oaObj, propertyName, oldValue, newValue, bProcessedCheck);
-        
-        // if allowed=false, then allow override
         if (DEMO_AllowAllToPass) {
             editQuery.setThrowable(null);
             editQuery.setAllowed(true);
