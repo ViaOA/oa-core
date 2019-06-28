@@ -137,6 +137,7 @@ public class DDLDelegate {
         case DBMetaData.MYSQL:
         case DBMetaData.ORACLE:
         case DBMetaData.SQLSERVER:
+        case DBMetaData.POSTGRES:
         case DBMetaData.OTHER:
         	// this is for SQL Server, not sure about others.
             sql = "UPDATE "+dbmd.leftBracket+toTableName+dbmd.rightBracket;
@@ -290,7 +291,12 @@ public class DDLDelegate {
             // 20130112
             sqlType = "varbinary(MAX)";
             break;
+        case DBMetaData.POSTGRES:
+            // 20190617
+            sqlType = "bytea";
+            break;
         }
+        
         return sqlType;
     }
 
@@ -313,6 +319,9 @@ public class DDLDelegate {
         case DBMetaData.DERBY:
             // todo: need to get correct unicode type for this DB    
             break;
+        case DBMetaData.POSTGRES:
+            sqlType = "VARCHAR("+maxLen+")";
+            break;
         }
         return sqlType;
     }
@@ -334,6 +343,9 @@ public class DDLDelegate {
             break;
         case DBMetaData.DERBY:
             // todo: need to get correct unicode type for this DB    
+            break;
+        case DBMetaData.POSTGRES:
+            sqlType = "CHAR("+maxLen+")";
             break;
         }
         return sqlType;
@@ -360,6 +372,9 @@ public class DDLDelegate {
         case DBMetaData.DERBY:
             // todo: need to get correct unicode type for this DB    
             sqlType = "CLOB"; // "CLOB("+maxLen+")";
+            break;
+        case DBMetaData.POSTGRES:
+            sqlType = "VARCHAR("+maxLen+")";
             break;
         }
         return sqlType;
@@ -390,6 +405,9 @@ public class DDLDelegate {
         case DBMetaData.DERBY:
             sqlType = "CLOB"; // "CLOB("+maxLen+")";
             break;
+        case DBMetaData.POSTGRES:
+            sqlType = "varchar("+maxLen+")";
+            break;
     	}
     	return sqlType;
     }
@@ -412,6 +430,9 @@ public class DDLDelegate {
             case DBMetaData.DERBY:
                 sqlType = "smallint";
                 break;
+            case DBMetaData.POSTGRES:
+                sqlType = "boolean";
+                break;
         }
     	return sqlType;
     }
@@ -428,6 +449,7 @@ public class DDLDelegate {
         String sqlType = "long";
         switch (dbmd.databaseType) {
             case DBMetaData.SQLSERVER:
+            case DBMetaData.POSTGRES:
             case DBMetaData.DERBY:
                 sqlType = "BIGINT";
                 break;
@@ -447,12 +469,17 @@ public class DDLDelegate {
             case DBMetaData.DERBY:
                 sqlType = "DOUBLE";
                 break;
+            case DBMetaData.POSTGRES:
+                sqlType = "real";
+                break;
         }
     	return sqlType;
     }
     public static String getDateType(DBMetaData dbmd) {
         String sqlType = "datetime";
         switch (dbmd.databaseType) {
+            case DBMetaData.SQLSERVER:
+            case DBMetaData.POSTGRES:
             case DBMetaData.MYSQL:
             case DBMetaData.ORACLE:
             case DBMetaData.DERBY:
@@ -464,6 +491,7 @@ public class DDLDelegate {
     public static String getDateTimeType(DBMetaData dbmd) {
         String sqlType = "DATETIME"; // ??????
         switch (dbmd.databaseType) {
+            case DBMetaData.POSTGRES:
             case DBMetaData.MYSQL:
                 sqlType = "TIMESTAMP";  // ?????? DATETIME
                 break;
@@ -507,6 +535,9 @@ public class DDLDelegate {
             case DBMetaData.DERBY:
                 sqlType = "DECIMAL(16,"+decimalLen+")";
                 break;
+            case DBMetaData.POSTGRES:
+                sqlType = "money";
+                break;
         }
         return sqlType;
     }
@@ -520,6 +551,9 @@ public class DDLDelegate {
                 sqlType = "DATE";
                 break;
             case DBMetaData.DERBY:
+                sqlType = "TIME";
+                break;
+            case DBMetaData.POSTGRES:
                 sqlType = "TIME";
                 break;
         }
