@@ -111,7 +111,7 @@ import com.viaoa.object.*;
  * </ul>
  * &nbsp;&nbsp;&nbsp;<img src="doc-files/Hub1.gif" alt="">
  */
-public class Hub<TYPE> implements Serializable, Cloneable, Comparable<TYPE>, Iterable<TYPE> {
+public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparable<TYPE>, Iterable<TYPE> {
     static final long serialVersionUID = 1L; // used for object serialization
 
     /** Internal object used to store objects in Vector and Hashtable. */
@@ -429,11 +429,13 @@ public class Hub<TYPE> implements Serializable, Cloneable, Comparable<TYPE>, Ite
      * 
      * @see Vector#copyInto
      */
-    public Object[] toArray() {
+    public TYPE[] toArray() {
         HubSelectDelegate.loadAllData(this);
-        return HubDataDelegate.toArray(this);
+        return (TYPE[]) HubDataDelegate.toArray(this);
     }
-    public TYPE[] toArray(TYPE[] anArray) {
+    
+    @Override
+    public <TYPE> TYPE[] toArray(TYPE[] anArray) {
         HubSelectDelegate.loadAllData(this);
         int x1 = anArray.length;
         int x2 = getSize();
@@ -883,8 +885,9 @@ public class Hub<TYPE> implements Serializable, Cloneable, Comparable<TYPE>, Ite
      *            creating the Hub
      * return true if object was added else false (Hub.canAdd(obj) returned false
      */
-    public void add(TYPE obj) {
-        HubAddRemoveDelegate.add(this, obj);
+    @Override
+    public boolean add(TYPE obj) {
+        return HubAddRemoveDelegate.add(this, obj);
     }
 
     public void add(Hub<TYPE> hub) {
@@ -1010,12 +1013,13 @@ public class Hub<TYPE> implements Serializable, Cloneable, Comparable<TYPE>, Ite
      *            position of object to remove. If an object does not exist at
      *            this position, then no action is taken.
      */
-    public void remove(int pos) {
-        HubAddRemoveDelegate.remove(this, pos);
+    @Override
+    public TYPE remove(int pos) {
+        return (TYPE) HubAddRemoveDelegate.remove(this, pos);
     }
 
-    public void removeAt(int pos) {
-        HubAddRemoveDelegate.remove(this, pos);
+    public TYPE removeAt(int pos) {
+        return (TYPE) HubAddRemoveDelegate.remove(this, pos);
     }
 
     /**
@@ -2112,70 +2116,6 @@ public class Hub<TYPE> implements Serializable, Cloneable, Comparable<TYPE>, Ite
         return -1;
     }
 
-    /*
-    public Iterator<TYPE> iterator() {
-        Iterator<TYPE> iter = new Iterator<TYPE>() {
-            int pos;
-            Object objNext;
-
-            @Override
-            public boolean hasNext() {
-                if (pos > 0 && objNext != null) {
-                    // see if the last object used was removed
-                    if (getAt(pos - 1) != objNext) pos--;
-                }
-                objNext = getAt(pos);
-                return (objNext != null);
-            }
-
-            @Override
-            public void remove() {
-                if (objNext != null) {
-                    removeAt(getPos(objNext));
-                    objNext = null;
-                }
-            }
-
-            @Override
-            public TYPE next() {
-                if (objNext == null) hasNext();
-                if (objNext != null) pos++;
-                return (TYPE) objNext;
-            }
-        };
-        return iter;
-    }
-    */
-    
-    // 20150605 make it thread/change safe
-    public Iterator<TYPE> iterator() {
-        final Object[] objs = toArray();
-        Iterator<TYPE> iter = new Iterator<TYPE>() {
-            int pos;
-
-            @Override
-            public boolean hasNext() {
-                return (pos < objs.length && objs[pos] != null);
-            }
-
-            @Override
-            public void remove() {
-                if (pos < objs.length) {
-                    Hub.this.remove(objs[pos]);
-                }
-            }
-
-            @Override
-            public TYPE next() {
-                if (pos < objs.length) {
-                    return (TYPE) objs[pos++];
-                }
-                return null;
-            }
-        };
-        return iter;
-    }
-
     public boolean isServer() {
         return OASyncDelegate.isServer(getObjectClass());
     }
@@ -2211,6 +2151,193 @@ public class Hub<TYPE> implements Serializable, Cloneable, Comparable<TYPE>, Ite
      */
     public void sendRefresh() {
         HubCSDelegate.sendRefresh(this);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return getSize() == 0;
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        if (c == null) return true;
+        for (Object obj : c) {
+            if (!contains(obj)) return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends TYPE> c) {
+        if (c == null) return true;
+        for (Object obj : c) {
+            add((TYPE) obj);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean addAll(int index, Collection<? extends TYPE> c) {
+        if (c == null) return true;
+        for (Object obj : c) {
+            insert((TYPE) obj, index++);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        if (c == null) return true;
+        for (Object obj : c) {
+            remove(obj);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        if (c == null) return true;
+        for (int i=0; ;) {
+            Object obj = get(i);
+            if (obj == null) break;
+            if (c.contains(obj)) {
+                i++;
+            }
+            else {
+                if (removeAt(i) == null) i++; 
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public TYPE get(int index) {
+        return getAt(index);
+    }
+
+    @Override
+    public TYPE set(int index, TYPE element) {
+        if (element == null) return null;
+        TYPE objx = remove(index);
+        if (objx != null) insert(element, index);
+        return objx;
+    }
+
+    @Override
+    public void add(int index, TYPE element) {
+        if (element == null) return;
+        insert(element, index);
+    }
+
+    @Override
+    public int lastIndexOf(Object o) {
+        return indexOf(o);
+    }
+
+    
+    @Override
+    public Iterator<TYPE> iterator() {
+        ListIterator<TYPE> listIterator = listIterator();
+        return listIterator;
+    }
+    
+    @Override
+    public ListIterator<TYPE> listIterator() {
+        // create a snapshot, so that concurrent issues dont happen
+        final List list = Arrays.asList(toArray());
+        
+        ListIterator<TYPE> iter = new ListIterator<TYPE>() {
+            int pos = -1;
+
+            @Override
+            public boolean hasNext() {
+                int x = list.size();
+                return (x > 0 && pos < (x-1));
+            }
+
+            @Override
+            public void remove() {
+                if (pos >= 0 && pos < list.size()) {
+                    Object objx = list.remove(pos);
+                    if (objx != null) Hub.this.remove(objx);
+                }
+            }
+
+            @Override
+            public TYPE next() {
+                int x = list.size();
+                if (pos < x) {
+                    ++pos;
+                    if (pos < x) return (TYPE) list.get(pos);
+                }
+                return null;
+            }
+
+            @Override
+            public boolean hasPrevious() {
+                return (pos > 0);
+            }
+
+            @Override
+            public TYPE previous() {
+                if (pos >= 0) {
+                    --pos;
+                    if (pos >= 0) return (TYPE) list.get(pos);
+                }
+                return null;
+            }
+
+            @Override
+            public int nextIndex() {
+                int x = list.size();
+                if (pos == x) return pos;
+                return pos+1;
+            }
+
+            @Override
+            public int previousIndex() {
+                if (pos < 0) return pos;
+                return pos-1;
+            }
+
+            @Override
+            public void set(TYPE e) {
+                if (pos >= 0 && pos < list.size()) {
+                    Hub.this.remove(e);
+                    Hub.this.insert(e, pos);
+                    list.set(pos, e);
+                }
+                
+            }
+
+            @Override
+            public void add(TYPE e) {
+                if (list.contains(e)) return;
+                list.add(e);
+                Hub.this.add(e);
+            }
+        };
+        return iter;
+    }
+    
+    @Override
+    public ListIterator<TYPE> listIterator(int index) {
+        ListIterator li = listIterator();
+        for (int i=0; i<index; i++) {
+            li.next();
+        }
+        return null;
+    }
+
+    @Override
+    public List<TYPE> subList(int fromIndex, int toIndex) {
+        ArrayList al = new ArrayList();
+        for (int i=fromIndex; i<toIndex; i++) {
+            Object objx = getAt(i);
+            if (objx == null) break;
+            al.add(objx);
+        }
+        return al;
     }
 
     // public transient boolean DEBUG; // for debugging

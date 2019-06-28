@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.OAUnitTest;
@@ -200,5 +201,42 @@ public class HubTest extends OAUnitTest {
             emp.delete();
         }
         assertEquals(50, cnt);
+        assertEquals(0, loc.getEmployees().size());
+    }
+    @Test
+    public void testIterator2() {
+        Location loc = new Location();
+        int max = 50;
+        for (int i = 0; i < max; i++) {
+            Employee emp = new Employee();
+            loc.getEmployees().add(emp);
+        }
+        
+        ListIterator<Employee> li = loc.getEmployees().listIterator();
+        for (int i = 0; i < max; i++) {
+            Object objx = li.next();
+            assertNotNull(objx);
+        }
+        assertEquals(max, li.nextIndex());
+        assertNull(li.next());
+        
+        assertEquals(max, li.nextIndex());
+        assertEquals(max, li.nextIndex());
+        assertEquals(max, li.nextIndex());
+        assertNull(li.next());
+
+        assertNotNull(li.previous());
+        assertEquals(max, li.nextIndex());
+        assertEquals(max-2, li.previousIndex());
+
+        Employee emp = new Employee();
+        li.set(emp);
+        assertEquals(max, li.nextIndex());
+        assertNotNull(li.previous());
+        assertEquals(emp, li.next());
+        
+        
+        
+        
     }
 }

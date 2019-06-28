@@ -32,13 +32,14 @@ public class HubAddRemoveDelegate {
         return remove(thisHub, obj, false, true, false, true, true, false);
     }
 
-    public static boolean remove(final Hub thisHub, final int pos) {
+    public static Object remove(final Hub thisHub, final int pos) {
         return remove(thisHub, pos, false);
     }
     
-    protected static boolean remove(final Hub thisHub, final int pos, final boolean bForce) {
+    protected static Object remove(final Hub thisHub, final int pos, final boolean bForce) {
         Object obj = HubDataDelegate.getObjectAt(thisHub, pos);
-        return remove(thisHub, obj, bForce, true, false, true, true, false);
+        if (!remove(thisHub, obj, bForce, true, false, true, true, false)) obj = null;
+        return obj;
     }
 
     
@@ -368,12 +369,11 @@ public class HubAddRemoveDelegate {
         return null;
     }
 
-    public static void add(final Hub thisHub, final Object obj) {
-        if (thisHub == null || obj == null) return;
+    public static boolean add(final Hub thisHub, final Object obj) {
+        if (thisHub == null || obj == null) return false;
         if (thisHub.datau.getSharedHub() != null) {
             if (thisHub.getEnabled()) {
-                add(thisHub.datau.getSharedHub(), obj);
-                return;
+                return add(thisHub.datau.getSharedHub(), obj);
             }
         }
  
@@ -382,7 +382,7 @@ public class HubAddRemoveDelegate {
             // use getCurrentSize to guess that it will go at the end, in 
             //  cases where this is loaded in order.
             insert(thisHub, obj, thisHub.getCurrentSize());  
-            return;
+            return true;
         }
         
         if (!bIsLoading && !OARemoteThreadDelegate.isRemoteThread()) {
@@ -400,6 +400,7 @@ public class HubAddRemoveDelegate {
             if (!bIsLoading) OAThreadLocalDelegate.unlock(thisHub);
         }
         if (b) _afterAdd(thisHub, obj);
+        return b;
     }
     
     private static boolean _add(final Hub thisHub, final Object obj, final boolean bIsLoading) {

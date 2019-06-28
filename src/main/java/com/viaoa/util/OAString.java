@@ -2249,7 +2249,8 @@ public class OAString {
         String newText = "";
         String pad = pad("", amt, false, ' ');
         for (String s : text.split("\n") ) {
-            newText += pad + s + '\n';
+            if (newText.length() > 0) newText+='\n';
+            newText += pad + s;
         }
         return newText;
     }
