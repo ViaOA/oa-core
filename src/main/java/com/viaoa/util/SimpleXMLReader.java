@@ -10,17 +10,20 @@
 */
 package com.viaoa.util;
 
-import java.io.InputStream;
-import java.io.StringBufferInputStream;
+import java.io.File;
+import java.io.StringReader;
+import java.net.URL;
 import java.util.*;
 
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.XMLConstants;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.SAXParser;
-
-import com.viaoa.object.*;
 
 /**
     XMLReader using a SAXParser to parse and load into a hierarchy of name/value, where value is a hashmap 
@@ -30,9 +33,34 @@ import com.viaoa.object.*;
     see: SimpleXMLReaderTest
 */
 public class SimpleXMLReader extends DefaultHandler {
-    protected String value;
-    protected int indent;
-    protected Object[] stack;
+    private Stack<Node> stack = new Stack<>();
+    private Node node;
+
+    static class Node {
+        String name;
+        String text;
+        ArrayList<Node> alChildNode = new ArrayList<>();
+        ArrayList<Attrib> alAttrib = new ArrayList<>();
+        
+        public Node(String name) {
+            this.name = name;
+        }
+        
+        public void add(Node node) {
+            alChildNode.add(node);
+        }
+        public void add(Attrib attrib) {
+            alAttrib.add(attrib);
+        }
+    }
+    static class Attrib {
+        String name;
+        String value;
+        Attrib(String name, String val) {
+            this.value = val;
+            this.name = name;
+        }
+    }
     
     public SimpleXMLReader() {
     }
@@ -41,50 +69,46 @@ public class SimpleXMLReader extends DefaultHandler {
      * @param xml text to parse.
      * @return hashmap of name/values, where values is either a HashMap or an ArrayList of HashMaps
      */
-    public HashMap<String, Object> parse(String xml) throws Exception {
-        stack = new Object[20];
-        stack[0] = new HashMap(10);
-        indent = 0;
+    public Node parse(String xml) throws Exception {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         SAXParser saxParser = factory.newSAXParser();
-        InputStream is = new StringBufferInputStream(xml);
+        StringReader sr = new StringReader(xml);
+        InputSource is = new InputSource(sr);
         saxParser.parse(is, this);
-        return (HashMap) stack[0];
+        return node;
+    }
+    public Node parse(File file) throws Exception {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParser saxParser = factory.newSAXParser();
+        
+//qqqqqqqqq        
+//        saxParser.setPreserveWhitespace(false);
+        saxParser.parse(file, this);
+        
+        return node;
     }
     
+    
     public void startElement(String namespaceURI, String sName, String qName, Attributes attrs) throws SAXException {
-        value = "";
         String eName = sName; // element name
         if ("".equals(eName)) eName = qName; // not namespaceAware
 
-        indent++;
-
-        if (stack.length <= indent) {
-            Object[] objs = new Object[stack.length + 20];
-            System.arraycopy(stack, 0, objs, 0, stack.length);
-            stack = objs;
-        }
-        stack[indent] = eName;
-
-        Object prev = stack[indent-1];
-
-        HashMap hm = null;
+        Node nodePrev = node;
         
-        if (prev == null) {
-            hm = new HashMap();
-            stack[++indent] = hm;
+        node = new Node(eName);
+        stack.push(node);
+        if (nodePrev != null) {
+            nodePrev.add(node);
+            nodePrev.text = "";
         }
-        else if (prev instanceof String) {
-            hm = new HashMap();
-            stack[indent] = hm;
-            stack[++indent] = eName;
-        }
-        if (hm != null && attrs != null) {
+
+        if (attrs != null) {
             for (int i = 0; i < attrs.getLength(); i++) {
                 String aName = attrs.getLocalName(i); // Attr name
                 if ("".equals(aName)) aName = attrs.getQName(i);
                 String aValue = attrs.getValue(i);
-                processProperty(aName, aValue, hm);
+                Attrib attrib = new Attrib(aName, aValue);
+                node.add(attrib);
             }
         }
     }
@@ -93,69 +117,66 @@ public class SimpleXMLReader extends DefaultHandler {
         String eName = sName; // element name
         if ("".equals(eName)) eName = qName; // not namespaceAware
         
-        Object stackObj = stack[indent--];
-        Object prev = stack[indent];
-        
-        if (stackObj instanceof String) {
-            HashMap hm = (HashMap) prev;
-            processProperty(eName, value, hm);
-            return;
+        node = stack.pop();
+        if (stack.size() > 0) {
+            node = stack.peek();
+            node.text = "";
         }
-
-        // obj is done
-        eName = (String) prev;
-        HashMap hm = (HashMap) stack[--indent];
-        processProperty(eName, (HashMap) stackObj, hm);
     }
     
     public void characters(char buf[], int offset, int len) throws SAXException {
         String s = new String(buf, offset, len);
-        value += OAString.decodeIllegalXML(s);
+        if (node.alChildNode.size()==0) node.text = OAString.concat(node.text, OAString.decodeIllegalXML(s), "");
+        else node.text = "";
     }
 
-    protected void processProperty(String eName, HashMap value, HashMap hm) {
-        Object objx = hm.get(eName.toUpperCase());
-        if (objx == null) {
-            hm.put(eName.toUpperCase(), value);
-        }
-        else {
-            if (objx instanceof ArrayList) {
-                ((ArrayList) objx).add(value);
-            }
-            else {
-                ArrayList al = new ArrayList(5);
-                al.add(objx);
-                al.add(value);
-                hm.put(eName.toUpperCase(), al);
-            }
-        }
-    }
     
-    protected void processProperty(String eName, String value, HashMap hm) {
-        Object objValue = value;
-        
-        if (objValue == null) return;
-
-        Object objx = hm.get(eName.toUpperCase());
-        if (objx == null) {
-            hm.put(eName.toUpperCase(), objValue);
-        }
-        else {
-            if (objx instanceof ArrayList) {
-                ((ArrayList) objx).add(objValue);
-            }
-            else {
-                ArrayList al = new ArrayList(5);
-                al.add(objx);
-                al.add(objValue);
-                hm.put(eName.toUpperCase(), al);
-            }
-        }
+    public void ignorableWhitespace (char ch[], int start, int length) throws SAXException {
+        int x = 4;
+        x++;
     }
+
 
     public void startDocument() throws SAXException {
     }
 
     public void endDocument() throws SAXException {
     }
+    
+    public void display() {
+        display(node, 0);
+    }
+    protected void display(Node node, final int indent) {
+        if (node == null) return;
+        String s = "";
+        for (Attrib a : node.alAttrib) {
+            s = OAString.append(s, a.name+"="+a.value, ", ");
+        }
+        System.out.println(OAString.indent(node.name+ (OAString.isEmpty(s)?"":s) + (OAString.isEmpty(node.text)?"":(" > \""+node.text+"\"")), indent));
+        for (Node nodex : node.alChildNode) {
+            display(nodex, indent+1);
+        }
+    }
+    
+    public static void main(String[] args) throws Exception {
+        SimpleXMLReader sr = new SimpleXMLReader();
+        File file = new File("C:\\Users\\vvia\\Documents\\HudsonMX\\TVB3.2\\schema\\test.xsd");
+        //File file = new File("C:\\Users\\vvia\\Documents\\HudsonMX\\TVB3.2\\schema\\TVB_Common_3.2.xsd");
+        sr.parse(file);
+        sr.display();
+
+        SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+
+        URL xsdURL = sr.getClass().getResource("/xsd/abc.xsd");
+        Schema schema = sf.newSchema(xsdURL);
+/*qqq        
+        Unmarshaller um = (getJAXBContext(NotificationReponseEnum.NOTIFICATION, notificationWrapper.getEnteteNotification().getTypeNotification()))
+                .createUnmarshaller();
+            um.setSchema(schema);        
+*/        
+        int xx = 4;
+        xx++;
+        
+    }
+    
 }

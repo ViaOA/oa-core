@@ -3,24 +3,14 @@ package com.viaoa.util;
 
 import static org.junit.Assert.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.Test;
-
 import com.viaoa.OAUnitTest;
-
-import test.xice.tsac.model.oa.*;
 
 public class SimpleXMLReaderTest extends OAUnitTest {
 
     
     @Test
     public void test() throws Exception {
-        
         // simple test to load into oaobjects 
         
         String s;
@@ -30,18 +20,12 @@ public class SimpleXMLReaderTest extends OAUnitTest {
         s += "<ssh><command>runcommand3</command><output>output text here3</output></ssh>\n";
         s += "<fn>Aaaa</fn><fn>Bbbb</fn></xml>";
         
-        
-        
         SimpleXMLReader xr = new SimpleXMLReader();
-        HashMap<String, Object> hm = xr.parse(s);
-        display(hm);
-
-        int xx = 4 ;
-        xx++;
-        
+        xr.parse(s);
+        xr.display();
     }
 
-
+    /*
     public void display(HashMap<String, Object> hm) {
         if (hm == null) return;
         
@@ -85,5 +69,5 @@ public class SimpleXMLReaderTest extends OAUnitTest {
         if (value instanceof ArrayList) System.out.println(sx+"/"+key+"[]");
         else System.out.println(sx+"/"+key);
     }
-    
+    */
 }
