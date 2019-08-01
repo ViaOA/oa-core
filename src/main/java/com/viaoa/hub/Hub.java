@@ -2127,6 +2127,24 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
         if (!OAObjectEditQueryDelegate.getAllowAdd(this, false)) return false;
         return OAObjectEditQueryDelegate.getVerifyAdd(this, obj);
     }
+    
+    public String getCanAddMessage(OAObject obj) {
+        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowAddEditQuery(this, false);
+        if (eq != null && !eq.getAllowed()) {
+            String s = eq.getResponse();
+            s = OAString.concat(s, eq.getThrowable(), ", ");
+            return "EditQuery.allowAdd returned: "+s;
+        }
+
+        eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(this, obj);
+        if (eq != null && !eq.getAllowed()) {
+            String s = eq.getResponse();
+            s = OAString.concat(s, eq.getThrowable(), ", ");
+            return "EditQuery.verifyAdd returned: "+s;
+        }
+        
+        return null;
+    }
     public boolean canRemove() {
         return OAObjectEditQueryDelegate.getAllowRemove(this, false);
     }

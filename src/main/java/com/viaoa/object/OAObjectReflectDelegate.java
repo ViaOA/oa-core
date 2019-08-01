@@ -2556,6 +2556,9 @@ public class OAObjectReflectDelegate {
                 return pathFromParent;
             }
         }
+        if (hx != null && hubParent.getObjectClass().equals(hx.getObjectClass())) {  // 20190731
+            return pathFromParent;
+        }
         
         String sx = getPropertyPathBetweenHubs(pathFromParent, hubParent, hx, false);
         if (sx != null) return sx;

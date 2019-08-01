@@ -2849,6 +2849,10 @@ public class OAString {
     public static String concat(String toText, String value) {
         return concat(toText, value, " ", true);
     }
+    public static String concat(String toText, Object value, String sepChar) {
+        String strValue = value == null ? null : value.toString();
+        return concat(toText, strValue, sepChar, false);
+    }
     public static String concat(String toText, String value, String sepChar) {
         return concat(toText, value, sepChar, false);
     }

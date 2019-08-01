@@ -387,7 +387,11 @@ public class HubAddRemoveDelegate {
         
         if (!bIsLoading && !OARemoteThreadDelegate.isRemoteThread()) {
             if (!canAdd(thisHub, obj)) {
-                throw new RuntimeException("Cant add object, can add retured false, hub="+thisHub+", add object="+obj);
+                String s = null;
+                if (obj instanceof OAObject) s = thisHub.getCanAddMessage((OAObject) obj);
+                if (s == null) s = HubAddRemoveDelegate.canAddMsg(thisHub, obj);
+                else s = "unknown";
+                throw new RuntimeException("Cant add object, can add retured false, hub="+thisHub+", add object="+obj+", Reason: "+s);
             }
         }
         
