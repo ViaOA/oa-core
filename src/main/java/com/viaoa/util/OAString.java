@@ -2872,6 +2872,42 @@ public class OAString {
         return toText;
     }
 
+    public static String maskPassword(String name, String val) {
+        String s = maskPassword(name, val, "*****", false, "password", "pw", "pass");
+        return s;
+    }
+    
+    public static String maskPassword(String name, String val, String passwordReturn, String... words) {
+        String s = maskPassword(name, val, passwordReturn, false, words);
+        return s;
+    }
+
+    public static String maskPassword(String name, String val, String... words) {
+        String s = maskPassword(name, val, "*****", false, words);
+        return s;
+    }
+    
+    /**
+     * Checks to see if name has any words in it that could make it value a password.  
+     * If so then it will return a new value, else value is returned.
+     * @param name name for the value
+     * @param value the actual value for name 
+     * @param maskValue return value to use if the name is for a password
+     * @param bCaseSensitive if the check should be casesensitive
+     * @param words words that are used to check if name is a password.  Note: uses indexOf>=0 and not equals
+     * @return if name is a password, then passwordReturn else value.
+     */
+    public static String maskPassword(String name, String value, String maskValue, boolean bCaseSensitive, String... words) {
+        if (name == null || words == null) return value;
+        if (bCaseSensitive) name = name.toLowerCase();
+        for (String word : words) {
+            if (word == null) continue;
+            if (bCaseSensitive) word = word.toLowerCase();
+            boolean b = name.indexOf(word) >= 0;
+            if (b) return maskValue;
+        }
+        return value;
+    }
     
     
     public static String hilite(String line, String search) {

@@ -337,26 +337,55 @@ public class OAObject implements java.io.Serializable, Comparable {
         OAObjectPropertyDelegate.removeProperty(this, name, true);
     }
 
-
     // allows other components to interact with OAObject property, by call onEditQueryXxxx or xxxCallback  method(s)
     public boolean isValidPropertyChange(String propertyName, Object oldValue, Object newValue) {
         return OAObjectEditQueryDelegate.getVerifyPropertyChange(this, propertyName, oldValue, newValue);
     }
+    public OAObjectEditQuery getIsValidPropertyChangeEditQuery(String propertyName, Object oldValue, Object newValue) {
+        OAObjectEditQuery eq =  OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(this, propertyName, oldValue, newValue);
+        return eq;
+    }
+
+    
     public boolean isEnabled(String propertyName) {
         return OAObjectEditQueryDelegate.getAllowEnabled(this, propertyName, false);
+    }
+    public OAObjectEditQuery getIsEnabledEditQuery(String propertyName, Object oldValue, Object newValue) {
+        OAObjectEditQuery eq =  OAObjectEditQueryDelegate.getAllowEnabledEditQuery(null, this, propertyName, false);
+        return eq;
     }
     public boolean isEnabled() {
         return OAObjectEditQueryDelegate.getAllowEnabled(this, null, false);
     }
+    public OAObjectEditQuery getIsEnabledEditQuery() {
+        OAObjectEditQuery eq =  OAObjectEditQueryDelegate.getAllowEnabledEditQuery(null, this, null, false);
+        return eq;
+    }
+
+    
+    
     public boolean isVisible(String propertyName) {
         return OAObjectEditQueryDelegate.getAllowVisible(this, propertyName);
+    }
+    public OAObjectEditQuery getIsVisibleEditQuery(String propertyName) {
+        OAObjectEditQuery eq =  OAObjectEditQueryDelegate.getAllowVisibleEditQuery(this, propertyName);
+        return eq;
     }
     public boolean isVisible() {
         return OAObjectEditQueryDelegate.getAllowVisible(this, null);
     }
+    public OAObjectEditQuery getIsVisibleEditQuery() {
+        OAObjectEditQuery eq =  OAObjectEditQueryDelegate.getAllowVisibleEditQuery(this, null);
+        return eq;
+    }
+
     public boolean verifyCommand(String methodName) {
         OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyCommandEditQuery(this, methodName);
         return eq.getAllowed();
+    }
+    public OAObjectEditQuery gtetVerifyCommand(String methodName) {
+        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyCommandEditQuery(this, methodName);
+        return eq;
     }
     
     /**
@@ -994,6 +1023,11 @@ public class OAObject implements java.io.Serializable, Comparable {
             throw new RuntimeException("method "+mname+", OASyncClient=null, thread="+Thread.currentThread());
         }
 
+//qqqqqqqqqqqqqqqqqqqqqqqqqqq 20190918
+        if (OAObjectCSDelegate.isInNewObjectCache(this)) {
+            OAObjectCSDelegate.addToServerSideCache(this);
+        }
+        
         RemoteServerInterface rs;
         try {
             rs = sc.getRemoteServer();

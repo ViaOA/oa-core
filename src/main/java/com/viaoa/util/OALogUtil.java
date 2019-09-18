@@ -10,9 +10,6 @@
 */
 package com.viaoa.util;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.ConsoleHandler;
@@ -80,7 +77,7 @@ public class OALogUtil {
         log.addHandler(ch);
     }
     
-    public static String getThreadDump() {
+    public static String getAllThreadDump() {
         StringBuilder sb = new StringBuilder(1024 * 32);
         String s;
 
@@ -102,4 +99,18 @@ public class OALogUtil {
         return new String(sb);
     }
     
+    public static String getThreadDump() {
+        StringBuilder sb = new StringBuilder(1024 * 4);
+        Thread t = Thread.currentThread();
+        String s = t.getName();
+        sb.append(s + OAString.NL);
+        StackTraceElement[] stes = t.getStackTrace();
+        if (stes != null) {
+            for (StackTraceElement ste : stes) {
+                s = "  "+ste.toString(); //was:  ste.getClassName()+" "+ste.getMethodName()+" "+ste.getLineNumber();
+                sb.append(s + OAString.NL);
+            }
+        }
+        return new String(sb);
+    }
 }

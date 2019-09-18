@@ -1840,6 +1840,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
     }
     
     public static void main(String[] args) {
+        
+        String sx = (new OADateTime()).toString("yyyy-MM-dd'T'HH:mm:ss.S");   // 2019-08-26T15:47:40.902
+        
         OADate d = new OADate("02/22/2019");
         OADate today = new OADate();
         int x = d.compareTo(today);

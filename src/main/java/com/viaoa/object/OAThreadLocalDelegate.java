@@ -26,6 +26,7 @@ import com.viaoa.undo.OAUndoManager;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAString;
 import com.viaoa.util.Tuple3;
 
 /**
@@ -918,6 +919,22 @@ static volatile int unlockCnt;
         }
         return result;
     }
+    
+    public static String getThreadDump() {
+        StringBuilder sb = new StringBuilder(1024 * 4);
+        Thread t = Thread.currentThread();
+        String s = t.getName();
+        sb.append(s + OAString.NL);
+        StackTraceElement[] stes = t.getStackTrace();
+        if (stes != null) {
+            for (StackTraceElement ste : stes) {
+                s = "  "+ste.toString(); //was:  ste.getClassName()+" "+ste.getMethodName()+" "+ste.getLineNumber();
+                sb.append(s + OAString.NL);
+            }
+        }
+        return new String(sb);
+    }
+    
     
     public static void setStatus(String msg) {
         getOAThreadLocal().status = msg;

@@ -540,7 +540,7 @@ if (siblingKeys == null || siblingKeys.length == 0) {
                     long msNow = System.currentTimeMillis();
                     if (msLastThreadCountWarning + 2500 < msNow) {
                         msLastThreadCountWarning = msNow;
-                        String s = OALogUtil.getThreadDump();
+                        String s = OALogUtil.getAllThreadDump();
                         LOG.warning("RemoteThread liveCount="+liveCount+", totalCreated="+totalCount+"\n"+s);
                     }
                 }

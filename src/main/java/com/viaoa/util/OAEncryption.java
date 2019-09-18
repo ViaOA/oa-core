@@ -124,20 +124,19 @@ public class OAEncryption {
         return _secretKey;
     }    
     public static SecretKey getSecretKey(String password) throws Exception {
-        if (_secretKey == null) {
-            byte[] bs = new byte[DESKeySpec.DES_KEY_LEN];
-            
-            int x = password == null ? 0 : password.length();
-            
-            for (int i=0; i<bs.length; i++) {
-                if (i < x) bs[i] = (byte) password.charAt(i); 
-                else bs[i] = (byte) i;
-            }
-            DESKeySpec desKeySpec = new DESKeySpec(bs);
-            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
-            _secretKey = keyFactory.generateSecret(desKeySpec);
+        byte[] bs = new byte[DESKeySpec.DES_KEY_LEN];
+        
+        int x = password == null ? 0 : password.length();
+        
+        for (int i=0; i<bs.length; i++) {
+            if (i < x) bs[i] = (byte) password.charAt(i); 
+            else bs[i] = (byte) i;
         }
-        return _secretKey;
+        DESKeySpec desKeySpec = new DESKeySpec(bs);
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
+        SecretKey skey = keyFactory.generateSecret(desKeySpec);
+
+        return skey;
     }    
     
     
