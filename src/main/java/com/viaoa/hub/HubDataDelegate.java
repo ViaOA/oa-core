@@ -735,4 +735,31 @@ public class HubDataDelegate {
     public static boolean getTrackChanges(Hub thisHub) {
         return thisHub != null && thisHub.data.getTrackChanges();        
     }
+    
+    public static boolean isLoadingAllData(Hub thisHub) {
+        if (thisHub == null) return false;
+        boolean b;
+        synchronized (thisHub.data) {
+            b = (thisHub != null && thisHub.data.isLoadingAllData());
+        }
+        return b;
+    }
+    public static boolean setLoadingAllData(Hub thisHub, boolean b) {
+        boolean bx = false;
+        if (thisHub != null) {
+            synchronized (thisHub.data) {
+                bx = thisHub.data.setLoadingAllData(b);
+            }
+        }
+        return bx;
+    }
+    public static boolean setLoadingAllData(Hub thisHub, boolean b, Thread thread) {
+        boolean bx = false;
+        if (thisHub != null) {
+            synchronized (thisHub.data) {
+                bx = thisHub.data.setLoadingAllData(b, thread);
+            }
+        }
+        return bx;
+    }
 }

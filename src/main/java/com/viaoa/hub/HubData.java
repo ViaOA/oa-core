@@ -185,14 +185,26 @@ public class HubData implements java.io.Serializable {
         }
     }
 
-//20160828qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq remove this???QQQQQQQQQQQQQQQQQQQQQQQQQ    
-    private static ConcurrentHashMap<HubData, HubData> hmLoadingAllData = new ConcurrentHashMap<HubData, HubData>(11, .85f);
+    private static ConcurrentHashMap<HubData, Thread> hmLoadingAllData = new ConcurrentHashMap<HubData, Thread>(23, .85f);
+
+    
     public boolean isLoadingAllData() {
-        return hmLoadingAllData.containsKey(this);
+        Thread t = hmLoadingAllData.get(this);
+        if (t == null) return false;
+        return (t != Thread.currentThread());
     }
-    public void setLoadingAllData(boolean loadingAllData) {
-        if (loadingAllData) hmLoadingAllData.put(this, this);
-        else hmLoadingAllData.remove(this);
+    
+    public boolean setLoadingAllData(boolean loadingAllData) {
+        Thread t = null;
+        if (loadingAllData) t = Thread.currentThread();
+        return setLoadingAllData(loadingAllData, t); 
+    }
+    public boolean setLoadingAllData(boolean loadingAllData, Thread thread) {
+        if (loadingAllData) {
+            if (thread == null) thread = Thread.currentThread();
+            return (hmLoadingAllData.put(this, thread) != null);
+        }
+        return (hmLoadingAllData.remove(this) != null);
     }
 
     private static ConcurrentHashMap<HubData, HubData> hmSelectAllHub = new ConcurrentHashMap<HubData, HubData>(11, .85f);

@@ -11,6 +11,7 @@
 package com.viaoa.util;
 
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 
 public class OANetwork {
 
@@ -46,8 +47,27 @@ public class OANetwork {
                 // the host address and host name are equal, meaning the host name could not be resolved
             }
         }
-
     }
+    
+    
+    //return current client mac address
+    protected static String macAddress;
+    public static String getMACAddress() throws Exception {
+        if (macAddress != null) return macAddress;
+        InetAddress ip;
+        StringBuilder sb = new StringBuilder(32);
+
+        ip = InetAddress.getLocalHost();
+        NetworkInterface network = NetworkInterface.getByInetAddress(ip);
+        byte[] mac = network.getHardwareAddress();
+
+        for (int i = 0; i < mac.length; i++) {
+            sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+        }
+        macAddress = sb.toString();
+        return macAddress;
+    }
+    
     
     public static void main(String[] args) throws Exception {
         findAllServers();

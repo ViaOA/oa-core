@@ -15,10 +15,10 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.process.OAChangeRefresher;
 import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 
@@ -176,11 +176,22 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             close();
             return;
         }
-        hub.clear();
-        if (changeRefresher != null && changeRefresher.hasChanged()) return;
-        reselect();
-        if (changeRefresher != null && changeRefresher.hasChanged()) return;
-        refresh();
+        // 20190925 dont clear since it removes all in hub.  refresh will remove any that are not needed
+        // hub.clear();
+        
+        
+        boolean b = HubDataDelegate.setLoadingAllData(hub, true);
+        try {
+            hub.setLoading(true);
+            if (changeRefresher != null && changeRefresher.hasChanged()) return;
+            reselect();
+            if (changeRefresher != null && changeRefresher.hasChanged()) return;
+            refresh();
+        }
+        finally {
+            hub.setLoading(false);
+            if (!b) HubDataDelegate.setLoadingAllData(hub, false);
+        }
     }
     
     /**
@@ -200,22 +211,42 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             return;
         }
 
-        hub.clear();
-        // need to check loaded objects 
-        OAObjectCacheDelegate.visit(clazz, new OACallback() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public boolean updateObject(Object obj) {
-                if (changeRefresher != null && changeRefresher.hasChanged()) {
-                    return false;
-                }
-
-                if (isUsed((T) obj)) {
-                    hub.add((T) obj);
-                }
-                return true;
+        // 20191002 
+        //was: hub.clear();
+        for (T obj : hub) {
+            if (!isUsed(obj)) {
+                hub.remove(obj);
             }
-        });
+        }
+        if (changeRefresher != null && changeRefresher.hasChanged()) {
+            return;
+        }
+        
+
+        hub.setLoading(true);
+        boolean b = HubDataDelegate.setLoadingAllData(hub, true);
+        try {
+        
+            // need to check loaded objects 
+            OAObjectCacheDelegate.visit(clazz, new OACallback() {
+                @SuppressWarnings("unchecked")
+                @Override
+                public boolean updateObject(Object obj) {
+                    if (changeRefresher != null && changeRefresher.hasChanged()) {
+                        return false;
+                    }
+    
+                    if (isUsed((T) obj)) {
+                        hub.add((T) obj);
+                    }
+                    return true;
+                }
+            });
+        }
+        finally {
+            if (!b) HubDataDelegate.setLoadingAllData(hub, false);
+            hub.setLoading(false);
+        }
     }
     
     
@@ -281,13 +312,23 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                                     changeRefresher = new OAChangeRefresher() {
                                         @Override
                                         protected void process() throws Exception {
-                                            reselectAndRefresh();            
+                                            try {
+                                                HubDataDelegate.setLoadingAllData(hub, true);
+                                                reselectAndRefresh();
+                                            }
+                                            finally {
+                                                if (!hasChanged()) {
+                                                    HubDataDelegate.setLoadingAllData(hub, false);
+                                                }
+                                            }
                                         }
                                     };
                                     changeRefresher.start();
                                 }
                             }
                         }
+                        // need to flag that all data will be loaded in another thread
+                        HubDataDelegate.setLoadingAllData(hub, true, changeRefresher.getThread());
                         changeRefresher.refresh();
                     }
                     else {

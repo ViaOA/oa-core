@@ -3,6 +3,7 @@ package com.viaoa.util;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.*;
+import java.util.UUID;
 
 import javax.crypto.*;
 import javax.crypto.spec.DESKeySpec;
@@ -238,6 +239,11 @@ public class OAEncryption {
 
         String s4 = getHash(s);
         System.out.println("Hashed ==> \""+s4+"\"");
+    }
+
+    public static String getUUID(String base) {
+        String s = UUID.randomUUID().toString();
+        return s;
     }
     
 }

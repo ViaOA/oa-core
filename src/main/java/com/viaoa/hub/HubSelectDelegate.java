@@ -178,13 +178,15 @@ if (sel.getNextCount() != thisHub.getCurrentSize()) {
         loadAllData(thisHub, thisHub.getSelect());
     }
 	public static void loadAllData(Hub thisHub, OASelect select) {
-	    if (thisHub == null || select == null) return;
-	    
-	    // 20121015 adjusted for locking
-	    for (int i=0; ;i++) {
+	    if (thisHub == null) return;
+
+	    int i = 0;
+	    boolean bLongTime = false;
+	    for ( ; ;i++) {
     	    boolean bCanRun = false;
             synchronized (thisHub.data) {
                 if (!thisHub.data.isLoadingAllData()) {
+                    if (select == null) break;
                     thisHub.data.setLoadingAllData(true);
                     bCanRun = true;
                 }
@@ -203,28 +205,27 @@ if (sel.getNextCount() != thisHub.getCurrentSize()) {
                 }
                 break;
             }
+            
             // else wait and try again
+            if (select == null) {
+                if (i >= 500) break; 
+                if (i > 25) bLongTime = true;
+            }
             try {
-                Thread.sleep(25);
+                Thread.sleep(2);
             }
             catch (Exception e) {
             }
 	    }
-	    /* was;
-        synchronized (thisHub.data) {
-            if (!thisHub.data.loadingAllData) {
-                thisHub.data.loadingAllData = true;
-                try {
-                    while ( isMoreData(thisHub) ) {
-                        fetchMore(thisHub);
-                    }
-                }
-                finally {
-                    thisHub.data.loadingAllData = false;
-                }
-            }
-        }
-        */
+	    
+	    if (bLongTime) {
+	        String s = "waiting on another thread to finish loadAllData, msTime="+(i*2);
+	        if (i >= 500) {
+	            s += ", timeout, will continue";
+	        }
+	        s += ", thisHub="+thisHub;
+            LOG.warning(s);
+	    }
 	}
 	
 

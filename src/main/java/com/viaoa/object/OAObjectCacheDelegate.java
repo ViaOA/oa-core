@@ -236,6 +236,31 @@ public class OAObjectCacheDelegate {
         }
     }
 
+    private static boolean UnitTestMode;
+    /**
+     * Flag to allow system to be running in test mode
+     * @param b
+     */
+    public static void setUnitTestMode(boolean b) {
+        UnitTestMode = b;
+    }
+    
+    /**
+     * Clear out object cache, remove all listeners, remove all selectAllHubs, remove all named hubs. 
+     */
+    public static void resetCache() throws Exception{
+        LOG.warning("call to reset cache, UnitTestMode="+UnitTestMode);
+        // 20191002
+        if (!UnitTestMode) throw new Exception("Can only call reset cache if UnitTestMode is true");
+        OAObjectHashDelegate.hashCacheClass.clear();
+        OAObjectHashDelegate.hashCacheListener.clear();
+        aiListenerCount.set(0);
+        OAObjectHashDelegate.hashCacheSelectAllHub.clear();
+        OAObjectHashDelegate.hashCacheNamedHub.clear();
+
+    }
+    
+    
     
     /* see addListener(Class, HubListener) */
     public static void removeListener(Class clazz, OAObjectCacheListener l) {
@@ -520,14 +545,7 @@ public class OAObjectCacheDelegate {
         return add(obj, false, true);
     }
 
-    // 20121226
-    /** *
-     *  Note: also use setDisableRemove, since the OAObject finalize will call remove from the 
-     *  cache. 
-     */
-    public static void clearCache() {
-        OAObjectHashDelegate.hashCacheClass.clear();
-    }
+
     public static void clearCache(Class clazz) {
         synchronized (OAObjectHashDelegate.hashCacheClass) {
             OAObjectHashDelegate.hashCacheClass.remove(clazz);
@@ -535,7 +553,6 @@ public class OAObjectCacheDelegate {
     }
 
     
-//qqqqqqqqqqqqqqqq    
     public static OAObject add(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll) {
         return add(obj, bErrorIfExists, bAddToSelectAll, false);
     }

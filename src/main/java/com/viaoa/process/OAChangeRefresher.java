@@ -32,12 +32,11 @@ import com.viaoa.util.OAString;
 public abstract class OAChangeRefresher {
     private static Logger LOG = Logger.getLogger(OAChangeRefresher.class.getName());
 
-    private static final AtomicInteger aiCount = new AtomicInteger();
-
+    private static final AtomicInteger aiThreadId = new AtomicInteger();
+    private static final AtomicInteger aiName = new AtomicInteger();
+    
     private final AtomicInteger aiChange = new AtomicInteger();
     private final AtomicInteger aiStartStop = new AtomicInteger();
-    private final AtomicInteger aiThreadId = new AtomicInteger();
-    private final AtomicInteger aiName = new AtomicInteger();
     
     private final Object lock = new Object();
     private Thread thread;
@@ -211,6 +210,9 @@ public abstract class OAChangeRefresher {
         thread.start();
     }
 
+    public Thread getThread() {
+        return thread;
+    }
     public void stop() {
         aiStartStop.incrementAndGet();
 
@@ -220,9 +222,11 @@ public abstract class OAChangeRefresher {
         LOG.fine("stop called, aiStartStop=" + aiStartStop);
     }
 
+    private int msWaitBetween = 3;
     protected void runThread() {
         final int iStartStop = aiStartStop.get();
         LOG.fine("created queue processor, cntStartStop=" + iStartStop + ", thread name=" + Thread.currentThread().getName());
+        long msLast = 0;
         for (;;) {
             try {
                 if (iStartStop != aiStartStop.get()) break;
@@ -235,9 +239,15 @@ public abstract class OAChangeRefresher {
 
                 if (!hasChanged()) continue;
                 
-                lastChange = aiChange.get();
+                long x = System.currentTimeMillis() - msLast;
+                if (x < msWaitBetween) {
+                    Thread.sleep(msWaitBetween-x);
+                    continue;
+                }
 
+                lastChange = aiChange.get();
                 process();
+                msLast = System.currentTimeMillis();                
             }
             catch (Exception e) {
                 LOG.log(Level.WARNING, "error processing from queue", e);

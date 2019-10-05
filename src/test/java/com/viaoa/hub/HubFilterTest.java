@@ -337,5 +337,32 @@ public class HubFilterTest extends OAUnitTest {
         }
         */
     }
+
+
+    @Test
+    public void testD() {
+        // dependents with and w/o "."        
+        
+        Hub<Employee> hubMaster = new Hub<Employee>(Employee.class);
+        Hub<Employee> hubFiltered = new Hub<Employee>(Employee.class);
+        
+        HubFilter<Employee> hf = new HubFilter<Employee>(hubMaster, hubFiltered) {
+            @Override
+            public boolean isUsed(Employee emp) {
+                return (emp.getLocation() != null);
+            }
+        };
+        hf.addDependentProperty(Employee.P_Location);
+
+        assertEquals(0, hubFiltered.size());
+        Employee emp = new Employee();
+        hubMaster.add(emp);
+        assertEquals(0, hubFiltered.size());
+        emp.setLocation(new Location());
+        assertEquals(1, hubFiltered.size());
+        
+    }
+
+
 }
 

@@ -13,6 +13,8 @@ package com.viaoa.hub;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.logging.Logger;
+
 import com.viaoa.object.*;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
@@ -27,7 +29,7 @@ import com.viaoa.util.*;
  * @author vincevia
  */
 public class HubDelegate {
-
+    private static Logger LOG = Logger.getLogger(HubDelegate.class.getName());
 	public static final Boolean TRUE  = new Boolean(true);
 	public static final Boolean FALSE = new Boolean(false);
 	
@@ -489,6 +491,15 @@ public class HubDelegate {
        	return HubDataDelegate.getCurrentSize(thisHub);
     }
 
+    /**
+     */
+    public static int getLoadedSize(Hub thisHub) {
+        if (thisHub == null) return 0;
+        thisHub.loadAllData();
+        return getSize(thisHub);
+    }
+    private static int cntLoadedSizeError; 
+    
     protected static void setProperty(Hub thisHub, String name, Object obj) {
         if (name == null) return;
         name = name.toUpperCase();

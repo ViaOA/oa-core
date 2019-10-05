@@ -18,6 +18,10 @@ import java.sql.Time;
 /*
     Superclass of OADate and OATime that combines Calendar, Date and SimpleDateFormat.
 
+    MM/dd HH:mm:ss
+    MM/dd/yy HH:mm:ss
+    MM/dd/yyyy HH:mm:ss
+
     'Hms', 'Mdy'
 
     yyyyMMdd_HHmmss.SSS

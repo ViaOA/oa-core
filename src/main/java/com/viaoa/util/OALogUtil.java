@@ -113,4 +113,20 @@ public class OALogUtil {
         }
         return new String(sb);
     }
+    public static String getStackTrace(Exception e) {
+        if (e == null) return null;
+        StringBuilder sb = new StringBuilder(1024 * 2);
+        Thread t = Thread.currentThread();
+        String s = t.getName();
+        sb.append(s + OAString.NL);
+        StackTraceElement[] stes = e.getStackTrace();
+        if (stes != null) {
+            for (StackTraceElement ste : stes) {
+                s = "  "+ste.toString(); //was:  ste.getClassName()+" "+ste.getMethodName()+" "+ste.getLineNumber();
+                sb.append(s + OAString.NL);
+            }
+        }
+        return new String(sb);
+    }
+    
 }

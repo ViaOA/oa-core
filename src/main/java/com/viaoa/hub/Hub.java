@@ -551,6 +551,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
     public int size() {
         return HubDelegate.getSize(this);
     }
+    /**
+     * Waits until all data is loaded before returning the size.
+     */
+    public int getLoadedSize() {
+        return HubDelegate.getLoadedSize(this);
+    }
 
     /**
      * Save all objects in this hub. If objects are OAObjects, then each object
