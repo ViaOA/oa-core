@@ -107,7 +107,7 @@ public class OALogUtil {
         StackTraceElement[] stes = t.getStackTrace();
         if (stes != null) {
             for (StackTraceElement ste : stes) {
-                s = "  "+ste.toString(); //was:  ste.getClassName()+" "+ste.getMethodName()+" "+ste.getLineNumber();
+                s = "\tat "+ste.toString(); //was:  ste.getClassName()+" "+ste.getMethodName()+" "+ste.getLineNumber();
                 sb.append(s + OAString.NL);
             }
         }
@@ -122,7 +122,7 @@ public class OALogUtil {
         StackTraceElement[] stes = e.getStackTrace();
         if (stes != null) {
             for (StackTraceElement ste : stes) {
-                s = "  "+ste.toString(); //was:  ste.getClassName()+" "+ste.getMethodName()+" "+ste.getLineNumber();
+                s = "\tat "+ste.toString(); //was:  ste.getClassName()+" "+ste.getMethodName()+" "+ste.getLineNumber();
                 sb.append(s + OAString.NL);
             }
         }

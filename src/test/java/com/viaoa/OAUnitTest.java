@@ -1,5 +1,7 @@
 package com.viaoa;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.viaoa.ds.OADataSource;
 import com.viaoa.ds.autonumber.NextNumber;
@@ -8,8 +10,10 @@ import com.viaoa.ds.objectcache.OADataSourceObjectCache;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.util.OALogUtil;
 
 public class OAUnitTest {
+    private static Logger LOG = Logger.getLogger(OAUnitTest.class.getName());
 
     protected OADataSourceAuto dsAuto;
     protected OADataSourceAuto dsCache;
@@ -34,7 +38,30 @@ public class OAUnitTest {
     public void init() {
         reset();
     }
-    protected void reset() {
+    protected void reset()  {
+        try {
+            _reset();
+        }
+        catch (Exception e) {
+            LOG.log(Level.WARNING, "exception calling reset", e);
+        }
+    }
+    protected void _reset() throws Exception {
+        OALogUtil.consoleOnly(Level.FINE, "com.viaoa");
+        OAObjectCacheDelegate.setUnitTestMode(true);
+        OAObjectCacheDelegate.resetCache();
+        OAObjectCacheDelegate.setUnitTestMode(false);
+        OAThreadLocalDelegate.clearSiblingHelpers();
+        
+        OADataSource.closeAll();
+        OAObjectDelegate.setNextGuid(0);
+        getCacheDataSource().setAssignIdOnCreate(true);
+        getAutoDataSource().setAssignIdOnCreate(true);
+    }
+    
+    
+    protected void reset_OLD() {
+/*qqqqq        
         if (dsCache != null) {
             dsCache.close();
             dsCache.setGlobalNextNumber(null);
@@ -51,6 +78,7 @@ public class OAUnitTest {
         OAObjectDelegate.setNextGuid(0);
         OAObjectCacheDelegate.removeAllSelectAllHubs();
         OAThreadLocalDelegate.clearSiblingHelpers();
+*/        
     }
 
     public void delay() {
