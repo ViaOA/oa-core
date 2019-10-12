@@ -1111,6 +1111,19 @@ public class OAObject implements java.io.Serializable, Comparable {
         }
     }
     
+    // runOnServerOnly(() -> parseXML());
+    public void runOnServerOnly(Runnable r) {
+        if (r == null || !startServerOnly()) return;
+        try {
+            beginServerOnly();
+            r.run();
+        }
+        finally {
+            endServerOnly();
+        }
+    }
+    
+    
     private static boolean DebugMode = false;
     public static void setDebugMode(boolean b) {
         LOG.config("DebugMode set to "+b);
