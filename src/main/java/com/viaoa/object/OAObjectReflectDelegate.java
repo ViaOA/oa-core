@@ -359,7 +359,11 @@ public class OAObjectReflectDelegate {
     public static void storeLinkValue(OAObject oaObj, String propertyName, Object value) {
         if (!(value instanceof OAObject) && !(value instanceof OAObjectKey)) {
             OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-            value = OAObjectKeyDelegate.convertToObjectKey(oi, value);
+            OALinkInfo li = oi.getLinkInfo(propertyName);
+            if (li != null && li.getType() == li.ONE) {
+                oi = li.getToObjectInfo();
+                value = OAObjectKeyDelegate.convertToObjectKey(oi, value);
+            }
         }
         OAObjectPropertyDelegate.setProperty(oaObj, propertyName, value);
     }

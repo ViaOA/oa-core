@@ -36,7 +36,7 @@ public class OAObjectSaveDelegate {
     private static void save(OAObject oaObj, int iCascadeRule, OACascade cascade, boolean bIsFirst, boolean bCheckDepth) {
         if (bCheckDepth && cascade.getDepth() > 50) {
             if (!cascade.wasCascaded(oaObj, false)) {
-                cascade.add(oaObj);  // add to overflow, (tail recursion)
+                cascade.addToOverflow(oaObj);  // add to overflow, (tail recursion)
             }
             return;
         }
@@ -91,9 +91,9 @@ public class OAObjectSaveDelegate {
         
         cascade.depthSubtract();
         if (cascade.getDepth() < 1) {
-            ArrayList<Object> al = cascade.getList();
+            ArrayList<Object> al = cascade.getOverflowList();
             if (al != null) {
-                cascade.clearList();
+                cascade.clearOverflowList();
                 cascade.setDepth(0);
                 if (al != null) {
                     for (Object obj : al) {

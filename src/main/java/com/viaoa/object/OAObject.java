@@ -11,8 +11,15 @@
 package com.viaoa.object;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.*;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlIDREF;
+import javax.xml.bind.annotation.XmlTransient;
+
 import java.lang.ref.*;  // java1.2
 
 import com.viaoa.hub.*;
@@ -97,6 +104,7 @@ import com.viaoa.util.*;
     @see Hub for observable collection class that has "linkage" features for automatically managing relationships.
     see OAHtmlSelect for datasource independent queries based on object and property paths.
 */
+@XmlTransient()
 public class OAObject implements java.io.Serializable, Comparable {
 
     private static final long serialVersionUID = 1L; // internally used by Java Serialization to identify this version of OAObject.
@@ -398,6 +406,7 @@ public class OAObject implements java.io.Serializable, Comparable {
     public boolean isNew() {
         return newFlag;
     }
+    @XmlTransient
     public void setNew(boolean b) {
         OAObjectDelegate.setNew(this, b);
     }
@@ -414,6 +423,7 @@ public class OAObject implements java.io.Serializable, Comparable {
     public boolean isDeleted() {
         return deletedFlag;
     }
+    @XmlTransient
     public void setDeleted(boolean tf) {
         OAObjectDeleteDelegate.setDeleted(this, tf);
     }
@@ -487,6 +497,7 @@ public class OAObject implements java.io.Serializable, Comparable {
         This is automatically set to true whenever firePropertyChange.  It is set to false when save() is called.
         @param tf if false then all original values of changed properties will be removed.
     */
+    @XmlTransient
     public void setChanged(boolean tf) {
         if (changedFlag != tf) {
             boolean bOld = changedFlag;
@@ -940,6 +951,7 @@ public class OAObject implements java.io.Serializable, Comparable {
     public void setAutoAdd(boolean b) {
         OAObjectDelegate.setAutoAdd(this, b);
     }
+    @XmlTransient
     public boolean getAutoAdd() {
         return OAObjectDelegate.getAutoAdd(this);
     }
@@ -1137,5 +1149,162 @@ public class OAObject implements java.io.Serializable, Comparable {
         boolean b = OAObjectPropertyDelegate.isPropertyLocked(this, prop);
         return b;
     }
+
+    // 20191018
+    /**
+     * These Jaxb methods are used to work with OAJaxb (JAXB xml processing).
+     * Only one of them will return a value, depending on what is needed for the XML.  Otherwise, a null is sent so that it wont be included in the xml gen.
+     *
+     * The xsd will have elements for object, objectRef and objectId, but only one will be included in the produced XML
+     * 
+ 
+    @XmlElement(name="vendor")
+    public Vendor getJaxbVendor() {
+        return (Vendor) super.getJaxb(P_Vendor);
+    }
+    @XmlElement(name="vendorRef")
+    @XmlIDREF
+    public Vendor getJaxbVendorRef() {
+        return (Vendor) super.getJaxbRef(P_Vendor);
+    }
+    @XmlElement(name="vendorId")
+    public String getJaxbVendorId() {
+        return super.getJaxbId(P_Vendor);
+    }
+ 
+     */
     
+    
+//qqqqqqqqqqqqq support for getHub qqqqqqqqqqqqqqqqqqqqq
+    
+    public OAObject getJaxb(String propertyName) {
+        OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+        if (jaxb != null) {
+            OAJaxb.SendRefType type = jaxb.getSendRefType(this, propertyName);
+            if (type != OAJaxb.SendRefType.object) return null;
+        }
+        return (OAObject) getObject(propertyName);
+    }
+    
+    public OAObject getJaxbRef(String propertyName) {
+        OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+        if (jaxb != null) {
+            OAJaxb.SendRefType type = jaxb.getSendRefType(this, propertyName);
+            if (type != OAJaxb.SendRefType.ref) return null;
+        }
+        return (OAObject) getObject(propertyName);
+    }
+    
+    public String getJaxbId(String propertyName) {
+        OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+        if (jaxb != null) {
+            OAJaxb.SendRefType type = jaxb.getSendRefType(this, propertyName);
+            if (type != OAJaxb.SendRefType.id) return null;
+        }
+        Object objx = OAObjectPropertyDelegate.getProperty(this, propertyName, true, true);
+        if (objx instanceof OANotExist) return null;
+        if (objx instanceof OAObject) objx = ((OAObject) objx).getObjectKey();
+        if (objx instanceof OAObjectKey) {
+            Object[] objs = ((OAObjectKey) objx).getObjectIds();
+            if (objs == null || objs.length != 1) return null;
+            return objs[0]+"";
+        }
+        return objx+"";
+    }
+    public void setJaxbId(String propertyName, String id) {
+        int idx = Integer.valueOf(id);
+        setProperty(propertyName, new OAObjectKey(idx));
+    }
+    
+    
+    public List getJaxbHub(String propertyName) {
+        List list = getJaxbHubX(propertyName, null, false, null, false);
+        return list;
+    }
+    public List getJaxbHub(String propertyName, String sortOrder) {
+        return getJaxbHubX(propertyName, sortOrder, false, null, false); 
+    }
+    public List getJaxbHub(String propertyName, String sortOrder, boolean bSequence, Hub hubMatch) {
+        return getJaxbHubX(propertyName, sortOrder, bSequence, hubMatch, false); 
+    }
+    
+    public List getJaxbRefHub(String propertyName) {
+        return getJaxbHubX(propertyName, null, false, null, true); 
+    }
+    public List getJaxbRefHub(String propertyName, String sortOrder) {
+        return getJaxbHubX(propertyName, sortOrder, false, null, true); 
+    }
+    public List getJaxbRefHub(String propertyName, String sortOrder, boolean bSequence, Hub hubMatch) {
+        return getJaxbHubX(propertyName, sortOrder, bSequence, hubMatch, true); 
+    }
+
+    
+    /**
+     * Same as getHub, that is used by Jaxb. 
+     * To return an OAObject.hub property (ex: Dept.getEmps), Dept will have 3 methods: 
+     *   1: getEmps() @XmlTransient that returns the real Hub
+     *   2: getJaxbEmps() that is used by jaxb to return list (or hub) of all emps in Dept.emps hub that have not been included in the xml output.
+     *   3: getJaxbRefEmps() that is used to return list (or hub) of references @XmlIDRef of objects that have already been included.
+     * @param linkPropertyName
+     * @param sortOrder
+     * @param bSequence
+     * @param hubMatch
+     * @param bRefsOnly if this is to only return hub objects that need to be XmlIDRef only 
+     * @return
+     */
+    protected List getJaxbHubX(final String linkPropertyName, final String sortOrder, final boolean bSequence, final Hub hubMatch, final boolean bRefsOnly) {
+        OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+
+        Hub hub = null;
+        if (jaxb != null) {
+            if (!jaxb.shouldIncludeProperty(this, linkPropertyName)) return null;
+            if (jaxb.isMarshelling()) {
+                int cnt = 0;
+                int cntRef = 0;
+                hub = getHub(linkPropertyName, sortOrder, bSequence, hubMatch);
+                
+                ArrayList<OAObject> lstRefsOnly = jaxb.getRefsOnlyList(linkPropertyName);
+                if (bRefsOnly) {
+                    if (lstRefsOnly != null) {
+                        if (lstRefsOnly.size() == 0) return null;
+                        return lstRefsOnly;
+                    }
+                }
+                
+                for (Object obj : hub) {
+                    if (jaxb.isAlreadyIncluded((OAObject) obj)) cntRef++;
+                    else cnt++;
+                    if (cnt > 0 && cntRef > 0) break;
+                }
+                
+                if (cnt > 0 && cntRef > 0) {
+                    List list = new ArrayList();
+                    if (!bRefsOnly) {
+                        lstRefsOnly = new ArrayList<OAObject>();
+                        jaxb.setRefsOnlyList(linkPropertyName, lstRefsOnly);
+                    }
+                    for (Object obj : hub) {
+                        if (jaxb.isAlreadyIncluded((OAObject) obj)) {
+                            if (bRefsOnly) list.add(obj);
+                            else lstRefsOnly.add((OAObject) obj);
+                        }
+                        else if (!bRefsOnly) list.add(obj);
+                    }
+                    return list;
+                }
+                if (bRefsOnly) {
+                    if (cntRef == 0) return null;
+                }
+                else {
+                    if (cnt == 0 && cntRef > 0) return null; // all refs
+                    if (lstRefsOnly == null) {
+                        lstRefsOnly = new ArrayList(); // no refs
+                        jaxb.setRefsOnlyList(linkPropertyName, lstRefsOnly);
+                    }
+                }
+            }
+        }
+        if (hub == null) hub = getHub(linkPropertyName, sortOrder, bSequence, hubMatch);
+        return hub;
+    }
 }

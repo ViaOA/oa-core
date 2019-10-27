@@ -37,10 +37,10 @@ public class OACascadeTest extends OAUnitTest {
     public void addTest() {
         OACascade cascade = new OACascade();
         Server server = new Server();
-        assertNull(cascade.getList());
-        cascade.add(server);
-        assertNotNull(cascade.getList());
-        assertEquals(1, cascade.getList().size());
+        assertNull(cascade.getOverflowList());
+        cascade.addToOverflow(server);
+        assertNotNull(cascade.getOverflowList());
+        assertEquals(1, cascade.getOverflowList().size());
     }
 
     
@@ -48,11 +48,11 @@ public class OACascadeTest extends OAUnitTest {
     public void clearListTest() {
         OACascade cascade = new OACascade();
         Server server = new Server();
-        assertNull(cascade.getList());
-        cascade.add(server);
-        assertNotNull(cascade.getList());
-        cascade.clearList();
-        assertNull(cascade.getList());
+        assertNull(cascade.getOverflowList());
+        cascade.addToOverflow(server);
+        assertNotNull(cascade.getOverflowList());
+        cascade.clearOverflowList();
+        assertNull(cascade.getOverflowList());
     }
 
     @Test

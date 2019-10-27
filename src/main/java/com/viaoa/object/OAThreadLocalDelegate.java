@@ -26,6 +26,7 @@ import com.viaoa.undo.OAUndoManager;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAJaxb;
 import com.viaoa.util.OAString;
 import com.viaoa.util.Tuple3;
 
@@ -61,6 +62,7 @@ public class OAThreadLocalDelegate {
 
     public static final HashMap<Object, OAThreadLocal[]> hmLock = new HashMap<Object, OAThreadLocal[]>(53, .75f);
     
+    private static final AtomicInteger TotalJaxb = new AtomicInteger();
     
 	protected static OAThreadLocal getThreadLocal(boolean bCreateIfNull) {
 		OAThreadLocal ti = threadLocal.get();
@@ -1272,7 +1274,6 @@ static volatile int unlockCnt;
         return ti.alwaysAllowEditProcessed;
     }
     
-
     /**
      *  If true, then used by OAContext.isEnabled(), and by OAEditQuery
      */
@@ -1304,5 +1305,24 @@ static volatile int unlockCnt;
         tlx.context = tl.context;
     }
     
+    public static OAJaxb getOAJaxb() {
+        if (TotalJaxb.get() == 0) return null;
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
+        if (ti == null) return null;
+        return ti.oajaxb;
+    }
+    public static OAJaxb setOAJaxb(OAJaxb jaxb) {
+        if (jaxb == null && TotalJaxb.get() == 0) return null;
+        
+        if (jaxb != null) TotalJaxb.incrementAndGet();
+        else TotalJaxb.decrementAndGet();
+        
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        OAJaxb hold = ti.oajaxb;
+        ti.oajaxb = jaxb;
+        return hold;
+    }
+
+
 }
 

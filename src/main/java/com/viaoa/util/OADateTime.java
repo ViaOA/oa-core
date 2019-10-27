@@ -27,7 +27,7 @@ import java.sql.Time;
     yyyyMMdd_HHmmss.SSS
              hhmmssa
 
-    JSON
+    JSON / XML
         yyyy-MM-dd'T'HH:mm:ssX
             Notice the X on the end. It will handle timezones in ISO 8601 standard
             see: http://stackoverflow.com/questions/19112357/java-simpledateformatyyyy-mm-ddthhmmssz-gives-timezone-as-ist
@@ -113,15 +113,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
     private static final long serialVersionUID = 1L;
 
     
+    
     public final static String FORMAT_long = "yyyy/MM/dd hh:mm:ss.S a";
     
     
     protected long _time;
     protected TimeZone timeZone;
+    protected boolean ignoreTimeZone;
 
     protected String format;
 
-    private static final TimeZone defaultTimeZone;
+    private static TimeZone defaultTimeZone;
 
     private static SimpleDateFormat[] simpleDateFormats;
     private static int simpleDateFormatCounter;
@@ -141,6 +143,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
         defaultTimeZone = TimeZone.getDefault();
     }
 
+    public static void setDefaultTimeZone(TimeZone tz) {
+        if (tz == null) tz = TimeZone.getDefault();
+        defaultTimeZone = tz;
+    }
+    public static TimeZone getDefaulttimeZone() {
+        return defaultTimeZone;
+    }
+    
     // use a pool of GregorianCalendar since they are so heavy
     private static final OAPool<GregorianCalendar> poolGregorianCalendar = new OAPool<GregorianCalendar>(GregorianCalendar.class, 20, 50) {
         @Override
@@ -1842,9 +1852,25 @@ public class OADateTime implements java.io.Serializable, Comparable {
         }
         return -1;  // error
     }
+ 
+    public void setIgnoreTimeZone(boolean b) {
+        this.ignoreTimeZone = b;
+    }
+    public boolean getIgnoreTimeZone() {
+        return this.ignoreTimeZone;
+    }
+    
+    
     
     public static void main(String[] args) {
         
+        SimpleDateFormat sdf = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
+        // or SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy KK:mm:ss a Z" );
+        sdf.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
+        String s = sdf.format(new Date());
+        System.out.println(s);        
+
+         
         String sx = (new OADateTime()).toString("yyyy-MM-dd'T'HH:mm:ss.S");   // 2019-08-26T15:47:40.902
         
         OADate d = new OADate("02/22/2019");

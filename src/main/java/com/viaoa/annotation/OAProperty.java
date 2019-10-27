@@ -84,4 +84,10 @@ public @interface OAProperty {
     boolean isUnicode() default false;
     
     boolean trackPrimitiveNull() default true;
+    
+    /**
+     * If true, then datetimes dont need timezone
+     * @return
+     */
+    boolean ignoreTimeZone() default false;
 }

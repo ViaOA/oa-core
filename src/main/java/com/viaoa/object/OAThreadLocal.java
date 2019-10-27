@@ -16,6 +16,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.remote.multiplexer.info.RequestInfo;
 import com.viaoa.transaction.OATransaction;
+import com.viaoa.util.OAJaxb;
 import com.viaoa.util.Tuple3;
 
 /**
@@ -131,5 +132,7 @@ public class OAThreadLocal {
      *  If true, then used by OAContext.isEnabled(), and by OAEditQuery
      */
     public boolean alwaysAllowEnabled;
+    
+    public OAJaxb oajaxb;
 }
 

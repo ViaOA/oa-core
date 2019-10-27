@@ -67,14 +67,14 @@ public class OACascade {
     public void setDepth(int d) {
         this.depth = d;
     }
-    public void add(Object obj) {
+    public void addToOverflow(Object obj) {
         if (alOverflow == null) alOverflow = new ArrayList<Object>();
         alOverflow.add(obj);
     }
-    public ArrayList<Object> getList() {
+    public ArrayList<Object> getOverflowList() {
         return alOverflow;
     }
-    public void clearList() {
+    public void clearOverflowList() {
         alOverflow = null;
     }
     

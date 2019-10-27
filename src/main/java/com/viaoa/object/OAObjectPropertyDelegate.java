@@ -628,7 +628,9 @@ public class OAObjectPropertyDelegate {
             }
             if (bReferenceable) {
                 if (cascade == null) cascade = new OACascade();
-                cascade.add(obj);
+                // 20191019
+                cascade.wasCascaded(obj, true);
+                // was: cascade.add(obj);
                 setReferenceable((OAObject)parent, bReferenceable, cascade);
             }
         }
