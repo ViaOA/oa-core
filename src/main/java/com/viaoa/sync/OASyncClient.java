@@ -48,7 +48,7 @@ import static com.viaoa.sync.OASyncServer.*;
 public class OASyncClient {
     protected static Logger LOG = Logger.getLogger(OASyncClient.class.getName());
 
-    /** this is used to create a connection (socket) to GSMR server. */
+    /** this is used to create a connection (socket) to server. */
     private MultiplexerClient multiplexerClient;
 
     /** Allow for making remote method calls to an object instance on the server. */

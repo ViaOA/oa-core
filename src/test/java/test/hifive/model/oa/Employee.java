@@ -41,7 +41,7 @@ import test.hifive.model.oa.propertypath.*;
         @OAIndex(name = "EmployeePointsNextApproval", columns = { @OAIndexColumn(name = "PointsNextApprovalId") })
     }
 )
-@OAEditQuery(enabledProperty = "xxxx", enabledValue = false)
+@OAEditQuery(enabledProperty = "InactiveDate", enabledValue = false)
 public class Employee extends OAObject {
     
     private static final long serialVersionUID = 1L;

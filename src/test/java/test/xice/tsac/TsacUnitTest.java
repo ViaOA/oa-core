@@ -10,8 +10,8 @@ public class TsacUnitTest extends OAUnitTest {
     protected Model model;
     protected DataGenerator dataGenerator;
     
-    public void reset(boolean bDataGen) {
-        super.reset();
+    public void reset(boolean bCreateNewDS, boolean bDataGen) {
+        super.reset(bCreateNewDS);
 
         model = new Model();
         ServerRoot sr = new ServerRoot();

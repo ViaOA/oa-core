@@ -685,7 +685,7 @@ public abstract class HubChangeListener {
             }
 
             Object value = (bValid) ? hub.getAO() : null;
-//qqqqqqq 20190203 if !bAoOnly, then check all objects qqqqqqqqqqqqq
+            // 20190203 if !bAoOnly, then check all objects
             if (compareValue == Type.EditQueryEnabled) {
                 if (!bValid) return false;
                 if (value != null && !(value instanceof OAObject)) return true;
@@ -708,7 +708,6 @@ public abstract class HubChangeListener {
                 }
                 return b;
 
-//qqqqqqqqq                
                 /*was:
                 OAObjectEditQuery eq  = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(hub, (OAObject) value, propertyPath, true);
                 boolean b = eq.getAllowed();
@@ -785,7 +784,7 @@ public abstract class HubChangeListener {
             if (bUseCompareValue && compareValue != null && compareValue != Type.AlwaysTrue) {
                 tt = OAString.append(tt, "compareValue="+compareValue, "<br>");
             }
-//todo:  see if you can figure out if editQueries exists or not qqqq            
+//todo:  see if you can figure out if editQueries exists or not            
             return tt;
         }
         

@@ -1,5 +1,6 @@
 package com.viaoa.object;
 
+import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -14,6 +15,12 @@ import test.hifive.model.oa.propertypath.CompanyPP;
 
 public class OASiblingHelperTest extends OAUnitTest {
 
+    
+    @Before
+    public void initialize() {
+        reset();
+    }
+    
     @Test
     public void test() {
         Hub<Company> hubCompany = new Hub<>(Company.class);

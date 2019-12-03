@@ -226,12 +226,12 @@ public class HubDelegate {
         // 20181119 reworked to check other hubs for hubWithLink 
 	    Hub h = HubLinkDelegate.getHubWithLink(hub, true);
         if (h != null) {
-            h = h.datau.getLinkToHub();
-            if (h != null) {
-                if (!HubDelegate.isValid(h)) {
+            Hub hx = h.datau.getLinkToHub();
+            if (hx != null) {
+                if (!HubDelegate.isValid(hx)) {
                     return false;
                 }
-                if (h.dataa.activeObject == null) {
+                if (hx.dataa.activeObject == null) {
                     if (!h.datau.isAutoCreate()) return false;
                 }
             }

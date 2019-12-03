@@ -118,7 +118,7 @@ public class OAObject implements java.io.Serializable, Comparable {
     static {
         // oaversion
         // String ver = "3.5.57_20190414";
-        String ver = "3.5.60_20191009";
+        String ver = "3.5.62_20191128";
         try {
             InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
             Properties props = new Properties();
@@ -392,7 +392,7 @@ public class OAObject implements java.io.Serializable, Comparable {
         OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyCommandEditQuery(this, methodName);
         return eq.getAllowed();
     }
-    public OAObjectEditQuery gtetVerifyCommand(String methodName) {
+    public OAObjectEditQuery getVerifyCommand(String methodName) {
         OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyCommandEditQuery(this, methodName);
         return eq;
     }

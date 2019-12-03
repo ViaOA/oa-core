@@ -1,17 +1,28 @@
 package com.viaoa.object;
 
 import static org.junit.Assert.*;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.object.OAObjectEditQuery.Type;
 import com.viaoa.util.OADate;
 
-import test.hifive.model.oa.Address;
-import test.hifive.model.oa.Employee;
-import test.hifive.model.oa.EmployeeAward;
+import test.hifive.model.oa.*;
 
 public class OAObjectEditQueryTest extends OAUnitTest {
 
+    @BeforeClass
+    public static void beforeAll() {
+        User user = new User();
+        OAThreadLocalDelegate.setContext(user);        
+    }
+    @AfterClass
+    public static void afterAll() {
+        OAThreadLocalDelegate.setContext(null);        
+    }
+    
     /**
      * Employee
      *    class is enabled if inactieDate=null

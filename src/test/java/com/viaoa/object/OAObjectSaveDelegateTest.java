@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import com.viaoa.OAUnitTest;
+import com.viaoa.ds.OADataSource;
 import com.viaoa.ds.OADataSourceIterator;
 import com.viaoa.ds.OASelect;
 import com.viaoa.ds.jdbc.OADataSourceJDBC;
@@ -25,9 +26,8 @@ public class OAObjectSaveDelegateTest extends OAUnitTest {
 
     @Test
     public void testSave() {
-        
-        init();
-        
+        reset(false);
+
         final AtomicInteger ai1 = new AtomicInteger();
         final AtomicInteger ai2 = new AtomicInteger();
         final AtomicInteger ai3 = new AtomicInteger();

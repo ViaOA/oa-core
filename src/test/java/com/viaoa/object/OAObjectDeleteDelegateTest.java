@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import com.viaoa.OAUnitTest;
+import com.viaoa.ds.OADataSource;
 import com.viaoa.ds.OADataSourceIterator;
 import com.viaoa.ds.OASelect;
 import com.viaoa.ds.jdbc.OADataSourceJDBC;
@@ -25,7 +26,7 @@ public class OAObjectDeleteDelegateTest extends OAUnitTest {
         /*
          * hi5.ImageStore has many private links. 
          */
-        init();
+        reset(false);
         
         final AtomicInteger ai = new AtomicInteger();
         final AtomicInteger aiSelect = new AtomicInteger();
@@ -52,7 +53,7 @@ public class OAObjectDeleteDelegateTest extends OAUnitTest {
         };
 
         ImageStore is = new ImageStore();
-        assertEquals(is.getId(), 0); // not auto assigned
+        // assertEquals(is.getId(), 0); // not auto assigned
         
         // 1toM private program has images, image has private program
         Program program = new Program();

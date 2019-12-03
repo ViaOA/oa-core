@@ -63,6 +63,7 @@ public abstract class OAChangeRefresher {
     /**
      * ceate a new change refresher, with the option to have refress called once started.
      * @param bInitialize if true, then the refresh process is called when start() is called.
+     * @see start to start the refresh thread
      */
     public OAChangeRefresher(boolean bInitialize) {
         if (bInitialize) lastChange = -1;
@@ -87,7 +88,7 @@ public abstract class OAChangeRefresher {
 
     public void addListener(Hub hub, String... propertyPaths) {
         if (hub == null) return;
-        if (propertyPaths == null) {
+        if (propertyPaths == null || propertyPaths.length == 0) {
             addListener(hub, (String) null);
         }
         else {

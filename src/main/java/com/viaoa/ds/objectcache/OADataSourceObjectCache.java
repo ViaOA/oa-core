@@ -16,6 +16,7 @@ import com.viaoa.object.*;
 import com.viaoa.remote.multiplexer.OARemoteThread;
 import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
+import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
 import com.viaoa.util.filter.OAEqualFilter;
@@ -85,9 +86,20 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
                 if (li != null) li = li.getReverseLinkInfo();
                 if (li != null) {
+                    final OALinkInfo lix = li;
                     filter = new OAEqualFilter(li.getName(), whereObject) {
                         public boolean isUsed(Object obj) {
-                            boolean b = super.isUsed(obj);
+//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+//qqqqqqqqqqqqqqqqqqqqqqq
+                            boolean b;
+                            if (obj instanceof OAObject) {
+//qqqqqqqqq get from oaobj.properties qqqqqqqqqqqqqqqqqqqq not using invoke qqqqqqqqqqqqqq                                
+                                 Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, lix.getName());
+                                 b = OACompare.isEqual(objx, whereObject);
+                            }
+                            else {
+                                b = super.isUsed(obj);
+                            }
                             if (b && extraFilter != null) {
                                 b = extraFilter.isUsed(obj);
                             }

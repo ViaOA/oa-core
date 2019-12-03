@@ -58,7 +58,6 @@ public class OALogUtil {
 
      */
     
-    
     public static void consoleOnly(Level level, String name) {
         Logger log = Logger.getLogger("");
         log.setLevel(Level.OFF);        
@@ -74,6 +73,12 @@ public class OALogUtil {
 
         log = Logger.getLogger(name);
         log.setLevel(level);
+        hs = log.getHandlers();
+        for (int i=0; hs != null && i<hs.length; i++) {
+            hs[i].setLevel(Level.OFF);
+            log.removeHandler(hs[i]);
+        }
+        
         log.addHandler(ch);
     }
     

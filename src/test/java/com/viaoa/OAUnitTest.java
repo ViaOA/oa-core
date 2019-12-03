@@ -7,6 +7,7 @@ import com.viaoa.ds.OADataSource;
 import com.viaoa.ds.autonumber.NextNumber;
 import com.viaoa.ds.autonumber.OADataSourceAuto;
 import com.viaoa.ds.objectcache.OADataSourceObjectCache;
+import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
@@ -39,14 +40,17 @@ public class OAUnitTest {
         reset();
     }
     protected void reset()  {
+        reset(true);
+    }
+    protected void reset(boolean bCreateNewDS)  {
         try {
-            _reset();
+            _reset(bCreateNewDS);
         }
         catch (Exception e) {
             LOG.log(Level.WARNING, "exception calling reset", e);
         }
     }
-    protected void _reset() throws Exception {
+    protected void _reset(boolean bCreateNewDS) throws Exception {
         OALogUtil.consoleOnly(Level.FINE, "com.viaoa");
         OAObjectCacheDelegate.setUnitTestMode(true);
         OAObjectCacheDelegate.resetCache();
@@ -54,9 +58,15 @@ public class OAUnitTest {
         OAThreadLocalDelegate.clearSiblingHelpers();
         
         OADataSource.closeAll();
+        dsCache = dsAuto = null;
+        
         OAObjectDelegate.setNextGuid(0);
-        getCacheDataSource().setAssignIdOnCreate(true);
-        getAutoDataSource().setAssignIdOnCreate(true);
+        OADataSourceAuto.setGlobalNextNumber(null);
+        
+        if (bCreateNewDS) {
+            getCacheDataSource().setAssignIdOnCreate(true);
+            getAutoDataSource().setAssignIdOnCreate(true);
+        }
     }
     
     

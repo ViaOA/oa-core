@@ -19,7 +19,8 @@ public class OADataSourceTest extends OAUnitTest {
      */
     @Test
     public void registerTest() {
-        init();
+        reset(false);
+        
         OADataSource[] dss = OADataSource.getDataSources();
         assertTrue(dss==null || dss.length == 0);
 

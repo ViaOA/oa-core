@@ -75,7 +75,9 @@ public class OAObjectEventDelegate {
     	            if (em.getThrowable() != null) {
     	                msg = OAString.concat(msg, "Exception: "+em.getThrowable().getMessage(), ", ");
     	            }
-    	            else if (OAString.isEmpty(msg)) msg = "Invalid property value, property="+propertyName+", value="+newObj;
+    	            else if (OAString.isEmpty(msg)) {
+    	                msg = "Property change not allowed, property="+propertyName+", value="+newObj;
+    	            }
                     else if (!em.getAllowed()) {
                         if (msg == null) msg = "";
                         else msg = ".  Reason: " + msg;

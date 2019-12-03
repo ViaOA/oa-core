@@ -666,7 +666,7 @@ public class OAObjectReflectDelegate {
             // since it is in props with a null, then it was placed that way to mean it has 0 objects
             //   by OAObjectSerializeDelegate._writeObject
             if (linkInfo == null) {
-                hub = new Hub();
+                hub = new Hub(linkInfo.toClass);
                 OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, hub);
                 return hub;
             }

@@ -655,15 +655,14 @@ public class OAReflect {
     public static String[] getClasses(String packageName) throws ClassNotFoundException, IOException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         if (classLoader == null) throw new ClassNotFoundException("classloaded not found");
-        String path = packageName.replace('.', '/');
-        Enumeration<URL> resources = classLoader.getResources(path);
+        final String origPath = packageName.replace('.', '/');
+        Enumeration<URL> resources = classLoader.getResources(origPath);
         List<String> list = new ArrayList<String>(50);
         if (resources.hasMoreElements()) {
             URL url = resources.nextElement();
             String fileName = url.getFile();
             String protocol = url.getProtocol();
             File file = new File(fileName);
-            boolean b = file.exists();
             if (file.isDirectory()) {
                 String[] ss = file.list();
                 if (ss != null) {
@@ -685,12 +684,12 @@ public class OAReflect {
                 JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
                 JarFile jar = jarConnection.getJarFile();
                 
-                path += "/";
+                String path = origPath + "/";
                 
-                Enumeration  entries=jar.entries();
+                Enumeration  entries = jar.entries();
                 while(entries.hasMoreElements())
                 {
-                   String name =((JarEntry)entries.nextElement()).getName();
+                   String name = ((JarEntry)entries.nextElement()).getName();
                    if (!name.startsWith(path)) continue;
                    if (name.indexOf('/', path.length()) >= 0) continue;
                    name = name.substring(path.length());

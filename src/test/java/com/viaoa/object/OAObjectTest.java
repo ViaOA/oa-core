@@ -20,7 +20,8 @@ public class OAObjectTest extends OAUnitTest {
     
     @Test
     public void constructorTest() {
-        reset();
+        reset(false);
+        
         assertFalse(OAThreadLocalDelegate.isLoading());
         Server server = new Server();
         
@@ -78,14 +79,15 @@ public class OAObjectTest extends OAUnitTest {
     
     @Test
     public void idAndGuidTest() {
-        reset();
+        reset(false);
+        
         int gidNext = OAObjectDelegate.getNextGuid() + 1;
         
         Server server = new Server();
         
         // test: make sure that it is in the cache
         Server serv = (Server) OAObjectCacheDelegate.get(Server.class, 0);  // should not work, Id is null
-        assertEquals(serv, null);
+        assertEquals(null, serv);
 
         OAObjectKey key = new OAObjectKey(null, gidNext, true);
         serv = (Server) OAObjectCacheDelegate.get(Server.class, key);

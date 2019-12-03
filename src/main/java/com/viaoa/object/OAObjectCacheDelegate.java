@@ -952,6 +952,10 @@ public class OAObjectCacheDelegate {
             // throw new IllegalArgumentException("HubController.find() property cant be null");
         }
         if (clazz == null) throw new IllegalArgumentException("HubController.find() class cant be null");
+        
+        if (findValue instanceof Hub) {
+            throw new IllegalArgumentException("findValue can not be a Hub, class="+clazz.getSimpleName()+", propertyPath="+propertyPath);
+        }
 
         // 20140201 replace methods with finder
         OAFinder finder;

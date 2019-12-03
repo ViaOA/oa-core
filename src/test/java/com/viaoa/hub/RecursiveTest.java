@@ -257,7 +257,7 @@ public class RecursiveTest extends OAUnitTest {
      */
     @Test
     public void recursiveHubDetail2Test() {
-        reset();
+        reset(false);
 
         HifiveDataGenerator data = new HifiveDataGenerator();
         data.createSampleData();

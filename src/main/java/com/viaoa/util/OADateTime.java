@@ -39,6 +39,13 @@ import java.sql.Time;
 
     javascript Date.toString()    EEE MMM dd yyyy '00:00:00' 'GMT'Z '('z')'
 
+    XSD dateTime
+        [-]CCYY-MM-DDThh:mm:ss[Z|(+|-)hh:mm]
+        The time zone may be specified as Z (UTC) or (+|-)hh:mm. Time zones that aren't specified are considered undetermined.
+       => yyyy-MM-dd'T'HH:mm:ss      -> 2001-10-26T21:32:52
+       => yyyy-MM-dd'T'HH:mm:ssXXX   -> 2001-10-26T21:32:52+02:00
+       => yyyy-MM-dd'T'HH:mm:ss'Z'  ->  2001-10-26T19:32:52Z   (UTZ)
+
     <p>
     Formatting Symbols used for output display.
 
@@ -1177,10 +1184,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
         return -1;
     }
 
-
-
-//qqqqqqqqqqqqqqqqqqqq test this qqqqqqqqqqqqqqqqq
-
+    private static TimeZone tzUTC;
+    public OADateTime convertToUTC() {
+        if (tzUTC == null) tzUTC = TimeZone.getTimeZone("UTC");
+        return convertTo(tzUTC);
+    }
+    
+    
     /**
      * Convert the current dt to a different tz, and adjusting it's values
      * @param tz
@@ -1863,6 +1873,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
     
     
     public static void main(String[] args) {
+        
+        OADateTime dt = new OADateTime().addDays(3);
+        String msg1 = dt.toString("yyyy-MM-dd'T'HH:mm:ssZ");  // 2019-11-08T20:31:21-0500
+        String msg2= dt.toString("yyyy-MM-dd'T'HH:mm:ssXXX");  // 2019-11-08T20:31:21-05:00
+
+
         
         SimpleDateFormat sdf = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
         // or SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy KK:mm:ss a Z" );

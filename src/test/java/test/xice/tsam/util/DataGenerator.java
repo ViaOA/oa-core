@@ -62,6 +62,10 @@ public class DataGenerator {
                         name = OAString.convert(name, "com.xice.tsam.", "test.xice.tsam.");
                         f.set(cd, name);
                     }
+                    else if (name.indexOf("com.theice.tsam.") == 0) {
+                        name = OAString.convert(name, "com.theice.tsam.", "test.xice.tsam.");
+                        f.set(cd, name);
+                    }
                 } 
                 catch (Exception e) {
                     throw new RuntimeException(e);

@@ -491,10 +491,12 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
         }
         stream.writeInt(totalObjectsWritten);
 
+        /*
         if (totalObjectsWritten > 120000 || totalObjectsWritten < 0) {
             msg = " ALERT, totalObjectsWritten is wrong";
             LOG.warning(msg);
         }
+        */
         
         wcnter++;
         LOG.fine(wcnter+") "+msg);
@@ -613,8 +615,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
                     totalObjectsWritten, (ts2-ts));
     	}
 //qqqqqqqqqqqqqqqqqqqqqqqqq    	
-        if (totalObjectsWritten > 120000 || totalObjectsWritten < 0) {
-            msg += " ALERT, totalObjectsWritten is wrong";
+        if (totalObjectsWritten > 100000 || totalObjectsWritten < 0) {
+            msg += " totalObjectsWritten="+totalObjectsWritten;
             // LOG.warning(rcnter+") "+msg);
         }
     	

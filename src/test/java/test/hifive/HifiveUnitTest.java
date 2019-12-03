@@ -7,8 +7,8 @@ public class HifiveUnitTest extends OAUnitTest {
 
     protected HifiveDataGenerator dataGenerator;
     
-    public void reset(boolean bDataGen) {
-        super.reset();
+    public void reset(boolean bCreateNewDS, boolean bDataGen) {
+        super.reset(bCreateNewDS);
 
         if (bDataGen) {
             getDataGenerator().createSampleData();

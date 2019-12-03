@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.ds.OADataSource;
 import com.viaoa.ds.autonumber.OADataSourceAuto;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -151,7 +152,7 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
         };
         
         OAObjectCacheDelegate.callback(cb);
-        assertEquals(cnt1, 1);
+        assertEquals(2, cnt1);
     }
     
     @Test
@@ -214,14 +215,14 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 
         final Server server = new Server();
         
-        dsAuto = new OADataSourceAuto() {
+        dsAuto = new OADataSourceAuto(false) {
             @Override
             public Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key, boolean bDirty) {
                 server.setHostName("worked");
                 return server;
             }
         };
-        
+
         OAObjectCacheDelegate.refresh(Server.class);
         assertEquals("worked", server.getHostName());
         

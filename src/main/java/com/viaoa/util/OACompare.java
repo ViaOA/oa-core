@@ -15,6 +15,7 @@ import java.util.Collection;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectReflectDelegate;
 
 // 20140124
@@ -206,11 +207,58 @@ public class OACompare {
      *  
      * 
      * value, matchValue can be any type of object, including Hub or Array.
-     * value, matchValue do not have to be same class. 
+     * value, matchValue do not have to be same class.
+     * 
+     *  value or matchValue can be one of the following:
+     *  OAAnyValueObject
+     *  OANotExist
+     *  OANotNullObject
+     *  OANullObject
+     *  
      */
     public static int compare(Object value, Object matchValue, final int decimalPlaces) {
         if (value == matchValue) return 0;
 
+        if (value instanceof OAAnyValueObject || matchValue instanceof OAAnyValueObject) return 0;
+        if (value instanceof OANotExist) {
+            if (matchValue == null) return 0;
+            return -1;
+        }
+        if (matchValue instanceof OANotExist) {
+            if (value == null) return 0;
+            return 1;
+        }
+        if (value instanceof OANullObject) {
+            if (matchValue == null) return 0;
+            return -1;
+        }
+        if (matchValue instanceof OANullObject) {
+            if (value == null) return 0;
+            return 1;
+        }
+        if (value instanceof OANotNullObject) {
+            if (matchValue != null) return 0;
+            return 1;
+        }
+        if (matchValue instanceof OANotNullObject) {
+            if (value != null) return 0;
+            return -1;
+        }
+
+        // 20191126
+        if (value instanceof OAObjectKey) {
+            int x = ((OAObjectKey) value).compareTo(matchValue);
+            return x;
+        }
+        if (matchValue instanceof OAObjectKey) {
+            int x = ((OAObjectKey) matchValue).compareTo(value);
+            return x;
+        }
+        if (value instanceof OAObject && value instanceof OAObject) {
+           int x = ((OAObject) value).compareTo((OAObject) matchValue);
+           return x;
+        }
+        
         Class classValue = (value == null) ? null : value.getClass();
         Class classMatchValue = (matchValue == null) ? null : matchValue.getClass();
         
