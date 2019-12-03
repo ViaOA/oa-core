@@ -165,6 +165,7 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
             pi.setHtml(oaprop.isHtml());
             pi.setTimestamp(oaprop.isTimestamp());
             pi.setTrackPrimitiveNull(oaprop.trackPrimitiveNull());
+            pi.setSubmit(oaprop.isSubmit());
 
             pi.setClassType(m.getReturnType());
 

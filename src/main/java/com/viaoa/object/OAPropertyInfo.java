@@ -47,6 +47,7 @@ public class OAPropertyInfo implements java.io.Serializable {
     private boolean enabledValue;
     private String visibleProperty;
     private boolean visibleValue;
+    private boolean isSubmit;
 
     private String contextEnabledProperty;
     private boolean contextEnabledValue;
@@ -281,6 +282,19 @@ public class OAPropertyInfo implements java.io.Serializable {
     }
     public void setTrackPrimitiveNull(boolean b) {
         trackPrimitiveNull = b;
+    }
+    
+    public void setIsSubmit(boolean b) {
+        this.isSubmit = b;
+    }
+    public void setSubmit(boolean b) {
+        this.isSubmit = b;
+    }
+    public boolean getIsSubmit() {
+        return this.isSubmit;
+    }
+    public boolean isSubmit() {
+        return this.isSubmit;
     }
 }
 

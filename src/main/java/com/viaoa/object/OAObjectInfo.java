@@ -1061,4 +1061,17 @@ public class OAObjectInfo { //implements java.io.Serializable {
         return piTimestamp;
     }
     
+    private OAPropertyInfo piSubmit;
+    private boolean bCheckSubmit;
+    public OAPropertyInfo getSubmitProperty() {
+        if (bCheckSubmit) return piSubmit;
+        for (OAPropertyInfo pi : getPropertyInfos()) {
+            if (pi.isSubmit()) {
+                piSubmit = pi;
+                break;
+            }
+        }
+        bCheckSubmit = true;
+        return piSubmit;
+    }
 }

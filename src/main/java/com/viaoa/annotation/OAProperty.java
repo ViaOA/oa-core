@@ -90,4 +90,9 @@ public @interface OAProperty {
      * @return
      */
     boolean ignoreTimeZone() default false;
+    
+    /**
+     * Flag used to determine if the object is completed and ready for submitted.
+     */
+    boolean isSubmit() default false;
 }

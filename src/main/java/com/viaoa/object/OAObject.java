@@ -118,7 +118,7 @@ public class OAObject implements java.io.Serializable, Comparable {
     static {
         // oaversion
         // String ver = "3.5.57_20190414";
-        String ver = "3.5.62_20191128";
+        String ver = "3.5.62_20191203";
         try {
             InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
             Properties props = new Properties();
@@ -1306,5 +1306,36 @@ public class OAObject implements java.io.Serializable, Comparable {
         }
         if (hub == null) hub = getHub(linkPropertyName, sortOrder, bSequence, hubMatch);
         return hub;
+    }
+    public boolean isSubmitted() {
+        return _isSubmitted(0);
+    }
+    
+    public boolean _isSubmitted(int cnt) {
+        if (cnt > 10) {
+            String s = "recursive > 10, will return true and continue";
+            LOG.log(Level.WARNING, "recursive, obj="+this, new Exception(s));
+            return true;
+        }
+        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+        OAPropertyInfo pi = oi.getSubmitProperty();
+        if (pi == null) {
+            // check owner (recursive)
+            OALinkInfo[] lis = oi.getOwnedLinkInfos();
+            if (lis != null) {
+                for (OALinkInfo li : lis) {
+                    Object objx = li.getValue(this);
+                    if (objx instanceof OAObject) {
+                        boolean b = ((OAObject) objx)._isSubmitted(cnt+1);
+                        if (!b) return false;
+                    }
+                }
+            }
+            return true;
+        }
+        Object objx = this.getProperty(pi.getName());
+        if (objx == null) return false;
+        boolean b = OAConv.toBoolean(objx);
+        return b;
     }
 }
