@@ -154,9 +154,6 @@ public abstract class HubChangeListener {
     }
     
     public HubProp addAddEnabled(final Hub hub) {
-        return addNewEnabled(hub);
-    }
-    public HubProp addNewEnabled(final Hub hub) {
         if (hub == null) return null;
         
         OAFilter filter = new OAFilter() {
@@ -171,6 +168,32 @@ public abstract class HubChangeListener {
             }
         };
         HubProp hp = add(hub, null, false, null, filter, false, "EditQuery.AllowAdd");
+
+        OAObjectEditQueryDelegate.addEditQueryChangeListeners(hub, hub.getObjectClass(), null, null, this, true);
+
+        Hub hx = hub.getMasterHub();
+        if (hx != null) {
+            add(hx, Type.AoNotNull);
+            String propx = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+            OAObjectEditQueryDelegate.addEditQueryChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
+        }
+        return hp;
+    }
+    public HubProp addNewEnabled(final Hub hub) {
+        if (hub == null) return null;
+        
+        OAFilter filter = new OAFilter() {
+            @Override
+            public boolean isUsed(Object obj) {
+                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowNewEditQuery(hub, true);
+                boolean b = eq.getAllowed();
+                if (!b) {
+                    failureReason = eq.getDisplayResponse();
+                }
+                return b;
+            }
+        };
+        HubProp hp = add(hub, null, false, null, filter, false, "EditQuery.AllowNew");
 
         OAObjectEditQueryDelegate.addEditQueryChangeListeners(hub, hub.getObjectClass(), null, null, this, true);
 

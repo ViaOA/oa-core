@@ -58,10 +58,11 @@ public class OAObjectEditQuery {
         
         AllowVisible(true),    // use: allowVisible
         
-        AllowAdd(true, true),        // use: allowAdd
-        AllowRemove(true, true),     // use: allowRemove
-        AllowRemoveAll(true, true),  // use: allowRemoveAll
-        AllowDelete(true, true),     // use: allowDelete
+        AllowNew(true, true),       
+        AllowAdd(true, true),       
+        AllowRemove(true, true),    
+        AllowRemoveAll(true, true), 
+        AllowDelete(true, true),    
         AllowSave(false, false),     // dont check parent(s) or if enabled.  Need to be able to save a disabled object
         AllowCopy(false),
         

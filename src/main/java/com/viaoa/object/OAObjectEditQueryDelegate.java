@@ -263,7 +263,7 @@ public class OAObjectEditQueryDelegate {
         return editQuery;
     }
     
-    protected static void updateEditProcessed(OAObjectEditQuery editQuery) {
+    public static void updateEditProcessed(OAObjectEditQuery editQuery) {
         if (editQuery == null) return;
         if (!OAContext.getAllowEditProcessed()) {
             String sx = OAContext.getAllowEditProcessedPropertyPath();
@@ -313,6 +313,33 @@ public class OAObjectEditQueryDelegate {
         }
         return editQuery;
     }
+
+    // 20191206
+    public static OAObjectEditQuery getAllowNewEditQuery(final Hub hub, final boolean bProcessedCheck) {
+        if (hub == null) return null;
+        final OAObjectEditQuery editQuery = new OAObjectEditQuery(Type.AllowNew);
+        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+        OAObject objMaster = hub.getMasterObject();
+
+        if (bProcessedCheck) {
+            if (hub.getOAObjectInfo().getProcessed()) {
+                updateEditProcessed(editQuery);
+            }
+        }
+
+        if (li == null || (li.getPrivateMethod() && objMaster == null)) {
+            processEditQueryForHubListeners(editQuery, hub, null, null, null, null);
+        }
+        else {
+            if (!li.getCalculated()) {
+                String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+                editQuery.setName(propertyName);
+                processEditQuery(editQuery, hub, null, objMaster, propertyName, null, null, bProcessedCheck);
+            }
+        }
+        return editQuery;
+    }
+    
     
     public static OAObjectEditQuery getAllowRemoveEditQuery(final Hub hub, final boolean bProcessedCheck) {
         if (hub == null) return null;
@@ -1049,6 +1076,10 @@ public class OAObjectEditQueryDelegate {
                     b = hl[i].isValidPropertyChange(hubEvent, b);
                     break;
 
+                case AllowNew:
+                    if (hubEvent == null) hubEvent = new HubEvent(hub);
+                    b = hl[i].getAllowAdd(hubEvent, b);
+                    break;
                 case AllowAdd:
                     if (hubEvent == null) hubEvent = new HubEvent(hub);
                     b = hl[i].getAllowAdd(hubEvent, b);
