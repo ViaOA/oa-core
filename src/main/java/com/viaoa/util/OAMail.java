@@ -167,8 +167,8 @@ public class OAMail implements java.io.Serializable {
         props.put("mail.smtp.auth", "true"); // required
         //props.put("mail.smtp.host", host);
         // if (port > 0) props.put("mail.smtp.port", port+""); // default 25
-        // props.put("mail.smtp.user", "viaoa.com@noip-smtp");
-        // props.put("mail.smtp.password", "vincePw"); 
+        // props.put("mail.smtp.user", "test.com@test-smtp");
+        // props.put("mail.smtp.password", "testPw"); 
         // props.setProperty ("mail.transport.protocol", "smtp");             
         // props.setProperty("mail.smtp.starttls.enable", "true"); 
         // see: http://javamail.kenai.com/nonav/javadocs/com/sun/mail/smtp/package-summary.html
@@ -176,7 +176,7 @@ public class OAMail implements java.io.Serializable {
         /*
         Authenticator auth = new Authenticator() {
             public PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication("viaoa.com@noip-smtp", "vincePw");
+                return new PasswordAuthentication("test.com@test-smtp", "testPw");
             }
         };
         */       
@@ -270,40 +270,35 @@ public class OAMail implements java.io.Serializable {
         String msg = "";
         String contentType = "text/html; charset=UTF-8";
         
-        OAMail m = new OAMail("smtp-auth.no-ip.com", 3325, "viaoa.com@noip-smtp", "vincePW");
+        OAMail m = new OAMail("smtp-auth.test.com", 3325, "test.com@test-smtp", "testPW");
         m.setDebug(true);
-        // m.sendSmtp(new String[]{"vincent.via@test.com"}, null, "vince@viaoa.com", "subject", "text", null, new String[] {"c:\\temp\\cem.jpg"});
+        // m.sendSmtp(new String[]{"test@test.com"}, null, "test@test.com", "subject", "text", null, new String[] {"c:\\temp\\cem.jpg"});
         
         
-        m = new OAMail("mail.gohifive.com", 2525, "notifications@gohifive.com","pnruf013" );
-        // "mail.gohifive.com", "notifications","pnruf013"
+        m = new OAMail("mail.test.com", 2525, "notifications@test.com","testpw" );
+        // "mail.test.com", "notifications","test3"
         m.setDebug(true);
 
         
-        // hi5: "mail.gohifive.com", "notifications","pnruf013"
-        // Jmadden <jmadden@gohifive.com>
-        m.sendSmtp(new String[]{"vince.via@xice.com"}, 
-                new String[]{"jmaddx@gohif.com", "lkkireddy@laraekies.com"}, "jmaddx@gohif.com", 
-                "Email from Hi5 Server", 
-                "<html><body>This is <i>another</i> email from the <h3>gohifive</h3> server, with an attachment</body></html>", null, 
-                new String[] {"c:\\temp\\cem.jpg"});
+        m.sendSmtp(new String[]{"test.x@xice.com"}, 
+                new String[]{"jmaddx@test.com", "x123@test.com"}, "tes@testf.com", 
+                "Email from test", 
+                "<html><body>This is <i>another</i> email from the <h3>test</h3>, with an attachment</body></html>", null, 
+                new String[] {"c:\\temp\\test.jpg"});
     }
     public static void mainB(String[] args) throws Exception {
+        // mail.send("titan.test.net", "t@vtest.com", "auto@tests.com", "HTTP Post Response", s);
+        // OAMail m = new OAMail("mail.test.com", 2525, "notifications@test.com","tpw" );
 
-// 20180907 test vj        
-        // mail.send("titan.uslec.net", "vvia@viaoa.com", "autoresponse@vetjobs.com", "HTTP Post Response", s);
-        
-        // OAMail m = new OAMail("mail.gohifive.com", 2525, "notifications@gohifive.com","pnruf013" );
-
-        String pw = "PUT IN HERE";
-        OAMail m = new OAMail("secure.emailsrvr.com", 465, "smtp@vetjobs.com", pw);
+        String pw = "pw";
+        OAMail m = new OAMail("secure.emailsrvr.com", 465, "smtp@test.com", pw);
         m.setUseSSL(true);
         m.setDebug(true);
 
         m.sendSmtp(
-            new String[]{"vince@viaoa.com"}, 
+            new String[]{"test@testoa.com"}, 
             new String[]{}, 
-            "info@vetjobs.com",
+            "info@test.com",
             "Test Email from info vj",
             "<html><body>This is a test</body></html>", "text/html; charset=UTF-8", 
             new String[] {}
@@ -313,46 +308,45 @@ public class OAMail implements java.io.Serializable {
     
     public static void main(String[] args) throws Exception {
 
-        String fromEmail = "info@vetjobs.com";//qqqqqqqqqqqqqqqq
-        fromEmail = "vinceX@viaoa.com";        
+        String fromEmail = "info@test.com";
+        fromEmail = "test@test.com";        
         String subject = "test subject";
         String msg = "test message";
-        String toEmail = "vince@viaoa.com";
+        String toEmail = "test@test.com";
         
-        fromEmail = "vinceX@viaoa.com";        
+        fromEmail = "testX@test.com";        
         subject = "test subject";
         msg = "test message";
-        toEmail = "vince@viaoa.com";
+        toEmail = "test@testoa.com";
         
         try {
-                  Properties props = System.getProperties();
-                  props.put("mail.smtp.auth", "true"); // required
-            
-                  Session session = Session.getInstance(props);
-                  session.setDebug(true);
-
-                  MimeMessage message = new MimeMessage(session);
-                  message.setFrom(new InternetAddress(fromEmail));
-                  message.addRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
-                  
-                  message.setSubject(""+subject);
-                  
-                  MimeBodyPart mbp1 = new MimeBodyPart();
-                  mbp1.setContent( msg, "text/html; charset=UTF-8");
-                  
-                  Multipart mp = new MimeMultipart();
-                  mp.addBodyPart(mbp1);
-                  
-                  message.setContent(mp);
-                  message.setSentDate(new java.util.Date());
-                  message.saveChanges();
-                  
-                  Transport transport = session.getTransport("smtps");
-        
-                  transport.connect("secure.emailsrvr.com", 465, "smtp@vetjobs.com", "oyfT8en3pi9wRa");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>> CONNECT worked *********************");
-                  transport.sendMessage(message, message.getAllRecipients());
-                  transport.close();
+          Properties props = System.getProperties();
+          props.put("mail.smtp.auth", "true"); // required
+    
+          Session session = Session.getInstance(props);
+          session.setDebug(true);
+    
+          MimeMessage message = new MimeMessage(session);
+          message.setFrom(new InternetAddress(fromEmail));
+          message.addRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
+          
+          message.setSubject(""+subject);
+          
+          MimeBodyPart mbp1 = new MimeBodyPart();
+          mbp1.setContent( msg, "text/html; charset=UTF-8");
+          
+          Multipart mp = new MimeMultipart();
+          mp.addBodyPart(mbp1);
+          
+          message.setContent(mp);
+          message.setSentDate(new java.util.Date());
+          message.saveChanges();
+          
+          Transport transport = session.getTransport("smtps");
+    
+          transport.connect("secure.emailsrvr.com", 465, "smtp@test.com", "test");
+          transport.sendMessage(message, message.getAllRecipients());
+          transport.close();
 
         }
         catch (Exception e) {
