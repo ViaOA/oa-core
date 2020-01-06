@@ -166,6 +166,8 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
             pi.setTimestamp(oaprop.isTimestamp());
             pi.setTrackPrimitiveNull(oaprop.trackPrimitiveNull());
             pi.setSubmit(oaprop.isSubmit());
+            pi.setIgnoreTimeZone(oaprop.ignoreTimeZone());
+            pi.setTimeZonePropertyPath(oaprop.timeZonePropertyPath());
 
             pi.setClassType(m.getReturnType());
 
@@ -320,7 +322,7 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
             }
         }
         // Manys
-        for (Method m : methods) {
+        for (final Method m : methods) {
             Class c = m.getReturnType();
             if (!Hub.class.isAssignableFrom(c)) continue; // 20111027 added
             if ((m.getModifiers() & Modifier.STATIC) > 0) continue;
@@ -673,6 +675,7 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
                                         mi.setVisibleProperty(s);
                                         mi.setVisibleValue(eq.visibleValue());
                                     }
+                                    s = eq.contextEnabledProperty();
                                     if (OAString.isNotEmpty(s)) {
                                         mi.setContextEnabledProperty(s);
                                         mi.setContextEnabledValue(eq.contextEnabledValue());

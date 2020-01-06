@@ -144,6 +144,19 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
         else excludeAllProperties();
     }
     
+    // 20200102 include blobs
+    private boolean bIncludeBlobs;
+    /**
+     * OAObject blob properties default to transient.
+     * Setting this to true will have them included.
+     */
+    public boolean getIncludeBlobs() {
+        return bIncludeBlobs;
+    }
+    public void setIncludeBlobs(boolean b) {
+        bIncludeBlobs = b;
+    }
+    
     /**
      * Classes that should not be serialized.
      */

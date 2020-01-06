@@ -159,7 +159,7 @@ public abstract class HubChangeListener {
         OAFilter filter = new OAFilter() {
             @Override
             public boolean isUsed(Object obj) {
-                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowAddEditQuery(hub, true);
+                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowAddEditQuery(hub, null, OAObjectEditQuery.CHECK_ALL);
                 boolean b = eq.getAllowed();
                 if (!b) {
                     failureReason = eq.getDisplayResponse();
@@ -185,7 +185,7 @@ public abstract class HubChangeListener {
         OAFilter filter = new OAFilter() {
             @Override
             public boolean isUsed(Object obj) {
-                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowNewEditQuery(hub, true);
+                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowNewEditQuery(hub, OAObjectEditQuery.CHECK_ALL);
                 boolean b = eq.getAllowed();
                 if (!b) {
                     failureReason = eq.getDisplayResponse();
@@ -213,7 +213,7 @@ public abstract class HubChangeListener {
             @Override
             public boolean isUsed(Object obj) {
                 if (!(obj instanceof OAObject)) return false;
-                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowDeleteEditQuery(hub, (OAObject)obj, true);
+                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowDeleteEditQuery(hub, (OAObject)obj, OAObjectEditQuery.CHECK_ALL);
                 boolean b = eq.getAllowed();
                 if (!b) {
                     failureReason = eq.getDisplayResponse();
@@ -243,9 +243,13 @@ public abstract class HubChangeListener {
         OAFilter filter = new OAFilter() {
             @Override
             public boolean isUsed(Object obj) {
+                // 20191214
+                boolean b = hub.getAllowRemove(OAObjectEditQuery.CHECK_ALL, obj);
+                /*was
                 boolean b;
                 if (obj instanceof OAObject) b = hub.canRemove((OAObject) obj);
                 else b = hub.canRemove();
+                */
                 return b;
             }
         };
@@ -720,7 +724,7 @@ public abstract class HubChangeListener {
                         if (!(value instanceof OAObject)) break;
                     }
            
-                    OAObjectEditQuery eq  = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(hub, (OAObject) value, propertyPath, true);
+                    OAObjectEditQuery eq  = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, hub, (OAObject) value, propertyPath);
                     b = eq.getAllowed();
                     if (!b) {
                         failureReason = eq.getDisplayResponse();
@@ -745,12 +749,15 @@ public abstract class HubChangeListener {
                 if (!bValid) return true;
                 if (value != null && !(value instanceof OAObject)) {
                     if (hub == null) return true;
+                    return true; //qqqqqqqqqqq needs to be done
+/*qqqqqqq was:                    
                     Class cx = hub.getObjectClass();
                     if (!OAObject.class.isAssignableFrom(cx)) return true;
                     OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(cx, propertyPath);
                     boolean b = eq.getAllowed();
                     if (!b) failureReason = eq.getDisplayResponse();
                     return b;
+*/                    
                 }
                 OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(hub, (OAObject) value, propertyPath);
                 boolean b = eq.getAllowed();

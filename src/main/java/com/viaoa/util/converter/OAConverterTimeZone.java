@@ -12,19 +12,14 @@ package com.viaoa.util.converter;
 
 import java.util.*;
 
+import com.viaoa.util.OATimeZone;
+
 /**
+ * Conversions between TimeZone and String.  
+ * @see OATimeZone
 */
 public class OAConverterTimeZone implements OAConverterInterface {
 
-    private static HashMap<String, TimeZone> hmTz = new HashMap<String, TimeZone>();
-    static {
-        String[] ss = TimeZone.getAvailableIDs();
-        for (String s : ss) {
-            TimeZone tz = TimeZone.getTimeZone(s);
-            hmTz.put(s.toUpperCase(), tz);
-        }
-    }
-    
     public Object convert(Class clazz, Object value, String fmt) {
         if (clazz == null) return null;
         if (clazz.equals(TimeZone.class)) return convertToTimeZone(value, fmt);
@@ -37,17 +32,19 @@ public class OAConverterTimeZone implements OAConverterInterface {
         if (value == null) return null;
         TimeZone tz = null;
         if (value instanceof String) {
-            tz = hmTz.get( ((String)value).toUpperCase());
+            tz = OATimeZone.getTimeZone((String) value);
         }
         return tz;
     }
 
-    protected Object convertFromTimeZone(Class toClass, TimeZone tz, String fmt) {
+    protected Object convertFromTimeZone(Class toClass, TimeZone timeZone, String fmt) {
         if (toClass.equals(String.class)) {
-            return tz.getDisplayName();
+            OATimeZone.TZ tz = OATimeZone.getOATimeZone(timeZone);
+            return tz.getDisplay();
         }
         return null;
     }
-
 }
+
+
 

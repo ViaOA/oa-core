@@ -11,7 +11,13 @@
 package com.viaoa.util;
 
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
+
+import com.viaoa.hub.Hub;
+
 import java.text.*;
+import java.time.ZoneId;
 import java.io.IOException;
 import java.sql.Time;
 
@@ -382,7 +388,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
      * Flag to know if the date.time value should be sent, which is the raw value.
      * Default is false, so times do not get converted. 
      */
-    private static boolean bSerializeTimeValue = false;
+    private static final boolean bSerializeTimeValue = false;
     //todo: set up a getter/setter for this?
     //   qqqq client apps would need to make sure that they are the same as server
     
@@ -401,11 +407,22 @@ public class OADateTime implements java.io.Serializable, Comparable {
                 _releaseCal(cal);
             }
         }
-        else if (bSerializeTimeValue) {
-            stream.writeInt(9999); // version
-            stream.writeLong(_time);
+        else if (this instanceof OATime) {
+            GregorianCalendar cal = _getCal();
+            try {
+                stream.writeInt(9998); // version
+                stream.writeInt(cal.get(Calendar.HOUR_OF_DAY));
+                stream.writeInt(cal.get(Calendar.MINUTE));
+                stream.writeInt(cal.get(Calendar.SECOND));
+                stream.writeInt(cal.get(Calendar.MILLISECOND));
+            }
+            finally {
+                _releaseCal(cal);
+            }
+            
         }
-        else {
+else if (ignoreTimeZone) {  //qqqqqqqqqqqqqq remove bSerializeTimeValue
+//        else if (!bSerializeTimeValue || ignoreTimeZone) {  //qqqqqqqqqqqqqq remove bSerializeTimeValue
             GregorianCalendar cal = _getCal();
             try {
                 stream.writeInt(9995); // version
@@ -421,6 +438,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
                 _releaseCal(cal);
             }
         }
+        else {
+            stream.writeInt(9999); // version
+            stream.writeLong(_time);
+        }
     }
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         // might want to add TimeZone
@@ -432,6 +453,15 @@ public class OADateTime implements java.io.Serializable, Comparable {
             int day = in.readInt();
             Date d = new Date(year-1900, month, day);
             this._time = d.getTime();
+        }
+        else if (x == 9998) {
+            int hour = in.readInt();
+            int minute = in.readInt();
+            int second = in.readInt();
+            int milisecond = in.readInt();
+            Date d = new Date(70, 0, 1, hour, minute, second);
+            this._time = d.getTime();
+            this._time += milisecond;
         }
         else if (x == 9999) {
             _time = in.readLong();
@@ -447,6 +477,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
             Date d = new Date(year-1900, month, day, hour, minute, second);
             this._time = d.getTime();
             this._time += milisecond;
+            this.ignoreTimeZone = true;
         }
         else {  // real old format
             int year = x;
@@ -1871,14 +1902,30 @@ public class OADateTime implements java.io.Serializable, Comparable {
     }
     
     
+
+    
     
     public static void main(String[] args) {
+        String[] tzs = TimeZone.getAvailableIDs();
+        for (String s : tzs) {
+            TimeZone tz = TimeZone.getTimeZone(s);
+            int xx=0;
+            xx++;
+        }
+        
+        String [] ids = TimeZone.getAvailableIDs();
+        for(String id:ids) {
+          TimeZone zone = TimeZone.getTimeZone(id);
+          int offset = zone.getRawOffset()/1000;
+          int hour = offset/3600;
+          int minutes = (offset % 3600)/60;
+          System.err.println(String.format("(GMT%+d:%02d) %s", hour, minutes, id));
+        }   
+        
         
         OADateTime dt = new OADateTime().addDays(3);
         String msg1 = dt.toString("yyyy-MM-dd'T'HH:mm:ssZ");  // 2019-11-08T20:31:21-0500
         String msg2= dt.toString("yyyy-MM-dd'T'HH:mm:ssXXX");  // 2019-11-08T20:31:21-05:00
-
-
         
         SimpleDateFormat sdf = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
         // or SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy KK:mm:ss a Z" );
@@ -1920,3 +1967,5 @@ public class OADateTime implements java.io.Serializable, Comparable {
         }
     }
 }
+
+

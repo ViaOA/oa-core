@@ -68,6 +68,7 @@ public class DBMetaData extends OAObject {
     public boolean allowStatementPooling = true;
     public boolean fkeysAutoCreateIndex = false;
     public int maxVarcharLength;
+    public String likeKeyword = "LIKE";
     
     /*
         DERBY:                   "org.apache.derby.jdbc.EmbeddedDriver"
@@ -461,6 +462,14 @@ public class DBMetaData extends OAObject {
         int old = this.maxVarcharLength;
         this.maxVarcharLength = x;
         firePropertyChange("maxVarcharLength", old, this.maxVarcharLength);
+    }
+    public String getLikeKeyword() {
+        return likeKeyword;
+    }
+    public void setLikeKeyword(String newLikeKeyword) {
+        String old = this.likeKeyword;
+        this.likeKeyword = newLikeKeyword;
+        firePropertyChange("likeKeyword", old, this.likeKeyword);
     }
 }
 

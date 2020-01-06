@@ -190,18 +190,12 @@ public class OAThreadLocalDelegateTest extends OAUnitTest {
         assertFalse(b);
         b = OAThreadLocalDelegate.setIsAdmin(false);
         assertTrue(b);
-        
-        b = OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
-        assertFalse(b);
-        b = OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
-        assertTrue(b);
     }
 
 
     @Test
     public void test5() throws Exception {
         final CountDownLatch cd = new CountDownLatch(1);
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
         final OAThreadLocal tl = OAThreadLocalDelegate.getOAThreadLocal();
        
         final AtomicBoolean ab = new AtomicBoolean(false);
@@ -209,14 +203,12 @@ public class OAThreadLocalDelegateTest extends OAUnitTest {
             @Override
             public void run() {
                 OAThreadLocalDelegate.initialize(tl);
-                ab.set(OAThreadLocalDelegate.getAlwaysAllowEditProcessed());
                 cd.countDown();
             }
         });
         t.start();
         cd.await(5, TimeUnit.SECONDS);
-        assertTrue(ab.get());
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
+        // assertTrue(ab.get());
     }
     
     
@@ -230,20 +222,6 @@ public class OAThreadLocalDelegateTest extends OAUnitTest {
         OAThreadLocalDelegate.setContext(null);
         assertNull(OAThreadLocalDelegate.getContext());
         
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
-        assertFalse(OAThreadLocalDelegate.getAlwaysAllowEditProcessed());
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
-        assertTrue(OAThreadLocalDelegate.getAlwaysAllowEditProcessed());
-        
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
-        assertFalse(OAThreadLocalDelegate.getAlwaysAllowEnabled());
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(true);
-        assertTrue(OAThreadLocalDelegate.getAlwaysAllowEnabled());
-
-        
-        
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
         OAContext.removeContext(context);
         OAContext.removeContext();
     }

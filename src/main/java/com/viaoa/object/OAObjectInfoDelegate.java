@@ -212,6 +212,7 @@ public class OAObjectInfoDelegate {
             }
             thisOI.getPropertyInfos().add(pi);
         }
+        thisOI.resetPropertyInfo();
         
         // this must be sorted, so that they will be in the same order used by OAObject.nulls, and created the same on all other computers
         Collections.sort(alPrimitive);

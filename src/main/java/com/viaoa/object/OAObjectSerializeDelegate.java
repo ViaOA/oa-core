@@ -43,9 +43,9 @@ public class OAObjectSerializeDelegate {
         }
 	    in.defaultReadObject();
 	    
-        OAObjectInfo oi = null;
-        boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
-	    
+        final OAObjectInfo oi = OAObjectHashDelegate.hashObjectInfo.get(oaObj.getClass());
+        final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
+
 	    // read properties
         for ( ; ; ) {
             Object obj = in.readObject();
@@ -57,14 +57,9 @@ public class OAObjectSerializeDelegate {
             
             if (bIsServer) {
                 // 20160206 dont read calcProps if server, they need to be recalc'ed 
-                if (oi == null) {
-                    oi = OAObjectHashDelegate.hashObjectInfo.get(oaObj.getClass());
-                }
-                if (oi != null) {
-                    OALinkInfo li = oi.getLinkInfo(key);
-                    if (li != null && li.bCalculated) {
-                        continue;
-                    }
+                OALinkInfo li = oi.getLinkInfo(key);
+                if (li != null && li.bCalculated) {
+                    continue;
                 }
                 
                 if (value instanceof IODummy) value = null;
@@ -73,6 +68,16 @@ public class OAObjectSerializeDelegate {
                     if (hx.getObjectClass().equals(IODummy.class)) value = null;
                 }
                 
+            }
+
+            // 20200102 include blobs
+            if (value instanceof byte[] && oi.getHasBlobPropery()) {
+                OAPropertyInfo pi = oi.getPropertyInfo(key);
+                if (pi != null && pi.isBlob()) {
+                    byte[] bs = (byte[]) value;
+                    oaObj.setProperty(key, bs);
+                    continue;
+                }
             }
             OAObjectPropertyDelegate.unsafeSetPropertyIfEmpty(oaObj, key, value);  // HubSerializeDelegate._readResolve could have set this first (as weakref)
         }
@@ -254,11 +259,11 @@ public class OAObjectSerializeDelegate {
 	protected static void _writeObject(OAObject oaObj, java.io.ObjectOutputStream stream) throws IOException {
         //if (xxx % 1000 == 0) System.out.println((xxx)+") writeObject "+oaObj);
         if (oaObj == null) return;
-	    OAObjectSerializer serializer = OAThreadLocalDelegate.getObjectSerializer();
+	    final OAObjectSerializer serializer = OAThreadLocalDelegate.getObjectSerializer();
         if (serializer != null) {
             serializer.beforeSerialize(oaObj);
         }
-        
+        final OAObjectInfo oi = OAObjectHashDelegate.hashObjectInfo.get(oaObj.getClass());
         final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
         final boolean bNewObjectCache = !bIsServer && OAObjectCSDelegate.isInNewObjectCache(oaObj);
         
@@ -280,7 +285,22 @@ public class OAObjectSerializeDelegate {
         
         stream.defaultWriteObject();  // does not write references (transient)
         
-        _writeProperties(oaObj, stream, serializer, bNewObjectCache); // this will write transient properties
+        _writeProperties(oi, bIsServer, oaObj, stream, serializer, bNewObjectCache); // this will write transient properties
+        
+        // 20200102 include blobs
+        if (serializer != null && serializer.getIncludeBlobs()) {
+            if (oi.getHasBlobPropery()) {
+                for (OAPropertyInfo pi : oi.getPropertyInfos()) {
+                    if (pi.isBlob()) {
+                        byte[] bs = (byte[]) oaObj.getProperty(pi.getName());
+                        if (bs != null) {
+                            stream.writeObject(pi.getName());
+                            stream.writeObject(bs);
+                        }
+                    }
+                }
+            }
+        }
   
   		stream.writeObject(OAObjectDelegate.FALSE);  // end of property list
 
@@ -292,16 +312,18 @@ public class OAObjectSerializeDelegate {
         }
 	}
 
-    protected static void _writeProperties(final OAObject oaObj, final java.io.ObjectOutputStream stream, final OAObjectSerializer serializer, final boolean bNewObjectCache) throws IOException {
+    protected static void _writeProperties(final OAObjectInfo oi, final boolean bIsServer, final OAObject oaObj, final java.io.ObjectOutputStream stream, final OAObjectSerializer serializer, final boolean bNewObjectCache) throws IOException {
         // this method can not support synchronized blocks, since multiple threads could be calling it and then cause deadlock
         // default way for OAServer to send objects.  Clients always send objectKeys.
         //   this way, only the object properties are sent, no reference objects or Hubs
         if (oaObj == null) return;
         Object[] objs = oaObj.properties;
         if (objs == null) return;
-        
+
+        /*
         final OAObjectInfo oi = OAObjectHashDelegate.hashObjectInfo.get(oaObj.getClass());
         final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
+        */
 
         for (int i=0; i<objs.length; i+=2) {
             String key = (String) objs[i];

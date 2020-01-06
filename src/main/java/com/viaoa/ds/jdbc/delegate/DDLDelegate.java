@@ -293,7 +293,7 @@ public class DDLDelegate {
             break;
         case DBMetaData.POSTGRES:
             // 20190617
-            sqlType = "bytea";
+            sqlType = "BYTEA";
             break;
         }
         
@@ -374,7 +374,7 @@ public class DDLDelegate {
             sqlType = "CLOB"; // "CLOB("+maxLen+")";
             break;
         case DBMetaData.POSTGRES:
-            sqlType = "VARCHAR("+maxLen+")";
+            sqlType = "TEXT";
             break;
         }
         return sqlType;
@@ -406,7 +406,7 @@ public class DDLDelegate {
             sqlType = "CLOB"; // "CLOB("+maxLen+")";
             break;
         case DBMetaData.POSTGRES:
-            sqlType = "varchar("+maxLen+")";
+            sqlType = "TEXT";
             break;
     	}
     	return sqlType;

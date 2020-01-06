@@ -37,7 +37,7 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
     */
     public HubEvent(Hub source, T obj, String propertyName, Object oldValue, Object newValue) {
         super(source, propertyName, oldValue, newValue);
-        //p("1: propChange "+obj+" "+propertyName );//qqqqqqqqqqq
+        //p("1: propChange "+obj+" "+propertyName );
         this.object = obj;
     }
 
@@ -46,7 +46,7 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
     */
     public HubEvent(T obj, String propertyName, Object oldValue, Object newValue) {
         super(obj, propertyName, oldValue, newValue);
-        //p("2: propChange "+obj+" "+propertyName );//qqqqqqqqqqq
+        //p("2: propChange "+obj+" "+propertyName );
         this.object = obj;
     }
 
@@ -61,7 +61,7 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
     */
     public HubEvent(Hub<T> source, T oldValue, T newValue) {
         super(source, null, oldValue, newValue);
-        //p("3: replace "+source.getObjectClass() );//qqqqqqqqqqq
+        //p("3: replace "+source.getObjectClass() );
         object = newValue;
     }
     
@@ -168,5 +168,10 @@ if (bError) {
     }
     public String getResponse() {
         return this.response;
+    }
+    
+    public boolean isProperty(String name) {
+        if (name == null) return false;
+        return name.equalsIgnoreCase(getPropertyName());
     }
 }

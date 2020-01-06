@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import com.cdi.model.oa.*;
 import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectEditQuery;
 import com.viaoa.object.OAObjectEditQueryDelegate;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
@@ -92,13 +93,16 @@ public class OAContextTest {
         OAThreadLocalDelegate.setContext(null);
         SalesOrder so = new SalesOrder();
         so.setContractor("adfa1");
-        boolean b = OAObjectEditQueryDelegate.getAllowEnabled(so, "Contractor");
+        boolean b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, so, "Contractor");
         assertTrue(b);
 
         so.setDateSubmitted(new OADate());
-        b = OAObjectEditQueryDelegate.getAllowEnabled(so, "Contractor");
-        assertTrue(b); // running as server, without an assigned context/user
+        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, so, "Contractor");
+        assertFalse(b);
 
+        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_CallbackMethod, null, so, "Contractor");
+        assertTrue(b);
+        
         so.setContractor("adfa2");
 
         AppUser au = new AppUser();
@@ -109,13 +113,13 @@ public class OAContextTest {
         OAContext.setContextObject(context, user);
         OAThreadLocalDelegate.setContext(context);
 
-        b = OAObjectEditQueryDelegate.getAllowEnabled(so, "Contractor");
+        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, so, "Contractor");
         assertFalse(b);
         
         // this will cause a warning (wont throw an exception)
         so.setContractor("adfa3");
         
-        b = OAObjectEditQueryDelegate.getAllowEnabled(so, "Contractor");
+        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, so, "Contractor");
         assertFalse(b);
         
         OAThreadLocalDelegate.setContext(null);
@@ -129,12 +133,17 @@ public class OAContextTest {
         OAThreadLocalDelegate.setContext(null);
         SalesOrder so = new SalesOrder();
         so.setContractor("adfa1");
-        boolean b = OAObjectEditQueryDelegate.getAllowEnabled(so, "Contractor");
+        boolean b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, so, "Contractor");
         assertTrue(b);
 
         so.setDateSubmitted(new OADate());
-        b = OAObjectEditQueryDelegate.getAllowEnabled(so, "Contractor");
+        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, so, "Contractor");
+        assertFalse(b); 
+        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_EnabledProperty, null, so, "Contractor");
+        assertFalse(b); 
+        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_CallbackMethod, null, so, "Contractor");
         assertTrue(b); // running as server, without an assigned context/user
+
 
         so.setContractor("adfa2");
 
@@ -147,21 +156,10 @@ public class OAContextTest {
         OAThreadLocalDelegate.setContext(context);
 
         
-        b = OAObjectEditQueryDelegate.getAllowEnabled(so, "Contractor");
+        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, so, "Contractor");
         assertFalse(b);
 
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(true);
-        b = OAObjectEditQueryDelegate.getAllowEnabled(so, "Contractor");
-        assertTrue(b);
-        
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
-        b = OAObjectEditQueryDelegate.getAllowEnabled(so, "Contractor");
-        assertFalse(b);
-
-        
         OAThreadLocalDelegate.setContext(null);
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
         OAContext.removeContext(context);
         OAContext.removeContext();
     }
@@ -188,10 +186,7 @@ public class OAContextTest {
         so.setDateSubmitted(new OADate());
 
         assertFalse(so.isEnabled());
-        
-        OAThreadLocalDelegate.setContext(null);
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
+
         OAContext.removeContext(context);
         OAContext.removeContext();
     }
@@ -221,27 +216,6 @@ public class OAContextTest {
         assertFalse(so.isEnabled());
         assertFalse(so.isEnabled(so.P_DateSubmitted));
 
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(true);
-        assertTrue(so.isEnabled());
-        assertTrue(so.isEnabled(so.P_DateSubmitted));
-        
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(true);
-        assertTrue(so.isEnabled());
-        assertTrue(so.isEnabled(so.P_DateSubmitted));
-        
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
-        assertFalse(so.isEnabled());
-        assertFalse(so.isEnabled(so.P_DateSubmitted));
-
-        
-        OAThreadLocalDelegate.setContext(null);
-        OAThreadLocalDelegate.setAlwaysAllowEditProcessed(false);
-        OAThreadLocalDelegate.setAlwaysAllowEnabled(false);
-        OAContext.removeContext(context);
-        OAContext.removeContext();
     }
     
 }

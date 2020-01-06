@@ -165,7 +165,9 @@ public class HubAODelegate {
                 if (thisHub.datam.getMasterHub() == null) {
                     if (!thisHub.getOAObjectInfo().getLocalOnly()) {
                         if (thisHub.dataa.activeObject != object || !bForce) {
-                            LOG.log(Level.WARNING, "Note/FYI only: should not setAO on thisHub="+thisHub+" (use sharedHub), will continue", new Exception("showing thread stack"));
+                            if (!(thisHub.datam.getMasterObject() instanceof OAGroupBy)) {
+                                LOG.log(Level.WARNING, "Note/FYI only: should not setAO on thisHub="+thisHub+" (use sharedHub), will continue", new Exception("showing thread stack"));
+                            }
                         }
                     }
                 }

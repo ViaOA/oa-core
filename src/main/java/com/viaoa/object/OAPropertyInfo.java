@@ -58,7 +58,10 @@ public class OAPropertyInfo implements java.io.Serializable {
     private String[] viewDependentProperties;
     private boolean trackPrimitiveNull=true;
     
-    private OAProperty oaProperty;    
+    private OAProperty oaProperty;
+    
+    private boolean ignoreTimeZone;
+    private String timeZonePropertyPath;
 	
 	public OAPropertyInfo() {
 	}
@@ -295,6 +298,19 @@ public class OAPropertyInfo implements java.io.Serializable {
     }
     public boolean isSubmit() {
         return this.isSubmit;
+    }
+
+    public boolean getIgnoreTimeZone() {
+        return ignoreTimeZone;
+    }
+    public void setIgnoreTimeZone(boolean b) {
+        this.ignoreTimeZone = b;
+    }
+    public String getTimeZonePropertyPath() {
+        return timeZonePropertyPath;
+    }
+    public void setTimeZonePropertyPath(String s) {
+        this.timeZonePropertyPath = s;
     }
 }
 

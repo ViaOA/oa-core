@@ -121,16 +121,16 @@ public class DBMetaDataDelegate {
                 dbmd.setFkeysAutoCreateIndex(false);
   
                 dbmd.setSupportsAutoAssign(true);
-//qqqqqqqqqq add to code gen qqqqqqqqqqqq for primary autoassigned columns/properties                
                 dbmd.setAutoAssignType("SERIAL");
                 
-                dbmd.setMaxVarcharLength( (int) Math.pow(1000, 3));// 1GB
+                dbmd.setMaxVarcharLength( (int) Math.pow(1024, 3));// 1GB
                 
                 dbmd.setCaseSensitive(true);
                 dbmd.setLowerCaseFunction("LOWER");
                 
                 dbmd.setBlanksAsNulls(false);
                 dbmd.setUseExists(true);
+                dbmd.setLikeKeyword("ILIKE");
                 
                 break;
 	    }

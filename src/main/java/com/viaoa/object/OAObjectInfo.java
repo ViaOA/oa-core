@@ -294,15 +294,40 @@ public class OAObjectInfo { //implements java.io.Serializable {
     	if (alPropertyInfo == null) alPropertyInfo = new ArrayList(5);
     	return alPropertyInfo;
     }
-    public void addProperty(OAPropertyInfo ci) {
-        addPropertyInfo(ci);
+    public void addProperty(OAPropertyInfo pi) {
+        addPropertyInfo(pi);
     }
-    public void addPropertyInfo(OAPropertyInfo ci) {
-    	getPropertyInfos().add(ci);
+    public void addPropertyInfo(OAPropertyInfo pi) {
+        if (pi == null) return;
+    	getPropertyInfos().add(pi);
+    	resetPropertyInfo();
+    }
+    protected void resetPropertyInfo() {
         hmPropertyInfo = null; 
         bCheckTimestamp = false;
+        bCheckSubmit = false;
+        bCheckHasBlobProperty = false;
     }
+    
+    
+    /**
+     * Blobs are set up as transient, OAObjectSerializer needs to know if/when to include them.
+     */
+    private volatile boolean bHasBlobProperty;
+    private volatile boolean bCheckHasBlobProperty;
 
+    public boolean getHasBlobPropery() {
+        if (bCheckHasBlobProperty) return bHasBlobProperty;
+        bCheckHasBlobProperty = true;
+        for (OAPropertyInfo pi : getPropertyInfos()) {
+            if (pi.isBlob()) {
+                bHasBlobProperty = true;
+                break;
+            }
+        }
+        return bHasBlobProperty;
+    }
+    
     private HashMap<String,OAPropertyInfo> hmPropertyInfo;
     public OAPropertyInfo getPropertyInfo(String propertyName) {
         if (propertyName == null) return null;
@@ -1047,8 +1072,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
         return editQueryMethod;
     }
 
-    private OAPropertyInfo piTimestamp;
-    private boolean bCheckTimestamp;
+    private volatile OAPropertyInfo piTimestamp;
+    private volatile boolean bCheckTimestamp;
     public OAPropertyInfo getTimestampProperty() {
         if (bCheckTimestamp) return piTimestamp;
         for (OAPropertyInfo pi : getPropertyInfos()) {
@@ -1061,8 +1086,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
         return piTimestamp;
     }
     
-    private OAPropertyInfo piSubmit;
-    private boolean bCheckSubmit;
+    private volatile OAPropertyInfo piSubmit;
+    private volatile boolean bCheckSubmit;
     public OAPropertyInfo getSubmitProperty() {
         if (bCheckSubmit) return piSubmit;
         for (OAPropertyInfo pi : getPropertyInfos()) {

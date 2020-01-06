@@ -122,16 +122,6 @@ public class OAThreadLocal {
      */
     public boolean isAdmin;
     
-    /**
-     * used by OAContext, to automatically allow OAContext.getAllowEditProcessed() to return true    
-     */
-    public boolean alwaysAllowEditProcessed;
-    
-    
-    /**
-     *  If true, then used by OAContext.isEnabled(), and by OAEditQuery
-     */
-    public boolean alwaysAllowEnabled;
     
     public OAJaxb oajaxb;
 }

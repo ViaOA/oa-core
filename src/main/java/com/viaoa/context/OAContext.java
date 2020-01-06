@@ -62,16 +62,16 @@ public class OAContext {
     public static boolean getAllowEditProcessed(Object context) {
         if (context == null) context = NullContext;
 
-        // default for main server thread (context=null) is always true
-        if (context == NullContext && OASync.isServer()) return true;
+        final OAObject oaObj = getContextObject(context);
         
-        if (OAThreadLocalDelegate.getAlwaysAllowEditProcessed()) {
-            return true;
+        // default for main server thread (context=null) is always true
+        if (context == NullContext && OASync.isServer()) {
+            if (oaObj == null) return true;
+            if (OAString.isEmpty(allowEditProcessedPropertyPath)) return true;
         }
         
-        if (OAString.isEmpty(allowEditProcessedPropertyPath)) return true;
-        OAObject oaObj = getContextObject(context);
         if (oaObj == null) return false;
+        if (OAString.isEmpty(allowEditProcessedPropertyPath)) return false;
         
         Object val = oaObj.getProperty(OAContext.allowEditProcessedPropertyPath);
         boolean b = OAConv.toBoolean(val);
@@ -100,23 +100,29 @@ public class OAContext {
     public static boolean isAdmin(Object context) {
         if (context == null) context = NullContext;
 
-        // default for main server thread (context=null) is always true
-        if (context == NullContext && OASync.isServer()) return true;
-        
         if (OAThreadLocalDelegate.isAdmin()) {
             return true;
         }
         
-        if (OAString.isEmpty(adminPropertyPath)) return true;
-        OAObject oaObj = getContextObject(context);
+        final OAObject oaObj = getContextObject(context);
+        
+        // default for main server thread (context=null) is always true
+        if (context == NullContext && OASync.isServer()) {
+            if (oaObj == null) return true;
+            if (OAString.isEmpty(adminPropertyPath)) return true;
+        }
+        
         if (oaObj == null) return false;
+        if (OAString.isEmpty(adminPropertyPath)) return false;
         
         Object val = oaObj.getProperty(OAContext.adminPropertyPath);
         boolean b = OAConv.toBoolean(val);
+        b = b || isSuperAdmin(context);
         return b;
     }
     
-
+    
+    
     /**
      * Property path used to find the user property for allowing users to have super admin rights.
      * If true, then the user will have all EditQuery.allowed=true 
@@ -136,9 +142,8 @@ public class OAContext {
         return isSuperAdmin(context);
     }
     public static boolean isSuperAdmin(Object context) {
-        if (context == null) context = NullContext;
-
         if (OAString.isEmpty(superAdminPropertyPath)) return false;
+        if (context == null) context = NullContext;
         OAObject oaObj = getContextObject(context);
         if (oaObj == null) return false;
         
@@ -158,16 +163,16 @@ public class OAContext {
     public static boolean isEnabled(Object context, final String pp, final boolean bEqualTo) {
         if (context == null) context = NullContext;
 
-        // default for main server thread (context=null) is always true
-        if (context == NullContext && OASync.isServer()) return true;
+        final OAObject oaObj = getContextObject(context);
         
-        if (OAThreadLocalDelegate.getAlwaysAllowEnabled()) {
-            return true;
+        // default for main server thread (context=null) is always true
+        if (context == NullContext && OASync.isServer()) {
+            if (oaObj == null) return true;
+            if (OAString.isEmpty(pp)) return true;
         }
         
-        if (OAString.isEmpty(pp)) return true;
-        OAObject oaObj = getContextObject(context);
         if (oaObj == null) return false;
+        if (OAString.isEmpty(pp)) return false;
         
         Object val = oaObj.getProperty(pp);
         boolean b = OAConv.toBoolean(val);
@@ -175,8 +180,7 @@ public class OAContext {
         b = b || isSuperAdmin(context);
         return b;
     }
-    
-    
+
     /**
      * Associated an object value with a context. 
      * @param context is value used to lookup obj

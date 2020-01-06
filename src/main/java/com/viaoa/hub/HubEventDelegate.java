@@ -33,7 +33,7 @@ public class HubEventDelegate {
 	    // verify with editQuery
         if (!OARemoteThreadDelegate.isRemoteThread()) {
             if (obj instanceof OAObject) {
-                OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyRemoveEditQuery(thisHub, (OAObject) obj);
+                OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyRemoveEditQuery(thisHub, (OAObject) obj, OAObjectEditQuery.CHECK_CallbackMethod);
                 if (!em.getAllowed()) {
                     String s = em.getResponse();
                     if (OAString.isEmpty(s)) s = "edit query returned false for remove, Hub="+thisHub;
@@ -121,7 +121,7 @@ public class HubEventDelegate {
 	public static void fireBeforeRemoveAllEvent(Hub thisHub) {
         // verify with editQuery
         if (!OARemoteThreadDelegate.isRemoteThread()) {
-            OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyRemoveAllEditQuery(thisHub);
+            OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyRemoveAllEditQuery(thisHub, OAObjectEditQuery.CHECK_CallbackMethod);
             if (!em.getAllowed()) {
                 String s = em.getResponse();
                 if (OAString.isEmpty(s)) s = "edit query returned false for removeAll, Hub="+thisHub;
@@ -203,7 +203,7 @@ public class HubEventDelegate {
         // verify with editQuery
         if (!OARemoteThreadDelegate.isRemoteThread()) {
             if (obj instanceof OAObject) {
-                OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyAddEditQuery(thisHub, (OAObject) obj);
+                OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyAddEditQuery(thisHub, (OAObject) obj, OAObjectEditQuery.CHECK_CallbackMethod);
                 if (!em.getAllowed()) {
                     String s = em.getResponse();
                     if (OAString.isEmpty(s)) s = "edit query returned false for add, Hub="+thisHub;
@@ -292,7 +292,7 @@ public class HubEventDelegate {
         // verify with editQuery
         if (!OARemoteThreadDelegate.isRemoteThread()) {
             if (obj instanceof OAObject) {
-                OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyAddEditQuery(thisHub, (OAObject) obj);
+                OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyAddEditQuery(thisHub, (OAObject) obj, OAObjectEditQuery.CHECK_CallbackMethod);
                 if (!em.getAllowed()) {
                     String s = em.getResponse();
                     if (OAString.isEmpty(s)) s = "edit query returned false for add/insert, Hub="+thisHub;

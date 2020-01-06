@@ -21,6 +21,7 @@ import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.hub.*;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.undo.OAUndoableEdit;
+import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
@@ -69,7 +70,7 @@ public class OAObjectEventDelegate {
 	        }
 
 	        if (!bSkip && !bIsLoading) {
-	            OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(oaObj, propertyName, oldObj, newObj);
+	            OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, oaObj, propertyName, oldObj, newObj);
     	        if (!em.getAllowed() || em.getThrowable() != null) {
     	            String msg = em.getResponse();
     	            if (em.getThrowable() != null) {
@@ -171,6 +172,12 @@ public class OAObjectEventDelegate {
                         throw new RuntimeException(s);
                     }
                 } 
+                
+                if (newObj instanceof OADateTime) {  // 20191222
+                    if (propInfo.getIgnoreTimeZone()) {
+                        ((OADateTime) newObj).setIgnoreTimeZone(true);
+                    }
+                }
                 
                 if (propInfo.getUnique() && newObj != null && !OAObjectDSDelegate.isAssigningId(oaObj)) {
                     

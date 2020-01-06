@@ -204,11 +204,13 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         try {
             // 20120624 hubCombined could be a detail hub.
             OAThreadLocalDelegate.setSuppressCSMessages(true);
-            
+            if (!bServerSideOnly) bLoadingCombined = true; //20191213
+
             _init();
         }
         finally {
             OAThreadLocalDelegate.setSuppressCSMessages(false);
+            if (!bServerSideOnly) bLoadingCombined = false; //20191213
             if (bx) OAThreadLocalDelegate.removeSiblingHelper(sh);
         }
         ts = System.currentTimeMillis() - ts;

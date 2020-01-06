@@ -95,4 +95,7 @@ public @interface OAProperty {
      * Flag used to determine if the object is completed and ready for submitted.
      */
     boolean isSubmit() default false;
+    
+    String timeZonePropertyPath() default "";
+    
 }

@@ -11,6 +11,7 @@
 package com.viaoa.hub;
 
 import java.util.*;
+import java.util.stream.Stream;
 import java.io.*;
 import java.lang.reflect.*;
 
@@ -566,15 +567,11 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
      * @see OAObject#save
      */
     public void saveAll() {
-        boolean b1 = OAThreadLocalDelegate.setAlwaysAllowEditProcessed(true);
-        boolean b2 = OAThreadLocalDelegate.setAlwaysAllowEnabled(true);
         boolean b3 = OAThreadLocalDelegate.setAdmin(true);
         try {
             HubSaveDelegate.saveAll(this, OAObject.CASCADE_LINK_RULES);
         }
         finally {
-            OAThreadLocalDelegate.setAlwaysAllowEditProcessed(b1);
-            OAThreadLocalDelegate.setAlwaysAllowEnabled(b2);
             OAThreadLocalDelegate.setAdmin(b3);
         }
     }
@@ -918,7 +915,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
      */
     public boolean getEnabled() {
         if (data.isDisabled()) return false;
-        return OAObjectEditQueryDelegate.getAllowEnabled(this);
+        return OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_CallbackMethod, this, null, null);
     }
     public void setEnabled(boolean b) {
         this.data.setDisabled(!b);
@@ -2127,42 +2124,30 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
     }
     
     public boolean canAdd() {
-        return OAObjectEditQueryDelegate.getAllowAdd(this, false);
+        return HubAddRemoveDelegate.canAdd(this, null);
     }
-    public boolean canAdd(OAObject obj) {
-        if (!OAObjectEditQueryDelegate.getAllowAdd(this, false)) return false;
-        return OAObjectEditQueryDelegate.getVerifyAdd(this, obj);
+    public boolean canAdd(Object obj) {
+        return HubAddRemoveDelegate.canAdd(this, obj);
     }
     
     public String getCanAddMessage(OAObject obj) {
-        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowAddEditQuery(this, false);
-        if (eq != null && !eq.getAllowed()) {
-            String s = eq.getResponse();
-            s = OAString.concat(s, eq.getThrowable(), ", ");
-            return "EditQuery.allowAdd returned: "+s;
-        }
+        return HubAddRemoveDelegate.canAddMsg(this, obj);
+    }
 
-        eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(this, obj);
-        if (eq != null && !eq.getAllowed()) {
-            String s = eq.getResponse();
-            s = OAString.concat(s, eq.getThrowable(), ", ");
-            return "EditQuery.verifyAdd returned: "+s;
-        }
-        
-        return null;
-    }
-    public boolean canRemove() {
-        return OAObjectEditQueryDelegate.getAllowRemove(this, false);
-    }
-    public boolean canRemove(OAObject obj) {
-        if (!OAObjectEditQueryDelegate.getAllowRemove(this, false)) return false;
-        return OAObjectEditQueryDelegate.getVerifyRemove(this, obj);
-    }
-    public boolean canRemoveAll() {
-        if (!OAObjectEditQueryDelegate.getAllowRemoveAll(this)) return false;
-        return OAObjectEditQueryDelegate.getVerifyRemoveAll(this);
-    }
     
+    public boolean getAllowRemove(int checkType, TYPE obj) {
+        if (!(obj instanceof OAObject)) return true;
+        return OAObjectEditQueryDelegate.getAllowRemove(this, (OAObject) obj, checkType);
+    }
+    public boolean getVerifyRemove(int checkType, TYPE obj) {
+        if (!(obj instanceof OAObject)) return true;
+        return OAObjectEditQueryDelegate.getVerifyRemove(this, (OAObject) obj, checkType);
+    }
+    public boolean getAllowRemoveAll(final boolean bCheckEditQuery, final int checkType) {
+        String s = HubAddRemoveDelegate.getCantRemoveAllMessage(this, checkType);
+        return s == null;
+    }
+
     public void setLoading(boolean b) {
         OAThreadLocalDelegate.setLoading(b);
     }
@@ -2364,5 +2349,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
         return al;
     }
 
+    public Stream<TYPE> stream() {
+        return this.data.vector.stream();
+    }
+    
     // public transient boolean DEBUG; // for debugging
 }

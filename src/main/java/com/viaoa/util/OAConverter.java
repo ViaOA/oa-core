@@ -60,6 +60,7 @@ public class OAConverter {
         addConverter( java.awt.Font.class, new OAConverterFont() );
 
         addConverter( Enum.class, new OAConverterEnum() );
+        addConverter( TimeZone.class, new OAConverterTimeZone() );
     }
 
     private static OAConverterArray oaConverterArray = new OAConverterArray();

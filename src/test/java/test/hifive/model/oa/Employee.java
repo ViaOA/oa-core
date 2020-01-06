@@ -41,7 +41,6 @@ import test.hifive.model.oa.propertypath.*;
         @OAIndex(name = "EmployeePointsNextApproval", columns = { @OAIndexColumn(name = "PointsNextApprovalId") })
     }
 )
-@OAEditQuery(enabledProperty = "InactiveDate", enabledValue = false)
 public class Employee extends OAObject {
     
     private static final long serialVersionUID = 1L;
@@ -330,7 +329,7 @@ public class Employee extends OAObject {
     public transient OAObjectEditQuery TestEditQuery_Class;
     
     @OAEditQuery(enabledProperty = "inactiveDate", enabledValue = false)
-    public void onEditQuery(OAObjectEditQuery eq) {
+    public void callback(OAObjectEditQuery eq) {
         if (TestEditQuery_Class == null) return;
         
         switch (eq.getType()) {
@@ -338,6 +337,12 @@ public class Employee extends OAObject {
             eq.setAllowed(TestEditQuery_Class.getAllowed());
             break;
         case AllowVisible:
+            eq.setAllowed(TestEditQuery_Class.getAllowed());
+            break;
+        case AllowCopy:
+            eq.setAllowed(TestEditQuery_Class.getAllowed());
+            break;
+        case GetCopy:
             eq.setAllowed(TestEditQuery_Class.getAllowed());
             break;
         }
@@ -385,6 +390,27 @@ public class Employee extends OAObject {
     public String getTitle() {
         return title;
     }
+    public OAObjectEditQuery TestEditQuery_EmployeeCode;
+    public void employeeCodeCallback(OAObjectEditQuery eq) {
+        if (TestEditQuery_EmployeeCode == null) return;
+        
+        switch (eq.getType()) {
+        case AllowEnabled:
+            eq.setAllowed(TestEditQuery_EmployeeCode.getAllowed());
+            break;
+        case AllowVisible:
+            eq.setAllowed(TestEditQuery_EmployeeCode.getAllowed());
+            break;
+        case AllowCopy:
+            eq.setAllowed(TestEditQuery_EmployeeCode.getAllowed());
+            break;
+        case GetCopy:
+            eq.setAllowed(TestEditQuery_EmployeeCode.getAllowed());
+            break;
+        }
+    }
+    
+    
     
     public void setTitle(String newValue) {
         fireBeforePropertyChange(P_Title, this.title, newValue);
@@ -411,14 +437,14 @@ public class Employee extends OAObject {
     }
     
     public void setFirstName(String newValue) {
-if (newValue != null && newValue.startsWith("FIRSTNAME")) {
-    int xx = 4;
-    xx++;
-}
         fireBeforePropertyChange(P_FirstName, this.firstName, newValue);
         String old = firstName;
         this.firstName = newValue;
         firePropertyChange(P_FirstName, old, this.firstName);
+    }
+    public int cntFirstNameCallback;
+    public void firstNameCallback(OAObjectEditQuery eq) {
+        cntFirstNameCallback++;
     }
     @OAProperty(displayName = "Middle Name", maxLength = 75, isUnicode = true, displayLength = 20, columnLength = 4)
     @OAColumn(maxLength = 75)
@@ -1430,6 +1456,21 @@ if (newValue != null && newValue.startsWith("FIRSTNAME")) {
         this.location = newValue;
         firePropertyChange(P_Location, old, this.location);
     }
+    public OAObjectEditQuery TestEditQuery_Location;
+    public void locationCallback(OAObjectEditQuery eq) {
+        if (TestEditQuery_Location == null) return;
+        
+        switch (eq.getType()) {
+        case AllowEnabled:
+            eq.setAllowed(TestEditQuery_Location.getAllowed());
+            break;
+        case AllowVisible:
+            eq.setAllowed(TestEditQuery_Location.getAllowed());
+            break;
+        }
+    }
+    
+    
     
     @OAMany(
         displayName = "Manager Hifives", 

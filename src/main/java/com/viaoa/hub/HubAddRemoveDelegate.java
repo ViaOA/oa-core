@@ -62,7 +62,8 @@ public class HubAddRemoveDelegate {
             throw new RuntimeException("Cant remove object, hub is disabled");
         }
         if (!bIsRemovingAll && !OARemoteThreadDelegate.isRemoteThread()) {
-            if (!canRemove(thisHub, obj)) {
+            if (!thisHub.getAllowRemove(OAObjectEditQuery.CHECK_CallbackMethod, obj)) { 
+            //was: if (!canRemove(thisHub, obj)) {
                 if (!OAThreadLocalDelegate.isDeleting(obj)) {
                     throw new RuntimeException("Cant remove object, can remove returned false");
                 }
@@ -136,26 +137,103 @@ public class HubAddRemoveDelegate {
         return true;
     }
     
-    public static boolean canRemove(final Hub thisHub, final Object obj) {
-        if (thisHub == null) return false;
-        if (obj instanceof OAObject) {
-            if (!thisHub.canRemove((OAObject) obj)) {
-                return false;
+    /**
+     * Checks to see if there is a reason why an object can not be removed.
+     * @param obj object to be removed, if null then it checks if the hub allows removals.
+     * @param checkType from OAObjectEdit
+     * @return reason/message why the object can not be removed, else returns null if the obj can be removed
+     */
+    public static String getCantRemoveMessage(final Hub thisHub, final Object obj, final int checkType) {
+        if (thisHub == null) return "hub is null";
+        
+        if (!thisHub.getEnabled()) {
+            return "hub is disabled";
+        }
+
+        if (obj != null) {
+            final Class c = obj.getClass();
+            if (thisHub.data.objClass == null) HubDelegate.setObjectClass(thisHub, c);
+            if (!thisHub.data.objClass.isAssignableFrom(c) ) {
+                return "class not assignable, class="+c;
             }
         }
-        else if (!thisHub.canRemove()) {
-            return false;
+        
+        // if there is a masterHub, then make sure that this Hub is active/valid
+        if (thisHub.datam.getMasterObject() == null && thisHub.getCurrentSize() == 0) {
+            HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+            if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
+                return "has masterHub, but masterObject is null";
+            }
         }
-        return true;
+        
+        if (checkType > 0) {
+            OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowRemoveEditQuery(thisHub, (OAObject) obj, checkType);
+            if (eq != null && !eq.getAllowed()) {
+                String s = eq.getResponse();
+                s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
+                return "EditQuery.allowRemove is false, msg: "+s;
+            }
+            
+            if (obj instanceof OAObject) {
+                eq = OAObjectEditQueryDelegate.getVerifyRemoveEditQuery(thisHub, (OAObject) obj, checkType);
+                if (eq != null && !eq.getAllowed()) {
+                    String s = eq.getResponse();
+                    s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
+                    return "EditQuery.verifyRemove is false, msg: "+s;
+                }
+            }
+        }
+        
+        if (thisHub.datau.getSharedHub() != null) {
+            return getCantRemoveMessage(thisHub.datau.getSharedHub(), obj, checkType);
+        }
+        return null;
     }
+    
+    public static String getCantRemoveAllMessage(final Hub thisHub, final int checkType) {
+        if (thisHub == null) return "hub is null";
+        
+        if (!thisHub.getEnabled()) {
+            return "hub is disabled";
+        }
 
+        // if there is a masterHub, then make sure that this Hub is active/valid
+        if (thisHub.datam.getMasterObject() == null && thisHub.getCurrentSize() == 0) {
+            HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+            if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
+                return "has masterHub, but masterObject is null";
+            }
+        }
+        
+        if (checkType > 0) {
+            OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowRemoveAllEditQuery(thisHub, checkType);
+            if (eq != null && !eq.getAllowed()) {
+                String s = eq.getResponse();
+                s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
+                return "EditQuery.allowRemoveAll is false, msg: "+s;
+            }
+            eq = OAObjectEditQueryDelegate.getVerifyRemoveAllEditQuery(thisHub, checkType);
+            if (eq != null && !eq.getAllowed()) {
+                String s = eq.getResponse();
+                s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
+                return "EditQuery.verifyRemoveAll is false, msg: "+s;
+            }
+        }
+        
+        if (thisHub.datau.getSharedHub() != null) {
+            return getCantRemoveAllMessage(thisHub.datau.getSharedHub(), checkType);
+        }
+        return null;
+    }
+    
+    
     public static void clear(final Hub thisHub) {
         clear(thisHub, true, true);
     }
     
     public static void clear(final Hub thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
         if (!OARemoteThreadDelegate.isRemoteThread() && bSendNewList) {
-            OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyRemoveAllEditQuery(thisHub);
+            OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyRemoveAllEditQuery(thisHub, OAObjectEditQuery.CHECK_CallbackMethod);
             if (!eq.getAllowed()) {
                 String s = eq.getResponse();
                 if (OAString.isEmpty(s)) s = "Cant clear, OAObjectEditQuery allowRemoveAll retured false";
@@ -281,44 +359,65 @@ public class HubAddRemoveDelegate {
         HubEventDelegate.fireAfterRemoveAllEvent(thisHub);
     }
     
+    
+    
     /**
         Used to find out if an object can be added/inserted to this Hub.
         Makes sure that object that being added is for the correct class.
         Calls all HubListeners.hubBeforeAdd() where HubEvent.object and pos are both set.
+        Calls editQuer
         If objects are OAObjets, then canAdd is called for each object.
         If it is a recursive Hub, then it will verify that it can have the parent set.
     */
     public static boolean canAdd(final Hub thisHub, final Object obj) {
-        if (obj instanceof OAObject) {
-            if (!thisHub.canAdd((OAObject) obj)) {
-                return false;
-            }
-        }
-        else if (!thisHub.canAdd()) {
-            return false;
-        }
         String s = canAddMsg(thisHub, obj);
         return s == null;
     }
+    public static boolean canAdd(final Hub thisHub) {
+        String s = canAddMsg(thisHub, null);
+        return s == null;
+    }
+    public static String canAddMsg(final Hub thisHub) {
+        return canAddMsg(thisHub, null);
+    }
     // returns null if obj can be added; otherwise an error msg is returned.
     public static String canAddMsg(final Hub thisHub, final Object obj) {
-        if (obj == null) return "obj is null";
         if (thisHub == null) return "hub is null";
         
-        // 20130728
         if (!thisHub.getEnabled()) {
-            return "add is disabled";
+            return "hub is disabled";
         }
 
+        if (obj != null) {
+            final Class c = obj.getClass();
+            if (thisHub.data.objClass == null) HubDelegate.setObjectClass(thisHub, c);
+            if (!thisHub.data.objClass.isAssignableFrom(c) ) {
+                return "class not assignable, class="+c;
+            }
+        }
+        
+        // if there is a masterHub, then make sure that this Hub is active/valid
+        if (thisHub.datam.getMasterObject() == null && thisHub.getCurrentSize() == 0) {
+            HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+            if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
+                return "has masterHub, but masterObject is null";
+            }
+        }
+        
+        OAObject oaObj = (obj instanceof OAObject) ? (OAObject) obj : null;
+        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowAddEditQuery(thisHub, oaObj, OAObjectEditQuery.CHECK_CallbackMethod);
+        if (eq != null && !eq.getAllowed()) {
+            String s = eq.getResponse();
+            s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
+            return "EditQuery.allowAdd is false, msg: "+s;
+        }
+        
         if (obj instanceof OAObject) {
-            OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(thisHub, (OAObject) obj);
-            if (!eq.getAllowed()) {
+            eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(thisHub, (OAObject) obj, OAObjectEditQuery.CHECK_CallbackMethod);
+            if (eq != null && !eq.getAllowed()) {
                 String s = eq.getResponse();
-                if (OAString.isEmpty(s)) return s;
-                if (eq.getThrowable() != null) {
-                    return eq.getThrowable().getMessage();
-                }
-                return "editQuery for add returned false";
+                s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
+                return "EditQuery.verifyAdd is false, msg: "+s;
             }
         }
         
@@ -326,28 +425,15 @@ public class HubAddRemoveDelegate {
             return canAddMsg(thisHub.datau.getSharedHub(), obj);
         }
     
-        // if there is a masterHub, then make sure that this Hub is active/valid
-        if (thisHub.datam.getMasterObject() == null && thisHub.getCurrentSize() == 0) { // 20160330
-            HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
-            if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
-                return "has masterHub, but masterObject is null";
-            }
-        }
-        
-        final Class c = obj.getClass();
-        if (thisHub.data.objClass == null) HubDelegate.setObjectClass(thisHub, c);
-        if (!thisHub.data.objClass.isAssignableFrom(c) ) {
-            return "class not assignable, class="+c;
-        }
-
-        if (thisHub.data.getUniqueProperty() != null || thisHub.datam.getUniqueProperty() != null) {
+        if (obj != null && (thisHub.data.getUniqueProperty() != null || thisHub.datam.getUniqueProperty() != null)) {
             if (!HubDelegate.verifyUniqueProperty(thisHub, obj)) {
                 return "verifyUniqueProperty returned false for property "+thisHub.datam.getUniqueProperty();
             }
         }
         
         // 20140731 recursive hub check
-        if (HubDetailDelegate.isRecursiveMasterDetail(thisHub)) {
+        if (obj != null && HubDetailDelegate.isRecursiveMasterDetail(thisHub)) {
+            final Class c = obj.getClass();
             // cant add a recursive object to its children Hub
             // cant make a recursive object have one of its children as the parent
 
@@ -390,7 +476,6 @@ public class HubAddRemoveDelegate {
                 String s = null;
                 if (obj instanceof OAObject) s = thisHub.getCanAddMessage((OAObject) obj);
                 if (s == null) s = HubAddRemoveDelegate.canAddMsg(thisHub, obj);
-                else s = "unknown";
                 throw new RuntimeException("Cant add object, can add retured false, hub="+thisHub+", add object="+obj+", Reason: "+s);
             }
         }

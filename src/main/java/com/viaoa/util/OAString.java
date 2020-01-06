@@ -463,7 +463,7 @@ public class OAString {
     }
 
     /** 
-        Used to convert a String that uses Hungarian notation to a titled, space separated String.
+        Used to convert a String that uses CamelCase notation to a titled, space separated String.
         <p>
         Example: "yourNameTest" converts to "Your Name Test"  
         @param value String to convert
@@ -475,7 +475,7 @@ public class OAString {
     }
 
 
-    private final static String validToHungarianSep = " _,.:|\t-/";
+    private final static String validToCamelCaseSep = " _,.:|\t-/";
     /** 
         Example: "Your Name Test" converts to "YourNameTest"   
         Example: "your name test" converts to "yourNameTest"   
@@ -484,12 +484,18 @@ public class OAString {
         
         first char upper/lower-case is not changed.
     */
+    public static String convertToCamelCase(String value) {
+        return convertToHungarian(value, null);
+    }
+    public static String convertToCamelCase(String value, String sepChars) {
+        return convertToHungarian(value, sepChars);
+    }
     public static String convertToHungarian(String value) {
         return convertToHungarian(value, null);
     }
     public static String convertToHungarian(String value, String sepChars) {
         if (value == null) return null;
-        if (sepChars == null) sepChars = validToHungarianSep;
+        if (sepChars == null) sepChars = validToCamelCaseSep;
         int x = value.length();
         StringBuilder sb = new StringBuilder(x);
 
@@ -518,7 +524,7 @@ public class OAString {
     }
     
     /**
-        Used to convert a String that uses Hungarian notation to a titled, space separated String.
+        Used to convert a String that uses CamelCase notation to a titled, space separated String.
         The first char and all letter chars following non-letter characters will be converted to
         uppercase.  Words will be seperated using space character.
         <p>
