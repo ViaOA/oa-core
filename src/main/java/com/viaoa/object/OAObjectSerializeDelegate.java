@@ -43,7 +43,7 @@ public class OAObjectSerializeDelegate {
         }
 	    in.defaultReadObject();
 	    
-        final OAObjectInfo oi = OAObjectHashDelegate.hashObjectInfo.get(oaObj.getClass());
+        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
         final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
 
 	    // read properties
