@@ -540,9 +540,6 @@ public class HubLinkDelegate {
         updateLinkedToHub(fromHub, linkToHub, obj, null);
     }
     protected static void updateLinkedToHub(final Hub fromHub, Hub linkToHub, Object obj, String changedPropName) {
-        updateLinkedToHub(fromHub, linkToHub, obj, changedPropName, true);
-    }
-    protected static void updateLinkedToHub(final Hub fromHub, Hub linkToHub, Object obj, String changedPropName, boolean bAdjustMaster) {
         if (fromHub == null) return;
 		if (fromHub.datau.isAutoCreate()) return;
 
@@ -558,37 +555,15 @@ public class HubLinkDelegate {
             // see if this hub is linked to a master (bForce)
     
             if (obj != null && fromHub.datau.getLinkFromGetMethod() == null) {
-                int pos = HubDataDelegate.getPos(fromHub, obj, bAdjustMaster, false);  // adjust master, bUpdateLink
-                if (pos < 0 && HubDelegate.isValid(fromHub)) {
-                    // add to fromHub
-                    //   - only if it does not have a masterObject
-                    
-                    // 20120716
-                    OAFilter<Hub> filter = new OAFilter<Hub>() {
-                        @Override
-                        public boolean isUsed(Hub h) {
-                            return (h.datam.getMasterObject() != null);
-                        }
-                    };
-                    Hub[] hubs = HubShareDelegate.getAllSharedHubs(fromHub, filter);
-                    
-                    /*
-                    //was: Hub[] hubs = HubShareDelegate.getAllSharedHubs(fromHub);
-                    boolean b = true;
-                    for (int i=0; i < hubs.length && b; i++) {
-                        if (hubs[i].datam.getMasterObject() != null) {
-                            b = false;
-                            break;
-                        }
-                    }
-                    */
-                    /*
-	            	if (b) {
-	            	    // 2018117 dont add to fromHub.  Instead use HubCopy (HubFilter), which will add to hub. 
-	            	    //was: fromHub.addElement(obj);
-	            	}
-	            	*/
-	            }
+                
+                // 20200121
+                OAThreadLocalDelegate.addDontAdjustHub(linkToHub);
+                try {
+                    HubDataDelegate.getPos(fromHub, obj, true, false);  // adjust master, bUpdateLink
+                }
+                finally {
+                    OAThreadLocalDelegate.removeDontAdjustHub(linkToHub);
+                }
 	        }
 	        else {
 	            if (changedPropName == null) {

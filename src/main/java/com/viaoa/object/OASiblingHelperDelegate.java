@@ -424,16 +424,19 @@ if (keys == null || keys.length == 0) {
                     if (!(propertyValue instanceof OANotExist)) return false;
                 }
                 
-                hmIgnore.put(oaObject.getGuid(), Boolean.TRUE);
-                OAObjectKey ok = oaObject.getObjectKey();
-                if (ok.guid == 0) {
-                    ok.guid = oaObject.getGuid();
-                }
-                alFoundObjectKey.add(ok);
-                if (alFoundObjectKey.size() >= maxAmount) {
-                    stop();
-                }
+                boolean bExisted = hmIgnore.put(oaObject.getGuid(), Boolean.TRUE) != null;
 
+                if (!bExisted) {
+                    OAObjectKey ok = oaObject.getObjectKey();
+                    if (ok.guid == 0) {
+                        ok.guid = oaObject.getGuid();
+                    }
+                    
+                    alFoundObjectKey.add(ok);
+                    if (alFoundObjectKey.size() >= maxAmount) {
+                        stop();
+                    }
+                }
                 return false; // always returns
             }
             @Override

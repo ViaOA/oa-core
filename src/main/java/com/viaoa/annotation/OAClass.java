@@ -27,6 +27,8 @@ import java.lang.annotation.Target;
 public @interface OAClass {
 
     String shortName() default "";
+    String pluralName() default "";
+    String lowerName() default "";
     String displayName() default "";
     String description() default "";
 

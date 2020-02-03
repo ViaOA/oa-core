@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import com.viaoa.object.OAObject;
 
 /**
+ 
+ see:  20200127 OAJaxb.java
+
     OAJsonReader that converts to XML, and then uses OAXMLReader to convert to OAObjects and Hubs.  
     @see OAJsonWriter
     @author vvia

@@ -12,6 +12,9 @@ public class HubDetailDelegateTest extends OAUnitTest {
     @Test
     public void test() {
         
+        
+        
+        
     }
     
 }

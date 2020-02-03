@@ -124,5 +124,8 @@ public class OAThreadLocal {
     
     
     public OAJaxb oajaxb;
+    
+    // hubs that Hub.setAO should not adjust when getting pos
+    public Hub[] dontAdjustHubs;
 }
 

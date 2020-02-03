@@ -54,6 +54,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
     protected boolean bAddToCache = true;  // add object to Cache
     protected boolean bInitializeNewObjects = true;  // initialize object properties (used by OAObject)
     protected String displayName;
+    protected String lowerName;
+    protected String pluralName;
     protected String[] rootTreePropertyPaths;
 
     // this is set by OAObjectInfoDelegate.initialize()
@@ -471,6 +473,22 @@ public class OAObjectInfo { //implements java.io.Serializable {
         this.displayName = s;
     }
 
+    public String getPluralName() {
+        if (pluralName == null && thisClass != null) pluralName = OAString.getPlural(thisClass.getName());
+        return pluralName;
+    }
+    public void setPluralName(String s) {
+        this.pluralName = s;
+    }
+
+    public String getLowerName() {
+        if (lowerName == null && thisClass != null) lowerName = OAString.makeFirstCharLower(thisClass.getName());
+        return lowerName;
+    }
+    public void setLowerName(String s) {
+        this.lowerName = s;
+    }
+    
     public String[] getRootTreePropertyPaths() {
         return rootTreePropertyPaths;
     }

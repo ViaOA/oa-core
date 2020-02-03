@@ -8,9 +8,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-package com.viaoa.util.converter;
+package com.viaoa.util;
 
 import com.viaoa.util.*;
+import com.viaoa.util.converter.OAConverterInterface;
 
 import java.util.*;
 import java.sql.*;

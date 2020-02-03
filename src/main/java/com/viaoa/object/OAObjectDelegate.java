@@ -123,8 +123,10 @@ public class OAObjectDelegate {
                 if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultContextPropertyPath())) {
                     OAObject objx = OAContext.getContextObject();
                     if (objx != null) {
-                        OAFinder hf = new OAFinder(li.getDefaultContextPropertyPath());
-                        objx = hf.findFirst(objx);
+                        if (!li.getDefaultContextPropertyPath().equals(".")) {
+                            OAFinder hf = new OAFinder(li.getDefaultContextPropertyPath());
+                            objx = hf.findFirst(objx);
+                        }
                         OAObjectPropertyDelegate.unsafeAddProperty(oaObj, li.getName(), objx);
                     }
                 }

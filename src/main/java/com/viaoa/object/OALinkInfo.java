@@ -72,6 +72,7 @@ public class OALinkInfo { //implements java.io.Serializable {
     private boolean defaultPropertyPathIsHierarchy;
     private boolean defaultPropertyPathCanBeChanged;
 
+    // default value comes from Context object.  "." is to use this object.
     private String defaultContextPropertyPath;
     
     private Method schedulerMethod;

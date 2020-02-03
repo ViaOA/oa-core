@@ -22,6 +22,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import java.lang.ref.*;  // java1.2
 
+import com.viaoa.ds.OASelect;
 import com.viaoa.hub.*;
 import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
@@ -118,7 +119,7 @@ public class OAObject implements java.io.Serializable, Comparable {
     static {
         // oaversion
         // String ver = "3.5.57_20190414";
-        String ver = "3.5.64_20200106";
+        String ver = "3.5.65_20200202";
         try {
             InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
             Properties props = new Properties();
@@ -1173,8 +1174,14 @@ public class OAObject implements java.io.Serializable, Comparable {
  
      */
     
-    
 //qqqqqqqqqqqqq support for getHub qqqqqqqqqqqqqqqqqqqqq
+
+    public static OAObject jaxbCreateInstance(Class clazz) {
+        OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+        if (jaxb == null) return null;
+        OAObject obj = jaxb.getNextObject(clazz);
+        return obj;
+    }
     
     public OAObject getJaxb(String propertyName) {
         OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
@@ -1193,6 +1200,38 @@ public class OAObject implements java.io.Serializable, Comparable {
         }
         return (OAObject) getObject(propertyName);
     }
+
+/***qqqqqqqqqq    
+    public int getJaxbId(String propertyName) {
+    // was: public String getJaxbId(String propertyName) {
+    //   jaxb required xmlId to be a String, but Moxy does not    
+        OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+        if (jaxb != null) {
+            //OAJaxb.SendRefType type = jaxb.getSendRefType(this, propertyName);
+            //if (type != OAJaxb.SendRefType.id) return 0;
+            //was: if (type != OAJaxb.SendRefType.id) return null;
+        }
+        Object objx = OAObjectPropertyDelegate.getProperty(this, propertyName, true, true);
+        if (objx instanceof OANotExist) return 0;
+        //was: if (objx instanceof OANotExist) return null;
+        if (objx instanceof OAObject) objx = ((OAObject) objx).getObjectKey();
+        if (objx instanceof OAObjectKey) {
+            Object[] objs = ((OAObjectKey) objx).getObjectIds();
+            if (objs == null || objs.length != 1) return 0;
+            //if (objs == null || objs.length != 1) return null;
+            return (int) objs[0];
+            //was: return objs[0]+"";
+        }
+        return OAConv.toInt(objx);
+        //was:  return objx+"";
+    }
+    public void setJaxbId(String propertyName, int id) {
+    //was: public void setJaxbId(String propertyName, String id) {
+        setProperty(propertyName, new OAObjectKey(id));
+        //was: int idx = Integer.valueOf(id);
+        //was: setProperty(propertyName, new OAObjectKey(idx));
+    }
+**/
     
     public String getJaxbId(String propertyName) {
         OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
@@ -1272,6 +1311,7 @@ public class OAObject implements java.io.Serializable, Comparable {
                 
                 for (Object obj : hub) {
                     if (jaxb.isAlreadyIncluded((OAObject) obj)) cntRef++;
+                    else if (jaxb.willBeIncludedLater((OAObject) obj)) cntRef++;
                     else cnt++;
                     if (cnt > 0 && cntRef > 0) break;
                 }
@@ -1284,6 +1324,10 @@ public class OAObject implements java.io.Serializable, Comparable {
                     }
                     for (Object obj : hub) {
                         if (jaxb.isAlreadyIncluded((OAObject) obj)) {
+                            if (bRefsOnly) list.add(obj);
+                            else lstRefsOnly.add((OAObject) obj);
+                        }
+                        else if (jaxb.willBeIncludedLater((OAObject) obj)) {
                             if (bRefsOnly) list.add(obj);
                             else lstRefsOnly.add((OAObject) obj);
                         }

@@ -36,6 +36,8 @@ import com.viaoa.object.*;
     3: use guid
     if not found, then a new object will be created.
 
+see:  20200127 OAJaxb.java
+
     @see OAXMLWriter
 */
 public class OAXMLReader {

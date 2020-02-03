@@ -8,6 +8,10 @@ import javax.json.stream.JsonParser.Event;
 
 public class OAJsonUtil {
 
+/*
+ * see:  20200127 OAJaxb.java
+ * 
+ */
 public void test(String sz) {    
     final JsonParser parser = Json.createParser(new StringReader(sz));
     String key = null;

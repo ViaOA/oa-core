@@ -100,6 +100,7 @@ public class OAObjectReflectDelegate {
     public static Object getProperty(OAObject oaObj, String propPath) {
         return getProperty(null, oaObj, propPath);
     }
+
     public static Object getProperty(Hub hubLast, OAObject oaObj, String propPath) {
         if (propPath == null || propPath.trim().length() == 0) return null;
         if (hubLast == null && oaObj == null) return null;
@@ -111,6 +112,7 @@ public class OAObjectReflectDelegate {
 
         boolean b = false;
         for (;;) {
+            if (!st.hasMoreTokens()) return oaObj;
             String tok = st.nextToken().trim();
             
             // 20161019 ignore class cast, ex: (com.test.Employee)emp.lname

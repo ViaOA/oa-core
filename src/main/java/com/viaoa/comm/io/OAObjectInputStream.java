@@ -78,9 +78,13 @@ public class OAObjectInputStream extends ObjectInputStream {
         boolean bReplace = false;
         Field f = null;
         try {
+            // 20200118
+            String name = cd.getName();
+            /* was:
             f = cd.getClass().getDeclaredField("name");
             f.setAccessible(true);
             String name = (String) f.get(cd);
+            */
             String newName;
             if (oldPackageName != null) {
                 if (!name.startsWith(oldPackageName)) return cd;
@@ -90,6 +94,9 @@ public class OAObjectInputStream extends ObjectInputStream {
                 if (newName == null) newName = s;
                 
                 newName = newPackageName + "." + newName;
+
+                f = cd.getClass().getDeclaredField("name");
+                f.setAccessible(true);
                 f.set(cd, newName);
             }
             else newName = name;

@@ -22,6 +22,7 @@ import com.viaoa.remote.multiplexer.info.RequestInfo;
 import com.viaoa.context.OAContext;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
+import com.viaoa.hub.HubShareDelegate;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAArray;
@@ -63,6 +64,7 @@ public class OAThreadLocalDelegate {
     public static final HashMap<Object, OAThreadLocal[]> hmLock = new HashMap<Object, OAThreadLocal[]>(53, .75f);
     
     private static final AtomicInteger TotalJaxb = new AtomicInteger();
+    private static final AtomicInteger TotalDontAdjustHub = new AtomicInteger();
     
 	protected static OAThreadLocal getThreadLocal(boolean bCreateIfNull) {
 		OAThreadLocal ti = threadLocal.get();
@@ -1277,6 +1279,52 @@ static volatile int unlockCnt;
         return hold;
     }
 
+    // 20200121
+    /**
+     * Hubs that should be adjusted when trying to set activeObject and adjusting masterHub.AO
+     */
+    public static void addDontAdjustHub(Hub hub) {
+        if (hub == null) return;
+        hub = HubShareDelegate.getMainSharedHub(hub);
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+        ti.dontAdjustHubs = (Hub[]) OAArray.add(Hub.class, ti.dontAdjustHubs, hub);
+        TotalDontAdjustHub.incrementAndGet();
+        int x = ti.dontAdjustHubs.length; 
+        if (x > 25 || TotalDontAdjustHub.get() > 250 || TotalDontAdjustHub.get() < 0) {
+            msHubEvent = throttleLOG("total DontAdjustHub this="+x+", all="+TotalDontAdjustHub.get(), msHubEvent);
+        }
+    }
+    public static void removeDontAdjustHub(Hub hub) {
+        if (hub == null) return;
+        if (TotalDontAdjustHub.get() == 0) return;
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
+        if (ti == null) return;
+        hub = HubShareDelegate.getMainSharedHub(hub);
+        ti.dontAdjustHubs = (Hub[]) OAArray.removeValue(Hub.class, ti.dontAdjustHubs, hub); 
+        TotalDontAdjustHub.decrementAndGet();
+    }
+    
+    public static boolean getCanAdjustHub(Hub hub) {
+        if (hub == null) return false;
+        if (TotalDontAdjustHub.get() == 0) return true;
+        
+        hub = HubShareDelegate.getMainSharedHub(hub);
+        
+        OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
+        if (ti == null) return true;
+        
+        if (ti.dontAdjustHubs == null || ti.dontAdjustHubs.length == 0) return true; 
 
+        for (Hub hubx : ti.dontAdjustHubs) {
+            Hub hubm = hubx.getMasterHub();
+            for (int i=0 ;hubm != null && i < 10; i++, hubm=hubm.getMasterHub()) {
+                if (HubShareDelegate.getMainSharedHub(hubm) == hub) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
 }
 

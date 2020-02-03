@@ -82,7 +82,7 @@ public @interface OAOne {
     boolean defaultPropertyPathIsHierarchy() default false;
     boolean defaultPropertyPathCanBeChanged() default false;
     
-    /** property path for default value from Context object */
+    /** property path for default value from Context object, "." is to use this object. */
     String defaultContextPropertyPath() default "";
 }
 

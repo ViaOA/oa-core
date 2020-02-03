@@ -101,8 +101,11 @@ public class HubDetailDelegate {
                 if (dm.getMasterHub().datau.isUpdatingActiveObject()) return false;
                 // see if masterHub (or a share of it) has a link
                 //  if it does, then dont allow it to adjustMaster
-                HubAODelegate.setActiveObject(dm.getMasterHub(), obj, true, bUpdateLink, false); // adjustMaster, updateLink, force
-                result = true;
+                    
+                if (OAThreadLocalDelegate.getCanAdjustHub(dm.getMasterHub())) {
+                    HubAODelegate.setActiveObject(dm.getMasterHub(), obj, true, bUpdateLink, false); // adjustMaster, updateLink, force
+                    result = true;
+                }
             }
         }
         return result;

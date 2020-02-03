@@ -45,6 +45,16 @@ public class OAPropertyPathTest extends OAUnitTest {
         
     }
 
+    @Test
+    public void test3() {
+        OAPropertyPath<Program> pp = new OAPropertyPath<>(Program.class, ".");
+        Program p = new Program();
+        Object px = pp.getValue(p);
+        assertEquals(p, px);
+        int xx = 4;
+        xx++;
+        
+    }
     
     
 }

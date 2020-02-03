@@ -241,7 +241,7 @@ public class OAPropertyPath<F> {
         if (this.fromClass == null) {
             setup( (Class<F>)fromObject.getClass());
         }
-        if (methods == null || methods.length == 0) return 0;
+        if (methods == null || methods.length == 0) return fromObject; // ex: could be pp="."
         
         Object result = fromObject;
         for (int i=0; i < methods.length; i++) {
@@ -388,7 +388,7 @@ public class OAPropertyPath<F> {
         Class classLast = clazz;
         int posDot, prevPosDot;
         posDot = prevPosDot = 0;
-        
+
         if (OAString.isEmpty(propertyPathClean)) posDot = -1;
         int cnter = 0;
         for ( ; posDot >= 0; prevPosDot=posDot+1) {
@@ -398,7 +398,10 @@ public class OAPropertyPath<F> {
                 throw new RuntimeException("cant parse propertyPath="+propertyPath+", class="+clazz);
             }
             
+            if (prevPosDot >= propertyPathClean.length()) break;
             posDot = propertyPathClean.indexOf('.', prevPosDot);
+            if (posDot == 0) continue;
+            
             int posCast = propertyPathClean.indexOf('(', prevPosDot);
             int posFilter = propertyPathClean.indexOf(':', prevPosDot);
 

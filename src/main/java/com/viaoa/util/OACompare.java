@@ -254,9 +254,17 @@ public class OACompare {
             int x = ((OAObjectKey) matchValue).compareTo(value);
             return x;
         }
-        if (value instanceof OAObject && value instanceof OAObject) {
+        if (value instanceof OAObject && matchValue instanceof OAObject) {
            int x = ((OAObject) value).compareTo((OAObject) matchValue);
            return x;
+        }
+        if (value instanceof OAObject) {
+            int x = ((OAObject) value).compareTo(matchValue);
+            return x;
+        }
+        if (matchValue instanceof OAObject) {
+            int x = ((OAObject) matchValue).compareTo(value);
+            return x;
         }
         
         Class classValue = (value == null) ? null : value.getClass();

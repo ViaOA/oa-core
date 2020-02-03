@@ -2352,6 +2352,55 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
     public Stream<TYPE> stream() {
         return this.data.vector.stream();
     }
+
+    public void onChangeAO(HubOnEventInterface onEvent) {
+        if (onEvent == null) return;
+        addHubListener(new HubListenerAdapter() {
+            @Override
+            public void afterChangeActiveObject(HubEvent e) {
+               onEvent.onEvent(e);
+            } 
+        });
+    }
+    public void onPropertyChange(HubOnEventInterface onEvent) {
+        if (onEvent == null) return;
+        addHubListener(new HubListenerAdapter() {
+            @Override
+            public void afterPropertyChange(HubEvent e) {
+                onEvent.onEvent(e);
+            }
+        });
+    }
+    public void onPropertyChange(HubOnEventInterface onEvent, String propName) {
+        if (onEvent == null || OAString.isEmpty(propName)) return;
+        addHubListener(new HubListenerAdapter() {
+            @Override
+            public void afterPropertyChange(HubEvent e) {
+                if (propName.equalsIgnoreCase(e.getPropertyName())) {
+                    onEvent.onEvent(e);
+                }
+            }
+        });
+    }
+    public void onAdd(HubOnEventInterface onEvent) {
+        if (onEvent == null) return;
+        addHubListener(new HubListenerAdapter() {
+            @Override
+            public void afterAdd(HubEvent e) {
+                onEvent.onEvent(e);
+            }
+        });
+    }
+    public void onRemove(HubOnEventInterface onEvent) {
+        if (onEvent == null) return;
+        addHubListener(new HubListenerAdapter() {
+            @Override
+            public void afterRemove(HubEvent e) {
+                onEvent.onEvent(e);
+            }
+        });
+    }
     
-    // public transient boolean DEBUG; // for debugging
+//qqqqqqqqqqqqqqqqqq    
+    public transient boolean DEBUG; // for debugging
 }

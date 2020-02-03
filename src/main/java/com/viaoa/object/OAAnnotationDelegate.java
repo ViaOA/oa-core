@@ -73,6 +73,8 @@ public class OAAnnotationDelegate {
                 oi.setRootTreePropertyPaths(pps);
                 oi.setLookup(oaclass.isLookup());
                 oi.setProcessed(oaclass.isProcessed());
+                oi.setPluralName(oaclass.pluralName());
+                oi.setLowerName(oaclass.lowerName());
             }
             OAEditQuery eq = (OAEditQuery) clazz.getAnnotation(OAEditQuery.class);
             if (eq != null) {

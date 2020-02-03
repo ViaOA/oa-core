@@ -1,13 +1,15 @@
-package com.viaoa.util;
+package com.viaoa.util.xmladapter;
 
 import java.time.Clock;
 import java.time.ZoneId;
 
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
+import com.viaoa.util.OADateTime;
+
 public class OADateTimeXmlAdapter extends XmlAdapter<String, OADateTime> {
 
-//qqqqqqqqqqqq need to create for OADate and OATime, OANumber (with digits) qqqqqqqqqqqqqqqqq
+//qqqqqqqqqqqq need to create for OADate and OATime, OANumber (add to doubles annotation deci digits) qqqqqqqqqqqqqqqqq
    //qqqqqqq need to XML annotate props that use OANumberXmlAdapter
     
     

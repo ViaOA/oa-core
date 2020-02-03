@@ -53,6 +53,7 @@ public class OAObjectSerializeDelegate {
 
             String key = (String)obj;
             Object value = in.readObject();
+            
             if (value instanceof OANullObject) value = null;
             
             if (bIsServer) {
