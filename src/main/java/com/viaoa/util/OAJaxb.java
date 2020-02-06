@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Queue;
 import java.util.Stack;
 
 import javax.json.Json;
@@ -29,6 +31,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.eclipse.persistence.jaxb.MarshallerProperties;
+import org.eclipse.persistence.internal.identitymaps.QueueableWeakCacheKey;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.eclipse.persistence.jaxb.MOXySystemProperties;
 
@@ -67,7 +70,17 @@ import com.viaoa.object.OAThreadLocalDelegate;
  * 0: getEmployees will be annotated with @XmlTransient so that it is ignored by jaxb
  * 1: getJaxbEmployees will return a list<Station> of the stations that are not already in the graph.
  * 2: getJaxbRefEmployees will return a list<Station> of the stations that are already in the graph.
- * when the xml/json is unmarshelled, the Hub will have the combined objects.  
+ * when the xml/json is unmarshelled, the Hub will have the combined objects.
+ * 
+ * Example:  
+    OAJaxb jaxb = new OAJaxb<>(Company.class);
+    jaxb.setUseReferences(false);
+    jaxb.setIncludeGuids(false);
+    jaxb.addPropertyPath(CompanyPP.clients().products().pp);
+    jaxb.addPropertyPath(CompanyPP.locations().buyers().pp);
+    jsonOutput = jaxb.convertToJSON(hub);
+ *   
+ *   
  * @author vvia
  */
 public class OAJaxb<TYPE extends OAObject> {
@@ -75,16 +88,33 @@ public class OAJaxb<TYPE extends OAObject> {
     private JAXBContext context;
     private Class<TYPE> clazz;
 
+    // each object in the tree
     private Stack<Object> stackObject;
-    private Stack<HashSet<String>> stackHashSet;
-    private Stack<HashMap<String, ArrayList<OAObject>>> stackHmRefsOnly;
 
-    private HashSet<String> hsCurrent;
+    // stack of link objects from marshalling, that can be used to know the propertyPath
+    private Stack<OALinkInfo> stackMarshalLinkInfo;  
+    
+    // keeps hsCurrent for objs in stack
+    private Stack<HashSet<String>> stackHashSet;
+    
+    // keeps a list of refs for the current object hub properties
+    private Stack<HashMap<String, ArrayList<OAObject>>> stackHmRefsOnly;
+    
+
+    // list of link properties for the current object that have responded with SendRefType.object
+    //    so that the other oaObj.getJaxb methods for the property will not be used.
+    private HashSet<String> hsCurrentLinkObjectsSent;
+    
+    // keeps track objects in a Hub that are already in the output (obj graph)
     private HashMap<String, ArrayList<OAObject>> hmCurrentRefsOnly; 
 
     private boolean bIsMarshelling;
     
+    private boolean bUseReferences = true;
+    
     private static HashMap<Class<OAObject>, JAXBContext> hmJAXBContext = new HashMap<>();
+    
+    private ArrayList<String> alPropertyPath = new ArrayList<>();
     
     public OAJaxb(Class<TYPE> c) {
         this.clazz = c;
@@ -95,10 +125,44 @@ public class OAJaxb<TYPE extends OAObject> {
         return stackObject.size();
     }
     
+    public void addPropertyPath(String pp) {
+        alPropertyPath.add(pp);
+    }
+    public void clearPropertyPaths() {
+        alPropertyPath.clear();
+    }
+    
+    private boolean bIncludeGuids;
+    public boolean getIncludeGuids() {
+        return bIncludeGuids;
+    }
+    public void setIncludeGuids(boolean b) {
+        this.bIncludeGuids = b;
+    }
+    
+    /**
+     * Flag to know if references are permitted (default: true).  References are used when
+     * an object is already in graph, and the reference will point to this object.
+     * If set to false, then an object that is included more then once will be repeated, causing
+     * duplicates for the object.
+     * 
+     * Note: if false and a circular reference is detected, then a referece will be used anyway to 
+     * avoid exception.
+     */
+    public boolean getUseReferences() {
+        return this.bUseReferences;
+    }
+    public void setUseReferences(boolean b) {
+        this.bUseReferences = b;
+    }
+    
+    /**
+     * Get the context for this.clazz
+     */
     public JAXBContext getJAXBContext() throws Exception {
         if (context == null) {
             
-            /*
+            /* Note: we are currently following the jaxb spec, where Id/RefId are treated as String.
                 The JAXB spec says that XmlId must always be type string
                 MOXY allows it to be otherwise, by doing one of the following:
                 A: set system property at startup.  Has to before MOXySystemProperties is initialized, since it will store at classload 
@@ -115,14 +179,16 @@ public class OAJaxb<TYPE extends OAObject> {
 
                 // MOXY 
                 HashMap hm = new HashMap<>();
-                hm.put(MOXySystemProperties.XML_ID_EXTENSION, Boolean.TRUE);  // ?????? dont think this is needed
-                context = JAXBContextFactory.createContext(new Class[] {clazz}, hm);
-                //was: context = JAXBContextFactory.createContext(new Class[] {HubWrapper.class, clazz}, hm);
+                // hm.put(MOXySystemProperties.XML_ID_EXTENSION, Boolean.TRUE);  // ?????? dont think this is needed right now
+                
+                // create using Moxy Factory
+                context = JAXBContextFactory.createContext(new Class[] {HubWrapper.class, clazz}, hm);
                 
                 boolean bx = (context instanceof org.eclipse.persistence.jaxb.JAXBContext);
                 
-                // default
+                // default way for creating
                 // context = JAXBContext.newInstance(HubWrapper.class, clazz); 
+                
                 hmJAXBContext.put((Class<OAObject>) clazz, context);
             }
         }
@@ -133,9 +199,10 @@ public class OAJaxb<TYPE extends OAObject> {
         cascade = new OACascade();
         stackObject = new Stack<>();
         stackHashSet = new Stack<>();
-        hsCurrent = null;
+        hsCurrentLinkObjectsSent = null;
         stackHmRefsOnly = new Stack<>();
         hmCurrentRefsOnly = null;
+        stackMarshalLinkInfo = new Stack<OALinkInfo>();
     }
     
     public void createXsdFile(final String directoryName) throws Exception {
@@ -229,8 +296,9 @@ public class OAJaxb<TYPE extends OAObject> {
         String s = convert(hub, rootName, true);
         return s;
     }
-    public String convertToJSON(Hub<TYPE> hub, String rootName) throws Exception {
-        String s = convert(hub, rootName, false);
+    
+    public String convertToJSON(Hub<TYPE> hub) throws Exception {
+        String s = convert(hub, null, false);
         return s;
     }
     
@@ -241,6 +309,7 @@ public class OAJaxb<TYPE extends OAObject> {
             OAThreadLocalDelegate.setOAJaxb(this);
             bIsMarshelling = true;
             for (OAObject obj : hub) {
+                // put root objects in list of cascade so that inner references to them will be used
                 cascade.wasCascaded(obj, true);
             }
             return _convert(hub, rootName, bToXML);
@@ -252,18 +321,14 @@ public class OAJaxb<TYPE extends OAObject> {
     }
     
     protected String _convert(Hub<TYPE> hub, String rootName, boolean bToXML) throws Exception {
-        // qqqqqqqqqq take out: 
-        //reset();
-
         Object obj;
-        if (OAString.isEmpty(rootName)) {
+        if (!bToXML || OAString.isEmpty(rootName)) {
             obj = hub;
         }
         else {
-            //HubWrapper<TYPE> wrapper = new HubWrapper<TYPE>(hub);
-            //JAXBElement jaxbElement = new JAXBElement(new QName(rootName), HubWrapper.class, wrapper);
-            //obj = jaxbElement;
-            obj = hub;
+            HubWrapper<TYPE> wrapper = new HubWrapper<TYPE>(hub);
+            JAXBElement jaxbElement = new JAXBElement(new QName(rootName), HubWrapper.class, wrapper);
+            obj = jaxbElement;
         }
         
         Marshaller marshaller = getJAXBContext().createMarshaller();
@@ -271,14 +336,9 @@ public class OAJaxb<TYPE extends OAObject> {
         marshaller.setListener(new OAJaxbListener());
         
         if (!bToXML) {
-            // Output JSON - Based on Object Graph
             marshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
-            /*
-            marshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, true);
+            marshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
             marshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);         
-             */
-marshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
-marshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);         
         }
 
         StringWriter stringWriter = new StringWriter();
@@ -307,22 +367,16 @@ marshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
     
     
     public TYPE convertFromJSON(String json) throws Exception {
-        OAThreadLocalDelegate.setLoading(true);
+        OAThreadLocalDelegate.setLoading(true);  ///qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq not always loading qqqqqqqqqqqqqqq
         OAThreadLocalDelegate.setOAJaxb(this);
         
         try {
             Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
             unmarshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
-/*qqqqqqqqqqq            
             unmarshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
             unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);         
-*/
-unmarshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
-unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);         
-            
             
             StringReader reader = new StringReader(json);
-            
             TYPE objx = (TYPE) unmarshaller.unmarshal(reader);
             return objx;
         }
@@ -344,6 +398,9 @@ unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
             JAXBElement<HubWrapper> hubWrapper = unmarshaller.unmarshal(streamSource, HubWrapper.class);
             */
 
+//qqqqqqqqqqqqqqqqqq get code from convertHubFromJSON ... call preload
+//qqqqqqqqqqqqqq test this with XML
+            
 JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
 List lst = (List) ele.getValue();
 Hub<TYPE> hub = new Hub<TYPE>(clazz);
@@ -360,8 +417,8 @@ Hub<TYPE> hub = new Hub<TYPE>(clazz);
         }
     }
     public Hub<TYPE> convertHubFromJSON(String xml) throws Exception {
-//qqqqqqqqq this needs to be an option, since POST will need to not use have Loading==true        
-        OAThreadLocalDelegate.setLoading(true);
+//qqqqqqqqq this needs to be an option, since POST will need to not use isLoading==true        
+//qqq        OAThreadLocalDelegate.setLoading(true);
         OAThreadLocalDelegate.setOAJaxb(this);
         try {
             Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
@@ -371,8 +428,8 @@ Hub<TYPE> hub = new Hub<TYPE>(clazz);
             
             StreamSource streamSource = new StreamSource(new StringReader(xml));
             
+//qqqqqqqqqqq needs to check for boundaries on what's allowed to be changed qqqqqqq            
 preload(xml); //qqqqqqqqqqqqqqqqqq
-
 
 
 JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
@@ -388,18 +445,20 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
             return hub;
         }
         finally {
-            OAThreadLocalDelegate.setLoading(false);
+//qqqq            OAThreadLocalDelegate.setLoading(false);
             OAThreadLocalDelegate.setOAJaxb(null);
         }
     }
 
-//qqqqqqqqqqqqqqqqqqqqqqqq    
     
-    private static class Record {
+    // create nodes using preprocessor
+    private static class Node {
+        OALinkInfo li;
+        String pp = "";
         Class clazz;
         Object id;
-        OAPropertyInfo pi;
-        public Record(Class c) {
+        OAPropertyInfo piId;
+        public Node(Class c) {
             this.clazz = c;
         }
     }
@@ -407,15 +466,15 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
 //qqqqqqqqqqqqq need to create a warning listener qqqqqqqqqqq otherwise it's silent    
 
     /** used from preload data, by static oaObject.jaxbCreate(), to get the next oaObject */
-    public OAObject getNextObject(Class clazz) {
+    public OAObject getNextUnmarshalObject(Class clazz) {
         if (clazz == null) return null;
 
-        if (stackRecord == null || stackRecord.isEmpty()) return null;
-        Record rec = stackRecord.peek();
-        if (!rec.clazz.equals(clazz)) return null;
-        stackRecord.pop();
+        if (queuePreloadNode == null || queuePreloadNode.isEmpty()) return null;
+        Node node = queuePreloadNode.peek();
+        if (!node.clazz.equals(clazz)) return null;
+        queuePreloadNode.remove();
         
-        Object id = rec.id;
+        Object id = node.id;
         if (id == null) return null;
         
         OAObjectKey objKey = new OAObjectKey(id);
@@ -426,7 +485,7 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
         }
         
         OASelect sel = new OASelect(clazz);
-        sel.select(rec.pi.getName() + " = ?",  new Object[] {id} );
+        sel.select(node.piId.getName() + " = ?",  new Object[] {id} );
         ref = sel.next();
         if (ref instanceof OAObject) {
             return (OAObject) ref;
@@ -435,23 +494,26 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
     }
     
     
+    
     // used by preload to know the order of objects that will be needed.
-    private Stack<Record> stackRecord;
+    private Queue<Node> queuePreloadNode;
+    
     /**
      * Need to find all of the Object IDs, so that jaxb createObject can then find the 
      * correct oaObj to update.
      */
     protected void preload(final String sz) {
         final JsonParser parser = Json.createParser(new StringReader(sz));
-        
-        final Stack<Record> stack = new Stack();
+    
+        final Stack<Node> stack = new Stack();
         
         Class clazz = this.clazz;
-        Record rec = new Record(clazz);
-        stack.push(rec);
+        Node node = new Node(clazz);
+        stack.push(node);
         
-        stackRecord = new Stack();
-        stackRecord.add(rec);
+        
+        queuePreloadNode = new ArrayDeque<>(); 
+        queuePreloadNode.add(node);
         
         String key = null;
         String value = null;
@@ -465,24 +527,28 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
                      OALinkInfo li = oi.getLinkInfo(key);
                      if (li != null) {
                          clazz = li.getToClass();
-                         rec = new Record(clazz);
-                         stack.push(rec);
-                         stackRecord.add(rec);
+                         Node prev = node;
+                         node = new Node(clazz);
+                         node.li = li;
+                         if (OAString.isNotEmpty(prev.pp)) node.pp = prev.pp + ".";
+                         node.pp += li.getName();
+                         stack.push(node);
+                         queuePreloadNode.add(node);
                      }
                  }
              }                 
              else if (event == Event.END_OBJECT) {
-                 rec = stack.pop();
+                 node = stack.pop();
                  key = null;
                  if (stack.isEmpty()) {
                      clazz = this.clazz;
-                     rec = new Record(clazz);
-                     stack.push(rec);
-                     stackRecord.add(rec);
+                     node = new Node(clazz);
+                     stack.push(node);
+                     queuePreloadNode.add(node);
                  }
                  else {
-                     rec = stack.peek();
-                     clazz = rec.clazz;
+                     node = stack.peek();
+                     clazz = node.clazz;
                  }
              }                 
              else if (event == Event.KEY_NAME) {
@@ -494,10 +560,10 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
                  OAPropertyInfo pi = oi.getPropertyInfo(key);
                  if (pi != null && pi.getId()) {
                      value = parser.getString();
-                     rec = stack.peek();
+                     node = stack.peek();
                      Object objx = OAConv.convert(pi.getClassType(), value);
-                     rec.id = objx;
-                     rec.pi = pi;
+                     node.id = objx;
+                     node.piId = pi;
                  }
              }
         }
@@ -505,43 +571,127 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
     }
     
     
+    public String getCurrentMarshalPropertyPath() {
+        String pp = "";
+        if (stackMarshalLinkInfo != null) {
+            OALinkInfo liPrev = null;
+            for (OALinkInfo li : stackMarshalLinkInfo) {
+                if (li == liPrev) continue;  // recursive
+                if (pp.length() > 0) pp += ".";
+                pp += li.getName();
+                liPrev = li;
+            }
+        }
+        return pp;
+    }
+    
+    private OAObject lastGetSendRefObject;
+    private String lastGetSendRefPropertyName;
+    
+//qqqqqqqqqqqq
+    // options:  send first level, send owned
+    
+    public boolean isInStack(OAObject obj) {
+        if (stackObject == null) return false;
+        for (Object objx : stackObject) {
+            if (obj == objx) return true;
+        }
+        return false;
+    }
+    
     /**
      * Used by OAObject when serializing
      */
     public SendRefType getSendRefType(final OAObject objThis, final String propertyName) {
+        lastGetSendRefObject = objThis;
+        lastGetSendRefPropertyName = propertyName;
+        
+        boolean bIsNeeded = true;
+        boolean bMatchedPP = false;
+        if (alPropertyPath.size() > 0) {
+            bIsNeeded = false;
+            String ppCurrent = getCurrentMarshalPropertyPath();
+            ppCurrent = OAString.concat(ppCurrent, propertyName, ".").toLowerCase();
+            boolean bFound = false;
+            for (String pp : alPropertyPath) {
+                if (pp.toLowerCase().indexOf(ppCurrent) == 0) {
+                    bIsNeeded = true;
+                    bMatchedPP = true;
+                    break;
+                }
+            }
+        }
+
+        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(objThis);
+        final OALinkInfo li = oi.getLinkInfo(propertyName);
+        if (li == null) return SendRefType.notNeeded;
+
         Object objx = OAObjectPropertyDelegate.getProperty(objThis, propertyName, true, true);
-/*
-        String objName = objThis.getClass().getSimpleName();
-int x = getStackSize();
-maxStackSize = 5;
-*/
-/*
-if (propertyName == null) return SendRefType.empty;          
-if (propertyName.equalsIgnoreCase("AppUser")) return SendRefType.empty;
-if (objName.equalsIgnoreCase("Buyer")) return SendRefType.empty;
-if (propertyName.equalsIgnoreCase("")) return SendRefType.empty;
-if (propertyName.equalsIgnoreCase("")) return SendRefType.empty;
-*/
-        if (objx instanceof OANotExist) return SendRefType.empty;
-
-//qqqqqqqqqqqqqqqqqqqqqq        
-//if (true || false) return SendRefType.object;
-
-
+        
+        if (!bIsNeeded && !shouldIncludeProperty(objThis, propertyName, false)) {
+            if (li.getType() == li.MANY) {
+                // if (objx instanceof Hub && ((Hub) objx).size() == 0) return SendRefType.object;
+                return SendRefType.notNeeded;
+            }
+            else {
+                if (objx instanceof OANotExist || objx == null) {
+                    return SendRefType.object; // send null
+                }
+                if (bUseReferences) {
+                    if (cascade.wasCascaded((OAObject) objx, false)) {
+                        if (hsCurrentLinkObjectsSent != null && hsCurrentLinkObjectsSent.contains(propertyName.toUpperCase())) {
+                            return SendRefType.notNeeded;
+                        }
+                        return SendRefType.ref;
+                    }
+                }
+                return SendRefType.id;
+            }
+        }
+        
+        if (objx instanceof OANotExist) {
+            if (li.getType() == li.ONE) {
+                return SendRefType.object; // send null
+            }
+            else {
+                return SendRefType.object; // send hub
+            }
+        }
+        
+        if (objx instanceof OAObjectKey) {
+            objx = li.getValue(objThis);
+        }
+        
         if (objx instanceof OAObject) {
+            if (!bUseReferences) {
+                if (!isInStack((OAObject) objx)) {
+                    if (shouldIncludeProperty(objThis, propertyName, true)) {
+                        if (hsCurrentLinkObjectsSent == null) hsCurrentLinkObjectsSent = new HashSet<>();
+                        hsCurrentLinkObjectsSent.add(propertyName.toUpperCase());
+                        return SendRefType.object;
+                    }
+                    return SendRefType.id;
+                }
+            }
+            
             if (cascade != null) {
                 if (cascade.wasCascaded((OAObject) objx, false)) {
-                    if (hsCurrent != null && hsCurrent.contains(propertyName.toUpperCase())) return SendRefType.empty;
+                    if (hsCurrentLinkObjectsSent != null && hsCurrentLinkObjectsSent.contains(propertyName.toUpperCase())) {
+                        return SendRefType.notNeeded;
+                    }
                     return SendRefType.ref;
                 }
             }
-            if (shouldIncludeProperty(objThis, propertyName)) {
-                if (hsCurrent == null) hsCurrent = new HashSet<>();
-                hsCurrent.add(propertyName.toUpperCase());
+            if (shouldIncludeProperty(objThis, propertyName, true)) {
+                if (hsCurrentLinkObjectsSent == null) hsCurrentLinkObjectsSent = new HashSet<>();
+                hsCurrentLinkObjectsSent.add(propertyName.toUpperCase());
                 return SendRefType.object;
             }
         }
-        if (hsCurrent != null && hsCurrent.contains(propertyName.toUpperCase())) return SendRefType.empty;
+        if (hsCurrentLinkObjectsSent != null && hsCurrentLinkObjectsSent.contains(propertyName.toUpperCase())) {
+            return SendRefType.notNeeded;
+        }
+        if (objx == null) return SendRefType.notNeeded; 
         return SendRefType.id;
     }
 
@@ -579,23 +729,28 @@ if (propertyName.equalsIgnoreCase("")) return SendRefType.empty;
      * @param propertyName
      * @return
      */
-    public boolean shouldIncludeProperty(final OAObject objThis, final String propertyName) {
-        int x = getStackSize();
-        
-        return x < maxStackSize;
+    public boolean shouldIncludeProperty(final OAObject objThis, final String propertyName, final boolean bDefaultValue) {
+        return bDefaultValue;
     }
-//qqqqqqqqqq    
-int maxStackSize = 8;
-    
+
+
     class OAJaxbListener extends Listener {
         private final HashSet<String> hsDummy = new HashSet<>();
         private final HashMap<String, ArrayList<OAObject>> hmDummy = new HashMap<>();
         @Override
         public void beforeMarshal(Object source) {
             stackObject.push(source);
+
+            if (lastGetSendRefObject != null && source instanceof OAObject) { 
+                OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(lastGetSendRefObject);
+                OALinkInfo li = oi.getLinkInfo(lastGetSendRefPropertyName);
+                if (li != null) {
+                    stackMarshalLinkInfo.push(li);
+                }
+            }            
             
-            stackHashSet.push(hsCurrent != null ? hsCurrent : hsDummy);
-            hsCurrent = null;
+            stackHashSet.push(hsCurrentLinkObjectsSent != null ? hsCurrentLinkObjectsSent : hsDummy);
+            hsCurrentLinkObjectsSent = null;
 
             stackHmRefsOnly.push(hmCurrentRefsOnly != null ? hmCurrentRefsOnly : hmDummy);
             hmCurrentRefsOnly = null;
@@ -609,16 +764,24 @@ int maxStackSize = 8;
         }
         @Override
         public void afterMarshal(Object source) {
+            if (stackMarshalLinkInfo.isEmpty()) {
+                lastGetSendRefObject = null;
+                lastGetSendRefPropertyName = null;
+            }
+            else {
+                stackMarshalLinkInfo.pop();
+            }
+            
             stackObject.pop();
-            hsCurrent = stackHashSet.pop();
-            if (hsCurrent == hsDummy) hsCurrent = null;
+            hsCurrentLinkObjectsSent = stackHashSet.pop();
+            if (hsCurrentLinkObjectsSent == hsDummy) hsCurrentLinkObjectsSent = null;
             hmCurrentRefsOnly = stackHmRefsOnly.pop();
             if (hmCurrentRefsOnly == hmDummy) hmCurrentRefsOnly = null;
         }
     }
 
     public enum SendRefType {
-        empty, object, ref, id;
+        notNeeded, object, ref, id;
     }
 
 
@@ -667,7 +830,7 @@ int maxStackSize = 8;
         return isAnyOwnerAlreadyIncluded((OAObject)objx);
     }
 
-    
+//qqqqqqqqqqqqqqqqqqqqqqqq TEST with XML data ......qqqqqqqqqqqq  it might need to HubWrapper qqqqqqqqqqqqqqqqqqqqq    
     
 }
 

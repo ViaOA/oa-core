@@ -952,6 +952,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
      * The filter will be true if there is a least one matching value in the property path;
      */
     public void addNullFilter(final String propPath) {
+        if (OAString.isEmpty(propPath)) return;
         _addFilter(propPath, new OAFilter() {
             @Override
             public boolean isUsed(Object obj) {

@@ -11,6 +11,9 @@
 package com.viaoa.util;
 
 import java.util.*;
+
+import com.viaoa.hub.Hub;
+
 import java.io.*;
 import java.lang.reflect.Array;
 import java.awt.*;
@@ -2183,6 +2186,9 @@ public class OAString {
         }
         else if (obj.getClass().isArray()) {
             if (Array.getLength(obj) == 0) return true;
+        }
+        else if (obj instanceof Hub) {
+            if (((Hub) obj).getSize() == 0) return true;
         }
         return false;
     }

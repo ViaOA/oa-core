@@ -118,8 +118,8 @@ public class OAObject implements java.io.Serializable, Comparable {
     
     static {
         // oaversion
-        // String ver = "3.5.57_20190414";
-        String ver = "3.5.65_20200202";
+        String ver = "3.5.66_20200206";
+        /*
         try {
             InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
             Properties props = new Properties();
@@ -131,8 +131,9 @@ public class OAObject implements java.io.Serializable, Comparable {
         }
         catch (Exception e) {
         }
+        */
         oaversion = ver;
-        System.out.println("OA "+oaversion);
+        System.out.println("oa-core version="+oaversion);
     }
     
     
@@ -1150,7 +1151,16 @@ public class OAObject implements java.io.Serializable, Comparable {
         return b;
     }
 
-    // 20191018
+    /*
+     *  20191018 JAXB support using OAJaxb to allow OAObjects & Hubs to be serialzied as Json/Xml.  
+     *  Support for sending reference objects as the following:
+     *      1: Ids only
+     *      2: ref to the object already in the (json/xml) output
+     *      3: full object
+     *  OAJax allows controlling how references are handling, including the use of adding propertyPaths.  
+     */
+    
+    
     /**
      * These Jaxb methods are used to work with OAJaxb (JAXB xml processing).
      * Only one of them will return a value, depending on what is needed for the XML.  Otherwise, a null is sent so that it wont be included in the xml gen.
@@ -1171,16 +1181,26 @@ public class OAObject implements java.io.Serializable, Comparable {
     public String getJaxbVendorId() {
         return super.getJaxbId(P_Vendor);
     }
- 
-     */
-    
-//qqqqqqqqqqqqq support for getHub qqqqqqqqqqqqqqqqqqqqq
+    */
 
+    
+    /**
+     * Called 
+     * @param clazz
+     * @return
+     */
     public static OAObject jaxbCreateInstance(Class clazz) {
         OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
         if (jaxb == null) return null;
-        OAObject obj = jaxb.getNextObject(clazz);
+        OAObject obj = jaxb.getNextUnmarshalObject(clazz);
         return obj;
+    }
+    
+    public Integer getJaxbGuid() {
+        OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+        if (jaxb == null) return null;
+        if (!jaxb.getIncludeGuids()) return null;
+        return getGuid();
     }
     
     public OAObject getJaxb(String propertyName) {
@@ -1237,7 +1257,10 @@ public class OAObject implements java.io.Serializable, Comparable {
         OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
         if (jaxb != null) {
             OAJaxb.SendRefType type = jaxb.getSendRefType(this, propertyName);
-            if (type != OAJaxb.SendRefType.id) return null;
+            if (type != OAJaxb.SendRefType.id) {
+                // one of the other (jaxb*) methods for this property is being used                
+                return null;  
+            }
         }
         Object objx = OAObjectPropertyDelegate.getProperty(this, propertyName, true, true);
         if (objx instanceof OANotExist) return null;
@@ -1250,10 +1273,26 @@ public class OAObject implements java.io.Serializable, Comparable {
         return objx+"";
     }
     public void setJaxbId(String propertyName, String id) {
-        int idx = Integer.valueOf(id);
-        setProperty(propertyName, new OAObjectKey(idx));
+        if (OAString.isEmpty(propertyName) || OAString.isEmpty(id)) return;
+        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(getClass());
+        OALinkInfo li = oi.getLinkInfo(propertyName);
+        if (li == null) return;
+        
+        for (OAPropertyInfo pi : oi.getPropertyInfos()) {
+            if (pi.getId()) {
+                Object idx = OAConv.convert(pi.getClassType(), id);
+                OAObjectKey objKey = new OAObjectKey(idx);
+                
+                /* 
+                 * this.setProperty will correctly set the property:
+                 * If isLoading=true, then it will only need to store the key
+                 * else it will get the ref object and call the setter method.
+                 */
+                this.setProperty(propertyName, objKey);  
+                break;
+            }
+        }
     }
-    
     
     public List getJaxbHub(String propertyName) {
         List list = getJaxbHubX(propertyName, null, false, null, false);
@@ -1295,12 +1334,13 @@ public class OAObject implements java.io.Serializable, Comparable {
 
         Hub hub = null;
         if (jaxb != null) {
-            if (!jaxb.shouldIncludeProperty(this, linkPropertyName)) return null;
+            
+            OAJaxb.SendRefType type = jaxb.getSendRefType(this, linkPropertyName);
+            if (type == OAJaxb.SendRefType.notNeeded) return null;  // not requested in property paths
+            
+            if (!jaxb.shouldIncludeProperty(this, linkPropertyName, true)) return null;
+            
             if (jaxb.isMarshelling()) {
-                int cnt = 0;
-                int cntRef = 0;
-                hub = getHub(linkPropertyName, sortOrder, bSequence, hubMatch);
-                
                 ArrayList<OAObject> lstRefsOnly = jaxb.getRefsOnlyList(linkPropertyName);
                 if (bRefsOnly) {
                     if (lstRefsOnly != null) {
@@ -1309,8 +1349,12 @@ public class OAObject implements java.io.Serializable, Comparable {
                     }
                 }
                 
+                hub = getHub(linkPropertyName, sortOrder, bSequence, hubMatch);
+                int cnt = 0;
+                int cntRef = 0;
                 for (Object obj : hub) {
-                    if (jaxb.isAlreadyIncluded((OAObject) obj)) cntRef++;
+                    if (!jaxb.getUseReferences() && !jaxb.isInStack((OAObject) obj)) cnt++;
+                    else if (jaxb.isAlreadyIncluded((OAObject) obj)) cntRef++;
                     else if (jaxb.willBeIncludedLater((OAObject) obj)) cntRef++;
                     else cnt++;
                     if (cnt > 0 && cntRef > 0) break;
@@ -1319,11 +1363,22 @@ public class OAObject implements java.io.Serializable, Comparable {
                 if (cnt > 0 && cntRef > 0) {
                     List list = new ArrayList();
                     if (!bRefsOnly) {
-                        lstRefsOnly = new ArrayList<OAObject>();
+                        lstRefsOnly = new ArrayList<OAObject>(); // hold for next call
                         jaxb.setRefsOnlyList(linkPropertyName, lstRefsOnly);
                     }
+                    
                     for (Object obj : hub) {
-                        if (jaxb.isAlreadyIncluded((OAObject) obj)) {
+                        if (!jaxb.getUseReferences()) {
+                            if (jaxb.isInStack((OAObject) obj)) {
+                                // must use ref anyway, to avoid circular reference exception
+                                if (bRefsOnly) list.add(obj);
+                                else lstRefsOnly.add((OAObject) obj);
+                            }
+                            else {
+                                if (!bRefsOnly) list.add(obj);
+                            }
+                        }
+                        else if (jaxb.isAlreadyIncluded((OAObject) obj)) {
                             if (bRefsOnly) list.add(obj);
                             else lstRefsOnly.add((OAObject) obj);
                         }
