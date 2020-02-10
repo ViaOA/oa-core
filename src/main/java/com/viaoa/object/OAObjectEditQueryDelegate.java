@@ -609,8 +609,6 @@ public class OAObjectEditQueryDelegate {
     }
 */    
     protected static void processEditQuery(OAObjectEditQuery editQuery) {
-int xx = 5;
-xx++;//qqqqqqqqqqqqqqq
         _processEditQuery(editQuery);
         if (DEMO_AllowAllToPass) {
             editQuery.setThrowable(null);
@@ -646,10 +644,6 @@ xx++;//qqqqqqqqqqqqqqq
      *      Hub add/remove/removeAll 
      */
     protected static void _processEditQuery(final OAObjectEditQuery editQuery) {
-        
-//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
-//if (not hub|object, but class!=null) then call class level editquery 
-        
         final Hub hubThis = editQuery.getHub();
         final Class clazz = editQuery.getCalcClass();
         final OAObject oaObj = editQuery.getObject();
@@ -705,8 +699,6 @@ xx++;//qqqqqqqqqqqqqqq
             }
         }
         
-int xx = 3;//qqqqqqqqqqqqqqqqqqq
-xx++;//qqqqqqqqqqqqq
         if (oaObj != null && editQuery.getType().checkOwner) {
             ownerHierProcess(editQuery, oaObj, propertyName);
         }

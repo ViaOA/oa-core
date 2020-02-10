@@ -23,19 +23,15 @@ import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.Marshaller.Listener;
 import javax.xml.bind.annotation.XmlAnyElement;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlID;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Result;
+import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.eclipse.persistence.jaxb.MarshallerProperties;
-import org.eclipse.persistence.internal.identitymaps.QueueableWeakCacheKey;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
-import org.eclipse.persistence.jaxb.MOXySystemProperties;
 
-import com.viaoa.annotation.OAProperty;
 import com.viaoa.ds.OASelect;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
@@ -53,17 +49,16 @@ import com.viaoa.object.OAThreadLocalDelegate;
  * Uses JAXB & Moxy to automate how OAObjects, and Hubs are converted to/from XML & Json.
  * Java+OAobject+Hub  <->  XML or JSON
  *
- * OAObject references have extra methods and annotations so that they work with JAXB.
+ * OAObject references have extra methods (named jaxb) and annotations so that they work with JAXB and
+ * allow for sending references as object, Id only, or as internal "ref" to another object in output.
  * 
  * Allows for controlling which references are included.  Designed to handle "deep" graphs without circular references. 
- *  
- * There are added methods and annotations to OAObject link properties for JAXB to work.  These methods are named "*Jaxb*".
  * 
  * One Links - 
  * 0: getEmployee will be annotated with @XmlTransient so that it is ignored by jaxb
  *  * only one of the following will be used when writing XML, others will return a null. All will be defined in xsd.  Other systems will need to be able to use/process each.
  * 1: getJaxbEmployee will return the xml for the full object, if shouldInclude=true and if the object is not already in the graph.
- * 2: getJaxbRefEmployee - used only if the refence object has already been included, uses an @XmlIDREF. 
+ * 2: getJaxbRefEmployee - used only if the reference object has already been included, uses an @XmlIDREF. 
  * 3: getJaxbEmployeeId - used when the full object is not needed (shouldIncludeProperty=false, and it is not already in the graph.
  * 
  * Many (Hub) Linkes -
@@ -71,6 +66,8 @@ import com.viaoa.object.OAThreadLocalDelegate;
  * 1: getJaxbEmployees will return a list<Station> of the stations that are not already in the graph.
  * 2: getJaxbRefEmployees will return a list<Station> of the stations that are already in the graph.
  * when the xml/json is unmarshelled, the Hub will have the combined objects.
+ * 
+ * Note: if setUseReferences=false, then getJaxbRef will not be used and instead will always use the object. 
  * 
  * Example:  
     OAJaxb jaxb = new OAJaxb<>(Company.class);
@@ -80,6 +77,8 @@ import com.viaoa.object.OAThreadLocalDelegate;
     jaxb.addPropertyPath(CompanyPP.locations().buyers().pp);
     jsonOutput = jaxb.convertToJSON(hub);
  *   
+ *   
+ *  NOTE: this is not threadsafe 
  *   
  * @author vvia
  */
@@ -91,8 +90,6 @@ public class OAJaxb<TYPE extends OAObject> {
     // each object in the tree
     private Stack<Object> stackObject;
 
-    // stack of link objects from marshalling, that can be used to know the propertyPath
-    private Stack<OALinkInfo> stackMarshalLinkInfo;  
     
     // keeps hsCurrent for objs in stack
     private Stack<HashSet<String>> stackHashSet;
@@ -183,7 +180,6 @@ public class OAJaxb<TYPE extends OAObject> {
                 
                 // create using Moxy Factory
                 context = JAXBContextFactory.createContext(new Class[] {HubWrapper.class, clazz}, hm);
-                
                 boolean bx = (context instanceof org.eclipse.persistence.jaxb.JAXBContext);
                 
                 // default way for creating
@@ -202,7 +198,8 @@ public class OAJaxb<TYPE extends OAObject> {
         hsCurrentLinkObjectsSent = null;
         stackHmRefsOnly = new Stack<>();
         hmCurrentRefsOnly = null;
-        stackMarshalLinkInfo = new Stack<OALinkInfo>();
+        stackMarshalLinkInfo = new Stack<MarshalInfo>();
+        hsDontUpdateGuids = null;
     }
     
     public void createXsdFile(final String directoryName) throws Exception {
@@ -349,7 +346,7 @@ public class OAJaxb<TYPE extends OAObject> {
     
     
     public TYPE convertFromXML(String xml) throws Exception {
-        OAThreadLocalDelegate.setLoading(true);
+        // OAThreadLocalDelegate.setLoading(true);
         OAThreadLocalDelegate.setOAJaxb(this);
         try {
             Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
@@ -359,29 +356,133 @@ public class OAJaxb<TYPE extends OAObject> {
             return objx;
         }
         finally {
-            OAThreadLocalDelegate.setLoading(false);
+            // OAThreadLocalDelegate.setLoading(false);
             OAThreadLocalDelegate.setOAJaxb(null);
         }
     }
     
+   
+    
+    /**
+     * Set what type of loading can be done. 
+     *
+     */
+    public static enum LoadingMode {
+        /**
+         * Update existing objects or create new ones if there is not an existing. 
+         */
+        Default,
+
+        /**
+         * Flag that will only allow a new Object and it's owned references to be created, and not to update existing objects.
+         * For example:  an HTTP REST API POST method should only be used to create a new object.
+         */
+        CreateNewRootOnly,
+
+        /**
+         * Flag that will only allow the root Object(s) and it's owned references to be created, to ignore updating other objects included.
+         * For example:  an HTTP REST API PUT method should only be used to update existing objects.
+         */
+        UpdateRootOnly  // including owned objects
+    }
+    
+    private LoadingMode loadingMode;
+    public LoadingMode getLoadingMode() {
+        return loadingMode == null ? LoadingMode.Default : loadingMode;
+    }
+    public void setLoadingMode(LoadingMode lm) {
+        this.loadingMode = lm;
+    }
+    
+    /**
+     * Checks during loading into OAObjects to see if property should be loaded or ignored.
+     * @see OAObject#getAllowJaxbPropertyUpdate(String)
+     */
+    public boolean getAllowJaxbPropertyUpdate(OAObject obj, String propertyName) {
+        if (obj == null) return false;
+        boolean b = hsCurrentLinkObjectsSent == null || !hsCurrentLinkObjectsSent.contains(obj.getGuid());
+
+        if (b && getLoadingMode() == LoadingMode.CreateNewRootOnly && OAString.isNotEmpty(propertyName)) {
+            // dont allow updating ID
+            OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj);
+            OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
+            if (pi != null && pi.getId()) b = false;
+        }
+        
+        return b;
+    }
+
+    /**
+     * Checks to see if property should be included in output.  Default is true.
+     */
+    public boolean getShouldInclude(OAObject obj, String propertyName) {
+        return true;
+    }
     
     
+  //qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+  //qqqqqq do same for loading Hub qqqqqqqqqqq
+//qqqqqqqqq do same for XML qqqqqqqqqqqqqqqqqqqqqqqqqq    
+    
+    /**
+     */
     public TYPE convertFromJSON(String json) throws Exception {
-        OAThreadLocalDelegate.setLoading(true);  ///qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq not always loading qqqqqqqqqqqqqqq
         OAThreadLocalDelegate.setOAJaxb(this);
         
         try {
             Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
             unmarshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
             unmarshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
-            unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);         
+            // unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);         
+            
+            preloadJSON(json);
+            
+            /* Rules based on LoadingMode createNew & updateRootOnly
+              can only create new root and owned objects if createNew  
+              dont allow updating of other objects
+              if they are new then reject (they shoudl be created them seperately)
+             
+              only allow new (ignore/reject ID prop) for root and owned objects
+              other objects will not be updated, 
+            */            
+            
+            if (getLoadingMode() == LoadingMode.UpdateRootOnly || getLoadingMode() == LoadingMode.CreateNewRootOnly) {
+                for (Node node : queuePreloadNode) {
+                    node.oaObject = getNextUnmarshalObject(node);
+                    
+                    boolean bIsOwned = false;
+                    Class cz = node.clazz;
+                    for ( ;; ) {
+                        if (this.clazz.equals(cz)) {
+                            bIsOwned = true;
+                            break;
+                        }
+                        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(cz);
+                        OALinkInfo li = oi.getOwnedByOne();
+                        if (li == null) break;
+                        cz = li.getToClass();
+                    }
+                    node.bDisableUpdate = !bIsOwned;  // dont allow updating real objects
+                    
+                    if (node.oaObject == null) {
+                        if (getLoadingMode() == LoadingMode.UpdateRootOnly) {
+                            throw new Exception("can not create new Objects for "+node.clazz.getSimpleName()+", id="+node.id);
+                        }
+                        else if (!bIsOwned && getLoadingMode() == LoadingMode.CreateNewRootOnly) {
+                            throw new Exception("can not create new Objects for "+node.clazz.getSimpleName()+", id="+node.id);
+                        }
+                    }
+                }
+            }
             
             StringReader reader = new StringReader(json);
-            TYPE objx = (TYPE) unmarshaller.unmarshal(reader);
+            Source source = new StreamSource(reader); 
+            JAXBElement ele =  unmarshaller.unmarshal(source, clazz);
+            TYPE objx = (TYPE) ele.getValue();
+            
             return objx;
         }
         finally {
-            OAThreadLocalDelegate.setLoading(false);
             OAThreadLocalDelegate.setOAJaxb(null);
         }
     }
@@ -429,7 +530,7 @@ Hub<TYPE> hub = new Hub<TYPE>(clazz);
             StreamSource streamSource = new StreamSource(new StringReader(xml));
             
 //qqqqqqqqqqq needs to check for boundaries on what's allowed to be changed qqqqqqq            
-preload(xml); //qqqqqqqqqqqqqqqqqq
+// preloadXml(xml); //qqqqqqqqqqqqqqqqqq
 
 
 JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
@@ -461,10 +562,17 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
         public Node(Class c) {
             this.clazz = c;
         }
+        OAObject oaObject;
+        boolean bDisableUpdate;
     }
     
 //qqqqqqqqqqqqq need to create a warning listener qqqqqqqqqqq otherwise it's silent    
 
+
+    // objects that should not have updates done to it.
+    private HashSet<Integer> hsDontUpdateGuids;
+    
+    
     /** used from preload data, by static oaObject.jaxbCreate(), to get the next oaObject */
     public OAObject getNextUnmarshalObject(Class clazz) {
         if (clazz == null) return null;
@@ -473,14 +581,24 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
         Node node = queuePreloadNode.peek();
         if (!node.clazz.equals(clazz)) return null;
         queuePreloadNode.remove();
+        OAObject obj = getNextUnmarshalObject(node);
+        if (node.bDisableUpdate) {
+            if (hsDontUpdateGuids == null) hsDontUpdateGuids = new HashSet<>();
+            hsDontUpdateGuids.add(obj.getGuid());
+        }
+        return obj;
+    }
+    protected OAObject getNextUnmarshalObject(Node node) {
+        if (node.oaObject != null) return node.oaObject;
         
         Object id = node.id;
         if (id == null) return null;
         
         OAObjectKey objKey = new OAObjectKey(id);
-        Object ref = OAObjectCacheDelegate.get(clazz, objKey);
+        Object ref = OAObjectCacheDelegate.get(node.clazz, objKey);
         
         if (ref instanceof OAObject) {
+            node.oaObject = (OAObject) ref;
             return (OAObject) ref;
         }
         
@@ -488,6 +606,7 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
         sel.select(node.piId.getName() + " = ?",  new Object[] {id} );
         ref = sel.next();
         if (ref instanceof OAObject) {
+            node.oaObject = (OAObject) ref;
             return (OAObject) ref;
         }
         return null;
@@ -502,25 +621,31 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
      * Need to find all of the Object IDs, so that jaxb createObject can then find the 
      * correct oaObj to update.
      */
-    protected void preload(final String sz) {
+    protected void preloadJSON(final String sz) {
         final JsonParser parser = Json.createParser(new StringReader(sz));
     
         final Stack<Node> stack = new Stack();
         
         Class clazz = this.clazz;
-        Node node = new Node(clazz);
-        stack.push(node);
         
+        boolean bStartRootNode = true;
         
         queuePreloadNode = new ArrayDeque<>(); 
-        queuePreloadNode.add(node);
-        
+
+        Node node = null;
         String key = null;
         String value = null;
         while (parser.hasNext()) {
              final Event event = parser.next();
 
              if (event == Event.START_OBJECT) {
+                 if (bStartRootNode) {
+                     bStartRootNode = false;
+                     node = new Node(this.clazz);
+                     stack.push(node);
+                     queuePreloadNode.add(node);
+                 }
+                 
                  if (key != null) {
                      // find next clazz
                      OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
@@ -541,10 +666,7 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
                  node = stack.pop();
                  key = null;
                  if (stack.isEmpty()) {
-                     clazz = this.clazz;
-                     node = new Node(clazz);
-                     stack.push(node);
-                     queuePreloadNode.add(node);
+                     bStartRootNode = true;
                  }
                  else {
                      node = stack.peek();
@@ -575,21 +697,15 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
         String pp = "";
         if (stackMarshalLinkInfo != null) {
             OALinkInfo liPrev = null;
-            for (OALinkInfo li : stackMarshalLinkInfo) {
-                if (li == liPrev) continue;  // recursive
+            for (MarshalInfo mi : stackMarshalLinkInfo) {
+                if (mi.li == liPrev) continue;  // recursive
                 if (pp.length() > 0) pp += ".";
-                pp += li.getName();
-                liPrev = li;
+                pp += mi.li.getName();
+                liPrev = mi.li;
             }
         }
         return pp;
     }
-    
-    private OAObject lastGetSendRefObject;
-    private String lastGetSendRefPropertyName;
-    
-//qqqqqqqqqqqq
-    // options:  send first level, send owned
     
     public boolean isInStack(OAObject obj) {
         if (stackObject == null) return false;
@@ -598,6 +714,10 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
         }
         return false;
     }
+
+    
+    private OAObject lastGetSendRefObject;
+    private String lastGetSendRefPropertyName;
     
     /**
      * Used by OAObject when serializing
@@ -606,10 +726,9 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
         lastGetSendRefObject = objThis;
         lastGetSendRefPropertyName = propertyName;
         
-        boolean bIsNeeded = true;
+        boolean bIsNeeded = false;
         boolean bMatchedPP = false;
         if (alPropertyPath.size() > 0) {
-            bIsNeeded = false;
             String ppCurrent = getCurrentMarshalPropertyPath();
             ppCurrent = OAString.concat(ppCurrent, propertyName, ".").toLowerCase();
             boolean bFound = false;
@@ -733,7 +852,23 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
         return bDefaultValue;
     }
 
+    
 
+    // stack of link objects from marshalling, that can be used to know the propertyPath
+    private Stack<MarshalInfo> stackMarshalLinkInfo;  
+    private static class MarshalInfo {
+        OALinkInfo li;
+        OAObject lastGetSendRefObject;
+        String lastGetSendRefPropertyName;
+
+        MarshalInfo(OALinkInfo li, OAObject lastGetSendRefObject, String lastGetSendRefPropertyName) {
+            this.li = li;
+            this.lastGetSendRefObject = lastGetSendRefObject;
+            this.lastGetSendRefPropertyName = lastGetSendRefPropertyName;
+        }
+    }
+
+    
     class OAJaxbListener extends Listener {
         private final HashSet<String> hsDummy = new HashSet<>();
         private final HashMap<String, ArrayList<OAObject>> hmDummy = new HashMap<>();
@@ -745,7 +880,7 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
                 OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(lastGetSendRefObject);
                 OALinkInfo li = oi.getLinkInfo(lastGetSendRefPropertyName);
                 if (li != null) {
-                    stackMarshalLinkInfo.push(li);
+                    stackMarshalLinkInfo.push(new MarshalInfo(li, lastGetSendRefObject, lastGetSendRefPropertyName));
                 }
             }            
             
@@ -769,7 +904,9 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
                 lastGetSendRefPropertyName = null;
             }
             else {
-                stackMarshalLinkInfo.pop();
+                MarshalInfo mi = stackMarshalLinkInfo.pop();
+                lastGetSendRefObject = mi.lastGetSendRefObject;
+                lastGetSendRefPropertyName = mi.lastGetSendRefPropertyName;
             }
             
             stackObject.pop();
@@ -830,7 +967,7 @@ JAXBElement ele = unmarshaller.unmarshal(streamSource, clazz);
         return isAnyOwnerAlreadyIncluded((OAObject)objx);
     }
 
-//qqqqqqqqqqqqqqqqqqqqqqqq TEST with XML data ......qqqqqqqqqqqq  it might need to HubWrapper qqqqqqqqqqqqqqqqqqqqq    
+//qqqqqqqqqqqqqqqqqqqqqqqq TEST with XML data ......qqqqqqqqqqqq  it might need to use HubWrapper qqqqqqqqqqqqqqqqqqqqq    
     
 }
 

@@ -13,16 +13,12 @@ package com.viaoa.object;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.logging.*;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlTransient;
 
 import java.lang.ref.*;  // java1.2
 
-import com.viaoa.ds.OASelect;
 import com.viaoa.hub.*;
 import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
@@ -118,7 +114,7 @@ public class OAObject implements java.io.Serializable, Comparable {
     
     static {
         // oaversion
-        String ver = "3.5.66_20200206";
+        String ver = "3.5.68_20200210";
         /*
         try {
             InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
@@ -1185,7 +1181,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 
     
     /**
-     * Called 
+     * Called by reference objects to find the next object from OAJaxb
      * @param clazz
      * @return
      */
@@ -1195,7 +1191,40 @@ public class OAObject implements java.io.Serializable, Comparable {
         OAObject obj = jaxb.getNextUnmarshalObject(clazz);
         return obj;
     }
+
+    /**
+     *  Uses OAJaxb to determine if property can be updated.
+     *  Used by setJaxb[PropertyName](..)
+     */
+    public boolean getJaxbAllowPropertyChange(String propertyName, Object oldValue, Object newValue) {
+        OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+        if (jaxb == null) return true;
+        boolean b = jaxb.getAllowJaxbPropertyUpdate(this, propertyName);
+
+        if (b) {
+            OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, this, propertyName, oldValue, newValue);
+            b = eq.isAllowed();
+        }
+        return b;
+    }
     
+    public boolean getJaxbShouldInclude(String propertyName) {
+        OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+        boolean b = true;
+        if (jaxb != null) {
+            b = jaxb.getShouldInclude(this, propertyName);
+        }
+        if (b) {
+            OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, this, propertyName);
+            b = eq.isAllowed();
+        }
+        return b;
+    }
+    
+    
+    /**
+     * Includes this.guid in output if OAJaxb.includeGuids=true  
+     */
     public Integer getJaxbGuid() {
         OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
         if (jaxb == null) return null;
@@ -1203,16 +1232,17 @@ public class OAObject implements java.io.Serializable, Comparable {
         return getGuid();
     }
     
-    public OAObject getJaxb(String propertyName) {
+    public OAObject getJaxbObject(String propertyName) {
         OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
         if (jaxb != null) {
             OAJaxb.SendRefType type = jaxb.getSendRefType(this, propertyName);
             if (type != OAJaxb.SendRefType.object) return null;
+            if (!getJaxbShouldInclude(propertyName)) return null;
         }
         return (OAObject) getObject(propertyName);
     }
     
-    public OAObject getJaxbRef(String propertyName) {
+    public OAObject getJaxbRefObject(String propertyName) {
         OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
         if (jaxb != null) {
             OAJaxb.SendRefType type = jaxb.getSendRefType(this, propertyName);
@@ -1274,6 +1304,9 @@ public class OAObject implements java.io.Serializable, Comparable {
     }
     public void setJaxbId(String propertyName, String id) {
         if (OAString.isEmpty(propertyName) || OAString.isEmpty(id)) return;
+        
+        if (!getJaxbAllowPropertyChange(propertyName, null, id)) return;
+        
         OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(getClass());
         OALinkInfo li = oi.getLinkInfo(propertyName);
         if (li == null) return;
@@ -1330,8 +1363,10 @@ public class OAObject implements java.io.Serializable, Comparable {
      * @return
      */
     protected List getJaxbHubX(final String linkPropertyName, final String sortOrder, final boolean bSequence, final Hub hubMatch, final boolean bRefsOnly) {
+        if (!getJaxbShouldInclude(linkPropertyName)) return null;
+        
         OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
-
+        
         Hub hub = null;
         if (jaxb != null) {
             

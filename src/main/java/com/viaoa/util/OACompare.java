@@ -422,6 +422,30 @@ public class OACompare {
             }
             else bNeedToConvert = true;
         }
+        else if (classValue.equals(OADate.class) && String.class.equals(classMatchValue)) {
+            matchValue = new OADate((String) matchValue);
+            classMatchValue = OADate.class;
+        }
+        else if (classMatchValue.equals(OADate.class) && String.class.equals(classValue)) {
+            value = new OADate((String) value);
+            classValue = (value == null) ? null : OADate.class;
+        }
+        else if (classValue.equals(OADateTime.class) && String.class.equals(classMatchValue)) {
+            matchValue = new OADateTime((String) matchValue);
+            classMatchValue = OADateTime.class;
+        }
+        else if (classMatchValue.equals(OADateTime.class) && String.class.equals(classValue)) {
+            value = new OADateTime((String) value);
+            classValue = OADateTime.class;
+        }
+        else if (classValue.equals(OATime.class) && String.class.equals(classMatchValue)) {
+            matchValue = new OATime((String) matchValue);
+            classMatchValue = OATime.class;
+        }
+        else if (classMatchValue.equals(OATime.class) && String.class.equals(classValue)) {
+            value = new OATime((String) value);
+            classValue = OATime.class;
+        }
         else bNeedToConvert = true;
         
         if (bNeedToConvert) {
