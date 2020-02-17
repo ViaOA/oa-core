@@ -311,6 +311,13 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
         bAddAndFilter = bAddOrFilter = false;
     }
     
+    public OAFilter<T> getFilter() {
+        return this.filter;
+    }
+    public void setFilter(OAFilter<T> f) {
+        this.filter = f;
+    }
+    
     /**
      * Returns true if a matching value is found.
      */

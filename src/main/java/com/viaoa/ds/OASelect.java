@@ -99,6 +99,9 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
     protected Hub<TYPE> hubSearch;      // hub used to search from, instead of using DataSource
     private boolean bDirty;  // data should always be loaded from datasource  
     private volatile boolean bIsSelectingNow;
+
+    protected Hub whereHub;
+    
     
     /** Create a new OASelect that is not initialzed. */
     public OASelect() {
@@ -556,6 +559,8 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         amountRead = 0;
         amountCount = -1;
 
+        
+        boolean bUseFinder = false;
         // 20140808
         if (hubSearch != null && finder == null) {
             finder = new OAFinder(hubSearch, null);
@@ -563,10 +568,19 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
             if (li != null && !li.getRecursive()) {
                 finder.setAllowRecursiveRoot(false);
             }
+            bUseFinder = true;
+        }
+        
+        if (!bUseFinder && finder != null) {
+            if ((whereHub != null || whereObject != null) && OAString.isNotEmpty(propertyFromWhereObject)) {
+                OADataSource ds = getDataSource();
+                bUseFinder = ds == null || !ds.supportsStorage();
+            }
+            else bUseFinder = true;
         }
         
         // 20140129
-        if (finder != null) {
+        if (bUseFinder) {
             OAFilter filter = new OAFilter<TYPE>() {
                 @Override
                 public boolean isUsed(TYPE obj) {
@@ -578,16 +592,22 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
                     return true;
                 }
             };
-            finder.addFilter(filter);
-            alFinderResults = finder.find();
-            
-            // sort the array
-            if (alFinderResults.size() > 0) {
-                String ord = getSortBy();
-                if (OAString.isNotEmpty(ord)) {
-                    OAComparator comparator = new OAComparator(getSelectClass(),  ord, true);
-                    Collections.sort(alFinderResults, comparator);
+            OAFilter filterx = finder.getFilter();
+            try {
+                finder.addFilter(filter);
+                alFinderResults = finder.find();
+                
+                // sort the array
+                if (alFinderResults.size() > 0) {
+                    String ord = getSortBy();
+                    if (OAString.isNotEmpty(ord)) {
+                        OAComparator comparator = new OAComparator(getSelectClass(),  ord, true);
+                        Collections.sort(alFinderResults, comparator);
+                    }
                 }
+            }
+            finally {
+                finder.setFilter(filterx);
             }
             return;
         }
@@ -602,11 +622,13 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
 
         try {
             bIsSelectingNow = true;
-            if (whereObject != null) {
+            OAObject whereObjx = whereObject;
+            if (whereObjx == null && whereHub != null) whereObjx = (OAObject) whereHub.getAO();
+            if (whereObjx != null) {
                 if (bCountFirst && amountCount < 0) {
-                	amountCount = ds.count(clazz, whereObject, where, params, propertyFromWhereObject, max);
+                	amountCount = ds.count(clazz, whereObjx, where, params, propertyFromWhereObject, max);
                 }
-                query = ds.select(clazz, whereObject, where, params, propertyFromWhereObject, order, max, getDataSourceFilter(), getDirty());
+                query = ds.select(clazz, whereObjx, where, params, propertyFromWhereObject, order, max, getDataSourceFilter(), getDirty());
             }
             else {
                 if (bPassthru) {
@@ -760,7 +782,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
     
     public boolean isSelectAll() {
     	boolean result = false;
-    	if (!bCancelled && OAString.isEmpty(getWhere()) && getFilter() == null && getFinder() == null && getMax() == 0 && getWhereObject() == null && getSearchHub() == null) {
+    	if (!bCancelled && OAString.isEmpty(getWhere()) && getFilter() == null && getFinder() == null && getMax() == 0 && getWhereObject() == null && getWhereHub() == null && getSearchHub() == null) {
 			result = true;
     	}
         return result;
@@ -803,4 +825,40 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         return this.bDirty;
     }
 
+    // similiar to whereObject, uses hub.AO as the whereObject
+    public void setWhereHub(Hub hub) {
+        this.whereHub = hub;
+    }
+    public Hub getWhereHub() {
+        return whereHub;
+    }
+
+//qqqqqqqqqqq what if fromObject.getProperty(ppFrom) is null qqqqqqqqq
+    
+    
+    
+    public void addMustMatch(OAObject fromObject, String ppFrom, String ppThisFrom) {
+        
+    }
+    
+    
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
