@@ -495,12 +495,15 @@ public class OAPropertyPath<F> {
                 bLastProperyLinkInfo = false;
             }
     
+            boolean bUsingToString;
             String mname;
             if (propertyName.length() == 0) {
                 propertyName = mname = "toString";
+                bUsingToString = true;
             }
             else {
                 mname = "get"+propertyName;
+                bUsingToString = false;
             }
             this.properties = (String[]) OAArray.add(String.class, this.properties, propertyName);
 
@@ -535,7 +538,10 @@ public class OAPropertyPath<F> {
             }
             this.methods = (Method[]) OAArray.add(Method.class, this.methods, method);
     
-            if (method == null) clazz = li.getToClass();
+            if (bUsingToString) {
+                // keep same clazz
+            }
+            else if (method == null) clazz = li.getToClass();
             else clazz = method.getReturnType();
             
             if (clazz != null && clazz.equals(Hub.class)) {

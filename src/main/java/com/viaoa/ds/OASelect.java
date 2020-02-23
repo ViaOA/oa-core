@@ -832,33 +832,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
     public Hub getWhereHub() {
         return whereHub;
     }
-
-//qqqqqqqqqqq what if fromObject.getProperty(ppFrom) is null qqqqqqqqq
-    
-    
-    
-    public void addMustMatch(OAObject fromObject, String ppFrom, String ppThisFrom) {
-        
-    }
-    
-    
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

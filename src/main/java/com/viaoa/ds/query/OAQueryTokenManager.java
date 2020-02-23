@@ -32,7 +32,7 @@ public class OAQueryTokenManager {
         OAQueryToken token = new OAQueryToken();
         char charWaitFor = 0;
         char ch=0, chLast;
-        sb.delete(0, len-1);
+        if (len > 0) sb.delete(0, len-1);
         boolean bReturn = false;
         String sError = null;
 
@@ -149,7 +149,7 @@ public class OAQueryTokenManager {
                 if (ch == '[') {  // check for PASSTHRU
                     if ((new String(sb)).equalsIgnoreCase("PASS")) {
                         token.type = OAQueryTokenType.PASSTHRU;
-                        sb.delete(0, len-1);
+                        if (len > 0) sb.delete(0, len-1);
                         continue;
                     }
                 }

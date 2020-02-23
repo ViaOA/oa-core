@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import javax.swing.JLabel;
 
 import com.viaoa.context.OAContext;
+import com.viaoa.context.OAUserAccess;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
 import com.viaoa.hub.HubDetailDelegate;
@@ -673,6 +674,27 @@ public class OAObjectEditQueryDelegate {
                 }
             }
         }
+  
+        // 20200217 add OAUserAccess
+        if (oaObj != null && (editQuery.getType() == Type.AllowEnabled || editQuery.getType() == Type.AllowVisible)) {
+            final OAUserAccess userAccess = OAContext.getContextUserAccess();
+            if (userAccess != null) {
+                boolean bx = true;
+                if (editQuery.getType() == Type.AllowEnabled) {
+                    bx = userAccess.getEnabled(oaObj);
+                }
+                else {
+                    bx = userAccess.getVisible(oaObj);
+                }
+                if (!bx) {
+                    editQuery.setAllowed(false);
+                    editQuery.setResponse("UserAccess returned false");
+                    return; 
+                }
+            }
+        }
+        
+        
         
         
         // follow the first link (if any), if it is not owner

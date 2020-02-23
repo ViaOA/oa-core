@@ -26,6 +26,9 @@ import com.viaoa.util.OAString;
 public class OAObjectEditQuery {
     static final long serialVersionUID = 1L;
 
+    private Hub hub;
+    private OAObject object;
+    
     private Type type = Type.Unknown;
 
     
@@ -80,7 +83,6 @@ public class OAObjectEditQuery {
         AllowSave(false, false),     // dont check parent(s) or if enabled.  Need to be able to save a disabled object
         AllowCopy(false),
         
-//qqqqqqqqqqqqqqq set checkEnabledFirst=false ?????????? qqqqqqqqqqqqqqqq        
         // verify command before calling
         VerifyPropertyChange(true, true),// use: value to get new value, name, response, throwable - set allowEnablede=false, or throwable!=null to cancel
         VerifyAdd(true, true),           // use: value to get added object, allowAdd, throwable - set allowed=false, or throwable!=null to cancel
@@ -184,8 +186,6 @@ public class OAObjectEditQuery {
         this.checkType = x;
     }
    
-//qqqqqqqqqqqqqq    
-    private Hub hub;
     public void setHub(Hub h) {
         this.hub = h;
     }
@@ -194,7 +194,6 @@ public class OAObjectEditQuery {
     }
    
     
-    private OAObject object;
     public OAObject getObject() {
         return object;
     }

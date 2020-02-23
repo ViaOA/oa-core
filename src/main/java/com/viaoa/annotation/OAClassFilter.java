@@ -35,5 +35,7 @@ public @interface OAClassFilter {
     // if set, then the existing filtered objects will be checked to see if they are still true 
     int autoRefreshInterval() default 0;
     TimeUnit autoRefreshTimeUnit() default TimeUnit.DAYS;
+    
+    String query() default "";
 }
 

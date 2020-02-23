@@ -16,7 +16,10 @@ import java.util.logging.Logger;
 import java.sql.*;
 
 import com.viaoa.object.*;
+import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
+import com.viaoa.util.OAPropertyPath;
+import com.viaoa.util.OAString;
 import com.viaoa.ds.*;
 import com.viaoa.ds.jdbc.db.*;
 import com.viaoa.ds.jdbc.delegate.*;
@@ -216,6 +219,18 @@ public class OADataSourceJDBC extends OADataSource {
         int max, OAFilter filter, boolean bDirty
     )
     {
+        // 20200219 need to convert whereObject/properyFromWhereObject to part of query if it's using a propertyPath 
+        if (whereObject != null && propertyFromWhereObject != null && propertyFromWhereObject.indexOf(".") >= 0) {
+            OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+            pp = pp.getReversePropertyPath();
+            if (OAString.isNotEmpty(queryWhere)) queryWhere += " AND ";
+            else if (queryWhere == null) queryWhere = "";
+            queryWhere += pp.getPropertyPath() + " == ?";
+            params = OAArray.add(Object.class, params, whereObject);
+            whereObject = null;
+            propertyFromWhereObject = null;
+        }
+        
         if (whereObject != null) {
             return SelectDelegate.select(this, selectClass, 
                     whereObject, extraWhere, params, propertyFromWhereObject,

@@ -19,6 +19,8 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import java.lang.ref.*;  // java1.2
 
+import com.viaoa.context.OAContext;
+import com.viaoa.context.OAUserAccess;
 import com.viaoa.hub.*;
 import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
@@ -1205,6 +1207,18 @@ public class OAObject implements java.io.Serializable, Comparable {
             OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, this, propertyName, oldValue, newValue);
             b = eq.isAllowed();
         }
+        return b;
+    }
+
+    public boolean getJaxbAllowSecurePropertyChange(String propertyName, Object oldValue, Object newValue) {
+        boolean b = getJaxbAllowPropertyChange(propertyName, oldValue, newValue);
+        if (b) {
+            OAUserAccess ua = OAContext.getContextUserAccess();
+            if (ua == null) b = false;
+            else {
+                b = false;  //qqqqqqqqqqqq dont allow directly changing secure (ex: passwords) data through JAXB
+            }
+        }        
         return b;
     }
     

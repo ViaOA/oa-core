@@ -10,6 +10,7 @@
 */
 package com.viaoa.context;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -19,8 +20,12 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 
 /**
- * Allows storing an object that is associated with a context, that can be used 
- * by EditQuery and other code to work with OAObjects. 
+ * Allows storing objects that are associated with a context
+ * 
+ * 1: OAObject as the login user.
+ * 2: OAUserAccess
+ * 
+ * Used by EditQuery and other code to work with OAObjects. 
  * 
  * set the JVM default (null) context, by calling OAContext.setContextObject(null, user);
  * set the JSP/Servlet context using oasession, by calling OAContext.setContextHub(oasession, hubLoginUser);
@@ -29,7 +34,8 @@ import com.viaoa.util.OAString;
  * @author vvia
  */
 public class OAContext {
-    private static final ConcurrentHashMap<Object, Hub<? extends OAObject>> hmContextHub = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Object, WeakReference<Hub<? extends OAObject>>> hmContextHub = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Object, WeakReference<OAUserAccess>> hmContextUserAccess = new ConcurrentHashMap<>();
 
     private static final Object NullContext = new Object();
 
@@ -78,7 +84,7 @@ public class OAContext {
         b = b || isSuperAdmin(context);
         return b;
     }
-    
+
 
     /**
      * Property path used to find the user property for allowing users to have admin rights.
@@ -188,12 +194,16 @@ public class OAContext {
      * @see OAThreadLocalDelegate#getContext()
      */
     public static void setContextObject(Object context, OAObject obj) {
-        if (obj == null) return;
         if (context == null) context = NullContext;
-        Hub h = new Hub();
-        h.add(obj);
-        h.setAO(obj);
-        setContextHub(context, h);
+        if (obj == null) {
+            hmContextHub.remove(context);
+        }
+        else {
+            Hub h = new Hub();
+            h.add(obj);
+            h.setAO(obj);
+            setContextHub(context, h);
+        }
     }
     public static void setContext(Object context, OAObject obj) {
         setContextObject(context, obj);
@@ -216,10 +226,12 @@ public class OAContext {
      * Allows the value to be associated with a context, to be the ActiveObject in a hub.
      */
     public static void setContextHub(Object context, Hub<? extends OAObject> hub) {
-        if (hub == null) return;
         if (context == null) context = NullContext;
-        if (hub.getAO() == null) hub.setPos(0);
-        hmContextHub.put(context, hub);
+        if (hub == null) hmContextHub.remove(context);
+        else {
+            if (hub.getAO() == null) hub.setPos(0);
+            hmContextHub.put(context, new WeakReference(hub));
+        }
     }
     public static void removeContextHub() {
         removeContextHub(NullContext);
@@ -236,15 +248,36 @@ public class OAContext {
     }
 
     public static Hub<? extends OAObject> getContextHub() {
-        return getContextHub(null);
+        Object context = OAThreadLocalDelegate.getContext();
+        return getContextHub(context);
     }
     public static Hub<? extends OAObject> getContextHub(Object context) {
-        // if (context == null)  //todo: qqqqqq look in threadLocal            
         if (context == null) context = NullContext;
-        return hmContextHub.get(context); 
+        WeakReference<Hub<? extends OAObject>> ref = hmContextHub.get(context); 
+        if (ref == null) return null;
+        return ref.get();
     }
 
     
-    
+
+    /**
+     * Associated an OAUserAccess with a context. 
+     * @see OAThreadLocalDelegate#getContext()
+     */
+    public static void setContextUserAccess(Object context, OAUserAccess ua) {
+        if (context == null) context = NullContext;
+        if (ua == null) hmContextUserAccess.remove(context);
+        else hmContextUserAccess.put(context, new WeakReference(ua));        
+    }
+    public static OAUserAccess getContextUserAccess() {
+        Object context = OAThreadLocalDelegate.getContext();
+        return getContextUserAccess(context);
+    }
+    public static OAUserAccess getContextUserAccess(Object context) {
+        if (context == null) context = NullContext;
+        WeakReference<OAUserAccess> ref = hmContextUserAccess.get(context);
+        if (ref == null) return null;
+        return ref.get();
+    }
     
 }

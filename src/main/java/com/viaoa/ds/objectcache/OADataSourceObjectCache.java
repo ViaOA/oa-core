@@ -10,14 +10,11 @@
 */
 package com.viaoa.ds.objectcache;
 
-import java.util.*;
-
 import com.viaoa.object.*;
-import com.viaoa.remote.multiplexer.OARemoteThread;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
-import com.viaoa.sync.OASync;
+import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
+import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 import com.viaoa.util.filter.OAEqualFilter;
 import com.viaoa.util.filter.OAQueryFilter;
@@ -47,15 +44,15 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 //TODO:  qqqqqqqqqqqqqq this does not sort qqqqqqqqqqqqq    
     
     @Override
-    public OADataSourceIterator select(Class selectClass, 
+    public OADataSourceIterator select(final Class selectClass, 
         String queryWhere, Object[] params, String queryOrder, 
         OAObject whereObject, String propertyFromWhereObject, String extraWhere, 
         int max, OAFilter filter, boolean bDirty
     )
     {
+        
         if (filter == null) {
-            
-            if (extraWhere != null) {
+            if (extraWhere != null && OAString.isNotEmpty(extraWhere.trim())) {
                 try {
                     filter = new OAQueryFilter(selectClass, extraWhere, null);
                 }
@@ -85,15 +82,23 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(whereObject.getClass());
                 OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
                 if (li != null) li = li.getReverseLinkInfo();
+                else {
+                    // 20200219 check to see if it's a propertyPath.  If so, then add to the query and re-select
+                    OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+                    pp = pp.getReversePropertyPath();
+                    if (OAString.isNotEmpty(queryWhere)) queryWhere += " AND ";
+                    else if (queryWhere == null) queryWhere = "";
+                    queryWhere += pp.getPropertyPath() + " == ?";
+                    params = OAArray.add(Object.class, params, whereObject);
+                    return select(selectClass, queryWhere, params, queryOrder, null, null, extraWhere, max, filter, bDirty);
+                }
+                
                 if (li != null) {
                     final OALinkInfo lix = li;
                     filter = new OAEqualFilter(li.getName(), whereObject) {
                         public boolean isUsed(Object obj) {
-//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
-//qqqqqqqqqqqqqqqqqqqqqqq
                             boolean b;
                             if (obj instanceof OAObject) {
-//qqqqqqqqq get from oaobj.properties qqqqqqqqqqqqqqqqqqqq not using invoke qqqqqqqqqqqqqq                                
                                  Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, lix.getName());
                                  b = OACompare.isEqual(objx, whereObject);
                             }
@@ -106,6 +111,9 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                             return b;
                         }
                     };
+                }
+                else {
+                    throw new RuntimeException("whereObject's propertyFromWhereObject is not a valid link, whereObject="+whereObject+", propertyFromWhereObject="+propertyFromWhereObject);
                 }
             }
             else {
