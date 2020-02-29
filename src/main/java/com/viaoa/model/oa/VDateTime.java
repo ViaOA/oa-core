@@ -22,7 +22,8 @@ import com.viaoa.util.OADateTime;
     displayName = "DateTime",
     displayProperty = "value",
     sortProperty = "value",
-    localOnly = true
+    localOnly = true,
+    useDataSource = false
 )
 public class VDateTime extends OAObject {
     private static final long serialVersionUID = 1L;

@@ -25,5 +25,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME) 
 public @interface OAIndexColumn {
     String name();
+    String lowerName() default "";
     boolean descend() default false;
 }

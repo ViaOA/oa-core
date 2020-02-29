@@ -16,6 +16,7 @@ import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
+import com.viaoa.util.filter.OAAndFilter;
 import com.viaoa.util.filter.OAEqualFilter;
 import com.viaoa.util.filter.OAQueryFilter;
 import com.viaoa.ds.OADataSource;
@@ -47,85 +48,74 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
     public OADataSourceIterator select(final Class selectClass, 
         String queryWhere, Object[] params, String queryOrder, 
         OAObject whereObject, String propertyFromWhereObject, String extraWhere, 
-        int max, OAFilter filter, boolean bDirty
+        int max, OAFilter filterx, boolean bDirty
     )
     {
-        
-        if (filter == null) {
-            if (extraWhere != null && OAString.isNotEmpty(extraWhere.trim())) {
-                try {
-                    filter = new OAQueryFilter(selectClass, extraWhere, null);
-                }
-                catch (Exception e) {
-                    throw new RuntimeException("query parsing failed", e);
-                }
+        if (extraWhere != null && OAString.isNotEmpty(extraWhere.trim())) {
+            try {
+                OAFilter filter2 = new OAQueryFilter(selectClass, extraWhere, null);
+                filterx = new OAAndFilter(filterx, filter2);
             }
-            final OAFilter extraFilter = filter;
-            
-            if (!OAString.isEmpty(queryWhere)) {
-                try {
-                    filter = new OAQueryFilter(selectClass, queryWhere, params) {
-                        public boolean isUsed(Object obj) {
-                            boolean b = super.isUsed(obj);
-                            if (b && extraFilter != null) {
-                                b = extraFilter.isUsed(obj);
-                            }
-                            return b;
-                        }
-                    };  
-                }
-                catch (Exception e) {
-                    throw new RuntimeException("query parsing failed", e);
-                }
-            }
-            else if (whereObject != null && propertyFromWhereObject != null) {
-                OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(whereObject.getClass());
-                OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
-                if (li != null) li = li.getReverseLinkInfo();
-                else {
-                    // 20200219 check to see if it's a propertyPath.  If so, then add to the query and re-select
-                    OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
-                    pp = pp.getReversePropertyPath();
-                    if (OAString.isNotEmpty(queryWhere)) queryWhere += " AND ";
-                    else if (queryWhere == null) queryWhere = "";
-                    queryWhere += pp.getPropertyPath() + " == ?";
-                    params = OAArray.add(Object.class, params, whereObject);
-                    return select(selectClass, queryWhere, params, queryOrder, null, null, extraWhere, max, filter, bDirty);
-                }
-                
-                if (li != null) {
-                    final OALinkInfo lix = li;
-                    filter = new OAEqualFilter(li.getName(), whereObject) {
-                        public boolean isUsed(Object obj) {
-                            boolean b;
-                            if (obj instanceof OAObject) {
-                                 Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, lix.getName());
-                                 b = OACompare.isEqual(objx, whereObject);
-                            }
-                            else {
-                                b = super.isUsed(obj);
-                            }
-                            if (b && extraFilter != null) {
-                                b = extraFilter.isUsed(obj);
-                            }
-                            return b;
-                        }
-                    };
-                }
-                else {
-                    throw new RuntimeException("whereObject's propertyFromWhereObject is not a valid link, whereObject="+whereObject+", propertyFromWhereObject="+propertyFromWhereObject);
-                }
-            }
-            else {
-                filter = new OAFilter() {
-                    @Override
-                    public boolean isUsed(Object obj) {
-                        return true;
-                    }
-                };
+            catch (Exception e) {
+                throw new RuntimeException("query parsing failed", e);
             }
         }
-        return new ObjectCacheIterator(selectClass, filter);
+        
+        if (!OAString.isEmpty(queryWhere)) {
+            try {
+                OAFilter filter2 = new OAQueryFilter(selectClass, queryWhere, params);
+                filterx = new OAAndFilter(filterx, filter2);
+            }
+            catch (Exception e) {
+                throw new RuntimeException("query parsing failed", e);
+            }
+        }
+        else if (whereObject != null && propertyFromWhereObject != null) {
+            OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(whereObject.getClass());
+            OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
+            if (li != null) li = li.getReverseLinkInfo();
+            else {
+                // 20200219 check to see if it's a propertyPath.  If so, then add to the query and re-select
+                OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+                pp = pp.getReversePropertyPath();
+                if (OAString.isNotEmpty(queryWhere)) queryWhere += " AND ";
+                else if (queryWhere == null) queryWhere = "";
+                queryWhere += pp.getPropertyPath() + " == ?";
+                params = OAArray.add(Object.class, params, whereObject);
+                return select(selectClass, queryWhere, params, queryOrder, null, null, extraWhere, max, filterx, bDirty);
+            }
+            
+            if (li != null) {
+                final OALinkInfo lix = li;
+                OAFilter filter2 = new OAEqualFilter(li.getName(), whereObject) {
+                    public boolean isUsed(Object obj) {
+                        boolean b;
+                        if (obj instanceof OAObject) {
+                             Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, lix.getName());
+                             b = OACompare.isEqual(objx, whereObject);
+                        }
+                        else {
+                            b = super.isUsed(obj);
+                        }
+                        return b;
+                    }
+                };
+                filterx = new OAAndFilter(filterx, filter2);
+            }
+            else {
+                throw new RuntimeException("whereObject's propertyFromWhereObject is not a valid link, whereObject="+whereObject+", propertyFromWhereObject="+propertyFromWhereObject);
+            }
+        }
+        else {
+            filterx = new OAFilter() {
+                @Override
+                public boolean isUsed(Object obj) {
+                    return true;
+                }
+            };
+        }
+
+        return new ObjectCacheIterator(selectClass, filterx);
     }
     
 

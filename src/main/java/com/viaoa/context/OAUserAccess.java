@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.viaoa.ds.OASelect;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -12,16 +13,23 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Used to set the "boundaries" of what objects can be accessed.
+ * Used to set the "boundaries" of what objects & properties/methods can be accessed by 
+ * a user (or system).
  * 
- * Used to determine if an object is included in a propertyPath from an root OAObject/Hub.AO
+ * Used to determine if an object is included in a propertyPath from a root OAObject/Hub.AO
  * 
  * Separate methods for Visible and Enabled property paths, both On and Off (Not).
  *
  * Has methods to add multiple obj/hub and propertyPaths, so that all are searched to
  * see if an Object is included in any of the root + paths.
  *
+ * Allows for adding child[ren] OAUserAccess
+ *
+ *
 <code>   
+
+qqqqqqqqqqqqqqqqqqqqqqqqq
+
     OAUserAccess ua = new OAUserAccess();
     ua.addVisible(buyer, BuyerPP.location().company().clients().products().campaigns().pp);
     
@@ -60,6 +68,24 @@ public class OAUserAccess {
     private final HashMap<Class<? extends OAObject>, String[]> hmNotEnabledClass = new HashMap<>();
     private final HashMap<Class<? extends OAObject>, String[]> hmVisibleClass = new HashMap<>();
     private final HashMap<Class<? extends OAObject>, String[]> hmNotVisibleClass = new HashMap<>();
+
+    private Package packageValid;  // ignore/allow others
+    
+    
+//qqqqqqqqqqqqqqqqqqqqq add query extraWhereClause .............
+//     ... or use current prop paths to build it ..
+    //    ex:  buyer.loc.company.clients.products.campaigns
+    //          => AND campaign.propduct.client.company = buyer.loc.company
+    // create a method to have oaselect use UserAccess to get this qqqqqqqq 
+    
+    public boolean updateSelect(OASelect sel) {
+        //qqqqqqqqqqqqqqqqqqqqqqqqqq  sel.add(String whereClause, Object[] params)
+        return false; // no changes made
+    }
+    
+//qqqqqqqqqqqqqqqqqqqqqqq allow param to determine if user has access
+    //  buyer.isManager  ... if true then skip the rule qqqqqq
+    
     
     
     /**
@@ -75,6 +101,10 @@ public class OAUserAccess {
     
     public OAUserAccess() {
         
+    }
+    
+    public void setValidPackage(Package packageValid) {
+        this.packageValid = packageValid;
     }
     
     /**
@@ -104,6 +134,9 @@ public class OAUserAccess {
         boolean bOnlyEndProperty;
         String[] props;
 
+//qqqqqqqqqq addIsUsedCheck(object, propPath, value)
+  // add custom method isUsed(boolean bDefault) to override qqqqqqq
+        
         public UserAccess(OAObject obj, String pp, boolean bOnlyEndProperty) {
             this.obj = obj;
             this.pp = new OAPropertyPath(obj.getClass(), pp);
@@ -266,13 +299,23 @@ public class OAUserAccess {
     
     
     public boolean getEnabled(OAObject obj) {
-        boolean b = getEnabled(obj, null, bDefaultEnabled);
+        if (obj == null) return false;
+        boolean b = getEnabled(obj, obj.getClass(), null, bDefaultEnabled);
         return b;
     }
     public boolean getEnabled(OAObject obj, String propertyName) {
-        boolean b = getEnabled(obj, propertyName, bDefaultEnabled);
+        if (obj == null) return false;
+        boolean b = getEnabled(obj, obj.getClass(), propertyName, bDefaultEnabled);
         return b;
     }
+    public boolean getEnabled(final Class clazz) {
+        if (clazz == null) return false;
+        return getEnabled(null, clazz, null, bDefaultEnabled);
+    }
+    public boolean getEnabled(final OAObject obj, final String propertyName, final boolean bDefault) {
+        if (obj == null) return false;
+        return getEnabled(obj, obj.getClass(), propertyName, bDefault);
+    }    
     
     /**
      * Checks to see if an OAObject & (optional) propertyName should be enabled.
@@ -288,52 +331,67 @@ public class OAUserAccess {
      * 7: calls child[ren] recursively setting result.
      * 8: returns result
      */
-    protected boolean getEnabled(final OAObject obj, final String propertyName, final boolean bDefault) {
-        if (obj == null) return false;
+    protected boolean getEnabled(final OAObject obj, final Class cz, final String propertyName, final boolean bDefault) {
         boolean bResult = bDefault;
 
-        Class cz = obj.getClass();
+        if (cz != null && packageValid != null) {
+            if (!packageValid.equals(cz.getPackage()))  {
+                return true; // allow other packages
+            }
+        }
         
         if (hsEnabledClass.contains(cz)) bResult = true;
         if (hsNotEnabledClass.contains(cz)) bResult = false;
 
-        if (propertyName != null) {
-            String[] ss = hmEnabledClass.get(cz);
-            if (ss != null) {
-                for (String s : ss) {
-                    if (propertyName.equalsIgnoreCase(s)) bResult = true;
+        if (obj != null) {
+            if (propertyName != null) {
+                String[] ss = hmEnabledClass.get(cz);
+                if (ss != null) {
+                    for (String s : ss) {
+                        if (propertyName.equalsIgnoreCase(s)) bResult = true;
+                    }
                 }
+                ss = hmNotEnabledClass.get(cz);
+                if (ss != null) {
+                    for (String s : ss) {
+                        if (propertyName.equalsIgnoreCase(s)) bResult = false;
+                    }
+                }                        
             }
-            ss = hmNotEnabledClass.get(cz);
-            if (ss != null) {
-                for (String s : ss) {
-                    if (propertyName.equalsIgnoreCase(s)) bResult = false;
-                }
-            }                        
-        }
-        
-        boolean b = getIsInSamePropertyPath(obj, propertyName, alEnabledUserAccess);
-        if (b) bResult = true;
-        b = getIsInSamePropertyPath(obj, propertyName, alNotEnabledUserAccess);
-        if (b) bResult = false;
-        
+            
+            boolean b = getIsInSamePropertyPath(obj, propertyName, alEnabledUserAccess);
+            if (b) bResult = true;
+            b = getIsInSamePropertyPath(obj, propertyName, alNotEnabledUserAccess);
+            if (b) bResult = false;
+        }        
         
         for (OAUserAccess ua : alOAUserAccess) {
-            bResult = ua.getEnabled(obj, propertyName, bResult);
+            bResult = ua.getEnabled(obj, cz, propertyName, bResult);
         }
         return bResult;
     }
 
     
     
+    public boolean getVisible(Class clazz) {
+        if (clazz == null) return false;
+        boolean b = getVisible(null, clazz, null, bDefaultVisible);
+        return b;
+    }
     public boolean getVisible(OAObject obj) {
-        boolean b = getVisible(obj, null, bDefaultVisible);
+        if (obj == null) return false;
+        boolean b = getVisible(obj, obj.getClass(), null, bDefaultVisible);
         return b;
     }
     public boolean getVisible(OAObject obj, String propertyName) {
-        boolean b = getVisible(obj, propertyName, bDefaultVisible);
+        if (obj == null) return false;
+        boolean b = getVisible(obj, obj.getClass(), propertyName, bDefaultVisible);
         return b;
     }
+    protected boolean getVisible(final OAObject obj, final String propertyName, final boolean bDefault) {
+        if (obj == null) return false;
+        return getVisible(obj, obj.getClass(), propertyName, bDefault);
+    }    
     
     /**
      * Checks to see if an OAObject & (optional) propertyName should be visible.
@@ -349,38 +407,42 @@ public class OAUserAccess {
      * 7: calls child[ren] recursively setting result.
      * 8: returns result
      */
-    protected boolean getVisible(final OAObject obj, final String propertyName, final boolean bDefault) {
-        if (obj == null) return false;
+    protected boolean getVisible(final OAObject obj, final Class cz, final String propertyName, final boolean bDefault) {
+        if (cz != null && packageValid != null) {
+            if (!packageValid.equals(cz.getPackage()))  {
+                return true; // allow other packages
+            }
+        }
+        
         boolean bResult = bDefault;
 
-        Class cz = obj.getClass();
-        
         if (hsVisibleClass.contains(cz)) bResult = true;
         if (hsNotVisibleClass.contains(cz)) bResult = false;
 
-        if (propertyName != null) {
-            String[] ss = hmVisibleClass.get(cz);
-            if (ss != null) {
-                for (String s : ss) {
-                    if (propertyName.equalsIgnoreCase(s)) bResult = true;
+        if (obj != null) {
+            if (propertyName != null) {
+                String[] ss = hmVisibleClass.get(cz);
+                if (ss != null) {
+                    for (String s : ss) {
+                        if (propertyName.equalsIgnoreCase(s)) bResult = true;
+                    }
                 }
+                ss = hmNotVisibleClass.get(cz);
+                if (ss != null) {
+                    for (String s : ss) {
+                        if (propertyName.equalsIgnoreCase(s)) bResult = false;
+                    }
+                }                        
             }
-            ss = hmNotVisibleClass.get(cz);
-            if (ss != null) {
-                for (String s : ss) {
-                    if (propertyName.equalsIgnoreCase(s)) bResult = false;
-                }
-            }                        
-        }
-        
-        boolean b = getIsInSamePropertyPath(obj, propertyName, alVisibleUserAccess);
-        if (b) bResult = true;
-        b = getIsInSamePropertyPath(obj, propertyName, alNotVisibleUserAccess);
-        if (b) bResult = false;
-        
+            
+            boolean b = getIsInSamePropertyPath(obj, propertyName, alVisibleUserAccess);
+            if (b) bResult = true;
+            b = getIsInSamePropertyPath(obj, propertyName, alNotVisibleUserAccess);
+            if (b) bResult = false;
+        }        
         
         for (OAUserAccess ua : alOAUserAccess) {
-            bResult = ua.getVisible(obj, propertyName, bResult);
+            bResult = ua.getVisible(obj, cz, propertyName, bResult);
         }
         return bResult;
     }

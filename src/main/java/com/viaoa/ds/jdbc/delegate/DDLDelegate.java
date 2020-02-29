@@ -139,6 +139,7 @@ public class DDLDelegate {
         case DBMetaData.SQLSERVER:
         case DBMetaData.POSTGRES:
         case DBMetaData.OTHER:
+        default:
         	// this is for SQL Server, not sure about others.
             sql = "UPDATE "+dbmd.leftBracket+toTableName+dbmd.rightBracket;
             sql += " SET ";

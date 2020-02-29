@@ -21,7 +21,8 @@ import com.viaoa.object.OAObject;
     displayName = "Integer",
     displayProperty = "value",
     sortProperty = "value",
-    localOnly = true
+    localOnly = true,
+    useDataSource = false
 )
 public class VInteger extends OAObject {
     private static final long serialVersionUID = 1L;

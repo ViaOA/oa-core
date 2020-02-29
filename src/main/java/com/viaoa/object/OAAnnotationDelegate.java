@@ -828,6 +828,8 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
             }
             
             Column column = new Column(colName, name, dbcol.sqlType(), dbcol.maxLength());
+            String s = dbcol.lowerName();
+            if (OAString.isNotEmpty(s)) column.columnLowerName = s;
             if (oaprop != null) column.decimalPlaces = oaprop.decimalPlaces();
             if (oaid != null) {
                 column.primaryKey = true;

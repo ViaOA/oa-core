@@ -54,12 +54,13 @@ public class VerifyDelegate {
 	*/
 	private static boolean _verify(OADataSourceJDBC ds, Connection connection, final ArrayList<String> alError) throws Exception {
 	    DatabaseMetaData dbmd = connection.getMetaData();
+        final DBMetaData dbx = ds.getDBMetaData();
 	    ResultSet rs;
 	    boolean bResult = true;
 	    Table[] tables = ds.getDatabase().getTables();
 	    for (int i=0; i<tables.length; i++) {
 	        Table t = tables[i];
-	        rs = dbmd.getTables(null,null,t.name.toUpperCase(), null);
+	        rs = dbmd.getTables(null,null, convertDBName(dbx, t.name), null);
 	        boolean b = rs.next();
 	        rs.close();
 	        if (!b) {
@@ -71,11 +72,10 @@ public class VerifyDelegate {
 	        }
 	        
 	        Column[] columns = t.getColumns();
-            final DBMetaData dbx = ds.getDBMetaData();
 
 	        for (int j=0; j<columns.length; j++) {
 	            Column c = columns[j];
-	            rs = dbmd.getColumns(null,null,t.name.toUpperCase(),c.columnName.toUpperCase());
+	            rs = dbmd.getColumns(null,null,convertDBName(dbx, t.name), convertDBName(dbx, c.columnName));
 	            b = rs.next();
 	            if (b) {
 	    	        int iType = rs.getInt(5);
@@ -185,7 +185,7 @@ public class VerifyDelegate {
 	            }
 	
 	            if (c.columnLowerName != null && c.columnLowerName.length() > 0) {
-		            rs = dbmd.getColumns(null,null,t.name.toUpperCase(),c.columnLowerName.toUpperCase());
+		            rs = dbmd.getColumns(null,null,convertDBName(dbx, t.name),convertDBName(dbx, c.columnLowerName));
 		            b = rs.next();
 		            rs.close();
 		            if (!b) {
@@ -198,7 +198,7 @@ public class VerifyDelegate {
 	            }
 	
 	            if (c.primaryKey) {
-	            	rs = dbmd.getPrimaryKeys(null, null, t.name.toUpperCase());
+	            	rs = dbmd.getPrimaryKeys(null, null, convertDBName(dbx, t.name));
 		            b = rs.next();
                     String colname=null;
                     String pkname=null;
@@ -206,6 +206,7 @@ public class VerifyDelegate {
 		            	colname = rs.getString(4); // column name
 		            	pkname = rs.getString(6); // pk name
 	            		b = pkname.equalsIgnoreCase("PK"+t.name);
+                        b = b || pkname.equalsIgnoreCase("PK_"+t.name);
 		            }	            	
 		            rs.close();
 		            if (!b) {
@@ -233,7 +234,7 @@ public class VerifyDelegate {
 	    		    if (dbx.getFkeysAutoCreateIndex()) continue; 
 	    		}
 
-	    		rs = dbmd.getIndexInfo(null, null, t.name.toUpperCase(), false, false);
+	    		rs = dbmd.getIndexInfo(null, null, convertDBName(dbx, t.name), false, false);
 	            int foundCnt = 0;
 	            boolean bNameMatch = false;
 	            for ( ;b = rs.next(); ) {
@@ -242,8 +243,8 @@ public class VerifyDelegate {
 	            	
 	            	name = rs.getString(9); // column name
 	            	for (int k=0; name != null && k < ind.columns.length; k++) {
-	            		if (name.equalsIgnoreCase(ind.columns[k])) {
-	            			foundCnt++;
+	            		if (name.equalsIgnoreCase(ind.columns[k]) || name.equalsIgnoreCase(ind.columns[k]+"lower")) {
+                            foundCnt++;
 	            		}
 	            	}
 	            }
@@ -258,7 +259,7 @@ public class VerifyDelegate {
             
             
 	        // check to see if there are "extra" indexes
-            rs = dbmd.getIndexInfo(null, null, t.name.toUpperCase(), false, false);
+            rs = dbmd.getIndexInfo(null, null, convertDBName(dbx, t.name), false, false);
             for ( ;b = rs.next(); ) {
                 boolean bFound = false;
                 String name = rs.getString(6); // index name
@@ -296,6 +297,7 @@ public class VerifyDelegate {
 
 	public static boolean verifyLinks(Table t, DatabaseMetaData dbmd, OADataSourceJDBC ds, final ArrayList<String> alError) throws Exception {
 		boolean bError = false;
+        final DBMetaData dbx = ds.getDBMetaData();
         // verify Links
         Link[] links = t.getLinks();
         for (int i=0; links!= null && i<links.length; i++) {
@@ -331,7 +333,7 @@ public class VerifyDelegate {
             }
             
             // check fkey index
-            ResultSet rs = dbmd.getIndexInfo(null, null, t.name.toUpperCase(), false, false);
+            ResultSet rs = dbmd.getIndexInfo(null, null, convertDBName(dbx, t.name), false, false);
             boolean bFound = false;
             for ( ; rs.next(); ) {
                 String name = rs.getString(6); // index name
@@ -355,4 +357,13 @@ public class VerifyDelegate {
         }
         return bError;
 	}
+	
+	protected static String convertDBName(DBMetaData dbmd, String name) {
+	    if (name != null && dbmd != null) {
+	        if (dbmd.databaseType == dbmd.POSTGRES) name = name.toLowerCase(); 
+	        else name = name.toUpperCase();
+	    }
+	    return name;
+	}
+	
 }

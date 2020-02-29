@@ -23,7 +23,8 @@ import com.viaoa.util.OADate;
     displayName = "Date",
     displayProperty = "value",
     sortProperty = "value",
-    localOnly = true
+    localOnly = true,
+    useDataSource = false
 )
 public class VDate extends OAObject {
     private static final long serialVersionUID = 1L;

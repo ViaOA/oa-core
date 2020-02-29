@@ -40,6 +40,10 @@ import com.viaoa.object.OAObjectInfoDelegate;
  *
  * Supports filters:
  * ex:  "dept.employees:newHires(7).orders.orderItems:overDue(30)"
+ *
+ * Recursive:
+ * 
+ * 
  * 
  * created 20120809
  * @param <F> type of object that the property path is based on.

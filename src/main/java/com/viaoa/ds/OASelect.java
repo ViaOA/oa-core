@@ -92,6 +92,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
     protected int fetchAmount=defalutFetchAmount;  // used by Hub to know how many to read at a time
     protected boolean bCancelled;
     protected boolean bHasBeenStarted;
+    protected boolean bUseFinder;
     protected volatile long lastReadTime; // used with for determining timeout
     protected OAFilter<TYPE> oaFilter;  // this will be used by OASelect to filter iterator returned values
     protected OAFilter<TYPE> dsFilter;  // this will be sent to DataSource, which will use it if it does not support queries
@@ -558,10 +559,8 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         posFinderResults = 0;
         amountRead = 0;
         amountCount = -1;
-
+        bUseFinder = false;
         
-        boolean bUseFinder = false;
-        // 20140808
         if (hubSearch != null && finder == null) {
             finder = new OAFinder(hubSearch, null);
             OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterObjectToDetail(hubSearch);
@@ -697,7 +696,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         }
         
         TYPE obj = null;
-        if (finder != null) {
+        if (bUseFinder && finder != null) {
             if (alFinderResults == null) return null;
             int x = alFinderResults.size();
             if (posFinderResults >= x) {
@@ -767,7 +766,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
             select();
         }
         
-        if (finder != null) {
+        if (bUseFinder && finder != null) {
             if (alFinderResults == null) return false;
             int x = alFinderResults.size();
             return (posFinderResults < x);

@@ -38,6 +38,8 @@ import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
+import com.viaoa.object.OAObjectEditQuery;
+import com.viaoa.object.OAObjectEditQueryDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
@@ -428,30 +430,44 @@ public class OAJaxb<TYPE extends OAObject> {
      */
     public TYPE convertFromJSON(String json) throws Exception {
         OAThreadLocalDelegate.setOAJaxb(this);
-        
+
         try {
+            preloadJSON(json);
+            
             Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
             unmarshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
             unmarshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
             // unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);         
             
-            preloadJSON(json);
-            
             /* Rules based on LoadingMode createNew & updateRootOnly
               can only create new root and owned objects if createNew  
               dont allow updating of other objects
-              if they are new then reject (they shoudl be created them seperately)
+              if they are new then reject (they should be created them seperately)
              
               only allow new (ignore/reject ID prop) for root and owned objects
               other objects will not be updated, 
             */            
+
+//qqqqqqqqqqqqqqqqqqqq see if first object (or collection is new object)
+            
+            
+            
             
             if (getLoadingMode() == LoadingMode.UpdateRootOnly || getLoadingMode() == LoadingMode.CreateNewRootOnly) {
+                int i = 0;
                 for (Node node : queuePreloadNode) {
+                    Class cz = node.clazz;
                     node.oaObject = getNextUnmarshalObject(node);
+                    if (i++ == 0) {
+                        if (node.oaObject == null) {
+                            OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowNewEditQuery(cz);
+                            if (!eq.getAllowed()) {
+                                throw new Exception("User does not have permission to create new object, msg="+eq.getResponse());
+                            }
+                        }
+                    }
                     
                     boolean bIsOwned = false;
-                    Class cz = node.clazz;
                     for ( ;; ) {
                         if (this.clazz.equals(cz)) {
                             bIsOwned = true;
@@ -464,12 +480,20 @@ public class OAJaxb<TYPE extends OAObject> {
                     }
                     node.bDisableUpdate = !bIsOwned;  // dont allow updating real objects
                     
+                    // check access
                     if (node.oaObject == null) {
                         if (getLoadingMode() == LoadingMode.UpdateRootOnly) {
                             throw new Exception("can not create new Objects for "+node.clazz.getSimpleName()+", id="+node.id);
                         }
                         else if (!bIsOwned && getLoadingMode() == LoadingMode.CreateNewRootOnly) {
                             throw new Exception("can not create new Objects for "+node.clazz.getSimpleName()+", id="+node.id);
+                        }
+                        
+                        if (bIsOwned) {
+                            OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowNewEditQuery(cz);
+                            if (!eq.getAllowed()) {
+                                throw new Exception("User does not have permission to create new owned object, type="+cz.getSimpleName()+", msg="+eq.getResponse());
+                            }
                         }
                     }
                 }

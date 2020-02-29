@@ -140,6 +140,7 @@ public class UpdateDelegate {
             boolean bNull = (obj == null);
             boolean bOver512 = (obj instanceof String && ((String)obj).length() > 512);
     
+            String origValue = null;
             // 20100514
             boolean byteArray = (obj instanceof byte[]);
             if (byteArray) {
@@ -149,7 +150,7 @@ public class UpdateDelegate {
             }
             else {
                 value = ConverterDelegate.convertToString(dbmd, obj, !bOver512, Delegate.getMaxLength(column), column.decimalPlaces, column);
-                String origValue = value;
+                origValue = value;
                 
                 if (value != null && bOver512) {
                     if (vecParam == null) vecParam = new Vector(3,3);
@@ -167,7 +168,6 @@ public class UpdateDelegate {
                 sbSet.append(value);
             }
 
-            /**
             // check for case sensitive column
         	if (dbmd.caseSensitive) {
             	String colName = column.columnLowerName;
@@ -182,7 +182,6 @@ public class UpdateDelegate {
                     sbSet.append(dbmd.leftBracket + column.columnLowerName.toUpperCase() + dbmd.rightBracket + " = " + value);
             	}            
         	}
-        	**/
         }
         
         Link[] links = table.getLinks();

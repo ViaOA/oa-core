@@ -21,7 +21,8 @@ import com.viaoa.object.OAObject;
     displayName = "NameValue",
     displayProperty = "name",
     sortProperty = "value",
-    localOnly = true
+    localOnly = true,
+    useDataSource = false
 )
 public class VNameValue extends OAObject {
     private static final long serialVersionUID = 1L;

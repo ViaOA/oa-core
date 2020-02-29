@@ -182,16 +182,13 @@ public class AutonumberDelegate {
             // ACCESS Version to get string value of seq number
             s = "select max(val("+column+"))";
         }
-        else if (dbmd.databaseType == dbmd.DERBY) {
-            s = "select max("+column+")";
-        }
-        else if (dbmd.databaseType == dbmd.SQLSERVER) {
-            s = "select max("+column+")";
-        }
-        else {
-            // MYSQL
+        else if (dbmd.databaseType == dbmd.MYSQL) {
             s = "SELECT MAX(CONVERT("+column+", UNSIGNED INTEGER))";
         }
+        else {
+            s = "select max("+column+")";
+        }
+
         s += " FROM " +table.name;
         LOG.fine("table="+table.name+", column="+dbcolumn.columnName+", query="+s);
         return s;

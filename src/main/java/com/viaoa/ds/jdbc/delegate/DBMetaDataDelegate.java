@@ -131,6 +131,8 @@ public class DBMetaDataDelegate {
                 dbmd.setBlanksAsNulls(false);
                 dbmd.setUseExists(true);
                 dbmd.setLikeKeyword("ILIKE");
+                dbmd.setObjectTrue("'true'");
+                dbmd.setObjectFalse("'false'");
                 
                 break;
 	    }

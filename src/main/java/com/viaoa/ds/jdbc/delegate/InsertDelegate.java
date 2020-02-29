@@ -18,6 +18,7 @@ import java.util.logging.*;
 import com.viaoa.ds.jdbc.*;
 import com.viaoa.ds.jdbc.db.*;
 import com.viaoa.object.*;
+import com.viaoa.util.OAString;
 
 /**
  * Manages inserts for JDBC datasource.
@@ -58,12 +59,12 @@ public class InsertDelegate {
         try {
             objs = getInsertSQL(ds, oaObj, clazz, columnSkip, bIncludeRefereces);
             Object[] params = null;
-            Vector v = (Vector) objs[1];
-            if (v != null) {
-                int x = v.size();
+            ArrayList al = (ArrayList) objs[1];
+            if (al != null) {
+                int x = al.size();
                 params = new Object[x];
                 for (int i=0; i<x; i++) {
-                    params[i] = v.elementAt(i);
+                    params[i] = al.get(i);
                 }
             }
             
@@ -85,7 +86,7 @@ public class InsertDelegate {
         Column[] columns = table.getColumns();
         StringBuffer str = new StringBuffer(128);
         StringBuffer values = new StringBuffer(128);
-        Vector<Object> vecValue = null;
+        ArrayList<Object> alValue = null;
         String value;
         DBMetaData dbmd = ds.getDBMetaData();
         for (int i=0; columns != null && i < columns.length; i++) {
@@ -116,23 +117,22 @@ public class InsertDelegate {
 
             boolean bNull = (obj == null);
 
+            String origValue = null;
             // 20100514
             boolean byteArray = (obj instanceof byte[]);
             if (byteArray) {
-                if (vecValue == null) vecValue = new Vector(3,3);
-                vecValue.addElement(obj);
+                if (alValue == null) alValue = new ArrayList(3);
+                alValue.add(obj);
                 value = "?";
             }
             else {
-                boolean bOver512 = (obj instanceof String && ((String)obj).length() > 512);
-                
+                boolean bOver512 = obj != null && obj instanceof String && ((String) obj).length() > 512;
                 // this will convert to SQL string
                 value = ConverterDelegate.convertToString(dbmd, obj, !bOver512, Delegate.getMaxLength(column), column.decimalPlaces, column);
-                
-                String origValue = value;
+                origValue = value;
                 if (value != null && bOver512) {
-                    if (vecValue == null) vecValue = new Vector<Object>(3,3);
-                    vecValue.addElement(value);
+                    if (alValue == null) alValue = new ArrayList<Object>(3);
+                    alValue.add(value);
                     value = "?";
                 }
             }
@@ -141,27 +141,24 @@ public class InsertDelegate {
                 values.append(", ");
             }
             str.append(dbmd.leftBracket + column.columnName.toUpperCase() + dbmd.rightBracket );
-            values.append( value );
-
+            values.append(value);
             
-            /***
             // check for case sensitive column
         	if (!byteArray && dbmd.caseSensitive) {
-            	String colName = column.columnLowerName;
-            	if (colName != null && colName.trim().length() > 0 && !colName.equalsIgnoreCase(column.columnName)) {
+            	String colNameLower = column.columnLowerName;
+            	if (OAString.isNotEmpty(colNameLower) && !colNameLower.equalsIgnoreCase(column.columnName)) {
                     value = origValue;
-            		if (!bNull) value = value.toLowerCase();
-            		if (bOver512) {
-                        vecValue.addElement(value);
+            		if (value != null) value = value.toLowerCase();
+            		if (value != null && value.length() > 512) {
+                        alValue.add(value);
                         value = "?";
                     }
             		str.append(", ");
                     values.append(", ");
-	                str.append( dbmd.leftBracket + colName.toUpperCase() + dbmd.rightBracket );
-	                values.append( value );
+	                str.append( dbmd.leftBracket + colNameLower.toUpperCase() + dbmd.rightBracket );
+	                values.append(value);
             	}
         	}
-        	***/
         }
 
         // update Fkeys
@@ -191,7 +188,7 @@ public class InsertDelegate {
             }
         }
         str = new StringBuffer("INSERT INTO " + dbmd.leftBracket + table.name.toUpperCase() + dbmd.rightBracket + " (" + str + ") VALUES (" + values + ")");
-        return new Object[] { new String(str), vecValue };
+        return new Object[] { new String(str), alValue };
     }
 
     private static void performInsert(OADataSourceJDBC ds, OAObject oaObj, String sqlInsert, Object[] params, Column columnAutoGen) throws Exception {

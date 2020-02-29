@@ -302,6 +302,19 @@ public class OAObjectEditQueryDelegate {
         return editQuery;
     }
 
+    public static OAObjectEditQuery getAllowNewEditQuery(final Class clazz) {
+        if (clazz == null) return null;
+        
+        OAObjectEditQuery editQuery = new OAObjectEditQuery(Type.AllowVisible, OAObjectEditQuery.CHECK_Processed, null, clazz, null, null, null);
+        processEditQuery(editQuery);
+        if (editQuery.getAllowed()) {
+            editQuery = new OAObjectEditQuery(Type.AllowNew, OAObjectEditQuery.CHECK_UserEnabledProperty, null, clazz, null, null, null);
+            processEditQuery(editQuery);
+        }
+        return editQuery;
+    }
+    
+    
     public static OAObjectEditQuery getAllowNewEditQuery(final Hub hub, final int checkType) {
         if (hub == null) return null;
 
@@ -610,6 +623,8 @@ public class OAObjectEditQueryDelegate {
     }
 */    
     protected static void processEditQuery(OAObjectEditQuery editQuery) {
+int xx = 4;
+xx++;
         _processEditQuery(editQuery);
         if (DEMO_AllowAllToPass) {
             editQuery.setThrowable(null);
@@ -643,6 +658,7 @@ public class OAObjectEditQueryDelegate {
      *      OAJfcController to see if an UI component should be enabled
      *      OAObjetEventDelegate.fireBeforePropertyChange
      *      Hub add/remove/removeAll 
+     *      OAJaxb
      */
     protected static void _processEditQuery(final OAObjectEditQuery editQuery) {
         final Hub hubThis = editQuery.getHub();
@@ -676,15 +692,17 @@ public class OAObjectEditQueryDelegate {
         }
   
         // 20200217 add OAUserAccess
-        if (oaObj != null && (editQuery.getType() == Type.AllowEnabled || editQuery.getType() == Type.AllowVisible)) {
+        if (editQuery.getType() == Type.AllowEnabled || editQuery.getType() == Type.AllowVisible) {
             final OAUserAccess userAccess = OAContext.getContextUserAccess();
             if (userAccess != null) {
                 boolean bx = true;
                 if (editQuery.getType() == Type.AllowEnabled) {
-                    bx = userAccess.getEnabled(oaObj);
+                    if (oaObj != null) bx = userAccess.getEnabled(oaObj);
+                    else bx = userAccess.getEnabled(clazz);
                 }
                 else {
-                    bx = userAccess.getVisible(oaObj);
+                    if (oaObj != null) bx = userAccess.getVisible(oaObj);
+                    else bx = userAccess.getVisible(clazz); 
                 }
                 if (!bx) {
                     editQuery.setAllowed(false);
@@ -693,8 +711,6 @@ public class OAObjectEditQueryDelegate {
                 }
             }
         }
-        
-        
         
         
         // follow the first link (if any), if it is not owner
@@ -947,9 +963,9 @@ public class OAObjectEditQueryDelegate {
      * Calls visible|enabled for this object and all of it's owner/parents
      */
     protected static void ownerHierProcess(OAObjectEditQuery editQuery, final OAObject oaObj, final String propertyName) {
-        _owerHierProcess(editQuery, oaObj, propertyName, null);
+        _ownerHierProcess(editQuery, oaObj, propertyName, null);
     }
-    protected static void _owerHierProcess(OAObjectEditQuery editQuery, final OAObject oaObj, final String propertyName, final OALinkInfo li) {
+    protected static void _ownerHierProcess(OAObjectEditQuery editQuery, final OAObject oaObj, final String propertyName, final OALinkInfo li) {
         if (oaObj == null) return;
         // recursive, goto top owner first
         OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
@@ -959,7 +975,7 @@ public class OAObjectEditQueryDelegate {
             OAObject objOwner = (OAObject) lix.getValue(oaObj);
             if (objOwner != null) {
                 lix = lix.getReverseLinkInfo();
-                _owerHierProcess(editQuery, objOwner, lix.getName(), lix);
+                _ownerHierProcess(editQuery, objOwner, lix.getName(), lix);
             }
         }
         

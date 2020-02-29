@@ -423,6 +423,40 @@ public class OADataSourceJDBC extends OADataSource {
         ArrayList<ManyToMany> al = SelectDelegate.getManyToMany(this, linkInfo);
         return al;
     }
+
+    /**
+     * used to set the next number for databases that support auto assigned (seq) pkeys.
+     */
+    public void updateAutoSequence(Class<? extends OAObject> clazz) {
+        if (dbmd == null || clazz == null) return;
+        
+        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+        Table table = database.getTable(clazz);
+        
+        Column[] cols = table.getPrimaryKeyColumns();
+        if (cols == null || cols.length == 0) return;
+        if (cols[0].assignedByDatabase) {
+            Connection connection = null;
+            Statement st = null;
+            try {
+                connection = getConnection();
+                st = connection.createStatement();
+
+                if (dbmd.getDatabaseType() == dbmd.POSTGRES) {
+                    String sql = "SELECT setval('"+table.name+"_id_seq', (SELECT MAX(id) FROM "+table.name+"))";
+                    LOG.fine(sql);
+                    st.execute(sql);
+                    st.close();
+                }
+            }
+            catch (Exception e) {
+                LOG.log(Level.WARNING, "exception while updating seq", e);
+            }
+            finally {
+                releaseConnection(connection);
+            }
+        }
+    }
     
 }
 

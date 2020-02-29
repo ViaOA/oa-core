@@ -28,4 +28,5 @@ public @interface OAColumn {
     int sqlType() default java.sql.Types.VARCHAR;
     int maxLength() default 0;
     boolean isFullTextIndex() default false;
+    String lowerName() default "";
 }
