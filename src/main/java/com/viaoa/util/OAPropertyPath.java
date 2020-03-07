@@ -92,7 +92,7 @@ public class OAPropertyPath<F> {
         this.fromClass = fromClass;
 
         try {
-            setup(fromClass);
+            setup(fromClass, bIgnoreError);
         }
         catch (Exception e) {
             try {
@@ -229,6 +229,12 @@ public class OAPropertyPath<F> {
         String[] ss = getProperties();
         if (ss == null || ss.length == 0) return null;
         return ss[ss.length-1];
+    }
+    
+    public String getFirstPropertyName() {
+        String[] ss = getProperties();
+        if (ss == null || ss.length == 0) return null;
+        return ss[0];
     }
     
     

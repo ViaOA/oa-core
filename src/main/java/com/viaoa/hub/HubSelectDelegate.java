@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import com.viaoa.ds.*;
 import com.viaoa.object.*;
 import com.viaoa.util.OAFilter;
+import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
@@ -298,6 +299,17 @@ if (sel.getNextCount() != thisHub.getCurrentSize()) {
 	    select.setSelectClass(thisHub.getObjectClass());
 	    OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(thisHub.getObjectClass());
 
+	    
+	    // 20200302 
+	    Hub hx = thisHub.data.getSelectWhereHub();
+	    if (hx != null) {
+	        String s = thisHub.data.getSelectWhereHubPropertyPath();
+	        if (OAString.isNotEmpty(s)) {
+	            select.setWhereHub(hx, s);
+	        }
+	    }
+	    
+	    
 	    HubEventDelegate.fireBeforeSelectEvent(thisHub);
 	    
         
@@ -541,4 +553,56 @@ if (sel.getNextCount() != thisHub.getCurrentSize()) {
         return true;
 	}
 	
+	
+    public static Hub getSelectWhereHub(Hub thisHub) {
+        if (thisHub == null) return null;
+        return thisHub.data.getSelectWhereHub();
+    }
+    public static void setSelectWhereHub(Hub thisHub, Hub hub) {
+        if (thisHub == null) return;
+        thisHub.data.setSelectWhereHub(hub);
+    }
+
+    public static String getSelectWhereHubPropertyPath(Hub thisHub) {
+        if (thisHub == null) return null;
+        return thisHub.data.getSelectWhereHubPropertyPath();
+    }
+    public static void setSelectWhereHubPropertyPath(Hub thisHub, String pp) {
+        if (thisHub == null) return;
+        thisHub.data.setSelectWhereHubPropertyPath(pp);
+    }
+
+    /**
+     * Use the same whereHub & pp as another hub, if thisHub is in the same propertyPath.
+     * 
+     * example:  hubFrom=Company pp=clients.products.campaigns  hubTo=Campaign that has a hub=Product to select campaign.product 
+     * @param thisHub  Hub that could be in the same propertyPath of the hubFromHub.whereHubPropertyPath
+     * @param propName the reference of thisHub from another hub.  ex: 
+     * @param hubFromHub  hub that might have a selectWhereHub & PP that is used by thisHub.
+     * @return
+     */
+    public static boolean adoptWhereHub(final Hub thisHub, final String propName, final Hub hubFromHub) {
+        if (hubFromHub == null) return false;
+        if (thisHub == null) return false;
+        if (OAString.isEmpty(propName)) return false;
+        final Hub hubSelectWhere = HubSelectDelegate.getSelectWhereHub(hubFromHub);
+        if (hubSelectWhere == null) return false;
+        final String pp = HubSelectDelegate.getSelectWhereHubPropertyPath(hubFromHub);
+        if (OAString.isEmpty(pp)) return false;
+        OAPropertyPath propPath = new OAPropertyPath(hubSelectWhere.getObjectClass(), pp);
+        OAPropertyPath ppRev = propPath.getReversePropertyPath();
+        
+        String s = ppRev.getFirstPropertyName();
+        if (!propName.equalsIgnoreCase(s)) return false;
+        
+        int x = OAString.dcount(pp, '.');
+        s = OAString.field(pp, '.', 1, x-1);
+        
+        thisHub.setSelectWhereHub(hubSelectWhere, s);
+        return true;
+    }
+    
 }
+
+
+

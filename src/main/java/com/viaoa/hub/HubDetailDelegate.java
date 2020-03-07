@@ -1003,6 +1003,23 @@ public class HubDetailDelegate {
     public static OALinkInfo getLinkInfoFromMasterHubToDetail(Hub thisDetailHub) {
         return getLinkInfoFromMasterToDetail(thisDetailHub);
     }
+    
+    
+    public static boolean getIsFromSameMasterHub(Hub hub1, Hub hub2) {
+        // if (HubDetailDelegate.getLinkInfoFromMasterToDetail(getOriginalHub().getMasterHub()) == HubDetailDelegate.getLinkInfoFromMasterToDetail(getPlatformCampaigns())) {        
+        if (hub1 == null || hub2 == null) return false;
+        
+        Hub h1 = hub1.getMasterHub();
+        if (h1 == null) return false;
+        OALinkInfo li1 = HubDetailDelegate.getLinkInfoFromMasterToDetail(h1);
+        if (li1 == null) return false;
+        
+        OALinkInfo li2 = HubDetailDelegate.getLinkInfoFromMasterToDetail(hub2);
+        if (li2 == null) return false;
+        
+        return li1 == li2;
+    }
+    
     public static OALinkInfo getLinkInfoFromMasterToDetail(Hub thisDetailHub) {
         if (thisDetailHub == null) return null;
         Hub h = HubShareDelegate.getMainSharedHub(thisDetailHub);

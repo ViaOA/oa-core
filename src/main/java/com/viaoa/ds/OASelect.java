@@ -74,13 +74,24 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
     private final int id;
     
     protected Class clazz;
-    protected OAObject whereObject;
     protected String where;
     protected String order;
     protected boolean bPassthru;
     protected boolean bAppend;
     protected boolean bRewind = true; // set back to first object
-    protected String propertyFromWhereObject; // ex: if whereObject is Dept and class is Emp, then "emps"
+    
+
+    /**
+     * Select based on a "root" object/hub.ao
+     *  
+     *  examples: 
+     *  if whereObject is Dept and this.class is Emp, then "emps"
+     *  if whereObject is Dept and this.class is Order, then "emps.orders"
+     */
+    protected OAObject whereObject;
+    protected Hub whereHub;
+    protected String whereObjectPropertyPath; 
+    
     protected int max;  // max amount of objects to load
     protected boolean bCountFirst; // count before selecting
     protected int amountRead=-1;
@@ -101,7 +112,6 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
     private boolean bDirty;  // data should always be loaded from datasource  
     private volatile boolean bIsSelectingNow;
 
-    protected Hub whereHub;
     
     
     /** Create a new OASelect that is not initialzed. */
@@ -211,10 +221,16 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         lastReadTime = 0;
     }
 
+    
+    public void setWhereObject(OAObject whereObject, String pp) {
+        this.whereObject = whereObject;
+        this.whereObjectPropertyPath = pp;
+    }
+    
     /**
         WhereObject is used to build a where statement that will select all objects that have
         have a reference to whereObject.
-        @see #setPropertyFromWhereObject
+        @see #setWhereObjectPropertyPath
     */
     public void setWhereObject(OAObject whereObject) {
         this.whereObject = whereObject;
@@ -222,7 +238,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
     /**
         WhereObject is used to build a where statement that will select all objects that have
         have a reference to whereObject.
-        @see #setPropertyFromWhereObject
+        @see #setWhereObjectPropertyPath
     */
     public Object getWhereObject() {
         return whereObject;
@@ -236,15 +252,21 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         example: if whereObject is Dept and class is Emp, then "emps"
     */
     public void setPropertyFromWhereObject(String propName) {
-        propertyFromWhereObject = propName;
+        whereObjectPropertyPath = propName;
+    }
+    public void setWhereObjectPropertyPath(String propName) {
+        whereObjectPropertyPath = propName;
     }
 
     /**
         Returns property from Where Object
-        @see #setPropertyFromWhereObject
+        @see #setWhereObjectPropertyPath
     */
     public String getPropertyFromWhereObject() {
-        return propertyFromWhereObject;
+        return whereObjectPropertyPath;
+    }
+    public String getWhereObjectPropertyPath() {
+        return whereObjectPropertyPath;
     }
 
     /**
@@ -464,7 +486,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
                 }
                 else {
                     if (whereObject != null) {
-                        amountCount = ds.count(clazz, whereObject, propertyFromWhereObject, max);
+                        amountCount = ds.count(clazz, whereObject, whereObjectPropertyPath, max);
                     }
                     else amountCount = ds.count(clazz, where, params, max);
                 }
@@ -571,7 +593,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         }
         
         if (!bUseFinder && finder != null) {
-            if ((whereHub != null || whereObject != null) && OAString.isNotEmpty(propertyFromWhereObject)) {
+            if ((whereHub != null || whereObject != null) && OAString.isNotEmpty(whereObjectPropertyPath)) {
                 OADataSource ds = getDataSource();
                 bUseFinder = ds == null || !ds.supportsStorage();
             }
@@ -625,9 +647,9 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
             if (whereObjx == null && whereHub != null) whereObjx = (OAObject) whereHub.getAO();
             if (whereObjx != null) {
                 if (bCountFirst && amountCount < 0) {
-                	amountCount = ds.count(clazz, whereObjx, where, params, propertyFromWhereObject, max);
+                	amountCount = ds.count(clazz, whereObjx, where, params, whereObjectPropertyPath, max);
                 }
-                query = ds.select(clazz, whereObjx, where, params, propertyFromWhereObject, order, max, getDataSourceFilter(), getDirty());
+                query = ds.select(clazz, whereObjx, where, params, whereObjectPropertyPath, order, max, getDataSourceFilter(), getDirty());
             }
             else {
                 if (bPassthru) {
@@ -824,14 +846,26 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         return this.bDirty;
     }
 
+    
     // similiar to whereObject, uses hub.AO as the whereObject
+    public void setWhereHub(Hub hubWhere, String ppFromWhereHub) {
+        setWhereHub(hubWhere);
+        setWhereHubPropertyPath(ppFromWhereHub);
+    }
+
     public void setWhereHub(Hub hub) {
         this.whereHub = hub;
     }
     public Hub getWhereHub() {
         return whereHub;
     }
+    public String getWhereHubPropertyPath() {
+        return this.whereObjectPropertyPath;
+    }
+    public void setWhereHubPropertyPath(String pp) {
+        this.whereObjectPropertyPath = pp;
+    }
+    
+    
 }
-
-
 

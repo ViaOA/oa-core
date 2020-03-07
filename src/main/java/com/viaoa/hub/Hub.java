@@ -1706,6 +1706,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
         HubSelectDelegate.setSelectOrder(this, s);
     }
 
+    public void setSelectWhereHub(Hub fromHub, String ppFromHub) {
+        HubSelectDelegate.setSelectWhereHub(this, fromHub);
+        HubSelectDelegate.setSelectWhereHubPropertyPath(this, ppFromHub);
+    }
+    
+    
     /**
      * Sort Order clause to use for select.
      * 

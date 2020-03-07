@@ -415,5 +415,27 @@ public class HubData implements java.io.Serializable {
         return vec;
     }
 
+    public Hub getSelectWhereHub() {
+        HubDatax hdx = hubDatax;
+        if (hdx == null) return null;
+        return hdx.selectWhereHub;
+    }
+    public void setSelectWhereHub(Hub hub) {
+        if (hubDatax != null || hub != null) {
+            getHubDatax().selectWhereHub = hub;
+        }
+    }
+
+    public String getSelectWhereHubPropertyPath() {
+        HubDatax hdx = hubDatax;
+        if (hdx == null) return null;
+        return hdx.selectWhereHubPropertyPath;
+    }
+    public void setSelectWhereHubPropertyPath(String pp) {
+        if (hubDatax != null || pp != null) {
+            getHubDatax().selectWhereHubPropertyPath = pp;
+        }
+    }
+    
 }
 

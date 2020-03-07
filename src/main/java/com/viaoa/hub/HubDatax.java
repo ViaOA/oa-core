@@ -37,6 +37,7 @@ public class HubDatax implements java.io.Serializable {
         if (selectOrder != null) return true;
         if (autoSequence != null) return true;
         if (autoMatch != null) return true;
+        if (selectWhereHub != null) return true;
         return false;
     }
     
@@ -47,6 +48,9 @@ public class HubDatax implements java.io.Serializable {
         if (bTrackChanges) return true;
         return false;
     }
+    
+    
+    
     
 	/**
 	    Counter that is incremented when a new list of objects is loaded.
@@ -117,5 +121,18 @@ public class HubDatax implements java.io.Serializable {
 
     // Flag to know if add/insert/remove objects should be tracked. see also datam.getTrackChanges()
     protected boolean bTrackChanges;
+    
+    // 20200302
+    /**
+     * Hub and property[Path] used for OASelect.whereHub & propertyFromWhereObject
+     * 
+     */
+    protected transient Hub selectWhereHub;
+    
+    /**
+     * Property[Path] from selectWhereHub to this Hub.
+     * ex: from hubCompany, this.hub=campaigns,  "clients.products.campaigns"
+     */
+    protected transient String selectWhereHubPropertyPath;
 }
 
