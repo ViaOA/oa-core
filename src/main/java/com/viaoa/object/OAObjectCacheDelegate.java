@@ -995,6 +995,7 @@ public class OAObjectCacheDelegate {
 
     protected static Object _find(final Object fromObject, final Class clazz, final OAFinder finder, final boolean bSkipNew, final boolean bThrowException, int fetchAmount, final ArrayList<Object> alResults) {
         if (bDisableCache) return null;
+        final boolean bSkipDeleted = true; //qqqq todo: make as param
 
         TreeMapHolder tmh = getTreeMapHolder(clazz, false);
         if (tmh == null) return null;
@@ -1020,10 +1021,12 @@ public class OAObjectCacheDelegate {
                 Object object = ref.get();
                 if (object != null && object != fromObject) {
                     if (!bSkipNew || !b || !((OAObject)object).getNew()) {
-                        if (finder == null || finder.findFirst((OAObject) object) != null) {
-                            if (alResults == null) return object;
-                            alResults.add(object);
-                            if (alResults.size() >= fetchAmount) return object;
+                        if (!bSkipDeleted || !((OAObject)object).getDeleted()) {
+                            if (finder == null || finder.findFirst((OAObject) object) != null) {
+                                if (alResults == null) return object;
+                                alResults.add(object);
+                                if (alResults.size() >= fetchAmount) return object;
+                            }
                         }
                     }
                 }            

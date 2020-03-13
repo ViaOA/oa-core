@@ -91,6 +91,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
     private boolean contextEnabledValue;
     private String contextVisibleProperty;
     private boolean contextVisibleValue;
+    private boolean bHasOneAndOnlyOneLink;
     
     public OAObjectInfo() {
         this(new String[] { });
@@ -1116,5 +1117,12 @@ public class OAObjectInfo { //implements java.io.Serializable {
         }
         bCheckSubmit = true;
         return piSubmit;
+    }
+    
+    public boolean getHasOneAndOnlyOneLink() {
+        return bHasOneAndOnlyOneLink;
+    }
+    public void setHasOneAndOnlyOneLink(boolean b) {
+        this.bHasOneAndOnlyOneLink = b;
     }
 }

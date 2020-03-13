@@ -623,8 +623,6 @@ public class OAObjectEditQueryDelegate {
     }
 */    
     protected static void processEditQuery(OAObjectEditQuery editQuery) {
-int xx = 4;
-xx++;
         _processEditQuery(editQuery);
         if (DEMO_AllowAllToPass) {
             editQuery.setThrowable(null);
@@ -744,6 +742,21 @@ xx++;
             updateEditProcessed(editQuery);
         }
 
+        if (oaObj != null && editQuery.getType() == Type.AllowVisible && OAString.isNotEmpty(propertyName) && editQuery.isAllowed() && oi.getHasOneAndOnlyOneLink()) {
+            OALinkInfo li = oi.getLinkInfo(propertyName);
+            if (li != null && li.getOneAndOnlyOne()) {
+                if (OAObjectPropertyDelegate.getProperty(oaObj, propertyName) == null) {
+                    for (OALinkInfo lix : oi.getLinkInfos()) {
+                        if (lix == li || !lix.getOneAndOnlyOne()) continue;
+                        if (OAObjectPropertyDelegate.getProperty(oaObj, lix.getName()) != null) {
+                            editQuery.setAllowed(false);
+                        }
+                    }
+                }
+            }
+        }
+        
+        
         // "allow" can be overwritten, if there is a lower level annotation/editQuery defined
         if (editQuery.getType() == Type.AllowVisible && OAString.isNotEmpty(propertyName)) {
             String sx = null;

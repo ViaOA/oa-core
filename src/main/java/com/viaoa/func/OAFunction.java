@@ -121,7 +121,7 @@ public class OAFunction {
     }
 
 
-    public static double max(OAObject obj, String pp) {
+    public static Object max(OAObject obj, String pp) {
         if (obj == null || OAString.isEmpty(pp)) return 0;
         String pp1, pp2;
         int x = pp.lastIndexOf('.');
@@ -135,7 +135,7 @@ public class OAFunction {
         }
         return max(obj, pp1, pp2);
     }
-    public static double max(Hub hub, String pp) {
+    public static Object max(Hub hub, String pp) {
         if (hub == null || OAString.isEmpty(pp)) return 0;
         String pp1, pp2;
         int x = pp.lastIndexOf('.');
@@ -149,9 +149,9 @@ public class OAFunction {
         }
         return max(hub, pp1, pp2);
     }
-    public static double max(OAObject obj, String ppToObject, String pp) {
+    public static Object max(OAObject obj, String ppToObject, String pp) {
         if (obj == null || OAString.isEmpty(pp)) return 0;
-        OADouble max = new OADouble();
+        Object[] object = new Object[1];
          
         OAFinder f = new OAFinder(obj, ppToObject) {
             @Override
@@ -159,8 +159,11 @@ public class OAFunction {
                 Object val = obj.getProperty(pp);
                 if (val != null) {
                     try {
-                        double d = OAConv.toDouble(val);
-                        if (d > max.get()) max.set(d);
+                        if (object[0] == null) object[0] = val;
+                        else {
+                            int x = OACompare.compare(object[0], val);
+                            if (x < 0) object[0] = val;
+                        }
                     }
                     catch (Exception e) {}
                 }
@@ -168,11 +171,11 @@ public class OAFunction {
             }
         };
         f.find();
-        return max.get();
+        return object[0];
     }
-    public static double max(Hub hub, String ppToObject, String pp) {
+    public static Object max(Hub hub, String ppToObject, String pp) {
         if (hub == null || OAString.isEmpty(pp)) return 0;
-        OADouble max = new OADouble();
+        Object[] object = new Object[1];
          
         OAFinder f = new OAFinder(hub, ppToObject) {
             @Override
@@ -180,8 +183,11 @@ public class OAFunction {
                 Object val = obj.getProperty(pp);
                 if (val != null) {
                     try {
-                        double d = OAConv.toDouble(val);
-                        if (d > max.get()) max.set(d);
+                        if (object[0] == null) object[0] = val;
+                        else {
+                            int x = OACompare.compare(object[0], val);
+                            if (x < 0) object[0] = val;
+                        }
                     }
                     catch (Exception e) {}
                 }
@@ -189,11 +195,11 @@ public class OAFunction {
             }
         };
         f.find();
-        return max.get();
+        return object[0];
     }
 
 
-    public static double min(OAObject obj, String pp) {
+    public static Object min(OAObject obj, String pp) {
         if (obj == null || OAString.isEmpty(pp)) return 0;
         String pp1, pp2;
         int x = pp.lastIndexOf('.');
@@ -207,7 +213,7 @@ public class OAFunction {
         }
         return min(obj, pp1, pp2);
     }
-    public static double min(Hub hub, String pp) {
+    public static Object min(Hub hub, String pp) {
         if (hub == null || OAString.isEmpty(pp)) return 0;
         String pp1, pp2;
         int x = pp.lastIndexOf('.');
@@ -221,9 +227,9 @@ public class OAFunction {
         }
         return min(hub, pp1, pp2);
     }
-    public static double min(OAObject obj, String ppToObject, String pp) {
+    public static Object min(OAObject obj, String ppToObject, String pp) {
         if (obj == null || OAString.isEmpty(pp)) return 0;
-        OADouble min = new OADouble();
+        Object[] object = new Object[1];
          
         OAFinder f = new OAFinder(obj, ppToObject) {
             @Override
@@ -231,8 +237,11 @@ public class OAFunction {
                 Object val = obj.getProperty(pp);
                 if (val != null) {
                     try {
-                        double d = OAConv.toDouble(val);
-                        if (d > min.get()) min.set(d);
+                        if (object[0] == null) object[0] = val;
+                        else {
+                            int x = OACompare.compare(object[0], val);
+                            if (x > 0) object[0] = val;
+                        }
                     }
                     catch (Exception e) {}
                 }
@@ -240,11 +249,11 @@ public class OAFunction {
             }
         };
         f.find();
-        return min.get();
+        return object[0];
     }
-    public static double min(Hub hub, String ppToObject, String pp) {
+    public static Object min(Hub hub, String ppToObject, String pp) {
         if (hub == null || OAString.isEmpty(pp)) return 0;
-        OADouble min = new OADouble();
+        Object[] object = new Object[1];
          
         OAFinder f = new OAFinder(hub, ppToObject) {
             @Override
@@ -252,8 +261,11 @@ public class OAFunction {
                 Object val = obj.getProperty(pp);
                 if (val != null) {
                     try {
-                        double d = OAConv.toDouble(val);
-                        if (d > min.get()) min.set(d);
+                        if (object[0] == null) object[0] = val;
+                        else {
+                            int x = OACompare.compare(object[0], val);
+                            if (x > 0) object[0] = val;
+                        }
                     }
                     catch (Exception e) {}
                 }
@@ -261,8 +273,12 @@ public class OAFunction {
             }
         };
         f.find();
-        return min.get();
+        return object[0];
     }
+    
+    
+    
+    
     
     public static String template(OAObject obj, String template) {
         if (obj == null || OAString.isEmpty(template)) return null;

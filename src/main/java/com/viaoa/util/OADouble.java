@@ -12,15 +12,18 @@ package com.viaoa.util;
 
 public class OADouble {
     private double x;
+    private boolean bIsSet;
     
     public OADouble() {
     }
     public OADouble(double x) {
         this.x = x;
+        bIsSet = true;
     }
     
     public void set(double x) {
         this.x = x;
+        bIsSet = true;
     }
     public double get() {
         return x;
@@ -41,5 +44,8 @@ public class OADouble {
         return this.subtract(1);
     }
 
-
+    public boolean isSet() {
+        return bIsSet;
+    }
+    
 }

@@ -302,6 +302,10 @@ if (clazz.getName().equals("com.cdi.model.oa.SalesOrder")) {
             li.setProcessed(annotation.isProcessed());
             //li.setRecursive(annotation.recursive());
             li.setOAOne(annotation);
+            
+            boolean b = annotation.isOneAndOnlyOne();
+            if (b) oi.setHasOneAndOnlyOneLink(b);
+            li.setOneAndOnlyOne(b);
 
             li.setDefaultPropertyPath(annotation.defaultPropertyPath());
             li.setDefaultPropertyPathIsHierarchy(annotation.defaultPropertyPathIsHierarchy());

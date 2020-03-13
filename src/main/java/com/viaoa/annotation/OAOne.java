@@ -84,6 +84,11 @@ public @interface OAOne {
     
     /** property path for default value from Context object, "." is to use this object. */
     String defaultContextPropertyPath() default "";
+
+    /**
+     * flag to know if this One link is only to be used if the other oneOfOne=true are null.
+     */
+    boolean isOneAndOnlyOne() default false;
 }
 
 /*  OALinkInfo

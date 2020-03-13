@@ -12,11 +12,13 @@ package com.viaoa.util;
 
 public class OAInteger {
     private int x;
+    private boolean bIsSet;
     
     public OAInteger() {
     }
     public OAInteger(int x) {
         this.x = x;
+        bIsSet = true;
     }
 
     public int get() {
@@ -24,6 +26,7 @@ public class OAInteger {
     }
     public void set(int x) {
         this.x = x;
+        bIsSet = true;
     }
     
     
@@ -70,4 +73,8 @@ public class OAInteger {
         ints = null;
     }
 
+    public boolean isSet() {
+        return bIsSet;
+    }
+    
 }

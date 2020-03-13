@@ -385,7 +385,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 
     
     /**
-     * Flag to know if the date.time value should be sent, which is the raw value.
+     * Flag to know if the date.time (long ms) value should be sent, which is the raw value.
      * Default is false, so times do not get converted. 
      */
     private static final boolean bSerializeTimeValue = false;

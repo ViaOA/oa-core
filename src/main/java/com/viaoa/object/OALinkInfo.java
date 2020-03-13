@@ -49,6 +49,7 @@ public class OALinkInfo { //implements java.io.Serializable {
     private String seqProperty;  // sequence propetyPath
     private boolean isImportMatch;
     private boolean couldBeLarge;
+    private boolean oneAndOnlyOne;
     
     
     // runtime
@@ -516,6 +517,13 @@ public class OALinkInfo { //implements java.io.Serializable {
     }
     public void setDefaultContextPropertyPath(String pp) {
         this.defaultContextPropertyPath = pp;
+    }
+
+    public boolean getOneAndOnlyOne() {
+        return oneAndOnlyOne;
+    }
+    public void setOneAndOnlyOne(boolean b) {
+        oneAndOnlyOne = b;
     }
 }
 
