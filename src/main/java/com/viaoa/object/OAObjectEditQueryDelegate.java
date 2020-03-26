@@ -248,8 +248,6 @@ public class OAObjectEditQueryDelegate {
     }
     
     
-    
-    
     public static OAObjectEditQuery getAllowAddEditQuery(final Hub hub, OAObject objAdd, final int checkType) {
         if (hub == null) return null;
         
@@ -718,14 +716,16 @@ public class OAObjectEditQueryDelegate {
                 OAObject objx = hubThis.getMasterObject();
                 if (objx != null) {
                     if (editQuery.getType() == Type.AllowEnabled || editQuery.getType().checkEnabledFirst) {
-                        OAObjectEditQuery editQueryX = new OAObjectEditQuery(Type.AllowEnabled, (editQuery.getCheckType() ^ editQuery.CHECK_IncludeMaster), hubThis.getMasterHub(), null, objx, li.getName(), null);
+                        int ct = (editQuery.getCheckType() ^ editQuery.CHECK_IncludeMaster) ^ editQuery.CHECK_Processed;
+                        OAObjectEditQuery editQueryX = new OAObjectEditQuery(Type.AllowEnabled, ct, hubThis.getMasterHub(), null, objx, li.getName(), null);
                         editQueryX.setAllowed(editQuery.getAllowed());
                         _processEditQuery(editQueryX);
                         editQuery.setAllowed(editQueryX.getAllowed());
                         if (OAString.isEmpty(editQuery.getResponse())) editQuery.setResponse(editQueryX.getResponse());
                     }
                     else if (editQuery.getType() == Type.AllowVisible) {
-                        OAObjectEditQuery editQueryX = new OAObjectEditQuery(Type.AllowVisible, (editQuery.getCheckType() ^ editQuery.CHECK_IncludeMaster), hubThis.getMasterHub(), null, objx, li.getName(), null);
+                        int ct = (editQuery.getCheckType() ^ editQuery.CHECK_IncludeMaster) ^ editQuery.CHECK_Processed;
+                        OAObjectEditQuery editQueryX = new OAObjectEditQuery(Type.AllowVisible, ct, hubThis.getMasterHub(), null, objx, li.getName(), null);
                         editQueryX.setAllowed(editQuery.getAllowed());
                         _processEditQuery(editQueryX);
                         editQuery.setAllowed(editQueryX.getAllowed());

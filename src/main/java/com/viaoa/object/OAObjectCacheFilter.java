@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.hub.HubEvent;
+import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.process.OAChangeRefresher;
 import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
 import com.viaoa.util.OAArray;
@@ -205,6 +206,9 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
      * To be added, isUsedFromObjectCache() and isUsed() must return true.
      */
     public void refresh() {
+        refresh(true);
+    }
+    public void refresh(final boolean bSetLoading) {
         final Hub<T> hub = wrHub.get();
         if (hub == null) {
             close();
@@ -222,11 +226,9 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             return;
         }
         
-
-        hub.setLoading(true);
+        if (bSetLoading) hub.setLoading(true);
         boolean b = HubDataDelegate.setLoadingAllData(hub, true);
         try {
-        
             // need to check loaded objects 
             OAObjectCacheDelegate.visit(clazz, new OACallback() {
                 @SuppressWarnings("unchecked")
@@ -244,8 +246,9 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             });
         }
         finally {
+            if (bSetLoading) hub.setLoading(false);
             if (!b) HubDataDelegate.setLoadingAllData(hub, false);
-            hub.setLoading(false);
+            HubEventDelegate.fireOnNewListEvent(hub, false);
         }
     }
     

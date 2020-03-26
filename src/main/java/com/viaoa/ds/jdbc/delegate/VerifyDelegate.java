@@ -53,7 +53,7 @@ public class VerifyDelegate {
 	    @returns true if all tables, columns and indexes exist, else returns false if any are missing.
 	*/
 	private static boolean _verify(OADataSourceJDBC ds, Connection connection, final ArrayList<String> alError) throws Exception {
-	    DatabaseMetaData dbmd = connection.getMetaData();
+	    final DatabaseMetaData dbmd = connection.getMetaData();
         final DBMetaData dbx = ds.getDBMetaData();
 	    ResultSet rs;
 	    boolean bResult = true;
@@ -184,7 +184,7 @@ public class VerifyDelegate {
 	                continue;
 	            }
 	
-	            if (c.columnLowerName != null && c.columnLowerName.length() > 0) {
+	            if (dbx.getCaseSensitive() && c.columnLowerName != null && c.columnLowerName.length() > 0) {
 		            rs = dbmd.getColumns(null,null,convertDBName(dbx, t.name),convertDBName(dbx, c.columnLowerName));
 		            b = rs.next();
 		            rs.close();
