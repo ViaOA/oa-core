@@ -185,7 +185,7 @@ public abstract class HubChangeListener {
         OAFilter filter = new OAFilter() {
             @Override
             public boolean isUsed(Object obj) {
-                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowNewEditQuery(hub, OAObjectEditQuery.CHECK_ALL);
+                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowNewEditQuery(hub);
                 boolean b = eq.getAllowed();
                 if (!b) {
                     failureReason = eq.getDisplayResponse();
@@ -213,7 +213,7 @@ public abstract class HubChangeListener {
             @Override
             public boolean isUsed(Object obj) {
                 if (!(obj instanceof OAObject)) return false;
-                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowDeleteEditQuery(hub, (OAObject)obj, OAObjectEditQuery.CHECK_ALL);
+                OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowDeleteEditQuery(hub, (OAObject)obj);
                 boolean b = eq.getAllowed();
                 if (!b) {
                     failureReason = eq.getDisplayResponse();

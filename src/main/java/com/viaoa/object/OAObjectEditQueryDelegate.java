@@ -108,8 +108,8 @@ public class OAObjectEditQueryDelegate {
         return getVerifyRemoveAllEditQuery(hub, checkType).getAllowed();
     }
     
-    public static boolean getAllowDelete(Hub hub, OAObject obj, int checkType) {
-        return getAllowDeleteEditQuery(hub, obj, checkType).getAllowed();
+    public static boolean getAllowDelete(Hub hub, OAObject obj) {
+        return getAllowDeleteEditQuery(hub, obj).getAllowed();
     }
     public static boolean getVerifyDelete(Hub hub, OAObject obj, int checkType) {
         return getVerifyDeleteEditQuery(hub, obj, checkType).getAllowed();
@@ -302,18 +302,29 @@ public class OAObjectEditQueryDelegate {
 
     public static OAObjectEditQuery getAllowNewEditQuery(final Class clazz) {
         if (clazz == null) return null;
+        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+
+        int ct = (OAObjectEditQuery.CHECK_Processed | OAObjectEditQuery.CHECK_UserEnabledProperty);
+        OAObjectEditQuery editQuery = new OAObjectEditQuery(Type.AllowNew, ct, null, clazz, null, null, null);
         
-        OAObjectEditQuery editQuery = new OAObjectEditQuery(Type.AllowVisible, OAObjectEditQuery.CHECK_Processed, null, clazz, null, null, null);
-        processEditQuery(editQuery);
+        if (oi.getProcessed()) updateEditProcessed(editQuery);
         if (editQuery.getAllowed()) {
-            editQuery = new OAObjectEditQuery(Type.AllowNew, OAObjectEditQuery.CHECK_UserEnabledProperty, null, clazz, null, null, null);
-            processEditQuery(editQuery);
+            String pp = oi.getContextEnabledProperty();
+            if (OAString.isNotEmpty(pp)) {
+                if (!OAContext.isEnabled(pp, oi.getContextEnabledValue())) {
+                    editQuery.setAllowed(false);
+                    String s = "Not enabled, user rule for "+clazz.getSimpleName()+", ";
+                    OAObject user = OAContext.getContextObject();
+                    if (user == null) s = "OAContext.getContextObject (User) returned null";
+                    else s = "User."+pp+" must be "+oi.getContextEnabledValue();
+                    editQuery.setResponse(s);
+                }
+            }
         }
         return editQuery;
     }
     
-    
-    public static OAObjectEditQuery getAllowNewEditQuery(final Hub hub, final int checkType) {
+    public static OAObjectEditQuery getAllowNewEditQuery(final Hub hub) {
         if (hub == null) return null;
 
         OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
@@ -322,24 +333,19 @@ public class OAObjectEditQueryDelegate {
         OAObjectEditQuery editQuery = null;
         
         if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-            editQuery = new OAObjectEditQuery(Type.AllowNew, checkType, hub, null, null, null, null);
-            if ( (checkType & OAObjectEditQuery.CHECK_Processed) > 0) {
-                if (hub.getOAObjectInfo().getProcessed()) {
-                    updateEditProcessed(editQuery);
-                }
-            }
+            editQuery = getAllowNewEditQuery(hub.getObjectClass());
             processEditQueryForHubListeners(editQuery, hub, null, null, null, null);
         }
         else {
             OALinkInfo liRev = li.getReverseLinkInfo();
-            if (liRev != null && !liRev.getCalculated()) { 
-                editQuery = new OAObjectEditQuery(Type.AllowNew, checkType, hub, null, objMaster, liRev.getName(), null);
+            if (liRev != null && !liRev.getCalculated()) {
+                editQuery = new OAObjectEditQuery(Type.AllowNew, OAObjectEditQuery.CHECK_ALL, hub, null, objMaster, liRev.getName(), null);
                 processEditQuery(editQuery);
             }
-        }
-        if (editQuery == null) {
-            editQuery = new OAObjectEditQuery(Type.AllowNew, checkType, hub, null, null, null, null);
-            processEditQuery(editQuery);
+            else {
+                editQuery = getAllowNewEditQuery(hub.getObjectClass());
+                processEditQueryForHubListeners(editQuery, hub, null, null, null, null);
+            }
         }
         return editQuery;
     }
@@ -470,43 +476,61 @@ public class OAObjectEditQueryDelegate {
         return editQuery;
     }
 
+
+    public static OAObjectEditQuery getAllowDeleteEditQuery(final OAObject objDelete) {
+        if (objDelete == null) return null;
+
+        final Class clazz = objDelete.getClass();
+        if (clazz == null) return null;
+        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+        
+        int ct = (OAObjectEditQuery.CHECK_Processed | OAObjectEditQuery.CHECK_UserEnabledProperty);
+        OAObjectEditQuery editQuery = new OAObjectEditQuery(Type.AllowDelete, ct, null, clazz, null, null, objDelete);
+      
+        if (oi.getProcessed()) updateEditProcessed(editQuery);
+        if (editQuery.getAllowed()) {
+            String pp = oi.getContextEnabledProperty();
+            if (OAString.isNotEmpty(pp)) {
+                if (!OAContext.isEnabled(pp, oi.getContextEnabledValue())) {
+                    editQuery.setAllowed(false);
+                    String s = "Not enabled, user rule for "+clazz.getSimpleName()+", ";
+                    OAObject user = OAContext.getContextObject();
+                    if (user == null) s = "OAContext.getContextObject (User) returned null";
+                    else s = "User."+pp+" must be "+oi.getContextEnabledValue();
+                    editQuery.setResponse(s);
+                }
+            }
+        }
+        return editQuery;
+    }
     
-    
-    
-    
-    public static OAObjectEditQuery getAllowDeleteEditQuery(final Hub hub, final OAObject objDelete, final int checkType) {
-        if (hub == null) return null;
+    public static OAObjectEditQuery getAllowDeleteEditQuery(final Hub hub, final OAObject objDelete) {
+        if (hub == null || objDelete == null) return null;
 
         OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
         OAObject objMaster = hub.getMasterObject();
 
         OAObjectEditQuery editQuery = null;
-        
+      
         if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-            editQuery = new OAObjectEditQuery(Type.AllowDelete, checkType, hub, null, null, null, objDelete);
-            if ( (checkType & OAObjectEditQuery.CHECK_Processed) > 0) {
-                if (hub.getOAObjectInfo().getProcessed()) {
-                    updateEditProcessed(editQuery);
-                }
-            }
+            editQuery = getAllowDeleteEditQuery(objDelete);
             processEditQueryForHubListeners(editQuery, hub, null, null, null, null);
         }
         else {
-            OALinkInfo liRev = li.getReverseLinkInfo(); 
-            if (liRev != null && !li.getCalculated()) {
-                editQuery = new OAObjectEditQuery(Type.AllowDelete, checkType, hub, null, objMaster, liRev.getName(), objDelete);
+            OALinkInfo liRev = li.getReverseLinkInfo();
+            if (liRev != null && !liRev.getCalculated()) {
+                editQuery = new OAObjectEditQuery(Type.AllowDelete, OAObjectEditQuery.CHECK_ALL, hub, null, objMaster, liRev.getName(), objDelete);
                 processEditQuery(editQuery);
             }
-        }
-        if (editQuery == null) {
-            editQuery = new OAObjectEditQuery(Type.AllowDelete, checkType, hub, null, null, null, objDelete);
-            processEditQuery(editQuery);
+            else {
+                editQuery = getAllowNewEditQuery(hub.getObjectClass());
+                processEditQueryForHubListeners(editQuery, hub, null, null, null, null);
+            }
         }
         return editQuery;
     }
     
     public static OAObjectEditQuery getVerifyDeleteEditQuery(final Hub hub, final OAObject objDelete, final int checkType) {
-
         OAObjectEditQuery editQuery = null;
         if (hub != null) {
             OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
@@ -674,14 +698,9 @@ public class OAObjectEditQueryDelegate {
         final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
         
         if (bCheckProcessedCheck) {
-            if (editQuery.getType() == Type.AllowNew) {
-                if (oi.getProcessed()) {
-                    updateEditProcessed(editQuery);
-                }
-            }
-            else if (editQuery.getType() == Type.AllowDelete && value != null) {
+            if (editQuery.getType() == Type.AllowDelete && value != null && OAString.isEmpty(propertyName)) {
                 OAObjectInfo oix = OAObjectInfoDelegate.getOAObjectInfo(value.getClass());
-                if (oi.getProcessed()) {
+                if (oix.getProcessed()) {
                     updateEditProcessed(editQuery);
                 }
             }

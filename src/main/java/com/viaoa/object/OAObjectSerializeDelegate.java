@@ -305,7 +305,9 @@ public class OAObjectSerializeDelegate {
   
   		stream.writeObject(OAObjectDelegate.FALSE);  // end of property list
 
-        if (bNewObjectCache) OAObjectCSDelegate.removeFromNewObjectCache(oaObj);
+        if (bNewObjectCache) {
+            OAObjectCSDelegate.removeFromNewObjectCache(oaObj);
+        }
 
         // 20141124
         if (serializer != null) {
@@ -360,12 +362,12 @@ public class OAObjectSerializeDelegate {
                 continue;
             }
 
-            boolean b = false;
+            boolean b = bNewObjectCache;
             if (serializer != null && obj != null && !(obj instanceof byte[])) {
                 b = serializer.shouldSerializeReference(oaObj, (String) key, obj, li);
             }
 
-            if (b || bNewObjectCache) {
+            if (b) {
                 if (serializer != null && obj instanceof OAObject) {
                     // option to dont send oaobj if it is already on the client
                     obj = serializer.getReferenceValueToSend(obj); 
