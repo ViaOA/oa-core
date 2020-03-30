@@ -1498,7 +1498,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 for (int i=0; i<40; i++) {
                     if (!hsNewList.contains(t)) break;
                     if (i > 20) {
-                        LOG.warning("HubMerger lockNewList timeout waiting for HubMerger thread to finish");
+                        LOG.log(Level.WARNING, "HubMerger lockNewList timeout waiting for HubMerger thread to finish", new Exception("HubMerger lockNewList timeout after 500ms, will continue"));
                         break;
                     }
                     try {

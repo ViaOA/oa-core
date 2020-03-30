@@ -14,6 +14,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 
 import com.viaoa.annotation.OAClass;
@@ -254,9 +255,12 @@ public class OAObjectInfoDelegate {
                 }
     
                 String s = methods[i].getName();
-                
+               
                 if (s.toLowerCase().startsWith("getjaxb")) {
                     if (methods[i].getAnnotation(XmlElement.class) != null) {
+                        continue;  // ignore all jaxb methods
+                    }
+                    if (methods[i].getAnnotation(XmlAttribute.class) != null) {
                         continue;  // ignore all jaxb methods
                     }
                 }
