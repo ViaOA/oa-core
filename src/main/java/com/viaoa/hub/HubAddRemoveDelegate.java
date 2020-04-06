@@ -154,7 +154,7 @@ public class HubAddRemoveDelegate {
             final Class c = obj.getClass();
             if (thisHub.data.objClass == null) HubDelegate.setObjectClass(thisHub, c);
             if (!thisHub.data.objClass.isAssignableFrom(c) ) {
-                return "class not assignable, class="+c;
+                return "class not assignable, class="+c.getSimpleName();
             }
         }
         
@@ -392,7 +392,7 @@ public class HubAddRemoveDelegate {
             final Class c = obj.getClass();
             if (thisHub.data.objClass == null) HubDelegate.setObjectClass(thisHub, c);
             if (!thisHub.data.objClass.isAssignableFrom(c) ) {
-                return "class not assignable, class="+c;
+                return "class not assignable, class="+c.getSimpleName();
             }
         }
         

@@ -2082,7 +2082,9 @@ public class OAObjectReflectDelegate {
             if (li.getPrivateMethod()) continue;
             if (!li.getUsed()) continue;
 
-            boolean bCopy = (li.isOwner());
+            boolean bM2M = li.isMany2Many();
+            boolean bCopy = (li.isOwner() || bM2M);
+            
             if (bCopy && excludeProperties != null) {
                 for (int j = 0; bCopy && j < excludeProperties.length; j++) {
                     if (excludeProperties[j] == null) continue;
@@ -2099,6 +2101,12 @@ public class OAObjectReflectDelegate {
                 OAObject obj = (OAObject) hub.elementAt(j);
                 if (obj == null) break;
 
+                // 20200405
+                if (bM2M) {
+                    hubNew.add(obj);
+                    continue;
+                }
+                
                 Object objx = hmNew.get(OAObjectDelegate.getGuid((OAObject)obj));
                 
                 if (objx == null) {
