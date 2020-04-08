@@ -24,11 +24,13 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
+import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAArray;
+import com.viaoa.util.OACompare;
 import com.viaoa.util.OAPropertyPath;
 
 /**
@@ -67,7 +69,7 @@ public class HubListenerTree {
 		 *  This allows getting all of the root objects that need to be notified when a change is made to an object "down" the tree from it.
 		*/
 
-		Object[] getRootValues(Object obj) {
+		Object[] getRootValues(final Object obj) {
 			// 20171212 reworked to include option to use a finder
 			long ts = System.currentTimeMillis();
 			String spp = null;
@@ -94,8 +96,9 @@ public class HubListenerTree {
 			}
 
 			boolean bUseOrig = true;
+            OAPropertyPath pp = null;
 			if (spp != null) {
-				OAPropertyPath pp = new OAPropertyPath(HubListenerTree.this.root.hub.getObjectClass(), spp);
+				pp = new OAPropertyPath(HubListenerTree.this.root.hub.getObjectClass(), spp);
 				OALinkInfo[] lis = pp.getLinkInfos();
 				if (lis != null && lis.length > 0) {
 					bUseOrig = false;
@@ -125,9 +128,24 @@ public class HubListenerTree {
 				objs = null;
 			}
 			if (objs == null && spp != null) {
-				OAFinder finder = new OAFinder();
-				finder.addEqualFilter(spp, obj);
-				ArrayList al = finder.find(HubListenerTree.this.root.hub);
+			    // 20200407
+			    ArrayList al = null;
+			    if (pp != null) {
+			        OALinkInfo[] lis = pp.getLinkInfos();
+			        if (lis != null && lis.length == 1 && pp.isLastPropertyLinkInfo()) {
+			            al = new ArrayList();
+			            for (final Object obja : HubListenerTree.this.root.hub) {
+			                Object objz = OAObjectPropertyDelegate.getProperty((OAObject) obja, lis[0].getName());
+			                if (OACompare.isEqual(obj, objz)) al.add(obja);
+			            }
+			        }
+			    }
+			    
+			    if (al == null) {
+    				OAFinder finder = new OAFinder();
+    				finder.addEqualFilter(spp, obj);
+    				al = finder.find(HubListenerTree.this.root.hub);
+			    }
 				objs = new Object[al.size()];
 				al.toArray(objs);
 			}

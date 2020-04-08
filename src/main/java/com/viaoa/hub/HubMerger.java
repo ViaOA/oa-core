@@ -1875,8 +1875,17 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
             ref = e.getNewValue();
             if (ref != null) {
+           
                 if (!node.child.data.hub.contains(ref)) {
-                    node.child.data.hub.add(ref);
+                    // 20200407 added siblingHelper
+                    final OASiblingHelper sh = getSiblingHelper();
+                    boolean bx = OAThreadLocalDelegate.addSiblingHelper(sh);
+                    try {
+                        node.child.data.hub.add(ref);
+                    }
+                    finally {
+                        if (bx) OAThreadLocalDelegate.removeSiblingHelper(sh);
+                    }
                 }
             }
         }
