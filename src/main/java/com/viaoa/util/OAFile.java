@@ -309,7 +309,7 @@ public class OAFile extends java.io.File {
             }
         }
 
-        StringBuffer sb = new StringBuffer(estimatedSize);
+        StringBuilder sb = new StringBuilder(estimatedSize);
         for (;;) {
             int x = is.read();
             if (x < 0) break;

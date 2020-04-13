@@ -11,6 +11,7 @@
 package com.viaoa.hub;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.lang.reflect.*;
@@ -172,38 +173,60 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     public void resequence() {
         resequence(0);
     }
+
+    private final static ConcurrentHashMap<Object, Object> hmUpdateSeq = new ConcurrentHashMap<>();
     
     protected void resequence(int startPos) {
         if (hub.isDeletingAll()) return;
+        synchronized (hmUpdateSeq) {
+            for (int i=0; ;i++) {
+                if (hmUpdateSeq.get(this) == null || i>3) {
+                    hmUpdateSeq.put(this, this);
+                    break;
+                }
+                try {
+                    hmUpdateSeq.wait(50);
+                }
+                catch (Exception e) {}
+            }
+        }
+
+        try {
+            if (bServerSideOnly) {
+                OARemoteThreadDelegate.sendMessages(true); 
+            }
+            _resequence(startPos);
+        }
+        finally {
+            if (bServerSideOnly) {
+                OARemoteThreadDelegate.sendMessages(false); 
+            }
+            synchronized (hmUpdateSeq) {
+                hmUpdateSeq.remove(this);
+                hmUpdateSeq.notifyAll();
+            }
+        }
+    }
+    
+    private void _resequence(int startPos) {
+        startPos = 0; // 20200409 since deletes dont reseq and can leave gaps
         int cnt = aiResequenceCnt.incrementAndGet();
         int x = hub.getSize();  // only seq loaded objects
         for (int i=startPos; i<x; i++) {
             Object obj = hub.elementAt(i);
             if (obj == null) break;
             if (cnt != aiResequenceCnt.get()) break;
-            updateSequence(obj, i+startNumber);
-        }
-    }
-    protected void updateSequence(Object obj, int pos) {
-        if (propertySetMethod == null) return;
-        if (obj == null) return;
-        try {
+            
             // if this is ClientThread then need to send to other clients
-            if (bServerSideOnly) {
-                OARemoteThreadDelegate.sendMessages(true); 
+            try {
+                propertySetMethod.invoke(obj, new Object[] { new Integer(i+startNumber) });
             }
-            propertySetMethod.invoke(obj, new Object[] { new Integer(pos) });
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        finally {
-            if (bServerSideOnly) {
-                OARemoteThreadDelegate.sendMessages(false); 
+            catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }
     }
-
+    
     /** HubListener interface method, used to listen to changes to Hub and update sequence numbers. */
     public @Override void afterInsert(HubEvent e) {
         int pos = e.getPos();

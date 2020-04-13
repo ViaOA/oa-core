@@ -140,6 +140,7 @@ public class OATemplate<F extends OAObject> {
     private String template;
     private final AtomicInteger aiStopCalled = new AtomicInteger();
     protected String fromText, toText, hiliteText;
+    private int parseErrorCnt = 0;    
 
     public OATemplate() {
     }
@@ -150,6 +151,7 @@ public class OATemplate<F extends OAObject> {
     public void setTemplate(String temp) {
         this.template = temp;
         this.rootTreeNode = null;
+        this.parseErrorCnt = 0;
     }
     public String getTemplate() {
         return this.template;
@@ -211,6 +213,7 @@ public class OATemplate<F extends OAObject> {
     
     public String process(F objRoot1, F objRoot2, Hub<F> hubRoot, OAProperties props) {
         final int cntStopCalled = aiStopCalled.get();
+        this.parseErrorCnt = 0;
 
         setProperty("DATETIME", new OADateTime());
         setProperty("DATE", new OADate());
@@ -296,7 +299,7 @@ public class OATemplate<F extends OAObject> {
             int pos1 = doc.indexOf(" ", pos) + 1;
             int pos2 = doc.indexOf("%>", pos1);
             if (pos2 < 0) {
-                LOG.warning("Error: missing end tag %>");
+                if(parseErrorCnt++ < 5) LOG.warning("Error: missing end tag for include %>");
                 break;
             }
             String text = doc.substring(pos1, pos2).trim();
@@ -336,14 +339,16 @@ public class OATemplate<F extends OAObject> {
         }
     }
 
-private int errorCnt = 0;//qqqqqqqqq    
+    public boolean getHasParseError() {
+        return parseErrorCnt > 0;
+    }
+    
     private void parseA(Token tok, TreeNode node) {
         if (tok.hasEndToken()) {
             Token tokB = parseB(tok, node);
             if (tokB == null || tokB.tagType == null || tokB.tagType != TagType.End) {
                 node.errorMsg = "Error: missing end tag for " + tok.data;
-//qqqqqqqqq
-if(errorCnt++ < 10) LOG.warning(node.errorMsg+", Template="+getTemplate());                
+                if(parseErrorCnt++ < 5) LOG.warning(node.errorMsg+", Template="+getTemplate());                
             }
         }
         else if (tok.tagType == null) {
