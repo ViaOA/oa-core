@@ -602,7 +602,9 @@ public class HubListenerTree {
 
 					if (b) {
 						if (node.getCalcPropertyNames().indexOf(origPropertyName) < 0) {
-							node.getCalcPropertyNames().add(origPropertyName);
+						    synchronized (node.getCalcPropertyNames()) {
+						        node.getCalcPropertyNames().add(origPropertyName);
+						    }
 						}
 						if (!bAllowBackgroundThread) {
 							node.hubMerger.setUseBackgroundThread(false);
@@ -613,8 +615,10 @@ public class HubListenerTree {
 						newTreeNode.parent = node;
 						newTreeNode.property = property;
 						newTreeNode.hub = new Hub(hubClass);
-						newTreeNode.getCalcPropertyNames().add(origPropertyName);
-
+                        synchronized (newTreeNode.getCalcPropertyNames()) {
+                            newTreeNode.getCalcPropertyNames().add(origPropertyName);
+                        }
+                        
 						String spp = "(" + hubClass.getName() + ")" + property;
 
 						if (bIsHub) {

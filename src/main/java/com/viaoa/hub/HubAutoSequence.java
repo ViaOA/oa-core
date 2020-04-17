@@ -191,15 +191,16 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
             }
         }
 
+        boolean b = false;
         try {
             if (bServerSideOnly) {
-                OARemoteThreadDelegate.sendMessages(true); 
+                b = OARemoteThreadDelegate.sendMessages(true); 
             }
             _resequence(startPos);
         }
         finally {
             if (bServerSideOnly) {
-                OARemoteThreadDelegate.sendMessages(false); 
+                OARemoteThreadDelegate.sendMessages(b); 
             }
             synchronized (hmUpdateSeq) {
                 hmUpdateSeq.remove(this);
