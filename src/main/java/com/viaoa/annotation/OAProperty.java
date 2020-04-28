@@ -10,92 +10,129 @@
 */
 package com.viaoa.annotation;
 
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines the properties in an OAObject class. 
+ * Defines the properties in an OAObject class.
+ *
  * @author vvia
  */
 @Documented
 @Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME) 
+@Retention(RetentionPolicy.RUNTIME)
 public @interface OAProperty {
-    String displayName() default "";
+	String displayName() default "";
 
-    String description() default "";
+	String description() default "";
 
-    String defaultValue() default "";
-    boolean required() default false;
+	String defaultValue() default "";
 
-    int maxLength() default 0;
-    int minLength() default 0;
-    int decimalPlaces() default -1;
-    int displayLength() default 0;
-    
-    /** @return length of the column in a table/grid UI component. */
-    int columnLength() default 0;
-    
-    String inputMask() default "";
-    String outputFormat() default "";
-    
-    boolean verify() default false;
-    String validCharacters() default "";
-    String invalidCharacters() default "";
+	boolean required() default false;
 
-    /** @return column name used for table/grid UI component */
-    String columnName() default "";
-    String toolTip() default "";
-    String help() default "";
-    boolean hasCustomCode() default false; 
-    
-    boolean isPassword() default false;
-    boolean isReadOnly() default false;
-    boolean isProcessed() default false;
-    boolean isImportMatch() default false;
-    
-    boolean isEmail() default false;
-    boolean isUrl() default false;
-    boolean isImageName() default false;
-    boolean isIconName() default false;
-    boolean isXml() default false;
-    boolean isFileName() default false;
-    boolean isAutoSeq() default false;
-    boolean isTimestamp() default false;
-    boolean isCaseSensitive() default false;
-    boolean isPhone() default false;
-    boolean isZipCode() default false;
-    boolean isHtml() default false;
-    
-    /** @return if true, then the property value must be unique. */
-    boolean isUnique() default false;
-    boolean isCurrency() default false;
+	int maxLength() default 0;
 
-    /** @return will be used to know if there is a validation method (not yet used at this time) */
-    boolean hasValidationMethod() default false;//qqqq new, if true, then call delegate to verify? or put verify in code?    
-    
+	int minLength() default 0;
 
-    boolean isBlob() default false;
-    boolean isNameValue() default false;
-    
-    boolean isUnicode() default false;
-    
-    boolean trackPrimitiveNull() default true;
-    
-    /**
-     * If true, then datetimes dont need timezone
-     * @return
-     */
-    boolean ignoreTimeZone() default false;
-    
-    /**
-     * Flag used to determine if the object is completed and ready for submitted.
-     */
-    boolean isSubmit() default false;
-    
-    String timeZonePropertyPath() default "";
-    
+	int decimalPlaces() default -1;
+
+	int displayLength() default 0;
+
+	/** @return length of the column in a table/grid UI component. */
+	int columnLength() default 0;
+
+	String inputMask() default "";
+
+	String outputFormat() default "";
+
+	boolean verify() default false;
+
+	String validCharacters() default "";
+
+	String invalidCharacters() default "";
+
+	/** @return column name used for table/grid UI component */
+	String columnName() default "";
+
+	String toolTip() default "";
+
+	String help() default "";
+
+	boolean hasCustomCode() default false;
+
+	boolean isEncrypted() default false;
+
+	/**
+	 * use isSHAHash or isEncrypted instead
+	 * 
+	 * @return
+	 */
+	@Deprecated
+	boolean isPassword() default false;
+
+	boolean isSHAHash() default false;
+
+	boolean isReadOnly() default false;
+
+	boolean isProcessed() default false;
+
+	boolean isImportMatch() default false;
+
+	boolean isEmail() default false;
+
+	boolean isUrl() default false;
+
+	boolean isImageName() default false;
+
+	boolean isIconName() default false;
+
+	boolean isXml() default false;
+
+	boolean isFileName() default false;
+
+	boolean isAutoSeq() default false;
+
+	boolean isTimestamp() default false;
+
+	boolean isCaseSensitive() default false;
+
+	boolean isPhone() default false;
+
+	boolean isZipCode() default false;
+
+	boolean isHtml() default false;
+
+	/** @return if true, then the property value must be unique. */
+	boolean isUnique() default false;
+
+	boolean isCurrency() default false;
+
+	/** @return will be used to know if there is a validation method (not yet used at this time) */
+	boolean hasValidationMethod() default false;//qqqq new, if true, then call delegate to verify? or put verify in code?
+
+	boolean isBlob() default false;
+
+	boolean isNameValue() default false;
+
+	boolean isUnicode() default false;
+
+	boolean trackPrimitiveNull() default true;
+
+	/**
+	 * If true, then datetimes dont need timezone
+	 *
+	 * @return
+	 */
+	boolean ignoreTimeZone() default false;
+
+	/**
+	 * Flag used to determine if the object is completed and ready for submitted.
+	 */
+	boolean isSubmit() default false;
+
+	String timeZonePropertyPath() default "";
+
 }
