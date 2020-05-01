@@ -20,7 +20,7 @@ import com.viaoa.object.OAObjectInfo;
 
 /**
  * Database MetaData for various JDBC databases.
- * 
+ *
  * @author vvia see for data types: http://docs.oracle.com/javase/1.5.0/docs/guide/jdbc/getstart/mapping.html#table1
  */
 @OAClass(useDataSource = false, localOnly = false)
@@ -59,7 +59,7 @@ public class DBMetaData extends OAObject {
 	public boolean supportsAutoAssign; // if true, db assigns id
 	public String autoAssignValue;
 	public String autoAssignType;
-	public String maxString; // use "?" to have the max amount entered
+	public String maxString = "LIMIT ?"; // use "?" to have the max amount entered
 	public String guid;
 	public boolean allowStatementPooling = true;
 	public boolean fkeysAutoCreateIndex = false;
@@ -68,7 +68,7 @@ public class DBMetaData extends OAObject {
 
 	/*
 	    DERBY:                   "org.apache.derby.jdbc.EmbeddedDriver"
-	    MS SQL Server            "com.microsoft.sqlserver.jdbc.SQLServerDriver"      
+	    MS SQL Server            "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 	
 	    ODBC Bridge:             "sun.jdbc.odbc.JdbcOdbcDriver"
 	    INET (SQL-SERVER):       "com.inet.tds.TdsDriver"
@@ -81,7 +81,7 @@ public class DBMetaData extends OAObject {
 
 	/*
 	    Derby:                   "jdbc:derby:database"   to create: "jdbc:derby:database;create=true;collation=TERRITORY_BASED"
-	    MS SQL Server            "jdbc:sqlserver://localhost;port=1433;database=vetjobs;sendStringParametersAsUnicode=false;SelectMethod=cursor;ConnectionRetryCount=2;ConnectionRetryDelay=2"      
+	    MS SQL Server            "jdbc:sqlserver://localhost;port=1433;database=vetjobs;sendStringParametersAsUnicode=false;SelectMethod=cursor;ConnectionRetryCount=2;ConnectionRetryDelay=2"
 	
 	    INET (SQL-SERVER):       "jdbc:inetdae:127.0.0.1:1433?database=northwind&sql7=true"
 	    WEBLOGIC (SQL-SERVER):   "jdbc:weblogic:mssqlserver4:northwind@127.0.0.1:1433"
