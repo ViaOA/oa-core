@@ -78,6 +78,8 @@ public class OAObjectDelegate {
 		int x = (ps == null) ? 0 : ((int) Math.ceil(ps.length / 8.0d));
 		oaObj.nulls = new byte[x];
 
+        if (OAThreadLocalDelegate.isLoading()) return; // dont initialize. Whatever is loading should call initialize below directly 
+        
 		boolean bInitializeWithCS = !oi.getLocalOnly() && OASync.isClient(oaObj.getClass());
 		initialize(oaObj, oi, oi.getInitializeNewObjects(), oi.getUseDataSource(), oi.getAddToCache(), bInitializeWithCS, true);
 	}

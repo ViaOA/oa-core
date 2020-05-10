@@ -1702,7 +1702,7 @@ public class OAObjectReflectDelegate {
                 }
                 else {
                     ref = OAObjectReflectDelegate.createNewObject(li.getToClass());
-//qqqqqqqqqqqqqqqqqqq     
+     
                     // 20190322
                     if ( ((OAObject) ref).isLoading()) {
                         OAObjectDelegate.initialize((OAObject) ref, OAObjectInfoDelegate.getOAObjectInfo(li.getToClass()), true, true, true, false, true);

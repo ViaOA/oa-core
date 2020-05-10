@@ -532,6 +532,7 @@ Hub<TYPE> hub = new Hub<TYPE>(clazz);
             
             
             for (Object obj : lst) {
+//qqqqqqqqqqqqqqqq need to call:  OAObjectCacheDelegate.add(objNew);                   
                 hub.add((TYPE) obj);
             }
             return hub;
