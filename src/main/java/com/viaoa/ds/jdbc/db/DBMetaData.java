@@ -59,7 +59,9 @@ public class DBMetaData extends OAObject {
 	public boolean supportsAutoAssign; // if true, db assigns id
 	public String autoAssignValue;
 	public String autoAssignType;
-	public String maxString = "LIMIT ?"; // use "?" to have the max amount entered
+	
+	// 20200511 uses statement.setMaxRows(x) instead
+	// public String maxString; // ex: "LIMIT ?"; // use "?" to have the max amount entered
 	public String guid;
 	public boolean allowStatementPooling = true;
 	public boolean fkeysAutoCreateIndex = false;
@@ -385,15 +387,16 @@ public class DBMetaData extends OAObject {
 		firePropertyChange("autoAssignType", old, this.autoAssignType);
 	}
 
+	/*
 	public String getMaxString() {
 		return maxString;
 	}
-
 	public void setMaxString(String maxString) {
 		String old = this.maxString;
 		this.maxString = maxString;
 		firePropertyChange("maxString", old, this.maxString);
 	}
+	*/
 
 	public String getDriverJDBC() {
 		return driverJDBC;

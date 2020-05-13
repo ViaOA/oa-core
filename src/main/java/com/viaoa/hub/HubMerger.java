@@ -1038,7 +1038,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 Data d = new Data(node.child, null, h);
                 try {
                     lock.writeLock().lock();
-                    if (alChildren != null) { // could have been closed in another thread
+                    if (alChildren != null && d != null) { // could have been closed in another thread
                         alChildren.add(d);
                     }
                 }
@@ -1114,7 +1114,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 }
                 try {
                     lock.writeLock().lock();
-                    if (alChildren != null) { // could have been closed in another thread
+                    if (alChildren != null && node.child.data != null) { // could have been closed in another thread
                         this.alChildren.add(node.child.data); // even if obj==null, so that verify will
                                                               // work - it looks for alChildren.size=1
                     }
@@ -1128,7 +1128,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 Data d = new Data(node.child, parent, h);
                 try {
                     lock.writeLock().lock();
-                    if (alChildren != null) { // could have been closed in another thread
+                    if (alChildren != null && d != null) { // could have been closed in another thread
                         alChildren.add(d);
                     }
                 }
@@ -1156,7 +1156,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             Data d = new Data(node.recursiveChild, parent, h);
             try {
                 lock.writeLock().lock();
-                if (alChildren != null) { // could have been closed in another thread
+                if (alChildren != null && d != null) { // could have been closed in another thread
                     alChildren.add(d);
                 }
             }
@@ -1898,7 +1898,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             // 20110809 if the AO is the same, then this can be skipped
             if (evt != null && alChildren != null && alChildren.size() > 0) {
                 Data d = alChildren.get(0);
-                if (d.parentObject == evt.getObject()) return;
+                if (d == null || d.parentObject == evt.getObject()) return;
             }
 
             if (hubCombined != null) {

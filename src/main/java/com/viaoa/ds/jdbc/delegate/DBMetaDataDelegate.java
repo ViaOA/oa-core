@@ -90,6 +90,7 @@ public class DBMetaDataDelegate {
 		case DBMetaData.ORACLE:
 			dbmd.setUseBracket(false);
 			dbmd.setName("ORACLE Database");
+            // dbmd.setMaxString("LIMIT ?");
 			dbmd.setMaxVarcharLength(4000);
 			dbmd.setSupportsAutoAssign(true);
 			break;
@@ -106,6 +107,7 @@ public class DBMetaDataDelegate {
 			dbmd.setDatesIncludeTime(false);
 			dbmd.setFkeysAutoCreateIndex(true);
 			dbmd.setSupportsAutoAssign(true);
+            // dbmd.setMaxString("LIMIT ?");
 			// ??? dbmd.setMaxVarcharLength();
 			// bUseExists = false; // prior to MySQL 4, now supports subqueries and EXISTS
 			break;
@@ -117,6 +119,7 @@ public class DBMetaDataDelegate {
 			dbmd.setUseBracket(false);
 			dbmd.setDatesIncludeTime(false);
 			dbmd.setFkeysAutoCreateIndex(false);
+            // dbmd.setMaxString("LIMIT ?");
 
 			dbmd.setSupportsAutoAssign(true);
 			dbmd.setAutoAssignType("SERIAL");

@@ -132,7 +132,8 @@ public class SelectDelegate {
 			queries[1] = OAString.convert(queries[1], "7", "?");
         }
         else {
-        	queries[0] = "SELECT " + getMax(ds,max) + qc.getSelectColumns(clazz, bDirty) + " " + queries[0];
+            queries[0] = "SELECT " + qc.getSelectColumns(clazz, bDirty) + " " + queries[0];
+        	//was: queries[0] = "SELECT " + getMax(ds,max) + qc.getSelectColumns(clazz, bDirty) + " " + queries[0];
         }
         return queries;
     }
@@ -292,7 +293,8 @@ public class SelectDelegate {
     
     public static String getSelectSQL(OADataSourceJDBC ds, QueryConverter qc, Class clazz, OAObject whereObject, String extraWhere, Object[] args, String propertyFromWhereObject, String queryOrder, int max, boolean bDirty) {
         if (propertyFromWhereObject == null) propertyFromWhereObject = "";
-        String query = "SELECT " + getMax(ds,max) + qc.getSelectColumns(clazz, bDirty);
+        String query = "SELECT " + qc.getSelectColumns(clazz, bDirty);
+        //was: String query = "SELECT " + getMax(ds,max) + qc.getSelectColumns(clazz, bDirty);
         query  += " " + qc.convertToSql(clazz, whereObject, extraWhere, args, propertyFromWhereObject, queryOrder);
     	return query;
     }
@@ -313,22 +315,25 @@ public class SelectDelegate {
         }       
         else {      
             Column[] columns = qc.getSelectColumnArray(clazz);
-            rsi = new ResultSetIterator(ds, clazz, columns, "SELECT "+getMax(ds,max)+query, max);
+            rsi = new ResultSetIterator(ds, clazz, columns, "SELECT "+query, max);
+            //was: rsi = new ResultSetIterator(ds, clazz, columns, "SELECT "+getMax(ds,max)+query, max);
         }
         rsi.setDirty(bDirty);
         return rsi;
     }
 
+    /* use statement.setMaxRows(x) instead
     private static String getMax(OADataSourceJDBC ds, int max) {
 		String str = "";
 		if (max > 0) {
 			DBMetaData dbmd = ds.getDBMetaData();
-			if (dbmd.maxString != null) {
+			if (OAString.isNotEmpty(dbmd.maxString)) {
 				str = OAString.convert(dbmd.maxString, "?", (max+"")) + " ";
 			}
 		}
 		return str;
     }
+    */
     
     /**
      * Note: queryWhere needs to begin with "FROM TABLENAME WHERE ..."
@@ -352,7 +357,8 @@ public class SelectDelegate {
         }       
         else {      
             Column[] columns = qc.getSelectColumnArray(clazz);
-            rsi = new ResultSetIterator(ds, clazz, columns, "SELECT "+getMax(ds,max)+query, max);
+            rsi = new ResultSetIterator(ds, clazz, columns, "SELECT "+query, max);
+            //was: rsi = new ResultSetIterator(ds, clazz, columns, "SELECT "+getMax(ds,max)+query, max);
         }
         rsi.setDirty(bDirty);
         return rsi;
@@ -377,7 +383,8 @@ public class SelectDelegate {
 
     // Note: queryWhere needs to begin with "FROM TABLENAME WHERE ..."
     public static int countPassthru(OADataSourceJDBC ds, String query, int max) {
-        String s = "SELECT "+getMax(ds, max)+"COUNT(*) ";
+        String s = "SELECT COUNT(*) ";
+        //was: String s = "SELECT "+getMax(ds, max)+"COUNT(*) ";
         if (query != null && query.length() > 0) s += query;
         // LOG.fine("sql="+s);
         Statement st = null;
@@ -409,12 +416,14 @@ public class SelectDelegate {
         QueryConverter qc = new QueryConverter(ds);
         String s = qc.convertToSql(selectClass, whereObject, extraWhere, args, propertyFromWhereObject, "");
 
-        s = "SELECT "+getMax(ds, max)+"COUNT(*) " + s;
+        s = "SELECT COUNT(*) " + s;
+        //was: s = "SELECT "+getMax(ds, max)+"COUNT(*) " + s;
         // LOG.fine("selectClass="+selectClass.getName()+", whereObject="+whereObject+", extraWhere="+extraWhere+", propertyFromWhereObject="+propertyFromWhereObject+", sql="+s);
 
         Statement st = null;
         try {
             st = ds.getStatement(s);
+            if (max > 0) st.setMaxRows(max);
             java.sql.ResultSet rs = st.executeQuery(s);
             rs.next();
             int x = rs.getInt(1);
@@ -425,6 +434,10 @@ public class SelectDelegate {
             throw new RuntimeException(e);
         }
         finally {
+            try {
+                if (max > 0) st.setMaxRows(0);
+            }
+            catch (Exception ex) {};
             if (st != null) ds.releaseStatement(st);
         }
     }
@@ -442,12 +455,14 @@ public class SelectDelegate {
         QueryConverter qc = new QueryConverter(ds);
 
         String s = qc.convertToSql(clazz, queryWhere, params, "");
-        s = "SELECT "+getMax(ds,max)+"COUNT(*) " + s;
+        s = "SELECT COUNT(*) " + s;
+        //was: s = "SELECT "+getMax(ds,max)+"COUNT(*) " + s;
         // LOG.fine("selectClass="+clazz.getName()+", querWhere="+queryWhere+", sql="+s);
 
         Statement st = null;
         try {
             st = ds.getStatement(s);
+            if (max > 0) st.setMaxRows(0);
             java.sql.ResultSet rs = st.executeQuery(s);
             rs.next();
             int x = rs.getInt(1);
@@ -458,6 +473,12 @@ public class SelectDelegate {
             throw new RuntimeException("OADataSourceJDBC.count() ", e);
         }
         finally {
+            if (max > 0) {
+                try {
+                    st.setMaxRows(0);
+                }
+                catch (Exception ex) {};
+            }
             if (st != null) ds.releaseStatement(st);
         }
     }
