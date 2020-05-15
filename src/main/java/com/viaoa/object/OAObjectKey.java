@@ -262,7 +262,7 @@ public class OAObjectKey implements Serializable, Comparable {
             if (s == null) s = "" + objectIds[i];
             else s += " " + objectIds[i];
         }
-        if (s == null) {
+        if (bEmpty) {
             s = "new.guid=" + guid;
         }
         return s;
