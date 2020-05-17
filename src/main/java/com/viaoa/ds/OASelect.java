@@ -95,14 +95,14 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
     protected int max;  // max amount of objects to load
     protected boolean bCountFirst; // count before selecting
     protected int amountRead=-1;
-    protected int amountCount=-1;
+    protected volatile int amountCount=-1;
     protected Object[] params;
     public volatile transient OADataSourceIterator query;
 
     public static final int defalutFetchAmount = 45;
     protected int fetchAmount=defalutFetchAmount;  // used by Hub to know how many to read at a time
-    protected boolean bCancelled;
-    protected boolean bHasBeenStarted;
+    protected volatile boolean bCancelled;
+    protected volatile boolean bHasBeenStarted;
     protected boolean bUseFinder;
     protected volatile long lastReadTime; // used with for determining timeout
     protected OAFilter<TYPE> oaFilter;  // this will be used by OASelect to filter iterator returned values
@@ -498,7 +498,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
     /** 
         Flag to see if a count has been executed for this query/select. 
     */
-    public synchronized boolean isCounted() {
+    public boolean isCounted() {
         if (amountCount != -1) return true;
         if (!bHasBeenStarted) return false;
         return (!hasMore());  // if hasMore is false, then all are loaded
@@ -557,7 +557,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
 	}
     
     
-	private ArrayList<TYPE> alFinderResults;
+	private volatile ArrayList<TYPE> alFinderResults;
 	private int posFinderResults;
 	
     /**
@@ -667,7 +667,6 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         finally {
             bIsSelectingNow = false;
         }
-        // 20110407
         OASelectManager.add(this);
     }
     
@@ -752,19 +751,23 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE> {
         return obj;
     }
 
-    public synchronized boolean isCancelled() {
+    public boolean isCancelled() {
     	return bCancelled;
     }
     
     /**
         Cancels and releases query Iterator from OADataSource.
     */
-    public synchronized void cancel() {
+    public void cancel() { // 20200516 removed sync
+    //was: public synchronized void cancel() {
     	if (!bHasBeenStarted) bCancelled = true;
-    	else bCancelled = (bIsSelectingNow || hasMore());
+    	else bCancelled = (bIsSelectingNow || (bHasBeenStarted && hasMore()));
         alFinderResults = null;
     	closeQuery();
     }
+    /**
+     * Same as cancel, except it is synchronized.
+     */
     public synchronized void close() {
         cancel();
     }
