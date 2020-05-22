@@ -57,7 +57,7 @@ public class OAObjectHashDelegate {
      * 	Key   = Class
      * 	Value = Hub (that is the 'top' (root) Hub of a recursive hub) 
 	 */
-	protected static final Hashtable<OAObjectInfo, Hub> hashRootHub = new Hashtable<OAObjectInfo, Hub>(13, .75f);
+	protected static final ConcurrentHashMap<OAObjectInfo, Hub> hashRootHub = new ConcurrentHashMap<OAObjectInfo, Hub>(13, .75f);
 	
 
     
