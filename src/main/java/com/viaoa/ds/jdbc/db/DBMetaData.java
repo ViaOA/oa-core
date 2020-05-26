@@ -59,7 +59,7 @@ public class DBMetaData extends OAObject {
 	public boolean supportsAutoAssign; // if true, db assigns id
 	public String autoAssignValue;
 	public String autoAssignType;
-	
+
 	// 20200511 uses statement.setMaxRows(x) instead
 	// public String maxString; // ex: "LIMIT ?"; // use "?" to have the max amount entered
 	public String guid;
@@ -67,6 +67,8 @@ public class DBMetaData extends OAObject {
 	public boolean fkeysAutoCreateIndex = false;
 	public int maxVarcharLength;
 	public String likeKeyword = "LIKE";
+	public boolean supportsLimit;
+	public boolean supportsFetchFirst;
 
 	/*
 	    DERBY:                   "org.apache.derby.jdbc.EmbeddedDriver"
@@ -77,7 +79,8 @@ public class DBMetaData extends OAObject {
 	    WEBLOGIC (SQL-SERVER):   "weblogic.jdbc.mssqlserver4.Driver"
 	    ODBC-BRIDGE:             "sun.jdbc.odbc.JdbcOdbcDriver"
 	    ORACLE:                  "oracle.jdbc.driver.OracleDriver"
-	
+		Postgres:                "org.postgresql.ds.PGSimpleDataSource"
+		DB2:                     "com.ibm.as400.access.AS400JDBCDriver"
 	*/
 	public String driverJDBC;
 
@@ -89,6 +92,8 @@ public class DBMetaData extends OAObject {
 	    WEBLOGIC (SQL-SERVER):   "jdbc:weblogic:mssqlserver4:northwind@127.0.0.1:1433"
 	    ODBC-BRIDGE:             "jdbc:odbc:northwind"
 	    Access:                  "jdbc:odbc:Driver={Microsoft Access Driver (*.mdb)};Dbq=c:\\temp\\vetplan.mdb";
+		Postgres:                "jdbc:postgresql://$Host:5432/$DatabaseName"
+		DB2:                     "jdbc:as400://as400/;libraries=JBRSYS,JBRDATA,CLOCFILE00,QZRDSSRV,SYSIBM,QGPL;errors=full;naming=system;driver=native;"
 	*/
 
 	public String urlJDBC;

@@ -15,7 +15,7 @@ import com.viaoa.util.OAString;
 
 /**
  * Used to get information about the specific type of database.
- * 
+ *
  * @author vvia
  */
 public class DBMetaDataDelegate {
@@ -41,7 +41,7 @@ public class DBMetaDataDelegate {
 		String s;
 		switch (dbmd.databaseType) {
 		case DBMetaData.OTHER:
-			dbmd.setUseExists(false); // Derby allows EXISTS, but is faster to do a join
+			dbmd.setUseExists(false);
 			dbmd.setName("Other");
 			dbmd.setUseBracket(false);
 			dbmd.setCaseSensitive(false);
@@ -67,6 +67,7 @@ public class DBMetaDataDelegate {
 				s = "jdbc:derby:database";
 				dbmd.setUrlJDBC(s);
 			}
+			dbmd.supportsFetchFirst = true;
 			break;
 		case DBMetaData.SQLSERVER:
 			dbmd.setName("SQL Server Database");
@@ -86,13 +87,15 @@ public class DBMetaDataDelegate {
 				s = "jdbc:sqlserver://localhost;port=1433;database=dbname;sendStringParametersAsUnicode=false;SelectMethod=cursor;ConnectionRetryCount=2;ConnectionRetryDelay=2";
 				dbmd.setUrlJDBC(s);
 			}
+			dbmd.supportsFetchFirst = true; // before 12, need to use TOP
 			break;
 		case DBMetaData.ORACLE:
 			dbmd.setUseBracket(false);
 			dbmd.setName("ORACLE Database");
-            // dbmd.setMaxString("LIMIT ?");
+			// dbmd.setMaxString("LIMIT ?");
 			dbmd.setMaxVarcharLength(4000);
 			dbmd.setSupportsAutoAssign(true);
+			dbmd.supportsFetchFirst = true;
 			break;
 		case DBMetaData.ACCESS:
 			dbmd.setName("Access Database");
@@ -107,9 +110,10 @@ public class DBMetaDataDelegate {
 			dbmd.setDatesIncludeTime(false);
 			dbmd.setFkeysAutoCreateIndex(true);
 			dbmd.setSupportsAutoAssign(true);
-            // dbmd.setMaxString("LIMIT ?");
+			// dbmd.setMaxString("LIMIT ?");
 			// ??? dbmd.setMaxVarcharLength();
 			// bUseExists = false; // prior to MySQL 4, now supports subqueries and EXISTS
+			dbmd.supportsLimit = true;
 			break;
 		case DBMetaData.BRIDGE:
 			dbmd.setName("ODBC-JDBC Bridge");
@@ -119,7 +123,7 @@ public class DBMetaDataDelegate {
 			dbmd.setUseBracket(false);
 			dbmd.setDatesIncludeTime(false);
 			dbmd.setFkeysAutoCreateIndex(false);
-            // dbmd.setMaxString("LIMIT ?");
+			// dbmd.setMaxString("LIMIT ?");
 
 			dbmd.setSupportsAutoAssign(true);
 			dbmd.setAutoAssignType("SERIAL");
@@ -134,7 +138,13 @@ public class DBMetaDataDelegate {
 			dbmd.setLikeKeyword("ILIKE");
 			dbmd.setObjectTrue("'true'");
 			dbmd.setObjectFalse("'false'");
+			dbmd.supportsFetchFirst = true;
 
+			break;
+		case DBMetaData.DB2:
+			dbmd.setName("IBM DB2");
+			dbmd.supportsFetchFirst = true;
+			//qqqqqqq todo: needs more here
 			break;
 		}
 		dbmd.setDistinctKeyword(distinctKeyword);
