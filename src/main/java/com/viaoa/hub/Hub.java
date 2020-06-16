@@ -2244,6 +2244,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		return this.data.vector.stream();
 	}
 
+	/*
+        hub.onChangeAO( event -> {
+      
+        });
+
+	 */
 	public void onChangeAO(HubOnEventInterface onEvent) {
 		if (onEvent == null) {
 			return;

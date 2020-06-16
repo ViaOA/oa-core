@@ -771,4 +771,10 @@ public class ResultSetIterator implements OADataSourceIterator {
 		return value;
 	}
 
+	public static void main(String[] args) {
+	    System.out.println(1000000.0f + 1.2f - 1000000.0f);;
+        System.out.println(1000000.0d + 1.2d - 1000000.0d);;
+	    
+    }
+	
 }
