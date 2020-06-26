@@ -67,7 +67,7 @@ public @interface OAProperty {
 
 	/**
 	 * use isSHAHash or isEncrypted instead
-	 * 
+	 *
 	 * @return
 	 */
 	@Deprecated
@@ -135,4 +135,7 @@ public @interface OAProperty {
 
 	String timeZonePropertyPath() default "";
 
+	boolean isUpper() default false;
+
+	boolean isLower() default false;
 }

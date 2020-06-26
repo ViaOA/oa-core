@@ -73,7 +73,7 @@ public class DBMetaData extends OAObject {
 	/*
 	    DERBY:                   "org.apache.derby.jdbc.EmbeddedDriver"
 	    MS SQL Server            "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-	
+
 	    ODBC Bridge:             "sun.jdbc.odbc.JdbcOdbcDriver"
 	    INET (SQL-SERVER):       "com.inet.tds.TdsDriver"
 	    WEBLOGIC (SQL-SERVER):   "weblogic.jdbc.mssqlserver4.Driver"
@@ -87,7 +87,7 @@ public class DBMetaData extends OAObject {
 	/*
 	    Derby:                   "jdbc:derby:database"   to create: "jdbc:derby:database;create=true;collation=TERRITORY_BASED"
 	    MS SQL Server            "jdbc:sqlserver://localhost;port=1433;database=vetjobs;sendStringParametersAsUnicode=false;SelectMethod=cursor;ConnectionRetryCount=2;ConnectionRetryDelay=2"
-	
+
 	    INET (SQL-SERVER):       "jdbc:inetdae:127.0.0.1:1433?database=northwind&sql7=true"
 	    WEBLOGIC (SQL-SERVER):   "jdbc:weblogic:mssqlserver4:northwind@127.0.0.1:1433"
 	    ODBC-BRIDGE:             "jdbc:odbc:northwind"
@@ -370,6 +370,26 @@ public class DBMetaData extends OAObject {
 		boolean old = this.supportsAutoAssign;
 		this.supportsAutoAssign = supportsAutoAssign;
 		firePropertyChange("supportsAutoAssign", old, this.supportsAutoAssign);
+	}
+
+	public boolean getSupportsLimit() {
+		return supportsLimit;
+	}
+
+	public void setSupportsLimit(boolean supportsLimit) {
+		boolean old = this.supportsLimit;
+		this.supportsLimit = supportsLimit;
+		firePropertyChange("supportsLimit", old, this.supportsLimit);
+	}
+
+	public boolean getSupportsFetchFirst() {
+		return supportsFetchFirst;
+	}
+
+	public void setSupportsFetchFirst(boolean supportsFetchFirst) {
+		boolean old = this.supportsFetchFirst;
+		this.supportsFetchFirst = supportsFetchFirst;
+		firePropertyChange("supportsFetchFirst", old, this.supportsFetchFirst);
 	}
 
 	public String getAutoAssignValue() {

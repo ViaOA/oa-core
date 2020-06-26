@@ -63,6 +63,8 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	private boolean ignoreTimeZone;
 	private String timeZonePropertyPath;
+	private boolean isUpper;
+	private boolean isLower;
 
 	public OAPropertyInfo() {
 	}
@@ -376,5 +378,29 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	public void setTimeZonePropertyPath(String s) {
 		this.timeZonePropertyPath = s;
+	}
+
+	public void setUpper(boolean b) {
+		this.isUpper = b;
+	}
+
+	public boolean getIsUpper() {
+		return this.isUpper;
+	}
+
+	public boolean isUpper() {
+		return this.isUpper;
+	}
+
+	public void setLower(boolean b) {
+		this.isLower = b;
+	}
+
+	public boolean getIsLower() {
+		return this.isLower;
+	}
+
+	public boolean isLower() {
+		return this.isLower;
 	}
 }

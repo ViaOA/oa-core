@@ -139,8 +139,9 @@ public class OAAnnotationDelegate {
 				ss = new String[pos + 1];
 			} else {
 				if (pos >= ss.length) {
-					String[] ss2 = new String[pos + 1];
-					System.arraycopy(ss, 0, ss2, 0, pos);
+					int x = Math.max(pos, ss.length);
+					String[] ss2 = new String[x + 1];
+					System.arraycopy(ss, 0, ss2, 0, ss.length);
 					ss = ss2;
 				}
 				if (ss[pos] != null) {
@@ -230,6 +231,9 @@ public class OAAnnotationDelegate {
 
 			pi.setEncrypted(oaprop.isEncrypted());
 			pi.setSHAHash(oaprop.isSHAHash() || oaprop.isPassword());
+
+			pi.setUpper(oaprop.isUpper());
+			pi.setLower(oaprop.isLower());
 
 			pi.setCurrency(oaprop.isCurrency());
 			pi.setOAProperty(oaprop);
