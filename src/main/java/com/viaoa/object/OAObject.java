@@ -100,7 +100,7 @@ import com.viaoa.util.OAString;
  * independent from datasource/database.
  * <p>
  * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
- * 
+ *
  * @author Vince Via
  * @see Hub for observable collection class that has "linkage" features for automatically managing relationships. see OAHtmlSelect for
  *      datasource independent queries based on object and property paths.
@@ -148,9 +148,9 @@ public class OAObject implements java.io.Serializable, Comparable {
 	protected byte[] nulls; // keeps track of which primitive type properties that are NULL. Uses bit position, based on OAObjectInfo getPrimitiveProperties() position
 	protected volatile boolean deletedFlag;
 
-	// list of Hub Collections that this object is a member of.  
+	// list of Hub Collections that this object is a member of.
 	// OAObject uses these Hubs for sending events.  See: OAObjectHubDelegate
-	// elements will be one of the following: 
+	// elements will be one of the following:
 	//   Hub - if a reference to object needs to be maintained, so that it wont be GCd and can be saved
 	//   null - empty slot
 	//   WeakReference<Hub> (default) - so that it does not hold the Hub from being GCd
@@ -182,7 +182,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * Creates new OAObject and calls OAObjectDelegate.initialize()
-	 * 
+	 *
 	 * @see OAObjectDelegate#initialize
 	 */
 	public OAObject() {
@@ -208,7 +208,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		OAObjectSerializeDelegate._readObject(this, in);
 	}
 
-	/* 
+	/*
 	 * This is called by serialization to check if object already exists in the Cache.
 	 * @see OAObjectSerializeDelegate#_readResolve
 	 */
@@ -218,8 +218,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 	}
 
 	/*
-	 *  Used to serialize and object.  
-	 *  @see OAObjectSerializeDelegate#_writeObject to see how objects can be custom written by selecting the properties that will be sent 
+	 *  Used to serialize and object.
+	 *  @see OAObjectSerializeDelegate#_writeObject to see how objects can be custom written by selecting the properties that will be sent
 	 *  in the object graph.
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
@@ -235,7 +235,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * calls setProperty()
-	 * 
+	 *
 	 * @see #setProperty(String, Object, String)
 	 */
 	public void setProperty(String propName, int value) {
@@ -289,13 +289,10 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * b: Hub for class OAObjectKey is created and value is converted to OAObjectKey and then added. When getHub(propName) is called, then
 	 * all of the ObjectKeys will be converted to objects.
 	 * </ol>
-	 * 
-	 * @param propName
-	 *            name of property
-	 * @param value
-	 *            new value
-	 * @param fmt
-	 *            format to convert from
+	 *
+	 * @param propName name of property
+	 * @param value    new value
+	 * @param fmt      format to convert from
 	 * @see OAObjectReflectDelegate#setProperty
 	 */
 	public void setProperty(String propName, Object value, String fmt) {
@@ -306,9 +303,9 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * Generic way for getting any property or value. This will first look for get"PropName" method in this object (including superclass
 	 * OAObject) Note: this supports property paths. For example: "dept.manager.lastname" from an Employee.class Note: if the property is of
 	 * a primitive type, it can return null.
-	 * 
-	 * @param propName
-	 *            can be a property path. If a Hub property is in the path and is not the last property, then the ActiveObject will be used.
+	 *
+	 * @param propName can be a property path. If a Hub property is in the path and is not the last property, then the ActiveObject will be
+	 *                 used.
 	 */
 	public Object getProperty(String propName) {
 		return OAObjectReflectDelegate.getProperty(this, propName);
@@ -328,7 +325,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * Generic way for getting any property or value as a String value.
-	 * 
+	 *
 	 * @return if value is null then "", else formatted value using OAConverter.toString(value,fmt)
 	 * @param propName
 	 * @param fmt
@@ -355,9 +352,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * removing property. If this property caused isChanged() to be true, then isChanged() will be false.
-	 * 
-	 * @param name
-	 *            of property to remove. (case insensitive)
+	 *
+	 * @param name of property to remove. (case insensitive)
 	 */
 	public void removeProperty(String name) {
 		OAObjectPropertyDelegate.removeProperty(this, name, true);
@@ -365,7 +361,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * allows other components to interact with OAObject property, by call
-	 * 
+	 *
 	 * @see OAObjectEditQueryDelegate#getVerifyPropertyChange(int, OAObject, String, Object, Object)
 	 */
 	public boolean isValidPropertyChange(String propertyName, Object oldValue, Object newValue) {
@@ -469,9 +465,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * propertyId.isNull(), then they will never be equal.
 	 * <li>if the object being compared to is equal to the objectId property of this object.
 	 * </ul>
-	 * 
-	 * @param obj
-	 *            object to compare to, object or objects[] to compare this object's objectId(s) with or OAObjectKey to compare with this
+	 *
+	 * @param obj object to compare to, object or objects[] to compare this object's objectId(s) with or OAObjectKey to compare with this
 	 *            object's objectId
 	 */
 	public final boolean equals(Object obj) {
@@ -482,7 +477,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 			return true;
 		}
 
-		//20141125 if obj is oaObj, then need to make sure that they are same class 
+		//20141125 if obj is oaObj, then need to make sure that they are same class
 		if (obj instanceof OAObject) {
 			if (!obj.getClass().equals(this.getClass())) {
 				return false;
@@ -542,9 +537,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * Flag to know if object has been changed.
 	 * <p>
 	 * This is automatically set to true whenever firePropertyChange. It is set to false when save() is called.
-	 * 
-	 * @param tf
-	 *            if false then all original values of changed properties will be removed.
+	 *
+	 * @param tf if false then all original values of changed properties will be removed.
 	 */
 	@XmlTransient
 	public void setChanged(boolean tf) {
@@ -554,7 +548,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 			OAObjectEventDelegate.fireBeforePropertyChange(	this, OAObjectDelegate.WORD_Changed,
 															bOld ? OAObjectDelegate.TRUE : OAObjectDelegate.FALSE,
 															tf ? OAObjectDelegate.TRUE : OAObjectDelegate.FALSE,
-															tf, // local only  20150530 was: "false", now only sending if changed=false 
+															tf, // local only  20150530 was: "false", now only sending if changed=false
 															false);
 			changedFlag = tf;
 			OAObjectEventDelegate.firePropertyChange(	this, OAObjectDelegate.WORD_Changed,
@@ -602,7 +596,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * Copies the properties and some of the links from a source object (this) to a new object. For links of type One, all of the links are
 	 * used, the same ref object from the source object is used. For links of type Many, only the owned links are used, and clones of the
 	 * objects are created in the Hub of the new object. Note: this is done on the server.
-	 * 
+	 *
 	 * @see OAObjectReflectDelegate#copyInto(OAObject, OAObject, String[], OACopyCallback)
 	 */
 	public OAObject createCopy() {
@@ -613,7 +607,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return OAObjectReflectDelegate.createCopy(this, excludePropertyNames);
 	}
 
-	/* 
+	/*
 	    @see OAObjectReflectDelegate#copyInto(OAObject, OAObject, String[], OACopyCallback)
 	*/
 	public void copyInto(OAObject toObject) {
@@ -622,9 +616,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * Option to have finalized objects automatically saved to datasource. Default is false.
-	 * 
-	 * @param b
-	 *            to set value
+	 *
+	 * @param b to set value
 	 */
 	public static void setFinalizeSave(boolean b) {
 		OAObjectDelegate.bFinalizeSave = b;
@@ -653,9 +646,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * Used to manage property changes. Sends a "beforePropertyChange()" to all listeners of the Hubs that this object is a member of. <br>
-	 * 
-	 * @param propertyName
-	 *            is not case sensitive
+	 *
+	 * @param propertyName is not case sensitive
 	 */
 	protected void fireBeforePropertyChange(String propertyName, Object oldObj, Object newObj, boolean bLocalOnly) {
 		OAObjectEventDelegate.fireBeforePropertyChange(this, propertyName, oldObj, newObj, bLocalOnly, true);
@@ -761,25 +753,22 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * DataSource independent method to retrieve a reference property that is a Hub Collection.
-	 * 
-	 * @param linkPropertyName
-	 *            name of property to retrieve. (case insensitive)
+	 *
+	 * @param linkPropertyName name of property to retrieve. (case insensitive)
 	 */
 	protected Hub getHub(String linkPropertyName, String sortOrder) {
 		return OAObjectReflectDelegate.getReferenceHub(this, linkPropertyName, sortOrder, false, null);
 	}
 
 	/**
-	 * @param bSequence
-	 *            if true, then a setAutoSequence will be called on the hub
+	 * @param bSequence if true, then a setAutoSequence will be called on the hub
 	 */
 	protected Hub getHub(String linkPropertyName, String sortOrder, boolean bSequence) {
 		return OAObjectReflectDelegate.getReferenceHub(this, linkPropertyName, sortOrder, bSequence, null);
 	}
 
 	/**
-	 * @param bSequence
-	 *            if true, then a setAutoSequence will be called on the hub
+	 * @param bSequence if true, then a setAutoSequence will be called on the hub
 	 */
 	protected Hub getHub(String linkPropertyName, String sortOrder, boolean bSequence, Hub hubMatch) {
 		return OAObjectReflectDelegate.getReferenceHub(this, linkPropertyName, sortOrder, bSequence, null);
@@ -828,7 +817,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * <li>calls listeners hubAfterSave()
 	 * <li>calls "cascadeSave()" to save all Links with TYPE=ONE and CASCADE=true
 	 * </ol>
-	 * 
+	 *
 	 * @see #isChanged
 	 */
 	public void save() {
@@ -841,8 +830,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * @param iCascadeRule
-	 *            OR combination of CASCADE, ALL, FORCE, NOCHECK
+	 * @param iCascadeRule OR combination of CASCADE, ALL, FORCE, NOCHECK
 	 * @see #save()
 	 */
 	public void save(int iCascadeRule) {
@@ -929,7 +917,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * <p>
 	 * Example: find a SectionItem from a SectionItem<br>
 	 * SectionItem si = (SectionItem) secItem.find("section.templateRow.template.templateRows.sections.sectionItems.item", item);
-	 * 
+	 *
 	 * @see #findAll(String,Object)
 	 */
 	public Object find(String propertyPath, Object value) {
@@ -945,7 +933,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * <p>
 	 * Example: find a SectionItem from a SectionItem<br>
 	 * SectionItem si = (SectionItem) secItem.find("section.templateRow.template.templateRows.sections.sectionItems.item", item);
-	 * 
+	 *
 	 * @see OAObject#find(String,Object)
 	 */
 	public Object[] findAll(String propertyPath, Object value) {
@@ -1018,9 +1006,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 	/**
 	 * Used to determine if an object should be added to a reference/master hub when one of it's OAObject properties is set. If false, then
 	 * the object will not be added to masterHubs until this is called with "true" or when oaObj is saved.
-	 * 
-	 * @param b
-	 *            (default is true)
+	 *
+	 * @param b (default is true)
 	 */
 	public void setAutoAdd(boolean b) {
 		OAObjectDelegate.setAutoAdd(this, b);
@@ -1069,7 +1056,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	// 20160506
 	/*
-	 * 
+	 *
 	 * @param params
 	 * @return
 	 */
@@ -1198,7 +1185,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * Makes sure that the following code is only ran on the server. Any oasync changes will be sent to clients.
-	 * 
+	 *
 	 * @see #endServerOnly()
 	 */
 	public boolean beginServerOnly() {
@@ -1258,19 +1245,19 @@ public class OAObject implements java.io.Serializable, Comparable {
 	}
 
 	/*
-	 *  20191018 JAXB support using OAJaxb to allow OAObjects & Hubs to be serialzied as Json/Xml.  
+	 *  20191018 JAXB support using OAJaxb to allow OAObjects & Hubs to be serialzied as Json/Xml.
 	 *  Support for sending reference objects as the following:
 	 *      1: Ids only
 	 *      2: ref to the object already in the (json/xml) output
 	 *      3: full object
-	 *  OAJax allows controlling how references are handling, including the use of adding propertyPaths.  
+	 *  OAJax allows controlling how references are handling, including the use of adding propertyPaths.
 	 */
 
 	/**
 	 * These Jaxb methods are used to work with OAJaxb (JAXB xml processing). Only one of them will return a value, depending on what is
 	 * needed for the XML. Otherwise, a null is sent so that it wont be included in the xml gen. The xsd will have elements for object,
 	 * objectRef and objectId, but only one will be included in the produced XML
-	 * 
+	 *
 	 * @XmlElement(name="vendor") public Vendor getJaxbVendor() { return (Vendor) super.getJaxb(P_Vendor); }
 	 * @XmlElement(name="vendorRef") @XmlIDREF public Vendor getJaxbVendorRef() { return (Vendor) super.getJaxbRef(P_Vendor); }
 	 * @XmlElement(name="vendorId") public String getJaxbVendorId() { return super.getJaxbId(P_Vendor); }
@@ -1278,7 +1265,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/**
 	 * Called by reference objects to find the next object from OAJaxb
-	 * 
+	 *
 	 * @param clazz
 	 * @return
 	 */
@@ -1349,6 +1336,22 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return getGuid();
 	}
 
+	public String getJaxbSinglePartId() {
+		String ids = null;
+		OAObjectKey ok = getObjectKey();
+		Object[] objs = ok.getObjectIds();
+		if (objs == null) {
+			for (Object obj : objs) {
+				if (ids == null) {
+					ids = "" + obj;
+				} else {
+					ids += "-" + obj;
+				}
+			}
+		}
+		return ids;
+	}
+
 	public OAObject getJaxbObject(String propertyName) {
 		OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
 		if (jaxb != null) {
@@ -1375,8 +1378,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 	}
 
 	/***
-	 * qqqqqqqqqq public int getJaxbId(String propertyName) { // was: public String getJaxbId(String propertyName) { // jaxb required xmlId
-	 * to be a String, but Moxy does not OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb(); if (jaxb != null) { //OAJaxb.SendRefType type =
+	 * public int getJaxbId(String propertyName) { // was: public String getJaxbId(String propertyName) { // jaxb required xmlId to be a
+	 * String, but Moxy does not OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb(); if (jaxb != null) { //OAJaxb.SendRefType type =
 	 * jaxb.getSendRefType(this, propertyName); //if (type != OAJaxb.SendRefType.id) return 0; //was: if (type != OAJaxb.SendRefType.id)
 	 * return null; } Object objx = OAObjectPropertyDelegate.getProperty(this, propertyName, true, true); if (objx instanceof OANotExist)
 	 * return 0; //was: if (objx instanceof OANotExist) return null; if (objx instanceof OAObject) objx = ((OAObject) objx).getObjectKey();
@@ -1392,7 +1395,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		if (jaxb != null) {
 			OAJaxb.SendRefType type = jaxb.getSendRefType(this, propertyName);
 			if (type != OAJaxb.SendRefType.id) {
-				// one of the other (jaxb*) methods for this property is being used                
+				// one of the other (jaxb*) methods for this property is being used
 				return null;
 			}
 		}
@@ -1405,10 +1408,18 @@ public class OAObject implements java.io.Serializable, Comparable {
 		}
 		if (objx instanceof OAObjectKey) {
 			Object[] objs = ((OAObjectKey) objx).getObjectIds();
-			if (objs == null || objs.length != 1) {
+			if (objs == null) {
 				return null;
 			}
-			return objs[0] + "";
+			String ids = null;
+			for (Object obj : objs) {
+				if (ids == null) {
+					ids = "" + obj;
+				} else {
+					ids += "-" + obj;
+				}
+			}
+			return ids;
 		}
 		return objx + "";
 	}
@@ -1433,7 +1444,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 				Object idx = OAConv.convert(pi.getClassType(), id);
 				OAObjectKey objKey = new OAObjectKey(idx);
 
-				/* 
+				/*
 				 * this.setProperty will correctly set the property:
 				 * If isLoading=true, then it will only need to store the key
 				 * else it will get the ref object and call the setter method.
@@ -1474,13 +1485,12 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * getEmps() @XmlTransient that returns the real Hub 2: getJaxbEmps() that is used by jaxb to return list (or hub) of all emps in
 	 * Dept.emps hub that have not been included in the xml output. 3: getJaxbRefEmps() that is used to return list (or hub) of
 	 * references @XmlIDRef of objects that have already been included.
-	 * 
+	 *
 	 * @param linkPropertyName
 	 * @param sortOrder
 	 * @param bSequence
 	 * @param hubMatch
-	 * @param bRefsOnly
-	 *            if this is to only return hub objects that need to be XmlIDRef only
+	 * @param bRefsOnly        if this is to only return hub objects that need to be XmlIDRef only
 	 * @return
 	 */
 	protected List getJaxbHubX(final String linkPropertyName, final String sortOrder, final boolean bSequence, final Hub hubMatch,
