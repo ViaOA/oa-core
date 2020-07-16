@@ -130,7 +130,8 @@ public class DBMetaDataDelegate {
 
 			dbmd.setMaxVarcharLength((int) Math.pow(1024, 3));// 1GB
 
-			dbmd.setCaseSensitive(true);
+			// dbmd.setCaseSensitive(true);
+			dbmd.setCaseSensitive(false); // ILIKE
 			dbmd.setLowerCaseFunction("LOWER");
 
 			dbmd.setBlanksAsNulls(false);
