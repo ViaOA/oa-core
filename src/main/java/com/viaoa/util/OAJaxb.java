@@ -29,6 +29,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
+import org.eclipse.persistence.jaxb.MOXySystemProperties;
 import org.eclipse.persistence.jaxb.MarshallerProperties;
 
 import com.viaoa.ds.OASelect;
@@ -46,6 +47,8 @@ import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 
+// see: https://howtodoinjava.com/jaxb/convert-json-to-java-object-moxy/
+
 /**
  * Uses JAXB & Moxy to automate how OAObjects, and Hubs are converted to/from XML & Json. Java+OAobject+Hub <-> XML or JSON OAObject
  * references have extra methods (named jaxb) and annotations so that they work with JAXB and allow for sending references as object, Id
@@ -61,6 +64,8 @@ import com.viaoa.object.OAThreadLocalDelegate;
  * then getJaxbRef will not be used and instead will always use the object. Example: OAJaxb jaxb = new OAJaxb<>(Company.class);
  * jaxb.setUseReferences(false); jaxb.setIncludeGuids(false); jaxb.addPropertyPath(CompanyPP.clients().products().pp);
  * jaxb.addPropertyPath(CompanyPP.locations().buyers().pp); jsonOutput = jaxb.convertToJSON(hub); NOTE: this is not threadsafe
+ *
+ *
  *
  * @author vvia
  */
@@ -139,36 +144,35 @@ public class OAJaxb<TYPE extends OAObject> {
 	 * Get the context for this.clazz
 	 */
 	public JAXBContext getJAXBContext() throws Exception {
+		if (context != null) return context;
+
+		/* Note: we are currently following the jaxb spec, where Id/RefId are treated as String.
+		    The JAXB spec says that XmlId must always be type string
+		    MOXY allows it to be otherwise, by doing one of the following:
+		    A: set system property at startup.  Has to before MOXySystemProperties is initialized, since it will store at classload
+		        System.setProperty(MOXySystemProperties.XML_ID_EXTENSION, "true");
+		    B: add this annotation of Id property
+		        @org.eclipse.persistence.oxm.annotations.XmlIDExtension
+
+		    https://www.eclipse.org/eclipselink/api/2.7/org/eclipse/persistence/jaxb/MOXySystemProperties.html
+		    https://stackoverflow.com/questions/29564627/does-moxy-support-non-string-xmlid-in-version-2-6-0
+		 */
+
+		context = hmJAXBContext.get(clazz);
 		if (context == null) {
 
-			/* Note: we are currently following the jaxb spec, where Id/RefId are treated as String.
-			    The JAXB spec says that XmlId must always be type string
-			    MOXY allows it to be otherwise, by doing one of the following:
-			    A: set system property at startup.  Has to before MOXySystemProperties is initialized, since it will store at classload
-			        System.setProperty(MOXySystemProperties.XML_ID_EXTENSION, "true");
-			    B: add this annotation of Id property
-			        @org.eclipse.persistence.oxm.annotations.XmlIDExtension
+			// MOXY
+			HashMap hm = new HashMap<>();
+			// hm.put(MOXySystemProperties.XML_ID_EXTENSION, Boolean.TRUE);  // ?????? dont think this is needed right now
 
-			    https://www.eclipse.org/eclipselink/api/2.7/org/eclipse/persistence/jaxb/MOXySystemProperties.html
-			    https://stackoverflow.com/questions/29564627/does-moxy-support-non-string-xmlid-in-version-2-6-0
-			 */
+			// create using Moxy Factory
+			context = JAXBContextFactory.createContext(new Class[] { HubWrapper.class, clazz }, hm);
+			boolean bx = (context instanceof org.eclipse.persistence.jaxb.JAXBContext);
 
-			context = hmJAXBContext.get(clazz);
-			if (context == null) {
+			// default way for creating
+			// context = JAXBContext.newInstance(HubWrapper.class, clazz);
 
-				// MOXY
-				HashMap hm = new HashMap<>();
-				// hm.put(MOXySystemProperties.XML_ID_EXTENSION, Boolean.TRUE);  // ?????? dont think this is needed right now
-
-				// create using Moxy Factory
-				context = JAXBContextFactory.createContext(new Class[] { HubWrapper.class, clazz }, hm);
-				boolean bx = (context instanceof org.eclipse.persistence.jaxb.JAXBContext);
-
-				// default way for creating
-				// context = JAXBContext.newInstance(HubWrapper.class, clazz);
-
-				hmJAXBContext.put((Class<OAObject>) clazz, context);
-			}
+			hmJAXBContext.put((Class<OAObject>) clazz, context);
 		}
 		return context;
 	}
@@ -235,6 +239,7 @@ public class OAJaxb<TYPE extends OAObject> {
 	}
 
 	protected String _convert(TYPE obj, boolean bToXML) throws Exception {
+	    if (obj == null) return null;
 		Marshaller marshaller = getJAXBContext().createMarshaller();
 		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 		marshaller.setListener(new OAJaxbListener());
@@ -435,12 +440,14 @@ public class OAJaxb<TYPE extends OAObject> {
 			Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
 			unmarshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
 			unmarshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
+//qqqqqqqqqqqqqq NEW qqqqq			
+			unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
 			// unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
 
 			/* Rules based on LoadingMode createNew & updateRootOnly
 			  can only create new root and owned objects if createNew
 			  dont allow updating of other objects
-			  if they are new then reject (they should be created them seperately)
+			  if they are new then reject (they should be created seperately)
 
 			  only allow new (ignore/reject ID prop) for root and owned objects
 			  other objects will not be updated,
@@ -496,6 +503,7 @@ public class OAJaxb<TYPE extends OAObject> {
 				}
 			}
 
+			OAThreadLocalDelegate.setLoading(true); //qqqqqqqqqqqqqqqq might be updating qqqqqq needs to only set isLoading if the object is new
 			StringReader reader = new StringReader(json);
 			Source source = new StreamSource(reader);
 			JAXBElement ele = unmarshaller.unmarshal(source, clazz);
@@ -503,6 +511,7 @@ public class OAJaxb<TYPE extends OAObject> {
 
 			return objx;
 		} finally {
+            OAThreadLocalDelegate.setLoading(false);
 			OAThreadLocalDelegate.setOAJaxb(null);
 		}
 	}
@@ -576,6 +585,7 @@ public class OAJaxb<TYPE extends OAObject> {
 		Class clazz;
 		Object id;
 		OAPropertyInfo piId;
+		boolean bIsArray;
 
 		public Node(Class c) {
 			this.clazz = c;
@@ -631,7 +641,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			node.oaObject = (OAObject) ref;
 			return (OAObject) ref;
 		}
-
+//qqqqqqqqqqqqqqqq only if on server ... qqqqqqqqqqqqqqqq
 		OASelect sel = new OASelect(clazz);
 		sel.select(node.piId.getName() + " = ?", new Object[] { id });
 		ref = sel.next();
@@ -654,7 +664,7 @@ public class OAJaxb<TYPE extends OAObject> {
 		}
 		final JsonParser parser = Json.createParser(new StringReader(sz));
 
-		final Stack<Node> stack = new Stack();
+		final Stack<Node> stackNode = new Stack();
 
 		Class clazz = this.clazz;
 
@@ -668,18 +678,76 @@ public class OAJaxb<TYPE extends OAObject> {
 		while (parser.hasNext()) {
 			final Event event = parser.next();
 
-			if (event == Event.START_OBJECT) {
+            if (event == Event.START_ARRAY) {
+                if (bStartRootNode) {
+                    bStartRootNode = false;
+                    node = new Node(this.clazz);
+                    node.bIsArray = true;
+                    stackNode.push(node);
+                    //queuePreloadNode.add(node);
+                }
+                else {
+                    // find next clazz
+                    OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+                    OALinkInfo li = oi.getLinkInfo(key);
+                    
+                    if (li != null) {
+                        clazz = li.getToClass();
+                        Node prev = node;
+                        node = new Node(clazz);
+                        node.bIsArray = true;
+                        node.li = li;
+                        if (OAString.isNotEmpty(prev.pp)) {
+                            node.pp = prev.pp + ".";
+                        }
+                        node.pp += li.getName();
+                        stackNode.push(node);
+                        // queuePreloadNode.add(node);
+                    }
+                }
+            }
+            else if (event == Event.END_ARRAY) {
+                node = stackNode.pop();
+                key = null;
+                if (stackNode.isEmpty()) {
+                    bStartRootNode = true;
+                } else {
+                    node = stackNode.peek();
+                    clazz = node.clazz;
+                }
+            }
+            else if (event == Event.START_OBJECT) {
+                Node nodeArray = stackNode.isEmpty() ? null : stackNode.peek();
+                if (nodeArray != null && !nodeArray.bIsArray) nodeArray = null;
+                
 				if (bStartRootNode) {
 					bStartRootNode = false;
 					node = new Node(this.clazz);
-					stack.push(node);
+					stackNode.push(node);
 					queuePreloadNode.add(node);
 				}
+				else if (nodeArray != null && nodeArray.li == null) {
+                    // outside array
+                    clazz = nodeArray.clazz;
+                    node = new Node(clazz);
+                    stackNode.push(node);
+                    // queuePreloadNode.add(node);
+                }
+                else if (nodeArray != null && nodeArray.li.getType() == OALinkInfo.TYPE_MANY) {
+				    // in an array
+				    clazz = nodeArray.clazz;
+                    node = new Node(clazz);
+                    node.li = nodeArray.li;
+                    node.pp = nodeArray.pp;
 
-				if (key != null) {
+                    stackNode.push(node);
+                    queuePreloadNode.add(node);
+				}
+				else if (key != null) {  // Type_ONE
 					// find next clazz
 					OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 					OALinkInfo li = oi.getLinkInfo(key);
+					
 					if (li != null) {
 						clazz = li.getToClass();
 						Node prev = node;
@@ -689,32 +757,42 @@ public class OAJaxb<TYPE extends OAObject> {
 							node.pp = prev.pp + ".";
 						}
 						node.pp += li.getName();
-						stack.push(node);
+						stackNode.push(node);
 						queuePreloadNode.add(node);
 					}
+					else {
+                        stackNode.push(new Node(clazz)); // dummy
+					}
 				}
-			} else if (event == Event.END_OBJECT) {
-				node = stack.pop();
+			} 
+			else if (event == Event.END_OBJECT) {
+				node = stackNode.pop();
 				key = null;
-				if (stack.isEmpty()) {
+				if (stackNode.isEmpty()) {
 					bStartRootNode = true;
 				} else {
-					node = stack.peek();
+					node = stackNode.peek();
 					clazz = node.clazz;
 				}
-			} else if (event == Event.KEY_NAME) {
+			} 
+			else if (event == Event.KEY_NAME) {
 				key = parser.getString();
-			} else if (event == Event.VALUE_STRING || event == Event.VALUE_NUMBER) {
+			} 
+			else if (event == Event.VALUE_STRING || event == Event.VALUE_NUMBER) {
 				value = parser.getString();
 				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 				OAPropertyInfo pi = oi.getPropertyInfo(key);
 				if (pi != null && pi.getId()) {
 					value = parser.getString();
-					node = stack.peek();
+					node = stackNode.peek();
 					Object objx = OAConv.convert(pi.getClassType(), value);
 					node.id = objx;
 					node.piId = pi;
 				}
+			}
+			else {
+			    int xx = 4;
+			    xx++;
 			}
 		}
 		parser.close();
@@ -753,6 +831,14 @@ public class OAJaxb<TYPE extends OAObject> {
 	private OAObject lastGetSendRefObject;
 	private String lastGetSendRefPropertyName;
 
+	private boolean bIncludeOwned;
+	public void setIncludeOwned(boolean b) {
+	    bIncludeOwned = b;
+	}
+	public boolean getIncludeOwned() {
+	    return bIncludeOwned;
+	}
+	
 	/**
 	 * Used by OAObject when serializing
 	 */
@@ -782,6 +868,10 @@ public class OAJaxb<TYPE extends OAObject> {
 		}
 
 		Object objx = OAObjectPropertyDelegate.getProperty(objThis, propertyName, true, true);
+		
+		if (!bIsNeeded && getIncludeOwned() && li.getOwner()) {
+		    bIsNeeded = true;
+		}
 
 		if (!bIsNeeded && !shouldIncludeProperty(objThis, propertyName, false)) {
 			if (li.getType() == li.MANY) {
@@ -792,7 +882,7 @@ public class OAJaxb<TYPE extends OAObject> {
 					return SendRefType.object; // send null
 				}
 				if (bUseReferences) {
-					if (cascade.wasCascaded((OAObject) objx, false)) {
+					if (objx instanceof OAObject && cascade.wasCascaded((OAObject) objx, false)) {
 						if (hsCurrentLinkObjectsSent != null && hsCurrentLinkObjectsSent.contains(propertyName.toUpperCase())) {
 							return SendRefType.notNeeded;
 						}
@@ -812,7 +902,8 @@ public class OAJaxb<TYPE extends OAObject> {
 		}
 
 		if (objx instanceof OAObjectKey) {
-			objx = li.getValue(objThis);
+			Object objz = li.getValue(objThis);
+			if (objz != null) objx = objz;
 		}
 
 		if (objx instanceof OAObject) {

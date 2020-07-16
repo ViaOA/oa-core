@@ -1503,17 +1503,16 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 		Hub hub = null;
 		if (jaxb != null) {
-
-			OAJaxb.SendRefType type = jaxb.getSendRefType(this, linkPropertyName);
-			if (type == OAJaxb.SendRefType.notNeeded) {
-				return null; // not requested in property paths
-			}
-
-			if (!jaxb.shouldIncludeProperty(this, linkPropertyName, true)) {
-				return null;
-			}
-
 			if (jaxb.isMarshelling()) {
+	            OAJaxb.SendRefType type = jaxb.getSendRefType(this, linkPropertyName);
+	            if (type == OAJaxb.SendRefType.notNeeded) {
+	                return null; // not requested in property paths
+	            }
+
+	            if (!jaxb.shouldIncludeProperty(this, linkPropertyName, true)) {
+	                return null;
+	            }
+			    
 				ArrayList<OAObject> lstRefsOnly = jaxb.getRefsOnlyList(linkPropertyName);
 				if (bRefsOnly) {
 					if (lstRefsOnly != null) {

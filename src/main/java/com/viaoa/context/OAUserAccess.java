@@ -395,7 +395,7 @@ public class OAUserAccess {
 	}
 
 	/**
-	 * Checks to see if an OAObject & (optional) propertyName should be enabled. Uses the following steps: 1: starts with result set to
+	 * Checks to see if an OAObject & (optional) propertyName should be enabled. Uses the following steps: 0: starts with result set to
 	 * default value (true/false) 1: checks if the class is enabled (result set to true). 2: checks if the class is not enabled (result set
 	 * to false). 3: if property name, then checks if class+propertyName is enabled (result set to true). 4: if property name, then checks
 	 * if class+propertyName is not enabled (result set to false). 5: checks to see if obj [& prop] are in the enabled propert paths (result
@@ -406,7 +406,7 @@ public class OAUserAccess {
 		boolean bResult = bDefault;
 
 		if (cz != null && packageValid != null) {
-			if (!packageValid.equals(cz.getPackage())) {
+			if (packageValid.equals(cz.getPackage())) {
 				return true; // allow other packages
 			}
 		}
