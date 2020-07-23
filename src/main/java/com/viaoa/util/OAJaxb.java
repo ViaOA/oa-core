@@ -29,7 +29,6 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
-import org.eclipse.persistence.jaxb.MOXySystemProperties;
 import org.eclipse.persistence.jaxb.MarshallerProperties;
 
 import com.viaoa.ds.OASelect;
@@ -64,8 +63,6 @@ import com.viaoa.object.OAThreadLocalDelegate;
  * then getJaxbRef will not be used and instead will always use the object. Example: OAJaxb jaxb = new OAJaxb<>(Company.class);
  * jaxb.setUseReferences(false); jaxb.setIncludeGuids(false); jaxb.addPropertyPath(CompanyPP.clients().products().pp);
  * jaxb.addPropertyPath(CompanyPP.locations().buyers().pp); jsonOutput = jaxb.convertToJSON(hub); NOTE: this is not threadsafe
- *
- *
  *
  * @author vvia
  */
@@ -144,7 +141,9 @@ public class OAJaxb<TYPE extends OAObject> {
 	 * Get the context for this.clazz
 	 */
 	public JAXBContext getJAXBContext() throws Exception {
-		if (context != null) return context;
+		if (context != null) {
+			return context;
+		}
 
 		/* Note: we are currently following the jaxb spec, where Id/RefId are treated as String.
 		    The JAXB spec says that XmlId must always be type string
@@ -239,7 +238,9 @@ public class OAJaxb<TYPE extends OAObject> {
 	}
 
 	protected String _convert(TYPE obj, boolean bToXML) throws Exception {
-	    if (obj == null) return null;
+		if (obj == null) {
+			return null;
+		}
 		Marshaller marshaller = getJAXBContext().createMarshaller();
 		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 		marshaller.setListener(new OAJaxbListener());
@@ -250,6 +251,27 @@ public class OAJaxb<TYPE extends OAObject> {
 			marshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
 			marshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
 		}
+
+		StringWriter stringWriter = new StringWriter();
+		marshaller.marshal(obj, stringWriter);
+		String result = stringWriter.toString();
+		return result;
+	}
+
+	public static String convertToJson(Object obj) throws Exception {
+		if (obj == null) {
+			return null;
+		}
+
+		HashMap hm = new HashMap<>();
+		JAXBContext context = JAXBContextFactory.createContext(new Class[] { obj.getClass() }, hm);
+
+		Marshaller marshaller = context.createMarshaller();
+		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+
+		marshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
+		marshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
+		marshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
 
 		StringWriter stringWriter = new StringWriter();
 		marshaller.marshal(obj, stringWriter);
@@ -422,6 +444,23 @@ public class OAJaxb<TYPE extends OAObject> {
 		return convertFromJSON(json, null);
 	}
 
+	public static Object convertJsonToGenericObject(String json, Class clazz) throws Exception {
+
+		HashMap hm = new HashMap<>();
+		JAXBContext context = JAXBContextFactory.createContext(new Class[] { clazz }, hm);
+
+		Unmarshaller unmarshaller = context.createUnmarshaller();
+		unmarshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
+		unmarshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
+
+		StringReader reader = new StringReader(json);
+		Source source = new StreamSource(reader);
+		JAXBElement ele = unmarshaller.unmarshal(source, clazz);
+		Object objx = ele.getValue();
+
+		return objx;
+	}
+
 	/**
 	 */
 	public TYPE convertFromJSON(String json, final TYPE objRoot) throws Exception {
@@ -440,7 +479,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
 			unmarshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
 			unmarshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
-//qqqqqqqqqqqqqq NEW qqqqq			
+			//qqqqqqqqqqqqqq NEW qqqqq
 			unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
 			// unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
 
@@ -503,7 +542,7 @@ public class OAJaxb<TYPE extends OAObject> {
 				}
 			}
 
-			OAThreadLocalDelegate.setLoading(true); //qqqqqqqqqqqqqqqq might be updating qqqqqq needs to only set isLoading if the object is new
+			//			OAThreadLocalDelegate.setLoading(true); //qqqqqqqqqqqqqqqq might be updating qqqqqq needs to only set isLoading if the object is new
 			StringReader reader = new StringReader(json);
 			Source source = new StreamSource(reader);
 			JAXBElement ele = unmarshaller.unmarshal(source, clazz);
@@ -511,7 +550,8 @@ public class OAJaxb<TYPE extends OAObject> {
 
 			return objx;
 		} finally {
-            OAThreadLocalDelegate.setLoading(false);
+			//qqqqqqqqq			
+			//			OAThreadLocalDelegate.setLoading(false);
 			OAThreadLocalDelegate.setOAJaxb(null);
 		}
 	}
@@ -641,7 +681,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			node.oaObject = (OAObject) ref;
 			return (OAObject) ref;
 		}
-//qqqqqqqqqqqqqqqq only if on server ... qqqqqqqqqqqqqqqq
+		//qqqqqqqqqqqqqqqq only if on server ... qqqqqqqqqqqqqqqq
 		OASelect sel = new OASelect(clazz);
 		sel.select(node.piId.getName() + " = ?", new Object[] { id });
 		ref = sel.next();
@@ -678,76 +718,72 @@ public class OAJaxb<TYPE extends OAObject> {
 		while (parser.hasNext()) {
 			final Event event = parser.next();
 
-            if (event == Event.START_ARRAY) {
-                if (bStartRootNode) {
-                    bStartRootNode = false;
-                    node = new Node(this.clazz);
-                    node.bIsArray = true;
-                    stackNode.push(node);
-                    //queuePreloadNode.add(node);
-                }
-                else {
-                    // find next clazz
-                    OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-                    OALinkInfo li = oi.getLinkInfo(key);
-                    
-                    if (li != null) {
-                        clazz = li.getToClass();
-                        Node prev = node;
-                        node = new Node(clazz);
-                        node.bIsArray = true;
-                        node.li = li;
-                        if (OAString.isNotEmpty(prev.pp)) {
-                            node.pp = prev.pp + ".";
-                        }
-                        node.pp += li.getName();
-                        stackNode.push(node);
-                        // queuePreloadNode.add(node);
-                    }
-                }
-            }
-            else if (event == Event.END_ARRAY) {
-                node = stackNode.pop();
-                key = null;
-                if (stackNode.isEmpty()) {
-                    bStartRootNode = true;
-                } else {
-                    node = stackNode.peek();
-                    clazz = node.clazz;
-                }
-            }
-            else if (event == Event.START_OBJECT) {
-                Node nodeArray = stackNode.isEmpty() ? null : stackNode.peek();
-                if (nodeArray != null && !nodeArray.bIsArray) nodeArray = null;
-                
+			if (event == Event.START_ARRAY) {
+				if (bStartRootNode) {
+					bStartRootNode = false;
+					node = new Node(this.clazz);
+					node.bIsArray = true;
+					stackNode.push(node);
+					//queuePreloadNode.add(node);
+				} else {
+					// find next clazz
+					OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+					OALinkInfo li = oi.getLinkInfo(key);
+
+					if (li != null) {
+						clazz = li.getToClass();
+						Node prev = node;
+						node = new Node(clazz);
+						node.bIsArray = true;
+						node.li = li;
+						if (OAString.isNotEmpty(prev.pp)) {
+							node.pp = prev.pp + ".";
+						}
+						node.pp += li.getName();
+						stackNode.push(node);
+						// queuePreloadNode.add(node);
+					}
+				}
+			} else if (event == Event.END_ARRAY) {
+				node = stackNode.pop();
+				key = null;
+				if (stackNode.isEmpty()) {
+					bStartRootNode = true;
+				} else {
+					node = stackNode.peek();
+					clazz = node.clazz;
+				}
+			} else if (event == Event.START_OBJECT) {
+				Node nodeArray = stackNode.isEmpty() ? null : stackNode.peek();
+				if (nodeArray != null && !nodeArray.bIsArray) {
+					nodeArray = null;
+				}
+
 				if (bStartRootNode) {
 					bStartRootNode = false;
 					node = new Node(this.clazz);
 					stackNode.push(node);
 					queuePreloadNode.add(node);
-				}
-				else if (nodeArray != null && nodeArray.li == null) {
-                    // outside array
-                    clazz = nodeArray.clazz;
-                    node = new Node(clazz);
-                    stackNode.push(node);
-                    // queuePreloadNode.add(node);
-                }
-                else if (nodeArray != null && nodeArray.li.getType() == OALinkInfo.TYPE_MANY) {
-				    // in an array
-				    clazz = nodeArray.clazz;
-                    node = new Node(clazz);
-                    node.li = nodeArray.li;
-                    node.pp = nodeArray.pp;
+				} else if (nodeArray != null && nodeArray.li == null) {
+					// outside array
+					clazz = nodeArray.clazz;
+					node = new Node(clazz);
+					stackNode.push(node);
+					// queuePreloadNode.add(node);
+				} else if (nodeArray != null && nodeArray.li.getType() == OALinkInfo.TYPE_MANY) {
+					// in an array
+					clazz = nodeArray.clazz;
+					node = new Node(clazz);
+					node.li = nodeArray.li;
+					node.pp = nodeArray.pp;
 
-                    stackNode.push(node);
-                    queuePreloadNode.add(node);
-				}
-				else if (key != null) {  // Type_ONE
+					stackNode.push(node);
+					queuePreloadNode.add(node);
+				} else if (key != null) { // Type_ONE
 					// find next clazz
 					OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 					OALinkInfo li = oi.getLinkInfo(key);
-					
+
 					if (li != null) {
 						clazz = li.getToClass();
 						Node prev = node;
@@ -759,13 +795,11 @@ public class OAJaxb<TYPE extends OAObject> {
 						node.pp += li.getName();
 						stackNode.push(node);
 						queuePreloadNode.add(node);
-					}
-					else {
-                        stackNode.push(new Node(clazz)); // dummy
+					} else {
+						stackNode.push(new Node(clazz)); // dummy
 					}
 				}
-			} 
-			else if (event == Event.END_OBJECT) {
+			} else if (event == Event.END_OBJECT) {
 				node = stackNode.pop();
 				key = null;
 				if (stackNode.isEmpty()) {
@@ -774,11 +808,9 @@ public class OAJaxb<TYPE extends OAObject> {
 					node = stackNode.peek();
 					clazz = node.clazz;
 				}
-			} 
-			else if (event == Event.KEY_NAME) {
+			} else if (event == Event.KEY_NAME) {
 				key = parser.getString();
-			} 
-			else if (event == Event.VALUE_STRING || event == Event.VALUE_NUMBER) {
+			} else if (event == Event.VALUE_STRING || event == Event.VALUE_NUMBER) {
 				value = parser.getString();
 				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 				OAPropertyInfo pi = oi.getPropertyInfo(key);
@@ -789,10 +821,9 @@ public class OAJaxb<TYPE extends OAObject> {
 					node.id = objx;
 					node.piId = pi;
 				}
-			}
-			else {
-			    int xx = 4;
-			    xx++;
+			} else {
+				int xx = 4;
+				xx++;
 			}
 		}
 		parser.close();
@@ -832,13 +863,15 @@ public class OAJaxb<TYPE extends OAObject> {
 	private String lastGetSendRefPropertyName;
 
 	private boolean bIncludeOwned;
+
 	public void setIncludeOwned(boolean b) {
-	    bIncludeOwned = b;
+		bIncludeOwned = b;
 	}
+
 	public boolean getIncludeOwned() {
-	    return bIncludeOwned;
+		return bIncludeOwned;
 	}
-	
+
 	/**
 	 * Used by OAObject when serializing
 	 */
@@ -868,9 +901,9 @@ public class OAJaxb<TYPE extends OAObject> {
 		}
 
 		Object objx = OAObjectPropertyDelegate.getProperty(objThis, propertyName, true, true);
-		
+
 		if (!bIsNeeded && getIncludeOwned() && li.getOwner()) {
-		    bIsNeeded = true;
+			bIsNeeded = true;
 		}
 
 		if (!bIsNeeded && !shouldIncludeProperty(objThis, propertyName, false)) {
@@ -903,7 +936,9 @@ public class OAJaxb<TYPE extends OAObject> {
 
 		if (objx instanceof OAObjectKey) {
 			Object objz = li.getValue(objThis);
-			if (objz != null) objx = objz;
+			if (objz != null) {
+				objx = objz;
+			}
 		}
 
 		if (objx instanceof OAObject) {
