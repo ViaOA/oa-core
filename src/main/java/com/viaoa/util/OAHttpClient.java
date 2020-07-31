@@ -16,9 +16,25 @@ import com.viaoa.object.OAObject;
 
 public class OAHttpClient {
 
+	public static String httpGetAsJson(String urlStr) throws IOException {
+		return httpGet(urlStr);
+	}
+
 	public static String httpGet(String urlStr) throws IOException {
 		URL url = new URL(urlStr);
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		//qqq compare this:  conn.connect();
+
+		// qqqqqq for research see:  https://www.codota.com/code/java/methods/java.net.URLConnection/setRequestProperty
+		conn.setRequestProperty("User-Agent", "OAHttpClient");
+		conn.setRequestMethod("GET");
+		conn.setDoOutput(true);
+		conn.setDoInput(true);
+		conn.setUseCaches(false);
+		conn.setAllowUserInteraction(false);
+		conn.setRequestProperty("Content-Type", "application/json");
+		conn.setRequestProperty("charset", "utf-8");
+		conn.setRequestProperty("Accept", "application/json");
 
 		if (conn.getResponseCode() != 200) {
 			throw new IOException(conn.getResponseMessage());
@@ -45,20 +61,43 @@ public class OAHttpClient {
 		return sb.toString();
 	}
 
-	//qqqqqq todo:  need to be able to set body as JSON
-	public static String httpPost(String urlStr, OAObject obj) throws Exception {
+	/*
+		public static String httpPost(String urlStr, OAObject obj) throws Exception {
+			if (obj == null) {
+				return null;
+			}
+			OAJaxb jaxb = new OAJaxb<>(obj.getClass());
+			jaxb.setIncludeOwned(true);
+
+			String json = jaxb.convertToJSON(obj);
+			String s = httpPost(urlStr, json);
+			return s;
+		}
+	*/
+
+	public static String httpPostAsJson(String strUrlBase, OAObject obj) throws Exception {
 		if (obj == null) {
 			return null;
+		}
+		if (strUrlBase != null && !strUrlBase.endsWith("/")) {
+			strUrlBase += "/";
 		}
 		OAJaxb jaxb = new OAJaxb<>(obj.getClass());
 		jaxb.setIncludeOwned(true);
 
 		String json = jaxb.convertToJSON(obj);
-		String s = httpPost(urlStr, json);
+
+		String surl = strUrlBase + obj.getClass().getSimpleName() + "/" + obj.getJaxbSinglePartId();
+
+		String s = httpPostJson(surl, json);
 		return s;
 	}
 
 	public static String httpPost(String urlStr, String json) throws Exception {
+		return httpPostJson(urlStr, json);
+	}
+
+	public static String httpPostJson(String urlStr, String json) throws Exception {
 		URL url = new URL(urlStr);
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -153,7 +192,7 @@ public class OAHttpClient {
 		json = json.replace("&", ",\n");
 		json = json.replace('=', ':');
 		json = json.replace('\'', '\"');
-		
+
 		s = OAHttpClient
 				.httpPost("http://localhost:8081/retail-products/iseries/itemRestriction/getRestriction", json);
 		*/

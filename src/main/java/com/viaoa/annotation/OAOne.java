@@ -22,73 +22,78 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME) 
+@Retention(RetentionPolicy.RUNTIME)
 public @interface OAOne {
-    String displayName() default "";
-    String description() default "";
+	String displayName() default "";
 
-    /** @return true if this object is the owner of linked to object */
-    boolean owner() default false;
+	String description() default "";
 
-    /** @return true if this is a recursive relationship. */
-    // 20131013 removed, since Manys are marked as recursive
-    // boolean recursive() default false;
-    
-    /** @return name used in the toClass that refers to this class. */
-    String reverseName() default "";
+	/** @return true if this object is the owner of linked to object */
+	boolean owner() default false;
 
-    boolean required() default false;
-    boolean verify() default false;
-    
-    /** @return true if saving this class will save the many objects */
-    boolean cascadeSave() default false;
-    
-    /** @return true if deleting this class will delete the many objects */
-    boolean cascadeDelete() default false;
+	/** @return true if this is a recursive relationship. */
+	// 20131013 removed, since Manys are marked as recursive
+	// boolean recursive() default false;
 
-    /** @return if true, then this object is not store in datasource. */
-    boolean isTransient() default false;
-    
-    /** @return if false, then this object can not create, but must pick an existing. */
-    boolean allowCreateNew() default true;
+	/** @return name used in the toClass that refers to this class. */
+	String reverseName() default "";
 
-    /** @return if true, then this object is auto created. */
-    boolean autoCreateNew() default false;
-    
-    /** @return if false, then an existing object can not be used - a new one must be created. */
-    boolean allowAddExisting() default true;
-    
-    /** @return if true, then this must be empty (null) to delete the other object */
-    boolean mustBeEmptyForDelete() default false; 
-    
-    
-    String toolTip() default "";
-    String help() default "";
-    /** @return flag to know if the code for the metods has been modified. */
-    boolean hasCustomCode() default false;
-    
-    /** @return true if this is a calculated reference. */
-    boolean isCalculated() default false;
-    
-    boolean isImportMatch() default false;
-    
-    String[] calcDependentProperties() default {};
+	boolean required() default false;
 
-    /** flag to know if this is processed and will require User.editProcessed=true for it to be changed. */
-    boolean isProcessed() default false;
-    
-    /** property path for default value */
-    String defaultPropertyPath() default "";
-    boolean defaultPropertyPathIsHierarchy() default false;
-    boolean defaultPropertyPathCanBeChanged() default false;
-    
-    /** property path for default value from Context object, "." is to use this object. */
-    String defaultContextPropertyPath() default "";
+	boolean verify() default false;
 
-    /**
-     * flag to know if this One link is only to be used if the other oneOfOne=true are null.
-     */
-    boolean isOneAndOnlyOne() default false;
+	/** @return true if saving this class will save the many objects */
+	boolean cascadeSave() default false;
+
+	/** @return true if deleting this class will delete the many objects */
+	boolean cascadeDelete() default false;
+
+	/** @return if true, then this object is not store in datasource. */
+	boolean isTransient() default false;
+
+	/** @return if false, then this object can not create, but must pick an existing. */
+	boolean allowCreateNew() default true;
+
+	/** @return if true, then this object is auto created. */
+	boolean autoCreateNew() default false;
+
+	/** @return if false, then an existing object can not be used - a new one must be created. */
+	boolean allowAddExisting() default true;
+
+	/** @return if true, then this must be empty (null) to delete the other object */
+	boolean mustBeEmptyForDelete() default false;
+
+	String toolTip() default "";
+
+	String help() default "";
+
+	/** @return flag to know if the code for the methods has been modified. */
+	boolean hasCustomCode() default false;
+
+	/** @return true if this is a calculated reference. */
+	boolean isCalculated() default false;
+
+	boolean isImportMatch() default false;
+
+	String[] calcDependentProperties() default {};
+
+	/** flag to know if this is processed and will require User.editProcessed=true for it to be changed. */
+	boolean isProcessed() default false;
+
+	/** property path for default value */
+	String defaultPropertyPath() default "";
+
+	boolean defaultPropertyPathIsHierarchy() default false;
+
+	boolean defaultPropertyPathCanBeChanged() default false;
+
+	/** property path for default value from Context object, "." is to use this object. */
+	String defaultContextPropertyPath() default "";
+
+	/**
+	 * flag to know if this One link is only to be used if the other oneOfOne=true are null.
+	 */
+	boolean isOneAndOnlyOne() default false;
 }
 
 /*  OALinkInfo
@@ -105,7 +110,7 @@ public @interface OAOne {
     protected String reverseName;  // reverse property name
     boolean bOwner;  // this object is the owner of relationship
     private boolean bTransient;
-    
+
     // runtime
     protected transient int cacheSize;
     protected OALinkInfo revLinkInfo;

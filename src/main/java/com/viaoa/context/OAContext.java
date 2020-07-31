@@ -221,11 +221,9 @@ public class OAContext {
 
 	/**
 	 * Associated an object value with a context.
-	 * 
-	 * @param context
-	 *            is value used to lookup obj
-	 * @param obj
-	 *            object that is associated with context.
+	 *
+	 * @param context is value used to lookup obj
+	 * @param obj     object that is associated with context.
 	 * @see OAThreadLocalDelegate#getContext()
 	 */
 	public static void setContextObject(Object context, OAObject obj) {
@@ -316,7 +314,7 @@ public class OAContext {
 
 	/**
 	 * Associated an OAUserAccess with a context.
-	 * 
+	 *
 	 * @see OAThreadLocalDelegate#getContext()
 	 */
 	public static void setContextUserAccess(Object context, OAUserAccess ua) {

@@ -152,7 +152,7 @@ public class OAJaxb<TYPE extends OAObject> {
 		        System.setProperty(MOXySystemProperties.XML_ID_EXTENSION, "true");
 		    B: add this annotation of Id property
 		        @org.eclipse.persistence.oxm.annotations.XmlIDExtension
-
+		
 		    https://www.eclipse.org/eclipselink/api/2.7/org/eclipse/persistence/jaxb/MOXySystemProperties.html
 		    https://stackoverflow.com/questions/29564627/does-moxy-support-non-string-xmlid-in-version-2-6-0
 		 */
@@ -283,15 +283,15 @@ public class OAJaxb<TYPE extends OAObject> {
 	public String testJackson(TYPE obj) throws Exception {
 	    JacksonXmlModule xmlModule = new JacksonXmlModule();
 	    xmlModule.setDefaultUseWrapper(false);  // XmlElementWrapper is included in method annotations
-
+	
 	    ObjectMapper objectMapper = new XmlMapper(xmlModule);
-
+	
 	    objectMapper.registerModule(new JaxbAnnotationModule());
-
+	
 	    objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 	    objectMapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);  // did not allow inside name to be a duplicate
 	    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
+	
 	    / *
 	    AnnotationIntrospector introspector = new JaxbAnnotationIntrospector(objectMapper.getTypeFactory());
 	    objectMapper.setAnnotationIntrospector(introspector);
@@ -435,13 +435,17 @@ public class OAJaxb<TYPE extends OAObject> {
 	//qqqqqqqqq do same for XML qqqqqqqqqqqqqqqqqqqqqqqqqq
 
 	public void loadFromJSON(String json, TYPE objRoot) throws Exception {
-		convertFromJSON(json, objRoot);
+		convertFromJSON(json, objRoot, true);
 	}
 
 	/**
 	 */
 	public TYPE convertFromJSON(String json) throws Exception {
-		return convertFromJSON(json, null);
+		return convertFromJSON(json, null, true);
+	}
+
+	public TYPE convertFromJSON(String json, boolean bIncludeValidation) throws Exception {
+		return convertFromJSON(json, null, bIncludeValidation);
 	}
 
 	public static Object convertJsonToGenericObject(String json, Class clazz) throws Exception {
@@ -463,17 +467,35 @@ public class OAJaxb<TYPE extends OAObject> {
 
 	/**
 	 */
-	public TYPE convertFromJSON(String json, final TYPE objRoot) throws Exception {
+	public TYPE convertFromJSON(final String json, final TYPE objRoot, final boolean bIncludeValidation) throws Exception {
 		OAThreadLocalDelegate.setOAJaxb(this);
 		if (OAString.isEmpty(json)) {
 			return objRoot;
 		}
 
+		boolean bUseIsLoading = !bIncludeValidation;
+		boolean bUseAutoAdd = false;
+		TYPE objx = null;
+
 		try {
 			preloadJSON(json);
 
-			if (objRoot != null && !queuePreloadNode.isEmpty()) {
-				queuePreloadNode.peek().oaObject = objRoot;
+			if (!queuePreloadNode.isEmpty()) {
+				final Node node = queuePreloadNode.peek();
+				if (objRoot != null) {
+					node.oaObject = objRoot;
+				}
+
+				node.oaObject = getNextUnmarshalObject(node);
+
+				if (node.oaObject.isNew()) {
+					node.oaObject.setAutoAdd(false);
+					bUseAutoAdd = true;
+				}
+			}
+
+			if (bUseIsLoading) {
+				OAThreadLocalDelegate.setLoading(true);
 			}
 
 			Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
@@ -487,7 +509,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			  can only create new root and owned objects if createNew
 			  dont allow updating of other objects
 			  if they are new then reject (they should be created seperately)
-
+			
 			  only allow new (ignore/reject ID prop) for root and owned objects
 			  other objects will not be updated,
 			*/
@@ -542,22 +564,25 @@ public class OAJaxb<TYPE extends OAObject> {
 				}
 			}
 
-			//			OAThreadLocalDelegate.setLoading(true); //qqqqqqqqqqqqqqqq might be updating qqqqqq needs to only set isLoading if the object is new
 			StringReader reader = new StringReader(json);
 			Source source = new StreamSource(reader);
 			JAXBElement ele = unmarshaller.unmarshal(source, clazz);
-			TYPE objx = (TYPE) ele.getValue();
+			objx = (TYPE) ele.getValue();
 
-			return objx;
 		} finally {
-			//qqqqqqqqq			
-			//			OAThreadLocalDelegate.setLoading(false);
+			if (bUseIsLoading) {
+				OAThreadLocalDelegate.setLoading(false);
+			}
 			OAThreadLocalDelegate.setOAJaxb(null);
+			if (objx != null && bUseAutoAdd) {
+				objx.setAutoAdd(true);
+			}
 		}
+		return objx;
 	}
 
 	public Hub<TYPE> convertHubFromXML(String xml) throws Exception {
-		OAThreadLocalDelegate.setLoading(true);
+		//OAThreadLocalDelegate.setLoading(true);
 		OAThreadLocalDelegate.setOAJaxb(this);
 		try {
 			Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
@@ -581,7 +606,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			}
 			return hub;
 		} finally {
-			OAThreadLocalDelegate.setLoading(false);
+			//OAThreadLocalDelegate.setLoading(false);
 			OAThreadLocalDelegate.setOAJaxb(null);
 		}
 	}

@@ -90,6 +90,7 @@ public class OAAnnotationDelegate {
 				oi.setLocalOnly(oaclass.localOnly());
 				oi.setAddToCache(oaclass.addToCache());
 				oi.setInitializeNewObjects(oaclass.initialize());
+
 				oi.setDisplayName(oaclass.displayName());
 
 				// 20140118 rootTreePropertyPaths
@@ -186,8 +187,14 @@ public class OAAnnotationDelegate {
 				pi.setName(name);
 				oi.addPropertyInfo(pi);
 			}
-			pi.setDisplayName(pi.getDisplayName());
-			pi.setColumnName(pi.getColumnName());
+
+			s = oaprop.displayName();
+			if (OAString.isEmpty(s)) {
+				s = OAString.getDisplayName(name);
+			}
+			pi.setDisplayName(s);
+
+			pi.setColumnName(oaprop.columnName());
 			pi.setMaxLength(oaprop.maxLength());
 			pi.setDisplayLength(oaprop.displayLength());
 			pi.setColumnLength(oaprop.columnLength());
@@ -340,6 +347,13 @@ public class OAAnnotationDelegate {
 				oi.addLinkInfo(li);
 			}
 
+			s = annotation.displayName();
+			if (OAString.isEmpty(s)) {
+				s = OAString.getDisplayName(name);
+			}
+			li.setDisplayName(s);
+
+			li.setRequired(annotation.required());
 			li.setCalcDependentProperties(annotation.calcDependentProperties());
 			li.setImportMatch(annotation.isImportMatch());
 			li.setCascadeSave(annotation.cascadeSave());
@@ -376,9 +390,7 @@ public class OAAnnotationDelegate {
 				li.setContextVisibleProperty(eq.contextVisibleProperty());
 				li.setContextVisibleValue(eq.contextVisibleValue());
 				li.setViewDependentProperties(eq.viewDependentProperties());
-				;
 				li.setContextDependentProperties(eq.contextDependentProperties());
-				;
 			}
 		}
 		// Manys
@@ -414,6 +426,11 @@ public class OAAnnotationDelegate {
 			}
 			hs.add("link." + name);
 
+			s = annotation.displayName();
+			if (OAString.isEmpty(s)) {
+				s = OAString.getDisplayName(name);
+			}
+			li.setDisplayName(s);
 			li.setCascadeSave(annotation.cascadeSave());
 			li.setCascadeDelete(annotation.cascadeDelete());
 			li.setReverseName(annotation.reverseName());

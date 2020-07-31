@@ -27,6 +27,7 @@ import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.undo.OAUndoableEdit;
+import com.viaoa.util.OAConv;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OANotExist;
@@ -119,7 +120,7 @@ public class OAObjectEventDelegate {
 
 		// verify that change is permitted
 		// verify if recursive link that new parent is allowed
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 		final String propertyU = propertyName.toUpperCase();
 		OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, propertyU);
 		OALinkInfo toLinkInfo;
@@ -185,6 +186,18 @@ public class OAObjectEventDelegate {
 
 		if (linkInfo == null && !OARemoteThreadDelegate.isRemoteThread()) {
 			OAPropertyInfo propInfo = OAObjectInfoDelegate.getPropertyInfo(oi, propertyU);
+
+			// 20200728
+			if (!bIsLoading && propInfo != null && propInfo.getIsSubmit() && newObj != null) {
+				if (OAConv.toBoolean(newObj)) {
+					OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyAfterObjectLoad(oaObj);
+					if (!eq.getAllowed()) {
+						throw new RuntimeException("submit failed, Class="
+								+ oaObj.getClass().getSimpleName() + ", message=" + eq.getResponse(), eq.getThrowable());
+					}
+				}
+			}
+
 			if (propInfo != null) {
 
 				if (propInfo.getId() && !OAObjectDSDelegate.isAssigningId(oaObj)) {
@@ -261,7 +274,6 @@ public class OAObjectEventDelegate {
 		}
 	}
 
-	//qqqqqq
 	private static final OAThrottle throttleSetOwnerNull = new OAThrottle(500);
 	private static int cntSetOwnerNull;
 

@@ -124,7 +124,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-		
+
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -418,6 +418,12 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	public OAObjectEditQuery getVerifyCommand(String methodName) {
 		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyCommandEditQuery(this, methodName, OAObjectEditQuery.CHECK_ALL);
+		return eq;
+	}
+
+	//qqqqqqqqqqqqqqqqqqqqqqqqq
+	public OAObjectEditQuery getVerifyAfterObjectLoad() {
+		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyAfterObjectLoad(this);
 		return eq;
 	}
 
@@ -1282,6 +1288,9 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * Uses OAJaxb to determine if property can be updated. Used by setJaxb[PropertyName](..)
 	 */
 	public boolean getJaxbAllowPropertyChange(String propertyName, Object oldValue, Object newValue) {
+		if (OAThreadLocalDelegate.isLoading()) {
+			return true;
+		}
 		OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
 		if (jaxb == null) {
 			return true;
@@ -1340,7 +1349,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		String ids = null;
 		OAObjectKey ok = getObjectKey();
 		Object[] objs = ok.getObjectIds();
-		if (objs == null) {
+		if (objs != null) {
 			for (Object obj : objs) {
 				if (ids == null) {
 					ids = "" + obj;
@@ -1504,15 +1513,15 @@ public class OAObject implements java.io.Serializable, Comparable {
 		Hub hub = null;
 		if (jaxb != null) {
 			if (jaxb.isMarshelling()) {
-	            OAJaxb.SendRefType type = jaxb.getSendRefType(this, linkPropertyName);
-	            if (type == OAJaxb.SendRefType.notNeeded) {
-	                return null; // not requested in property paths
-	            }
+				OAJaxb.SendRefType type = jaxb.getSendRefType(this, linkPropertyName);
+				if (type == OAJaxb.SendRefType.notNeeded) {
+					return null; // not requested in property paths
+				}
 
-	            if (!jaxb.shouldIncludeProperty(this, linkPropertyName, true)) {
-	                return null;
-	            }
-			    
+				if (!jaxb.shouldIncludeProperty(this, linkPropertyName, true)) {
+					return null;
+				}
+
 				ArrayList<OAObject> lstRefsOnly = jaxb.getRefsOnlyList(linkPropertyName);
 				if (bRefsOnly) {
 					if (lstRefsOnly != null) {
@@ -1636,4 +1645,5 @@ public class OAObject implements java.io.Serializable, Comparable {
 		boolean b = OAConv.toBoolean(objx);
 		return b;
 	}
+
 }
