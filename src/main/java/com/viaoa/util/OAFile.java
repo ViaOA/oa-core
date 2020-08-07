@@ -10,392 +10,429 @@
 */
 package com.viaoa.util;
 
-import javax.swing.*;
-import java.net.*;
-import java.nio.file.Files;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Vector;
-import java.io.*;
 
 /**
  * Subclass of java.io.File that includes extra functionality.
  * <p>
- * Note: All file names separators will automatically be converted to match the
- * Operating System.
- * 
+ * Note: All file names separators will automatically be converted to match the Operating System.
+ *
  * @see OAString#convertFileName
  */
 public class OAFile extends java.io.File {
-    static final long serialVersionUID = 1L;
+	static final long serialVersionUID = 1L;
 
-    public static final String FS = File.separator;
-    public static final String NL = System.getProperty("line.separator");
+	public static final String FS = File.separator;
+	public static final String NL = System.getProperty("line.separator");
 
-    public OAFile(String fname) {
-        super(OAString.convertFileName(fname));
-    }
+	public OAFile(String fname) {
+		super(OAString.convertFileName(fname));
+	}
 
-    /**
-     * Copy this file to another file.
-     * 
-     * @see #copy(String,String)
-     */
-    public boolean copyTo(String fileNameTo) {
-        try {
-            copy(this.getPath(), fileNameTo);
-        }
-        catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
+	/**
+	 * Copy this file to another file.
+	 * 
+	 * @see #copy(String,String)
+	 */
+	public boolean copyTo(String fileNameTo) {
+		try {
+			copy(this.getPath(), fileNameTo);
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
 
-    /**
-     * Copy this file to another file.
-     * 
-     * @see #copy(String,String)
-     */
-    public boolean copyTo(OAFile fileTo) {
-        if (fileTo == null) return false;
-        try {
-            copy(this.getPath(), fileTo.getPath());
-        }
-        catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
+	/**
+	 * Copy this file to another file.
+	 * 
+	 * @see #copy(String,String)
+	 */
+	public boolean copyTo(OAFile fileTo) {
+		if (fileTo == null) {
+			return false;
+		}
+		try {
+			copy(this.getPath(), fileTo.getPath());
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
 
-    /**
-     * Create all directories for fileName.
-     */
-    public void mkdirsForFile() {
-        mkdirsForFile(getPath());
-    }
+	/**
+	 * Create all directories for fileName.
+	 */
+	public void mkdirsForFile() {
+		mkdirsForFile(getPath());
+	}
 
-    /**
-     * Converts fileName path to correct system file.separator characters.
-     * 
-     * @return new String with corrected file path characters.
-     */
-    public static String convertFileName(String fileName) {
-        return convertFileName(fileName, false);
-    }
+	/**
+	 * Converts fileName path to correct system file.separator characters.
+	 * 
+	 * @return new String with corrected file path characters.
+	 */
+	public static String convertFileName(String fileName) {
+		return convertFileName(fileName, false);
+	}
 
-    /**
-     * Converts fileName path to correct system file.separator characters.
-     * 
-     * @return new String with corrected file path characters.
-     */
-    public static String convertFileName(String fileName, boolean bEndWithSlashChar) {
-        if (fileName == null) return null;
-        fileName = fileName.replace('/', File.separatorChar);
-        fileName = fileName.replace('\\', File.separatorChar);
-        if (bEndWithSlashChar && !fileName.endsWith(FS)) fileName += File.separatorChar;
-        return fileName;
-    }
+	/**
+	 * Converts fileName path to correct system file.separator characters.
+	 * 
+	 * @return new String with corrected file path characters.
+	 */
+	public static String convertFileName(String fileName, boolean bEndWithSlashChar) {
+		if (fileName == null) {
+			return null;
+		}
+		fileName = fileName.replace('/', File.separatorChar);
+		fileName = fileName.replace('\\', File.separatorChar);
+		if (bEndWithSlashChar && !fileName.endsWith(FS)) {
+			fileName += File.separatorChar;
+		}
+		return fileName;
+	}
 
-    public static String getFileName(String filePath) {
-        filePath = filePath.replace('\\', '/');
+	public static String getFileName(String filePath) {
+		filePath = filePath.replace('\\', '/');
 
-        int x = filePath.lastIndexOf('/');
-        if (x >= 0) {
-            filePath = filePath.substring(x + 1);
-        }
-        filePath = convertFileName(filePath);
-        return filePath;
-    }
+		int x = filePath.lastIndexOf('/');
+		if (x >= 0) {
+			filePath = filePath.substring(x + 1);
+		}
+		filePath = convertFileName(filePath);
+		return filePath;
+	}
 
-    public static String getDirectoryName(String filePath) {
-        filePath = filePath.replace('\\', '/');
-        String dir = ".";
+	public static String getDirectoryName(String filePath) {
+		filePath = filePath.replace('\\', '/');
+		String dir = ".";
 
-        int x = filePath.lastIndexOf('/');
-        if (x >= 0) {
-            dir = filePath.substring(0, x);
-        }
-        dir = convertFileName(dir);
-        return dir;
-    }
+		int x = filePath.lastIndexOf('/');
+		if (x >= 0) {
+			dir = filePath.substring(0, x);
+		}
+		dir = convertFileName(dir);
+		return dir;
+	}
 
-    public static String getExtension(File file) {
-        if (file == null) return null;
-        return getExtension(file.getName());
-    }
-    public static String getExtension(String filePath) {
-        String ext;
-        int x = filePath.lastIndexOf('.');
-        if (x >= 0) {
-            ext = filePath.substring(x+1);
-        }
-        else ext = "";
-        return ext;
-    }
-    
-    /**
-     * Create directories for fileName.<br>
-     * Compared to the method in the File.class, "File.mkdirs()" which creates a
-     * directory using the full fileName, where fileName itself will end up
-     * being a directory.
-     * 
-     * This method assumes that the fileName is for a file and will then create
-     * the directories needed so that the file can be saved.
-     */
-    public static void mkdirsForFile(String fileName) {
-        if (fileName == null) return;
-        fileName = OAString.convertFileName(fileName);
-        int pos = fileName.lastIndexOf(File.separatorChar);
-        if (pos > 0) {
-            File f = new File(fileName.substring(0, pos));
-            f.mkdirs();
-        }
-    }
+	public static String getExtension(File file) {
+		if (file == null) {
+			return null;
+		}
+		return getExtension(file.getName());
+	}
 
-    public static void mkdirsForFile(File file) {
-        if (file == null) return;
-        String fileName = file.getAbsolutePath();
-        fileName = OAString.convertFileName(fileName);
-        int pos = fileName.lastIndexOf(File.separatorChar);
-        if (pos > 0) {
-            File f = new File(fileName.substring(0, pos));
-            f.mkdirs();
-        }
-    }
+	public static String getExtension(String filePath) {
+		String ext;
+		int x = filePath.lastIndexOf('.');
+		if (x >= 0) {
+			ext = filePath.substring(x + 1);
+		} else {
+			ext = "";
+		}
+		return ext;
+	}
 
-    /**
-     * Renames this file to another name. This will create the required
-     * directories for the new file.
-     */
-    public void renameTo(String fileName) {
-        if (fileName != null) {
-            File f1 = new File(OAString.convertFileName(this.getPath()));
-            if (f1.exists()) {
-                OAFile.mkdirsForFile(fileName);
-                File f2 = new File(OAString.convertFileName(fileName));
-                f1.renameTo(f2);
-            }
-        }
-    }
+	/**
+	 * Create directories for fileName.<br>
+	 * Compared to the method in the File.class, "File.mkdirs()" which creates a directory using the full fileName, where fileName itself
+	 * will end up being a directory. This method assumes that the fileName is for a file and will then create the directories needed so
+	 * that the file can be saved.
+	 */
+	public static void mkdirsForFile(String fileName) {
+		if (fileName == null) {
+			return;
+		}
+		fileName = OAString.convertFileName(fileName);
+		int pos = fileName.lastIndexOf(File.separatorChar);
+		if (pos > 0) {
+			File f = new File(fileName.substring(0, pos));
+			f.mkdirs();
+		}
+	}
 
-    /**
-     * Copy a file to another file. This will create the required directories
-     * for the new file.
-     * <p>
-     * NOTE: if the fileNameTo already exists, it will be overwritten.
-     */
-    public static void copy(String fileNameFrom, String fileNameTo) throws Exception {
-        if (fileNameFrom == null || fileNameTo == null) {
-            return;
-        }
-        fileNameFrom = OAString.convertFileName(fileNameFrom);
-        File fileFrom = new File(fileNameFrom);
+	public static void mkdirsForFile(File file) {
+		if (file == null) {
+			return;
+		}
+		String fileName = file.getAbsolutePath();
+		fileName = OAString.convertFileName(fileName);
+		int pos = fileName.lastIndexOf(File.separatorChar);
+		if (pos > 0) {
+			File f = new File(fileName.substring(0, pos));
+			f.mkdirs();
+		}
+	}
 
-        fileNameTo = OAString.convertFileName(fileNameTo);
-        File fileTo = new File(fileNameTo);
+	/**
+	 * Renames this file to another name. This will create the required directories for the new file.
+	 */
+	public void renameTo(String fileName) {
+		if (fileName != null) {
+			File f1 = new File(OAString.convertFileName(this.getPath()));
+			if (f1.exists()) {
+				OAFile.mkdirsForFile(fileName);
+				File f2 = new File(OAString.convertFileName(fileName));
+				f1.renameTo(f2);
+			}
+		}
+	}
 
-        copy(fileFrom, fileTo);
-    }
+	/**
+	 * Copy a file to another file. This will create the required directories for the new file.
+	 * <p>
+	 * NOTE: if the fileNameTo already exists, it will be overwritten.
+	 */
+	public static void copy(String fileNameFrom, String fileNameTo) throws Exception {
+		if (fileNameFrom == null || fileNameTo == null) {
+			return;
+		}
+		fileNameFrom = OAString.convertFileName(fileNameFrom);
+		File fileFrom = new File(fileNameFrom);
 
-    public static void copy(File file, File fileTo) throws Exception {
-        if (file == null || fileTo == null) return;
+		fileNameTo = OAString.convertFileName(fileNameTo);
+		File fileTo = new File(fileNameTo);
 
-        if (!file.exists()) {
-            throw new Exception("File " + file.getAbsolutePath() + " not found");
-        }
+		copy(fileFrom, fileTo);
+	}
 
-        mkdirsForFile(fileTo);
-        if (fileTo.exists()) {
-            fileTo.delete();
-        }
+	public static void copy(File file, File fileTo) throws Exception {
+		if (file == null || fileTo == null) {
+			return;
+		}
 
-        InputStream is = new FileInputStream(file);
-        OutputStream os = new FileOutputStream(fileTo);
+		if (!file.exists()) {
+			throw new Exception("File " + file.getAbsolutePath() + " not found");
+		}
 
-        int bufferSize = 1024 * 8;
-        byte[] bs = new byte[bufferSize];
+		mkdirsForFile(fileTo);
+		if (fileTo.exists()) {
+			fileTo.delete();
+		}
 
-        for (int i = 0;; i++) {
-            int x = is.read(bs, 0, bufferSize);
-            if (x < 0) break;
-            os.write(bs, 0, x);
-        }
-        is.close();
-        os.close();
-    }
+		InputStream is = new FileInputStream(file);
+		OutputStream os = new FileOutputStream(fileTo);
 
-    /**
-     * Copy a file from class/jar to file.
-     * 
-     * @param c
-     * @param resourceName
-     *            class path name for file to read
-     * param fname
-     *            file name to save as
-     * param estimatedSize
-     * @return true if successful, false if resource did not exist
-     * @throws Exception
-     */
-    public static boolean copyResourceToFile(Class c, String resourceName, String fname) throws Exception {
-        if (fname == null) return false;
-        fname = OAString.convertFileName(fname);
+		int bufferSize = 1024 * 8;
+		byte[] bs = new byte[bufferSize];
 
-        InputStream is = c.getResourceAsStream(resourceName);
-        if (is == null) {
-            is = ClassLoader.getSystemResourceAsStream(resourceName);
-            if (is == null) return false;
-        }
+		for (int i = 0;; i++) {
+			int x = is.read(bs, 0, bufferSize);
+			if (x < 0) {
+				break;
+			}
+			os.write(bs, 0, x);
+		}
+		is.close();
+		os.close();
+	}
 
-        mkdirsForFile(fname);
-        File fileTo = new File(fname);
+	/**
+	 * Copy a file from class/jar to file.
+	 * 
+	 * @param c
+	 * @param resourceName class path name for file to read param fname file name to save as param estimatedSize
+	 * @return true if successful, false if resource did not exist
+	 * @throws Exception
+	 */
+	public static boolean copyResourceToFile(Class c, String resourceName, String fname) throws Exception {
+		if (fname == null) {
+			return false;
+		}
+		fname = OAString.convertFileName(fname);
 
-        OutputStream os = new FileOutputStream(fileTo);
+		InputStream is = c.getResourceAsStream(resourceName);
+		if (is == null) {
+			is = ClassLoader.getSystemResourceAsStream(resourceName);
+			if (is == null) {
+				return false;
+			}
+		}
 
-        int bufferSize = 1024 * 2;
-        byte[] bs = new byte[bufferSize];
+		mkdirsForFile(fname);
+		File fileTo = new File(fname);
 
-        for (int i = 0;; i++) {
-            int x = is.read(bs, 0, bufferSize);
-            if (x < 0) break;
-            os.write(bs, 0, x);
-        }
-        is.close();
-        os.close();
-        return true;
-    }
+		OutputStream os = new FileOutputStream(fileTo);
 
-    /**
-     * Read the contents of a text file from a specific class location. This
-     * will read from a jar file.
-     * 
-     * param fname
-     *            '/' seperated file name, located from the class. If fname
-     *            begins with '/' then the file will go to the root directory.
-     */
-    public static String[] readResourceTextFile(Class c, String resourceName) throws Exception {
-        InputStream is = c.getResourceAsStream(resourceName);
-        if (is == null) {
-            is = ClassLoader.getSystemResourceAsStream(resourceName);
-            if (is == null) return null;
-        }
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+		int bufferSize = 1024 * 2;
+		byte[] bs = new byte[bufferSize];
 
-        ArrayList<String> al = new ArrayList<String>(120);
-        for (int i = 0;; i++) {
-            String s = reader.readLine();
-            if (s == null) break;
-            al.add(s);
-        }
-        is.close();
-        return al.toArray(new String[0]);
-    }
+		for (int i = 0;; i++) {
+			int x = is.read(bs, 0, bufferSize);
+			if (x < 0) {
+				break;
+			}
+			os.write(bs, 0, x);
+		}
+		is.close();
+		os.close();
+		return true;
+	}
 
-    /**
-     * Read the contents of a text file from a specific class location. This
-     * will read from a jar file.
-     * 
-     * @param fname
-     *            '/' seperated file name, located from the class. If fname
-     *            begins with '/' then the file will go to the root directory.
-     */
-    public static String readTextFile(Class c, String fname, int estimatedSize) throws Exception {
-        if (fname == null) return null;
-        // fname = OAString.convertFileName(fname); // dont convert, this reads
-        // from class and should be using '/'
-        InputStream is = c.getResourceAsStream(fname);
-        if (is == null) {
-            is = ClassLoader.getSystemResourceAsStream(fname);
-            if (is == null) {
-                return null;
-            }
-        }
+	/**
+	 * Read the contents of a text file from a specific class location. This will read from a jar file. param fname '/' seperated file name,
+	 * located from the class. If fname begins with '/' then the file will go to the root directory.
+	 */
+	public static String[] readResourceTextFile(Class c, String resourceName) throws Exception {
+		InputStream is = c.getResourceAsStream(resourceName);
+		if (is == null) {
+			is = ClassLoader.getSystemResourceAsStream(resourceName);
+			if (is == null) {
+				return null;
+			}
+		}
+		BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 
-        StringBuilder sb = new StringBuilder(estimatedSize);
-        for (;;) {
-            int x = is.read();
-            if (x < 0) break;
-            sb.append((char) x);
-        }
-        is.close();
-        return new String(sb);
-    }
+		ArrayList<String> al = new ArrayList<String>(120);
+		for (int i = 0;; i++) {
+			String s = reader.readLine();
+			if (s == null) {
+				break;
+			}
+			al.add(s);
+		}
+		is.close();
+		return al.toArray(new String[0]);
+	}
 
-    public static String readTextFile(File file, int estimatedSize) throws Exception {
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        StringBuffer sb = new StringBuffer(estimatedSize);
-        for (;;) {
-            String line = reader.readLine();
-            if (line == null) break;
-            sb.append(line);
-            sb.append(NL);
-        }
-        reader.close();
-        return new String(sb);
-    }
+	/**
+	 * Read the contents of a text file from a specific class location. This will read from a jar file.
+	 * 
+	 * @param fname '/' seperated file name, located from the class. If fname begins with '/' then the file will go to the root directory.
+	 */
+	public static String readTextFile(Class c, String fname, int estimatedSize) throws Exception {
+		if (fname == null) {
+			return null;
+		}
+		// fname = OAString.convertFileName(fname); // dont convert, this reads
+		// from class and should be using '/'
+		InputStream is = c.getResourceAsStream(fname);
+		if (is == null) {
+			is = ClassLoader.getSystemResourceAsStream(fname);
+			if (is == null) {
+				return null;
+			}
+		}
 
-    public static String readTextFile(String fname, int estimatedSize) throws Exception {
-        if (fname == null) return null;
-        fname = OAString.convertFileName(fname);
-        BufferedReader reader = new BufferedReader(new FileReader(fname));
-        if (estimatedSize < 100) estimatedSize = 1024 * 4;
-        StringBuffer sb = new StringBuffer(estimatedSize);
-        for (;;) {
-            String line = reader.readLine();
-            if (line == null) break;
-            sb.append(line);
-            sb.append(NL);
-        }
-        reader.close();
-        return new String(sb);
-    }
+		BufferedInputStream bis = new BufferedInputStream(is);
+		StringBuilder sb = new StringBuilder(estimatedSize);
+		for (;;) {
+			int x = bis.read();
+			if (x < 0) {
+				break;
+			}
+			sb.append((char) x);
+		}
+		is.close();
+		return new String(sb);
+	}
 
-    public static boolean writeTextFile(String fname, String data) throws Exception {
-        if (fname == null) return false;
-        fname = OAString.convertFileName(fname);
+	public static String readTextFile(File file, int estimatedSize) throws Exception {
+		BufferedReader reader = new BufferedReader(new FileReader(file));
+		StringBuffer sb = new StringBuffer(estimatedSize);
+		for (;;) {
+			String line = reader.readLine();
+			if (line == null) {
+				break;
+			}
+			sb.append(line);
+			sb.append(NL);
+		}
+		reader.close();
+		return new String(sb);
+	}
 
-        mkdirsForFile(fname);
-        File fileTo = new File(fname);
+	public static String readTextFile(String fname, int estimatedSize) throws Exception {
+		if (fname == null) {
+			return null;
+		}
+		fname = OAString.convertFileName(fname);
+		BufferedReader reader = new BufferedReader(new FileReader(fname));
+		if (estimatedSize < 100) {
+			estimatedSize = 1024 * 4;
+		}
+		StringBuffer sb = new StringBuffer(estimatedSize);
+		for (;;) {
+			String line = reader.readLine();
+			if (line == null) {
+				break;
+			}
+			sb.append(line);
+			sb.append(NL);
+		}
+		reader.close();
+		return new String(sb);
+	}
 
-        OutputStream os = new FileOutputStream(fileTo);
+	public static boolean writeTextFile(String fname, String data) throws Exception {
+		if (fname == null) {
+			return false;
+		}
+		fname = OAString.convertFileName(fname);
 
-        if (data != null) os.write(data.getBytes());
+		mkdirsForFile(fname);
+		File fileTo = new File(fname);
 
-        os.close();
-        return true;
-    }
+		OutputStream os = new FileOutputStream(fileTo);
 
-    public static boolean writeTextFile(File file, String data) throws Exception {
-        if (file == null) return false;
+		if (data != null) {
+			os.write(data.getBytes());
+		}
 
-        mkdirsForFile(file);
-        OutputStream os = new FileOutputStream(file);
+		os.close();
+		return true;
+	}
 
-        if (data != null) os.write(data.getBytes());
+	public static boolean writeTextFile(File file, String data) throws Exception {
+		if (file == null) {
+			return false;
+		}
 
-        os.close();
-        return true;
-    }
+		mkdirsForFile(file);
+		OutputStream os = new FileOutputStream(file);
 
-    /**
-     * Remove directory and all children files.
-     */
-    public static void rmDir(File f) throws IOException {
-        delTree(f);
-    }
-    public static void removeDir(File f) throws IOException {
-        delTree(f);
-    }
-    public static void delTree(File f) throws IOException {
-        if (f == null || !f.exists()) return;
-        if (f.isDirectory()) {
-            File[] fs = f.listFiles();
-            if (fs != null) {
-                for (File c : fs) {
-                    delTree(c);
-                }
-            }
-        }
-        f.delete();
-    }
+		if (data != null) {
+			os.write(data.getBytes());
+		}
+
+		os.close();
+		return true;
+	}
+
+	/**
+	 * Remove directory and all children files.
+	 */
+	public static void rmDir(File f) throws IOException {
+		delTree(f);
+	}
+
+	public static void removeDir(File f) throws IOException {
+		delTree(f);
+	}
+
+	public static void delTree(File f) throws IOException {
+		if (f == null || !f.exists()) {
+			return;
+		}
+		if (f.isDirectory()) {
+			File[] fs = f.listFiles();
+			if (fs != null) {
+				for (File c : fs) {
+					delTree(c);
+				}
+			}
+		}
+		f.delete();
+	}
 }
-
-

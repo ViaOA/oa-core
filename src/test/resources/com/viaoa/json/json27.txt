@@ -1,0 +1,10 @@
+{
+  "company": {
+    "customers": [
+      {},
+      {
+        "name": "ABC Company"
+      }
+    ]
+  }
+}

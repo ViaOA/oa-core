@@ -1,0 +1,41 @@
+{
+  "employees": [
+    {
+      "name": "Ram",
+      "email": "ram@gmail.com",
+      "age": 23,
+      "weight": "test",
+      "customers": [
+        {
+          "a": 1
+        },
+        {
+          "b": 2
+        },
+        {
+          "c": 3
+        },
+        {}
+      ]
+    },
+    {
+      "name": "May",
+      "email": "may@gmail.com",
+      "age": 28,
+      "weight": 123.45678
+    },
+    {
+      "name": "John",
+      "email": "jon@gmail.com",
+      "age": 33,
+      "abc": true
+    },
+    {
+      "name": "Bob",
+      "email": "bob@gmail.com",
+      "age": 41,
+      "xyz": false,
+      "NullProperty": null
+    }
+  ]
+}

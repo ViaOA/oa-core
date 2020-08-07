@@ -1,0 +1,13 @@
+{
+  "first": "John",
+  "last": "Doe",
+  "middle": "M",
+  "phones": [
+    {
+      "areaCode": "456"
+    },
+    {
+      "number": "9999999999"
+    }
+  ]
+}

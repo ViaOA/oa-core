@@ -403,4 +403,8 @@ public class OAPropertyInfo implements java.io.Serializable {
 	public boolean isLower() {
 		return this.isLower;
 	}
+
+	public Object getValue(Object obj) {
+		return OAObjectReflectDelegate.getProperty((OAObject) obj, name);
+	}
 }

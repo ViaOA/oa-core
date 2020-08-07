@@ -18,8 +18,6 @@ import com.viaoa.util.OAString;
  * Has methods to add multiple obj/hub and propertyPaths, so that all are searched to see if an Object is included in any of the root +
  * paths. Allows for adding child[ren] OAUserAccess <code>
 
-qqqqqqqqqqqqqqqqqqqqqqqqq
-
     OAUserAccess ua = new OAUserAccess();
     ua.addVisible(buyer, BuyerPP.location().company().clients().products().campaigns().pp);
 

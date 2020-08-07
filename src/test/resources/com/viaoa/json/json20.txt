@@ -1,0 +1,12 @@
+{
+  "firstName": null,
+  "lastName": null,
+  "age": null,
+  "date": null,
+  "dateTime": null,
+  "cost": null,
+  "bignum": null,
+  "nullProp": "NOT null",
+  "isTrue": null,
+  "isFalse": null
+}

@@ -1,0 +1,12 @@
+{
+  "firstName": "fname",
+  "lastName": "lname",
+  "age": 25,
+  "date": "2020-01-25",
+  "dateTime": "2020-01-25T14:29:55",
+  "cost": 1234.58,
+  "bignum": 1234567.890123,
+  "nullProp": null,
+  "isTrue": true,
+  "isFalse": false
+}

@@ -1,0 +1,11 @@
+{
+  "orderItem": {
+    "order": {
+      "customer": {
+        "company": {
+          "name": "ABC Company"
+        }
+      }
+    }
+  }
+}

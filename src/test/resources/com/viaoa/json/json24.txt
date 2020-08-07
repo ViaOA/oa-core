@@ -1,0 +1,6 @@
+{
+  "firstName": "Vincent",
+  "nickName": "LastName",
+  "middleInitial": "A",
+  "lastName": "NewLastName"
+}

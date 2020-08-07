@@ -1,0 +1,24 @@
+{
+  "cost": 123.45,
+  "discount": 12.34,
+  "customers": [
+    {
+      "firstName": "Vincent",
+      "nickName": "Vince",
+      "middleInitial": "A",
+      "lastName": "Smith",
+      "NullProp2": null,
+      "Alive2": true,
+      "StringProp2": "StringPropVAlue2"
+    },
+    {
+      "firstName": "Vincent",
+      "nickName": "Vince",
+      "middleInitial": "A",
+      "lastName": "Smith",
+      "NullProp": null,
+      "Alive": true,
+      "StringProp": "StringPropVAlue"
+    }
+  ]
+}
