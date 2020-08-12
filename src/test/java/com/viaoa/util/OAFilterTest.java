@@ -5,6 +5,17 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.filter.OABetweenFilter;
+import com.viaoa.filter.OABetweenOrEqualFilter;
+import com.viaoa.filter.OAEmptyFilter;
+import com.viaoa.filter.OAEqualFilter;
+import com.viaoa.filter.OAGreaterFilter;
+import com.viaoa.filter.OAGreaterOrEqualFilter;
+import com.viaoa.filter.OALessFilter;
+import com.viaoa.filter.OALessOrEqualFilter;
+import com.viaoa.filter.OALikeFilter;
+import com.viaoa.filter.OANotEqualFilter;
+import com.viaoa.filter.OANotLikeFilter;
 import com.viaoa.util.filter.*;
 
 import test.xice.tsac3.Tsac3DataGenerator;

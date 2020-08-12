@@ -14,6 +14,7 @@ import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.json.node.OAJsonArrayNode;
 import com.viaoa.json.node.OAJsonNode;
+import com.viaoa.json.node.OAJsonNumberNode;
 import com.viaoa.json.node.OAJsonObjectNode;
 import com.viaoa.json.node.OAJsonRootNode;
 import com.viaoa.json.node.OAJsonStringNode;
@@ -48,14 +49,14 @@ public class OAJsonTest extends OAUnitTest {
 	public void json2Test() throws Exception {
 		OAJson oaJson = new OAJson();
 
-		String txt = OAFile.readTextFile(OAJson.class, "json1.txt", 1024 * 2);
+		String txt = readJsonFile(1);
 		OAJsonRootNode root = oaJson.load(txt);
 
 		assertTrue(root instanceof OAJsonObjectNode);
 
-		((OAJsonObjectNode) root).set("middle", "M");
+		root.set("middle", "M");
 
-		String txt2 = OAFile.readTextFile(OAJson.class, "json2.txt", 1024 * 2);
+		String txt2 = readJsonFile(2);
 
 		String json = root.toJson(2);
 
@@ -67,9 +68,9 @@ public class OAJsonTest extends OAUnitTest {
 	public void json3Test() throws Exception {
 		OAJson oaJson = new OAJson();
 
-		String txt1 = OAFile.readTextFile(OAJson.class, "json1.txt", 1024 * 2);
+		String txt1 = readJsonFile(1);
+		String txt2 = readJsonFile(2);
 
-		String txt2 = OAFile.readTextFile(OAJson.class, "json2.txt", 1024 * 2);
 		OAJsonRootNode root2 = oaJson.load(txt2);
 
 		((OAJsonObjectNode) root2).remove("middle");
@@ -84,14 +85,14 @@ public class OAJsonTest extends OAUnitTest {
 	public void json4Test() throws Exception {
 		OAJson oaJson = new OAJson();
 
-		String txt2 = OAFile.readTextFile(OAJson.class, "json2.txt", 1024 * 2);
+		String txt2 = readJsonFile(2);
 		OAJsonRootNode root2 = oaJson.load(txt2);
 		assertTrue(root2 instanceof OAJsonObjectNode);
 
 		((OAJsonObjectNode) root2).set("phones", new OAJsonArrayNode());
 		String json = root2.toJson(2);
 
-		String txt3 = OAFile.readTextFile(OAJson.class, "json3.txt", 1024 * 2);
+		String txt3 = readJsonFile(3);
 
 		boolean b = json.equals(txt3);
 		assertEquals(json, txt3);
@@ -101,13 +102,13 @@ public class OAJsonTest extends OAUnitTest {
 	public void json5Test() throws Exception {
 		OAJson oaJson = new OAJson();
 
-		String txt3 = OAFile.readTextFile(OAJson.class, "json3.txt", 1024 * 2);
+		String txt3 = readJsonFile(3);
 		OAJsonRootNode root3 = oaJson.load(txt3);
 		assertTrue(root3 instanceof OAJsonObjectNode);
 		root3.set("phones[0].number", "1231231234");
 		String json = root3.toJson(2);
 
-		String txt4 = OAFile.readTextFile(OAJson.class, "json4.txt", 1024 * 2);
+		String txt4 = readJsonFile(4);
 
 		boolean b = json.equals(txt4);
 		assertEquals(json, txt4);
@@ -117,13 +118,13 @@ public class OAJsonTest extends OAUnitTest {
 	public void json6Test() throws Exception {
 		OAJson oaJson = new OAJson();
 
-		String txt4 = OAFile.readTextFile(OAJson.class, "json4.txt", 1024 * 2);
+		String txt4 = readJsonFile(4);
 		OAJsonRootNode root4 = oaJson.load(txt4);
 		assertTrue(root4 instanceof OAJsonObjectNode);
 		root4.set("phones[2].number", "9999999999");
 		String json = root4.toJson(2);
 
-		String txt5 = OAFile.readTextFile(OAJson.class, "json5.txt", 1024 * 2);
+		String txt5 = readJsonFile(5);
 
 		boolean b = json.equals(txt5);
 		assertEquals(json, txt5);
@@ -133,9 +134,7 @@ public class OAJsonTest extends OAUnitTest {
 	public void json7Test() throws Exception {
 		OAJson oaJson = new OAJson();
 
-		int fileId = 5;
-		String txt = readJsonFile(fileId);
-		String txtNew = readJsonFile(fileId + 1);
+		String txt = readJsonFile(5);
 
 		OAJsonRootNode root = oaJson.load(txt);
 		assertTrue(root instanceof OAJsonObjectNode);
@@ -144,6 +143,8 @@ public class OAJsonTest extends OAUnitTest {
 		root.set("phones[4].number", "555555555");
 
 		String json = root.toJson(2);
+
+		String txtNew = readJsonFile(6);
 		boolean b = json.equals(txtNew);
 		assertEquals(json, txtNew);
 	}
@@ -152,9 +153,8 @@ public class OAJsonTest extends OAUnitTest {
 	public void json8Test() throws Exception {
 		OAJson oaJson = new OAJson();
 
-		int fileId = 7;
-		String txt = readJsonFile(fileId);
-		String txtNew = readJsonFile(fileId + 1);
+		String txt = readJsonFile(7);
+		String txtNew = readJsonFile(8);
 
 		OAJsonRootNode root = oaJson.load(txt);
 		assertTrue(root instanceof OAJsonObjectNode);
@@ -309,11 +309,13 @@ public class OAJsonTest extends OAUnitTest {
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		root.set("[1].number", "2222");
+		String json = root.toJson(2);
+
 		root.set("[2].code", 3333);
 		root.set("[3].date", new OADate(2020, 1, 23));
 		root.set("[4].datetime", new OADateTime(2020, 1, 23, 9, 30, 45));
 
-		String json = root.toJson(2);
+		json = root.toJson(2);
 
 		String txtNew = readJsonFile(15);
 
@@ -532,6 +534,118 @@ public class OAJsonTest extends OAUnitTest {
 		assertEquals(json, txtNew);
 	}
 
+	@Test
+	public void json22Test() throws Exception {
+		OAJson oaJson = new OAJson();
+
+		String txt = readJsonFile(16);
+
+		OAJsonRootNode root = oaJson.load(txt);
+		assertTrue(root instanceof OAJsonArrayNode);
+
+		root.set("[5]", "wasNull");
+		root.set("[6]", 12345);
+		root.set("[7]", true);
+
+		root.set("[6]", 67890);
+		String json = root.toJson(2);
+
+		String txtNew = readJsonFile(28);
+
+		boolean b = json.equals(txtNew);
+		assertEquals(json, txtNew);
+	}
+
+	@Test
+	public void json23Test() throws Exception {
+		OAJson oaJson = new OAJson();
+
+		String txt = readJsonFile(16);
+
+		OAJsonRootNode root = oaJson.load(txt);
+		assertTrue(root instanceof OAJsonArrayNode);
+
+		BigDecimal bd = new BigDecimal("12345.67");
+		root.set("[6].customers[3].balance", new OAJsonNumberNode(bd));
+		root.remove("", 5);
+		root.remove("[6]");
+
+		OAJsonNode jn = root.get("[5].customers[3].balance");
+		assertTrue(jn instanceof OAJsonNumberNode);
+		assertEquals(bd, ((OAJsonNumberNode) jn).getValue());
+
+		String json = root.toJson(2);
+
+		String txtNew = readJsonFile(29);
+
+		boolean b = json.equals(txtNew);
+		assertEquals(json, txtNew);
+	}
+
+	@Test
+	public void json24Test() throws Exception {
+		OAJson oaJson = new OAJson();
+
+		String txt = readJsonFile(16);
+
+		OAJsonRootNode root = oaJson.load(txt);
+		assertTrue(root instanceof OAJsonArrayNode);
+
+		root.set("[1]", "justAstring");
+
+		OAJsonNode jn = root.get("[1]");
+		assertTrue(jn instanceof OAJsonStringNode);
+		assertEquals("justAstring", ((OAJsonStringNode) jn).getValue());
+
+		String json = root.toJson(2);
+
+		String txtNew = readJsonFile(30);
+
+		boolean b = json.equals(txtNew);
+		assertEquals(json, txtNew);
+	}
+
+	@Test
+	public void json25Test() throws Exception {
+		OAJson oaJson = new OAJson();
+		OAJsonArrayNode custs = new OAJsonArrayNode();
+
+		for (int i = 0; i < 2; i++) {
+			OAJsonObjectNode cust = new OAJsonObjectNode();
+			cust.set("name", "Customer" + i);
+			cust.set("salesPerson", "John Doe" + i);
+			custs.add(cust);
+			OAJsonArrayNode orders = new OAJsonArrayNode();
+			cust.set("orders", orders);
+
+			for (int ii = 0; ii < 2; ii++) {
+				OAJsonObjectNode ord = new OAJsonObjectNode();
+				ord.set("id", ii);
+				ord.set("description", "description" + ii);
+				orders.add(ord);
+
+				for (int iii = 0; iii < 2; iii++) {
+					custs.set("[" + i + "].orders[" + ii + "].orderItems[" + iii + "].item.name", "itemname");
+					ord.getObject("orderItems[" + iii + "]").set("qty", iii + 1);
+				}
+			}
+
+			for (int ii = 0; ii < 2; ii++) {
+				custs.set("[" + i + "].counters[" + ii + "]", ii);
+			}
+
+		}
+
+		custs.set("[0].counters[0]", "test this");
+
+		String json = custs.toJson(2);
+
+		String txtNew = readJsonFile(31);
+
+		boolean b = json.equals(txtNew);
+		assertEquals(json, txtNew);
+	}
+
 	protected String readJsonFile(int number) throws Exception {
 		String txt = OAFile.readTextFile(OAJson.class, "json" + number + ".txt", 1024 * 2);
 		return txt;
@@ -642,7 +756,6 @@ public class OAJsonTest extends OAUnitTest {
 		json = nodex.toJson(2);
 
 		json = root.toJson(2);
-		System.out.println(json);
 
 		OAJson oaJson = new OAJson();
 		OAJsonRootNode rootx = oaJson.load(json);
@@ -651,10 +764,9 @@ public class OAJsonTest extends OAUnitTest {
 		customerNode.set("Alive", true);
 		customerNode.set("StringProp", "StringPropVAlue");
 		json = rootx.toJson();
-		System.out.println(json);
 
 		OAJsonArrayNode customers = rootx.getArrayNode("customers");
-		customerNode = customers.get(0);
+		customerNode = customers.getObject(0);
 		customerNode.setNull("NullProp2");
 		customerNode.set("Alive2", true);
 		customerNode.set("StringProp2", "StringPropVAlue2");

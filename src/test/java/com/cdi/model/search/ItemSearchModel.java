@@ -4,11 +4,10 @@ package com.cdi.model.search;
 import java.util.logging.*;
 
 import com.viaoa.object.*;
+import com.viaoa.datasource.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.util.filter.*;
-import com.viaoa.ds.*;
-
 import com.cdi.model.*;
 import com.cdi.model.oa.*;
 import com.cdi.model.oa.propertypath.*;

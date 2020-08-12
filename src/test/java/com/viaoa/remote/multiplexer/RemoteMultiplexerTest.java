@@ -7,16 +7,18 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.comm.multiplexer.MultiplexerClient;
-import com.viaoa.comm.multiplexer.MultiplexerServer;
+import com.viaoa.comm.multiplexer.OAMultiplexerClient;
+import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.object.OAObject;
-import com.viaoa.remote.multiplexer.info.RequestInfo;
+import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
 import com.viaoa.remote.multiplexer.remote.*;  // test package only
 import com.viaoa.util.OADateTime;
 
 public class RemoteMultiplexerTest extends OAUnitTest {
-    private MultiplexerServer multiplexerServer;
-    private RemoteMultiplexerServer remoteMultiplexerServer; 
+    private OAMultiplexerServer multiplexerServer;
+    private OARemoteMultiplexerServer remoteMultiplexerServer; 
     public final int port = 1101;
     final String queueName = "que";
     final int queueSize = 2500;
@@ -37,8 +39,8 @@ public class RemoteMultiplexerTest extends OAUnitTest {
     public void setup() throws Exception {
         System.out.println("Before, calling setup");
         // setup server
-        multiplexerServer = new MultiplexerServer(port);        
-        remoteMultiplexerServer = new RemoteMultiplexerServer(multiplexerServer) {
+        multiplexerServer = new OAMultiplexerServer(port);        
+        remoteMultiplexerServer = new OARemoteMultiplexerServer(multiplexerServer) {
             protected void afterInvokeForCtoS(RequestInfo ri) {
                 cntCtoSRequestServer++;
                 riServer = ri;
@@ -151,11 +153,11 @@ public class RemoteMultiplexerTest extends OAUnitTest {
     @Test //(timeout=2000)
     public void testCtoS_QueuedRequest() throws Exception {
         RemoteClientInterface remoteClient;
-        MultiplexerClient multiplexerClient;
-        RemoteMultiplexerClient remoteMultiplexerClient;
+        OAMultiplexerClient multiplexerClient;
+        OARemoteMultiplexerClient remoteMultiplexerClient;
         
-        multiplexerClient = new MultiplexerClient("localhost", port);
-        remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient) {
+        multiplexerClient = new OAMultiplexerClient("localhost", port);
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient) {
             @Override
             protected void afterInvokeForCtoS(RequestInfo ri) {
                 cntCtoSRequestClient++;
@@ -187,11 +189,11 @@ public class RemoteMultiplexerTest extends OAUnitTest {
     @Test //(timeout=2000)
     public void testCtoS_QueuedRequestNoResponse() throws Exception {
         RemoteClientInterface remoteClient;
-        MultiplexerClient multiplexerClient;
-        RemoteMultiplexerClient remoteMultiplexerClient;
+        OAMultiplexerClient multiplexerClient;
+        OARemoteMultiplexerClient remoteMultiplexerClient;
         
-        multiplexerClient = new MultiplexerClient("localhost", port);
-        remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient) {
+        multiplexerClient = new OAMultiplexerClient("localhost", port);
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient) {
             @Override
             protected void afterInvokeForCtoS(RequestInfo ri) {
                 cntCtoSRequestClient++;
@@ -225,11 +227,11 @@ public class RemoteMultiplexerTest extends OAUnitTest {
     //(timeout=4500)
     public void testStoC_QueuedRequest() throws Exception {
         RemoteClientInterface remoteClient;
-        MultiplexerClient multiplexerClient;
-        RemoteMultiplexerClient remoteMultiplexerClient;
+        OAMultiplexerClient multiplexerClient;
+        OARemoteMultiplexerClient remoteMultiplexerClient;
         
-        multiplexerClient = new MultiplexerClient("localhost", port);
-        remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient) {
+        multiplexerClient = new OAMultiplexerClient("localhost", port);
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient) {
             @Override
             protected void afterInvokeForCtoS(RequestInfo ri) {
                 cntCtoSRequestClient++;
@@ -301,11 +303,11 @@ public class RemoteMultiplexerTest extends OAUnitTest {
     @Test//(timeout=12000)
     public void testStoC_QueuedRequestNoResponse() throws Exception {
         RemoteClientInterface remoteClient;
-        MultiplexerClient multiplexerClient;
-        RemoteMultiplexerClient remoteMultiplexerClient;
+        OAMultiplexerClient multiplexerClient;
+        OARemoteMultiplexerClient remoteMultiplexerClient;
         
-        multiplexerClient = new MultiplexerClient("localhost", port);
-        remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient) {
+        multiplexerClient = new OAMultiplexerClient("localhost", port);
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient) {
             @Override
             protected void afterInvokeForCtoS(RequestInfo ri) {
                 cntCtoSRequestClient++;
@@ -356,11 +358,11 @@ public class RemoteMultiplexerTest extends OAUnitTest {
     @Test//(timeout=2000)
     public void testStoC_SocketRequest() throws Exception {
         RemoteClientInterface remoteClient;
-        MultiplexerClient multiplexerClient;
-        RemoteMultiplexerClient remoteMultiplexerClient;
+        OAMultiplexerClient multiplexerClient;
+        OARemoteMultiplexerClient remoteMultiplexerClient;
         
-        multiplexerClient = new MultiplexerClient("localhost", port);
-        remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient) {
+        multiplexerClient = new OAMultiplexerClient("localhost", port);
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient) {
             @Override
             protected void afterInvokeForCtoS(RequestInfo ri) {
                 cntCtoSRequestClient++;
@@ -432,11 +434,11 @@ public class RemoteMultiplexerTest extends OAUnitTest {
     @Test//(timeout=5000)
     public void testStoC_SocketRequestNoResponse() throws Exception {
         RemoteClientInterface remoteClient;
-        MultiplexerClient multiplexerClient;
-        RemoteMultiplexerClient remoteMultiplexerClient;
+        OAMultiplexerClient multiplexerClient;
+        OARemoteMultiplexerClient remoteMultiplexerClient;
         
-        multiplexerClient = new MultiplexerClient("localhost", port);
-        remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient) {
+        multiplexerClient = new OAMultiplexerClient("localhost", port);
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient) {
             @Override
             protected void afterInvokeForCtoS(RequestInfo ri) {
                 cntCtoSRequestClient++;
@@ -485,11 +487,11 @@ public class RemoteMultiplexerTest extends OAUnitTest {
     @Test //(timeout=2000)
     public void testStoC_QueuedBroadcast() throws Exception {
         RemoteClientInterface remoteClient;
-        MultiplexerClient multiplexerClient;
-        RemoteMultiplexerClient remoteMultiplexerClient;
+        OAMultiplexerClient multiplexerClient;
+        OARemoteMultiplexerClient remoteMultiplexerClient;
         
-        multiplexerClient = new MultiplexerClient("localhost", port);
-        remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient) {
+        multiplexerClient = new OAMultiplexerClient("localhost", port);
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient) {
             @Override
             protected void afterInvokeForCtoS(RequestInfo ri) {
                 cntCtoSRequestClient++;

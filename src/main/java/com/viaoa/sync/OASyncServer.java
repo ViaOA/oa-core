@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.comm.multiplexer.MultiplexerServer;
+import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -31,8 +31,8 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAObjectUniqueDelegate;
-import com.viaoa.remote.multiplexer.RemoteMultiplexerServer;
-import com.viaoa.remote.multiplexer.info.RequestInfo;
+import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
 import com.viaoa.sync.file.ServerFile;
 import com.viaoa.sync.model.*;
 import com.viaoa.sync.remote.*;
@@ -53,8 +53,8 @@ public class OASyncServer {
     public static final int QueueSize = 20000;
     
     private int port;
-    private MultiplexerServer multiplexerServer;
-    private RemoteMultiplexerServer remoteMultiplexerServer;
+    private OAMultiplexerServer multiplexerServer;
+    private OARemoteMultiplexerServer remoteMultiplexerServer;
 
     private RemoteSyncImpl remoteSync;
     private RemoteServerImpl remoteServer;
@@ -307,9 +307,9 @@ public class OASyncServer {
      * Used to manage multiplexed socket connections from client computers.
      * @return
      */
-    public MultiplexerServer getMultiplexerServer() {
+    public OAMultiplexerServer getMultiplexerServer() {
         if (multiplexerServer == null) {
-            multiplexerServer = new MultiplexerServer(port) {
+            multiplexerServer = new OAMultiplexerServer(port) {
                 @Override
                 protected void onClientConnect(Socket socket, int connectionId) {
                     OASyncServer.this.onClientConnect(socket, connectionId);
@@ -416,9 +416,9 @@ public class OASyncServer {
         return msg;
     }
     
-    public RemoteMultiplexerServer getRemoteMultiplexerServer() {
+    public OARemoteMultiplexerServer getRemoteMultiplexerServer() {
         if (remoteMultiplexerServer == null) {
-            remoteMultiplexerServer = new RemoteMultiplexerServer(getMultiplexerServer()) {
+            remoteMultiplexerServer = new OARemoteMultiplexerServer(getMultiplexerServer()) {
                 @Override
                 protected void afterInvokeForCtoS(RequestInfo ri) {
                     OASyncServer.this.afterInvokeRemoteMethod(ri);

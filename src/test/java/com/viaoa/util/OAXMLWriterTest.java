@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.hub.Hub;
+import com.viaoa.xml.OAXMLWriter;
 
 import test.hifive.model.oa.Employee;
 

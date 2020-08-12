@@ -21,7 +21,7 @@ import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAObjectSaveDelegate;
-import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
+import com.viaoa.remote.annotation.OARemoteMethod;
 import com.viaoa.sync.model.ClientInfo;
 
 // see: OAClient

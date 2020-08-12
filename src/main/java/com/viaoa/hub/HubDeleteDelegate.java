@@ -14,10 +14,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Vector;
 
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.object.*;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.*;
-import com.viaoa.ds.OADataSource;
 
 /**
  * Delegate that manages deleting an object from a Hub.

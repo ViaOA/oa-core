@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.filter.OANotEmptyFilter;
 import com.viaoa.hub.Hub;
-import com.viaoa.util.filter.OANotEmptyFilter;
 
 import test.hifive.model.oa.Employee;
 import test.hifive.model.oa.Location;

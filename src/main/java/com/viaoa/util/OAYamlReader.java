@@ -15,7 +15,9 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 
+import com.viaoa.json.OAJsonWriter;
 import com.viaoa.object.OAObject;
+import com.viaoa.xml.OAXMLReader;
 
 /**
     OAJsonReader that converts to XML, and then uses OAXMLReader to convert to OAObjects and Hubs.  

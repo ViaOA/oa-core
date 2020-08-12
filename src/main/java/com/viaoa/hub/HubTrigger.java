@@ -11,7 +11,7 @@
 package com.viaoa.hub;
 
 import com.viaoa.object.OAObject;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.util.OAFilter;
 
 /**

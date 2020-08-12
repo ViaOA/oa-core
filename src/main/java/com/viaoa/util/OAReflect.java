@@ -25,7 +25,7 @@ import java.net.URI;
 import java.net.URL;
 
 import com.viaoa.object.*;
-import com.viaoa.remote.multiplexer.info.RequestInfo;
+import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.hub.*;
 
 

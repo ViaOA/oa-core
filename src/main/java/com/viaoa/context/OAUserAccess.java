@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.viaoa.ds.OASelect;
+import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;

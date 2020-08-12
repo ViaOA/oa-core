@@ -10,6 +10,7 @@
 */
 package com.viaoa.hub;
 
+import com.viaoa.json.OAJsonWriter;
 import com.viaoa.object.*;
 import com.viaoa.util.*;
 

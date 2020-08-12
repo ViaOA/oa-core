@@ -20,14 +20,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.*;
 
-import com.viaoa.comm.multiplexer.MultiplexerClient;
-import com.viaoa.ds.OADataSource;
-import com.viaoa.ds.cs.OADataSourceClient;
+import com.viaoa.comm.multiplexer.OAMultiplexerClient;
+import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
-import com.viaoa.remote.multiplexer.RemoteMultiplexerClient;
-import com.viaoa.remote.multiplexer.info.RequestInfo;
+import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
 import com.viaoa.sync.file.ClientFile;
 import com.viaoa.sync.model.ClientInfo;
 import com.viaoa.sync.remote.RemoteClientCallbackInterface;
@@ -49,10 +49,10 @@ public class OASyncClient {
     protected static Logger LOG = Logger.getLogger(OASyncClient.class.getName());
 
     /** this is used to create a connection (socket) to server. */
-    private MultiplexerClient multiplexerClient;
+    private OAMultiplexerClient multiplexerClient;
 
     /** Allow for making remote method calls to an object instance on the server. */
-    private RemoteMultiplexerClient remoteMultiplexerClient;
+    private OARemoteMultiplexerClient remoteMultiplexerClient;
 
     /** information about this client */ 
     private ClientInfo clientInfo;
@@ -484,9 +484,9 @@ if (siblingKeys == null || siblingKeys.length == 0) {
     /** the socket connection to GSMR server. 
      * @see #onSocketException(Exception) for connection errors
      * */
-    protected MultiplexerClient getMultiplexerClient() {
+    protected OAMultiplexerClient getMultiplexerClient() {
         if (multiplexerClient != null) return multiplexerClient; 
-        multiplexerClient = new MultiplexerClient(getClientInfo().getServerHostName(), clientInfo.getServerHostPort()) {
+        multiplexerClient = new OAMultiplexerClient(getClientInfo().getServerHostName(), clientInfo.getServerHostPort()) {
             @Override
             protected void onSocketException(Exception e) {
                 OASyncClient.this.onSocketException(e);
@@ -529,9 +529,9 @@ if (siblingKeys == null || siblingKeys.length == 0) {
     
     private long msLastThreadCountWarning;
     /** allows remote method calls to GSMR server. */
-    public RemoteMultiplexerClient getRemoteMultiplexerClient() {
+    public OARemoteMultiplexerClient getRemoteMultiplexerClient() {
         if (remoteMultiplexerClient != null) return remoteMultiplexerClient; 
-        remoteMultiplexerClient = new RemoteMultiplexerClient(getMultiplexerClient()) {
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(getMultiplexerClient()) {
             @Override
             protected void onRemoteThreadCreated(int totalCount, int liveCount) {
                 getClientInfo().setRemoteThreadCount(liveCount);

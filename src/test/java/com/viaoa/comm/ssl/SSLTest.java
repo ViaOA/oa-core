@@ -19,14 +19,14 @@ import com.viaoa.OAUnitTest;
 public class SSLTest extends OAUnitTest {
     private static Logger LOG = Logger.getLogger(SSLTest.class.getName());
     
-    SSLServer server;
-    SSLClient client;
+    OASslServer server;
+    OASslClient client;
     volatile boolean bStop;
     volatile int cntServer, cntClient;
 
     @Before
     public void setup() throws Exception {
-        server = new SSLServer("localhost", 1101) {
+        server = new OASslServer("localhost", 1101) {
             @Override
             protected void sendOutput(byte[] bs, int offset, int len, boolean bHandshakeOnly) throws Exception {
                 client.input(bs, len, bHandshakeOnly);
@@ -34,7 +34,7 @@ public class SSLTest extends OAUnitTest {
         };
         server.initialize();
         
-        client = new SSLClient("localhost", 1101) {
+        client = new OASslClient("localhost", 1101) {
             @Override
             protected void sendOutput(byte[] bs, int offset, int len, boolean bHandshakeOnly) throws Exception {
                 server.input(bs, len, bHandshakeOnly);

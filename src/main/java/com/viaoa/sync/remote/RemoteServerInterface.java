@@ -14,7 +14,7 @@ package com.viaoa.sync.remote;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.remote.multiplexer.annotation.*;
+import com.viaoa.remote.annotation.*;
 import com.viaoa.sync.model.ClientInfo;
 
 @OARemoteInterface

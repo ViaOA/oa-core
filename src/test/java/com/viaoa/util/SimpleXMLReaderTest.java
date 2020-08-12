@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 import com.viaoa.OAUnitTest;
+import com.viaoa.xml.SimpleXMLReader;
 
 public class SimpleXMLReaderTest extends OAUnitTest {
 

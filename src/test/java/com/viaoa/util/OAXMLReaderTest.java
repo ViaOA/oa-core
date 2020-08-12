@@ -9,6 +9,9 @@ import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.object.OAObject;
+import com.viaoa.xml.OAXMLReader;
+import com.viaoa.xml.OAXMLReader1;
+import com.viaoa.xml.OAXMLWriter;
 
 import test.xice.tsac.model.oa.*;
 

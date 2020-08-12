@@ -12,8 +12,8 @@ package com.viaoa.sync.remote;
 
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
-import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
+import com.viaoa.remote.annotation.OARemoteInterface;
+import com.viaoa.remote.annotation.OARemoteMethod;
 
 /**
  * Client remote methods that will use the same named msg queue as RemoteSync, when set up (bind) on the server.

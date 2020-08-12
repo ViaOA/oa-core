@@ -5,13 +5,13 @@ import java.util.logging.*;
 import com.cdi.model.oa.*;
 import com.cdi.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
+import com.viaoa.datasource.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
-import com.viaoa.ds.*;
-import com.viaoa.util.filter.OAQueryFilter;
+import com.viaoa.filter.OAQueryFilter;
 
 @OAClass(useDataSource=false, localOnly=true)
 public class FileInfoSearch extends OAObject {

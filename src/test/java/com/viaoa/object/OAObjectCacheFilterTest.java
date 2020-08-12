@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.filter.OAFilterDelegate;
 import com.viaoa.hub.Hub;
 import com.viaoa.util.OAFilter;
-import com.viaoa.util.filter.OAFilterDelegate;
 
 import test.hifive.model.oa.Employee;
 import test.hifive.model.oa.Location;

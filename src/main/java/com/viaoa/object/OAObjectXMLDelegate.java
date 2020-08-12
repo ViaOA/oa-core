@@ -16,6 +16,7 @@ import java.util.logging.*;
 
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
+import com.viaoa.xml.OAXMLWriter;
 
 
 /**

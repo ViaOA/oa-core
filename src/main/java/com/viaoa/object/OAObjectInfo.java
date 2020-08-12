@@ -19,9 +19,9 @@ import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
 
-import com.viaoa.ds.OADataSource;
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.*;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;

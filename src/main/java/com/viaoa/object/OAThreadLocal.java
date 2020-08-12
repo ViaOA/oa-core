@@ -14,9 +14,9 @@ import java.util.ArrayList;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.remote.multiplexer.info.RequestInfo;
+import com.viaoa.jaxb.OAJaxb;
+import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.transaction.OATransaction;
-import com.viaoa.util.OAJaxb;
 import com.viaoa.util.Tuple3;
 
 /**

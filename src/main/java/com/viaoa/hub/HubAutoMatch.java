@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.reflect.*;
 
 import com.viaoa.object.*;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.util.*;
 
 /** 

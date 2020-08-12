@@ -4,6 +4,11 @@ import java.io.ByteArrayOutputStream;
 
 import com.viaoa.json.io.JsonOutputStream;
 
+/**
+ * Used for json object and object graphs, each node representing a token.
+ *
+ * @author vvia
+ */
 public abstract class OAJsonNode {
 	//	String name;
 

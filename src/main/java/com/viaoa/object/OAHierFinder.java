@@ -12,11 +12,11 @@ package com.viaoa.object;
 
 import java.util.HashSet;
 
+import com.viaoa.converter.OAConverterBoolean;
+import com.viaoa.filter.OAEmptyFilter;
+import com.viaoa.filter.OANotEmptyFilter;
+import com.viaoa.filter.OANotNullFilter;
 import com.viaoa.util.*;
-import com.viaoa.util.converter.OAConverterBoolean;
-import com.viaoa.util.filter.OAEmptyFilter;
-import com.viaoa.util.filter.OANotEmptyFilter;
-import com.viaoa.util.filter.OANotNullFilter;
 
 /**
  * This is used to find the first value in an object hierarchy (including recursive) that 

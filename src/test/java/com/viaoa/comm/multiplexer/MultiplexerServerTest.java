@@ -8,7 +8,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.comm.multiplexer.MultiplexerServer;
+import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.object.OAObject;
 import com.viaoa.util.OAString;
 
@@ -16,7 +16,7 @@ import test.xice.tsac3.model.oa.*;
 
 public class MultiplexerServerTest extends OAUnitTest {
     private volatile boolean bStopCalled;
-    private MultiplexerServer multiplexerServer;
+    private OAMultiplexerServer multiplexerServer;
     
     public void test(final int maxConnections) throws Exception {
         Thread t = new Thread() {
@@ -36,7 +36,7 @@ public class MultiplexerServerTest extends OAUnitTest {
     }
     private void _test(int maxConnections) throws Exception {
 
-        multiplexerServer = new MultiplexerServer(null, 1101);
+        multiplexerServer = new OAMultiplexerServer(null, 1101);
         ServerSocket ss = multiplexerServer.createServerSocket("test");
         multiplexerServer.start();
         OAObject.setDebugMode(true);

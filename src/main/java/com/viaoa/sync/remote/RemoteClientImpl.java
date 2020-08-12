@@ -12,7 +12,8 @@ package com.viaoa.sync.remote;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
-import com.viaoa.ds.OADataSource;
+
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;

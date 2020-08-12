@@ -6,6 +6,7 @@ import javax.json.Json;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 
+import com.viaoa.jaxb.OAJaxb;
 import com.viaoa.json.node.OAJsonArrayNode;
 import com.viaoa.json.node.OAJsonBooleanNode;
 import com.viaoa.json.node.OAJsonNode;
@@ -15,14 +16,17 @@ import com.viaoa.json.node.OAJsonObjectNode;
 import com.viaoa.json.node.OAJsonRootNode;
 import com.viaoa.json.node.OAJsonStringNode;
 
-/*
-	see: https://jaunt-api.com
-		https://jaunt-api.com/javadocs/index.html
-*/
-
 /**
- * JSON Util for parsing, queries.
+ * Create and load JSON data into a tree node object graph . Supports property paths for getting and setting data.
+ * <p>
+ * Loads json from from string value into tree nodes.
+ * <p>
+ * The tree nodes can then be used to change the json object graph and to convert back to json text (String), with or without formatting
+ * (indenting).
  *
+ * @see OAJsonObjectNode for creating with an single object as the root.
+ * @see OAJsonArrayNode for creating with an array as the root.
+ * @see OAJaxb for marshalling/unmarshalling java to/from json
  * @author vvia
  */
 public class OAJson {
@@ -77,37 +81,49 @@ public class OAJson {
 			} else if (event == Event.KEY_NAME) {
 				key = parser.getString();
 			} else if (event == Event.VALUE_STRING) {
+				String value = parser.getString();
+				OAJsonStringNode newNode = new OAJsonStringNode(value);
 				if (key != null) {
-					String value = parser.getString();
-					OAJsonStringNode newNode = new OAJsonStringNode(value);
 					((OAJsonObjectNode) node).set(key, newNode);
 					key = null;
+				} else if (bUsingArray) {
+					((OAJsonArrayNode) node).add(newNode);
 				}
 			} else if (event == Event.VALUE_NUMBER) {
+				Number value = parser.getBigDecimal();
+				OAJsonNumberNode newNode = new OAJsonNumberNode(value);
 				if (key != null) {
-					Number value = parser.getBigDecimal();
-					OAJsonNumberNode newNode = new OAJsonNumberNode(value);
 					((OAJsonObjectNode) node).set(key, newNode);
 					key = null;
+				} else if (bUsingArray) {
+					((OAJsonArrayNode) node).add(newNode);
 				}
 			} else if (event == Event.VALUE_FALSE) {
+				OAJsonBooleanNode newNode = new OAJsonBooleanNode(Boolean.FALSE);
 				if (key != null) {
-					((OAJsonObjectNode) node).set(key, new OAJsonBooleanNode(Boolean.FALSE));
+					((OAJsonObjectNode) node).set(key, newNode);
 					key = null;
+				} else if (bUsingArray) {
+					((OAJsonArrayNode) node).add(newNode);
 				}
 			} else if (event == Event.VALUE_TRUE) {
+				OAJsonBooleanNode newNode = new OAJsonBooleanNode(Boolean.TRUE);
 				if (key != null) {
-					((OAJsonObjectNode) node).set(key, new OAJsonBooleanNode(Boolean.TRUE));
+					((OAJsonObjectNode) node).set(key, newNode);
 					key = null;
+				} else if (bUsingArray) {
+					((OAJsonArrayNode) node).add(newNode);
 				}
 			} else if (event == Event.VALUE_NULL) {
+				OAJsonNullNode newNode = new OAJsonNullNode();
 				if (key != null) {
-					((OAJsonObjectNode) node).set(key, new OAJsonNullNode());
+					((OAJsonObjectNode) node).set(key, newNode);
 					key = null;
+				} else if (bUsingArray) {
+					((OAJsonArrayNode) node).add(newNode);
 				}
 			}
 		}
 		return node;
 	}
-
 }

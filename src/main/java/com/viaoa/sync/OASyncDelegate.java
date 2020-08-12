@@ -20,8 +20,8 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
-import com.viaoa.remote.multiplexer.info.RequestInfo;
+import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.sync.remote.*;
 
 /**

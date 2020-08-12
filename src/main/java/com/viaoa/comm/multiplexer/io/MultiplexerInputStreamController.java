@@ -16,8 +16,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.comm.multiplexer.MultiplexerClient;
-import com.viaoa.comm.multiplexer.MultiplexerServer;
+import com.viaoa.comm.multiplexer.OAMultiplexerClient;
+import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAThreadLocalDelegate;
 

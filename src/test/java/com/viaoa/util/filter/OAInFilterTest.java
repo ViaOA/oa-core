@@ -5,6 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.filter.OAInFilter;
 
 import test.hifive.model.oa.*;
 import test.hifive.model.oa.propertypath.*;

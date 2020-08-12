@@ -7,21 +7,23 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.comm.multiplexer.MultiplexerClient;
-import com.viaoa.comm.multiplexer.MultiplexerServer;
+import com.viaoa.comm.multiplexer.OAMultiplexerClient;
+import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
 import com.viaoa.sync.model.ClientInfo;
 import com.viaoa.sync.remote.*;
 
 import test.xice.tsac3.model.oa.Server;
 
 public class RemoteMultiplexer3Test extends OAUnitTest {
-    private MultiplexerServer multiplexerServer;
-    private RemoteMultiplexerServer remoteMultiplexerServer; 
+    private OAMultiplexerServer multiplexerServer;
+    private OARemoteMultiplexerServer remoteMultiplexerServer; 
 
-    private MultiplexerClient multiplexerClient;
-    private RemoteMultiplexerClient remoteMultiplexerClient;
+    private OAMultiplexerClient multiplexerClient;
+    private OARemoteMultiplexerClient remoteMultiplexerClient;
 
     public final int port = 1101;
     final String queueName = "que";
@@ -38,8 +40,8 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
     @Before
     public void setup() throws Exception {
         // setup server
-        multiplexerServer = new MultiplexerServer(port);        
-        remoteMultiplexerServer = new RemoteMultiplexerServer(multiplexerServer);
+        multiplexerServer = new OAMultiplexerServer(port);        
+        remoteMultiplexerServer = new OARemoteMultiplexerServer(multiplexerServer);
         
         // create server side for C2S socket request
         remoteMultiplexerServer.createLookup("server", createRemoteServerInterface("server"), RemoteServerInterface.class);
@@ -55,8 +57,8 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
         remoteMultiplexerServer.start();
 
         // setup client
-        multiplexerClient = new MultiplexerClient("localhost", port);
-        remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient);
+        multiplexerClient = new OAMultiplexerClient("localhost", port);
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient);
         multiplexerClient.start();
         
         // create sample object on server

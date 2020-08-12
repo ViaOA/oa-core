@@ -15,7 +15,8 @@ import java.util.HashSet;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
-import com.viaoa.ds.OADataSource;
+
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;

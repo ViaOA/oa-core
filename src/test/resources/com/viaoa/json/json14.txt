@@ -5,12 +5,12 @@
   {
     "number": "2"
   },
-  {},
-  {},
+  null,
+  null,
   {
     "number": "755"
   },
-  {},
-  {},
-  {}
+  null,
+  null,
+  null
 ]

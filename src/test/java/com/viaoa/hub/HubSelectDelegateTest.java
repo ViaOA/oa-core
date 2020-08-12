@@ -3,9 +3,9 @@ package com.viaoa.hub;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import com.viaoa.OAUnitTest;
-import com.viaoa.ds.OADataSource;
-import com.viaoa.ds.OADataSourceMock;
-import com.viaoa.ds.OASelect;
+import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.OADataSourceMock;
+import com.viaoa.datasource.OASelect;
 
 import test.xice.tsam.model.oa.*;
 

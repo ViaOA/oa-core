@@ -10,6 +10,11 @@ import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
+/**
+ * Represents a json object.
+ *
+ * @author vvia
+ */
 public class OAJsonObjectNode extends OAJsonRootNode {
 	private Map<String, OAJsonNode> map = new HashMap<>();
 	private ArrayList<String> al = new ArrayList<>();

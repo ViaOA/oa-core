@@ -18,7 +18,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 
 import com.viaoa.annotation.OAClass;
-import com.viaoa.ds.OADataSource;
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.*;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.*;

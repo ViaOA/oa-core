@@ -34,10 +34,10 @@ import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.annotation.OATriggerMethod;
-import com.viaoa.ds.jdbc.db.Column;
-import com.viaoa.ds.jdbc.db.Database;
-import com.viaoa.ds.jdbc.db.Index;
-import com.viaoa.ds.jdbc.db.Table;
+import com.viaoa.datasource.jdbc.db.Column;
+import com.viaoa.datasource.jdbc.db.Database;
+import com.viaoa.datasource.jdbc.db.Index;
+import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.util.OAArray;
@@ -1143,8 +1143,8 @@ public class OAAnnotationDelegate {
 		 * (String fn : fnames) { System.out.println("oi&ds ==>"+fn); Class c = Class.forName("com.viaoa.scheduler.oa." + fn); if
 		 * (c.getAnnotation(OATable.class) == null) continue; OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(c); del.verify(oi);
 		 * del.verify(c, database); } // Create database database = new Database(); Table table = new
-		 * Table("NextNumber",com.viaoa.ds.autonumber.NextNumber.class); // ** Used by all OADataSource Database // NextNumber COLUMNS
-		 * Column[] columns = new Column[2]; columns[0] = new Column("nextNumberId","nextNumberId", Types.VARCHAR, 75);
+		 * Table("NextNumber",com.viaoa.datasource.autonumber.NextNumber.class); // ** Used by all OADataSource Database // NextNumber
+		 * COLUMNS Column[] columns = new Column[2]; columns[0] = new Column("nextNumberId","nextNumberId", Types.VARCHAR, 75);
 		 * columns[0].primaryKey = true; columns[1] = new Column("nextNumber","nextNumber", Types.INTEGER); table.setColumns(columns);
 		 * database.addTable(table); for (String fn : fnames) { System.out.println("create columns ==>"+fn); Class c =
 		 * Class.forName("com.viaoa.scheduler.oa." + fn); if (c.getAnnotation(OATable.class) == null) continue; del.createColumns(database,

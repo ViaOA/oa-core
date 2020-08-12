@@ -17,26 +17,33 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Used to define dependent property paths for OAObjectEditQuery.enabled and visible
- *  
- * @author vvia
+ * Used to define OAObject callbacks, and dependent property paths for OAObjectEditQuery.enabled and visible
+ *
  * @see com.viaoa.object.OAObjectEditQuery
+ * @author vvia
  */
 @Documented
-@Target( {ElementType.TYPE, ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME) 
+@Target({ ElementType.TYPE, ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
 public @interface OAEditQuery {
-    String enabledProperty() default "";
-    boolean enabledValue() default true;
-    String visibleProperty() default "";
-    boolean visibleValue() default true;
-    
-    String contextEnabledProperty() default "";
-    boolean contextEnabledValue() default true;
-    String contextVisibleProperty() default "";
-    boolean contextVisibleValue() default true;
+	String enabledProperty() default "";
 
-    // any properties that affect visiblity, enabled, or rendering
-    String[] viewDependentProperties() default {};
-    String[] contextDependentProperties() default {};
+	boolean enabledValue() default true;
+
+	String visibleProperty() default "";
+
+	boolean visibleValue() default true;
+
+	String contextEnabledProperty() default "";
+
+	boolean contextEnabledValue() default true;
+
+	String contextVisibleProperty() default "";
+
+	boolean contextVisibleValue() default true;
+
+	// any properties that affect visiblity, enabled, or rendering
+	String[] viewDependentProperties() default {};
+
+	String[] contextDependentProperties() default {};
 }

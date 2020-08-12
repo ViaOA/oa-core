@@ -6,7 +6,7 @@ import test.xice.tsam.model.oa.*;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.object.OAObject;
-import com.viaoa.remote.multiplexer.info.RequestInfo;
+import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.sync.remote.RemoteTestInterface2;
 import com.viaoa.util.OALogUtil;
 

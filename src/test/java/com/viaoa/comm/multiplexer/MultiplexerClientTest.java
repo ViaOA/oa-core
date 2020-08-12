@@ -7,7 +7,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.viaoa.OAUnitTest;
-import com.viaoa.comm.multiplexer.MultiplexerClient;
+import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.object.OAObject;
 
 public class MultiplexerClientTest extends OAUnitTest {
@@ -15,7 +15,7 @@ public class MultiplexerClientTest extends OAUnitTest {
     private AtomicInteger aiRunnngCount = new AtomicInteger();
     
     public void test(int ... msgSizes) throws Exception {
-        final MultiplexerClient mc = new MultiplexerClient("localhost", 1101);
+        final OAMultiplexerClient mc = new OAMultiplexerClient("localhost", 1101);
         mc.start();
         OAObject.setDebugMode(true);
         
@@ -52,7 +52,7 @@ public class MultiplexerClientTest extends OAUnitTest {
         return aiRunnngCount.get();        
     }
     
-    public void _test(final int id, final MultiplexerClient mc, final int msgSize) throws Exception {
+    public void _test(final int id, final OAMultiplexerClient mc, final int msgSize) throws Exception {
         final Socket socket = mc.createSocket("test");
         
         InputStream is = socket.getInputStream();

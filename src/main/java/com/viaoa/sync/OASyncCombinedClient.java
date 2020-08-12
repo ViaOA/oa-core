@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.ds.OADataSource;
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -68,7 +68,7 @@ public class OASyncCombinedClient {
     private OASyncClient syncClient;
 
     // mapping between the object on each server and the combined server
-    private ConcurrentHashMap<RemoteMultiplexerClient, ClientSession> hmClientSession = new ConcurrentHashMap<RemoteMultiplexerClient, ClientSession>();
+    private ConcurrentHashMap<OARemoteMultiplexerClient, ClientSession> hmClientSession = new ConcurrentHashMap<OARemoteMultiplexerClient, ClientSession>();
     
     private class ClientSession {
         OASyncClient syncClient;
@@ -112,7 +112,7 @@ public class OASyncCombinedClient {
      * Find the client that is the source for the object on the combinedServer.
      */
     private ClientSession getClientSession(Class c, OAObjectKey okServer) {
-        for (Map.Entry<RemoteMultiplexerClient, ClientSession> me : hmClientSession.entrySet()) { 
+        for (Map.Entry<OARemoteMultiplexerClient, ClientSession> me : hmClientSession.entrySet()) { 
             Mapper m = me.getValue().hmClassToMapper.get(c);
             if (m == null) continue;
             if (m.hmServerToClient.get(okServer) != null) return me.getValue(); 
@@ -472,7 +472,7 @@ public class OASyncCombinedClient {
             }
         };
 
-        RemoteMultiplexerClient rmc = sc.getRemoteMultiplexerClient();
+        OARemoteMultiplexerClient rmc = sc.getRemoteMultiplexerClient();
         ClientSession session = new ClientSession();
         session.syncClient = sc;
         hmClientSession.put(rmc, session);
@@ -482,7 +482,7 @@ public class OASyncCombinedClient {
     
     
     public OASyncClient getCurrentThreadSyncClient() {
-        RemoteMultiplexerClient rmc = null;//OAThreadLocalDelegate.getRemoteMultiplexerClient();
+        OARemoteMultiplexerClient rmc = null;//OAThreadLocalDelegate.getRemoteMultiplexerClient();
         if (rmc == null) {
             return null;
         }
@@ -517,7 +517,7 @@ public class OASyncCombinedClient {
      */
     public OAObject resolveObject(final OAObject objClient) {
 
-        RemoteMultiplexerClient rmc = null;//OAThreadLocalDelegate.getRemoteMultiplexerClient();
+        OARemoteMultiplexerClient rmc = null;//OAThreadLocalDelegate.getRemoteMultiplexerClient();
         
         if (rmc == null || rmc == syncClient.getRemoteMultiplexerClient()) {
             //qqqqqqqqqqq from Server to Client(s)  - there might not be any clients
@@ -588,7 +588,7 @@ public class OASyncCombinedClient {
     // get the key that was created for the combined server
     public OAObjectKey getClientToServerKey(final Class c, final OAObjectKey keyClient) {
         
-        RemoteMultiplexerClient rmc = null;//OAThreadLocalDelegate.getRemoteMultiplexerClient();
+        OARemoteMultiplexerClient rmc = null;//OAThreadLocalDelegate.getRemoteMultiplexerClient();
         
         if (rmc == null || rmc == syncClient.getRemoteMultiplexerClient()) {
             //qqqqqqqqqqq from Server to Client(s)  - there might not be any clients

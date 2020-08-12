@@ -1,7 +1,7 @@
 {
   "company": {
     "customers": [
-      {},
+      null,
       {
         "name": "ABC Company"
       }

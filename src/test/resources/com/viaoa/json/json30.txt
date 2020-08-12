@@ -1,0 +1,19 @@
+[
+  {
+    "number": "1"
+  },
+  "justAstring",
+  {
+    "code": 3333
+  },
+  {
+    "date": "2020-02-23"
+  },
+  {
+    "number": "755",
+    "datetime": "2020-02-23T09:30:45"
+  },
+  null,
+  null,
+  null
+]

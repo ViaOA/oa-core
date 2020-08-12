@@ -14,14 +14,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.*;
 
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
 import com.viaoa.sync.*;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
-import com.viaoa.ds.OASelect;
+import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.*;
+import com.viaoa.remote.OARemoteThreadDelegate;
 
 public class OAObjectCSDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectCSDelegate.class.getName());

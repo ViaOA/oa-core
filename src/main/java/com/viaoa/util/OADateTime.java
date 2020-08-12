@@ -36,6 +36,9 @@ import java.util.Vector;
     JSON / XML
     	format – ISO 8601
 			2014-03-12T13:37:27+00:00
+			"yyyy-MM-dd'T'HH:mm:ssZ"
+			also...
+			"yyyy-MM-dd'T'HH:mm:sszzz"
 
         yyyy-MM-dd'T'HH:mm:ssX
             Notice the X on the end. It will handle timezones in ISO 8601 standard

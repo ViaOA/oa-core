@@ -8,13 +8,13 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.filter.OAAndFilter;
+import com.viaoa.filter.OAEqualFilter;
+import com.viaoa.filter.OAGreaterFilter;
+import com.viaoa.filter.OALessFilter;
+import com.viaoa.filter.OAOrFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.util.OAFilter;
-import com.viaoa.util.filter.OAAndFilter;
-import com.viaoa.util.filter.OAEqualFilter;
-import com.viaoa.util.filter.OAGreaterFilter;
-import com.viaoa.util.filter.OALessFilter;
-import com.viaoa.util.filter.OAOrFilter;
 
 import test.hifive.HifiveDataGenerator;
 import test.hifive.delegate.ModelDelegate;

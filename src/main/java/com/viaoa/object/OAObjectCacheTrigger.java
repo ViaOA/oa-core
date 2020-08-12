@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 

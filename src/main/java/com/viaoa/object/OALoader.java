@@ -17,7 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.concurrent.OAExecutorService;
-import com.viaoa.ds.OASelect;
+import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 

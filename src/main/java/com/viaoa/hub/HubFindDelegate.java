@@ -12,10 +12,10 @@ package com.viaoa.hub;
 
 import java.util.ArrayList;
 
+import com.viaoa.filter.OALikeFilter;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
 import com.viaoa.util.OACompare;
-import com.viaoa.util.filter.OALikeFilter;
 
 /**
  * Delegate used for the Find methods in Hub.

@@ -5,8 +5,8 @@ import static org.junit.Assert.*;
 
 import java.util.logging.Level;
 import com.viaoa.OAUnitTest;
-import com.viaoa.comm.multiplexer.MultiplexerClient;
-import com.viaoa.ds.cs.OADataSourceClient;
+import com.viaoa.comm.multiplexer.OAMultiplexerClient;
+import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.util.OALogUtil;

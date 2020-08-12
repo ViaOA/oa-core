@@ -19,7 +19,7 @@ import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.process.OAChangeRefresher;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 

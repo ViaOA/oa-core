@@ -22,7 +22,7 @@ import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.hub.HubShareDelegate;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.undo.OAUndoManager;
@@ -190,7 +190,7 @@ public class OAObjectEventDelegate {
 			// 20200728
 			if (!bIsLoading && propInfo != null && propInfo.getIsSubmit() && newObj != null) {
 				if (OAConv.toBoolean(newObj)) {
-					OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyAfterObjectLoad(oaObj);
+					OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowSubmitEditQuery(oaObj);
 					if (!eq.getAllowed()) {
 						throw new RuntimeException("submit failed, Class="
 								+ oaObj.getClass().getSimpleName() + ", message=" + eq.getResponse(), eq.getThrowable());
@@ -231,7 +231,7 @@ public class OAObjectEventDelegate {
 					    }
 					};
 					OADataSource ds = OADataSource.getDataSource(oaObj.getClass(), filter);
-
+					
 					if (ds != null && (!(ds instanceof OADataSourceObjectCache))) {
 					    Iterator it = ds.select(oaObj.getClass(), propertyU+" = ?", new Object[] {newObj}, null, null, null, null, 2, filter, false);
 					    try {
@@ -417,8 +417,8 @@ public class OAObjectEventDelegate {
 			    newx = "byte[" + ((byte[])objNew).length +"]";
 			}
 			else newx = objNew;
-
-
+			
+			
 			String s = String.format("Change, class=%s, id=%s, property=%s, oldValue=%s, newVaue=%s",
 			        OAString.getClassName(oaObj.getClass()),
 			        key.toString(),
@@ -568,7 +568,7 @@ public class OAObjectEventDelegate {
 		}
 
 		/* 20101218 replaced by HubListenerTree
-
+		
 		// Check to see if a Calculated property is changed.
 		/ * how do properties from other link object notify this objects calc objects?
 		Answer: when you add a HubListener to Hub, it will create detail hub and
@@ -729,7 +729,7 @@ public class OAObjectEventDelegate {
 		    ex:  Section.setCatalog(catalog)  or  Section.setParentSection(section)
 		    This: "Section"
 		    Changed Prop: "Catalog" or "ParentSection"
-
+		
 		    linkInfo: from Section -> Catalog or ParentSection
 		    toLinkInfo: =  from  Catalog or ParentSection -> Sections
 		    liRecursive = "ParentSection"

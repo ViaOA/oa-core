@@ -78,8 +78,8 @@ public class OAObjectEditQuery {
 		AllowDelete(true, true),
 		AllowSave(false, false), // dont check parent(s) or if enabled.  Need to be able to save a disabled object
 		AllowCopy(false),
+		AllowSubmit(false, false), // called to see if object is populated with correct values
 
-		VerifyAfterObjectLoad(false, false),
 		VerifyPropertyChange(true, true), // use: value to get new value, name, response, throwable - set allowEnablede=false, or throwable!=null to cancel
 		VerifyAdd(true, true), // use: value to get added object, allowAdd, throwable - set allowed=false, or throwable!=null to cancel
 		VerifyRemove(true, true), // use: value to get removed object, allowRemove, throwable - set allowRemove=false, or throwable!=null to cancel

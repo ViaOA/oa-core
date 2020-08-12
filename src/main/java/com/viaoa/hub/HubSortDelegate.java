@@ -14,7 +14,7 @@ import java.io.Serializable;
 import java.util.*;
 
 import com.viaoa.object.*;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.util.OAComparator;
 import com.viaoa.util.OAString;
 

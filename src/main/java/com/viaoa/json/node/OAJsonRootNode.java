@@ -6,6 +6,14 @@ import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
+/**
+ * "Top" node when loading JSON. Will be either an Array or Object node.<br>
+ * Has methods to get and set using property and property paths.
+ * <p>
+ * Property paths are dot separated, and allow for array indexing (ex: "customer.orders[1].date")
+ *
+ * @author vvia
+ */
 public abstract class OAJsonRootNode extends OAJsonNode {
 
 	public void set(final String propertyPath, String value) {
@@ -279,22 +287,23 @@ public abstract class OAJsonRootNode extends OAJsonNode {
 				}
 				// pad array
 				for (int j = arrayNode.getArray().size(); j <= pos; j++) {
-					arrayNode.getArray().add(new OAJsonObjectNode());
+					arrayNode.getArray().add(new OAJsonNullNode());
 				}
 
 				if (bIsLastToken) {
-					if (!(newJsonNode instanceof OAJsonObjectNode)) {
-						throw new RuntimeException(
-								"cant setNode in array, newNode must be an objectNode, propertyPath=" + propertyPath);
-					}
-					arrayNode.getArray().set(pos, (OAJsonObjectNode) newJsonNode);
+					arrayNode.getArray().set(pos, newJsonNode);
 				} else {
 					nodex = arrayNode.getArray().get(pos);
+					if (nodex instanceof OAJsonNullNode) {
+						// change out the null to allow for newValue
+						nodex = new OAJsonObjectNode();
+						arrayNode.getArray().set(pos, nodex);
+					}
 				}
 			} else {
 				if (!(node instanceof OAJsonObjectNode)) {
 					throw new RuntimeException(
-							"cant setNode, node must be an objectNode, propertyPath=" + propertyPath);
+							"cant setNode, node must be objectNode, propertyPath=" + propertyPath);
 				}
 				nodex = ((OAJsonObjectNode) node).get(tok);
 				if (nodex == null) {
@@ -452,7 +461,7 @@ public abstract class OAJsonRootNode extends OAJsonNode {
 				}
 				// pad array
 				for (int j = arrayNode.getArray().size(); j <= pos; j++) {
-					arrayNode.getArray().add(new OAJsonObjectNode());
+					arrayNode.getArray().add(new OAJsonNullNode());
 				}
 
 				nodex = arrayNode.getArray().get(pos);
@@ -481,13 +490,6 @@ public abstract class OAJsonRootNode extends OAJsonNode {
 		}
 		OAJsonArrayNode arrayNode = (OAJsonArrayNode) node;
 		arrayNode.insert(index, newJsonNode);
-	}
-
-	/**
-	 * Add an object to the root array.
-	 */
-	public void add(OAJsonObjectNode newJsonNode) {
-		add("", newJsonNode);
 	}
 
 	/**
@@ -550,7 +552,7 @@ public abstract class OAJsonRootNode extends OAJsonNode {
 				}
 				// pad array
 				for (int j = arrayNode.getArray().size(); j <= pos; j++) {
-					arrayNode.getArray().add(new OAJsonObjectNode());
+					arrayNode.getArray().add(new OAJsonNullNode());
 				}
 
 				nodex = arrayNode.getArray().get(pos);

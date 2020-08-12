@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.*;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAArray;

@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 import javax.swing.undo.*;
 
 import com.viaoa.object.*;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.*;
 
 

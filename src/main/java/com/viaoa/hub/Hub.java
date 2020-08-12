@@ -24,8 +24,8 @@ import java.util.ListIterator;
 import java.util.Vector;
 import java.util.stream.Stream;
 
-import com.viaoa.ds.OADataSource;
-import com.viaoa.ds.OASelect;
+import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.OASelect;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;

@@ -9,19 +9,21 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.comm.multiplexer.MultiplexerClient;
-import com.viaoa.comm.multiplexer.MultiplexerServer;
+import com.viaoa.comm.multiplexer.OAMultiplexerClient;
+import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
-import com.viaoa.remote.multiplexer.info.RequestInfo;
+import com.viaoa.remote.annotation.OARemoteMethod;
+import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
 import com.viaoa.remote.multiplexer.remote.*;  // test package only
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
 public class OARemoteThreadDelegateTest extends OAUnitTest {
-    private MultiplexerServer multiplexerServer;
-    private RemoteMultiplexerServer remoteMultiplexerServer; 
+    private OAMultiplexerServer multiplexerServer;
+    private OARemoteMultiplexerServer remoteMultiplexerServer; 
     private final AtomicInteger aiRemoteCount = new AtomicInteger();
 
     public final int port = 1101;
@@ -49,8 +51,8 @@ public class OARemoteThreadDelegateTest extends OAUnitTest {
         
         System.out.println("Before, calling setup");
         // setup server
-        multiplexerServer = new MultiplexerServer(port);        
-        remoteMultiplexerServer = new RemoteMultiplexerServer(multiplexerServer);
+        multiplexerServer = new OAMultiplexerServer(port);        
+        remoteMultiplexerServer = new OARemoteMultiplexerServer(multiplexerServer);
     
         RemoteServerInterface remoteServer = new RemoteServerInterface() {
             @Override
@@ -339,15 +341,15 @@ public class OARemoteThreadDelegateTest extends OAUnitTest {
         volatile RemoteClientInterface remoteClientInterface, remoteClientInterfaceNoQ;
 
         volatile RemoteClientInterface remoteClient, remoteClientNoQ;
-        MultiplexerClient multiplexerClient;
-        RemoteMultiplexerClient remoteMultiplexerClient;
+        OAMultiplexerClient multiplexerClient;
+        OARemoteMultiplexerClient remoteMultiplexerClient;
         
         public TestClient(final int id) {
             this.id = id;
         }
         public void run() throws Exception {
-            multiplexerClient = new MultiplexerClient("localhost", port);
-            remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient);
+            multiplexerClient = new OAMultiplexerClient("localhost", port);
+            remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient);
             multiplexerClient.start();
             
             // System.out.println("TestClient, id="+this.id+""+", Thread="+Thread.currentThread().getName()+", connectionId="+multiplexerClient.getConnectionId());                

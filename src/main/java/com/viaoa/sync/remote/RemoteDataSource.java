@@ -16,15 +16,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import com.viaoa.ds.OADataSource;
-import com.viaoa.ds.cs.OADataSourceClient;
+import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.util.OAFilter;
 
 /**

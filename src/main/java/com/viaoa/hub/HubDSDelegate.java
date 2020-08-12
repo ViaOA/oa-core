@@ -10,7 +10,7 @@
 */
 package com.viaoa.hub;
 
-import com.viaoa.ds.OADataSource;
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfoDelegate;

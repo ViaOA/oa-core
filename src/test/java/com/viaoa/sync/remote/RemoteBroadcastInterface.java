@@ -3,7 +3,8 @@ package com.viaoa.sync.remote;
 
 import test.xice.tsam.model.oa.Server;
 import test.xice.tsam.model.oa.Site;
-import com.viaoa.remote.multiplexer.annotation.*;
+
+import com.viaoa.remote.annotation.*;
 
 import test.xice.tsam.model.oa.*;
 

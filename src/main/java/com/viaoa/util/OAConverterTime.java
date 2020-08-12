@@ -10,8 +10,8 @@
 */
 package com.viaoa.util;
 
+import com.viaoa.converter.OAConverterInterface;
 import com.viaoa.util.*;
-import com.viaoa.util.converter.OAConverterInterface;
 
 import java.util.*;
 import java.sql.*;

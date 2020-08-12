@@ -10,8 +10,8 @@
 */
 package com.viaoa.sync.remote;
 
-import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
-import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
+import com.viaoa.remote.annotation.OARemoteInterface;
+import com.viaoa.remote.annotation.OARemoteMethod;
 
 @OARemoteInterface()
 public interface RemoteClientCallbackInterface {

@@ -17,6 +17,8 @@ import java.util.logging.*;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.util.*;
+import com.viaoa.xml.OAXMLReader;
+import com.viaoa.xml.OAXMLWriter;
 
 public class OAObjectLogDelegate {
     private static Logger LOG = Logger.getLogger(OAObjectLogDelegate.class.getName());

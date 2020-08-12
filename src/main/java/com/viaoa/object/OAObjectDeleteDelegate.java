@@ -13,7 +13,7 @@ package com.viaoa.object;
 import java.util.List;
 import java.util.logging.*;
 
-import com.viaoa.ds.OADataSource;
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubAddRemoveDelegate;
 import com.viaoa.hub.HubCSDelegate;

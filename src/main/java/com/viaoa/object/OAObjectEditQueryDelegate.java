@@ -128,25 +128,24 @@ public class OAObjectEditQueryDelegate {
 		return getVerifySaveEditQuery(obj, checkType).getAllowed();
 	}
 
-	//qqqqqqqqqqqqqqqqqqqqqqqqq
 	/**
-	 * Call oaobject class callback with type=VerifyAfterObjectLoad, and then calls each prop, link with type=VerifyPropertyChange
+	 * Call oaobject class callback with type=AllowSubmit, and then calls each prop, owned lins
 	 *
 	 * @param obj
 	 * @return
 	 */
-	public static OAObjectEditQuery getVerifyAfterObjectLoad(OAObject obj) {
+	public static OAObjectEditQuery getAllowSubmitEditQuery(OAObject obj) {
 		if (obj == null) {
 			return null;
 		}
 
-		OAObjectEditQuery em = new OAObjectEditQuery(Type.VerifyAfterObjectLoad);
-		getVerifyAfterObjectLoadEditQuery(em, obj, new OACascade());
+		OAObjectEditQuery em = new OAObjectEditQuery(Type.AllowSubmit);
+		_getAllowSubmit(em, obj, new OACascade());
 
 		return em;
 	}
 
-	private static void getVerifyAfterObjectLoadEditQuery(final OAObjectEditQuery em, final OAObject obj, final OACascade cascade) {
+	private static void _getAllowSubmit(final OAObjectEditQuery em, final OAObject obj, final OACascade cascade) {
 		if (em == null || obj == null) {
 			return;
 		}
@@ -202,7 +201,7 @@ public class OAObjectEditQueryDelegate {
 					String s = li.getDisplayName() + " is required";
 					em.setResponse(s);
 				} else if (li.getOwner()) {
-					getVerifyAfterObjectLoadEditQuery(em, (OAObject) li.getValue(obj), cascade);
+					_getAllowSubmit(em, (OAObject) li.getValue(obj), cascade);
 					em.setObject(obj);
 				}
 				callEditQueryMethod(em, li.getName(), em);
@@ -210,7 +209,7 @@ public class OAObjectEditQueryDelegate {
 			} else {
 				if (li.getOwner()) {
 					for (OAObject objx : (Hub<OAObject>) li.getValue(obj)) {
-						getVerifyAfterObjectLoadEditQuery(em, (OAObject) li.getValue(objx), cascade);
+						_getAllowSubmit(em, (OAObject) li.getValue(objx), cascade);
 						em.setObject(obj);
 						if (!em.isAllowed() || em.getThrowable() != null) {
 							break;

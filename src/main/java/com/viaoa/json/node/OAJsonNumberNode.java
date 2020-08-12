@@ -2,6 +2,11 @@ package com.viaoa.json.node;
 
 import com.viaoa.json.io.JsonOutputStream;
 
+/**
+ * Represents a json numeric type.
+ *
+ * @author vvia
+ */
 public class OAJsonNumberNode extends OAJsonNode {
 	Number value;
 
@@ -14,4 +19,7 @@ public class OAJsonNumberNode extends OAJsonNode {
 		jos.append(s);
 	}
 
+	public Number getValue() {
+		return value;
+	}
 }

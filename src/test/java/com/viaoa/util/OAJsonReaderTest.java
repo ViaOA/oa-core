@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.json.OAJsonReader;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectPropertyDelegate;
 

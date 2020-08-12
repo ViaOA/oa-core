@@ -12,6 +12,7 @@ package com.viaoa.hub;
 
 import com.viaoa.object.*;
 import com.viaoa.util.*;
+import com.viaoa.xml.OAXMLWriter;
 
 
 /**

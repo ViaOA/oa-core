@@ -10,7 +10,7 @@
 */
 package com.viaoa.object;
 
-import com.viaoa.ds.OASelect;
+import com.viaoa.datasource.OASelect;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncDelegate;

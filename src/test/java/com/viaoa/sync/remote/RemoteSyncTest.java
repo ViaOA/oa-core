@@ -8,20 +8,20 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import com.viaoa.OAUnitTest;
-import com.viaoa.comm.multiplexer.MultiplexerClient;
-import com.viaoa.comm.multiplexer.MultiplexerServer;
+import com.viaoa.comm.multiplexer.OAMultiplexerClient;
+import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.remote.multiplexer.RemoteMultiplexerClient;
-import com.viaoa.remote.multiplexer.RemoteMultiplexerServer;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.OASyncServer;
 
 //qqqqqqqqqqqq NOT Done qqqqqqqqqqqqqqqqqqqq
 
 public class RemoteSyncTest extends OAUnitTest {
-    private MultiplexerServer multiplexerServer;
-    private RemoteMultiplexerServer remoteMultiplexerServer; 
+    private OAMultiplexerServer multiplexerServer;
+    private OARemoteMultiplexerServer remoteMultiplexerServer; 
     public final int port = 1101;
     final String queueName = "que";
     final int queueSize = 2500;
@@ -31,8 +31,8 @@ public class RemoteSyncTest extends OAUnitTest {
     @Before
     public void setup() throws Exception {
         System.out.println("Before, calling setup");
-        multiplexerServer = new MultiplexerServer(port);        
-        remoteMultiplexerServer = new RemoteMultiplexerServer(multiplexerServer);
+        multiplexerServer = new OAMultiplexerServer(port);        
+        remoteMultiplexerServer = new OARemoteMultiplexerServer(multiplexerServer);
         
         remoteSyncImpl = createRemoteSync();
         
@@ -99,11 +99,11 @@ public class RemoteSyncTest extends OAUnitTest {
     
     @Test
     public void test() throws Exception {
-        MultiplexerClient multiplexerClient;
-        RemoteMultiplexerClient remoteMultiplexerClient;
+        OAMultiplexerClient multiplexerClient;
+        OARemoteMultiplexerClient remoteMultiplexerClient;
         
-        multiplexerClient = new MultiplexerClient("localhost", port);
-        remoteMultiplexerClient = new RemoteMultiplexerClient(multiplexerClient);
+        multiplexerClient = new OAMultiplexerClient("localhost", port);
+        remoteMultiplexerClient = new OARemoteMultiplexerClient(multiplexerClient);
         multiplexerClient.start();
 
         RemoteSyncInterface remoteSyncImpl = createRemoteSync();

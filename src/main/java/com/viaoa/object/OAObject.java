@@ -25,15 +25,16 @@ import com.viaoa.context.OAContext;
 import com.viaoa.context.OAUserAccess;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
-import com.viaoa.remote.multiplexer.OARemoteThreadDelegate;
+import com.viaoa.jaxb.OAJaxb;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteServerInterface;
+import com.viaoa.util.OACompare;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAJaxb;
 import com.viaoa.util.OALogger;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OAString;
@@ -124,7 +125,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-
+		
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -422,8 +423,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 	}
 
 	//qqqqqqqqqqqqqqqqqqqqqqqqq
-	public OAObjectEditQuery getVerifyAfterObjectLoad() {
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyAfterObjectLoad(this);
+	public OAObjectEditQuery getAllowSubmit() {
+		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowSubmitEditQuery(this);
 		return eq;
 	}
 
@@ -1646,4 +1647,47 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return b;
 	}
 
+	public boolean compareAndSwap(String property, Object oldValue, Object newValue) {
+		compareAndSwap(property, oldValue, newValue, true);
+		return true;
+	}
+
+	/**
+	 * Use a compare and swap (CAS) to replace (set) a new value for a property.
+	 * <p>
+	 * Note: a distributed lock will be set on this object while the compare and set is done.
+	 *
+	 * @param property            name of property to change
+	 * @param oldValue            expected value of the property current value that must match for the new value to be set.
+	 * @param newValue            new value to set if the oldValue and current value match.
+	 * @param bUseDistributedLock if true then use a distributed lock, else use local lock only.
+	 * @return true if the CAS was completed, else false if the oldValue did not match the current value.
+	 */
+	public boolean compareAndSwap(String property, Object oldValue, Object newValue, final boolean bUseDistributedLock) {
+		if (OAString.isEmpty(property)) {
+			return false;
+		}
+
+		if (bUseDistributedLock) {
+			lock();
+			try {
+				Object val = getProperty(property);
+				if (OACompare.compare(val, oldValue) != 0) {
+					return false;
+				}
+				setProperty(property, newValue);
+			} finally {
+				unlock();
+			}
+		} else {
+			synchronized (this) {
+				Object val = getProperty(property);
+				if (OACompare.compare(val, oldValue) != 0) {
+					return false;
+				}
+				setProperty(property, newValue);
+			}
+		}
+		return true;
+	}
 }
