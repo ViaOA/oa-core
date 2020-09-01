@@ -356,13 +356,17 @@ public class OAHttpJsonClient {
 		map.put("productLineSubcode", "123");
 		map.put("item", "R134A-30");
 		map.put("storeId", "12345");
-		map.put("zipcode", "44260");
-		map.put("state", "GA");
-		map.put("county", "COBB");
+		map.put("zipcode", "20108");
+		map.put("state", "VA");
+		map.put("county", "FAIRFAX");
+		map.put("stocking", "true");
+		/*
+				s = client.get("http://localhost:18080/retail-products/itemRestriction", map);
+		
+				s = client.post("http://localhost:18080/retail-products/iseries/itemRestriction/get", map);
+		*/
 
-		s = client.get("http://localhost:18080/retail-products/itemRestriction", map);
-
-		s = client.post("http://localhost:18080/retail-products/iseries/itemRestriction/get", map);
+		s = client.post("http://localhost:8081/retail-products/iseries/items/getSalesRestrictedItemsByLocation", map);
 
 		//qqqqqqqqq put json into a Map qqqqqqqqqqq
 
@@ -375,7 +379,7 @@ public class OAHttpJsonClient {
 		json = json.replace("&", ",\n");
 		json = json.replace('=', ':');
 		json = json.replace('\'', '\"');
-		
+
 		s = OAHttpClient
 				.httpPost("http://localhost:8081/retail-products/iseries/itemRestriction/getRestriction", json);
 		*/

@@ -16,6 +16,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.viaoa.object.OAObjectEditQuery;
+
 /**
  * Used to define OAObject callbacks, and dependent property paths for OAObjectEditQuery.enabled and visible
  *
@@ -46,4 +48,7 @@ public @interface OAEditQuery {
 	String[] viewDependentProperties() default {};
 
 	String[] contextDependentProperties() default {};
+
+	// expected types that the method is expecting and will call ack() method when called.
+	OAObjectEditQuery.Type[] supportedTypes() default {};
 }

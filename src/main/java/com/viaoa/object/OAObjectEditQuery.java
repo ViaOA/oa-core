@@ -58,6 +58,14 @@ public class OAObjectEditQuery {
 	private String response; // used to give message back to caller
 	private Throwable throwable; // used to tell the caller to throw this exception and not to allow further processing.
 
+	private String propertyName;
+	private Object oldValue;
+
+	/**
+	 * Flag to know that the called code has Ack'd the call.
+	 */
+	private boolean acknownledged;
+
 	/**
 	 * Type of request being made from caller object. All can use setResponse to include a return message/
 	 */
@@ -167,7 +175,7 @@ public class OAObjectEditQuery {
 	public OAObjectEditQuery(Type type, int checkType) {
 	    this.type = type;
 	    this.checkType = checkType;
-	
+
 	    this.allowed = true;
 	}
 	*/
@@ -207,7 +215,17 @@ public class OAObjectEditQuery {
 		this.object = object;
 	}
 
-	private String propertyName;
+	public void ack() {
+		this.acknownledged = true;
+	}
+
+	public void setAcknownledged(boolean b) {
+		this.acknownledged = b;
+	}
+
+	public boolean getAcknownledged() {
+		return acknownledged;
+	}
 
 	public String getPropertyName() {
 		return propertyName;
@@ -216,8 +234,6 @@ public class OAObjectEditQuery {
 	public void setPropertyName(String s) {
 		this.propertyName = s;
 	}
-
-	private Object oldValue;
 
 	public void setOldValue(Object obj) {
 		oldValue = obj;
