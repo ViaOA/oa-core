@@ -109,7 +109,7 @@ public class SalesOrderNoteModel extends OAObjectModel {
         modelSalesOrder.setCreateUI(li == null || !SalesOrderNote.P_SalesOrder.equals(li.getName()) );
         modelSalesOrder.setViewOnly(getViewOnly());
         // call SalesOrderNote.onEditQuerySalesOrder(SalesOrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrderNote.class, SalesOrderNote.P_SalesOrder, modelSalesOrder);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrderNote.class, SalesOrderNote.P_SalesOrder, modelSalesOrder);
     
         return modelSalesOrder;
     }
@@ -130,7 +130,7 @@ public class SalesOrderNoteModel extends OAObjectModel {
         modelUser.setAllowGotoEdit(false);
         modelUser.setViewOnly(true);
         // call SalesOrderNote.onEditQueryUser(UserModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrderNote.class, SalesOrderNote.P_User, modelUser);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrderNote.class, SalesOrderNote.P_User, modelUser);
     
         return modelUser;
     }
@@ -161,7 +161,7 @@ public class SalesOrderNoteModel extends OAObjectModel {
         modelImageStores.setAllowCut(false);
         modelImageStores.setAllowPaste(false);
         // call SalesOrderNote.onEditQueryImageStores(ImageStoreModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrderNote.class, SalesOrderNote.P_ImageStores, modelImageStores);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrderNote.class, SalesOrderNote.P_ImageStores, modelImageStores);
     
         return modelImageStores;
     }

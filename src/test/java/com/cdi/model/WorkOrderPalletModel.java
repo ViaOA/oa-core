@@ -13,7 +13,7 @@ import com.viaoa.hub.HubCopy;
 import com.viaoa.hub.HubDelegate;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectEditQueryDelegate;
+import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class WorkOrderPalletModel extends OAObjectModel {
@@ -111,7 +111,7 @@ public class WorkOrderPalletModel extends OAObjectModel {
 		modelPallet.setAllowGotoEdit(false);
 		modelPallet.setViewOnly(getViewOnly());
 		// call WorkOrderPallet.onEditQueryPallet(PalletModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WorkOrderPallet.class, WorkOrderPallet.P_Pallet, modelPallet);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WorkOrderPallet.class, WorkOrderPallet.P_Pallet, modelPallet);
 
 		return modelPallet;
 	}
@@ -137,7 +137,7 @@ public class WorkOrderPalletModel extends OAObjectModel {
 		modelWorkOrder.setCreateUI(li == null || !WorkOrderPallet.P_WorkOrder.equals(li.getName()));
 		modelWorkOrder.setViewOnly(getViewOnly());
 		// call WorkOrderPallet.onEditQueryWorkOrder(WorkOrderModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WorkOrderPallet.class, WorkOrderPallet.P_WorkOrder, modelWorkOrder);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WorkOrderPallet.class, WorkOrderPallet.P_WorkOrder, modelWorkOrder);
 
 		return modelWorkOrder;
 	}

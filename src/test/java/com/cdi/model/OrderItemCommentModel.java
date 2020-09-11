@@ -94,7 +94,7 @@ public class OrderItemCommentModel extends OAObjectModel {
         modelOrderItem.setCreateUI(li == null || !OrderItemComment.P_OrderItem.equals(li.getName()) );
         modelOrderItem.setViewOnly(getViewOnly());
         // call OrderItemComment.onEditQueryOrderItem(OrderItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(OrderItemComment.class, OrderItemComment.P_OrderItem, modelOrderItem);
+        OAObjectCallbackDelegate.onObjectCallbackModel(OrderItemComment.class, OrderItemComment.P_OrderItem, modelOrderItem);
     
         return modelOrderItem;
     }

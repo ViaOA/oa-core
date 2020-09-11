@@ -109,7 +109,7 @@ public class SalesCustomerModel extends OAObjectModel {
         modelCustomer.setAllowGotoEdit(true);
         modelCustomer.setViewOnly(true);
         // call SalesCustomer.onEditQueryCustomer(CustomerModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesCustomer.class, SalesCustomer.P_Customer, modelCustomer);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesCustomer.class, SalesCustomer.P_Customer, modelCustomer);
     
         return modelCustomer;
     }
@@ -132,7 +132,7 @@ public class SalesCustomerModel extends OAObjectModel {
         modelSalesOrder.setCreateUI(li == null || !SalesCustomer.P_SalesOrder.equals(li.getName()) );
         modelSalesOrder.setViewOnly(getViewOnly());
         // call SalesCustomer.onEditQuerySalesOrder(SalesOrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesCustomer.class, SalesCustomer.P_SalesOrder, modelSalesOrder);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesCustomer.class, SalesCustomer.P_SalesOrder, modelSalesOrder);
     
         return modelSalesOrder;
     }
@@ -155,7 +155,7 @@ public class SalesCustomerModel extends OAObjectModel {
         modelShipTo.setCreateUI(li == null || !SalesCustomer.P_ShipTo.equals(li.getName()) );
         modelShipTo.setViewOnly(getViewOnly());
         // call SalesCustomer.onEditQueryShipTo(ShipToModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesCustomer.class, SalesCustomer.P_ShipTo, modelShipTo);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesCustomer.class, SalesCustomer.P_ShipTo, modelShipTo);
     
         return modelShipTo;
     }

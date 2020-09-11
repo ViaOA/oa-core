@@ -134,9 +134,9 @@ public class Customer extends OAObject {
         setId(id);
     }
      
-    @OAEditQuery(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcCustomerWriteAccess
+    @OAObjCallback(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcCustomerWriteAccess
     )
-    public void onEditQuery(OAObjectEditQuery em) {
+    public void onEditQuery(OAObjectCallback em) {
     }
     @OAProperty(isUnique = true, displayLength = 6)
     @OAId()
@@ -331,8 +331,8 @@ public class Customer extends OAObject {
         this.currentBalance = newValue;
         firePropertyChange(P_CurrentBalance, old, this.currentBalance);
     }
-    @OAEditQuery(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
-    public void onEditQueryCurrentBalance(OAObjectEditQuery em) {
+    @OAObjCallback(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
+    public void onEditQueryCurrentBalance(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Mtd Costs", decimalPlaces = 2, isCurrency = true, displayLength = 9, isProcessed = true)
@@ -346,8 +346,8 @@ public class Customer extends OAObject {
         this.mtdCosts = newValue;
         firePropertyChange(P_MtdCosts, old, this.mtdCosts);
     }
-    @OAEditQuery(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
-    public void onEditQueryMtdCosts(OAObjectEditQuery em) {
+    @OAObjCallback(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
+    public void onEditQueryMtdCosts(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Ytd Costs", decimalPlaces = 2, isCurrency = true, displayLength = 9, isProcessed = true)
@@ -361,8 +361,8 @@ public class Customer extends OAObject {
         this.ytdCosts = newValue;
         firePropertyChange(P_YtdCosts, old, this.ytdCosts);
     }
-    @OAEditQuery(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
-    public void onEditQueryYtdCosts(OAObjectEditQuery em) {
+    @OAObjCallback(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
+    public void onEditQueryYtdCosts(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Prior Year Cost", decimalPlaces = 2, isCurrency = true, displayLength = 9, columnLength = 10, columnName = "Prior Year", isProcessed = true)
@@ -376,8 +376,8 @@ public class Customer extends OAObject {
         this.priorYearCost = newValue;
         firePropertyChange(P_PriorYearCost, old, this.priorYearCost);
     }
-    @OAEditQuery(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
-    public void onEditQueryPriorYearCost(OAObjectEditQuery em) {
+    @OAObjCallback(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
+    public void onEditQueryPriorYearCost(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Tax Exempt", displayLength = 5, columnLength = 6, columnName = "Tax Ex")

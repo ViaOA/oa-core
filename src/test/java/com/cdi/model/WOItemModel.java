@@ -12,7 +12,7 @@ import com.viaoa.hub.HubCopy;
 import com.viaoa.hub.HubDelegate;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectEditQueryDelegate;
+import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class WOItemModel extends OAObjectModel {
@@ -109,7 +109,7 @@ public class WOItemModel extends OAObjectModel {
 		modelOrderItem.setCreateUI(li == null || !WOItem.P_OrderItem.equals(li.getName()));
 		modelOrderItem.setViewOnly(getViewOnly());
 		// call WOItem.onEditQueryOrderItem(OrderItemModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WOItem.class, WOItem.P_OrderItem, modelOrderItem);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WOItem.class, WOItem.P_OrderItem, modelOrderItem);
 
 		return modelOrderItem;
 	}
@@ -135,7 +135,7 @@ public class WOItemModel extends OAObjectModel {
 		modelWorkOrder.setCreateUI(li == null || !WOItem.P_WorkOrder.equals(li.getName()));
 		modelWorkOrder.setViewOnly(getViewOnly());
 		// call WOItem.onEditQueryWorkOrder(WorkOrderModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WOItem.class, WOItem.P_WorkOrder, modelWorkOrder);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WOItem.class, WOItem.P_WorkOrder, modelWorkOrder);
 
 		return modelWorkOrder;
 	}

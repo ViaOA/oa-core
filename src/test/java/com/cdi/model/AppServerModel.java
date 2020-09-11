@@ -94,7 +94,7 @@ public class AppServerModel extends OAObjectModel {
         modelAppUserLogin.setAllowGotoEdit(true);
         modelAppUserLogin.setViewOnly(getViewOnly());
         // call AppServer.onEditQueryAppUserLogin(AppUserLoginModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(AppServer.class, AppServer.P_AppUserLogin, modelAppUserLogin);
+        OAObjectCallbackDelegate.onObjectCallbackModel(AppServer.class, AppServer.P_AppUserLogin, modelAppUserLogin);
     
         return modelAppUserLogin;
     }

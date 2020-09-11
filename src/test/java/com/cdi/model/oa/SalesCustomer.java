@@ -375,10 +375,10 @@ public class SalesCustomer extends OAObject {
         this.shipTo = newValue;
         firePropertyChange(P_ShipTo, old, this.shipTo);
     }
-    @OAEditQuery(enabledProperty = SalesCustomer.P_SalesOrder+"."+SalesOrder.P_CustomerPickUp, 
+    @OAObjCallback(enabledProperty = SalesCustomer.P_SalesOrder+"."+SalesOrder.P_CustomerPickUp, 
         enabledValue = false
     )
-    public void onEditQueryShipTo(OAObjectEditQuery em) {
+    public void onEditQueryShipTo(OAObjectCallback em) {
     }
      
     @OAMethod(displayName = "Update")
@@ -430,8 +430,8 @@ public class SalesCustomer extends OAObject {
         s = cust.getFaxNumber();
         if (!OAString.isEmpty(s)) setFax(s);
     }
-    @OAEditQuery(enabledProperty = SalesCustomer.P_Customer)
-    public void onEditQueryUpdateSalesCustomer(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = SalesCustomer.P_Customer)
+    public void onEditQueryUpdateSalesCustomer(OAObjectCallback em) {
     }
 
     public void load(ResultSet rs, int id) throws SQLException {

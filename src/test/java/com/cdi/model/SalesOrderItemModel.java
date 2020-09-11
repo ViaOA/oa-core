@@ -125,7 +125,7 @@ public class SalesOrderItemModel extends OAObjectModel {
         modelItem.setAllowGotoEdit(true);
         modelItem.setViewOnly(true);
         // call SalesOrderItem.onEditQueryItem(ItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrderItem.class, SalesOrderItem.P_Item, modelItem);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrderItem.class, SalesOrderItem.P_Item, modelItem);
     
         return modelItem;
     }
@@ -148,7 +148,7 @@ public class SalesOrderItemModel extends OAObjectModel {
         modelSalesOrder.setCreateUI(li == null || !SalesOrderItem.P_SalesOrder.equals(li.getName()) );
         modelSalesOrder.setViewOnly(getViewOnly());
         // call SalesOrderItem.onEditQuerySalesOrder(SalesOrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrderItem.class, SalesOrderItem.P_SalesOrder, modelSalesOrder);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrderItem.class, SalesOrderItem.P_SalesOrder, modelSalesOrder);
     
         return modelSalesOrder;
     }
@@ -169,7 +169,7 @@ public class SalesOrderItemModel extends OAObjectModel {
         modelServiceCode.setAllowGotoEdit(false);
         modelServiceCode.setViewOnly(true);
         // call SalesOrderItem.onEditQueryServiceCode(ServiceCodeModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrderItem.class, SalesOrderItem.P_ServiceCode, modelServiceCode);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrderItem.class, SalesOrderItem.P_ServiceCode, modelServiceCode);
     
         return modelServiceCode;
     }
@@ -200,7 +200,7 @@ public class SalesOrderItemModel extends OAObjectModel {
         modelItemAddOns.setAllowCut(false);
         modelItemAddOns.setAllowPaste(false);
         // call SalesOrderItem.onEditQueryItemAddOns(ItemAddOnModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrderItem.class, SalesOrderItem.P_ItemAddOns, modelItemAddOns);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrderItem.class, SalesOrderItem.P_ItemAddOns, modelItemAddOns);
     
         return modelItemAddOns;
     }

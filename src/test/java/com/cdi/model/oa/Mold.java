@@ -72,9 +72,9 @@ public class Mold extends OAObject {
         setId(id);
     }
      
-    @OAEditQuery(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcItemWriteAccess
+    @OAObjCallback(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcItemWriteAccess
     )
-    public void onEditQuery(OAObjectEditQuery em) {
+    public void onEditQuery(OAObjectCallback em) {
     }
     @OAProperty(isUnique = true, displayLength = 6)
     @OAId()

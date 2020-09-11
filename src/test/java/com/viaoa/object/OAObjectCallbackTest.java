@@ -8,12 +8,12 @@ import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.context.OAContext;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAObjectEditQuery.Type;
+import com.viaoa.object.OAObjectCallback.Type;
 import com.viaoa.util.OADate;
 
 import test.hifive.model.oa.*;
 
-public class OAObjectEditQueryTest extends OAUnitTest {
+public class OAObjectCallbackTest extends OAUnitTest {
 
     @BeforeClass
     public static void beforeAll() {
@@ -42,42 +42,42 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         
         Employee emp = new Employee();
         
-        boolean b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        boolean b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertTrue(b);
         
         emp.setInactiveDate(new OADate());
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertFalse(b);
 
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_AllButProcessed, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_AllButProcessed, null, emp, null);
         assertFalse(b);
 
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_EnabledProperty, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_EnabledProperty, null, emp, null);
         assertFalse(b);
 
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_None, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_None, null, emp, null);
         assertTrue(b);
         
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_Processed, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_Processed, null, emp, null);
         assertTrue(b);
         
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_UserEnabledProperty, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_UserEnabledProperty, null, emp, null);
         assertTrue(b);
 
         emp.setInactiveDate(null);
         
-        emp.TestEditQuery_Class = new OAObjectEditQuery(Type.AllowEnabled);
+        emp.TestEditQuery_Class = new OAObjectCallback(Type.AllowEnabled);
         emp.TestEditQuery_Class.setAllowed(false);
         
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertFalse(b);
 
         emp.TestEditQuery_Class.setAllowed(true);
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertTrue(b);
         
         emp.TestEditQuery_Class = null;
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertTrue(b);
         
         int xx = 4;
@@ -94,10 +94,10 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         emp.setInactiveDate(new OADate());
         EmployeeAward ea = new EmployeeAward();
         
-        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_ALL);
+        OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_ALL);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_CallbackMethod);
+        eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_CallbackMethod);
         assertTrue(eq.getAllowed());
         
         emp.getEmployeeAwards().add(ea);  // this will work, use EQ.checktype=callbackMethod
@@ -115,17 +115,17 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         Employee emp = new Employee();
         EmployeeAward ea = new EmployeeAward();
         
-        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_ALL);
+        OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_ALL);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_CallbackMethod);
+        eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_CallbackMethod);
         assertTrue(eq.getAllowed());
 
         emp.setTopLevelManager(true);
-        eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_ALL);
+        eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_ALL);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_CallbackMethod);
+        eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_CallbackMethod);
         assertTrue(eq.getAllowed());
 
         emp.getEmployeeAwards().add(ea); 
@@ -145,18 +145,18 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         Employee emp = new Employee();
         EmployeeAward ea = new EmployeeAward();
         
-        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_ALL);
+        OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_ALL);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_CallbackMethod);
+        eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_CallbackMethod);
         assertTrue(eq.getAllowed());
 
         user.setAdmin(true);
         
-        eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_ALL);
+        eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_ALL);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_CallbackMethod);
+        eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_CallbackMethod);
         assertTrue(eq.getAllowed());
 
         emp.getEmployeeAwards().add(ea); 
@@ -171,18 +171,18 @@ public class OAObjectEditQueryTest extends OAUnitTest {
 
         Employee emp = new Employee();
         
-        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(null, emp, OAObjectEditQuery.CHECK_ALL);
+        OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(null, emp, OAObjectCallback.CHECK_ALL);
         assertNull(eq);
 
 
-        eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, emp, "firstName", null, "xxx");
+        eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, emp, "firstName", null, "xxx");
         assertTrue(eq.getAllowed());
         
         OAPropertyInfo pi = oi.getPropertyInfo("firstname");
         pi.setEnabledProperty("lastname");
         pi.setEnabledValue(true);
         
-        eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, emp, "firstName", null, "xxx");
+        eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, emp, "firstName", null, "xxx");
         assertFalse(eq.getAllowed());
         
         int x = emp.cntFirstNameCallback;
@@ -191,7 +191,7 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         
         emp.setLastName("x");
         
-        eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, emp, "firstName", null, "xxx");
+        eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, emp, "firstName", null, "xxx");
         assertTrue(eq.getAllowed());
         
         pi.setEnabledProperty(null);
@@ -207,7 +207,7 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         OAPropertyInfo pi = oi.getPropertyInfo("firstname");
         pi.setProcessed(true);
 
-        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, emp, "firstName", null, "xxx");
+        OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, emp, "firstName", null, "xxx");
         assertFalse(eq.getAllowed());
         
         pi.setProcessed(false);
@@ -225,7 +225,7 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         OAPropertyInfo pi = oi.getPropertyInfo("firstname");
         pi.setProcessed(true);
 
-        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, emp, "firstName", null, "xxx");
+        OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, emp, "firstName", null, "xxx");
         assertFalse(eq.getAllowed());
         
         pi.setProcessed(false);
@@ -243,7 +243,7 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         
         assertNotNull(emp.getCreated());
         
-        boolean b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        boolean b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertTrue(b);
 
         assertTrue(emp.isEnabled());
@@ -259,22 +259,22 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         b = emp.getEmployeeAwards().canAdd();
         assertTrue(b);
         
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, "lastName");
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, "lastName");
         assertTrue(b);
         
         emp.setInactiveDate(new OADate());
         assertFalse(emp.isEnabled());
         
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertFalse(b);
         
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, "lastName");
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, "lastName");
         assertFalse(b);
 
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, "EmployeeAwards");
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, "EmployeeAwards");
         assertFalse(b);
 
-        b = OAObjectEditQueryDelegate.getAllowAdd(emp.getEmployeeAwards(), null, OAObjectEditQuery.CHECK_ALL);
+        b = OAObjectCallbackDelegate.getAllowAdd(emp.getEmployeeAwards(), null, OAObjectCallback.CHECK_ALL);
         assertFalse(b);
         
         b = emp.getEmployeeAwards().canAdd();  // only checks callback method
@@ -285,7 +285,7 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         
         b = emp.getAddresses().canAdd(new Address());
         assertTrue(b);
-        b = emp.getAddresses().getAllowRemove(OAObjectEditQuery.CHECK_ALL, null);
+        b = emp.getAddresses().getAllowRemove(OAObjectCallback.CHECK_ALL, null);
         assertTrue(b);
         
         try {
@@ -308,9 +308,9 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         assertFalse(emp.isEnabled(Employee.P_LastName));
         
         assertFalse(emp.isEnabled(Employee.P_Addresses));
-        b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, Employee.P_Addresses);
+        b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, Employee.P_Addresses);
         assertFalse(b);
-        b = OAObjectEditQueryDelegate.getAllowAdd(emp.getAddresses(), null, OAObjectEditQuery.CHECK_ALL);
+        b = OAObjectCallbackDelegate.getAllowAdd(emp.getAddresses(), null, OAObjectCallback.CHECK_ALL);
         assertFalse(b);
         
         try {
@@ -341,7 +341,7 @@ public class OAObjectEditQueryTest extends OAUnitTest {
     public void testClass() throws Exception {
         Employee emp = new Employee();
         assertNotNull(emp.getCreated());
-        boolean b = OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        boolean b = OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertTrue(b);
         
         assertTrue(emp.isEnabled());
@@ -355,7 +355,7 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         assertTrue(emp.isEnabled());
         assertTrue(emp.isVisible());
 
-        emp.TestEditQuery_Class = new OAObjectEditQuery(Type.AllowEnabled);
+        emp.TestEditQuery_Class = new OAObjectCallback(Type.AllowEnabled);
         emp.TestEditQuery_Class.setAllowed(false);
         assertFalse(emp.isEnabled());
 
@@ -363,7 +363,7 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         assertTrue(emp.isEnabled());
         
         assertTrue(emp.isVisible());
-        emp.TestEditQuery_Class = new OAObjectEditQuery(Type.AllowVisible);
+        emp.TestEditQuery_Class = new OAObjectCallback(Type.AllowVisible);
         emp.TestEditQuery_Class.setAllowed(false);
         assertFalse(emp.isVisible());
 
@@ -371,7 +371,7 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         
         assertTrue(emp.getAddresses().canAdd());
         
-        emp.TestEditQuery_Class = new OAObjectEditQuery(Type.AllowEnabled);
+        emp.TestEditQuery_Class = new OAObjectCallback(Type.AllowEnabled);
         emp.TestEditQuery_Class.setAllowed(false);
         assertFalse(emp.isEnabled());
         
@@ -432,21 +432,21 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         Employee emp = new Employee();
         
         assertTrue(emp.getAddresses().canAdd());
-        assertTrue(emp.getAddresses().getAllowRemove(OAObjectEditQuery.CHECK_ALL, null));
+        assertTrue(emp.getAddresses().getAllowRemove(OAObjectCallback.CHECK_ALL, null));
         assertTrue(emp.getAddresses().canAdd());
-        assertTrue(OAObjectEditQueryDelegate.getAllowAdd(emp.getAddresses(), null, OAObjectEditQuery.CHECK_ALL));
-        assertTrue(OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, emp.getAddresses(), null, null));
+        assertTrue(OAObjectCallbackDelegate.getAllowAdd(emp.getAddresses(), null, OAObjectCallback.CHECK_ALL));
+        assertTrue(OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, emp.getAddresses(), null, null));
 
         emp.setCreated(null);
         assertFalse(emp.getAddresses().canAdd());
-        assertFalse(emp.getAddresses().getAllowRemove(OAObjectEditQuery.CHECK_ALL, null));
+        assertFalse(emp.getAddresses().getAllowRemove(OAObjectCallback.CHECK_ALL, null));
         assertFalse(emp.getAddresses().canAdd());
-        assertFalse(OAObjectEditQueryDelegate.getAllowAdd(emp.getAddresses(), null, OAObjectEditQuery.CHECK_ALL));
-        assertFalse(OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, emp.getAddresses(), null, null));
+        assertFalse(OAObjectCallbackDelegate.getAllowAdd(emp.getAddresses(), null, OAObjectCallback.CHECK_ALL));
+        assertFalse(OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, emp.getAddresses(), null, null));
         
         emp.setCreated(new OADate());
         assertTrue(emp.getAddresses().canAdd());
-        assertTrue(emp.getAddresses().getAllowRemove(OAObjectEditQuery.CHECK_ALL, null));
+        assertTrue(emp.getAddresses().getAllowRemove(OAObjectCallback.CHECK_ALL, null));
         assertTrue(emp.getAddresses().canAdd());
         
         Address address = new Address();
@@ -455,10 +455,10 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         emp.setCreated(null);
         emp.setInactiveDate(new OADate());
         assertFalse(emp.getAddresses().canAdd());
-        assertFalse(emp.getAddresses().getAllowRemove(OAObjectEditQuery.CHECK_ALL, null));
+        assertFalse(emp.getAddresses().getAllowRemove(OAObjectCallback.CHECK_ALL, null));
         assertFalse(emp.getAddresses().canAdd());
-        assertFalse(OAObjectEditQueryDelegate.getAllowAdd(emp.getAddresses(), null, OAObjectEditQuery.CHECK_ALL));
-        assertFalse(OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, emp.getAddresses(), null, null));
+        assertFalse(OAObjectCallbackDelegate.getAllowAdd(emp.getAddresses(), null, OAObjectCallback.CHECK_ALL));
+        assertFalse(OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, emp.getAddresses(), null, null));
         
         assertFalse(address.isEnabled());
         assertTrue(address.isVisible());
@@ -487,11 +487,11 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         assertEquals("birthDate", mi.getVisibleProperty());
         
         Employee emp = new Employee();
-        boolean b = OAObjectEditQueryDelegate.getAllowVisible(null, emp, "command");
+        boolean b = OAObjectCallbackDelegate.getAllowVisible(null, emp, "command");
         assertFalse(b);
 
         emp.setBirthDate(new OADate("05/04/99"));
-        b = OAObjectEditQueryDelegate.getAllowVisible(null, emp, "command");
+        b = OAObjectCallbackDelegate.getAllowVisible(null, emp, "command");
         assertTrue(b);
     }   
 **/    
@@ -506,43 +506,43 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         EmployeeAward ea = new EmployeeAward();
         emp.getEmployeeAwards().add(ea);
 
-        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, ea, EmployeeAward.P_ApprovedDate);
+        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
 
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
         oi.setVisibleProperty(Employee.P_InactiveDate);
         oi.setVisibleValue(false);
         
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
         Hub hub = new Hub();
         hub.add(ea);
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(hub, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(hub, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
         
         emp.setInactiveDate(new OADate());
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(hub, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(hub, ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
         
         emp.setInactiveDate(null);
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(hub, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(hub, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
     
         final OAPropertyInfo pi = oi.getPropertyInfo(Employee.P_EmployeeCode);
@@ -550,14 +550,14 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         pi.setVisibleValue(true);
         emp.setSuperApprover(false);
         
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, emp, null);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, emp, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, emp, Employee.P_EmployeeCode);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, emp, Employee.P_EmployeeCode);
         assertFalse(eq.getAllowed());
         
         emp.setSuperApprover(true);
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, emp, Employee.P_EmployeeCode);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, emp, Employee.P_EmployeeCode);
         assertTrue(eq.getAllowed());
         
         OALinkInfo li = oi.getLinkInfo(Employee.P_Location);
@@ -565,10 +565,10 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         li.setVisibleValue(true);
         emp.setSuperApprover(false);
         
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, emp, Employee.P_Location);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, emp, Employee.P_Location);
         assertFalse(eq.getAllowed());
         emp.setSuperApprover(true);
-        eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, emp, Employee.P_Location);
+        eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, emp, Employee.P_Location);
         assertTrue(eq.getAllowed());
     
         li.setVisibleProperty(null);
@@ -591,56 +591,56 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         EmployeeAward ea = new EmployeeAward();
         emp.getEmployeeAwards().add(ea);
         
-        OAObjectEditQuery eq;
+        OAObjectCallback eq;
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
-        assertTrue(eq.getAllowed());
-
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
-        assertTrue(eq.getAllowed());
-        
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
-        assertTrue(eq.getAllowed());
-        
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        assertTrue(eq.getAllowed());
+        
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        assertTrue(eq.getAllowed());
+        
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, null);
+        assertTrue(eq.getAllowed());
+
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
         
         emp.setInactiveDate(new OADate());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, null);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
         
         emp.setInactiveDate(null);
@@ -651,101 +651,101 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         oi.setContextEnabledValue(true);
       
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, null);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
        
         
         // user.admin=true
         user.setAdmin(true);
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, null);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, emp, Employee.P_LastName);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, emp, Employee.P_LastName);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), emp, Employee.P_LastName);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), emp, Employee.P_LastName);
         assertTrue(eq.getAllowed());
         
         Hub hub = new Hub();
         hub.add(emp);
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, hub, emp, Employee.P_LastName);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, hub, emp, Employee.P_LastName);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, hub, null, Employee.P_LastName);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, hub, null, Employee.P_LastName);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertTrue(eq.getAllowed());
         
 
         // emp is inactive
         emp.setInactiveDate(new OADate());
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, null);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
 
         
@@ -755,84 +755,84 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         // none should pass
         oi.setProcessed(true);
         emp.setInactiveDate(new OADate());
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, ea, null);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), null, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
 
         
         // all should pass
         oi.setProcessed(true);
         emp.setInactiveDate(null);
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_AllButProcessed, null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_AllButProcessed, null, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_AllButProcessed, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_AllButProcessed, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_AllButProcessed, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_AllButProcessed, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_AllButProcessed, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_AllButProcessed, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_AllButProcessed, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_AllButProcessed, null, ea, null);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_AllButProcessed, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_AllButProcessed, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_AllButProcessed, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_AllButProcessed, emp.getEmployeeAwards(), null, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_AllButProcessed, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_AllButProcessed, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
         
         // all should pass
         oi.setProcessed(true);
         emp.setInactiveDate(new OADate());
         emp.setAdmin(false);
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_None, null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_None, null, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_None, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_None, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_None, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_None, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_None, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_None, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_None, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_None, null, ea, null);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_None, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_None, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_None, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_None, emp.getEmployeeAwards(), null, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_None, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_None, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
         
 
@@ -840,28 +840,28 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         oi.setProcessed(true);
         emp.setInactiveDate(new OADate());
         emp.setAdmin(false);
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_CallbackMethod, null, ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_CallbackMethod, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_CallbackMethod, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_CallbackMethod, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_CallbackMethod, null, ea, null);
         assertTrue(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_CallbackMethod, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_CallbackMethod, emp.getEmployeeAwards(), null, null);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_CallbackMethod, emp.getEmployeeAwards(), ea, null);
         assertTrue(eq.getAllowed());
         
 
@@ -870,30 +870,30 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         emp.setInactiveDate(new OADate());
         emp.setAdmin(false);
         
-        int checkType = OAObjectEditQuery.CHECK_ALL ^ OAObjectEditQuery.CHECK_IncludeMaster;
+        int checkType = OAObjectCallback.CHECK_ALL ^ OAObjectCallback.CHECK_IncludeMaster;
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(checkType, null, ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(checkType, null, ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(checkType, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(checkType, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(checkType, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(checkType, emp.getEmployeeAwards(), null, EmployeeAward.P_ApprovedDate);
         assertTrue(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(checkType, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(checkType, emp.getEmployeeAwards(), ea, EmployeeAward.P_ApprovedDate);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(checkType, null, ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(checkType, null, ea, null);
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(checkType, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(checkType, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(checkType, emp.getEmployeeAwards(), null, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(checkType, emp.getEmployeeAwards(), null, null);
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(checkType, emp.getEmployeeAwards(), ea, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(checkType, emp.getEmployeeAwards(), ea, null);
         assertFalse(eq.getAllowed());
     
         
@@ -907,16 +907,16 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         pi.setEnabledValue(true);
         emp.setSuperApprover(false);
 
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, emp, null);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, emp, null);
         assertFalse(eq.getAllowed());
         
         emp.setInactiveDate(null);
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, emp, Employee.P_EmployeeCode);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, emp, Employee.P_EmployeeCode);
         assertFalse(eq.getAllowed());
         
         // pass
         emp.setSuperApprover(true);
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, emp, Employee.P_EmployeeCode);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, emp, Employee.P_EmployeeCode);
         assertTrue(eq.getAllowed());
         
         // li enabled prop
@@ -925,10 +925,10 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         li.setEnabledValue(true);
         emp.setSuperApprover(false);
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, emp, Employee.P_Location);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, emp, Employee.P_Location);
         assertFalse(eq.getAllowed());
         emp.setSuperApprover(true);
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, emp, Employee.P_Location);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, emp, Employee.P_Location);
         assertTrue(eq.getAllowed());
         
         li.setEnabledProperty(null);
@@ -947,18 +947,18 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         
         Employee emp = new Employee();
         
-        OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowCopyEditQuery(emp);
+        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowCopyObjectCallback(emp);
         assertTrue(eq.getAllowed());
     
         
-        emp.TestEditQuery_Class = new OAObjectEditQuery(Type.AllowCopy);
+        emp.TestEditQuery_Class = new OAObjectCallback(Type.AllowCopy);
         emp.TestEditQuery_Class.setAllowed(false);
     
-        eq = OAObjectEditQueryDelegate.getAllowCopyEditQuery(emp);
+        eq = OAObjectCallbackDelegate.getAllowCopyObjectCallback(emp);
         assertFalse(eq.getAllowed());
         
         emp.TestEditQuery_Class.setAllowed(true);
-        eq = OAObjectEditQueryDelegate.getAllowCopyEditQuery(emp);
+        eq = OAObjectCallbackDelegate.getAllowCopyObjectCallback(emp);
         assertTrue(eq.getAllowed());
     }
     
@@ -971,13 +971,13 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         
         Employee emp = new Employee();
         
-        Employee empx = (Employee) OAObjectEditQueryDelegate.getCopy(emp);
+        Employee empx = (Employee) OAObjectCallbackDelegate.getCopy(emp);
         assertNotNull(empx);
 
-        emp.TestEditQuery_Class = new OAObjectEditQuery(Type.AllowCopy);
+        emp.TestEditQuery_Class = new OAObjectCallback(Type.AllowCopy);
         emp.TestEditQuery_Class.setAllowed(false);
         
-        empx = (Employee) OAObjectEditQueryDelegate.getCopy(emp);
+        empx = (Employee) OAObjectCallbackDelegate.getCopy(emp);
         assertNull(empx);
     }
 
@@ -993,21 +993,21 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         EmployeeAward ea = new EmployeeAward();
         emp.getEmployeeAwards().add(ea);
         
-        OAObjectEditQuery eq;
+        OAObjectCallback eq;
 
-        eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, ea, EmployeeAward.P_ApprovedDate, null, new OADate());
+        eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, ea, EmployeeAward.P_ApprovedDate, null, new OADate());
         assertTrue(eq.getAllowed());
 
         emp.setInactiveDate(new OADate());
         
-        eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, ea, EmployeeAward.P_ApprovedDate, null, new OADate());
+        eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, ea, EmployeeAward.P_ApprovedDate, null, new OADate());
         assertFalse(eq.getAllowed());
         
-        eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, ea, Employee.P_Location, null, new Location());
+        eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, ea, Employee.P_Location, null, new Location());
         assertFalse(eq.getAllowed());
 
         emp.setInactiveDate(null);
-        eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, ea, Employee.P_Location, null, new Location());
+        eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, ea, Employee.P_Location, null, new Location());
         assertTrue(eq.getAllowed());
 
         
@@ -1017,20 +1017,20 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         li.setEnabledValue(true);
         emp.setSuperApprover(false);
         
-        eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, emp, Employee.P_Location, null, new Location());
+        eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, emp, Employee.P_Location, null, new Location());
         assertFalse(eq.getAllowed());
 
-        eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(OAObjectEditQuery.CHECK_ALL, emp, Employee.P_Location, null, new Location());
+        eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, emp, Employee.P_Location, null, new Location());
         assertFalse(eq.getAllowed());
         
         emp.setSuperApprover(true);
-        emp.TestEditQuery_Location = new OAObjectEditQuery(Type.AllowEnabled);
+        emp.TestEditQuery_Location = new OAObjectCallback(Type.AllowEnabled);
         
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, emp, Employee.P_Location);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, emp, Employee.P_Location);
         assertTrue(eq.getAllowed());
         
         emp.TestEditQuery_Location.setAllowed(false);
-        eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_CallbackMethod, null, emp, Employee.P_Location);
+        eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_CallbackMethod, null, emp, Employee.P_Location);
         assertFalse(eq.getAllowed());
         
         
@@ -1051,19 +1051,19 @@ public class OAObjectEditQueryTest extends OAUnitTest {
         Employee emp = new Employee();
         EmployeeAward ea = new EmployeeAward();
         
-        OAObjectEditQuery eq;
-        eq = OAObjectEditQueryDelegate.getAllowAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_ALL);
+        OAObjectCallback eq;
+        eq = OAObjectCallbackDelegate.getAllowAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_ALL);
         assertTrue(eq.getAllowed());
 
         OALinkInfo li = oi.getLinkInfo(Employee.P_EmployeeAwards);
         li.setContextEnabledProperty(User.P_Admin);
         li.setContextEnabledValue(true);
         
-        eq = OAObjectEditQueryDelegate.getAllowAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_ALL);
+        eq = OAObjectCallbackDelegate.getAllowAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_ALL);
         assertFalse(eq.getAllowed());
         
         user.setAdmin(true);
-        eq = OAObjectEditQueryDelegate.getAllowAddEditQuery(emp.getEmployeeAwards(), ea, OAObjectEditQuery.CHECK_ALL);
+        eq = OAObjectCallbackDelegate.getAllowAddObjectCallback(emp.getEmployeeAwards(), ea, OAObjectCallback.CHECK_ALL);
         assertTrue(eq.getAllowed());
         
         li.setContextEnabledProperty(null);

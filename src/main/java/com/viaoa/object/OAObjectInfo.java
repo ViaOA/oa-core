@@ -78,7 +78,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
     
     protected boolean bProcessed;
     protected boolean bLookup;
-    private Method editQueryMethod;
+    private Method objectCallbackMethod;
     
     private String[] viewDependentProperties;
     private String[] contextDependentProperties;
@@ -377,16 +377,16 @@ public class OAObjectInfo { //implements java.io.Serializable {
         return hm.get(name.toUpperCase());
     }
     
-    private HashMap<String, Method> hmEditQueryMethod;
-    public Method getEditQueryMethod(String name) {
-        if (hmEditQueryMethod == null) return null;
+    private HashMap<String, Method> hmObjectCallbackMethod;
+    public Method getObjectCallbackMethod(String name) {
+        if (hmObjectCallbackMethod == null) return null;
         if (name == null) return null;
-        return hmEditQueryMethod.get(name.toUpperCase());
+        return hmObjectCallbackMethod.get(name.toUpperCase());
     }
-    public void addEditQueryMethod(String name, Method m) {
+    public void addObjectCallbackMethod(String name, Method m) {
         if (name == null || m == null) return;
-        if (hmEditQueryMethod == null) hmEditQueryMethod = new HashMap<>();
-        hmEditQueryMethod.put(name.toUpperCase(), m);
+        if (hmObjectCallbackMethod == null) hmObjectCallbackMethod = new HashMap<>();
+        hmObjectCallbackMethod.put(name.toUpperCase(), m);
     }
     
     // set by OAObjectInfoDelegate.initialize().  All primitive properties, in uppercase, sorted - 
@@ -1084,11 +1084,11 @@ public class OAObjectInfo { //implements java.io.Serializable {
         contextVisibleValue = b;
     }
     
-    public void setEditQueryMethod(Method m) {
-        this.editQueryMethod = m;
+    public void setObjectCallbackMethod(Method m) {
+        this.objectCallbackMethod = m;
     }
-    public Method getEditQueryMethod() {
-        return editQueryMethod;
+    public Method getObjectCallbackMethod() {
+        return objectCallbackMethod;
     }
 
     private volatile OAPropertyInfo piTimestamp;

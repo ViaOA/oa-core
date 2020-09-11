@@ -16,7 +16,7 @@ import com.viaoa.hub.HubCopy;
 import com.viaoa.hub.HubDelegate;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectEditQueryDelegate;
+import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 import com.viaoa.util.OAFilter;
 
@@ -125,7 +125,7 @@ public class WODeliveryModel extends OAObjectModel {
 		modelDelivery.setCreateUI(li == null || !WODelivery.P_Delivery.equals(li.getName()));
 		modelDelivery.setViewOnly(true);
 		// call WODelivery.onEditQueryDelivery(DeliveryModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WODelivery.class, WODelivery.P_Delivery, modelDelivery);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WODelivery.class, WODelivery.P_Delivery, modelDelivery);
 
 		return modelDelivery;
 	}
@@ -151,7 +151,7 @@ public class WODeliveryModel extends OAObjectModel {
 		modelWorkOrder.setCreateUI(li == null || !WODelivery.P_WorkOrder.equals(li.getName()));
 		modelWorkOrder.setViewOnly(true);
 		// call WODelivery.onEditQueryWorkOrder(WorkOrderModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WODelivery.class, WODelivery.P_WorkOrder, modelWorkOrder);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WODelivery.class, WODelivery.P_WorkOrder, modelWorkOrder);
 
 		return modelWorkOrder;
 	}
@@ -186,7 +186,7 @@ public class WODeliveryModel extends OAObjectModel {
 		modelDeliveryTrucks.setAllowCut(false);
 		modelDeliveryTrucks.setAllowPaste(false);
 		// call WODelivery.onEditQueryDeliveryTrucks(DeliveryTruckModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WODelivery.class, WODelivery.P_DeliveryTrucks, modelDeliveryTrucks);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WODelivery.class, WODelivery.P_DeliveryTrucks, modelDeliveryTrucks);
 
 		return modelDeliveryTrucks;
 	}

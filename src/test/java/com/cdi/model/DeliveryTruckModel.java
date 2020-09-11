@@ -113,7 +113,7 @@ public class DeliveryTruckModel extends OAObjectModel {
         modelDelivery.setCreateUI(li == null || !DeliveryTruck.P_Delivery.equals(li.getName()) );
         modelDelivery.setViewOnly(true);
         // call DeliveryTruck.onEditQueryDelivery(DeliveryModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(DeliveryTruck.class, DeliveryTruck.P_Delivery, modelDelivery);
+        OAObjectCallbackDelegate.onObjectCallbackModel(DeliveryTruck.class, DeliveryTruck.P_Delivery, modelDelivery);
     
         return modelDelivery;
     }
@@ -136,7 +136,7 @@ public class DeliveryTruckModel extends OAObjectModel {
         modelTruck.setCreateUI(li == null || !DeliveryTruck.P_Truck.equals(li.getName()) );
         modelTruck.setViewOnly(getViewOnly());
         // call DeliveryTruck.onEditQueryTruck(TruckModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(DeliveryTruck.class, DeliveryTruck.P_Truck, modelTruck);
+        OAObjectCallbackDelegate.onObjectCallbackModel(DeliveryTruck.class, DeliveryTruck.P_Truck, modelTruck);
     
         return modelTruck;
     }
@@ -167,7 +167,7 @@ public class DeliveryTruckModel extends OAObjectModel {
         modelWODeliveries.setAllowCut(false);
         modelWODeliveries.setAllowPaste(false);
         // call DeliveryTruck.onEditQueryWODeliveries(WODeliveryModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(DeliveryTruck.class, DeliveryTruck.P_WODeliveries, modelWODeliveries);
+        OAObjectCallbackDelegate.onObjectCallbackModel(DeliveryTruck.class, DeliveryTruck.P_WODeliveries, modelWODeliveries);
     
         return modelWODeliveries;
     }

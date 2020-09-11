@@ -21,8 +21,8 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 
 /**
- * Allows storing objects that are associated with a context 1: OAObject as the login user. 2: OAUserAccess Used by EditQuery and other code
- * to work with OAObject permissions.
+ * Allows storing objects that are associated with a context 1: OAObject as the login user. 2: OAUserAccess Used by ObjectCallback and other
+ * code to work with OAObject permissions.
  *
  * @author vvia
  */
@@ -145,7 +145,7 @@ public class OAContext {
 
 	/**
 	 * Property path used to find the user property for allowing users to have super admin rights. If true, then the user will have all
-	 * EditQuery.allowed=true Defaults to "SuperAdmin"
+	 * ObjectCallback.allowed=true Defaults to "SuperAdmin"
 	 */
 	public static void setSuperAdminPropertyPath(String pp) {
 		OAContext.superAdminPropertyPath = pp;

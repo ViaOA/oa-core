@@ -29,7 +29,7 @@ import com.viaoa.util.OAString;
  * This is the central Delegate class that performs services for OAObjects. The other Delegate classes are specialized for specific tasks.
  * This Delegate is used for multi-specific and misc functionality. The Delegates are designed so that the OAObject class can be light
  * weight and have various functionalities built in.
- * 
+ *
  * @author vincevia
  */
 public class OAObjectDelegate {
@@ -78,10 +78,15 @@ public class OAObjectDelegate {
 		int x = (ps == null) ? 0 : ((int) Math.ceil(ps.length / 8.0d));
 		oaObj.nulls = new byte[x];
 
-        if (OAThreadLocalDelegate.isLoading()) return; // dont initialize. Whatever is loading should call initialize below directly 
-        
+		if (OAThreadLocalDelegate.isLoading()) {
+			return; // dont initialize. Whatever is loading should call initialize below directly
+		}
+
 		boolean bInitializeWithCS = !oi.getLocalOnly() && OASync.isClient(oaObj.getClass());
-		initialize(oaObj, oi, oi.getInitializeNewObjects(), oi.getUseDataSource(), oi.getAddToCache(), bInitializeWithCS, true);
+
+		// 20200910 useDataSource needs to be true ... since other DS (ex: autonumber) might be used
+		initialize(oaObj, oi, oi.getInitializeNewObjects(), true, oi.getAddToCache(), bInitializeWithCS, true);
+		//was: initialize(oaObj, oi, oi.getInitializeNewObjects(), oi.getUseDataSource(), oi.getAddToCache(), bInitializeWithCS, true);
 	}
 
 	/**
@@ -104,7 +109,7 @@ public class OAObjectDelegate {
 				/* 20180325 20180403 removed,not used
 				byte[] bsMask = oi.getPrimitiveMask();
 				for (int i=0; i<oaObj.nulls.length; i++) {
-				    oaObj.nulls[i] |= (byte) bsMask[i]; 
+				    oaObj.nulls[i] |= (byte) bsMask[i];
 				}
 				*/
 				// put this back
@@ -131,7 +136,7 @@ public class OAObjectDelegate {
 					// 20140409 added check for 1to1, in which case one side will not have an
 					//    fkey, since it uses it's own pkey as the fkey
 
-					// 20190205 set default linkOne 
+					// 20190205 set default linkOne
 					if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultContextPropertyPath())) {
 						OAObject objx = OAContext.getContextObject();
 						if (objx != null) {
@@ -228,7 +233,7 @@ public class OAObjectDelegate {
 		}
 	}
 
-	// 20151029 remove the Id props, set new=true, reassign guid    
+	// 20151029 remove the Id props, set new=true, reassign guid
 	public static void setAsNewObject(final OAObject oaObj) {
 		if (oaObj == null) {
 			return;
@@ -274,7 +279,7 @@ public class OAObjectDelegate {
 	/**
 	 * This is used by RemoteSyncImpl on the server, when it has to reload a GCd object from DS. This happens when a client makes a change
 	 * and the server does not have the object in memory.
-	 * 
+	 *
 	 * @param obj     newly loaded object from DS
 	 * @param origKey
 	 */
@@ -590,7 +595,7 @@ public class OAObjectDelegate {
 	/**
 	 * Central method that is used when the object property Key is changed (OAObjectKey) and needs to be rehashed in all Hashtables that it
 	 * could exist in.
-	 * 
+	 *
 	 * @param oaObj
 	 * @param oldKey
 	 */
@@ -617,7 +622,7 @@ public class OAObjectDelegate {
 	/**
 	 * Used to determine if an object should be added to a reference/master hub when one of it's OAObject properties is set. If false, then
 	 * the object will not be added to masterHubs until this is called with "true" or when oaObj is saved.
-	 * 
+	 *
 	 * @param oaObj
 	 * @param bEnabled (default is true)
 	 */
@@ -647,7 +652,7 @@ public class OAObjectDelegate {
 
 		try {
 			OAThreadLocalDelegate.setSuppressCSMessages(true);
-			// need to see if object should be put into linkOne/masterObject hub(s)             
+			// need to see if object should be put into linkOne/masterObject hub(s)
 			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 			for (OALinkInfo li : oi.getLinkInfos()) {
 				if (!li.getUsed()) {

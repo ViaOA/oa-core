@@ -102,7 +102,7 @@ public class TruckModel extends OAObjectModel {
         modelDeliveryTrucks.setAllowCut(false);
         modelDeliveryTrucks.setAllowPaste(false);
         // call Truck.onEditQueryDeliveryTrucks(DeliveryTruckModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Truck.class, Truck.P_DeliveryTrucks, modelDeliveryTrucks);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Truck.class, Truck.P_DeliveryTrucks, modelDeliveryTrucks);
     
         return modelDeliveryTrucks;
     }

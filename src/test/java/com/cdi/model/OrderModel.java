@@ -221,7 +221,7 @@ public class OrderModel extends OAObjectModel {
         modelColorCode.setAllowGotoEdit(false);
         modelColorCode.setViewOnly(true);
         // call Order.onEditQueryColorCode(ColorCodeModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_ColorCode, modelColorCode);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_ColorCode, modelColorCode);
     
         return modelColorCode;
     }
@@ -244,7 +244,7 @@ public class OrderModel extends OAObjectModel {
         modelCustomer.setCreateUI(li == null || !Order.P_Customer.equals(li.getName()) );
         modelCustomer.setViewOnly(true);
         // call Order.onEditQueryCustomer(CustomerModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_Customer, modelCustomer);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_Customer, modelCustomer);
     
         return modelCustomer;
     }
@@ -265,7 +265,7 @@ public class OrderModel extends OAObjectModel {
         modelRegion.setAllowGotoEdit(false);
         modelRegion.setViewOnly(true);
         // call Order.onEditQueryRegion(RegionModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_Region, modelRegion);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_Region, modelRegion);
     
         return modelRegion;
     }
@@ -288,7 +288,7 @@ public class OrderModel extends OAObjectModel {
         modelSalesOrder.setCreateUI(li == null || !Order.P_SalesOrder.equals(li.getName()) );
         modelSalesOrder.setViewOnly(true);
         // call Order.onEditQuerySalesOrder(SalesOrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_SalesOrder, modelSalesOrder);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_SalesOrder, modelSalesOrder);
     
         return modelSalesOrder;
     }
@@ -311,7 +311,7 @@ public class OrderModel extends OAObjectModel {
         modelShipTo.setCreateUI(li == null || !Order.P_ShipTo.equals(li.getName()) );
         modelShipTo.setViewOnly(true);
         // call Order.onEditQueryShipTo(ShipToModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_ShipTo, modelShipTo);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_ShipTo, modelShipTo);
     
         return modelShipTo;
     }
@@ -332,7 +332,7 @@ public class OrderModel extends OAObjectModel {
         modelTexture.setAllowGotoEdit(false);
         modelTexture.setViewOnly(true);
         // call Order.onEditQueryTexture(TextureModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_Texture, modelTexture);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_Texture, modelTexture);
     
         return modelTexture;
     }
@@ -363,7 +363,7 @@ public class OrderModel extends OAObjectModel {
         modelOrderContacts.setAllowCut(false);
         modelOrderContacts.setAllowPaste(false);
         // call Order.onEditQueryOrderContacts(OrderContactModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_OrderContacts, modelOrderContacts);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_OrderContacts, modelOrderContacts);
     
         return modelOrderContacts;
     }
@@ -394,7 +394,7 @@ public class OrderModel extends OAObjectModel {
         modelOrderItems.setAllowCut(false);
         modelOrderItems.setAllowPaste(false);
         // call Order.onEditQueryOrderItems(OrderItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_OrderItems, modelOrderItems);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_OrderItems, modelOrderItems);
     
         return modelOrderItems;
     }
@@ -425,7 +425,7 @@ public class OrderModel extends OAObjectModel {
         modelOrderNotes.setAllowCut(false);
         modelOrderNotes.setAllowPaste(false);
         // call Order.onEditQueryOrderNotes(OrderNoteModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_OrderNotes, modelOrderNotes);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_OrderNotes, modelOrderNotes);
     
         return modelOrderNotes;
     }
@@ -456,7 +456,7 @@ public class OrderModel extends OAObjectModel {
         modelWorkOrders.setAllowCut(false);
         modelWorkOrders.setAllowPaste(false);
         // call Order.onEditQueryWorkOrders(WorkOrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Order.class, Order.P_WorkOrders, modelWorkOrders);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Order.class, Order.P_WorkOrders, modelWorkOrders);
     
         return modelWorkOrders;
     }

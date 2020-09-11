@@ -118,7 +118,7 @@ public class OrderItemModel extends OAObjectModel {
         modelItem.setAllowGotoEdit(true);
         modelItem.setViewOnly(true);
         // call OrderItem.onEditQueryItem(ItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(OrderItem.class, OrderItem.P_Item, modelItem);
+        OAObjectCallbackDelegate.onObjectCallbackModel(OrderItem.class, OrderItem.P_Item, modelItem);
     
         return modelItem;
     }
@@ -141,7 +141,7 @@ public class OrderItemModel extends OAObjectModel {
         modelOrder.setCreateUI(li == null || !OrderItem.P_Order.equals(li.getName()) );
         modelOrder.setViewOnly(getViewOnly());
         // call OrderItem.onEditQueryOrder(OrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(OrderItem.class, OrderItem.P_Order, modelOrder);
+        OAObjectCallbackDelegate.onObjectCallbackModel(OrderItem.class, OrderItem.P_Order, modelOrder);
     
         return modelOrder;
     }
@@ -172,7 +172,7 @@ public class OrderItemModel extends OAObjectModel {
         modelOrderItemComments.setAllowCut(false);
         modelOrderItemComments.setAllowPaste(false);
         // call OrderItem.onEditQueryOrderItemComments(OrderItemCommentModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(OrderItem.class, OrderItem.P_OrderItemComments, modelOrderItemComments);
+        OAObjectCallbackDelegate.onObjectCallbackModel(OrderItem.class, OrderItem.P_OrderItemComments, modelOrderItemComments);
     
         return modelOrderItemComments;
     }
@@ -203,7 +203,7 @@ public class OrderItemModel extends OAObjectModel {
         modelWOItems.setAllowCut(false);
         modelWOItems.setAllowPaste(false);
         // call OrderItem.onEditQueryWOItems(WOItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(OrderItem.class, OrderItem.P_WOItems, modelWOItems);
+        OAObjectCallbackDelegate.onObjectCallbackModel(OrderItem.class, OrderItem.P_WOItems, modelWOItems);
     
         return modelWOItems;
     }

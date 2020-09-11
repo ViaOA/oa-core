@@ -10,18 +10,15 @@
 */
 package com.viaoa.object;
 
+/**
+ * Callback for methods that "visit" object graphs. see OAObjectCacheDelegate#
+ */
+public interface OACallback<TYPE> {
 
-/** 
-    Callback for methods that "visit" object graphs. 
-    see OAObjectCacheDelegate# 
-*/
-public interface OACallback {
-    
-    /**
-     * Callback method used for methods that "visit" an object graph.
-     * @return true to continue, else false to exit visiting 
-    */
-    public boolean updateObject(Object obj);
+	/**
+	 * Callback method used for methods that "visit" an object graph.
+	 * 
+	 * @return true to continue, else false to exit visiting
+	 */
+	public boolean updateObject(TYPE obj);
 }
-
-

@@ -16,8 +16,8 @@ import java.util.logging.Logger;
 
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectEditQuery;
-import com.viaoa.object.OAObjectEditQueryDelegate;
+import com.viaoa.object.OAObjectCallback;
+import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
@@ -72,7 +72,7 @@ public class HubAddRemoveDelegate {
 			throw new RuntimeException("Cant remove object, hub is disabled");
 		}
 		if (!bIsRemovingAll && !OARemoteThreadDelegate.isRemoteThread()) {
-			if (!thisHub.getAllowRemove(OAObjectEditQuery.CHECK_CallbackMethod, obj)) {
+			if (!thisHub.getAllowRemove(OAObjectCallback.CHECK_CallbackMethod, obj)) {
 				//was: if (!canRemove(thisHub, obj)) {
 				if (!OAThreadLocalDelegate.isDeleting(obj)) {
 					throw new RuntimeException("Cant remove object, can remove returned false");
@@ -151,10 +151,8 @@ public class HubAddRemoveDelegate {
 	/**
 	 * Checks to see if there is a reason why an object can not be removed.
 	 *
-	 * @param obj
-	 *            object to be removed, if null then it checks if the hub allows removals.
-	 * @param checkType
-	 *            from OAObjectEdit
+	 * @param obj       object to be removed, if null then it checks if the hub allows removals.
+	 * @param checkType from OAObjectEdit
 	 * @return reason/message why the object can not be removed, else returns null if the obj can be removed
 	 */
 	public static String getCantRemoveMessage(final Hub thisHub, final Object obj, final int checkType) {
@@ -185,19 +183,19 @@ public class HubAddRemoveDelegate {
 		}
 
 		if (checkType > 0) {
-			OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowRemoveEditQuery(thisHub, (OAObject) obj, checkType);
+			OAObjectCallback eq = OAObjectCallbackDelegate.getAllowRemoveObjectCallback(thisHub, (OAObject) obj, checkType);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
-				return "EditQuery.allowRemove is false, msg: " + s;
+				return "ObjectCallback.allowRemove is false, msg: " + s;
 			}
 
 			if (obj instanceof OAObject) {
-				eq = OAObjectEditQueryDelegate.getVerifyRemoveEditQuery(thisHub, (OAObject) obj, checkType);
+				eq = OAObjectCallbackDelegate.getVerifyRemoveObjectCallback(thisHub, (OAObject) obj, checkType);
 				if (eq != null && !eq.getAllowed()) {
 					String s = eq.getResponse();
 					s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
-					return "EditQuery.verifyRemove is false, msg: " + s;
+					return "ObjectCallback.verifyRemove is false, msg: " + s;
 				}
 			}
 		}
@@ -226,17 +224,17 @@ public class HubAddRemoveDelegate {
 		}
 
 		if (checkType > 0) {
-			OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowRemoveAllEditQuery(thisHub, checkType);
+			OAObjectCallback eq = OAObjectCallbackDelegate.getAllowRemoveAllObjectCallback(thisHub, checkType);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
-				return "EditQuery.allowRemoveAll is false, msg: " + s;
+				return "ObjectCallback.allowRemoveAll is false, msg: " + s;
 			}
-			eq = OAObjectEditQueryDelegate.getVerifyRemoveAllEditQuery(thisHub, checkType);
+			eq = OAObjectCallbackDelegate.getVerifyRemoveAllObjectCallback(thisHub, checkType);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
-				return "EditQuery.verifyRemoveAll is false, msg: " + s;
+				return "ObjectCallback.verifyRemoveAll is false, msg: " + s;
 			}
 		}
 
@@ -252,11 +250,11 @@ public class HubAddRemoveDelegate {
 
 	public static void clear(final Hub thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
 		if (!OARemoteThreadDelegate.isRemoteThread() && bSendNewList) {
-			OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyRemoveAllEditQuery(thisHub, OAObjectEditQuery.CHECK_CallbackMethod);
+			OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
 			if (!eq.getAllowed()) {
 				String s = eq.getResponse();
 				if (OAString.isEmpty(s)) {
-					s = "Cant clear, OAObjectEditQuery allowRemoveAll retured false";
+					s = "Cant clear, OAObjectCallback allowRemoveAll retured false";
 				}
 				throw new RuntimeException(s);
 			}
@@ -354,14 +352,14 @@ public class HubAddRemoveDelegate {
 		for (int pos=0 ; ; ) {
 		    Object obj = thisHub.elementAt(pos);
 		    if (obj == null) break;
-
+		
 		    if (obj == objLast) {
 		        // object was not deleted
 		        pos++;
 		        continue;
 		    }
 		    objLast = obj;
-
+		
 		    // 20140422 set to false, since clients will now have clear msg
 		    remove(thisHub, obj, false,
 		            false, false, bSetAOtoNull,
@@ -432,19 +430,19 @@ public class HubAddRemoveDelegate {
 		}
 
 		OAObject oaObj = (obj instanceof OAObject) ? (OAObject) obj : null;
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowAddEditQuery(thisHub, oaObj, OAObjectEditQuery.CHECK_CallbackMethod);
+		OAObjectCallback eq = OAObjectCallbackDelegate.getAllowAddObjectCallback(thisHub, oaObj, OAObjectCallback.CHECK_CallbackMethod);
 		if (eq != null && !eq.getAllowed()) {
 			String s = eq.getResponse();
 			s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
-			return "EditQuery.allowAdd is false, msg: " + s;
+			return "ObjectCallback.allowAdd is false, msg: " + s;
 		}
 
 		if (obj instanceof OAObject) {
-			eq = OAObjectEditQueryDelegate.getVerifyAddEditQuery(thisHub, (OAObject) obj, OAObjectEditQuery.CHECK_CallbackMethod);
+			eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(thisHub, (OAObject) obj, OAObjectCallback.CHECK_CallbackMethod);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
-				return "EditQuery.verifyAdd is false, msg: " + s;
+				return "ObjectCallback.verifyAdd is false, msg: " + s;
 			}
 		}
 
@@ -632,10 +630,8 @@ public class HubAddRemoveDelegate {
 	/**
 	 * Swap the position of two different objects within the hub. This will call the move method. Sends a hubMove event to all HubListeners.
 	 *
-	 * @param posFrom
-	 *            position of object to move
-	 * @param posTo
-	 *            position where object should be after the move
+	 * @param posFrom position of object to move
+	 * @param posTo   position where object should be after the move
 	 */
 	protected static void move(final Hub thisHub, final int posFrom, int posTo) {
 		if (posFrom == posTo) {
@@ -707,10 +703,8 @@ public class HubAddRemoveDelegate {
 	 * <p>
 	 * If Hub is sorted, then object will be inserted at correct/sorted position.
 	 *
-	 * @param obj
-	 *            Object to insert, must be from the same class that was used when creating the Hub
-	 * @param pos
-	 *            position to insert the object into the Hub. If greater then size of Hub, then it will be added to the end.
+	 * @param obj Object to insert, must be from the same class that was used when creating the Hub
+	 * @param pos position to insert the object into the Hub. If greater then size of Hub, then it will be added to the end.
 	 * @return true if object was added else false (event hubBeforeAdd() threw an exception)
 	 */
 	public static boolean insert(final Hub thisHub, final Object obj, final int pos) {
@@ -898,10 +892,8 @@ public class HubAddRemoveDelegate {
 	/**
 	 * Swap the position of two different objects within the hub. This will call the move method.
 	 *
-	 * @param pos1
-	 *            position of object to move from, if there is not an object at this position, then no move is performed.
-	 * @param pos2
-	 *            position of object to move to, if there is not an object at this position, then no move is performed.
+	 * @param pos1 position of object to move from, if there is not an object at this position, then no move is performed.
+	 * @param pos2 position of object to move to, if there is not an object at this position, then no move is performed.
 	 * @see #move
 	 */
 	public static void swap(final Hub thisHub, int pos1, int pos2) {

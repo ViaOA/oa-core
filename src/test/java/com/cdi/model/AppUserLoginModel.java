@@ -102,7 +102,7 @@ public class AppUserLoginModel extends OAObjectModel {
         modelAppUser.setCreateUI(li == null || !AppUserLogin.P_AppUser.equals(li.getName()) );
         modelAppUser.setViewOnly(getViewOnly());
         // call AppUserLogin.onEditQueryAppUser(AppUserModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(AppUserLogin.class, AppUserLogin.P_AppUser, modelAppUser);
+        OAObjectCallbackDelegate.onObjectCallbackModel(AppUserLogin.class, AppUserLogin.P_AppUser, modelAppUser);
     
         return modelAppUser;
     }
@@ -133,7 +133,7 @@ public class AppUserLoginModel extends OAObjectModel {
         modelAppUserErrors.setAllowCut(false);
         modelAppUserErrors.setAllowPaste(false);
         // call AppUserLogin.onEditQueryAppUserErrors(AppUserErrorModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(AppUserLogin.class, AppUserLogin.P_AppUserErrors, modelAppUserErrors);
+        OAObjectCallbackDelegate.onObjectCallbackModel(AppUserLogin.class, AppUserLogin.P_AppUserErrors, modelAppUserErrors);
     
         return modelAppUserErrors;
     }

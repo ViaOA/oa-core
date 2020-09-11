@@ -80,7 +80,7 @@ public class OAObjectEventDelegate {
 			}
 
 			if (!bSkip && !bIsLoading) {
-				OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(	OAObjectEditQuery.CHECK_CallbackMethod,
+				OAObjectCallback em = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(	OAObjectCallback.CHECK_CallbackMethod,
 																									oaObj, propertyName, oldObj, newObj);
 				if (!em.getAllowed() || em.getThrowable() != null) {
 					String msg = em.getResponse();
@@ -190,7 +190,7 @@ public class OAObjectEventDelegate {
 			// 20200728
 			if (!bIsLoading && propInfo != null && propInfo.getIsSubmit() && newObj != null) {
 				if (OAConv.toBoolean(newObj)) {
-					OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowSubmitEditQuery(oaObj);
+					OAObjectCallback eq = OAObjectCallbackDelegate.getAllowSubmitObjectCallback(oaObj);
 					if (!eq.getAllowed()) {
 						throw new RuntimeException("submit failed, Class="
 								+ oaObj.getClass().getSimpleName() + ", message=" + eq.getResponse(), eq.getThrowable());

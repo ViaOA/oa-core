@@ -114,7 +114,7 @@ public class ItemQuoteModel extends OAObjectModel {
         modelItem.setAllowGotoEdit(true);
         modelItem.setViewOnly(true);
         // call ItemQuote.onEditQueryItem(ItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(ItemQuote.class, ItemQuote.P_Item, modelItem);
+        OAObjectCallbackDelegate.onObjectCallbackModel(ItemQuote.class, ItemQuote.P_Item, modelItem);
     
         return modelItem;
     }
@@ -135,7 +135,7 @@ public class ItemQuoteModel extends OAObjectModel {
         modelItemAddOn.setAllowGotoEdit(false);
         modelItemAddOn.setViewOnly(true);
         // call ItemQuote.onEditQueryItemAddOn(ItemAddOnModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(ItemQuote.class, ItemQuote.P_ItemAddOn, modelItemAddOn);
+        OAObjectCallbackDelegate.onObjectCallbackModel(ItemQuote.class, ItemQuote.P_ItemAddOn, modelItemAddOn);
     
         return modelItemAddOn;
     }
@@ -156,7 +156,7 @@ public class ItemQuoteModel extends OAObjectModel {
         modelPriceCode.setAllowGotoEdit(false);
         modelPriceCode.setViewOnly(true);
         // call ItemQuote.onEditQueryPriceCode(PriceCodeModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(ItemQuote.class, ItemQuote.P_PriceCode, modelPriceCode);
+        OAObjectCallbackDelegate.onObjectCallbackModel(ItemQuote.class, ItemQuote.P_PriceCode, modelPriceCode);
     
         return modelPriceCode;
     }

@@ -94,7 +94,7 @@ public class PhoneModel extends OAObjectModel {
         modelContact.setCreateUI(li == null || !Phone.P_Contact.equals(li.getName()) );
         modelContact.setViewOnly(getViewOnly());
         // call Phone.onEditQueryContact(ContactModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Phone.class, Phone.P_Contact, modelContact);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Phone.class, Phone.P_Contact, modelContact);
     
         return modelContact;
     }

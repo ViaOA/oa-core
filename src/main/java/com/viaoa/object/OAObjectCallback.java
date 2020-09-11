@@ -18,12 +18,12 @@ import com.viaoa.util.OAString;
 
 /**
  * Used to allow interaction with OAObject callback methods and other (ex: UI) components. OAObject has a class level
- * "callback(OAObjectEditQuery eq)" method and can have callbackXXX(OAObjectEditQuery eq)" methods defined for other props,calcs,links
+ * "callback(OAObjectCallback eq)" method and can have callbackXXX(OAObjectCallback eq)" methods defined for other props,calcs,links
  *
- * @see OAObjectEditQueryDelegate
+ * @see OAObjectCallbackDelegate
  * @author vvia
  */
-public class OAObjectEditQuery {
+public class OAObjectCallback {
 	static final long serialVersionUID = 1L;
 
 	private Hub hub;
@@ -50,7 +50,7 @@ public class OAObjectEditQuery {
 	private String toolTip;
 	private String format; // allows creating customized formatter
 
-	private boolean allowed = true; // flag to know if the type of editQuery is permitted
+	private boolean allowed = true; // flag to know if the type of objectCallback is permitted
 
 	private Object value; // depends on Type
 	private JLabel label; // used for UI rendering control
@@ -141,11 +141,11 @@ public class OAObjectEditQuery {
 		return null;
 	}
 
-	public OAObjectEditQuery(Type type) {
+	public OAObjectCallback(Type type) {
 		this.type = type;
 	}
 
-	public OAObjectEditQuery(Type type, int checkType, Hub hub, Class clazz, OAObject oaObj, String propertyName, Object value) {
+	public OAObjectCallback(Type type, int checkType, Hub hub, Class clazz, OAObject oaObj, String propertyName, Object value) {
 		this.type = type;
 		this.checkType = checkType;
 		this.hub = hub;
@@ -156,7 +156,7 @@ public class OAObjectEditQuery {
 		this.allowed = true;
 	}
 
-	public OAObjectEditQuery(Type type, int checkType, OAObjectEditQuery eq) {
+	public OAObjectCallback(Type type, int checkType, OAObjectCallback eq) {
 		this.type = type;
 		this.checkType = checkType;
 
@@ -172,10 +172,10 @@ public class OAObjectEditQuery {
 	}
 
 	/*
-	public OAObjectEditQuery(Type type, int checkType) {
+	public OAObjectCallback(Type type, int checkType) {
 	    this.type = type;
 	    this.checkType = checkType;
-
+	
 	    this.allowed = true;
 	}
 	*/

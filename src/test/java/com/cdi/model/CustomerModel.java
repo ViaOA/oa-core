@@ -120,7 +120,7 @@ public class CustomerModel extends OAObjectModel {
         modelRegion.setAllowGotoEdit(false);
         modelRegion.setViewOnly(true);
         // call Customer.onEditQueryRegion(RegionModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Customer.class, Customer.P_Region, modelRegion);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Customer.class, Customer.P_Region, modelRegion);
     
         return modelRegion;
     }
@@ -141,7 +141,7 @@ public class CustomerModel extends OAObjectModel {
         modelTaxCode.setAllowGotoEdit(false);
         modelTaxCode.setViewOnly(true);
         // call Customer.onEditQueryTaxCode(TaxCodeModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Customer.class, Customer.P_TaxCode, modelTaxCode);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Customer.class, Customer.P_TaxCode, modelTaxCode);
     
         return modelTaxCode;
     }
@@ -172,7 +172,7 @@ public class CustomerModel extends OAObjectModel {
         modelContacts.setAllowCut(false);
         modelContacts.setAllowPaste(false);
         // call Customer.onEditQueryContacts(ContactModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Customer.class, Customer.P_Contacts, modelContacts);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Customer.class, Customer.P_Contacts, modelContacts);
     
         return modelContacts;
     }
@@ -203,7 +203,7 @@ public class CustomerModel extends OAObjectModel {
         modelOrders.setAllowCut(false);
         modelOrders.setAllowPaste(false);
         // call Customer.onEditQueryOrders(OrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Customer.class, Customer.P_Orders, modelOrders);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Customer.class, Customer.P_Orders, modelOrders);
     
         return modelOrders;
     }

@@ -112,7 +112,7 @@ public class OrderContactModel extends OAObjectModel {
         modelContact.setCreateUI(li == null || !OrderContact.P_Contact.equals(li.getName()) );
         modelContact.setViewOnly(getViewOnly());
         // call OrderContact.onEditQueryContact(ContactModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(OrderContact.class, OrderContact.P_Contact, modelContact);
+        OAObjectCallbackDelegate.onObjectCallbackModel(OrderContact.class, OrderContact.P_Contact, modelContact);
     
         return modelContact;
     }
@@ -135,7 +135,7 @@ public class OrderContactModel extends OAObjectModel {
         modelOrder.setCreateUI(li == null || !OrderContact.P_Order.equals(li.getName()) );
         modelOrder.setViewOnly(getViewOnly());
         // call OrderContact.onEditQueryOrder(OrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(OrderContact.class, OrderContact.P_Order, modelOrder);
+        OAObjectCallbackDelegate.onObjectCallbackModel(OrderContact.class, OrderContact.P_Order, modelOrder);
     
         return modelOrder;
     }

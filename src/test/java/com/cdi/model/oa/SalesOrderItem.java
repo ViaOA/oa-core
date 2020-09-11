@@ -111,8 +111,8 @@ public class SalesOrderItem extends OAObject {
         setId(id);
     }
      
-    @OAEditQuery
-    public void onEditQuery(OAObjectEditQuery em) {
+    @OAObjCallback
+    public void onEditQuery(OAObjectCallback em) {
         switch (em.getType()) {
         case AfterCopy:
             SalesOrderItem salesOrderItemCopy = (SalesOrderItem) em.getValue();
@@ -184,8 +184,8 @@ public class SalesOrderItem extends OAObject {
             endServerOnly();
         }
     }
-    @OAEditQuery
-    public void onEditQueryCustomItem(OAObjectEditQuery em) {
+    @OAObjCallback
+    public void onEditQueryCustomItem(OAObjectCallback em) {
         switch (em.getType()) {
         case SetConfirmForPropertyChange:
             if (em.getBooleanValue()) {
@@ -212,8 +212,8 @@ public class SalesOrderItem extends OAObject {
         firePropertyChange(P_ItemDescription, old, this.itemDescription);
     }
     
-    @OAEditQuery(enabledProperty = SalesOrderItem.P_CustomItem)
-    public void onEditQueryItemDescription(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = SalesOrderItem.P_CustomItem)
+    public void onEditQueryItemDescription(OAObjectCallback em) {
     }
      
     @OAProperty(displayLength = 6, columnName = "Qty")
@@ -239,8 +239,8 @@ public class SalesOrderItem extends OAObject {
         this.unitPrice = newValue;
         firePropertyChange(P_UnitPrice, old, this.unitPrice);
     }
-    @OAEditQuery(enabledProperty = SalesOrderItem.P_CustomItem, contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
-    public void onEditQueryUnitPrice(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = SalesOrderItem.P_CustomItem, contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
+    public void onEditQueryUnitPrice(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Item Weight", displayLength = 6, columnLength = 7, columnName = "Item Wt", hasCustomCode = true)
@@ -254,8 +254,8 @@ public class SalesOrderItem extends OAObject {
         this.unitWeight = newValue;
         firePropertyChange(P_UnitWeight, old, this.unitWeight);
     }
-    @OAEditQuery(enabledProperty = SalesOrderItem.P_CustomItem)
-    public void onEditQueryUnitWeight(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = SalesOrderItem.P_CustomItem)
+    public void onEditQueryUnitWeight(OAObjectCallback em) {
         switch (em.getType()) {
         case RenderLabel:
             javax.swing.JLabel lbl = em.getLabel();
@@ -287,8 +287,8 @@ public class SalesOrderItem extends OAObject {
         this.addOnPrice = newValue;
         firePropertyChange(P_AddOnPrice, old, this.addOnPrice);
     }
-    @OAEditQuery(enabledProperty = SalesOrderItem.P_ItemAddOns)
-    public void onEditQueryAddOnPrice(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = SalesOrderItem.P_ItemAddOns)
+    public void onEditQueryAddOnPrice(OAObjectCallback em) {
     }
      
     @OAProperty(displayLength = 20)
@@ -331,8 +331,8 @@ public class SalesOrderItem extends OAObject {
         if (!customItem) return;
         setUnitPrice(newValue);
     }
-    @OAEditQuery(enabledProperty = SalesOrderItem.P_CustomItem)
-    public void onEditQueryFakeUnitPrice(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = SalesOrderItem.P_CustomItem)
+    public void onEditQueryFakeUnitPrice(OAObjectCallback em) {
         switch (em.getType()) {
         case RenderLabel:
             AppUser au = ModelDelegate.getLocalAppUser();
@@ -365,8 +365,8 @@ public class SalesOrderItem extends OAObject {
         d = OAConv.round(d, 2);
         return d;
     }
-    @OAEditQuery(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
-    public void onEditQueryTotalItemOurPrice(OAObjectEditQuery em) {
+    @OAObjCallback(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
+    public void onEditQueryTotalItemOurPrice(OAObjectCallback em) {
     }
      
     @OACalculatedProperty(displayName = "Item Sell Price", decimalPlaces = 2, isCurrency = true, displayLength = 9, columnLength = 11, columnName = "Item Sell $", properties = {P_UnitPrice, P_SellRate, P_AddOnPrice})
@@ -382,8 +382,8 @@ public class SalesOrderItem extends OAObject {
         bd = OAConv.round(bd, 2);
         return bd;
     }
-    @OAEditQuery
-    public void onEditQueryItemSellPrice(OAObjectEditQuery em) {
+    @OAObjCallback
+    public void onEditQueryItemSellPrice(OAObjectCallback em) {
         switch (em.getType()) {
         case RenderLabel:
             javax.swing.JLabel lbl = em.getLabel();
@@ -405,8 +405,8 @@ public class SalesOrderItem extends OAObject {
         d = OAConv.round(d, 2);
         return d;
     }
-    @OAEditQuery
-    public void onEditQueryTotalItemSellPrice(OAObjectEditQuery em) {
+    @OAObjCallback
+    public void onEditQueryTotalItemSellPrice(OAObjectCallback em) {
         switch (em.getType()) {
         case RenderLabel:
             javax.swing.JLabel lbl = em.getLabel();
@@ -422,8 +422,8 @@ public class SalesOrderItem extends OAObject {
         d = OAConv.round(d, 2);
         return d;
     }
-    @OAEditQuery
-    public void onEditQueryTotalSellPrice(OAObjectEditQuery em) {
+    @OAObjCallback
+    public void onEditQueryTotalSellPrice(OAObjectCallback em) {
         switch (em.getType()) {
         case RenderLabel:
             javax.swing.JLabel lbl = em.getLabel();
@@ -440,8 +440,8 @@ public class SalesOrderItem extends OAObject {
         qty = getUnitWeight() * qty;
         return qty;
     }
-    @OAEditQuery
-    public void onEditQueryTotalWeight(OAObjectEditQuery em) {
+    @OAObjCallback
+    public void onEditQueryTotalWeight(OAObjectCallback em) {
         switch (em.getType()) {
         case RenderLabel:
             javax.swing.JLabel lbl = em.getLabel();
@@ -492,8 +492,8 @@ public class SalesOrderItem extends OAObject {
             endServerOnly();
         }
     }
-    @OAEditQuery(enabledProperty = SalesOrderItem.P_CustomItem, enabledValue = false)
-    public void onEditQueryItem(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = SalesOrderItem.P_CustomItem, enabledValue = false)
+    public void onEditQueryItem(OAObjectCallback em) {
         // CUSTOM
         switch (em.getType()) {
         case SetConfirmForPropertyChange:
@@ -543,8 +543,8 @@ public class SalesOrderItem extends OAObject {
         }
         return hubItemAddOns;
     }
-    @OAEditQuery(enabledProperty = SalesOrderItem.P_AllowsItemAddOn)
-    public void onEditQueryItemAddOns(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = SalesOrderItem.P_AllowsItemAddOn)
+    public void onEditQueryItemAddOns(OAObjectCallback em) {
     }
      
     @OAOne(
@@ -597,8 +597,8 @@ public class SalesOrderItem extends OAObject {
             endServerOnly();
         }
     }
-    @OAEditQuery
-    public void onEditQueryServiceCode(OAObjectEditQuery em) {
+    @OAObjCallback
+    public void onEditQueryServiceCode(OAObjectCallback em) {
         switch (em.getType()) {
         case SetConfirmForPropertyChange:
             double d = getServicePrice();
@@ -620,8 +620,8 @@ public class SalesOrderItem extends OAObject {
             salesOrderItem.assignSameItemAddOn(data);
         }
     }
-    @OAEditQuery(enabledProperty = SalesOrderItem.P_AllowsItemAddOn)
-    public void onEditQueryAssignSameItemAddOn(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = SalesOrderItem.P_AllowsItemAddOn)
+    public void onEditQueryAssignSameItemAddOn(OAObjectCallback em) {
     }
 
     public void load(ResultSet rs, int id) throws SQLException {

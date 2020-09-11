@@ -110,7 +110,7 @@ public class ShipToModel extends OAObjectModel {
         modelOrders.setAllowCut(false);
         modelOrders.setAllowPaste(false);
         // call ShipTo.onEditQueryOrders(OrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(ShipTo.class, ShipTo.P_Orders, modelOrders);
+        OAObjectCallbackDelegate.onObjectCallbackModel(ShipTo.class, ShipTo.P_Orders, modelOrders);
     
         return modelOrders;
     }
@@ -141,7 +141,7 @@ public class ShipToModel extends OAObjectModel {
         modelSalesCustomers.setAllowCut(false);
         modelSalesCustomers.setAllowPaste(false);
         // call ShipTo.onEditQuerySalesCustomers(SalesCustomerModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(ShipTo.class, ShipTo.P_SalesCustomers, modelSalesCustomers);
+        OAObjectCallbackDelegate.onObjectCallbackModel(ShipTo.class, ShipTo.P_SalesCustomers, modelSalesCustomers);
     
         return modelSalesCustomers;
     }

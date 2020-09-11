@@ -110,7 +110,7 @@ public class DeliveryModel extends OAObjectModel {
         modelDeliveryTrucks.setAllowCut(false);
         modelDeliveryTrucks.setAllowPaste(false);
         // call Delivery.onEditQueryDeliveryTrucks(DeliveryTruckModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Delivery.class, Delivery.P_DeliveryTrucks, modelDeliveryTrucks);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Delivery.class, Delivery.P_DeliveryTrucks, modelDeliveryTrucks);
     
         return modelDeliveryTrucks;
     }
@@ -141,7 +141,7 @@ public class DeliveryModel extends OAObjectModel {
         modelWODeliveries.setAllowCut(false);
         modelWODeliveries.setAllowPaste(false);
         // call Delivery.onEditQueryWODeliveries(WODeliveryModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Delivery.class, Delivery.P_WODeliveries, modelWODeliveries);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Delivery.class, Delivery.P_WODeliveries, modelWODeliveries);
     
         return modelWODeliveries;
     }

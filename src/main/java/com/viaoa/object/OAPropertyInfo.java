@@ -39,7 +39,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private boolean isEncrypted;
 	private Hub<String> hubNameValue;
 	private boolean isCurrency;
-	private transient Method editQueryMethod;
+	private transient Method objectCallbackMethod;
 	private boolean isProcessed;
 	private boolean isHtml;
 	private boolean isTimestamp;
@@ -332,12 +332,12 @@ public class OAPropertyInfo implements java.io.Serializable {
 		contextVisibleValue = b;
 	}
 
-	public void setEditQueryMethod(Method m) {
-		this.editQueryMethod = m;
+	public void setObjectCallbackMethod(Method m) {
+		this.objectCallbackMethod = m;
 	}
 
-	public Method getEditQueryMethod() {
-		return editQueryMethod;
+	public Method getObjectCallbackMethod() {
+		return objectCallbackMethod;
 	}
 
 	public boolean getTrackPrimitiveNull() {

@@ -38,8 +38,8 @@ import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectEditQuery;
-import com.viaoa.object.OAObjectEditQueryDelegate;
+import com.viaoa.object.OAObjectCallback;
+import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
@@ -546,7 +546,7 @@ public class OAJaxb<TYPE extends OAObject> {
 					node.oaObject = getNextUnmarshalObject(node);
 					if (i++ == 0) {
 						if (node.oaObject == null) {
-							OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowNewEditQuery(cz);
+							OAObjectCallback eq = OAObjectCallbackDelegate.getAllowNewObjectCallback(cz);
 							if (!eq.getAllowed()) {
 								throw new Exception("User does not have permission to create new object, msg=" + eq.getResponse());
 							}
@@ -577,7 +577,7 @@ public class OAJaxb<TYPE extends OAObject> {
 						}
 
 						if (bIsOwned) {
-							OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowNewEditQuery(cz);
+							OAObjectCallback eq = OAObjectCallbackDelegate.getAllowNewObjectCallback(cz);
 							if (!eq.getAllowed()) {
 								throw new Exception("User does not have permission to create new owned object, type=" + cz.getSimpleName()
 										+ ", msg=" + eq.getResponse());

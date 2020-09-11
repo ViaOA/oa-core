@@ -357,8 +357,8 @@ public class User extends OAObject {
         this.inactiveDate = newValue;
         firePropertyChange(P_InactiveDate, old, this.inactiveDate);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryInactiveDate(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryInactiveDate(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "New Order Access", displayLength = 5, columnLength = 16)
@@ -372,8 +372,8 @@ public class User extends OAObject {
         this.newOrderAccess = newValue;
         firePropertyChange(P_NewOrderAccess, old, this.newOrderAccess);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryNewOrderAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryNewOrderAccess(OAObjectCallback em) {
     }
      
     @OAProperty(maxLength = 12, displayLength = 3, columnLength = 8)
@@ -399,8 +399,8 @@ public class User extends OAObject {
         this.adminAccess = newValue;
         firePropertyChange(P_AdminAccess, old, this.adminAccess);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryAdminAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryAdminAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Prod View Access", displayLength = 5, columnLength = 16)
@@ -414,8 +414,8 @@ public class User extends OAObject {
         this.prodViewAccess = newValue;
         firePropertyChange(P_ProdViewAccess, old, this.prodViewAccess);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryProdViewAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryProdViewAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Prod Shipping Access", displayLength = 5, columnLength = 20)
@@ -429,8 +429,8 @@ public class User extends OAObject {
         this.prodShippingAccess = newValue;
         firePropertyChange(P_ProdShippingAccess, old, this.prodShippingAccess);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryProdShippingAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryProdShippingAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Prod Manager Access", displayLength = 5, columnLength = 19)
@@ -444,8 +444,8 @@ public class User extends OAObject {
         this.prodManagerAccess = newValue;
         firePropertyChange(P_ProdManagerAccess, old, this.prodManagerAccess);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryProdManagerAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryProdManagerAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Sales View Access", displayLength = 5, columnLength = 17)
@@ -459,8 +459,8 @@ public class User extends OAObject {
         this.salesViewAccess = newValue;
         firePropertyChange(P_SalesViewAccess, old, this.salesViewAccess);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQuerySalesViewAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQuerySalesViewAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Sales User Access", displayLength = 5, columnLength = 17)
@@ -474,8 +474,8 @@ public class User extends OAObject {
         this.salesUserAccess = newValue;
         firePropertyChange(P_SalesUserAccess, old, this.salesUserAccess);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQuerySalesUserAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQuerySalesUserAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Phone", maxLength = 35, displayLength = 15, columnLength = 13, isPhone = true)
@@ -537,8 +537,8 @@ public class User extends OAObject {
         this.prodAssignedToList = newValue;
         firePropertyChange(P_ProdAssignedToList, old, this.prodAssignedToList);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryProdAssignedToList(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryProdAssignedToList(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Sales Assigned To List", displayLength = 5, columnLength = 22)
@@ -552,8 +552,8 @@ public class User extends OAObject {
         this.salesAssignedToList = newValue;
         firePropertyChange(P_SalesAssignedToList, old, this.salesAssignedToList);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQuerySalesAssignedToList(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQuerySalesAssignedToList(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Salesperson List", displayLength = 5, columnLength = 16)
@@ -567,8 +567,8 @@ public class User extends OAObject {
         this.salesPersonList = newValue;
         firePropertyChange(P_SalesPersonList, old, this.salesPersonList);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQuerySalesPersonList(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQuerySalesPersonList(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Prod Inspector List", displayLength = 5, columnLength = 19)
@@ -582,8 +582,8 @@ public class User extends OAObject {
         this.prodInspectorList = newValue;
         firePropertyChange(P_ProdInspectorList, old, this.prodInspectorList);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryProdInspectorList(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryProdInspectorList(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Sales Access", trackPrimitiveNull = false, displayLength = 6, columnLength = 12, isNameValue = true)
@@ -603,8 +603,8 @@ public class User extends OAObject {
         if (s == null) s = "";
         return s;
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQuerySalesAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQuerySalesAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Production Access", trackPrimitiveNull = false, displayLength = 6, columnLength = 11, columnName = "Prod Access", isNameValue = true)
@@ -624,8 +624,8 @@ public class User extends OAObject {
         if (s == null) s = "";
         return s;
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryProductionAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryProductionAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Customer Access", trackPrimitiveNull = false, displayLength = 6, columnLength = 11, columnName = "Cust Access", isNameValue = true)
@@ -645,8 +645,8 @@ public class User extends OAObject {
         if (s == null) s = "";
         return s;
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryCustomerAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryCustomerAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Item Access", trackPrimitiveNull = false, displayLength = 6, columnLength = 11, isNameValue = true)
@@ -666,8 +666,8 @@ public class User extends OAObject {
         if (s == null) s = "";
         return s;
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryItemAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryItemAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Pricing Access", trackPrimitiveNull = false, displayLength = 6, columnLength = 14, isNameValue = true)
@@ -687,8 +687,8 @@ public class User extends OAObject {
         if (s == null) s = "";
         return s;
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryPricingAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryPricingAccess(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Search Access", trackPrimitiveNull = false, displayLength = 6, columnLength = 13, isNameValue = true)
@@ -708,8 +708,8 @@ public class User extends OAObject {
         if (s == null) s = "";
         return s;
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQuerySearchAccess(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQuerySearchAccess(OAObjectCallback em) {
     }
      
     @OACalculatedProperty(displayName = "Full Name", displayLength = 20, columnLength = 15, properties = {P_FirstName, P_LastName})
@@ -872,8 +872,8 @@ public class User extends OAObject {
         this.appUser = newValue;
         firePropertyChange(P_AppUser, old, this.appUser);
     }
-    @OAEditQuery(contextVisibleProperty = AppUser.P_Admin)
-    public void onEditQueryAppUser(OAObjectEditQuery em) {
+    @OAObjCallback(contextVisibleProperty = AppUser.P_Admin)
+    public void onEditQueryAppUser(OAObjectCallback em) {
     }
      
     @OAMany(
@@ -967,8 +967,8 @@ public class User extends OAObject {
         appUser.setAdmin(getAdminAccess());
         endServerOnly();
     }
-    @OAEditQuery(contextVisibleProperty = AppUser.P_Admin)
-    public void onEditQueryUpdateAppUser(OAObjectEditQuery em) {
+    @OAObjCallback(contextVisibleProperty = AppUser.P_Admin)
+    public void onEditQueryUpdateAppUser(OAObjectCallback em) {
     }
 
     public void load(ResultSet rs, int id) throws SQLException {

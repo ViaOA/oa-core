@@ -105,7 +105,7 @@ public class ProductionAreaModel extends OAObjectModel {
         modelItems.setAllowCut(false);
         modelItems.setAllowPaste(false);
         // call ProductionArea.onEditQueryItems(ItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(ProductionArea.class, ProductionArea.P_Items, modelItems);
+        OAObjectCallbackDelegate.onObjectCallbackModel(ProductionArea.class, ProductionArea.P_Items, modelItems);
     
         return modelItems;
     }

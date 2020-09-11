@@ -114,7 +114,7 @@ public class WebPageModel extends OAObjectModel {
         modelLinkFromWebPart.setAllowCut(false);
         modelLinkFromWebPart.setAllowPaste(false);
         // call WebPage.onEditQueryLinkFromWebPart(WebPartModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebPage.class, WebPage.P_LinkFromWebPart, modelLinkFromWebPart);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebPage.class, WebPage.P_LinkFromWebPart, modelLinkFromWebPart);
     
         return modelLinkFromWebPart;
     }
@@ -146,7 +146,7 @@ public class WebPageModel extends OAObjectModel {
         modelWebParts.setAllowCut(false);
         modelWebParts.setAllowPaste(false);
         // call WebPage.onEditQueryWebParts(WebPartModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebPage.class, WebPage.P_WebParts, modelWebParts);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebPage.class, WebPage.P_WebParts, modelWebParts);
     
         return modelWebParts;
     }

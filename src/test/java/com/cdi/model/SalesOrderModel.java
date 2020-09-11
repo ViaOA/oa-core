@@ -240,7 +240,7 @@ public class SalesOrderModel extends OAObjectModel {
         modelAssignedUser.setCreateUI(li == null || !SalesOrder.P_AssignedUser.equals(li.getName()) );
         modelAssignedUser.setViewOnly(true);
         // call SalesOrder.onEditQueryAssignedUser(UserModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrder.class, SalesOrder.P_AssignedUser, modelAssignedUser);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrder.class, SalesOrder.P_AssignedUser, modelAssignedUser);
     
         return modelAssignedUser;
     }
@@ -263,7 +263,7 @@ public class SalesOrderModel extends OAObjectModel {
         modelOrder.setCreateUI(li == null || !SalesOrder.P_Order.equals(li.getName()) );
         modelOrder.setViewOnly(true);
         // call SalesOrder.onEditQueryOrder(OrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrder.class, SalesOrder.P_Order, modelOrder);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrder.class, SalesOrder.P_Order, modelOrder);
     
         return modelOrder;
     }
@@ -284,7 +284,7 @@ public class SalesOrderModel extends OAObjectModel {
         modelPriceCode.setAllowGotoEdit(false);
         modelPriceCode.setViewOnly(true);
         // call SalesOrder.onEditQueryPriceCode(PriceCodeModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrder.class, SalesOrder.P_PriceCode, modelPriceCode);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrder.class, SalesOrder.P_PriceCode, modelPriceCode);
     
         return modelPriceCode;
     }
@@ -305,7 +305,7 @@ public class SalesOrderModel extends OAObjectModel {
         modelSalesOrderSource.setAllowGotoEdit(false);
         modelSalesOrderSource.setViewOnly(true);
         // call SalesOrder.onEditQuerySalesOrderSource(SalesOrderSourceModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrder.class, SalesOrder.P_SalesOrderSource, modelSalesOrderSource);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrder.class, SalesOrder.P_SalesOrderSource, modelSalesOrderSource);
     
         return modelSalesOrderSource;
     }
@@ -326,7 +326,7 @@ public class SalesOrderModel extends OAObjectModel {
         modelSalesOrderStatus.setAllowGotoEdit(false);
         modelSalesOrderStatus.setViewOnly(true);
         // call SalesOrder.onEditQuerySalesOrderStatus(SalesOrderStatusModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrder.class, SalesOrder.P_SalesOrderStatus, modelSalesOrderStatus);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrder.class, SalesOrder.P_SalesOrderStatus, modelSalesOrderStatus);
     
         return modelSalesOrderStatus;
     }
@@ -347,7 +347,7 @@ public class SalesOrderModel extends OAObjectModel {
         modelSalesPersonUser.setAllowGotoEdit(false);
         modelSalesPersonUser.setViewOnly(true);
         // call SalesOrder.onEditQuerySalesPersonUser(UserModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrder.class, SalesOrder.P_SalesPersonUser, modelSalesPersonUser);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrder.class, SalesOrder.P_SalesPersonUser, modelSalesPersonUser);
     
         return modelSalesPersonUser;
     }
@@ -378,7 +378,7 @@ public class SalesOrderModel extends OAObjectModel {
         modelSalesOrderItems.setAllowCut(false);
         modelSalesOrderItems.setAllowPaste(false);
         // call SalesOrder.onEditQuerySalesOrderItems(SalesOrderItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrder.class, SalesOrder.P_SalesOrderItems, modelSalesOrderItems);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrder.class, SalesOrder.P_SalesOrderItems, modelSalesOrderItems);
     
         return modelSalesOrderItems;
     }
@@ -409,7 +409,7 @@ public class SalesOrderModel extends OAObjectModel {
         modelSalesOrderNotes.setAllowCut(false);
         modelSalesOrderNotes.setAllowPaste(false);
         // call SalesOrder.onEditQuerySalesOrderNotes(SalesOrderNoteModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(SalesOrder.class, SalesOrder.P_SalesOrderNotes, modelSalesOrderNotes);
+        OAObjectCallbackDelegate.onObjectCallbackModel(SalesOrder.class, SalesOrder.P_SalesOrderNotes, modelSalesOrderNotes);
     
         return modelSalesOrderNotes;
     }

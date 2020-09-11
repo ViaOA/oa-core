@@ -154,8 +154,8 @@ public class OrderContact extends OAObject {
         this.followupDate = newValue;
         firePropertyChange(P_FollowupDate, old, this.followupDate);
     }
-    @OAEditQuery(enabledProperty = OrderContact.P_Followup)
-    public void onEditQueryFollowupDate(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = OrderContact.P_Followup)
+    public void onEditQueryFollowupDate(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Followup Time", displayLength = 8, columnName = "Time")
@@ -169,8 +169,8 @@ public class OrderContact extends OAObject {
         this.followupTime = newValue;
         firePropertyChange(P_FollowupTime, old, this.followupTime);
     }
-    @OAEditQuery(enabledProperty = OrderContact.P_Followup)
-    public void onEditQueryFollowupTime(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = OrderContact.P_Followup)
+    public void onEditQueryFollowupTime(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Followup Note", maxLength = 250, displayLength = 20)
@@ -184,8 +184,8 @@ public class OrderContact extends OAObject {
         this.followupNote = newValue;
         firePropertyChange(P_FollowupNote, old, this.followupNote);
     }
-    @OAEditQuery(enabledProperty = OrderContact.P_Followup)
-    public void onEditQueryFollowupNote(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = OrderContact.P_Followup)
+    public void onEditQueryFollowupNote(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Followup Completed", displayLength = 5, columnName = "Done")
@@ -199,8 +199,8 @@ public class OrderContact extends OAObject {
         this.followupCompleted = newValue;
         firePropertyChange(P_FollowupCompleted, old, this.followupCompleted);
     }
-    @OAEditQuery(enabledProperty = OrderContact.P_Followup)
-    public void onEditQueryFollowupCompleted(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = OrderContact.P_Followup)
+    public void onEditQueryFollowupCompleted(OAObjectCallback em) {
     }
      
     @OAOne(

@@ -268,7 +268,7 @@ public class WebPartModel extends OAObjectModel {
         modelImageStore.setAllowGotoEdit(true);
         modelImageStore.setViewOnly(getViewOnly());
         // call WebPart.onEditQueryImageStore(ImageStoreModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebPart.class, WebPart.P_ImageStore, modelImageStore);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebPart.class, WebPart.P_ImageStore, modelImageStore);
     
         return modelImageStore;
     }
@@ -291,7 +291,7 @@ public class WebPartModel extends OAObjectModel {
         modelLinkToWebPage.setCreateUI(li == null || !WebPart.P_LinkToWebPage.equals(li.getName()) );
         modelLinkToWebPage.setViewOnly(true);
         // call WebPart.onEditQueryLinkToWebPage(WebPageModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebPart.class, WebPart.P_LinkToWebPage, modelLinkToWebPage);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebPart.class, WebPart.P_LinkToWebPage, modelLinkToWebPage);
     
         return modelLinkToWebPage;
     }
@@ -314,7 +314,7 @@ public class WebPartModel extends OAObjectModel {
         modelParentWebPart.setCreateUI(li == null || !WebPart.P_ParentWebPart.equals(li.getName()) );
         modelParentWebPart.setViewOnly(true);
         // call WebPart.onEditQueryParentWebPart(WebPartModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebPart.class, WebPart.P_ParentWebPart, modelParentWebPart);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebPart.class, WebPart.P_ParentWebPart, modelParentWebPart);
     
         return modelParentWebPart;
     }
@@ -337,7 +337,7 @@ public class WebPartModel extends OAObjectModel {
         modelWebPage.setCreateUI(li == null || !WebPart.P_WebPage.equals(li.getName()) );
         modelWebPage.setViewOnly(getViewOnly());
         // call WebPart.onEditQueryWebPage(WebPageModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebPart.class, WebPart.P_WebPage, modelWebPage);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebPart.class, WebPart.P_WebPage, modelWebPage);
     
         return modelWebPage;
     }
@@ -368,7 +368,7 @@ public class WebPartModel extends OAObjectModel {
         modelWebItems.setAllowCut(false);
         modelWebItems.setAllowPaste(false);
         // call WebPart.onEditQueryWebItems(WebItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebPart.class, WebPart.P_WebItems, modelWebItems);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebPart.class, WebPart.P_WebItems, modelWebItems);
     
         return modelWebItems;
     }
@@ -400,7 +400,7 @@ public class WebPartModel extends OAObjectModel {
         modelWebParts.setAllowCut(false);
         modelWebParts.setAllowPaste(false);
         // call WebPart.onEditQueryWebParts(WebPartModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebPart.class, WebPart.P_WebParts, modelWebParts);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebPart.class, WebPart.P_WebParts, modelWebParts);
     
         return modelWebParts;
     }

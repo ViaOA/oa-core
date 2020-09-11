@@ -155,9 +155,9 @@ public class Order extends OAObject {
         setId(id);
     }
      
-    @OAEditQuery(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcProductionWriteAccess
+    @OAObjCallback(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcProductionWriteAccess
     )
-    public void onEditQuery(OAObjectEditQuery em) {
+    public void onEditQuery(OAObjectCallback em) {
     }
     @OAProperty(isUnique = true, displayLength = 6)
     @OAId()
@@ -513,8 +513,8 @@ public class Order extends OAObject {
         this.colorCode = newValue;
         firePropertyChange(P_ColorCode, old, this.colorCode);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryColorCode(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryColorCode(OAObjectCallback em) {
     }
      
     @OAOne(
@@ -683,8 +683,8 @@ public class Order extends OAObject {
         this.texture = newValue;
         firePropertyChange(P_Texture, old, this.texture);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQueryTexture(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQueryTexture(OAObjectCallback em) {
     }
      
     @OAMany(
@@ -741,8 +741,8 @@ public class Order extends OAObject {
             sendMessages(false);
         }
     }
-    @OAEditQuery(enabledProperty = Order.P_DateCompleted, enabledValue = false)
-    public void onEditQueryCreateWorkOrder(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = Order.P_DateCompleted, enabledValue = false)
+    public void onEditQueryCreateWorkOrder(OAObjectCallback em) {
     }
 
     @OAMethod(displayName = "Update Work Orders")

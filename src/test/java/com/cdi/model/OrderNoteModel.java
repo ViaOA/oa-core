@@ -101,7 +101,7 @@ public class OrderNoteModel extends OAObjectModel {
         modelOrder.setCreateUI(li == null || !OrderNote.P_Order.equals(li.getName()) );
         modelOrder.setViewOnly(getViewOnly());
         // call OrderNote.onEditQueryOrder(OrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(OrderNote.class, OrderNote.P_Order, modelOrder);
+        OAObjectCallbackDelegate.onObjectCallbackModel(OrderNote.class, OrderNote.P_Order, modelOrder);
     
         return modelOrder;
     }
@@ -122,7 +122,7 @@ public class OrderNoteModel extends OAObjectModel {
         modelUser.setAllowGotoEdit(false);
         modelUser.setViewOnly(true);
         // call OrderNote.onEditQueryUser(UserModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(OrderNote.class, OrderNote.P_User, modelUser);
+        OAObjectCallbackDelegate.onObjectCallbackModel(OrderNote.class, OrderNote.P_User, modelUser);
     
         return modelUser;
     }

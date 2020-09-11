@@ -101,7 +101,7 @@ public class WebItemModel extends OAObjectModel {
         modelItem.setCreateUI(li == null || !WebItem.P_Item.equals(li.getName()) );
         modelItem.setViewOnly(getViewOnly());
         // call WebItem.onEditQueryItem(ItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebItem.class, WebItem.P_Item, modelItem);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebItem.class, WebItem.P_Item, modelItem);
     
         return modelItem;
     }
@@ -124,7 +124,7 @@ public class WebItemModel extends OAObjectModel {
         modelWebPart.setCreateUI(li == null || !WebItem.P_WebPart.equals(li.getName()) );
         modelWebPart.setViewOnly(getViewOnly());
         // call WebItem.onEditQueryWebPart(WebPartModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(WebItem.class, WebItem.P_WebPart, modelWebPart);
+        OAObjectCallbackDelegate.onObjectCallbackModel(WebItem.class, WebItem.P_WebPart, modelWebPart);
     
         return modelWebPart;
     }

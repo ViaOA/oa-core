@@ -151,7 +151,7 @@ public class ItemModel extends OAObjectModel {
         modelFileInfo.setAllowGotoEdit(true);
         modelFileInfo.setViewOnly(getViewOnly());
         // call Item.onEditQueryFileInfo(FileInfoModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Item.class, Item.P_FileInfo, modelFileInfo);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Item.class, Item.P_FileInfo, modelFileInfo);
     
         return modelFileInfo;
     }
@@ -172,7 +172,7 @@ public class ItemModel extends OAObjectModel {
         modelImageStore.setAllowGotoEdit(true);
         modelImageStore.setViewOnly(getViewOnly());
         // call Item.onEditQueryImageStore(ImageStoreModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Item.class, Item.P_ImageStore, modelImageStore);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Item.class, Item.P_ImageStore, modelImageStore);
     
         return modelImageStore;
     }
@@ -195,7 +195,7 @@ public class ItemModel extends OAObjectModel {
         modelItemCategory.setCreateUI(li == null || !Item.P_ItemCategory.equals(li.getName()) );
         modelItemCategory.setViewOnly(true);
         // call Item.onEditQueryItemCategory(ItemCategoryModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Item.class, Item.P_ItemCategory, modelItemCategory);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Item.class, Item.P_ItemCategory, modelItemCategory);
     
         return modelItemCategory;
     }
@@ -218,7 +218,7 @@ public class ItemModel extends OAObjectModel {
         modelMold.setCreateUI(li == null || !Item.P_Mold.equals(li.getName()) );
         modelMold.setViewOnly(getViewOnly());
         // call Item.onEditQueryMold(MoldModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Item.class, Item.P_Mold, modelMold);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Item.class, Item.P_Mold, modelMold);
     
         return modelMold;
     }
@@ -241,7 +241,7 @@ public class ItemModel extends OAObjectModel {
         modelProductionArea.setCreateUI(li == null || !Item.P_ProductionArea.equals(li.getName()) );
         modelProductionArea.setViewOnly(true);
         // call Item.onEditQueryProductionArea(ProductionAreaModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Item.class, Item.P_ProductionArea, modelProductionArea);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Item.class, Item.P_ProductionArea, modelProductionArea);
     
         return modelProductionArea;
     }
@@ -272,7 +272,7 @@ public class ItemModel extends OAObjectModel {
         modelOpenOrderItems.setAllowCut(false);
         modelOpenOrderItems.setAllowPaste(false);
         // call Item.onEditQueryOpenOrderItems(OrderItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Item.class, Item.P_OpenOrderItems, modelOpenOrderItems);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Item.class, Item.P_OpenOrderItems, modelOpenOrderItems);
     
         return modelOpenOrderItems;
     }
@@ -303,7 +303,7 @@ public class ItemModel extends OAObjectModel {
         modelWebItems.setAllowCut(false);
         modelWebItems.setAllowPaste(false);
         // call Item.onEditQueryWebItems(WebItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Item.class, Item.P_WebItems, modelWebItems);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Item.class, Item.P_WebItems, modelWebItems);
     
         return modelWebItems;
     }

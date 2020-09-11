@@ -143,8 +143,8 @@ public class OrderItem extends OAObject {
         this.onHandQuantity = newValue;
         firePropertyChange(P_OnHandQuantity, old, this.onHandQuantity);
     }
-    @OAEditQuery(enabledProperty = OrderItem.P_IsProduced)
-    public void onEditQueryOnHandQuantity(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = OrderItem.P_IsProduced)
+    public void onEditQueryOnHandQuantity(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Ship Quantity", description = "set by QB when line item is shipped", displayLength = 6, columnLength = 8, columnName = "Ship Qty", isProcessed = true)
@@ -161,8 +161,8 @@ public class OrderItem extends OAObject {
         this.shippedQuantity = newValue;
         firePropertyChange(P_ShippedQuantity, old, this.shippedQuantity);
     }
-    @OAEditQuery(enabledProperty = OrderItem.P_IsProduced)
-    public void onEditQueryShippedQuantity(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = OrderItem.P_IsProduced)
+    public void onEditQueryShippedQuantity(OAObjectCallback em) {
     }
      
     @OAProperty(displayLength = 20, hasCustomCode = true, isHtml = true)
@@ -225,8 +225,8 @@ public class OrderItem extends OAObject {
         this.expectedProductionEndDate = newValue;
         firePropertyChange(P_ExpectedProductionEndDate, old, this.expectedProductionEndDate);
     }
-    @OAEditQuery(enabledProperty = OrderItem.P_IsProduced)
-    public void onEditQueryExpectedProductionEndDate(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = OrderItem.P_IsProduced)
+    public void onEditQueryExpectedProductionEndDate(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Inventory Adjustment Quantity", trackPrimitiveNull = false, displayLength = 6, columnLength = 29, isProcessed = true)
@@ -419,8 +419,8 @@ public class OrderItem extends OAObject {
         }
         return hubWOItems;
     }
-    @OAEditQuery(enabledProperty = OrderItem.P_IsProduced)
-    public void onEditQueryWOItems(OAObjectEditQuery em) {
+    @OAObjCallback(enabledProperty = OrderItem.P_IsProduced)
+    public void onEditQueryWOItems(OAObjectCallback em) {
     }
      
     public void load(ResultSet rs, int id) throws SQLException {

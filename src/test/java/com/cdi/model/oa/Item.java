@@ -134,9 +134,9 @@ public class Item extends OAObject {
         setId(id);
     }
      
-    @OAEditQuery(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcItemWriteAccess
+    @OAObjCallback(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcItemWriteAccess
     )
-    public void onEditQuery(OAObjectEditQuery em) {
+    public void onEditQuery(OAObjectCallback em) {
     }
     @OAProperty(isUnique = true, displayLength = 6)
     @OAId()
@@ -270,10 +270,10 @@ public class Item extends OAObject {
         this.price = newValue;
         firePropertyChange(P_Price, old, this.price);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcPricingWriteAccess, 
+    @OAObjCallback(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcPricingWriteAccess, 
         contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess
     )
-    public void onEditQueryPrice(OAObjectEditQuery em) {
+    public void onEditQueryPrice(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Discontinued Date", displayLength = 8, columnLength = 9, columnName = "Disc Date")

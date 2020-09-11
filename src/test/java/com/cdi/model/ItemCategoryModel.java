@@ -253,7 +253,7 @@ public class ItemCategoryModel extends OAObjectModel {
         modelParentItemCategory.setCreateUI(li == null || !ItemCategory.P_ParentItemCategory.equals(li.getName()) );
         modelParentItemCategory.setViewOnly(true);
         // call ItemCategory.onEditQueryParentItemCategory(ItemCategoryModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(ItemCategory.class, ItemCategory.P_ParentItemCategory, modelParentItemCategory);
+        OAObjectCallbackDelegate.onObjectCallbackModel(ItemCategory.class, ItemCategory.P_ParentItemCategory, modelParentItemCategory);
     
         return modelParentItemCategory;
     }
@@ -285,7 +285,7 @@ public class ItemCategoryModel extends OAObjectModel {
         modelItemCategories.setAllowCut(false);
         modelItemCategories.setAllowPaste(false);
         // call ItemCategory.onEditQueryItemCategories(ItemCategoryModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(ItemCategory.class, ItemCategory.P_ItemCategories, modelItemCategories);
+        OAObjectCallbackDelegate.onObjectCallbackModel(ItemCategory.class, ItemCategory.P_ItemCategories, modelItemCategories);
     
         return modelItemCategories;
     }
@@ -316,7 +316,7 @@ public class ItemCategoryModel extends OAObjectModel {
         modelItems.setAllowCut(false);
         modelItems.setAllowPaste(false);
         // call ItemCategory.onEditQueryItems(ItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(ItemCategory.class, ItemCategory.P_Items, modelItems);
+        OAObjectCallbackDelegate.onObjectCallbackModel(ItemCategory.class, ItemCategory.P_Items, modelItems);
     
         return modelItems;
     }

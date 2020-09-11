@@ -29,8 +29,8 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectEditQuery;
-import com.viaoa.object.OAObjectEditQueryDelegate;
+import com.viaoa.object.OAObjectCallback;
+import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
@@ -320,7 +320,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 			OASelect sel = data.getSelect();
 			if (sel != null) {
 			    boolean b = sel.isCounted();
-
+			
 			    if (!sel.hasBeenStarted()) {
 			        if (b) s += " counted: " + sel.getCount() + ", ";
 			        s += " not selected";
@@ -850,13 +850,19 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		return HubAddRemoveDelegate.add(this, obj);
 	}
 
+	public void add(List<TYPE> list) {
+		for (TYPE obj : list) {
+			HubAddRemoveDelegate.add(this, obj);
+		}
+	}
+
 	public void add(Hub<TYPE> hub) {
 		if (hub == null) {
 			return;
 		}
 		/* 20200522 removed, caller should setLoading(..) if it's needed
 		 * otherwise, events from add will check isLoading and not run code.  Ex: M2M wont be set
-
+		
 		boolean b = (getSize() == 0);
 		if (b) {
 			OAThreadLocalDelegate.setLoading(true);
@@ -883,7 +889,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (data.isDisabled()) {
 			return false;
 		}
-		return OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_CallbackMethod, this, null, null);
+		return OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, this, null, null);
 	}
 
 	public void setEnabled(boolean b) {
@@ -1911,8 +1917,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	}
 
 	/**
-
-
+	
+	
 	 */
 	protected void setLinkHub(String propertyFrom, Hub linkHub, String propertyTo, boolean linkPosFlag) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
@@ -1989,17 +1995,17 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		return OAObjectEditQueryDelegate.getAllowRemove(this, (OAObject) obj, checkType);
+		return OAObjectCallbackDelegate.getAllowRemove(this, (OAObject) obj, checkType);
 	}
 
 	public boolean getVerifyRemove(int checkType, TYPE obj) {
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		return OAObjectEditQueryDelegate.getVerifyRemove(this, (OAObject) obj, checkType);
+		return OAObjectCallbackDelegate.getVerifyRemove(this, (OAObject) obj, checkType);
 	}
 
-	public boolean getAllowRemoveAll(final boolean bCheckEditQuery, final int checkType) {
+	public boolean getAllowRemoveAll(final boolean bCheckObjectCallback, final int checkType) {
 		String s = HubAddRemoveDelegate.getCantRemoveAllMessage(this, checkType);
 		return s == null;
 	}
@@ -2245,10 +2251,10 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	}
 
 	/*
-        hub.onChangeAO( event -> {
-      
-        });
-
+	    hub.onChangeAO( event -> {
+	
+	    });
+	
 	 */
 	public void onChangeAO(HubOnEventInterface onEvent) {
 		if (onEvent == null) {
@@ -2310,6 +2316,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 				onEvent.onEvent(e);
 			}
 		});
+	}
+
+	public Hub<TYPE> createFilteredHub(OAFilter filter, String... dependentPropertyPaths) {
+		Hub h = new Hub(this.getObjectClass());
+		HubFilter f = new HubFilter(this, h, filter, dependentPropertyPaths);
+		return h;
 	}
 
 	//qqqqqqqqqqqqqqqqqq

@@ -110,7 +110,7 @@ public class ContactModel extends OAObjectModel {
         modelCustomer.setCreateUI(li == null || !Contact.P_Customer.equals(li.getName()) );
         modelCustomer.setViewOnly(getViewOnly());
         // call Contact.onEditQueryCustomer(CustomerModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Contact.class, Contact.P_Customer, modelCustomer);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Contact.class, Contact.P_Customer, modelCustomer);
     
         return modelCustomer;
     }
@@ -141,7 +141,7 @@ public class ContactModel extends OAObjectModel {
         modelOrderContacts.setAllowCut(false);
         modelOrderContacts.setAllowPaste(false);
         // call Contact.onEditQueryOrderContacts(OrderContactModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Contact.class, Contact.P_OrderContacts, modelOrderContacts);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Contact.class, Contact.P_OrderContacts, modelOrderContacts);
     
         return modelOrderContacts;
     }
@@ -172,7 +172,7 @@ public class ContactModel extends OAObjectModel {
         modelPhones.setAllowCut(false);
         modelPhones.setAllowPaste(false);
         // call Contact.onEditQueryPhones(PhoneModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Contact.class, Contact.P_Phones, modelPhones);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Contact.class, Contact.P_Phones, modelPhones);
     
         return modelPhones;
     }

@@ -125,10 +125,10 @@ public class ItemAddOn extends OAObject {
         this.price = newValue;
         firePropertyChange(P_Price, old, this.price);
     }
-    @OAEditQuery(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcPricingWriteAccess, 
+    @OAObjCallback(contextEnabledProperty = AppUser.P_User+"."+User.P_CalcPricingWriteAccess, 
         contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess
     )
-    public void onEditQueryPrice(OAObjectEditQuery em) {
+    public void onEditQueryPrice(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Discontinued Date", displayLength = 8, columnLength = 9, columnName = "Disc Date")

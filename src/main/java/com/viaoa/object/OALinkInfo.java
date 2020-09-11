@@ -67,7 +67,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private String mergerPropertyPath;
 	private OAOne oaOne;
 	private OAMany oaMany;
-	private Method editQueryMethod;
+	private Method objectCallbackMethod;
 	private String[] viewDependentProperties;
 	private String[] contextDependentProperties;
 
@@ -593,12 +593,12 @@ public class OALinkInfo { //implements java.io.Serializable {
 		contextVisibleValue = b;
 	}
 
-	public void setEditQueryMethod(Method m) {
-		this.editQueryMethod = m;
+	public void setObjectCallbackMethod(Method m) {
+		this.objectCallbackMethod = m;
 	}
 
-	public Method getEditQueryMethod() {
-		return editQueryMethod;
+	public Method getObjectCallbackMethod() {
+		return objectCallbackMethod;
 	}
 
 	public void setSchedulerMethod(Method m) {

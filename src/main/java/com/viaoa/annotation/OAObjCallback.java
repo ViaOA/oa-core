@@ -16,18 +16,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.viaoa.object.OAObjectEditQuery;
+import com.viaoa.object.OAObjectCallback;
 
 /**
- * Used to define OAObject callbacks, and dependent property paths for OAObjectEditQuery.enabled and visible
+ * Used to define OAObject callbacks, and dependent property paths for OAObjectCallback.enabled and visible
  *
- * @see com.viaoa.object.OAObjectEditQuery
+ * @see com.viaoa.object.OAObjectCallback
  * @author vvia
  */
 @Documented
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface OAEditQuery {
+public @interface OAObjCallback {
 	String enabledProperty() default "";
 
 	boolean enabledValue() default true;
@@ -50,5 +50,5 @@ public @interface OAEditQuery {
 	String[] contextDependentProperties() default {};
 
 	// expected types that the method is expecting and will call ack() method when called.
-	OAObjectEditQuery.Type[] supportedTypes() default {};
+	OAObjectCallback.Type[] supportedTypes() default {};
 }

@@ -94,7 +94,7 @@ public class AppUserErrorModel extends OAObjectModel {
         modelAppUserLogin.setCreateUI(li == null || !AppUserError.P_AppUserLogin.equals(li.getName()) );
         modelAppUserLogin.setViewOnly(getViewOnly());
         // call AppUserError.onEditQueryAppUserLogin(AppUserLoginModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(AppUserError.class, AppUserError.P_AppUserLogin, modelAppUserLogin);
+        OAObjectCallbackDelegate.onObjectCallbackModel(AppUserError.class, AppUserError.P_AppUserLogin, modelAppUserLogin);
     
         return modelAppUserLogin;
     }

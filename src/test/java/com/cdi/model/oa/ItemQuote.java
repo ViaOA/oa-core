@@ -95,8 +95,8 @@ public class ItemQuote extends OAObject {
         d = OAConv.round(d, 2);
         return d;
     }
-    @OAEditQuery(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
-    public void onEditQueryTotalItemOurPrice(OAObjectEditQuery em) {
+    @OAObjCallback(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
+    public void onEditQueryTotalItemOurPrice(OAObjectCallback em) {
     }
      
     @OACalculatedProperty(displayName = "Item Sell Price", decimalPlaces = 2, isCurrency = true, displayLength = 9, columnLength = 15, properties = {P_TotalItemOurPrice, P_PriceCode+"."+PriceCode.P_Rate, P_ItemAddOn+"."+ItemAddOn.P_Price})

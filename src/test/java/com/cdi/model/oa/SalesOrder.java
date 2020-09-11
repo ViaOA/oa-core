@@ -183,10 +183,10 @@ public class SalesOrder extends OAObject {
         setId(id);
     }
      
-    @OAEditQuery(enabledProperty = SalesOrder.P_CanEdit, contextEnabledProperty = AppUser.P_User+"."+User.P_CalcSalesWriteAccess, 
+    @OAObjCallback(enabledProperty = SalesOrder.P_CanEdit, contextEnabledProperty = AppUser.P_User+"."+User.P_CalcSalesWriteAccess, 
         viewDependentProperties = {SalesOrder.P_SalesOrderItems}
     )
-    public void onEditQuery(OAObjectEditQuery em) {
+    public void onEditQuery(OAObjectCallback em) {
         switch (em.getType()) {
         case AfterCopy:
             SalesOrder salesOrderCopy = (SalesOrder) em.getValue();
@@ -296,8 +296,8 @@ public class SalesOrder extends OAObject {
         this.dateComplete = newValue;
         firePropertyChange(P_DateComplete, old, this.dateComplete);
     }
-    @OAEditQuery
-    public void onEditQueryDateComplete(OAObjectEditQuery em) {
+    @OAObjCallback
+    public void onEditQueryDateComplete(OAObjectCallback em) {
         // CUSTOM
         switch (em.getType()) {
         case AllowEnabled:
@@ -330,8 +330,8 @@ public class SalesOrder extends OAObject {
         this.closeReason = newValue;
         firePropertyChange(P_CloseReason, old, this.closeReason);
     }
-    @OAEditQuery(visibleProperty = SalesOrder.P_DateClosed)
-    public void onEditQueryCloseReason(OAObjectEditQuery em) {
+    @OAObjCallback(visibleProperty = SalesOrder.P_DateClosed)
+    public void onEditQueryCloseReason(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Tax Rate", description = "percentage", decimalPlaces = 2, displayLength = 7, columnLength = 8)
@@ -363,8 +363,8 @@ public class SalesOrder extends OAObject {
         this.discountPercent = newValue;
         firePropertyChange(P_DiscountPercent, old, this.discountPercent);
     }
-    @OAEditQuery(visibleProperty = SalesOrder.P_DiscountPercent)
-    public void onEditQueryDiscountPercent(OAObjectEditQuery em) {
+    @OAObjCallback(visibleProperty = SalesOrder.P_DiscountPercent)
+    public void onEditQueryDiscountPercent(OAObjectCallback em) {
     }
      
     @OAProperty(displayName = "Shipping Price", decimalPlaces = 2, isCurrency = true, displayLength = 9, columnLength = 8, columnName = "Ship $")
@@ -462,8 +462,8 @@ public class SalesOrder extends OAObject {
         this.sample = newValue;
         firePropertyChange(P_Sample, old, this.sample);
     }
-    @OAEditQuery
-    public void onEditQuerySample(OAObjectEditQuery em) {
+    @OAObjCallback
+    public void onEditQuerySample(OAObjectCallback em) {
         switch (em.getType()) {
         case AllowEnabled:
             if (em.getAllowed()) break;
@@ -518,8 +518,8 @@ public class SalesOrder extends OAObject {
         this.submitError = newValue;
         firePropertyChange(P_SubmitError, old, this.submitError);
     }
-    @OAEditQuery(visibleProperty = SalesOrder.P_SubmitError)
-    public void onEditQuerySubmitError(OAObjectEditQuery em) {
+    @OAObjCallback(visibleProperty = SalesOrder.P_SubmitError)
+    public void onEditQuerySubmitError(OAObjectCallback em) {
     }
      
     @OACalculatedProperty(displayName = "Total Item Our Price", decimalPlaces = 2, isCurrency = true, displayLength = 9, columnLength = 14, columnName = "Tot Item Our $", properties = {P_SalesOrderItems+"."+SalesOrderItem.P_TotalItemOurPrice})
@@ -531,8 +531,8 @@ public class SalesOrder extends OAObject {
         }
         return tot;
     }
-    @OAEditQuery(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
-    public void onEditQueryTotalItemOurPrice(OAObjectEditQuery em) {
+    @OAObjCallback(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
+    public void onEditQueryTotalItemOurPrice(OAObjectCallback em) {
     }
      
     @OACalculatedProperty(displayName = "Total Item Sell Price", decimalPlaces = 2, isCurrency = true, displayLength = 9, columnLength = 10, columnName = "Tot Item $", properties = {P_SalesOrderItems+"."+SalesOrderItem.P_TotalItemSellPrice})
@@ -556,8 +556,8 @@ public class SalesOrder extends OAObject {
         d = OAConv.round(d, 2);
         return d;
     }
-    @OAEditQuery(visibleProperty = SalesOrder.P_DiscountPercent)
-    public void onEditQueryTotalItemDiscount(OAObjectEditQuery em) {
+    @OAObjCallback(visibleProperty = SalesOrder.P_DiscountPercent)
+    public void onEditQueryTotalItemDiscount(OAObjectCallback em) {
     }
      
     @OACalculatedProperty(displayName = "Total Tooling", decimalPlaces = 2, isCurrency = true, displayLength = 9, columnName = "Tot Tool$", properties = {P_SalesOrderItems+"."+SalesOrderItem.P_ServicePrice})
@@ -697,8 +697,8 @@ public class SalesOrder extends OAObject {
         this.order = newValue;
         firePropertyChange(P_Order, old, this.order);
     }
-    @OAEditQuery(visibleProperty = SalesOrder.P_Order)
-    public void onEditQueryOrder(OAObjectEditQuery em) {
+    @OAObjCallback(visibleProperty = SalesOrder.P_Order)
+    public void onEditQueryOrder(OAObjectCallback em) {
     }
      
     @OAOne(
@@ -760,7 +760,7 @@ public class SalesOrder extends OAObject {
         }
         return hubSalesOrderItems;
     }
-    @OAEditQuery
+    @OAObjCallback
     public static void onEditQuerySalesOrderItemsModel(OAObjectModel om) {
         // custom model code
         om.setAllowMultiSelect(true);
@@ -848,10 +848,10 @@ public class SalesOrder extends OAObject {
         this.setDateSubmitted(new OADate());
         this.setDateClosed(new OADate());
     }
-    @OAEditQuery(enabledProperty = SalesOrder.P_DateSubmitted, enabledValue = false, 
+    @OAObjCallback(enabledProperty = SalesOrder.P_DateSubmitted, enabledValue = false, 
         viewDependentProperties = {SalesOrder.P_DateClosed}
     )
-    public void onEditQuerySubmitToQuickBooks(OAObjectEditQuery em) {
+    public void onEditQuerySubmitToQuickBooks(OAObjectCallback em) {
         switch (em.getType()) {
         case VerifyCommand:
             if (!em.getAllowed()) break;
@@ -880,8 +880,8 @@ public class SalesOrder extends OAObject {
         setDateClosed(new OADate());
         setCloseReason(data.getCloseReason());
     }
-    @OAEditQuery(visibleProperty = SalesOrder.P_DateClosed, visibleValue = false)
-    public void onEditQueryClose(OAObjectEditQuery em) {
+    @OAObjCallback(visibleProperty = SalesOrder.P_DateClosed, visibleValue = false)
+    public void onEditQueryClose(OAObjectCallback em) {
         switch (em.getType()) {
         case AllowEnabled:
             if (getDateClosed() == null) {
@@ -895,10 +895,10 @@ public class SalesOrder extends OAObject {
     public void reopen() {
         setDateClosed(null);
     }
-    @OAEditQuery(visibleProperty = SalesOrder.P_DateClosed, viewDependentProperties = {SalesOrder.P_DateSubmitted, SalesOrder.P_DateClosed}, 
+    @OAObjCallback(visibleProperty = SalesOrder.P_DateClosed, viewDependentProperties = {SalesOrder.P_DateSubmitted, SalesOrder.P_DateClosed}, 
         contextDependentProperties = {AppUser.P_Admin, AppUser.P_User+"."+User.P_AdminAccess}
     )
-    public void onEditQueryReopen(OAObjectEditQuery em) {
+    public void onEditQueryReopen(OAObjectCallback em) {
         switch (em.getType()) {
         case AllowEnabled:
             boolean b = (ModelDelegate.isAdminUser() && getDateClosed() != null && getDateSubmitted() == null);

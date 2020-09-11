@@ -194,7 +194,7 @@ public class UserModel extends OAObjectModel {
         modelAppUser.setCreateUI(li == null || !User.P_AppUser.equals(li.getName()) );
         modelAppUser.setViewOnly(true);
         // call User.onEditQueryAppUser(AppUserModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(User.class, User.P_AppUser, modelAppUser);
+        OAObjectCallbackDelegate.onObjectCallbackModel(User.class, User.P_AppUser, modelAppUser);
     
         return modelAppUser;
     }
@@ -225,7 +225,7 @@ public class UserModel extends OAObjectModel {
         modelAssignedSalesOrders.setAllowCut(false);
         modelAssignedSalesOrders.setAllowPaste(false);
         // call User.onEditQueryAssignedSalesOrders(SalesOrderModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(User.class, User.P_AssignedSalesOrders, modelAssignedSalesOrders);
+        OAObjectCallbackDelegate.onObjectCallbackModel(User.class, User.P_AssignedSalesOrders, modelAssignedSalesOrders);
     
         return modelAssignedSalesOrders;
     }

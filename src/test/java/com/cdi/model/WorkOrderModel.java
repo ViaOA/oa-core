@@ -21,7 +21,7 @@ import com.viaoa.hub.HubDelegate;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubShareAO;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectEditQueryDelegate;
+import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 import com.viaoa.util.OAFilter;
 
@@ -204,7 +204,7 @@ public class WorkOrderModel extends OAObjectModel {
 		modelInspectUser.setAllowGotoEdit(false);
 		modelInspectUser.setViewOnly(true);
 		// call WorkOrder.onEditQueryInspectUser(UserModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WorkOrder.class, WorkOrder.P_InspectUser, modelInspectUser);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WorkOrder.class, WorkOrder.P_InspectUser, modelInspectUser);
 
 		return modelInspectUser;
 	}
@@ -230,7 +230,7 @@ public class WorkOrderModel extends OAObjectModel {
 		modelOrder.setCreateUI(li == null || !WorkOrder.P_Order.equals(li.getName()));
 		modelOrder.setViewOnly(getViewOnly());
 		// call WorkOrder.onEditQueryOrder(OrderModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WorkOrder.class, WorkOrder.P_Order, modelOrder);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WorkOrder.class, WorkOrder.P_Order, modelOrder);
 
 		return modelOrder;
 	}
@@ -265,7 +265,7 @@ public class WorkOrderModel extends OAObjectModel {
 		modelAssignedUsers.setAllowCut(false);
 		modelAssignedUsers.setAllowPaste(false);
 		// call WorkOrder.onEditQueryAssignedUsers(UserModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WorkOrder.class, WorkOrder.P_AssignedUsers, modelAssignedUsers);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WorkOrder.class, WorkOrder.P_AssignedUsers, modelAssignedUsers);
 
 		return modelAssignedUsers;
 	}
@@ -300,7 +300,7 @@ public class WorkOrderModel extends OAObjectModel {
 		modelWODeliveries.setAllowCut(false);
 		modelWODeliveries.setAllowPaste(false);
 		// call WorkOrder.onEditQueryWODeliveries(WODeliveryModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WorkOrder.class, WorkOrder.P_WODeliveries, modelWODeliveries);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WorkOrder.class, WorkOrder.P_WODeliveries, modelWODeliveries);
 
 		return modelWODeliveries;
 	}
@@ -335,7 +335,7 @@ public class WorkOrderModel extends OAObjectModel {
 		modelWOItems.setAllowCut(false);
 		modelWOItems.setAllowPaste(false);
 		// call WorkOrder.onEditQueryWOItems(WOItemModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WorkOrder.class, WorkOrder.P_WOItems, modelWOItems);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WorkOrder.class, WorkOrder.P_WOItems, modelWOItems);
 
 		return modelWOItems;
 	}
@@ -370,7 +370,7 @@ public class WorkOrderModel extends OAObjectModel {
 		modelWorkOrderPallets.setAllowCut(false);
 		modelWorkOrderPallets.setAllowPaste(false);
 		// call WorkOrder.onEditQueryWorkOrderPallets(WorkOrderPalletModel) to be able to customize this model
-		OAObjectEditQueryDelegate.onEditQueryModel(WorkOrder.class, WorkOrder.P_WorkOrderPallets, modelWorkOrderPallets);
+		OAObjectCallbackDelegate.onObjectCallbackModel(WorkOrder.class, WorkOrder.P_WorkOrderPallets, modelWorkOrderPallets);
 
 		return modelWorkOrderPallets;
 	}

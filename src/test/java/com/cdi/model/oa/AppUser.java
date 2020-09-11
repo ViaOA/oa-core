@@ -78,8 +78,8 @@ public class AppUser extends OAObject {
         setId(id);
     }
      
-    @OAEditQuery(contextEnabledProperty = AppUser.P_Admin)
-    public void onEditQuery(OAObjectEditQuery em) {
+    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    public void onEditQuery(OAObjectCallback em) {
     }
     @OAProperty(isUnique = true, displayLength = 6)
     @OAId()

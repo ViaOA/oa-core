@@ -29,7 +29,7 @@ public class OAMethodInfo implements java.io.Serializable {
     private String contextVisibleProperty;
     private boolean contextVisibleValue;
     
-    private transient Method editQueryMethod;
+    private transient Method objectCallbackMethod;
     private OAMethod oaMethod;
     
     
@@ -111,11 +111,11 @@ public class OAMethodInfo implements java.io.Serializable {
     }
     
     
-    public void setEditQueryMethod(Method m) {
-        this.editQueryMethod = m;
+    public void setObjectCallbackMethod(Method m) {
+        this.objectCallbackMethod = m;
     }
-    public Method getEditQueryMethod() {
-        return editQueryMethod;
+    public Method getObjectCallbackMethod() {
+        return objectCallbackMethod;
     }
     
     public void setOAMethod(OAMethod m) {

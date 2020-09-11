@@ -25,6 +25,7 @@ import com.viaoa.context.OAContext;
 import com.viaoa.context.OAUserAccess;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
+import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.jaxb.OAJaxb;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
@@ -363,68 +364,68 @@ public class OAObject implements java.io.Serializable, Comparable {
 	/**
 	 * allows other components to interact with OAObject property, by call
 	 *
-	 * @see OAObjectEditQueryDelegate#getVerifyPropertyChange(int, OAObject, String, Object, Object)
+	 * @see OAObjectCallbackDelegate#getVerifyPropertyChange(int, OAObject, String, Object, Object)
 	 */
 	public boolean isValidPropertyChange(String propertyName, Object oldValue, Object newValue) {
-		return OAObjectEditQueryDelegate.getVerifyPropertyChange(	OAObjectEditQuery.CHECK_CallbackMethod, this, propertyName, oldValue,
-																	newValue);
+		return OAObjectCallbackDelegate.getVerifyPropertyChange(OAObjectCallback.CHECK_CallbackMethod, this, propertyName, oldValue,
+																newValue);
 	}
 
-	public OAObjectEditQuery getIsValidPropertyChangeEditQuery(String propertyName, Object oldValue, Object newValue) {
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(	OAObjectEditQuery.CHECK_CallbackMethod, this,
-																							propertyName, oldValue, newValue);
+	public OAObjectCallback getIsValidPropertyChangeObjectCallback(String propertyName, Object oldValue, Object newValue) {
+		OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(	OAObjectCallback.CHECK_CallbackMethod, this,
+																								propertyName, oldValue, newValue);
 		return eq;
 	}
 
 	public boolean isEnabled(String propertyName) {
-		return OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, this, propertyName);
+		return OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, this, propertyName);
 	}
 
-	public OAObjectEditQuery getIsEnabledEditQuery(String propertyName, Object oldValue, Object newValue) {
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, this, propertyName);
+	public OAObjectCallback getIsEnabledObjectCallback(String propertyName, Object oldValue, Object newValue) {
+		OAObjectCallback eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, this, propertyName);
 		return eq;
 	}
 
 	public boolean isEnabled() {
-		return OAObjectEditQueryDelegate.getAllowEnabled(OAObjectEditQuery.CHECK_ALL, null, this, null);
+		return OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, this, null);
 	}
 
-	public OAObjectEditQuery getIsEnabledEditQuery() {
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowEnabledEditQuery(OAObjectEditQuery.CHECK_ALL, null, this, null);
+	public OAObjectCallback getIsEnabledObjectCallback() {
+		OAObjectCallback eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, this, null);
 		return eq;
 	}
 
 	public boolean isVisible(String propertyName) {
-		return OAObjectEditQueryDelegate.getAllowVisible(null, this, propertyName);
+		return OAObjectCallbackDelegate.getAllowVisible(null, this, propertyName);
 	}
 
-	public OAObjectEditQuery getIsVisibleEditQuery(String propertyName) {
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, this, propertyName);
+	public OAObjectCallback getIsVisibleObjectCallback(String propertyName) {
+		OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, this, propertyName);
 		return eq;
 	}
 
 	public boolean isVisible() {
-		return OAObjectEditQueryDelegate.getAllowVisible(null, this, null);
+		return OAObjectCallbackDelegate.getAllowVisible(null, this, null);
 	}
 
-	public OAObjectEditQuery getIsVisibleEditQuery() {
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, this, null);
+	public OAObjectCallback getIsVisibleObjectCallback() {
+		OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, this, null);
 		return eq;
 	}
 
 	public boolean verifyCommand(String methodName) {
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyCommandEditQuery(this, methodName, OAObjectEditQuery.CHECK_ALL);
+		OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyCommandObjectCallback(this, methodName, OAObjectCallback.CHECK_ALL);
 		return eq.getAllowed();
 	}
 
-	public OAObjectEditQuery getVerifyCommand(String methodName) {
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyCommandEditQuery(this, methodName, OAObjectEditQuery.CHECK_ALL);
+	public OAObjectCallback getVerifyCommand(String methodName) {
+		OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyCommandObjectCallback(this, methodName, OAObjectCallback.CHECK_ALL);
 		return eq;
 	}
 
 	//qqqqqqqqqqqqqqqqqqqqqqqqq
-	public OAObjectEditQuery getAllowSubmit() {
-		OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowSubmitEditQuery(this);
+	public OAObjectCallback getAllowSubmit() {
+		OAObjectCallback eq = OAObjectCallbackDelegate.getAllowSubmitObjectCallback(this);
 		return eq;
 	}
 
@@ -698,6 +699,14 @@ public class OAObject implements java.io.Serializable, Comparable {
 		OAObjectEventDelegate.firePropertyChange(this, propertyName, null, null, false, true, true);
 	}
 
+	protected void fireNewList(String hubPropertyName) {
+		Hub h = getHub(hubPropertyName);
+		if (h == null) {
+			return;
+		}
+		HubEventDelegate.fireOnNewListEvent(h, true);
+	}
+
 	/* @see #firePropertyChange(String, Object, Object, boolean, boolean) firePropertyChange */
 	protected void firePropertyChange(String property, boolean oldObj, boolean newObj) {
 		firePropertyChange(	property, oldObj ? OAObjectDelegate.TRUE : OAObjectDelegate.FALSE,
@@ -852,7 +861,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	}
 
 	public boolean canSave() {
-		boolean flag = OAObjectEditQueryDelegate.getAllowSave(this, OAObjectEditQuery.CHECK_ALL);
+		boolean flag = OAObjectCallbackDelegate.getAllowSave(this, OAObjectCallback.CHECK_ALL);
 		return flag;
 	}
 
@@ -873,9 +882,9 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * Remove this object from all hubs and deletes object from OADataSource. Calls canDelete first. see Hub#deleted
 	 */
 	public void delete() {
-		// verify with editQuery
+		// verify with objectCallback
 		if (!OARemoteThreadDelegate.isRemoteThread()) {
-			OAObjectEditQuery em = OAObjectEditQueryDelegate.getVerifyDeleteEditQuery(null, this, OAObjectEditQuery.CHECK_CallbackMethod);
+			OAObjectCallback em = OAObjectCallbackDelegate.getVerifyDeleteObjectCallback(null, this, OAObjectCallback.CHECK_CallbackMethod);
 			if (!em.getAllowed()) {
 				String s = em.getResponse();
 				if (OAString.isEmpty(s)) {
@@ -888,7 +897,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	}
 
 	public boolean canDelete() {
-		boolean b = OAObjectEditQueryDelegate.getAllowDelete(null, this);
+		boolean b = OAObjectCallbackDelegate.getAllowDelete(null, this);
 		return b;
 	}
 
@@ -1299,8 +1308,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 		boolean b = jaxb.getAllowJaxbPropertyUpdate(this, propertyName);
 
 		if (b) {
-			OAObjectEditQuery eq = OAObjectEditQueryDelegate.getVerifyPropertyChangeEditQuery(	OAObjectEditQuery.CHECK_ALL, this,
-																								propertyName, oldValue, newValue);
+			OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(	OAObjectCallback.CHECK_ALL, this,
+																									propertyName, oldValue, newValue);
 			b = eq.isAllowed();
 		}
 		return b;
@@ -1326,7 +1335,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 			b = jaxb.getShouldInclude(this, propertyName);
 		}
 		if (b) {
-			OAObjectEditQuery eq = OAObjectEditQueryDelegate.getAllowVisibleEditQuery(null, this, propertyName);
+			OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(null, this, propertyName);
 			b = eq.isAllowed();
 		}
 		return b;

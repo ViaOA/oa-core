@@ -102,7 +102,7 @@ public class MoldModel extends OAObjectModel {
         modelItems.setAllowCut(false);
         modelItems.setAllowPaste(false);
         // call Mold.onEditQueryItems(ItemModel) to be able to customize this model
-        OAObjectEditQueryDelegate.onEditQueryModel(Mold.class, Mold.P_Items, modelItems);
+        OAObjectCallbackDelegate.onObjectCallbackModel(Mold.class, Mold.P_Items, modelItems);
     
         return modelItems;
     }

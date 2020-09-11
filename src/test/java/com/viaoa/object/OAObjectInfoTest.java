@@ -15,14 +15,14 @@ public class OAObjectInfoTest extends OAUnitTest {
         
         assertNotNull(mi);
         
-        assertNotNull(mi.getEditQueryMethod());
+        assertNotNull(mi.getObjectCallbackMethod());
         
         assertEquals("birthDate", mi.getVisibleProperty());
         assertEquals(true, mi.getVisibleValue());
         
         assertNotNull(oi.getEnabledProperty());
         assertFalse(oi.getEnabledValue());
-        assertNotNull(oi.getEditQueryMethod());
+        assertNotNull(oi.getObjectCallbackMethod());
         
     }
     

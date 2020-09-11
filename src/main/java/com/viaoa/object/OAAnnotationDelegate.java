@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAColumn;
-import com.viaoa.annotation.OAEditQuery;
 import com.viaoa.annotation.OAFkey;
 import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAIndex;
@@ -30,6 +29,7 @@ import com.viaoa.annotation.OAIndexColumn;
 import com.viaoa.annotation.OALinkTable;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAMethod;
+import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
@@ -101,7 +101,7 @@ public class OAAnnotationDelegate {
 				oi.setPluralName(oaclass.pluralName());
 				oi.setLowerName(oaclass.lowerName());
 			}
-			OAEditQuery eq = (OAEditQuery) clazz.getAnnotation(OAEditQuery.class);
+			OAObjCallback eq = (OAObjCallback) clazz.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
 				oi.setEnabledProperty(eq.enabledProperty());
 				oi.setEnabledValue(eq.enabledValue());
@@ -261,7 +261,7 @@ public class OAAnnotationDelegate {
 				}
 			}
 
-			OAEditQuery eq = (OAEditQuery) m.getAnnotation(OAEditQuery.class);
+			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
 				pi.setEnabledProperty(eq.enabledProperty());
 				pi.setEnabledValue(eq.enabledValue());
@@ -309,7 +309,7 @@ public class OAAnnotationDelegate {
 			ci.setClassType(m.getReturnType());
 			ci.setHtml(annotation.isHtml());
 
-			OAEditQuery eq = (OAEditQuery) m.getAnnotation(OAEditQuery.class);
+			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
 				ci.setEnabledProperty(eq.enabledProperty());
 				ci.setEnabledValue(eq.enabledValue());
@@ -322,7 +322,7 @@ public class OAAnnotationDelegate {
 				ci.setViewDependentProperties(eq.viewDependentProperties());
 				ci.setContextDependentProperties(eq.contextDependentProperties());
 			}
-			ci.setEditQueryMethod(m);
+			ci.setObjectCallbackMethod(m);
 		}
 
 		// linkInfos
@@ -379,7 +379,7 @@ public class OAAnnotationDelegate {
 
 			li.setDefaultContextPropertyPath(annotation.defaultContextPropertyPath());
 
-			OAEditQuery eq = (OAEditQuery) m.getAnnotation(OAEditQuery.class);
+			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
 				li.setEnabledProperty(eq.enabledProperty());
 				li.setEnabledValue(eq.enabledValue());
@@ -481,7 +481,7 @@ public class OAAnnotationDelegate {
 			li.setMergerPropertyPath(s);
 			li.setOAMany(annotation);
 
-			OAEditQuery eq = (OAEditQuery) m.getAnnotation(OAEditQuery.class);
+			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
 				li.setEnabledProperty(eq.enabledProperty());
 				li.setEnabledValue(eq.enabledValue());
@@ -518,7 +518,7 @@ public class OAAnnotationDelegate {
 				oi.addMethodInfo(mi);
 			}
 
-			OAEditQuery eq = (OAEditQuery) m.getAnnotation(OAEditQuery.class);
+			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
 				mi.setEnabledProperty(eq.enabledProperty());
 				mi.setEnabledValue(eq.enabledValue());
@@ -534,27 +534,24 @@ public class OAAnnotationDelegate {
 		}
 
 		/*
-		 *  check for any methods that have one param OAObjectEditQuery, and method name matching either onEditQuery*  or *Callback
+		 *  check for any methods that have one param OAObjectCallback, and method name matching either onObjectCallback*  or *Callback
 		 *
 		 *  example:
-		 *  @OAEditQuery   // (not required, but helpful)
-		 *  public void lastNameCallback(OAObjectEditQuery)
-		 *     -or-
-		 *  @OAEditQuery
-		 *  public void onEditQueryLastName(OAObjectEditQuery)
+		 *  @OAObjCallback   // (not required, but helpful)
+		 *  public void lastNameCallback(OAObjectCallback)
 		 */
-		// onEditQueryXxx   or  xxxCallback
+		//  xxxCallback
 		for (final Method m : methods) {
 			String name = m.getName();
-			final OAEditQuery eq = (OAEditQuery) m.getAnnotation(OAEditQuery.class);
+			final OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			final Class[] cs = m.getParameterTypes();
 			if (eq == null) {
-				if (cs != null && cs.length == 1 && cs[0].equals(OAObjectEditQuery.class)) {
+				if (cs != null && cs.length == 1 && cs[0].equals(OAObjectCallback.class)) {
 				} else {
 					s = name.toUpperCase();
-					if (s.indexOf("EDITQUERY") >= 0 && s.indexOf("$") < 0) {
+					if (s.indexOf("CALLBACK") >= 0 && s.indexOf("$") < 0) {
 						if (!s.endsWith("MODEL") && !s.startsWith("GET") && !s.startsWith("SET")) {
-							s = "missing @OAEditQuery() annotation, class=" + clazz + ", method=" + m + ", will continue";
+							s = "missing @OAObjCallback() annotation, class=" + clazz + ", method=" + m + ", will continue";
 							LOG.log(Level.WARNING, s, new Exception(s));
 						}
 					} else {
@@ -580,59 +577,52 @@ public class OAAnnotationDelegate {
 				}
 			}
 
-			String prefixName = "onEditQuery";
 			String suffixName = null;
-			if (!name.startsWith(prefixName)) {
-				// can also be xXX"Callback"(..)
-				if (name.endsWith("Callback")) {
-					suffixName = "Callback";
-					prefixName = null;
-				} else if (name.equals("callback")) {
-					suffixName = "callback";
-					prefixName = null;
-				} else {
-					if (eq != null) {
-						s = "OAEditQuery annotation, class=" + clazz + ", method=" + m + ", should be named onEditQuery*, or *Callback";
-						LOG.log(Level.WARNING, s, new Exception(s));
-					}
-					continue;
+			// can also be xXX"Callback"(..)
+			if (name.endsWith("Callback")) {
+				suffixName = "Callback";
+			} else if (name.equals("callback")) {
+				suffixName = "callback";
+			} else {
+				if (eq != null) {
+					s = "OAObjCallback annotation, class=" + clazz + ", method=" + m + ", should be named *Callback, will continue";
+					LOG.log(Level.WARNING, s, new Exception(s));
 				}
+				continue;
 			}
 
 			boolean b = (cs != null && cs.length == 1);
 			if (b) {
-				b = cs[0].equals(OAObjectEditQuery.class);
+				b = cs[0].equals(OAObjectCallback.class);
 				if (!Modifier.isPublic(m.getModifiers())) {
-					s = "OAEditQuery annotation, class=" + clazz + ", method=" + m + ", should be public";
+					s = "OAObjCallback annotation, class=" + clazz + ", method=" + m + ", should be public, will continue";
 					LOG.log(Level.WARNING, s, new Exception(s));
 				}
 				if (!b && cs[0].isAssignableFrom(OAObjectModel.class)) {
-					// public static void onEditQueryAddressesModel(OAObjectModel model)
 					// public static void addressesModelCallback(OAObjectModel model)
-					s = name.substring(prefixName.length());
-					s = s.substring(0, s.length() - 5);
+					s = s.substring(0, name.length() - 5);
 					if (!name.endsWith("Model")) {
 						if (name.endsWith("ModelCallback")) {
 							s = s.substring(0, s.length() - 13);
 						} else {
-							s = "OAEditQuery annotation, class=" + clazz + ", method=" + m
-									+ ", should be named onEditQuery*Model or *ModelCallback";
+							s = "OAObjCallback annotation, class=" + clazz + ", method=" + m
+									+ ", should be named *ModelCallback, will continue";
 							LOG.log(Level.WARNING, s, new Exception(s));
 						}
 					}
 					OALinkInfo lix = oi.getLinkInfo(s);
 					if (lix == null) {
-						s = "OAEditQuery annotation, class=" + clazz + ", method=" + m + ", link not found, name=" + s;
-						LOG.log(Level.WARNING, s, new Exception(s));
+						s = "OAObjCallback annotation, class=" + clazz + ", method=" + m + ", link not found, name=" + s;
+						LOG.log(Level.WARNING, s + ", will continue", new Exception(s));
 					}
 					if (!Modifier.isStatic(m.getModifiers())) {
-						s = "OAEditQuery annotation, class=" + clazz + ", method=" + m + ", should be static";
+						s = "OAObjCallback annotation, class=" + clazz + ", method=" + m + ", should be static, will continue";
 						LOG.log(Level.WARNING, s, new Exception(s));
 					}
 					continue;
 				}
 				if (Modifier.isStatic(m.getModifiers())) {
-					s = "OAEditQuery annotation, class=" + clazz + ", method=" + m + ", should not be static";
+					s = "OAObjCallback annotation, class=" + clazz + ", method=" + m + ", should not be static, will continue";
 					LOG.log(Level.WARNING, s, new Exception(s));
 				}
 			}
@@ -640,21 +630,18 @@ public class OAAnnotationDelegate {
 				if (eq == null) {
 					continue;
 				}
-				s = "OAEditQuery annotation, class=" + clazz + ", method=" + m + ", should have one param of OAObjectEditQuery";
+				s = "OAObjCallback annotation, class=" + clazz + ", method=" + m
+						+ ", should have one param of OAObjectCallback, will continue";
 				LOG.log(Level.WARNING, s, new Exception(s));
 			}
-			if (prefixName != null) {
-				name = name.substring(prefixName.length());
-			} else {
-				name = name.substring(0, name.length() - suffixName.length());
-			}
+			name = name.substring(0, name.length() - suffixName.length());
 
-			oi.addEditQueryMethod(name, m);
+			oi.addObjectCallbackMethod(name, m);
 
 			// make sure it belongs to a prop/calc/link/method
 			OAPropertyInfo pi = oi.getPropertyInfo(name);
 			if (pi != null) {
-				pi.setEditQueryMethod(m);
+				pi.setObjectCallbackMethod(m);
 				if (eq != null) {
 					s = eq.enabledProperty();
 					if (OAString.isNotEmpty(s)) {
@@ -681,7 +668,7 @@ public class OAAnnotationDelegate {
 				}
 			} else {
 				if (name.length() == 0) {
-					oi.setEditQueryMethod(m);
+					oi.setObjectCallbackMethod(m);
 					if (eq != null) {
 						s = eq.enabledProperty();
 						if (OAString.isNotEmpty(s)) {
@@ -709,7 +696,7 @@ public class OAAnnotationDelegate {
 				} else {
 					OALinkInfo li = oi.getLinkInfo(name);
 					if (li != null) {
-						li.setEditQueryMethod(m);
+						li.setObjectCallbackMethod(m);
 						if (eq != null) {
 							s = eq.enabledProperty();
 							if (OAString.isNotEmpty(s)) {
@@ -737,7 +724,7 @@ public class OAAnnotationDelegate {
 					} else {
 						OACalcInfo ci = oi.getCalcInfo(name);
 						if (ci != null) {
-							ci.setEditQueryMethod(m);
+							ci.setObjectCallbackMethod(m);
 							if (eq != null) {
 								s = eq.enabledProperty();
 								if (OAString.isNotEmpty(s)) {
@@ -765,7 +752,7 @@ public class OAAnnotationDelegate {
 						} else {
 							OAMethodInfo mi = oi.getMethodInfo(name);
 							if (mi != null) {
-								mi.setEditQueryMethod(m);
+								mi.setObjectCallbackMethod(m);
 								if (eq != null) {
 									s = eq.enabledProperty();
 									if (OAString.isNotEmpty(s)) {
@@ -799,7 +786,7 @@ public class OAAnnotationDelegate {
 									}
 								}
 								if (!b) {
-									s = "OAEditQuery annotation, class=" + clazz + ", method=" + m
+									s = "OAObjCallback annotation, class=" + clazz + ", method=" + m
 											+ ", could not find method that it goes with, ex: get" + name;
 									LOG.log(Level.WARNING, s, new Exception(s));
 								}

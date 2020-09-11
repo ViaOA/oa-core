@@ -11,7 +11,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import com.viaoa.object.*;
-import com.viaoa.object.OAObjectEditQuery.Type;
+import com.viaoa.object.OAObjectCallback.Type;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
@@ -326,10 +326,10 @@ public class Employee extends OAObject {
         setId(id);
     }
 
-    public transient OAObjectEditQuery TestEditQuery_Class;
+    public transient OAObjectCallback TestEditQuery_Class;
     
-    @OAEditQuery(enabledProperty = "inactiveDate", enabledValue = false)
-    public void callback(OAObjectEditQuery eq) {
+    @OAObjCallback(enabledProperty = "inactiveDate", enabledValue = false)
+    public void callback(OAObjectCallback eq) {
         if (TestEditQuery_Class == null) return;
         
         switch (eq.getType()) {
@@ -390,8 +390,8 @@ public class Employee extends OAObject {
     public String getTitle() {
         return title;
     }
-    public OAObjectEditQuery TestEditQuery_EmployeeCode;
-    public void employeeCodeCallback(OAObjectEditQuery eq) {
+    public OAObjectCallback TestEditQuery_EmployeeCode;
+    public void employeeCodeCallback(OAObjectCallback eq) {
         if (TestEditQuery_EmployeeCode == null) return;
         
         switch (eq.getType()) {
@@ -443,7 +443,7 @@ public class Employee extends OAObject {
         firePropertyChange(P_FirstName, old, this.firstName);
     }
     public int cntFirstNameCallback;
-    public void firstNameCallback(OAObjectEditQuery eq) {
+    public void firstNameCallback(OAObjectCallback eq) {
         cntFirstNameCallback++;
     }
     @OAProperty(displayName = "Middle Name", maxLength = 75, isUnicode = true, displayLength = 20, columnLength = 4)
@@ -469,7 +469,7 @@ public class Employee extends OAObject {
         this.lastName = newValue;
         firePropertyChange(P_LastName, old, this.lastName);
     }
-    public boolean isValidLastName(String newValue, OAObjectEditQuery msg) {
+    public boolean isValidLastName(String newValue, OAObjectCallback msg) {
         // check valud of validateTestType   see:HubEventDelegateTest
         validateTestResult++;
         if (validateTestType == 2 && !"test".equals(newValue)) return false;
@@ -479,8 +479,8 @@ public class Employee extends OAObject {
         }
         return true;
     }
-    @OAEditQuery()
-    public void onEditQueryLastName(OAObjectEditQuery eq) {
+    @OAObjCallback()
+    public void onEditQueryLastName(OAObjectCallback eq) {
         if (eq == null) return;
         if (eq.getType() == Type.VerifyPropertyChange) {
             boolean b = isValidLastName((String) eq.getValue(), eq);
@@ -567,8 +567,8 @@ public class Employee extends OAObject {
     public String getInactiveReason() {
         return inactiveReason;
     }
-    @OAEditQuery()
-    public void onEditQueryInactiveDate(OAObjectEditQuery eq) {
+    @OAObjCallback()
+    public void onEditQueryInactiveDate(OAObjectCallback eq) {
         if (eq == null) return;
         if (eq.getType() == Type.VerifyPropertyChange) {
             eq.setAllowed(true);
@@ -945,7 +945,7 @@ public class Employee extends OAObject {
         cascadeSave = true, 
         cascadeDelete = true
     )
-    @OAEditQuery(enabledProperty="created")
+    @OAObjCallback(enabledProperty="created")
     public Hub<Address> getAddresses() {
         if (hubAddresses == null) {
             hubAddresses = (Hub<Address>) getHub(P_Addresses);
@@ -1103,7 +1103,7 @@ public class Employee extends OAObject {
         this.countryCode = newValue;
         firePropertyChange(P_CountryCode, old, this.countryCode);
     }
-    public boolean isValidCountryCode(CountryCode newValue, OAObjectEditQuery msg) {
+    public boolean isValidCountryCode(CountryCode newValue, OAObjectCallback msg) {
         // check valud of validateTestType   see:HubEventDelegateTest
         validateTestResult++;
         if (validateTestType == 3) {
@@ -1128,8 +1128,8 @@ public class Employee extends OAObject {
         }
         return hubEmployeeAwards;
     }
-    @OAEditQuery
-    public void onEditQueryEmployeeAwards(OAObjectEditQuery eq) {
+    @OAObjCallback
+    public void onEditQueryEmployeeAwards(OAObjectCallback eq) {
         if (validateTestType == 3) {
             eq.setAllowed(false);
             return;
@@ -1456,8 +1456,8 @@ public class Employee extends OAObject {
         this.location = newValue;
         firePropertyChange(P_Location, old, this.location);
     }
-    public OAObjectEditQuery TestEditQuery_Location;
-    public void locationCallback(OAObjectEditQuery eq) {
+    public OAObjectCallback TestEditQuery_Location;
+    public void locationCallback(OAObjectCallback eq) {
         if (TestEditQuery_Location == null) return;
         
         switch (eq.getType()) {
@@ -1938,11 +1938,11 @@ if (objectKey != null) {
     }
     
     @OAMethod
-    @OAEditQuery(visibleProperty="xxxx")
+    @OAObjCallback(visibleProperty="xxxx")
     public void command() {
     }
-    @OAEditQuery(visibleProperty="birthDate")
-    public void onEditQueryCommand(OAObjectEditQuery eq) {
+    @OAObjCallback(visibleProperty="birthDate")
+    public void onEditQueryCommand(OAObjectCallback eq) {
         
     }
     public static void main(String[] args) {
