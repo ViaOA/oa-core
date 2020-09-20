@@ -43,7 +43,7 @@ import com.viaoa.converter.OAConverterTimestamp;
  * Formatting, Decimal Arithmetic.<br>
  * <p>
  * contains two key static methods: toString(Object, format) &amp; toObject(class, String, format)
- * 
+ *
  * @see OAConverterNumber
  * @see OAConverterOADate
  * @see OAString#format(String,String) OAString.format()
@@ -88,7 +88,7 @@ public class OAConverter {
 
 	/**
 	 * Returns a OAConverterInterface Object for a specific Class.
-	 * 
+	 *
 	 * @see OAConverterInterface
 	 */
 	public static OAConverterInterface getConverter(Class clazz) {
@@ -165,7 +165,7 @@ public class OAConverter {
 	 * Note: OAConverter.toString() will not automatically use this format unless it is sent as a parameter. This method is to be used as a
 	 * global area for other APIs to store default system formatting. Note: OADate is used for formatting dates and has its own default
 	 * formatting if one is not supplied.
-	 * 
+	 *
 	 * @see OADate#OADate for format options and default formatting/parsing values
 	 */
 	public static String getDateFormat() {
@@ -177,7 +177,7 @@ public class OAConverter {
 
 	/**
 	 * Set default format for Dates.
-	 * 
+	 *
 	 * @see #getDateFormat
 	 */
 	public static void setDateFormat(String fmt) {
@@ -188,7 +188,7 @@ public class OAConverter {
 	 * default format to use for times. Note: OAConverter.toString() will not automatically use this format unless it is sent as a
 	 * parameter. This method is to be used as a global area for other APIs to store default system formatting. Note: OADate is used for
 	 * formatting times and has its own default formatting.
-	 * 
+	 *
 	 * @see OADate#OADate for format options and default formatting/parsing values
 	 */
 	public static String getTimeFormat() {
@@ -200,7 +200,7 @@ public class OAConverter {
 
 	/**
 	 * Set default format for Times.
-	 * 
+	 *
 	 * @see #getTimeFormat
 	 */
 	public static void setTimeFormat(String fmt) {
@@ -211,7 +211,7 @@ public class OAConverter {
 	 * default format to use for datetimes. Note: OAConverter.toString() will not automatically use this format unless it is sent as a
 	 * parameter. This method is to be used as a global area for other APIs to store default system formatting. Note: OADate is used for
 	 * formatting times and has its own default formatting.
-	 * 
+	 *
 	 * @see OADate#OADate for format options and default formatting/parsing values
 	 */
 	public static String getDateTimeFormat() {
@@ -223,7 +223,7 @@ public class OAConverter {
 
 	/**
 	 * Set default format for DateTimes.
-	 * 
+	 *
 	 * @see #getDateTimeFormat
 	 */
 	public static void setDateTimeFormat(String fmt) {
@@ -242,7 +242,7 @@ public class OAConverter {
 
 	/**
 	 * Set default format for Integers.
-	 * 
+	 *
 	 * @see #getIntegerFormat
 	 */
 	public static void setIntegerFormat(String fmt) {
@@ -254,7 +254,7 @@ public class OAConverter {
 	 * <p>
 	 * Note: OAConverter.toString() will not automatically use this format unless it is sent as a parameter. This method is to be used as a
 	 * global area for other APIs to store default system formatting.
-	 * 
+	 *
 	 * @see OAConverterNumber#OAConverterNumber for format options
 	 */
 	public static String getDecimalFormat() {
@@ -263,7 +263,7 @@ public class OAConverter {
 
 	/**
 	 * Set default format for Decimal numbers (floats/doubles).
-	 * 
+	 *
 	 * @see #getDecimalFormat
 	 */
 	public static void setDecimalFormat(String fmt) {
@@ -279,7 +279,7 @@ public class OAConverter {
 
 	/**
 	 * Default format to use for BigDecimal numbers, mostly to represent currency.
-	 * 
+	 *
 	 * @see OAConverterNumber#OAConverterNumber for format options
 	 */
 	public static void setBigDecimalFormat(String fmt) {
@@ -317,7 +317,7 @@ public class OAConverter {
 
 	/**
 	 * Set default format for booleans.
-	 * 
+	 *
 	 * @see #getBooleanFormat
 	 */
 	public static void setBooleanFormat(String fmt) {
@@ -338,13 +338,14 @@ public class OAConverter {
 	 * The round method allows you to specify the number of decimal places that you know the number currently should have. The round method
 	 * will first round the number to this amount of decimal places before performing the round. SEE:
 	 * https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places
-	 * 
+	 *
 	 * @param accurateDecimalPlaces is number of decimal places that number should have. See note above.
 	 * @param decimalPlaces         is number of decimal places that number needs to be rounded to.
 	 * @param roundType             is type of rounding to perform. See BigDecimal for types of rounding, ex: BigDecimal.ROUND_HALF_UP
 	 * @see BigDecimal
 	 */
 	public static double round(double d, int accurateDecimalPlaces, int decimalPlaces, int roundType) {
+
 		String s = Double.toString(d);
 		BigDecimal bd = new BigDecimal(s);
 		//was:  BigDecimal bd = new BigDecimal(d);   // not as precise as using string
@@ -359,7 +360,7 @@ public class OAConverter {
 	 * Uses BigDecimal to round number to "decimalPlaces" amount of decimal numbers.
 	 * <p>
 	 * By Default, uses BigDecimal.ROUND_HALF_UP.
-	 * 
+	 *
 	 * @param accurateDecimalPlaces is number of decimal places that number should have. See note above.
 	 * @param decimalPlaces         number of decimal places to round to
 	 * @see #round(double,int,int,int) Notes about rounding
@@ -373,7 +374,7 @@ public class OAConverter {
 	 * Uses BigDecimal to round number to "decimalPlaces" amount of decimal numbers.
 	 * <p>
 	 * By Default, uses BigDecimal.ROUND_HALF_UP.
-	 * 
+	 *
 	 * @param decimalPlaces number of decimal places to round to
 	 * @see #round(double,int,int,int) Notes about rounding
 	 * @see BigDecimal
@@ -746,7 +747,7 @@ public class OAConverter {
 	 * called.
 	 * <p>
 	 * <b>Note:</b> If clazz is String and value is null, then a blank String "" is returned.
-	 * 
+	 *
 	 * @param fmt is format to use for parsing/formatting. returns converted object of type clazz or null if converstion can not be done.
 	 * @see #getConverter
 	 */
@@ -781,7 +782,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -791,7 +792,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a double to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -801,7 +802,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a double to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -811,7 +812,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a float to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -821,7 +822,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an float to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -831,7 +832,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a long to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -841,7 +842,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a long to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -851,7 +852,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an int to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -861,7 +862,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an int to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -871,7 +872,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a short to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -881,7 +882,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an short to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -891,7 +892,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a char to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -901,7 +902,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a char to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -911,7 +912,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a byte to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -921,7 +922,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a byte to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -931,7 +932,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a boolean to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -941,7 +942,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a boolean to another type "clazz".
-	 * 
+	 *
 	 * @return converted object of type clazz or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -951,7 +952,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a double.
-	 * 
+	 *
 	 * @return value converted into a double
 	 * @see #convert(Class,Object,String)
 	 * @throws IllegalArgumentException if number is not a valid number
@@ -966,7 +967,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a BigDecimal.
-	 * 
+	 *
 	 * @return value converted into a double
 	 * @see #convert(Class,Object,String)
 	 * @throws IllegalArgumentException if number is not a valid number
@@ -989,7 +990,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a float.
-	 * 
+	 *
 	 * @return value converted into a float
 	 * @see #convert(Class,Object,String)
 	 * @throws IllegalArgumentException if number is not a valid number
@@ -1004,7 +1005,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a long.
-	 * 
+	 *
 	 * @return value converted into a long
 	 * @see #convert(Class,Object,String)
 	 * @throws IllegalArgumentException if number is not a valid number
@@ -1022,7 +1023,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to an int.
-	 * 
+	 *
 	 * @return value converted into an int
 	 * @see #convert(Class,Object,String)
 	 * @throws IllegalArgumentException if number is not a valid number
@@ -1040,7 +1041,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a short.
-	 * 
+	 *
 	 * @return value converted into a short
 	 * @see #convert(Class,Object,String)
 	 * @throws IllegalArgumentException if number is not a valid number
@@ -1058,7 +1059,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a char.
-	 * 
+	 *
 	 * @return value converted into a char
 	 * @see #convert(Class,Object,String)
 	 * @throws IllegalArgumentException if number is not a valid number
@@ -1076,7 +1077,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a byte.
-	 * 
+	 *
 	 * @return value converted into a byte
 	 * @see #convert(Class,Object,String)
 	 * @throws IllegalArgumentException if number is not a valid number
@@ -1094,7 +1095,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a boolean.
-	 * 
+	 *
 	 * @return value converted into a boolean
 	 * @see #convert(Class,Object,String)
 	 * @throws IllegalArgumentException if number is not a valid number
@@ -1112,7 +1113,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a String to an OADateTime.
-	 * 
+	 *
 	 * @return OADateTime or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
@@ -1123,7 +1124,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a String to an OADateTime.
-	 * 
+	 *
 	 * @return OADateTime or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -1133,7 +1134,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a String to an OADate.
-	 * 
+	 *
 	 * @return OADate or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
@@ -1144,7 +1145,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a String to an OADate.
-	 * 
+	 *
 	 * @return OADate or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
@@ -1155,7 +1156,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a String to an OATime.
-	 * 
+	 *
 	 * @return OATime or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
@@ -1166,7 +1167,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a String to an OATime.
-	 * 
+	 *
 	 * @return OATime or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
@@ -1177,7 +1178,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a String, without formatting.
-	 * 
+	 *
 	 * @return if obj is null then a blank string is returned, otherwise String version of obj.
 	 * @see #convert(Class,Object,String)
 	 */
@@ -1195,7 +1196,7 @@ public class OAConverter {
 
 	/**
 	 * Convert an Object to a String, using a specific format. For formatters, see below.
-	 * 
+	 *
 	 * @return if obj is null then a blank string is returned, otherwise String version of obj.
 	 * @see #convert(Class,Object,String)
 	 * @see OAString#format(String,String)
@@ -1206,7 +1207,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a double to a String, using a specific format. For formatters, see below.
-	 * 
+	 *
 	 * @return String version of a double
 	 * @see OAConverterNumber
 	 * @see #convert(Class,Object,String)
@@ -1226,7 +1227,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a double to a String
-	 * 
+	 *
 	 * @return String version of a double
 	 * @see OAConverterNumber
 	 * @see #convert(Class,Object,String)
@@ -1237,7 +1238,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a long to a String, using a specific format.
-	 * 
+	 *
 	 * @return String version of a long
 	 * @see OAConverterNumber
 	 * @see #convert(Class,Object,String)
@@ -1249,7 +1250,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a long to a String.
-	 * 
+	 *
 	 * @return String version of a long
 	 * @see OAConverterNumber
 	 * @see #convert(Class,Object,String)
@@ -1268,7 +1269,7 @@ public class OAConverter {
 
 	/**
 	 * Convert a character to a String.
-	 * 
+	 *
 	 * @return String version of a character
 	 * @see OAConverterCharacter
 	 */
@@ -1282,7 +1283,7 @@ public class OAConverter {
 
 	/**
 	 * Convert boolean value to a String.
-	 * 
+	 *
 	 * @param fmt format string to determine values for true, false, null. Ex: "true;false;null", "yes;no;maybe"
 	 * @return String version of a boolean
 	 * @see OAConverterBoolean
@@ -1303,7 +1304,7 @@ public class OAConverter {
 
 	/**
 	 * Convert boolean value to a String.
-	 * 
+	 *
 	 * @param b   boolean value, can be null if used as "(Boolean) null"
 	 * @param fmt format string to determine values for true, false, null. Ex: "true;false;null", "yes;no;maybe"
 	 * @return String version of a boolean
@@ -1317,7 +1318,7 @@ public class OAConverter {
 
 	/**
 	 * Convert boolean value to a String, using Boolean(b).toString()
-	 * 
+	 *
 	 * @see toString(boolean,String)
 	 * @see toString(Boolean,String)
 	 * @see #convert(Class,Object,String)
@@ -1327,6 +1328,21 @@ public class OAConverter {
 	}
 
 	public static void main(String[] args) {
+		double dx = 256.025;
+		dx = round(dx, 2);
+
+		Object objx = OAConv.convert(int.class, new OADateTime());
+
+		objx = OAConv.convert(long.class, new OADateTime());
+
+		objx = OAConv.convert(String.class, new OADateTime());
+
+		objx = OAConv.convert(OADate.class, new OADateTime());
+
+		objx = OAConv.convert(OADateTime.class, new OADateTime());
+
+		objx = OAConv.convert(boolean.class, new OADateTime());
+
 		// -4.1 => -5.0
 		double d = -4.5;
 

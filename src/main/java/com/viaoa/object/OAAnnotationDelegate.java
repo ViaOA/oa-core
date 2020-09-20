@@ -93,13 +93,18 @@ public class OAAnnotationDelegate {
 
 				oi.setDisplayName(oaclass.displayName());
 
-				// 20140118 rootTreePropertyPaths
 				String[] pps = oaclass.rootTreePropertyPaths();
 				oi.setRootTreePropertyPaths(pps);
 				oi.setLookup(oaclass.isLookup());
 				oi.setProcessed(oaclass.isProcessed());
 				oi.setPluralName(oaclass.pluralName());
 				oi.setLowerName(oaclass.lowerName());
+
+				oi.setSoftDeleteProperty(oaclass.softDeleteProperty());
+				oi.setSoftDeleteReasonProperty(oaclass.softDeleteProperty());
+				oi.setVersionProperty(oaclass.versionProperty());
+				oi.setVersionLinkProperty(oaclass.versionLinkProperty());
+				oi.setTimeSeriesProperty(oaclass.timeSeriesProperty());
 			}
 			OAObjCallback eq = (OAObjCallback) clazz.getAnnotation(OAObjCallback.class);
 			if (eq != null) {

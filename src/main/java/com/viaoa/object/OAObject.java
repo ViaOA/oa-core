@@ -509,7 +509,10 @@ public class OAObject implements java.io.Serializable, Comparable {
 			return 0;
 		}
 		if (!obj.getClass().equals(this.getClass())) {
-			return -1;
+			if (obj instanceof OAObject) {
+				return -1;
+			}
+			return OACompare.compare(obj, OAObjectKeyDelegate.getKey(this));
 		}
 		return OAObjectKeyDelegate.getKey(this).compareTo(obj);
 	}

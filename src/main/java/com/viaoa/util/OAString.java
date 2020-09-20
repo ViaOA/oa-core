@@ -2547,9 +2547,7 @@ public class OAString {
 	public static void mainXX(String[] args) {
 		String s = "Tymczak";
 		System.out.println(soundex(s));
-
 		System.out.println(soundex("Ashcraft"));
-
 	}
 
 	public static void mainX(String[] args) {
@@ -3610,7 +3608,7 @@ public class OAString {
 		System.out.println(s + " ==> " + s2);
 	}
 
-	public static void main(String[] args) {
+	public static void mainAZ(String[] args) {
 
 		String sx = String.format("%.5s", "this is a test");
 		sx = String.format("%5.15s", "test");
@@ -3638,6 +3636,47 @@ public class OAString {
 		escaped = escaped.replace("\t", "\\t");
 		// TODO: escape other non-printing characters using uXXXX notation
 		return escaped;
+	}
+
+	public static String getAbbrev(String name) {
+		return getShortName(name);
+	}
+
+	public static String getShortName(String name) {
+		return getShortName(name, 3);
+	}
+
+	public static String getShortName(final String name, final int max) {
+		if (OAString.isEmpty(name)) {
+			return "";
+		}
+
+		final int x = name.length();
+		String shortName = "";
+
+		int cnt = 0;
+		for (int i = 0; i < x; i++) {
+			char c = name.charAt(i);
+			if (Character.isUpperCase(c)) {
+				cnt++;
+			}
+		}
+
+		int cnt2 = 0;
+		for (int i = 0; i < x && shortName.length() < max; i++) {
+			char c = name.charAt(i);
+			if (i == 0 || Character.isUpperCase(c)) {
+				shortName += Character.toLowerCase(c);
+			} else if ("aeiou".indexOf(c) < 0 && cnt2++ < (max - cnt)) {
+				shortName += c;
+			}
+		}
+		return shortName;
+	}
+
+	public static void main(String[] args) {
+		String s = "ItemMaster";
+		System.out.println(getShortName(s, 7));
 	}
 
 }

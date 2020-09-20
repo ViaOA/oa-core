@@ -507,6 +507,32 @@ public abstract class HubChangeListener {
 		return newHubProp;
 	}
 
+	public boolean isListeningTo(Hub hub, Object object, String property) {
+		if (hub == null || object == null || property == null) {
+			return false;
+		}
+
+		for (HubProp hp : hubProps) {
+			if (hp.bIgnore) {
+				continue;
+			}
+			if (hp.hub == null) {
+				continue;
+			}
+			if (hp.hub != hub) {
+				if (!HubShareDelegate.isUsingSameSharedHub(hp.hub, hub)) {
+					continue;
+				}
+			}
+			if (!hp.bAoOnly || object == hp.hub.getAO()) {
+				if (property.equalsIgnoreCase(hp.listenToPropertyName)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	protected void assignHubListener(final HubProp newHubProp) {
 		// see if a new hubListener is needed
 		for (HubProp hp : hubProps) {
@@ -544,25 +570,8 @@ public abstract class HubChangeListener {
 					return;
 				}
 				lastHubEvent = e;
-
-				String s = e.getPropertyName();
-				for (HubProp hp : hubProps) {
-					if (hp.bIgnore) {
-						continue;
-					}
-					if (hp.hub == null) {
-						continue;
-					}
-					if (hp.hub != newHubProp.hub) {
-						continue;
-					}
-
-					if (!hp.bAoOnly || e.getObject() == newHubProp.hub.getAO()) {
-						if (s != null && s.equalsIgnoreCase(hp.listenToPropertyName)) {
-							callOnChange();
-							break;
-						}
-					}
+				if (isListeningTo(e.getHub(), e.getObject(), e.getPropertyName())) {
+					callOnChange();
 				}
 			}
 

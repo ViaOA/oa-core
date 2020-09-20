@@ -10,58 +10,75 @@
 */
 package com.viaoa.annotation;
 
-import java.lang.annotation.RetentionPolicy;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Describes OAObject information. 
+ * Describes OAObject information.
+ *
  * @author vvia
  */
 @Documented
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME) 
+@Retention(RetentionPolicy.RUNTIME)
 public @interface OAClass {
 
-    String shortName() default "";
-    String pluralName() default "";
-    String lowerName() default "";
-    String displayName() default "";
-    String description() default "";
+	String shortName() default "";
 
-    boolean isLookup() default false;
-    boolean isPreSelect() default false;
-    
-    /**  @return flag used to determine if object can be stored to datasource. */
-    boolean useDataSource() default true;
+	String pluralName() default "";
 
-    /** @return flag to know if objects should be added to cache */
-    boolean addToCache() default true;
-    
-    /** @return if true, then changes are not sent to sever. */
+	String lowerName() default "";
+
+	String displayName() default "";
+
+	String description() default "";
+
+	boolean isLookup() default false;
+
+	boolean isPreSelect() default false;
+
+	/** @return flag used to determine if object can be stored to datasource. */
+	boolean useDataSource() default true;
+
+	/** @return flag to know if objects should be added to cache */
+	boolean addToCache() default true;
+
+	/** @return if true, then changes are not sent to sever. */
 	boolean localOnly() default false;
-	
+
 	/** @return if false, then objects are not initialized on creation */
 	boolean initialize() default true;
 
-    String displayProperty() default "";
-    String sortProperty() default "";
-    //String[] searchProperties() default "";
-    String[] viewProperties() default "";
-    long estimatedTotal() default 0;
-    
-    Class[] filterClasses() default {};
+	String displayProperty() default "";
 
-    // property path from a root class to this class.
-    String[] rootTreePropertyPaths() default {};
+	String sortProperty() default "";
 
-    /** flag to know if this is processed and will require User.editProcessed=true for it to be changed. */
-    boolean isProcessed() default false;
+	//String[] searchProperties() default "";
+	String[] viewProperties() default "";
+
+	long estimatedTotal() default 0;
+
+	Class[] filterClasses() default {};
+
+	// property path from a root class to this class.
+	String[] rootTreePropertyPaths() default {};
+
+	/** flag to know if this is processed and will require User.editProcessed=true for it to be changed. */
+	boolean isProcessed() default false;
+
+	String softDeleteProperty() default "";
+
+	String softDeleteReasonProperty() default "";
+
+	String versionProperty() default "";
+
+	String versionLinkProperty() default "";
+
+	String timeSeriesProperty() default "";
 }
-
 
 /* used by OAObjectInfo
     protected boolean bUseDataSource = true;
