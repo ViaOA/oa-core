@@ -605,16 +605,14 @@ public class OAAnnotationDelegate {
 				}
 				if (!b && cs[0].isAssignableFrom(OAObjectModel.class)) {
 					// public static void addressesModelCallback(OAObjectModel model)
-					s = s.substring(0, name.length() - 5);
-					if (!name.endsWith("Model")) {
-						if (name.endsWith("ModelCallback")) {
-							s = s.substring(0, s.length() - 13);
-						} else {
-							s = "OAObjCallback annotation, class=" + clazz + ", method=" + m
-									+ ", should be named *ModelCallback, will continue";
-							LOG.log(Level.WARNING, s, new Exception(s));
-						}
+					if (name.endsWith("ModelCallback")) {
+						s = s.substring(0, s.length() - 13);
+					} else {
+						s = "OAObjCallback annotation, class=" + clazz + ", method=" + m
+								+ ", should be named *ModelCallback, will continue";
+						LOG.log(Level.WARNING, s, new Exception(s));
 					}
+
 					OALinkInfo lix = oi.getLinkInfo(s);
 					if (lix == null) {
 						s = "OAObjCallback annotation, class=" + clazz + ", method=" + m + ", link not found, name=" + s;

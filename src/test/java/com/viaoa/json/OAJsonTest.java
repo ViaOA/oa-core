@@ -671,7 +671,7 @@ public class OAJsonTest extends OAUnitTest {
 		OAJsonNode node = root.get("employees[0]");
 		json = node.toJson();
 
-		root.set("employees[1].customers[1].b", new OADate());
+		root.set("employees[1].customers[1].b", new OADate("08/07/2020"));
 		json = root.toJson();
 
 		node = root.get("employees[1].weight");

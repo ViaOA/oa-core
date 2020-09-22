@@ -329,15 +329,19 @@ public class OAConverter {
 	 * <p>
 	 * <b>Notes:</b><br>
 	 * Since doubles are floating point numbers, there is a chance for loss of precision.<br>
-	 * For rounding, this could cause a problem when the digit that is being removed should be a 5, in which case the previous digit might
-	 * need to be changed based on the type of rounding that is being performed (ex: BigDecimal.ROUND_HALF_UP, ROUND_HALF_DOWN, etc.).
+	 * For rounding, this could cause a problem when the digit that is being removed should be a 5, in which case the previous (left) digit
+	 * might need to be changed based on the type of rounding that is being performed (ex: BigDecimal.ROUND_HALF_UP, ROUND_HALF_DOWN, etc.).
 	 * <p>
 	 * Floating point numbers mostly lose precision when being used for a lot of calculations.
 	 * <p>
-	 * Example: a number "1.5" could be represented as "1.499999" or "1.500001" as a double. <br>
-	 * The round method allows you to specify the number of decimal places that you know the number currently should have. The round method
-	 * will first round the number to this amount of decimal places before performing the round. SEE:
-	 * https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places
+	 * Example: number "1.5" could be represented as "1.499999" or "1.500001" as a double, which would affect how/if it is rounded. <br>
+	 * The round method allows you to specify the number of decimal places that you know the number currently should accurately have. The
+	 * round method will first round the number to this amount of decimal places before performing the round.
+	 * <p>
+	 * ex: 1.25 could be 1.2499999 or 1.2500001. If the accurateDecimalPlaces is 3, and the rounding is 2, then it will return 1.25.
+	 * <p>
+	 * SEE: https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places
+	 * <p>
 	 *
 	 * @param accurateDecimalPlaces is number of decimal places that number should have. See note above.
 	 * @param decimalPlaces         is number of decimal places that number needs to be rounded to.
@@ -345,11 +349,13 @@ public class OAConverter {
 	 * @see BigDecimal
 	 */
 	public static double round(double d, int accurateDecimalPlaces, int decimalPlaces, int roundType) {
-
+		if (roundType == BigDecimal.ROUND_HALF_UP) { // && accurateDecimalPlaces > decimalPlaces) {
+			return roundHalfUp(d, accurateDecimalPlaces, decimalPlaces);
+		}
 		String s = Double.toString(d);
 		BigDecimal bd = new BigDecimal(s);
 		//was:  BigDecimal bd = new BigDecimal(d);   // not as precise as using string
-		if (accurateDecimalPlaces != decimalPlaces) {
+		if (accurateDecimalPlaces > decimalPlaces) {
 			bd = bd.setScale(accurateDecimalPlaces, roundType);
 		}
 		bd = bd.setScale(decimalPlaces, roundType);
@@ -367,21 +373,48 @@ public class OAConverter {
 	 * @see BigDecimal
 	 */
 	public static double round(double d, int accurateDecimalPlaces, int decimalPlaces) {
-		return round(d, accurateDecimalPlaces, decimalPlaces, BigDecimal.ROUND_HALF_UP);
+		//if (accurateDecimalPlaces > decimalPlaces) {
+		double dx = roundHalfUp(d, accurateDecimalPlaces, decimalPlaces);
+		return dx;
+		//}
+		// return round(d, accurateDecimalPlaces, decimalPlaces, BigDecimal.ROUND_HALF_UP);
+	}
+
+	// always uses Half RoundUp
+	public static double roundHalfUp(double d, int accurateDecimalPlaces, int decimalPlaces) {
+		if (accurateDecimalPlaces >= decimalPlaces) {
+			long x = (long) Math.pow(10, accurateDecimalPlaces);
+			double dx = d * x;
+			dx = Math.round(dx);
+
+			dx /= ((double) x);
+			d = dx;
+		}
+		// get one extra digit and check for >= 5
+		long x = (long) Math.pow(10, decimalPlaces + 1);
+
+		long lx = (long) (d * x);
+		int remainder = (int) (lx % 10);
+		lx -= remainder;
+		if (remainder >= 5) {
+			lx += 10;
+		}
+
+		double dx = lx / ((double) x);
+
+		return dx;
 	}
 
 	/**
-	 * Uses BigDecimal to round number to "decimalPlaces" amount of decimal numbers.
+	 * Rounds double to decimal places, assuming decimal+1 places are accurate.
 	 * <p>
 	 * By Default, uses BigDecimal.ROUND_HALF_UP.
 	 *
 	 * @param decimalPlaces number of decimal places to round to
-	 * @see #round(double,int,int,int) Notes about rounding
-	 * @see BigDecimal
 	 */
 	public static double round(double d, int decimalPlaces) {
 		// 20181104 returned to using this:
-		return round(d, decimalPlaces, decimalPlaces, BigDecimal.ROUND_HALF_UP);
+		return round(d, 0, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 		/* was: does not use round_half_up,  ex: 1.235
 		// this will be faster (no BigDecimal needed)
 		if (decimalPlaces < 0) return d;
@@ -1328,8 +1361,60 @@ public class OAConverter {
 	}
 
 	public static void main(String[] args) {
-		double dx = 256.025;
-		dx = round(dx, 2);
+
+		double d = 0.0;
+		for (int i = 0; i < 1000; i++) {
+			d += .01;
+			d = round(d, 2);
+		}
+
+		double dx = round(d, 2);
+
+		dx = 256.025;
+		/*
+		dx = round(dx, 3, 2);
+
+		dx = 1.025;
+
+		dx *= 100.0;
+		dx /= 100.0;
+		*/
+
+		// .025 is a problem
+		dx = .025;
+		dx += 1.0; // 1.025
+		dx *= 100.0; // 102.499999..
+		dx = round(dx, 2, 0);
+
+		dx = 1.024999999;
+		dx = round(dx, 3, 2);
+
+		dx = 1.024999999;
+		dx = round(dx, 3, 2, BigDecimal.ROUND_HALF_UP);
+
+		dx = 1.024999999;
+		dx = round(dx, 3, 2); // <<<< this is wrong ... should be 1.3
+
+		dx = 1.024999999;
+		dx = round(dx, 2, 2);
+
+		dx = 1.02500000001;
+		dx = round(dx, 3, 2);
+
+		dx = 1.02500000001;
+		dx = round(dx, 2, 2);
+
+		dx = 1.64999999;
+		dx = round(dx, 4, 2, BigDecimal.ROUND_HALF_UP);
+
+		double newNum = Math.floor(256.025 * 100 + 0.5) / 100;
+		newNum = Math.rint(256.025 * 100) / 100;
+
+		dx = 256.025;
+		dx = Math.round(dx * 100) / 100.0d;
+
+		dx = 2560.25;
+		dx = Math.round(dx * 10) / 10.0d;
 
 		Object objx = OAConv.convert(int.class, new OADateTime());
 
@@ -1344,7 +1429,7 @@ public class OAConverter {
 		objx = OAConv.convert(boolean.class, new OADateTime());
 
 		// -4.1 => -5.0
-		double d = -4.5;
+		d = -4.5;
 
 		d = OAConv.divide(1.0, 3.0, 4);
 

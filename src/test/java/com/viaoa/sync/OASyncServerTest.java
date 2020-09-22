@@ -374,7 +374,8 @@ public class OASyncServerTest {
 
 	public static void main(String[] args) throws Exception {
 		OAObject.setDebugMode(true);
-		OALogUtil.consoleOnly(Level.FINE, OACircularQueue.class.getName());//"com.viaoa.util.OACircularQueue");
+		// OALogUtil.consoleOnly(Level.FINE, OACircularQueue.class.getName());//"com.viaoa.util.OACircularQueue");
+		OALogUtil.consoleOnly(Level.FINE);
 
 		Logger logx = Logger.getLogger(OACircularQueue.class.getName());
 

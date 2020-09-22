@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
@@ -57,7 +58,7 @@ public class OAObjectCacheDelegate {
 	/**
 	 * dont store object if a duplicate is already stored. If the object is being deserialized (see OAObject.readResolve) then the object
 	 * that is already loaded will be used. see HubController#setAddMode
-	 * 
+	 *
 	 * @see OAObject#readResolve
 	 */
 	static public final int IGNORE_DUPS = 2;
@@ -73,13 +74,13 @@ public class OAObjectCacheDelegate {
 	static public final int IGNORE_ALL = 4;
 	static protected final int MODE_MAX = 4;
 
-	// object keys that are empty (no id assigned yet), that are currently using guid
+	// object keys that are empty (no id assigned yet), that are currently using only the guid
 	private static final ConcurrentHashMap<Integer, OAObjectKey> hmGuid = new ConcurrentHashMap<>();
 
 	/**
 	 * Automatically set by Hub.select() when a select is done without a where clause. A WeakReference is used for storage. When a new
 	 * OAObject is created, it will be added to a SelectAllHub.
-	 * 
+	 *
 	 * @since 2007/08/16
 	 */
 	public static Hub[] getSelectAllHubs(Class clazz) {
@@ -136,7 +137,7 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Used by Hub.select() to register a Hub that has all data selected.
-	 * 
+	 *
 	 * @since 2007/08/16
 	 */
 	public static void setSelectAllHub(Hub hub) {
@@ -169,7 +170,7 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Used by Hub to unregister a Hub that had all data selected.
-	 * 
+	 *
 	 * @since 2007/08/16
 	 */
 	public static void removeSelectAllHub(Hub hub) {
@@ -210,7 +211,7 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Used to store a global hub by name, using a WeakReference.
-	 * 
+	 *
 	 * @param name reference name to use, not case-sensitive
 	 */
 	static public void setNamedHub(String name, Hub hub) {
@@ -224,7 +225,7 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Gets a hub that is stored by name.
-	 * 
+	 *
 	 * @param name reference name to use, not case-sensitive
 	 * @return if found then Hub, else null.
 	 */
@@ -276,7 +277,7 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Flag to allow system to be running in test mode
-	 * 
+	 *
 	 * @param b
 	 */
 	public static void setUnitTestMode(boolean b) {
@@ -284,7 +285,7 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Clear out object cache, remove all listeners, remove all selectAllHubs, remove all named hubs.
+	 * Clear out object cache, remove all listeners, remove all selectAllHubs, remove all named hubs, clear hmGuid.
 	 */
 	public static void resetCache() throws Exception {
 		LOG.warning("call to reset cache, UnitTestMode=" + UnitTestMode);
@@ -297,7 +298,7 @@ public class OAObjectCacheDelegate {
 		aiListenerCount.set(0);
 		OAObjectHashDelegate.hashCacheSelectAllHub.clear();
 		OAObjectHashDelegate.hashCacheNamedHub.clear();
-
+		OAObjectCacheDelegate.hmGuid.clear(); // 20200922
 	}
 
 	/* see addListener(Class, HubListener) */
@@ -594,7 +595,7 @@ public class OAObjectCacheDelegate {
 	/**
 	 * The DefaultAddMode determines how HubController.addObject() will handle an object if it already exists. This method sets the Default
 	 * mode for all unassigned threads.
-	 * 
+	 *
 	 * @param mode AddModes are NO_DUPS (default), IGNORE_DUPS, OVERWRITE_DUPS. see HubController#setAddMode
 	 */
 	static public void setDefaultAddMode(int mode) {
@@ -614,7 +615,7 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Used by OAObject to cache new objects. Objects are removed by OAObject.finalize() see #setAddMode(int)
-	 * 
+	 *
 	 * @return either the object that was "obj" or the object that was already in the tree.
 	 */
 	public static OAObject add(OAObject obj) {
@@ -664,6 +665,11 @@ public class OAObjectCacheDelegate {
 			if (obj == objResult) { // if it was added
 				if (key.bEmpty) {
 					hmGuid.put(key.guid, key);
+					int x = hmGuid.size();
+					if (x % 1000 == 0) {
+						String msg = "OAObjectCacheDelete hmGuid size=" + x;
+						LOG.log(Level.WARNING, msg, new Exception(msg));
+					}
 				}
 			}
 		}
@@ -877,7 +883,7 @@ public class OAObjectCacheDelegate {
 				WeakReference ref = tmh.treeMap.remove(key);
 
 				// 20140307 make sure that the obj in tree is the one being removed
-				//   since an obj that is finalized could be reloaded. 
+				//   since an obj that is finalized could be reloaded.
 				if (ref != null) {
 					Object objx = ref.get();
 					if (objx != null && objx != obj) {
@@ -940,7 +946,7 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Used to retrieve any object based on its Object Id property value.
-	 * 
+	 *
 	 * @param key object to compare to, object or objects[] to compare this object's objectId(s) with or OAObjectKey to compare with this
 	 *            object's objectId
 	 * @see OAObjectKey#OAObjectKey
@@ -952,7 +958,7 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Used to retrieve any object based on its Object Id property value.
-	 * 
+	 *
 	 * @see getObject(Class, Object)
 	 */
 	public static OAObject get(Class clazz, int id) {
@@ -985,7 +991,7 @@ public class OAObjectCacheDelegate {
 					key = OAObjectKeyDelegate.convertToObjectKey(clazz, key);
 				}
 			} else {
-				// 20200514
+				// 20200514 serialized read/write could have objects that are not assigned id yet.
 				int guid = ((OAObjectKey) key).guid;
 				OAObjectKey ok = hmGuid.get(guid);
 				if (ok != null) {
@@ -1108,7 +1114,7 @@ public class OAObjectCacheDelegate {
 	// 20140125 get objects from cache
 	/**
 	 * Returns objects from the objectCache.
-	 * 
+	 *
 	 * @param clazz       type of objects
 	 * @param fromObject  null to start from the beginning, else use the last object previously returned.
 	 * @param fetchAmount max number to add to the alResults
@@ -1230,7 +1236,7 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Refresh all objects from the datasource. This will be ran on the server, if called by client then it will async to run on server.
-	 * 
+	 *
 	 * @param clazz Class of objects to update, will also requery all hubs for this class.
 	 */
 	public static void refresh(Class clazz) {
@@ -1310,26 +1316,26 @@ public class OAObjectCacheDelegate {
 								clazz.getSimpleName(), cntTotal, cntAlone, cntHubs, cntInHubs));
 	}
 
-	/*qqq    
+	/*qqq
 	public static void updateClientInfo(OAClientInfo ci) {
 		// LOG.fine("called");
 	    Enumeration enumx = OAObjectHashDelegate.hashCacheClass.keys();
 	    ci.getCacheHashMap().clear();
-	
+
 	    Object[] cs = OAObjectHashDelegate.hashCacheClass.keySet().toArray();
 		if (cs == null) return;
 		int x = cs.length;
 		for (int i=0; i<x; i++) {
 	        TreeMapHolder tmh = (TreeMapHolder) OAObjectHashDelegate.hashCacheClass.get(cs[i]);
 	    	ci.getCacheHashMap().put(cs[i], tmh.treeMap.size());
-	    }    
+	    }
 	}
 	*/
 }
 
 /**
  * qqq static { Thread t = new Thread(new Runnable() {
- * 
+ *
  * @Override public void run() { for (;;) { try { LOG.finer(Thread.currentThread() + " sleeping for 5 minutes"); Thread.sleep(5 * 60000);
  *           LOG.finer(Thread.currentThread() + " awake and calling clean()"); clean(); } catch (Exception e) { LOG.log(Level.WARNING,
  *           "Error in cleaning thread run()", e); } } } }, "OAObjectCacheDelegate.clean"); t.setDaemon(true);
