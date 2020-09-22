@@ -19,11 +19,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
@@ -73,9 +71,6 @@ public class OAObjectCacheDelegate {
 	 */
 	static public final int IGNORE_ALL = 4;
 	static protected final int MODE_MAX = 4;
-
-	// object keys that are empty (no id assigned yet), that are currently using only the guid
-	private static final ConcurrentHashMap<Integer, OAObjectKey> hmGuid = new ConcurrentHashMap<>();
 
 	/**
 	 * Automatically set by Hub.select() when a select is done without a where clause. A WeakReference is used for storage. When a new
@@ -285,7 +280,7 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Clear out object cache, remove all listeners, remove all selectAllHubs, remove all named hubs, clear hmGuid.
+	 * Clear out object cache, remove all listeners, remove all selectAllHubs, remove all named hubs.
 	 */
 	public static void resetCache() throws Exception {
 		LOG.warning("call to reset cache, UnitTestMode=" + UnitTestMode);
@@ -298,7 +293,6 @@ public class OAObjectCacheDelegate {
 		aiListenerCount.set(0);
 		OAObjectHashDelegate.hashCacheSelectAllHub.clear();
 		OAObjectHashDelegate.hashCacheNamedHub.clear();
-		OAObjectCacheDelegate.hmGuid.clear(); // 20200922
 	}
 
 	/* see addListener(Class, HubListener) */
@@ -657,22 +651,8 @@ public class OAObjectCacheDelegate {
 			final boolean bSendAddEventInAnotherThread) {
 		final OAObjectKey key = OAObjectKeyDelegate.getKey(obj);
 		OAObject objResult;
-		final OAObjectKey ok = hmGuid.get(key.guid);
-		if (ok != null) {
-			objResult = get(obj.getClass(), ok);
-		} else {
-			objResult = _add2(obj, key, bErrorIfExists, bAddToSelectAll, bSendAddEventInAnotherThread);
-			if (obj == objResult) { // if it was added
-				if (key.bEmpty) {
-					hmGuid.put(key.guid, key);
-					int x = hmGuid.size();
-					if (x % 1000 == 0) {
-						String msg = "OAObjectCacheDelete hmGuid size=" + x;
-						LOG.log(Level.WARNING, msg, new Exception(msg));
-					}
-				}
-			}
-		}
+
+		objResult = _add2(obj, key, bErrorIfExists, bAddToSelectAll, bSendAddEventInAnotherThread);
 		return objResult;
 	}
 
@@ -849,9 +829,6 @@ public class OAObjectCacheDelegate {
 				WeakReference refx = tmh.treeMap.remove(oldKey);
 			}
 			tmh.treeMap.put(ok, new WeakReference(obj));
-			if (ok.bEmpty || oldKey.bEmpty || hmGuid.get(ok.guid) != null) {
-				hmGuid.put(ok.guid, ok);
-			}
 		} finally {
 			tmh.rwl.writeLock().unlock();
 		}
@@ -892,9 +869,6 @@ public class OAObjectCacheDelegate {
 					}
 				}
 
-				if (key.guid > 0 && hmGuid.get(key.guid) == key) {
-					hmGuid.remove(key.guid);
-				}
 			} finally {
 				tmh.rwl.writeLock().unlock();
 			}
@@ -952,7 +926,7 @@ public class OAObjectCacheDelegate {
 	 * @see OAObjectKey#OAObjectKey
 	 * @see OAObject#equals
 	 */
-	public static OAObject getObject(Class clazz, Object key) {
+	public static <T> T getObject(Class<T> clazz, Object key) {
 		return get(clazz, key);
 	}
 
@@ -961,14 +935,14 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @see getObject(Class, Object)
 	 */
-	public static OAObject get(Class clazz, int id) {
+	public static <T> T get(Class<T> clazz, int id) {
 		return get(clazz, new Integer(id));
 	}
 
 	/**
 	 * Returns object with objectId of key.
 	 */
-	public static OAObject get(Class clazz, Object key) {
+	public static <T> T get(Class<T> clazz, Object key) {
 		if (bDisableCache) {
 			return null;
 		}
@@ -990,13 +964,6 @@ public class OAObjectCacheDelegate {
 				} else {
 					key = OAObjectKeyDelegate.convertToObjectKey(clazz, key);
 				}
-			} else {
-				// 20200514 serialized read/write could have objects that are not assigned id yet.
-				int guid = ((OAObjectKey) key).guid;
-				OAObjectKey ok = hmGuid.get(guid);
-				if (ok != null) {
-					key = ok;
-				}
 			}
 			WeakReference ref;
 
@@ -1009,7 +976,7 @@ public class OAObjectCacheDelegate {
 
 			if (ref != null) {
 				// LOG.finer("found, class="+clazz+", key="+key);
-				OAObject objx = (OAObject) ref.get();
+				T objx = (T) ref.get();
 				return objx;
 			}
 		}
@@ -1018,7 +985,9 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Used to retrieve any object. param key object to find.
+	 * Used to retrieve any object.
+	 *
+	 * @param key object to find.
 	 */
 	public static Object get(OAObject obj) {
 		if (bDisableCache) {

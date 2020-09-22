@@ -57,6 +57,7 @@ public class OASyncServerTest {
 
 	public void start() throws Exception {
 		DataGenerator dg = new DataGenerator();
+
 		serverRoot = dg.readSerializeFromFile();
 		setupTestB();
 		ModelDelegate.initialize(serverRoot, null);

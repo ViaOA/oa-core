@@ -160,7 +160,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 
 	@Override
 	public OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties) {
-		OAObject obj = OAObjectCacheDelegate.getObject(objectClass, objectKey);
+		OAObject obj = (OAObject) OAObjectCacheDelegate.getObject(objectClass, objectKey);
 		if (obj == null) {
 			return null;
 		}
@@ -193,9 +193,9 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		return true;
 	}
 
-	// on the server, if the object is not found in the cache, then it will be loaded by the datasource 
+	// on the server, if the object is not found in the cache, then it will be loaded by the datasource
 	private OAObject getObject(Class objectClass, OAObjectKey origKey) {
-		OAObject obj = OAObjectCacheDelegate.get(objectClass, origKey);
+		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, origKey);
 		if (obj == null && OASyncDelegate.isServer(objectClass)) {
 			obj = (OAObject) OADataSource.getObject(objectClass, origKey);
 			if (obj != null) {

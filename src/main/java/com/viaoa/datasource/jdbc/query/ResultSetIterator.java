@@ -434,7 +434,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 						pkeyValues[columnInfos[i].pkeyPos] = values[i];
 						if (i == lastPkeyColumn) {
 							// try to find existing object
-							oaObject = OAObjectCacheDelegate.get(clazz, new OAObjectKey(pkeyValues));
+							oaObject = (OAObject) OAObjectCacheDelegate.get(clazz, new OAObjectKey(pkeyValues));
 							if (oaObject != null && !bDirty) {
 								break;
 							}
@@ -460,7 +460,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 								oaObject.setProperty(columns[i].propertyName, values[i]);
 							} catch (Exception e) {
 								if (bNew && columnInfos[i].pkeyPos >= 0) {
-									OAObject objx = OAObjectCacheDelegate.get(clazz, new OAObjectKey(pkeyValues));
+									OAObject objx = (OAObject) OAObjectCacheDelegate.get(clazz, new OAObjectKey(pkeyValues));
 									if (objx != null) {
 										LOG.log(Level.WARNING, "Error while setting property " + columns[i].propertyName
 												+ ", object has been found in cache, so everything is good", e);

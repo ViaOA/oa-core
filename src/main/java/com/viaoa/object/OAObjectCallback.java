@@ -42,9 +42,6 @@ public class OAObjectCallback {
 	public static final int CHECK_ALL = 31;
 	public static final int CHECK_AllButProcessed = (CHECK_ALL ^ CHECK_Processed);
 
-	// name of property, method that is being queried
-	private String name;
-
 	private String confirmTitle; // allow interaction with UI to have user confirm before continuing
 	private String confirmMessage; // message to use for confirming
 	private String toolTip;
@@ -175,7 +172,7 @@ public class OAObjectCallback {
 	public OAObjectCallback(Type type, int checkType) {
 	    this.type = type;
 	    this.checkType = checkType;
-	
+
 	    this.allowed = true;
 	}
 	*/
