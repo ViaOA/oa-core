@@ -27,7 +27,7 @@ public class JsonOutputStream {
 			return false;
 		}
 		try {
-			os.write("\n".getBytes());
+			os.write(OAString.NL.getBytes());
 		} catch (Exception e) {
 			throw new RuntimeException("", e);
 		}

@@ -144,9 +144,10 @@ public class OAObjectKeyDelegate {
 	}
 
 	// 20150109
-	public static String verifyKeyChange(OAObject oaObj) {
+	public static String verifyKeyChange(final OAObject oaObj) {
+        OAObjectInfo oi = null;
 		if (!oaObj.getNew()) {
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			if (oi == null) oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 			if (oi.getUseDataSource()) {
 				if (OAObjectDSDelegate.allowIdChange(oaObj.getClass())) {
 					return ("can not be changed if " + oaObj.getClass().getName() + " has already been saved");
@@ -156,7 +157,8 @@ public class OAObjectKeyDelegate {
 
 		Object o = OAObjectCacheDelegate.get(oaObj.getClass(), oaObj.objectKey);
 		if ((o == null || o == oaObj)) {
-			if (OAObjectCSDelegate.isWorkstation(oaObj)) {
+            if (oi == null) oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			if (!oi.getLocalOnly() && OAObjectCSDelegate.isWorkstation(oaObj)) {
 				// check on server.  If server has same object as this, resolve() will return this object
 				o = OAObjectCSDelegate.getServerObject(oaObj.getClass(), oaObj.objectKey);
 			}
@@ -181,7 +183,7 @@ public class OAObjectKeyDelegate {
 			} else {
 				if (!OAThreadLocalDelegate.isLoading()) {
 					// make sure object does not already exist in datasource
-					OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		            if (oi == null) oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 					if (oi.getUseDataSource()) {
 						o = OAObjectDSDelegate.getObject(oaObj);
 						if (o != oaObj && o != null) {

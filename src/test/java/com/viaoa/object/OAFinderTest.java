@@ -261,6 +261,7 @@ public class OAFinderTest extends OAUnitTest {
 		ModelDelegate.getPrograms().clear();
 
 		HifiveDataGenerator data = new HifiveDataGenerator();
+		data.empIdCnt.set(0);
 		data.createSampleData();
 
 		String pp = "location.program.locations.employees";
