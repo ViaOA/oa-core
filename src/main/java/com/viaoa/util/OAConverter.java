@@ -406,7 +406,7 @@ public class OAConverter {
 	}
 
 	/**
-	 * Rounds double to decimal places, assuming decimal+1 places are accurate.
+	 * Rounds double to decimal places.
 	 * <p>
 	 * By Default, uses BigDecimal.ROUND_HALF_UP.
 	 *
@@ -1012,6 +1012,36 @@ public class OAConverter {
 		}
 		return num;
 	}
+    public static BigDecimal toBD(Object value) {
+        return toBigDecimal(value);
+    }
+
+    public static BigDecimal toBigDecimal(String value) {
+        BigDecimal bd = new BigDecimal(value);
+        return bd;
+    }
+    public static BigDecimal toBD(String value) {
+        BigDecimal bd = new BigDecimal(value);
+        return bd;
+    }
+    
+    public static BigDecimal toBigDecimal(double value) {
+        BigDecimal bd = new BigDecimal(Double.toString(value));
+        return bd;
+    }
+    public static BigDecimal toBD(double value) {
+        BigDecimal bd = new BigDecimal(Double.toString(value));
+        return bd;
+    }
+    
+    public static BigDecimal toBigDecimal(double value, int decimalPlaces) {
+        BigDecimal bd = (new BigDecimal(Double.toString(value))).setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP);
+        return bd;
+    }
+    public static BigDecimal toBD(double value, int decimalPlaces) {
+        BigDecimal bd = (new BigDecimal(Double.toString(value))).setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP);
+        return bd;
+    }
 
 	public static BigDecimal toBigDecimal(Object value, String fmt) {
 		BigDecimal num = (BigDecimal) convert(BigDecimal.class, value, fmt);
@@ -1020,6 +1050,13 @@ public class OAConverter {
 		}
 		return num;
 	}
+    public static BigDecimal toBD(Object value, String fmt) {
+        BigDecimal num = (BigDecimal) convert(BigDecimal.class, value, fmt);
+        if (num == null) {
+            throw new IllegalArgumentException("OAConverter.toBigDecimal(): " + value + " cant be converted to double");
+        }
+        return num;
+    }
 
 	/**
 	 * Convert an Object to a float.
