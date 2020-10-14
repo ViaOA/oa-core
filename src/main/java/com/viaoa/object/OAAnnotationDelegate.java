@@ -554,8 +554,8 @@ public class OAAnnotationDelegate {
 				if (cs != null && cs.length == 1 && cs[0].equals(OAObjectCallback.class)) {
 				} else {
 					s = name.toUpperCase();
-					if (s.indexOf("CALLBACK") >= 0 && s.indexOf("$") < 0) {
-						if (!s.endsWith("MODEL") && !s.startsWith("GET") && !s.startsWith("SET")) {
+					if (s.endsWith("CALLBACK") && s.indexOf("$") < 0) {
+						if (!s.endsWith("MODELCALLBACK") && !s.startsWith("GET") && !s.startsWith("SET")) {
 							s = "missing @OAObjCallback() annotation, class=" + clazz + ", method=" + m + ", will continue";
 							LOG.log(Level.WARNING, s, new Exception(s));
 						}

@@ -167,12 +167,12 @@ public class OAObjectInfoDelegate {
         ArrayList<String> alPrimitive = new ArrayList<String>();
         ArrayList<String> alHub = new ArrayList<String>();
         
-        // 20140331 only get props for this class, then combine with superClass(es)        
+        // only get props for this class, then combine with superClass(es)        
         String[] props = getPropertyNames(clazz, false);
         for (int i=0; props != null && i < props.length; i++) {
             String name = props[i];
             if (name == null) continue;
-            Method m = getMethod(thisOI, "get"+name, 0);
+            Method m = getMethod(thisOI, "get"+name, 0);  // always use getter, since the setter could be overloaded (ex: with int,String,enum)
             
             if (m == null) {
                 m = getMethod(thisOI, "is"+name);
@@ -268,15 +268,18 @@ public class OAObjectInfoDelegate {
                 if (s.length() < 3) continue;
                 String s2 = s.substring(0,3);
     
-                if (s2.equals("get") || s2.startsWith("is")) {
-                    Class[] cs = methods[i].getParameterTypes();
+                Class[] cs = methods[i].getParameterTypes();
+                if (s2.equals("get")) {
                     if (cs.length > 0) continue;
                     storeMethod(clazzOrig, methods[i]);
-                    if (s2.equals("get")) s = s.substring(3);
-                    else s = s.substring(2);
+                    s = s.substring(3);
+                }
+                else if (s2.startsWith("is")) {
+                    if (cs.length > 0) continue;
+                    storeMethod(clazzOrig, methods[i]);
+                    s = s.substring(2);
                 }
                 else if (s2.equals("set")) {
-                    Class[] cs = methods[i].getParameterTypes();
                     if (cs.length != 1) continue;
                     storeMethod(clazzOrig, methods[i]);
                     s = s.substring(3);
@@ -619,14 +622,16 @@ public class OAObjectInfoDelegate {
     public static Method getMethod(OAObjectInfo oi, String methodName, int argumentCount) {
         if (methodName == null || oi == null) return null;
         methodName = methodName.toUpperCase();
-        Class clazz = oi.thisClass;
+        final Class clazz = oi.thisClass;
         Map<String, Method> map = OAObjectHashDelegate.getHashClassMethod(clazz);
         Method method = map.get(methodName);
         if (method != null && argumentCount < 0) {
             return method;
         }
-        final Set<String> set = OAObjectHashDelegate.getHashClassMethodNotFound(clazz);
-        if (set.contains(methodName)) return null;
+        if (method == null) {
+            Set<String> set = OAObjectHashDelegate.getHashClassMethodNotFound(clazz);
+            if (set.contains(methodName)) return null;
+        }
         
         boolean bRecalc = false;
         if (method != null && argumentCount >= 0) {
@@ -640,11 +645,30 @@ public class OAObjectInfoDelegate {
             method = OAReflect.getMethod(clazz, methodName, argumentCount);
             if (method == null) {
                 if (!bRecalc) {
-                    set.add(methodName);
+                    OAObjectHashDelegate.getHashClassMethodNotFound(clazz).add(methodName);
                 }
                 return null;
             }
             method.setAccessible(true); // 20130131
+            map.put(methodName, method);
+        }
+        return method;
+    }
+
+    public static Method getMethod(OAObjectInfo oi, String methodName, final Class classParam) {
+        if (methodName == null || oi == null) return null;
+        methodName = methodName.toUpperCase();
+        Class clazz = oi.thisClass;
+        final Map<String, Method> map = OAObjectHashDelegate.getHashClassMethod(clazz);
+        Method method = map.get(methodName);
+        if (method != null) {
+            Class[] cs = method.getParameterTypes();
+            if (cs != null && cs.length == 1 && OAReflect.isEqualEvenIfWrapper(classParam, cs[0])) {
+                return method;
+            }
+        }
+        method = OAReflect.getMethod(clazz, methodName, classParam);
+        if (method != null) {
             map.put(methodName, method);
         }
         return method;

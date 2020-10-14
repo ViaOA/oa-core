@@ -105,6 +105,20 @@ public class OAReflect {
         }
         return null;
     }
+
+    public static Method getMethod(Class clazz, String methodName, Class classParam) {
+        if (clazz == null || methodName == null || methodName.length() == 0 || classParam == null) return null;
+    
+        Method[] methods = clazz.getMethods();
+        for (int i=0; i<methods.length; i++) {
+            if ( !methodName.equalsIgnoreCase(methods[i].getName()) ) continue;
+            Class[] cs = methods[i].getParameterTypes();
+            if (cs == null || cs.length != 1) continue;
+              
+            if (isEqualEvenIfWrapper(cs[0], classParam)) return methods[i];
+        }
+        return null;
+    }
     
     /**
         Get the methods for a property path.
@@ -582,18 +596,32 @@ public class OAReflect {
         if (clazz == null) {
             return false;
         }
+        if (clazz.equals(Integer.class)) return true;
+        if (clazz.equals(Long.class)) return true;
         if (clazz.equals(Boolean.class)) return true;
+        if (clazz.equals(Double.class)) return true;
         if (clazz.equals(Byte.class)) return true;
         if (clazz.equals(Character.class)) return true;
         if (clazz.equals(Short.class)) return true;
-        if (clazz.equals(Integer.class)) return true;
-        if (clazz.equals(Long.class)) return true;
         if (clazz.equals(Float.class)) return true;
-        if (clazz.equals(Double.class)) return true;
         return false;
     }
 
-
+    public static boolean isEqualEvenIfWrapper(Class c1, Class c2) {
+        if (c1 == c2) return true;
+        if (c1 == null || c2 == null) return false;
+        if (c1.equals(c2)) return true;
+        if (c1.isPrimitive()) {
+            Class c3 = getPrimitiveClassWrapper(c1);
+            return c2.equals(c3);
+        }
+        if (c2.isPrimitive()) {
+            Class c3 = getPrimitiveClassWrapper(c2);
+            return c1.equals(c3);
+        }
+        return false;
+    }
+    
     /**
         Returns an Object that is of a wrapper class for a primitive type.
     */
@@ -601,14 +629,14 @@ public class OAReflect {
         if (clazz == null) {
             return null;
         }
+        if (clazz.equals(int.class)) return new Integer(0);
         if (clazz.equals(boolean.class)) return new Boolean(false);
+        if (clazz.equals(long.class)) return new Long(0);
+        if (clazz.equals(double.class)) return new Double(0.0D);
         if (clazz.equals(byte.class)) return new Byte((byte)0);
         if (clazz.equals(char.class)) return new Character((char)0);
         if (clazz.equals(short.class)) return new Short((short)0);
-        if (clazz.equals(int.class)) return new Integer(0);
-        if (clazz.equals(long.class)) return new Long(0);
         if (clazz.equals(float.class)) return new Float(0.0F);
-        if (clazz.equals(double.class)) return new Double(0.0D);
         return null;
     }
 

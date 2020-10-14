@@ -1542,9 +1542,10 @@ public class OAObjectCallbackDelegate {
 			return;
 		}
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-		Method m = OAObjectInfoDelegate.getMethod(oi, "onObjectCallback" + property + "Model", 1);
+		Method m;
+        m = OAObjectInfoDelegate.getMethod(oi, property + "ModelCallback", OAObjectModel.class);
 		if (m == null) {
-			m = OAObjectInfoDelegate.getMethod(oi, property + "ModelCallback", 1);
+		    m = OAObjectInfoDelegate.getMethod(oi, "onObjectCallback" + property + "Model", 1);
 		}
 		if (m != null) {
 			Class[] cs = m.getParameterTypes();

@@ -92,7 +92,7 @@ public class OAObjectEventDelegate {
 						if (msg == null) {
 							msg = "";
 						} else {
-							msg = ".  Reason: " + msg;
+							msg = "Reason: " + msg;
 						}
 						msg = (oaObj.getClass().getSimpleName()) + "." + propertyName + " change not allowed, value=" + newObj + msg;
 					}
@@ -103,9 +103,9 @@ public class OAObjectEventDelegate {
 						LOG.warning(cntError + ") " + msg + ", will continue without throwing an exception");
 						msThrottle = ms;
 					}
-					/**
-					 * 20181018, 20190502 dont throw an exception until there is more confidence. throw new RuntimeException(msg,
-					 * em.getThrowable());
+					/*
+					 * 20181018, 20190502 dont throw an exception until there is more confidence. 
+					 * throw new RuntimeException(msg, em.getThrowable());
 					 */
 				}
 			}

@@ -12,8 +12,6 @@ package com.viaoa.converter;
 
 import java.sql.Date;
 
-import com.viaoa.*;
-import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
 /**

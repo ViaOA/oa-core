@@ -182,9 +182,6 @@ public class OAObjectReflectDelegate {
 			m = OAObjectInfoDelegate.getMethod(oi, "get" + propName, 0);
 			if (m == null) {
 				m = OAObjectInfoDelegate.getMethod(oi, "is" + propName, 0);
-				if (m == null) {
-					return null;
-				}
 			}
 			if (m != null && (m.getModifiers() & Modifier.PRIVATE) == 0) {
 				Class c = m.getReturnType();
@@ -224,8 +221,7 @@ public class OAObjectReflectDelegate {
 	 * @see OAObject#setProperty(String, Object, String) This can also be used to add Objects (or ObjectKeys) to a Hub. When the Hub is then
 	 *      retrieved, the value will be converted to OAObject subclasses.
 	 */
-	public static void setProperty(OAObject oaObj, String propName, Object value, String fmt) {
-
+	public static void setProperty(final OAObject oaObj, String propName, Object value, final String fmt) {
 		if (oaObj == null || propName == null || propName.length() == 0) {
 			LOG.log(Level.WARNING, "property is invalid, =" + propName, new Exception());
 			return;
@@ -248,15 +244,18 @@ public class OAObjectReflectDelegate {
 
 		String propNameU = propName.toUpperCase();
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-		Method m = OAObjectInfoDelegate.getMethod(oi, "SET" + propNameU, 1);
+		
+		Method m = null;
+		if (value != null) {
+	        m = OAObjectInfoDelegate.getMethod(oi, "SET" + propNameU, value.getClass());
+		}
+		if (m == null) {
+		    m = OAObjectInfoDelegate.getMethod(oi, "SET" + propNameU, 1);
+		}
 
 		Class clazz = null;
 		if (m != null) {
-			// a "real" property
-			Class[] cs = m.getParameterTypes();
-			if (cs.length == 1) {
-				clazz = cs[0];
-			}
+			clazz = m.getParameterTypes()[0];
 		}
 
 		Object previousValue = null;
