@@ -16,11 +16,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.viaoa.jaxb.OAJaxb;
+import com.viaoa.json.node.OAJsonObjectNode;
+import com.viaoa.json.node.OAJsonRootNode;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.Base64;
+import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
 
 /*
@@ -366,7 +369,45 @@ public class OAHttpJsonClient {
 				s = client.post("http://localhost:18080/retail-products/iseries/itemRestriction/get", map);
 		*/
 
-		s = client.post("http://localhost:8081/retail-products/iseries/items/getSalesRestrictedItemsByLocation", map);
+		// s = client.post("http://localhost:8081/retail-products/iseries/itemRestriction/get", map);
+
+		map = new HashMap<String, String>();
+		map.put("itemRuleType", "LINE_ITEM"); // LINE, PRODUCT_LINE_CODE, PRODUCT_LINE_SUBCODE, LINE_ITEM;
+		map.put("changeType", "SALES_RESTRICTED"); // SALES_RESTRICTED, FLIGHT_RESTRICTED, CAUSTIC, HYBRID_ELECTRIC, FREON_RESTRICTED;
+		map.put("updateType", "ADD"); // CHANGE, ADD, DELETE, CLEAR
+		// node.set("locationRuleType", ""); // NOT_USED, STORE_ID, ZIPCODE, STATE, COUNTY
+		map.put("newValue", "");
+		map.put("line", "WIX");
+		map.put("productLineCode", "-1");
+		map.put("productLineSubcode", "-1");
+		map.put("item", "");
+		map.put("storeId", "1234");
+		map.put("zipcode", "54321");
+		map.put("state", "MO");
+		map.put("county", "GREENE");
+		map.put("salesRestrictedEffectiveDate", new OADate().toString(OADate.JsonFormat));
+		s = client.post("http://localhost:8081/retail-products/iseries/itemRestriction/put", map);
+
+		OAJsonRootNode node = new OAJsonObjectNode();
+		node.set("itemRuleType", "LINE_ITEM"); // LINE, PRODUCT_LINE_CODE, PRODUCT_LINE_SUBCODE, LINE_ITEM;
+		node.set("changeType", "SALES_RESTRICTED"); // SALES_RESTRICTED, FLIGHT_RESTRICTED, CAUSTIC, HYBRID_ELECTRIC, FREON_RESTRICTED;
+		node.set("updateType", "ADD"); // CHANGE, ADD, DELETE, CLEAR
+		// node.set("locationRuleType", ""); // NOT_USED, STORE_ID, ZIPCODE, STATE, COUNTY
+		node.set("newValue", "");
+		node.set("line", "WIX");
+		node.set("productLineCode", -1);
+		node.set("productLineSubcode", -1);
+		node.set("item", "");
+		node.set("storeId", 1234);
+		node.set("zipcode", "54321");
+		node.set("state", "MO");
+		node.set("county", "GREENE");
+		node.set("salesRestrictedEffectiveDate", new OADate());
+
+		String json = node.toJson();
+		s = client.post("http://localhost:8081/retail-products/iseries/itemRestriction/put", json);
+
+		//		s = client.post("http://localhost:8081/retail-products/iseries/items/getSalesRestrictedItemsByLocation", map);
 
 		//qqqqqqqqq put json into a Map qqqqqqqqqqq
 
@@ -379,7 +420,7 @@ public class OAHttpJsonClient {
 		json = json.replace("&", ",\n");
 		json = json.replace('=', ':');
 		json = json.replace('\'', '\"');
-
+		
 		s = OAHttpClient
 				.httpPost("http://localhost:8081/retail-products/iseries/itemRestriction/getRestriction", json);
 		*/
