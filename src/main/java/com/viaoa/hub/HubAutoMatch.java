@@ -10,8 +10,6 @@
 */
 package com.viaoa.hub;
 
-import com.viaoa.*;
-
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.reflect.*;

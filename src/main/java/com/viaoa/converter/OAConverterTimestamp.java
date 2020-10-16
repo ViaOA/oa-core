@@ -12,12 +12,7 @@ package com.viaoa.converter;
 
 import com.viaoa.util.*;
 
-import java.util.*;
 import java.sql.*;
-
-import com.viaoa.*;
-import com.viaoa.hub.*;
-import com.viaoa.util.*;
 
 /**
     Convert to/from a Timestamp value.

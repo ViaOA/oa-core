@@ -13,7 +13,7 @@ package com.viaoa.image.jpg;
 import java.util.Iterator;
 import java.util.LinkedList;
 import javax.imageio.metadata.IIOMetadata;
-import com.sun.imageio.plugins.jpeg.JPEGImageReader;
+// import com.sun.imageio.plugins.jpeg.JPEGImageReader;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
