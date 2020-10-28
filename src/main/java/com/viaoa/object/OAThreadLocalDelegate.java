@@ -238,7 +238,7 @@ public class OAThreadLocalDelegate {
 			else {
 			    x = OAThreadLocalDelegate.TotalObjectSerializer.decrementAndGet();
 			}
-            if (x > 15 || x < 0) {
+            if (x > 25 || x < 0) {
                 msObjectSerializer = throttleLOG("TotalObjectSerializeInterface ="+x, msObjectSerializer);
             }
 		}
