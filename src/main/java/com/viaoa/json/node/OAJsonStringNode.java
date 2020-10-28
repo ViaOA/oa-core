@@ -1,6 +1,7 @@
 package com.viaoa.json.node;
 
 import com.viaoa.json.io.JsonOutputStream;
+import com.viaoa.util.OAString;
 
 /**
  * Represents a json string type.
@@ -15,7 +16,8 @@ public class OAJsonStringNode extends OAJsonNode {
 	}
 
 	protected void toJson(final JsonOutputStream jos) {
-		jos.append(String.format("\"%s\"", value));
+		String s = OAString.escapeJSON(value);
+		jos.append(String.format("\"%s\"", s));
 	}
 
 	public String getValue() {
