@@ -146,10 +146,10 @@ public class OAString {
 	 *
 	 * <pre>
 	   see: http://www.w3.org/TR/REC-xml#NT-Char
-	
+
 	   Legal Chars ::=   #x9 | #xA | #xD | [#x20-#xD7FF] |
 	             [#xE000-#xFFFD] | [#x10000-#x10FFFF]
-	
+
 	   9, 10, 13
 	   tab, lf, cr
 	 * </pre>
@@ -1321,14 +1321,14 @@ public class OAString {
 	/**
 	 * fmt/format javadoc Used to format/mask Strings using a "Pick like" format/mask String.
 	 * <p>
-	 * Also suoports formats for Date/Times (see OADateTime) and Numbers (see OAConverterNumber)
+	 * Also supports formats for Date/Times (see OADateTime) and Numbers (see OAConverterNumber)
 	 * <p>
 	 * <b>Formatting Strings</b>
 	 *
 	 * <pre>
-	
+
 	 Example:  fmt(str,"12 L2.,$0(MASK)");
-	
+
 	 Format description for "12 L2,$0(MASK)":
 	     12 = width - not required.
 	          will pad with spaces if pad character is not defined.
@@ -1343,25 +1343,25 @@ public class OAString {
 	         that position is used for the amount of decimal places.
 	     Mask = must be in "()".  Use # character to have actual characters inserted,
 	            all other characters in mask will be inserted.
-	
+
 	 Examples:
-	
+
 	 fmt("1234.5", "R4,")
 	     "R4," = align right, 4 decimal places with comma seperators.
 	     output: "1,234.5000"
-	
+
 	 fmt("123.5", "R00")
 	     "R00" = align right, 0 decimal places (causes rounding), pad with '0' character
 	     output: "123"
-	
+
 	 fmt("123.5", "8R00")
 	     "8R00" = 8 width to fill,
 	     output: "00000123"
-	
+
 	 fmt("123.5", "8 R00")
 	     "8 R00" = 8 width, append one space, right justified, 0 decimal places, '0' fill
 	     output: "00000123 "
-	
+
 	 fmt("1231231234","13  R((###)###-####)")
 	     "13  R((###)###-####)" = 13 width, append 2 spaces, right justified, mask to use.
 	          Note: the mask must be put into () and use # to denote where to insert the
@@ -1853,10 +1853,10 @@ public class OAString {
 	 exclude "AEHIOUWY" or any char that is not a letter
 	 exclude all duplicates
 	 '0' pad to 4 chars             Note: this will also use digits
-	
+
 	 From: "BFPVCGJKQSZXDTLMNR"
 	 To  : "111122222222334556"
-	
+
 	 EXAMPLE:
 	 soundex(sndx,"Vincent")  sndx = "V523"
 	 soundex(sndx,"Via")      sndx = "V000"
@@ -2074,9 +2074,9 @@ public class OAString {
 	//        String s = OAString.fmt("1234.5678", "12R2,");
 	    OAString oas = new OAString();
 	    String s = oas.fmt(argv[0], argv[1]);
-	
+
 	    System.out.println("-------->"+s+"<------");
-	
+
 	    // double x = OAConv.toDouble("-12345.5678");
 	    int x = OAConv.toInt("-12345.5678");
 	    System.out.println("-------->"+OAConv.toString(x, "#,###.####")+"<------");
