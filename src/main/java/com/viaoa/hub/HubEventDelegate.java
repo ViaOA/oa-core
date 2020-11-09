@@ -24,6 +24,7 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.sync.OASync;
 import com.viaoa.util.OAString;
 
 /**
@@ -637,15 +638,17 @@ public class HubEventDelegate {
 			propertyChangeUpdateDetailHubs(thisHub, oaObj, propertyName);
 		}
 
-		String s = thisHub.data.getUniqueProperty();
-		if (s == null) {
-			s = thisHub.datam.getUniqueProperty();
-		}
-
-		if (s != null && newValue != null && s.equalsIgnoreCase(propertyName)) {
-			if (!HubDelegate.verifyUniqueProperty(thisHub, oaObj)) {
-				throw new RuntimeException("Property " + s + " already exists in " + oaObj.getClass().getSimpleName());
-			}
+		if (!OASync.isRemoteThread()) {
+    		String s = thisHub.data.getUniqueProperty();
+    		if (s == null) {
+    			s = thisHub.datam.getUniqueProperty();
+    		}
+    
+    		if (s != null && newValue != null && s.equalsIgnoreCase(propertyName)) {
+    			if (!HubDelegate.verifyUniqueProperty(thisHub, oaObj)) {
+    				throw new RuntimeException("Property " + s + " already exists in " + oaObj.getClass().getSimpleName());
+    			}
+    		}
 		}
 
 		final HubListener[] hl = getAllListeners(thisHub);
