@@ -202,14 +202,6 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		}
 		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, origKey);
 
-		// 20200922 try to find using guid only version
-		//   this is for cases where the new object's Id is assigned on one computer before other computers have received the
-		//      change and only have the objKey guid.
-		if (obj == null && bCheckGuidKey && !origKey.isEmpty()) {
-			OAObjectKey ok = new OAObjectKey(null, origKey.getGuid(), origKey.isNew());
-			obj = (OAObject) OAObjectCacheDelegate.get(objectClass, ok);
-		}
-
 		if (obj == null && OASyncDelegate.isServer(objectClass)) {
 			obj = (OAObject) OADataSource.getObject(objectClass, origKey);
 			if (obj != null) {

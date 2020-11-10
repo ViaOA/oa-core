@@ -1687,7 +1687,7 @@ public class OAObjectReflectDelegate {
 	 * If reference object is not already loaded, then OADataSource will be used to retrieve object.
 	 */
 
-	public static Object getReferenceObject(OAObject oaObj, String linkPropertyName) {
+	public static Object getReferenceObject(final OAObject oaObj, final String linkPropertyName) {
 		OASiblingHelperDelegate.onGetObjectReference(oaObj, linkPropertyName);
 
 		Object objOriginal = OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, true, true);

@@ -677,6 +677,12 @@ public class OAObjectCacheDelegate {
 
 			WeakReference ref = (WeakReference) tm.get(key);
 
+            // 20201109 check to see if it's in tree with only guid
+            if (ref == null && key != null && key.isNew()) {
+                OAObjectKey keyGuidOnly = new OAObjectKey((Object[]) null, key.guid, true);
+                ref = (WeakReference) tm.get(keyGuidOnly);
+            }
+			
 			if (ref != null) {
 				result = (OAObject) ref.get();
 				if (result == obj) {
@@ -970,6 +976,12 @@ public class OAObjectCacheDelegate {
 			try {
 				tmh.rwl.readLock().lock();
 				ref = (WeakReference) tmh.treeMap.get(key);
+				
+	            // 20201109 check to see if it's in tree with only guid
+	            if (ref == null && key instanceof OAObjectKey && ((OAObjectKey)key).guid != 0 && ((OAObjectKey)key).isNew()) {
+	                OAObjectKey keyGuidOnly = new OAObjectKey((Object[]) null, ((OAObjectKey)key).guid, true);
+	                ref = (WeakReference) tmh.treeMap.get(keyGuidOnly);
+	            }
 			} finally {
 				tmh.rwl.readLock().unlock();
 			}

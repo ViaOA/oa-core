@@ -105,6 +105,9 @@ public class OAObjectSerializeDelegate {
         
 		OAObjectInfo oi =  OAObjectInfoDelegate.getOAObjectInfo(oaObjRead);
 		if (oi.bAddToCache) {
+
+//qqqqqqqqqqqqqq need to also check guid qqqqqqqqqqqqqqqqq		    
+		    
             oaObjUse = OAObjectCacheDelegate.add(oaObjRead, false, false, true);
 			bDup = (oaObjRead != oaObjUse);
 		}
