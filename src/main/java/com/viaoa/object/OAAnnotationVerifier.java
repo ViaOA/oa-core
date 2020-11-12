@@ -40,7 +40,7 @@ import com.viaoa.util.OAArray;
 
 /**
  * Verifies OA annotations.
- * 
+ *
  * @author vvia
  */
 public class OAAnnotationVerifier {
@@ -660,24 +660,20 @@ public class OAAnnotationVerifier {
 			return false;
 		}
 		if (c1.primaryKey != c2.primaryKey) {
-			//20100714 uncomment after VJ is done qqqqqqqqqqqqqqqqqqqqqqqqqq
-			//            p("mismatch in primaryKey");
-			//            return false;
+			p("mismatch in primaryKey");
+			return false;
 		}
 		if (c1.foreignKey != c2.foreignKey) {
-			//20100714 uncomment after VJ is done qqqqqqqqqqqqqqqqqqqqqqqqqq
-			//            p("mismatch in foreignKey");
-			//            return false;
+			p("mismatch in foreignKey");
+			return false;
 		}
 		if (c1.clazz != c2.clazz) {
-			//20100714 uncomment after VJ is done qqqqqqqqqqqqqqqqqqqqqqqqqq
-			//            p("mismatch in clazz");
-			//            return false;
+			p("mismatch in clazz");
+			return false;
 		}
 		if (c1.type != c2.type) {
-			//20100714 uncomment after VJ is done qqqqqqqqqqqqqqqqqqqqqqqqqq
-			//            p("mismatch in type "+c1.columnName+": "+c1.type+", " + c2.type);
-			//            return false;
+			p("mismatch in type " + c1.columnName + ": " + c1.type + ", " + c2.type);
+			return false;
 		}
 		if (c1.maxLength != c2.maxLength) {
 			if (c1.type == Types.VARCHAR) {
@@ -686,11 +682,7 @@ public class OAAnnotationVerifier {
 			}
 		}
 		if (c1.decimalPlaces != c2.decimalPlaces) {
-			//20100714 uncomment after VJ is done qqqqqqqqqqqqqqqqqqqqqqqqqq
-			if (true) {
-				return true;
-			}
-			//            p("mismatch in decimalPlaces");
+			p("mismatch in decimalPlaces");
 			return false;
 		}
 		if (c1.assignNextNumber != c2.assignNextNumber) {
@@ -972,28 +964,4 @@ public class OAAnnotationVerifier {
 		//LOG.warning(msg);
 		System.out.println("Error: " + msg);
 	}
-
-	/**
-	 * public static void main(String[] args) throws Exception { OAAnnotationVerifier verifier = new OAAnnotationVerifier(); // DataSource
-	 * ds = new DataSource("server", "database", "user", "pw"); DataSource ds = new DataSource(); ds.startup(null, null, null, null, 0, 0,
-	 * 0); Database database = ((OADataSourceJDBC)ds.getOADataSource()).getDatabase(); DBMetaData dbmd =
-	 * ((OADataSourceJDBC)ds.getOADataSource()).getDBMetaData(); String[] fnames = OAReflect.getClasses("com.vetjobs.oa"); Class[] classes =
-	 * new Class[0]; for (String fn : fnames) { Class c = Class.forName("com.vetjobs.oa." + fn); if (c.getAnnotation(OATable.class) == null)
-	 * continue; classes = (Class[]) OAArray.add(Class.class, classes, c); } / ** for (String fn : fnames) { System.out.println("oi&ds
-	 * ==>"+fn); Class c = Class.forName("com.viaoa.scheduler.oa." + fn); if (c.getAnnotation(OATable.class) == null) continue; OAObjectInfo
-	 * oi = OAObjectInfoDelegate.getOAObjectInfo(c); del.verify(oi); del.verify(c, database); } / // Create database Database database2 =
-	 * new Database(); Table table = new Table("NextNumber",com.viaoa.datasource.autonumber.NextNumber.class); // ** Used by all
-	 * OADataSource Database // NextNumber COLUMNS Column[] columns = new Column[2]; columns[0] = new Column("nextNumberId","nextNumberId",
-	 * Types.VARCHAR, 75); columns[0].primaryKey = true; columns[1] = new Column("nextNumber","nextNumber", Types.INTEGER);
-	 * table.setColumns(columns); database2.addTable(table); OAAnnotationDelegate.update(database2, classes); / ** // Verify for (Class c :
-	 * classes) { System.out.println("verify OA ==>"+c.getSimpleName()); del.verify(c, database2); } System.out.println("verify database
-	 * Links ==>"); del.verifyLinks(database2); / verifier.compare(database, database2); for (Class c : classes) { OAObjectInfo oi =
-	 * OAObjectInfoDelegate.getOAObjectInfo(c); // compare class annotations with ObjectInfo verifier.verify(oi); OAObjectInfo oi2 = new
-	 * OAObjectInfo(); OAAnnotationDelegate.update(oi2, c); int x = oi2.getCalcInfos().size(); int x2 = oi2.getLinkInfos().size();
-	 * OAObjectInfoDelegate.initialize(oi2, c); if (x != oi2.getCalcInfos().size()) verifier.p("CalcInfos missing"); if (x2 !=
-	 * oi2.getLinkInfos().size()) verifier.p("LinkInfos missing"); verifier.compare(oi, oi2); } // must have database access to run this //
-	 * System.out.println("datasource VerifyDelegate.verify database ==>"); // OADataSourceJOAC dsx = new OADataSourceJOAC(database, dbmd);
-	 * // VerifyDelegate.verify(dsx); System.out.println("done"); }
-	 */
-	// qqqqqqqqqqqqq need to test where there is a superClass, objectInfo needs to combine
 }

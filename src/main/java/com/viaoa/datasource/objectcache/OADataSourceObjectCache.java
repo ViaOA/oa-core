@@ -47,7 +47,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 		}
 	}
 
-	//TODO:  qqqqqqqqqqqqqq this does not sort qqqqqqqqqqqqq
+	//TODO:  this does not sort
 
 	@Override
 	public OADataSourceIterator select(final Class selectClass,

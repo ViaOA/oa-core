@@ -7,6 +7,6 @@ package com.viaoa.remote.http;
  */
 public class OARemoteHttpServer {
 
-	// see OARemoteServlet  qqqqqqqqqqqqqqqqqqqqqq
+	// see OARemoteServlet
 
 }

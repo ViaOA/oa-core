@@ -701,7 +701,6 @@ public class OAObjectCallbackDelegate {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForPropertyChange, OAObjectCallback.CHECK_ALL, null,
 				null,
 				oaObj, property, newValue);
-		//qqqqqqqqqqqqqqqqqqq needs to include OldValue qqqqqqqqqqqqq
 		objectCallback.setValue(newValue);
 		objectCallback.setPropertyName(property);
 		objectCallback.setConfirmMessage(confirmMessage);
@@ -1543,9 +1542,9 @@ public class OAObjectCallbackDelegate {
 		}
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 		Method m;
-        m = OAObjectInfoDelegate.getMethod(oi, property + "ModelCallback", OAObjectModel.class);
+		m = OAObjectInfoDelegate.getMethod(oi, property + "ModelCallback", OAObjectModel.class);
 		if (m == null) {
-		    m = OAObjectInfoDelegate.getMethod(oi, "onObjectCallback" + property + "Model", 1);
+			m = OAObjectInfoDelegate.getMethod(oi, "onObjectCallback" + property + "Model", 1);
 		}
 		if (m != null) {
 			Class[] cs = m.getParameterTypes();

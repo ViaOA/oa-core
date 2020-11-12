@@ -969,7 +969,7 @@ public class OATemplate<F extends OAObject> {
 	 * @param propertyName name of property parsed between <%=XX%> parameters.
 	 * @return
 	 */
-	/*qqqqqqqqqqqqqq
+	/*
 	protected String getValue(OAObject obj, String propertyName, int width, String fmt, OAProperties props) {
 	    return getValue(obj, propertyName, width, fmt, props, false);
 	}

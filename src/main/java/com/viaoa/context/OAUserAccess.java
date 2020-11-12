@@ -58,19 +58,18 @@ public class OAUserAccess {
 
 	private Package packageValid; // ignore/allow others
 
-	//qqqqqqqqqqqqqqqqqqqqq add query extraWhereClause .....
+	// todo? add query extraWhereClause .....
 	//     ... or use current prop paths to build it ..
 	//    ex:  buyer.loc.company.clients.products.campaigns
 	//          => AND campaign.propduct.client.company = buyer.loc.company
 	// create a method to have oaselect use UserAccess to get this qqqqqqqq
 
 	public boolean updateSelect(OASelect sel) {
-		//qqqqqqqqqqqqqqqqqqqqqqqqqq  sel.add(String whereClause, Object[] params)
 		return false; // no changes made
 	}
 
-	//qqqqqqqqqqqqqqqqqqqqqqq allow param to determine if user has access
-	//  buyer.isManager  ... if true then skip the rule qqqqqq
+	// todo? allow param to determine if user has access
+	// ex:  buyer.isManager  ... if true then skip the rule
 
 	/**
 	 * Default values if no defined userAccess.

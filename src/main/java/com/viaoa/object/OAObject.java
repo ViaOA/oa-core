@@ -423,7 +423,6 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return eq;
 	}
 
-	//qqqqqqqqqqqqqqqqqqqqqqqqq
 	public OAObjectCallback getAllowSubmit() {
 		OAObjectCallback eq = OAObjectCallbackDelegate.getAllowSubmitObjectCallback(this);
 		return eq;
@@ -1126,7 +1125,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 			throw new RuntimeException("method " + mname + ", OASyncClient=null, thread=" + Thread.currentThread());
 		}
 
-		//qqqqqqqqqqqqqqqqqqqqqqqqqqq 20190918
+		// 20190918
 		if (OAObjectCSDelegate.isInNewObjectCache(this)) {
 			OAObjectCSDelegate.addToServerSideCache(this);
 		}
@@ -1325,7 +1324,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 			if (ua == null) {
 				b = false;
 			} else {
-				b = false; //qqqqqqqqqqqq dont allow directly changing secure (ex: passwords) data through JAXB
+				b = false; // todo? dont allow directly changing secure (ex: passwords) data through JAXB
 			}
 		}
 		return b;

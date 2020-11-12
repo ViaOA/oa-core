@@ -449,8 +449,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 				_releaseCal(cal);
 			}
 
-		} else if (ignoreTimeZone) { //qqqqqqqqqqqqqq remove bSerializeTimeValue
-			//        else if (!bSerializeTimeValue || ignoreTimeZone) {  //qqqqqqqqqqqqqq remove bSerializeTimeValue
+		} else if (ignoreTimeZone) {
 			GregorianCalendar cal = _getCal();
 			try {
 				stream.writeInt(9995); // version

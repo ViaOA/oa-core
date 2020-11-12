@@ -29,7 +29,7 @@ import com.viaoa.util.OAString;
 
 /**
  * Delegate used for Hub selecting and lazy loading (fetching) from datasource.
- * 
+ *
  * @author vvia
  */
 public class HubSelectDelegate {
@@ -130,13 +130,6 @@ public class HubSelectDelegate {
 					try {
 						OAThreadLocalDelegate.setLoading(true);
 						HubAddRemoveDelegate.add(thisHub, obj);
-						/***
-						 * qqqqqqqqqqqqqqqq if (sel.getNextCount() != thisHub.getCurrentSize()) { //qqqqqqqqqqqqqq int xx = 4; xx++; long ts
-						 * = System.currentTimeMillis(); if (ts > msLAST+2500) { msLAST = ts; LOG.log(Level.WARNING, "VINCE
-						 * qqqqqqqqqqqqqqqqqqqqqq hub="+thisHub, new Exception("fetchMore hub.add counts not the same qqqqqqqqqqqqqqqqqq"));
-						 * } }
-						 */
-
 					} finally {
 						OAThreadLocalDelegate.setLoading(false);
 					}
@@ -291,7 +284,7 @@ public class HubSelectDelegate {
 				throw new RuntimeException("select cant be changed for detail hub");
 			}
 
-			/* 20200522 removed this, calling code should be setting the whereObj.  Now defined in oabuilder and code gen	        
+			/* 20200522 removed this, calling code should be setting the whereObj.  Now defined in oabuilder and code gen
 			if (thisHub.datam.getMasterObject() != null) {
 			    if (thisHub.datam.getMasterObject() != select.getWhereObject()) {
 			        if (select.getWhere() == null || select.getWhere().length() == 0) {
@@ -318,7 +311,7 @@ public class HubSelectDelegate {
 		select.setSelectClass(thisHub.getObjectClass());
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(thisHub.getObjectClass());
 
-		// 20200302 
+		// 20200302
 		Hub hx = thisHub.data.getSelectWhereHub();
 		if (hx != null) {
 			String s = thisHub.data.getSelectWhereHubPropertyPath();
@@ -446,7 +439,7 @@ public class HubSelectDelegate {
 
 	/**
 	 * WHERE clause to use for select.
-	 * 
+	 *
 	 * @see #setSelectOrder
 	 * @see OASelect
 	 */
@@ -469,7 +462,7 @@ public class HubSelectDelegate {
 
 	/**
 	 * Sort Order clause to use for select.
-	 * 
+	 *
 	 * @see #getSelectOrder
 	 * @see OASelect
 	 */
@@ -486,7 +479,7 @@ public class HubSelectDelegate {
 
 	/**
 	 * Sort Order clause to use for select.
-	 * 
+	 *
 	 * @see #setSelectOrder
 	 * @see OASelect
 	 */
@@ -550,7 +543,7 @@ public class HubSelectDelegate {
 
 	/**
 	 * This will re-run the last select.
-	 * 
+	 *
 	 * @see OASelect
 	 */
 	public static boolean refreshSelect(Hub thisHub) {
@@ -631,7 +624,7 @@ public class HubSelectDelegate {
 	/**
 	 * Use the same whereHub & pp as another hub, if thisHub is in the same propertyPath. example: hubFrom=Company
 	 * pp=clients.products.campaigns hubTo=Campaign that has a hub=Product to select campaign.product
-	 * 
+	 *
 	 * @param thisHub    Hub that could be in the same propertyPath of the hubFromHub.whereHubPropertyPath
 	 * @param propName   the reference of thisHub from another hub. ex:
 	 * @param hubFromHub hub that might have a selectWhereHub & PP that is used by thisHub.

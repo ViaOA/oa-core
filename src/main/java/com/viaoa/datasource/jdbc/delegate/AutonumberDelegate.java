@@ -152,7 +152,7 @@ public class AutonumberDelegate {
 		} else {
 			max = ai.get();
 		}
-		//qqqqqqqqqqqqqqqq
+
 		//LOG.warning("table="+table.name+", column="+pkColumn.columnName+", max="+max+", ai="+ai+", bAutoIncrement="+bAutoIncrement);
 		return max;
 	}

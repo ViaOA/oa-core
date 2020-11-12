@@ -446,21 +446,21 @@ public class OAImageUtil {
 		/*was
 		int type = BufferedImage.TYPE_INT_ARGB;
 		if (!hasAlpha(image)) type = BufferedImage.TYPE_INT_RGB;
-
+		
 		BufferedImage bi = new BufferedImage(w2, h2, type);
 		Graphics2D g = (Graphics2D) bi.getGraphics();
-
+		
 		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC); // VALUE_INTERPOLATION_BILINEAR);
-
+		
 		// g.scale(xPercent, yPercent);
-
+		
 		// 20110717
 		g.setColor(new Color(0, 0, 0, 0)); // make sure transparency works
 		g.fillRect(0, 0, bi.getWidth(), bi.getHeight());
-
+		
 		// g.drawImage(image, 0, 0, null);
 		g.drawImage(image, 0, 0, w2, h2, null);
-
+		
 		return bi;
 		*/
 	}
@@ -564,7 +564,7 @@ public class OAImageUtil {
 
 	public static BufferedImage scale(Image image, int newWidth, int newHeight) {
 
-		// qqqqqqqqqqqqqq new 20120201
+		// 20120201
 		BufferedImage bix = getScaledInstance(image, newWidth, newHeight);
 		return bix;
 
@@ -572,10 +572,10 @@ public class OAImageUtil {
 		loadImage(image);
 		int w = image.getWidth(null);
 		int h = image.getHeight(null);
-
+		
 		int type = BufferedImage.TYPE_INT_ARGB;
 		if (!hasAlpha(image)) type = BufferedImage.TYPE_INT_RGB;
-
+		
 		BufferedImage bi = new BufferedImage(newWidth, newHeight, type);
 		bi.getGraphics().drawImage(image, 0, 0, newWidth, newHeight, 0, 0, w, h, null);
 		return bi;
@@ -902,9 +902,9 @@ public class OAImageUtil {
 	 * "oaproperty://com.vetplan.oa.Pet/picture?932" will load from
 	 * OAObject.property, using Id = 932 "file://c:/projects/cdi/logo.gif"
 	 * "jar:file:schedulercdi.jar!/com/viaoa/scheduler/help.gif"
-
-
-
+	
+	
+	
 	 */
 	public static BufferedImage loadImageUsingURL(URL url) {
 		return loadImage(url);
@@ -1063,10 +1063,10 @@ public class OAImageUtil {
 	}
 
 	/* Convert from "img src" format used by OAHTMLTextEditor to ImageServlet
-
+	
 	    src='oaproperty://com.tmgsc.hifive.model.ImageStore/Bytes?2'
 	    src='../servlet/img?c=ImageStore&i=8105&p=bytes'
-
+	
 	 * @param html
 	 * @param servletPath any prefix for path to servlet, default (null, or blank) is "/servlet"
 	 * @return

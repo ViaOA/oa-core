@@ -40,7 +40,7 @@ https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
 	Content-Type: application/json;charset=utf-8
 */
 
-// qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq  NOT DONE .... original plan is to be a client for  OARestServlet
+// NOTE!!!!  NOT DONE .... original plan is to be a client for  OARestServlet
 
 /**
  * @author vvia
@@ -266,7 +266,7 @@ public class OARestClient {
 		json = json.replace("&", ",\n");
 		json = json.replace('=', ':');
 		json = json.replace('\'', '\"');
-		
+
 		s = OAHttpClient
 				.httpPost("http://localhost:8081/retail-products/iseries/itemRestriction/getRestriction", json);
 		*/

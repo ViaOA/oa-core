@@ -857,17 +857,6 @@ public class QueryConverter {
 					Linkinfo li = (Linkinfo) vecLink.elementAt(xx - 1);
 					if (!li.bMany) {
 						if (li.parent.bMany) {
-							/*
-							// many2many that uses a link table
-							int pos = 0; // currently only using one column, could be multipart id
-							for (int j=0; j<li.parent.links.length; j++) {  // parent should be link table qqqqqqqqqqqqqq
-							    if (li.parent.links[j] == li) {
-							        pos = j;
-							        break;
-							    }
-							}
-							column = li.linkFromParent.fkeys[pos];
-							*/
 							column = li.linkFromParent.fkeys[0];
 						} else {
 							column = li.linkFromParent.fkeys[0];

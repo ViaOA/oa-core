@@ -19,7 +19,7 @@ import com.viaoa.util.OAArray;
 
 /**
  * Recovers items that were written by DBLogDelegate.
- * 
+ *
  * @author vvia
  */
 public class DBRecoverLogUtil {
@@ -66,18 +66,17 @@ public class DBRecoverLogUtil {
 					bParam = false;
 				} else {
 					// execute command
-					//qqqqqqqqqqqqqqqqq                    
 				}
 			}
 
 		}
 
-		/*        
-		  
+		/*
+
 		Apr 5, 2010 2:37:35 PM com.viaoa.datasource.jdbc.delegate.DBLogDelegate logInsert
 		FINE: INSERT: [[BEGIN[INSERT INTO PRODUCTIONDATE (WORKING, ID, TYPE, DATEVALUE) VALUES (NULL, 491, 2, {d '2010-03-28'})]END]]
-		
-		
+
+
 		*/
 
 	}

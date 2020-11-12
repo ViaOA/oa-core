@@ -21,6 +21,8 @@ import com.viaoa.xml.OAXMLReader;
  * OAJsonReader that converts to XML, and then uses OAXMLReader to convert to OAObjects and Hubs.
  * <p>
  * See also OAJaxb, which works with OAObjects and any other Java objects.
+ * <p>
+ * Note: replaced with OAJaxb
  *
  * @see OAJsonWriter
  * @author vvia
@@ -198,7 +200,6 @@ public class OAJsonReader {
 			}
 		}
 	}
-	//qqqqqqqqqqqqqqqq end
 
 	/**
 	 * Convert to OAXML so that OAXMLReader can be used to load the Hubs and OAObjects
@@ -280,7 +281,6 @@ public class OAJsonReader {
 					sb.append("</com.viaoa.hub.Hub>\n");
 				}
 			} else {
-				// see if <![CDATA[xxx.value.xxx]]>   is needed   qqqqqqqqqqqqq
 				sb.append(token.value);
 			}
 

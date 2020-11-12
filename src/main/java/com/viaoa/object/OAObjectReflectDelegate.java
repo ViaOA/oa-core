@@ -244,13 +244,13 @@ public class OAObjectReflectDelegate {
 
 		String propNameU = propName.toUpperCase();
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-		
+
 		Method m = null;
 		if (value != null) {
-	        m = OAObjectInfoDelegate.getMethod(oi, "SET" + propNameU, value.getClass());
+			m = OAObjectInfoDelegate.getMethod(oi, "SET" + propNameU, value.getClass());
 		}
 		if (m == null) {
-		    m = OAObjectInfoDelegate.getMethod(oi, "SET" + propNameU, 1);
+			m = OAObjectInfoDelegate.getMethod(oi, "SET" + propNameU, 1);
 		}
 
 		Class clazz = null;
@@ -330,7 +330,7 @@ public class OAObjectReflectDelegate {
 					return; // no change, was storing key, now storing oaObject
 				}
 			}
-		} else { //  (value NOT instanceof OAObject) either OAObjectKey or value of key 
+		} else { //  (value NOT instanceof OAObject) either OAObjectKey or value of key
 			if (!(value instanceof OAObjectKey)) {
 				value = OAObjectKeyDelegate.convertToObjectKey(oi, value);
 			}
@@ -498,7 +498,7 @@ public class OAObjectReflectDelegate {
 	/**
 	 * DataSource independent method to retrieve an object. Find the OAObject given a key value. This will look in the Cache, Server (if
 	 * running as workstation) and the DataSource (if not running as workstation).
-	 * 
+	 *
 	 * @param clazz class of reference of to find.
 	 * @param key   can be the value of the key or an OAObjectKey
 	 */
@@ -532,7 +532,7 @@ public class OAObjectReflectDelegate {
 
 	/**
 	 * DataSource independent method to retrieve a reference property that is a Hub Collection.
-	 * 
+	 *
 	 * @param linkPropertyName name of property to retrieve. (case insensitive)
 	 * @param sortOrder
 	 * @param bSequence        if true, then create a hub sequencer to manage the order of the objects in the hub.
@@ -814,7 +814,7 @@ public class OAObjectReflectDelegate {
 			// request from server
 			hub = OAObjectCSDelegate.getServerReferenceHub(oaObj, linkPropertyName);
 			if (hub == null) {
-				// master not on the Server, might have been GCd, create empty Hub 
+				// master not on the Server, might have been GCd, create empty Hub
 				if (linkInfo == null) {
 					return null;
 				}
@@ -958,8 +958,8 @@ public class OAObjectReflectDelegate {
 		}
 
 		/*20171108 moved below. The issue with this is that this adds the Hub to oaObj.props before it runs the
-		 *    select (which loads data).  Another thread could get this empty hub before the objects are loaded.        
-		 
+		 *    select (which loads data).  Another thread could get this empty hub before the objects are loaded.
+
 		    // 20141204 added check to see if property is now there, in case it was deserialized and then
 		    //    the property was set by HubSerializeDelegate._readResolve
 		    if (bThisIsServer || OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, false) == null) {
@@ -1139,7 +1139,7 @@ public class OAObjectReflectDelegate {
 	/**
 	 * This method is used to get the value of a relationship. Calling it will not load objects. To load objects, call getReferenceHub(name)
 	 * or getReferenceObject(name)
-	 * 
+	 *
 	 * @return one of the following: null, OAObjectKey, OAObject, Hub of OAObjects, Hub of OAObjectKeys
 	 * @see #getReferenceObject to have the OAObject returned.
 	 * @see #getReferenceHub to have a Hub of OAObjects returned.
@@ -1339,7 +1339,7 @@ public class OAObjectReflectDelegate {
 			}
 			if (val instanceof Hub && bIsServer) {
 				Hub hubx = (Hub) val;
-				// see if autoMatch (if used) is set up 
+				// see if autoMatch (if used) is set up
 				String matchProperty = li.getMatchProperty();
 				if (matchProperty != null && matchProperty.length() > 0) {
 					if (HubDelegate.getAutoMatch(hubx) == null) {
@@ -1739,7 +1739,7 @@ public class OAObjectReflectDelegate {
 
 		if (!(obj instanceof OAObjectKey)) {
 			if (obj == OANotExist.instance || obj == null) {
-				// 20190112                    
+				// 20190112
 				String pps = li.getDefaultPropertyPath();
 				if (OAString.isNotEmpty(pps)) {
 					if (li.getDefaultPropertyPathIsHierarchy()) {
@@ -1944,7 +1944,7 @@ public class OAObjectReflectDelegate {
 	 * used to retrieve the object when requested using getObject(property). This method is a way to get the key, without loading the
 	 * object.<br>
 	 * <br>
-	 * 
+	 *
 	 * @return the OAObjectKey of a ONE reference. Does not call getMethod, but internally stored value. see isLoaded to see if object has
 	 *         been loaded and exists in memory. isLoaded will return false if the property has never been set, or loaded, or if the
 	 *         objectKey has been set and the object for the key is not in memory. This method will always return the objectKey for the
@@ -2170,7 +2170,7 @@ public class OAObjectReflectDelegate {
 
 	/**
 	 * Used to preload data, this will recursively load all references in the given Property Paths.
-	 * 
+	 *
 	 * @param oaObj         root object to use.
 	 * @param propertyPaths one or more propertyPaths, that can be loaded using a single visit to each property.
 	 */
@@ -2189,7 +2189,7 @@ public class OAObjectReflectDelegate {
 
 	/**
 	 * Used to preload data, this will recursively load all references in the given Property Paths.
-	 * 
+	 *
 	 * @param hub           root objects to use.
 	 * @param propertyPaths one or more propertyPaths, that can be loaded using a single visit to each property.
 	 */
@@ -2208,7 +2208,7 @@ public class OAObjectReflectDelegate {
 
 	/**
 	 * Used by loadProperties, to take multiple property paths, and create a tree of unique property paths.
-	 * 
+	 *
 	 * @param propertyPaths example: "orders.orderItems.item.vendor"
 	 * @return root node of tree, that has it's children as the starting point for the property paths.
 	 */
@@ -2272,7 +2272,7 @@ public class OAObjectReflectDelegate {
 
 	/**
 	 * Create a copy of an object, excluding selected properties.
-	 * 
+	 *
 	 * @return new copy of the object
 	 */
 	public static OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
@@ -2347,7 +2347,7 @@ public class OAObjectReflectDelegate {
 
 	/*
 	 * note: OAThreadLocalDelegate.setLoadingObject(true/false) is not set in this method.
-	 *      it is set by copyInto 
+	 *      it is set by copyInto
 	 */
 	public static void _copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
 			HashMap<Integer, Object> hmNew) {
@@ -2616,7 +2616,7 @@ public class OAObjectReflectDelegate {
 
 	/**
 	 * Find the common Hub that two objects are descendants of. param currentLevel current level of parents that have been checked
-	 * 
+	 *
 	 * @param maxLevelsToCheck total number of parents to check
 	 */
 	public static Hub findCommonHierarchyHub(OAObject obj1, OAObject obj2, int maxLevelsToCheck) {
@@ -2684,7 +2684,7 @@ public class OAObjectReflectDelegate {
 
 	/**
 	 * get the property path from a Parent hub to a child hub.
-	 * 
+	 *
 	 * @param hubParent parent hub that needs to have the path expanded from.
 	 * @param hubChild  child Hub that has a path
 	 * @return
@@ -2828,12 +2828,10 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
-	//qqqqqqqqqqqqqq test this    
-	// 20140404
 	/**
 	 * get the "real" object that needs to be displayed, based on a parent/from Hub, and a from object (ex: row in table), and the hub that
 	 * it originates from.
-	 * 
+	 *
 	 * @param hubFrom    ex: hubDept
 	 * @param fromObject ex: dept
 	 * @param hubChild   ex: hubEmplyeeType, (enum of strings) and is linked to hubEmp
@@ -2912,7 +2910,7 @@ public class OAObjectReflectDelegate {
 
 	/**
 	 * get the property path from a Parent hub to a child hub, that is all of type=One.
-	 * 
+	 *
 	 * @param hubParent parent hub that needs to have the path expanded from.
 	 * @param hubChild  child Hub that has a path
 	 */

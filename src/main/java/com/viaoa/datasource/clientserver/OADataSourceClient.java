@@ -423,7 +423,7 @@ public class OADataSourceClient extends OADataSource {
 				close();
 				return;
 			}
-			//20190130             
+			//20190130
 			if (siblingHelper == null) {
 				this.hubReadAhead = new Hub();
 				siblingHelper = new OASiblingHelper(this.hubReadAhead);
@@ -433,7 +433,7 @@ public class OADataSourceClient extends OADataSource {
 				if (obj == null) {
 					break;
 				}
-				// the server will add the object to the session cache (server side) if it is not in a hub w/master 
+				// the server will add the object to the session cache (server side) if it is not in a hub w/master
 				if (OAObjectHubDelegate.isInHubWithMaster((OAObject) obj)) {
 					OAObjectCSDelegate.removeFromServerSideCache((OAObject) obj);
 				}
@@ -478,7 +478,6 @@ public class OADataSourceClient extends OADataSource {
 		}
 
 		public void close() {
-			// 20190130 qqqqqqqqqqqqqqqq        
 			if (hubReadAhead != null) {
 				hubReadAhead.clear();
 				hubReadAhead = null;

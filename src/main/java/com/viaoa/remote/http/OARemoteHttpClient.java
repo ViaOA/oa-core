@@ -4,6 +4,6 @@ public class OARemoteHttpClient {
 
 	// ability to call http servelet
 
-	// OAHttpXxxClient.java qqqqqqqqqqqqqqqqqqqqq
+	// OAHttpXxxClient.java
 
 }

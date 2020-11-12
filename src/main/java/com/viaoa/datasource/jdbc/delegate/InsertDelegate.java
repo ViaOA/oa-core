@@ -30,7 +30,7 @@ import com.viaoa.util.OAString;
 
 /**
  * Manages inserts for JDBC datasource.
- * 
+ *
  * @author vvia
  */
 public class InsertDelegate {
@@ -247,12 +247,11 @@ public class InsertDelegate {
 		if (oi.getUseDataSource()) {
 		    OAObject.OALOG.fine(s);
 		}
-		
+
 		LOG.fine(s);
-		           
+
 		DBLogDelegate.logInsert(sqlInsert, params);
 		*/
-		//qqqqqqqqqqqqqqq        
 		DBLogDelegate.logInsert(sqlInsert, params);
 
 		Statement statement = null;

@@ -72,7 +72,7 @@ public class OAObjectDeleteDelegate {
 				if (h == null) {
 					continue;
 				}
-				/*qqqqqqqqqqqqqqqqqqqqqq
+				/* this can be added later?
 				if (!HubEventDelegate.canDelete(h, oaObj)) {
 				    throw new RuntimeException("can delete returned false, object can not be deleted.");
 				}

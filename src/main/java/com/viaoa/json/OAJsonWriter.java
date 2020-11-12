@@ -18,6 +18,7 @@ import java.util.Stack;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubJsonDelegate;
+import com.viaoa.jaxb.OAJaxb;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -32,8 +33,11 @@ import com.viaoa.util.OAString;
  * See also OAJaxb, which works with OAObjects and any other Java objects.
  * <p>
  * If an object has already been stored in the file, then its key will be stored.
+ * <p>
+ * NOTE: replaced with OAJaxb
  *
  * @see OAJsonReader
+ * @see OAJaxb
  */
 public class OAJsonWriter {
 	protected PrintWriter pw;
@@ -88,8 +92,8 @@ public class OAJsonWriter {
 		stack = new Stack<Object>();
 	}
 
-	//qqq  NEW CODE 20120610 qqqqqqqqqqqqq THis needs to be tested **********qqqqqqqqq
-	//qqqqqqqqqqqq todo: build a tree ?
+	//qqq  NEW CODE 20120610 THis needs to be tested ****
+	// todo: build a tree ?
 
 	/**
 	 * called by OAObject.write to know if object should be written for a property that references another OAObject. This can be overwritten
@@ -236,8 +240,8 @@ public class OAJsonWriter {
 		if (pw == null) {
 			throw new NullPointerException("PrintWrite is null");
 		}
-		//qqqqq Json does not have CDATA
-		//qqqqqqq check to see what conversions JSON needs, qqqqqqqqqqqq
+		// Json does not have CDATA
+		// todo? check to see what conversions JSON needs
 		if (encodeMessage != null) {
 			line = encodeMessage + Base64.encode(line);
 		}
@@ -249,7 +253,6 @@ public class OAJsonWriter {
 		if (pw == null) {
 			throw new NullPointerException("PrintWrite is null");
 		}
-		//qqqqqqq check to see what conversions JSON needs, qqqqqqqqqqqq
 		pw.print(OAString.convertToXML(line, false));
 	}
 

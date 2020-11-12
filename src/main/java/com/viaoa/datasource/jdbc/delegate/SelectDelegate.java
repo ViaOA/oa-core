@@ -78,7 +78,6 @@ public class SelectDelegate {
 		if (table == null) {
 			return null;
 		}
-		//if (table == null || ds == null) return null;//qqqqqqqqqqqqq test/debugging
 		QueryConverter qc = new QueryConverter(ds);
 		String[] queries = getSelectSQL(qc, ds, clazz, queryWhere, params, queryOrder, max, bDirty);
 
@@ -593,7 +592,6 @@ public class SelectDelegate {
 		if (table == null) {
 			throw new Exception("table not found for class=" + clazz + ", property=" + property);
 		}
-		//  qqqqqqqqqqqqqqqqqqqqqq USE preparedStatement
 		QueryConverter qc = new QueryConverter(ds);
 
 		Column[] cols = qc.getSelectColumnArray(clazz);

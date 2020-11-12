@@ -78,11 +78,10 @@ public class OASiblingHelperDelegate {
 		try {
 			keys = _getSiblings(mainObject, property, maxAmount, hmIgnore, msStarted);
 			/**
-			 * qqqqqq testing if (keys == null || keys.length == 0) { keys = _getSiblings(mainObject, property, maxAmount, hmIgnore,
-			 * msStarted); }
+			 * testing if (keys == null || keys.length == 0) { keys = _getSiblings(mainObject, property, maxAmount, hmIgnore, msStarted); }
 			 */
 		} catch (Exception e) {
-			e.printStackTrace();//qqqqqqqqqqqqqqqqqqqqqqqqqq testing, can be removed
+			// e.printStackTrace();// testing, can be removed
 			throw new RuntimeException("OAObjectSiblingDelegate error", e);
 		} finally {
 			tl.cntGetSiblingCalled = 0;
@@ -91,10 +90,10 @@ public class OASiblingHelperDelegate {
 		if (OAObject.getDebugMode()) {
 			long x = msStarted == 0 ? 0 : (System.currentTimeMillis() - msStarted);
 			if (throttle.check() || x > (MaxMs * 2)) {
-				System.out.println((throttle.getCheckCount()) + ") OAObjectSiblingDelegate " + x + "ms, obj="
+				System.out.println((throttle.getCheckCount()) + ") OASiblingHelper " + x + "ms, obj="
 						+ (mainObject == null ? "" : mainObject.getClass().getSimpleName()) + ", prop=" + property + ", sibs="
 						+ (keys == null ? 0 : keys.length));
-				// System.out.println((throttle.getCheckCount())+") OAObjectSiblingDelegate "+x+"ms, obj="+mainObject.getClass().getSimpleName()+", prop="+property+", hmIgnore="+(hmIgnore==null?0:hmIgnore.size())+", alRemove="+keys.length);
+				// System.out.println((throttle.getCheckCount())+") OASiblingHelper "+x+"ms, obj="+mainObject.getClass().getSimpleName()+", prop="+property+", hmIgnore="+(hmIgnore==null?0:hmIgnore.size())+", alRemove="+keys.length);
 			}
 		}
 
