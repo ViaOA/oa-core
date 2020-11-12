@@ -1,9 +1,13 @@
 package com.viaoa.jaxb;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -177,7 +181,7 @@ public class OAJaxb<TYPE extends OAObject> {
 		        System.setProperty(MOXySystemProperties.XML_ID_EXTENSION, "true");
 		    B: add this annotation of Id property
 		        @org.eclipse.persistence.oxm.annotations.XmlIDExtension
-		
+
 		    https://www.eclipse.org/eclipselink/api/2.7/org/eclipse/persistence/jaxb/MOXySystemProperties.html
 		    https://stackoverflow.com/questions/29564627/does-moxy-support-non-string-xmlid-in-version-2-6-0
 		 */
@@ -236,35 +240,77 @@ public class OAJaxb<TYPE extends OAObject> {
 	}
 
 	public String convertToXML(TYPE obj) throws Exception {
-		String s = convert(obj, true);
-		return s;
+		String result = convertTo(obj, true);
+		return result;
+	}
+
+	public String convertToXml(TYPE obj) throws Exception {
+		String result = convertTo(obj, true);
+		return result;
 	}
 
 	public String convertToJSON(TYPE obj) throws Exception {
-		String s = convert(obj, false);
-		return s;
+		String result = convertTo(obj, false);
+		return result;
+	}
+
+	public String convertToJson(TYPE obj) throws Exception {
+		String result = convertTo(obj, false);
+		return result;
+	}
+
+	public String convertTo(TYPE obj, boolean bToXML) throws Exception {
+		if (obj == null) {
+			return null;
+		}
+		StringWriter writer = new StringWriter();
+		convert(obj, bToXML, writer);
+		String result = writer.toString();
+		return result;
+	}
+
+	public void saveAsXML(TYPE obj, File file) throws Exception {
+		saveAs(obj, true, file);
+	}
+
+	public void saveAsXml(TYPE obj, File file) throws Exception {
+		saveAs(obj, true, file);
+	}
+
+	public void saveAsJSON(TYPE obj, File file) throws Exception {
+		saveAs(obj, false, file);
+	}
+
+	public void saveAsJson(TYPE obj, File file) throws Exception {
+		saveAs(obj, false, file);
+	}
+
+	public void saveAs(TYPE obj, boolean bToXML, File file) throws Exception {
+		Writer writer = new FileWriter(file);
+		convert(obj, bToXML, writer);
+		writer.close();
 	}
 
 	/**
-	 * Convert OAObject to XML or JSON.
+	 * Main method for converting an object to a writer.
 	 *
 	 * @param bToXML if true then XML, else JSON
 	 */
-	public String convert(TYPE obj, boolean bToXML) throws Exception {
+	public void convert(TYPE obj, boolean bToXML, Writer writer) throws Exception {
 		try {
 			reset();
 			OAThreadLocalDelegate.setOAJaxb(this);
 			bIsMarshelling = true;
-			return _convert(obj, bToXML);
+			_convert(obj, bToXML, writer);
 		} finally {
 			bIsMarshelling = false;
 			OAThreadLocalDelegate.setOAJaxb(null);
 		}
 	}
 
-	protected String _convert(TYPE obj, boolean bToXML) throws Exception {
-		if (obj == null) {
-			return null;
+	protected void _convert(TYPE obj, boolean bToXML, Writer writer) throws Exception {
+		if (obj == null || writer == null) {
+			return;
 		}
 		Marshaller marshaller = getJAXBContext().createMarshaller();
 		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
@@ -277,10 +323,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			marshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
 		}
 
-		StringWriter stringWriter = new StringWriter();
-		marshaller.marshal(obj, stringWriter);
-		String result = stringWriter.toString();
-		return result;
+		marshaller.marshal(obj, writer);
 	}
 
 	public static String convertToJson(Object obj) throws Exception {
@@ -308,15 +351,15 @@ public class OAJaxb<TYPE extends OAObject> {
 	public String testJackson(TYPE obj) throws Exception {
 	    JacksonXmlModule xmlModule = new JacksonXmlModule();
 	    xmlModule.setDefaultUseWrapper(false);  // XmlElementWrapper is included in method annotations
-	
+
 	    ObjectMapper objectMapper = new XmlMapper(xmlModule);
-	
+
 	    objectMapper.registerModule(new JaxbAnnotationModule());
-	
+
 	    objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 	    objectMapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);  // did not allow inside name to be a duplicate
 	    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-	
+
 	    / *
 	    AnnotationIntrospector introspector = new JaxbAnnotationIntrospector(objectMapper.getTypeFactory());
 	    objectMapper.setAnnotationIntrospector(introspector);
@@ -327,16 +370,56 @@ public class OAJaxb<TYPE extends OAObject> {
 	*/
 
 	public String convertToXML(Hub<TYPE> hub, String rootName) throws Exception {
-		String s = convert(hub, rootName, true);
+		String s = convertTo(hub, rootName, true);
+		return s;
+	}
+
+	public String convertToXml(Hub<TYPE> hub, String rootName) throws Exception {
+		String s = convertTo(hub, rootName, true);
 		return s;
 	}
 
 	public String convertToJSON(Hub<TYPE> hub) throws Exception {
-		String s = convert(hub, null, false);
+		String s = convertTo(hub, null, false);
 		return s;
 	}
 
-	public String convert(Hub<TYPE> hub, String rootName, boolean bToXML) throws Exception {
+	public String convertToJson(Hub<TYPE> hub) throws Exception {
+		String s = convertTo(hub, null, false);
+		return s;
+	}
+
+	public String convertTo(Hub<TYPE> hub, String rootName, boolean bToXML) throws Exception {
+		StringWriter writer = new StringWriter();
+		convert(hub, rootName, bToXML, writer);
+		String result = writer.toString();
+		return result;
+	}
+
+	public void saveAsXML(Hub<TYPE> hub, String rootName, File file) throws Exception {
+		Writer writer = new FileWriter(file);
+		convert(hub, rootName, true, writer);
+	}
+
+	public void saveAsXml(Hub<TYPE> hub, String rootName, File file) throws Exception {
+		Writer writer = new FileWriter(file);
+		convert(hub, rootName, true, writer);
+	}
+
+	public void saveAsJSON(Hub<TYPE> hub, File file) throws Exception {
+		Writer writer = new FileWriter(file);
+		convert(hub, null, false, writer);
+	}
+
+	public void saveAsJson(Hub<TYPE> hub, File file) throws Exception {
+		Writer writer = new FileWriter(file);
+		convert(hub, null, false, writer);
+	}
+
+	/**
+	 * Main method for converting Hub.
+	 */
+	public void convert(Hub<TYPE> hub, String rootName, boolean bToXML, Writer writer) throws Exception {
 		try {
 			reset();
 			OAThreadLocalDelegate.setOAJaxb(this);
@@ -345,14 +428,14 @@ public class OAJaxb<TYPE extends OAObject> {
 				// put root objects in list of cascade so that inner references to them will be used
 				cascade.wasCascaded(obj, true);
 			}
-			return _convert(hub, rootName, bToXML);
+			_convert(hub, rootName, bToXML, writer);
 		} finally {
 			bIsMarshelling = false;
 			OAThreadLocalDelegate.setOAJaxb(null);
 		}
 	}
 
-	protected String _convert(Hub<TYPE> hub, String rootName, boolean bToXML) throws Exception {
+	protected void _convert(Hub<TYPE> hub, String rootName, boolean bToXML, Writer writer) throws Exception {
 		Object obj;
 		if (!bToXML || OAString.isEmpty(rootName)) {
 			obj = hub;
@@ -372,10 +455,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			marshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
 		}
 
-		StringWriter stringWriter = new StringWriter();
-		marshaller.marshal(obj, stringWriter);
-		String result = stringWriter.toString();
-		return result;
+		marshaller.marshal(obj, writer);
 	}
 
 	public TYPE convertFromXML(String xml) throws Exception {
@@ -455,7 +535,7 @@ public class OAJaxb<TYPE extends OAObject> {
 		return true;
 	}
 
-	//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+	//qqqqqqqqqqq
 	//qqqqqq do same for loading Hub qqqqqqqqqqq
 	//qqqqqqqqq do same for XML qqqqqqqqqqqqqqqqqqqqqqqqqq
 
@@ -491,23 +571,55 @@ public class OAJaxb<TYPE extends OAObject> {
 	}
 
 	public TYPE convertFromJSON(final String json, final TYPE objRoot) throws Exception {
-		TYPE x = convertFromJSON(json, objRoot, true);
-		return x;
+		TYPE obj = convertFromJSON(json, objRoot, true);
+		return obj;
+	}
+
+	public TYPE convertFromJson(final String json, final TYPE objRoot) throws Exception {
+		TYPE obj = convertFromJSON(json, objRoot, true);
+		return obj;
+	}
+
+	public TYPE convertFromJSON(final String json, final TYPE objRoot, final boolean bIncludeValidation) throws Exception {
+		if (OAString.isEmpty(json)) {
+			return null;
+		}
+		TYPE obj = convertFromJSON(objRoot, bIncludeValidation, new StringReader(json), new StringReader(json));
+		return obj;
+	}
+
+	public TYPE convertFromJson(final String json, final TYPE objRoot, final boolean bIncludeValidation) throws Exception {
+		TYPE obj = convertFromJSON(json, objRoot, bIncludeValidation);
+		return obj;
+	}
+
+	public TYPE convertFromJSON(final TYPE objRoot, final boolean bIncludeValidation, File file) throws Exception {
+		if (file == null) {
+			return null;
+		}
+		TYPE obj = convertFromJSON(objRoot, bIncludeValidation, new FileReader(file), new FileReader(file));
+		return obj;
+	}
+
+	public TYPE convertFromJson(final TYPE objRoot, final boolean bIncludeValidation, File file) throws Exception {
+		return convertFromJSON(objRoot, bIncludeValidation, file);
 	}
 
 	/**
+	 * Main method for converting JSON to object.
 	 */
-	public TYPE convertFromJSON(final String json, final TYPE objRoot, final boolean bIncludeValidation) throws Exception {
-		OAThreadLocalDelegate.setOAJaxb(this);
-		if (OAString.isEmpty(json)) {
+	public TYPE convertFromJSON(final TYPE objRoot, final boolean bIncludeValidation, Reader reader, Reader reader2) throws Exception {
+		if (reader == null) {
 			return objRoot;
 		}
 
 		boolean bUseIsLoading = false;
 		TYPE objx = null;
 
+		OAThreadLocalDelegate.setOAJaxb(this);
 		try {
-			preloadJSON(json);
+			preloadJSON(reader);
+			reader = reader2;
 
 			if (!queuePreloadNode.isEmpty()) {
 				final Node node = queuePreloadNode.peek();
@@ -532,7 +644,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			  can only create new root and owned objects if createNew
 			  dont allow updating of other objects
 			  if they are new then reject (they should be created seperately)
-			
+
 			  only allow new (ignore/reject ID prop) for root and owned objects
 			  other objects will not be updated,
 			*/
@@ -587,7 +699,6 @@ public class OAJaxb<TYPE extends OAObject> {
 				}
 			}
 
-			StringReader reader = new StringReader(json);
 			Source source = new StreamSource(reader);
 			JAXBElement ele = unmarshaller.unmarshal(source, clazz);
 			objx = (TYPE) ele.getValue();
@@ -632,6 +743,21 @@ public class OAJaxb<TYPE extends OAObject> {
 	}
 
 	public Hub<TYPE> convertHubFromJSON(String xml) throws Exception {
+		Hub<TYPE> hub = convertHubFromJSON(new StringReader(xml));
+		return hub;
+	}
+
+	public Hub<TYPE> convertHubFromJson(String xml) throws Exception {
+		Hub<TYPE> hub = convertHubFromJSON(new StringReader(xml));
+		return hub;
+	}
+
+	public Hub<TYPE> convertHubFromJson(Reader reader) throws Exception {
+		Hub<TYPE> hub = convertHubFromJSON(reader);
+		return hub;
+	}
+
+	public Hub<TYPE> convertHubFromJSON(Reader reader) throws Exception {
 		//qqqqqqqqq this needs to be an option, since POST will need to not use isLoading==true
 		//qqq        OAThreadLocalDelegate.setLoading(true);
 		OAThreadLocalDelegate.setOAJaxb(this);
@@ -641,7 +767,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			unmarshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
 			unmarshaller.setProperty(MarshallerProperties.JSON_WRAPPER_AS_ARRAY_NAME, true);
 
-			StreamSource streamSource = new StreamSource(new StringReader(xml));
+			StreamSource streamSource = new StreamSource(reader);
 
 			//qqqqqqqqqqq needs to check for boundaries on what's allowed to be changed qqqqqqq
 			// preloadXml(xml); //qqqqqqqqqqqqqqqqqq
@@ -727,7 +853,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			return (OAObject) ref;
 		}
 		//qqqqqqqqqqqqqqqq only if on server ... qqqqqqqqqqqqqqqq
-		OASelect sel = new OASelect(clazz);
+		OASelect sel = new OASelect(node.clazz);
 		sel.select(node.piId.getName() + " = ?", new Object[] { id });
 		ref = sel.next();
 		if (ref instanceof OAObject) {
@@ -743,11 +869,11 @@ public class OAJaxb<TYPE extends OAObject> {
 	/**
 	 * Need to find all of the Object IDs, so that jaxb createObject can then find the correct oaObj to update.
 	 */
-	protected void preloadJSON(String sz) {
-		if (sz == null) {
-			sz = "";
+	protected void preloadJSON(Reader reader) {
+		if (reader == null) {
+			return;
 		}
-		final JsonParser parser = Json.createParser(new StringReader(sz));
+		final JsonParser parser = Json.createParser(reader);
 
 		final Stack<Node> stackNode = new Stack();
 
@@ -787,6 +913,16 @@ public class OAJaxb<TYPE extends OAObject> {
 						node.pp += li.getName();
 						stackNode.push(node);
 						// queuePreloadNode.add(node);
+					} else {
+						// array of refobjects
+						Node prev = node;
+						node = new Node(clazz);
+						node.bIsArray = true;
+						if (OAString.isNotEmpty(prev.pp)) {
+							node.pp = prev.pp + ".";
+						}
+						node.pp += key;
+						stackNode.push(node);
 					}
 				}
 			} else if (event == Event.END_ARRAY) {
@@ -917,6 +1053,16 @@ public class OAJaxb<TYPE extends OAObject> {
 		return bIncludeOwned;
 	}
 
+	private boolean bIncludeAll;
+
+	public void setIncludeAll(boolean b) {
+		bIncludeAll = b;
+	}
+
+	public boolean getIncludeAll() {
+		return bIncludeAll;
+	}
+
 	/**
 	 * Used by OAObject when serializing
 	 */
@@ -924,9 +1070,9 @@ public class OAJaxb<TYPE extends OAObject> {
 		lastGetSendRefObject = objThis;
 		lastGetSendRefPropertyName = propertyName;
 
-		boolean bIsNeeded = false;
+		boolean bIsNeeded = getIncludeAll();
 		boolean bMatchedPP = false;
-		if (alPropertyPath.size() > 0) {
+		if (!bIsNeeded && alPropertyPath.size() > 0) {
 			String ppCurrent = getCurrentMarshalPropertyPath();
 			ppCurrent = OAString.concat(ppCurrent, propertyName, ".").toLowerCase();
 			boolean bFound = false;

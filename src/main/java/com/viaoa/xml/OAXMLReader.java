@@ -33,6 +33,7 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
+import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OACompare;
@@ -47,7 +48,7 @@ import com.viaoa.util.OAString;
  * OAXMLReader using a SAXParser to parse and automatically create OAObjects from an XML file. This will do the following to find the
  * existing object: 1: if OAProperty.importMatch, then it will search to find a matching object 2: if objectId props, then it will search to
  * find a matching object 3: use guid if not found, then a new object will be created. see: 20200127 OAJaxb.java
- * 
+ *
  * @see OAXMLWriter
  */
 public class OAXMLReader {
@@ -119,7 +120,7 @@ public class OAXMLReader {
 
 	/**
 	 * Used to unencrypt an XML file created by OAXMLWriter that used an encryption code.
-	 * 
+	 *
 	 * @see OAXMLWriter#setEncodeMessage(String)
 	 */
 	public void setDecodeMessage(String msg) {
@@ -423,6 +424,13 @@ public class OAXMLReader {
 			v = getValue(objNew, k, v); // hook method for subclass
 
 			if (v instanceof String) {
+
+				// convert to correct type in case of enum and method overloading
+				OAPropertyInfo pi = oi.getPropertyInfo(k);
+				if (pi != null) {
+					v = OAConv.convert(pi.getClassType(), v);
+				}
+
 				// set prop
 				if (!bIsPreloading) {
 					objNew.setProperty(k, v);
@@ -764,7 +772,7 @@ public class OAXMLReader {
 
 	/**
 	 * Convert from String to correct type. param clazz type of object to convert value to
-	 * 
+	 *
 	 * @return null to skip property.
 	 */
 	public Object convertToObject(String propertyName, String value, Class propertyClass) {
@@ -786,7 +794,7 @@ public class OAXMLReader {
 
 	/**
 	 * Called before creating and loading a new object.
-	 * 
+	 *
 	 * @param toClass type of object to create
 	 * @param hm      name/value, where name is uppercase.
 	 * @return
