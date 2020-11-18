@@ -329,12 +329,13 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 		assertNull(serverx);
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Server.class);
-		// dont update cache when Id is change
+		// dont update cache when Id is changed
 		oi.setAddToCache(false);
-		server.setId(1);
+		server.setId(7777);
 
-		serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey());
-		assertNull(serverx);
+		// wont find new key, but will find it using guid
+		serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey()); 
+		assertEquals(serverx, server);
 
 		OAObjectKey ok = new OAObjectKey(null, server.getObjectKey().getGuid(), server.getObjectKey().isNew());
 		serverx = OAObjectCacheDelegate.get(Server.class, ok);
