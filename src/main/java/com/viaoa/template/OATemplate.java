@@ -143,7 +143,7 @@ import com.viaoa.util.OATime;
  * Dynamically converts text with custom property [paths] and processing tags into pure html text, by using a supplied OAObject or Hub to
  * plug into the text.
  * <p>
- * Used for producing html, reports, web pages, UI components like tooltips, autocomplete, renderers, and more.
+ * Used for producing html, reports, web pages, emails, UI components like tooltips, autocomplete, renderers, and more.
  */
 public class OATemplate<F extends OAObject> {
 	private static Logger LOG = Logger.getLogger(OATemplate.class.getName());
@@ -201,11 +201,13 @@ public class OATemplate<F extends OAObject> {
 		return s;
 	}
 
-	/**
-	 * qqqqqqq TODO: protected final ArrayList<String> alDependentProperties = new ArrayList<>(); public String[] getDependentProperties() {
-	 * if (alDependentProperties.size() == 0) parse ...?? String[] ss = new String[alDependentProperties.size()];
+	/*
+	 * qqqqqqq TODO:
+	 * protected final ArrayList<String> alDependentProperties = new ArrayList<>();
+	 * public String[] getDependentProperties() {
+	 * 	if (alDependentProperties.size() == 0) parse ...?? String[] ss = new String[alDependentProperties.size()];
 	 * alDependentProperties.toArray(ss); return ss; }
-	 **/
+	 */
 
 	/**
 	 * Used to have a a call to getHtml stopped.
@@ -552,7 +554,7 @@ public class OATemplate<F extends OAObject> {
 		NotEquals, // arg1=prop, arg2=value
 		End,
 		Command, // arg1=prop
-		Counter, // arg1=prop, arg2=fmt
+		Counter, // arg1=prop name (hub) to count, arg2=fmt
 		Count, // arg1=prop, arg2=fmt
 		Sum // arg1=prop, arg2=prop, arg3=fmt
 	}
@@ -679,7 +681,7 @@ public class OATemplate<F extends OAObject> {
 	/**
 	 * Returns false if it did not complete (stopProcessing was called)
 	 */
-	protected boolean generate(TreeNode rootNode, OAObject obj, Hub hub, StringBuilder sb, OAProperties props, final int cntStop) {
+	protected boolean generate(TreeNode node, OAObject obj, Hub hub, StringBuilder sb, OAProperties props, final int cntStop) {
 		boolean b = false;
 		OASiblingHelper siblingHelper = null;
 		try {
@@ -687,7 +689,7 @@ public class OATemplate<F extends OAObject> {
 				siblingHelper = new OASiblingHelper(hub);
 			}
 			OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
-			b = _generate(rootNode, obj, hub, sb, props, cntStop);
+			b = _generate(node, obj, hub, sb, props, cntStop);
 		} finally {
 			if (siblingHelper != null) {
 				OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
@@ -696,7 +698,8 @@ public class OATemplate<F extends OAObject> {
 		return b;
 	}
 
-	protected boolean _generate(TreeNode rootNode, OAObject obj, Hub hub, StringBuilder sb, OAProperties props, final int cntStop) {
+	protected boolean _generate(final TreeNode node, final OAObject obj, final Hub hub, StringBuilder sb, final OAProperties props,
+			final int cntStop) {
 
 		if (aiStopCalled.get() != cntStop) {
 			return false;
@@ -704,25 +707,25 @@ public class OATemplate<F extends OAObject> {
 		boolean bNot = false;
 		boolean bProcessChildren = true;
 
-		if (rootNode.errorMsg != null) {
-			String s = getOutputText(rootNode.errorMsg);
+		if (node.errorMsg != null) {
+			String s = getOutputText(node.errorMsg);
 			sb.append(s);
 		}
-		if (rootNode.tagType == null) {
-			String s = rootNode.arg1;
-			if (!OAString.isEmpty(rootNode.arg2)) {
-				s = OAString.format(s, rootNode.arg2);
+		if (node.tagType == null) {
+			String s = node.arg1;
+			if (!OAString.isEmpty(node.arg2)) {
+				s = OAString.format(s, node.arg2);
 			}
 			if (s != null) {
 				sb.append(s);
 			}
 		} else {
-			switch (rootNode.tagType) {
+			switch (node.tagType) {
 			case ForEach:
 				bProcessChildren = false;
 				Object objValue;
-				if (obj != null && !OAString.isEmpty(rootNode.arg1)) {
-					objValue = this.getProperty(obj, rootNode.arg1);
+				if (obj != null && !OAString.isEmpty(node.arg1)) {
+					objValue = this.getProperty(obj, node.arg1);
 				} else {
 					objValue = hub;
 				}
@@ -730,12 +733,12 @@ public class OATemplate<F extends OAObject> {
 				if (objValue instanceof Hub) {
 					Hub h = (Hub) objValue;
 					for (int i = 0;; i++) {
-						hmForEachCounter.put(rootNode.arg1, i + 1);
+						hmForEachCounter.put(node.arg1, i + 1);
 						OAObject oa = (OAObject) h.elementAt(i);
 						if (oa == null) {
 							break;
 						}
-						for (TreeNode dn : rootNode.alChildren) {
+						for (TreeNode dn : node.alChildren) {
 							if (!generate(dn, oa, hub, sb, props, cntStop)) {
 								return false;
 							}
@@ -754,16 +757,16 @@ public class OATemplate<F extends OAObject> {
 				StringBuilder sbHold = sb;
 				sb = new StringBuilder(1024 * 4);
 
-				for (TreeNode dn : rootNode.alChildren) {
+				for (TreeNode dn : node.alChildren) {
 					if (!generate(dn, obj, hub, sb, props, cntStop)) {
 						return false;
 					}
 				}
 
 				String s = new String(sb);
-				s = OAString.format(s, rootNode.arg1);
+				s = OAString.format(s, node.arg1);
 				s = getOutputText(s);
-				s = OAString.convert(s, " ", "&nbsp;");
+				// s = OAString.convert(s, "  ", "&nbsp;&nbsp;");
 				sb = sbHold;
 				sb.append(s);
 
@@ -773,7 +776,7 @@ public class OATemplate<F extends OAObject> {
 				bNot = true;
 			case If:
 				// if not null, blank or 0.0
-				s = getValue(obj, rootNode.arg1, 0, null, props, false);
+				s = getValue(obj, node.arg1, 0, null, props, false);
 
 				bProcessChildren = false;
 				if (s != null) {
@@ -800,26 +803,26 @@ public class OATemplate<F extends OAObject> {
 				break;
 
 			case IfEquals:
-				s = getValue(obj, rootNode.arg1, 0, null, props, false);
+				s = getValue(obj, node.arg1, 0, null, props, false);
 
-				bProcessChildren = OAString.isEqual(s, rootNode.arg2);
+				bProcessChildren = OAString.isEqual(s, node.arg2);
 				break;
 
 			case IfGt:
-				s = getValue(obj, rootNode.arg1, 0, null, props, false);
-				if (OAString.isNumber(s) && OAString.isNumber(rootNode.arg2)) {
+				s = getValue(obj, node.arg1, 0, null, props, false);
+				if (OAString.isNumber(s) && OAString.isNumber(node.arg2)) {
 					double d1 = OAConv.toDouble(s);
-					double d2 = OAConv.toDouble(rootNode.arg2);
+					double d2 = OAConv.toDouble(node.arg2);
 					bProcessChildren = d1 > d2;
 				} else {
 					bProcessChildren = false;
 				}
 				break;
 			case IfGte:
-				s = getValue(obj, rootNode.arg1, 0, null, props, false);
-				if (OAString.isNumber(s) && OAString.isNumber(rootNode.arg2)) {
+				s = getValue(obj, node.arg1, 0, null, props, false);
+				if (OAString.isNumber(s) && OAString.isNumber(node.arg2)) {
 					double d1 = OAConv.toDouble(s);
-					double d2 = OAConv.toDouble(rootNode.arg2);
+					double d2 = OAConv.toDouble(node.arg2);
 					bProcessChildren = d1 >= d2;
 				} else {
 					bProcessChildren = false;
@@ -827,10 +830,10 @@ public class OATemplate<F extends OAObject> {
 				break;
 
 			case IfLt:
-				s = getValue(obj, rootNode.arg1, 0, null, props, false);
-				if (OAString.isNumber(s) && OAString.isNumber(rootNode.arg2)) {
+				s = getValue(obj, node.arg1, 0, null, props, false);
+				if (OAString.isNumber(s) && OAString.isNumber(node.arg2)) {
 					double d1 = OAConv.toDouble(s);
-					double d2 = OAConv.toDouble(rootNode.arg2);
+					double d2 = OAConv.toDouble(node.arg2);
 					bProcessChildren = d1 < d2;
 				} else {
 					bProcessChildren = false;
@@ -838,10 +841,10 @@ public class OATemplate<F extends OAObject> {
 				break;
 
 			case IfLte:
-				s = getValue(obj, rootNode.arg1, 0, null, props, false);
-				if (OAString.isNumber(s) && OAString.isNumber(rootNode.arg2)) {
+				s = getValue(obj, node.arg1, 0, null, props, false);
+				if (OAString.isNumber(s) && OAString.isNumber(node.arg2)) {
 					double d1 = OAConv.toDouble(s);
-					double d2 = OAConv.toDouble(rootNode.arg2);
+					double d2 = OAConv.toDouble(node.arg2);
 					bProcessChildren = d1 <= d2;
 				} else {
 					bProcessChildren = false;
@@ -849,8 +852,8 @@ public class OATemplate<F extends OAObject> {
 				break;
 
 			case GetProp:
-				String prop = rootNode.arg1;
-				String fmt = rootNode.arg2;
+				String prop = node.arg1;
+				String fmt = node.arg2;
 
 				int width = 0;
 				if (!OAString.isEmpty(fmt)) {
@@ -869,8 +872,8 @@ public class OATemplate<F extends OAObject> {
 				break;
 
 			case Counter:
-				prop = rootNode.arg1; // from open forEach loop
-				fmt = rootNode.arg2;
+				prop = node.arg1; // from open forEach loop
+				fmt = node.arg2;
 				Integer ix = hmForEachCounter.get(prop);
 				if (ix == null) {
 					sb.append("Error: " + prop + ".counter not valid");
@@ -884,8 +887,8 @@ public class OATemplate<F extends OAObject> {
 				}
 				break;
 			case Count:
-				prop = rootNode.arg1;
-				fmt = rootNode.arg2;
+				prop = node.arg1;
+				fmt = node.arg2;
 				if (obj == null) {
 					break;
 				}
@@ -898,9 +901,9 @@ public class OATemplate<F extends OAObject> {
 				sb.append(s);
 				break;
 			case Sum:
-				prop = rootNode.arg1;
-				String prop2 = rootNode.arg2;
-				fmt = rootNode.arg3;
+				prop = node.arg1;
+				String prop2 = node.arg2;
+				fmt = node.arg3;
 				if (obj == null) {
 					break;
 				}
@@ -925,8 +928,8 @@ public class OATemplate<F extends OAObject> {
 				break;
 			}
 		}
-		if (bProcessChildren && rootNode.alChildren != null) {
-			for (TreeNode dn : rootNode.alChildren) {
+		if (bProcessChildren && node.alChildren != null) {
+			for (TreeNode dn : node.alChildren) {
 				if (!generate(dn, obj, hub, sb, props, cntStop)) {
 					return false;
 				}
@@ -1071,7 +1074,7 @@ public class OATemplate<F extends OAObject> {
 
 		if (bFmt && fmt != null && fmt.length() > 0) {
 			result = OAString.format(result, fmt);
-			result = OAString.convert(result, " ", "&nbsp;");
+			// result = OAString.convert(result, "  ", "&nbsp;&nbsp;");
 		}
 
 		return result;

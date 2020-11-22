@@ -1385,6 +1385,11 @@ public class OAString {
 	 * @see #format(String,String)
 	 */
 	public static String fmt(String str, String format) {
+		String s = _fmt(str, format);
+		return s;
+	}
+
+	private static String _fmt(String str, String format) {
 		if (format == null) {
 			return "";
 		}
@@ -1606,7 +1611,9 @@ public class OAString {
 				if (lr == 'R' || (lr == 'C' && j < x)) {
 					str = charPad + str;
 				} else {
-					str += charPad;
+					if (!bDots) {
+						str += charPad;
+					}
 				}
 			}
 		}
