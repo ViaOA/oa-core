@@ -2922,7 +2922,6 @@ public class OAObjectReflectDelegate {
 		if (hubChild == hubParent) {
 			return null;
 		}
-
 		if (hubChild == null || hubParent == null) {
 			return null;
 		}

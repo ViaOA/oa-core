@@ -45,7 +45,7 @@ import com.viaoa.util.OAString;
  * filtered Hub.
  * <p>
  * Example<br>
- * 
+ *
  * <pre>
  Hub hubFiltered = new Hub(Employee.class)
  new HubFilter(hubAllEmployees, hubFiltered) {
@@ -85,7 +85,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 
 	/**
 	 * Create a new HubFilter using two supplied Hubs.
-	 * 
+	 *
 	 * @param hubMaster hub with complete list of objects.
 	 * @param hub       that stores filtered objects.
 	 */
@@ -216,7 +216,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 
 	/**
 	 * Property names to listen for changes.
-	 * 
+	 *
 	 * @param prop property name or property path (from Hub)
 	 * @see #setRefreshOnLinkChange(boolean) to refresh list when linkTo Hub AO changes
 	 */
@@ -277,7 +277,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 			return;
 		}
 
-		//todo: need to all remove hl on close        
+		//todo: need to all remove hl on close
 		hub.addHubListener(new HubListenerAdapter() {
 			@Override
 			public void afterChangeActiveObject(HubEvent e) {
@@ -313,7 +313,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 
 		final String propName = s;
 
-		//todo:  need to add remove hl on close        
+		//todo:  need to add remove hl on close
 		HubListener hl = new HubListenerAdapter() {
 			@Override
 			public void afterChangeActiveObject(HubEvent e) {
@@ -340,7 +340,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 
 	/**
 	 * Same as addDependentProperty method
-	 * 
+	 *
 	 * @param prop
 	 * @deprecated use addDependentProperty instead
 	 */
@@ -394,7 +394,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	/**
 	 * Method used to know if object should be in filtered hub. HubFilter will automatically listen to Master hub and call this method when
 	 * needed.
-	 * 
+	 *
 	 * @return true to include object (default)
 	 * @return false to exclude object
 	 */
@@ -415,7 +415,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	/**
 	 * This is called when isUsed() is true, to get the object to use. <br>
 	 * This can be overwritten to replace the object with another object.
-	 * 
+	 *
 	 * @return object to insert into hub. Default is to use object.
 	 */
 	public T getObject(T object) {
@@ -616,7 +616,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 					}
 				}
 				if (bRefreshOnLinkChange) {
-					refresh(); // 20110930 need to refresh since the linkTo hub has changed                
+					refresh(); // 20110930 need to refresh since the linkTo hub has changed
 				}
 				Object obj = hubLink.getAO();
 				if (objTemp == null && obj != null) {
@@ -917,6 +917,10 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		return bShareAO;
 	}
 
+	public boolean getIsSharingAO() {
+		return bShareAO;
+	}
+
 	// Hub Listener code for filtered Hub
 	//    note: this needs to be here so that HubShareDelegate can find HubFilter for a hub
 
@@ -1134,7 +1138,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	/**
 	 * Create a filter that is used on every object for this finder. The filter will be true if there is a least one matching value in the
 	 * property path;
-	 * 
+	 *
 	 * @param propPath property path from this Finder from object to the object that will be compared.
 	 * @param value    value to compare with using OACompare.isLike(..).
 	 */
