@@ -10,45 +10,145 @@
 */
 package com.viaoa.hub;
 
-/** 
-    Adapter class that implements HubListener Interface.  
-    <p>
-    @see HubListener
-*/
+/**
+ * Adapter class that implements HubListener Interface.
+ * <p>
+ *
+ * @see HubListener
+ */
 public class HubListenerAdapter<T> implements HubListener<T> {
-    
-    public void afterChangeActiveObject(HubEvent<T> e) { }
-    public void beforePropertyChange(HubEvent<T> e) { }
-    public void afterPropertyChange(HubEvent<T> e) { }
-    public void beforeInsert(HubEvent<T> e) { }
-    public void afterInsert(HubEvent<T> e) { }
-    public void beforeMove(HubEvent<T> e) { }
-    public void afterMove(HubEvent<T> e) { }
-    public void beforeAdd(HubEvent<T> e) { }
-    public void afterAdd(HubEvent<T> e) { }
-    public void beforeRemove(HubEvent<T> e) { }
-    public void afterRemove(HubEvent<T> e) { }
-    public void beforeRemoveAll(HubEvent<T> e) { }
-    public void afterRemoveAll(HubEvent<T> e) { }
-    public void beforeSave(HubEvent<T> e) { }
-    public void afterSave(HubEvent<T> e) { }
-    public void beforeDelete(HubEvent<T> e) { }
-    public void afterDelete(HubEvent<T> e) { }
-    public void beforeSelect(HubEvent<T> e) { }
-    public void afterSort(HubEvent<T> e) { }
-    public void onNewList(HubEvent<T> e) { }
-    public void afterNewList(HubEvent<T> e) { }
-    
-    private InsertLocation insertWhere;
-    public void setLocation(InsertLocation pos) {
-        this.insertWhere = pos;
-    }
-    public InsertLocation getLocation() {
-        return this.insertWhere;
-    }
 
-    @Override
-    public void afterLoad(HubEvent<T> e) {
-    }
+	private Object listener;
+	private String name, description;
 
+	public HubListenerAdapter() {
+
+	}
+
+	public HubListenerAdapter(Object listener, String name, String description) {
+		this.listener = listener;
+		this.name = name;
+		this.description = description;
+	}
+
+	public HubListenerAdapter(Object listener, String name) {
+		this.listener = listener;
+		this.name = name;
+	}
+
+	public HubListenerAdapter(Object listener) {
+		this.listener = listener;
+	}
+
+	@Override
+	public void afterChangeActiveObject(HubEvent<T> e) {
+	}
+
+	@Override
+	public void beforePropertyChange(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterPropertyChange(HubEvent<T> e) {
+	}
+
+	@Override
+	public void beforeInsert(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterInsert(HubEvent<T> e) {
+	}
+
+	@Override
+	public void beforeMove(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterMove(HubEvent<T> e) {
+	}
+
+	@Override
+	public void beforeAdd(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterAdd(HubEvent<T> e) {
+	}
+
+	@Override
+	public void beforeRemove(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterRemove(HubEvent<T> e) {
+	}
+
+	@Override
+	public void beforeRemoveAll(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterRemoveAll(HubEvent<T> e) {
+	}
+
+	@Override
+	public void beforeSave(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterSave(HubEvent<T> e) {
+	}
+
+	@Override
+	public void beforeDelete(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterDelete(HubEvent<T> e) {
+	}
+
+	@Override
+	public void beforeSelect(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterSort(HubEvent<T> e) {
+	}
+
+	@Override
+	public void onNewList(HubEvent<T> e) {
+	}
+
+	@Override
+	public void afterNewList(HubEvent<T> e) {
+	}
+
+	private InsertLocation insertWhere;
+
+	@Override
+	public void setLocation(InsertLocation pos) {
+		this.insertWhere = pos;
+	}
+
+	@Override
+	public InsertLocation getLocation() {
+		return this.insertWhere;
+	}
+
+	@Override
+	public void afterLoad(HubEvent<T> e) {
+	}
+
+	public Object getListener() {
+		return listener;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getDescription() {
+		return description;
+	}
 }

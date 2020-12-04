@@ -70,6 +70,10 @@ public class HubEventDelegate {
 	}
 
 	public static void fireAfterRemoveEvent(Hub thisHub, final Object obj, int pos) {
+		if (OAThreadLocalDelegate.isLoading()) {
+			return;
+		}
+
 		final HubListener[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
 		if (x > 0) {
@@ -570,7 +574,7 @@ public class HubEventDelegate {
 	 * <p>
 	 * If this Hub is linked to a property in another Hub and that property is changed, this Hub will changed it's active object to match
 	 * the same value as the new property value.
-	 * 
+	 *
 	 * @param propertyName name of property that changed. This is case insensitive
 	 */
 	public static void fireCalcPropertyChange(Hub thisHub, final Object object, final String propertyName) {
@@ -596,7 +600,7 @@ public class HubEventDelegate {
 
 	/**
 	 * Called by OAObject and Hub, used to notify all listeners of a property change.
-	 * 
+	 *
 	 * @param oaObj        OAObject that was changed
 	 * @param propertyName name of property that changed. This is case insensitive
 	 * @param oldValue     previous value of property
@@ -620,7 +624,7 @@ public class HubEventDelegate {
 
 	/**
 	 * Called by OAObject and Hub, used to notify all listeners of a property change.
-	 * 
+	 *
 	 * @param oaObj        OAObject that was changed
 	 * @param propertyName name of property that changed. This is case insensitive
 	 * @param oldValue     previous value of property
@@ -639,16 +643,16 @@ public class HubEventDelegate {
 		}
 
 		if (!OASync.isRemoteThread()) {
-    		String s = thisHub.data.getUniqueProperty();
-    		if (s == null) {
-    			s = thisHub.datam.getUniqueProperty();
-    		}
-    
-    		if (s != null && newValue != null && s.equalsIgnoreCase(propertyName)) {
-    			if (!HubDelegate.verifyUniqueProperty(thisHub, oaObj)) {
-    				throw new RuntimeException("Property " + s + " already exists in " + oaObj.getClass().getSimpleName());
-    			}
-    		}
+			String s = thisHub.data.getUniqueProperty();
+			if (s == null) {
+				s = thisHub.datam.getUniqueProperty();
+			}
+
+			if (s != null && newValue != null && s.equalsIgnoreCase(propertyName)) {
+				if (!HubDelegate.verifyUniqueProperty(thisHub, oaObj)) {
+					throw new RuntimeException("Property " + s + " already exists in " + oaObj.getClass().getSimpleName());
+				}
+			}
 		}
 
 		final HubListener[] hl = getAllListeners(thisHub);
@@ -684,7 +688,7 @@ public class HubEventDelegate {
 		}
 
 		/* 20160827 removed, since it is done when obj is changed, or when a Hub has a add/insert/remove
-		// 20160110 
+		// 20160110
 		if (linkInfo != null && oaObj != null && !oaObj.isLoading() && OASync.isServer()) {
 		    HubDelegate.setReferenceable(thisHub, true);
 		}
@@ -776,7 +780,7 @@ public class HubEventDelegate {
 	/**
 	 * Add a Listener to this hub specifying a specific property name. If property is a calculated property, then the Hub will automatically
 	 * set up internal listeners to know when the calculated property changes.
-	 * 
+	 *
 	 * @param property name to listen for
 	 */
 	public static void addHubListener(Hub thisHub, HubListener hl, String property, String[] dependentPropertyPaths) {

@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
@@ -24,7 +25,7 @@ import com.viaoa.util.OAReflect;
 
 /**
  * Makes sure that for each object in a master hub, there exists an object with a reference to it in a second hub.
- * 
+ *
  * @see Hub#setAutoMatch
  */
 public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements java.io.Serializable {
@@ -39,8 +40,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
 	/**
 	 * Create new HubAutoMatch that will automatically create objects in a Hub with references that match the objects in a master hub. ex:
-	 * new HubAutoMatch(hub, itemMain.getItemOptionTypes(), "itemOptionType")
-	 * 
+	 * new HubAutoMatch(hubItem, "itemOptionTypes", itemMain.getItemOptionTypes())
+	 *
 	 * @param hubMaster       hub that has all objects to use
 	 * @param property        property in hub that has same type as objects in hubMaster.
 	 * @param bManuallyCalled set to true if the update method will be manually called. This is used in cases where the hubMaster could be
@@ -48,20 +49,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 *                        HubMerger and objects are added/removed.
 	 */
 	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, boolean bManuallyCalled) {
-		if (hub == null) {
-			throw new IllegalArgumentException("hub can not be null");
-		}
-		if (hubMaster == null) {
-			throw new IllegalArgumentException("hubMaster can not be null");
-		}
-
-		this.hub = hub;
-		this.hubMaster = hubMaster;
 		this.bManuallyCalled = bManuallyCalled;
-		if (!bManuallyCalled) {
-			hubMaster.addHubListener(this);
-		}
-		setProperty(property);
+		init(hub, property, hubMaster);
 	}
 
 	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster) {
@@ -71,7 +60,14 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	public HubAutoMatch() {
 	}
 
+	private boolean bInit;
+
+	// required to call if using the second empty constructor
 	public void init(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster) {
+		if (bInit) {
+			return;
+		}
+		bInit = true;
 		if (hub == null) {
 			throw new IllegalArgumentException("hub can not be null");
 		}
@@ -81,7 +77,9 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
 		this.hub = hub;
 		this.hubMaster = hubMaster;
-		hubMaster.addHubListener(this);
+		if (!bManuallyCalled) {
+			hubMaster.addHubListener(this);
+		}
 		setProperty(property);
 	}
 
@@ -149,6 +147,12 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			return; // already updating
 		}
 		try {
+			if (HubDelegate.getCurrentState(hub, null, null) != HubDelegate.HubCurrentStateEnum.InSync) {
+				return;
+			}
+			if (HubDelegate.getCurrentState(hubMaster, null, null) != HubDelegate.HubCurrentStateEnum.InSync) {
+				return;
+			}
 			if (bServerSideOnly) {
 				OARemoteThreadDelegate.sendMessages(true);
 			}
@@ -168,7 +172,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			}
 		}
 
-		// Step 1: verify that both hubs are using the correct hub 
+		// Step 1: verify that both hubs are using the correct hub
 		//         (in case AO of master hub has been changed, and one of these hubs has not yet been adjusted).
 		Hub hubMasterx = HubDetailDelegate.getRealHub(hubMaster);
 		Hub hubx = HubDetailDelegate.getRealHub(hub); // in case it is a detailHub and has not been updated yet
@@ -191,7 +195,9 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 				for (int j = 0;; j++) {
 					Object o = hubx.elementAt(j);
 					if (o == null) {
-						createNewObject((PROPTYPE) obj);
+						if (hubx.getEnabled()) {
+							createNewObject((PROPTYPE) obj);
+						}
 						break;
 					}
 					try {
@@ -223,12 +229,14 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 				throw new RuntimeException(e);
 			}
 			if (hubMasterx.getObject(value) == null) {
-				if (okToRemove(obj, value)) {
-					hubx.remove(i); // 20161111 added remove in case delete does not remove from this hub (bug found in some data)
-					if (obj instanceof OAObject) {
-						((OAObject) obj).delete();
+				if (hubx.getAllowRemove(OAObjectCallback.CHECK_ALL, obj)) {
+					if (okToRemove(obj, value)) {
+						hubx.remove(i);
+						if (obj instanceof OAObject) {
+							((OAObject) obj).delete();
+						}
+						i--;
 					}
-					i--;
 				}
 			}
 		}
@@ -275,15 +283,18 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
 	/** HubListener interface method, used to listen to changes to master Hub. */
 	public @Override void afterRemove(HubEvent e) {
-		if (!OAThreadLocalDelegate.isHubMergerChanging()) { // else wait for newList
-			update();
+		if (OAThreadLocalDelegate.isHubMergerChanging()) {
+			return; // else wait for newList
 		}
+
+		update();
 	}
 
 	/** HubListener interface method, used to listen to changes to master Hub. */
 	public @Override void onNewList(HubEvent e) {
-		if (!OAThreadLocalDelegate.isHubMergerChanging()) { // else wait for newList after merger is done
-			update();
+		if (OAThreadLocalDelegate.isHubMergerChanging()) { // else wait for newList after merger is done
+			return;
 		}
+		update();
 	}
 }

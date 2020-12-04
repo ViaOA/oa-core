@@ -17,7 +17,7 @@ import javax.swing.Icon;
 
 /**
  * Combines multiple icons into one.
- * 
+ *
  * @author vvia
  */
 public class MultiIcon implements Icon {
@@ -51,7 +51,7 @@ public class MultiIcon implements Icon {
 				x += gap;
 			}
 		}
-		if (icon2 != null && icon2 != icon1) {
+		if (icon2 != null && icon2 != icon1 && icon2 != this) {
 			x += icon2.getIconWidth();
 		}
 		return x;

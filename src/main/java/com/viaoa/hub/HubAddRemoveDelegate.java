@@ -55,6 +55,7 @@ public class HubAddRemoveDelegate {
 	public static boolean remove(final Hub thisHub, Object obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll) {
+
 		if (obj == null) {
 			return false;
 		}

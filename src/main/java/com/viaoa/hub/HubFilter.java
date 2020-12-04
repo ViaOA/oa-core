@@ -427,7 +427,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 			return hlHubMaster;
 		}
 
-		hlHubMaster = new HubListenerAdapter<T>() {
+		hlHubMaster = new HubListenerAdapter<T>(this, "HubFilter.hubMaster", "") {
 			/** HubListener interface method, used to update filter. */
 			public @Override void afterPropertyChange(HubEvent<T> e) {
 				if (bClosed) {
