@@ -145,7 +145,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 	/**
 	 * Add the found object to the list that is returned by find. This can be overwritten to get all of the objects as they are found.
-	 * 
+	 *
 	 * @see stop to be able to have the find stop searching.
 	 */
 	protected void onFound(T obj) {
@@ -449,7 +449,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 	/**
 	 * Given the propertyPath, find all of the objects from a root object.
-	 * 
+	 *
 	 * @param objectRoot starting object to begin navigating through the propertyPath.
 	 */
 	public ArrayList<T> find(F objectRoot) {
@@ -669,11 +669,16 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 		if (linkInfos != null && pos < linkInfos.length) {
 			if (getUseOnlyLoadedData()) {
-				// 20180713 check if it needs to be sorted, and if a sortListener already created 
+				// 20180713 check if it needs to be sorted, and if a sortListener already created
 				boolean b = linkInfos[pos].isLoaded(obj);
 				if (b && linkInfos[pos].getType() == OALinkInfo.TYPE_MANY) {
 					if (OAString.isNotEmpty(linkInfos[pos].getSortProperty())) {
-						Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, linkInfos[pos].getName());
+						Object objx;
+						if (linkInfos[pos].getCalculated()) {
+							objx = linkInfos[pos].getValue((OAObject) obj);
+						} else {
+							objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, linkInfos[pos].getName());
+						}
 						if (objx instanceof Hub) {
 							Hub h = (Hub) objx;
 							if (HubSortDelegate.getSortListener(h) == null && HubDelegate.getAutoSequence(h) == null) {
@@ -716,7 +721,12 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			return false;
 		}
 
-		Hub hx = (Hub) OAObjectPropertyDelegate.getProperty((OAObject) obj, li.name, false, true);
+		Hub hx;
+		if (li.getCalculated()) {
+			hx = (Hub) li.getValue((OAObject) obj);
+		} else {
+			hx = (Hub) OAObjectPropertyDelegate.getProperty((OAObject) obj, li.name, false, true);
+		}
 		if (hx == null || (HubSortDelegate.getSortListener(hx) == null && HubDelegate.getAutoSequence(hx) == null)) {
 			return true;
 		}
@@ -725,7 +735,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 	/**
 	 * This will be called to create a filter that is in the propertyPaths.
-	 * 
+	 *
 	 * @param name name of the filter in the propertyPath
 	 */
 	protected HubFilter createHubFilter(String name) {
@@ -734,7 +744,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 	/**
 	 * Called for all objects that are found, and pass the filter.
-	 * 
+	 *
 	 * @return true (default) to include in arrayList results, false to skip.
 	 */
 	protected boolean isUsed(T obj) {
@@ -743,7 +753,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 	/**
 	 * This will have the internal stack updated when a find is being performed.
-	 * 
+	 *
 	 * @param b, default is false
 	 */
 	public void setEnabledStack(boolean b) {
@@ -790,7 +800,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 	/**
 	 * The objects that are in the current stack. This can be used when overwriting the onFound(..) to know the object path.
-	 * 
+	 *
 	 * @see #setEnabledStack(boolean) to enable this information.
 	 */
 	public Object[] getStackObjects() {
@@ -803,7 +813,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 	/**
 	 * The property name of the objects that are in the current stack.
-	 * 
+	 *
 	 * @see #setEnabledStack(boolean) to enable this information.
 	 */
 	public String[] getStackPropertyNames() {
