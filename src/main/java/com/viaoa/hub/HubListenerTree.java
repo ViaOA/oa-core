@@ -130,7 +130,12 @@ public class HubListenerTree {
 					if (lis != null && lis.length == 1 && pp.isLastPropertyLinkInfo()) {
 						al = new ArrayList();
 						for (final Object obja : HubListenerTree.this.root.hub) {
-							Object objz = OAObjectPropertyDelegate.getProperty((OAObject) obja, lis[0].getName());
+							Object objz;
+							if (lis[0].getCalculated()) {
+								objz = lis[0].getValue((OAObject) obja);
+							} else {
+								objz = OAObjectPropertyDelegate.getProperty((OAObject) obja, lis[0].getName());
+							}
 							if (OACompare.isEqual(obj, objz)) {
 								al.add(obja);
 							}
