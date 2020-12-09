@@ -416,7 +416,7 @@ public class HubDelegate {
 					hubCombined = null;
 				} else if (listener instanceof HubFilter) {
 					hubFilter = (HubFilter) hla.getListener();
-					Hub hubx = hubFilter.getMasterHub();
+					Hub hubx = hubFilter.getHub();
 					if (hubx == hub) {
 						break;
 					}
