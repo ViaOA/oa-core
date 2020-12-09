@@ -64,7 +64,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	// this is set by OAObjectInfoDelegate.initialize()
 	// All primitive properties, in uppercase and sorted.
 	// This is used by OAObject.nulls, to get the bit position for an objects primitive properties.
-	protected String[] primitiveProps; //not used
+	protected String[] primitiveProps;
 	protected byte[] primitiveMask; // used to mask boolean to not default to null, instead false
 
 	// 20120827 hubs that have a size of 0
@@ -340,10 +340,6 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return null;
 	}
 
-	public void addCalc(OACalcInfo ci) {
-		addCalcInfo(ci);
-	}
-
 	public void addCalcInfo(OACalcInfo ci) {
 		getCalcInfos().add(ci);
 		if (ci.bIsForHub) {
@@ -371,10 +367,6 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			alPropertyInfo = new ArrayList(5);
 		}
 		return alPropertyInfo;
-	}
-
-	public void addProperty(OAPropertyInfo pi) {
-		addPropertyInfo(pi);
 	}
 
 	public void addPropertyInfo(OAPropertyInfo pi) {
