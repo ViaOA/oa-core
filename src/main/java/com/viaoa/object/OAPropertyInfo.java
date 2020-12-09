@@ -43,6 +43,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private boolean isProcessed;
 	private boolean isHtml;
 	private boolean isTimestamp;
+	private boolean bIsPrimitive;
 
 	private String enabledProperty;
 	private boolean enabledValue;
@@ -75,6 +76,11 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	public void setClassType(Class classType) {
 		this.classType = classType;
+		bIsPrimitive = classType == null ? false : classType.isPrimitive();
+	}
+
+	public boolean getIsPrimitive() {
+		return bIsPrimitive;
 	}
 
 	public boolean getId() {
