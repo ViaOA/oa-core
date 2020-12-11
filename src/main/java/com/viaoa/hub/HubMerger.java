@@ -256,7 +256,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
 	private void _init() {
 		createNodes(); // this will create nodeRoot
-		this.dataRoot = new Data(nodeRoot, null, hubRoot);
+		this.dataRoot = new Data(null, nodeRoot, null, hubRoot);
 		nodeRoot.data = dataRoot;
 	}
 
@@ -510,7 +510,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 			}
 		}
 
-		nodeRoot = new Node();
+		nodeRoot = new Node(null);
 		nodeRoot.clazz = clazz;
 		Node node = nodeRoot;
 		boolean bLastWasMany = false;
@@ -525,7 +525,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 			if (bLastWasMany && recursiveLinkInfo != null && lastLinkInfo != null && lastLinkInfo.getRecursive()) {
 				// was: if (bLastWasMany && recursiveLinkInfo != null) {
 				bIsRecusive = true;
-				recursiveNode = new Node();
+				recursiveNode = new Node(null);
 				recursiveNode.property = recursiveLinkInfo.getName();
 				recursiveNode.liFromParentToChild = recursiveLinkInfo;
 				recursiveNode.clazz = recursiveLinkInfo.getToClass();
@@ -560,7 +560,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 				}
 			}
 
-			Node node2 = new Node();
+			Node node2 = new Node(node);
 			node2.property = prop;
 			node2.liFromParentToChild = linkInfo;
 
@@ -634,6 +634,11 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 		Node recursiveChild;
 		Data data; // first node for root and used for Hub for link.type = One
 		OACascade cascade;
+		Node parent;
+
+		public Node(Node parent) {
+			this.parent = parent;
+		}
 
 		void close() {
 			if (data != null) {
@@ -650,15 +655,16 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 	}
 
 	final class Data extends HubListenerAdapter {
-		Node node;
-		OAObject parentObject; // parent object of hub
+		final Node node;
+		final Data parent;
+		final OAObject parentObject; // parent object of hub
 		Hub hub;
 		Hub hubFilterMaster; // if using filter, then this is the master/orig that is then filtered into "hub"
 		HubFilter hubFilter;
 		volatile ArrayList<Data> alChildren;
 		volatile boolean bHubListener;
 
-		Data(Node node, OAObject parentObject, Hub hubNew) {
+		Data(Data parent, Node node, OAObject parentObject, Hub hubNew) {
 			if (hubNew == null) {
 				throw new RuntimeException("hub can not be null");
 			}
@@ -673,6 +679,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 					 * RuntimeException("Hub class does not equal Node class"); } */
 				}
 			}
+			this.parent = parent;
 			this.node = node;
 			this.parentObject = parentObject;
 			this.hub = hubNew;
@@ -1120,7 +1127,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 						h = new Hub(node.child.clazz);
 					}
 
-					Data data = new Data(node.child, null, h);
+					Data data = new Data(this, node.child, null, h);
 					node.child.data = data;
 				}
 				OAObject ref = (OAObject) hub.getMasterObject();
@@ -1145,7 +1152,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 				if (h == null) {
 					return;
 				}
-				Data d = new Data(node.child, null, h);
+				Data d = new Data(this, node.child, null, h);
 				try {
 					lock.writeLock().lock();
 					if (alChildren != null && d != null) { // could have been closed in another thread
@@ -1215,15 +1222,17 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 						}
 					}
 				}
+				//qqqqqqqqqqqqqqqqqqqq
+				HubMerger.this.onAddToCombined(this, parent);
 			} else if (node.child.liFromParentToChild.getType() == OALinkInfo.ONE) { // store in Node.data.hub
 				if (node.child.data == null) {
 					Hub h;
-					if (node.child.child == null) {
+					if (node.child.child == null && hubCombined != null) {
 						h = hubCombined;
 					} else {
 						h = new Hub(node.child.clazz);
 					}
-					Data data = new Data(node.child, null, h);
+					Data data = new Data(this, node.child, null, h);
 					node.child.data = data;
 				}
 				OAObject ref = (OAObject) node.child.liFromParentToChild.getValue(parent);
@@ -1244,7 +1253,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 				}
 			} else {
 				Hub h = (Hub) node.child.liFromParentToChild.getValue(parent);
-				Data d = new Data(node.child, parent, h);
+				Data d = new Data(this, node.child, parent, h);
 				try {
 					lock.writeLock().lock();
 					if (alChildren != null && d != null) { // could have been closed in another thread
@@ -1280,7 +1289,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 			}
 
 			Hub h = (Hub) node.recursiveChild.liFromParentToChild.getValue(parent);
-			Data d = new Data(node.recursiveChild, parent, h);
+			Data d = new Data(this, node.recursiveChild, parent, h);
 			try {
 				lock.writeLock().lock();
 				if (alChildren != null && d != null) { // could have been closed in another thread
@@ -1372,7 +1381,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 			}
 		}
 
-		void _remove(Object obj) {
+		void _remove(final Object obj) {
 			if (!bEnabled) {
 				return;
 			}
@@ -1398,6 +1407,9 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 							hubCombined.remove(obj);
 						}
 					}
+				}
+				if (obj instanceof OAObject) {
+					onRemoveFromCombined(this, (OAObject) obj);
 				}
 				if (alChildren == null) {
 					return;
@@ -2260,6 +2272,15 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 				}
 			}
 		}
+	}
+
+	//qqqqqqqqqqqqqqqq
+	protected void onAddToCombined(Data data, OAObject obj) {
+
+	}
+
+	protected void onRemoveFromCombined(Data data, OAObject obj) {
+
 	}
 
 	public boolean getUseAll() {
