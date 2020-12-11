@@ -26,6 +26,7 @@ import com.viaoa.filter.OALessOrEqualFilter;
 import com.viaoa.filter.OALikeFilter;
 import com.viaoa.filter.OANotEqualFilter;
 import com.viaoa.filter.OANotLikeFilter;
+import com.viaoa.filter.OATrueFilter;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
@@ -1061,6 +1062,14 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	 */
 	public void addEqualFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OAEqualFilter(value));
+	}
+
+	public void addTrueFilter(final String propPath) {
+		_addFilter(propPath, new OATrueFilter());
+	}
+
+	public void addFalseFilter(final String propPath) {
+		_addFilter(propPath, new OATrueFilter());
 	}
 
 	/**

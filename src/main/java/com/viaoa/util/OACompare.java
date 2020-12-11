@@ -81,34 +81,43 @@ public class OACompare {
 
 		String sMatchValue = (String) matchValue;
 		sMatchValue = sMatchValue.toLowerCase();
-		boolean b1 = false;
-		boolean b2 = false;
+
+		String startMatch = null;
+		String endMatch = null;
 
 		int x = sMatchValue.length();
 		if (x > 0) {
 			char ch = sMatchValue.charAt(0);
 			if (ch == '*' || ch == '%') {
-				b1 = true;
-				sMatchValue = sMatchValue.substring(1);
+				endMatch = sMatchValue.substring(1);
 				x--;
 			}
 		}
 		if (x > 0) {
 			char ch = sMatchValue.charAt(x - 1);
 			if (ch == '*' || ch == '%') {
-				b2 = true;
-				sMatchValue = sMatchValue.substring(0, x - 1);
+				startMatch = sMatchValue.substring(0, x - 1);
 			}
 		}
-		if (!b1 && !b2) {
-			return sValue.equals(sMatchValue);
-		} else if (b1 && b2) {
-			return (sValue.indexOf(sMatchValue) >= 0);
-		} else if (b1) {
-			return sValue.endsWith(sMatchValue);
+		if (startMatch == null && endMatch == null) {
+			int pos = sMatchValue.indexOf('*');
+			if (pos < 0) {
+				pos = sMatchValue.indexOf('%');
+			}
+			if (pos > 0) {
+				startMatch = sMatchValue.substring(0, pos);
+				endMatch = sMatchValue.substring(pos + 1);
+			}
 		}
-		//else if (b2) {
-		return sValue.startsWith(sMatchValue);
+
+		if (startMatch == null && endMatch == null) {
+			return sValue.equals(sMatchValue);
+		} else if (startMatch != null && endMatch != null) {
+			return sValue.startsWith(startMatch) && sValue.endsWith(endMatch);
+		} else if (startMatch != null) {
+			return sValue.startsWith(startMatch);
+		}
+		return sValue.endsWith(sMatchValue);
 	}
 
 	public static boolean isEqualIgnoreCase(Object value, Object matchValue) {
@@ -311,7 +320,7 @@ public class OACompare {
 		Class classValue = (value == null) ? null : value.getClass();
 		Class classMatchValue = (matchValue == null) ? null : matchValue.getClass();
 
-		// check if using array        
+		// check if using array
 		if (classValue != null && classValue.isArray()) {
 			if (classMatchValue != null && classMatchValue.isArray()) {
 				// all objects must be same
@@ -581,7 +590,7 @@ public class OACompare {
 	/**
 	 * Checks to see if the value of an object can be considered empty. example: null, an empty array, an collection with no elements, a
 	 * primitive set to 0, primitive boolean that is false, a string with only spaces (if using bTrim)
-	 * 
+	 *
 	 * @param obj
 	 * @param bTrim if true and object is a string, then spaces will be ignored.
 	 */
