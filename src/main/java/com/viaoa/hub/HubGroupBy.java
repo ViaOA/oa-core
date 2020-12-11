@@ -24,17 +24,28 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
-/**
- * Creates a groupBy hub from a new single hub. Equivalent of a database groupBy. The combined Hub (see getCombinedHub) uses OAObject
- * OAGroupBy&lt;F, G&gt;, where G is the same class as the groupBy Hub and F is a hub of the from objects. // group Employees by Dept new
- * HubGroupBy&lt;Emp, Dept&gt;(hubEmp, hubAllDept, "depts") new HubGroupBy&lt;Emp, Dept&gt;(hubEmp, "depts") Split property path - this is
- * when all of the methods in a pp are not public (link that does not create method). HubGroupBy is able to group them by splitting the pp
- * using HubGroupBy and HubFrom to get a combined group. ex: MRADClient.Application.ApplicationType.ApplicationGroup,
- * hubFrom=hubMRADClients, hubGroupBy=hubApplicationGroups note: the method for ApplicationType.getApplicationGroups() is not created (is
- * private) new HubGroupBy(hubMRADClients, hubApplicationGroups, "MRADClient.Application.ApplicationType.ApplicationGroup") internally will
- * create 2 HubGroupBys ... (hubMRADClients, "MRADClient.Application.ApplicationType") (hubApplicationGroups, "ApplicationTypes")
+/*
+ * Creates a groupBy hub using a new single hub and property path.
  *
- * @see HubLeftJoin to create a "flat" list.
+ * Equivalent of a database groupBy.
+ * The combined Hub (see getCombinedHub) uses OAObject OAGroupBy<F, G>,
+ * where G is the same class as the groupBy Hub and F is a hub of the from objects.
+ *
+ * // group Employees by Dept new
+ * HubGroupBy<Emp, Dept>(hubEmp, hubAllDept, "depts") = new HubGroupBy<Emp, Dept>(hubEmp, "depts")
+ *
+ * Split property path - this is when all of the methods in a pp are not public (link that does not create method).
+ *
+ * HubGroupBy is able to group them by splitting the pp using HubGroupBy and HubFrom to get a combined group.
+ * ex: MRADClient.Application.ApplicationType.ApplicationGroup, hubFrom=hubMRADClients, hubGroupBy=hubApplicationGroups
+ *
+ * note: the method for ApplicationType.getApplicationGroups() is not created
+ *
+ * new HubGroupBy(hubMRADClients, hubApplicationGroups, "MRADClient.Application.ApplicationType.ApplicationGroup")
+ * internally will create 2 HubGroupBys ... (hubMRADClients, "MRADClient.Application.ApplicationType") (hubApplicationGroups, "ApplicationTypes")
+ *
+ * @see HubLeftJoin to create a "flat" list of the grouping object (ex: Dept)
+ *
  * @author vvia
  */
 public class HubGroupBy<F extends OAObject, G extends OAObject> {
@@ -43,7 +54,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	private final Class<F> classFrom;
 	private Class<G> classGroupBy;
 
-	// optional hub to use as groupBy list.  Required if the propertyPath has a "split/gap" (method does not exist) 
+	// optional hub to use as groupBy list.  Required if the propertyPath has a "split/gap" (method does not exist)
 	private Hub<G> hubGroupBy;
 
 	// result hub
@@ -67,7 +78,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 	/**
 	 * Create a hub of objects that are based on hubB.
-	 * 
+	 *
 	 * @param hubB
 	 * @param propertyPath
 	 */
@@ -106,7 +117,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	/**
 	 * Create a hub on objects that are based on hubB, and are grouped by hubA. This allows the combined hub to have a full list like a
 	 * left-join.
-	 * 
+	 *
 	 * @param propertyPath pp of the property from the right object to get left object. example: if hubDept, hubEmpOrders, then
 	 *                     "Employee.Department" HubGroupBy(hubEmpOrders, hubDept, "Employee.Department") -or- HubGroupBy(hubEmpOrders,
 	 *                     "Employee.Department")
@@ -307,18 +318,18 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 	/*  This is used to define the structure that is created for the split.
 	 *  <pre><code>
-	    
+	
 	    Original HubGroupBy  new HubGroupBy(hubApplicationGroup, hubMRADClient, "MRADClient.Application.ApplicationType.ApplicationGroup")
-	    
-	    Split:  
+	
+	    Split:
 	       GB1:     new HubGroupBy(hubMRADClient, "MRADClient.Application.ApplicationType")
-	       GB2:     new HubGroupBy(hubApplicationGroup, "ApplicationTypes") 
+	       GB2:     new HubGroupBy(hubApplicationGroup, "ApplicationTypes")
 	       GBNew:   hubCombined is updated using setupSlit
-	       
-	  
+	
+	
 	      OAGroupBy   GB1       GB2          GBNew
-	      .A          appType   appType      appGroup 
-	      .hubB       mrads     appGroups    mrads 
+	      .A          appType   appType      appGroup
+	      .hubB       mrads     appGroups    mrads
 	
 	 </code></pre>
 	 * This is used when a propertyPath has a link where one of the createMethod=false. By having the source hub
@@ -575,7 +586,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 					}
 					gbNewFound.getHub().add(gb1B);
 				}
-				//remove from null hub                
+				//remove from null hub
 				if (!bCreateNullList) {
 					return;
 				}
@@ -694,7 +705,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 		};
 
-		// B: hubGroup2 (hgb2) right reverse part of pp, using hubA as the root 
+		// B: hubGroup2 (hgb2) right reverse part of pp, using hubA as the root
 		// B.1: listen to hgb2 add/removes and update this.hubCombined
 		// listen to GB2
 		hubGB2.addHubListener(new HubListenerAdapter() {
@@ -1058,7 +1069,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 		};
 
-		// C: initial load for this.hubCombined using GB1 
+		// C: initial load for this.hubCombined using GB1
 		for (OAGroupBy gb1 : hubGB1) {
 			OAObject gb1A = (OAObject) gb1.getGroupBy();
 
@@ -1654,9 +1665,9 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 		// set up hubMergers
 
-		//qqqqqq this fails        
+		//qqqqqq this fails
 		//Hub<F> hubTemp1 = new Hub<F>();
-		//qq this works        
+		//qq this works
 		Hub<OAObject> hubTemp1 = new Hub<OAObject>(OAObject.class);
 		HubMerger<OAGroupBy<F, G>, F> hm1 = new HubMerger<OAGroupBy<F, G>, F>(hub1, (Hub<F>) hubTemp1, OAGroupBy.P_Hub, true) {
 			@Override
