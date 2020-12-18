@@ -10,7 +10,6 @@
 */
 package com.viaoa.filter;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
@@ -23,65 +22,67 @@ import com.viaoa.util.OAPropertyPath;
 
 /**
  * Creates a filter to see if the value from the propertyPath is between (but not equal) two values.
+ *
  * @author vvia
  * @see OACompare#isBetween(Object, Object, Object)
  */
-public class OABetweenFilter implements OAFilter {
-    private static Logger LOG = Logger.getLogger(OABetweenFilter.class.getName());
-    private OAPropertyPath pp;
-    private OAFinder finder;
-    private Object value1, value2;
-    
-    public OABetweenFilter(Object val1, Object val2) {
-        this.value1 = val1;
-        this.value2 = val2;
-    }
-    public OABetweenFilter(OAPropertyPath pp, Object val1, Object val2) {
-        this.pp = pp;
-        this.value1 = val1;
-        this.value2 = val2;
-    }
-    public OABetweenFilter(String pp, Object val1, Object val2) {
-        this(pp==null?null:new OAPropertyPath(pp), val1, val2);
-    }
+public class OABetweenFilter<T> implements OAFilter {
+	private static Logger LOG = Logger.getLogger(OABetweenFilter.class.getName());
 
-    private boolean bSetup;
-    private int cntError;
-    
-    @Override
-    public boolean isUsed(Object obj) {
-        if (!bSetup && pp != null && obj != null) {
-            // see if an oaFinder is needed
-            bSetup = true;
-            FinderInfo fi = OAFilterDelegate.createFinder(obj.getClass(), pp);
-            if (fi != null) {
-                this.finder = fi.finder;
-                OAFilter f = new OABetweenFilter(fi.pp, value1, value2);
-                finder.addFilter(f);
-            }
-        }
-    
-        if (finder != null) {
-            if (obj instanceof OAObject) {
-                obj = finder.findFirst((OAObject)obj);
-                return obj != null;
-            }
-            else if (obj instanceof Hub) {
-                obj = finder.findFirst((Hub)obj);
-                return obj != null;
-            }
-        }
-        obj = getPropertyValue(obj);
-        return OACompare.isBetween(obj, value1, value2);
-    }
-    
-    protected Object getPropertyValue(Object obj) {
-        Object objx = obj;
-        if (pp != null) {
-            objx = pp.getValue(obj);
-        }
-        return objx;
-    }
-    
+	private OAPropertyPath pp;
+	private OAFinder finder;
+	private Object value1, value2;
+
+	public OABetweenFilter(Object val1, Object val2) {
+		this.value1 = val1;
+		this.value2 = val2;
+	}
+
+	public OABetweenFilter(OAPropertyPath pp, Object val1, Object val2) {
+		this.pp = pp;
+		this.value1 = val1;
+		this.value2 = val2;
+	}
+
+	public OABetweenFilter(String pp, Object val1, Object val2) {
+		this(pp == null ? null : new OAPropertyPath(pp), val1, val2);
+	}
+
+	private boolean bSetup;
+	private int cntError;
+
+	@Override
+	public boolean isUsed(Object obj) {
+		if (!bSetup && pp != null && obj != null) {
+			// see if an oaFinder is needed
+			bSetup = true;
+			FinderInfo fi = OAFilterDelegate.createFinder(obj.getClass(), pp);
+			if (fi != null) {
+				this.finder = fi.finder;
+				OAFilter f = new OABetweenFilter(fi.pp, value1, value2);
+				finder.addFilter(f);
+			}
+		}
+
+		if (finder != null) {
+			if (obj instanceof OAObject) {
+				obj = finder.findFirst((OAObject) obj);
+				return obj != null;
+			} else if (obj instanceof Hub) {
+				obj = finder.findFirst((Hub) obj);
+				return obj != null;
+			}
+		}
+		obj = getPropertyValue(obj);
+		return OACompare.isBetween(obj, value1, value2);
+	}
+
+	protected Object getPropertyValue(Object obj) {
+		Object objx = obj;
+		if (pp != null) {
+			objx = pp.getValue(obj);
+		}
+		return objx;
+	}
+
 }
-
