@@ -6,11 +6,12 @@ import com.viaoa.object.OAObject;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Uses a HubMerger to then store the found objects in the property path of a Hub.
+ * Uses a HubMerger to get objects, and then adds the found objects to a groupBy object Hub property.
  * <p>
  * Example:<br>
- * mergerPP: [Orders]:open().orderItems.item groupByPP: [sOrders].customer groupByProperty (in customer): Hub<Item> hubOpenOrderItems
- * (calculated)
+ * mergerPP: [Orders]:open().orderItems.item <br>
+ * groupByPP: [sOrders].customer <br>
+ * groupByProperty (in customer): Hub<Item> hubOpenOrderItems (calculated)<br>
  *
  * @author vvia
  * @param <F> from object for the hub merger
@@ -18,6 +19,7 @@ import com.viaoa.util.OAPropertyPath;
  */
 public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 
+	private String mergerPropertyPath;
 	private String groupByPropertyPath;
 	private String groupByProperty;
 
@@ -33,6 +35,7 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 	 * @param groupByProperty     name of property Hub<T> in groupByPP for storing the found merger objects.
 	 */
 	public HubGroupByMerger(Hub<F> hubRoot, String mergerPropertyPath, String groupByPropertyPath, String groupByProperty) {
+		this.mergerPropertyPath = mergerPropertyPath;
 		this.groupByPropertyPath = groupByPropertyPath;
 		this.groupByProperty = groupByProperty;
 
@@ -49,6 +52,7 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 			}
 		}
 
+		// find out where the
 		this.cntAbove = msMergerPropertyPath.length - (cnt + 1);
 
 		hubMerger = new HubMerger(hubRoot, null, mergerPropertyPath, false, null, true, false, false) {
