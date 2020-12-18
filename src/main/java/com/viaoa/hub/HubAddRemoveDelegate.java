@@ -353,14 +353,14 @@ public class HubAddRemoveDelegate {
 		for (int pos=0 ; ; ) {
 		    Object obj = thisHub.elementAt(pos);
 		    if (obj == null) break;
-		
+
 		    if (obj == objLast) {
 		        // object was not deleted
 		        pos++;
 		        continue;
 		    }
 		    objLast = obj;
-		
+
 		    // 20140422 set to false, since clients will now have clear msg
 		    remove(thisHub, obj, false,
 		            false, false, bSetAOtoNull,
@@ -556,20 +556,36 @@ public class HubAddRemoveDelegate {
 			return false;
 		}
 
-		// 20160426 make sure that it has not been removed
 		if (obj instanceof OAObject) {
 			if (HubDataDelegate.contains(thisHub, obj)) {
 				// this code has been moved before the listeners are notified.  Else listeners could ask for more objects
 
-				if (thisHub.datam.getMasterObject() != null) {
-					if (!bIsLoading || thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
-						HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.getMasterObject());
+				if (!bIsLoading) {
+					if (thisHub.datam.getMasterObject() != null) {
+						if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
+							HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.getMasterObject());
+						}
+					} else if (obj instanceof OAObject && ((OAObject) obj).isNew()) {
+						// 20201212
+						Hub hubx = HubSelectDelegate.getSelectWhereHub(thisHub);
+						if (hubx != null) {
+							Object objx = hubx.getAO();
+							if (objx != null) {
+								String ppx = HubSelectDelegate.getSelectWhereHubPropertyPath(thisHub);
+								OALinkInfo lix = hubx.getOAObjectInfo().getLinkInfo(ppx);
+								if (lix != null) {
+									lix = lix.getReverseLinkInfo();
+									if (lix != null) {
+										if (((OAObject) obj).getProperty(lix.getName()) == null) {
+											((OAObject) obj).setProperty(lix.getName(), objx);
+										}
+									}
+								}
+							}
+						}
 					}
-				}
-				//was: HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.masterObject);
 
-				// if recursive and this is the root hub, then need to set parent to null (since object is now in root, it has no parent)
-				if (!bIsLoading) { // 20171108
+					// if recursive and this is the root hub, then need to set parent to null (since object is now in root, it has no parent)
 					Hub rootHub = thisHub.getRootHub();
 					if (rootHub != null) {
 						if (rootHub == thisHub) {
@@ -863,14 +879,41 @@ public class HubAddRemoveDelegate {
 		}
 
 		// moved before listeners are notified.  Else listeners could ask for it.
-		HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.getMasterObject());
+		if (thisHub.datam.getMasterObject() != null) {
+			if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
+				HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.getMasterObject());
+			}
+		} else if (obj instanceof OAObject && ((OAObject) obj).isNew()) {
+			// 20201212
+			Hub hubx = HubSelectDelegate.getSelectWhereHub(thisHub);
+			if (hubx != null) {
+				Object objx = hubx.getAO();
+				if (objx != null) {
+					String ppx = HubSelectDelegate.getSelectWhereHubPropertyPath(thisHub);
+					OALinkInfo lix = hubx.getOAObjectInfo().getLinkInfo(ppx);
+					if (lix != null) {
+						lix = lix.getReverseLinkInfo();
+						if (lix != null) {
+							if (((OAObject) obj).getProperty(lix.getName()) == null) {
+								((OAObject) obj).setProperty(lix.getName(), objx);
+							}
+						}
+					}
+				}
+			}
+		}
 
-		/* 20140904 I'm not sure why this was needed to be after setPropertyToMaster,
-		 * but it is now moved before so that contains(obj) will return true.
-		 *
-		// 20130726 this needs to be done after setPropertyToMasterHub
-		if (thisHub.isOAObject()) OAObjectHubDelegate.addHub((OAObject)obj,thisHub);
-		*/
+		// if recursive and this is the root hub, then need to set parent to null (since object is now in root, it has no parent)
+		Hub rootHub = thisHub.getRootHub();
+		if (rootHub != null) {
+			if (rootHub == thisHub) {
+				OALinkInfo liRecursive = OAObjectInfoDelegate.getRecursiveLinkInfo(	thisHub.data.getObjectInfo(),
+																					OALinkInfo.ONE);
+				if (liRecursive != null) {
+					OAObjectReflectDelegate.setProperty((OAObject) obj, liRecursive.getName(), null, null);
+				}
+			}
+		}
 
 		// if recursive and this is the root hub, then need to set parent to null (since object is now in root, it has no parent)
 		if (thisHub.getRootHub() == thisHub) {
