@@ -239,7 +239,7 @@ public class OAObjectInfoDelegate {
 				}
 			}
 
-			if (pi.getClassType() != null && pi.getClassType().isPrimitive()) {
+			if (pi.getClassType() != null && pi.getClassType().isPrimitive() && (pi.getId() || pi.getTrackPrimitiveNull())) {
 				alPrimitive.add(pi.getName().toUpperCase());
 			} else if (pi.getClassType().isArray() && pi.getClassType().getComponentType().equals(byte.class)) { // 20121001
 				alPrimitive.add(pi.getName().toUpperCase());
@@ -970,7 +970,7 @@ public class OAObjectInfoDelegate {
 
 		propertyName = propertyName.toUpperCase();
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
-		if (pi == null || !pi.getIsPrimitive() || !pi.getTrackPrimitiveNull()) {
+		if (pi == null || !pi.getIsPrimitive() || (!pi.getTrackPrimitiveNull() && !pi.getId())) {
 			return false;
 		}
 
