@@ -51,7 +51,7 @@ public class OACompare {
 	}
 
 	/**
-	 * @param matchValue if a String, then it can begin or end with '*'|'%' as a wildcard.
+	 * @param matchValue if a String, then it can begin and/or end with '*'|'%', (or inside the string) as a wildcard.
 	 */
 	public static boolean isLike(Object value, Object matchValue) {
 		if (value == matchValue) {
@@ -85,21 +85,30 @@ public class OACompare {
 		String startMatch = null;
 		String endMatch = null;
 
-		int x = sMatchValue.length();
-		if (x > 0) {
-			char ch = sMatchValue.charAt(0);
-			if (ch == '*' || ch == '%') {
-				endMatch = sMatchValue.substring(1);
-				x--;
-			}
+		final int matchLen = sMatchValue.length();
+		if (matchLen == 0) {
+			return false;
 		}
-		if (x > 0) {
-			char ch = sMatchValue.charAt(x - 1);
-			if (ch == '*' || ch == '%') {
-				startMatch = sMatchValue.substring(0, x - 1);
+
+		char ch = sMatchValue.charAt(0);
+		boolean b1 = (ch == '*' || ch == '%');
+
+		ch = sMatchValue.charAt(matchLen - 1);
+		boolean b2 = (ch == '*' || ch == '%');
+
+		boolean bUseContains = false;
+		if (b1 && b2) {
+			bUseContains = true;
+			if (matchLen == 2) {
+				return true;
+			} else {
+				sMatchValue = sMatchValue.substring(1, matchLen - 1);
 			}
-		}
-		if (startMatch == null && endMatch == null) {
+		} else if (b1) {
+			endMatch = sMatchValue.substring(1);
+		} else if (b2) {
+			startMatch = sMatchValue.substring(0, matchLen - 1);
+		} else {
 			int pos = sMatchValue.indexOf('*');
 			if (pos < 0) {
 				pos = sMatchValue.indexOf('%');
@@ -110,14 +119,16 @@ public class OACompare {
 			}
 		}
 
-		if (startMatch == null && endMatch == null) {
+		if (bUseContains) {
+			return sValue.indexOf(sMatchValue) >= 0;
+		} else if (startMatch == null && endMatch == null) {
 			return sValue.equals(sMatchValue);
 		} else if (startMatch != null && endMatch != null) {
 			return sValue.startsWith(startMatch) && sValue.endsWith(endMatch);
 		} else if (startMatch != null) {
 			return sValue.startsWith(startMatch);
 		}
-		return sValue.endsWith(sMatchValue);
+		return sValue.endsWith(endMatch);
 	}
 
 	public static boolean isEqualIgnoreCase(Object value, Object matchValue) {

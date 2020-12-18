@@ -19,6 +19,10 @@ public class OACompareTest extends OAUnitTest {
 		assertTrue(OACompare.isLike(s, "a*"));
 		assertFalse(OACompare.isLike(s, "*a"));
 
+		assertTrue(OACompare.isLike(s, "*Bc*"));
+		assertTrue(OACompare.isLike(s, "*aBcde*"));
+		assertTrue(OACompare.isLike(s, "*Bcd*"));
+
 		assertTrue(OACompare.isLike(s, "*E"));
 		assertFalse(OACompare.isLike(s, "E*"));
 		assertTrue(OACompare.isLike(s, "*e"));
@@ -33,6 +37,7 @@ public class OACompareTest extends OAUnitTest {
 
 		assertFalse(OACompare.isLike(null, "A*E"));
 		assertFalse(OACompare.isLike(s, null));
+
 	}
 
 	@Test
