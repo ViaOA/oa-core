@@ -19,7 +19,7 @@ import com.viaoa.util.OAFilter;
 /**
  * Used to find and filter objects in OAObjectCache. Note, all queries require that a non-null Filter be used. If filter is null, then no
  * results will be returned.
- * 
+ *
  * @author vvia
  */
 public class ObjectCacheIterator<T> implements OADataSourceIterator {

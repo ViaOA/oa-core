@@ -12,12 +12,26 @@ package com.viaoa.util;
 
 import java.io.Serializable;
 
+import com.viaoa.datasource.OASelect;
 
 /**
- * Used to filter a collection of TYPE objects. 
+ * Used to filter a collection of TYPE objects.
+ *
  * @author vvia
  */
 @FunctionalInterface
-public interface OAFilter<TYPE> extends Serializable {
-    boolean isUsed(TYPE obj);
+public interface OAFilter<T> extends Serializable {
+	boolean isUsed(T obj);
+
+	/**
+	 * Callback, that allows a Filter to be called by Select before it is performed, so that the filter can be done by the datasource that
+	 * performs the select/query.
+	 * <p>
+	 *
+	 * @param select oaselect that is using this select, before it runs the query on the datasource.
+	 * @return true (default) if this filter should still be used from the select results.
+	 */
+	default boolean updateSelect(OASelect select) {
+		return true;
+	}
 }

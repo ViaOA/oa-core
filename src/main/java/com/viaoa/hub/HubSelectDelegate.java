@@ -622,16 +622,33 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * Use the same whereHub & pp as another hub, if thisHub is in the same propertyPath. example: hubFrom=Company
-	 * pp=clients.products.campaigns hubTo=Campaign that has a hub=Product to select campaign.product
+	 * Check to see if thisHub can use the whereHub and "converted" PP as another Hub.
+	 * <p>
+	 * Example setup:<br>
+	 * hubWhere&lt;Company&gt;<br>
+	 * PP: [Company.]customers.orders.orderItems<br>
+	 * reversePP: orderItem.order.customer.company<br>
+	 * <p>
+	 * hubFrom = Hub&lt;OrderItem&gt;, hubWhere+PP=hub&lt;Company&gt;+"customers.orders.orderItems"<br>
+	 * a select for hubFrom&lt;OrderItem&gt; would add a whereClause "AND order.customer.company=?", hubWhere&lt;Company&gt;.AO<br>
+	 * Which would limit it to only selecting orderitems that are for a company.
+	 * <p>
+	 * Now ... if we have a Hub&lt;Order&gt; that is used to select an Order for an OrderItem, then it would need to only select under the
+	 * same Company.<br>
+	 * thisHub&lt;Order&gt;<br>
+	 * calling adoptWhereHub(thisHub, "order", hubFrom&lt;OrderItem&gt;, where "order" is the property from hubFrom&lt;OrderItem&gt; to
+	 * thisHub&lt;Order&gt;<br>
+	 * would get hubWhere+PP from hubFrom&lt;Orderitem&gt;, which would be hub&lt;Company&gt;+"customers.orders.orderItems", and would
+	 * reverse it to "order.customer.company", where the first link is "order", which matches propName "order", and thisHub&lt;Order&gt;
+	 * would end up using hub&lt;Company&gt;+"customers.orders"
+	 * <p>
 	 *
-	 * @param thisHub    Hub that could be in the same propertyPath of the hubFromHub.whereHubPropertyPath
-	 * @param propName   the reference of thisHub from another hub. ex:
-	 * @param hubFromHub hub that might have a selectWhereHub & PP that is used by thisHub.
-	 * @return
+	 * @param thisHub  Hub that could be in the same propertyPath of the hubFromHub.whereHubPropertyPath
+	 * @param propName the link name of thisHub from hubFrom.
+	 * @param hubFrom  hub that might have a selectWhereHub & PP that can be used by thisHub.
 	 */
-	public static boolean adoptWhereHub(final Hub thisHub, final String propName, final Hub hubFromHub) {
-		if (hubFromHub == null) {
+	public static boolean adoptWhereHub(final Hub thisHub, final String propName, final Hub hubFrom) {
+		if (hubFrom == null) {
 			return false;
 		}
 		if (thisHub == null) {
@@ -640,15 +657,15 @@ public class HubSelectDelegate {
 		if (OAString.isEmpty(propName)) {
 			return false;
 		}
-		final Hub hubSelectWhere = HubSelectDelegate.getSelectWhereHub(hubFromHub);
+		final Hub hubSelectWhere = HubSelectDelegate.getSelectWhereHub(hubFrom);
 		if (hubSelectWhere == null) {
 			return false;
 		}
-		final String pp = HubSelectDelegate.getSelectWhereHubPropertyPath(hubFromHub);
+		final String pp = HubSelectDelegate.getSelectWhereHubPropertyPath(hubFrom);
 		if (OAString.isEmpty(pp)) {
 			return false;
 		}
-		OAPropertyPath propPath = new OAPropertyPath(hubSelectWhere.getObjectClass(), pp);
+		OAPropertyPath propPath = new OAPropertyPath(hubSelectWhere.getObjectClass(), pp, true);
 		OAPropertyPath ppRev = propPath.getReversePropertyPath();
 
 		String s = ppRev.getFirstPropertyName();

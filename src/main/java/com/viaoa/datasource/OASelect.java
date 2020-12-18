@@ -88,8 +88,13 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	protected boolean bRewind = true; // set back to first object
 
 	/**
-	 * Select based on a "root" object/hub.ao examples: if whereObject is Dept and this.class is Emp, then "emps" if whereObject is Dept and
-	 * this.class is Order, then "emps.orders"
+	 * Select based on a where object/hub.ao and the property path to this.hub<TYPE>.
+	 * <p>
+	 * This will then add to the whereClause of the query, by taking the reverse of the PP that is equal the whereObject.
+	 * <p>
+	 * examples: if whereObject+pp is Dept+"emps" and this select is for Emp.class, then query will have added: "AND dept.id = ?", dept
+	 * <p>
+	 * if whereObject+pp is Dept+"emps.orders" and this select is for Order.class, then query will have added: "AND "emp.dept = ?", dept
 	 */
 	protected OAObject whereObject;
 	protected Hub whereHub;

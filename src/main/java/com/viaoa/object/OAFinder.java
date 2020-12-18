@@ -359,7 +359,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		filter = null;
 	}
 
-	public void addFilter(OAFilter<T> filter) {
+	public void addFilter(OAFilter filter) {
 		if (this.filter == null) {
 			this.filter = filter;
 		} else {
@@ -372,11 +372,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		bAddAndFilter = bAddOrFilter = false;
 	}
 
-	public OAFilter<T> getFilter() {
+	public OAFilter getFilter() {
 		return this.filter;
 	}
 
-	public void setFilter(OAFilter<T> f) {
+	public void setFilter(OAFilter f) {
 		this.filter = f;
 	}
 
@@ -521,8 +521,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 		// match filters
 		String[] names = propertyPath.getFilterNames();
-		Object[] values = propertyPath.getFilterParamValues();
-		Constructor[] constructors = propertyPath.getFilterConstructors();
+		Object[][] values = propertyPath.getFilterParamValues();
+		Constructor[] constructors = propertyPath.getFilterConstructors(); // (hub, hub, [params ...])
 
 		x = names.length;
 		for (int i = 0; i < x; i++) {
@@ -535,7 +535,17 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			try {
 				HubFilter hubFilter = createHubFilter(names[i]);
 				if (hubFilter == null) {
-					hubFilter = ((CustomHubFilter) constructors[i].newInstance(values[i])).getHubFilter();
+
+					// hubFilter constructor that PP finds needs to have 2 hub params as first 2 params
+					int xx = values[i] == null ? 0 : values[i].length;
+					Object[] objs = new Object[2 + xx];
+					objs[0] = null;
+					objs[1] = null;
+					if (xx > 0) {
+						System.arraycopy(values[i], 0, objs, 2, xx);
+					}
+
+					hubFilter = ((CustomHubFilter) constructors[i].newInstance(objs)).getHubFilter();
 				}
 				if (filter == null) {
 					filter = hubFilter;

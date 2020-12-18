@@ -1027,5 +1027,4 @@ public class OAPropertyPath<F> {
 		bHasHubPropertyCheck = true;
 		return bHasHubProperty;
 	}
-
 }
