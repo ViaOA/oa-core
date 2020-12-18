@@ -14,30 +14,34 @@ import com.viaoa.util.OAFilter;
 
 /**
  * Joins two filters together to create an OR filter between them.
- * 
+ *
  * @author vvia
  */
-public class OAOrFilter implements OAFilter {
+public class OAXorFilter implements OAFilter {
 
 	private OAFilter filter1, filter2;
 
-	public OAOrFilter(OAFilter filter1, OAFilter filter2) {
+	public OAXorFilter(OAFilter filter1, OAFilter filter2) {
 		this.filter1 = filter1;
 		this.filter2 = filter2;
 	}
 
 	@Override
 	public boolean isUsed(Object obj) {
-		if (filter1 != null) {
-			if (filter1.isUsed(obj)) {
-				return true;
+		boolean b1 = false;
+		if (filter1 == null) {
+			if (filter2 == null) {
+				return true; // no filter
 			}
+		} else {
+			b1 = filter1.isUsed(obj);
 		}
+
+		boolean b2 = false;
 		if (filter2 != null) {
-			if (filter2.isUsed(obj)) {
-				return true;
-			}
+			b2 = filter2.isUsed(obj);
 		}
-		return (filter1 == null && filter2 == null);
+		boolean b = (b1 && !b2) || (!b1 && b2);
+		return b;
 	}
 }
