@@ -41,8 +41,8 @@ public class OAObjectDelegate {
 	public static final String WORD_Deleted = "DELETED";
 	public static final String WORD_AutoAdd = "AutoAdd";
 
-	public static final Boolean TRUE = new Boolean(true);
-	public static final Boolean FALSE = new Boolean(false);
+	public static final Boolean TRUE = Boolean.TRUE;
+	public static final Boolean FALSE = Boolean.FALSE;
 
 	/** Static global lock used when setting global properties (ex: guidCounter) */
 
@@ -62,9 +62,9 @@ public class OAObjectDelegate {
 	 * Called by OAObject constructor to assign guid and initialize new OAObject. If OAObjectFlagDelegate.isLoading() == false then
 	 * initialize(...) will be called using the values from getOAObjectInfo()
 	 */
-	protected static void initialize(OAObject oaObj) {
+	protected static boolean initialize(OAObject oaObj) {
 		if (oaObj == null) {
-			return;
+			return false;
 		}
 		assignGuid(oaObj); // must get a guid before calling setInConstructor, so that it will have a valid hash key
 
@@ -79,7 +79,7 @@ public class OAObjectDelegate {
 		oaObj.nulls = new byte[x];
 
 		if (OAThreadLocalDelegate.isLoading()) {
-			return; // dont initialize. Whatever is loading should call initialize below directly
+			return false; // dont initialize. Whatever is loading should call initialize below directly
 		}
 
 		boolean bInitializeWithCS = !oi.getLocalOnly() && OASync.isClient(oaObj.getClass());
@@ -87,6 +87,18 @@ public class OAObjectDelegate {
 		// 20200910 useDataSource needs to be true ... since other DS (ex: autonumber) might be used
 		initialize(oaObj, oi, oi.getInitializeNewObjects(), true, oi.getAddToCache(), bInitializeWithCS, true);
 		//was: initialize(oaObj, oi, oi.getInitializeNewObjects(), oi.getUseDataSource(), oi.getAddToCache(), bInitializeWithCS, true);
+		return true;
+	}
+
+	public static void initializeAfterLoading(OAObject oaObj, boolean bAssignNewId, boolean bSetChangedToFalse) {
+		if (oaObj == null) {
+			return;
+		}
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+
+		boolean bInitializeWithCS = !oi.getLocalOnly() && OASync.isClient(oaObj.getClass());
+
+		initialize(oaObj, oi, oi.getInitializeNewObjects(), bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
 	}
 
 	/**
