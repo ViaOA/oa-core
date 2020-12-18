@@ -80,7 +80,6 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 	private boolean bIsRecusive;
 	private boolean bIncludeRootHub;
 	private boolean bUseBackgroundThread;
-
 	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 	public int TotalHubListeners; // for testing only
