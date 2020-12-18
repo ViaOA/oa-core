@@ -126,7 +126,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-
+		
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -1700,5 +1700,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 			}
 		}
 		return true;
+	}
+
+	public void setObjectDefaults() {
 	}
 }
