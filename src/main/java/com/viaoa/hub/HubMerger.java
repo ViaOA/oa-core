@@ -548,13 +548,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
 			if (bShareEndHub) {
 				if (linkInfo.getType() == OALinkInfo.MANY) {
-					if (i + 1 <= pps.length) {
+					if (i < (pps.length - 1)) {
 						bShareEndHub = false; // only the last one can be many
 					}
 				} else {
-					if (i + 1 == pps.length) {
-						bShareEndHub = false; // only the last one can be many, but
-												// not one
+					if (i == (pps.length - 1)) {
+						bShareEndHub = false; // the last one can must be a many
 					}
 				}
 			}
@@ -1022,7 +1021,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 							if (node.child != null && node.child.liFromParentToChild != null) {
 								node.child.liFromParentToChild.getValue(obj);
 							} else if (node.liFromParentToChild != null) {
-								node.liFromParentToChild.getValue(obj);
+								// 20201221 bug??
+								// node.liFromParentToChild.getValue(obj);
 							}
 						}
 					}
@@ -1731,7 +1731,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
 		public void _onNewList2(HubEvent e) {
 			// 20161103 if root, then all can be removed. Must do this for rootHubs that are recursive
-			if (hub == hubRoot) {
+			if (!bShareEndHub && hub == hubRoot) {
 				hubCombined.clear();
 			}
 			try {
@@ -2123,7 +2123,6 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
 			ref = e.getNewValue();
 			if (ref != null) {
-
 				if (!node.child.data.hub.contains(ref)) {
 					// 20200407 added siblingHelper
 					final OASiblingHelper sh = getSiblingHelper();
@@ -2151,7 +2150,9 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 			if (evt != null && alChildren != null && alChildren.size() > 0) {
 				Data d = alChildren.get(0);
 				if (d == null || d.parentObject == evt.getObject()) {
-					return;
+					if (evt.getObject() != null) { // 20201222 could be repopulating based on parent/masterObject and PP using parent
+						return;
+					}
 				}
 			}
 
