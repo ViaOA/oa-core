@@ -719,23 +719,23 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	public OADataSourceIterator select(Class selectClass,
-			OAObject whereObject, String extraWhere, Object[] args,
-			String propertyNameFromWhereObject, String queryOrder,
-			int max, OAFilter filter, boolean bDirty) {
+			OAObject whereObject, String propertyNameFromWhereObject, String addToWhere, Object[] args,
+			String queryOrder, int max, OAFilter filter, boolean bDirty) {
 		return select(	selectClass,
-						null, args, queryOrder,
-						whereObject, propertyNameFromWhereObject, extraWhere,
+						addToWhere, args, queryOrder,
+						whereObject, propertyNameFromWhereObject, null,
 						max, filter, bDirty);
 	}
 
-	public OADataSourceIterator select(Class selectClass, OAObject whereObject, String extraWhere, Object[] args,
-			String propertyNameFromWhereObject, String queryOrder, int max, boolean bDirty) {
-		return select(selectClass, whereObject, extraWhere, args, propertyNameFromWhereObject, queryOrder, max, null, bDirty);
+	public OADataSourceIterator select(Class selectClass, OAObject whereObject,
+			String propertyNameFromWhereObject, String addToWhere, Object[] args, String queryOrder, int max, boolean bDirty) {
+		return select(selectClass, whereObject, propertyNameFromWhereObject, addToWhere, args, queryOrder, max, null, bDirty);
 	}
 
-	public OADataSourceIterator select(Class selectClass, OAObject whereObject, String extraWhere, Object[] args,
-			String propertyNameFromWhereObject, String queryOrder, boolean bDirty) {
-		return select(selectClass, whereObject, extraWhere, args, propertyNameFromWhereObject, queryOrder, 0, null, bDirty);
+	public OADataSourceIterator select(Class selectClass, OAObject whereObject, String propertyNameFromWhereObject,
+			String addToWhere, Object[] args,
+			String queryOrder, boolean bDirty) {
+		return select(selectClass, whereObject, propertyNameFromWhereObject, addToWhere, args, queryOrder, 0, null, bDirty);
 	}
 
 	public OADataSourceIterator select(Class selectClass, OAObject whereObject, String propertyNameFromWhereObject, String queryOrder,
