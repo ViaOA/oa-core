@@ -181,7 +181,7 @@ public class OAJaxb<TYPE extends OAObject> {
 		        System.setProperty(MOXySystemProperties.XML_ID_EXTENSION, "true");
 		    B: add this annotation of Id property
 		        @org.eclipse.persistence.oxm.annotations.XmlIDExtension
-
+		
 		    https://www.eclipse.org/eclipselink/api/2.7/org/eclipse/persistence/jaxb/MOXySystemProperties.html
 		    https://stackoverflow.com/questions/29564627/does-moxy-support-non-string-xmlid-in-version-2-6-0
 		 */
@@ -326,7 +326,7 @@ public class OAJaxb<TYPE extends OAObject> {
 		marshaller.marshal(obj, writer);
 	}
 
-	public static String convertToJson(Object obj) throws Exception {
+	public static String convertToJsonString(Object obj) throws Exception {
 		if (obj == null) {
 			return null;
 		}
@@ -351,15 +351,15 @@ public class OAJaxb<TYPE extends OAObject> {
 	public String testJackson(TYPE obj) throws Exception {
 	    JacksonXmlModule xmlModule = new JacksonXmlModule();
 	    xmlModule.setDefaultUseWrapper(false);  // XmlElementWrapper is included in method annotations
-
+	
 	    ObjectMapper objectMapper = new XmlMapper(xmlModule);
-
+	
 	    objectMapper.registerModule(new JaxbAnnotationModule());
-
+	
 	    objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 	    objectMapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);  // did not allow inside name to be a duplicate
 	    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
+	
 	    / *
 	    AnnotationIntrospector introspector = new JaxbAnnotationIntrospector(objectMapper.getTypeFactory());
 	    objectMapper.setAnnotationIntrospector(introspector);
@@ -644,7 +644,7 @@ public class OAJaxb<TYPE extends OAObject> {
 			  can only create new root and owned objects if createNew
 			  dont allow updating of other objects
 			  if they are new then reject (they should be created seperately)
-
+			
 			  only allow new (ignore/reject ID prop) for root and owned objects
 			  other objects will not be updated,
 			*/
