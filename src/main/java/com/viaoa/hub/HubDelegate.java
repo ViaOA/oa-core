@@ -203,7 +203,7 @@ public class HubDelegate {
 		if (hub == null) {
 			return null;
 		}
-		HubDataMaster dm = HubDetailDelegate.getDataMaster(hub);
+		HubDataMaster dm = HubDetailDelegate.getDataMaster(hub, true);
 		if (dm == null) {
 			return null;
 		}
@@ -217,7 +217,7 @@ public class HubDelegate {
 		if (hub == null) {
 			return null;
 		}
-		HubDataMaster dm = HubDetailDelegate.getDataMaster(hub);
+		HubDataMaster dm = HubDetailDelegate.getDataMaster(hub, true);
 		Object obj = dm.getMasterObject();
 		if (obj != null) {
 			return obj.getClass();
@@ -270,7 +270,7 @@ public class HubDelegate {
 	 * If this hub has a master Hub or link Hub and that Hub does not have an active Object set, then this Hub is invalid.
 	 */
 	public static boolean isValid(final Hub thisHub) {
-		HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+		HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
 		if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
 			return false;
 		}
@@ -334,7 +334,7 @@ public class HubDelegate {
 		Hub hubMaster;
 		boolean bHasMaster = false;
 		for (int i = 0;; i++, hub = hubMaster) {
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(hub);
+			HubDataMaster dm = HubDetailDelegate.getDataMaster(hub, true);
 
 			hubMaster = dm.getMasterHub();
 			if (hubMaster == null) {
@@ -523,7 +523,7 @@ public class HubDelegate {
 	 * @return controlling hub, or param hub if there is no controlling hub
 	 */
 	public static Hub getControllingHub(Hub thisHub) {
-		HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+		HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
 		if (dm.getMasterHub() != null) {
 			return dm.getMasterHub();
 		}

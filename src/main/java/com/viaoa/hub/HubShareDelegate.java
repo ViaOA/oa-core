@@ -58,8 +58,9 @@ public class HubShareDelegate {
 	 * @param bIncludeFilteredHubs if true then HubFilter will also be include
 	 * @return array (could be size 0) of found hubs, including thisHub.
 	 */
-	public static Hub[] getAllSharedHubs(Hub thisHub, boolean bChildrenOnly, OAFilter<Hub> filter, boolean bIncludeFilteredHubs,
+	protected static Hub[] getAllSharedHubs(Hub thisHub, boolean bChildrenOnly, OAFilter<Hub> filter, boolean bIncludeFilteredHubs,
 			boolean bOnlyIfSharedAO) {
+
 		if (thisHub == null) {
 			return null;
 		}
@@ -77,6 +78,7 @@ public class HubShareDelegate {
 
 	private static void _getAllSharedHubs(final Hub hub, final Hub findHub, final ArrayList<Hub> alHub, final OAFilter<Hub> filter,
 			final int cnter, final boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO, boolean bIncludeHubShareAO) {
+
 		if (filter == null || filter.isUsed(hub)) {
 			alHub.add(hub);
 		}
@@ -100,10 +102,11 @@ public class HubShareDelegate {
 		if (!bIncludeFilteredHubs || cnter > 0) {
 			return;
 		}
-		HubFilter hc = getHubFilter(hub);
-		if (hc != null) {
-			if (!bOnlyIfSharedAO || hc.isSharingAO()) {
-				Hub mh = hc.getMasterHub();
+
+		HubFilter hf = getHubFilter(hub);
+		if (hf != null) {
+			if (!bOnlyIfSharedAO || hf.isSharingAO()) {
+				Hub mh = hf.getMasterHub();
 				Hub h = getMainSharedHub(mh);
 				// note: use "mh" instead of findHub, since it is going thru a hubFiler
 				_getAllSharedHubs(h, mh, alHub, filter, 0, bIncludeFilteredHubs, bOnlyIfSharedAO, bIncludeHubShareAO);
@@ -179,7 +182,6 @@ public class HubShareDelegate {
 		return null;
 	}
 
-	// 20131117
 	public static Hub getSharedHub(final Hub thisHub, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
 		if (thisHub == null) {
 			return null;
@@ -213,7 +215,6 @@ public class HubShareDelegate {
 		return null;
 	}
 
-	// 20131116
 	public static Hub getFirstSharedHub(Hub thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
 		Hub h = getMainSharedHub(thisHub);
 		return _getFirstSharedHub(h, thisHub, filter, bIncludeFilteredHubs, 0, bOnlyIfSharedAO, bIncludeFilteredHubs);
@@ -324,8 +325,8 @@ public class HubShareDelegate {
 			return false;
 		}
 
-		Hub[] hs1 = getAllSharedHubs(hub1, false, null, true, true);
-		Hub[] hs2 = getAllSharedHubs(hub2, false, null, true, true);
+		Hub[] hs1 = getAllSharedHubs(hub1, false, null, bIncludeFilteredHubs, true);
+		Hub[] hs2 = getAllSharedHubs(hub2, false, null, bIncludeFilteredHubs, true);
 
 		for (Hub h1 : hs1) {
 			for (Hub h2 : hs2) {

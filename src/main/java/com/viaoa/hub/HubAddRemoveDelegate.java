@@ -177,7 +177,7 @@ public class HubAddRemoveDelegate {
 
 		// if there is a masterHub, then make sure that this Hub is active/valid
 		if (thisHub.datam.getMasterObject() == null && thisHub.getCurrentSize() == 0) {
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
 			if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
 				return "has masterHub, but masterObject is null";
 			}
@@ -218,7 +218,7 @@ public class HubAddRemoveDelegate {
 
 		// if there is a masterHub, then make sure that this Hub is active/valid
 		if (thisHub.datam.getMasterObject() == null && thisHub.getCurrentSize() == 0) {
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
 			if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
 				return "has masterHub, but masterObject is null";
 			}
@@ -424,7 +424,7 @@ public class HubAddRemoveDelegate {
 
 		// if there is a masterHub, then make sure that this Hub is active/valid
 		if (thisHub.datam.getMasterObject() == null && thisHub.getCurrentSize() == 0) {
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
 			if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
 				return "has masterHub, but masterObject is null";
 			}
@@ -562,7 +562,7 @@ public class HubAddRemoveDelegate {
 
 				if (!bIsLoading) {
 					if (thisHub.datam.getMasterObject() != null) {
-						if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
+						if (thisHub.datam.liDetailToMaster != null && thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
 							HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.getMasterObject());
 						}
 					} else if (obj instanceof OAObject && ((OAObject) obj).isNew()) {

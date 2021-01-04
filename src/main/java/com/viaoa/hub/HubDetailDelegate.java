@@ -142,7 +142,7 @@ public class HubDetailDelegate {
 
 		HubDataMaster dm;
 		if (objMaster != null) {
-			dm = getDataMaster(thisHub, objMaster.getClass());
+			dm = getDataMaster(thisHub, objMaster.getClass(), false);
 		} else {
 			dm = thisHub.datam;
 			if (dm == null) {
@@ -566,10 +566,14 @@ public class HubDetailDelegate {
 	 * returns DataMaster from any shared hub that has a MasterHub set. If none is found, then the DataMaster for thisHub is returned.
 	 */
 	protected static HubDataMaster getDataMaster(final Hub thisHub) {
-		return getDataMaster(thisHub, null);
+		return getDataMaster(thisHub, null, false);
 	}
 
-	protected static HubDataMaster getDataMaster(final Hub thisHub, final Class masterClass) {
+	protected static HubDataMaster getDataMaster(final Hub thisHub, boolean bIncludedFilteredHub) {
+		return getDataMaster(thisHub, null, bIncludedFilteredHub);
+	}
+
+	private static HubDataMaster getDataMaster(final Hub thisHub, final Class masterClass, boolean bIncludedFilteredHub) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -589,7 +593,7 @@ public class HubDetailDelegate {
 				return false;
 			}
 		};
-		Hub hubx = HubShareDelegate.getFirstSharedHub(thisHub, filter, true, false);
+		Hub hubx = HubShareDelegate.getFirstSharedHub(thisHub, filter, bIncludedFilteredHub, false);
 		if (hubx != null) {
 			return hubx.datam;
 		}
@@ -1014,7 +1018,7 @@ public class HubDetailDelegate {
 
 		Hub h = thisHub;
 		for (; h != null;) {
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(h);
+			HubDataMaster dm = HubDetailDelegate.getDataMaster(h, true);
 
 			Object obj = null;
 			if (dm.getMasterHub() != null) {
