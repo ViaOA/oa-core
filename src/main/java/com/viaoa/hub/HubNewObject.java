@@ -2,10 +2,13 @@ package com.viaoa.hub;
 
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectDSDelegate;
+import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAObjectReflectDelegate;
+import com.viaoa.object.OAThreadLocalDelegate;
 
 /**
- * This is used to allow for creating new object for a hub, but waiting until it is ready to be submitted before adding it.
+ * This is used to allow for creating new object for a hub, but waiting until it is ready to be submitted before adding it to the Hub.
  * <p>
  * This is done by using a second hub to contain the new object. This second hub will be configured to act the same as the mainHub. For
  * example, if the mainHub has a masterObject/Hub.
@@ -110,6 +113,26 @@ public class HubNewObject<F extends OAObject> {
 				obj.delete();
 			}
 		}
+	}
+
+	/**
+	 * Create a new object that can then be added to hubNewObject;
+	 * 
+	 * @return
+	 */
+	public F createNewObject() {
+		F obj = null;
+		try {
+			OAThreadLocalDelegate.setLoading(true);
+			Class<F> clazz = hubMain.getObjectClass();
+			obj = (F) OAObjectReflectDelegate.createNewObject(clazz);
+		} finally {
+			OAThreadLocalDelegate.setLoading(false);
+		}
+		if (obj instanceof OAObject) {
+			OAObjectDelegate.initializeAfterLoading((OAObject) obj, false, false);
+		}
+		return obj;
 	}
 
 }
