@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OAFinder;
@@ -640,9 +641,15 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 
 		// 20140129
 		if (bUseFinder) {
+			final OAQueryFilter filterQuery = OAString.isEmpty(where) ? null : new OAQueryFilter(clazz, where, params);
+			// todo: whereObject, propertyFromWhereObject need to be added to where ??
+
 			OAFilter filter = new OAFilter<TYPE>() {
 				@Override
 				public boolean isUsed(TYPE obj) {
+					if (filterQuery != null && !filterQuery.isUsed(obj)) {
+						return false;
+					}
 					if (dsFilter != null && !dsFilter.isUsed(obj)) {
 						return false;
 					}
@@ -657,9 +664,11 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 					return true;
 				}
 			};
-			OAFilter filterx = finder.getFilter();
+
+			OAFilter filterx = finder.getFilter(); // hold
 			try {
 				finder.addFilter(filter);
+
 				alFinderResults = finder.find();
 
 				// sort the array
@@ -694,9 +703,10 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 			}
 			if (whereObjx != null) {
 				if (bCountFirst && amountCount < 0) {
-					amountCount = ds.count(clazz, whereObjx, where, params, whereObjectPropertyPath, max);
+					amountCount = ds.count(clazz, where, params, whereObjx, whereObjectPropertyPath, null, max);
 				}
-				query = ds.select(clazz, whereObjx, where, params, whereObjectPropertyPath, order, max, getDataSourceFilter(), getDirty());
+				query = ds.select(	clazz, where, params, order, whereObjx, whereObjectPropertyPath, null, max, getDataSourceFilter(),
+									getDirty());
 			} else {
 				if (bPassthru) {
 					if (bCountFirst && amountCount < 0) {
