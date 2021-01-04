@@ -11,6 +11,7 @@
 package com.viaoa.datasource.objectcache;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.OADataSourceEmptyIterator;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.autonumber.OADataSourceAuto;
 import com.viaoa.filter.OAAndFilter;
@@ -87,7 +88,34 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 			} else {
 				// 20200219 check to see if it's a propertyPath.  If so, then add to the query and re-select
 				OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+
+				OALinkInfo[] lis = pp.getLinkInfos();
+				if (lis != null) {
+					for (int i = 0; i < lis.length; i++) {
+						if (lis[i].getType() != OALinkInfo.ONE) {
+							break;
+						}
+						Object objx = lis[i].getValue(whereObject);
+						whereObject = (OAObject) objx;
+
+						if (whereObject == null) {
+							return new OADataSourceEmptyIterator();
+						}
+						// shorten pp
+						int pos = propertyFromWhereObject.indexOf('.');
+						int pos2 = propertyFromWhereObject.indexOf(')');
+						if (pos < pos2) {
+							pos = propertyFromWhereObject.indexOf('.', pos2);
+						}
+						propertyFromWhereObject = propertyFromWhereObject.substring(pos + 1);
+						pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+					}
+				}
 				pp = pp.getReversePropertyPath();
+				if (pp == null) {
+					return new OADataSourceEmptyIterator();
+				}
+
 				if (OAString.isNotEmpty(queryWhere)) {
 					queryWhere += " AND ";
 				} else if (queryWhere == null) {
@@ -99,13 +127,14 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 			}
 
 			if (li != null) {
+				final OAObject whereObjectx = whereObject;
 				final OALinkInfo lix = li;
 				OAFilter filter2 = new OAEqualFilter(li.getName(), whereObject) {
 					public boolean isUsed(Object obj) {
 						boolean b;
 						if (obj instanceof OAObject) {
 							Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, lix.getName());
-							b = OACompare.isEqual(objx, whereObject);
+							b = OACompare.isEqual(objx, whereObjectx);
 						} else {
 							b = super.isUsed(obj);
 						}
