@@ -27,7 +27,7 @@ import com.viaoa.util.OAString;
 
 /**
  * Delegate used for linking Hubs.
- * 
+ *
  * @author vvia
  */
 public class HubLinkDelegate {
@@ -43,7 +43,7 @@ public class HubLinkDelegate {
 
 		// 20181211 verify that no other shared hub is linked
 		Hub hx = HubLinkDelegate.getHubWithLink(thisHub, true);
-		if (hx != null && hx != thisHub) {
+		if (linkToHub != null && hx != null && hx != thisHub) {
 
 			// 20201221 allow setting bAutoCreate
 			if (!linkPosFlag && hx.datau.getLinkToHub() == linkToHub && OAString.isEmpty(propertyFrom)
@@ -174,7 +174,7 @@ public class HubLinkDelegate {
 		return isLinkAutoCreated(thisHub, false);
 	}
 
-	// 20131116 
+	// 20131116
 	public static boolean isLinkAutoCreated(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.isAutoCreate()) {
 			return true;
@@ -199,7 +199,7 @@ public class HubLinkDelegate {
 		return getLinkedOnPos(thisHub, false);
 	}
 
-	// 20131116 
+	// 20131116
 	public static boolean getLinkedOnPos(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.isLinkPos()) {
 			return true;
@@ -234,7 +234,7 @@ public class HubLinkDelegate {
 
 	/**
 	 * Called by HubAODelegate when ActiveObject is changed in Link From Hub.
-	 * 
+	 *
 	 * @param linkObj object to update
 	 * @param object  new property value
 	 * @param         pos, if object is link by position
@@ -337,7 +337,7 @@ public class HubLinkDelegate {
 	 * Example:<br>
 	 * If Department Hub is linked to a Employee Hub on property "department", then for any Employee object, this will return the value of
 	 * employee.getDepartment().
-	 * 
+	 *
 	 * @see Hub#setLinkHub(Hub,String) Full Description of Linking Hubs
 	 */
 	public static Object getPropertyValueInLinkedToHub(Hub thisHub, Object linkObject) {
@@ -398,14 +398,14 @@ public class HubLinkDelegate {
 	 * <p>
 	 * Example:<br>
 	 * DepartmentHub linked to Employee.department will return "department"
-	 * 
+	 *
 	 * @see Hub#setLinkHub(Hub,String) Full Description of Linking Hubs
 	 */
 	public static String getLinkToProperty(Hub thisHub) {
 		return getLinkToProperty(thisHub, false);
 	}
 
-	// 20131116 
+	// 20131116
 	public static String getLinkToProperty(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToPropertyName() != null) {
 			return thisHub.datau.getLinkToPropertyName();
@@ -436,7 +436,7 @@ public class HubLinkDelegate {
 		return getLinkFromProperty(thisHub, false);
 	}
 
-	// 20131116 
+	// 20131116
 	public static String getLinkFromProperty(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkFromPropertyName() != null) {
 			return thisHub.datau.getLinkFromPropertyName();
@@ -507,7 +507,7 @@ public class HubLinkDelegate {
 		return getLinkHubOnPos(thisHub, false);
 	}
 
-	// 20131116 
+	// 20131116
 	public static boolean getLinkHubOnPos(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.isLinkPos()) {
 			return true;
@@ -540,7 +540,7 @@ public class HubLinkDelegate {
 		return getLinkSetMethod(thisHub, false);
 	}
 
-	// 20131116 
+	// 20131116
 	public static Method getLinkSetMethod(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToSetMethod() != null) {
 			return thisHub.datau.getLinkToSetMethod();
@@ -575,7 +575,7 @@ public class HubLinkDelegate {
 		return getLinkGetMethod(thisHub, false);
 	}
 
-	// 20131116 
+	// 20131116
 	public static Method getLinkGetMethod(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToGetMethod() != null) {
 			return thisHub.datau.getLinkToGetMethod();
@@ -610,7 +610,7 @@ public class HubLinkDelegate {
 		return getLinkHubPath(thisHub, false);
 	}
 
-	// 20131116 
+	// 20131116
 	public static String getLinkHubPath(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToPropertyName() != null) {
 			return thisHub.datau.getLinkToPropertyName();
@@ -714,8 +714,8 @@ public class HubLinkDelegate {
 				}
 			}
 
-			/* MIGHT not need this new change (reverted to previous     
-			 ** ==> use the hubEvent.newList to get the change       
+			/* MIGHT not need this new change (reverted to previous
+			 ** ==> use the hubEvent.newList to get the change
 			// 20110808 if AO is not changing in fromHub then need to set force=true so that the fromHub hub listeners will
 			//    be notified.  Example:  if masterHub.ao was null, fromHub.ao=null and fromHub was invalid (because masterHub.ao=null)
 			//                           then if masterHub.ao is not null, but fromHub.ao was still null (but now is valid)
@@ -755,7 +755,7 @@ public class HubLinkDelegate {
 			// 20110810 if fromHub AO=null and linkToHub.AO=null then fromHub.isValid
 			//             if linkToHub.AO is changed to != null, but fromHub.AO is still null, then need to set bForce=true
 			//                so listeners will be notified of the change
-			// ex: in SalesOrder there is a hubCustomer linked to it that needs to know when SalesOrder.AO is not null  
+			// ex: in SalesOrder there is a hubCustomer linked to it that needs to know when SalesOrder.AO is not null
 			if (fromHub.getAO() == null && obj == null) {
 				bForce = true;
 			}
