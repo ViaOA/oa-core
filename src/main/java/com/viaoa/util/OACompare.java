@@ -99,7 +99,7 @@ public class OACompare {
 		boolean bUseContains = false;
 		if (b1 && b2) {
 			bUseContains = true;
-			if (matchLen == 2) {
+			if (matchLen <= 2) {
 				return true;
 			} else {
 				sMatchValue = sMatchValue.substring(1, matchLen - 1);
