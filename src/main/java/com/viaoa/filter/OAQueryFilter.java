@@ -22,7 +22,7 @@ import com.viaoa.util.OAPropertyPath;
 /**
  * Convert an Object query to an OAFilter. This can be used for Hub selects, etc. It is used by OADataSourceObjectCache.selects created
  * 20140127, expanded 201511125
- * 
+ *
  * @author vvia
  */
 public class OAQueryFilter<T> implements OAFilter {
@@ -162,7 +162,7 @@ public class OAQueryFilter<T> implements OAFilter {
 
 	// Operators begin
 
-	// == 
+	// ==
 	private OAQueryToken parseForEqual(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForNotEqual(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.EQUAL) {
@@ -191,11 +191,13 @@ public class OAQueryFilter<T> implements OAFilter {
 			if (args != null && posArgs < args.length) {
 				val = args[posArgs++];
 			}
+		} else if (token.type == OAQueryToken.NULL) {
+			val = null;
 		}
 		return val;
 	}
 
-	// != 
+	// !=
 	private OAQueryToken parseForNotEqual(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForGreater(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.NOTEQUAL) {
@@ -276,7 +278,7 @@ public class OAQueryFilter<T> implements OAFilter {
 		return nextToken;
 	}
 
-	// LIKE 
+	// LIKE
 	private OAQueryToken parseForLike(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForNotLike(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.LIKE) {
