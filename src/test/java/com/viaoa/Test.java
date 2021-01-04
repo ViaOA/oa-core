@@ -32,8 +32,9 @@ public class Test {
 			int cnt;
 
 			@Override
-			public OADataSourceIterator select(Class selectClass, OAObject whereObject, String extraWhere, Object[] args,
-					String propertyNameFromWhereObject, String queryOrder, int max, OAFilter filter, boolean bDirty) {
+			public OADataSourceIterator select(Class selectClass, OAObject whereObject, String propertyNameFromWhereObject,
+					String addToWhere, Object[] args,
+					String queryOrder, int max, OAFilter filter, boolean bDirty) {
 				if (whereObject instanceof Silo && Server.class.equals(selectClass)) {
 					return new OADataSourceIterator() {
 						int x = 0;
