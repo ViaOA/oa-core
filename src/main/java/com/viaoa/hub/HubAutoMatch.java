@@ -137,7 +137,9 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		if (!hubMaster.getObjectClass().equals(c)) {
 			throw new RuntimeException("hubMaster class=" + hubMaster.getObjectClass() + " does not match class for update Hub: " + c);
 		}
-		update();
+		if (!bManuallyCalled) {
+			update();
+		}
 	}
 
 	private AtomicBoolean abUpdating = new AtomicBoolean(false);
@@ -156,7 +158,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			if (bServerSideOnly) {
 				OARemoteThreadDelegate.sendMessages(true);
 			}
-			_update();
+			_update1();
 		} finally {
 			abUpdating.set(false);
 			if (bServerSideOnly) {
@@ -165,7 +167,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 	}
 
-	private void _update() {
+	private void _update1() {
 		if (hub != null) {
 			if (OAThreadLocalDelegate.isDeleting(hub.getMasterObject())) {
 				return;
