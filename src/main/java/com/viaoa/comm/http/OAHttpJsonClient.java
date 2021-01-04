@@ -47,11 +47,7 @@ HttpStatus.java
 	Expires: Thu, 01 Jan 1970 00:00:00 GMT
 	Content-Type: application/json;charset=utf-8
 
-
 see OAHttpsUtil.java for using https/SSL/TLS
-
-
-
 */
 
 /**
@@ -365,7 +361,7 @@ public class OAHttpJsonClient {
 		map.put("stocking", "true");
 		/*
 				s = client.get("http://localhost:18080/retail-products/itemRestriction", map);
-		
+
 				s = client.post("http://localhost:18080/retail-products/iseries/itemRestriction/get", map);
 		*/
 
@@ -420,7 +416,7 @@ public class OAHttpJsonClient {
 		json = json.replace("&", ",\n");
 		json = json.replace('=', ':');
 		json = json.replace('\'', '\"');
-		
+
 		s = OAHttpClient
 				.httpPost("http://localhost:8081/retail-products/iseries/itemRestriction/getRestriction", json);
 		*/
