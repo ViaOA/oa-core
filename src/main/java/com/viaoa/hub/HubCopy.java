@@ -14,41 +14,52 @@ import com.viaoa.object.OAObject;
 
 /**
  * Used to have two hubs use the same objects, so that the ordering can be different.
+ *
+ * @see HubMakeCopy to only have the copy done when hubMaster AO or newList events. It will not change hubMaster when hubCopy has adds or
+ *      removes.
  */
 public class HubCopy<T extends OAObject> extends HubFilter<T> {
 
 	public HubCopy(Hub<T> hubMaster, Hub<T> hubCopy, boolean bShareAO) {
-	    super(hubMaster, hubCopy, bShareAO);
+		super(hubMaster, hubCopy, bShareAO);
 	}
+
 	// if object is directly removed from filtered hub, then remove from hubMaster
 	@Override
 	protected void afterRemoveFromFilteredHub(T obj) {
-	    if (hubMaster != null && hubMaster.contains(obj)) {
-	        hubMaster.remove(obj);
-	    }
+		if (hubMaster != null && hubMaster.contains(obj)) {
+			hubMaster.remove(obj);
+		}
 	}
-	
+
 	@Override
 	public boolean isUsed(T object) {
-	    if (object != objTemp) return true;
-	    return hubMaster.contains(object);
+		if (object != objTemp) {
+			return true;
+		}
+		return hubMaster.contains(object);
 	}
-	
-    @Override
-    public void afterRemoveAllFromFilteredHub() {
-        if (hubMaster != null) {
-            hubMaster.removeAll();
-        }
-    }
-    
-    @Override
-    public void onNewList(HubEvent<T> e) {
-        if (hubMaster == null) return;
-        Hub h = weakHub.get();
-        if (h == null) return;
-        for (Object obj : h) {
-            hubMaster.add((T) obj);
-        };
-    }
-	
+
+	@Override
+	public void afterRemoveAllFromFilteredHub() {
+		if (hubMaster != null) {
+			hubMaster.removeAll();
+		}
+	}
+
+	@Override
+	public void onNewList(HubEvent<T> e) {
+		if (hubMaster == null) {
+			return;
+		}
+		Hub h = weakHub.get();
+		if (h == null) {
+			return;
+		}
+		for (Object obj : h) {
+			hubMaster.add((T) obj);
+		}
+		;
+	}
+
 }
