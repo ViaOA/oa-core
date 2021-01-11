@@ -1027,4 +1027,38 @@ public class OAPropertyPath<F> {
 		bHasHubPropertyCheck = true;
 		return bHasHubProperty;
 	}
+
+	/**
+	 * Used when fromObject is already in the propertyPath. 
+	 * @param fromObject object to start with
+	 * @param startPos number of properties to skip in the PP, that aligns with fromObject's position in
+	 * the PP.
+	 */
+    public Object getValue(final OAObject fromObject, final int startPos) {
+        if (fromObject == null) {
+            return null;
+        }
+
+        Object result = fromObject;
+        for (int i = startPos; i < methods.length; i++) {
+            try {
+                result = methods[i].invoke(result);
+            } catch (Exception e) {
+                throw new RuntimeException("error invoking method=" + methods[i], e);
+            }
+
+            if (result == null) {
+                break;
+            }
+            if (i + 1 < methods.length && result instanceof Hub) {
+                result = ((Hub) result).getAO();
+                if (result == null) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+
 }
