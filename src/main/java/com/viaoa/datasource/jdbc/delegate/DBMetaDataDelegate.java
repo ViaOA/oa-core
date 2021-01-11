@@ -68,6 +68,9 @@ public class DBMetaDataDelegate {
 				dbmd.setUrlJDBC(s);
 			}
 			dbmd.supportsFetchFirst = true;
+			// 20210109
+			dbmd.objectTrue = new Integer(1);
+            dbmd.objectFalse = new Integer(0);
 			break;
 		case DBMetaData.SQLSERVER:
 			dbmd.setName("SQL Server Database");

@@ -995,6 +995,10 @@ public class QueryConverter {
 				} else {
 					s = "not " + s;
 				}
+			} else if (token.type == OAQueryTokenType.TRUE) {
+			    if (dbmd.objectTrue != null) s = ""+dbmd.objectTrue;
+            } else if (token.type == OAQueryTokenType.FALSE) {
+                if (dbmd.objectFalse != null) s = ""+dbmd.objectFalse;
 			} else {
 				s = token.value;
 				if (fullTextIndex != null) {
