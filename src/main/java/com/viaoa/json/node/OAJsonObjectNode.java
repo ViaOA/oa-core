@@ -19,6 +19,11 @@ public class OAJsonObjectNode extends OAJsonRootNode {
 	private Map<String, OAJsonNode> map = new HashMap<>();
 	private ArrayList<String> al = new ArrayList<>();
 
+	@Override
+	public ArrayList<String> getChildrenPropertyNames() {
+		return al;
+	}
+
 	protected void toJson(final JsonOutputStream jos) {
 		jos.append("{");
 		boolean bFirst = true;
@@ -116,6 +121,30 @@ public class OAJsonObjectNode extends OAJsonRootNode {
 			return ((OAJsonNumberNode) node).value;
 		}
 		return null;
+	}
+
+	public int getInt(String propertyName) {
+		Number num = getNumber(propertyName);
+		if (num == null) {
+			return -1;
+		}
+		return num.intValue();
+	}
+
+	public long getLong(String propertyName) {
+		Number num = getNumber(propertyName);
+		if (num == null) {
+			return -1;
+		}
+		return num.longValue();
+	}
+
+	public double getDouble(String propertyName) {
+		Number num = getNumber(propertyName);
+		if (num == null) {
+			return -1;
+		}
+		return num.doubleValue();
 	}
 
 	@Override
@@ -258,7 +287,7 @@ public class OAJsonObjectNode extends OAJsonRootNode {
 			return;
 		}
 		OAJson oaJson = new OAJson();
-		OAJsonRootNode node = oaJson.load(json);
+		OAJsonNode node = oaJson.load(json);
 		set(propertyName, node);
 	}
 

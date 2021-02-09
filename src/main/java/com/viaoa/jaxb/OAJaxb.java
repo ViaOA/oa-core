@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,7 +96,8 @@ import com.viaoa.util.OAString;
  * @see OAJson for working directory with Json object graphs, without loading into Java objects.
  * @author vvia
  */
-public class OAJaxb<TYPE extends OAObject> {
+public class OAJaxb<TYPE> {
+	// public class OAJaxb<TYPE extends OAObject> {
 	private OACascade cascade;
 	private JAXBContext context;
 	private Class<TYPE> clazz;
@@ -136,7 +138,9 @@ public class OAJaxb<TYPE extends OAObject> {
 	}
 
 	public void addPropertyPath(String pp) {
-		alPropertyPath.add(pp);
+		if (pp != null) {
+			alPropertyPath.add(pp);
+		}
 	}
 
 	public void clearPropertyPaths() {
@@ -424,9 +428,11 @@ public class OAJaxb<TYPE extends OAObject> {
 			reset();
 			OAThreadLocalDelegate.setOAJaxb(this);
 			bIsMarshelling = true;
-			for (OAObject obj : hub) {
+			for (Object obj : hub) {
 				// put root objects in list of cascade so that inner references to them will be used
-				cascade.wasCascaded(obj, true);
+				if (obj instanceof OAObject) {
+					cascade.wasCascaded((OAObject) obj, true);
+				}
 			}
 			_convert(hub, rootName, bToXML, writer);
 		} finally {
@@ -549,6 +555,37 @@ public class OAJaxb<TYPE extends OAObject> {
 		return convertFromJSON(json, null, true);
 	}
 
+	public TYPE[] convertArrayFromJSON(String json) throws Exception {
+		boolean bIncludeValidation = false;
+		Object obj = _convertFromJSON(null, bIncludeValidation, new StringReader(json), new StringReader(json));
+		if (obj == null) {
+			return null;
+		}
+
+		if (obj != null && obj.getClass().isArray()) {
+			return (TYPE[]) obj;
+		}
+		if (obj instanceof List) {
+			List list = (List) obj;
+			if (list.size() == 0) {
+				return null;
+			}
+			Object[] objs = (Object[]) Array.newInstance(list.get(0).getClass(), list.size());
+			list.toArray(objs);
+			return (TYPE[]) objs;
+		}
+		Object objs = Array.newInstance(obj.getClass(), 1);
+		((TYPE[]) objs)[0] = (TYPE) obj;
+
+		return (TYPE[]) objs;
+	}
+
+	public List<TYPE> convertListFromJSON(String json) throws Exception {
+		//qqqqqqqqq
+		return null;
+		//return convertFromJSON(json, null, true);
+	}
+
 	public TYPE convertFromJSON(String json, boolean bIncludeValidation) throws Exception {
 		return convertFromJSON(json, null, bIncludeValidation);
 	}
@@ -605,16 +642,21 @@ public class OAJaxb<TYPE extends OAObject> {
 		return convertFromJSON(objRoot, bIncludeValidation, file);
 	}
 
+	public TYPE convertFromJSON(final TYPE objRoot, final boolean bIncludeValidation, Reader reader, Reader reader2) throws Exception {
+		return (TYPE) _convertFromJSON(objRoot, bIncludeValidation, reader, reader2);
+	}
+
 	/**
 	 * Main method for converting JSON to object.
 	 */
-	public TYPE convertFromJSON(final TYPE objRoot, final boolean bIncludeValidation, Reader reader, Reader reader2) throws Exception {
+	protected Object _convertFromJSON(final TYPE objRoot, final boolean bIncludeValidation, Reader reader, Reader reader2)
+			throws Exception {
 		if (reader == null) {
 			return objRoot;
 		}
 
 		boolean bUseIsLoading = false;
-		TYPE objx = null;
+		Object objx = null;
 
 		OAThreadLocalDelegate.setOAJaxb(this);
 		try {
@@ -623,8 +665,8 @@ public class OAJaxb<TYPE extends OAObject> {
 
 			if (!queuePreloadNode.isEmpty()) {
 				final Node node = queuePreloadNode.peek();
-				if (objRoot != null) {
-					node.oaObject = objRoot;
+				if (objRoot instanceof OAObject) {
+					node.oaObject = (OAObject) objRoot;
 				}
 			}
 
@@ -701,7 +743,7 @@ public class OAJaxb<TYPE extends OAObject> {
 
 			Source source = new StreamSource(reader);
 			JAXBElement ele = unmarshaller.unmarshal(source, clazz);
-			objx = (TYPE) ele.getValue();
+			objx = ele.getValue();
 
 		} finally {
 			if (bUseIsLoading) {

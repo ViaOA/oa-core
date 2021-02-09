@@ -18,6 +18,11 @@ public class OAJsonArrayNode extends OAJsonRootNode {
 		return al;
 	}
 
+	@Override
+	public ArrayList<String> getChildrenPropertyNames() {
+		return null;
+	}
+
 	public OAJsonNode get(int pos) {
 		if (pos >= al.size()) {
 			return null;

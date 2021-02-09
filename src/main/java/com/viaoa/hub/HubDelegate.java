@@ -33,6 +33,7 @@ import com.viaoa.object.OAObjectSaveDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OANullObject;
 
@@ -84,7 +85,7 @@ public class HubDelegate {
 	 *
 	 * @return true if object is valid, false if another object already uses same unique property value.
 	 */
-	public static boolean verifyUniqueProperty(Hub thisHub, Object object) {
+	public static boolean verifyUniqueProperty(final Hub thisHub, final Object object) {
 		if (thisHub == null || object == null) {
 			return true;
 		}
@@ -97,21 +98,36 @@ public class HubDelegate {
 
 		Object object2;
 		Method m = null;
+		String uniqueLinkPropName;
 		try {
-			m = thisHub.data.getUniquePropertyGetMethod();
-			if (m == null) {
-				m = thisHub.datam.getUniquePropertyGetMethod();
-				if (m == null) {
-					return true;
+			uniqueLinkPropName = thisHub.data.getUniqueProperty();
+			if (uniqueLinkPropName == null) {
+				uniqueLinkPropName = thisHub.datam.getUniqueProperty();
+			}
+			if (uniqueLinkPropName != null) {
+				OAObjectInfo oi = thisHub.getOAObjectInfo();
+				if (oi.getLinkInfo(uniqueLinkPropName) == null) {
+					uniqueLinkPropName = null;
 				}
 			}
 
-			object2 = m.invoke(object, null);
-			if (object2 == null) {
-				return true;
-			}
-			if (object2 instanceof String && ((String) object2).equals("")) {
-				return true;
+			if (uniqueLinkPropName != null) {
+				object2 = OAObjectPropertyDelegate.getProperty((OAObject) object, uniqueLinkPropName);
+			} else {
+				m = thisHub.data.getUniquePropertyGetMethod();
+				if (m == null) {
+					m = thisHub.datam.getUniquePropertyGetMethod();
+					if (m == null) {
+						return true;
+					}
+				}
+				object2 = m.invoke(object, null);
+				if (object2 == null) {
+					return true;
+				}
+				if (object2 instanceof String && ((String) object2).equals("")) {
+					return true;
+				}
 			}
 		} catch (Exception e) {
 			String s = m == null ? "" : m.getName();
@@ -126,7 +142,16 @@ public class HubDelegate {
 			if (obj == object) {
 				continue;
 			}
+
 			try {
+				if (uniqueLinkPropName != null) {
+					Object obj2 = OAObjectPropertyDelegate.getProperty((OAObject) obj, uniqueLinkPropName);
+					if (OACompare.compare(obj2, object2) == 0) {
+						return false;
+					}
+					continue;
+				}
+
 				Object obj2 = m.invoke(obj, null);
 				if (obj2 == null) {
 					continue;

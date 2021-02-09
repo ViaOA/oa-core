@@ -37,7 +37,7 @@ public class OAJsonTest extends OAUnitTest {
 		OAJson oaJson = new OAJson();
 
 		String txt = OAFile.readTextFile(OAJson.class, "json1.txt", 1024 * 2);
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonNode root = oaJson.load(txt);
 
 		String json = root.toJson(2);
 
@@ -50,7 +50,7 @@ public class OAJsonTest extends OAUnitTest {
 		OAJson oaJson = new OAJson();
 
 		String txt = readJsonFile(1);
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 
 		assertTrue(root instanceof OAJsonObjectNode);
 
@@ -71,7 +71,7 @@ public class OAJsonTest extends OAUnitTest {
 		String txt1 = readJsonFile(1);
 		String txt2 = readJsonFile(2);
 
-		OAJsonRootNode root2 = oaJson.load(txt2);
+		OAJsonRootNode root2 = (OAJsonRootNode) oaJson.load(txt2);
 
 		((OAJsonObjectNode) root2).remove("middle");
 
@@ -86,7 +86,7 @@ public class OAJsonTest extends OAUnitTest {
 		OAJson oaJson = new OAJson();
 
 		String txt2 = readJsonFile(2);
-		OAJsonRootNode root2 = oaJson.load(txt2);
+		OAJsonRootNode root2 = (OAJsonRootNode) oaJson.load(txt2);
 		assertTrue(root2 instanceof OAJsonObjectNode);
 
 		((OAJsonObjectNode) root2).set("phones", new OAJsonArrayNode());
@@ -103,7 +103,7 @@ public class OAJsonTest extends OAUnitTest {
 		OAJson oaJson = new OAJson();
 
 		String txt3 = readJsonFile(3);
-		OAJsonRootNode root3 = oaJson.load(txt3);
+		OAJsonRootNode root3 = (OAJsonRootNode) oaJson.load(txt3);
 		assertTrue(root3 instanceof OAJsonObjectNode);
 		root3.set("phones[0].number", "1231231234");
 		String json = root3.toJson(2);
@@ -119,7 +119,7 @@ public class OAJsonTest extends OAUnitTest {
 		OAJson oaJson = new OAJson();
 
 		String txt4 = readJsonFile(4);
-		OAJsonRootNode root4 = oaJson.load(txt4);
+		OAJsonRootNode root4 = (OAJsonRootNode) oaJson.load(txt4);
 		assertTrue(root4 instanceof OAJsonObjectNode);
 		root4.set("phones[2].number", "9999999999");
 		String json = root4.toJson(2);
@@ -136,7 +136,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(5);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonObjectNode);
 
 		// add 3rd value to array at new index, w/padding
@@ -156,7 +156,7 @@ public class OAJsonTest extends OAUnitTest {
 		String txt = readJsonFile(7);
 		String txtNew = readJsonFile(8);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonObjectNode);
 
 		// add 3rd value to array at new index, w/padding
@@ -186,7 +186,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(6);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonObjectNode);
 
 		// insert at 0 & 8
@@ -213,7 +213,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(9);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonObjectNode);
 
 		// insert
@@ -236,7 +236,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(11);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		OAJsonObjectNode jsonObjectNode = new OAJsonObjectNode();
@@ -258,7 +258,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(12);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		OAJsonObjectNode jsonObjectNode = new OAJsonObjectNode();
@@ -280,7 +280,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(13);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		root.remove("", 4);
@@ -305,7 +305,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(14);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		root.set("[1].number", "2222");
@@ -329,7 +329,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(15);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		root.set("[1].refObject", new OAJsonObjectNode());
@@ -348,7 +348,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(16);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		root.set("[1].refObject.firstName", "Ralph");
@@ -367,7 +367,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(17);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		root.set("[1].refObject.lastName", "Jenkons");
@@ -515,7 +515,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(19);
 
-		OAJsonRootNode rootNode = oaJson.load(txt);
+		OAJsonRootNode rootNode = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(rootNode instanceof OAJsonObjectNode);
 
 		OAJsonObjectNode objNode = (OAJsonObjectNode) rootNode;
@@ -523,7 +523,7 @@ public class OAJsonTest extends OAUnitTest {
 		OAJsonArrayNode arrayNode = new OAJsonArrayNode();
 		arrayNode.add(objNode);
 
-		rootNode = oaJson.load(txt);
+		rootNode = (OAJsonRootNode) oaJson.load(txt);
 		arrayNode.add((OAJsonObjectNode) objNode);
 
 		String json = arrayNode.toJson(2);
@@ -540,7 +540,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(16);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		root.set("[5]", "wasNull");
@@ -562,7 +562,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(16);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		BigDecimal bd = new BigDecimal("12345.67");
@@ -588,7 +588,7 @@ public class OAJsonTest extends OAUnitTest {
 
 		String txt = readJsonFile(16);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		assertTrue(root instanceof OAJsonArrayNode);
 
 		root.set("[1]", "justAstring");
@@ -658,7 +658,7 @@ public class OAJsonTest extends OAUnitTest {
 		String txt = readJsonFile(0);
 		// String txt = OAFile.readTextFile(new File("/home/vvia/git/oa-core/src/main/java/com/viaoa/json/json.txt"), 0);
 
-		OAJsonRootNode root = oaJson.load(txt);
+		OAJsonRootNode root = (OAJsonRootNode) oaJson.load(txt);
 		String json = root.toJson();
 
 		OAJsonArrayNode arrayNode = root.getArray("employees");
@@ -758,7 +758,7 @@ public class OAJsonTest extends OAUnitTest {
 		json = root.toJson(2);
 
 		OAJson oaJson = new OAJson();
-		OAJsonRootNode rootx = oaJson.load(json);
+		OAJsonRootNode rootx = (OAJsonRootNode) oaJson.load(json);
 		OAJsonObjectNode customerNode = rootx.getObjectNode("customers[1]");
 		customerNode.setNull("NullProp");
 		customerNode.set("Alive", true);

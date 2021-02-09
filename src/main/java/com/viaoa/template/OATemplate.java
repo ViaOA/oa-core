@@ -171,6 +171,11 @@ public class OATemplate<F extends OAObject> {
 		return this.template;
 	}
 
+	public String process() {
+		String s = process(null, null, null, null);
+		return s;
+	}
+
 	public String process(F objRoot) {
 		String s = process(objRoot, null, null, null);
 		return s;

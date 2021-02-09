@@ -42,6 +42,8 @@ https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
 
 // NOTE!!!!  NOT DONE .... original plan is to be a client for  OARestServlet
 
+// SEE:  RestClient.java  (currently being created), that allows using java method & proxy instance
+
 /**
  * @author vvia
  */
@@ -266,7 +268,7 @@ public class OARestClient {
 		json = json.replace("&", ",\n");
 		json = json.replace('=', ':');
 		json = json.replace('\'', '\"');
-
+		
 		s = OAHttpClient
 				.httpPost("http://localhost:8081/retail-products/iseries/itemRestriction/getRestriction", json);
 		*/

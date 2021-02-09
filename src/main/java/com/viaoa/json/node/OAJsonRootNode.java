@@ -1,5 +1,7 @@
 package com.viaoa.json.node;
 
+import java.util.ArrayList;
+
 import com.viaoa.json.OAJson;
 import com.viaoa.json.io.JsonOutputStream;
 import com.viaoa.util.OADate;
@@ -55,7 +57,7 @@ public abstract class OAJsonRootNode extends OAJsonNode {
 
 	public void setJson(final String propertyPath, String json) {
 		OAJson oaJson = new OAJson();
-		OAJsonRootNode node = oaJson.load(json);
+		OAJsonNode node = oaJson.load(json);
 		set(propertyPath, node);
 	}
 
@@ -160,6 +162,10 @@ public abstract class OAJsonRootNode extends OAJsonNode {
 	 *                     order.customer.contact.phone.number (return value)<br>
 	 *                     order.customer.active (return value)
 	 */
+	public OAJsonNode getChildNode(String propertyPath) {
+		return get(propertyPath);
+	}
+
 	public OAJsonNode get(String propertyPath) {
 		if (propertyPath == null) {
 			return null;
@@ -493,7 +499,7 @@ public abstract class OAJsonRootNode extends OAJsonNode {
 	}
 
 	/**
-	 * Add an object to an array.
+	 * Add an object to a property path.
 	 */
 	public void add(String propertyPath, OAJsonObjectNode newJsonNode) {
 		if (propertyPath == null || newJsonNode == null) {
@@ -675,5 +681,7 @@ public abstract class OAJsonRootNode extends OAJsonNode {
 
 	@Override
 	protected abstract void toJson(JsonOutputStream jos);
+
+	public abstract ArrayList<String> getChildrenPropertyNames();
 
 }

@@ -36,6 +36,7 @@ import com.viaoa.jaxb.adapter.OASecureXmlAdapter;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.util.OAConv;
+import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
@@ -609,7 +610,7 @@ public class Database extends OAObject {
 	}
 
 	protected void setJaxbRefProjects(List<Project> lst) {
-		// no-op, since jaxb sends lst=hubProjects 
+		// no-op, since jaxb sends lst=hubProjects
 	}
 
 	@OAMany(displayName = "Table Categories", toClass = TableCategory.class, recursive = true, owner = true, reverseName = TableCategory.P_Database, cascadeSave = true, cascadeDelete = true)
@@ -635,7 +636,12 @@ public class Database extends OAObject {
 	}
 
 	protected void setJaxbRefTableCategories(List<TableCategory> lst) {
-		// no-op, since jaxb sends lst=hubTableCategories 
+		// no-op, since jaxb sends lst=hubTableCategories
+	}
+
+	public int testMethod(Table table, int i, OADate d, String s) {
+		System.out.println("Database.testMethod has been called");
+		return i;
 	}
 
 	@OAMany(toClass = Table.class, owner = true, reverseName = Table.P_Database, cascadeSave = true, cascadeDelete = true, sortProperty = Table.P_Name)
@@ -661,7 +667,7 @@ public class Database extends OAObject {
 	}
 
 	protected void setJaxbRefTables(List<Table> lst) {
-		// no-op, since jaxb sends lst=hubTables 
+		// no-op, since jaxb sends lst=hubTables
 	}
 
 	@OAMethod(displayName = "Load")

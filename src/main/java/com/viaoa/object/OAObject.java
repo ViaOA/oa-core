@@ -126,7 +126,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-
+		
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -1287,12 +1287,22 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * @param clazz
 	 * @return
 	 */
-	public static OAObject jaxbCreateInstance(Class clazz) {
+	public static <T extends OAObject> T jaxbCreateInstance(Class<T> clazz) {
 		OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
 		if (jaxb == null) {
 			return null;
 		}
-		OAObject obj = jaxb.getNextUnmarshalObject(clazz);
+		T obj = (T) jaxb.getNextUnmarshalObject(clazz);
+		if (obj == null) {
+			OAThreadLocalDelegate.setLoading(true);
+			try {
+				obj = clazz.newInstance();
+			} catch (Exception e) {
+				obj = null;
+			} finally {
+				OAThreadLocalDelegate.setLoading(false);
+			}
+		}
 		return obj;
 	}
 
@@ -1470,7 +1480,14 @@ public class OAObject implements java.io.Serializable, Comparable {
 				 * If isLoading=true, then it will only need to store the key
 				 * else it will get the ref object and call the setter method.
 				 */
-				this.setProperty(propertyName, objKey);
+
+				/*
+				 * 20210208
+				 * the object for this id might not exist
+				 */
+				if (OAObjectPropertyDelegate.setPropertyCAS(this, propertyName, objKey, null, true, false) != objKey) {
+					this.setProperty(propertyName, objKey);
+				}
 				break;
 			}
 		}

@@ -21,6 +21,7 @@ import com.viaoa.converter.OAConverterBigDecimal;
 import com.viaoa.converter.OAConverterBoolean;
 import com.viaoa.converter.OAConverterCalendar;
 import com.viaoa.converter.OAConverterCharacter;
+import com.viaoa.converter.OAConverterClass;
 import com.viaoa.converter.OAConverterColor;
 import com.viaoa.converter.OAConverterDate;
 import com.viaoa.converter.OAConverterDimension;
@@ -82,6 +83,7 @@ public class OAConverter {
 
 		addConverter(Enum.class, new OAConverterEnum());
 		addConverter(TimeZone.class, new OAConverterTimeZone());
+		addConverter(Class.class, new OAConverterClass());
 	}
 
 	private static OAConverterArray oaConverterArray = new OAConverterArray();
@@ -418,17 +420,17 @@ public class OAConverter {
 		/* was: does not use round_half_up,  ex: 1.235
 		// this will be faster (no BigDecimal needed)
 		if (decimalPlaces < 0) return d;
-		
+
 		boolean bNegative;
 		if (d < 0) {
 		    d = Math.abs(d);
 		    bNegative = true;
 		}
 		else bNegative = false;
-		
+
 		double decimalValue = Math.pow(10, decimalPlaces);
 		d *= decimalValue;
-		
+
 		d = StrictMath.round(d);
 		d /= decimalValue;
 		if (bNegative) d *= -1;
@@ -1012,36 +1014,40 @@ public class OAConverter {
 		}
 		return num;
 	}
-    public static BigDecimal toBD(Object value) {
-        return toBigDecimal(value);
-    }
 
-    public static BigDecimal toBigDecimal(String value) {
-        BigDecimal bd = new BigDecimal(value);
-        return bd;
-    }
-    public static BigDecimal toBD(String value) {
-        BigDecimal bd = new BigDecimal(value);
-        return bd;
-    }
-    
-    public static BigDecimal toBigDecimal(double value) {
-        BigDecimal bd = new BigDecimal(Double.toString(value));
-        return bd;
-    }
-    public static BigDecimal toBD(double value) {
-        BigDecimal bd = new BigDecimal(Double.toString(value));
-        return bd;
-    }
-    
-    public static BigDecimal toBigDecimal(double value, int decimalPlaces) {
-        BigDecimal bd = (new BigDecimal(Double.toString(value))).setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP);
-        return bd;
-    }
-    public static BigDecimal toBD(double value, int decimalPlaces) {
-        BigDecimal bd = (new BigDecimal(Double.toString(value))).setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP);
-        return bd;
-    }
+	public static BigDecimal toBD(Object value) {
+		return toBigDecimal(value);
+	}
+
+	public static BigDecimal toBigDecimal(String value) {
+		BigDecimal bd = new BigDecimal(value);
+		return bd;
+	}
+
+	public static BigDecimal toBD(String value) {
+		BigDecimal bd = new BigDecimal(value);
+		return bd;
+	}
+
+	public static BigDecimal toBigDecimal(double value) {
+		BigDecimal bd = new BigDecimal(Double.toString(value));
+		return bd;
+	}
+
+	public static BigDecimal toBD(double value) {
+		BigDecimal bd = new BigDecimal(Double.toString(value));
+		return bd;
+	}
+
+	public static BigDecimal toBigDecimal(double value, int decimalPlaces) {
+		BigDecimal bd = (new BigDecimal(Double.toString(value))).setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP);
+		return bd;
+	}
+
+	public static BigDecimal toBD(double value, int decimalPlaces) {
+		BigDecimal bd = (new BigDecimal(Double.toString(value))).setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP);
+		return bd;
+	}
 
 	public static BigDecimal toBigDecimal(Object value, String fmt) {
 		BigDecimal num = (BigDecimal) convert(BigDecimal.class, value, fmt);
@@ -1050,13 +1056,14 @@ public class OAConverter {
 		}
 		return num;
 	}
-    public static BigDecimal toBD(Object value, String fmt) {
-        BigDecimal num = (BigDecimal) convert(BigDecimal.class, value, fmt);
-        if (num == null) {
-            throw new IllegalArgumentException("OAConverter.toBigDecimal(): " + value + " cant be converted to double");
-        }
-        return num;
-    }
+
+	public static BigDecimal toBD(Object value, String fmt) {
+		BigDecimal num = (BigDecimal) convert(BigDecimal.class, value, fmt);
+		if (num == null) {
+			throw new IllegalArgumentException("OAConverter.toBigDecimal(): " + value + " cant be converted to double");
+		}
+		return num;
+	}
 
 	/**
 	 * Convert an Object to a float.
@@ -1410,9 +1417,9 @@ public class OAConverter {
 		dx = 256.025;
 		/*
 		dx = round(dx, 3, 2);
-
+		
 		dx = 1.025;
-
+		
 		dx *= 100.0;
 		dx /= 100.0;
 		*/

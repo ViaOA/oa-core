@@ -13,7 +13,6 @@ import com.viaoa.json.node.OAJsonNode;
 import com.viaoa.json.node.OAJsonNullNode;
 import com.viaoa.json.node.OAJsonNumberNode;
 import com.viaoa.json.node.OAJsonObjectNode;
-import com.viaoa.json.node.OAJsonRootNode;
 import com.viaoa.json.node.OAJsonStringNode;
 
 /**
@@ -31,21 +30,43 @@ import com.viaoa.json.node.OAJsonStringNode;
  */
 public class OAJson {
 
-	public OAJsonRootNode load(final String json) {
+	public OAJsonNode load(final String json) {
 		final JsonParser parser = Json.createParser(new StringReader(json));
 
 		//		OAJsonNode root = new OAJsonNode();
-		OAJsonRootNode root = (OAJsonRootNode) _load(parser, null, false);
+		OAJsonNode root = (OAJsonNode) _load(parser, null, false);
 
 		parser.close();
 		return root;
 	}
 
+	public OAJsonObjectNode loadObject(final String json) {
+		final JsonParser parser = Json.createParser(new StringReader(json));
+
+		//		OAJsonNode root = new OAJsonNode();
+		OAJsonNode root = (OAJsonNode) _load(parser, null, false);
+
+		parser.close();
+		return (OAJsonObjectNode) root;
+	}
+
+	public OAJsonArrayNode loadArray(final String json) {
+		final JsonParser parser = Json.createParser(new StringReader(json));
+
+		//		OAJsonNode root = new OAJsonNode();
+		OAJsonNode root = (OAJsonNode) _load(parser, null, false);
+
+		parser.close();
+		return (OAJsonArrayNode) root;
+	}
+
 	protected OAJsonNode _load(final JsonParser parser, OAJsonNode node, boolean bUsingArray) {
 
 		String key = null;
+		int cnt = 0;
 		while (parser.hasNext()) {
 			final Event event = parser.next();
+			cnt++;
 
 			if (event == Event.START_OBJECT) {
 				if (bUsingArray) {
@@ -88,6 +109,10 @@ public class OAJson {
 					key = null;
 				} else if (bUsingArray) {
 					((OAJsonArrayNode) node).add(newNode);
+				} else {
+					if (cnt == 1) {
+						node = newNode;
+					}
 				}
 			} else if (event == Event.VALUE_NUMBER) {
 				Number value = parser.getBigDecimal();
@@ -97,6 +122,10 @@ public class OAJson {
 					key = null;
 				} else if (bUsingArray) {
 					((OAJsonArrayNode) node).add(newNode);
+				} else {
+					if (cnt == 1) {
+						node = newNode;
+					}
 				}
 			} else if (event == Event.VALUE_FALSE) {
 				OAJsonBooleanNode newNode = new OAJsonBooleanNode(Boolean.FALSE);
@@ -105,6 +134,10 @@ public class OAJson {
 					key = null;
 				} else if (bUsingArray) {
 					((OAJsonArrayNode) node).add(newNode);
+				} else {
+					if (cnt == 1) {
+						node = newNode;
+					}
 				}
 			} else if (event == Event.VALUE_TRUE) {
 				OAJsonBooleanNode newNode = new OAJsonBooleanNode(Boolean.TRUE);
@@ -113,6 +146,10 @@ public class OAJson {
 					key = null;
 				} else if (bUsingArray) {
 					((OAJsonArrayNode) node).add(newNode);
+				} else {
+					if (cnt == 1) {
+						node = newNode;
+					}
 				}
 			} else if (event == Event.VALUE_NULL) {
 				OAJsonNullNode newNode = new OAJsonNullNode();
@@ -121,6 +158,10 @@ public class OAJson {
 					key = null;
 				} else if (bUsingArray) {
 					((OAJsonArrayNode) node).add(newNode);
+				} else {
+					if (cnt == 1) {
+						node = newNode;
+					}
 				}
 			}
 		}
