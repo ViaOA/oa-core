@@ -224,8 +224,8 @@ public class OAJsonUtil {
 		final Class origToClass = toClass;
 
 		final boolean bIsArray = origToClass.isArray();
-		final boolean bIsList = List.class.isAssignableFrom(origToClass);
 		final boolean bIsHub = List.class.isAssignableFrom(origToClass);
+		final boolean bIsList = !bIsHub && List.class.isAssignableFrom(origToClass);
 
 		if ((bIsList || bIsHub) && classInCollection == null) {
 			throw new Exception("listClass can not be null");

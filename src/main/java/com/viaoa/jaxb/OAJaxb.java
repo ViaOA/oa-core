@@ -11,6 +11,7 @@ import java.io.Writer;
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -581,9 +582,12 @@ public class OAJaxb<TYPE> {
 	}
 
 	public List<TYPE> convertListFromJSON(String json) throws Exception {
-		//qqqqqqqqq
-		return null;
-		//return convertFromJSON(json, null, true);
+		TYPE[] ts = convertArrayFromJSON(json);
+		ArrayList al = new ArrayList();
+		if (ts != null && ts.length > 0) {
+			al.addAll(Arrays.asList(ts));
+		}
+		return al;
 	}
 
 	public TYPE convertFromJSON(String json, boolean bIncludeValidation) throws Exception {
