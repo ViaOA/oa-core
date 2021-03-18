@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import com.viaoa.context.OAContext;
@@ -27,6 +28,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.jaxb.OAJaxb;
+import com.viaoa.json.OAJsonMapper;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
@@ -1367,20 +1369,58 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return getGuid();
 	}
 
-	public String getJaxbSinglePartId() {
-		String ids = null;
-		OAObjectKey ok = getObjectKey();
-		Object[] objs = ok.getObjectIds();
-		if (objs != null) {
-			for (Object obj : objs) {
-				if (ids == null) {
-					ids = "" + obj;
-				} else {
-					ids += "-" + obj;
-				}
-			}
+	@XmlElement(name = "new")
+	public Boolean getJaxbNew() {
+		OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+		if (jaxb == null) {
+			return null;
 		}
-		return ids;
+		if (!jaxb.getIncludeNewChangedDeletedFlags()) {
+			return null;
+		}
+		return getNew();
+	}
+
+	public void setJaxbNew(boolean b) {
+		setNew(b);
+	}
+
+	@XmlElement(name = "changed")
+	public Boolean getJaxbChanged() {
+		OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+		if (jaxb == null) {
+			return null;
+		}
+		if (!jaxb.getIncludeNewChangedDeletedFlags()) {
+			return null;
+		}
+		return getChanged();
+	}
+
+	public void setJaxbChanged(boolean b) {
+		setChanged(b);
+	}
+
+	@XmlElement(name = "deleted")
+	public Boolean getJaxbDeleted() {
+		OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+		if (jaxb == null) {
+			return null;
+		}
+		if (!jaxb.getIncludeNewChangedDeletedFlags()) {
+			return null;
+		}
+		return getDeleted();
+	}
+
+	public void setJaxbDeleted(boolean b) {
+		setDeleted(b);
+	}
+
+	public String getJaxbSinglePartId() {
+		OAObjectKey ok = getObjectKey();
+		String id = OAJsonMapper.convertObjectKeyToJsonSinglePartId(ok);
+		return id;
 	}
 
 	public OAObject getJaxbObject(String propertyName) {
@@ -1408,21 +1448,27 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return (OAObject) getObject(propertyName);
 	}
 
-	/***
-	 * public int getJaxbId(String propertyName) { // was: public String getJaxbId(String propertyName) { // jaxb required xmlId to be a
-	 * String, but Moxy does not OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb(); if (jaxb != null) { //OAJaxb.SendRefType type =
-	 * jaxb.getSendRefType(this, propertyName); //if (type != OAJaxb.SendRefType.id) return 0; //was: if (type != OAJaxb.SendRefType.id)
-	 * return null; } Object objx = OAObjectPropertyDelegate.getProperty(this, propertyName, true, true); if (objx instanceof OANotExist)
-	 * return 0; //was: if (objx instanceof OANotExist) return null; if (objx instanceof OAObject) objx = ((OAObject) objx).getObjectKey();
-	 * if (objx instanceof OAObjectKey) { Object[] objs = ((OAObjectKey) objx).getObjectIds(); if (objs == null || objs.length != 1) return
-	 * 0; //if (objs == null || objs.length != 1) return null; return (int) objs[0]; //was: return objs[0]+""; } return OAConv.toInt(objx);
-	 * //was: return objx+""; } public void setJaxbId(String propertyName, int id) { //was: public void setJaxbId(String propertyName,
-	 * String id) { setProperty(propertyName, new OAObjectKey(id)); //was: int idx = Integer.valueOf(id); //was: setProperty(propertyName,
-	 * new OAObjectKey(idx)); }
-	 **/
-
+	/**
+	 * Nilable property that controls reference object value.<br>
+	 * Uses single string "-" separated value for multiple keys.
+	 * <p>
+	 * Note: reference propertyIds need to be annotated as nilable=true
+	 *
+	 * <pre>
+	 * examples:
+	 * <code>
+	 * "supplierId" = null
+	 * "supplierId" = "23"
+	 * "supplierId" = "ABC-233"
+	 * </code>
+	 * </pre>
+	 *
+	 * @param propertyName name of reference property.
+	 * @return String value of the reference property's Id, with "-" as separator for multipart keys.
+	 */
 	public String getJaxbId(String propertyName) {
 		OAJaxb jaxb = OAThreadLocalDelegate.getOAJaxb();
+		/* 20210306 always send Id.  Note: it's nilable, and we dont want to send a null
 		if (jaxb != null) {
 			OAJaxb.SendRefType type = jaxb.getSendRefType(this, propertyName);
 			if (type != OAJaxb.SendRefType.id) {
@@ -1430,6 +1476,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 				return null;
 			}
 		}
+		*/
 		Object objx = OAObjectPropertyDelegate.getProperty(this, propertyName, true, true);
 		if (objx instanceof OANotExist) {
 			return null;
@@ -1455,12 +1502,18 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return objx + "";
 	}
 
-	public void setJaxbId(String propertyName, String id) {
-		if (OAString.isEmpty(propertyName) || OAString.isEmpty(id)) {
+	public void setJaxbId(final String propertyName, final String id) {
+		if (OAString.isEmpty(propertyName)) {
 			return;
 		}
 
 		if (!getJaxbAllowPropertyChange(propertyName, null, id)) {
+			return;
+		}
+
+		// 20210306
+		if (OAString.isEmpty(id)) {
+			setProperty(propertyName, null);
 			return;
 		}
 
@@ -1470,27 +1523,57 @@ public class OAObject implements java.io.Serializable, Comparable {
 			return;
 		}
 
-		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
+		OAObjectInfo oiRef = li.getToObjectInfo();
+
+		// 20210306 mulitpart ids.  Json uses a single ID, with "-" as separator.
+		String[] ss = oiRef.getIdProperties();
+		Object[] objIds = new Object[ss.length];
+		for (int i = 0; i < ss.length; i++) {
+			OAPropertyInfo pi = oiRef.getPropertyInfo(ss[i]);
+			String id2 = OAString.field(id, "-", i + 1);
+			Object idx = OAConv.convert(pi.getClassType(), id2);
+			objIds[i] = idx;
+		}
+		OAObjectKey objKey = new OAObjectKey(objIds);
+
+		Object objx = OAObjectPropertyDelegate.getProperty(this, propertyName);
+		if (objx instanceof OAObject) {
+			OAObjectKey ok = ((OAObject) objx).getObjectKey();
+			if (!objKey.equals(ok)) {
+				OAObject refObj = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), objKey);
+				if (refObj != null) {
+					this.setProperty(propertyName, refObj);
+				} else {
+					OAObjectPropertyDelegate.setProperty(this, propertyName, objKey);
+				}
+			}
+		} else {
+			OAObjectPropertyDelegate.setProperty(this, propertyName, objKey);
+		}
+
+		/* was:
+		for (OAPropertyInfo pi : oiRef.getPropertyInfos()) {
 			if (pi.getId()) {
 				Object idx = OAConv.convert(pi.getClassType(), id);
 				OAObjectKey objKey = new OAObjectKey(idx);
-
-				/*
+		
+				/ *
 				 * this.setProperty will correctly set the property:
 				 * If isLoading=true, then it will only need to store the key
 				 * else it will get the ref object and call the setter method.
-				 */
-
-				/*
+				 * /
+		
+				/ *
 				 * 20210208
 				 * the object for this id might not exist
-				 */
+				 * /
 				if (OAObjectPropertyDelegate.setPropertyCAS(this, propertyName, objKey, null, true, false) != objKey) {
 					this.setProperty(propertyName, objKey);
 				}
 				break;
 			}
 		}
+		*/
 	}
 
 	public List getJaxbHub(String propertyName) {

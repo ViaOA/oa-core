@@ -8,7 +8,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-package com.viaoa.remote.annotation;
+package com.viaoa.remote.multiplexer.annotation;
 
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Documented;
@@ -17,30 +17,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Remoting information about remote methods.
+ * Information about remote methods parameters.
  * Important:  this annotation needs to be added to the Interface, not the Impl class.
  * @author vvia
  */
 @Documented
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface OARemoteMethod {
+@Target(ElementType.PARAMETER)
+@Retention(RetentionPolicy.RUNTIME) 
+public @interface OARemoteParameter {
     
-    // true if the return value should be compressed when it is transmitted
-    boolean compressedReturnValue() default false;
-
-    // true if return value should not be returned
-    boolean noReturnValue() default false;
+    // true if the param should be compressed when it is transmitted
+    boolean compressed() default false;
     
-    int timeoutSeconds() default 0;
-    
-    // if true and the return value is a remote object, then it will not use a queue when messaging (even if parent uses a msg queue)
-    boolean dontUseQueueForReturnValue() default false;
-    
-    // do not use queue (even if parent uses a msg queue)
+    // if true and this is a remote object, then it will not use a queue when messaging (even if parent uses a msg queue)
     boolean dontUseQueue() default false;
-    
-    // send return value using the socket that writes queued messages from the server to the client
-    boolean returnOnQueueSocket() default false;
 }
-

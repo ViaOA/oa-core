@@ -31,7 +31,7 @@ public class OAConverterClass implements OAConverterInterface {
 			return null;
 		}
 
-		String s = ((Class) value).toString();
+		String s = ((Class) value).getName();
 		return s;
 	}
 }

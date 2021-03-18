@@ -393,6 +393,22 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return (al != null && al.size() > 0);
 	}
 
+	public T findFirst() {
+		if (fromObject != null) {
+			return findFirst(fromObject);
+		}
+		if (fromHub != null) {
+			if (bUseAll) {
+				return findFirst(fromHub);
+			}
+			F obj = fromHub.getAO();
+			if (obj != null) {
+				return findFirst(obj);
+			}
+		}
+		return null;
+	}
+
 	/**
 	 * Finds the first matching value. If searching for a null, then this would return a null, so use the canFindFirst method instead.
 	 */

@@ -22,6 +22,9 @@ import javax.net.ssl.X509TrustManager;
 
 /**
  * Used for access HTTPS data.
+ * <p>
+ * Note: this has been added to OARestClient
+ * <p>
  *
  * @author vvia
  */

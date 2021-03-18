@@ -32,6 +32,7 @@ import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
+import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OAThrottle;
 
@@ -52,11 +53,14 @@ public class OAObjectEventDelegate {
 		if (oaObj == null || propertyName == null) {
 			return;
 		}
+
 		if (oldObj == newObj) {
 			return;
 		}
 		if (oldObj != null && oldObj.equals(newObj)) {
-			return;
+			if (!OAReflect.isPrimitiveClassWrapper(oldObj.getClass())) {
+				return;
+			}
 		}
 
 		final boolean bIsLoading = OAThreadLocalDelegate.isLoading();
@@ -81,7 +85,8 @@ public class OAObjectEventDelegate {
 
 			if (!bSkip && !bIsLoading) {
 				OAObjectCallback em = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(	OAObjectCallback.CHECK_CallbackMethod,
-																									oaObj, propertyName, oldObj, newObj);
+																										oaObj, propertyName, oldObj,
+																										newObj);
 				if (!em.getAllowed() || em.getThrowable() != null) {
 					String msg = em.getResponse();
 					if (em.getThrowable() != null) {
@@ -104,7 +109,7 @@ public class OAObjectEventDelegate {
 						msThrottle = ms;
 					}
 					/*
-					 * 20181018, 20190502 dont throw an exception until there is more confidence. 
+					 * 20181018, 20190502 dont throw an exception until there is more confidence.
 					 * throw new RuntimeException(msg, em.getThrowable());
 					 */
 				}
@@ -231,7 +236,7 @@ public class OAObjectEventDelegate {
 					    }
 					};
 					OADataSource ds = OADataSource.getDataSource(oaObj.getClass(), filter);
-					
+
 					if (ds != null && (!(ds instanceof OADataSourceObjectCache))) {
 					    Iterator it = ds.select(oaObj.getClass(), propertyU+" = ?", new Object[] {newObj}, null, null, null, null, 2, filter, false);
 					    try {
@@ -417,8 +422,8 @@ public class OAObjectEventDelegate {
 			    newx = "byte[" + ((byte[])objNew).length +"]";
 			}
 			else newx = objNew;
-			
-			
+
+
 			String s = String.format("Change, class=%s, id=%s, property=%s, oldValue=%s, newVaue=%s",
 			        OAString.getClassName(oaObj.getClass()),
 			        key.toString(),
@@ -568,7 +573,7 @@ public class OAObjectEventDelegate {
 		}
 
 		/* 20101218 replaced by HubListenerTree
-		
+
 		// Check to see if a Calculated property is changed.
 		/ * how do properties from other link object notify this objects calc objects?
 		Answer: when you add a HubListener to Hub, it will create detail hub and
@@ -729,7 +734,7 @@ public class OAObjectEventDelegate {
 		    ex:  Section.setCatalog(catalog)  or  Section.setParentSection(section)
 		    This: "Section"
 		    Changed Prop: "Catalog" or "ParentSection"
-		
+
 		    linkInfo: from Section -> Catalog or ParentSection
 		    toLinkInfo: =  from  Catalog or ParentSection -> Sections
 		    liRecursive = "ParentSection"

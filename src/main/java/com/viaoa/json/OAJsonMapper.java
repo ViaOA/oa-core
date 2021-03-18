@@ -20,8 +20,12 @@ import com.viaoa.json.node.OAJsonBooleanNode;
 import com.viaoa.json.node.OAJsonNode;
 import com.viaoa.json.node.OAJsonNullNode;
 import com.viaoa.json.node.OAJsonNumberNode;
+import com.viaoa.json.node.OAJsonObjectNode;
 import com.viaoa.json.node.OAJsonStringNode;
 import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectInfo;
+import com.viaoa.object.OAObjectInfoDelegate;
+import com.viaoa.object.OAObjectKey;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
@@ -35,11 +39,12 @@ import com.viaoa.util.OATime;
 */
 
 /**
- * JSON Util methods for converting from/to json/objects.
+ * JSON Mapper for converting between json and objects.
+ * <p>
  *
  * @author vvia
  */
-public class OAJsonUtil {
+public class OAJsonMapper {
 
 	/**
 	 * load flat json into a map. Only loads json key/string values.
@@ -89,7 +94,6 @@ public class OAJsonUtil {
 	/**
 	 * Convert a value to a json string. Includes arrays.
 	 * <P>
-	 * qqqqqqqq Note: only used in unittest
 	 */
 	public static String convertToJsonValue(Object value) {
 		String result;
@@ -142,89 +146,34 @@ public class OAJsonUtil {
 		return result;
 	}
 
-	/**
-	 * Used by proxy invoke to serialize the arguments into a Json array.
-	 */
-	public static OAJsonArrayNode convertMethodArgumentsToJson(final Method method, final Object[] argValues,
-			final List<String>[] lstIncludePropertyPathss, boolean bSkipFirst) throws Exception {
-		final OAJsonArrayNode arrayNode = new OAJsonArrayNode();
-
-		if (argValues == null) {
-			return arrayNode;
-		}
-
-		int i = -1;
-		for (Object obj : argValues) {
-			i++;
-			if (i == 0 && bSkipFirst) {
-				continue;
-			}
-			OAJsonNode node = convertObjectToJsonNode(	obj,
-														lstIncludePropertyPathss != null && i < lstIncludePropertyPathss.length
-																? lstIncludePropertyPathss[i]
-																: null);
-			arrayNode.add(node);
-		}
-
-		return arrayNode;
-	}
-
-	/**
-	 * Convert an array of objects to the argument values of a method.
-	 */
-	public static Object[] convertJsonToMethodArguments(String jsonArray, Method method) throws Exception {
-		final OAJson oajson = new OAJson();
-		final OAJsonArrayNode nodeArray = oajson.loadArray(jsonArray);
-		Object[] objs = convertJsonToMethodArguments(nodeArray, method);
-		return objs;
-	}
-
-	public static Object[] convertJsonToMethodArguments(OAJsonArrayNode nodeArray, Method method) throws Exception {
-		if (nodeArray == null || method == null) {
-			return null;
-		}
-
-		Parameter[] mps = method.getParameters();
-		if (mps == null) {
-			return null;
-		}
-		final Object[] margs = new Object[mps.length];
-
-		final int x = nodeArray.getSize();
-
-		for (int i = 0; i < mps.length && i < x; i++) {
-			final Parameter param = mps[i];
-			final Class paramClass = param.getType();
-
-			OAJsonNode node = nodeArray.get(i);
-			Object objx = convertJsonToObject(node, param.getType(), null);
-			margs[i] = objx;
-		}
-
-		return margs;
-	}
-
-	public static Object convertJsonToObject(final String json, Class toClass) throws Exception {
-		Object obj = convertJsonToObject(json, toClass, null);
+	public static <T> T convertJsonToObject(final String json, Class<T> toClass) throws Exception {
+		T obj = convertJsonToObject(json, toClass, null);
 		return obj;
 	}
 
-	public static Object convertJsonToObject(final String json, Class toClass, final Class classInCollection) throws Exception {
+	public static <T> T convertJsonToObject(final String json, Class<T> toClass, final Class classInCollection) throws Exception {
+		if (OAString.isEmpty(json)) {
+			return null;
+		}
 		OAJson oaj = new OAJson();
 		OAJsonNode node = oaj.load(json);
-		Object obj = convertJsonToObject(node, toClass, classInCollection);
+		T obj = convertJsonToObject(node, toClass, classInCollection);
 		return obj;
 	}
 
-	public static Object convertJsonToObject(final OAJsonNode fromNode, Class toClass, final Class classInCollection) throws Exception {
+	public static <T> T convertJsonToObject(final OAJsonNode fromNode, Class<T> toClass, final Class classInCollection) throws Exception {
 		if (fromNode == null || toClass == null) {
+			return null;
+		}
+
+		if (fromNode instanceof OAJsonNullNode) {
 			return null;
 		}
 
 		final Class origToClass = toClass;
 
 		final boolean bIsArray = origToClass.isArray();
-		final boolean bIsHub = List.class.isAssignableFrom(origToClass);
+		final boolean bIsHub = Hub.class.isAssignableFrom(origToClass);
 		final boolean bIsList = !bIsHub && List.class.isAssignableFrom(origToClass);
 
 		if ((bIsList || bIsHub) && classInCollection == null) {
@@ -234,13 +183,13 @@ public class OAJsonUtil {
 		toClass = bIsArray ? origToClass.getComponentType() : (bIsList ? classInCollection : origToClass);
 
 		if (fromNode.getClass().isAssignableFrom(origToClass)) {
-			return fromNode;
+			return (T) fromNode;
 		}
 
 		Object objResult = null;
 		if (toClass.equals(String.class)) {
 			objResult = fromNode.toJson();
-			return objResult;
+			return (T) objResult;
 		}
 
 		if (OAObject.class.isAssignableFrom(toClass)) {
@@ -255,17 +204,17 @@ public class OAJsonUtil {
 			} else {
 				objResult = jaxb.convertFromJSON(sJson);
 			}
-			return objResult;
+			return (T) objResult;
 		}
 
 		if (toClass.equals(void.class) || toClass.equals(Void.class)) {
 			objResult = null;
-			return objResult;
+			return (T) objResult;
 		}
 
 		if (toClass.equals(String.class)) {
 			objResult = fromNode.toJson();
-			return objResult;
+			return (T) objResult;
 		}
 
 		if (bIsArray || bIsList || bIsHub) {
@@ -309,7 +258,21 @@ public class OAJsonUtil {
 			} else {
 				objResult = al;
 			}
-			return objResult;
+			return (T) objResult;
+		}
+
+		if (Map.class.isAssignableFrom(origToClass)) {
+			if (fromNode instanceof OAJsonObjectNode) {
+				Map map = new HashMap();
+				OAJsonObjectNode nodex = (OAJsonObjectNode) fromNode;
+				for (String sx : nodex.getChildrenPropertyNames()) {
+					OAJsonNode child = nodex.getChildNode(sx);
+					Object val = convertJsonToObject(child, classInCollection, null);
+					map.put(sx, val);
+				}
+				objResult = map;
+				return (T) objResult;
+			}
 		}
 
 		if (fromNode instanceof OAJsonStringNode) {
@@ -328,7 +291,7 @@ public class OAJsonUtil {
 			objResult = jaxb.convertFromJSON(fromNode.toJson());
 		}
 
-		return objResult;
+		return (T) objResult;
 	}
 
 	public static String convertObjectToJson(final Object obj) throws Exception {
@@ -341,7 +304,18 @@ public class OAJsonUtil {
 		return node.toJson();
 	}
 
-	public static OAJsonNode convertObjectToJsonNode(final Object obj, List<String> lstIncludePropertyPaths)
+	public static String convertObjectToJson(final Object obj, List<String> lstIncludePropertyPaths, final boolean bIncludeOwned)
+			throws Exception {
+		OAJsonNode node = convertObjectToJsonNode(obj, lstIncludePropertyPaths, bIncludeOwned);
+		return node.toJson();
+	}
+
+	public static OAJsonNode convertObjectToJsonNode(final Object obj, List<String> lstIncludePropertyPaths) throws Exception {
+		return convertObjectToJsonNode(obj, lstIncludePropertyPaths, false);
+	}
+
+	public static OAJsonNode convertObjectToJsonNode(final Object obj, final List<String> lstIncludePropertyPaths,
+			final boolean bIncludeOwned)
 			throws Exception {
 
 		OAJsonNode nodeResult = null;
@@ -358,19 +332,22 @@ public class OAJsonUtil {
 		if (bIsArray) {
 			c = c.getComponentType();
 		}
-		boolean bIsList = (obj instanceof List);
-		if (bIsList) {
-			c = ((List) obj).size() == 0 ? null : ((List) obj).get(0).getClass();
-		}
+
 		boolean bIsHub = (obj instanceof Hub);
 		if (bIsHub) {
 			c = ((Hub) obj).size() == 0 ? null : ((Hub) obj).get(0).getClass();
+		}
+
+		boolean bIsList = !bIsHub && (obj instanceof List);
+		if (bIsList) {
+			c = ((List) obj).size() == 0 ? null : ((List) obj).get(0).getClass();
 		}
 
 		if (OAObject.class.isAssignableFrom(c)) {
 			OAJaxb jaxb = new OAJaxb(obj.getClass());
 			jaxb.setUseReferences(false);
 			jaxb.setIncludeGuids(false);
+			jaxb.setIncludeOwned(bIncludeOwned);
 			if (lstIncludePropertyPaths != null) {
 				for (String s : lstIncludePropertyPaths) {
 					jaxb.addPropertyPath(s);
@@ -436,6 +413,14 @@ public class OAJsonUtil {
 				OAJsonNode nodex = convertObjectToJsonNode(objx, lstIncludePropertyPaths);
 				((OAJsonArrayNode) nodeResult).add(nodex);
 			}
+		} else if (obj instanceof Map) {
+			nodeResult = new OAJsonObjectNode();
+			for (Object key : ((Map) obj).keySet()) {
+				String s = OAConv.toString(key);
+				Object val = ((Map) obj).get(key);
+				OAJsonNode nodex = convertObjectToJsonNode(val, null);
+				((OAJsonObjectNode) nodeResult).set(s, nodex);
+			}
 		} else {
 			if (obj == null) {
 				nodeResult = new OAJsonNullNode();
@@ -454,10 +439,25 @@ public class OAJsonUtil {
 			} else if (obj instanceof OADateTime) {
 				//qqqqqqqq localdate, etc
 				nodeResult = new OAJsonStringNode(((OADateTime) obj).toString("yyyy-MM-dd'T'HH:mm:ss"));
+			} else if (obj instanceof Class) {
+				nodeResult = new OAJsonStringNode(((Class) obj).getName());
+			} else if (obj instanceof OAObjectKey) {
+				Object[] objs = ((OAObjectKey) obj).getObjectIds();
+				String ok = null;
+				for (int i = 0; objs != null && i < objs.length; i++) {
+					if (i > 0) {
+						ok += "-";
+					} else if (ok == null) {
+						ok = "";
+					}
+					ok += OAConv.toString(objs[i]);
+				}
+				nodeResult = new OAJsonStringNode(ok);
 			} else {
 				OAJaxb jaxb = new OAJaxb(obj.getClass());
 				jaxb.setUseReferences(false);
 				jaxb.setIncludeGuids(false);
+				jaxb.setIncludeOwned(bIncludeOwned);
 				if (lstIncludePropertyPaths != null) {
 					for (String s : lstIncludePropertyPaths) {
 						jaxb.addPropertyPath(s);
@@ -470,5 +470,191 @@ public class OAJsonUtil {
 			}
 		}
 		return nodeResult;
+	}
+
+	/**
+	 * Used by proxy invoke to serialize the arguments into a Json array. This will also include json properties for setting(/casting) if
+	 * the object is different then the parameter type.
+	 */
+	public static OAJsonArrayNode convertMethodArgumentsToJson(final Method method, final Object[] argValues,
+			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
+		final OAJsonArrayNode arrayNode = new OAJsonArrayNode();
+
+		if (argValues == null) {
+			return arrayNode;
+		}
+
+		final Parameter[] mps = method.getParameters();
+
+		int i = -1;
+		for (Object obj : argValues) {
+			i++;
+
+			if (skipParams != null && skipParams.length > 0) {
+				boolean b = false;
+				for (int p : skipParams) {
+					if (p == i) {
+						b = true;
+						break;
+					}
+				}
+				if (b) {
+					continue;
+				}
+			}
+
+			final Parameter param = mps[i];
+			final Class paramClass = param.getType();
+			if (obj != null && !obj.getClass().equals(paramClass) && !paramClass.isPrimitive()) {
+				// need to know the correct cast
+				String s = methodNextArgumentParamClass + obj.getClass().getName();
+				arrayNode.add(new OAJsonStringNode(s));
+			}
+
+			OAJsonNode node = convertObjectToJsonNode(	obj,
+														lstIncludePropertyPathss != null && i < lstIncludePropertyPathss.length
+																? lstIncludePropertyPathss[i]
+																: null);
+			arrayNode.add(node);
+		}
+
+		return arrayNode;
+	}
+
+	private static final String methodNextArgumentParamClass = "OANextParamClass:";
+
+	/**
+	 * Convert an array of objects to the argument values of a method.
+	 */
+	public static Object[] convertJsonToMethodArguments(String jsonArray, Method method) throws Exception {
+		final OAJson oajson = new OAJson();
+		final OAJsonArrayNode nodeArray = oajson.loadArray(jsonArray);
+		Object[] objs = convertJsonToMethodArguments(nodeArray, method, null);
+		return objs;
+	}
+
+	public static Object[] convertJsonToMethodArguments(OAJsonArrayNode nodeArray, Method method, final int[] skipParams) throws Exception {
+		if (nodeArray == null || method == null) {
+			return null;
+		}
+
+		Parameter[] mps = method.getParameters();
+		if (mps == null) {
+			return null;
+		}
+		final Object[] margs = new Object[mps.length];
+
+		final int x = nodeArray.getSize();
+
+		int ii = 0;
+		for (int i = 0; i < mps.length && i < x; i++) {
+
+			if (skipParams != null && skipParams.length > 0) {
+				boolean b = false;
+				for (int p : skipParams) {
+					if (p == i) {
+						b = true;
+						break;
+					}
+				}
+				if (b) {
+					continue;
+				}
+			}
+
+			final Parameter param = mps[i];
+			Class paramClass = param.getType();
+
+			OAJsonNode node = nodeArray.get(ii);
+
+			if (node instanceof OAJsonStringNode) {
+				String s = ((OAJsonStringNode) node).getValue();
+				if (s.startsWith(methodNextArgumentParamClass)) {
+					s = s.substring(methodNextArgumentParamClass.length());
+					paramClass = Class.forName(s);
+					ii++;
+					node = nodeArray.get(ii);
+				}
+			}
+
+			Object objx = convertJsonToObject(node, paramClass, null);
+			margs[i] = objx;
+			ii++;
+		}
+
+		return margs;
+	}
+
+	/**
+	 * Takes an Object Id that is a String and converts it to an OAObjectKey.
+	 * <p>
+	 * Json uses a single String value to represent an Object Id/Reference.<br>
+	 * OA converts these into a "-" separated String value.
+	 *
+	 * @param clazz type of class that the Id is for.
+	 * @param id    object Id value, "-" separated for multipart keys
+	 */
+	public static OAObjectKey convertJsonSinglePartIdToObjectKey(Class clazz, String id) {
+		if (clazz == null || id == null) {
+			return null;
+		}
+
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		String[] ids = oi.getIdProperties();
+
+		OAObjectKey ok;
+		if (ids == null || ids.length == 0) {
+			ok = new OAObjectKey(id);
+			;
+		} else if (ids.length == 1) {
+			Class c = OAObjectInfoDelegate.getPropertyClass(clazz, ids[0]);
+			Object obj = OAConverter.convert(c, id, null);
+			ok = new OAObjectKey(obj);
+		} else {
+			Object[] objs = new Object[ids.length];
+			int cntField = 1;
+			for (int i = 0; ids != null && i < ids.length; i++) {
+				Class c = OAObjectInfoDelegate.getPropertyClass(clazz, ids[i]);
+
+				String idx;
+				if (c.equals(String.class)) {
+					if (i + 1 == ids.length) {
+						idx = OAString.field(id, "-", cntField, 99);
+					} else {
+						idx = OAString.field(id, "-", cntField++);
+					}
+				} else {
+					idx = OAString.field(id, "-", cntField++);
+				}
+				objs[i] = OAConverter.convert(c, idx, null);
+			}
+			ok = new OAObjectKey(objs);
+		}
+		return ok;
+	}
+
+	/**
+	 * Convert an OAObjectKey to a single String, used by Json single part id.
+	 * <p>
+	 * Json uses a single String value to represent an Object Id/Reference.<br>
+	 * OA converts these into a "-" separated String value.
+	 */
+	public static String convertObjectKeyToJsonSinglePartId(OAObjectKey oaObjKey) {
+		if (oaObjKey == null) {
+			return null;
+		}
+
+		String ids = null;
+		Object[] objs = oaObjKey.getObjectIds();
+		if (objs != null) {
+			for (Object obj : objs) {
+				if (ids == null) {
+					ids = "" + obj;
+				} else {
+					ids += "-" + OAConv.toString(obj);
+				}
+			}
+		}
+		return ids;
 	}
 }

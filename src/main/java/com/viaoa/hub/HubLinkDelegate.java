@@ -119,7 +119,11 @@ public class HubLinkDelegate {
 				}
 			}
 		}
-		thisHub.datau.setLinkToSetMethod(OAReflect.getMethod(linkToHub.getObjectClass(), "set" + propertyTo));
+		if (linkPosFlag) {
+			thisHub.datau.setLinkToSetMethod(OAReflect.getMethod(linkToHub.getObjectClass(), "set" + propertyTo, int.class));
+		} else {
+			thisHub.datau.setLinkToSetMethod(OAReflect.getMethod(linkToHub.getObjectClass(), "set" + propertyTo));
+		}
 		if (thisHub.datau.getLinkToSetMethod() == null) {
 			throw new RuntimeException("cant find set method for property " + propertyTo);
 		}

@@ -15,7 +15,7 @@ import java.util.Comparator;
 
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.remote.annotation.OARemoteInterface;
+import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 
 @OARemoteInterface(isOASync=true)
 public interface RemoteSyncInterface {

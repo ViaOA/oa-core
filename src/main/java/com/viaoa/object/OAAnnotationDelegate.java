@@ -247,6 +247,8 @@ public class OAAnnotationDelegate {
 			pi.setUpper(oaprop.isUpper());
 			pi.setLower(oaprop.isLower());
 
+			pi.setSensitiveData(oaprop.sensitiveData());
+
 			pi.setCurrency(oaprop.isCurrency());
 			pi.setOAProperty(oaprop);
 

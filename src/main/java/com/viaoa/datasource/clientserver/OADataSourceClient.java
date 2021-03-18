@@ -509,4 +509,8 @@ public class OADataSourceClient extends OADataSource {
 		return null;
 	}
 
+	@Override
+	public boolean isClient() {
+		return true;
+	}
 }

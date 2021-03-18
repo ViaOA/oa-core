@@ -959,7 +959,7 @@ public class OAObjectReflectDelegate {
 
 		/*20171108 moved below. The issue with this is that this adds the Hub to oaObj.props before it runs the
 		 *    select (which loads data).  Another thread could get this empty hub before the objects are loaded.
-
+		
 		    // 20141204 added check to see if property is now there, in case it was deserialized and then
 		    //    the property was set by HubSerializeDelegate._readResolve
 		    if (bThisIsServer || OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, false) == null) {
@@ -2464,13 +2464,6 @@ public class OAObjectReflectDelegate {
 				continue;
 			}
 
-			OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
-			if (liRev != null && liRev.isOwner()) {
-				if (!li.getAutoCreateNew()) {
-					continue;
-				}
-			}
-
 			if (excludeProperties != null) {
 				boolean b = true;
 				for (int j = 0; j < excludeProperties.length; j++) {
@@ -2488,6 +2481,20 @@ public class OAObjectReflectDelegate {
 			}
 
 			Object obj = OAObjectReflectDelegate.getProperty(oaObj, li.getName());
+
+			Object objFromCallback = null;
+
+			OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+			if (liRev != null && liRev.isOwner()) {
+				if (!li.getAutoCreateNew()) {
+					objFromCallback = copyCallback.getPropertyValue(oaObj, li.getName(), obj);
+					if (obj == objFromCallback) {
+						// dont auto assign the owner to be the same (??)
+						continue;
+					}
+				}
+			}
+
 			if (li.getAutoCreateNew() && obj instanceof OAObject) {
 				Object objx = newObject.getProperty(li.getName());
 				if (objx instanceof OAObject) {
@@ -2503,8 +2510,12 @@ public class OAObjectReflectDelegate {
 					}
 				}
 				if (!b && copyCallback != null) {
-					obj = copyCallback.getPropertyValue(oaObj, li.getName(), obj);
-					if (obj instanceof OAObject) {
+					if (objFromCallback == null) {
+						objFromCallback = copyCallback.getPropertyValue(oaObj, li.getName(), obj);
+					}
+
+					if (obj == objFromCallback && obj instanceof OAObject) {
+						obj = objFromCallback;
 						if (shouldMakeACopy((OAObject) obj, excludeProperties, copyCallback, hmNew, 0, null)) {
 							Object objx = _createCopy((OAObject) obj, excludeProperties, copyCallback, hmNew);
 							if (objx != obj && objx != null) {
@@ -2512,6 +2523,8 @@ public class OAObjectReflectDelegate {
 								obj = objx;
 							}
 						}
+					} else {
+						obj = objFromCallback;
 					}
 				}
 				newObject.setProperty(li.getName(), obj);

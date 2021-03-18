@@ -25,7 +25,7 @@ import com.viaoa.util.OAReflect;
  *
  * @author vvia
  */
-public class OAJsonUtilTest extends OAUnitTest {
+public class OAJsonMapperTest extends OAUnitTest {
 
 	// formatting was validated using:  https://www.freeformatter.com/json-formatter.html
 
@@ -35,14 +35,14 @@ public class OAJsonUtilTest extends OAUnitTest {
 		database.setId(7);
 		database.setName("dbName");
 
-		String json = OAJsonUtil.convertObjectToJson(database);
+		String json = OAJsonMapper.convertObjectToJson(database);
 
 		OAJson oaj = new OAJson();
 		OAJsonObjectNode node = (OAJsonObjectNode) oaj.load(json);
 		node.set("name", "newDBName");
 		json = node.toJson();
 
-		Database database2 = (Database) OAJsonUtil.convertJsonToObject(json, Database.class);
+		Database database2 = (Database) OAJsonMapper.convertJsonToObject(json, Database.class);
 
 		assertEquals(database2.getName(), "newDBName");
 	}
@@ -64,17 +64,17 @@ public class OAJsonUtilTest extends OAUnitTest {
 		}
 
 		ArrayList<String> al = new ArrayList();
-		String json = OAJsonUtil.convertObjectToJson(database, al);
+		String json = OAJsonMapper.convertObjectToJson(database, al);
 		assertTrue(json.indexOf("tables") < 0);
 		assertTrue(json.indexOf("columns") < 0);
 
 		al.add("tables");
-		json = OAJsonUtil.convertObjectToJson(database, al);
+		json = OAJsonMapper.convertObjectToJson(database, al);
 		assertTrue(json.indexOf("tables") >= 0);
 		assertTrue(json.indexOf("columns") < 0);
 
 		al.add("tables.columns");
-		json = OAJsonUtil.convertObjectToJson(database, al);
+		json = OAJsonMapper.convertObjectToJson(database, al);
 		assertTrue(json.indexOf("tables") >= 0);
 		assertTrue(json.indexOf("columns") >= 0);
 
@@ -83,29 +83,29 @@ public class OAJsonUtilTest extends OAUnitTest {
 		node.set("name", "newDBName");
 		json = node.toJson();
 
-		Database database2 = (Database) OAJsonUtil.convertJsonToObject(json, Database.class);
+		Database database2 = (Database) OAJsonMapper.convertJsonToObject(json, Database.class);
 
 		assertEquals(database2.getName(), "newDBName");
 	}
 
 	@Test
 	public void convertToJsonValueTest() throws Exception {
-		String s = OAJsonUtil.convertToJsonValue(12);
+		String s = OAJsonMapper.convertToJsonValue(12);
 		assertEquals("12", s);
 
-		s = OAJsonUtil.convertToJsonValue(new OADate());
+		s = OAJsonMapper.convertToJsonValue(new OADate());
 		assertEquals("\"" + (new OADate()).toString(OADate.JsonFormat) + "\"", s);
 
-		s = OAJsonUtil.convertToJsonValue(null);
+		s = OAJsonMapper.convertToJsonValue(null);
 		assertEquals("null", s);
 
-		s = OAJsonUtil.convertToJsonValue(123.456);
+		s = OAJsonMapper.convertToJsonValue(123.456);
 		assertEquals("123.456", s);
 	}
 
 	@Test
 	public void convertMethodArgumentsToJsonTest() throws Exception {
-		String s = OAJsonUtil.convertToJsonValue(12);
+		String s = OAJsonMapper.convertToJsonValue(12);
 		assertEquals("12", s);
 
 		// int testMethod(Table table, int i, OADate d, String s)
@@ -120,10 +120,10 @@ public class OAJsonUtilTest extends OAUnitTest {
 				*/
 
 		Object[] objs = new Object[] { new Table(), 7, new OADate(), "abc" };
-		OAJsonArrayNode arrayNode = OAJsonUtil.convertMethodArgumentsToJson(method, objs, null, false);
+		OAJsonArrayNode arrayNode = OAJsonMapper.convertMethodArgumentsToJson(method, objs, null, null);
 
 		objs = new Object[] { database, new Table(), 7, new OADate(), "abc" };
-		OAJsonArrayNode arrayNode2 = OAJsonUtil.convertMethodArgumentsToJson(method, objs, null, true);
+		OAJsonArrayNode arrayNode2 = OAJsonMapper.convertMethodArgumentsToJson(method, objs, null, new int[] { 0 });
 
 		ArrayList<String> al = arrayNode.getChildrenPropertyNames();
 		assertEquals(5, al == null ? 0 : al.size());
@@ -150,11 +150,11 @@ public class OAJsonUtilTest extends OAUnitTest {
 		}
 
 		ArrayList<String> al = new ArrayList();
-		OAJsonNode node = OAJsonUtil.convertObjectToJsonNode(dbs, al);
+		OAJsonNode node = OAJsonMapper.convertObjectToJsonNode(dbs, al);
 		assertTrue(node instanceof OAJsonArrayNode);
 
 		al.add("tables.columns");
-		node = OAJsonUtil.convertObjectToJsonNode(dbs, al);
+		node = OAJsonMapper.convertObjectToJsonNode(dbs, al);
 		assertTrue(node instanceof OAJsonArrayNode);
 
 		int xx = 4;
@@ -162,7 +162,7 @@ public class OAJsonUtilTest extends OAUnitTest {
 	}
 
 	public static void main(String[] args) throws Exception {
-		OAJsonUtilTest util = new OAJsonUtilTest();
+		OAJsonMapperTest util = new OAJsonMapperTest();
 
 		util.convertObjectToJsonTest();
 

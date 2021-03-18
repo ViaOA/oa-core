@@ -1127,6 +1127,11 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 				return;
 			}
 
+			// 20210311
+			if (node.child.child == null) {
+				return;
+			}
+
 			if (node.child.liFromParentToChild.getType() == OALinkInfo.ONE) { // store in Node.data.hub
 				if (node.child.data == null) {
 					Hub h;

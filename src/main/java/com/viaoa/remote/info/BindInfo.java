@@ -17,9 +17,9 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.remote.annotation.OARemoteInterface;
-import com.viaoa.remote.annotation.OARemoteMethod;
-import com.viaoa.remote.annotation.OARemoteParameter;
+import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
+import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
+import com.viaoa.remote.multiplexer.annotation.OARemoteParameter;
 
 /**
  * Internal information about a remote Object. One side (Client/Server) will have the real object, and the other side will have a proxy. Any

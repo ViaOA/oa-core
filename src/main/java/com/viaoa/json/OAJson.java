@@ -81,20 +81,24 @@ public class OAJson {
 						key = null;
 					} else if (node == null) {
 						node = new OAJsonObjectNode();
+						_load(parser, node, false);
 					}
 				}
 			} else if (event == Event.END_OBJECT) {
 				break;
 			} else if (event == Event.START_ARRAY) {
-				if (key != null) {
+				if (bUsingArray) {
+					// 20210217 an array of arrays
+					OAJsonArrayNode newNode = new OAJsonArrayNode();
+					_load(parser, newNode, true);
+					((OAJsonArrayNode) node).add(newNode);
+				} else if (key != null) {
 					OAJsonArrayNode newNode = new OAJsonArrayNode();
 					_load(parser, newNode, true);
 					((OAJsonObjectNode) node).set(key, newNode);
 					key = null;
 				} else {
-					if (node == null) {
-						node = new OAJsonArrayNode();
-					}
+					node = new OAJsonArrayNode();
 					_load(parser, node, true);
 				}
 			} else if (event == Event.END_ARRAY) {

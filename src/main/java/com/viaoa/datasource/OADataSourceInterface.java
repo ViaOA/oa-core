@@ -109,4 +109,12 @@ public interface OADataSourceInterface {
 
 	default void compress() throws Exception {
 	}
+
+	/**
+	 * Is this a client computer that needs to remotely connect to datasource on a server.
+	 */
+	default boolean isClient() {
+		return false;
+	}
+
 }

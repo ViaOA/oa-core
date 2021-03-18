@@ -10,7 +10,7 @@
 */
 package com.viaoa.datasource.remote;
 
-import com.viaoa.remote.annotation.OARemoteInterface;
+import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 
 @OARemoteInterface
 public class OADataSourceRemote {

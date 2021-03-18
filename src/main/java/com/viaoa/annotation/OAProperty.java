@@ -138,4 +138,6 @@ public @interface OAProperty {
 	boolean isUpper() default false;
 
 	boolean isLower() default false;
+
+	boolean sensitiveData() default false;
 }

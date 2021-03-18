@@ -315,7 +315,7 @@ public class OAQueryFilter<T> implements OAFilter {
 	// IN
 	private OAQueryToken parseForIn(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseBottom(token);
-		if (nextToken.type == OAQueryTokenType.IN) {
+		if (nextToken != null && nextToken.type == OAQueryTokenType.IN) {
 			nextToken = nextToken();
 			if (nextToken == null) {
 				throw new Exception("token expected for IN");

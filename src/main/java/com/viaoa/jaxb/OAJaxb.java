@@ -37,6 +37,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.eclipse.persistence.jaxb.MarshallerProperties;
 
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
@@ -159,9 +160,24 @@ public class OAJaxb<TYPE> {
 	}
 
 	/**
-	 * Flag to know if references are permitted (default: true). References are used when an object is already in graph, and the reference
-	 * will point to this object. If set to false, then an object that is included more then once will be repeated, causing duplicates for
-	 * the object. Note: if false and a circular reference is detected, then a referece will be used anyway to avoid exception.
+	 * Flag to know if OAObject.new,changed,deleted boolean flags should be included. This is important to set to true if it's going to be
+	 * read into an OAObject by client. Default=true.
+	 */
+	private boolean bIncludeNewChangedDeletedFlags = true;
+
+	public boolean getIncludeNewChangedDeletedFlags() {
+		return this.bIncludeNewChangedDeletedFlags;
+	}
+
+	public void setIncludeNewChangedDeletedFlags(boolean b) {
+		this.bIncludeNewChangedDeletedFlags = b;
+	}
+
+	/**
+	 * Flag to know if references are permitted (default: true). <br>
+	 * References are used when an object is already in graph, and the reference will point to this object. If set to false, then an object
+	 * that is included more then once will be repeated, causing duplicates for the object. Note: if false and a circular reference is
+	 * detected, then a reference will be used anyway to avoid exception.
 	 */
 	public boolean getUseReferences() {
 		return this.bUseReferences;
@@ -186,7 +202,7 @@ public class OAJaxb<TYPE> {
 		        System.setProperty(MOXySystemProperties.XML_ID_EXTENSION, "true");
 		    B: add this annotation of Id property
 		        @org.eclipse.persistence.oxm.annotations.XmlIDExtension
-		
+
 		    https://www.eclipse.org/eclipselink/api/2.7/org/eclipse/persistence/jaxb/MOXySystemProperties.html
 		    https://stackoverflow.com/questions/29564627/does-moxy-support-non-string-xmlid-in-version-2-6-0
 		 */
@@ -356,15 +372,15 @@ public class OAJaxb<TYPE> {
 	public String testJackson(TYPE obj) throws Exception {
 	    JacksonXmlModule xmlModule = new JacksonXmlModule();
 	    xmlModule.setDefaultUseWrapper(false);  // XmlElementWrapper is included in method annotations
-	
+
 	    ObjectMapper objectMapper = new XmlMapper(xmlModule);
-	
+
 	    objectMapper.registerModule(new JaxbAnnotationModule());
-	
+
 	    objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 	    objectMapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);  // did not allow inside name to be a duplicate
 	    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-	
+
 	    / *
 	    AnnotationIntrospector introspector = new JaxbAnnotationIntrospector(objectMapper.getTypeFactory());
 	    objectMapper.setAnnotationIntrospector(introspector);
@@ -690,7 +706,7 @@ public class OAJaxb<TYPE> {
 			  can only create new root and owned objects if createNew
 			  dont allow updating of other objects
 			  if they are new then reject (they should be created seperately)
-			
+
 			  only allow new (ignore/reject ID prop) for root and owned objects
 			  other objects will not be updated,
 			*/
@@ -898,13 +914,16 @@ public class OAJaxb<TYPE> {
 			node.oaObject = (OAObject) ref;
 			return (OAObject) ref;
 		}
-		//qqqqqqqqqqqqqqqq only if on server ... qqqqqqqqqqqqqqqq
-		OASelect sel = new OASelect(node.clazz);
-		sel.select(node.piId.getName() + " = ?", new Object[] { id });
-		ref = sel.next();
-		if (ref instanceof OAObject) {
-			node.oaObject = (OAObject) ref;
-			return (OAObject) ref;
+		OADataSource ds = OADataSource.getDataSource(node.clazz);
+		if (ds != null && !ds.isClient()) {
+			// only run on server
+			OASelect sel = new OASelect(node.clazz);
+			sel.select(node.piId.getName() + " = ?", new Object[] { id });
+			ref = sel.next();
+			if (ref instanceof OAObject) {
+				node.oaObject = (OAObject) ref;
+				return (OAObject) ref;
+			}
 		}
 		return null;
 	}

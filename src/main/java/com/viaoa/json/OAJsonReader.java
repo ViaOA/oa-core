@@ -22,7 +22,7 @@ import com.viaoa.xml.OAXMLReader;
  * <p>
  * See also OAJaxb, which works with OAObjects and any other Java objects.
  * <p>
- * Note: replaced with OAJaxb
+ * Note> >>>>>>>>>> replaced with OAJaxb & OAJson & OAJsonMapper <<<<<<<<<<<<
  *
  * @see OAJsonWriter
  * @author vvia

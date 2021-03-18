@@ -8,27 +8,30 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-package com.viaoa.remote.annotation;
+package com.viaoa.remote.rest.annotation;
 
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Information about remote methods parameters.
- * Important:  this annotation needs to be added to the Interface, not the Impl class.
+ * Remoting information about remote Interface methods using HTTP(S).
+ * <p>
+ * Important: this annotation needs to be added to the Java Interface, not the Impl class.
+ *
  * @author vvia
  */
 @Documented
-@Target(ElementType.PARAMETER)
-@Retention(RetentionPolicy.RUNTIME) 
-public @interface OARemoteParameter {
-    
-    // true if the param should be compressed when it is transmitted
-    boolean compressed() default false;
-    
-    // if true and this is a remote object, then it will not use a queue when messaging (even if parent uses a msg queue)
-    boolean dontUseQueue() default false;
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface OARestClass {
+
+	/**
+	 * Context name used on webserver, which will be added to the baseURL.
+	 * <p>
+	 * example: "customer", will use "http://www.company.com/customer.."
+	 */
+	String contextName() default "";
 }

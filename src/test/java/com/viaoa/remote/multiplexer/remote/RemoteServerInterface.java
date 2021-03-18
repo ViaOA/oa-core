@@ -1,8 +1,8 @@
 package com.viaoa.remote.multiplexer.remote;
 
 import com.viaoa.annotation.OAMethod;
-import com.viaoa.remote.annotation.OARemoteInterface;
-import com.viaoa.remote.annotation.OARemoteMethod;
+import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
+import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 
 @OARemoteInterface()
 public interface RemoteServerInterface {

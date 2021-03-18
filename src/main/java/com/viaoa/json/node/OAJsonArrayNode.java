@@ -7,7 +7,7 @@ import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 
 /**
- * Represents a json array, which can be any json data types.
+ * Represents a json array, which can be any json data type(s).
  *
  * @author vvia
  */

@@ -66,6 +66,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private String timeZonePropertyPath;
 	private boolean isUpper;
 	private boolean isLower;
+	private boolean sensitiveData;
 
 	public OAPropertyInfo() {
 	}
@@ -80,6 +81,10 @@ public class OAPropertyInfo implements java.io.Serializable {
 	}
 
 	public boolean getIsPrimitive() {
+		return bIsPrimitive;
+	}
+
+	public boolean getPrimitive() {
 		return bIsPrimitive;
 	}
 
@@ -366,6 +371,10 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return this.isSubmit;
 	}
 
+	public boolean getSubmit() {
+		return this.isSubmit;
+	}
+
 	public boolean isSubmit() {
 		return this.isSubmit;
 	}
@@ -394,6 +403,10 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return this.isUpper;
 	}
 
+	public boolean getUpper() {
+		return this.isUpper;
+	}
+
 	public boolean isUpper() {
 		return this.isUpper;
 	}
@@ -406,11 +419,23 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return this.isLower;
 	}
 
+	public boolean getLower() {
+		return this.isLower;
+	}
+
 	public boolean isLower() {
 		return this.isLower;
 	}
 
 	public Object getValue(Object obj) {
 		return OAObjectReflectDelegate.getProperty((OAObject) obj, name);
+	}
+
+	public void setSensitiveData(boolean b) {
+		this.sensitiveData = b;
+	}
+
+	public boolean getSensitiveData() {
+		return sensitiveData;
 	}
 }
