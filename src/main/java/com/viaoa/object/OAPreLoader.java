@@ -33,7 +33,7 @@ import com.viaoa.util.OAString;
  *
  * This will load and set recursive properties, M2M properties.
  *
- * Ex: from calss: ItemCategory, pp: items.products
+ * Ex: from class: ItemCategory, pp: items.products
  *  where itemCategory is recursive and itemCategory.items is M2M
  *
  * */
@@ -45,7 +45,7 @@ public class OAPreLoader {
 
 	/**
 	 * Create a new pre loader. Call load method to run.
-	 * 
+	 *
 	 * @param classFrom base/root class for property path
 	 * @param propPath  property path to load. Note: all links need to be of type Many
 	 */
@@ -56,7 +56,7 @@ public class OAPreLoader {
 
 	/**
 	 * load the property path.
-	 * 
+	 *
 	 * @return objects load from classFrom, so that gc does not remove objects from OAObjectCache
 	 */
 	public ArrayList load() {

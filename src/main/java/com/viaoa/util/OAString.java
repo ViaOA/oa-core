@@ -1212,6 +1212,10 @@ public class OAString {
 		if (value == null) {
 			value = "";
 		}
+		if (amount < 1) {
+			return value;
+		}
+
 		String s = "";
 		for (int i = 0; i < amount; i++) {
 			s += padCharacter;
@@ -3748,6 +3752,62 @@ public class OAString {
 			s += "%";
 		}
 		return s;
+	}
+
+	/**
+	 * Create a 3 row column heading.
+	 *
+	 * @param startPos first position (usually 0 or 1)
+	 * @param endPos
+	 * @return 2 rows of numbers, showing each digit vertically
+	 */
+	public static String getVerticalNumberLines(int startPos, int endPos) {
+		StringBuilder sb = new StringBuilder();
+		/*
+		for (int i = startPos; i <= endPos; i++) {
+			int x = (i / 100);
+			if (i == 100) {
+				sb.append('1');
+			} else {
+				sb.append(' ');
+			}
+		}
+		sb.append('\n');
+		*/
+
+		for (int i = startPos; i <= endPos; i++) {
+			if (i % 10 == 0) {
+				int x = (i / 10);
+				sb.append("" + (x % 10));
+			} else {
+				sb.append(' ');
+			}
+		}
+
+		sb.append('\n');
+
+		for (int i = startPos; i <= endPos; i++) {
+			sb.append("" + (i % 10));
+		}
+
+		return sb.toString();
+	}
+
+	public static String getVerticalHex(byte[] bs) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < bs.length; i++) {
+			String hex = String.format("%02x", bs[i]).toUpperCase();
+			sb.append(hex, 0, 1);
+		}
+
+		sb.append('\n');
+
+		for (int i = 0; i < bs.length; i++) {
+			String hex = String.format("%02x", bs[i]).toUpperCase();
+			sb.append(hex, 1, 2);
+		}
+
+		return sb.toString();
 	}
 
 	public static void main(String[] args) {

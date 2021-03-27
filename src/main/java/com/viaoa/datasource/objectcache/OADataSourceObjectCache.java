@@ -10,6 +10,21 @@
 */
 package com.viaoa.datasource.objectcache;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
+
+import com.viaoa.comm.io.OAObjectInputStream;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceEmptyIterator;
 import com.viaoa.datasource.OADataSourceIterator;
@@ -23,19 +38,26 @@ import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectPropertyDelegate;
+import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
+import com.viaoa.util.OALogger;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 // 20140124
 /**
+ * OADataSource for OAObjectCache.
+ * <p>
  * Uses OAFinder to find objects. This will use OAObjectCache.selectAllHubs along with any OAObject.OAClass.rootTreePropertyPaths ex:
  * "[Router]."+Router.P_UserLogins+"."+UserLogin.P_User to find all of the objects available. subclassed to allow initializeObject(..) to
  * auto assign Object Ids
  */
 public class OADataSourceObjectCache extends OADataSourceAuto {
+	private static final Logger LOG = OALogger.getLogger(OADataSourceObjectCache.class);
+
+	private final ConcurrentHashMap<Class, ArrayList> hmClassList = new ConcurrentHashMap();
 
 	public OADataSourceObjectCache() {
 		this(true);
@@ -209,5 +231,144 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public void insert(OAObject object) {
+		super.insert(object);
+		if (object == null) {
+			return;
+		}
+		List al = getList(object.getClass());
+		al.add(object);
+	}
+
+	public void saveToStorageFile(File file) throws Exception {
+		LOG.fine("saving to storage file=" + file);
+		if (file == null) {
+			return;
+		}
+		FileOutputStream fos = new FileOutputStream(file);
+
+		Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
+		DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(fos, deflater, 1024 * 16);
+
+		ObjectOutputStream oos = new ObjectOutputStream(deflaterOutputStream);
+
+		for (Entry<Class, ArrayList> entry : hmClassList.entrySet()) {
+			oos.writeBoolean(true);
+
+			Class c = entry.getKey();
+			oos.writeObject(c);
+
+			List al = entry.getValue();
+			OAObjectSerializer wrap = new OAObjectSerializer(al, false, false);
+			wrap.setIncludeBlobs(true);
+			oos.writeObject(wrap);
+		}
+		oos.writeBoolean(false);
+		oos.close();
+
+		deflaterOutputStream.finish();
+		deflaterOutputStream.close();
+		fos.close();
+		LOG.fine("saved to storage file=" + file);
+	}
+
+	public boolean loadFromStorageFile(final File file) throws Exception {
+		LOG.fine("loading to storage file=" + file);
+		if (file == null) {
+			return false;
+		}
+		if (!file.exists()) {
+			LOG.fine("storage file=" + file + " does not exist");
+			return false;
+		}
+
+		FileInputStream fis = new FileInputStream(file);
+		Inflater inflater = new Inflater();
+		InflaterInputStream inflaterInputStream = new InflaterInputStream(fis, inflater, 1024 * 16);
+
+		OAObjectInputStream ois = new OAObjectInputStream(inflaterInputStream);
+
+		int cnt = 0;
+		for (;;) {
+			boolean b = ois.readBoolean();
+			if (!b) {
+				break;
+			}
+			cnt++;
+			Class c = (Class) ois.readObject();
+			OAObjectSerializer wrap = (OAObjectSerializer) ois.readObject();
+			ArrayList al = (ArrayList) wrap.getObject();
+			hmClassList.put(c, al);
+		}
+
+		ois.close();
+		fis.close();
+		LOG.fine("loaded storage file=" + file);
+		return (cnt > 0);
+	}
+
+	private ArrayList getList(Class c) {
+		if (c == null) {
+			return null;
+		}
+		ArrayList al = hmClassList.get(c);
+		if (al == null) {
+			synchronized (hmClassList) {
+				al = new ArrayList();
+				hmClassList.put(c, al);
+			}
+		}
+		return al;
+	}
+
+	@Override
+	public void insertWithoutReferences(OAObject obj) {
+		super.insertWithoutReferences(obj);
+		if (obj == null) {
+			return;
+		}
+		List al = getList(obj.getClass());
+		if (!al.contains(obj)) {
+			al.add(obj);
+		}
+	}
+
+	@Override
+	public void delete(OAObject obj) {
+		super.delete(obj);
+		if (obj == null) {
+			return;
+		}
+		final Class c = obj.getClass();
+		ArrayList al = (ArrayList) hmClassList.get(c);
+		if (al != null) {
+			al.remove(obj);
+		}
+	}
+
+	@Override
+	public void deleteAll(Class c) {
+		super.deleteAll(c);
+		if (c == null) {
+			return;
+		}
+		ArrayList al = (ArrayList) hmClassList.get(c);
+		if (al != null) {
+			al.clear();
+		}
+		OAObjectCacheDelegate.removeAllObjects(c);
+	}
+
+	public void addToStorage(OAObject obj, boolean bIsLoading) {
+		if (obj == null) {
+			return;
+		}
+		ArrayList al = getList(obj.getClass());
+		if (!bIsLoading || !al.contains(obj)) {
+			al.add(obj);
+		}
 	}
 }

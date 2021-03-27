@@ -424,6 +424,21 @@ public class OAObjectCacheDelegate {
 		OAObjectHashDelegate.hashCacheClass.clear();
 	}
 
+	public static void removeAllObjects(Class c) {
+		if (c == null) {
+			return;
+		}
+		LOG.warning(String.format("removing all Objects for class=%s was called (fyi only)", c.getSimpleName()));
+
+		TreeMapHolder tmh = (TreeMapHolder) OAObjectHashDelegate.hashCacheClass.get(c);
+		if (tmh != null) {
+			TreeMap tm = tmh.treeMap;
+			if (tm != null) {
+				tm.clear();
+			}
+		}
+	}
+
 	/**
 	 * Used to <i>visit</i> every object in the Cache.
 	 */
@@ -677,12 +692,12 @@ public class OAObjectCacheDelegate {
 
 			WeakReference ref = (WeakReference) tm.get(key);
 
-            // 20201109 check to see if it's in tree with only guid
-            if (ref == null && key != null && key.isNew()) {
-                OAObjectKey keyGuidOnly = new OAObjectKey((Object[]) null, key.guid, true);
-                ref = (WeakReference) tm.get(keyGuidOnly);
-            }
-			
+			// 20201109 check to see if it's in tree with only guid
+			if (ref == null && key != null && key.isNew()) {
+				OAObjectKey keyGuidOnly = new OAObjectKey((Object[]) null, key.guid, true);
+				ref = (WeakReference) tm.get(keyGuidOnly);
+			}
+
 			if (ref != null) {
 				result = (OAObject) ref.get();
 				if (result == obj) {
@@ -976,12 +991,12 @@ public class OAObjectCacheDelegate {
 			try {
 				tmh.rwl.readLock().lock();
 				ref = (WeakReference) tmh.treeMap.get(key);
-				
-	            // 20201109 check to see if it's in tree with only guid
-	            if (ref == null && key instanceof OAObjectKey && ((OAObjectKey)key).guid != 0 && ((OAObjectKey)key).isNew()) {
-	                OAObjectKey keyGuidOnly = new OAObjectKey((Object[]) null, ((OAObjectKey)key).guid, true);
-	                ref = (WeakReference) tmh.treeMap.get(keyGuidOnly);
-	            }
+
+				// 20201109 check to see if it's in tree with only guid
+				if (ref == null && key instanceof OAObjectKey && ((OAObjectKey) key).guid != 0 && ((OAObjectKey) key).isNew()) {
+					OAObjectKey keyGuidOnly = new OAObjectKey((Object[]) null, ((OAObjectKey) key).guid, true);
+					ref = (WeakReference) tmh.treeMap.get(keyGuidOnly);
+				}
 			} finally {
 				tmh.rwl.readLock().unlock();
 			}
@@ -1302,7 +1317,7 @@ public class OAObjectCacheDelegate {
 		// LOG.fine("called");
 	    Enumeration enumx = OAObjectHashDelegate.hashCacheClass.keys();
 	    ci.getCacheHashMap().clear();
-
+	
 	    Object[] cs = OAObjectHashDelegate.hashCacheClass.keySet().toArray();
 		if (cs == null) return;
 		int x = cs.length;

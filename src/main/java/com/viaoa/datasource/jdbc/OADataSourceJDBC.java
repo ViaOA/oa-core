@@ -204,6 +204,13 @@ public class OADataSourceJDBC extends OADataSource {
 		DeleteDelegate.delete(this, object);
 	}
 
+	// 20210325
+	public @Override void deleteAll(Class c) {
+		LOG.fine("object=" + c.getSimpleName());
+		// could be dangerous
+		throw new RuntimeException("OADataSource.deleteAll(class) not yet implemented for OADataSourceJDBC - could be dangerous :)");
+	}
+
 	public @Override void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
 		OAObjectKey key = OAObjectKeyDelegate.getKey(masterObject);
 		LOG.finer("object=" + masterObject.getClass().getSimpleName() + ", key=" + key);
@@ -212,7 +219,7 @@ public class OADataSourceJDBC extends OADataSource {
 
 	/**
 	 * Called by OAObject.getRequiredProperties() to find required properties that are unassigned.
-	 * 
+	 *
 	 * @return true if the datasource will set the property value before saving.
 	 */
 	public @Override boolean willCreatePropertyValue(OAObject object, String propertyName) {
@@ -248,7 +255,7 @@ public class OADataSourceJDBC extends OADataSource {
 			String queryWhere, Object[] params, String queryOrder,
 			OAObject whereObject, String propertyFromWhereObject, String extraWhere,
 			int max, OAFilter filter, boolean bDirty) {
-		// 20200219 need to convert whereObject/properyFromWhereObject to part of query if it's using a propertyPath 
+		// 20200219 need to convert whereObject/properyFromWhereObject to part of query if it's using a propertyPath
 		if (whereObject != null && propertyFromWhereObject != null && propertyFromWhereObject.indexOf(".") >= 0) {
 			OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
 			pp = pp.getReversePropertyPath();

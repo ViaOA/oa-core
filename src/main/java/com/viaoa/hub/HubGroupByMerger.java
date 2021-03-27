@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 
 import com.viaoa.object.OAObject;
 import com.viaoa.util.OAPropertyPath;
+import com.viaoa.util.OAString;
 
 /**
  * Uses a HubMerger to get objects, and then adds the found objects to a groupBy object Hub property.
@@ -32,6 +33,10 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 
 	private HubMerger<F, T> hubMerger;
 
+	public HubGroupByMerger(Hub<F> hubRoot, String groupByPropertyPath, String groupByProperty) {
+		this(hubRoot, null, groupByPropertyPath, groupByProperty);
+	}
+
 	/**
 	 * @param hubRoot
 	 * @param mergerPropertyPath  PP from Root to merger objects
@@ -44,60 +49,85 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 		this.groupByPropertyPath = groupByPropertyPath;
 		this.groupByProperty = groupByProperty;
 
-		final OAPropertyPath ppMergerPropertyPath = new OAPropertyPath(hubRoot.getObjectClass(), mergerPropertyPath);
-		Method[] msMergerPropertyPath = ppMergerPropertyPath.getMethods();
-
 		final OAPropertyPath ppGroupByPropertyPath = new OAPropertyPath(hubRoot.getObjectClass(), groupByPropertyPath);
 		Method[] msGroupByPropertyPath = ppGroupByPropertyPath.getMethods();
 
-		int cnt = 0;
-		for (; cnt < msGroupByPropertyPath.length && cnt < msMergerPropertyPath.length; cnt++) {
-			if (!msGroupByPropertyPath[cnt].equals(msMergerPropertyPath[cnt])) {
-				break;
+		if (OAString.isEmpty(mergerPropertyPath)) {
+			hubRoot.addHubListener(new HubListenerAdapter() {
+				@Override
+				public void afterAdd(HubEvent e) {
+					OAObject objFrom = (OAObject) e.getObject();
+					OAObject objTo = (OAObject) ppGroupByPropertyPath.getValue(objFrom);
+					if (objTo != null) {
+						Hub hub = (Hub) objTo.getProperty(groupByProperty);
+						hub.add(objFrom);
+					}
+				}
+
+				@Override
+				public void afterRemove(HubEvent e) {
+					OAObject objFrom = (OAObject) e.getObject();
+					OAObject objTo = (OAObject) ppGroupByPropertyPath.getValue(objFrom);
+					if (objTo != null) {
+						Hub hub = (Hub) objTo.getProperty(groupByProperty);
+						hub.remove(objFrom);
+					}
+				}
+			});
+		} else {
+			final OAPropertyPath ppMergerPropertyPath = new OAPropertyPath(hubRoot.getObjectClass(), mergerPropertyPath);
+			Method[] msMergerPropertyPath = ppMergerPropertyPath.getMethods();
+
+			int cnt = 0;
+			for (; cnt < msGroupByPropertyPath.length && cnt < msMergerPropertyPath.length; cnt++) {
+				if (!msGroupByPropertyPath[cnt].equals(msMergerPropertyPath[cnt])) {
+					break;
+				}
 			}
-		}
 
-		// find how much of the the groupBy PP is same as merger
-		this.cntAbove = msMergerPropertyPath.length - (cnt + 1);
+			// find how much of the the groupBy PP is same as merger
+			this.cntAbove = msMergerPropertyPath.length - (cnt + 1);
 
-		final int groupByPropertyPathStartPos = cnt;
+			final int groupByPropertyPathStartPos = cnt;
 
-		hubMerger = new HubMerger(hubRoot, null, mergerPropertyPath, false, null, true, false, false) {
-			@Override
-			protected void onAddToCombined(Data data, final OAObject obj) {
-				OAObject objFrom = obj;
-				if (cntAbove >= 0) {
+			hubMerger = new HubMerger(hubRoot, null, mergerPropertyPath, false, null, true, false, false) {
+				@Override
+				protected void onAddToCombined(Data data, final OAObject obj) {
+					OAObject objFrom = obj;
+					if (cntAbove >= 0) {
+						for (int i = 0; data != null && i < cntAbove; i++) {
+							data = data.parent;
+						}
+						if (data == null) {
+							objFrom = null;
+						} else {
+							objFrom = data.parentObject;
+						}
+					}
+					if (objFrom != null) {
+						OAObject objTo = (OAObject) ppGroupByPropertyPath.getValue(objFrom, groupByPropertyPathStartPos);
+						if (objTo != null) {
+							Hub hub = (Hub) objTo.getProperty(groupByProperty);
+							hub.add(obj);
+						}
+					}
+				}
+
+				@Override
+				protected void onRemoveFromCombined(Data data, OAObject obj) {
 					for (int i = 0; data != null && i < cntAbove; i++) {
 						data = data.parent;
 					}
-					if (data == null) {
-						objFrom = null;
-					} else {
-						objFrom = data.parentObject;
+					if (data != null) {
+						OAObject objx = (OAObject) ppGroupByPropertyPath.getValue(data.parentObject);
+						Hub hub = (Hub) objx.getProperty(groupByProperty);
+						hub.remove(obj);
 					}
 				}
-				if (objFrom != null) {
-					OAObject objTo = (OAObject) ppGroupByPropertyPath.getValue(objFrom, groupByPropertyPathStartPos);
-					if (objTo != null) {
-						Hub hub = (Hub) objTo.getProperty(groupByProperty);
-						hub.add(obj);
-					}
-				}
-			}
+			};
 
-			@Override
-			protected void onRemoveFromCombined(Data data, OAObject obj) {
-				for (int i = 0; data != null && i < cntAbove; i++) {
-					data = data.parent;
-				}
-				if (data != null) {
-					OAObject objx = (OAObject) ppGroupByPropertyPath.getValue(data.parentObject);
-					Hub hub = (Hub) objx.getProperty(groupByProperty);
-					hub.remove(obj);
-				}
-			}
-		};
-
-		hubMerger.setServerSideOnly(true);
+			hubMerger.setServerSideOnly(true);
+		}
 	}
+
 }

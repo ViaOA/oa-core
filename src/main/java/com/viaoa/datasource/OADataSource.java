@@ -484,6 +484,11 @@ public abstract class OADataSource implements OADataSourceInterface {
 	@Override
 	public abstract void delete(OAObject obj);
 
+	@Override
+	public void deleteAll(Class c) {
+		// no-op by default
+	}
+
 	/**
 	 * Used to save an object to DataSource.
 	 * <p>

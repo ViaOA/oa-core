@@ -200,6 +200,14 @@ public class OADataSourceRestClient extends OADataSource {
 	}
 
 	@Override
+	public void deleteAll(Class c) {
+		if (c == null) {
+			return;
+		}
+		getRestAPI().deleteAll(c);
+	}
+
+	@Override
 	public int count(Class selectClass,
 			String queryWhere, Object[] params,
 			OAObject whereObject, String propertyFromWhereObject, String extraWhere, int max) {

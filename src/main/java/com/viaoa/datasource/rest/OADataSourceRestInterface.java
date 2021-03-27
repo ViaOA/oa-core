@@ -53,6 +53,9 @@ public interface OADataSourceRestInterface {
 	void delete(OAObject obj);
 
 	@OARestMethod(methodType = MethodType.OARemote)
+	void deleteAll(Class c);
+
+	@OARestMethod(methodType = MethodType.OARemote)
 	int count(Class selectClass, String queryWhere, Object[] params, Class whereObjectClass, String whereKey,
 			String propertyFromWhereObject, String extraWhere, int max);
 

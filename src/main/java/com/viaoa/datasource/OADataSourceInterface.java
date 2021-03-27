@@ -59,6 +59,8 @@ public interface OADataSourceInterface {
 
 	void delete(OAObject object);
 
+	void deleteAll(Class c);
+
 	void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
 
 	/**

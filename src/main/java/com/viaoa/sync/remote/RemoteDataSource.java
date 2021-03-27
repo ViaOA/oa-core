@@ -83,7 +83,7 @@ public abstract class RemoteDataSource {
 			ds = getDataSource(clazz);
 			if (ds != null) {
 				x = ds.getMaxLength(clazz, (String) objects[1]);
-				// System.out.println("note: RemoteDataSource call to MAX_LENGTH when it should be on the client.");                
+				// System.out.println("note: RemoteDataSource call to MAX_LENGTH when it should be on the client.");
 				obj = new Integer(x);
 			}
 			break;
@@ -146,6 +146,16 @@ public abstract class RemoteDataSource {
 			}
 			break;
 
+		case OADataSourceClient.DELETE_ALL:
+			Class c = (Class) objects[0];
+			if (c != null) {
+				ds = getDataSource(c);
+				if (ds != null) {
+					ds.deleteAll(c);
+				}
+				obj = null;
+			}
+			break;
 		case OADataSourceClient.COUNT:
 			clazz = (Class) objects[0];
 			ds = getDataSource(clazz);
@@ -229,7 +239,7 @@ public abstract class RemoteDataSource {
 				}
 
 				OAFilter filter = null;
-				/* 20170201 not needed, needs to filter on whereClause                
+				/* 20170201 not needed, needs to filter on whereClause
 				if (bHasFilter) {
 				    // if client has a filter, then create a dummy one here
 				    filter = new OAFilter() {

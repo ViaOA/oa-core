@@ -89,6 +89,8 @@ public class OADataSourceClient extends OADataSource {
 
 	public static final int GET_PROPERTY = 26;
 
+	public static final int DELETE_ALL = 27;
+
 	private final Package packagex;
 
 	/**
@@ -238,6 +240,13 @@ public class OADataSourceClient extends OADataSource {
 			return;
 		}
 		getRemoteClient().datasource(DELETE, new Object[] { obj });
+	}
+
+	public @Override void deleteAll(Class c) {
+		if (c == null) {
+			return;
+		}
+		getRemoteClient().datasource(DELETE_ALL, new Object[] { c });
 	}
 
 	@Override

@@ -29,6 +29,10 @@ public abstract class OAJsonRootNode extends OAJsonNode {
 		set(propertyPath, new OAJsonNumberNode(value));
 	}
 
+	public void set(final String propertyPath, Number value, int decimalPlaces) {
+		set(propertyPath, new OAJsonNumberNode(value, decimalPlaces));
+	}
+
 	public void set(final String propertyPath, Boolean value) {
 		set(propertyPath, new OAJsonBooleanNode(value));
 	}

@@ -395,6 +395,11 @@ public class OAConverter {
 		// get one extra digit and check for >= 5
 		long x = (long) Math.pow(10, decimalPlaces + 1);
 
+		boolean bNeg = d < 0.0;
+		if (bNeg) {
+			d *= -1;
+		}
+
 		long lx = (long) (d * x);
 		int remainder = (int) (lx % 10);
 		lx -= remainder;
@@ -403,7 +408,9 @@ public class OAConverter {
 		}
 
 		double dx = lx / ((double) x);
-
+		if (bNeg) {
+			dx *= -1;
+		}
 		return dx;
 	}
 
@@ -420,17 +427,17 @@ public class OAConverter {
 		/* was: does not use round_half_up,  ex: 1.235
 		// this will be faster (no BigDecimal needed)
 		if (decimalPlaces < 0) return d;
-
+		
 		boolean bNegative;
 		if (d < 0) {
 		    d = Math.abs(d);
 		    bNegative = true;
 		}
 		else bNegative = false;
-
+		
 		double decimalValue = Math.pow(10, decimalPlaces);
 		d *= decimalValue;
-
+		
 		d = StrictMath.round(d);
 		d /= decimalValue;
 		if (bNegative) d *= -1;
@@ -1417,9 +1424,9 @@ public class OAConverter {
 		dx = 256.025;
 		/*
 		dx = round(dx, 3, 2);
-		
+
 		dx = 1.025;
-		
+
 		dx *= 100.0;
 		dx /= 100.0;
 		*/

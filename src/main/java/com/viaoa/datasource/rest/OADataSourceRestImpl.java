@@ -122,6 +122,15 @@ public class OADataSourceRestImpl implements OADataSourceRestInterface {
 	}
 
 	@Override
+	public void deleteAll(Class c) {
+		OADataSource ds = getDataSource(c);
+		if (ds == null) {
+			return;
+		}
+		ds.deleteAll(c);
+	}
+
+	@Override
 	public int count(Class selectClass, String queryWhere, Object[] params, Class whereObjectClass, String whereKey,
 			String propertyFromWhereObject, String extraWhere, int max) {
 		OADataSource ds = getDataSource(selectClass);
@@ -173,7 +182,7 @@ public class OADataSourceRestImpl implements OADataSourceRestInterface {
 			String queryWhere, Object[] params, String queryOrder,
 			OAObject whereObject, String propertyFromWhereObject, String extraWhere,
 			int max, OAFilter filter, boolean bDirty);
-		
+
 		*/
 
 		OAObject objWhere = null;
