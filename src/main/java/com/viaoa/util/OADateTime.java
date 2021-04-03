@@ -14,6 +14,10 @@ import java.io.IOException;
 import java.sql.Time;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -354,6 +358,37 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			this._time = odt.getTime();
 			this.timeZone = odt.timeZone;
 		}
+	}
+
+	public OADateTime(LocalDateTime ldt) {
+		this(new java.sql.Date(Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime()));
+	}
+
+	public OADateTime(Instant instant) {
+		this(Date.from((Instant) instant).getTime());
+	}
+
+	public OADateTime(ZonedDateTime zdt) {
+		this(new java.sql.Date(Date.from(zdt.toInstant()).getTime()));
+	}
+
+	public LocalDateTime getLocalDateTime() {
+		LocalDateTime ldt = LocalDateTime.of(	getYear(), getMonth() + 1, getDay(), get24Hour(), getMinute(),
+												getSecond(), (int) (getMilliSecond() / Math.pow(10, 6)));
+		return ldt;
+	}
+
+	public ZonedDateTime getZonedDateTime() {
+		ZonedDateTime zdt = ZonedDateTime.of(	getYear(), getMonth() + 1, getDay(), get24Hour(), getMinute(),
+												getSecond(),
+												(int) (getMilliSecond() / Math.pow(10, 6)),
+												getTimeZone().toZoneId());
+		return zdt;
+	}
+
+	public Instant getInstant() {
+		Instant instant = getZonedDateTime().toInstant();
+		return instant;
 	}
 
 	/**

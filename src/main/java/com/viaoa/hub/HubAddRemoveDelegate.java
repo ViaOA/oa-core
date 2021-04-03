@@ -143,9 +143,11 @@ public class HubAddRemoveDelegate {
 				if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
 					HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, null);
 				} else if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.MANY) {
-					// 2021326 M2M
+					// 20210326 M2M
 					Hub hubx = (Hub) thisHub.datam.liDetailToMaster.getValue(obj);
-					hubx.remove(thisHub.datam.getMasterObject());
+					if (hubx != null) {
+						hubx.remove(thisHub.datam.getMasterObject());
+					}
 				}
 			}
 		}
@@ -362,14 +364,14 @@ public class HubAddRemoveDelegate {
 		for (int pos=0 ; ; ) {
 		    Object obj = thisHub.elementAt(pos);
 		    if (obj == null) break;
-
+		
 		    if (obj == objLast) {
 		        // object was not deleted
 		        pos++;
 		        continue;
 		    }
 		    objLast = obj;
-
+		
 		    // 20140422 set to false, since clients will now have clear msg
 		    remove(thisHub, obj, false,
 		            false, false, bSetAOtoNull,
@@ -576,7 +578,9 @@ public class HubAddRemoveDelegate {
 						} else if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.MANY) {
 							// 20210326 M2M
 							Hub hubx = (Hub) thisHub.datam.liDetailToMaster.getValue(obj);
-							hubx.add(thisHub.datam.getMasterObject());
+							if (hubx != null) {
+								hubx.add(thisHub.datam.getMasterObject());
+							}
 						}
 					} else if (obj instanceof OAObject && ((OAObject) obj).isNew()) {
 						// 20201212
@@ -898,7 +902,9 @@ public class HubAddRemoveDelegate {
 			} else if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.MANY) {
 				// 20210326 M2M
 				Hub hubx = (Hub) thisHub.datam.liDetailToMaster.getValue(obj);
-				hubx.add(thisHub.datam.getMasterObject());
+				if (hubx != null) {
+					hubx.add(thisHub.datam.getMasterObject());
+				}
 			}
 		} else if (obj instanceof OAObject && ((OAObject) obj).isNew()) {
 			// 20201212

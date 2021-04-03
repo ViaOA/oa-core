@@ -11,6 +11,12 @@
 package com.viaoa.util;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
@@ -27,7 +33,11 @@ import com.viaoa.converter.OAConverterDate;
 import com.viaoa.converter.OAConverterDimension;
 import com.viaoa.converter.OAConverterEnum;
 import com.viaoa.converter.OAConverterFont;
+import com.viaoa.converter.OAConverterInstant;
 import com.viaoa.converter.OAConverterInterface;
+import com.viaoa.converter.OAConverterLocalDate;
+import com.viaoa.converter.OAConverterLocalDateTime;
+import com.viaoa.converter.OAConverterLocalTime;
 import com.viaoa.converter.OAConverterNumber;
 import com.viaoa.converter.OAConverterOADate;
 import com.viaoa.converter.OAConverterOADateTime;
@@ -36,8 +46,11 @@ import com.viaoa.converter.OAConverterPoint;
 import com.viaoa.converter.OAConverterRectangle;
 import com.viaoa.converter.OAConverterSqlDate;
 import com.viaoa.converter.OAConverterString;
+import com.viaoa.converter.OAConverterTime;
 import com.viaoa.converter.OAConverterTimeZone;
 import com.viaoa.converter.OAConverterTimestamp;
+import com.viaoa.converter.OAConverterZoneId;
+import com.viaoa.converter.OAConverterZonedDateTime;
 
 /**
  * Conversion class for converting Objects from one form to another. Most common usage is to convert Objects to Strings, String to Objects,
@@ -84,6 +97,13 @@ public class OAConverter {
 		addConverter(Enum.class, new OAConverterEnum());
 		addConverter(TimeZone.class, new OAConverterTimeZone());
 		addConverter(Class.class, new OAConverterClass());
+
+		addConverter(LocalDateTime.class, new OAConverterLocalDateTime());
+		addConverter(LocalDate.class, new OAConverterLocalDate());
+		addConverter(LocalTime.class, new OAConverterLocalTime());
+		addConverter(ZonedDateTime.class, new OAConverterZonedDateTime());
+		addConverter(Instant.class, new OAConverterInstant());
+		addConverter(ZoneId.class, new OAConverterZoneId());
 	}
 
 	private static OAConverterArray oaConverterArray = new OAConverterArray();

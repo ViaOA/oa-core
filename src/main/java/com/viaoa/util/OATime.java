@@ -10,6 +10,7 @@
 */
 package com.viaoa.util;
 
+import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Vector;
@@ -19,7 +20,7 @@ import java.util.Vector;
  * <p>
  * OATime is not affected by timezone. A time created on one system will be the same on another machine, even if the timezone is different.
  * See OADateTime for list or formatting symbols.
- * 
+ *
  * @see OADateTime
  */
 public class OATime extends OADateTime {
@@ -120,7 +121,7 @@ public class OATime extends OADateTime {
 	 * Create a new time that uses a supplied String.
 	 * <p>
 	 * Note: uses default format of "hh:mma" Note: clearDate() is called to set date information to 0.
-	 * 
+	 *
 	 * @see OATime#valueOf
 	 */
 	public OATime(String strTime) {
@@ -132,7 +133,7 @@ public class OATime extends OADateTime {
 	 * Create a new time that uses a supplied String and format.
 	 * <p>
 	 * Note: clearDate() is called to set date information to 0.
-	 * 
+	 *
 	 * @see OATime#valueOf
 	 */
 	public OATime(String strTime, String fmt) {
@@ -140,11 +141,15 @@ public class OATime extends OADateTime {
 		clearDate();
 	}
 
+	public OATime(LocalTime lt) {
+		OATime out = new OATime(lt.getHour(), lt.getMinute(), lt.getSecond(), (int) (lt.getNano() / Math.pow(10, 6)));
+	}
+
 	/**
 	 * Create a new time that uses that uses a supplied hours, minutes, seconds.
 	 * <p>
 	 * Note: clearDate() is called to set date information to 0.
-	 * 
+	 *
 	 * @param hrs 0-23
 	 * @see OATime#valueOf
 	 */
@@ -157,7 +162,7 @@ public class OATime extends OADateTime {
 	 * Create a new time that uses that uses a supplied hours, minutes, seconds, milliseconds.
 	 * <p>
 	 * Note: clearDate() is called to set date information to 0.
-	 * 
+	 *
 	 * @param hrs 0-23
 	 * @see OATime#valueOf
 	 */
@@ -168,7 +173,7 @@ public class OATime extends OADateTime {
 
 	/**
 	 * Time comparision with any object. Object will first be converted to OATime.
-	 * 
+	 *
 	 * @param obj Date, OADate, Calendar
 	 * @return "0" if equal, "-1" if this OADateTime is less than, "1" if this OADateTime is greater than, "2" if objects can not be
 	 *         compared.
@@ -180,7 +185,7 @@ public class OATime extends OADateTime {
 	/**
 	 * Converts this time to a String value using default format. The default format is the first format that has been set: "format",
 	 * "timeOutputFormat" else or "hh:mma" See OADateTime for list of formatting symbols.
-	 * 
+	 *
 	 * @see OADateTime
 	 */
 	public String toString() {
@@ -189,7 +194,7 @@ public class OATime extends OADateTime {
 
 	/**
 	 * Converts this time to a String value using supplied format. See OADateTime for list of formatting symbols.
-	 * 
+	 *
 	 * @see OADateTime
 	 */
 	public String toString(String f) {
@@ -204,7 +209,7 @@ public class OATime extends OADateTime {
 
 	/**
 	 * Converts a String to an OATime using a supplied format. See OADateTime for list of formatting symbols.
-	 * 
+	 *
 	 * @see #valueOf(String,String)
 	 * @see OADateTime
 	 */
@@ -215,7 +220,7 @@ public class OATime extends OADateTime {
 	/**
 	 * Converts a String to an OATime using a default format. The default format is the first format that has been set: "format",
 	 * "timeOutputFormat" else or "hh:mma" See OADateTime for list of formatting symbols.
-	 * 
+	 *
 	 * @see #valueOf(String,String)
 	 * @see OADateTime
 	 */
@@ -228,7 +233,7 @@ public class OATime extends OADateTime {
 	 * then other formatting and conversions will be used to try to convert to an OATime.
 	 * <p>
 	 * Note: you will need to cast the return value to a OATime.
-	 * 
+	 *
 	 * @param fmt is format to use for parsing. See OADateTime for list of formatting symbols.
 	 * @see OADateTime
 	 * @see #timeValue(String,String)
@@ -253,7 +258,7 @@ public class OATime extends OADateTime {
 	 * "timeOutputFormat" else or "hh:mma" See OADateTime for list of formatting symbols.
 	 * <p>
 	 * Note: you will need to cast the return value to a OATime.
-	 * 
+	 *
 	 * @see #valueOf(String,String)
 	 * @see OADateTime
 	 * @see #timeValue(String,String)
@@ -264,7 +269,7 @@ public class OATime extends OADateTime {
 
 	/**
 	 * Sets the default global format used when converting OADate to String.
-	 * 
+	 *
 	 * @see OADate#setFormat
 	 */
 	public static void setGlobalOutputFormat(String fmt) {
@@ -273,7 +278,7 @@ public class OATime extends OADateTime {
 
 	/**
 	 * Gets the default global format used when converting OADate to String.
-	 * 
+	 *
 	 * @see OADate#setFormat
 	 */
 	public static String getGlobalOutputFormat() {
@@ -282,7 +287,7 @@ public class OATime extends OADateTime {
 
 	/**
 	 * Sets the default global parse format used when converting a String to OATime.
-	 * 
+	 *
 	 * @see OADate#setFormat
 	 */
 	public static void addGlobalParseFormat(String fmt) {
@@ -291,7 +296,7 @@ public class OATime extends OADateTime {
 
 	/**
 	 * Removes a default global parse format that is used when converting a String to OATime.
-	 * 
+	 *
 	 * @see OADate#setFormat
 	 */
 	public static void removeGlobalParseFormat(String fmt) {
@@ -300,18 +305,23 @@ public class OATime extends OADateTime {
 
 	/**
 	 * Removes all global parse formats that are used when converting a String to OATime.
-	 * 
+	 *
 	 * @see OADate#setFormat
 	 */
 	public static void removeAllGlobalParseFormats() {
 		vecTimeParseFormat.removeAllElements();
 	}
 
+	public LocalTime getLocalTime() {
+		LocalTime lt = LocalTime.of(get24Hour(), getMinute(), getSecond(), (int) (getMilliSecond() * (Math.pow(10, 6))));
+		return lt;
+	}
+
 	public static void main(String[] args) {
-		// this is the start time - grep "Opened file" *error*.log        
+		// this is the start time - grep "Opened file" *error*.log
 		OATime dt = new OATime("19:08:28.024", "HH:mm:ss.SSS");
 
-		// this is the gc timestamp to find        
+		// this is the gc timestamp to find
 		dt = (OATime) dt.addSeconds(69099);
 		dt = (OATime) dt.addMilliSeconds(830);
 

@@ -12,6 +12,7 @@ package com.viaoa.util;
 
 import java.sql.Time;
 import java.text.DateFormat;
+import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -108,6 +109,10 @@ public class OADate extends OADateTime {
 	public OADate(Time time) {
 		super(time);
 		clearTime();
+	}
+
+	public OADate(LocalDate ld) {
+		this(new Date(ld.getYear() - 1900, (ld.getMonth().getValue()) - 1, ld.getDayOfMonth()));
 	}
 
 	/**
@@ -302,5 +307,10 @@ public class OADate extends OADateTime {
 			throw new IllegalArgumentException("OADate cant create date from String \"" + date + "\"");
 		}
 		return dt;
+	}
+
+	public LocalDate getLocalDate() {
+		LocalDate ld = LocalDate.of(getYear(), getMonth() + 1, getDay());
+		return ld;
 	}
 }
