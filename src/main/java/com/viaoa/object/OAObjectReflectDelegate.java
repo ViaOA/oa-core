@@ -2307,7 +2307,6 @@ public class OAObjectReflectDelegate {
 		}
 
 		try {
-			// 20181115
 			OAThreadLocalDelegate.setLoading(true);
 			OAThreadLocalDelegate.setSuppressCSMessages(true);
 
@@ -2315,6 +2314,7 @@ public class OAObjectReflectDelegate {
 			OAObjectDelegate.initialize(newObject, oi, true, true, false, false, true);
 
 			_copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
+
 		} finally {
 			OAThreadLocalDelegate.setSuppressCSMessages(false);
 			OAThreadLocalDelegate.setLoading(false);
@@ -2338,6 +2338,7 @@ public class OAObjectReflectDelegate {
 		try {
 			OAThreadLocalDelegate.setLoading(true);
 			OAThreadLocalDelegate.setSuppressCSMessages(true);
+
 			_copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 		} finally {
 			OAThreadLocalDelegate.setLoading(false);
@@ -2349,8 +2350,8 @@ public class OAObjectReflectDelegate {
 	 * note: OAThreadLocalDelegate.setLoadingObject(true/false) is not set in this method.
 	 *      it is set by copyInto
 	 */
-	public static void _copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
-			HashMap<Integer, Object> hmNew) {
+	public static void _copyInto(final OAObject oaObj, final OAObject newObject, final String[] excludeProperties,
+			final OACopyCallback copyCallback, final HashMap<Integer, Object> hmNew) {
 		if (oaObj == null || newObject == null) {
 			return;
 		}
@@ -2440,7 +2441,8 @@ public class OAObjectReflectDelegate {
 							objx = _createCopy((OAObject) obj, (String[]) null, copyCallback, hmNew);
 						}
 					} else {
-						objx = obj.createCopy();
+						objx = _createCopy((OAObject) obj, (String[]) null, copyCallback, hmNew);
+						//was: objx = obj.createCopy();
 					}
 				}
 				if (objx != null) {
@@ -2448,6 +2450,9 @@ public class OAObjectReflectDelegate {
 						hmNew.put(OAObjectDelegate.getGuid(obj), objx);
 					}
 					hubNew.add(objx);
+					// assign parentProperty
+					OAObjectPropertyDelegate.unsafeSetProperty(	(OAObject) objx, HubDetailDelegate.getPropertyFromDetailToMaster(hubNew),
+																newObject);
 				}
 			}
 		}
@@ -2482,21 +2487,21 @@ public class OAObjectReflectDelegate {
 
 			Object obj = OAObjectReflectDelegate.getProperty(oaObj, li.getName());
 
-			Object objFromCallback = null;
-
 			OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
-			if (liRev != null && liRev.isOwner()) {
-				if (!li.getAutoCreateNew()) {
-					objFromCallback = copyCallback.getPropertyValue(oaObj, li.getName(), obj);
-					if (obj == objFromCallback) {
-						// dont auto assign the owner to be the same (??)
-						continue;
+			if (liRev != null && liRev.isOwner() && !li.getAutoCreateNew()) {
+				Object newObj = hmNew.get(OAObjectDelegate.getGuid((OAObject) obj)); // this is the new/replacement one to use
+				if (newObj != null) {
+					if (copyCallback != null) {
+						newObj = copyCallback.getPropertyValue(oaObj, li.getName(), newObj);
 					}
+					newObject.setProperty(li.getName(), newObj);
 				}
+				// else dont assign, since it has the owner as the old/original object. It will be assigned when a new ownerObj is copied
+				continue;
 			}
 
 			if (li.getAutoCreateNew() && obj instanceof OAObject) {
-				Object objx = newObject.getProperty(li.getName());
+				Object objx = newObject.getProperty(li.getName()); // creates new
 				if (objx instanceof OAObject) {
 					_copyInto((OAObject) obj, (OAObject) objx, (String[]) null, copyCallback, hmNew);
 				}
@@ -2510,9 +2515,7 @@ public class OAObjectReflectDelegate {
 					}
 				}
 				if (!b && copyCallback != null) {
-					if (objFromCallback == null) {
-						objFromCallback = copyCallback.getPropertyValue(oaObj, li.getName(), obj);
-					}
+					Object objFromCallback = copyCallback.getPropertyValue(oaObj, li.getName(), obj);
 
 					if (obj == objFromCallback && obj instanceof OAObject) {
 						obj = objFromCallback;
