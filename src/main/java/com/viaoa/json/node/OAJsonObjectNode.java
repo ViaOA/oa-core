@@ -105,7 +105,11 @@ public class OAJsonObjectNode extends OAJsonRootNode {
 		if (node instanceof OAJsonStringNode) {
 			return ((OAJsonStringNode) node).value;
 		}
-		return null;
+
+		if (node == null) {
+			return null;
+		}
+		return node.toJson(0);
 	}
 
 	@Override
