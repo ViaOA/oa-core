@@ -40,14 +40,13 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 // 20140124
-/*
- * This is used to find all values from one OAObject/Hub to another OAObject/Hub, using a propertyPath.
- * Support is included for Filters.
+/**
+ * This is used to find all values from one OAObject/Hub to another OAObject/Hub, using a propertyPath. Support is included for Filters.
  *
  * @param <F> type of hub or OAObject to use as the root (from)
  * @param <T> type of hub for the to class (to).
- *
- * examples:<code>
+ *        <P>
+ *        examples:<code>
     // from Router, find all UserLogin for a userId
     OAFinder<Router, UserLogin> f = new OAFinder<Router, UserLogin>(Router.P_UserLogins);
     String cpp = UserLoginPP.user().userId().pp;
@@ -55,11 +54,11 @@ import com.viaoa.util.OAString;
     UserLogin userLogin = f.findFirst(router);
 
     OAFinder<Program, Employee> f = new OAFinder<Program, Employee>(ProgramPP.locations().employees().pp) {
-        @Override
+        &#64;Override
         protected boolean isUsed(Employee emp) {
             return super.isUsed(emp);
         }
-        @Override
+        &#64;Override
         protected void onFound(Employee emp) {
             //todo:
         }
@@ -69,7 +68,6 @@ import com.viaoa.util.OAString;
     ArrayList<Employee> al = f.find(program);
 
     </code>
- *
  */
 public class OAFinder<F extends OAObject, T extends OAObject> {
 	private String strPropertyPath;
