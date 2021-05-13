@@ -23,7 +23,8 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Creates a filter to see if the value of a Hub.AO propertyPath is the same as the propertyPath from another object.
+ * Creates a filter to see if the value of a Hub.AO propertyPath is the same as the propertyPath from 
+ * a propertyPath of the objects being selected.
  *
  * @author vvia
  */
@@ -36,12 +37,12 @@ public class OAEqualPathFilter implements OAFilter {
 	private final Hub hubFrom; // uses AO
 	private Object objHubFromAO; // last (AO) Object used for hubFrom
 
-	private final String strPropPathOrig;
-	private String strPropPath;
-	private OAPropertyPath pp;
+	private final String strFromPropPathOrig;
+	private String strFromPropPath;
+	private OAPropertyPath ppFrom;
 
-	private String strPropPathCompareObject;
-	private OAPropertyPath ppCompareObject;
+	private String strToPropPath;
+	private OAPropertyPath ppTo;
 
 	private OAFinder finder;
 	private OAFinder finderCompareObject;
@@ -51,21 +52,21 @@ public class OAEqualPathFilter implements OAFilter {
 	 * Uses a fromHub.AO and property path to see if it matches the value from a property path of another object.
 	 *
 	 * @param fromHub  uses the AO
-	 * @param propPath to use for finding object that matches the object propertyPath of a compared object.
+	 * @param propPathFrom to use for finding object that matches the object propertyPath of a compared object.
 	 */
-	public OAEqualPathFilter(Hub fromHub, String propPath, String strPropPathCompareObject) {
+	public OAEqualPathFilter(Hub fromHub, String propPathFrom, String propPathTo) {
 		this.hubFrom = fromHub;
 		this.objFrom = null;
-		this.strPropPathOrig = propPath;
-		this.strPropPathCompareObject = strPropPathCompareObject;
+		this.strFromPropPathOrig = propPathFrom;
+		this.strToPropPath = propPathTo;
 		setup();
 	}
 
 	public OAEqualPathFilter(OAObject objFrom, String propPath, String strPropPathCompareObject) {
 		this.objFrom = objFrom;
 		this.hubFrom = null;
-		this.strPropPathOrig = propPath;
-		this.strPropPathCompareObject = strPropPathCompareObject;
+		this.strFromPropPathOrig = propPath;
+		this.strToPropPath = strPropPathCompareObject;
 		setup();
 	}
 
@@ -73,9 +74,11 @@ public class OAEqualPathFilter implements OAFilter {
 	// ex:   Depts.emps m/d hubs if dept AO changes and emp AO was null
 	// needs to listen to this.hubFrom.getMasterHub AOchanges
 
+	// 20210509 updateSelect now checks to see if AO changed
+	
 	protected void setup() {
-		strPropPath = strPropPathOrig;
-		if (strPropPath == null) {
+		strFromPropPath = strFromPropPathOrig;
+		if (strFromPropPath == null) {
 			return;
 		}
 		if (objFrom == null && hubFrom == null) {
@@ -84,10 +87,10 @@ public class OAEqualPathFilter implements OAFilter {
 
 		final Class clazz = hubFrom != null ? hubFrom.getObjectClass() : objFrom != null ? objFrom.getClass() : null;
 
-		this.pp = new OAPropertyPath(clazz, strPropPath);
+		this.ppFrom = new OAPropertyPath(clazz, strFromPropPath);
 
 		if (!bHasFilter) {
-			String[] ss = pp.getFilterNames();
+			String[] ss = ppFrom.getFilterNames();
 			if (ss != null) {
 				for (String s : ss) {
 					if (OAString.isNotEmpty(s)) {
@@ -98,10 +101,11 @@ public class OAEqualPathFilter implements OAFilter {
 		}
 
 		if (hubFrom != null) {
-			OALinkInfo[] lis = pp.getLinkInfos();
+			OALinkInfo[] lis = ppFrom.getLinkInfos();
 
 			// use hubFrom.AO, if it is null, then check if pp uses it's masterObject(s), and if so then use objFrom=masterObj and shorten the pp.
 			// reset
+			
 			objFrom = null;
 			finder = null;
 			objFromPPValue = null;
@@ -131,25 +135,25 @@ public class OAEqualPathFilter implements OAFilter {
 			}
 
 			if (cntGetMasterObject > 0) {
-				int pos = strPropPath.indexOf('.');
-				int pos1 = strPropPath.indexOf('(');
-				int pos2 = strPropPath.indexOf(')');
+				int pos = strFromPropPath.indexOf('.');
+				int pos1 = strFromPropPath.indexOf('(');
+				int pos2 = strFromPropPath.indexOf(')');
 
 				String spp;
 				if (pos1 >= 0 && pos > pos1 && pos > pos2) {
-					strPropPath = OAString.field(strPropPath, ')', 2, 99);
-					strPropPath = OAString.field(strPropPath, '.', cntGetMasterObject + 1, 99);
+					strFromPropPath = OAString.field(strFromPropPath, ')', 2, 99);
+					strFromPropPath = OAString.field(strFromPropPath, '.', cntGetMasterObject + 1, 99);
 				} else {
-					strPropPath = OAString.field(strPropPath, '.', cntGetMasterObject + 1, 99);
+					strFromPropPath = OAString.field(strFromPropPath, '.', cntGetMasterObject + 1, 99);
 				}
-				this.pp = new OAPropertyPath(objFrom.getClass(), strPropPath);
+				this.ppFrom = new OAPropertyPath(objFrom.getClass(), strFromPropPath);
 			}
-			objFromPPValue = pp.getValue(objFrom);
+			objFromPPValue = ppFrom.getValue(objFrom);
 		}
 	}
 
 	public OAPropertyPath getPropertyPath() {
-		return pp;
+		return ppFrom;
 	}
 
 	@Override
@@ -175,11 +179,11 @@ public class OAEqualPathFilter implements OAFilter {
 			return false;
 		}
 
-		if (ppCompareObject == null) {
-			ppCompareObject = new OAPropertyPath(obj.getClass(), strPropPathCompareObject);
+		if (ppTo == null) {
+			ppTo = new OAPropertyPath(obj.getClass(), strToPropPath);
 			//qqqqqqq put in OAInFilter
 			if (!bHasFilter) {
-				String[] ss = ppCompareObject.getFilterNames();
+				String[] ss = ppTo.getFilterNames();
 				if (ss != null) {
 					for (String s : ss) {
 						if (OAString.isNotEmpty(s)) {
@@ -191,18 +195,28 @@ public class OAEqualPathFilter implements OAFilter {
 
 		}
 
-		Object objx = ppCompareObject.getValue(obj);
+		Object objx = ppTo.getValue(obj);
 
 		boolean b = (objx == objFromPPValue);
 		return b;
 	}
 
+	
+	
 	@Override
 	public boolean updateSelect(OASelect select) {
-		if (objFrom != null && ppCompareObject != null && select.getWhereObject() == null) {
-			OAPropertyPath ppRev = ppCompareObject.getReversePropertyPath();
-			if (ppRev != null) {
-				select.setWhereObject(objFrom, ppRev.getPropertyPath());
+	    OAObject obj = null;
+	    if (hubFrom != null) {
+	        obj = (OAObject) hubFrom.getAO();
+	        if (obj != objFrom) {
+	            setup();
+	        }
+	    }
+	    
+		if (objFrom != null && ppTo != null && select.getWhereObject() == null) {
+			OAPropertyPath ppRev = ppTo.getReversePropertyPath();
+			if (ppTo != null) {
+				select.setWhereObject((OAObject) objFromPPValue, ppRev.getPropertyPath());
 				if (bHasFilter) {
 					return true;
 				}

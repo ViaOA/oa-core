@@ -1757,7 +1757,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
 		public void _onNewList2() {
 			if (!bShareEndHub) {
-				hubCombined.clear();
+				if (hubCombined != null) hubCombined.clear();
 			}
 			try {
 				_onNewList3();

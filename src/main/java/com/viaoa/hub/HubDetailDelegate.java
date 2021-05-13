@@ -827,7 +827,7 @@ public class HubDetailDelegate {
 		}
 
 		// get LinkInfo
-		OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(thisHub.data.getObjectInfo(), propertyName);
+		final OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(thisHub.data.getObjectInfo(), propertyName);
 
 		// find method
 		if (linkInfo == null) {
@@ -946,6 +946,14 @@ public class HubDetailDelegate {
 
 		if (type == HubDetail.OAOBJECT || type == HubDetail.OBJECT) {
 			hub.datau.setDefaultPos(0);
+			
+			// 20210506
+	        if (type == HubDetail.OAOBJECT && linkInfo.getCalculated() && linkInfo.getCalcDependentProperties() != null && linkInfo.getCalcDependentProperties().length > 0) {
+	            // need to use a hub listener if it's a calculated link that has dependent PPs
+	            thisHub.addHubListener(new HubListenerAdapter() {
+	                // no-op, just need to have it generate a property change whenever a dependent prop changes so that link hub is updated.
+	            }, propertyName);
+	        }
 		}
 
 		if (!bFound) {

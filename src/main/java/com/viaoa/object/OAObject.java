@@ -1381,7 +1381,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return getNew();
 	}
 
-	public void setJaxbNew(boolean b) {
+	public void setJaxbNew(Boolean b) {
 		setNew(b);
 	}
 
@@ -1397,7 +1397,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return getChanged();
 	}
 
-	public void setJaxbChanged(boolean b) {
+	public void setJaxbChanged(Boolean b) {
 		setChanged(b);
 	}
 
@@ -1413,7 +1413,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return getDeleted();
 	}
 
-	public void setJaxbDeleted(boolean b) {
+	public void setJaxbDeleted(Boolean b) {
 		setDeleted(b);
 	}
 
