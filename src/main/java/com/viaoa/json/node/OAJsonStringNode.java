@@ -21,6 +21,7 @@ public class OAJsonStringNode extends OAJsonNode {
 	}
 
 	public String getValue() {
-		return value;
+		String s = OAString.unescapeJSON(value);
+		return s;
 	}
 }

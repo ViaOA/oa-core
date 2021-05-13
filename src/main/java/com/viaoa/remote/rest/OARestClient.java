@@ -657,6 +657,7 @@ public class OARestClient {
 		}
 
 		httpUrl = OAString.append(httpUrl, invokeInfo.urlQuery, "?");
+		httpUrl = OAString.convert(httpUrl, "/?", "?");
 
 		invokeInfo.finalUrl = httpUrl;
 

@@ -188,7 +188,11 @@ public class OAJsonMapper {
 
 		Object objResult = null;
 		if (toClass.equals(String.class)) {
-			objResult = fromNode.toJson();
+			if (fromNode instanceof OAJsonStringNode) {
+				objResult = ((OAJsonStringNode) fromNode).getValue();
+			} else {
+				objResult = fromNode.toJson();
+			}
 			return (T) objResult;
 		}
 
@@ -209,11 +213,6 @@ public class OAJsonMapper {
 
 		if (toClass.equals(void.class) || toClass.equals(Void.class)) {
 			objResult = null;
-			return (T) objResult;
-		}
-
-		if (toClass.equals(String.class)) {
-			objResult = fromNode.toJson();
 			return (T) objResult;
 		}
 
@@ -308,6 +307,10 @@ public class OAJsonMapper {
 			throws Exception {
 		OAJsonNode node = convertObjectToJsonNode(obj, lstIncludePropertyPaths, bIncludeOwned);
 		return node.toJson();
+	}
+
+	public static OAJsonNode convertObjectToJsonNode(final Object obj) throws Exception {
+		return convertObjectToJsonNode(obj, null, false);
 	}
 
 	public static OAJsonNode convertObjectToJsonNode(final Object obj, List<String> lstIncludePropertyPaths) throws Exception {

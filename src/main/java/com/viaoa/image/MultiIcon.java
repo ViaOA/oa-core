@@ -34,10 +34,10 @@ public class MultiIcon implements Icon {
 
 	public int getIconHeight() {
 		int x = 0;
-		if (icon1 != null) {
+		if (icon1 != null && icon1 != this) {
 			x = icon1.getIconHeight();
 		}
-		if (icon2 != null) {
+		if (icon2 != null && icon2 != this) {
 			x = Math.max(x, icon2.getIconHeight());
 		}
 		return x;

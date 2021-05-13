@@ -1599,7 +1599,7 @@ public class OARestMethodInfo {
 		}
 
 		invokeInfo.byteArrayBody = getByteArrayBody(args);
-		if (invokeInfo.byteArrayBody != null) {
+		if (invokeInfo.byteArrayBody == null) {
 			invokeInfo.jsonBody = getJsonBody(args);
 			invokeInfo.formData = getFormData(args);
 		}

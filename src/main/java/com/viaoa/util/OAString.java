@@ -3685,6 +3685,19 @@ public class OAString {
 		return shortName;
 	}
 
+	public static String unescapeJSON(String s) {
+		s = OAString.convert(s, "\\\"", "\"");
+		s = OAString.convert(s, "\\\\", "\\");
+		s = OAString.convert(s, "\\b", "\b");
+		s = OAString.convert(s, "\\f", "\f");
+		s = OAString.convert(s, "\\n", "\n");
+		s = OAString.convert(s, "\\r", "\r");
+		s = OAString.convert(s, "\\t", "\t");
+		s = OAString.convert(s, "\\/", "/");
+
+		return s;
+	}
+
 	public static String escapeJSON(String s) {
 		if (s == null) {
 			return null;

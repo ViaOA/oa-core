@@ -573,13 +573,15 @@ public class HubAddRemoveDelegate {
 
 				if (!bIsLoading) {
 					if (thisHub.datam.getMasterObject() != null) {
-						if (thisHub.datam.liDetailToMaster != null && thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
-							HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.getMasterObject());
-						} else if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.MANY) {
-							// 20210326 M2M
-							Hub hubx = (Hub) thisHub.datam.liDetailToMaster.getValue(obj);
-							if (hubx != null) {
-								hubx.add(thisHub.datam.getMasterObject());
+						if (thisHub.datam.liDetailToMaster != null) {
+							if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
+								HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.getMasterObject());
+							} else if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.MANY) {
+								// 20210326 M2M
+								Hub hubx = (Hub) thisHub.datam.liDetailToMaster.getValue(obj);
+								if (hubx != null) {
+									hubx.add(thisHub.datam.getMasterObject());
+								}
 							}
 						}
 					} else if (obj instanceof OAObject && ((OAObject) obj).isNew()) {

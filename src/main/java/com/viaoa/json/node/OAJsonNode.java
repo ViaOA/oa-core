@@ -36,4 +36,6 @@ public abstract class OAJsonNode {
 	}
 
 	protected abstract void toJson(final JsonOutputStream jos);
+
+	// public abstract Object getValue();
 }
