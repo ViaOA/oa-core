@@ -1993,6 +1993,26 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		return HubAddRemoveDelegate.canAddMsg(this, obj);
 	}
 
+    public boolean getAllowAdd() {
+        return HubAddRemoveDelegate.canAdd(this, null);
+    }
+
+    public boolean getAllowAdd(Object obj) {
+        return HubAddRemoveDelegate.canAdd(this, obj);
+    }
+
+    /**
+     * Uses OAObjectCallbackDelegate 
+     * @param checkType from OAObjectCallback
+     */
+    public boolean getAllowAdd(int checkType, TYPE obj) {
+        if (!(obj instanceof OAObject)) {
+            return true;
+        }
+        return OAObjectCallbackDelegate.getAllowAdd(this, (OAObject) obj, checkType);
+    }
+
+    
 	public boolean getAllowRemove(int checkType, TYPE obj) {
 		if (!(obj instanceof OAObject)) {
 			return true;

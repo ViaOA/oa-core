@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
+import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
@@ -190,16 +191,28 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			}
 			// see if object is in hubx
 			if (getMethod == null) {
-				if (hubx.getObject(obj) == null) {
-					hubx.add(obj);
+			    if (hubx.getObject(obj) == null) {
+			        if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, obj)) {
+                        hubx.add(obj);
+				    }
+				    /* 20210514 was:
+                    if (hubx.getEnabled()) {
+                        hubx.add(obj);
+                    }
+                    */
 				}
 			} else {
 				for (int j = 0;; j++) {
 					Object o = hubx.elementAt(j);
 					if (o == null) {
+	                    if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, obj)) {
+                            createNewObject((PROPTYPE) obj);
+	                    }
+	                    /* 20210514 was:
 						if (hubx.getEnabled()) {
-							createNewObject((PROPTYPE) obj);
+						    createNewObject((PROPTYPE) obj);
 						}
+						*/
 						break;
 					}
 					try {
@@ -231,7 +244,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 				throw new RuntimeException(e);
 			}
 			if (hubMasterx.getObject(value) == null) {
-				if (hubx.getAllowRemove(OAObjectCallback.CHECK_ALL, obj)) {
+				if (hubx.getAllowRemove(OAObjectCallback.CHECK_AllButProcessed, obj)) {
 					if (okToRemove(obj, value)) {
 						hubx.remove(i);
 						if (obj instanceof OAObject) {

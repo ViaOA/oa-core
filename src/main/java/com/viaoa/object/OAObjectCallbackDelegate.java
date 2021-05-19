@@ -52,6 +52,7 @@ public class OAObjectCallbackDelegate {
 		return getAllowEnabledObjectCallback(checkType, hub, obj, name).getAllowed();
 	}
 
+    
 	public static boolean getAllowCopy(OAObject oaObj) {
 		if (oaObj == null) {
 			return false;
