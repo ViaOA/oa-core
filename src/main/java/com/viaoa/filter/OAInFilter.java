@@ -242,7 +242,7 @@ public class OAInFilter implements OAFilter {
 	}
 
 	@Override
-	public boolean isUsed(Object obj) {
+	public boolean isUsed(final Object obj) {
 		if (hubFrom != null) {
 			Hub hubx = hubFrom;
 			Object objx = null;
@@ -282,7 +282,7 @@ public class OAInFilter implements OAFilter {
 			Object objx = finder.findFirst(objFrom);
 			bResult = (objx != null);
 		} else if (objFrom != null) {
-			bResult = (objFrom == obj);
+			bResult = (objFrom == objFind);
 		} else {
 			bResult = false;
 		}
