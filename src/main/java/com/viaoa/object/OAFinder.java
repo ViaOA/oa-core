@@ -29,6 +29,7 @@ import com.viaoa.filter.OANotLikeFilter;
 import com.viaoa.filter.OANotNullFilter;
 import com.viaoa.filter.OANullFilter;
 import com.viaoa.filter.OAOrFilter;
+import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.hub.CustomHubFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDelegate;
@@ -870,6 +871,14 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 	public void addNotEmptyFilter(String pp) {
 		addFilter(new OANotEmptyFilter(pp));
+	}
+
+	public void addQueryFilter(Class<F> c, String pp) {
+		addFilter(new OAQueryFilter(c, pp));
+	}
+
+	public void addQueryFilter(Class<F> c, String pp, Object[] args) {
+		addFilter(new OAQueryFilter(c, pp, args));
 	}
 
 	public void addEqualFilter(String pp, Object val) {
