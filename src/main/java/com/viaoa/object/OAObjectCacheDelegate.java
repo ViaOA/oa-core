@@ -249,7 +249,7 @@ public class OAObjectCacheDelegate {
 	 * Events from Hubs: afterAdd, afterRemove<br>
 	 * Events from OAObjects: afterPropertyChange
 	 */
-	public static void addListener(Class clazz, OAObjectCacheListener l) {
+	public static <T extends OAObject> void addListener(Class<T> clazz, OAObjectCacheListener<T> l) {
 		LOG.fine("class=" + clazz);
 		Vector vecListener = (Vector) OAObjectHashDelegate.hashCacheListener.get(clazz);
 		if (vecListener == null) {
@@ -1317,7 +1317,7 @@ public class OAObjectCacheDelegate {
 		// LOG.fine("called");
 	    Enumeration enumx = OAObjectHashDelegate.hashCacheClass.keys();
 	    ci.getCacheHashMap().clear();
-	
+
 	    Object[] cs = OAObjectHashDelegate.hashCacheClass.keySet().toArray();
 		if (cs == null) return;
 		int x = cs.length;

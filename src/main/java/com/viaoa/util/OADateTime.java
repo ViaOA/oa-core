@@ -2058,7 +2058,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return this.ignoreTimeZone;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
+
+		String sx = (new OADateTime()).toString("yyyy-MM-dd-HH.mm.ss.SSSSSS");
+		Thread.sleep(1);
+		String sx2 = (new OADateTime()).toString("yyyy-MM-dd-HH.mm.ss.SSSSSS");
+
 		String[] tzs = TimeZone.getAvailableIDs();
 		for (String s : tzs) {
 			TimeZone tz = TimeZone.getTimeZone(s);
@@ -2085,7 +2090,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		String s = sdf.format(new Date());
 		System.out.println(s);
 
-		String sx = (new OADateTime()).toString("yyyy-MM-dd'T'HH:mm:ss.S"); // 2019-08-26T15:47:40.902
+		sx = (new OADateTime()).toString("yyyy-MM-dd'T'HH:mm:ss.S"); // 2019-08-26T15:47:40.902
 
 		OADate d = new OADate("02/22/2019");
 		OADate today = new OADate();
