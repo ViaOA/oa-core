@@ -128,7 +128,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-		
+
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -1481,6 +1481,9 @@ public class OAObject implements java.io.Serializable, Comparable {
 		if (objx instanceof OANotExist) {
 			return null;
 		}
+		if (objx == null) { // 20210709
+			return null;
+		}
 		if (objx instanceof OAObject) {
 			objx = ((OAObject) objx).getObjectKey();
 		}
@@ -1556,13 +1559,13 @@ public class OAObject implements java.io.Serializable, Comparable {
 			if (pi.getId()) {
 				Object idx = OAConv.convert(pi.getClassType(), id);
 				OAObjectKey objKey = new OAObjectKey(idx);
-		
+
 				/ *
 				 * this.setProperty will correctly set the property:
 				 * If isLoading=true, then it will only need to store the key
 				 * else it will get the ref object and call the setter method.
 				 * /
-		
+
 				/ *
 				 * 20210208
 				 * the object for this id might not exist
