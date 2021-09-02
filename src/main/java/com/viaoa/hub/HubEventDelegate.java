@@ -275,7 +275,7 @@ public class HubEventDelegate {
 				}
 			}
 		}
-		OAObjectCacheDelegate.fireAfterRemoveEvent(thisHub, obj);
+		OAObjectCacheDelegate.fireAfterAddEvent(thisHub, obj);
 		//OAObjectCacheDelegate.fireAfterAddEvent(thisHub, obj, pos);
 		//fireMasterObjectChangeEvent(thisHub, false);
 
@@ -585,13 +585,13 @@ public class HubEventDelegate {
 
 		// 20210506 could be used by link
 		if (object instanceof OAObject) {
-            OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo((OAObject) object);
-            OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
-            if (linkInfo != null) {
-                propertyChangeUpdateDetailHubs(thisHub, (OAObject) object, propertyName);
-            }
+			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo((OAObject) object);
+			OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
+			if (linkInfo != null) {
+				propertyChangeUpdateDetailHubs(thisHub, (OAObject) object, propertyName);
+			}
 		}
-		
+
 		HubListener[] hl = HubEventDelegate.getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
@@ -605,9 +605,7 @@ public class HubEventDelegate {
 				OAThreadLocalDelegate.removeHubEvent(hubEvent);
 			}
 		}
-		
 
-		
 	}
 
 	/**
