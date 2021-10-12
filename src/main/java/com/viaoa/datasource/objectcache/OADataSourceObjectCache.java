@@ -15,6 +15,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +42,7 @@ import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.util.OAArray;
+import com.viaoa.util.OAComparator;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OALogger;
@@ -183,6 +186,43 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 
 		ObjectCacheIterator itx = new ObjectCacheIterator(selectClass, filterx);
 		itx.setMax(max);
+
+		if (OAString.isNotEmpty(queryOrder)) {
+			OAComparator comparator = new OAComparator(selectClass, queryOrder, false);
+			ArrayList al = new ArrayList();
+			for (; itx.hasNext();) {
+				al.add(itx.next());
+			}
+			Collections.sort(al, comparator);
+
+			final Iterator itSorted = al.iterator();
+
+			final String queryWhere2 = queryWhere;
+
+			OADataSourceIterator dsi = new OADataSourceIterator() {
+				@Override
+				public boolean hasNext() {
+					return itSorted.hasNext();
+				}
+
+				@Override
+				public Object next() {
+					return itSorted.next();
+				}
+
+				@Override
+				public String getQuery() {
+					return queryWhere2;
+				}
+
+				@Override
+				public String getQuery2() {
+					return null;
+				}
+			};
+			return dsi;
+		}
+
 		return itx;
 	}
 
@@ -190,6 +230,11 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 	public OADataSourceIterator selectPassthru(Class selectClass,
 			String queryWhere, String queryOrder,
 			int max, OAFilter filter, boolean bDirty) {
+
+		// 20211012 same as select for this datasource
+		return select(selectClass, queryWhere, null, queryOrder, null, null, null, max, filter, bDirty);
+
+		/*was:
 		if (!OAString.isEmpty(queryWhere)) {
 			filter = new OAFilter() {
 				@Override
@@ -199,6 +244,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 			};
 		}
 		return new ObjectCacheIterator(selectClass, filter);
+		*/
 	}
 
 	public @Override void assignId(OAObject obj) {
