@@ -188,7 +188,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 		itx.setMax(max);
 
 		if (OAString.isNotEmpty(queryOrder)) {
-			OAComparator comparator = new OAComparator(selectClass, queryOrder, false);
+			OAComparator comparator = new OAComparator(selectClass, queryOrder, true);
 			ArrayList al = new ArrayList();
 			for (; itx.hasNext();) {
 				al.add(itx.next());
@@ -218,6 +218,10 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 				@Override
 				public String getQuery2() {
 					return null;
+				}
+
+				@Override
+				public void remove() {
 				}
 			};
 			return dsi;
