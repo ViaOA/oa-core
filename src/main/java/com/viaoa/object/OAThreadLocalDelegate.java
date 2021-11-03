@@ -23,6 +23,7 @@ import com.viaoa.context.OAContext;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubShareDelegate;
+import com.viaoa.jackson.OAJackson;
 import com.viaoa.jaxb.OAJaxb;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -38,7 +39,7 @@ import com.viaoa.util.Tuple3;
  * Delegate class used to store information about the local thread. This is used internally throughout OA to set specific features for a
  * thread. Note: it is important to make sure to call the corresponding reverse value, so that the flags and counters will be unset and the
  * Thread will be removed from internal map.
- * 
+ *
  * @author vvia
  */
 public class OAThreadLocalDelegate {
@@ -67,6 +68,7 @@ public class OAThreadLocalDelegate {
 
 	private static final AtomicInteger TotalJaxb = new AtomicInteger();
 	private static final AtomicInteger TotalDontAdjustHub = new AtomicInteger();
+	private static final AtomicInteger TotalJackson = new AtomicInteger();
 
 	protected static OAThreadLocal getThreadLocal(boolean bCreateIfNull) {
 		OAThreadLocal ti = threadLocal.get();
@@ -517,7 +519,7 @@ public class OAThreadLocalDelegate {
 	 * Ideally, only one threadLocal at a time will have access to the Object - while the other threads wait. If another thread already has
 	 * lock(s) on other objects, then it can also be allowed to use the object - after waiting a certain amount of time, and still not given
 	 * the lock.
-	 * 
+	 *
 	 * @param maxWaitTries (default=10) max number of waits (each 50 ms) to wait before taking the lock - 0 to wait until notified. This
 	 *                     will only be used if the current threadLocal has 1+ locks already and object is locked by another threadLocal.
 	 */
@@ -644,7 +646,7 @@ public class OAThreadLocalDelegate {
 				try {
 					tiThis.wait(msWait); // wait for wake up
 				} catch (InterruptedException e) {
-					// System.out.println("ERRROR");                    
+					// System.out.println("ERRROR");
 				}
 			}
 		}
@@ -699,7 +701,7 @@ public class OAThreadLocalDelegate {
 
 		if (maxWaitTries > 0 && tries >= maxWaitTries && tries > 1) {
 			if (tls[1] != tlThis) {
-				// need to be second in list, since the owner (at pos [0]) will notify [1] when it is done - and not another threadLocal                     
+				// need to be second in list, since the owner (at pos [0]) will notify [1] when it is done - and not another threadLocal
 				tls = (OAThreadLocal[]) OAArray.removeValue(OAThreadLocal.class, tls, tlThis);
 				tls = (OAThreadLocal[]) OAArray.insert(OAThreadLocal.class, tls, tlThis, 1);
 				hmLock.put(thisLockObject, tls);
@@ -828,7 +830,7 @@ public class OAThreadLocalDelegate {
 		tl.locks = OAArray.removeAt(Object.class, tl.locks, pos); // must be inside sync
 	}
 
-	// HubListenerTree uses this to ignore dependent property changes caused by add/remove objects from hubMerger.hubMaster                                
+	// HubListenerTree uses this to ignore dependent property changes caused by add/remove objects from hubMerger.hubMaster
 	public static boolean isHubMergerChanging() {
 		boolean b;
 		if (OAThreadLocalDelegate.TotalHubMergerChanging.get() == 0) {
@@ -1052,7 +1054,7 @@ public class OAThreadLocalDelegate {
 		long ms = System.currentTimeMillis();
 		if (ms > msLast + 5000) {
 			LOG.warning(msg);
-			/*qqqqqqq            
+			/*qqqqqqq
 			if (ms > msThrottleStackTrace + 30000) {
 			    if (msThrottleStackTrace != 0) LOG.warning("ThreadLocalDelegate.stackTraces\n"+getAllStackTraces());
 			    msThrottleStackTrace = ms;
@@ -1139,8 +1141,8 @@ public class OAThreadLocalDelegate {
 	    if (sc != null) setRemoteMultiplexerClient(sc.getRemoteMultiplexerClient());
 	    else setRemoteMultiplexerClient(null);
 	}
-	
-	
+
+
 	public static RemoteMultiplexerClient getRemoteMultiplexerClient() {
 	    RemoteMultiplexerClient mc;
 	    if (OAThreadLocalDelegate.TotalRemoteMultiplexerClient.get() == 0) {
@@ -1217,7 +1219,7 @@ public class OAThreadLocalDelegate {
 		ti.recursiveTriggerCount = x;
 	}
 
-	// HubListenerTree used to determine how deep tree is, caused by listening to dependent props (like calcs, etc)                                
+	// HubListenerTree used to determine how deep tree is, caused by listening to dependent props (like calcs, etc)
 	public static int getHubListenerTreeCount() {
 		int x;
 		if (OAThreadLocalDelegate.TotalHubListenerTreeCount.get() == 0) {
@@ -1442,7 +1444,7 @@ public class OAThreadLocalDelegate {
 
 	/**
 	 * Sets the context that is being used for this Thread.
-	 * 
+	 *
 	 * @see OAContext#getContextObject()
 	 */
 	public static void setContext(Object context) {
@@ -1519,6 +1521,34 @@ public class OAThreadLocalDelegate {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
 		OAJaxb hold = ti.oajaxb;
 		ti.oajaxb = jaxb;
+		return hold;
+	}
+
+	public static OAJackson getOAJackson() {
+		if (TotalJackson.get() == 0) {
+			return null;
+		}
+		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
+		if (ti == null) {
+			return null;
+		}
+		return ti.oajackson;
+	}
+
+	public static OAJackson setOAJackson(OAJackson jackson) {
+		if (jackson == null && TotalJackson.get() == 0) {
+			return null;
+		}
+
+		if (jackson != null) {
+			TotalJackson.incrementAndGet();
+		} else {
+			TotalJackson.decrementAndGet();
+		}
+
+		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
+		OAJackson hold = ti.oajackson;
+		ti.oajackson = jackson;
 		return hold;
 	}
 

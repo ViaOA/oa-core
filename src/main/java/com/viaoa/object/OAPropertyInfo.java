@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.hub.Hub;
+import com.viaoa.util.OAString;
 
 public class OAPropertyInfo implements java.io.Serializable {
 	static final long serialVersionUID = 1L;
@@ -142,6 +143,10 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public String getLowerName() {
+		return OAString.mfcl(name);
 	}
 
 	public String getDisplayName() {

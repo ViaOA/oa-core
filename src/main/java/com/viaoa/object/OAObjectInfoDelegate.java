@@ -361,6 +361,30 @@ public class OAObjectInfoDelegate {
 				}
 			}
 		}
+
+		// 20211103 remove helper methods for enum props *String, *Enum
+		List<String> alRemove = new ArrayList();
+		for (final String propName : alFound) {
+			boolean bFound = false;
+			String s = propName.toUpperCase();
+			if (s.endsWith("STRING") || s.endsWith("ENUM")) {
+				for (String s2 : alFound) {
+					s2 = s2.toUpperCase();
+					if (s2.equals(s)) {
+						continue;
+					}
+					if ((s2 + "STRING").equals(s) || (s2 + "ENUM").equals(s)) {
+						bFound = true;
+						break;
+					}
+				}
+				if (bFound) {
+					alRemove.add(propName);
+				}
+			}
+		}
+		alFound.removeAll(alRemove);
+
 		String[] ss = new String[alFound.size()];
 		alFound.toArray(ss);
 		return ss;

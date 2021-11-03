@@ -123,8 +123,6 @@ public @interface OAProperty {
 
 	/**
 	 * If true, then datetimes dont need timezone
-	 *
-	 * @return
 	 */
 	boolean ignoreTimeZone() default false;
 

@@ -128,7 +128,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-
+		
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -966,6 +966,10 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return b;
 	}
 
+	public void removeNull(String propertyName) {
+		OAObjectInfoDelegate.setPrimitiveNull(this, propertyName, false);
+	}
+
 	/**
 	 * This is used so that code will only be ran on the server. If the current thread is an OAClientThread, then it will still send
 	 * messages to other clients.
@@ -1559,13 +1563,13 @@ public class OAObject implements java.io.Serializable, Comparable {
 			if (pi.getId()) {
 				Object idx = OAConv.convert(pi.getClassType(), id);
 				OAObjectKey objKey = new OAObjectKey(idx);
-
+		
 				/ *
 				 * this.setProperty will correctly set the property:
 				 * If isLoading=true, then it will only need to store the key
 				 * else it will get the ref object and call the setter method.
 				 * /
-
+		
 				/ *
 				 * 20210208
 				 * the object for this id might not exist

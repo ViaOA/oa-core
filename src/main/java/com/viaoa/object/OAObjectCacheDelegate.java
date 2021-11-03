@@ -281,6 +281,12 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Clear out object cache, remove all listeners, remove all selectAllHubs, remove all named hubs.
+	 * <p>
+	 * NOTE: this can only be used if UnitTestMode=true
+	 *
+	 * @see #setUnitTestMode must be true, else an Exception is thrown
+	 * @see #removeAllObjects()
+	 * @see #clearCache(Class)
 	 */
 	public static void resetCache() throws Exception {
 		LOG.warning("call to reset cache, UnitTestMode=" + UnitTestMode);
@@ -418,6 +424,9 @@ public class OAObjectCacheDelegate {
 
 	/**
 	 * Removes all objects from HubController.
+	 *
+	 * @see #clearCache(Class) to remove objects for a Class.
+	 * @see #resetCache()
 	 */
 	public static void removeAllObjects() {
 		LOG.warning("removing all Objects was called (fyi only)");
@@ -631,6 +640,12 @@ public class OAObjectCacheDelegate {
 		return add(obj, false, true);
 	}
 
+	/**
+	 * Remove objects from cache for a class.
+	 *
+	 * @see #removeAllObjects()
+	 * @see #resetCache()
+	 */
 	public static void clearCache(Class clazz) {
 		synchronized (OAObjectHashDelegate.hashCacheClass) {
 			OAObjectHashDelegate.hashCacheClass.remove(clazz);

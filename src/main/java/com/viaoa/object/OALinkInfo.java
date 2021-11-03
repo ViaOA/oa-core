@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
+import com.viaoa.util.OAString;
 
 /**
  * Defines reference properties between OAObjects.
@@ -178,6 +179,10 @@ public class OALinkInfo { //implements java.io.Serializable {
 
 	public String getName() {
 		return name;
+	}
+
+	public String getLowerName() {
+		return OAString.mfcl(name);
 	}
 
 	public String getDisplayName() {
