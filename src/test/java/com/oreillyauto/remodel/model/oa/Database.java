@@ -3,20 +3,7 @@ package com.oreillyauto.remodel.model.oa;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.logging.Logger;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlID;
-import javax.xml.bind.annotation.XmlIDREF;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
@@ -32,11 +19,8 @@ import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.hub.Hub;
-import com.viaoa.jaxb.adapter.OASecureXmlAdapter;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
@@ -44,55 +28,32 @@ import com.viaoa.util.OAString;
 @OATable(indexes = {
 		@OAIndex(name = "DatabaseDatabaseType", fkey = true, columns = { @OAIndexColumn(name = "DatabaseTypeId") })
 })
-@XmlRootElement(name = "database")
-@XmlType(factoryMethod = "jaxbCreate")
-@XmlAccessorType(XmlAccessType.NONE)
 public class Database extends OAObject {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOG = Logger.getLogger(Database.class.getName());
 
-	public static final String PROPERTY_Id = "Id";
 	public static final String P_Id = "Id";
-	public static final String PROPERTY_Created = "Created";
 	public static final String P_Created = "Created";
-	public static final String PROPERTY_Name = "Name";
 	public static final String P_Name = "Name";
-	public static final String PROPERTY_Description = "Description";
 	public static final String P_Description = "Description";
-	public static final String PROPERTY_CatalogName = "CatalogName";
 	public static final String P_CatalogName = "CatalogName";
-	public static final String PROPERTY_SchemeName = "SchemeName";
 	public static final String P_SchemeName = "SchemeName";
-	public static final String PROPERTY_DriverName = "DriverName";
 	public static final String P_DriverName = "DriverName";
-	public static final String PROPERTY_JdbcUrl = "JdbcUrl";
 	public static final String P_JdbcUrl = "JdbcUrl";
-	public static final String PROPERTY_UserId = "UserId";
 	public static final String P_UserId = "UserId";
-	public static final String PROPERTY_Password = "Password";
 	public static final String P_Password = "Password";
-	public static final String PROPERTY_ModelFileName = "ModelFileName";
 	public static final String P_ModelFileName = "ModelFileName";
-	public static final String PROPERTY_CodeDirectory = "CodeDirectory";
 	public static final String P_CodeDirectory = "CodeDirectory";
-	public static final String PROPERTY_Console = "Console";
 	public static final String P_Console = "Console";
-	public static final String PROPERTY_Notes = "Notes";
 	public static final String P_Notes = "Notes";
 
-	public static final String PROPERTY_Display = "Display";
 	public static final String P_Display = "Display";
 
-	public static final String PROPERTY_DatabaseType = "DatabaseType";
 	public static final String P_DatabaseType = "DatabaseType";
-	public static final String PROPERTY_Projects = "Projects";
 	public static final String P_Projects = "Projects";
-	public static final String PROPERTY_TableCategories = "TableCategories";
 	public static final String P_TableCategories = "TableCategories";
-	public static final String PROPERTY_Tables = "Tables";
 	public static final String P_Tables = "Tables";
 
-	public static final String METHOD_Load = "Load";
 	public static final String M_Load = "Load";
 	protected volatile int id;
 	protected volatile OADateTime created;
@@ -117,8 +78,13 @@ public class Database extends OAObject {
 
 	public Database() {
 		if (!isLoading()) {
-			setCreated(new OADateTime());
+			setObjectDefaults();
 		}
+	}
+
+	@Override
+	public void setObjectDefaults() {
+		setCreated(new OADateTime());
 	}
 
 	public Database(int id) {
@@ -126,14 +92,8 @@ public class Database extends OAObject {
 		setId(id);
 	}
 
-	@XmlAttribute(name = "oaSingleId")
-	public Integer getJaxbGuid() {
-		return super.getJaxbGuid();
-	}
-
 	@OAProperty(isUnique = true, trackPrimitiveNull = false, displayLength = 6)
 	@OAId()
-	@XmlTransient
 	@OAColumn(sqlType = java.sql.Types.INTEGER)
 	public int getId() {
 		return id;
@@ -144,22 +104,6 @@ public class Database extends OAObject {
 		fireBeforePropertyChange(P_Id, old, newValue);
 		this.id = newValue;
 		firePropertyChange(P_Id, old, this.id);
-	}
-
-	@XmlID
-	@XmlAttribute(name = "id")
-	public String getJaxbId() {
-		// note: jaxb spec requires id to be a string
-		if (!getJaxbShouldInclude(P_Id)) {
-			return null;
-		}
-		return "" + id;
-	}
-
-	public void setJaxbId(String id) {
-		if (getJaxbAllowPropertyChange(P_Id, this.id, id)) {
-			setId((int) OAConv.convert(int.class, id));
-		}
 	}
 
 	@OAProperty(defaultValue = "new OADateTime()", displayLength = 15, isProcessed = true)
@@ -175,20 +119,6 @@ public class Database extends OAObject {
 		firePropertyChange(P_Created, old, this.created);
 	}
 
-	@XmlElement(name = "created", nillable = true)
-	public OADateTime getJaxbCreated() {
-		if (!getJaxbShouldInclude(P_Created)) {
-			return null;
-		}
-		return getCreated();
-	}
-
-	public void setJaxbCreated(OADateTime newValue) {
-		if (getJaxbAllowPropertyChange(P_Created, this.created, newValue)) {
-			setCreated(newValue);
-		}
-	}
-
 	@OAProperty(maxLength = 35, displayLength = 20)
 	@OAColumn(maxLength = 35)
 	public String getName() {
@@ -200,20 +130,6 @@ public class Database extends OAObject {
 		fireBeforePropertyChange(P_Name, old, newValue);
 		this.name = newValue;
 		firePropertyChange(P_Name, old, this.name);
-	}
-
-	@XmlElement(name = "name", nillable = true)
-	public String getJaxbName() {
-		if (!getJaxbShouldInclude(P_Name)) {
-			return null;
-		}
-		return getName();
-	}
-
-	public void setJaxbName(String newValue) {
-		if (getJaxbAllowPropertyChange(P_Name, this.name, newValue)) {
-			setName(newValue);
-		}
 	}
 
 	@OAProperty(maxLength = 150, displayLength = 20)
@@ -229,20 +145,6 @@ public class Database extends OAObject {
 		firePropertyChange(P_Description, old, this.description);
 	}
 
-	@XmlElement(name = "description", nillable = true)
-	public String getJaxbDescription() {
-		if (!getJaxbShouldInclude(P_Description)) {
-			return null;
-		}
-		return getDescription();
-	}
-
-	public void setJaxbDescription(String newValue) {
-		if (getJaxbAllowPropertyChange(P_Description, this.description, newValue)) {
-			setDescription(newValue);
-		}
-	}
-
 	@OAProperty(displayName = "Catalog Name", maxLength = 35, displayLength = 20)
 	@OAColumn(maxLength = 35)
 	public String getCatalogName() {
@@ -254,20 +156,6 @@ public class Database extends OAObject {
 		fireBeforePropertyChange(P_CatalogName, old, newValue);
 		this.catalogName = newValue;
 		firePropertyChange(P_CatalogName, old, this.catalogName);
-	}
-
-	@XmlElement(name = "catalogName", nillable = true)
-	public String getJaxbCatalogName() {
-		if (!getJaxbShouldInclude(P_CatalogName)) {
-			return null;
-		}
-		return getCatalogName();
-	}
-
-	public void setJaxbCatalogName(String newValue) {
-		if (getJaxbAllowPropertyChange(P_CatalogName, this.catalogName, newValue)) {
-			setCatalogName(newValue);
-		}
 	}
 
 	@OAProperty(displayName = "Scheme Name", maxLength = 35, displayLength = 20)
@@ -283,20 +171,6 @@ public class Database extends OAObject {
 		firePropertyChange(P_SchemeName, old, this.schemeName);
 	}
 
-	@XmlElement(name = "schemeName", nillable = true)
-	public String getJaxbSchemeName() {
-		if (!getJaxbShouldInclude(P_SchemeName)) {
-			return null;
-		}
-		return getSchemeName();
-	}
-
-	public void setJaxbSchemeName(String newValue) {
-		if (getJaxbAllowPropertyChange(P_SchemeName, this.schemeName, newValue)) {
-			setSchemeName(newValue);
-		}
-	}
-
 	@OAProperty(displayName = "Driver Name", maxLength = 75, displayLength = 20)
 	@OAColumn(maxLength = 75)
 	public String getDriverName() {
@@ -308,20 +182,6 @@ public class Database extends OAObject {
 		fireBeforePropertyChange(P_DriverName, old, newValue);
 		this.driverName = newValue;
 		firePropertyChange(P_DriverName, old, this.driverName);
-	}
-
-	@XmlElement(name = "driverName", nillable = true)
-	public String getJaxbDriverName() {
-		if (!getJaxbShouldInclude(P_DriverName)) {
-			return null;
-		}
-		return getDriverName();
-	}
-
-	public void setJaxbDriverName(String newValue) {
-		if (getJaxbAllowPropertyChange(P_DriverName, this.driverName, newValue)) {
-			setDriverName(newValue);
-		}
 	}
 
 	@OAProperty(displayName = "Jdbc Url", maxLength = 150, displayLength = 20)
@@ -337,20 +197,6 @@ public class Database extends OAObject {
 		firePropertyChange(P_JdbcUrl, old, this.jdbcUrl);
 	}
 
-	@XmlElement(name = "jdbcUrl", nillable = true)
-	public String getJaxbJdbcUrl() {
-		if (!getJaxbShouldInclude(P_JdbcUrl)) {
-			return null;
-		}
-		return getJdbcUrl();
-	}
-
-	public void setJaxbJdbcUrl(String newValue) {
-		if (getJaxbAllowPropertyChange(P_JdbcUrl, this.jdbcUrl, newValue)) {
-			setJdbcUrl(newValue);
-		}
-	}
-
 	@OAProperty(displayName = "User Id", maxLength = 30, displayLength = 12)
 	@OAColumn(maxLength = 30)
 	public String getUserId() {
@@ -362,20 +208,6 @@ public class Database extends OAObject {
 		fireBeforePropertyChange(P_UserId, old, newValue);
 		this.userId = newValue;
 		firePropertyChange(P_UserId, old, this.userId);
-	}
-
-	@XmlElement(name = "userId", nillable = true)
-	public String getJaxbUserId() {
-		if (!getJaxbShouldInclude(P_UserId)) {
-			return null;
-		}
-		return getUserId();
-	}
-
-	public void setJaxbUserId(String newValue) {
-		if (getJaxbAllowPropertyChange(P_UserId, this.userId, newValue)) {
-			setUserId(newValue);
-		}
 	}
 
 	@OAProperty(maxLength = 30, displayLength = 12, isEncrypted = true)
@@ -391,21 +223,6 @@ public class Database extends OAObject {
 		firePropertyChange(P_Password, old, this.password);
 	}
 
-	@XmlElement(name = "password", nillable = true)
-	@XmlJavaTypeAdapter(OASecureXmlAdapter.class)
-	public String getJaxbPassword() {
-		if (!getJaxbShouldInclude(P_Password)) {
-			return null;
-		}
-		return getPassword();
-	}
-
-	public void setJaxbPassword(String newValue) {
-		if (getJaxbAllowSecurePropertyChange(P_Password, this.password, newValue)) {
-			setPassword(newValue);
-		}
-	}
-
 	@OAProperty(displayName = "Model File Name", maxLength = 150, displayLength = 20, isFileName = true)
 	@OAColumn(maxLength = 150)
 	public String getModelFileName() {
@@ -417,20 +234,6 @@ public class Database extends OAObject {
 		fireBeforePropertyChange(P_ModelFileName, old, newValue);
 		this.modelFileName = newValue;
 		firePropertyChange(P_ModelFileName, old, this.modelFileName);
-	}
-
-	@XmlElement(name = "modelFileName", nillable = true)
-	public String getJaxbModelFileName() {
-		if (!getJaxbShouldInclude(P_ModelFileName)) {
-			return null;
-		}
-		return getModelFileName();
-	}
-
-	public void setJaxbModelFileName(String newValue) {
-		if (getJaxbAllowPropertyChange(P_ModelFileName, this.modelFileName, newValue)) {
-			setModelFileName(newValue);
-		}
 	}
 
 	@OAProperty(displayName = "Code Directory", maxLength = 250, displayLength = 20)
@@ -446,20 +249,6 @@ public class Database extends OAObject {
 		firePropertyChange(P_CodeDirectory, old, this.codeDirectory);
 	}
 
-	@XmlElement(name = "codeDirectory", nillable = true)
-	public String getJaxbCodeDirectory() {
-		if (!getJaxbShouldInclude(P_CodeDirectory)) {
-			return null;
-		}
-		return getCodeDirectory();
-	}
-
-	public void setJaxbCodeDirectory(String newValue) {
-		if (getJaxbAllowPropertyChange(P_CodeDirectory, this.codeDirectory, newValue)) {
-			setCodeDirectory(newValue);
-		}
-	}
-
 	@OAProperty(maxLength = 250, displayLength = 20)
 	public String getConsole() {
 		return console;
@@ -470,20 +259,6 @@ public class Database extends OAObject {
 		fireBeforePropertyChange(P_Console, old, newValue);
 		this.console = newValue;
 		firePropertyChange(P_Console, old, this.console);
-	}
-
-	@XmlTransient
-	public String getJaxbConsole() {
-		if (!getJaxbShouldInclude(P_Console)) {
-			return null;
-		}
-		return getConsole();
-	}
-
-	public void setJaxbConsole(String newValue) {
-		if (getJaxbAllowPropertyChange(P_Console, this.console, newValue)) {
-			setConsole(newValue);
-		}
 	}
 
 	@OAProperty(displayLength = 30, columnLength = 20, isHtml = true)
@@ -497,20 +272,6 @@ public class Database extends OAObject {
 		fireBeforePropertyChange(P_Notes, old, newValue);
 		this.notes = newValue;
 		firePropertyChange(P_Notes, old, this.notes);
-	}
-
-	@XmlElement(name = "notes", nillable = true)
-	public String getJaxbNotes() {
-		if (!getJaxbShouldInclude(P_Notes)) {
-			return null;
-		}
-		return getNotes();
-	}
-
-	public void setJaxbNotes(String newValue) {
-		if (getJaxbAllowPropertyChange(P_Notes, this.notes, newValue)) {
-			setNotes(newValue);
-		}
 	}
 
 	@OACalculatedProperty(displayLength = 20, columnLength = 18, properties = { P_Name, P_DatabaseType + "." + DatabaseType.P_Name })
@@ -528,17 +289,8 @@ public class Database extends OAObject {
 		return display;
 	}
 
-	@XmlElement(name = "display", nillable = true)
-	public String getJaxbDisplay() {
-		if (!getJaxbShouldInclude(P_Display)) {
-			return null;
-		}
-		return getDisplay();
-	}
-
 	@OAOne(displayName = "Database Type", reverseName = DatabaseType.P_Databases, allowCreateNew = false)
 	@OAFkey(columns = { "DatabaseTypeId" })
-	@XmlTransient
 	public DatabaseType getDatabaseType() {
 		if (databaseType == null) {
 			databaseType = (DatabaseType) getObject(P_DatabaseType);
@@ -553,42 +305,8 @@ public class Database extends OAObject {
 		firePropertyChange(P_DatabaseType, old, this.databaseType);
 	}
 
-	@XmlElement(name = "databaseType", nillable = true)
-	public DatabaseType getJaxbDatabaseType() {
-		Object obj = super.getJaxbObject(P_DatabaseType);
-		return (DatabaseType) obj;
-	}
-
-	public void setJaxbDatabaseType(DatabaseType newValue) {
-		if (getJaxbAllowPropertyChange(P_DatabaseType, this.databaseType, newValue)) {
-			setDatabaseType(newValue);
-		}
-	}
-
-	@XmlElement(name = "refDatabaseType")
-	@XmlIDREF
-	public DatabaseType getJaxbRefDatabaseType() {
-		Object obj = super.getJaxbRefObject(P_DatabaseType);
-		return (DatabaseType) obj;
-	}
-
-	public void setJaxbRefDatabaseType(DatabaseType newValue) {
-		setJaxbDatabaseType(newValue);
-	}
-
-	@XmlElement(name = "databaseTypeId", nillable = true)
-	public String getJaxbDatabaseTypeId() {
-		String s = super.getJaxbId(P_DatabaseType);
-		return s;
-	}
-
-	public void setJaxbDatabaseTypeId(String id) {
-		setJaxbId(P_DatabaseType, id);
-	}
-
 	@OAMany(toClass = Project.class, reverseName = Project.P_Databases)
 	@OALinkTable(name = "ProjectDatabase", indexName = "ProjectDatabas", columns = { "DatabaseId" })
-	@XmlTransient
 	public Hub<Project> getProjects() {
 		if (hubProjects == null) {
 			hubProjects = (Hub<Project>) getHub(P_Projects);
@@ -596,25 +314,7 @@ public class Database extends OAObject {
 		return hubProjects;
 	}
 
-	@XmlElementWrapper(name = "projects")
-	@XmlElement(name = "project", type = Project.class)
-	protected List<Project> getJaxbProjects() {
-		return getJaxbHub(P_Projects);
-	}
-
-	@XmlElementWrapper(name = "refProjects")
-	@XmlElement(name = "project", type = Project.class)
-	@XmlIDREF
-	protected List<Project> getJaxbRefProjects() {
-		return getJaxbRefHub(P_Projects);
-	}
-
-	protected void setJaxbRefProjects(List<Project> lst) {
-		// no-op, since jaxb sends lst=hubProjects
-	}
-
 	@OAMany(displayName = "Table Categories", toClass = TableCategory.class, recursive = true, owner = true, reverseName = TableCategory.P_Database, cascadeSave = true, cascadeDelete = true)
-	@XmlTransient
 	public Hub<TableCategory> getTableCategories() {
 		if (hubTableCategories == null) {
 			hubTableCategories = (Hub<TableCategory>) getHub(P_TableCategories);
@@ -622,30 +322,7 @@ public class Database extends OAObject {
 		return hubTableCategories;
 	}
 
-	@XmlElementWrapper(name = "tableCategories")
-	@XmlElement(name = "tableCategory", type = TableCategory.class)
-	protected List<TableCategory> getJaxbTableCategories() {
-		return getJaxbHub(P_TableCategories);
-	}
-
-	@XmlElementWrapper(name = "refTableCategories")
-	@XmlElement(name = "tableCategory", type = TableCategory.class)
-	@XmlIDREF
-	protected List<TableCategory> getJaxbRefTableCategories() {
-		return getJaxbRefHub(P_TableCategories);
-	}
-
-	protected void setJaxbRefTableCategories(List<TableCategory> lst) {
-		// no-op, since jaxb sends lst=hubTableCategories
-	}
-
-	public int testMethod(Table table, int i, OADate d, String s) {
-		System.out.println("Database.testMethod has been called");
-		return i;
-	}
-
 	@OAMany(toClass = Table.class, owner = true, reverseName = Table.P_Database, cascadeSave = true, cascadeDelete = true, sortProperty = Table.P_Name)
-	@XmlTransient
 	public Hub<Table> getTables() {
 		if (hubTables == null) {
 			hubTables = (Hub<Table>) getHub(P_Tables);
@@ -653,25 +330,21 @@ public class Database extends OAObject {
 		return hubTables;
 	}
 
-	@XmlElementWrapper(name = "tables")
-	@XmlElement(name = "table", type = Table.class)
-	protected List<Table> getJaxbTables() {
-		return getJaxbHub(P_Tables);
-	}
-
-	@XmlElementWrapper(name = "refTables")
-	@XmlElement(name = "table", type = Table.class)
-	@XmlIDREF
-	protected List<Table> getJaxbRefTables() {
-		return getJaxbRefHub(P_Tables);
-	}
-
-	protected void setJaxbRefTables(List<Table> lst) {
-		// no-op, since jaxb sends lst=hubTables
-	}
-
 	@OAMethod(displayName = "Load")
 	public void load() {
+		// use this to run on server (remote)
+		if (isRemoteAvailable()) {
+			remote();
+			return;
+		}
+		/*
+		LoadDatabaseMetadata loader = new LoadDatabaseMetadata(this);
+		try {
+		    loader.load();
+		} catch (Exception e) {
+		    throw new RuntimeException("Exception while loading DB metadata", e);
+		}
+		*/
 	}
 
 	public void load(ResultSet rs, int id) throws SQLException {
@@ -702,13 +375,5 @@ public class Database extends OAObject {
 
 		this.changedFlag = false;
 		this.newFlag = false;
-	}
-
-	public static Database jaxbCreate() {
-		Database database = (Database) OAObject.jaxbCreateInstance(Database.class);
-		if (database == null) {
-			database = new Database();
-		}
-		return database;
 	}
 }

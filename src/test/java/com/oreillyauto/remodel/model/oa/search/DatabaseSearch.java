@@ -3,11 +3,6 @@ package com.oreillyauto.remodel.model.oa.search;
 
 import java.util.logging.Logger;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
-
 import com.oreillyauto.remodel.model.oa.Database;
 import com.oreillyauto.remodel.model.oa.DatabaseType;
 import com.oreillyauto.remodel.model.oa.Table;
@@ -15,19 +10,16 @@ import com.oreillyauto.remodel.model.oa.propertypath.DatabasePP;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
 import com.viaoa.util.OAArray;
-import com.viaoa.util.OACompare;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
 
 @OAClass(useDataSource = false, localOnly = true)
-@XmlRootElement(name = "databaseSearch")
-@XmlType(factoryMethod = "jaxbCreate")
-@XmlAccessorType(XmlAccessType.PROPERTY)
 public class DatabaseSearch extends OAObject {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOG = Logger.getLogger(DatabaseSearch.class.getName());
@@ -159,14 +151,6 @@ public class DatabaseSearch extends OAObject {
 		this.searchTables = newValue;
 	}
 
-	public static DatabaseSearch jaxbCreate() {
-		DatabaseSearch databaseSearch = (DatabaseSearch) OAObject.jaxbCreateInstance(DatabaseSearch.class);
-		if (databaseSearch == null) {
-			databaseSearch = new DatabaseSearch();
-		}
-		return databaseSearch;
-	}
-
 	public void reset() {
 		setCreated(null);
 		setName(null);
@@ -209,7 +193,7 @@ public class DatabaseSearch extends OAObject {
 	public void setExtraWhere(String s, Object... args) {
 		this.extraWhere = s;
 		this.extraWhereParams = args;
-		if (!OAString.isEmpty(s) && getExtraWhereFilter() == null) {
+		if (OAString.isNotEmpty(s) && getExtraWhereFilter() == null) {
 			OAFilter<Database> f = new OAQueryFilter<Database>(Database.class, s, args);
 			setExtraWhereFilter(f);
 		}
@@ -236,14 +220,11 @@ public class DatabaseSearch extends OAObject {
 			sql += Database.P_Created + " = ?";
 			args = OAArray.add(Object.class, args, this.created);
 		}
-		if (!OAString.isEmpty(this.name)) {
+		if (OAString.isNotEmpty(this.name)) {
 			if (sql.length() > 0) {
 				sql += " AND ";
 			}
-			String value = this.name.replace("*", "%");
-			if (!value.endsWith("%")) {
-				value += "%";
-			}
+			String value = OAString.convertToLikeSearch(name);
 			if (value.indexOf("%") >= 0) {
 				sql += Database.P_Name + " LIKE ?";
 			} else {
@@ -251,14 +232,11 @@ public class DatabaseSearch extends OAObject {
 			}
 			args = OAArray.add(Object.class, args, value);
 		}
-		if (!OAString.isEmpty(this.schemeName)) {
+		if (OAString.isNotEmpty(this.schemeName)) {
 			if (sql.length() > 0) {
 				sql += " AND ";
 			}
-			String value = this.schemeName.replace("*", "%");
-			if (!value.endsWith("%")) {
-				value += "%";
-			}
+			String value = OAString.convertToLikeSearch(schemeName);
 			if (value.indexOf("%") >= 0) {
 				sql += Database.P_SchemeName + " LIKE ?";
 			} else {
@@ -282,7 +260,7 @@ public class DatabaseSearch extends OAObject {
 			finder = new OAFinder<Table, Database>(getTables(), Table.P_Database);
 		}
 
-		if (!OAString.isEmpty(extraWhere)) {
+		if (OAString.isNotEmpty(extraWhere)) {
 			if (sql.length() > 0) {
 				sql = "(" + sql + ") AND ";
 			}
@@ -291,8 +269,12 @@ public class DatabaseSearch extends OAObject {
 		}
 
 		OASelect<Database> select = new OASelect<Database>(Database.class, sql, args, sortOrder);
+		if (getExtraWhereFilter() != null && getExtraWhereFilter().updateSelect(select)) {
+			select.setFilter(new OAAndFilter(this.getCustomFilter(), getExtraWhereFilter()));
+		} else {
+			select.setFilter(this.getCustomFilter());
+		}
 		select.setDataSourceFilter(this.getDataSourceFilter());
-		select.setFilter(this.getCustomFilter());
 		select.setFinder(finder);
 		if (getMaxResults() > 0) {
 			select.setMax(getMaxResults());
@@ -317,14 +299,11 @@ public class DatabaseSearch extends OAObject {
 			sql += prefix + Database.P_Created + " = ?";
 			args = OAArray.add(Object.class, args, this.created);
 		}
-		if (!OAString.isEmpty(this.name)) {
+		if (OAString.isNotEmpty(this.name)) {
 			if (sql.length() > 0) {
 				sql += " AND ";
 			}
-			String value = this.name.replace("*", "%");
-			if (!value.endsWith("%")) {
-				value += "%";
-			}
+			String value = OAString.convertToLikeSearch(name);
 			if (value.indexOf("%") >= 0) {
 				sql += prefix + Database.P_Name + " LIKE ?";
 			} else {
@@ -332,14 +311,11 @@ public class DatabaseSearch extends OAObject {
 			}
 			args = OAArray.add(Object.class, args, value);
 		}
-		if (!OAString.isEmpty(this.schemeName)) {
+		if (OAString.isNotEmpty(this.schemeName)) {
 			if (sql.length() > 0) {
 				sql += " AND ";
 			}
-			String value = this.schemeName.replace("*", "%");
-			if (!value.endsWith("%")) {
-				value += "%";
-			}
+			String value = OAString.convertToLikeSearch(schemeName);
 			if (value.indexOf("%") >= 0) {
 				sql += prefix + Database.P_SchemeName + " LIKE ?";
 			} else {
@@ -395,9 +371,6 @@ public class DatabaseSearch extends OAObject {
 			@Override
 			public boolean isUsed(Database database) {
 				boolean b = DatabaseSearch.this.isUsedForCustomFilter(database);
-				if (b && filterExtraWhere != null) {
-					b = filterExtraWhere.isUsed(database);
-				}
 				return b;
 			}
 		};
@@ -405,57 +378,6 @@ public class DatabaseSearch extends OAObject {
 	}
 
 	public boolean isUsedForDataSourceFilter(Database searchDatabase) {
-		if (created != null) {
-			if (!OACompare.isEqual(searchDatabase.getCreated(), created)) {
-				return false;
-			}
-		}
-		if (name != null) {
-			String s = getName();
-			if (s != null && s.indexOf('*') < 0 && s.indexOf('%') < 0) {
-				s += '*';
-			}
-			if (!OACompare.isLike(searchDatabase.getName(), s)) {
-				return false;
-			}
-		}
-		if (schemeName != null) {
-			String s = getSchemeName();
-			if (s != null && s.indexOf('*') < 0 && s.indexOf('%') < 0) {
-				s += '*';
-			}
-			if (!OACompare.isLike(searchDatabase.getSchemeName(), s)) {
-				return false;
-			}
-		}
-		if (databaseType != null) {
-			if (!OACompare.isEqual(searchDatabase.getDatabaseType(), databaseType)) {
-				return false;
-			}
-		}
-		if (tables != null) {
-			if (!OACompare.isIn(tables, searchDatabase.getTables())) {
-				return false;
-			}
-		}
-		if (useDatabaseTypeSearch && getDatabaseTypeSearch() != null) {
-			DatabaseType databaseType = (DatabaseType) searchDatabase.getProperty(DatabasePP.databaseType().pp);
-			if (databaseType == null) {
-				return false;
-			}
-			if (!getDatabaseTypeSearch().isUsedForDataSourceFilter(databaseType)) {
-				return false;
-			}
-		}
-		if (useTablesSearch && getTablesSearch() != null) {
-			Table table = (Table) searchDatabase.getProperty(DatabasePP.tables().pp);
-			if (table == null) {
-				return false;
-			}
-			if (!getTablesSearch().isUsedForDataSourceFilter(table)) {
-				return false;
-			}
-		}
 		return true;
 	}
 

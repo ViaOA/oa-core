@@ -32,5 +32,9 @@ public class QuerySortPP {
         String s = QuerySort.P_Seq;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

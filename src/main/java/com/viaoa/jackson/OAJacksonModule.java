@@ -10,7 +10,7 @@ import com.viaoa.object.OAObject;
 public class OAJacksonModule extends SimpleModule {
 
 	public OAJacksonModule() {
-		super("OAJackson", new Version(1, 0, 0, "RELEASE", "", ""));
+		super("OAJackson", new Version(1, 0, 0, "RELEASE", "com.viaoa", "jackson"));
 		addSerializer(OAObject.class, new OAJacksonSerializer());
 		addDeserializer(OAObject.class, new OAJacksonDeserializer());
 	}

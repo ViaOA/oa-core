@@ -37,5 +37,9 @@ public class JavaTypePP {
         String s = JavaType.P_Seq;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

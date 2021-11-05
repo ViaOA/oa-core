@@ -108,5 +108,9 @@ public class ColumnPP {
         String s = Column.P_Seq;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

@@ -15,14 +15,13 @@ import java.util.ArrayList;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.jackson.OAJackson;
-import com.viaoa.jaxb.OAJaxb;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.Tuple3;
 
 /**
  * Used/created by OAThreadInfoDelegate to manage "flags" for threads.
- * 
+ *
  * @author vvia
  */
 public class OAThreadLocal {
@@ -99,7 +98,7 @@ public class OAThreadLocal {
 	// 20160625
 	protected int recursiveTriggerCount;
 
-	// 20180223 
+	// 20180223
 	public int oaSyncEventCount;
 
 	// 20180704
@@ -116,8 +115,6 @@ public class OAThreadLocal {
 	 * used by OAContext, to automatically allow OAContext.isAdmin() to return true
 	 */
 	public boolean isAdmin;
-
-	public OAJaxb oajaxb;
 
 	public OAJackson oajackson;
 

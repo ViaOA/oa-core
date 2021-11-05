@@ -8,11 +8,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import com.viaoa.json.OAJson;
-import com.viaoa.json.OAJsonMapper;
-import com.viaoa.json.node.OAJsonArrayNode;
-import com.viaoa.json.node.OAJsonNode;
-import com.viaoa.json.node.OAJsonObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.viaoa.jackson.OAJackson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
@@ -1859,7 +1859,7 @@ public class OARestMethodInfo {
 
 						String val;
 						if (obj instanceof OAObject) {
-							val = ((OAObject) obj).getJaxbSinglePartId();
+							val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) obj).getObjectKey());
 						} else {
 							val = OAConv.toString(obj, pi.format);
 							if (val == null) {
@@ -1897,7 +1897,7 @@ public class OARestMethodInfo {
 
 						String val;
 						if (arg instanceof OAObject) {
-							val = ((OAObject) arg).getJaxbSinglePartId();
+							val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) arg).getObjectKey());
 						} else {
 							val = OAConv.toString(arg, pi.format);
 							if (val == null) {
@@ -1918,7 +1918,7 @@ public class OARestMethodInfo {
 
 					String val;
 					if (objArg instanceof OAObject) {
-						val = ((OAObject) objArg).getJaxbSinglePartId();
+						val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) objArg).getObjectKey());
 					} else {
 						val = OAConv.toString(objArg, pi.format);
 						if (val == null) {
@@ -1941,7 +1941,7 @@ public class OARestMethodInfo {
 
 						String val;
 						if (obj instanceof OAObject) {
-							val = ((OAObject) obj).getJaxbSinglePartId();
+							val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) obj).getObjectKey());
 						} else {
 							val = OAConv.toString(obj, pi.format);
 							if (val == null) {
@@ -1958,7 +1958,7 @@ public class OARestMethodInfo {
 
 					String val;
 					if (objArg instanceof OAObject) {
-						val = ((OAObject) objArg).getJaxbSinglePartId();
+						val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) objArg).getObjectKey());
 					} else {
 						val = OAConv.toString(objArg, pi.format);
 						if (val == null) {
@@ -2013,7 +2013,7 @@ public class OARestMethodInfo {
 			}
 
 			int[] is = new int[alParamInfo.size() - cnt];
-			List<String>[] lstIncludePropertyPathss = new ArrayList[cnt];
+			List<String>[] lstIncludePropertyPaths = new ArrayList[cnt];
 			Object[] args2 = new Object[cnt];
 
 			int i = -1;
@@ -2024,7 +2024,7 @@ public class OARestMethodInfo {
 				i++;
 				if (pix.paramType == ParamType.MethodCallArg) {
 					args2[i2] = args[i];
-					lstIncludePropertyPathss[i2] = pix.alIncludePropertyPaths;
+					lstIncludePropertyPaths[i2] = pix.alIncludePropertyPaths;
 					i2++;
 				} else {
 					if (pix.paramType == ParamType.OAObjectMethodName) {
@@ -2039,15 +2039,15 @@ public class OARestMethodInfo {
 				if (args2[0] != null && args2[0].getClass().isArray()) {
 					args = (Object[]) args2[0];
 					is = null;
-					lstIncludePropertyPathss = null;
+					lstIncludePropertyPaths = null;
 				}
 			}
 
-			OAJsonArrayNode node = OAJsonMapper.convertMethodArgumentsToJson(method, args, lstIncludePropertyPathss, is);
+			ArrayNode node = OAJackson.convertMethodArgumentsToJson(method, args, lstIncludePropertyPaths, is);
 			if (node == null) {
 				return null;
 			}
-			return node.toJson();
+			return node.toPrettyString();
 		} else if (methodType == MethodType.OARemote) {
 			int cnt = 0;
 			for (OARestParamInfo pix : alParamInfo) {
@@ -2074,11 +2074,11 @@ public class OARestMethodInfo {
 					i3++;
 				}
 			}
-			OAJsonArrayNode node = OAJsonMapper.convertMethodArgumentsToJson(method, args2, lstIncludePropertyPathss, is);
+			ArrayNode node = OAJackson.convertMethodArgumentsToJson(method, args2, lstIncludePropertyPathss, is);
 			if (node == null) {
 				return null;
 			}
-			return node.toJson();
+			return node.toPrettyString();
 		} else if (methodType == MethodType.OAInsert || methodType == MethodType.OAUpdate || methodType == MethodType.OADelete) {
 			if (args == null || args.length == 0) {
 				return null;
@@ -2093,15 +2093,20 @@ public class OARestMethodInfo {
 			}
 
 			OARestParamInfo pi = alParamInfo.get(pos);
-			OAJsonNode node = OAJsonMapper.convertObjectToJsonNode(args[pos], pi.alIncludePropertyPaths, true);
-			if (node == null) {
-				return null;
-			}
-			return node.toJson();
+
+			OAJackson oaj = new OAJackson();
+			oaj.addPropertyPaths(pi.alIncludePropertyPaths);
+
+			String json = oaj.write(args[pos]);
+
+			return json;
 		}
 
+		final OAJackson oaj = new OAJackson();
+		final ObjectMapper om = oaj.createObjectMapper();
+
 		// fall thru and find all OAObject, BodyObject, BodyJson
-		OAJsonObjectNode jsonNodeBody = new OAJsonObjectNode();
+		ObjectNode jsonNodeBody = om.createObjectNode();
 
 		for (int argPos = 0; argPos < alParamInfo.size(); argPos++) {
 			OARestParamInfo pi = alParamInfo.get(argPos);
@@ -2109,27 +2114,31 @@ public class OARestMethodInfo {
 
 			if (pi.paramType == OARestParam.ParamType.BodyJson) {
 				if (objArg instanceof String) {
-					OAJson oaJson = new OAJson();
-					OAJsonNode node = oaJson.load((String) objArg);
+					JsonNode node = om.readTree((String) objArg);
 					jsonNodeBody.set(pi.name, node);
-				} else if (objArg instanceof OAJsonNode) {
-					jsonNodeBody.set(pi.name, (OAJsonNode) objArg);
+				} else if (objArg instanceof JsonNode) {
+					jsonNodeBody.set(pi.name, (JsonNode) objArg);
 				}
 			} else if (pi.paramType == OARestParam.ParamType.BodyObject) {
-				OAJsonNode nodex = OAJsonMapper.convertObjectToJsonNode(objArg, pi.alIncludePropertyPaths);
-				//  todo: includeReferenceLevelAmount
+
+				OAJackson oajx = new OAJackson();
+				ObjectMapper omx = oajx.createObjectMapper();
+				oajx.addPropertyPaths(pi.alIncludePropertyPaths);
+
+				String jsonx = oajx.write(objArg);
+				JsonNode nodex = omx.readTree(jsonx);
+
 				jsonNodeBody.set(pi.name, nodex);
 			}
 		}
 
 		String jsonBody = null;
-		int x = jsonNodeBody.getChildrenPropertyNames().size();
+		int x = jsonNodeBody.size();
 		if (x == 1) {
-			String s = jsonNodeBody.getChildrenPropertyNames().get(0);
-			jsonBody = jsonNodeBody.getChildNode(s).toJson();
+			jsonBody = jsonNodeBody.get(0).asText();
 		} else if (x > 1) {
 			// simulate an object based on the params that are paramType.BodyObject
-			jsonBody = jsonNodeBody.toJson();
+			jsonBody = jsonNodeBody.asText();
 		}
 
 		return jsonBody;

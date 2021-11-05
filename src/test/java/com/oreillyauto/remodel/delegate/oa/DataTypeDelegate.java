@@ -1,5 +1,6 @@
 package com.oreillyauto.remodel.delegate.oa;
 
+import com.oreillyauto.remodel.delegate.ModelDelegate;
 import com.oreillyauto.remodel.model.oa.DataType;
 
 public class DataTypeDelegate {
@@ -7,7 +8,7 @@ public class DataTypeDelegate {
 	private static final Object Lock = new Object();
 
 	public static DataType getDataType(int type) {
-		DataType dt = null;
+		DataType dt = ModelDelegate.getDataTypes().find(DataType.P_Type, type);
 		return dt;
 	}
 

@@ -38,5 +38,9 @@ public class ForeignTablePP {
         String s = ForeignTable.P_FkeyExist;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

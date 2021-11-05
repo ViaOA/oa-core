@@ -17,6 +17,7 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.objectcache.ObjectCacheIterator;
 import com.viaoa.hub.Hub;
+import com.viaoa.jackson.OAJackson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectInfo;
@@ -214,7 +215,7 @@ public class OADataSourceRestClient extends OADataSource {
 		Class whereClass = null;
 		String whereId = null;
 		if (whereObject != null) {
-			whereId = whereObject.getJaxbSinglePartId();
+			whereId = OAJackson.convertObjectKeyToJsonSinglePartId(whereObject.getObjectKey());
 			whereClass = whereObject.getClass();
 		}
 
@@ -269,7 +270,7 @@ public class OADataSourceRestClient extends OADataSource {
 		Class whereClass = null;
 		String whereId = null;
 		if (whereObject != null) {
-			whereId = whereObject.getJaxbSinglePartId();
+			whereId = OAJackson.convertObjectKeyToJsonSinglePartId(whereObject.getObjectKey());
 			whereClass = whereObject.getClass();
 		}
 
@@ -470,7 +471,7 @@ public class OADataSourceRestClient extends OADataSource {
 		Class masterClass = null;
 		String masterId = null;
 		if (masterObject != null) {
-			masterId = masterObject.getJaxbSinglePartId();
+			masterId = OAJackson.convertObjectKeyToJsonSinglePartId(masterObject.getObjectKey());
 			masterClass = masterObject.getClass();
 		}
 

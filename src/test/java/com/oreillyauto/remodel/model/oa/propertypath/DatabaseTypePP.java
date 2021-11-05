@@ -52,5 +52,9 @@ public class DatabaseTypePP {
         String s = DatabaseType.P_Type;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

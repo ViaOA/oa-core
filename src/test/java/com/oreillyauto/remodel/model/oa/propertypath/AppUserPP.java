@@ -71,5 +71,9 @@ public class AppUserPP {
         String s = AppUser.P_DisplayName;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

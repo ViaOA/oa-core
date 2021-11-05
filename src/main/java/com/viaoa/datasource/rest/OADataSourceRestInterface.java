@@ -18,7 +18,7 @@ import com.viaoa.remote.rest.annotation.OARestParam;
 import com.viaoa.remote.rest.annotation.OARestParam.ParamType;
 
 /**
- * OADataSource for client apps that uses OARestClientto use OADataSource on Server with OARestServlet.
+ * OADataSource for client apps that uses OARestClient to use OADataSource on Server with OARestServlet.
  *
  * @author vvia
  */

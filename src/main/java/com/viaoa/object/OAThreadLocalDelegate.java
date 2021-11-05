@@ -24,7 +24,6 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubShareDelegate;
 import com.viaoa.jackson.OAJackson;
-import com.viaoa.jaxb.OAJaxb;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
@@ -66,7 +65,6 @@ public class OAThreadLocalDelegate {
 
 	public static final HashMap<Object, OAThreadLocal[]> hmLock = new HashMap<Object, OAThreadLocal[]>(53, .75f);
 
-	private static final AtomicInteger TotalJaxb = new AtomicInteger();
 	private static final AtomicInteger TotalDontAdjustHub = new AtomicInteger();
 	private static final AtomicInteger TotalJackson = new AtomicInteger();
 
@@ -1141,8 +1139,8 @@ public class OAThreadLocalDelegate {
 	    if (sc != null) setRemoteMultiplexerClient(sc.getRemoteMultiplexerClient());
 	    else setRemoteMultiplexerClient(null);
 	}
-
-
+	
+	
 	public static RemoteMultiplexerClient getRemoteMultiplexerClient() {
 	    RemoteMultiplexerClient mc;
 	    if (OAThreadLocalDelegate.TotalRemoteMultiplexerClient.get() == 0) {
@@ -1494,34 +1492,6 @@ public class OAThreadLocalDelegate {
 		OAThreadLocal tlx = getThreadLocal(true);
 		tlx.isAdmin = tl.isAdmin;
 		tlx.context = tl.context;
-	}
-
-	public static OAJaxb getOAJaxb() {
-		if (TotalJaxb.get() == 0) {
-			return null;
-		}
-		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
-		if (ti == null) {
-			return null;
-		}
-		return ti.oajaxb;
-	}
-
-	public static OAJaxb setOAJaxb(OAJaxb jaxb) {
-		if (jaxb == null && TotalJaxb.get() == 0) {
-			return null;
-		}
-
-		if (jaxb != null) {
-			TotalJaxb.incrementAndGet();
-		} else {
-			TotalJaxb.decrementAndGet();
-		}
-
-		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
-		OAJaxb hold = ti.oajaxb;
-		ti.oajaxb = jaxb;
-		return hold;
 	}
 
 	public static OAJackson getOAJackson() {

@@ -49,5 +49,9 @@ public class TableCategoryPP {
         String s = "generate";
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

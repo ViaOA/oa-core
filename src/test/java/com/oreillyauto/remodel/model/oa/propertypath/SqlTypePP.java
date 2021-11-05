@@ -47,5 +47,9 @@ public class SqlTypePP {
         String s = SqlType.P_Display;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

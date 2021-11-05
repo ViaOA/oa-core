@@ -111,9 +111,13 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				continue;
 			}
 
+			if (li.getCalculated()) {
+				continue;
+			}
+
 			boolean bSerialized = false;
 
-			if (shouldInclude(li, bIncludeOwned, alPropertyPaths)) {
+			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(li, bIncludeOwned, alPropertyPaths)) {
 				try {
 					stackLinkInfo.push(li);
 
@@ -148,7 +152,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				if (key == null) {
 					gen.writeNullField(li.getLowerName());
 				} else {
-					String id = convertObjectKeyToJsonSinglePartId(key);
+					String id = OAJackson.convertObjectKeyToJsonSinglePartId(key);
 
 					if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
 						gen.writeStringField(li.getLowerName(), id);
@@ -167,8 +171,11 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			if (li.getPrivateMethod()) {
 				continue;
 			}
+			if (li.getCalculated()) {
+				continue;
+			}
 
-			if (shouldInclude(li, bIncludeOwned, alPropertyPaths)) {
+			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(li, bIncludeOwned, alPropertyPaths)) {
 				//qqqqq add to stackLinkinfo
 				try {
 
@@ -188,7 +195,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 						} else {
 
 							OAObjectKey key = objx.getObjectKey();
-							String id = convertObjectKeyToJsonSinglePartId(key);
+							String id = OAJackson.convertObjectKeyToJsonSinglePartId(key);
 
 							if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
 								gen.writeString(id);
@@ -278,9 +285,11 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		} else if (value instanceof BigDecimal) {
 			gen.writeNumberField(lowerName, (BigDecimal) value);
 		} else if (value instanceof Double) {
-			gen.writeNumberField(lowerName, (Double) value);
+			BigDecimal bd = OAConv.toBigDecimal((Double) value, pi.getDecimalPlaces());
+			gen.writeNumberField(lowerName, bd);
 		} else if (value instanceof Float) {
-			gen.writeNumberField(lowerName, (Float) value);
+			BigDecimal bd = OAConv.toBigDecimal((Float) value, pi.getDecimalPlaces());
+			gen.writeNumberField(lowerName, bd);
 		} else if (value instanceof Long) {
 			gen.writeNumberField(lowerName, (Long) value);
 		} else if (value instanceof Integer) {
@@ -296,36 +305,11 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		} else if (value instanceof OADateTime) {
 			String result = ((OADateTime) value).toString("yyyy-MM-dd'T'HH:mm:ss"); // "2020-12-26T19:21:09"
 			gen.writeStringField(lowerName, result);
-		} else if (pi.isBlob()) {
+		} else if (value instanceof byte[]) {
 			gen.writeBinaryField(lowerName, (byte[]) value);
 		} else {
 			String result = OAConv.toString(value);
 			gen.writeStringField(lowerName, result);
 		}
 	}
-
-	public static String convertObjectKeyToJsonSinglePartId(OAObjectKey oaObjKey) {
-		if (oaObjKey == null) {
-			return null;
-		}
-
-		String ids = null;
-		Object[] objs = oaObjKey.getObjectIds();
-		if (objs != null) {
-			boolean bHasId = false;
-			for (Object obj : objs) {
-				bHasId |= (obj != null);
-				if (ids == null) {
-					ids = "" + obj;
-				} else {
-					ids += "-" + OAConv.toString(obj);
-				}
-			}
-			if (!bHasId) {
-				ids = "guid." + oaObjKey.getGuid();
-			}
-		}
-		return ids;
-	}
-
 }

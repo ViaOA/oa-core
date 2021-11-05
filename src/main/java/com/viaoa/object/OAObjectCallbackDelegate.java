@@ -52,7 +52,6 @@ public class OAObjectCallbackDelegate {
 		return getAllowEnabledObjectCallback(checkType, hub, obj, name).getAllowed();
 	}
 
-    
 	public static boolean getAllowCopy(OAObject oaObj) {
 		if (oaObj == null) {
 			return false;
@@ -822,7 +821,7 @@ public class OAObjectCallbackDelegate {
 	/**
 	 * This will process an Edit Query, calling objectCallback methods on OAObject, properties, links, methods (depending on type of edit
 	 * query) used by: OAJfcController to see if an UI component should be enabled OAObjetEventDelegate.fireBeforePropertyChange Hub
-	 * add/remove/removeAll OAJaxb
+	 * add/remove/removeAll
 	 */
 	protected static void _processObjectCallback(final OAObjectCallback objectCallback) {
 		final Hub hubThis = objectCallback.getHub();

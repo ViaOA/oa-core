@@ -2,6 +2,7 @@ package com.viaoa.jackson;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -22,6 +23,9 @@ import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAConv;
+import com.viaoa.util.OADate;
+import com.viaoa.util.OADateTime;
+import com.viaoa.util.OATime;
 
 /**
  * Used by OAJackson to convert JSON to OAObject(s).
@@ -57,7 +61,8 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			}
 
 			JsonNode jn = node.get(pi.getLowerName());
-			Object objx = OAConv.convert(pi.getClassType(), jn.asText());
+
+			Object objx = convert(jn, pi);
 			alKeys.add(objx);
 		}
 		OAObjectKey ok = new OAObjectKey(alKeys.toArray());
@@ -94,24 +99,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			}
 
 			jn = node.get(pi.getLowerName());
-			Object objx;
-			if (jn.isNull()) {
-				objx = null;
-			} else {
-				if (pi.isNameValue()) {
-					objx = jn.asText();
-					if (objx != null) {
-						for (int i = 0; i < pi.getNameValues().size(); i++) {
-							if (((String) objx).equalsIgnoreCase(pi.getNameValues().get(i))) {
-								objx = i;
-								break;
-							}
-						}
-					}
-				} else {
-					objx = OAConv.convert(pi.getClassType(), jn.asText());
-				}
-			}
+			Object objx = convert(jn, pi);
 			objNew.setProperty(pi.getName(), objx);
 		}
 
@@ -124,10 +112,18 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				continue;
 			}
 
+			//qqqqqqqqq check property to see if it's an ObjectKey (not loaded)
 			JsonNode nodex = node.get(li.getLowerName());
 
-			OAObject objx = getLinkObject(objNew, li, nodex);
-			objNew.setProperty(li.getName(), objx);
+			//qqqqqqq test between having a null value, vs not sent (blank) qqqqqqqqq
+
+			if (nodex != null) {
+				OAObject objx = getLinkObject(objNew, li, nodex);
+
+				//qqqqqqqqqqqq need to take into account if only objKey is loaded
+
+				objNew.setProperty(li.getName(), objx);
+			}
 		}
 
 		// load many links
@@ -139,23 +135,82 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				continue;
 			}
 
-			Hub hub = (Hub) li.getValue(objNew);
-
 			JsonNode nodex = node.get(li.getLowerName());
 			if (nodex instanceof ArrayNode) {
+
+				//qqqqqqq will need to add/remove objects in hub qqqqqqqqqqq
+
+				Hub<OAObject> hub = (Hub<OAObject>) li.getValue(objNew);
 				ArrayNode nodeArray = (ArrayNode) nodex;
 
+				List<OAObject> alNew = new ArrayList();
 				int x = nodeArray.size();
 				for (int i = 0; i < x; i++) {
 					nodex = nodeArray.get(i);
 					OAObject objx = getLinkObject(objNew, li, nodex);
-					hub.add(objx);
+					alNew.add(objx);
+				}
+
+				List<OAObject> alRemove = new ArrayList();
+				for (OAObject objx : hub) {
+					if (!alNew.contains(objx)) {
+						alRemove.add(objx);
+					}
+				}
+				for (OAObject objx : alNew) {
+					if (!hub.contains(objx)) {
+						hub.add(objx);
+					}
+				}
+				for (OAObject objx : alRemove) {
+					hub.remove(objx);
+				}
+
+				// same order
+				int i = 0;
+				for (OAObject objx : alNew) {
+					int pos = hub.getPos(objx);
+					hub.move(pos, i);
+					i++;
 				}
 			}
 		}
 
 		return objNew;
 
+	}
+
+	protected Object convert(final JsonNode jn, final OAPropertyInfo pi) {
+		Object objx;
+		if (jn.isNull()) {
+			objx = null;
+		} else {
+			if (pi.isNameValue()) {
+				objx = jn.asText();
+				if (objx != null) {
+					for (int i = 0; i < pi.getNameValues().size(); i++) {
+						if (((String) objx).equalsIgnoreCase(pi.getNameValues().get(i))) {
+							objx = i;
+							break;
+						}
+					}
+				}
+			} else if (jn.isTextual()) {
+				Class paramClass = pi.getClassType();
+				String fmt = null;
+				if (paramClass.equals(OADate.class)) {
+					fmt = "yyyy-MM-dd";
+				} else if (paramClass.equals(OADateTime.class)) {
+					fmt = "yyyy-MM-dd'T'HH:mm:ss";
+				} else if (paramClass.equals(OATime.class)) {
+					fmt = "HH:mm:ss";
+				}
+				objx = OAConv.convert(pi.getClassType(), jn.asText(), fmt);
+			} else {
+				objx = OAConv.convert(pi.getClassType(), jn.asText());
+			}
+		}
+		return objx;
 	}
 
 	protected OAObject getLinkObject(OAObject fromObject, OALinkInfo li, JsonNode nodeForLinkProperty) {
@@ -183,7 +238,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 					objNew = oaj.getGuidMap().get(guid);
 				}
 			} else {
-				OAObjectKey ok = convertJsonSinglePartIdToObjectKey(li.getToClass(), s);
+				OAObjectKey ok = OAJackson.convertJsonSinglePartIdToObjectKey(li.getToClass(), s);
 
 				objNew = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), ok);
 				if (objNew != null) {
@@ -206,35 +261,4 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 		}
 		return objNew;
 	}
-
-	public static OAObjectKey convertJsonSinglePartIdToObjectKey(final Class<? extends OAObject> clazz, final String strSinglePartId) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-
-		String[] ids = strSinglePartId.split("/-");
-		Object[] ids2 = new Object[ids.length];
-		int i = 0;
-		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
-			if (pi.getId()) {
-				ids2[i] = OAConv.convert(pi.getClassType(), ids[i]);
-				i++;
-			}
-		}
-		OAObjectKey ok = new OAObjectKey(ids2);
-		return ok;
-	}
-
-	public static OAObjectKey convertNumberToObjectKey(final Class<? extends OAObject> clazz, final int id) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-
-		Object[] ids2 = new Object[1];
-		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
-			if (pi.getId()) {
-				ids2[0] = OAConv.convert(pi.getClassType(), id);
-				break;
-			}
-		}
-		OAObjectKey ok = new OAObjectKey(ids2);
-		return ok;
-	}
-
 }

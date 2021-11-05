@@ -3,19 +3,7 @@ package com.oreillyauto.remodel.model.oa;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.logging.Logger;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlID;
-import javax.xml.bind.annotation.XmlIDREF;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
 
 import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
@@ -35,7 +23,6 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OAConv;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
@@ -46,37 +33,23 @@ import com.viaoa.util.OAString;
 		@OAIndex(name = "RepositoryMainTable", fkey = true, columns = { @OAIndexColumn(name = "MainTableId") }),
 		@OAIndex(name = "RepositoryProject", fkey = true, columns = { @OAIndexColumn(name = "ProjectId") })
 })
-@XmlRootElement(name = "repository")
-@XmlType(factoryMethod = "jaxbCreate")
-@XmlAccessorType(XmlAccessType.NONE)
 public class Repository extends OAObject {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOG = Logger.getLogger(Repository.class.getName());
 
-	public static final String PROPERTY_Id = "Id";
 	public static final String P_Id = "Id";
-	public static final String PROPERTY_Created = "Created";
 	public static final String P_Created = "Created";
-	public static final String PROPERTY_FileName = "FileName";
 	public static final String P_FileName = "FileName";
-	public static final String PROPERTY_PackageName = "PackageName";
 	public static final String P_PackageName = "PackageName";
-	public static final String PROPERTY_Seq = "Seq";
 	public static final String P_Seq = "Seq";
-	public static final String PROPERTY_Description = "Description";
 	public static final String P_Description = "Description";
 
-	public static final String PROPERTY_FileExists = "FileExists";
 	public static final String P_FileExists = "FileExists";
 
-	public static final String PROPERTY_MainTable = "MainTable";
 	public static final String P_MainTable = "MainTable";
-	public static final String PROPERTY_Project = "Project";
 	public static final String P_Project = "Project";
-	public static final String PROPERTY_QueryInfos = "QueryInfos";
 	public static final String P_QueryInfos = "QueryInfos";
 
-	public static final String METHOD_Parse = "Parse";
 	public static final String M_Parse = "Parse";
 	protected volatile int id;
 	protected volatile OADateTime created;
@@ -92,8 +65,13 @@ public class Repository extends OAObject {
 
 	public Repository() {
 		if (!isLoading()) {
-			setCreated(new OADateTime());
+			setObjectDefaults();
 		}
+	}
+
+	@Override
+	public void setObjectDefaults() {
+		setCreated(new OADateTime());
 	}
 
 	public Repository(int id) {
@@ -101,14 +79,8 @@ public class Repository extends OAObject {
 		setId(id);
 	}
 
-	@XmlAttribute(name = "oaSingleId")
-	public Integer getJaxbGuid() {
-		return super.getJaxbGuid();
-	}
-
 	@OAProperty(isUnique = true, trackPrimitiveNull = false, displayLength = 6)
 	@OAId()
-	@XmlTransient
 	@OAColumn(sqlType = java.sql.Types.INTEGER)
 	public int getId() {
 		return id;
@@ -119,22 +91,6 @@ public class Repository extends OAObject {
 		fireBeforePropertyChange(P_Id, old, newValue);
 		this.id = newValue;
 		firePropertyChange(P_Id, old, this.id);
-	}
-
-	@XmlID
-	@XmlAttribute(name = "id")
-	public String getJaxbId() {
-		// note: jaxb spec requires id to be a string
-		if (!getJaxbShouldInclude(P_Id)) {
-			return null;
-		}
-		return "" + id;
-	}
-
-	public void setJaxbId(String id) {
-		if (getJaxbAllowPropertyChange(P_Id, this.id, id)) {
-			setId((int) OAConv.convert(int.class, id));
-		}
 	}
 
 	@OAProperty(defaultValue = "new OADateTime()", displayLength = 15, isProcessed = true)
@@ -148,20 +104,6 @@ public class Repository extends OAObject {
 		fireBeforePropertyChange(P_Created, old, newValue);
 		this.created = newValue;
 		firePropertyChange(P_Created, old, this.created);
-	}
-
-	@XmlElement(name = "created", nillable = true)
-	public OADateTime getJaxbCreated() {
-		if (!getJaxbShouldInclude(P_Created)) {
-			return null;
-		}
-		return getCreated();
-	}
-
-	public void setJaxbCreated(OADateTime newValue) {
-		if (getJaxbAllowPropertyChange(P_Created, this.created, newValue)) {
-			setCreated(newValue);
-		}
 	}
 
 	@OAProperty(displayName = "File Name", maxLength = 250, displayLength = 20, hasCustomCode = true, isFileName = true)
@@ -219,20 +161,6 @@ public class Repository extends OAObject {
 		return ss;
 	}
 
-	@XmlElement(name = "fileName", nillable = true)
-	public String getJaxbFileName() {
-		if (!getJaxbShouldInclude(P_FileName)) {
-			return null;
-		}
-		return getFileName();
-	}
-
-	public void setJaxbFileName(String newValue) {
-		if (getJaxbAllowPropertyChange(P_FileName, this.fileName, newValue)) {
-			setFileName(newValue);
-		}
-	}
-
 	@OAProperty(displayName = "Package Name", maxLength = 150, displayLength = 20)
 	@OAColumn(maxLength = 150)
 	public String getPackageName() {
@@ -244,20 +172,6 @@ public class Repository extends OAObject {
 		fireBeforePropertyChange(P_PackageName, old, newValue);
 		this.packageName = newValue;
 		firePropertyChange(P_PackageName, old, this.packageName);
-	}
-
-	@XmlElement(name = "packageName", nillable = true)
-	public String getJaxbPackageName() {
-		if (!getJaxbShouldInclude(P_PackageName)) {
-			return null;
-		}
-		return getPackageName();
-	}
-
-	public void setJaxbPackageName(String newValue) {
-		if (getJaxbAllowPropertyChange(P_PackageName, this.packageName, newValue)) {
-			setPackageName(newValue);
-		}
 	}
 
 	@OAProperty(displayLength = 6, isAutoSeq = true)
@@ -273,20 +187,6 @@ public class Repository extends OAObject {
 		firePropertyChange(P_Seq, old, this.seq);
 	}
 
-	@XmlElement(name = "seq")
-	public Integer getJaxbSeq() {
-		if (!getJaxbShouldInclude(P_Seq)) {
-			return null;
-		}
-		return getSeq();
-	}
-
-	public void setJaxbSeq(Integer newValue) {
-		if (getJaxbAllowPropertyChange(P_Seq, this.seq, newValue)) {
-			setSeq(newValue);
-		}
-	}
-
 	@OAProperty(displayLength = 30, columnLength = 20)
 	@OAColumn(sqlType = java.sql.Types.CLOB)
 	public String getDescription() {
@@ -300,23 +200,11 @@ public class Repository extends OAObject {
 		firePropertyChange(P_Description, old, this.description);
 	}
 
-	@XmlElement(name = "description", nillable = true)
-	public String getJaxbDescription() {
-		if (!getJaxbShouldInclude(P_Description)) {
-			return null;
-		}
-		return getDescription();
-	}
-
-	public void setJaxbDescription(String newValue) {
-		if (getJaxbAllowPropertyChange(P_Description, this.description, newValue)) {
-			setDescription(newValue);
-		}
-	}
-
 	@OACalculatedProperty(displayName = "File Exists", displayLength = 5, columnLength = 6, columnName = "Exists", properties = {
 			P_FileName, P_PackageName, P_Project + "." + Project.P_CodeDirectory })
 	public boolean getFileExists() {
+		//boolean b = RepositoryDelegate.getFileExists(this);
+		//return b;
 		return false;
 	}
 
@@ -324,17 +212,8 @@ public class Repository extends OAObject {
 		return getFileExists();
 	}
 
-	@XmlElement(name = "fileExists")
-	public Boolean getJaxbFileExists() {
-		if (!getJaxbShouldInclude(P_FileExists)) {
-			return null;
-		}
-		return getFileExists();
-	}
-
 	@OAOne(displayName = "Main Table", reverseName = Table.P_Repositories, allowCreateNew = false)
 	@OAFkey(columns = { "MainTableId" })
-	@XmlTransient
 	public Table getMainTable() {
 		if (mainTable == null) {
 			mainTable = (Table) getObject(P_MainTable);
@@ -349,42 +228,8 @@ public class Repository extends OAObject {
 		firePropertyChange(P_MainTable, old, this.mainTable);
 	}
 
-	@XmlElement(name = "mainTable", nillable = true)
-	public Table getJaxbMainTable() {
-		Object obj = super.getJaxbObject(P_MainTable);
-		return (Table) obj;
-	}
-
-	public void setJaxbMainTable(Table newValue) {
-		if (getJaxbAllowPropertyChange(P_MainTable, this.mainTable, newValue)) {
-			setMainTable(newValue);
-		}
-	}
-
-	@XmlElement(name = "refMainTable")
-	@XmlIDREF
-	public Table getJaxbRefMainTable() {
-		Object obj = super.getJaxbRefObject(P_MainTable);
-		return (Table) obj;
-	}
-
-	public void setJaxbRefMainTable(Table newValue) {
-		setJaxbMainTable(newValue);
-	}
-
-	@XmlElement(name = "mainTableId", nillable = true)
-	public String getJaxbMainTableId() {
-		String s = super.getJaxbId(P_MainTable);
-		return s;
-	}
-
-	public void setJaxbMainTableId(String id) {
-		setJaxbId(P_MainTable, id);
-	}
-
 	@OAOne(reverseName = Project.P_Repositories, required = true, allowCreateNew = false)
 	@OAFkey(columns = { "ProjectId" })
-	@XmlTransient
 	public Project getProject() {
 		if (project == null) {
 			project = (Project) getObject(P_Project);
@@ -399,41 +244,7 @@ public class Repository extends OAObject {
 		firePropertyChange(P_Project, old, this.project);
 	}
 
-	@XmlElement(name = "project", required = true)
-	public Project getJaxbProject() {
-		Object obj = super.getJaxbObject(P_Project);
-		return (Project) obj;
-	}
-
-	public void setJaxbProject(Project newValue) {
-		if (getJaxbAllowPropertyChange(P_Project, this.project, newValue)) {
-			setProject(newValue);
-		}
-	}
-
-	@XmlElement(name = "refProject")
-	@XmlIDREF
-	public Project getJaxbRefProject() {
-		Object obj = super.getJaxbRefObject(P_Project);
-		return (Project) obj;
-	}
-
-	public void setJaxbRefProject(Project newValue) {
-		setJaxbProject(newValue);
-	}
-
-	@XmlElement(name = "projectId", required = true)
-	public String getJaxbProjectId() {
-		String s = super.getJaxbId(P_Project);
-		return s;
-	}
-
-	public void setJaxbProjectId(String id) {
-		setJaxbId(P_Project, id);
-	}
-
 	@OAMany(displayName = "Query Infos", toClass = QueryInfo.class, owner = true, reverseName = QueryInfo.P_Repository, cascadeSave = true, cascadeDelete = true, seqProperty = QueryInfo.P_Seq, sortProperty = QueryInfo.P_Seq)
-	@XmlTransient
 	public Hub<QueryInfo> getQueryInfos() {
 		if (hubQueryInfos == null) {
 			hubQueryInfos = (Hub<QueryInfo>) getHub(P_QueryInfos);
@@ -441,25 +252,13 @@ public class Repository extends OAObject {
 		return hubQueryInfos;
 	}
 
-	@XmlElementWrapper(name = "queryInfos")
-	@XmlElement(name = "queryInfo", type = QueryInfo.class)
-	protected List<QueryInfo> getJaxbQueryInfos() {
-		return getJaxbHub(P_QueryInfos);
-	}
-
-	@XmlElementWrapper(name = "refQueryInfos")
-	@XmlElement(name = "queryInfo", type = QueryInfo.class)
-	@XmlIDREF
-	protected List<QueryInfo> getJaxbRefQueryInfos() {
-		return getJaxbRefHub(P_QueryInfos);
-	}
-
-	protected void setJaxbRefQueryInfos(List<QueryInfo> lst) {
-		// no-op, since jaxb sends lst=hubQueryInfos
-	}
-
 	@OAMethod(displayName = "Parse")
 	public void parse() {
+		try {
+			// RepositoryDelegate.parse(this);
+		} catch (Exception e) {
+			throw new RuntimeException("failed to parse", e);
+		}
 	}
 
 	@OAObjCallback
@@ -502,13 +301,5 @@ public class Repository extends OAObject {
 
 		this.changedFlag = false;
 		this.newFlag = false;
-	}
-
-	public static Repository jaxbCreate() {
-		Repository repository = (Repository) OAObject.jaxbCreateInstance(Repository.class);
-		if (repository == null) {
-			repository = new Repository();
-		}
-		return repository;
 	}
 }

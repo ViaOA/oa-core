@@ -49,5 +49,9 @@ public class ForeignTableColumnPP {
         String s = ForeignTableColumn.P_ToColumnName;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

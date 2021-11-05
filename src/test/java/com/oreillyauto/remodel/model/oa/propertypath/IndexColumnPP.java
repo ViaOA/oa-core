@@ -37,5 +37,9 @@ public class IndexColumnPP {
         String s = IndexColumn.P_Seq;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

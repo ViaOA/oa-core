@@ -47,7 +47,7 @@ import com.viaoa.util.OAString;
 /**
  * OAXMLReader using a SAXParser to parse and automatically create OAObjects from an XML file. This will do the following to find the
  * existing object: 1: if OAProperty.importMatch, then it will search to find a matching object 2: if objectId props, then it will search to
- * find a matching object 3: use guid if not found, then a new object will be created. see: 20200127 OAJaxb.java
+ * find a matching object 3: use guid if not found, then a new object will be created.
  *
  * @see OAXMLWriter
  */

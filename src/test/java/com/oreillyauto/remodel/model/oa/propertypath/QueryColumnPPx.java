@@ -2,7 +2,6 @@
 package com.oreillyauto.remodel.model.oa.propertypath;
  
 import java.io.Serializable;
-
 import com.oreillyauto.remodel.model.oa.*;
  
 public class QueryColumnPPx implements PPxInterface, Serializable {

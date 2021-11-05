@@ -53,5 +53,9 @@ public class QueryInfoPP {
         String s = QueryInfo.P_AllowPaging;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

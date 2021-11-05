@@ -61,5 +61,9 @@ public class JsonColumnPP {
         String s = JsonColumn.P_Seq;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

@@ -1,7 +1,12 @@
 package com.viaoa.jackson;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -11,22 +16,26 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
+import com.viaoa.object.OAObjectInfo;
+import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAConv;
 
 /**
  * OA + JSON that uses the Jackson library.
  * <p>
- * This should be used directory for read/write with OAObject & Hub.
+ * This should be used directly for read/write with OAObject & Hub.
  * <p>
- * It will internally use ObjectMapper.
+ * It internally uses ObjectMapper.
  * <p>
  * Note: this is not thread safe, create and use a separate instance.
  *
@@ -36,6 +45,7 @@ public class OAJackson {
 
 	private final ArrayList<String> alPropertyPath = new ArrayList<>();
 	private boolean bIncludeOwned = true;
+	private boolean bIncludeAll;
 
 	private Class readObjectClass;
 
@@ -45,8 +55,8 @@ public class OAJackson {
 	private Map<Integer, OAObject> hmGuidObject;
 
 	/**
-	 * Used during writing, to know if an object has already been output. If so, then it will output refId as each a String that is a
-	 * singlePart Id, a Integer if single part numeric id, or guid if object does not have an assigned id.
+	 * Used during writing, to know if an object has already been output. If so, then it will output refId of one of the following: 1: an
+	 * Integer if id is numeric, 2: '-' separated string if multipart key, 3: 'guid.[guidValue]' if object does not have an assigned id.
 	 */
 	private OACascade cascade;
 
@@ -59,6 +69,17 @@ public class OAJackson {
 
 	public boolean getIncludeOwned() {
 		return bIncludeOwned;
+	}
+
+	/**
+	 * Flag to know if ALL references are included, default is false.
+	 */
+	public void setIncludeAll(boolean b) {
+		bIncludeAll = b;
+	}
+
+	public boolean getIncludeAll() {
+		return bIncludeAll;
 	}
 
 	/**
@@ -76,6 +97,14 @@ public class OAJackson {
 	public void addPropertyPath(String pp) {
 		if (pp != null) {
 			alPropertyPath.add(pp);
+		}
+	}
+
+	public void addPropertyPaths(List<String> pps) {
+		if (pps != null) {
+			for (String pp : pps) {
+				alPropertyPath.add(pp);
+			}
 		}
 	}
 
@@ -105,7 +134,7 @@ public class OAJackson {
 	/**
 	 * Convert OAObject to a JSON string.
 	 */
-	public String write(OAObject obj) throws JsonProcessingException {
+	public String write(Object obj) throws JsonProcessingException {
 		this.cascade = null;
 		String json;
 		try {
@@ -120,10 +149,23 @@ public class OAJackson {
 		return json;
 	}
 
+	public void write(Object obj, File file) throws JsonProcessingException, IOException {
+		this.cascade = null;
+		String json;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+
+			createObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, obj);
+
+		} finally {
+			OAThreadLocalDelegate.setOAJackson(null);
+		}
+	}
+
 	/**
-	 * Convert a JSON string to an OAObject graph.
+	 * Convert a JSON string to an Object graph.
 	 */
-	public <T extends OAObject> T readObject(final String json, final Class<T> clazz, final boolean bUseValidation)
+	public <T extends Object> T readObject(final String json, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException {
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
@@ -138,6 +180,35 @@ public class OAJackson {
 				OAThreadLocalDelegate.setLoading(true);
 			}
 			obj = (T) om.readValue(json, OAObject.class);
+		} finally {
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(false);
+			}
+			OAThreadLocalDelegate.setOAJackson(null);
+			readObjectClass = null;
+		}
+
+		return obj;
+	}
+
+	/**
+	 * Convert a JSON file to an OAObject graph.
+	 */
+	public <T extends OAObject> T readObject(final File file, final Class<T> clazz, final boolean bUseValidation)
+			throws JsonProcessingException, IOException {
+		this.readObjectClass = clazz;
+		ObjectMapper om = createObjectMapper();
+
+		hmGuidObject = null;
+		Map<Integer, OAObject> hmGuidMap = getGuidMap();
+
+		T obj;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(true);
+			}
+			obj = (T) om.readValue(file, OAObject.class);
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -179,7 +250,7 @@ public class OAJackson {
 					// write single objKey or guid to arrayNode
 					OAObjectKey key = oaObj.getObjectKey();
 
-					String id = OAJacksonSerializer.convertObjectKeyToJsonSinglePartId(key);
+					String id = OAJackson.convertObjectKeyToJsonSinglePartId(key);
 
 					if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
 						nodeArray.add(id);
@@ -224,7 +295,7 @@ public class OAJackson {
 						hub.add(objx);
 					} else if (node.isNumber()) {
 						// key
-						OAObjectKey ok = OAJacksonDeserializer.convertNumberToObjectKey(getReadObjectClass(), node.asInt());
+						OAObjectKey ok = OAJackson.convertNumberToObjectKey(getReadObjectClass(), node.asInt());
 
 						OAObject objNew = (OAObject) OAObjectCacheDelegate.get(getReadObjectClass(), ok);
 						if (objNew != null) {
@@ -241,7 +312,7 @@ public class OAJackson {
 							hub.add((T) getGuidMap().get(guid));
 						} else {
 							// convert multipart key to OAObjectKey
-							OAObjectKey ok = OAJacksonDeserializer.convertJsonSinglePartIdToObjectKey(getReadObjectClass(), s);
+							OAObjectKey ok = OAJackson.convertJsonSinglePartIdToObjectKey(getReadObjectClass(), s);
 
 							OAObject objNew = (OAObject) OAObjectCacheDelegate.get(getReadObjectClass(), ok);
 							if (objNew != null) {
@@ -270,4 +341,194 @@ public class OAJackson {
 		}
 	}
 
+	public static OAObjectKey convertJsonSinglePartIdToObjectKey(final Class<? extends OAObject> clazz, final String strSinglePartId) {
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+
+		String[] ids = strSinglePartId.split("/-");
+		Object[] ids2 = new Object[ids.length];
+		int i = 0;
+		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
+			if (pi.getId()) {
+				ids2[i] = OAConv.convert(pi.getClassType(), ids[i]);
+				i++;
+			}
+		}
+		OAObjectKey ok = new OAObjectKey(ids2);
+		return ok;
+	}
+
+	public static OAObjectKey convertNumberToObjectKey(final Class<? extends OAObject> clazz, final int id) {
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+
+		Object[] ids2 = new Object[1];
+		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
+			if (pi.getId()) {
+				ids2[0] = OAConv.convert(pi.getClassType(), id);
+				break;
+			}
+		}
+		OAObjectKey ok = new OAObjectKey(ids2);
+		return ok;
+	}
+
+	public static String convertObjectKeyToJsonSinglePartId(OAObjectKey oaObjKey) {
+		if (oaObjKey == null) {
+			return null;
+		}
+
+		String ids = null;
+		Object[] objs = oaObjKey.getObjectIds();
+		if (objs != null) {
+			boolean bHasId = false;
+			for (Object obj : objs) {
+				bHasId |= (obj != null);
+				if (ids == null) {
+					ids = "" + obj;
+				} else {
+					ids += "-" + OAConv.toString(obj);
+				}
+			}
+			if (!bHasId) {
+				ids = "guid." + oaObjKey.getGuid();
+			}
+		}
+		return ids;
+	}
+
+	/**
+	 * Used to serialize the arguments into a Json array. This will also include json properties for setting(/casting) if the object is
+	 * different then the parameter type.
+	 */
+	public static ArrayNode convertMethodArgumentsToJson(final Method method, final Object[] argValues,
+			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
+
+		final OAJackson oaj = new OAJackson();
+		final ObjectMapper om = oaj.createObjectMapper();
+
+		final ArrayNode arrayNode = om.createArrayNode();
+
+		if (argValues == null) {
+			return arrayNode;
+		}
+
+		final Parameter[] mps = method.getParameters();
+
+		int i = -1;
+		for (Object obj : argValues) {
+			i++;
+
+			if (skipParams != null && skipParams.length > 0) {
+				boolean b = false;
+				for (int p : skipParams) {
+					if (p == i) {
+						b = true;
+						break;
+					}
+				}
+				if (b) {
+					continue;
+				}
+			}
+
+			final Parameter param = mps[i];
+			final Class paramClass = param.getType();
+			if (obj != null && !obj.getClass().equals(paramClass) && !paramClass.isPrimitive()) {
+				// need to know the correct cast
+				String s = methodNextArgumentParamClass + obj.getClass().getName();
+				arrayNode.add(s);
+			}
+
+			JsonNode node = om.valueToTree(obj);
+
+			arrayNode.add(node);
+		}
+
+		return arrayNode;
+	}
+
+	private static final String methodNextArgumentParamClass = "OANextParamClass:";
+
+	/**
+	 * Convert a json array to the argument values of a method.
+	 */
+	public static Object[] convertJsonToMethodArguments(String jsonArray, Method method) throws Exception {
+
+		final OAJackson oaj = new OAJackson();
+		final ObjectMapper om = oaj.createObjectMapper();
+
+		JsonNode nodeRoot = om.readTree(jsonArray);
+
+		ArrayNode nodeArray;
+
+		if (nodeRoot instanceof ArrayNode) {
+			nodeArray = (ArrayNode) nodeRoot;
+		} else {
+			nodeArray = om.createArrayNode();
+			if (nodeRoot != null) {
+				nodeArray.add(nodeRoot);
+			}
+		}
+
+		Object[] objs = convertJsonToMethodArguments(oaj, nodeArray, method, null);
+		return objs;
+	}
+
+	public static Object[] convertJsonToMethodArguments(ArrayNode nodeArray, Method method, final int[] skipParams) throws Exception {
+		final OAJackson oaj = new OAJackson();
+		final ObjectMapper om = oaj.createObjectMapper();
+
+		Object[] objs = convertJsonToMethodArguments(oaj, nodeArray, method, null);
+		return objs;
+	}
+
+	protected static Object[] convertJsonToMethodArguments(OAJackson oaj, ArrayNode nodeArray, Method method, final int[] skipParams)
+			throws Exception {
+		if (nodeArray == null || method == null) {
+			return null;
+		}
+
+		Parameter[] mps = method.getParameters();
+		if (mps == null) {
+			return null;
+		}
+		final Object[] margs = new Object[mps.length];
+
+		final int nodeArraySize = nodeArray.size();
+
+		int nodeArrayPos = 0;
+		for (int i = 0; i < mps.length && nodeArrayPos < nodeArraySize; i++) {
+			if (skipParams != null && skipParams.length > 0) {
+				boolean b = false;
+				for (int p : skipParams) {
+					if (p == i) {
+						b = true;
+						break;
+					}
+				}
+				if (b) {
+					continue;
+				}
+			}
+
+			final Parameter param = mps[i];
+			Class paramClass = param.getType();
+
+			JsonNode node = nodeArray.get(nodeArrayPos);
+
+			if (node instanceof TextNode) {
+				String s = ((TextNode) node).asText();
+				if (s.startsWith(methodNextArgumentParamClass)) {
+					s = s.substring(methodNextArgumentParamClass.length());
+					paramClass = Class.forName(s);
+					nodeArrayPos++;
+					node = nodeArray.get(nodeArrayPos);
+				}
+			}
+
+			Object objx = oaj.readObject(node.asText(), paramClass, false);
+			margs[i] = objx;
+			nodeArrayPos++;
+		}
+		return margs;
+	}
 }

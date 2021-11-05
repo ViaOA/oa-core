@@ -60,5 +60,9 @@ public class ColumnTypePP {
         String s = ColumnType.P_Display;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

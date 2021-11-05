@@ -42,5 +42,9 @@ public class ProjectPP {
         String s = Project.P_CodeDirectory;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

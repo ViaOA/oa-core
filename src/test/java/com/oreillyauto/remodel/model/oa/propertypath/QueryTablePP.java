@@ -45,5 +45,9 @@ public class QueryTablePP {
         String s = QueryTable.P_Created;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

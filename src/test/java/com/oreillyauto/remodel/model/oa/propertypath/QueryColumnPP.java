@@ -43,5 +43,9 @@ public class QueryColumnPP {
         String s = QueryColumn.P_Seq;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

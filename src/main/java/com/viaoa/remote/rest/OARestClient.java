@@ -33,9 +33,9 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.viaoa.hub.Hub;
-import com.viaoa.json.OAJsonMapper;
-import com.viaoa.json.node.OAJsonNode;
+import com.viaoa.jackson.OAJackson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
@@ -350,7 +350,12 @@ public class OARestClient {
 				} else {
 					c = mi.origReturnClass;
 				}
-				obj = OAJsonMapper.convertJsonToObject(invokeInfo.responseBody, c, invokeInfo.methodReturnClass);
+
+				OAJackson oaj = new OAJackson();
+				obj = oaj.readObject(invokeInfo.responseBody, invokeInfo.methodReturnClass, true);
+
+				//was: obj = OAJsonMapper.convertJsonToObject(invokeInfo.responseBody, c, invokeInfo.methodReturnClass);
+
 			} catch (Exception e) {
 				String s = "exception converting JSON response to Object";
 				invokeInfo.tsEnd = System.currentTimeMillis();
@@ -445,7 +450,7 @@ public class OARestClient {
 				} else {
 					mi.returnClass = null; // needs to be defined by method paramType=MethodReturnClass
 				}
-			} else if (OAJsonNode.class.isAssignableFrom(mi.origReturnClass)) {
+			} else if (JsonNode.class.isAssignableFrom(mi.origReturnClass)) {
 				mi.returnClassType = OARestMethodInfo.ReturnClassType.JsonNode;
 			} else if (mi.origReturnClass.equals(String.class)) {
 				mi.returnClassType = OARestMethodInfo.ReturnClassType.String;
@@ -476,7 +481,7 @@ public class OARestClient {
 					} else {
 						pi.paramClass = null;
 					}
-				} else if (OAJsonNode.class.isAssignableFrom(pi.origParamClass)) {
+				} else if (JsonNode.class.isAssignableFrom(pi.origParamClass)) {
 					pi.classType = OARestParamInfo.ClassType.JsonNode;
 				} else if (pi.origParamClass.equals(String.class)) {
 					pi.classType = OARestParamInfo.ClassType.String;
@@ -1053,7 +1058,14 @@ public class OARestClient {
 		Class clazz = obj.getClass();
 		ii.urlPath += "/" + OAString.mfcl(clazz.getSimpleName());
 
-		String json = OAJsonMapper.convertObjectToJson(obj, includePPs == null ? null : Arrays.asList(includePPs));
+		OAJackson oaj = new OAJackson();
+		if (includePPs != null) {
+			oaj.addPropertyPaths(Arrays.asList(includePPs));
+		}
+
+		String json = oaj.write(obj);
+
+		// was: String json = OAJsonMapper.convertObjectToJson(obj, includePPs == null ? null : Arrays.asList(includePPs));
 
 		ii.jsonBody = json;
 
@@ -1082,7 +1094,7 @@ public class OARestClient {
 		Class clazz = obj.getClass();
 		ii.urlPath += "/" + OAString.mfcl(clazz.getSimpleName());
 
-		ii.urlPath += "/" + obj.getJaxbSinglePartId();
+		ii.urlPath += "/" + OAJackson.convertObjectKeyToJsonSinglePartId(obj.getObjectKey());
 
 		callHttpEndPoint(ii);
 		return ii;
@@ -1110,9 +1122,17 @@ public class OARestClient {
 
 		Class clazz = obj.getClass();
 		ii.urlPath += "/" + OAString.mfcl(clazz.getSimpleName());
-		ii.urlPath += "/" + obj.getJaxbSinglePartId();
 
-		String json = OAJsonMapper.convertObjectToJson(obj, includePPs == null ? null : Arrays.asList(includePPs));
+		ii.urlPath += "/" + OAJackson.convertObjectKeyToJsonSinglePartId(obj.getObjectKey());
+
+		OAJackson oaj = new OAJackson();
+		if (includePPs != null) {
+			oaj.addPropertyPaths(Arrays.asList(includePPs));
+		}
+
+		String json = oaj.write(obj);
+
+		//was: String json = OAJsonMapper.convertObjectToJson(obj, includePPs == null ? null : Arrays.asList(includePPs));
 
 		ii.jsonBody = json;
 

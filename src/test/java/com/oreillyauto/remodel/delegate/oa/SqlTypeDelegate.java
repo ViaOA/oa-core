@@ -2,8 +2,10 @@ package com.oreillyauto.remodel.delegate.oa;
 
 import java.util.logging.Logger;
 
+import com.oreillyauto.remodel.delegate.ModelDelegate;
 import com.oreillyauto.remodel.model.oa.DataType;
 import com.oreillyauto.remodel.model.oa.SqlType;
+import com.viaoa.util.OAString;
 
 public class SqlTypeDelegate {
 
@@ -15,11 +17,27 @@ public class SqlTypeDelegate {
 	}
 
 	public static SqlType getSqlType(String name) {
-		return null;
+		SqlType st = ModelDelegate.getSqlTypes().find(SqlType.P_SqlType, name);
+		if (st == null) {
+			st = ModelDelegate.getSqlTypes().find(SqlType.P_SqlType, OAString.convert(name, " ", ""));
+		}
+		return st;
 	}
 
 	public static SqlType getSqlType(int type, String name, boolean bAutoCreateNew) {
-		return null;
+		SqlType st = ModelDelegate.getSqlTypes().find(SqlType.P_SqlType, type);
+		if (st == null && bAutoCreateNew) {
+			synchronized (Lock) {
+				st = ModelDelegate.getSqlTypes().find(SqlType.P_SqlType, type);
+				if (st == null) {
+					st = new SqlType();
+					st.setSqlType(type);
+					st.setName(name);
+					ModelDelegate.getSqlTypes().add(st);
+				}
+			}
+		}
+		return st;
 	}
 
 	public static void assignDefaultValues() {

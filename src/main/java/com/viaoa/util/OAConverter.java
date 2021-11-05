@@ -442,27 +442,7 @@ public class OAConverter {
 	 * @param decimalPlaces number of decimal places to round to
 	 */
 	public static double round(double d, int decimalPlaces) {
-		// 20181104 returned to using this:
 		return round(d, 0, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-		/* was: does not use round_half_up,  ex: 1.235
-		// this will be faster (no BigDecimal needed)
-		if (decimalPlaces < 0) return d;
-
-		boolean bNegative;
-		if (d < 0) {
-		    d = Math.abs(d);
-		    bNegative = true;
-		}
-		else bNegative = false;
-
-		double decimalValue = Math.pow(10, decimalPlaces);
-		d *= decimalValue;
-
-		d = StrictMath.round(d);
-		d /= decimalValue;
-		if (bNegative) d *= -1;
-		return d;
-		*/
 	}
 
 	/**
@@ -1455,9 +1435,9 @@ public class OAConverter {
 		dx = 256.025;
 		/*
 		dx = round(dx, 3, 2);
-		
+
 		dx = 1.025;
-		
+
 		dx *= 100.0;
 		dx /= 100.0;
 		*/
