@@ -1,4 +1,4 @@
-package com.viaoa.jackson;
+package com.viaoa.json.jackson;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
+import com.viaoa.json.OAJson;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -37,7 +38,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 	@Override
 	public OAObject deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JacksonException {
 
-		final OAJackson oaj = OAThreadLocalDelegate.getOAJackson();
+		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
 		final Class clazz = oaj.getReadObjectClass();
 
 		JsonNode node = jp.getCodec().readTree(jp);
@@ -51,7 +52,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
 	protected OAObject getObject(OAObjectInfo oi, JsonNode node) {
 
-		final OAJackson oaj = OAThreadLocalDelegate.getOAJackson();
+		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
 		Class clazz = oi.getForClass();
 
 		ArrayList alKeys = new ArrayList();
@@ -138,8 +139,6 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			JsonNode nodex = node.get(li.getLowerName());
 			if (nodex instanceof ArrayNode) {
 
-				//qqqqqqq will need to add/remove objects in hub qqqqqqqqqqq
-
 				Hub<OAObject> hub = (Hub<OAObject>) li.getValue(objNew);
 				ArrayNode nodeArray = (ArrayNode) nodex;
 
@@ -214,7 +213,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 	}
 
 	protected OAObject getLinkObject(OAObject fromObject, OALinkInfo li, JsonNode nodeForLinkProperty) {
-		final OAJackson oaj = OAThreadLocalDelegate.getOAJackson();
+		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
 
 		OAObject objNew = null;
 		if (nodeForLinkProperty.isObject()) {
@@ -238,7 +237,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 					objNew = oaj.getGuidMap().get(guid);
 				}
 			} else {
-				OAObjectKey ok = OAJackson.convertJsonSinglePartIdToObjectKey(li.getToClass(), s);
+				OAObjectKey ok = OAJson.convertJsonSinglePartIdToObjectKey(li.getToClass(), s);
 
 				objNew = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), ok);
 				if (objNew != null) {

@@ -33,22 +33,22 @@ public class RpgType extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(RpgType.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_Created = "Created";
-    public static final String P_Name = "Name";
-    public static final String P_EncodeType = "EncodeType";
-    public static final String P_EncodeTypeAsString = "EncodeTypeString";
-    public static final String P_DefaultSize = "DefaultSize";
-    public static final String P_DefaultFormat = "DefaultFormat";
-    public static final String P_NullValueType = "NullValueType";
-    public static final String P_NullValueTypeAsString = "NullValueTypeString";
-    public static final String P_Note = "Note";
-    public static final String P_Samples = "Samples";
-    public static final String P_Seq = "Seq";
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_Name = "name";
+    public static final String P_EncodeType = "encodeType";
+    public static final String P_EncodeTypeAsString = "encodeTypeString";
+    public static final String P_DefaultSize = "defaultSize";
+    public static final String P_DefaultFormat = "defaultFormat";
+    public static final String P_NullValueType = "nullValueType";
+    public static final String P_NullValueTypeAsString = "nullValueTypeString";
+    public static final String P_Note = "note";
+    public static final String P_Samples = "samples";
+    public static final String P_Seq = "seq";
      
      
-    public static final String P_JsonType = "JsonType";
-    public static final String P_MessageTypeColumns = "MessageTypeColumns";
+    public static final String P_JsonType = "jsonType";
+    public static final String P_MessageTypeColumns = "messageTypeColumns";
      
     protected volatile int id;
     protected volatile OADateTime created;

@@ -1,4 +1,4 @@
-package com.viaoa.jackson;
+package com.viaoa.json.jackson;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.viaoa.hub.Hub;
+import com.viaoa.json.OAJson;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -57,7 +58,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 	@Override
 	public void serialize(OAObject value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
 
-		final OAJackson oaj = OAThreadLocalDelegate.getOAJackson();
+		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
 
 		final OAObject oaObj = (OAObject) value;
 
@@ -152,7 +153,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				if (key == null) {
 					gen.writeNullField(li.getLowerName());
 				} else {
-					String id = OAJackson.convertObjectKeyToJsonSinglePartId(key);
+					String id = OAJson.convertObjectKeyToJsonSinglePartId(key);
 
 					if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
 						gen.writeStringField(li.getLowerName(), id);
@@ -195,7 +196,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 						} else {
 
 							OAObjectKey key = objx.getObjectKey();
-							String id = OAJackson.convertObjectKeyToJsonSinglePartId(key);
+							String id = OAJson.convertObjectKeyToJsonSinglePartId(key);
 
 							if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
 								gen.writeString(id);

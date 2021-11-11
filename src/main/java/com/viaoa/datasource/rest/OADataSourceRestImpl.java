@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
-import com.viaoa.jackson.OAJackson;
+import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectKey;
@@ -187,7 +187,7 @@ public class OADataSourceRestImpl implements OADataSourceRestInterface {
 
 		OAObject objWhere = null;
 		if (whereObjectClass != null && whereKey != null) {
-			OAObjectKey ok = OAJackson.convertJsonSinglePartIdToObjectKey(whereObjectClass, whereKey);
+			OAObjectKey ok = OAJson.convertJsonSinglePartIdToObjectKey(whereObjectClass, whereKey);
 
 			objWhere = (OAObject) OAObjectCacheDelegate.get(whereObjectClass, ok);
 			if (objWhere == null) {

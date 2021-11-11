@@ -29,21 +29,21 @@ public class AppUser extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(AppUser.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_LoginId = "LoginId";
-    public static final String P_Password = "Password";
-    public static final String P_Admin = "Admin";
-    public static final String P_SuperAdmin = "SuperAdmin";
-    public static final String P_EditProcessed = "EditProcessed";
-    public static final String P_FirstName = "FirstName";
-    public static final String P_LastName = "LastName";
-    public static final String P_InactiveDate = "InactiveDate";
-    public static final String P_Note = "Note";
+    public static final String P_Id = "id";
+    public static final String P_LoginId = "loginId";
+    public static final String P_Password = "password";
+    public static final String P_Admin = "admin";
+    public static final String P_SuperAdmin = "superAdmin";
+    public static final String P_EditProcessed = "editProcessed";
+    public static final String P_FirstName = "firstName";
+    public static final String P_LastName = "lastName";
+    public static final String P_InactiveDate = "inactiveDate";
+    public static final String P_Note = "note";
      
-    public static final String P_FullName = "FullName";
-    public static final String P_DisplayName = "DisplayName";
+    public static final String P_FullName = "fullName";
+    public static final String P_DisplayName = "displayName";
      
-    public static final String P_AppUserLogins = "AppUserLogins";
+    public static final String P_AppUserLogins = "appUserLogins";
      
     protected volatile int id;
     protected volatile String loginId;

@@ -35,21 +35,21 @@ public class AppUserLogin extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(AppUserLogin.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_Created = "Created";
-    public static final String P_Location = "Location";
-    public static final String P_ComputerName = "ComputerName";
-    public static final String P_Disconnected = "Disconnected";
-    public static final String P_ConnectionId = "ConnectionId";
-    public static final String P_HostName = "HostName";
-    public static final String P_IpAddress = "IpAddress";
-    public static final String P_TotalMemory = "TotalMemory";
-    public static final String P_FreeMemory = "FreeMemory";
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_Location = "location";
+    public static final String P_ComputerName = "computerName";
+    public static final String P_Disconnected = "disconnected";
+    public static final String P_ConnectionId = "connectionId";
+    public static final String P_HostName = "hostName";
+    public static final String P_IpAddress = "ipAddress";
+    public static final String P_TotalMemory = "totalMemory";
+    public static final String P_FreeMemory = "freeMemory";
      
      
-    public static final String P_AppServers = "AppServers";
-    public static final String P_AppUser = "AppUser";
-    public static final String P_AppUserErrors = "AppUserErrors";
+    public static final String P_AppServers = "appServers";
+    public static final String P_AppUser = "appUser";
+    public static final String P_AppUserErrors = "appUserErrors";
      
     protected volatile int id;
     protected volatile OADateTime created;

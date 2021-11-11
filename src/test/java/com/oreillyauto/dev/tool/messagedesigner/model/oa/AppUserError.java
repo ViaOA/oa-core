@@ -32,15 +32,15 @@ public class AppUserError extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(AppUserError.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_DateTime = "DateTime";
-    public static final String P_Message = "Message";
-    public static final String P_StackTrace = "StackTrace";
-    public static final String P_Reviewed = "Reviewed";
-    public static final String P_ReviewNote = "ReviewNote";
+    public static final String P_Id = "id";
+    public static final String P_DateTime = "dateTime";
+    public static final String P_Message = "message";
+    public static final String P_StackTrace = "stackTrace";
+    public static final String P_Reviewed = "reviewed";
+    public static final String P_ReviewNote = "reviewNote";
      
      
-    public static final String P_AppUserLogin = "AppUserLogin";
+    public static final String P_AppUserLogin = "appUserLogin";
      
     protected volatile int id;
     protected volatile OADateTime dateTime;

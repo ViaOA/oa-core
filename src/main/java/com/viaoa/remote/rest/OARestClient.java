@@ -35,7 +35,7 @@ import javax.net.ssl.X509TrustManager;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.viaoa.hub.Hub;
-import com.viaoa.jackson.OAJackson;
+import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
@@ -351,7 +351,7 @@ public class OARestClient {
 					c = mi.origReturnClass;
 				}
 
-				OAJackson oaj = new OAJackson();
+				OAJson oaj = new OAJson();
 				obj = oaj.readObject(invokeInfo.responseBody, invokeInfo.methodReturnClass, true);
 
 				//was: obj = OAJsonMapper.convertJsonToObject(invokeInfo.responseBody, c, invokeInfo.methodReturnClass);
@@ -1058,7 +1058,7 @@ public class OARestClient {
 		Class clazz = obj.getClass();
 		ii.urlPath += "/" + OAString.mfcl(clazz.getSimpleName());
 
-		OAJackson oaj = new OAJackson();
+		OAJson oaj = new OAJson();
 		if (includePPs != null) {
 			oaj.addPropertyPaths(Arrays.asList(includePPs));
 		}
@@ -1094,7 +1094,7 @@ public class OARestClient {
 		Class clazz = obj.getClass();
 		ii.urlPath += "/" + OAString.mfcl(clazz.getSimpleName());
 
-		ii.urlPath += "/" + OAJackson.convertObjectKeyToJsonSinglePartId(obj.getObjectKey());
+		ii.urlPath += "/" + OAJson.convertObjectKeyToJsonSinglePartId(obj.getObjectKey());
 
 		callHttpEndPoint(ii);
 		return ii;
@@ -1123,9 +1123,9 @@ public class OARestClient {
 		Class clazz = obj.getClass();
 		ii.urlPath += "/" + OAString.mfcl(clazz.getSimpleName());
 
-		ii.urlPath += "/" + OAJackson.convertObjectKeyToJsonSinglePartId(obj.getObjectKey());
+		ii.urlPath += "/" + OAJson.convertObjectKeyToJsonSinglePartId(obj.getObjectKey());
 
-		OAJackson oaj = new OAJackson();
+		OAJson oaj = new OAJson();
 		if (includePPs != null) {
 			oaj.addPropertyPaths(Arrays.asList(includePPs));
 		}

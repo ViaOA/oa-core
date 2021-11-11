@@ -30,16 +30,16 @@ public class JsonType extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(JsonType.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_Created = "Created";
-    public static final String P_Name = "Name";
-    public static final String P_Type = "Type";
-    public static final String P_TypeAsString = "TypeString";
-    public static final String P_Seq = "Seq";
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_Name = "name";
+    public static final String P_Type = "type";
+    public static final String P_TypeAsString = "typeString";
+    public static final String P_Seq = "seq";
      
-    public static final String P_DefaultJavaClassType = "DefaultJavaClassType";
+    public static final String P_DefaultJavaClassType = "defaultJavaClassType";
      
-    public static final String P_RpgTypes = "RpgTypes";
+    public static final String P_RpgTypes = "rpgTypes";
      
     protected volatile int id;
     protected volatile OADateTime created;

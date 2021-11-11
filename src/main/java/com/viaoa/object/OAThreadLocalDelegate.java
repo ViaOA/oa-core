@@ -23,7 +23,7 @@ import com.viaoa.context.OAContext;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubShareDelegate;
-import com.viaoa.jackson.OAJackson;
+import com.viaoa.json.OAJson;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
@@ -1494,7 +1494,7 @@ public class OAThreadLocalDelegate {
 		tlx.context = tl.context;
 	}
 
-	public static OAJackson getOAJackson() {
+	public static OAJson getOAJackson() {
 		if (TotalJackson.get() == 0) {
 			return null;
 		}
@@ -1505,7 +1505,7 @@ public class OAThreadLocalDelegate {
 		return ti.oajackson;
 	}
 
-	public static OAJackson setOAJackson(OAJackson jackson) {
+	public static OAJson setOAJackson(OAJson jackson) {
 		if (jackson == null && TotalJackson.get() == 0) {
 			return null;
 		}
@@ -1517,7 +1517,7 @@ public class OAThreadLocalDelegate {
 		}
 
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
-		OAJackson hold = ti.oajackson;
+		OAJson hold = ti.oajackson;
 		ti.oajackson = jackson;
 		return hold;
 	}

@@ -33,14 +33,14 @@ public class AppServer extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(AppServer.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_Created = "Created";
-    public static final String P_Started = "Started";
-    public static final String P_DemoMode = "DemoMode";
-    public static final String P_Release = "Release";
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_Started = "started";
+    public static final String P_DemoMode = "demoMode";
+    public static final String P_Release = "release";
      
      
-    public static final String P_AppUserLogin = "AppUserLogin";
+    public static final String P_AppUserLogin = "appUserLogin";
      
     protected volatile int id;
     protected volatile OADateTime created;

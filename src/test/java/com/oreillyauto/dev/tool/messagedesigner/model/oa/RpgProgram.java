@@ -29,12 +29,12 @@ public class RpgProgram extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(RpgProgram.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_Created = "Created";
-    public static final String P_Name = "Name";
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_Name = "name";
      
      
-    public static final String P_MessageTypeRecords = "MessageTypeRecords";
+    public static final String P_MessageTypeRecords = "messageTypeRecords";
      
     protected volatile int id;
     protected volatile OADateTime created;

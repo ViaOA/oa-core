@@ -31,16 +31,16 @@ public class Message extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(Message.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_Created = "Created";
-    public static final String P_Json = "Json";
-    public static final String P_Processed = "Processed";
-    public static final String P_Cancelled = "Cancelled";
-    public static final String P_SeqNumber = "SeqNumber";
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_Json = "json";
+    public static final String P_Processed = "processed";
+    public static final String P_Cancelled = "cancelled";
+    public static final String P_SeqNumber = "seqNumber";
      
      
-    public static final String P_MessageType = "MessageType";
-    public static final String P_RpgMessages = "RpgMessages";
+    public static final String P_MessageType = "messageType";
+    public static final String P_RpgMessages = "rpgMessages";
      
     protected volatile int id;
     protected volatile OADateTime created;

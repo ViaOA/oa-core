@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.jackson.OAJackson;
+import com.viaoa.json.OAJson;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.Tuple3;
@@ -116,7 +116,7 @@ public class OAThreadLocal {
 	 */
 	public boolean isAdmin;
 
-	public OAJackson oajackson;
+	public OAJson oajackson;
 
 	// hubs that Hub.setAO should not adjust when getting pos
 	public Hub[] dontAdjustHubs;

@@ -23,15 +23,15 @@ public class MessageConfig extends OAObject {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOG = Logger.getLogger(MessageConfig.class.getName());
 
-	public static final String P_Id = "Id";
-	public static final String P_Created = "Created";
-	public static final String P_Console = "Console";
-	public static final String P_RpgMessageDefinitionFile = "RpgMessageDefinitionFile";
+	public static final String P_Id = "id";
+	public static final String P_Created = "created";
+	public static final String P_Console = "console";
+	public static final String P_RpgMessageDefinitionFile = "rpgMessageDefinitionFile";
 
-	public static final String M_ClearMessages = "ClearMessages";
-	public static final String M_LoadJPOSND = "LoadJPOSND";
-	public static final String M_LoadJcomm = "LoadJcomm";
-	public static final String M_LoadRpgMessageFile = "LoadRpgMessageFile";
+	public static final String M_ClearMessages = "clearMessages";
+	public static final String M_LoadJPOSND = "loadJPOSND";
+	public static final String M_LoadJcomm = "loadJcomm";
+	public static final String M_LoadRpgMessageFile = "loadRpgMessageFile";
 	protected volatile int id;
 	protected volatile OADateTime created;
 	protected volatile String console;

@@ -32,33 +32,33 @@ public class MessageTypeColumn extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(MessageTypeColumn.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_Created = "Created";
-    public static final String P_Name = "Name";
-    public static final String P_RpgName = "RpgName";
-    public static final String P_Key = "Key";
-    public static final String P_KeyPos = "KeyPos";
-    public static final String P_FromPos = "FromPos";
-    public static final String P_ToPos = "ToPos";
-    public static final String P_Size = "Size";
-    public static final String P_Description = "Description";
-    public static final String P_DecimalPlaces = "DecimalPlaces";
-    public static final String P_Format = "Format";
-    public static final String P_SpecialType = "SpecialType";
-    public static final String P_SpecialTypeAsString = "SpecialTypeString";
-    public static final String P_NullValueType = "NullValueType";
-    public static final String P_NullValueTypeAsString = "NullValueTypeString";
-    public static final String P_DocType = "DocType";
-    public static final String P_NotUsed = "NotUsed";
-    public static final String P_Seq = "Seq";
-    public static final String P_Note = "Note";
-    public static final String P_FollowUp = "FollowUp";
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_Name = "name";
+    public static final String P_RpgName = "rpgName";
+    public static final String P_Key = "key";
+    public static final String P_KeyPos = "keyPos";
+    public static final String P_FromPos = "fromPos";
+    public static final String P_ToPos = "toPos";
+    public static final String P_Size = "size";
+    public static final String P_Description = "description";
+    public static final String P_DecimalPlaces = "decimalPlaces";
+    public static final String P_Format = "format";
+    public static final String P_SpecialType = "specialType";
+    public static final String P_SpecialTypeAsString = "specialTypeString";
+    public static final String P_NullValueType = "nullValueType";
+    public static final String P_NullValueTypeAsString = "nullValueTypeString";
+    public static final String P_DocType = "docType";
+    public static final String P_NotUsed = "notUsed";
+    public static final String P_Seq = "seq";
+    public static final String P_Note = "note";
+    public static final String P_FollowUp = "followUp";
      
-    public static final String P_DefaultJavaClassType = "DefaultJavaClassType";
+    public static final String P_DefaultJavaClassType = "defaultJavaClassType";
      
-    public static final String P_MessageTypeRecord = "MessageTypeRecord";
-    public static final String P_RecordSubCode = "RecordSubCode";
-    public static final String P_RpgType = "RpgType";
+    public static final String P_MessageTypeRecord = "messageTypeRecord";
+    public static final String P_RecordSubCode = "recordSubCode";
+    public static final String P_RpgType = "rpgType";
      
     protected volatile int id;
     protected volatile OADateTime created;

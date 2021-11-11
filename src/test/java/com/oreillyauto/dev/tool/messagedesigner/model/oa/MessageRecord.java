@@ -33,17 +33,17 @@ public class MessageRecord extends OAObject {
     private static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(MessageRecord.class.getName());
 
-    public static final String P_Id = "Id";
-    public static final String P_Created = "Created";
-    public static final String P_RelationshipType = "RelationshipType";
-    public static final String P_RelationshipTypeAsString = "RelationshipTypeString";
-    public static final String P_Seq = "Seq";
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_RelationshipType = "relationshipType";
+    public static final String P_RelationshipTypeAsString = "relationshipTypeString";
+    public static final String P_Seq = "seq";
      
-    public static final String P_Display = "Display";
+    public static final String P_Display = "display";
      
-    public static final String P_MessageGroup = "MessageGroup";
-    public static final String P_MessageType = "MessageType";
-    public static final String P_MessageTypeRecord = "MessageTypeRecord";
+    public static final String P_MessageGroup = "messageGroup";
+    public static final String P_MessageType = "messageType";
+    public static final String P_MessageTypeRecord = "messageTypeRecord";
      
     protected volatile int id;
     protected volatile OADateTime created;

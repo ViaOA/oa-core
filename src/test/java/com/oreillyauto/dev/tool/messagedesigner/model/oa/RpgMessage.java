@@ -33,22 +33,22 @@ public class RpgMessage extends OAObject {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOG = Logger.getLogger(RpgMessage.class.getName());
 
-	public static final String P_Id = "Id";
-	public static final String P_Created = "Created";
-	public static final String P_Code = "Code";
-	public static final String P_Binary = "Binary";
-	public static final String P_Json = "Json";
-	public static final String P_Processed = "Processed";
-	public static final String P_Cancelled = "Cancelled";
-	public static final String P_Error = "Error";
+	public static final String P_Id = "id";
+	public static final String P_Created = "created";
+	public static final String P_Code = "code";
+	public static final String P_Binary = "binary";
+	public static final String P_Json = "json";
+	public static final String P_Processed = "processed";
+	public static final String P_Cancelled = "cancelled";
+	public static final String P_Error = "error";
 
-	public static final String P_Status = "Status";
-	public static final String P_BinaryDisplay = "BinaryDisplay";
+	public static final String P_Status = "status";
+	public static final String P_BinaryDisplay = "binaryDisplay";
 
-	public static final String P_Message = "Message";
-	public static final String P_MessageTypeRecord = "MessageTypeRecord";
+	public static final String P_Message = "message";
+	public static final String P_MessageTypeRecord = "messageTypeRecord";
 
-	public static final String M_Convert = "Convert";
+	public static final String M_Convert = "convert";
 	protected volatile int id;
 	protected volatile OADateTime created;
 	protected volatile String code;
@@ -239,7 +239,7 @@ public class RpgMessage extends OAObject {
 		    }
 		}
 		*/
-		sb.append("[end]");
+		// sb.append("[end]");
 		sb.append("</pre></b></tt>");
 		return sb.toString();
 	}

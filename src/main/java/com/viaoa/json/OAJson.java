@@ -1,4 +1,4 @@
-package com.viaoa.jackson;
+package com.viaoa.json;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
+import com.viaoa.json.jackson.OAJacksonModule;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -35,13 +36,13 @@ import com.viaoa.util.OAConv;
  * <p>
  * This should be used directly for read/write with OAObject & Hub.
  * <p>
- * It internally uses ObjectMapper.
+ * It internally uses Jackson's ObjectMapper.
  * <p>
  * Note: this is not thread safe, create and use a separate instance.
  *
  * @author vvia
  */
-public class OAJackson {
+public class OAJson {
 
 	private final ArrayList<String> alPropertyPath = new ArrayList<>();
 	private boolean bIncludeOwned = true;
@@ -85,18 +86,16 @@ public class OAJackson {
 	/**
 	 * Used internally to know the class of the root node.
 	 */
-	protected Class<? extends OAObject> getReadObjectClass() {
+	public Class<? extends OAObject> getReadObjectClass() {
 		return readObjectClass;
 	}
 
 	/**
 	 * Add property paths to include when writing.
-	 *
-	 * @param pp
 	 */
-	public void addPropertyPath(String pp) {
-		if (pp != null) {
-			alPropertyPath.add(pp);
+	public void addPropertyPath(String propertyPath) {
+		if (propertyPath != null) {
+			alPropertyPath.add(propertyPath);
 		}
 	}
 
@@ -171,7 +170,7 @@ public class OAJackson {
 		ObjectMapper om = createObjectMapper();
 
 		hmGuidObject = null;
-		Map<Integer, OAObject> hmGuidMap = getGuidMap();
+		getGuidMap();
 
 		T obj;
 		try {
@@ -179,7 +178,12 @@ public class OAJackson {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(true);
 			}
-			obj = (T) om.readValue(json, OAObject.class);
+
+			if (OAObject.class.isAssignableFrom(clazz)) {
+				obj = (T) om.readValue(json, OAObject.class);
+			} else {
+				obj = (T) om.readValue(json, clazz);
+			}
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -250,7 +254,7 @@ public class OAJackson {
 					// write single objKey or guid to arrayNode
 					OAObjectKey key = oaObj.getObjectKey();
 
-					String id = OAJackson.convertObjectKeyToJsonSinglePartId(key);
+					String id = OAJson.convertObjectKeyToJsonSinglePartId(key);
 
 					if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
 						nodeArray.add(id);
@@ -273,7 +277,6 @@ public class OAJackson {
 	}
 
 	public <T extends OAObject> void readIntoHub(final String json, final Hub<T> hub, final boolean bUseValidation) throws Exception {
-
 		this.readObjectClass = hub.getObjectClass();
 		ObjectMapper om = createObjectMapper();
 
@@ -295,7 +298,7 @@ public class OAJackson {
 						hub.add(objx);
 					} else if (node.isNumber()) {
 						// key
-						OAObjectKey ok = OAJackson.convertNumberToObjectKey(getReadObjectClass(), node.asInt());
+						OAObjectKey ok = OAJson.convertNumberToObjectKey(getReadObjectClass(), node.asInt());
 
 						OAObject objNew = (OAObject) OAObjectCacheDelegate.get(getReadObjectClass(), ok);
 						if (objNew != null) {
@@ -312,7 +315,7 @@ public class OAJackson {
 							hub.add((T) getGuidMap().get(guid));
 						} else {
 							// convert multipart key to OAObjectKey
-							OAObjectKey ok = OAJackson.convertJsonSinglePartIdToObjectKey(getReadObjectClass(), s);
+							OAObjectKey ok = OAJson.convertJsonSinglePartIdToObjectKey(getReadObjectClass(), s);
 
 							OAObject objNew = (OAObject) OAObjectCacheDelegate.get(getReadObjectClass(), ok);
 							if (objNew != null) {
@@ -399,16 +402,16 @@ public class OAJackson {
 	 * Used to serialize the arguments into a Json array. This will also include json properties for setting(/casting) if the object is
 	 * different then the parameter type.
 	 */
-	public static ArrayNode convertMethodArgumentsToJson(final Method method, final Object[] argValues,
+	public static String convertMethodArgumentsToJson(final Method method, final Object[] argValues,
 			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
 
-		final OAJackson oaj = new OAJackson();
+		final OAJson oaj = new OAJson();
 		final ObjectMapper om = oaj.createObjectMapper();
 
 		final ArrayNode arrayNode = om.createArrayNode();
 
 		if (argValues == null) {
-			return arrayNode;
+			return null;
 		}
 
 		final Parameter[] mps = method.getParameters();
@@ -443,7 +446,7 @@ public class OAJackson {
 			arrayNode.add(node);
 		}
 
-		return arrayNode;
+		return arrayNode.toPrettyString();
 	}
 
 	private static final String methodNextArgumentParamClass = "OANextParamClass:";
@@ -453,7 +456,7 @@ public class OAJackson {
 	 */
 	public static Object[] convertJsonToMethodArguments(String jsonArray, Method method) throws Exception {
 
-		final OAJackson oaj = new OAJackson();
+		final OAJson oaj = new OAJson();
 		final ObjectMapper om = oaj.createObjectMapper();
 
 		JsonNode nodeRoot = om.readTree(jsonArray);
@@ -474,14 +477,14 @@ public class OAJackson {
 	}
 
 	public static Object[] convertJsonToMethodArguments(ArrayNode nodeArray, Method method, final int[] skipParams) throws Exception {
-		final OAJackson oaj = new OAJackson();
+		final OAJson oaj = new OAJson();
 		final ObjectMapper om = oaj.createObjectMapper();
 
 		Object[] objs = convertJsonToMethodArguments(oaj, nodeArray, method, null);
 		return objs;
 	}
 
-	protected static Object[] convertJsonToMethodArguments(OAJackson oaj, ArrayNode nodeArray, Method method, final int[] skipParams)
+	protected static Object[] convertJsonToMethodArguments(OAJson oaj, ArrayNode nodeArray, Method method, final int[] skipParams)
 			throws Exception {
 		if (nodeArray == null || method == null) {
 			return null;
@@ -525,10 +528,21 @@ public class OAJackson {
 				}
 			}
 
-			Object objx = oaj.readObject(node.asText(), paramClass, false);
+			Object objx;
+			if (OAObject.class.isAssignableFrom(paramClass)) {
+				objx = oaj.readObject(node.toString(), paramClass, false);
+			} else {
+				ObjectMapper om = oaj.createObjectMapper();
+				objx = om.readValue(node.toString(), paramClass);
+			}
 			margs[i] = objx;
 			nodeArrayPos++;
 		}
 		return margs;
+	}
+
+	public JsonNode readTree(String json) throws Exception {
+		JsonNode node = createObjectMapper().readTree(json);
+		return node;
 	}
 }

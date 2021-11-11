@@ -10,9 +10,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.viaoa.jackson.OAJackson;
+import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
@@ -1859,7 +1858,7 @@ public class OARestMethodInfo {
 
 						String val;
 						if (obj instanceof OAObject) {
-							val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) obj).getObjectKey());
+							val = OAJson.convertObjectKeyToJsonSinglePartId(((OAObject) obj).getObjectKey());
 						} else {
 							val = OAConv.toString(obj, pi.format);
 							if (val == null) {
@@ -1897,7 +1896,7 @@ public class OARestMethodInfo {
 
 						String val;
 						if (arg instanceof OAObject) {
-							val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) arg).getObjectKey());
+							val = OAJson.convertObjectKeyToJsonSinglePartId(((OAObject) arg).getObjectKey());
 						} else {
 							val = OAConv.toString(arg, pi.format);
 							if (val == null) {
@@ -1918,7 +1917,7 @@ public class OARestMethodInfo {
 
 					String val;
 					if (objArg instanceof OAObject) {
-						val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) objArg).getObjectKey());
+						val = OAJson.convertObjectKeyToJsonSinglePartId(((OAObject) objArg).getObjectKey());
 					} else {
 						val = OAConv.toString(objArg, pi.format);
 						if (val == null) {
@@ -1941,7 +1940,7 @@ public class OARestMethodInfo {
 
 						String val;
 						if (obj instanceof OAObject) {
-							val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) obj).getObjectKey());
+							val = OAJson.convertObjectKeyToJsonSinglePartId(((OAObject) obj).getObjectKey());
 						} else {
 							val = OAConv.toString(obj, pi.format);
 							if (val == null) {
@@ -1958,7 +1957,7 @@ public class OARestMethodInfo {
 
 					String val;
 					if (objArg instanceof OAObject) {
-						val = OAJackson.convertObjectKeyToJsonSinglePartId(((OAObject) objArg).getObjectKey());
+						val = OAJson.convertObjectKeyToJsonSinglePartId(((OAObject) objArg).getObjectKey());
 					} else {
 						val = OAConv.toString(objArg, pi.format);
 						if (val == null) {
@@ -2043,11 +2042,8 @@ public class OARestMethodInfo {
 				}
 			}
 
-			ArrayNode node = OAJackson.convertMethodArgumentsToJson(method, args, lstIncludePropertyPaths, is);
-			if (node == null) {
-				return null;
-			}
-			return node.toPrettyString();
+			String json = OAJson.convertMethodArgumentsToJson(method, args, lstIncludePropertyPaths, is);
+			return json;
 		} else if (methodType == MethodType.OARemote) {
 			int cnt = 0;
 			for (OARestParamInfo pix : alParamInfo) {
@@ -2074,11 +2070,8 @@ public class OARestMethodInfo {
 					i3++;
 				}
 			}
-			ArrayNode node = OAJackson.convertMethodArgumentsToJson(method, args2, lstIncludePropertyPathss, is);
-			if (node == null) {
-				return null;
-			}
-			return node.toPrettyString();
+			String json = OAJson.convertMethodArgumentsToJson(method, args2, lstIncludePropertyPathss, is);
+			return json;
 		} else if (methodType == MethodType.OAInsert || methodType == MethodType.OAUpdate || methodType == MethodType.OADelete) {
 			if (args == null || args.length == 0) {
 				return null;
@@ -2094,7 +2087,7 @@ public class OARestMethodInfo {
 
 			OARestParamInfo pi = alParamInfo.get(pos);
 
-			OAJackson oaj = new OAJackson();
+			OAJson oaj = new OAJson();
 			oaj.addPropertyPaths(pi.alIncludePropertyPaths);
 
 			String json = oaj.write(args[pos]);
@@ -2102,7 +2095,7 @@ public class OARestMethodInfo {
 			return json;
 		}
 
-		final OAJackson oaj = new OAJackson();
+		final OAJson oaj = new OAJson();
 		final ObjectMapper om = oaj.createObjectMapper();
 
 		// fall thru and find all OAObject, BodyObject, BodyJson
@@ -2121,7 +2114,7 @@ public class OARestMethodInfo {
 				}
 			} else if (pi.paramType == OARestParam.ParamType.BodyObject) {
 
-				OAJackson oajx = new OAJackson();
+				OAJson oajx = new OAJson();
 				ObjectMapper omx = oajx.createObjectMapper();
 				oajx.addPropertyPaths(pi.alIncludePropertyPaths);
 

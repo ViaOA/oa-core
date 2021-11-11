@@ -31,31 +31,31 @@ public class MessageSource extends OAObject {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOG = Logger.getLogger(MessageSource.class.getName());
 
-	public static final String P_Id = "Id";
-	public static final String P_Created = "Created";
-	public static final String P_Source = "Source";
-	public static final String P_SourceAsString = "SourceString";
-	public static final String P_Console = "Console";
-	public static final String P_RpgMessageDefinitionFile = "RpgMessageDefinitionFile";
-	public static final String P_CommonApiRootDirectory = "CommonApiRootDirectory";
+	public static final String P_Id = "id";
+	public static final String P_Created = "created";
+	public static final String P_Source = "source";
+	public static final String P_SourceAsString = "sourceString";
+	public static final String P_Console = "console";
+	public static final String P_RpgMessageDefinitionFile = "rpgMessageDefinitionFile";
+	public static final String P_CommonApiRootDirectory = "commonApiRootDirectory";
 
-	public static final String P_ApiCode = "ApiCode";
-	public static final String P_ControllerCode = "ControllerCode";
+	public static final String P_ApiCode = "apiCode";
+	public static final String P_ControllerCode = "controllerCode";
 
-	public static final String P_MessageTypeRecords = "MessageTypeRecords";
-	public static final String P_MessageTypes = "MessageTypes";
+	public static final String P_MessageTypeRecords = "messageTypeRecords";
+	public static final String P_MessageTypes = "messageTypes";
 
-	public static final String M_SortMessageTypes = "SortMessageTypes";
-	public static final String M_CreateOneMessageTypeForRecords = "CreateOneMessageTypeForRecords";
-	public static final String M_Update = "Update";
-	public static final String M_RefreshApiCode = "RefreshApiCode";
-	public static final String M_RefreshControllerCode = "RefreshControllerCode";
-	public static final String M_LoadRpgMessageFile = "LoadRpgMessageFile";
-	public static final String M_ClearMessages = "ClearMessages";
-	public static final String M_ExportApiAndClasses = "ExportApiAndClasses";
-	public static final String M_SaveAsJsonResource = "SaveAsJsonResource";
-	public static final String M_SaveAsCSV = "SaveAsCSV";
-	public static final String M_VerifyAll = "VerifyAll";
+	public static final String M_SortMessageTypes = "sortMessageTypes";
+	public static final String M_CreateOneMessageTypeForRecords = "createOneMessageTypeForRecords";
+	public static final String M_Update = "update";
+	public static final String M_RefreshApiCode = "refreshApiCode";
+	public static final String M_RefreshControllerCode = "refreshControllerCode";
+	public static final String M_LoadRpgMessageFile = "loadRpgMessageFile";
+	public static final String M_ClearMessages = "clearMessages";
+	public static final String M_ExportApiAndClasses = "exportApiAndClasses";
+	public static final String M_SaveAsJsonResource = "saveAsJsonResource";
+	public static final String M_SaveAsCSV = "saveAsCSV";
+	public static final String M_VerifyAll = "verifyAll";
 	protected volatile int id;
 	protected volatile OADateTime created;
 	protected volatile int source;
@@ -313,6 +313,7 @@ public class MessageSource extends OAObject {
 			remote();
 			return;
 		}
+		// custom code here
 	}
 
 	@OAObjCallback(enabledProperty = MessageSource.P_RpgMessageDefinitionFile)
@@ -342,6 +343,8 @@ public class MessageSource extends OAObject {
 			remote();
 			return;
 		}
+
+		// custom code here
 	}
 
 	@OAMethod(displayName = "Save As Json Resource")
