@@ -163,11 +163,8 @@ public class HubAODelegate {
 	 * @param bCalledByShareHub true if the active object is being called when a Hub is being shared with an existing hub. This is so that
 	 *                          all of the shared hubs dont recv an event.
 	 */
-	static int xxx;//qqqqqqqqqqqqqqqqqqq
-
 	public static void setActiveObject(final Hub thisHub, Object object, int pos, boolean bUpdateLink, boolean bForce,
 			boolean bCalledByShareHub, boolean bUpdateDetail) {
-		System.out.println((++xxx) + " ) " + thisHub); //qqqqqqqqq
 		if (thisHub == null) {
 			return;
 		}

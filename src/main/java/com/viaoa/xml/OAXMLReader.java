@@ -807,6 +807,8 @@ public class OAXMLReader {
 	}
 
 	protected void afterLoadObject(OAObject obj, HashMap<String, Object> hm) {
+		// 20211117 was a no-op
+		obj.afterLoad();
 	}
 
 	/**
