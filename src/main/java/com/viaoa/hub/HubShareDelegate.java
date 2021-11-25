@@ -457,6 +457,17 @@ public class HubShareDelegate {
 		_setSharedHub(thisHub, sharedMasterHub, shareActiveObject, newLinkValue);
 		// 20181030 update temp listener cache
 		HubEventDelegate.clearGetAllListenerCache(thisHub);
+
+		// 20211125 if thisHub is linked & AO != null, and sharedHub is recursive, might need to adjust thisHub
+		if (thisHub.getAO() == null) {
+			final Hub hx = thisHub.getLinkHub(true);
+			if (hx != null) {
+				if (sharedMasterHub.getOAObjectInfo().getRecursiveLinkInfo(OALinkInfo.ONE) != null) {
+					// fire a fake changeActiveObject
+					HubEventDelegate.fireAfterChangeActiveObjectEvent(hx, hx.getAO(), hx.getPos(), true);
+				}
+			}
+		}
 	}
 
 	protected static void _setSharedHub(Hub thisHub, Hub sharedMasterHub, boolean shareActiveObject, Object newLinkValue) {
