@@ -2233,6 +2233,14 @@ public class OAString {
 		return getRandomString(normal, min, max, true, true, false);
 	}
 
+	public static String createDigits(int min, int max) {
+		return getRandomString(min, max, true, false, false);
+	}
+
+	public static String getRandomDigits(int min, int max) {
+		return getRandomString(min, max, true, false, false);
+	}
+
 	/**
 	 * Returns a string that has random generated characters
 	 *
@@ -3492,8 +3500,8 @@ public class OAString {
 	}
 
 	/**
-	 * Checks to see if name has any words in it that could make it value a password. If so then it will return a new value, else value is
-	 * returned.
+	 * Checks to see if name has any words in it that could make it the name of a password. If so then it will return a new value, else
+	 * value is returned.
 	 *
 	 * @param name           name for the value
 	 * @param value          the actual value for name
@@ -3827,6 +3835,14 @@ public class OAString {
 		}
 
 		return sb.toString();
+	}
+
+	public static String createString(char repeatChar, int length) {
+		String s = "";
+		for (int i = 0; i < length; i++) {
+			s += repeatChar;
+		}
+		return s;
 	}
 
 	public static void main(String[] args) {

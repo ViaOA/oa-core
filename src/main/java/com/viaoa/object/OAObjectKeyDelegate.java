@@ -52,7 +52,7 @@ public class OAObjectKeyDelegate {
 
 	/**
 	 * Used to update Hubs and HubController when an objects unique values (property Id) are changed.<br>
-	 * 
+	 *
 	 * @return true if HubController is updated
 	 * @see OAObjectKey
 	 */
@@ -145,9 +145,11 @@ public class OAObjectKeyDelegate {
 
 	// 20150109
 	public static String verifyKeyChange(final OAObject oaObj) {
-        OAObjectInfo oi = null;
+		OAObjectInfo oi = null;
 		if (!oaObj.getNew()) {
-			if (oi == null) oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			if (oi == null) {
+				oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			}
 			if (oi.getUseDataSource()) {
 				if (OAObjectDSDelegate.allowIdChange(oaObj.getClass())) {
 					return ("can not be changed if " + oaObj.getClass().getName() + " has already been saved");
@@ -157,11 +159,19 @@ public class OAObjectKeyDelegate {
 
 		Object o = OAObjectCacheDelegate.get(oaObj.getClass(), oaObj.objectKey);
 		if ((o == null || o == oaObj)) {
-            if (oi == null) oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			if (oi == null) {
+				oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			}
 			if (!oi.getLocalOnly() && OAObjectCSDelegate.isWorkstation(oaObj)) {
 				// check on server.  If server has same object as this, resolve() will return this object
 				o = OAObjectCSDelegate.getServerObject(oaObj.getClass(), oaObj.objectKey);
 			}
+		}
+
+		if (o instanceof OAObject && ((OAObject) o).getDeleted()) {
+			// 20211208
+			OAObjectCacheDelegate.removeObject((OAObject) o);
+			o = null;
 		}
 
 		if (o != oaObj) {
@@ -183,7 +193,9 @@ public class OAObjectKeyDelegate {
 			} else {
 				if (!OAThreadLocalDelegate.isLoading()) {
 					// make sure object does not already exist in datasource
-		            if (oi == null) oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+					if (oi == null) {
+						oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+					}
 					if (oi.getUseDataSource()) {
 						o = OAObjectDSDelegate.getObject(oaObj);
 						if (o != oaObj && o != null) {
@@ -229,18 +241,18 @@ public class OAObjectKeyDelegate {
 		return new OAObjectKey(value);
 	}
 
-	/*was:	
+	/*was:
 		public static OAObjectKey convertToObjectKey(OAObjectInfo oi, Object value) {
 	    if (oi == null || value == null) return null;
 	    if (value instanceof OAObjectKey) return (OAObjectKey) value;
-	
+
 	    String[] ids = oi.idProperties;
 	    if (ids != null && ids.length > 0) {
 	        Class c = OAObjectInfoDelegate.getPropertyClass(oi, ids[0]);
 	        value = OAConverter.convert(c, value, null);
 	    }
 	    return new OAObjectKey(value);
-	}	
+	}
 	*/
 	public static OAObjectKey convertToObjectKey(Class clazz, Object value) {
 		if (clazz == null || value == null) {

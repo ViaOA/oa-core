@@ -39,6 +39,7 @@ import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.ClassModifier;
+import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
@@ -244,7 +245,16 @@ public class ResultSetIterator implements OADataSourceIterator {
 			if (bUsePreparedStatement) {
 				preparedStatement = ds.getConnectionPool().getPreparedStatement(query, false);
 				for (int i = 0; arguments != null && i < arguments.length; i++) {
-					preparedStatement.setObject(i + 1, arguments[i]);
+					// 20211206 need to convert argument to correct jdbc type
+					Object arg = arguments[i];
+					if (arg instanceof OADate) {
+						arg = OAConv.convert(java.sql.Date.class, arg);
+					} else if (arg instanceof OADateTime) {
+						arg = OAConv.convert(java.sql.Timestamp.class, arg);
+					} else if (arg instanceof OATime) {
+						arg = OAConv.convert(java.sql.Time.class, arg);
+					}
+					preparedStatement.setObject(i + 1, arg);
 				}
 				preparedStatement.setMaxRows(Math.max(0, max));
 				rs = preparedStatement.executeQuery();
