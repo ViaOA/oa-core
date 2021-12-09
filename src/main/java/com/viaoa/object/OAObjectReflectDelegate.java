@@ -866,10 +866,19 @@ public class OAObjectReflectDelegate {
 
 					if (siblingKeys != null) {
 						hmSiblingHub = new HashMap<>();
+						boolean bChecked = false;
 						for (OAObjectKey keyx : siblingKeys) {
 							Object[] idsx = keyx.getObjectIds();
 							if (idsx == null || idsx.length != 1 || idsx[0] == null) {
 								continue;
+							}
+							// 20211209
+							if (!bChecked) {
+								bChecked = true;
+								Class c = idsx[0].getClass();
+								if (!c.isPrimitive() && !c.equals(String.class)) {
+									break;
+								}
 							}
 
 							OAObject objx = OAObjectCacheDelegate.get(oaObj.getClass(), keyx);
@@ -880,11 +889,13 @@ public class OAObjectReflectDelegate {
 								continue;
 							}
 							hmSiblingHub.put(keyx, new Hub(linkClass, objx, liReverse, false));
+
 							if (sibIds == null) {
-								sibIds = "" + idsx[0];
+								sibIds = "";
 							} else {
-								sibIds += "," + idsx[0];
+								sibIds += ", ";
 							}
+							sibIds += "" + idsx[0];
 						}
 						if (sibIds != null) {
 							Object[] idsx = oaObj.getObjectKey().getObjectIds();

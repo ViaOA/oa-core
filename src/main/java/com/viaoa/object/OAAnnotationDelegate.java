@@ -970,7 +970,7 @@ public class OAAnnotationDelegate {
 			throw new Exception("Annotation for Table not defined for this class");
 		}
 
-		Table table = database.getTable(clazz);
+		final Table table = database.getTable(clazz);
 		if (table == null) {
 			throw new Exception("Table for class=" + clazz + " was not found");
 		}
@@ -1020,9 +1020,15 @@ public class OAAnnotationDelegate {
 				String[] fkcols = dbfk.columns();
 				int[] poss = new int[0];
 				for (String sfk : fkcols) {
-					poss = OAArray.add(poss, table.getColumns().length);
-					Column c = new Column(sfk, true);
-					table.addColumn(c);
+					// 20211209 could be using it's own pkey columns, for the fkey column
+					Column col = table.getColumn(sfk, null);
+					if (col != null) {
+						poss = OAArray.add(poss, table.getColumnPosition(col));
+					} else {
+						poss = OAArray.add(poss, table.getColumns().length);
+						Column c = new Column(sfk, true);
+						table.addColumn(c);
+					}
 				}
 				table.addLink(getPropertyName(m.getName()), fkTable, oaone.reverseName(), poss);
 			} else if (oalt != null) {

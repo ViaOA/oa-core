@@ -212,6 +212,19 @@ public class Table {
 		return null;
 	}
 
+	public int getColumnPosition(Column col) {
+		if (col == null) {
+			return -1;
+		}
+		Column[] cols = getColumns();
+		for (int i = 0; cols != null && i < cols.length; i++) {
+			if (cols[i] == col) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	public Column getPropertyColumn(String propName) {
 		Column[] cols = getColumns();
 		for (int i = 0; cols != null && i < cols.length; i++) {
