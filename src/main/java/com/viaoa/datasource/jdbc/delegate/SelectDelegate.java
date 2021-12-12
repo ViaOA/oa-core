@@ -10,7 +10,6 @@
 */
 package com.viaoa.datasource.jdbc.delegate;
 
-import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -632,10 +631,14 @@ public class SelectDelegate {
 				return null;
 			}
 
+			// 20211212 postgress (bytea) did not like getBlob logic, failed on reading long (size)
+			result = rs.getBytes(1);
+			/*
 			Blob blob = rs.getBlob(1);
 			if (blob != null) {
 				result = blob.getBytes(1, (int) blob.length());
 			}
+			*/
 			rs.close();
 		} finally {
 			ds.releaseStatement(statement);
