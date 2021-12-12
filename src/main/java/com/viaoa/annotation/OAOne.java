@@ -94,6 +94,13 @@ public @interface OAOne {
 	 * flag to know if this One link is only to be used if the other oneOfOne=true are null.
 	 */
 	boolean isOneAndOnlyOne() default false;
+
+	/**
+	 * Properties that this link needs to be in-sync with. For example: if this is for an Employee object, and this object also has an
+	 * employeeId property that used used to find Employee. This is usually only need properties are keys in this object to the other
+	 * object.
+	 */
+	String[] usesProperties() default {};
 }
 
 /*  OALinkInfo

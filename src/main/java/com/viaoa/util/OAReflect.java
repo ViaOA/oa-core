@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfoDelegate;
+import com.viaoa.object.OAObjectReflectDelegate;
 
 /**
  * Used for Reflection services.
@@ -61,7 +62,7 @@ public class OAReflect {
 
 	/**
 	 * Finds a Method in a class.
-	 * 
+	 *
 	 * @param clazz      is the Class to use to find method name.
 	 * @param methodName is case insensitive name of method. <br>
 	 *                   Example: Employee.class, "getLastName")
@@ -78,7 +79,7 @@ public class OAReflect {
 
 	/**
 	 * 20121028
-	 * 
+	 *
 	 * @param args list of arguments used in method call
 	 */
 	public static Method getMethod(Class clazz, String methodName, int paramCount, Object[] args) {
@@ -139,7 +140,7 @@ public class OAReflect {
 
 	/**
 	 * Get the methods for a property path.
-	 * 
+	 *
 	 * @param clazz        beginning Class object to start with.
 	 * @param propertyPath is dot "." separated list (case insensitive). <br>
 	 *                     Example: getMethods(Order.class, "employee.department.region.name") will retrieve the following methods:
@@ -156,7 +157,7 @@ public class OAReflect {
 
 	/**
 	 * Get the methods for a property path.
-	 * 
+	 *
 	 * @param clazz           beginning Class object to start with.
 	 * @param propertyPath    is dot "." separated list (case insensitive). <br>
 	 *                        Example: getMethods(Order.class, "employee.department.region.name") will retrieve the following methods:
@@ -294,7 +295,7 @@ public class OAReflect {
 
 	/**
 	 * Convert String to required object needed as a parameter to Method. This will call OAConverter to do the conversion.
-	 * 
+	 *
 	 * @param method is Method that value will be sent to.
 	 * @param value  is String that needs to be converted so that it can be used with method.
 	 * @return Object that is converted from String value.
@@ -311,7 +312,7 @@ public class OAReflect {
 
 	/**
 	 * Convert String to required object needed as a parameter to Method. This will call OAConverter to do the conversion.
-	 * 
+	 *
 	 * @param method is Method that value will be sent to.
 	 * @param value  is String that needs to be converted so that it can be used with method.
 	 * @param format is text format used for String.
@@ -329,7 +330,7 @@ public class OAReflect {
 
 	/**
 	 * Convert a String value to a different value of Class clazz. This will call OAConverter to do the conversion.
-	 * 
+	 *
 	 * @param clazz Class to convert String value to.
 	 * @param value is String to convert.
 	 * @return Object that is converted from String value.
@@ -342,7 +343,7 @@ public class OAReflect {
 	/**
 	 * Convert a String value to a different value of Class clazz. This will call OAConverter to do the conversion. param clazz Class to
 	 * convert String value to.
-	 * 
+	 *
 	 * @param value  is String to convert.
 	 * @param format is text format used for String.
 	 * @return Object that is converted from String value.
@@ -354,7 +355,7 @@ public class OAReflect {
 
 	/**
 	 * Convert the returned object to a String value.
-	 * 
+	 *
 	 * @param object beginning object to use when calling methods.
 	 * @param method array of methods to call. Will use object for the first method, then will follow using the returned object for each
 	 *               method.
@@ -368,7 +369,7 @@ public class OAReflect {
 
 	/**
 	 * Convert the returned object, from an array of method calls, to a String value.
-	 * 
+	 *
 	 * @param object beginning object to use when calling methods.
 	 * @param method array of methods to call. Will use object for the first method, then will follow using the returned object for each
 	 *               method.
@@ -394,7 +395,7 @@ public class OAReflect {
 
 	/**
 	 * Convert the returned object of a method call to a String value.
-	 * 
+	 *
 	 * @param object beginning object to use when calling methods.
 	 * @param method array of methods to call. Will use object for the first method, then will follow using the returned object for each
 	 *               method. param format text format to use for conversion to string value.
@@ -455,7 +456,7 @@ public class OAReflect {
 
 	/**
 	 * This method will walk through the methods starting with the object supplied and then using the returned object. It will
-	 * 
+	 *
 	 * @param object beginning object to use
 	 * @param        method[] methods of property path
 	 * @see OAReflect#getMethods
@@ -510,7 +511,7 @@ public class OAReflect {
 				} else if (s.startsWith("is")) {
 					s = s.substring(2);
 				}
-				if (((OAObject) object).isNull(s)) {
+				if (OAObjectReflectDelegate.getPrimitiveNull((OAObject) object, s)) {
 					return null;
 				}
 			}
@@ -521,7 +522,7 @@ public class OAReflect {
 
 	/**
 	 * Converts a String object to object type required by method and invokes method
-	 * 
+	 *
 	 * @param value String value to use with method
 	 * @see OAReflect#convertParameterFromString
 	 */
@@ -532,7 +533,7 @@ public class OAReflect {
 
 	/**
 	 * Converts a String object to object type required by method and invokes method
-	 * 
+	 *
 	 * @param value  String value to use with method
 	 * @param format is format used for value.
 	 * @see OAReflect#convertParameterFromString
@@ -745,7 +746,7 @@ public class OAReflect {
 	/**
 	 * Get name of all classes in a package. Example: String[] cs = getClasses("com.viaoa.scheduler.oa"); output: Item SalesOrder Customer
 	 * etc ...
-	 * 
+	 *
 	 * @param packageName
 	 * @return String array of class names, without the package prefix or '.class' suffix.
 	 * @throws ClassNotFoundException
@@ -813,7 +814,7 @@ public class OAReflect {
 
 	/**
 	 * Finds the class path used to be able to load a class.
-	 * 
+	 *
 	 * @return the full pathname to the .class file or the .jar file.
 	 */
 	public static String getClassPath(Class clazz) {
@@ -834,7 +835,7 @@ public class OAReflect {
 
 		s = s.replaceAll("%20", " ");
 
-		if (s.startsWith("file:/")) { // It's a jar-file. 
+		if (s.startsWith("file:/")) { // It's a jar-file.
 			if (File.separatorChar == '/') { // UNIX|LINUX
 				s = s.substring(5); // Leaves a / alone.
 			} else {

@@ -26,7 +26,7 @@ import com.viaoa.util.OAString;
 
 /**
  * Methods to validate that OAObject database metadata matches database scheme.
- * 
+ *
  * @author vvia
  */
 public class VerifyDelegate {
@@ -55,7 +55,7 @@ public class VerifyDelegate {
 
 	/**
 	 * Verifies Tables, Columns and Indexes. Prints to console window.
-	 * 
+	 *
 	 * @returns true if all tables, columns and indexes exist, else returns false if any are missing.
 	 */
 	private static boolean _verify(OADataSourceJDBC ds, Connection connection, final ArrayList<String> alError) throws Exception {
@@ -143,7 +143,18 @@ public class VerifyDelegate {
 							if (c.getSqlType() == java.sql.Types.CLOB && iSize > Math.pow(10, 9)) {
 								b = true;
 							}
+						} else if (!b && iType == java.sql.Types.VARCHAR) {
+							if (c.getSqlType() == java.sql.Types.CLOB && iSize > Math.pow(10, 9)) {
+								b = true;
+							}
 						}
+
+						if (!b && iType == java.sql.Types.BINARY) {
+							if (c.getSqlType() == java.sql.Types.BLOB) {
+								b = true;
+							}
+						}
+
 						if (!b && iType == java.sql.Types.VARBINARY && dbx != null && dbx.databaseType == dbx.SQLSERVER) {
 							if (c.getSqlType() == java.sql.Types.BLOB) {
 								b = true;
@@ -280,7 +291,7 @@ public class VerifyDelegate {
 					}
 				}
 				if (!bFound) {
-					// could be pkey or fkey 
+					// could be pkey or fkey
 					String s = rs.getString(9); // column name
 					for (int j = 0; j < columns.length; j++) {
 						Column c = columns[j];

@@ -19,9 +19,11 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectHubDelegate;
+import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectReflectDelegate;
+import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -364,14 +366,14 @@ public class HubAddRemoveDelegate {
 		for (int pos=0 ; ; ) {
 		    Object obj = thisHub.elementAt(pos);
 		    if (obj == null) break;
-
+		
 		    if (obj == objLast) {
 		        // object was not deleted
 		        pos++;
 		        continue;
 		    }
 		    objLast = obj;
-
+		
 		    // 20140422 set to false, since clients will now have clear msg
 		    remove(thisHub, obj, false,
 		            false, false, bSetAOtoNull,
@@ -1002,6 +1004,34 @@ public class HubAddRemoveDelegate {
 			return false;
 		}
 		return thisHub.data.isDupAllowAddRemove();
+	}
+
+	// 20211211
+	public static boolean isAllowRemove(Hub thisHub) {
+		if (thisHub == null) {
+			return false;
+		}
+		if (!thisHub.data.isDupAllowAddRemove()) {
+			return false;
+		}
+
+		// see if fkeys is also pkey
+		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
+		if (li == null || li.getType() != li.TYPE_ONE) {
+			return true;
+		}
+		String[] props = li.getUsesProperties();
+		if (props == null) {
+			return true;
+		}
+		OAObjectInfo oi = thisHub.getOAObjectInfo();
+		for (String prop : props) {
+			OAPropertyInfo pi = oi.getPropertyInfo(prop);
+			if (pi != null && pi.getId()) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**

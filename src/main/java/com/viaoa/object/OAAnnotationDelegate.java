@@ -372,6 +372,7 @@ public class OAAnnotationDelegate {
 			li.setCalculated(annotation.isCalculated());
 			li.setProcessed(annotation.isProcessed());
 			//li.setRecursive(annotation.recursive());
+			li.setUsesProperties(annotation.usesProperties());
 			li.setOAOne(annotation);
 
 			boolean b = annotation.isOneAndOnlyOne();

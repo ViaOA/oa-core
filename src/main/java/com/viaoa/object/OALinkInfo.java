@@ -71,6 +71,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private Method objectCallbackMethod;
 	private String[] viewDependentProperties;
 	private String[] contextDependentProperties;
+	private String[] usesProperties;
 
 	private String defaultPropertyPath;
 	private boolean defaultPropertyPathIsHierarchy;
@@ -450,6 +451,14 @@ public class OALinkInfo { //implements java.io.Serializable {
 
 	public void setContextDependentProperties(String[] props) {
 		contextDependentProperties = props;
+	}
+
+	public String[] getUsesProperties() {
+		return usesProperties;
+	}
+
+	public void setUsesProperties(String[] props) {
+		usesProperties = props;
 	}
 
 	public String getMergerPropertyPath() {

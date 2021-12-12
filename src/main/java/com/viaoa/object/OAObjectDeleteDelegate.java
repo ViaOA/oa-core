@@ -56,15 +56,16 @@ public class OAObjectDeleteDelegate {
 														bOld ? OAObjectDelegate.TRUE : OAObjectDelegate.FALSE,
 														oaObj.deletedFlag ? OAObjectDelegate.TRUE : OAObjectDelegate.FALSE, false, false);
 
-			// need to reverify the key to make sure that another one with same Id was not created.
-			String s = OAObjectKeyDelegate.verifyKeyChange(oaObj);
-			if (s != null) {
-				throw new RuntimeException(s);
-			} else {
-				// make sure it is in the ObjectCache
-				OAObjectCacheDelegate.add(oaObj, false, false);
+			// need to reverify the key to make sure that another one was not created with the same Id
+			if (!tf) {
+				String s = OAObjectKeyDelegate.verifyKeyChange(oaObj, oaObj.getObjectKey());
+				if (s != null) {
+					throw new RuntimeException(s);
+				} else {
+					// make sure it is in the ObjectCache
+					OAObjectCacheDelegate.add(oaObj, false, false);
+				}
 			}
-
 		}
 	}
 

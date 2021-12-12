@@ -953,9 +953,17 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return OAObjectDelegate.find(this, propertyPath, value, true);
 	}
 
-	//todo: needs to work for all properties, not just primitives ??
+	// 20211210 added more then primitiveNull check
 	public boolean isNull(String prop) {
 		boolean b = OAObjectReflectDelegate.getPrimitiveNull(this, prop);
+		if (!b) {
+			Object objx = OAObjectPropertyDelegate.getProperty(this, prop, true, false);
+			if (objx == null) {
+				b = true;
+			} else if (getProperty(prop) == null) {
+				b = true;
+			}
+		}
 		return b;
 	}
 
@@ -1343,4 +1351,127 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	public void setObjectDefaults() {
 	}
+
+	// 20211210 used when a property is an Fkey
+	/**
+	 * Allows an Object property (or more than one, for compound keys) to be an fkey to one (or more) of it's links. This method is used
+	 * when a property (when not isLoading) is changed, so that the link property can be updated to match.
+	 */
+	public boolean onFkeyPropertyChange(final String propertyName, final Object propertyValue) {
+		boolean bResult = false;
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		for (OALinkInfo li : oi.getLinkInfos()) {
+			if (li.getType() != li.TYPE_ONE) {
+				continue;
+			}
+
+			final String[] props = li.getUsesProperties();
+			if (props == null || props.length == 0) {
+				continue;
+			}
+
+			int posFound = -1;
+
+			final OAObjectInfo oix = li.getToObjectInfo();
+			final String[] toProps = oix.getIdProperties();
+			for (int i = 0; i < props.length && toProps != null && i < toProps.length; i++) {
+				if (propertyName.equalsIgnoreCase(props[i])) {
+					posFound = i;
+					break;
+				}
+			}
+			if (posFound < 0) {
+				continue;
+			}
+			Object obj = OAObjectPropertyDelegate.getProperty(this, li.getName());
+			if (obj instanceof OAObject) {
+				OAObjectKey ok = ((OAObject) obj).getObjectKey();
+				Object[] objs = ok.getObjectIds();
+				if (objs != null && posFound < objs.length && !propertyValue.equals(objs[posFound])) {
+					bResult = true;
+					ok = OAObjectKeyDelegate.createChangedObjectKey((OAObject) obj, toProps[posFound], propertyValue);
+
+					Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
+					if (objx != null) {
+						OAObjectPropertyDelegate.setProperty(this, li.getName(), objx);
+					} else {
+						OAObjectPropertyDelegate.setProperty(this, li.getName(), ok);
+					}
+				}
+			} else if (obj instanceof OAObjectKey) {
+				bResult = true;
+				Object[] objs = new Object[toProps.length];
+				objs[posFound] = propertyValue;
+				OAObjectKey ok = new OAObjectKey(objs);
+
+				Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
+				if (objx != null) {
+					OAObjectPropertyDelegate.setProperty(this, li.getName(), objx);
+				} else {
+					OAObjectPropertyDelegate.setProperty(this, li.getName(), ok);
+				}
+			}
+		}
+		return bResult;
+	}
+
+	// 20211210 used when a property is an Fkey
+	public Object getValueFromLink(String propertyName, Object defaultValue) {
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		for (OALinkInfo li : oi.getLinkInfos()) {
+			if (li.getType() != li.TYPE_ONE) {
+				continue;
+			}
+
+			final String[] props = li.getUsesProperties();
+			if (props == null || props.length == 0) {
+				continue;
+			}
+
+			Object obj = OAObjectPropertyDelegate.getProperty(this, li.getName());
+			if (obj instanceof OAObject) {
+				// call getter on correct prop
+				final OAObjectInfo oix = li.getToObjectInfo();
+				final String[] toProps = oix.getIdProperties();
+				for (int i = 0; i < props.length && toProps != null && i < toProps.length; i++) {
+					if (!propertyName.equalsIgnoreCase(props[i])) {
+						continue;
+					}
+
+					Object valx = ((OAObject) obj).getProperty(toProps[i]);
+					if (valx != null) {
+						removeNull(propertyName);
+						return valx;
+					}
+				}
+			} else if (obj instanceof OAObjectKey) {
+				OAObjectKey ok = (OAObjectKey) obj;
+				for (int i = 0; i < props.length; i++) {
+					if (!propertyName.equalsIgnoreCase(props[i])) {
+						continue;
+					}
+
+					Object[] ids = ok.getObjectIds();
+					if (ids != null && i < ids.length && ids[i] != null) {
+						Object valx = ids[i];
+						if (valx != null) {
+							removeNull(propertyName);
+							return valx;
+						}
+					}
+				}
+			}
+			continue;
+		}
+
+		if (defaultValue != null) {
+			if (!OAObjectInfoDelegate.isPrimitiveNull(this, propertyName)) {
+				removeNull(propertyName);
+				return defaultValue;
+			}
+		}
+		OAObjectInfoDelegate.setPrimitiveNull(this, propertyName, true);
+		return null;
+	}
+
 }

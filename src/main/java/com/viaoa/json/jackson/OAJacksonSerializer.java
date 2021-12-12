@@ -16,6 +16,7 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectPropertyDelegate;
+import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAConv;
@@ -262,7 +263,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
 		final String lowerName = pi.getLowerName();
 
-		if (pi.getIsPrimitive() && pi.getTrackPrimitiveNull() && oaObj.isNull(lowerName)) {
+		if (pi.getIsPrimitive() && pi.getTrackPrimitiveNull() && OAObjectReflectDelegate.getPrimitiveNull(oaObj, lowerName)) {
 			value = null;
 		}
 		if (value == null) {
