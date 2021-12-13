@@ -1383,12 +1383,12 @@ public class OAObject implements java.io.Serializable, Comparable {
 			if (posFound < 0) {
 				continue;
 			}
+			bResult = true;
 			Object obj = OAObjectPropertyDelegate.getProperty(this, li.getName());
 			if (obj instanceof OAObject) {
 				OAObjectKey ok = ((OAObject) obj).getObjectKey();
 				Object[] objs = ok.getObjectIds();
 				if (objs != null && posFound < objs.length && !propertyValue.equals(objs[posFound])) {
-					bResult = true;
 					ok = OAObjectKeyDelegate.createChangedObjectKey((OAObject) obj, toProps[posFound], propertyValue);
 
 					Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
@@ -1399,7 +1399,23 @@ public class OAObject implements java.io.Serializable, Comparable {
 					}
 				}
 			} else if (obj instanceof OAObjectKey) {
-				bResult = true;
+				Object[] objs = new Object[toProps.length];
+				if (objs.length > 1) {
+					Object[] objsx = ((OAObjectKey) obj).getObjectIds();
+					for (int i = 0; i < objs.length && objsx != null && i < objsx.length; i++) {
+						objs[i] = objsx[i];
+					}
+				}
+				objs[posFound] = propertyValue;
+				OAObjectKey ok = new OAObjectKey(objs);
+
+				Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
+				if (objx != null) {
+					OAObjectPropertyDelegate.setProperty(this, li.getName(), objx);
+				} else {
+					OAObjectPropertyDelegate.setProperty(this, li.getName(), ok);
+				}
+			} else {
 				Object[] objs = new Object[toProps.length];
 				objs[posFound] = propertyValue;
 				OAObjectKey ok = new OAObjectKey(objs);

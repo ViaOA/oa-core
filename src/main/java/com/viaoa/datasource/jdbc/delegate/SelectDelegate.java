@@ -309,16 +309,19 @@ public class SelectDelegate {
 				sql = "SELECT " + sql;
 				sql += " FROM " + table.name + " WHERE ";
 
-				Column[] cols = table.getSelectColumns();
+				// 20211212 query columns must match same order as used by objKey properties
+				OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(clazz);
 				boolean b = false;
-				for (Column c : cols) {
-					if (c.primaryKey) {
+				String[] ss = oi.getKeyProperties();
+				if (ss != null) {
+					for (String propName : ss) {
 						if (!b) {
 							b = true;
 						} else {
 							sql += " AND ";
 						}
-						sql += c.columnName + " = ?";
+						Column col = table.getPropertyColumn(propName);
+						sql += col.columnName + " = ?";
 					}
 				}
 				hmPreparedStatementSqlx.put(clazz, sql);
@@ -333,16 +336,19 @@ public class SelectDelegate {
 				sql = "SELECT " + qc.getSelectColumns(clazz, bDirty); // could use dao
 				sql += " FROM " + table.name + " WHERE ";
 
-				Column[] cols = table.getSelectColumns(); //
+				// 20211212 query columns must match same order as used by objKey properties
+				OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(clazz);
 				boolean b = false;
-				for (Column c : cols) {
-					if (c.primaryKey) {
+				String[] ss = oi.getKeyProperties();
+				if (ss != null) {
+					for (String propName : ss) {
 						if (!b) {
 							b = true;
 						} else {
 							sql += " AND ";
 						}
-						sql += c.columnName + " = ?";
+						Column col = table.getPropertyColumn(propName);
+						sql += col.columnName + " = ?";
 					}
 				}
 				hmPreparedStatementSqlxDirty.put(clazz, sql);

@@ -23,6 +23,9 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	private int maxLength;
 	private int displayLength;
+
+	// UI grid/table column header name
+	private String columnName;
 	private int columnLength;
 
 	private boolean required;
@@ -33,7 +36,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private boolean isBlob;
 	private boolean isNameValue;
 	private String displayName;
-	private String columnName;
+
 	private boolean isUnicode;
 	private boolean isImportMatch;
 	private boolean isSHAHash;
@@ -137,6 +140,14 @@ public class OAPropertyInfo implements java.io.Serializable {
 		this.columnLength = length;
 	}
 
+	public String getColumnName() {
+		return columnName;
+	}
+
+	public void setColumnName(String colName) {
+		this.columnName = colName;
+	}
+
 	public String getName() {
 		return name;
 	}
@@ -155,14 +166,6 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	public void setDisplayName(String name) {
 		this.displayName = name;
-	}
-
-	public String getColumnName() {
-		return columnName;
-	}
-
-	public void setColumnName(String name) {
-		this.columnName = name;
 	}
 
 	public boolean getRequired() {

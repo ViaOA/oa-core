@@ -241,7 +241,7 @@ public class OAObjectKeyDelegate {
 						oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 					}
 					if (oi.getUseDataSource()) {
-						objInCache = OAObjectDSDelegate.getObject(oaObj);
+						objInCache = OAObjectDSDelegate.getObject(oi, oaObj.getClass(), newObjectKey);
 						if (objInCache != oaObj && objInCache != null) {
 							Object[] ids = newObjectKey.getObjectIds();
 							// Object[] ids = OAObjectInfoDelegate.getPropertyIdValues(oaObj);
@@ -290,7 +290,7 @@ public class OAObjectKeyDelegate {
 		public static OAObjectKey convertToObjectKey(OAObjectInfo oi, Object value) {
 	    if (oi == null || value == null) return null;
 	    if (value instanceof OAObjectKey) return (OAObjectKey) value;
-
+	
 	    String[] ids = oi.idProperties;
 	    if (ids != null && ids.length > 0) {
 	        Class c = OAObjectInfoDelegate.getPropertyClass(oi, ids[0]);

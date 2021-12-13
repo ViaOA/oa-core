@@ -199,10 +199,13 @@ public class OAAnnotationDelegate {
 			}
 			pi.setDisplayName(s);
 
-			pi.setColumnName(oaprop.columnName());
+			// 20211212 removed, use @OAColumn instead
+			// pi.setColumnName(oaprop.columnName());
+
 			pi.setMaxLength(oaprop.maxLength());
 			pi.setDisplayLength(oaprop.displayLength());
-			pi.setColumnLength(oaprop.columnLength());
+			pi.setColumnName(oaprop.columnName()); // for UI grid/table header
+			pi.setColumnLength(oaprop.columnLength()); // for UI grid/table header
 			pi.setRequired(oaprop.required());
 			pi.setDecimalPlaces(oaprop.decimalPlaces());
 			pi.setId(m.getAnnotation(OAId.class) != null);
