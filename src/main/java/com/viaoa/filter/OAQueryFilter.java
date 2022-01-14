@@ -10,12 +10,19 @@
 */
 package com.viaoa.filter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 import java.util.Vector;
 
 import com.viaoa.datasource.query.OAQueryToken;
 import com.viaoa.datasource.query.OAQueryTokenType;
 import com.viaoa.datasource.query.OAQueryTokenizer;
+import com.viaoa.object.OAObjectInfo;
+import com.viaoa.object.OAObjectInfoDelegate;
+import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.util.OAConv;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 
@@ -72,6 +79,9 @@ public class OAQueryFilter<T> implements OAFilter {
 		parseForConjuction(token);
 
 		if (stack.size() == 0) {
+			if (alInTokens != null && alInTokens.size() > 0) {
+				return null;
+			}
 			throw new Exception("Block failed, no filter in stack");
 		}
 		OAFilter fi = stack.pop();
@@ -147,8 +157,23 @@ public class OAQueryFilter<T> implements OAFilter {
 		}
 
 		OAFilter fi = parseBlock();
-		stack.push(fi);
+		if (fi != null) {
+			stack.push(fi);
+		}
+
 		nextToken = nextToken();
+
+		if (alInTokens != null && alInTokens.size() > 0) {
+			// IN using more then one property name in brackets, ex:  "(orderId, itemId) IN ?"
+
+			if (nextToken == null || nextToken.type != OAQueryTokenType.IN) {
+				throw new Exception("token type expected to be IN");
+			}
+
+			nextToken = parseCompoundIn(null);
+			alInTokens.clear();
+		}
+
 		return nextToken;
 	}
 
@@ -297,11 +322,12 @@ public class OAQueryFilter<T> implements OAFilter {
 
 	// NOTLIKE
 	private OAQueryToken parseForNotLike(OAQueryToken token) throws Exception {
-		OAQueryToken nextToken = parseForIn(token);
+		OAQueryToken nextToken = parseForInMutiplePropertyNames(token);
+		//was: OAQueryToken nextToken = parseForIn(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.NOTLIKE) {
 			nextToken = nextToken();
 			if (nextToken == null) {
-				throw new Exception("token expected for !=");
+				throw new Exception("token expected for NotLike");
 			}
 			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
 			OAFilter f = new OANotLikeFilter(pp, getValueToUse(nextToken));
@@ -311,40 +337,204 @@ public class OAQueryFilter<T> implements OAFilter {
 		return nextToken;
 	}
 
+	private ArrayList<OAQueryToken> alInTokens = new ArrayList<>();
+
+	// Comma separated list (used by IN)
+	private OAQueryToken parseForInMutiplePropertyNames(OAQueryToken token) throws Exception {
+		OAQueryToken nextToken = parseForIn(token);
+		for (;;) {
+			if (nextToken == null || nextToken.type != OAQueryTokenType.COMMA) {
+				if (alInTokens.size() > 0) {
+					alInTokens.add(token);
+				}
+				break;
+			}
+			alInTokens.add(token);
+
+			nextToken = nextToken();
+
+			if (nextToken == null) {
+				throw new Exception("token expected for Comma");
+			}
+			if (nextToken.type != OAQueryTokenType.VARIABLE) {
+				throw new Exception("token expected to be a Variable");
+			}
+
+			token = nextToken;
+			nextToken = nextToken(); // next comma (optional), or end bracket ")"
+
+			if (nextToken == null) {
+				throw new Exception("token expected after Comma");
+			}
+		}
+		return nextToken;
+	}
+
 	// 20171222
 	// IN
 	private OAQueryToken parseForIn(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseBottom(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.IN) {
-			nextToken = nextToken();
-			if (nextToken == null) {
-				throw new Exception("token expected for IN");
-			}
-			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+			nextToken = parseIn(token);
+		}
+		return nextToken;
+	}
 
-			OAFilter f = null;
-			for (int i = 0;; i++) {
-				nextToken = nextToken();
-				if (nextToken.type == OAQueryTokenType.SEPERATOREND) {
+	private OAQueryToken parseIn(OAQueryToken token) throws Exception {
+
+		OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+		OAQueryToken nextToken = null;
+
+		OAFilter f = null;
+		for (int i = 0;; i++) {
+			nextToken = nextToken();
+			if (nextToken.type == OAQueryTokenType.SEPERATOREND) {
+				break;
+			}
+			if (nextToken.type == OAQueryTokenType.SEPERATORBEGIN) {
+				continue;
+			}
+			if (nextToken.type == OAQueryTokenType.COMMA) {
+				continue;
+			}
+
+			if (nextToken.type == OAQueryTokenType.QUESTION) {
+				Object arg = getValueToUse(nextToken);
+
+				if (!(arg instanceof List)) {
+					throw new IllegalArgumentException("Argument for ? is expected to be a List of key values");
+				}
+				List list = (List) arg;
+
+				for (Object objx : list) {
+					OAFilter fx = new OAEqualFilter(pp, objx);
+					if (f == null) {
+						f = fx;
+					} else {
+						f = new OAOrFilter(f, fx);
+					}
+				}
+				break;
+			}
+
+			OAFilter fx = new OAEqualFilter(pp, getValueToUse(nextToken));
+			if (f == null) {
+				f = fx;
+			} else {
+				f = new OAOrFilter(f, fx);
+			}
+		}
+		stack.push(f);
+		nextToken = nextToken();
+		return nextToken;
+	}
+
+	private OAQueryToken parseCompoundIn(OAQueryToken token) throws Exception {
+		int bracketCount = 0;
+		int commaCount = 0;
+		OAQueryToken nextToken = null;
+		OAFilter f = null;
+		ArrayList<OAFilter> alFilter = null;
+
+		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+
+		for (int i = 0;; i++) {
+			nextToken = nextToken();
+			if (nextToken.type == OAQueryTokenType.SEPERATOREND) {
+				bracketCount--;
+				if (bracketCount == 0) {
 					break;
 				}
-				if (nextToken.type == OAQueryTokenType.SEPERATORBEGIN) {
-					continue;
-				}
-				if (nextToken.type == OAQueryTokenType.COMMA) {
-					continue;
-				}
+				continue;
+			}
+			if (nextToken.type == OAQueryTokenType.SEPERATORBEGIN) {
+				bracketCount++;
+				commaCount = 0;
+				continue;
+			}
 
-				OAFilter fx = new OAEqualFilter(pp, getValueToUse(nextToken));
-				if (f == null) {
-					f = fx;
-				} else {
+			if (nextToken.type == OAQueryTokenType.COMMA) {
+				commaCount++;
+				continue;
+			}
+
+			if (nextToken.type == OAQueryTokenType.QUESTION) {
+				Object arg = getValueToUse(nextToken);
+
+				// expects to be a List of OAObjectKey
+				if (!(arg instanceof List)) {
+					throw new IllegalArgumentException("Argument for ? is expected to be a List of OAObjectKey");
+				}
+				List list = (List) arg;
+
+				for (Object objx : list) {
+					if (!(objx instanceof OAObjectKey)) {
+						throw new IllegalArgumentException("Argument for ? is expected to be a List of OAObjectKey");
+					}
+					OAObjectKey ok = (OAObjectKey) objx;
+
+					alFilter = new ArrayList();
+					int pos = 0;
+					for (OAQueryToken qt : alInTokens) {
+						// OAPropertyInfo pi = oi.getPropertyInfo(qt.value);
+						OAPropertyPath pp = new OAPropertyPath(qt.value);
+						OAFilter fx = new OAEqualFilter(pp, ok.getObjectIds()[pos++]);
+						alFilter.add(fx);
+					}
+
+					OAFilter[] fs = new OAFilter[alInTokens.size()];
+					alFilter.toArray(fs);
+					alFilter = null;
+					OAFilter fx = new OABlockFilter(fs);
+					if (f == null) {
+						f = fx;
+					} else {
+						f = new OAOrFilter(f, fx);
+					}
+				}
+				break;
+			}
+
+			OAQueryToken tokx = alInTokens.get(commaCount);
+
+			OAPropertyPath pp = new OAPropertyPath(tokx.value);
+
+			Object objx = getValueToUse(nextToken);
+
+			OAPropertyInfo pi = oi.getPropertyInfo(tokx.value);
+			if (pi != null) {
+				objx = OAConv.convert(pi.getClassType(), objx);
+			}
+
+			OAFilter fx = new OAEqualFilter(pp, objx);
+
+			if (f == null && (alInTokens.size() == 1)) {
+				f = fx;
+			} else {
+				if (alInTokens.size() == 1) {
 					f = new OAOrFilter(f, fx);
+				} else {
+					if (alFilter == null) {
+						alFilter = new ArrayList();
+					}
+					alFilter.add(fx);
+
+					if (commaCount + 1 == alInTokens.size()) {
+						OAFilter[] fs = new OAFilter[alInTokens.size()];
+						alFilter.toArray(fs);
+						alFilter = null;
+						fx = new OABlockFilter(fs);
+						if (f == null) {
+							f = fx;
+						} else {
+							f = new OAOrFilter(f, fx);
+						}
+					}
 				}
 			}
-			stack.push(f);
-			nextToken = nextToken();
 		}
+		stack.push(f);
+		nextToken = nextToken();
 		return nextToken;
 	}
 
@@ -380,7 +570,7 @@ public class OAQueryFilter<T> implements OAFilter {
 		return false;
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main2(String[] args) throws Exception {
 		String query = "A = 1";
 		query = "A == 1 && B = 2";
 		query = "(A == 1) && B = 2";
@@ -394,4 +584,20 @@ public class OAQueryFilter<T> implements OAFilter {
 		int xx = 4;
 		xx++;
 	}
+
+	public static void main(String[] args) throws Exception {
+		OAQueryFilter qf;
+		String query = "(date, store_number) in ( ('2021-12-15', 12345), ('2021-10-07', 67890) )";
+		// qf = new OAQueryFilter(Object.class, query, null);
+
+		query = "(date, store_number) in (?)";
+		List list = new ArrayList();
+		list.add(new OAObjectKey());
+		list.add(new OAObjectKey());
+		qf = new OAQueryFilter(Object.class, query, new Object[] { list });
+
+		int xx = 4;
+		xx++;
+	}
+
 }

@@ -9,95 +9,112 @@
     limitations under the License.
 */
 package com.viaoa.datasource.jdbc.db;
-import java.util.*;
 
-import com.viaoa.object.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
+import com.viaoa.object.OAObject;
 import com.viaoa.util.OAArray;
-import com.viaoa.hub.*;
 
-/** 
-    Used for defining a Database for OADataSourceJDBC.
-*/
+/**
+ * Used for defining a Database for OADataSourceJDBC.
+ */
 public class Database {
-    
-    private Table[] tables = new Table[0];
-    private Hashtable hash = new Hashtable();
-    
-    /** type of database is generic (currently not used). */
-    public static final int DATABASE_GENERIC = 0;
-    /** type of database is generic (currently not used). */
-    public static final int DATABASE_ACCESS = 1;
-    /** maximum number of database types defined (currently not used).  */
-    public static final int DATABASE_MAX = 2;
 
-    /**
-        Returns that Table that is mapped to a Class.
-    */
-    public Table getTable(Class clazz) {
-        if (clazz == null) {
-            int xx = 4;
-            xx++;
-            return null;
-        }
-        return (Table) hash.get(clazz);
-    }
+	private Table[] tables = new Table[0];
+	private Hashtable hash = new Hashtable();
 
-    public Table getTable(String name) {
-        if (name == null) return null;
-        
-        if (hash != null) {
-            Enumeration enumx = hash.elements();
-            for ( ;enumx.hasMoreElements(); ) {
-                Table t = (Table) enumx.nextElement();
-                if (name.equalsIgnoreCase(t.name)) return t;
-            }
-        }
-        for (int i=0; tables != null && i<tables.length; i++) {
-            if (name.equalsIgnoreCase(tables[i].name)) return tables[i];
-        }
-        return null;
-    }
+	/** type of database is generic (currently not used). */
+	public static final int DATABASE_GENERIC = 0;
+	/** type of database is generic (currently not used). */
+	public static final int DATABASE_ACCESS = 1;
+	/** maximum number of database types defined (currently not used). */
+	public static final int DATABASE_MAX = 2;
 
+	/**
+	 * Returns that Table that is mapped to a Class.
+	 */
+	public Table getTable(Class clazz) {
+		if (clazz == null) {
+			int xx = 4;
+			xx++;
+			return null;
+		}
+		return (Table) hash.get(clazz);
+	}
 
-    public void addTable(Table table) {
-        if (table == null) return;
-        this.tables = (Table[]) OAArray.add(Table.class, this.tables, table);
+	public Table getTable(String name) {
+		if (name == null) {
+			return null;
+		}
 
-        if (table.clazz != null) {
-            hash.put( table.clazz, table);
-            
-            Class sc = table.clazz.getSuperclass();
-            if (sc != null && !sc.equals(OAObject.class)) {
-                Table stable = (Table) hash.get(sc);
-                if (stable != null) {
-                    int x = (stable.subclasses == null) ? 0: stable.subclasses.length;
-                    Class[] cc = new Class[x+1];
-                    if (x > 0) System.arraycopy(stable.subclasses, 0, cc, 0, x);
-                    cc[x] = table.clazz;
-                    stable.subclasses = cc;
-                }
-            }
-        }
-    }
-    
-    /**
-        Sets the Tables that are used in this Database.
-    */
-    public void setTables(Table[] tables) {
-        if (tables == null) tables = new Table[0];
-        hash.clear();
+		if (hash != null) {
+			Enumeration enumx = hash.elements();
+			for (; enumx.hasMoreElements();) {
+				Table t = (Table) enumx.nextElement();
+				if (name.equalsIgnoreCase(t.name)) {
+					return t;
+				}
+			}
+		}
+		for (int i = 0; tables != null && i < tables.length; i++) {
+			if (name.equalsIgnoreCase(tables[i].name)) {
+				return tables[i];
+			}
+		}
+		return null;
+	}
 
-        for (int i=0; tables!=null && i<tables.length; i++) {
-            addTable(tables[i]);
-        }
-    }
+	public void removeTable(Table table) {
+		this.tables = (Table[]) OAArray.removeValue(Table.class, this.tables, table);
+		hash.remove(table.clazz);
+		//todo: include superclasses, like add table
+	}
 
-    /**
-        Returns the Tables that are used in this Database.
-    */
-    public Table[] getTables() {
-        return tables;   
-    }
+	public void addTable(Table table) {
+		if (table == null) {
+			return;
+		}
+		this.tables = (Table[]) OAArray.add(Table.class, this.tables, table);
+
+		if (table.clazz != null) {
+			hash.put(table.clazz, table);
+
+			Class sc = table.clazz.getSuperclass();
+			if (sc != null && !sc.equals(OAObject.class)) {
+				Table stable = (Table) hash.get(sc);
+				if (stable != null) {
+					int x = (stable.subclasses == null) ? 0 : stable.subclasses.length;
+					Class[] cc = new Class[x + 1];
+					if (x > 0) {
+						System.arraycopy(stable.subclasses, 0, cc, 0, x);
+					}
+					cc[x] = table.clazz;
+					stable.subclasses = cc;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Sets the Tables that are used in this Database.
+	 */
+	public void setTables(Table[] tables) {
+		if (tables == null) {
+			tables = new Table[0];
+		}
+		hash.clear();
+
+		for (int i = 0; tables != null && i < tables.length; i++) {
+			addTable(tables[i]);
+		}
+	}
+
+	/**
+	 * Returns the Tables that are used in this Database.
+	 */
+	public Table[] getTables() {
+		return tables;
+	}
 
 }
-

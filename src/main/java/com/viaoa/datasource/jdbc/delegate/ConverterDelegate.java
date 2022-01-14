@@ -12,10 +12,13 @@ package com.viaoa.datasource.jdbc.delegate;
 
 import java.math.BigDecimal;
 import java.sql.Types;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
+import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectKey;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
@@ -25,7 +28,7 @@ import com.viaoa.util.OATime;
 
 /**
  * Used to convert query data into correct SQL data type.
- * 
+ *
  * @author vvia
  */
 public class ConverterDelegate {
@@ -37,7 +40,73 @@ public class ConverterDelegate {
 			if (value == null) {
 				return "NULL";
 			}
+
+			if (value instanceof List) {
+				// 20220101 list of oaObjectKey used by IN
+				String str = "";
+				for (Object objx : ((List) value)) {
+					if (objx instanceof OAObjectKey) {
+						Object[] ids = ((OAObjectKey) objx).getObjectIds();
+						String s = "";
+						for (Object objz : ids) {
+							if (s.length() > 0) {
+								s += ", ";
+							}
+							if (objz == null) {
+								s += "null";
+							} else {
+								s += convertToString(dbmd, objz, true, 0, 0, null);
+							}
+						}
+
+						if (ids != null && ids.length > 1) {
+							s = "(" + s + ")";
+						}
+						if (str.length() > 0) {
+							str += ", ";
+						}
+						str += s;
+					} else {
+						if (str.length() > 0) {
+							str += ", ";
+						}
+						String s = convertToString(dbmd, objx, true, 0, 0, null);
+						str += s;
+
+					}
+				}
+				return str;
+			}
+
 			return value.toString();
+		}
+
+		if (value instanceof OAObject) {
+			value = ((OAObject) value).getObjectKey();
+		}
+		if (value instanceof OAObjectKey) {
+			String str = "";
+			Object[] ids = ((OAObjectKey) value).getObjectIds();
+			String s = "";
+			for (Object objz : ids) {
+				if (s.length() > 0) {
+					s += ", ";
+				}
+				if (objz == null) {
+					s += "null";
+				} else {
+					s += convertToString(dbmd, objz, true, 0, 0, null);
+				}
+			}
+
+			if (ids != null && ids.length > 1) {
+				s = "(" + s + ")";
+			}
+			if (str.length() > 0) {
+				str += ", ";
+			}
+			str += s;
+			return str;
 		}
 
 		switch (column.type) {
