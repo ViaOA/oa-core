@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -18,11 +19,12 @@ public class MultiplexerServerTest extends OAUnitTest {
 	private OAMultiplexerServer multiplexerServer;
 
 	public void test(final int maxConnections) throws Exception {
+		final CountDownLatch latch = new CountDownLatch(1);
 		Thread t = new Thread() {
 			@Override
 			public void run() {
 				try {
-					_test(maxConnections);
+					_test(maxConnections, latch);
 				} catch (Exception e) {
 					System.out.println("Error in MultiplexerServerTest serverSocket");
 					e.printStackTrace();
@@ -31,13 +33,16 @@ public class MultiplexerServerTest extends OAUnitTest {
 		};
 		t.setDaemon(true);
 		t.start();
+		latch.await();
 	}
 
-	private void _test(int maxConnections) throws Exception {
+	private void _test(int maxConnections, final CountDownLatch latch) throws Exception {
 		//System.out.println("MultiplexerServerTest starting on port 1101");
 		multiplexerServer = new OAMultiplexerServer(null, 1101);
 		ServerSocket ss = multiplexerServer.createServerSocket("test");
 		multiplexerServer.start();
+		latch.countDown();
+
 		OAObject.setDebugMode(true);
 
 		for (int i = 0; (maxConnections == 0 && i == 0) || i < maxConnections; i++) {

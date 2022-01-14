@@ -10,179 +10,220 @@
 */
 package com.viaoa.datasource.query;
 
-import java.util.*;
+import java.util.Vector;
 
 /**
-    Descendant parser internally used to parse object queries into a Vector of OAQueryToken Objects.
-    Uses a OAQueryTokenManager to parse into tokens.
-    <p>
-    For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
-*/
+ * Descendant parser internally used to parse object queries into a Vector of OAQueryToken Objects. Uses a OAQueryTokenManager to parse into
+ * tokens.
+ * <p>
+ * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ */
 public class OAQueryTokenizer implements OAQueryTokenType {
-    OAQueryTokenManager tokenManager;
-    OAQueryToken token, lastToken;
-    Vector vec;
+	OAQueryTokenManager tokenManager;
+	OAQueryToken token, lastToken;
+	Vector vec;
 
-    /** convert query to vector of tokens */
-    public Vector convertToTokens(String query) {
-        if (tokenManager == null) tokenManager = new OAQueryTokenManager();
-        vec = new Vector(20,20);
-        tokenManager.setQuery(query);
-        nextToken();
-        evaluate();
-        return vec;
-    }
+	/** convert query to vector of tokens */
+	public Vector convertToTokens(String query) {
+		if (tokenManager == null) {
+			tokenManager = new OAQueryTokenManager();
+		}
+		vec = new Vector(20, 20);
+		tokenManager.setQuery(query);
+		nextToken();
+		evaluate();
+		return vec;
+	}
 
-    protected void evaluate() {
-        evaluateA();
-        if (token.type != OAQueryTokenType.EOF) {
-            throw new RuntimeException("unexpected token \""+token.value+"\" while parsing query " + tokenManager.query);
-        }
-    }
+	protected void evaluate() {
+		evaluateA();
+		if (token.type != OAQueryTokenType.EOF) {
+			throw new RuntimeException("unexpected token \"" + token.value + "\" while parsing query " + tokenManager.query);
+		}
+	}
 
-    // AND OR
-    protected void evaluateA() {
-        evaluateB();
-        if (token.type == OAQueryTokenType.AND || token.type == OAQueryTokenType.OR) {
-            vec.addElement(token);
-            nextToken();
-            evaluateA();
-        }
-    }
+	// AND OR
+	protected void evaluateA() {
+		evaluateB();
+		if (token.type == OAQueryTokenType.AND || token.type == OAQueryTokenType.OR) {
+			vec.addElement(token);
+			nextToken();
+			evaluateA();
+		}
+	}
 
-    // GT, GE, LT, LE, EQUAL, NOTEQUAL, LIKE
-    protected void evaluateB() {
-        evaluateB2();
-        if (token.isOperator()) {
-            vec.addElement(token);
-            nextToken();
-            evaluateA();
-        }
-    }
+	// GT, GE, LT, LE, EQUAL, NOTEQUAL, LIKE
+	protected void evaluateB() {
+		evaluateB2();
+		if (token.isOperator()) {
+			vec.addElement(token);
+			nextToken();
+			evaluateA();
+		}
+	}
 
-    // 20171222 support for IN(1,2,3) 
-    // IN
-    protected void evaluateB2() {
-        evaluateC();
-        if (token.type ==  OAQueryTokenType.IN) {
-            vec.addElement(token);
+	//qqqqqqqqqqqqqq 	(a, b, c, d)  OR ((a,b), (c,d))    OR (?)  OR ?
 
-            for (int i=0; ;i++) {
-                nextToken();
-                vec.addElement(token);
-                if (i == 0) {
-                    if (token.type != OAQueryTokenType.SEPERATORBEGIN) {
-                        throw new RuntimeException("IN operator expected begin '(',  query " + tokenManager.query);
-                    }
-                }
-                else if (i % 2 == 0) {
-                    if (token.type == OAQueryTokenType.SEPERATOREND) {
-                        break;
-                    }
-                    if (token.type != OAQueryTokenType.COMMA) {
-                        throw new RuntimeException("IN operator expected comma or ')',  query " + tokenManager.query);
-                    }
-                }
-                else {
-                    if (token.type != OAQueryTokenType.NUMBER) {
-                        throw new RuntimeException("IN operator expected number,  query " + tokenManager.query);
-                    }
-                }
-            }
-            nextToken();
-        }
-    }
-    
-    
-    
-    // () used to surround
-    protected void evaluateC() {
-        if (token.type == OAQueryTokenType.SEPERATORBEGIN) {
-            vec.addElement(token);
-            nextToken();
-            evaluateA();
+	//qqqqqq where (date, store_number) in ( ('2021-12-15', 12345), ('2021-10-07', 67890) )
+	//qqqqqq where (date, store_number) in (?)
+	//         where ? is oaObjKeys[]
 
-            if (token.type == OAQueryTokenType.SEPERATOREND) {
-                vec.addElement(token);
-                nextToken();
-            }
-            else throw new RuntimeException("Unbalanced brackets in query " + tokenManager.query);
-        }
-        else evaluateC2();
-    }
-    
-// 20090608 added C2, to allow for sql functions, ex: lower(lastName)
-    // () func call
-    protected void evaluateC2() {
-        evaluateD();
-        if (token.type == OAQueryTokenType.SEPERATORBEGIN) {
-            token.type = OAQueryTokenType.FUNCTIONBEGIN;
-            vec.addElement(token);
-            nextToken();
-            
-            evaluateA();
-            if (token.type == OAQueryTokenType.SEPERATOREND) {
-                token.type = OAQueryTokenType.FUNCTIONEND;
-                vec.addElement(token);
-                nextToken();
-            }
-            else throw new RuntimeException("Unbalanced brackets in query " + tokenManager.query);
-        }
-    }
+	// must match pkey columns
 
-    
-    // single quotes
-    protected void evaluateD() {
-        evaluateE();
-        if (token.type == OAQueryTokenType.STRINGSQ) {
-            vec.addElement(token);
-            nextToken();
-        }
-    }
+	// 20171222 support for IN(1,2,3)
+	// IN
+	protected void evaluateB2() {
+		evaluateC();
 
+		if (token.type != OAQueryTokenType.IN) {
+			return;
+		}
+		vec.addElement(token);
 
-    // Single Quote
-    protected void evaluateE() {
-        // sql allows for single quotes to be doubled up to show a single quote in string
-        evaluateF();
-        while (token.type == OAQueryTokenType.STRINGSQ) {
-            vec.addElement(token);
-            nextToken();
-        }
-    }
+		//qqqqqqq new
+		nextToken();
+		evaluateA();
 
+		/* was: qqqqqqqqqqqqqqqqqqq old
+		for (int i = 0;; i++) {
+			nextToken();
+			vec.addElement(token);
+			if (i == 0) {
+				if (token.type != OAQueryTokenType.SEPERATORBEGIN) {
+					throw new RuntimeException("IN operator expected begin '(',  query " + tokenManager.query);
+				}
+			} else if (i % 2 == 0) {
+				if (token.type == OAQueryTokenType.SEPERATOREND) {
+					break;
+				}
+				if (token.type != OAQueryTokenType.COMMA) {
+					throw new RuntimeException("IN operator expected comma or ')',  query " + tokenManager.query);
+				}
+			} else {
+				if (token.type != OAQueryTokenType.NUMBER) {
+					throw new RuntimeException("IN operator expected number,  query " + tokenManager.query);
+				}
+			}
+		}
+		nextToken();
+			*/
+	}
 
-    // VARIABLE, NUMBER, EOF, ?
-    protected void evaluateF() {
-        if ((token.type == OAQueryTokenType.STRINGDQ) ||
-            (token.type == OAQueryTokenType.STRINGSQ) ||
-            (token.type == OAQueryTokenType.STRINGESC) ||
-            (token.type == OAQueryTokenType.NUMBER) ||
-            (token.type == OAQueryTokenType.NULL) ||
-            (token.type == OAQueryTokenType.PASSTHRU) ||
-            (token.type == OAQueryTokenType.VARIABLE) || 
-            (token.type == OAQueryTokenType.QUESTION)) {
-            vec.addElement(token);
-            nextToken();
-        }
-        else {
-            throw new RuntimeException("Unexpected value in query " + tokenManager.query + " expecting variable or string, received "+token.value);
-        }
-    }
+	// () used to surround
+	protected void evaluateC() {
+		if (token.type == OAQueryTokenType.SEPERATORBEGIN) {
+			vec.addElement(token);
 
-    protected void nextToken() {
-        lastToken = token;
-        token = tokenManager.getNext();
-    }
+			for (;;) {
+				nextToken();
+				evaluateA();
 
-    public static void main(String[] args) {
-        OAQueryTokenizer qt = new OAQueryTokenizer();
-        String query = "Code = 'CT13''6\"X16HALF-COL'";
-        Vector vec = qt.convertToTokens(query);
-        int x = vec.size();
-    }
-    
+				//qqqqqqqqqqq allow commas
+				if (token.type != OAQueryTokenType.COMMA) {
+					break;
+				}
+				vec.addElement(token);
+			}
+
+			if (token.type == OAQueryTokenType.SEPERATOREND) {
+				vec.addElement(token);
+				nextToken();
+			} else {
+				throw new RuntimeException("Unbalanced brackets in query " + tokenManager.query);
+			}
+		} else
+
+		{
+			evaluateC2();
+		}
+	}
+
+	// 20090608 added C2, to allow for sql functions, ex: lower(lastName)
+	// () func call
+	protected void evaluateC2() {
+		evaluateD();
+		if (token.type == OAQueryTokenType.SEPERATORBEGIN) {
+			token.type = OAQueryTokenType.FUNCTIONBEGIN;
+			vec.addElement(token);
+			nextToken();
+
+			evaluateA();
+			if (token.type == OAQueryTokenType.SEPERATOREND) {
+				token.type = OAQueryTokenType.FUNCTIONEND;
+				vec.addElement(token);
+				nextToken();
+			} else {
+				throw new RuntimeException("Unbalanced brackets in query " + tokenManager.query);
+			}
+		}
+	}
+
+	// single quotes
+	protected void evaluateD() {
+		evaluateE();
+		if (token.type == OAQueryTokenType.STRINGSQ) {
+			vec.addElement(token);
+			nextToken();
+		}
+	}
+
+	// Single Quote
+	protected void evaluateE() {
+		// sql allows for single quotes to be doubled up to show a single quote in string
+		evaluateF();
+		while (token.type == OAQueryTokenType.STRINGSQ) {
+			vec.addElement(token);
+			nextToken();
+		}
+	}
+
+	// VARIABLE, NUMBER, EOF, ?
+	protected void evaluateF() {
+		if ((token.type == OAQueryTokenType.STRINGDQ) ||
+				(token.type == OAQueryTokenType.STRINGSQ) ||
+				(token.type == OAQueryTokenType.STRINGESC) ||
+				(token.type == OAQueryTokenType.NUMBER) ||
+				(token.type == OAQueryTokenType.NULL) ||
+				(token.type == OAQueryTokenType.PASSTHRU) ||
+				(token.type == OAQueryTokenType.VARIABLE) ||
+				(token.type == OAQueryTokenType.QUESTION)) {
+			vec.addElement(token);
+			nextToken();
+		} else {
+			throw new RuntimeException(
+					"Unexpected value in query " + tokenManager.query + " expecting variable or string, received " + token.value);
+		}
+	}
+
+	protected void nextToken() {
+		lastToken = token;
+		token = tokenManager.getNext();
+	}
+
+	public static void main2(String[] args) {
+		OAQueryTokenizer qt = new OAQueryTokenizer();
+		String query = "Code = 'CT13''6\"X16HALF-COL'";
+		Vector vec = qt.convertToTokens(query);
+		int x = vec.size();
+	}
+
+	public static void main(String[] args) {
+		OAQueryTokenizer qt = new OAQueryTokenizer();
+		String query = "(date, store_number) in ( ('2021-12-15', 12345), ('2021-10-07', 67890) )";
+		Vector vec = qt.convertToTokens(query);
+
+		query = "id in (12345, 67890)";
+		vec = qt.convertToTokens(query);
+
+		query = "id in (?)";
+		vec = qt.convertToTokens(query);
+
+		query = "(date, store_number) in (?)";
+		vec = qt.convertToTokens(query);
+
+		query = "(date, store_number) in ?";
+		vec = qt.convertToTokens(query);
+
+	}
+
 }
-
-
-

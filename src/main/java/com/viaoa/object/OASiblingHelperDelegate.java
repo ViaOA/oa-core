@@ -127,7 +127,7 @@ public class OASiblingHelperDelegate {
 
 		Hub getDetailHub = null;
 		String getDetailPropertyPath = null;
-		;
+
 		OAPropertyPath ppGetDetailPropertyPath = null;
 
 		// 20180704

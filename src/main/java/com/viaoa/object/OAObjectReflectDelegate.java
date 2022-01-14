@@ -802,8 +802,8 @@ public class OAObjectReflectDelegate {
 			return hub;
 		}
 
-		OASelect select = null;
-		String sibIds = null;
+		OASelect<?> select = null;
+		//String sibIds = null;
 		OAObjectKey[] siblingKeys = null;
 		HashMap<OAObjectKey, Hub> hmSiblingHub = null;
 		final String matchProperty = linkInfo.getMatchProperty();
@@ -848,7 +848,7 @@ public class OAObjectReflectDelegate {
 					OALinkInfo rli = linkInfo.getReverseLinkInfo();
 					if (!bThisIsServer || linkInfo.getRecursive() || rli == null || rli.getType() == OALinkInfo.TYPE_MANY
 							|| rli.getPrivateMethod() || (hubMatch != null) || (matchProperty != null && matchProperty.length() > 0)) {
-						// not supported in this release
+						// not yet supported
 						siblingKeys = null;
 					} else {
 						int x;
@@ -864,23 +864,13 @@ public class OAObjectReflectDelegate {
 						}
 					}
 
-					if (siblingKeys != null) {
+					select = new OASelect(hub.getObjectClass());
+					if (siblingKeys != null && siblingKeys.length > 0) {
 						hmSiblingHub = new HashMap<>();
-						boolean bChecked = false;
-						for (OAObjectKey keyx : siblingKeys) {
-							Object[] idsx = keyx.getObjectIds();
-							if (idsx == null || idsx.length != 1 || idsx[0] == null) {
-								continue;
-							}
-							// 20211209
-							if (!bChecked) {
-								bChecked = true;
-								Class c = idsx[0].getClass();
-								if (!c.isPrimitive() && !c.equals(String.class)) {
-									break;
-								}
-							}
+						final List<OAObjectKey> alOk = new ArrayList<>();
+						alOk.add(oaObj.getObjectKey());
 
+						for (OAObjectKey keyx : siblingKeys) {
 							OAObject objx = OAObjectCacheDelegate.get(oaObj.getClass(), keyx);
 							if (objx == null) {
 								continue;
@@ -888,43 +878,19 @@ public class OAObjectReflectDelegate {
 							if (!OAObjectPropertyDelegate.attemptPropertyLock(objx, linkPropertyName)) {
 								continue;
 							}
+							alOk.add(keyx);
 							hmSiblingHub.put(keyx, new Hub(linkClass, objx, liReverse, false));
-
-							if (sibIds == null) {
-								sibIds = "";
-							} else {
-								sibIds += ", ";
-							}
-							sibIds += "" + idsx[0];
 						}
-						if (sibIds != null) {
-							Object[] idsx = oaObj.getObjectKey().getObjectIds();
-							if (idsx == null || idsx.length != 1 || idsx[0] == null) {
-								sibIds = null;
-								hmSiblingHub = null;
-							} else {
-								sibIds = idsx[0] + "," + sibIds;
-							}
-						}
-					}
 
-					select = new OASelect(hub.getObjectClass());
-					if (sibIds != null) {
-						select.setWhere(rli.getName() + " IN (" + sibIds + ")");
+						select.setWhere(rli.getName() + " IN (?)");
+
+						select.setParams(new Object[] { alOk });
 					} else {
 						if (bThisIsServer) {
 							select.setWhereObject(oaObj);
 							select.setPropertyFromWhereObject(linkInfo.getName());
 						}
 					}
-
-					/* was:
-					select = new OASelect(hub.getObjectClass());
-					if (oaObj != null) {
-					    select.setWhereObject(oaObj);
-					    select.setPropertyFromWhereObject(linkInfo.getName());
-					}
-					*/
 				}
 
 				//was: hub = new Hub(linkClass, oaObj, liReverse, true); // liReverse = liDetailToMaster
@@ -970,7 +936,7 @@ public class OAObjectReflectDelegate {
 
 		/*20171108 moved below. The issue with this is that this adds the Hub to oaObj.props before it runs the
 		 *    select (which loads data).  Another thread could get this empty hub before the objects are loaded.
-		
+
 		    // 20141204 added check to see if property is now there, in case it was deserialized and then
 		    //    the property was set by HubSerializeDelegate._readResolve
 		    if (bThisIsServer || OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, false) == null) {
@@ -995,7 +961,7 @@ public class OAObjectReflectDelegate {
 		// needs to loadAllData first, otherwise another thread could get the hub without using the lock
 		if (bThisIsServer || (bIsCalc && !bIsServerSideCalc)) {
 			// 20171225 support for selecting multiple at one time
-			if (sibIds != null) {
+			if (siblingKeys != null && siblingKeys.length > 0) {
 				OALinkInfo rli = linkInfo.getReverseLinkInfo();
 				try {
 					OAThreadLocalDelegate.setSuppressCSMessages(true);
@@ -1868,42 +1834,47 @@ public class OAObjectReflectDelegate {
 					} else {
 						siblingKeys = OASiblingHelperDelegate.getSiblings(oaObj, linkPropertyName, 75, hmIgnoreSibling);
 					}
-					String sibIds = null;
-					if (siblingKeys != null) {
+
+					if (siblingKeys != null && siblingKeys.length > 0) {
+						final List<OAObjectKey> alOk = new ArrayList<>();
+						alOk.add(key);
+
 						for (OAObjectKey keyx : siblingKeys) {
 							OAObject objx = OAObjectCacheDelegate.get(oaObj.getClass(), keyx);
 							if (objx == null) {
 								continue;
 							}
-							Object valx = OAObjectPropertyDelegate.getProperty(objx, linkPropertyName, false, false);
-							if (!(valx instanceof OAObjectKey)) {
+
+							Object val = OAObjectPropertyDelegate.getProperty(objx, linkPropertyName, false, false);
+							if (!(val instanceof OAObjectKey)) {
 								continue;
 							}
 
-							if (!OAObjectPropertyDelegate.isPropertyLocked(objx, linkPropertyName)) {
-								Object[] idsx = ((OAObjectKey) valx).getObjectIds();
-								if (idsx == null || idsx.length != 1) {
-									continue;
-								}
-								if (sibIds == null) {
-									sibIds = "" + idsx[0];
-								} else {
-									sibIds += "," + idsx[0];
-								}
+							if (OAObjectPropertyDelegate.isPropertyLocked(objx, linkPropertyName)) {
+								continue;
 							}
+
+							alOk.add((OAObjectKey) val);
 						}
-						if (sibIds != null) {
-							Object[] idsx = key.getObjectIds();
-							if (idsx == null || idsx.length != 1) {
-								sibIds = null;
-							} else {
-								sibIds = idsx[0] + "," + sibIds;
-							}
-						}
-					}
-					if (sibIds != null) {
+
 						OASelect sel = new OASelect(li.toClass);
-						sel.setWhere("id IN (" + sibIds + ")");
+						String[] ss = li.getToObjectInfo().getIdProperties();
+						String idProps = "";
+						if (ss != null) {
+							for (String s : ss) {
+								if (idProps.length() > 0) {
+									idProps += ", ";
+								}
+								idProps += s;
+							}
+							if (ss.length > 1) {
+								idProps = "(" + idProps + ")";
+							}
+						}
+
+						sel.setWhere(idProps + " IN (?)");
+						sel.setParams(new Object[] { alOk });
+						// was:  sel.setWhere("id IN (" + sibIds + ")");
 						sel.select();
 						for (; sel.hasMore();) {
 							OAObject refx = sel.next(); // this will load into objCache w/weakRef
@@ -1911,15 +1882,12 @@ public class OAObjectReflectDelegate {
 								ref = refx;
 							}
 						}
-					} else {
-						ref = (OAObject) OAObjectDSDelegate.getObject(oi, li.toClass, (OAObjectKey) obj);
-					}
-					if (siblingKeys != null) {
 						for (OAObjectKey ok : siblingKeys) {
 							hmIgnoreSibling.remove(ok.getGuid());
 						}
+					} else {
+						ref = (OAObject) OAObjectDSDelegate.getObject(oi, li.toClass, (OAObjectKey) obj);
 					}
-					//was: ref = (OAObject) OAObjectDSDelegate.getObject(oi, li.toClass, (OAObjectKey) obj);
 				}
 			}
 		}

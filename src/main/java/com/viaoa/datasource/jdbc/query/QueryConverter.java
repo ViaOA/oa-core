@@ -11,6 +11,7 @@
 package com.viaoa.datasource.jdbc.query;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -682,8 +683,8 @@ public class QueryConverter {
 					}
 
 					Vector vecLink = new Vector(5, 5);
-					Column column = parseLink(vecLink, s); // populates vecLink with Linkinfos to match path in token.value
-					if (column == null) {
+					Column[] columns = parseLink(vecLink, s); // populates vecLink with Linkinfos to match path in token.value
+					if (columns == null) {
 						throw new RuntimeException(
 								"Cant use find column in ORDER clause: property \"" + s + "\" in query \"" + line + "\"");
 					}
@@ -703,21 +704,31 @@ public class QueryConverter {
 					}
 					Linkinfo li = (Linkinfo) vecLink.elementAt(xx - 1);
 
-					// 2006/09/22 check for using case sensitve searches.
-					String colName;
-					if (dbmd.caseSensitive && column.type == java.sql.Types.VARCHAR && !column.primaryKey) {
-						colName = column.columnLowerName;
-						if (colName != null && colName.trim().length() > 0 && !colName.equalsIgnoreCase(column.columnName)) {
+					s = "";
+					for (Column column : columns) {
+						String colName;
+						if (dbmd.caseSensitive && column.type == java.sql.Types.VARCHAR && !column.primaryKey) {
+							colName = column.columnLowerName;
+							if (colName != null && colName.trim().length() > 0 && !colName.equalsIgnoreCase(column.columnName)) {
+							} else {
+								colName = column.columnName;
+								funcName = dbmd.lowerCaseFunction;
+							}
 						} else {
 							colName = column.columnName;
-							funcName = dbmd.lowerCaseFunction;
 						}
-					} else {
-						colName = column.columnName;
+
+						if (s.length() > 0) {
+							s += ", ";
+						}
+						s += (funcName == null ? "" : (funcName + "(")) + LB + li.table.name.toUpperCase()
+								+ (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName.toUpperCase() + RB
+								+ (funcName == null ? "" : ")");
 					}
-					s = (funcName == null ? "" : (funcName + "(")) + LB + li.table.name.toUpperCase()
-							+ (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName.toUpperCase() + RB
-							+ (funcName == null ? "" : ")");
+					if (columns.length > 1) {
+						s = "(" + s + ")";
+					}
+
 					bAllowDesc = true;
 				}
 			}
@@ -800,7 +811,7 @@ public class QueryConverter {
 
 		String where = "";
 		Table table = null;
-		Column column = null;
+		Column[] columns = null;
 		Column origColumn = null;
 		String fullTextIndex = null;
 		boolean bLastColumnWasInFunction = false; // 20121120
@@ -821,387 +832,77 @@ public class QueryConverter {
 				s = token.value;
 			} else if (token.type == OAQueryTokenType.VARIABLE) {
 				Vector vecLink = new Vector(5, 5);
-				column = parseLink(vecLink, token.value); // populates vecLink with Linkinfos to match path in token.value
+				columns = parseLink(vecLink, token.value); // populates vecLink with Linkinfos to match path in token.value
 
-				if (OAArray.contains(nullColumns, i)) {
-					OAQueryToken t = (OAQueryToken) vecToken.elementAt(i + 4);
-					boolean b = false;
-					for (Column c : column.table.getColumns()) {
-						if (c.primaryKey) {
-							int pos = t.value.lastIndexOf('.');
-							t.value = t.value.substring(0, pos);
-							t.value += "." + c.propertyName;
-							b = true;
-							break;
-						}
-					}
-					if (!b) {
-						//qqqqqqqqq
-						// this needs to have a warning, that there is no other field to check for non-null value
-						//   for now, set it back to the same "IS NULL"
-						t = (OAQueryToken) vecToken.elementAt(i + 5);
-						t.type = OAQueryToken.EQUAL;
-					}
-
-				}
-
-				if (column == null) {
-					throw new RuntimeException(
-							"Cant use find column in WHERE clause: property \"" + token.value + "\" in query \"" + whereClause + "\"");
-				}
-				origColumn = column;
-				int xx = vecLink.size();
-
-				// if a pkey column is being used, see if fkey can be used instead
-				if (xx > 1 && column != null && column.primaryKey) {
-					Linkinfo li = (Linkinfo) vecLink.elementAt(xx - 1);
-					if (!li.bMany) {
-						if (li.parent.bMany) {
-							column = li.linkFromParent.fkeys[0];
-						} else {
-							column = li.linkFromParent.fkeys[0];
-						}
-						xx--;
-						vecLink.removeElementAt(xx);
-					}
-				}
-
-				for (int ii = 1; ii < xx; ii++) {
-					Linkinfo li = (Linkinfo) vecLink.elementAt(ii);
-					li.bUsed = true;
-					li.bUseLeftJoin = true;
-					if (li.base != null) {
-						li.base.bUsed = true;
-						li.bUseLeftJoin = true;
-					}
-					if (li.bMany) {
-						bUseDistinct = true; // need to use "<DISTINCT KEYWORD>" with select
-					}
-				}
-				Linkinfo li = (Linkinfo) vecLink.elementAt(xx - 1);
-
-				// 2006/09/22 check for using case sensitive searches.
-				String colName;
-
-				// 20151206 check for fulltextindex
-				if (column.fullTextIndex && (dbmd.getDatabaseType() == DBMetaData.SQLSERVER)) {
-					colName = column.columnLowerName;
-					colName = LB + li.table.name.toUpperCase() + (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName + RB;
-					fullTextIndex = colName;
-					colName = null;
-				} else if (dbmd.caseSensitive && column.type == java.sql.Types.VARCHAR && !column.primaryKey) {
-					colName = column.columnLowerName;
-					if (colName != null && colName.trim().length() > 0 && !colName.equalsIgnoreCase(column.columnName)) {
-						colName = colName.toUpperCase();
-						colName = LB + li.table.name.toUpperCase() + (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName + RB;
-					} else {
-						colName = column.columnName.toUpperCase();
-						colName = LB + li.table.name.toUpperCase() + (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName + RB;
-						colName = dbmd.lowerCaseFunction + "(" + colName + ")";
-					}
-
-					// need to make search string is lower case
-					if (i + 1 < x) {
-						OAQueryToken t = (OAQueryToken) vecToken.elementAt(i + 1);
-						if (t.isOperator()) {
-							// find next var and make lowercase  2006/09/22
-							for (int j = i + 2; j < x; j++) {
-								t = (OAQueryToken) vecToken.elementAt(j);
-								if (t.type == OAQueryTokenType.STRINGSQ || t.type == OAQueryTokenType.STRINGDQ) {
-									t.value = t.value.toLowerCase();
-									break;
-								}
-								if (t.type == OAQueryTokenType.QUESTION) {
-									if (params != null && paramPos < params.length && params[paramPos] instanceof String) {
-										params[paramPos] = ((String) params[paramPos]).toLowerCase();
-									}
-									break;
-								}
-							}
-						}
-					}
-				} else {
-					colName = column.columnName;
-					if (colName != null) {
-						colName = colName.toUpperCase();
-					}
-					colName = LB + li.table.name.toUpperCase() + (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName + RB;
-				}
-				s = colName;
-			} else if (token.type == OAQueryTokenType.QUESTION) {
-				if (params == null || paramPos >= params.length) {
-					throw new RuntimeException("wrong number of params in query");
-				}
-				if (origColumn == null) {
-					throw new RuntimeException("column not found for parameter");
-				}
-				Object param = params[paramPos++];
-				if (origColumn != column) {
-					if (param instanceof OAObject) {
-						param = ((OAObject) param).getProperty(origColumn.propertyName);
-					}
-				}
-
-				// 20121013
-				if (fullTextIndex == null && bUsingPreparedStatement) {
-					s = "?";
-				} else {
-					if (bLastColumnWasInFunction) {
-						bLastColumnWasInFunction = false;
-						if (param instanceof String) {
-							s = ConverterDelegate.convert(dbmd, origColumn, param);
-						} else {
-							s = ConverterDelegate.convert(dbmd, null, param);
-						}
-					} else {
-						s = ConverterDelegate.convert(dbmd, origColumn, param);
-					}
-				}
-
-				if (fullTextIndex != null) {
-					s = "CONTAINS(" + fullTextIndex + ", '" + s + "')";
-					fullTextIndex = null;
-				}
-			} else if (token.type == OAQueryTokenType.STRINGSQ || token.type == OAQueryTokenType.STRINGDQ) {
-				if (column == null) {
-					throw new RuntimeException("column not found for parameter");
-				}
-				s = ConverterDelegate.convert(dbmd, column, token.value);
-				if (fullTextIndex != null) {
-					s = "CONTAINS(" + fullTextIndex + ", '" + s + "')";
-					fullTextIndex = null;
-				}
-			} else if (token.type == OAQueryTokenType.NUMBER) {
-				if (column == null) {
-					throw new RuntimeException("column not found for parameter");
-				}
-				s = ConverterDelegate.convert(dbmd, column, token.value);
-				if (fullTextIndex != null) {
-					s = "CONTAINS(" + fullTextIndex + ", '" + s + "')";
-					fullTextIndex = null;
-				}
-			} else if (token.type == OAQueryTokenType.FUNCTIONBEGIN) {
-				bLastColumnWasInFunction = true;
-				s = token.value;
-			} else if (token.type == OAQueryTokenType.LIKE) {
-				s = dbmd.getLikeKeyword();
-				if (OAString.isEmpty(s)) {
-					s = token.value;
-				}
-			} else if (token.type == OAQueryTokenType.NOTLIKE) {
-				s = dbmd.getLikeKeyword();
-				if (OAString.isEmpty(s)) {
-					s = token.value;
-				} else {
-					s = "not " + s;
-				}
-			} else if (token.type == OAQueryTokenType.TRUE) {
-			    if (dbmd.objectTrue != null) s = ""+dbmd.objectTrue;
-            } else if (token.type == OAQueryTokenType.FALSE) {
-                if (dbmd.objectFalse != null) s = ""+dbmd.objectFalse;
-			} else {
-				s = token.value;
-				if (fullTextIndex != null) {
-					s = null;
-				}
-			}
-
-			if (s != null && s.length() > 0) {
-				if (where.length() > 0) {
-					where += " ";
-				}
-				where += s;
-			}
-		}
-		if (where.indexOf(" NULL") >= 0) {
-			where = OAString.convert(where, " = NULL", " IS NULL");
-			where = OAString.convert(where, " != NULL", " IS NOT NULL");
-			where = OAString.convert(where, " <> NULL", " IS NOT NULL");
-		}
-		return where;
-	}
-
-	protected String parseWhereUseExist(Class clazz, String whereClause, Object[] params, boolean bUsingPreparedStatement) {
-		OAQueryTokenizer qa = new OAQueryTokenizer();
-		Vector vecToken = qa.convertToTokens(whereClause);
-		cleanTokens(vecToken, params);
-
-		int existCount = 0;
-		Vector vecLink = new Vector(5, 5);
-		Vector vecPreLink = null;
-
-		String where = "";
-		OAQueryToken holdToken = null;
-		Column column = null;
-		Column origColumn = null;
-		int paramPos = 0;
-
-		int x = vecToken.size();
-		boolean bLastColumnWasInFunction = false; // 20121120
-		for (int i = 0; i < x; i++) {
-			OAQueryToken token = (OAQueryToken) vecToken.elementAt(i);
-
-			OAQueryToken tokenNext;
-			if (i + 1 != x) {
-				tokenNext = (OAQueryToken) vecToken.elementAt(i + 1);
-			} else {
-				tokenNext = null;
-			}
-
-			String newVar = "";
-
-			if (token.type == OAQueryTokenType.VARIABLE && tokenNext != null && tokenNext.type == OAQueryTokenType.FUNCTIONBEGIN) {
-				//20090608 todo, have Datasource convert function name to correct name for the database that is being used.
-				newVar = token.value;
-				if (holdToken != null) {
-					newVar = holdToken.value + " " + newVar;
-					holdToken = null;
-				}
-			} else if (token.type == OAQueryTokenType.VARIABLE) {
-				vecPreLink = (Vector) vecLink.clone();
-				vecLink.removeAllElements();
-
-				column = parseLink(vecLink, token.value); // populates vecLink with Linkinfos to match path
-				origColumn = column;
-				int xx = vecLink.size();
-
-				// if a pkey column is being used, see if fkey can be used instead
-				if (xx > 1 && column != null && column.primaryKey) {
-					Linkinfo li = (Linkinfo) vecLink.elementAt(xx - 1);
-					if (!li.bMany) {
-						// use fkey from previous Linkinfo
-						column = li.linkFromParent.fkeys[0];
-						li = (Linkinfo) vecLink.elementAt(xx - 2);
-						xx--;
-						vecLink.removeElementAt(xx);
-					}
-				}
-
-				// see if path is same as prev path
-				if (vecPreLink != null) {
-					int xxx = vecPreLink.size();
-					if (xxx > 0 && xxx <= xx && column != null) {
-						for (int j = 0; j < xxx; j++) {
-							if (vecPreLink.elementAt(j) != vecLink.elementAt(j)) {
-								vecPreLink = null;
+				s = "";
+				int columnsPos = -1;
+				for (Column column : columns) {
+					columnsPos++;
+					if (OAArray.contains(nullColumns, i)) {
+						OAQueryToken t = (OAQueryToken) vecToken.elementAt(i + 4);
+						boolean b = false;
+						for (Column c : column.table.getColumns()) {
+							if (c.primaryKey) {
+								int pos = t.value.lastIndexOf('.');
+								t.value = t.value.substring(0, pos);
+								t.value += "." + c.propertyName;
+								b = true;
 								break;
 							}
 						}
-						for (int j = xxx; vecPreLink != null && j < xx; j++) {
-							Linkinfo li = (Linkinfo) vecLink.elementAt(j);
-							if (!li.bMany) {
-								vecPreLink = null; // cant add JOINS to previous statement, only EXISTS
-							}
+						if (!b) {
+							// todo: this needs to have a warning, that there is no other field to check for non-null value
+							//   for now, set it back to the same "IS NULL"
+							t = (OAQueryToken) vecToken.elementAt(i + 5);
+							t.type = OAQueryToken.EQUAL;
 						}
-					} else {
-						vecPreLink = null;
+
 					}
-				}
 
-				if (vecPreLink == null) {
-					// close previous
-					for (int j = 0; j < existCount; j++) {
-						where += ")";
+					if (column == null) {
+						throw new RuntimeException(
+								"Cant use find column in WHERE clause: property \"" + token.value + "\" in query \"" + whereClause + "\"");
 					}
-					existCount = 0;
-				}
+					origColumn = column;
+					int xx = vecLink.size();
 
-				if (holdToken != null) {
-					if (where.length() > 0) {
-						where += " ";
+					// if a pkey column is being used, see if fkey can be used instead
+					if (xx > 1 && column != null && column.primaryKey && columns.length == 1) {
+						final Linkinfo liLast = vecLink.size() == 0 ? null : (Linkinfo) vecLink.elementAt(vecLink.size() - 1);
+						if (!liLast.bMany) {
+							if (liLast.parent.bMany) {
+								column = liLast.linkFromParent.fkeys[columnsPos];
+							} else {
+								column = liLast.linkFromParent.fkeys[columnsPos];
+							}
+							vecLink.removeElementAt(--xx);
+						}
 					}
-					where += holdToken.value;
-					holdToken = null;
-				}
 
-				// set up variable name
-				Linkinfo li = ((xx == 0) ? root : (Linkinfo) vecLink.elementAt(0));
-
-				// check for MANY relationships within property path
-				Linkinfo prev;
-				Linkinfo liMany = null;
-				String exists = "";
-				for (int ii = 1; ii < xx; ii++) {
-					prev = li;
-					li = (Linkinfo) vecLink.elementAt(ii);
-					if (!li.bMany) {
+					for (int ii = 1; ii < xx; ii++) {
+						Linkinfo li = (Linkinfo) vecLink.elementAt(ii);
 						li.bUsed = true;
+						li.bUseLeftJoin = true;
 						if (li.base != null) {
 							li.base.bUsed = true;
+							li.bUseLeftJoin = true;
 						}
-
-						if (bUsingOR && ii == 1) {
-							bUseLeftJoin = true;
-						}
-						continue;
-					}
-					if (vecPreLink != null) {
-						if (ii < vecPreLink.size() && (li == (Linkinfo) vecPreLink.elementAt(ii))) {
-							continue; // exists/joins already built from last vecLink
+						if (li.bMany) {
+							bUseDistinct = true; // need to use "<DISTINCT KEYWORD>" with select
 						}
 					}
+					Linkinfo li = (Linkinfo) vecLink.elementAt(xx - 1);
 
-					// Many
-					if (liMany != null) {
-						// need to include JOINs for any ONE relationships that might have been in path
-						extraWhere = ""; // built by getJoins for Oracle
-						boolean bHold = bUseLeftJoin;
-						bUseLeftJoin = false;
-						newVar += "EXISTS (SELECT * FROM " + getJoins(vecLink, liMany, prev) + " WHERE " + exists + " AND ";
-						bUseLeftJoin = bHold;
-						if (extraWhere != null && extraWhere.length() > 0) {
-							newVar += extraWhere + " AND ";
-						}
-						existCount++;
-					}
-
-					exists = LB + prev.table.name.toUpperCase() + (prev.number > 0 ? prev.number + "" : "") + RB;
-					exists += ".";
-					exists += LB + li.linkFromParent.fkeys[0].columnName + RB;
-
-					exists += " = ";
-
-					Linkinfo lix = (li.base == null) ? li : li.base; // base link is the "real" link to the parent link
-					exists += LB + lix.table.name.toUpperCase() + (lix.number > 0 ? li.number + "" : "") + RB;
-					exists += ".";
-					exists += LB + lix.linkToParent.fkeys[0].columnName + RB;
-
-					liMany = li;
-				}
-
-				if (liMany != null) {
-					if (column == null) {
-						// ex: orders.orderItems = null
-						//     orders.orderItems != null
-						// need to look ahead
-
-						OAQueryToken t = null;
-						if (i + 1 < x) {
-							t = (OAQueryToken) vecToken.elementAt(i + 1);
-						}
-						if (t != null && t.type == OAQueryTokenType.EQUAL) {
-							newVar += "NOT ";
-							vecLink.removeAllElements(); // so that it can not be shared with next path
-						}
-					}
-					extraWhere = ""; // built by getJoins for Oracle
-					boolean bHold = bUseLeftJoin;
-					bUseLeftJoin = false;
-					newVar += "EXISTS (SELECT * FROM " + getJoins(vecLink, liMany, null) + " WHERE " + exists;
-					bUseLeftJoin = bHold;
-					if (extraWhere != null && extraWhere.length() > 0) {
-						newVar += " AND " + extraWhere;
-					}
-					if (column != null) {
-						newVar += " AND ";
-					}
-					existCount++;
-				}
-
-				if (column != null) {
-					// 2006/09/22 check for using case sensitve searches.
+					// 2006/09/22 check for using case sensitive searches.
 					String colName;
-					if (dbmd.caseSensitive && column.type == java.sql.Types.VARCHAR && !column.primaryKey) {
+
+					// 20151206 check for fulltextindex
+					if (column.fullTextIndex && (dbmd.getDatabaseType() == DBMetaData.SQLSERVER)) {
+						colName = column.columnLowerName;
+						colName = LB + li.table.name.toUpperCase() + (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName + RB;
+						fullTextIndex = colName;
+						colName = null;
+					} else if (dbmd.caseSensitive && column.type == java.sql.Types.VARCHAR && !column.primaryKey) {
 						colName = column.columnLowerName;
 						if (colName != null && colName.trim().length() > 0 && !colName.equalsIgnoreCase(column.columnName)) {
 							colName = colName.toUpperCase();
@@ -1241,22 +942,13 @@ public class QueryConverter {
 						}
 						colName = LB + li.table.name.toUpperCase() + (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName + RB;
 					}
-					newVar += colName;
-				} else {
-					// ignore "= null" or "!= null"
-					for (int j = 0; j < existCount; j++) {
-						newVar += ")";
+					if (s.length() > 0) {
+						s += ", ";
 					}
-					OAQueryToken t = null;
-					if (i + 1 < x) {
-						t = (OAQueryToken) vecToken.elementAt(i + 1);
-					}
-					if (t != null && t.isOperator()) {
-						i += 2;
-					}
-
-					vecLink.removeAllElements(); // so that it can not be shared with next path
-					existCount = 0;
+					s += colName;
+				}
+				if (s.indexOf(", ") > 0) {
+					s = "(" + s + ")";
 				}
 			} else if (token.type == OAQueryTokenType.QUESTION) {
 				if (params == null || paramPos >= params.length) {
@@ -1266,7 +958,358 @@ public class QueryConverter {
 					throw new RuntimeException("column not found for parameter");
 				}
 				Object param = params[paramPos++];
-				if (origColumn != column) {
+				if (origColumn != columns[columns.length - 1]) {
+					if (param instanceof OAObject) {
+						param = ((OAObject) param).getProperty(origColumn.propertyName);
+					}
+				}
+
+				// 20121013
+				if (fullTextIndex == null && bUsingPreparedStatement) {
+					s = "?";
+				} else {
+					if (bLastColumnWasInFunction || param instanceof List) {
+						bLastColumnWasInFunction = false;
+						if (param instanceof String) {
+							s = ConverterDelegate.convert(dbmd, origColumn, param);
+						} else {
+							s = ConverterDelegate.convert(dbmd, null, param);
+						}
+					} else {
+						s = ConverterDelegate.convert(dbmd, origColumn, param);
+					}
+				}
+
+				if (fullTextIndex != null) {
+					s = "CONTAINS(" + fullTextIndex + ", '" + s + "')";
+					fullTextIndex = null;
+				}
+			} else if (token.type == OAQueryTokenType.STRINGSQ || token.type == OAQueryTokenType.STRINGDQ) {
+				if (columns == null || columns.length == 0) {
+					throw new RuntimeException("column not found for parameter");
+				}
+				s = ConverterDelegate.convert(dbmd, columns[0], token.value);
+				if (fullTextIndex != null) {
+					s = "CONTAINS(" + fullTextIndex + ", '" + s + "')";
+					fullTextIndex = null;
+				}
+			} else if (token.type == OAQueryTokenType.NUMBER) {
+				if (columns == null || columns.length == 0) {
+					throw new RuntimeException("column not found for parameter");
+				}
+				s = ConverterDelegate.convert(dbmd, columns[0], token.value);
+				if (fullTextIndex != null) {
+					s = "CONTAINS(" + fullTextIndex + ", '" + s + "')";
+					fullTextIndex = null;
+				}
+			} else if (token.type == OAQueryTokenType.FUNCTIONBEGIN) {
+				bLastColumnWasInFunction = true;
+				s = token.value;
+			} else if (token.type == OAQueryTokenType.LIKE) {
+				s = dbmd.getLikeKeyword();
+				if (OAString.isEmpty(s)) {
+					s = token.value;
+				}
+			} else if (token.type == OAQueryTokenType.NOTLIKE) {
+				s = dbmd.getLikeKeyword();
+				if (OAString.isEmpty(s)) {
+					s = token.value;
+				} else {
+					s = "not " + s;
+				}
+			} else if (token.type == OAQueryTokenType.TRUE) {
+				if (dbmd.objectTrue != null) {
+					s = "" + dbmd.objectTrue;
+				}
+			} else if (token.type == OAQueryTokenType.FALSE) {
+				if (dbmd.objectFalse != null) {
+					s = "" + dbmd.objectFalse;
+				}
+			} else {
+				s = token.value;
+				if (fullTextIndex != null) {
+					s = null;
+				}
+			}
+
+			if (s != null && s.length() > 0) {
+				if (where.length() > 0) {
+					where += " ";
+				}
+				where += s;
+			}
+		}
+		if (where.indexOf(" NULL") >= 0) {
+			where = OAString.convert(where, " = NULL", " IS NULL");
+			where = OAString.convert(where, " != NULL", " IS NOT NULL");
+			where = OAString.convert(where, " <> NULL", " IS NOT NULL");
+		}
+		return where;
+	}
+
+	protected String parseWhereUseExist(Class clazz, String whereClause, Object[] params, boolean bUsingPreparedStatement) {
+		OAQueryTokenizer qa = new OAQueryTokenizer();
+		Vector vecToken = qa.convertToTokens(whereClause);
+		cleanTokens(vecToken, params);
+
+		int existCount = 0;
+		Vector vecLink = new Vector(5, 5);
+		Vector vecPreLink = null;
+
+		String where = "";
+		OAQueryToken holdToken = null;
+		Column[] columns = null;
+		Column origColumn = null;
+		int paramPos = 0;
+
+		int x = vecToken.size();
+		boolean bLastColumnWasInFunction = false; // 20121120
+		for (int i = 0; i < x; i++) {
+			OAQueryToken token = (OAQueryToken) vecToken.elementAt(i);
+
+			OAQueryToken tokenNext;
+			if (i + 1 != x) {
+				tokenNext = (OAQueryToken) vecToken.elementAt(i + 1);
+			} else {
+				tokenNext = null;
+			}
+
+			String newVar = "";
+
+			if (token.type == OAQueryTokenType.VARIABLE && tokenNext != null && tokenNext.type == OAQueryTokenType.FUNCTIONBEGIN) {
+				//20090608 todo, have Datasource convert function name to correct name for the database that is being used.
+				newVar = token.value;
+				if (holdToken != null) {
+					newVar = holdToken.value + " " + newVar;
+					holdToken = null;
+				}
+			} else if (token.type == OAQueryTokenType.VARIABLE) {
+				vecPreLink = (Vector) vecLink.clone();
+				vecLink.removeAllElements();
+
+				columns = parseLink(vecLink, token.value); // populates vecLink with Linkinfos to match path
+
+				int columnPos = -1;
+				for (Column column : columns) {
+					columnPos++;
+					origColumn = column;
+					int xx = vecLink.size();
+
+					// if a pkey column is being used, see if fkey can be used instead
+					if (xx > 1 && column != null && column.primaryKey && columns.length == 1) {
+						Linkinfo li = (Linkinfo) vecLink.elementAt(xx - 1);
+						if (!li.bMany) {
+							// use fkey from previous Linkinfo
+							column = li.linkFromParent.fkeys[0];
+							li = (Linkinfo) vecLink.elementAt(xx - 2);
+							xx--;
+							vecLink.removeElementAt(xx);
+						}
+					}
+
+					// see if path is same as prev path
+					if (vecPreLink != null && columnPos == 0) {
+						int xxx = vecPreLink.size();
+						if (xxx > 0 && xxx <= xx && column != null) {
+							for (int j = 0; j < xxx; j++) {
+								if (vecPreLink.elementAt(j) != vecLink.elementAt(j)) {
+									vecPreLink = null;
+									break;
+								}
+							}
+							for (int j = xxx; vecPreLink != null && j < xx; j++) {
+								Linkinfo li = (Linkinfo) vecLink.elementAt(j);
+								if (!li.bMany) {
+									vecPreLink = null; // cant add JOINS to previous statement, only EXISTS
+								}
+							}
+						} else {
+							vecPreLink = null;
+						}
+					}
+
+					if (vecPreLink == null && columnPos == 0) {
+						// close previous
+						for (int j = 0; j < existCount; j++) {
+							where += ")";
+						}
+						existCount = 0;
+					}
+
+					if (holdToken != null) {
+						if (where.length() > 0) {
+							where += " ";
+						}
+						where += holdToken.value;
+						holdToken = null;
+					}
+
+					// set up variable name
+					Linkinfo li = ((xx == 0) ? root : (Linkinfo) vecLink.elementAt(0));
+
+					// check for MANY relationships within property path
+					Linkinfo prev;
+					Linkinfo liMany = null;
+					String exists = "";
+					for (int ii = 1; ii < xx; ii++) {
+						prev = li;
+						li = (Linkinfo) vecLink.elementAt(ii);
+						if (!li.bMany) {
+							li.bUsed = true;
+							if (li.base != null) {
+								li.base.bUsed = true;
+							}
+
+							if (bUsingOR && ii == 1) {
+								bUseLeftJoin = true;
+							}
+							continue;
+						}
+						if (vecPreLink != null) {
+							if (ii < vecPreLink.size() && (li == (Linkinfo) vecPreLink.elementAt(ii))) {
+								continue; // exists/joins already built from last vecLink
+							}
+						}
+
+						// Many
+						if (liMany != null) {
+							// need to include JOINs for any ONE relationships that might have been in path
+							extraWhere = ""; // built by getJoins for Oracle
+							boolean bHold = bUseLeftJoin;
+							bUseLeftJoin = false;
+							newVar += "EXISTS (SELECT * FROM " + getJoins(vecLink, liMany, prev) + " WHERE " + exists + " AND ";
+							bUseLeftJoin = bHold;
+							if (extraWhere != null && extraWhere.length() > 0) {
+								newVar += extraWhere + " AND ";
+							}
+							existCount++;
+						}
+
+						for (int ix = 0; ix < li.linkFromParent.fkeys.length; ix++) {
+							if (ix > 0) {
+								exists += " AND ";
+							}
+							exists = LB + prev.table.name.toUpperCase() + (prev.number > 0 ? prev.number + "" : "") + RB;
+							exists += ".";
+							exists += LB + li.linkFromParent.fkeys[ix].columnName + RB;
+
+							exists += " = ";
+
+							Linkinfo lix = (li.base == null) ? li : li.base; // base link is the "real" link to the parent link
+							exists += LB + lix.table.name.toUpperCase() + (lix.number > 0 ? li.number + "" : "") + RB;
+							exists += ".";
+							exists += LB + lix.linkToParent.fkeys[ix].columnName + RB;
+						}
+
+						liMany = li;
+					}
+
+					if (liMany != null) {
+						if (column == null) {
+							// ex: orders.orderItems = null
+							//     orders.orderItems != null
+							// need to look ahead
+
+							OAQueryToken t = null;
+							if (i + 1 < x) {
+								t = (OAQueryToken) vecToken.elementAt(i + 1);
+							}
+							if (t != null && t.type == OAQueryTokenType.EQUAL) {
+								newVar += "NOT ";
+								vecLink.removeAllElements(); // so that it can not be shared with next path
+							}
+						}
+						extraWhere = ""; // built by getJoins for Oracle
+						boolean bHold = bUseLeftJoin;
+						bUseLeftJoin = false;
+						newVar += "EXISTS (SELECT * FROM " + getJoins(vecLink, liMany, null) + " WHERE " + exists;
+						bUseLeftJoin = bHold;
+						if (extraWhere != null && extraWhere.length() > 0) {
+							newVar += " AND " + extraWhere;
+						}
+						if (column != null) {
+							newVar += " AND ";
+						}
+						existCount++;
+					}
+
+					if (column != null) {
+						// 2006/09/22 check for using case sensitve searches.
+						String colName;
+						if (dbmd.caseSensitive && column.type == java.sql.Types.VARCHAR && !column.primaryKey) {
+							colName = column.columnLowerName;
+							if (colName != null && colName.trim().length() > 0 && !colName.equalsIgnoreCase(column.columnName)) {
+								colName = colName.toUpperCase();
+								colName = LB + li.table.name.toUpperCase() + (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName
+										+ RB;
+							} else {
+								colName = column.columnName.toUpperCase();
+								colName = LB + li.table.name.toUpperCase() + (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName
+										+ RB;
+								colName = dbmd.lowerCaseFunction + "(" + colName + ")";
+							}
+
+							// need to make search string is lower case
+							if (i + 1 < x) {
+								OAQueryToken t = (OAQueryToken) vecToken.elementAt(i + 1);
+								if (t.isOperator()) {
+									// find next var and make lowercase  2006/09/22
+									for (int j = i + 2; j < x; j++) {
+										t = (OAQueryToken) vecToken.elementAt(j);
+										if (t.type == OAQueryTokenType.STRINGSQ || t.type == OAQueryTokenType.STRINGDQ) {
+											t.value = t.value.toLowerCase();
+											break;
+										}
+										if (t.type == OAQueryTokenType.QUESTION) {
+											if (params != null && paramPos < params.length && params[paramPos] instanceof String) {
+												params[paramPos] = ((String) params[paramPos]).toLowerCase();
+											}
+											break;
+										}
+									}
+								}
+							}
+						} else {
+							colName = column.columnName;
+							if (colName != null) {
+								colName = colName.toUpperCase();
+							}
+							colName = LB + li.table.name.toUpperCase() + (li.number > 0 ? li.number + "" : "") + RB + "." + LB + colName
+									+ RB;
+						}
+						if (newVar.length() > 0 && columnPos > 0) {
+							newVar += ", ";
+						}
+						newVar += colName;
+					} else {
+						// ignore "= null" or "!= null"
+						for (int j = 0; j < existCount; j++) {
+							newVar += ")";
+						}
+						OAQueryToken t = null;
+						if (i + 1 < x) {
+							t = (OAQueryToken) vecToken.elementAt(i + 1);
+						}
+						if (t != null && t.isOperator()) {
+							i += 2;
+						}
+
+						vecLink.removeAllElements(); // so that it can not be shared with next path
+						existCount = 0;
+					}
+				}
+				if (columns.length > 1) {
+					newVar = "(" + newVar + ")";
+				}
+			} else if (token.type == OAQueryTokenType.QUESTION) {
+				if (params == null || paramPos >= params.length) {
+					throw new RuntimeException("wrong number of params in query");
+				}
+				if (origColumn == null) {
+					throw new RuntimeException("column not found for parameter");
+				}
+				Object param = params[paramPos++];
+				if (origColumn != columns[0] && columns.length == 1) {
 					if (param instanceof OAObject) {
 						param = ((OAObject) param).getProperty(origColumn.propertyName);
 						params[paramPos - 1] = param;
@@ -1277,7 +1320,7 @@ public class QueryConverter {
 				if (bUsingPreparedStatement) {
 					newVar = "?";
 				} else {
-					if (bLastColumnWasInFunction) {
+					if (bLastColumnWasInFunction || param instanceof List) {
 						bLastColumnWasInFunction = false;
 						if (param instanceof String) {
 							newVar = ConverterDelegate.convert(dbmd, origColumn, param);
@@ -1289,15 +1332,15 @@ public class QueryConverter {
 					}
 				}
 			} else if (token.type == OAQueryTokenType.STRINGSQ || token.type == OAQueryTokenType.STRINGDQ) {
-				if (column == null) {
+				if (columns == null || columns.length == 0) {
 					throw new RuntimeException("column not found for parameter");
 				}
-				newVar = ConverterDelegate.convert(dbmd, column, token.value);
+				newVar = ConverterDelegate.convert(dbmd, columns[0], token.value);
 			} else if (token.type == OAQueryTokenType.NUMBER) {
-				if (column == null) {
+				if (columns == null || columns.length == 0) {
 					throw new RuntimeException("column not found for parameter");
 				}
-				newVar = ConverterDelegate.convert(dbmd, column, token.value);
+				newVar = ConverterDelegate.convert(dbmd, columns[0], token.value);
 			} else if (token.type == OAQueryTokenType.FUNCTIONBEGIN) {
 				bLastColumnWasInFunction = true;
 				newVar = token.value;
@@ -1373,7 +1416,7 @@ public class QueryConverter {
 	}
 
 	/** @param vec list of Linkinfos to find property. */
-	protected Column parseLink(Vector vec, String line) {
+	protected Column[] parseLink(Vector vec, String line) {
 		StringTokenizer st = new StringTokenizer(line, ".", true);
 
 		Linkinfo linkinfo = root;
@@ -1394,13 +1437,13 @@ public class QueryConverter {
 			if (!st.hasMoreElements()) {
 				Column c = linkinfo.findColumn(vec, s);
 				if (c != null) {
-					return c;
+					return new Column[] { c };
 				}
 			}
 
 			linkinfo = linkinfo.findLink(vec, s);
 			if (linkinfo == null) {
-				throw new RuntimeException("QueryConverter.parseLink() cant find link for \"" + s + "\"");
+				throw new RuntimeException("QueryConverter.parseLink() cant find link for \"" + s + "\", parse line=" + line);
 			}
 
 			if (!st.hasMoreElements()) {
@@ -1412,7 +1455,7 @@ public class QueryConverter {
 
 				// ex: hubEmp.select("dept = null") ->  "emp.dept.id = NULL"
 				Column[] pcols = linkinfo.table.getPrimaryKeyColumns();
-				return pcols[0];
+				return pcols;
 			}
 		}
 	}
@@ -1878,7 +1921,6 @@ public class QueryConverter {
 					return li;
 				}
 			}
-
 			return null; // not found
 		}
 
@@ -1948,23 +1990,6 @@ public class QueryConverter {
 				links[i].linkToParent = tabLinks[i].getReverseLink();
 			}
 		}
-
 	}
 
 }
-
-/**
- * Testing from VP: // OASelect sel = new OASelect(Exam.class, "examItems.id = null", ""); // FROM (EXAM LEFT OUTER JOIN EXAMITEM EXAMITEM9
- * ON EXAM.ID = EXAMITEM9.EXAMID) WHERE ( EXAMITEM9.ID IS NULL AND EXAMITEM9.ID IS NOT NULL ) // OASelect sel = new OASelect(Exam.class,
- * "examItems.id != null", ""); // FROM (EXAM LEFT OUTER JOIN EXAMITEM EXAMITEM9 ON EXAM.ID = EXAMITEM9.EXAMID) WHERE EXAMITEM9.ID IS NOT
- * NULL // OASelect sel = new OASelect(Exam.class, "examItems != null", ""); // FROM (EXAM LEFT OUTER JOIN EXAMITEM EXAMITEM9 ON EXAM.ID =
- * EXAMITEM9.EXAMID) WHERE EXAMITEM9.ID IS NOT NULL // OASelect sel = new OASelect(Exam.class, "examItems = null", ""); // FROM (EXAM LEFT
- * OUTER JOIN EXAMITEM EXAMITEM9 ON EXAM.ID = EXAMITEM9.EXAMID) WHERE EXAMITEM9.ID IS NULL // OASelect sel = new OASelect(Exam.class,
- * "examItems.item.id != null", ""); // FROM (EXAM LEFT OUTER JOIN EXAMITEM EXAMITEM9 ON EXAM.ID = EXAMITEM9.EXAMID) WHERE EXAMITEM9.ITEMID
- * IS NOT NULL //OASelect sel = new OASelect(Exam.class, "examItems.item != null", ""); // FROM (EXAM LEFT OUTER JOIN EXAMITEM EXAMITEM9 ON
- * EXAM.ID = EXAMITEM9.EXAMID) WHERE EXAMITEM9.ITEMID IS NOT NULL // OASelect sel = new OASelect(Exam.class, "examItems.item.name != null",
- * ""); // FROM ((EXAM LEFT OUTER JOIN EXAMITEM EXAMITEM9 ON EXAM.ID = EXAMITEM9.EXAMID) LEFT OUTER JOIN ITEM ITEM14 ON EXAMITEM9.ITEMID =
- * ITEM14.ID) WHERE ITEM14.NAME IS NOT NULL OASelect sel = new OASelect(Exam.class, "examItems.item.name == null", ""); // FROM ((EXAM LEFT
- * OUTER JOIN EXAMITEM EXAMITEM9 ON EXAM.ID = EXAMITEM9.EXAMID) LEFT OUTER JOIN ITEM ITEM14 ON EXAMITEM9.ITEMID = ITEM14.ID) WHERE (
- * ITEM14.NAME IS NULL AND EXAMITEM9.ITEMID IS NOT NULL ) sel.select();
- */
