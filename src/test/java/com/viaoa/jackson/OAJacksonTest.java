@@ -62,7 +62,7 @@ public class OAJacksonTest extends OAUnitTest {
 		MessageSource ms = new MessageSource();
 		ms.setId(3);
 
-		ms.getMessageTypes().add(new MessageType());
+		//qqqqq		ms.getMessageTypes().add(new MessageType());
 
 		MessageTypeRecord mtr = new MessageTypeRecord();
 		ms.getMessageTypeRecords().add(mtr);
@@ -75,6 +75,8 @@ public class OAJacksonTest extends OAUnitTest {
 		OAObjectCacheDelegate.resetCache();
 
 		MessageSource ms2 = oaj.readObject(json, MessageSource.class, false);
+
+		assertEquals(ms2, ms2.getMessageTypeRecords().getAt(0).getMessageSource());
 
 		String json2 = oaj.write(ms2);
 		assertEquals(json, json2);

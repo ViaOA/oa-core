@@ -290,7 +290,7 @@ public class OAObjectKeyDelegate {
 		public static OAObjectKey convertToObjectKey(OAObjectInfo oi, Object value) {
 	    if (oi == null || value == null) return null;
 	    if (value instanceof OAObjectKey) return (OAObjectKey) value;
-	
+
 	    String[] ids = oi.idProperties;
 	    if (ids != null && ids.length > 0) {
 	        Class c = OAObjectInfoDelegate.getPropertyClass(oi, ids[0]);

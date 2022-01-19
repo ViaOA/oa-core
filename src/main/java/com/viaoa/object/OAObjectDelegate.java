@@ -98,7 +98,9 @@ public class OAObjectDelegate {
 
 		boolean bInitializeWithCS = !oi.getLocalOnly() && OASync.isClient(oaObj.getClass());
 
-		initialize(oaObj, oi, oi.getInitializeNewObjects(), bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
+		// 20210116
+		initialize(oaObj, oi, false, bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
+		// was: initialize(oaObj, oi, oi.getInitializeNewObjects(), bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
 	}
 
 	/**
@@ -357,7 +359,8 @@ public class OAObjectDelegate {
 				if (OAObjectDelegate.getAutoAdd(oaObj)) {
 					OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
 					if (oi != null && oi.getUseDataSource()) {
-						LOG.fine("object was not saved, object=" + oaObj.getClass().getName() + ", key=" + OAObjectKeyDelegate.getKey(oaObj)
+						LOG.finer("object was not saved, object=" + oaObj.getClass().getName() + ", key="
+								+ OAObjectKeyDelegate.getKey(oaObj)
 								+ ", willSaveNow=" + bFinalizeSave);
 						if (bFinalizeSave) {
 							try {

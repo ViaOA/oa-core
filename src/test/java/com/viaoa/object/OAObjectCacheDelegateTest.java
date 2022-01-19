@@ -4,6 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
@@ -159,8 +162,9 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 			}
 		};
 
+		assertEquals(0, cnt1);
 		OAObjectCacheDelegate.callback(cb);
-		assertEquals(2, cnt1);
+		assertEquals(1, cnt1);
 	}
 
 	@Test
@@ -237,38 +241,38 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 		dsAuto.close();
 	}
 
-	private boolean bStop;
-
 	@Test
 	public void concurrentTest() {
 		reset();
+
+		final CountDownLatch cdLatch = new CountDownLatch(10);
+
 		for (int i = 0; i < 10; i++) {
-			Thread t = new TestThread(i + 1);
+			Thread t = new TestThread(i + 1, cdLatch);
 			t.start();
 		}
-		for (int i = 0; i < 3; i++) {
-			try {
-				Thread.sleep(1000);
-			} catch (Exception e) {
-				// TODO: handle exception
-			}
+		try {
+			cdLatch.await(10, TimeUnit.SECONDS);
+		} catch (Exception e) {
 		}
-		bStop = true;
 	}
 
 	class TestThread extends Thread {
 		int id;
+		CountDownLatch cdLatch;
 
-		public TestThread(int id) {
+		public TestThread(int id, CountDownLatch cdLatch) {
+			this.cdLatch = cdLatch;
 			this.id = id;
 		}
 
 		public void run() {
-			int max = 1500;
+			int max = 150;
 			int rootId = id * max;
-			for (int i = 0; i < max && !bStop; i++) {
+			for (int i = 0; i < max; i++) {
 				test(rootId + i);
 			}
+			cdLatch.countDown();
 		}
 	}
 
@@ -334,7 +338,7 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 		server.setId(7777);
 
 		// wont find new key, but will find it using guid
-		serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey()); 
+		serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey());
 		assertEquals(serverx, server);
 
 		OAObjectKey ok = new OAObjectKey(null, server.getObjectKey().getGuid(), server.getObjectKey().isNew());

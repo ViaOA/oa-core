@@ -178,9 +178,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			}
 
 			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(li, bIncludeOwned, alPropertyPaths)) {
-				//qqqqq add to stackLinkinfo
 				try {
-
 					stackLinkInfo.push(li);
 
 					Hub hub = (Hub) li.getValue(oaObj);
@@ -189,7 +187,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
 					for (OAObject objx : (Hub<OAObject>) li.getValue(oaObj)) {
 
-						//qqqqqqqqqqqqqqqqqqqq check cascade to see if its been sent ...if so, then only output key (/guid)
+						// check cascade to see if its been sent ...if so, then only output key (/guid)
 						// note:  deserializer needs to check array values for object, string, number to "know" how to get it
 
 						if (oaj != null && !oaj.getCascade().wasCascaded(objx, true)) {

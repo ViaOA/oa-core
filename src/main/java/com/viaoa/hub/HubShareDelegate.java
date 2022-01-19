@@ -459,7 +459,7 @@ public class HubShareDelegate {
 		HubEventDelegate.clearGetAllListenerCache(thisHub);
 
 		// 20211125 if thisHub is linked & AO != null, and sharedHub is recursive, might need to adjust thisHub
-		if (thisHub.getAO() == null) {
+		if (sharedMasterHub != null && thisHub.getAO() == null) {
 			final Hub hx = thisHub.getLinkHub(true);
 			if (hx != null) {
 				if (sharedMasterHub.getOAObjectInfo().getRecursiveLinkInfo(OALinkInfo.ONE) != null) {

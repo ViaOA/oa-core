@@ -121,10 +121,10 @@ public class OAObjectTest extends OAUnitTest {
 
 		try {
 			serv.setId(1);
-			fail();
 		} catch (Exception e) {
+			fail("id can be changed, if datasource.getAllowIdChange() is true (default)"); // RDBMS datasources will be false
 		}
-		assertEquals(server.getId(), 2); // use Id=2
+		assertEquals(server.getId(), 1);
 
 		// action: this will auto assign Id
 		getDataSource();
@@ -139,7 +139,7 @@ public class OAObjectTest extends OAUnitTest {
 
 		assertEquals(0, server2.getId());
 		server2.save();
-		assertEquals(1, server2.getId());
+		assertEquals(2, server2.getId());
 
 		server2 = new Server();
 		gidNext++;
@@ -402,10 +402,10 @@ public class OAObjectTest extends OAUnitTest {
 		reset();
 	}
 
-	//qqqqqqq create these    
-	//qqqqqqqq OAObjectCacheDelegate 
+	//qqqqqqq create these
+	//qqqqqqqq OAObjectCacheDelegate
 	//  finder
-	// datasource tests 
+	// datasource tests
 	// order of finding registered one
 
 	@Test
@@ -413,7 +413,7 @@ public class OAObjectTest extends OAUnitTest {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Server.class);
 		String[] ps = oi.getPrimitiveProperties();
 
-		//qqq links, etc        
+		//qqq links, etc
 	}
 
 	@Test
@@ -421,6 +421,6 @@ public class OAObjectTest extends OAUnitTest {
 
 	}
 
-	//qqqqqqq  OAThreadLocalDelegate tests    
+	//qqqqqqq  OAThreadLocalDelegate tests
 
 }

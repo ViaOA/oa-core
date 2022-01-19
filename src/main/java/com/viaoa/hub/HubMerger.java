@@ -187,6 +187,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 		bServerSideOnly = b;
 	}
 
+	private HubListener hlCombinedNoOp;
+
 	private void init(Hub hubRoot, Hub hubCombinedObjects, String propertyPath, boolean bShareActiveObject, String selectOrder,
 			boolean bUseAll, boolean bIncludeRootHub) {
 
@@ -198,9 +200,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 		this.bIncludeRootHub = bIncludeRootHub;
 
 		if (hubCombined != null) {
-			hubCombined.addHubListener(new HubListenerAdapter(this, "HubMerger", "hubMerger, hubRoot=" + hubRoot + ", pp=" + propertyPath) {
-				// no op, just want to know that hubCombined uses a HubMerger
-			});
+			hlCombinedNoOp = new HubListenerAdapter(this, "HubMerger", "hubMerger, hubRoot=" + hubRoot + ", pp=" + propertyPath) {
+				// no-op, just want to know that hubCombined uses a HubMerger
+			};
+			hubCombined.addHubListener(hlCombinedNoOp);
 		}
 
 		long ts = System.currentTimeMillis();
@@ -617,6 +620,11 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 		bIgnoreIsUsedFlag = false;
 		nodeRoot = null;
 		dataRoot = null;
+
+		if (hlCombinedNoOp != null && hubCombined != null) {
+			hubCombined.removeHubListener(hlCombinedNoOp);
+			hlCombinedNoOp = null;
+		}
 	}
 
 	protected void finalize() throws Throwable {
@@ -1757,7 +1765,9 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
 		public void _onNewList2() {
 			if (!bShareEndHub) {
-				if (hubCombined != null) hubCombined.clear();
+				if (hubCombined != null) {
+					hubCombined.clear();
+				}
 			}
 			try {
 				_onNewList3();

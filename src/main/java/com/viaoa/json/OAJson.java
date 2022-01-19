@@ -180,7 +180,7 @@ public class OAJson {
 			}
 
 			if (OAObject.class.isAssignableFrom(clazz)) {
-				obj = (T) om.readValue(json, OAObject.class);
+				obj = (T) om.readValue(json, OAObject.class); // will call OAJacksonDeserializer
 			} else {
 				obj = (T) om.readValue(json, clazz);
 			}

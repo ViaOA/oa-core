@@ -16,6 +16,7 @@ import com.viaoa.json.OAJson;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
+import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
@@ -45,7 +46,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 
-		OAObject obj = getObject(oi, node);
+		OAObject obj = this.getObject(oi, node);
 
 		return obj;
 	}
@@ -82,6 +83,10 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 					}
 					objNew.setProperty(pi.getName(), alKeys.get(i++));
 				}
+
+				if (OAThreadLocalDelegate.isLoading()) {
+					OAObjectDelegate.initializeAfterLoading((OAObject) objNew, false, false);
+				}
 			}
 		}
 
@@ -113,15 +118,10 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				continue;
 			}
 
-			//qqqqqqqqq check property to see if it's an ObjectKey (not loaded)
 			JsonNode nodex = node.get(li.getLowerName());
-
-			//qqqqqqq test between having a null value, vs not sent (blank) qqqqqqqqq
 
 			if (nodex != null) {
 				OAObject objx = getLinkObject(objNew, li, nodex);
-
-				//qqqqqqqqqqqq need to take into account if only objKey is loaded
 
 				objNew.setProperty(li.getName(), objx);
 			}
@@ -248,9 +248,9 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 					if (objx instanceof OAObjectKey) {
 						OAObjectPropertyDelegate.setPropertyCAS(fromObject, li.getName(), ok, objx);
 					} else if (objx instanceof OAObject) {
-						//qqqq need to get and replace, since it's loaded
+						// need to get and replace, since it's loaded
 					} else if (objx == null) {
-						//qqqq need to get and replace, since it could be loaded
+						//  need to get and replace, since it could be loaded
 					}
 
 					// get from DS

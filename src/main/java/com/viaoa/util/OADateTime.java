@@ -2125,4 +2125,46 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			}
 		}
 	}
+
+	public final static int SUNDAY = 1;
+	public final static int SUN = 1;
+	public final static int MONDAY = 2;
+	public final static int MON = 2;
+	public final static int TUESDAY = 3;
+	public final static int TUES = 3;
+	public final static int TUE = 3;
+	public final static int WEDNESDAY = 4;
+	public final static int WED = 4;
+	public final static int THURSDAY = 5;
+	public final static int THURS = 5;
+	public final static int THU = 5;
+	public final static int FRIDAY = 6;
+	public final static int FRI = 6;
+	public final static int SATURDAY = 7;
+	public final static int SAT = 7;
+
+	public final static int JANUARY = 0;
+	public final static int JAN = 0;
+	public final static int FEBRUARY = 1;
+	public final static int FEB = 1;
+	public final static int MARCH = 2;
+	public final static int MAR = 2;
+	public final static int APRIL = 3;
+	public final static int APR = 3;
+	public final static int MAY = 4;
+	public final static int JUNE = 5;
+	public final static int JUN = 5;
+	public final static int JULY = 6;
+	public final static int JUL = 6;
+	public final static int AUGUST = 7;
+	public final static int AUG = 7;
+	public final static int SEPTEMBER = 8;
+	public final static int SEPT = 8;
+	public final static int SEP = 8;
+	public final static int OCTOBER = 9;
+	public final static int OCT = 9;
+	public final static int NOVEMBER = 10;
+	public final static int NOV = 10;
+	public final static int DECEMBER = 11;
+	public final static int DEC = 11;
 }

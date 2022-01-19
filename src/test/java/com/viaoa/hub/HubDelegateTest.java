@@ -21,7 +21,7 @@ public class HubDelegateTest extends OAUnitTest {
 
 		HubDelegate.HubCurrentStateEnum hcs = HubDelegate.getCurrentState(hubLocation, null, null);
 
-		assertEquals(HubDelegate.HubCurrentStateEnum.DetailDisconectedFromMaster, hcs);
+		assertEquals(HubDelegate.HubCurrentStateEnum.InSync, hcs);
 
 		Program prog = new Program();
 		hubProgram.add(prog);
@@ -33,7 +33,7 @@ public class HubDelegateTest extends OAUnitTest {
 		hubProgram.setPos(-1);
 
 		hcs = HubDelegate.getCurrentState(hubLocation, null, null);
-		assertEquals(HubDelegate.HubCurrentStateEnum.DetailDisconectedFromMaster, hcs);
+		assertEquals(HubDelegate.HubCurrentStateEnum.InSync, hcs);
 
 		hubProgram.setPos(0);
 		hcs = HubDelegate.getCurrentState(hubLocation, null, null);
@@ -92,7 +92,7 @@ public class HubDelegateTest extends OAUnitTest {
 		HubMerger<Location, Employee> hm = new HubMerger<>(hubLocation, hubEmployee, "employees", true);
 
 		HubDelegate.HubCurrentStateEnum hcs = HubDelegate.getCurrentState(hubLocation, null, null);
-		assertEquals(HubDelegate.HubCurrentStateEnum.DetailDisconectedFromMaster, hcs);
+		assertEquals(HubDelegate.HubCurrentStateEnum.InSync, hcs);
 
 		Program prog = new Program();
 		hubProgram.add(prog);

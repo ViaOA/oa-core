@@ -64,8 +64,8 @@ public class OASyncClientTest extends OAUnitTest {
 	private static ServerRoot serverRoot;
 	private static OASyncClient syncClient;
 
-	private final int maxThreads = 7;
-	private final int testSeconds = 30;
+	private final int maxThreads = 3; // 7;
+	private final int testSeconds = 10; // 30;
 
 	private RemoteTsamInterface remoteTsam;
 	private RemoteAppInterface remoteApp;
@@ -199,7 +199,7 @@ public class OASyncClientTest extends OAUnitTest {
 
 	/**
 	 * Run basic tests with oasyncservertest
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	@Test
@@ -342,7 +342,7 @@ public class OASyncClientTest extends OAUnitTest {
 
 		System.out.println("Starting tests " + (new OATime()).toString("hh:mm:ss.S") + ", for " + testSeconds + " seconds");
 
-		// send message 
+		// send message
 		remoteBroadcast.startTest();
 
 		testMain(testSeconds);
@@ -464,7 +464,7 @@ public class OASyncClientTest extends OAUnitTest {
 			Server server = hubServer.getAt((int) (x * Math.random()));
 			String s1 = server.getName();
 			server.setName(s);
-			//System.out.println(cnt+") server.id="+server.getId()+" old="+s1+", new="+s);            
+			//System.out.println(cnt+") server.id="+server.getId()+" old="+s1+", new="+s);
 
 			Hub<Application> hubApplication = server.getApplications();
 			x = hubApplication.getSize();
@@ -772,12 +772,12 @@ public class OASyncClientTest extends OAUnitTest {
 		OASyncClientTest test = new OASyncClientTest();
 
 		/*
-		test.setup();        
+		test.setup();
 		test.testA();
 		*/
 
 		//        test.runLocalClientTest();
-		//test.tsamTest();        
+		//test.tsamTest();
 		test.test2();
 
 		System.out.println("DONE running test, exiting program");
