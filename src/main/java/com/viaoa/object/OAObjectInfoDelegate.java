@@ -66,17 +66,28 @@ public class OAObjectInfoDelegate {
 
 	private static OAObjectInfo getOAObjectInfo(Class clazz, HashMap<Class, OAObjectInfo> hash) {
 		OAObjectInfo oi;
+		boolean bNotOa = false;
 		if (clazz == null || !OAObject.class.isAssignableFrom(clazz) || OAObject.class.equals(clazz)) {
-			oi = hash.get(String.class); // fake out so that null is never returned
-		} else {
-			oi = hash.get(clazz);
+			bNotOa = true;
+			clazz = String.class;
 		}
+		oi = hash.get(clazz);
+		if (oi != null) {
+			return oi;
+		}
+
+		// 20220124
+		oi = OAObjectHashDelegate.hashObjectInfo.get(clazz);
 		if (oi != null) {
 			return oi;
 		}
 
 		oi = _getOAObjectInfo(clazz);
 		hash.put(clazz, oi);
+
+		if (bNotOa) {
+			return oi;
+		}
 
 		// must be ran after oi is created and stored (in hash), since it will create propPaths, which will load other ObjectInfos
 		OAAnnotationDelegate.update2(oi, clazz);

@@ -110,7 +110,7 @@ public class HubEventDelegate {
 
 		// 20160304
 		if (obj instanceof OAObject && !((OAObject) obj).isLoading()) {
-			OAObject objx = thisHub.getMasterObject();
+			OAObject objx = thisHub.datam.getMasterObject();
 			if (objx != null) {
 				String s = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
 				if (s != null) {
@@ -190,17 +190,19 @@ public class HubEventDelegate {
 		}
 		//fireMasterObjectChangeEvent(thisHub, true);
 
-		// 20160304
-		OAObject objx = thisHub.getMasterObject();
+		// 20160304 created
+		// 20220124 might be a filtered hub
+		final OAObject objx = thisHub.datam.getMasterObject();
+		// was: final OAObject objx = thisHub.getMasterObject();
 		if (objx != null) {
-			String s = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
+			final String s = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
 			if (s != null) {
 				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(objx.getClass());
 				if (oi.getHasTriggers()) {
 					final HubEvent hubEvent = new HubEvent(thisHub);
 					try {
 						OAThreadLocalDelegate.addHubEvent(hubEvent);
-						oi.onChange(thisHub.getMasterObject(), s, hubEvent);
+						oi.onChange(objx, s, hubEvent);
 					} finally {
 						OAThreadLocalDelegate.removeHubEvent(hubEvent);
 					}
@@ -281,7 +283,7 @@ public class HubEventDelegate {
 
 		// 20160304
 		if (obj instanceof OAObject) {
-			OAObject objx = thisHub.getMasterObject();
+			OAObject objx = thisHub.datam.getMasterObject();
 			if (objx != null) {
 				String s = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
 				if (s != null) {
@@ -372,7 +374,7 @@ public class HubEventDelegate {
 
 		// 20160304
 		if (obj instanceof OAObject) {
-			OAObject objx = thisHub.getMasterObject();
+			OAObject objx = thisHub.datam.getMasterObject();
 			if (objx != null) {
 				String s = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
 				if (s != null) {

@@ -751,7 +751,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 
 	/** HubListener interface method, used to update filter. */
 	public void initialize() {
-		Hub<T> hub = getHub();
+		final Hub<T> hub = getHub();
 		if (hub == null || bClosed) {
 			return;
 		}
@@ -769,7 +769,9 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 					aiClearing.incrementAndGet();
 					// clear needs to be called, so that each oaObj.weakHub[] will be updated correctly
 					bIgnoreSettingAO = true;
-					HubAddRemoveDelegate.clear(hub, false, false); // false:dont set AO to null,  false: send newList event
+
+					HubAddRemoveDelegate.clear(hub, false, false); // false:dont set AO to null,  false: dont send newList event
+
 					objTemp = null;
 					bIgnoreSettingAO = false;
 				} finally {
