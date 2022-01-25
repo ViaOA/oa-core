@@ -3,7 +3,6 @@ package com.viaoa.json.jackson;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Stack;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -36,8 +35,9 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 	*/
 
 	// stack of link objects from marshalling, that can be used to know the propertyPath
-	private final Stack<OALinkInfo> stackLinkInfo = new Stack<>();
+	// private final Stack<OALinkInfo> stackLinkInfo = new Stack<>();
 
+	/*
 	public String getCurrentPropertyPath() {
 		String pp = "";
 		if (stackLinkInfo != null) {
@@ -55,6 +55,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		}
 		return pp;
 	}
+	*/
 
 	@Override
 	public void serialize(OAObject value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
@@ -77,7 +78,15 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			if (!pi.getId()) {
 				continue;
 			}
+
+			String propertyName = pi.getLowerName();
 			Object objx = pi.getValue(oaObj);
+
+			if (!oaj.getUsePropertyCallback(oaObj, propertyName)) {
+				continue;
+			}
+			propertyName = oaj.getPropertyNameCallback(oaObj, propertyName);
+			objx = oaj.getPropertyValueCallback(oaObj, propertyName, objx);
 
 			if (objx == null) {
 				gen.writeNullField(pi.getLowerName());
@@ -102,8 +111,6 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		final ArrayList<String> alPropertyPaths = oaj == null ? null : oaj.getPropertyPaths();
 		final boolean bIncludeOwned = oaj == null ? true : oaj.getIncludeOwned();
 
-		getCurrentPropertyPath();
-
 		// write one references
 		for (OALinkInfo li : oi.getLinkInfos()) {
 			if (li.getType() != li.TYPE_ONE) {
@@ -117,15 +124,23 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				continue;
 			}
 
+			String propertyName = li.getLowerName();
+			if (!oaj.getUsePropertyCallback(oaObj, propertyName)) {
+				continue;
+			}
+
 			boolean bSerialized = false;
 
-			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(li, bIncludeOwned, alPropertyPaths)) {
+			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bIncludeOwned, alPropertyPaths)) {
+				propertyName = oaj.getPropertyNameCallback(oaObj, propertyName);
 				try {
-					stackLinkInfo.push(li);
+					oaj.getStackLinkInfo().push(li);
 
 					OAObject objx = (OAObject) li.getValue(oaObj);
+					objx = (OAObject) oaj.getPropertyValueCallback(oaObj, propertyName, objx);
+
 					if (objx == null) {
-						gen.writeNullField(li.getLowerName());
+						gen.writeNullField(propertyName);
 						bSerialized = true;
 					} else {
 
@@ -138,13 +153,16 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 					}
 
 				} finally {
-					stackLinkInfo.pop();
+					oaj.getStackLinkInfo().pop();
 				}
 			}
 
 			if (!bSerialized) {
 				OAObjectKey key = null;
 				Object obj = OAObjectPropertyDelegate.getProperty(oaObj, li.getName(), false, true);
+
+				obj = oaj.getPropertyValueCallback(oaObj, li.getLowerName(), obj);
+
 				if (obj instanceof OAObject) {
 					key = ((OAObject) obj).getObjectKey();
 				} else if (obj instanceof OAObjectKey) {
@@ -152,7 +170,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				}
 
 				if (key == null) {
-					gen.writeNullField(li.getLowerName());
+					gen.writeNullField(propertyName);
 				} else {
 					String id = OAJson.convertObjectKeyToJsonSinglePartId(key);
 
@@ -177,13 +195,18 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				continue;
 			}
 
-			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(li, bIncludeOwned, alPropertyPaths)) {
+			String propertyName = li.getLowerName();
+			if (!oaj.getUsePropertyCallback(oaObj, propertyName)) {
+				continue;
+			}
+
+			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bIncludeOwned, alPropertyPaths)) {
 				try {
-					stackLinkInfo.push(li);
+					oaj.getStackLinkInfo().push(li);
 
 					Hub hub = (Hub) li.getValue(oaObj);
 
-					gen.writeArrayFieldStart(li.getLowerName());
+					gen.writeArrayFieldStart(propertyName);
 
 					for (OAObject objx : (Hub<OAObject>) li.getValue(oaObj)) {
 
@@ -206,7 +229,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 					}
 
 				} finally {
-					stackLinkInfo.pop();
+					oaj.getStackLinkInfo().pop();
 					gen.writeEndArray();
 				}
 			} else {
@@ -220,7 +243,6 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				}
 
 			}
-
 		}
 
 		// todo: want to add any calcs ??
@@ -228,7 +250,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		gen.writeEndObject();
 	}
 
-	protected boolean shouldInclude(OALinkInfo li, boolean bIncludeOwned, ArrayList<String> alPropertyPaths) {
+	protected boolean shouldInclude(OAJson oaj, OALinkInfo li, boolean bIncludeOwned, ArrayList<String> alPropertyPaths) {
 		if (li == null) {
 			return false;
 		}
@@ -239,7 +261,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			return false;
 		}
 
-		String cpp = getCurrentPropertyPath();
+		String cpp = oaj.getCurrentPropertyPath();
 		if (cpp == null) {
 			return false;
 		}

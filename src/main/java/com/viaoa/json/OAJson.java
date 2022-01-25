@@ -8,9 +8,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +24,7 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.jackson.OAJacksonModule;
 import com.viaoa.object.OACascade;
+import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectInfo;
@@ -43,12 +46,15 @@ import com.viaoa.util.OAConv;
  * @author vvia
  */
 public class OAJson {
+	private static ObjectMapper objectMapper;
 
 	private final ArrayList<String> alPropertyPath = new ArrayList<>();
 	private boolean bIncludeOwned = true;
 	private boolean bIncludeAll;
 
 	private Class readObjectClass;
+
+	private Stack<OALinkInfo> stackLinkInfo;
 
 	/**
 	 * Used during reading, to be able to find refId that use guid for object key.
@@ -116,24 +122,28 @@ public class OAJson {
 	}
 
 	public static ObjectMapper createObjectMapper() {
-		ObjectMapper objectMapper;
-		objectMapper = new ObjectMapper();
-		objectMapper.registerModule(new JavaTimeModule());
-		objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		objectMapper.setSerializationInclusion(Include.NON_NULL);
+		if (objectMapper != null) {
+			return objectMapper;
+		}
+		ObjectMapper objectMapperx = new ObjectMapper();
+		objectMapperx.registerModule(new JavaTimeModule());
+		objectMapperx.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		objectMapperx.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		objectMapperx.setSerializationInclusion(Include.NON_NULL);
 		// objectMapper.setDefaultPropertyInclusion(Include.NON_DEFAULT);
 
-		objectMapper.registerModule(new OAJacksonModule());
-		objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+		objectMapperx.registerModule(new OAJacksonModule());
+		objectMapperx.enable(SerializationFeature.INDENT_OUTPUT);
 
-		return objectMapper;
+		objectMapper = objectMapperx;
+		return objectMapperx;
 	}
 
 	/**
 	 * Convert OAObject to a JSON string.
 	 */
 	public String write(Object obj) throws JsonProcessingException {
+		this.stackLinkInfo = new Stack<>();
 		this.cascade = null;
 		String json;
 		try {
@@ -149,6 +159,7 @@ public class OAJson {
 	}
 
 	public void write(Object obj, File file) throws JsonProcessingException, IOException {
+		this.stackLinkInfo = new Stack<>();
 		this.cascade = null;
 		String json;
 		try {
@@ -166,6 +177,7 @@ public class OAJson {
 	 */
 	public <T extends Object> T readObject(final String json, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException {
+		this.stackLinkInfo = new Stack<>();
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
 
@@ -202,6 +214,7 @@ public class OAJson {
 			throws JsonProcessingException, IOException {
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
+		this.stackLinkInfo = new Stack<>();
 
 		hmGuidObject = null;
 		Map<Integer, OAObject> hmGuidMap = getGuidMap();
@@ -224,6 +237,60 @@ public class OAJson {
 		return obj;
 	}
 
+	public <T extends OAObject> List<T> readList(final String json, final Class<T> clazz, final boolean bUseValidation)
+			throws JsonProcessingException, IOException {
+		this.readObjectClass = clazz;
+		ObjectMapper om = createObjectMapper();
+		this.stackLinkInfo = new Stack<>();
+		hmGuidObject = null;
+
+		List<T> list;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(true);
+			}
+
+			list = (List<T>) om.readValue(json, new TypeReference<List<T>>() {
+			});
+		} finally {
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(false);
+			}
+			OAThreadLocalDelegate.setOAJackson(null);
+			readObjectClass = null;
+		}
+
+		return list;
+	}
+
+	public <T extends OAObject> List<T> readList(final File file, final Class<T> clazz, final boolean bUseValidation)
+			throws JsonProcessingException, IOException {
+		this.readObjectClass = clazz;
+		ObjectMapper om = createObjectMapper();
+		this.stackLinkInfo = new Stack<>();
+		hmGuidObject = null;
+
+		List<T> list;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(true);
+			}
+
+			list = (List<T>) om.readValue(file, new TypeReference<List<T>>() {
+			});
+		} finally {
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(false);
+			}
+			OAThreadLocalDelegate.setOAJackson(null);
+			readObjectClass = null;
+		}
+
+		return list;
+	}
+
 	public OACascade getCascade() {
 		if (cascade == null) {
 			cascade = new OACascade();
@@ -238,6 +305,34 @@ public class OAJson {
 		return hmGuidObject;
 	}
 
+	public void write(final Hub<? extends OAObject> hub, File file) throws JsonProcessingException, IOException {
+		this.stackLinkInfo = new Stack<>();
+		this.cascade = null;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+
+			createObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, hub);
+
+		} finally {
+			OAThreadLocalDelegate.setOAJackson(null);
+		}
+	}
+
+	public String write(final Hub<? extends OAObject> hub) throws JsonProcessingException {
+		this.stackLinkInfo = new Stack<>();
+		this.cascade = null;
+		String json;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+			final ObjectMapper objectMapper = createObjectMapper();
+			json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(hub);
+		} finally {
+			OAThreadLocalDelegate.setOAJackson(null);
+		}
+		return json;
+	}
+
+	/*
 	public String write(final Hub<? extends OAObject> hub) throws JsonProcessingException {
 		this.cascade = null;
 		final OACascade cascade = getCascade();
@@ -275,10 +370,25 @@ public class OAJson {
 
 		return json;
 	}
+	*/
+
+	public <T extends OAObject> void readIntoHub(final File file, final Hub<T> hub, final boolean bUseValidation) throws Exception {
+		ObjectMapper om = createObjectMapper();
+		final JsonNode nodeRoot = om.readTree(file);
+		readIntoHub(om, nodeRoot, hub, bUseValidation);
+	}
 
 	public <T extends OAObject> void readIntoHub(final String json, final Hub<T> hub, final boolean bUseValidation) throws Exception {
-		this.readObjectClass = hub.getObjectClass();
 		ObjectMapper om = createObjectMapper();
+		final JsonNode nodeRoot = om.readTree(json);
+		readIntoHub(om, nodeRoot, hub, bUseValidation);
+	}
+
+	public <T extends OAObject> void readIntoHub(final ObjectMapper om, final JsonNode nodeRoot, final Hub<T> hub,
+			final boolean bUseValidation) throws Exception {
+
+		this.readObjectClass = hub.getObjectClass();
+		this.stackLinkInfo = new Stack<>();
 
 		hmGuidObject = null;
 		Map<Integer, OAObject> hmGuidMap = getGuidMap();
@@ -286,14 +396,12 @@ public class OAJson {
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
 
-			final JsonNode nodeRoot = om.readTree(json);
 			if (nodeRoot.isArray()) {
 				ArrayNode nodeArray = (ArrayNode) nodeRoot;
 				int x = nodeArray.size();
 				for (int i = 0; i < x; i++) {
 					JsonNode node = nodeArray.get(i);
 					if (node.isObject()) {
-						// qqqqq
 						T objx = om.readerFor(OAObject.class).readValue(node); // will use OAJacksondeserializer
 						hub.add(objx);
 					} else if (node.isNumber()) {
@@ -328,7 +436,7 @@ public class OAJson {
 					}
 				}
 			} else {
-				hub.add(readObject(json, hub.getObjectClass(), bUseValidation));
+				// hub.add(readObject(json, hub.getObjectClass(), bUseValidation));
 			}
 
 			if (!bUseValidation) {
@@ -542,7 +650,56 @@ public class OAJson {
 	}
 
 	public JsonNode readTree(String json) throws Exception {
+		this.stackLinkInfo = new Stack<>();
 		JsonNode node = createObjectMapper().readTree(json);
 		return node;
+	}
+
+	/**
+	 * Propertypath that is currently being read/written.
+	 */
+	public String getCurrentPropertyPath() {
+		String pp = "";
+		if (stackLinkInfo != null) {
+			OALinkInfo liPrev = null;
+			for (OALinkInfo li : stackLinkInfo) {
+				if (li == liPrev) {
+					continue; // recursive
+				}
+				if (pp.length() > 0) {
+					pp += ".";
+				}
+				pp += li.getLowerName();
+				liPrev = li;
+			}
+		}
+		return pp;
+	}
+
+	public Stack<OALinkInfo> getStackLinkInfo() {
+		return this.stackLinkInfo;
+	}
+
+	// called during read/write
+	public String getPropertyNameCallback(Object obj, String defaultName) {
+		return defaultName;
+	}
+
+	// called during read/write
+	public Object getPropertyValueCallback(Object obj, String propertyName, Object defaultValue) {
+		return defaultValue;
+	}
+
+	// called during read/write
+	public boolean getUsePropertyCallback(Object obj, String propertyName) {
+		return true;
+	}
+
+	public void beforeReadCallback(JsonNode node) {
+
+	}
+
+	public void afterReadCallback(JsonNode node, Object objNew) {
+
 	}
 }

@@ -54,7 +54,9 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 	protected OAObject getObject(OAObjectInfo oi, JsonNode node) {
 
 		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
-		Class clazz = oi.getForClass();
+		final Class clazz = oi.getForClass();
+
+		oaj.beforeReadCallback(node);
 
 		ArrayList alKeys = new ArrayList();
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
@@ -62,9 +64,18 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				continue;
 			}
 
-			JsonNode jn = node.get(pi.getLowerName());
+			String propertyName = pi.getLowerName();
+			if (!oaj.getUsePropertyCallback(null, propertyName)) {
+				continue;
+			}
+			propertyName = oaj.getPropertyNameCallback(null, propertyName);
+
+			JsonNode jn = node.get(propertyName);
 
 			Object objx = convert(jn, pi);
+
+			objx = oaj.getPropertyValueCallback(null, pi.getLowerName(), objx);
+
 			alKeys.add(objx);
 		}
 		OAObjectKey ok = new OAObjectKey(alKeys.toArray());
@@ -81,7 +92,15 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 					if (!pi.getId()) {
 						continue;
 					}
-					objNew.setProperty(pi.getName(), alKeys.get(i++));
+
+					if (!oaj.getUsePropertyCallback(objNew, pi.getLowerName())) {
+						continue;
+					}
+
+					Object objx = alKeys.get(i++);
+					objx = oaj.getPropertyValueCallback(objNew, pi.getLowerName(), objx);
+
+					objNew.setProperty(pi.getLowerName(), objx);
 				}
 
 				if (OAThreadLocalDelegate.isLoading()) {
@@ -104,9 +123,18 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				continue;
 			}
 
-			jn = node.get(pi.getLowerName());
+			if (!oaj.getUsePropertyCallback(objNew, pi.getLowerName())) {
+				continue;
+			}
+
+			String propertyName = oaj.getPropertyNameCallback(objNew, pi.getLowerName());
+
+			jn = node.get(propertyName);
 			Object objx = convert(jn, pi);
-			objNew.setProperty(pi.getName(), objx);
+
+			objx = oaj.getPropertyValueCallback(objNew, pi.getLowerName(), objx);
+
+			objNew.setProperty(pi.getLowerName(), objx);
 		}
 
 		// load links
@@ -118,12 +146,19 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				continue;
 			}
 
-			JsonNode nodex = node.get(li.getLowerName());
+			if (!oaj.getUsePropertyCallback(objNew, li.getLowerName())) {
+				continue;
+			}
+
+			String propertyName = oaj.getPropertyNameCallback(objNew, li.getLowerName());
+			JsonNode nodex = node.get(propertyName);
 
 			if (nodex != null) {
 				OAObject objx = getLinkObject(objNew, li, nodex);
 
-				objNew.setProperty(li.getName(), objx);
+				objx = (OAObject) oaj.getPropertyValueCallback(objNew, li.getLowerName(), objx);
+
+				objNew.setProperty(li.getLowerName(), objx);
 			}
 		}
 
@@ -136,7 +171,12 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				continue;
 			}
 
-			JsonNode nodex = node.get(li.getLowerName());
+			if (!oaj.getUsePropertyCallback(objNew, li.getLowerName())) {
+				continue;
+			}
+
+			String propertyName = oaj.getPropertyNameCallback(objNew, li.getLowerName());
+			JsonNode nodex = node.get(propertyName);
 			if (nodex instanceof ArrayNode) {
 
 				Hub<OAObject> hub = (Hub<OAObject>) li.getValue(objNew);
@@ -174,12 +214,15 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				}
 			}
 		}
+		oaj.afterReadCallback(node, objNew);
 
 		return objNew;
-
 	}
 
 	protected Object convert(final JsonNode jn, final OAPropertyInfo pi) {
+		if (jn == null) {
+			return null;
+		}
 		Object objx;
 		if (jn.isNull()) {
 			objx = null;
