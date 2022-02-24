@@ -102,6 +102,10 @@ public class OAPropertyPath<F> {
 	}
 
 	public OAPropertyPath getReversePropertyPath() {
+		return getReversePropertyPath(false);
+	}
+
+	public OAPropertyPath getReversePropertyPath(final boolean bAllowPrivateLinks) {
 		if (revPropertyPath != null) {
 			return revPropertyPath;
 		}
@@ -114,7 +118,7 @@ public class OAPropertyPath<F> {
 		for (int i = 0; i < linkInfos.length; i++) {
 			OALinkInfo li = linkInfos[i];
 			OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
-			if (liRev.getPrivateMethod()) {
+			if (!bAllowPrivateLinks && liRev.getPrivateMethod()) {
 				return null;
 			}
 			if (pp.length() > 0) {
@@ -124,7 +128,7 @@ public class OAPropertyPath<F> {
 		}
 		c = linkInfos[linkInfos.length - 1].getToClass();
 
-		revPropertyPath = new OAPropertyPath(c, pp);
+		revPropertyPath = new OAPropertyPath(c, pp, bAllowPrivateLinks);
 		return revPropertyPath;
 	}
 
@@ -1030,7 +1034,7 @@ public class OAPropertyPath<F> {
 
 	/**
 	 * Used when fromObject is already in the propertyPath.
-	 * 
+	 *
 	 * @param fromObject object to start with
 	 * @param startPos   number of properties to skip in the PP, that aligns with fromObject's position in the PP.
 	 */
