@@ -230,13 +230,17 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		lastReadTime = 0;
 	}
 
+	/**
+	 * @param whereObject object that this select is based on.
+	 * @param pp          property path from whereObject to this.selectClass
+	 */
 	public void setWhereObject(OAObject whereObject, String pp) {
 		this.whereObject = whereObject;
 		this.whereObjectPropertyPath = pp;
 	}
 
 	/**
-	 * WhereObject is used to build a where statement that will select all objects that have have a reference to whereObject.
+	 * WhereObject is used to build a where statement that will select all objects that have a reference to whereObject.
 	 *
 	 * @see #setWhereObjectPropertyPath
 	 */
