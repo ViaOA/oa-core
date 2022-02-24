@@ -33,6 +33,7 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAConv;
+import com.viaoa.util.OAString;
 
 /**
  * OA + JSON that uses the Jackson library.
@@ -336,27 +337,27 @@ public class OAJson {
 	public String write(final Hub<? extends OAObject> hub) throws JsonProcessingException {
 		this.cascade = null;
 		final OACascade cascade = getCascade();
-
+	
 		final ObjectMapper objectMapper = createObjectMapper();
-
+	
 		ArrayNode nodeArray = objectMapper.createArrayNode();
-
+	
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-
+	
 			for (final OAObject oaObj : hub) {
 				if (cascade.wasCascaded(oaObj, true)) {
 					// write single objKey or guid to arrayNode
 					OAObjectKey key = oaObj.getObjectKey();
-
+	
 					String id = OAJson.convertObjectKeyToJsonSinglePartId(key);
-
+	
 					if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
 						nodeArray.add(id);
 					} else {
 						nodeArray.add(OAConv.toLong(id));
 					}
-
+	
 				} else {
 					JsonNode node = objectMapper.valueToTree(oaObj);
 					nodeArray.add(node);
@@ -365,9 +366,9 @@ public class OAJson {
 		} finally {
 			OAThreadLocalDelegate.setOAJackson(null);
 		}
-
+	
 		String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(nodeArray);
-
+	
 		return json;
 	}
 	*/
@@ -653,6 +654,20 @@ public class OAJson {
 		this.stackLinkInfo = new Stack<>();
 		JsonNode node = createObjectMapper().readTree(json);
 		return node;
+	}
+
+	// todo:  under constructions[]
+
+	public JsonNode getNode(JsonNode parentNode, String propertyPath) {
+		String[] ss = propertyPath.split("\\.");
+		for (String prop : ss) {
+			String s = OAString.field(prop, "[", 2);
+			prop = OAString.field(prop, "[", 1);
+
+			JsonNode jn = parentNode.get(prop);
+			parentNode = jn;
+		}
+		return parentNode;
 	}
 
 	/**
