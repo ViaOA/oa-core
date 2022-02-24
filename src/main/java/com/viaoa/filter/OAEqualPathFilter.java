@@ -23,8 +23,8 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Creates a filter to see if the value of a Hub.AO propertyPath is the same as the propertyPath from 
- * a propertyPath of the objects being selected.
+ * Creates a filter to see if the value of a Hub.AO propertyPath is the same as the propertyPath from a propertyPath of the objects being
+ * selected.
  *
  * @author vvia
  */
@@ -51,7 +51,7 @@ public class OAEqualPathFilter implements OAFilter {
 	/**
 	 * Uses a fromHub.AO and property path to see if it matches the value from a property path of another object.
 	 *
-	 * @param fromHub  uses the AO
+	 * @param fromHub      uses the AO
 	 * @param propPathFrom to use for finding object that matches the object propertyPath of a compared object.
 	 */
 	public OAEqualPathFilter(Hub fromHub, String propPathFrom, String propPathTo) {
@@ -75,7 +75,7 @@ public class OAEqualPathFilter implements OAFilter {
 	// needs to listen to this.hubFrom.getMasterHub AOchanges
 
 	// 20210509 updateSelect now checks to see if AO changed
-	
+
 	protected void setup() {
 		strFromPropPath = strFromPropPathOrig;
 		if (strFromPropPath == null) {
@@ -105,30 +105,35 @@ public class OAEqualPathFilter implements OAFilter {
 
 			// use hubFrom.AO, if it is null, then check if pp uses it's masterObject(s), and if so then use objFrom=masterObj and shorten the pp.
 			// reset
-			
+
 			objFrom = null;
 			finder = null;
 			objFromPPValue = null;
 
 			int cntGetMasterObject = 0;
 			Hub hubx = hubFrom;
-			for (; cntGetMasterObject < lis.length; cntGetMasterObject++) {
-				objFrom = (OAObject) hubx.getAO();
-				if (objFrom != null) {
-					break;
+			if (lis.length > 0) {
+				for (; cntGetMasterObject < lis.length; cntGetMasterObject++) {
+					objFrom = (OAObject) hubx.getAO();
+					if (objFrom != null) {
+						break;
+					}
+					OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hubx);
+					if (li == null) {
+						break;
+					}
+					if (li.getType() == li.TYPE_MANY) {
+						break;
+					}
+					if (li != lis[cntGetMasterObject]) {
+						break;
+					}
+					hubx = hubx.getMasterHub();
 				}
-				OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hubx);
-				if (li == null) {
-					break;
-				}
-				if (li.getType() == li.TYPE_MANY) {
-					break;
-				}
-				if (li != lis[cntGetMasterObject]) {
-					break;
-				}
-				hubx = hubx.getMasterHub();
+			} else {
+				objFrom = (OAObject) hubFrom.getAO();
 			}
+
 			if (objFrom == null) {
 				// filter will be empty
 				return;
@@ -201,21 +206,19 @@ public class OAEqualPathFilter implements OAFilter {
 		return b;
 	}
 
-	
-	
 	@Override
 	public boolean updateSelect(OASelect select) {
-	    OAObject obj = null;
-	    if (hubFrom != null) {
-	        obj = (OAObject) hubFrom.getAO();
-	        if (obj != objFrom) {
-	            setup();
-	        }
-	    }
-	    
+		OAObject obj = null;
+		if (hubFrom != null) {
+			obj = (OAObject) hubFrom.getAO();
+			if (obj != objFrom) {
+				setup();
+			}
+		}
+
 		if (objFrom != null && ppTo != null && select.getWhereObject() == null) {
-			OAPropertyPath ppRev = ppTo.getReversePropertyPath();
 			if (ppTo != null) {
+				OAPropertyPath ppRev = ppTo.getReversePropertyPath(true);
 				select.setWhereObject((OAObject) objFromPPValue, ppRev.getPropertyPath());
 				if (bHasFilter) {
 					return true;
