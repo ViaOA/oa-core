@@ -511,10 +511,24 @@ public class OAJson {
 	 * Used to serialize the arguments into a Json array. This will also include json properties for setting(/casting) if the object is
 	 * different then the parameter type.
 	 */
-	public static String convertMethodArgumentsToJson(final Method method, final Object[] argValues,
-			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
+    public static String convertMethodArgumentsToJson(final Method method, final Object[] argValues,
+            final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
+        
+        final OAJson oaj = new OAJson();
+        oaj.stackLinkInfo = new Stack<>();
+        
+        try {
+            OAThreadLocalDelegate.setOAJackson(oaj);
 
-		final OAJson oaj = new OAJson();
+            return _convertMethodArgumentsToJson(oaj, method, argValues, lstIncludePropertyPathss, skipParams); 
+        } finally {
+            OAThreadLocalDelegate.setOAJackson(null);
+        }
+    }
+            
+	protected static String _convertMethodArgumentsToJson(final OAJson oaj, final Method method, final Object[] argValues,
+			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
+		
 		final ObjectMapper om = oaj.createObjectMapper();
 
 		final ArrayNode arrayNode = om.createArrayNode();
