@@ -32,4 +32,4 @@ Read [OA Object Graph](doc/OAObjectGraph.pdf)
 Current release on Maven Central: 
     Group Id: com.viaoa
     Artifact Id: oa-core
-    Version: 3.5.56
+    Version: 3.7.1
