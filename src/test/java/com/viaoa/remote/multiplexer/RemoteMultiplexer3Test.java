@@ -107,7 +107,7 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
 			}
 
 			@Override
-			public void refresh(Class clazz) {
+			public void refreshCache(Class clazz) {
 			}
 
 			@Override
@@ -175,7 +175,7 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
 		return remoteCallback;
 	}
 
-	//qqqqqqqqqqqqqqqqqq put this back in	
+	//qqqqqqqqqqqqqqqqqq put this back in
 	//	@Test(timeout = 5000)
 	public void test() throws Exception {
 		// C2S using socket request/reply

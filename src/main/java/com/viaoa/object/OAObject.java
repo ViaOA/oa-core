@@ -14,11 +14,15 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 // java1.2
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.bind.annotation.XmlTransient;
 
+import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubEventDelegate;
@@ -116,7 +120,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	static {
 		// oaversion
 		String ver = "3.7.1.202202250";
-        // previous:  String ver = "3.7.0.202104100";
+		// previous:  String ver = "3.7.0.202104100";
 		/*
 		try {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
@@ -1491,4 +1495,97 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return null;
 	}
 
+	/**
+	 * Refresh by reselecting from DataSource
+	 */
+	public void refresh() {
+		OASyncClient sc = OASync.getSyncClient();
+		if (sc != null) {
+			OASync.getRemoteClient().refresh(getClass(), getObjectKey());
+			return;
+		}
+
+		OADataSource ds = OADataSource.getDataSource(getClass());
+		if (ds == null) {
+			return;
+		}
+
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		Object objx = ds.getObject(oi, getClass(), getObjectKey(), true);
+
+		if (objx == null) {
+			// deleted already
+			if (objx == null) {
+				this.setDeleted(true);
+			}
+		} else {
+			if (this.getDeleted()) {
+				this.setDeleted(false);
+			}
+		}
+	}
+
+	/**
+	 * Refresh by reselecting from DataSource
+	 */
+	public void refresh(String linkPropertyName) {
+
+		OASyncClient sc = OASync.getSyncClient();
+		if (sc != null) {
+			OASync.getRemoteClient().refresh(getClass(), getObjectKey(), linkPropertyName);
+			return;
+		}
+
+		OADataSource ds = OADataSource.getDataSource(getClass());
+		if (ds == null) {
+			return;
+		}
+
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		OALinkInfo li = oi.getLinkInfo(linkPropertyName);
+		if (li == null) {
+			return;
+		}
+
+		Object objx = OAObjectPropertyDelegate.getProperty(this, linkPropertyName);
+		if (li.getType() == li.TYPE_ONE) {
+			if (objx instanceof OAObject) {
+				((OAObject) objx).refresh();
+			}
+			return;
+		}
+
+		if (!(objx instanceof Hub)) {
+			return;
+		}
+		Hub hub = (Hub) objx;
+
+		OADataSourceIterator dsi = ds.select(li.getToClass(), this, linkPropertyName, li.getSortProperty(), true);
+		List alNew = new ArrayList();
+		for (; dsi.hasNext();) {
+			objx = dsi.next();
+			alNew.add(objx);
+			if (!hub.contains(objx)) {
+				hub.add(objx);
+			}
+		}
+
+		List alRemove = new ArrayList();
+		for (Object obj : hub) {
+			if (!alNew.contains(obj)) {
+				alRemove.add(obj);
+			}
+		}
+		for (Object obj : alRemove) {
+			hub.remove(obj);
+		}
+		int i = 0;
+		for (Object obj : alNew) {
+			int pos = hub.getPos(obj);
+			if (i != pos) {
+				hub.move(pos, i);
+			}
+			i++;
+		}
+	}
 }

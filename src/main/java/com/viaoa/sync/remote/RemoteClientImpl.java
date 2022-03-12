@@ -233,4 +233,20 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		obj.delete();
 		return true;
 	}
+
+	@Override
+	public void refresh(Class objectClass, OAObjectKey objectKey) {
+		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, objectKey);
+		if (obj != null) {
+			obj.refresh();
+		}
+	}
+
+	@Override
+	public void refresh(Class objectClass, OAObjectKey objectKey, String propertyName) {
+		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, objectKey);
+		if (obj != null) {
+			obj.refresh(propertyName);
+		}
+	}
 }

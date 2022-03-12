@@ -69,7 +69,7 @@ public class OAObjectPropertyDelegate {
 
 	/**
 	 * check to see if property does or will exist (if it is oaObjKey).
-	 * 
+	 *
 	 * @return
 	 */
 	public static boolean isReferenceNull(OAObject oaObj, String name) {
@@ -350,7 +350,7 @@ public class OAObjectPropertyDelegate {
 
 	/**
 	 * Compare and swap a property.
-	 * 
+	 *
 	 * @param name            property name, not case sensitive
 	 * @param newValue        new value to set, if matchValue matches current setting
 	 * @param matchValue      value that it must currently be set to
@@ -685,7 +685,7 @@ public class OAObjectPropertyDelegate {
 	 * Used on server, this will make sure that a Hub does not get GCd on the Server. This is needed when a hub has a masterObject that has
 	 * a cacheSize set, which means that it can be GCd. This will recursively set any parent/master objects. This is called by Hub.add,
 	 * Hub.remove, Hub.firepropchange(), Hub.saveAll.
-	 * 
+	 *
 	 * @param bReferenceable true to make sure that it has a hard ref, otherwise a weakRef will be used
 	 */
 	public static void setReferenceable(OAObject obj, boolean bReferenceable) {
@@ -777,4 +777,5 @@ public class OAObjectPropertyDelegate {
 			oaObj.properties = null;
 		}
 	}
+
 }

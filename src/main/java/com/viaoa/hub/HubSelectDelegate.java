@@ -10,7 +10,9 @@
 */
 package com.viaoa.hub;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -541,58 +543,6 @@ public class HubSelectDelegate {
 		select(thisHub, sel);
 	}
 
-	/**
-	 * This will re-run the last select.
-	 *
-	 * @see OASelect
-	 */
-	public static boolean refreshSelect(Hub thisHub) {
-		if (thisHub == null) {
-			return false;
-		}
-		Object objAO = thisHub.getAO();
-		OASelect sel = getSelect(thisHub);
-
-		if (sel == null) {
-			Object obj = thisHub.getMasterObject();
-			if (!(obj instanceof OAObject)) {
-				return false;
-			}
-
-			OALinkInfo linkInfo = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
-			if (linkInfo == null) {
-				return false;
-			}
-
-			sel = new OASelect(thisHub.getObjectClass());
-			sel.setWhereObject((OAObject) obj);
-			sel.setPropertyFromWhereObject(linkInfo.getReverseName());
-		} else {
-			cancelSelect(thisHub, false);
-			sel.reset(false);
-		}
-
-		sel.setDirty(true);
-		sel.select();
-		HashSet<Object> hs = new HashSet<Object>();
-		for (; sel.hasMore();) {
-			Object objx = sel.next();
-			hs.add(objx);
-			thisHub.add(objx);
-		}
-		sel.setDirty(false);
-
-		// check to see if any objects need to be removed from the original list
-		for (Object obj : thisHub) {
-			if (!hs.contains(obj)) {
-				thisHub.remove(obj);
-			}
-		}
-
-		thisHub.setAO(objAO);
-		return true;
-	}
-
 	public static Hub getSelectWhereHub(Hub thisHub) {
 		if (thisHub == null) {
 			return null;
@@ -677,6 +627,121 @@ public class HubSelectDelegate {
 		s = OAString.field(pp, '.', 1, x - 1);
 
 		thisHub.setSelectWhereHub(hubSelectWhere, s);
+		return true;
+	}
+
+	// 20220311
+	public static boolean refresh(final Hub thisHub) {
+		if (thisHub == null) {
+			return false;
+		}
+
+		OAObject obj = HubDetailDelegate.getMasterObject(thisHub);
+		if (obj != null) {
+			String s = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
+			obj.refresh(s);
+			return true;
+		}
+
+		OASelect sel = thisHub.getSelect();
+		if (sel == null) {
+			return false;
+		}
+
+		cancelSelect(thisHub, false);
+		sel.reset(false);
+
+		boolean bWasDirty = sel.getDirty();
+		sel.setDirty(true);
+
+		sel.select();
+
+		List alNew = new ArrayList();
+		for (Object objx : sel) {
+			alNew.add(objx);
+			if (!thisHub.contains(objx)) {
+				thisHub.add(objx);
+			}
+		}
+
+		List alRemove = new ArrayList();
+		for (Object objx : thisHub) {
+			if (!alNew.contains(objx)) {
+				alRemove.add(objx);
+			}
+		}
+		for (Object objx : alRemove) {
+			thisHub.remove(objx);
+		}
+		int i = 0;
+		for (Object objx : alNew) {
+			int pos = thisHub.getPos(obj);
+			if (i != pos) {
+				thisHub.move(pos, i);
+			}
+			i++;
+		}
+
+		if (!bWasDirty) {
+			sel.setDirty(false);
+		}
+		return true;
+	}
+
+	/**
+	 * This will re-run the last select.
+	 *
+	 * @see OASelect
+	 */
+	public static boolean refreshSelect(Hub thisHub) {
+		if (thisHub == null) {
+			return false;
+		}
+		Object objAO = thisHub.getAO();
+		OASelect sel = getSelect(thisHub);
+
+		if (sel == null) {
+			Object obj = thisHub.getMasterObject();
+			if (!(obj instanceof OAObject)) {
+				return false;
+			}
+
+			OALinkInfo linkInfo = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
+			if (linkInfo == null) {
+				return false;
+			}
+
+			sel = new OASelect(thisHub.getObjectClass());
+			sel.setWhereObject((OAObject) obj);
+			sel.setPropertyFromWhereObject(linkInfo.getReverseName());
+		} else {
+			cancelSelect(thisHub, false);
+			sel.reset(false);
+		}
+
+		boolean bWasDirty = sel.getDirty();
+		if (!bWasDirty) {
+			sel.setDirty(true);
+		}
+		sel.select();
+		HashSet<Object> hs = new HashSet<Object>();
+		for (; sel.hasMore();) {
+			Object objx = sel.next();
+			hs.add(objx);
+			thisHub.add(objx);
+		}
+		if (!bWasDirty) {
+			sel.setDirty(false);
+		}
+
+		// check to see if any objects need to be removed from the original list
+		for (Object obj : thisHub) {
+			if (!hs.contains(obj)) {
+				thisHub.remove(obj);
+			}
+		}
+
+		thisHub.setAO(objAO);
 		return true;
 	}
 

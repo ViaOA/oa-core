@@ -16,33 +16,37 @@ import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 
 /**
- * Client remote methods that will use the same named msg queue as RemoteSync, when set up (bind) on the server.
- * This is so that changes can be ordered and instances (clients/server0 will stay in sync.
- * 
+ * Client remote methods that will use the same named msg queue as RemoteSync, when set up (bind) on the server. This is so that changes can
+ * be ordered and instances (clients/server0 will stay in sync.
+ *
  * @author vvia
  */
 @OARemoteInterface()
 public interface RemoteClientInterface {
 
-    OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties);
-    
-    Object getDetail(int id, Class masterClass, OAObjectKey masterObjectKey, String property, boolean bForHubMerger);
-    
-    Object getDetail(int id, Class masterClass, OAObjectKey masterObjectKey, 
-            String property, String[] masterProps, OAObjectKey[] siblingKeys, boolean bForHubMerger);
+	OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties);
 
-    // dont put in queue, but have it returned on vsocket for queued messages  
-    //     All of the other methods are put in queue to be processed and have the return value set.
-    @OARemoteMethod(returnOnQueueSocket=true)
-    Object getDetailNow(int id, Class masterClass, OAObjectKey masterObjectKey, 
-            String property, String[] masterProps, OAObjectKey[] siblingKeys, boolean bForHubMerger);
+	Object getDetail(int id, Class masterClass, OAObjectKey masterObjectKey, String property, boolean bForHubMerger);
 
-    Object datasource(int command, Object[] objects);
-    
-    @OARemoteMethod(noReturnValue=true)
-    void datasourceNoReturn(int command, Object[] objects);
+	Object getDetail(int id, Class masterClass, OAObjectKey masterObjectKey,
+			String property, String[] masterProps, OAObjectKey[] siblingKeys, boolean bForHubMerger);
 
-    boolean delete(Class objectClass, OAObjectKey objectKey);
-    
-    boolean deleteAll(Class objectClass, OAObjectKey objectKey, String hubPropertyName);
+	// dont put in queue, but have it returned on vsocket for queued messages
+	//     All of the other methods are put in queue to be processed and have the return value set.
+	@OARemoteMethod(returnOnQueueSocket = true)
+	Object getDetailNow(int id, Class masterClass, OAObjectKey masterObjectKey,
+			String property, String[] masterProps, OAObjectKey[] siblingKeys, boolean bForHubMerger);
+
+	Object datasource(int command, Object[] objects);
+
+	@OARemoteMethod(noReturnValue = true)
+	void datasourceNoReturn(int command, Object[] objects);
+
+	boolean delete(Class objectClass, OAObjectKey objectKey);
+
+	boolean deleteAll(Class objectClass, OAObjectKey objectKey, String hubPropertyName);
+
+	void refresh(Class clazz, OAObjectKey objectKey);
+
+	void refresh(Class clazz, OAObjectKey objectKey, String propertyName);
 }

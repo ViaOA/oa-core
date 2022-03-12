@@ -1663,7 +1663,6 @@ public class OAObjectReflectDelegate {
 	 * <p>
 	 * If reference object is not already loaded, then OADataSource will be used to retrieve object.
 	 */
-
 	public static Object getReferenceObject(final OAObject oaObj, final String linkPropertyName) {
 		OASiblingHelperDelegate.onGetObjectReference(oaObj, linkPropertyName);
 
@@ -3001,7 +3000,6 @@ public class OAObjectReflectDelegate {
 
 		return null;
 	}
-
 }
 
 class LoadPropertyNode {

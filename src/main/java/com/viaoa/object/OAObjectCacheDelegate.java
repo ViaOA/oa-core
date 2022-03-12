@@ -1257,11 +1257,11 @@ public class OAObjectCacheDelegate {
 		LOG.fine("refreshing " + clazz.getSimpleName());
 
 		if (!OASyncDelegate.isServer(clazz)) {
-			OASyncDelegate.getRemoteServer(clazz).refresh(clazz);
+			OASyncDelegate.getRemoteServer(clazz).refreshCache(clazz);
 			LOG.fine("refreshing " + clazz.getSimpleName() + " will be ran on the server");
 			return;
 		}
-		HashSet<Hub> hsHub = new HashSet<Hub>();
+		final HashSet<Hub> hsHub = new HashSet<Hub>();
 
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		if (ds == null) {
