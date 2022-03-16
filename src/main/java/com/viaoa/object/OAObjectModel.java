@@ -36,6 +36,7 @@ public class OAObjectModel {
 	protected boolean bAllowRecursive;
 	protected boolean bAllowFilter; // to include hub filters
 	protected boolean bAllowDownload;
+	protected boolean bAllowRefresh;
 
 	protected boolean bAllowCut;
 	protected boolean bAllowCopy;
@@ -280,5 +281,13 @@ public class OAObjectModel {
 
 	public void setAllowMove(boolean b) {
 		bAllowMove = b;
+	}
+
+	public boolean getAllowRefresh() {
+		return bAllowRefresh;
+	}
+
+	public void setAllowRefresh(boolean b) {
+		bAllowRefresh = b;
 	}
 }

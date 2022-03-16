@@ -132,6 +132,10 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return getIdProperties();
 	}
 
+	public boolean isKeyProperty(String prop) {
+		return isIdProperty(prop);
+	}
+
 	public boolean isIdProperty(String prop) {
 		if (prop == null) {
 			return false;

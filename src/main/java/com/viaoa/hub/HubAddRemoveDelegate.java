@@ -143,7 +143,21 @@ public class HubAddRemoveDelegate {
 
 			if (thisHub.datam.liDetailToMaster != null) {
 				if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
-					HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, null);
+					String[] ss = thisHub.datam.liDetailToMaster.getUsesProperties();
+					boolean b = true;
+					if (ss != null) { // dont set to null if it's this object's primary key
+						OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(thisHub.getObjectClass());
+						for (String s : ss) {
+							OAPropertyInfo pi = oi.getPropertyInfo(s);
+							if (pi != null && oi.isIdProperty(s)) {
+								b = false;
+								break;
+							}
+						}
+					}
+					if (b) {
+						HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, null);
+					}
 				} else if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.MANY) {
 					// 20210326 M2M
 					Hub hubx = (Hub) thisHub.datam.liDetailToMaster.getValue(obj);

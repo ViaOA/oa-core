@@ -111,7 +111,20 @@ public class HubSelectDelegate {
 			for (; cnt < fa || fa == 0;) {
 				Object obj;
 				if (!HubSelectDelegate.isMoreData(sel)) {
-					thisHub.cancelSelect();
+					boolean bRemoveSelectFromHub;
+					if (thisHub.getMasterObject() != null) {
+						OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
+						if (li.getType() == OALinkInfo.ONE && li.getPrivateMethod()) {
+							bRemoveSelectFromHub = false;
+						} else {
+							bRemoveSelectFromHub = true;
+						}
+					} else {
+						bRemoveSelectFromHub = false; // dont remove, so that it can be refreshed
+					}
+
+					cancelSelect(thisHub, bRemoveSelectFromHub);
+					// was: thisHub.cancelSelect();
 					sel.cancel();
 					break;
 				}
@@ -636,15 +649,14 @@ public class HubSelectDelegate {
 			return false;
 		}
 
-		OAObject obj = HubDetailDelegate.getMasterObject(thisHub);
-		if (obj != null) {
-			String s = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
-			obj.refresh(s);
-			return true;
-		}
-
 		OASelect sel = thisHub.getSelect();
 		if (sel == null) {
+			OAObject obj = HubDetailDelegate.getMasterObject(thisHub);
+			if (obj != null) {
+				String s = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
+				obj.refresh(s);
+				return true;
+			}
 			return false;
 		}
 
@@ -675,7 +687,7 @@ public class HubSelectDelegate {
 		}
 		int i = 0;
 		for (Object objx : alNew) {
-			int pos = thisHub.getPos(obj);
+			int pos = thisHub.getPos(objx);
 			if (i != pos) {
 				thisHub.move(pos, i);
 			}

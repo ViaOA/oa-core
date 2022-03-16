@@ -23,6 +23,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
+import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubEventDelegate;
@@ -126,7 +127,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-
+		
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -1536,11 +1537,6 @@ public class OAObject implements java.io.Serializable, Comparable {
 			return;
 		}
 
-		OADataSource ds = OADataSource.getDataSource(getClass());
-		if (ds == null) {
-			return;
-		}
-
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
 		OALinkInfo li = oi.getLinkInfo(linkPropertyName);
 		if (li == null) {
@@ -1560,7 +1556,21 @@ public class OAObject implements java.io.Serializable, Comparable {
 		}
 		Hub hub = (Hub) objx;
 
+		OASelect sel = hub.getSelect();
+		if (sel != null) {
+			hub.refresh();
+			return;
+		}
+
+		OADataSource ds = OADataSource.getDataSource(li.getToClass());
+		if (ds == null) {
+			return;
+		}
+
 		OADataSourceIterator dsi = ds.select(li.getToClass(), this, linkPropertyName, li.getSortProperty(), true);
+		if (dsi == null) {
+			return;
+		}
 		List alNew = new ArrayList();
 		for (; dsi.hasNext();) {
 			objx = dsi.next();
