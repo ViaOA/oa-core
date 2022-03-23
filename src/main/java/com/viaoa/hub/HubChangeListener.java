@@ -41,7 +41,7 @@ public abstract class HubChangeListener {
 	private String failureReason;
 
 	/**
-	 * Specific types of comparisions.
+	 * Specific types of comparisons.
 	 */
 	public enum Type {
 		Unknown(true),
@@ -51,6 +51,8 @@ public abstract class HubChangeListener {
 		HubNotEmpty(false),
 		AoNull(true), // hub.activeObject
 		AoNotNull(true),
+		AoNew(true),
+		AoNotNew(true),
 		AlwaysTrue(true),
 		AlwaysFalse(true),
 		OnlySuperAdmin(true), // OAContext.isSuperAdmin must be true
@@ -127,6 +129,15 @@ public abstract class HubChangeListener {
 
 	public HubProp addHubNotEmpty(Hub hub) {
 		return add(hub, null, true, Type.HubNotEmpty);
+	}
+
+	/** Checks to see if hub.AO = null */
+	public HubProp addAoNew(Hub hub) {
+		return add(hub, null, true, Type.AoNew);
+	}
+
+	public HubProp addAoNotNew(Hub hub) {
+		return add(hub, null, true, Type.AoNotNew);
 	}
 
 	/** Checks to see if hub.AO = null */
@@ -844,6 +855,14 @@ public abstract class HubChangeListener {
 				}
 				if (compareValue == Type.AoNotNull) {
 					return (bValid && hub.getAO() != null);
+				}
+				if (compareValue == Type.AoNew) {
+					Object objx = hub.getAO();
+					return (bValid && (objx instanceof OAObject) && ((OAObject) objx).isNew());
+				}
+				if (compareValue == Type.AoNotNew) {
+					Object objx = hub.getAO();
+					return (bValid && (objx instanceof OAObject) && !((OAObject) objx).isNew());
 				}
 				if (compareValue == Type.AlwaysTrue) {
 					return true;

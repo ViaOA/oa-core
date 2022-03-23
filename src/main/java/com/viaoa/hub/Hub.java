@@ -1740,7 +1740,18 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * Cancel the reading of anymore records from OADataSource.
 	 */
 	public void cancelSelect() {
-		HubSelectDelegate.cancelSelect(this, true);
+		boolean bRemoveSelectFromHub;
+		if (getMasterObject() != null) {
+			OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(this);
+			if (li.getType() == OALinkInfo.ONE && li.getPrivateMethod()) {
+				bRemoveSelectFromHub = false;
+			} else {
+				bRemoveSelectFromHub = true;
+			}
+		} else {
+			bRemoveSelectFromHub = false; // dont remove, so that it can be refreshed
+		}
+		HubSelectDelegate.cancelSelect(this, bRemoveSelectFromHub);
 	}
 
 	/**
