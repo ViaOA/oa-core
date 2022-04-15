@@ -137,7 +137,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			objNew.setProperty(pi.getLowerName(), objx);
 		}
 
-		// load links
+		// load links of type=one
 		for (OALinkInfo li : oi.getLinkInfos()) {
 			if (li.getType() != li.TYPE_ONE) {
 				continue;
@@ -159,11 +159,75 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				objx = (OAObject) oaj.getPropertyValueCallback(objNew, li.getLowerName(), objx);
 
 				objNew.setProperty(li.getLowerName(), objx);
+			} else {
+				String[] ss = li.getUsesProperties();
+				if (ss != null && ss.length > 0) {
+					ArrayList<Object> al = new ArrayList();
+					for (String s : ss) {
+						OAPropertyInfo pi = oi.getPropertyInfo(s);
+						jn = node.get(pi.getLowerName());
+						if (jn == null) {
+							al.clear();
+							break;
+						}
+						Object objx = convert(jn, pi);
+						objx = oaj.getPropertyValueCallback(objNew, pi.getLowerName(), objx);
+						al.add(objx);
+					}
+					if (al.size() > 0) {
+						Object[] objs = al.toArray(new Object[al.size()]);
+						OAObjectKey okx = new OAObjectKey(objs);
+
+						objNew.setProperty(li.getLowerName(), okx);
+					}
+				} else {
+					final String[] pojoNames = li.getPojoNames();
+
+					ArrayList<Object> al = new ArrayList();
+					OAObjectInfo oix = li.getToObjectInfo();
+					int pos = 0;
+					for (OAPropertyInfo pi : oix.getPropertyInfos()) {
+						if (!pi.getId()) {
+							continue;
+						}
+
+						String name;
+						if (pojoNames != null && pos < pojoNames.length) {
+							name = pojoNames[pos++];
+						} else {
+							name = li.getLowerName() + pi.getName();
+						}
+
+						jn = node.get(name);
+						if (jn == null) {
+							al.clear();
+							break;
+						}
+						Object objx = convert(jn, pi);
+						al.add(objx);
+						pos++;
+					}
+					if (al.size() > 0) {
+						Object[] objs = al.toArray(new Object[al.size()]);
+						OAObjectKey okx = new OAObjectKey(objs);
+
+						objNew.setProperty(li.getLowerName(), okx);
+					}
+
+					if (al.size() > 0) {
+						Object[] objs = al.toArray(new Object[al.size()]);
+						OAObjectKey okx = new OAObjectKey(objs);
+
+						objNew.setProperty(li.getLowerName(), okx);
+					}
+				}
 			}
 		}
 
-		// load many links
-		for (OALinkInfo li : oi.getLinkInfos()) {
+		// load links of type=many
+		for (
+
+		OALinkInfo li : oi.getLinkInfos()) {
 			if (li.getType() != li.TYPE_MANY) {
 				continue;
 			}

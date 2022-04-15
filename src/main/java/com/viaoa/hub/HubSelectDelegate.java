@@ -338,7 +338,7 @@ public class HubSelectDelegate {
 		HubEventDelegate.fireBeforeSelectEvent(thisHub);
 
 		boolean bRunSelect;
-		bRunSelect = oi.getUseDataSource();
+		bRunSelect = oi.getUseDataSource() || select.getDataSource() != null;
 
 		// 20160110 selects now have hubFinders, etc to do selects
 		bRunSelect = (bRunSelect && (select.getDataSource() != null || select.getFinder() != null));

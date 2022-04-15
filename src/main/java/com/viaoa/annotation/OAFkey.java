@@ -18,12 +18,12 @@ import java.lang.annotation.Target;
 
 /**
  * Used to map properties to datasource fkey columns
- * @author vvia
  *
+ * @author vvia
  */
 @Documented
 @Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME) 
+@Retention(RetentionPolicy.RUNTIME)
 public @interface OAFkey {
-    String[] columns();
+	String[] columns();
 }

@@ -377,6 +377,7 @@ public class OAAnnotationDelegate {
 			//li.setRecursive(annotation.recursive());
 			li.setUsesProperties(annotation.usesProperties());
 			li.setOAOne(annotation);
+			li.setPojoNames(annotation.pojoNames());
 
 			boolean b = annotation.isOneAndOnlyOne();
 			if (b) {

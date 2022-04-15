@@ -101,6 +101,11 @@ public @interface OAOne {
 	 * object.
 	 */
 	String[] usesProperties() default {};
+
+	/**
+	 * Name of properties in pojo used as fkey(s).
+	 */
+	String[] pojoNames() default {};
 }
 
 /*  OALinkInfo

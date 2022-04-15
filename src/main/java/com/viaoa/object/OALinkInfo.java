@@ -72,6 +72,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private String[] viewDependentProperties;
 	private String[] contextDependentProperties;
 	private String[] usesProperties;
+	private String[] pojoNames;
 
 	private String defaultPropertyPath;
 	private boolean defaultPropertyPathIsHierarchy;
@@ -459,6 +460,14 @@ public class OALinkInfo { //implements java.io.Serializable {
 
 	public void setUsesProperties(String[] props) {
 		usesProperties = props;
+	}
+
+	public String[] getPojoNames() {
+		return pojoNames;
+	}
+
+	public void setPojoNames(String[] names) {
+		pojoNames = names;
 	}
 
 	public String getMergerPropertyPath() {

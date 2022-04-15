@@ -868,6 +868,10 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		alFinderResults = null;
 	}
 
+	public boolean hasNext() {
+		return hasMore();
+	}
+
 	/**
 	 * Returns true if more objects are available to be loaded.
 	 */

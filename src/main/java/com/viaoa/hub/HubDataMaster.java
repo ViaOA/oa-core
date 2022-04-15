@@ -12,6 +12,7 @@ package com.viaoa.hub;
 
 import java.lang.reflect.Method;
 
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfoDelegate;
@@ -97,7 +98,7 @@ class HubDataMaster implements java.io.Serializable {
 		}
 
 		// 20160623 so that serverRoot wont store changes to objects
-		if (!liDetailToMaster.getToObjectInfo().getUseDataSource()) {
+		if (!liDetailToMaster.getToObjectInfo().getUseDataSource() && OADataSource.getDataSource(liDetailToMaster.getToClass()) == null) {
 			return false;
 		}
 

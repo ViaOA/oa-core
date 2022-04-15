@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.context.OAContext;
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDelegate;
 import com.viaoa.sync.OASync;
@@ -358,7 +359,7 @@ public class OAObjectDelegate {
 				// 20131128 added autoAttach check
 				if (OAObjectDelegate.getAutoAdd(oaObj)) {
 					OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
-					if (oi != null && oi.getUseDataSource()) {
+					if (oi != null && (oi.getUseDataSource() || OADataSource.getDataSource(oaObj.getClass()) != null)) {
 						LOG.finer("object was not saved, object=" + oaObj.getClass().getName() + ", key="
 								+ OAObjectKeyDelegate.getKey(oaObj)
 								+ ", willSaveNow=" + bFinalizeSave);

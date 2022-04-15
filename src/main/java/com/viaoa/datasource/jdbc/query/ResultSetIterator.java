@@ -536,7 +536,9 @@ public class ResultSetIterator implements OADataSourceIterator {
 					_close();
 				}
 			}
-			hubReadAhead.add(oaObject);
+			if (hubReadAhead != null) {
+				hubReadAhead.add(oaObject);
+			}
 
 			return true;
 		} catch (Exception e) {

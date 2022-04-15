@@ -1005,6 +1005,10 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return OARemoteThreadDelegate.isRemoteThread();
 	}
 
+	public boolean isSyncThread() {
+		return OARemoteThreadDelegate.isRemoteThread();
+	}
+
 	/**
 	 * This is used to send out OASync messages, even if the currentThread is a OARemoteThread.
 	 */
@@ -1212,6 +1216,17 @@ public class OAObject implements java.io.Serializable, Comparable {
 		OAHierFinder hf = new OAHierFinder<OAObject>(propertyName, heirarchyPropertyPath);
 		Object objx = hf.findFirstNotEmpty(this);
 		return objx;
+	}
+
+	public OAObjectKey getReferenceObjectKey(String prop) {
+		Object obj = OAObjectPropertyDelegate.getProperty(this, prop);
+		if (obj instanceof OAObject) {
+			obj = ((OAObject) obj).getObjectKey();
+		}
+		if (obj instanceof OAObjectKey) {
+			return (OAObjectKey) obj;
+		}
+		return null;
 	}
 
 	/**

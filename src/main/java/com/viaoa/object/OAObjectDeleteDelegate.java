@@ -461,10 +461,7 @@ public class OAObjectDeleteDelegate {
 		if (OASyncDelegate.isServer(oaObj)) {
 			OAObjectLogDelegate.logToXmlFile(oaObj, false);
 			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
-
-			if (oi.getUseDataSource()) {
-				OAObjectDSDelegate.delete(oaObj);
-			}
+			OAObjectDSDelegate.delete(oaObj);
 		}
 		oaObj.afterDelete();
 	}

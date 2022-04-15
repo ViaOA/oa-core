@@ -192,10 +192,8 @@ public class OAObjectKeyDelegate {
 			if (oi == null) {
 				oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 			}
-			if (oi.getUseDataSource()) {
-				if (!OAObjectDSDelegate.allowIdChange(oaObj.getClass())) {
-					return ("ID property can not be changed if " + oaObj.getClass().getSimpleName() + " has been saved");
-				}
+			if (!OAObjectDSDelegate.allowIdChange(oaObj.getClass())) {
+				return ("ID property can not be changed if " + oaObj.getClass().getSimpleName() + " has been saved");
 			}
 		}
 
@@ -290,7 +288,7 @@ public class OAObjectKeyDelegate {
 		public static OAObjectKey convertToObjectKey(OAObjectInfo oi, Object value) {
 	    if (oi == null || value == null) return null;
 	    if (value instanceof OAObjectKey) return (OAObjectKey) value;
-
+	
 	    String[] ids = oi.idProperties;
 	    if (ids != null && ids.length > 0) {
 	        Class c = OAObjectInfoDelegate.getPropertyClass(oi, ids[0]);

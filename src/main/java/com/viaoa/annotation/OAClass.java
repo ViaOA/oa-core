@@ -56,8 +56,8 @@ public @interface OAClass {
 
 	String sortProperty() default "";
 
-	//String[] searchProperties() default "";
-	String[] viewProperties() default "";
+	//String[] searchProperties() default {};
+	String[] viewProperties() default {};
 
 	long estimatedTotal() default 0;
 

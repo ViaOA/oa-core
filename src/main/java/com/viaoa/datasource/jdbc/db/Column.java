@@ -17,7 +17,7 @@ import com.viaoa.util.OAReflect;
 /**
  * Used for mapping database Columns with OAObject properties. Column objects are stored in Table.columns[].
  */
-public class Column { // need to select all with properyName!=null 
+public class Column { // need to select all with properyName!=null
 
 	/** table that this column belongs to. */
 	public Table table; // set by Table.setColumns()
@@ -123,5 +123,4 @@ public class Column { // need to select all with properyName!=null
 		}
 		return methodSet;
 	}
-
 }
