@@ -107,17 +107,24 @@ public class DeleteDelegate {
 
 	private static void performDelete(OADataSourceJDBC ds, String str) throws Exception {
 		LOG.fine(str);
+		final boolean bUseBatch = ds.isAllowingBatch();
 		Statement statement = null;
 		try {
 			// DBLogDelegate.logDelete(str);
-			//qqqqqqqqqqqqq
-			statement = ds.getBatchStatement(str);
-			int x = statement.executeUpdate(str);
+			int x;
+			if (bUseBatch) {
+				statement = ds.getBatchStatement(str);
+				statement.addBatch(str);
+				x = 1;
+			} else {
+				statement = ds.getStatement(str);
+				x = statement.executeUpdate(str);
+			}
 			if (x != 1) {
 				LOG.warning("row was not DELETEd, no exception thrown");
 			}
 		} finally {
-			if (statement != null) {
+			if (statement != null && !bUseBatch) {
 				ds.releaseStatement(statement);
 			}
 		}
