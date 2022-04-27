@@ -233,7 +233,8 @@ public class InsertDelegate {
 		return new Object[] { new String(str), alValue };
 	}
 
-	private static void performInsert(OADataSourceJDBC ds, OAObject oaObj, String sqlInsert, Object[] params, Column columnAutoGen)
+	private static void performInsert(final OADataSourceJDBC ds, final OAObject oaObj, final String sqlInsert, final Object[] params,
+			final Column columnAutoGen)
 			throws Exception {
 
 		/*
@@ -247,21 +248,23 @@ public class InsertDelegate {
 		if (oi.getUseDataSource()) {
 		    OAObject.OALOG.fine(s);
 		}
-		
+
 		LOG.fine(s);
-		
+
 		DBLogDelegate.logInsert(sqlInsert, params);
 		*/
 		DBLogDelegate.logInsert(sqlInsert, params);
 
+		final boolean bUseBatch = ds.isAllowingBatch() && (columnAutoGen == null);
+
 		Statement statement = null;
 		PreparedStatement preparedStatement = null;
 		try {
+
 			int x = 0;
 			if (params != null && params.length > 0) {
-				if (ds.getDBMetaData().databaseType == DBMetaData.ACCESS) {
-					preparedStatement = ds.getPreparedStatement(sqlInsert);
-					columnAutoGen = null;
+				if (bUseBatch) {
+					preparedStatement = ds.getBatchPreparedStatement(sqlInsert);
 				} else {
 					preparedStatement = ds.getPreparedStatement(sqlInsert, (columnAutoGen != null));
 				}
@@ -271,18 +274,23 @@ public class InsertDelegate {
 						preparedStatement.setAsciiStream(	i + 1, new StringBufferInputStream((String) params[i]),
 															((String) params[i]).length());
 					} else {
-						// 20100504
 						preparedStatement.setBytes(i + 1, (byte[]) (params[i]));
 					}
-
 				}
-				x = preparedStatement.executeUpdate();
-			} else {
-				statement = ds.getStatement(sqlInsert);
-				if (ds.getDBMetaData().databaseType == DBMetaData.ACCESS) {
-					x = statement.executeUpdate(sqlInsert);
-					columnAutoGen = null;
+
+				if (bUseBatch) {
+					preparedStatement.addBatch();
+					x = 1;
 				} else {
+					x = preparedStatement.executeUpdate();
+				}
+			} else {
+				if (bUseBatch) {
+					statement = ds.getBatchStatement(sqlInsert);
+					statement.addBatch(sqlInsert);
+					x = 1;
+				} else {
+					statement = ds.getStatement(sqlInsert);
 					int param = (columnAutoGen != null) ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS;
 					x = statement.executeUpdate(sqlInsert, param);
 				}
@@ -314,10 +322,14 @@ public class InsertDelegate {
 			}
 		} finally {
 			if (statement != null) {
-				ds.releaseStatement(statement);
+				if (!bUseBatch) {
+					ds.releaseStatement(statement);
+				}
 			}
 			if (preparedStatement != null) {
-				ds.releasePreparedStatement(preparedStatement);
+				if (!bUseBatch) {
+					ds.releasePreparedStatement(preparedStatement);
+				}
 			}
 		}
 	}

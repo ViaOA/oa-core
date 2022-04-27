@@ -322,7 +322,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 			OASelect sel = data.getSelect();
 			if (sel != null) {
 			    boolean b = sel.isCounted();
-			
+
 			    if (!sel.hasBeenStarted()) {
 			        if (b) s += " counted: " + sel.getCount() + ", ";
 			        s += " not selected";
@@ -864,7 +864,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		}
 		/* 20200522 removed, caller should setLoading(..) if it's needed
 		 * otherwise, events from add will check isLoading and not run code.  Ex: M2M wont be set
-		
+
 		boolean b = (getSize() == 0);
 		if (b) {
 			OAThreadLocalDelegate.setLoading(true);
@@ -1743,7 +1743,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		boolean bRemoveSelectFromHub;
 		if (getMasterObject() != null) {
 			OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(this);
-			if (li.getType() == OALinkInfo.ONE && li.getPrivateMethod()) {
+			if (li != null && li.getType() == OALinkInfo.ONE && li.getPrivateMethod()) {
 				bRemoveSelectFromHub = false;
 			} else {
 				bRemoveSelectFromHub = true;
@@ -1930,8 +1930,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	}
 
 	/**
-	
-	
+
+
 	 */
 	protected void setLinkHub(String propertyFrom, Hub linkHub, String propertyTo, boolean linkPosFlag) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
@@ -2285,9 +2285,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 
 	/*
 	    hub.onChangeAO( event -> {
-	
+
 	    });
-	
+
 	 */
 	public void onChangeAO(HubOnEventInterface onEvent) {
 		if (onEvent == null) {

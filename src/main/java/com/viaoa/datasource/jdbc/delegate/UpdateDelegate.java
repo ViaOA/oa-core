@@ -32,7 +32,7 @@ import com.viaoa.util.OANotExist;
 
 /**
  * Manages updates for JDBC datasource.
- * 
+ *
  * @author vvia
  */
 public class UpdateDelegate {
@@ -300,28 +300,43 @@ public class UpdateDelegate {
 	}
 
 	private static void performUpdate(OADataSourceJDBC ds, String sqlUpdate, Object[] sqlParams) throws Exception {
-		Statement statement = null;
-
 		// DBLogDelegate.logUpdate(sqlUpdate, sqlParams);
 
+		final boolean bUseBatch = ds.isAllowingBatch();
+
+		Statement statement = null;
 		PreparedStatement preparedStatement = null;
 		try {
 			int x;
 			if (sqlParams != null && sqlParams.length > 0) {
-				preparedStatement = ds.getPreparedStatement(sqlUpdate);
+				if (bUseBatch) {
+					preparedStatement = ds.getBatchPreparedStatement(sqlUpdate);
+				} else {
+					preparedStatement = ds.getPreparedStatement(sqlUpdate);
+				}
 				for (int i = 0; i < sqlParams.length; i++) {
 					if (sqlParams[i] instanceof String) {
 						preparedStatement.setAsciiStream(	i + 1, new StringBufferInputStream((String) sqlParams[i]),
 															((String) sqlParams[i]).length());
 					} else {
-						// 20100504
 						preparedStatement.setBytes(i + 1, (byte[]) (sqlParams[i]));
 					}
 				}
-				x = preparedStatement.executeUpdate();
+				if (bUseBatch) {
+					preparedStatement.addBatch();
+					x = 1;
+				} else {
+					x = preparedStatement.executeUpdate();
+				}
 			} else {
-				statement = ds.getStatement(sqlUpdate);
-				x = statement.executeUpdate(sqlUpdate);
+				if (bUseBatch) {
+					statement = ds.getBatchStatement(sqlUpdate);
+					statement.addBatch(sqlUpdate);
+					x = 1;
+				} else {
+					statement = ds.getStatement(sqlUpdate);
+					x = statement.executeUpdate(sqlUpdate);
+				}
 			}
 			if (x != 1) {
 				LOG.warning("expected executeUpdate to return 1, received=" + x + ", sql=" + sqlUpdate);
@@ -329,10 +344,13 @@ public class UpdateDelegate {
 			}
 		} finally {
 			if (statement != null) {
-				ds.releaseStatement(statement);
-			}
-			if (preparedStatement != null) {
-				ds.releasePreparedStatement(preparedStatement);
+				if (!bUseBatch) {
+					ds.releaseStatement(statement);
+				}
+			} else if (preparedStatement != null) {
+				if (!bUseBatch) {
+					ds.releasePreparedStatement(preparedStatement);
+				}
 			}
 		}
 	}
@@ -487,7 +505,7 @@ public class UpdateDelegate {
 				statement = ds.getStatement(sql);
 				statement.executeUpdate(sql);
 			} catch (Exception e) {
-				//System.out.println("UpdateDelegate.updateMany2ManyLinks(..) failed, exception: "+e);                
+				//System.out.println("UpdateDelegate.updateMany2ManyLinks(..) failed, exception: "+e);
 				// if (!connectionPool.isDatabaseAvailable()) throw new RuntimeException("Database Connection is not Available.  Error:"+e);
 				// could be a duplicate record ... just ignore
 				// throw new OADataSourceException(this, "OADataSourceJDBC.saveLinks() - "+e.getMessage());
@@ -551,7 +569,7 @@ public class UpdateDelegate {
 				statement = ds.getStatement(sql);
 				statement.executeUpdate(sql);
 			} catch (Exception e) {
-				//System.out.println("UpdateDelegate.updateMany2ManyLinks(..) failed, exception: "+e);                
+				//System.out.println("UpdateDelegate.updateMany2ManyLinks(..) failed, exception: "+e);
 				// if (!connectionPool.isDatabaseAvailable()) throw new OAException("Database Connection is not Available.  Error:"+e);
 				// could be a duplicate ... just ignore
 				// throw new OADataSourceException(this, "OADataSourceJDBC.saveLinks() - "+e.getMessage());

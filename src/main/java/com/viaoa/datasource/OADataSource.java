@@ -16,6 +16,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAFilter;
 
 /**
@@ -850,4 +852,13 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return true;
 	}
 
+	/**
+	 * Helper method to know if there is an OATransaction that has batchUpdate=true. If using OATransaction wth batchUpdate=true, then
+	 * datasource can batch the updates that it makes to the database.
+	 */
+	public boolean isAllowingBatch() {
+		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+		final boolean bIsForBatch = tran != null && tran.getBatchUpdate();
+		return bIsForBatch;
+	}
 }

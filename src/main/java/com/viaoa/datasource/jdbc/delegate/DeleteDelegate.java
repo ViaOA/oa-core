@@ -22,7 +22,7 @@ import com.viaoa.object.OAObjectKeyDelegate;
 
 /**
  * Manages deleting for JDBC datasource.
- * 
+ *
  * @author vvia
  */
 public class DeleteDelegate {
@@ -110,7 +110,8 @@ public class DeleteDelegate {
 		Statement statement = null;
 		try {
 			// DBLogDelegate.logDelete(str);
-			statement = ds.getStatement(str);
+			//qqqqqqqqqqqqq
+			statement = ds.getBatchStatement(str);
 			int x = statement.executeUpdate(str);
 			if (x != 1) {
 				LOG.warning("row was not DELETEd, no exception thrown");

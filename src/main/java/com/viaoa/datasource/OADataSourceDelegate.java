@@ -90,6 +90,34 @@ public class OADataSourceDelegate {
 		return null;
 	}
 
+	public static Statement getBatchStatement() throws Exception {
+		OADataSource[] dss = OADataSource.getDataSources();
+		if (dss == null) {
+			return null;
+		}
+		for (OADataSource ds : dss) {
+			if (ds instanceof OADataSourceJDBC) {
+				OADataSourceJDBC jds = (OADataSourceJDBC) ds;
+				return jds.getBatchStatement("");
+			}
+		}
+		return null;
+	}
+
+	public static Statement getBatchStatement(String msg) throws Exception {
+		OADataSource[] dss = OADataSource.getDataSources();
+		if (dss == null) {
+			return null;
+		}
+		for (OADataSource ds : dss) {
+			if (ds instanceof OADataSourceJDBC) {
+				OADataSourceJDBC jds = (OADataSourceJDBC) ds;
+				return jds.getBatchStatement(msg);
+			}
+		}
+		return null;
+	}
+
 	public static void releaseStatement(Statement statement) {
 		if (statement == null) {
 			return;
