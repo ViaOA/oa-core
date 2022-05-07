@@ -10,7 +10,6 @@
 */
 package com.viaoa.datasource.jdbc.query;
 
-import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -424,13 +423,18 @@ public class ResultSetIterator implements OADataSourceIterator {
 					if (columnInfos[i].column.clazz.equals(String.class)) {
 						values[i] = resultSet.getString(i + 1);
 					} else if (columnInfos[i].column.clazz.equals(byte[].class)) {
-						// 20100514
+
+						// 20220430 postgress (bytea) did not like getBlob logic, failed on reading long (size)
+						values[i] = rs.getBytes(i + 1);
+
+						/*was
 						Blob blob = resultSet.getBlob(i + 1);
 						if (blob != null) {
 							values[i] = blob.getBytes(1, (int) blob.length());
 						} else {
 							values[i] = null;
 						}
+						*/
 					} else {
 						values[i] = resultSet.getObject(i + 1);
 						if (values[i] == null) {
