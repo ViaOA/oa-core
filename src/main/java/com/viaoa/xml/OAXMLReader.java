@@ -15,6 +15,7 @@ import java.io.StringBufferInputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.parsers.SAXParser;
@@ -330,20 +331,27 @@ public class OAXMLReader {
 			final OAObjectKey key = new OAObjectKey(values, iguid, false);
 
 			// try to find using matching props
-			final String[] matchProps = getImportMatching() ? oi.getImportMatchProperties() : null;
-			final Object[] matchValues = new Object[matchProps == null ? 0 : matchProps.length];
+			final String[] matchProps = getImportMatching() ? oi.getImportMatchPropertyNames() : null;
+			final String[] matchPropPaths = getImportMatching() ? oi.getImportMatchPropertyPaths() : null;
+			List<Object> al = new ArrayList<>();
 			if (matchProps != null && matchProps.length > 0) {
 				for (int i = 0; i < matchProps.length; i++) {
+					if (matchPropPaths[i].indexOf('.') > 0) {
+						continue;
+					}
 					String id = matchProps[i].toUpperCase();
 					Class c2 = OAObjectInfoDelegate.getPropertyClass(toClass, id);
-					matchValues[i] = hm.get(id);
 
-					if (matchValues[i] instanceof HashMap) {
-						matchValues[i] = _processChildren((HashMap) matchValues[i], c2, true, level + 1);
-					} else if (matchValues[i] instanceof String) {
-						matchValues[i] = OAConverter.convert(c2, matchValues[i]);
+					Object val = hm.get(id);
+
+					if (val instanceof HashMap) {
+						val = _processChildren((HashMap) val, c2, true, level + 1);
+					} else if (val instanceof String) {
+						val = OAConverter.convert(c2, val);
 					}
+					al.add(val);
 				}
+				final Object[] matchValues = al.toArray(new Object[al.size()]);
 
 				OASelect sel = new OASelect(toClass);
 				sel.setFilter(new OAFilter() {
@@ -352,9 +360,13 @@ public class OAXMLReader {
 						if (!(obj instanceof OAObject)) {
 							return false;
 						}
+						int pos = 0;
 						for (int i = 0; i < matchProps.length; i++) {
+							if (matchPropPaths[i].indexOf('.') > 0) {
+								continue;
+							}
 							Object val1 = ((OAObject) obj).getProperty(matchProps[i]);
-							if (!OACompare.isEqual(val1, matchValues[i])) {
+							if (!OACompare.isEqual(val1, matchValues[pos++])) {
 								return false;
 							}
 						}

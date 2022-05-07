@@ -164,7 +164,7 @@ public class OAAnnotationDelegateTest extends OAUnitTest {
 					continue;
 				}
 				b = true;
-				assertEquals(li.isImportMatch(), oaone.isImportMatch());
+				assertEquals(li.isImportMatch(), oaone.importMatch());
 				assertEquals(li.getCascadeSave(), oaone.cascadeSave());
 				assertEquals(li.getCascadeDelete(), oaone.cascadeDelete());
 				assertEquals(li.getOwner(), oaone.owner());

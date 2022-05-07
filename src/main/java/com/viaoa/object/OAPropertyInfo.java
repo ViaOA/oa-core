@@ -31,6 +31,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private boolean required;
 	private boolean id;
 	private boolean unique;
+	private boolean autoAssign;
 	private Class classType;
 	private int decimalPlaces = -1;
 	private boolean isBlob;
@@ -38,7 +39,6 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private String displayName;
 
 	private boolean isUnicode;
-	private boolean isImportMatch;
 	private boolean isSHAHash;
 	private boolean isEncrypted;
 	private Hub<String> hubNameValue;
@@ -72,6 +72,8 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private boolean isLower;
 	private boolean sensitiveData;
 
+	private boolean importMatch;
+
 	public OAPropertyInfo() {
 	}
 
@@ -96,8 +98,20 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return id;
 	}
 
+	public boolean isId() {
+		return id;
+	}
+
 	public void setId(boolean id) {
 		this.id = id;
+	}
+
+	public boolean getKey() {
+		return id;
+	}
+
+	public boolean isKey() {
+		return id;
 	}
 
 	public boolean getUnique() {
@@ -106,6 +120,14 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	public void setUnique(boolean bUnique) {
 		this.unique = bUnique;
+	}
+
+	public boolean getAutoAssign() {
+		return autoAssign;
+	}
+
+	public void setAutoAssign(boolean b) {
+		this.autoAssign = b;
 	}
 
 	public boolean getProcessed() {
@@ -206,14 +228,6 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	public void setUnicode(boolean b) {
 		this.isUnicode = b;
-	}
-
-	public boolean isImportMatch() {
-		return isImportMatch;
-	}
-
-	public void setImportMatch(boolean b) {
-		this.isImportMatch = b;
 	}
 
 	public boolean isEncrypted() {
@@ -446,4 +460,17 @@ public class OAPropertyInfo implements java.io.Serializable {
 	public boolean getSensitiveData() {
 		return sensitiveData;
 	}
+
+	public boolean isImportMatch() {
+		return importMatch;
+	}
+
+	public void setImportMatch(boolean b) {
+		this.importMatch = b;
+	}
+
+	public boolean getImportMatch() {
+		return importMatch;
+	}
+
 }

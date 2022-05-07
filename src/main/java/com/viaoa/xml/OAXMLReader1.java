@@ -13,9 +13,11 @@ package com.viaoa.xml;
 import java.io.File;
 import java.io.StringBufferInputStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 
 import javax.xml.parsers.SAXParser;
@@ -48,7 +50,7 @@ import com.viaoa.util.OAString;
  * OAXMLReader using a SAXParser to parse and automatically create OAObjects from a XML file. This will do the following to find the
  * existing object: 1: if OAProperty.importMatch, then it will search to find a matching object 2: if objectId props, then it will search to
  * find a matching object 3: use guid if not found, then a new object will be created.
- * 
+ *
  * @see OAXMLWriter
  */
 public class OAXMLReader1 extends DefaultHandler {
@@ -106,7 +108,7 @@ public class OAXMLReader1 extends DefaultHandler {
 
 	/**
 	 * Used to parse and create OAObjects from an XML file.
-	 * 
+	 *
 	 * @return topmost object from XML file.
 	 */
 	public Object read(String fileName) throws Exception {
@@ -116,7 +118,7 @@ public class OAXMLReader1 extends DefaultHandler {
 
 	/**
 	 * Used to parse and create OAObjects from an XML file.
-	 * 
+	 *
 	 * @return topmost object from XML file.
 	 */
 	public Object read() throws Exception {
@@ -125,7 +127,7 @@ public class OAXMLReader1 extends DefaultHandler {
 
 	/**
 	 * Used to parse and create OAObjects from an XML file.
-	 * 
+	 *
 	 * @return topmost object from XML file.
 	 */
 	public Object parse() throws Exception {
@@ -161,7 +163,7 @@ public class OAXMLReader1 extends DefaultHandler {
 
 	/**
 	 * Used to parse and create OAObjects from an XML file.
-	 * 
+	 *
 	 * @return topmost object from XML file.
 	 */
 	public Object parse(String fileName) throws Exception {
@@ -195,7 +197,7 @@ public class OAXMLReader1 extends DefaultHandler {
 
 	/**
 	 * Used to parse and create OAObjects from an XML string.
-	 * 
+	 *
 	 * @return topmost object from XML file.
 	 */
 	public Object parseString(String xmlData) throws Exception {
@@ -242,7 +244,7 @@ public class OAXMLReader1 extends DefaultHandler {
 
 	/**
 	 * Used to unencrypt an XML file created by OAXMLWriter that used an encryption code.
-	 * 
+	 *
 	 * @see OAXMLWriter#setEncodeMessage(String)
 	 */
 	public void setDecodeMessage(String msg) {
@@ -499,19 +501,24 @@ public class OAXMLReader1 extends DefaultHandler {
 				hash.remove(id);
 			}
 			final OAObjectKey key = new OAObjectKey(values, OAConv.toInt(guid), false);
-			// 20150730
-			final String[] matchProps = getImportMatching() ? oi.getImportMatchProperties() : null;
-			final Object[] matchValues = new Object[matchProps == null ? 0 : matchProps.length];
+			final String[] matchProps = getImportMatching() ? oi.getImportMatchPropertyNames() : null;
+			final String[] matchPropPaths = getImportMatching() ? oi.getImportMatchPropertyPaths() : null;
+			List<Object> al = new ArrayList<>();
 			if (matchProps != null && matchProps.length > 0) {
 				for (int i = 0; i < matchProps.length; i++) {
+					if (matchPropPaths[i].indexOf('.') > 0) {
+						continue;
+					}
 					String id = matchProps[i].toUpperCase();
 					Class c2 = OAObjectInfoDelegate.getPropertyClass(c, id);
-					matchValues[i] = hash.get(id);
-					if (matchValues[i] instanceof String) {
-						matchValues[i] = OAConverter.convert(c2, matchValues[i]);
+					Object val = hash.get(id);
+					if (val instanceof String) {
+						val = OAConverter.convert(c2, val);
 					}
+					al.add(val);
 				}
 			}
+			final Object[] matchValues = al.toArray(new Object[al.size()]);
 
 			OAObject object = null;
 
@@ -578,7 +585,7 @@ public class OAXMLReader1 extends DefaultHandler {
 					if (object != null) {
 						h.add(object);
 					} else {
-						// note: should not ever need a Holder 
+						// note: should not ever need a Holder
 						h.add(key);
 					}
 				} else if (indent > 3) {
@@ -874,7 +881,7 @@ public class OAXMLReader1 extends DefaultHandler {
 								if (hm != null) {
 									o = hm.get(hx.key);
 								} else {
-									// 20150730 should not happen, this can be removed later                                
+									// 20150730 should not happen, this can be removed later
 									System.out.println("OAXMLReader error, value was not in hmMatch");
 									continue; //qqq
 								}
@@ -1006,7 +1013,7 @@ public class OAXMLReader1 extends DefaultHandler {
 
 	/**
 	 * Convert from String to correct type. param clazz type of object to convert value to
-	 * 
+	 *
 	 * @return null to skip property.
 	 */
 	public Object convertToObject(String propertyName, String value, Class propertyClass) {

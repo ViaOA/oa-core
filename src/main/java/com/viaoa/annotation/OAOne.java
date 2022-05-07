@@ -73,8 +73,6 @@ public @interface OAOne {
 	/** @return true if this is a calculated reference. */
 	boolean isCalculated() default false;
 
-	boolean isImportMatch() default false;
-
 	String[] calcDependentProperties() default {};
 
 	/** flag to know if this is processed and will require User.editProcessed=true for it to be changed. */
@@ -106,6 +104,8 @@ public @interface OAOne {
 	 * Name of properties in pojo used as fkey(s).
 	 */
 	String[] pojoNames() default {};
+
+	boolean importMatch() default false;
 }
 
 /*  OALinkInfo

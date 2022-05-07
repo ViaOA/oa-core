@@ -69,7 +69,6 @@ public class OAAnnotationDelegate {
 	 * needs to be called after OAObjectInfo has been created.
 	 */
 	public static void update2(OAObjectInfo oi, Class clazz) {
-		HashSet<String> hs = new HashSet<String>();
 		for (; clazz != null;) {
 			if (OAObject.class.equals(clazz)) {
 				break;
@@ -193,6 +192,8 @@ public class OAAnnotationDelegate {
 				oi.addPropertyInfo(pi);
 			}
 
+			pi.setImportMatch(oaprop.importMatch());
+
 			s = oaprop.displayName();
 			if (OAString.isEmpty(s)) {
 				s = OAString.getDisplayName(name);
@@ -228,6 +229,11 @@ public class OAAnnotationDelegate {
 				}
 			}
 
+			OAId oaid = (OAId) m.getAnnotation(OAId.class);
+			if (oaid != null) {
+				pi.setAutoAssign(oaid.autoAssign());
+			}
+
 			boolean b = oaprop.isBlob();
 			if (b) {
 				b = false;
@@ -242,7 +248,6 @@ public class OAAnnotationDelegate {
 			pi.setBlob(b);
 			pi.setNameValue(oaprop.isNameValue());
 			pi.setUnicode(oaprop.isUnicode());
-			pi.setImportMatch(oaprop.isImportMatch());
 
 			pi.setEncrypted(oaprop.isEncrypted());
 			pi.setSHAHash(oaprop.isSHAHash() || oaprop.isPassword());
@@ -357,6 +362,8 @@ public class OAAnnotationDelegate {
 				oi.addLinkInfo(li);
 			}
 
+			li.setImportMatch(annotation.importMatch());
+
 			s = annotation.displayName();
 			if (OAString.isEmpty(s)) {
 				s = OAString.getDisplayName(name);
@@ -365,7 +372,6 @@ public class OAAnnotationDelegate {
 
 			li.setRequired(annotation.required());
 			li.setCalcDependentProperties(annotation.calcDependentProperties());
-			li.setImportMatch(annotation.isImportMatch());
 			li.setCascadeSave(annotation.cascadeSave());
 			li.setCascadeDelete(annotation.cascadeDelete());
 			li.setReverseName(annotation.reverseName());
@@ -1138,8 +1144,119 @@ public class OAAnnotationDelegate {
 		}
 	}
 
+	// 20220503
+	public static void updateImportMatches(OAObjectInfo oi) {
+		// get all ImportMatches and create propertyPaths for each
+		final ArrayList<Object> al = new ArrayList<>();
+
+		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
+			if (pi.isImportMatch()) {
+				al.add(pi);
+			}
+		}
+
+		for (OALinkInfo li : oi.getLinkInfos()) {
+			if (li.isImportMatch()) {
+				al.add(li);
+			}
+		}
+
+		final ArrayList<String> alPropertyName = new ArrayList<>();
+		final ArrayList<String> alPropertyPath = new ArrayList<>();
+
+		for (Object obj : al) {
+			if (obj == null) {
+				continue;
+			}
+			if (obj instanceof OAPropertyInfo) {
+				OAPropertyInfo pi = (OAPropertyInfo) obj;
+				alPropertyName.add(pi.getLowerName());
+				alPropertyPath.add(""); // "this"
+			} else {
+				OALinkInfo li = (OALinkInfo) obj;
+
+				String prefixName;
+				if (li.getPojoNames() != null && li.getPojoNames().length > 0) {
+					prefixName = "";
+				} else {
+					prefixName = li.getLowerName();
+				}
+
+				recurseUpdateImportMatches(	0, prefixName, li.getLowerName(), li, alPropertyName, alPropertyPath,
+											new HashSet<OALinkInfo>());
+			}
+		}
+
+		oi.importMatchPropertyNames = alPropertyName.toArray(new String[alPropertyName.size()]);
+		oi.importMatchPropertyPaths = alPropertyPath.toArray(new String[alPropertyPath.size()]);
+	}
+
+	private static void recurseUpdateImportMatches(final int level, final String prefixName, final String prefixPath, final OALinkInfo li,
+			final ArrayList<String> alPropertyName,
+			final ArrayList<String> alPropertyPath, final HashSet<OALinkInfo> hsLi) {
+
+		if (hsLi.contains(li)) {
+			return;
+		}
+		hsLi.add(li);
+
+		if (li == null || !li.isImportMatch()) {
+			return;
+		}
+
+		final OAObjectInfo oiTo = li.getToObjectInfo();
+
+		boolean b = false;
+		for (OAPropertyInfo pi : oiTo.getPropertyInfos()) {
+			if (pi.isImportMatch()) {
+				b = true;
+				break;
+			}
+		}
+		for (OALinkInfo lix : oiTo.getLinkInfos()) {
+			if (lix.isImportMatch()) {
+				b = true;
+				break;
+			}
+		}
+		if (!b) {
+			if (li.getPojoNames() != null && li.getPojoNames().length > 0) {
+				for (String sx : li.getPojoNames()) {
+					alPropertyName.add(sx);
+					String s = prefixPath + "." + sx;
+					alPropertyPath.add(s);
+				}
+			} else {
+				for (String pkName : oiTo.getKeyProperties()) {
+					OAPropertyInfo pi = oiTo.getPropertyInfo(pkName);
+					alPropertyName.add(prefixName + pi.getName());
+					String s = (prefixPath == null || prefixPath.length() == 0) ? pi.getLowerName() : (prefixPath + "." + pi.getName());
+					alPropertyPath.add(s);
+				}
+			}
+		} else {
+			for (OAPropertyInfo pi : oiTo.getPropertyInfos()) {
+				if (!pi.isImportMatch()) {
+					continue;
+				}
+				alPropertyName.add(prefixName + pi.getName());
+				String s = (prefixPath == null || prefixPath.length() == 0) ? pi.getLowerName() : (prefixPath + "." + pi.getName());
+				alPropertyPath.add(s);
+			}
+
+			for (OALinkInfo lix : oiTo.getLinkInfos()) {
+				if (!lix.isImportMatch()) {
+					continue;
+				}
+				recurseUpdateImportMatches(	level + 1, prefixName + lix.getName(), prefixPath + "." + lix.getName(), lix, alPropertyName,
+											alPropertyPath,
+											hsLi);
+			}
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
-		/**
+		/*
 		 * OAAnnotationDelegate del = new OAAnnotationDelegate(); DataSource ds = new DataSource("server", "database", "user", "pw");
 		 * Database database = ((OADataSourceJOAC)ds.getOADataSource()).getDatabase(); OAMetaData dbmd =
 		 * ((OADataSourceJOAC)ds.getOADataSource()).getOAMetaData(); String[] fnames = OAReflect.getClasses("com.viaoa.scheduler.oa"); for

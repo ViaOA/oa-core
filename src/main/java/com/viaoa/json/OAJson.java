@@ -53,6 +53,11 @@ public class OAJson {
 	private boolean bIncludeOwned = true;
 	private boolean bIncludeAll;
 
+	/**
+	 * Make compatible with pojo version of oaobj, where importMatch property(ies) and link(s) are used instead of autoseq property Id
+	 */
+	private boolean bWriteAsPojo;
+
 	private Class readObjectClass;
 
 	private Stack<OALinkInfo> stackLinkInfo;
@@ -171,6 +176,11 @@ public class OAJson {
 		} finally {
 			OAThreadLocalDelegate.setOAJackson(null);
 		}
+	}
+
+	public <T extends Object> T readObject(final String json, final Class<T> clazz) throws JsonProcessingException {
+		T t = readObject(json, clazz, false);
+		return t;
 	}
 
 	/**
@@ -337,27 +347,27 @@ public class OAJson {
 	public String write(final Hub<? extends OAObject> hub) throws JsonProcessingException {
 		this.cascade = null;
 		final OACascade cascade = getCascade();
-	
+
 		final ObjectMapper objectMapper = createObjectMapper();
-	
+
 		ArrayNode nodeArray = objectMapper.createArrayNode();
-	
+
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-	
+
 			for (final OAObject oaObj : hub) {
 				if (cascade.wasCascaded(oaObj, true)) {
 					// write single objKey or guid to arrayNode
 					OAObjectKey key = oaObj.getObjectKey();
-	
+
 					String id = OAJson.convertObjectKeyToJsonSinglePartId(key);
-	
+
 					if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
 						nodeArray.add(id);
 					} else {
 						nodeArray.add(OAConv.toLong(id));
 					}
-	
+
 				} else {
 					JsonNode node = objectMapper.valueToTree(oaObj);
 					nodeArray.add(node);
@@ -366,9 +376,9 @@ public class OAJson {
 		} finally {
 			OAThreadLocalDelegate.setOAJackson(null);
 		}
-	
+
 		String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(nodeArray);
-	
+
 		return json;
 	}
 	*/
@@ -511,24 +521,24 @@ public class OAJson {
 	 * Used to serialize the arguments into a Json array. This will also include json properties for setting(/casting) if the object is
 	 * different then the parameter type.
 	 */
-    public static String convertMethodArgumentsToJson(final Method method, final Object[] argValues,
-            final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
-        
-        final OAJson oaj = new OAJson();
-        oaj.stackLinkInfo = new Stack<>();
-        
-        try {
-            OAThreadLocalDelegate.setOAJackson(oaj);
+	public static String convertMethodArgumentsToJson(final Method method, final Object[] argValues,
+			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
 
-            return _convertMethodArgumentsToJson(oaj, method, argValues, lstIncludePropertyPathss, skipParams); 
-        } finally {
-            OAThreadLocalDelegate.setOAJackson(null);
-        }
-    }
-            
+		final OAJson oaj = new OAJson();
+		oaj.stackLinkInfo = new Stack<>();
+
+		try {
+			OAThreadLocalDelegate.setOAJackson(oaj);
+
+			return _convertMethodArgumentsToJson(oaj, method, argValues, lstIncludePropertyPathss, skipParams);
+		} finally {
+			OAThreadLocalDelegate.setOAJackson(null);
+		}
+	}
+
 	protected static String _convertMethodArgumentsToJson(final OAJson oaj, final Method method, final Object[] argValues,
 			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
-		
+
 		final ObjectMapper om = oaj.createObjectMapper();
 
 		final ArrayNode arrayNode = om.createArrayNode();
@@ -730,5 +740,13 @@ public class OAJson {
 
 	public void afterReadCallback(JsonNode node, Object objNew) {
 
+	}
+
+	public void setWriteAsPojo(boolean b) {
+		this.bWriteAsPojo = b;
+	}
+
+	public boolean getWriteAsPojo() {
+		return this.bWriteAsPojo;
 	}
 }

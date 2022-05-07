@@ -22,6 +22,7 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
 
@@ -58,7 +59,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 	*/
 
 	@Override
-	public void serialize(OAObject value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+	public void serialize(final OAObject value, final JsonGenerator gen, final SerializerProvider serializers) throws IOException {
 
 		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
 
@@ -68,7 +69,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			oaj.getCascade().wasCascaded(oaObj, true);
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
 
 		gen.writeStartObject();
 
@@ -77,6 +78,22 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
 			if (!pi.getId()) {
 				continue;
+			}
+
+			if (oaj.getWriteAsPojo() && pi.getAutoAssign()) {
+				if (OAString.isNotEmpty(oi.getImportMatchPropertyNames())) {
+					boolean b = false;
+					for (String pp : oi.getImportMatchPropertyPaths()) {
+						OAPropertyPath ppx = new OAPropertyPath(oi.getForClass(), pp);
+						if (pp.indexOf('.') < 0 && pp.equalsIgnoreCase(pi.getName())) {
+							b = true;
+							break;
+						}
+					}
+					if (!b) {
+						continue;
+					}
+				}
 			}
 
 			String propertyName = pi.getLowerName();
@@ -96,9 +113,32 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			}
 		}
 
-		if (bNullId) {
+		if (bNullId && !oaj.getWriteAsPojo()) {
 			gen.writeNumberField("guid", oaObj.getGuid());
 		}
+
+		// write pojo importMatch properties
+		if (oaj.getWriteAsPojo() && OAString.isNotEmpty(oi.getImportMatchPropertyNames())) {
+			int pos = 0;
+			for (String propertyName : oi.getImportMatchPropertyNames()) {
+				String pp = oi.getImportMatchPropertyPaths()[pos++];
+				OAPropertyPath ppx = new OAPropertyPath(oi.getForClass(), pp);
+				OAPropertyInfo pi = ppx.getEndPropertyInfo();
+
+				Object objx = oaObj.getProperty(pp);
+
+				propertyName = oaj.getPropertyNameCallback(oaObj, propertyName);
+				objx = oaj.getPropertyValueCallback(oaObj, propertyName, objx);
+
+				if (objx == null) {
+					gen.writeNullField(propertyName);
+				} else {
+					writeProperty(pi, propertyName, objx, gen, oaObj);
+				}
+			}
+		}
+
+		//qqqqqqqqqqq dont write again, if already used in importMatchPropertyNames qqqqqqqqqqqqq
 
 		// write (non-id) props
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
@@ -106,6 +146,11 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				continue;
 			}
 			writeProperty(pi, gen, oaObj);
+		}
+
+		if (oaj.getWriteAsPojo()) {
+			gen.writeEndObject();
+			return;
 		}
 
 		final ArrayList<String> alPropertyPaths = oaj == null ? null : oaj.getPropertyPaths();
@@ -279,12 +324,18 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 	}
 
 	protected void writeProperty(OAPropertyInfo pi, JsonGenerator gen, OAObject oaObj) throws IOException {
-		Object value = pi.getValue(oaObj);
+		writeProperty(pi, pi.getLowerName(), null, gen, oaObj);
+	}
 
-		final String lowerName = pi.getLowerName();
+	protected void writeProperty(OAPropertyInfo pi, final String lowerName, Object value, JsonGenerator gen, OAObject oaObj)
+			throws IOException {
+		boolean bCheckValue = (value == null);
 
-		if (pi.getIsPrimitive() && pi.getTrackPrimitiveNull() && OAObjectReflectDelegate.getPrimitiveNull(oaObj, lowerName)) {
-			value = null;
+		if (bCheckValue) {
+			value = pi.getValue(oaObj);
+			if (pi.getIsPrimitive() && pi.getTrackPrimitiveNull() && OAObjectReflectDelegate.getPrimitiveNull(oaObj, lowerName)) {
+				value = null;
+			}
 		}
 		if (value == null) {
 			gen.writeNullField(lowerName);

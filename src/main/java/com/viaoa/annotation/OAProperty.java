@@ -83,8 +83,6 @@ public @interface OAProperty {
 
 	boolean isProcessed() default false;
 
-	boolean isImportMatch() default false;
-
 	boolean isEmail() default false;
 
 	boolean isUrl() default false;
@@ -142,4 +140,6 @@ public @interface OAProperty {
 	boolean isLower() default false;
 
 	boolean sensitiveData() default false;
+
+	boolean importMatch() default false;
 }

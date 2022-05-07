@@ -2,7 +2,11 @@ package com.viaoa.json.jackson;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -11,12 +15,14 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
+import com.viaoa.object.OAObjectEventDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
@@ -24,10 +30,14 @@ import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.util.OAArray;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAPropertyPath;
+import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
+import com.viaoa.util.Tuple;
 
 /**
  * Used by OAJackson to convert JSON to OAObject(s).
@@ -51,13 +61,14 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 		return obj;
 	}
 
-	protected OAObject getObject(OAObjectInfo oi, JsonNode node) {
+	protected OAObject getObject(final OAObjectInfo oi, final JsonNode node) {
 
 		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
 		final Class clazz = oi.getForClass();
 
 		oaj.beforeReadCallback(node);
 
+		boolean bIdMissing = false;
 		ArrayList alKeys = new ArrayList();
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
 			if (!pi.getId()) {
@@ -72,40 +83,122 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
 			JsonNode jn = node.get(propertyName);
 
+			if (jn == null) {
+				bIdMissing = true;
+				continue;
+			}
+
 			Object objx = convert(jn, pi);
 
 			objx = oaj.getPropertyValueCallback(null, pi.getLowerName(), objx);
 
 			alKeys.add(objx);
 		}
-		OAObjectKey ok = new OAObjectKey(alKeys.toArray());
 
-		OAObject objNew = (OAObject) OAObjectCacheDelegate.get(clazz, ok);
+		OAObjectKey ok = null;
+		OAObject objNew = null;
+
+		if (!bIdMissing) {
+			ok = new OAObjectKey(alKeys.toArray());
+			objNew = (OAObject) OAObjectCacheDelegate.get(clazz, ok);
+
+			if (objNew == null) {
+				objNew = (OAObject) OADataSource.getObject(clazz, ok);
+			}
+		} else {
+			JsonNode jn = node.get("guid");
+			if (jn != null) {
+				int guid = jn.asInt();
+
+				objNew = oaj.getGuidMap().get(guid);
+				if (objNew == null) {
+					ok = new OAObjectKey(null, guid, false);
+					objNew = (OAObject) OAObjectCacheDelegate.get(clazz, ok);
+					if (objNew == null) {
+						ok = new OAObjectKey(null, guid, true);
+						objNew = (OAObject) OAObjectCacheDelegate.get(clazz, ok);
+					}
+
+				}
+			}
+			if (objNew == null) {
+				// try to use importMatches
+				final String[] importMatchPropertyNames = oi.getImportMatchPropertyNames();
+				if (importMatchPropertyNames != null && importMatchPropertyNames.length > 0) {
+
+					final Map<String, Tuple<OAPropertyPath, Object>> hmNameValue = new HashMap<>();
+
+					int pos = 0;
+					String sql = null;
+					Object[] params = null;
+
+					for (String propertyName : importMatchPropertyNames) {
+						String propertyPath = oi.getImportMatchPropertyPaths()[pos++];
+						OAPropertyPath pp = new OAPropertyPath(oi.getForClass(), propertyPath);
+
+						jn = node.get(propertyName);
+						if (jn == null) {
+							if (pp.getEndPropertyInfo().isKey()) {
+								continue;
+							}
+							sql = null;
+							break;
+						}
+
+						if (sql == null) {
+							sql = "";
+						} else {
+							sql += " AND ";
+						}
+						sql += propertyPath + " = ?";
+
+						OAPropertyInfo pi = pp.getEndPropertyInfo();
+						Object val = convert(jn, pi);
+
+						if (val == null) {
+							sql = null;
+							break;
+						}
+
+						params = OAArray.add(Object.class, params, val);
+					}
+					if (sql != null) {
+						OASelect sel = new OASelect(oi.getForClass(), sql, params, "");
+
+						objNew = sel.next();
+						sel.close();
+					}
+				}
+			}
+
+			if (objNew != null) {
+				ok = objNew.getObjectKey();
+			}
+		}
 
 		if (objNew == null) {
-			objNew = (OAObject) OADataSource.getObject(clazz, ok);
-			if (objNew == null) {
-				objNew = (OAObject) OAObjectReflectDelegate.createNewObject(clazz);
+			objNew = (OAObject) OAObjectReflectDelegate.createNewObject(clazz);
 
-				int i = 0;
-				for (OAPropertyInfo pi : oi.getPropertyInfos()) {
-					if (!pi.getId()) {
-						continue;
-					}
+			int pos = 0;
+			for (OAPropertyInfo pi : oi.getPropertyInfos()) {
+				if (!pi.getId()) {
+					continue;
+				}
 
-					if (!oaj.getUsePropertyCallback(objNew, pi.getLowerName())) {
-						continue;
-					}
+				if (!oaj.getUsePropertyCallback(objNew, pi.getLowerName())) {
+					continue;
+				}
 
-					Object objx = alKeys.get(i++);
+				if (alKeys.size() > pos) {
+					Object objx = alKeys.get(pos++);
 					objx = oaj.getPropertyValueCallback(objNew, pi.getLowerName(), objx);
 
 					objNew.setProperty(pi.getLowerName(), objx);
 				}
+			}
 
-				if (OAThreadLocalDelegate.isLoading()) {
-					OAObjectDelegate.initializeAfterLoading((OAObject) objNew, false, false);
-				}
+			if (OAThreadLocalDelegate.isLoading()) {
+				OAObjectDelegate.initializeAfterLoading((OAObject) objNew, false, false);
 			}
 		}
 
@@ -138,7 +231,8 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 		}
 
 		// load links of type=one
-		for (OALinkInfo li : oi.getLinkInfos()) {
+		final Set<OALinkInfo> hsLinkFound = new HashSet<>();
+		for (final OALinkInfo li : oi.getLinkInfos()) {
 			if (li.getType() != li.TYPE_ONE) {
 				continue;
 			}
@@ -154,13 +248,14 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			JsonNode nodex = node.get(propertyName);
 
 			if (nodex != null) {
+				hsLinkFound.add(li);
 				OAObject objx = getLinkObject(objNew, li, nodex);
 
 				objx = (OAObject) oaj.getPropertyValueCallback(objNew, li.getLowerName(), objx);
 
 				objNew.setProperty(li.getLowerName(), objx);
 			} else {
-				String[] ss = li.getUsesProperties();
+				final String[] ss = li.getUsesProperties();
 				if (ss != null && ss.length > 0) {
 					ArrayList<Object> al = new ArrayList();
 					for (String s : ss) {
@@ -175,6 +270,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 						al.add(objx);
 					}
 					if (al.size() > 0) {
+						hsLinkFound.add(li);
 						Object[] objs = al.toArray(new Object[al.size()]);
 						OAObjectKey okx = new OAObjectKey(objs);
 
@@ -205,16 +301,9 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 						}
 						Object objx = convert(jn, pi);
 						al.add(objx);
-						pos++;
 					}
 					if (al.size() > 0) {
-						Object[] objs = al.toArray(new Object[al.size()]);
-						OAObjectKey okx = new OAObjectKey(objs);
-
-						objNew.setProperty(li.getLowerName(), okx);
-					}
-
-					if (al.size() > 0) {
+						hsLinkFound.add(li);
 						Object[] objs = al.toArray(new Object[al.size()]);
 						OAObjectKey okx = new OAObjectKey(objs);
 
@@ -224,10 +313,133 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			}
 		}
 
-		// load links of type=many
-		for (
+		// 20220504
+		// load any (optional) ImportMatch properties for One-Links.
+		//   These are "extra" properties added to Pojos that can use importMatch value(s) instead of pkey(s)
+		final String[] importMatchPropertyNames = oi.getImportMatchPropertyNames();
+		if (importMatchPropertyNames != null && importMatchPropertyNames.length > 0) {
 
-		OALinkInfo li : oi.getLinkInfos()) {
+			final Map<String, Tuple<OAPropertyPath, Object>> hmNameValue = new HashMap<>();
+
+			int pos = 0;
+			for (String propertyName : importMatchPropertyNames) {
+				String propertyPath = oi.getImportMatchPropertyPaths()[pos];
+				OAPropertyPath pp = new OAPropertyPath(objNew.getClass(), propertyPath);
+				OAPropertyInfo pi = pp.getEndPropertyInfo();
+
+				jn = node.get(propertyName);
+				if (jn != null) {
+					Object val = convert(jn, pi);
+					if (val != null || pi.getKey()) {
+						hmNameValue.put(propertyName, new Tuple(pp, val));
+					}
+				}
+				pos++;
+			}
+
+			if (hmNameValue.size() > 0) {
+				// see if oaObjKey can be created.  This is only when the linkTo's pkey prop values are included.
+				//   otherwise, the other values could be importMatch values that can be used to find the link object (at later time)
+				for (final OALinkInfo li : oi.getLinkInfos()) {
+					if (li.getType() != li.TYPE_ONE) {
+						continue;
+					}
+					if (hsLinkFound.contains(li)) {
+						continue;
+					}
+
+					final String[] keyProps = li.getToObjectInfo().getKeyProperties();
+					final List<Object> alKey = new ArrayList<>();
+					for (String keyProp : keyProps) {
+						OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(keyProp);
+						for (String propertyName : importMatchPropertyNames) {
+							Tuple<OAPropertyPath, Object> t = hmNameValue.get(propertyName);
+							if (t == null) {
+								continue;
+							}
+
+							OAPropertyPath pp = t.a;
+							Object val = t.b;
+
+							OALinkInfo[] lis = pp.getLinkInfos();
+							if (lis != null && lis.length == 1 && pp.getEndPropertyInfo() == pi) {
+								alKey.add(val);
+							}
+						}
+					}
+					if (alKey.size() == keyProps.length) {
+						Object[] objs = alKey.toArray(new Object[alKey.size()]);
+						OAObjectKey okx = new OAObjectKey(objs);
+
+						Object objValue = OAObjectPropertyDelegate.getProperty(objNew, li.getName());
+						Object objx = objValue;
+						if (objx instanceof OAObject) {
+							objx = ((OAObject) objx).getObjectKey();
+						}
+						if (objx instanceof OAObjectKey) {
+							if (!okx.equals(objx)) {
+								OAObjectPropertyDelegate.setProperty(objNew, li.getName(), okx);
+								if (objValue instanceof OAObject) {
+									OAObjectEventDelegate.sendHubPropertyChange(objNew, li.getName(), objValue, okx, li);
+								}
+							}
+						}
+					} else {
+						// try to use importMatch values to query for the correct object
+						pos = 0;
+						String sql = "";
+						Object[] params = null;
+						for (String propertyName : importMatchPropertyNames) {
+							String propertyPath = oi.getImportMatchPropertyPaths()[pos++];
+							OAPropertyPath pp = new OAPropertyPath(objNew.getClass(), propertyPath);
+							OALinkInfo[] lis = pp.getLinkInfos();
+							if (lis == null || lis.length == 0 || lis[0] != li) {
+								continue;
+							}
+
+							OAPropertyInfo pix = pp.getEndPropertyInfo();
+							if (pix.getId()) { // only using the importMathes for this
+								continue;
+							}
+
+							Tuple<OAPropertyPath, Object> t = hmNameValue.get(propertyName);
+							Object val;
+							if (t == null) {
+								val = null;
+							} else {
+								val = t.b;
+							}
+
+							if (OAString.isNotEmpty(sql)) {
+								sql += " AND ";
+							}
+							sql += OAString.field(t.a.getPropertyPath(), ".", 2, 99) + " = ?";
+							params = OAArray.add(Object.class, params, val);
+						}
+						OASelect sel = new OASelect(li.getToObjectInfo().getForClass(), sql, params, "");
+
+						Object objLookup = sel.next();
+						Object objCurrent = OAObjectPropertyDelegate.getProperty(objNew, li.getName());
+
+						boolean bChanged = (objLookup != objCurrent);
+
+						if (bChanged && objCurrent instanceof OAObjectKey) {
+							if (objLookup instanceof OAObject) {
+								OAObjectKey okx = ((OAObject) objLookup).getObjectKey();
+								bChanged = !okx.equals(objCurrent);
+							}
+						}
+
+						if (bChanged) {
+							objNew.setProperty(li.getName(), objLookup);
+						}
+					}
+				}
+			}
+		}
+
+		// load links of type=many
+		for (OALinkInfo li : oi.getLinkInfos()) {
 			if (li.getType() != li.TYPE_MANY) {
 				continue;
 			}

@@ -243,7 +243,7 @@ public class OAObjectReflectDelegate {
 		final boolean bIsLoading = OAThreadLocalDelegate.isLoading();
 
 		String propNameU = propName.toUpperCase();
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 
 		Method m = null;
 		if (value != null) {
@@ -297,7 +297,7 @@ public class OAObjectReflectDelegate {
 					//was: OAObjectPropertyDelegate.removeProperty(oaObj, propName, true);
 				} else {
 					if (!(value instanceof OAObject) && !(value instanceof OAObjectKey)) {
-						value = OAObjectKeyDelegate.convertToObjectKey(oi, value);
+						value = OAObjectKeyDelegate.convertToObjectKey(li.getToObjectInfo(), value);
 					}
 					OAObjectPropertyDelegate.setProperty(oaObj, propName, value);
 				}
@@ -332,7 +332,7 @@ public class OAObjectReflectDelegate {
 			}
 		} else { //  (value NOT instanceof OAObject) either OAObjectKey or value of key
 			if (!(value instanceof OAObjectKey)) {
-				value = OAObjectKeyDelegate.convertToObjectKey(oi, value);
+				value = OAObjectKeyDelegate.convertToObjectKey(li.getToObjectInfo(), value);
 			}
 			if (value.equals(previousValue)) {
 				return; // no change
@@ -347,7 +347,7 @@ public class OAObjectReflectDelegate {
 			// have to get the real object
 			Object findValue = getObject(li.toClass, value);
 			if (findValue == null) {
-				throw new RuntimeException("Cant find object for Id: " + value + ", class=" + li.toClass);
+				throw new RuntimeException("Cant find object for Id: " + value + ", class=" + li.toClass.getSimpleName());
 			}
 			value = findValue;
 		}
@@ -936,7 +936,7 @@ public class OAObjectReflectDelegate {
 
 		/*20171108 moved below. The issue with this is that this adds the Hub to oaObj.props before it runs the
 		 *    select (which loads data).  Another thread could get this empty hub before the objects are loaded.
-
+		
 		    // 20141204 added check to see if property is now there, in case it was deserialized and then
 		    //    the property was set by HubSerializeDelegate._readResolve
 		    if (bThisIsServer || OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, false) == null) {

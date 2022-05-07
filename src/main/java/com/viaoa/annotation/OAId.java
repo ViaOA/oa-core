@@ -18,14 +18,16 @@ import java.lang.annotation.Target;
 
 /**
  * Used to map properties to datasource pkeys
+ * 
  * @author vvia
  */
 @Documented
 @Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME) 
+@Retention(RetentionPolicy.RUNTIME)
 public @interface OAId {
-    boolean autoAssign() default true;
-    boolean guid() default false;
-    int pos() default 0;  // for multiple-part keys
-}
+	boolean autoAssign() default true;
 
+	boolean guid() default false;
+
+	int pos() default 0; // for multiple-part keys
+}

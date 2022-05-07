@@ -51,7 +51,6 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private String sortProperty; // sort propetyPath
 	private boolean sortAsc = true; // sort ascending
 	private String seqProperty; // sequence propetyPath
-	private boolean isImportMatch;
 	private boolean couldBeLarge;
 	private boolean oneAndOnlyOne;
 
@@ -82,6 +81,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private String defaultContextPropertyPath;
 
 	private Method schedulerMethod;
+
+	private boolean importMatch;
 
 	public OALinkInfo(String name, Class toClass, int type) {
 		this(name, toClass, type, false, false, null, false);
@@ -397,14 +398,6 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return oi;
 	}
 
-	public boolean isImportMatch() {
-		return isImportMatch;
-	}
-
-	public void setImportMatch(boolean b) {
-		this.isImportMatch = b;
-	}
-
 	public boolean getCouldBeLarge() {
 		return couldBeLarge;
 	}
@@ -680,5 +673,17 @@ public class OALinkInfo { //implements java.io.Serializable {
 
 	public void setRequired(boolean b) {
 		this.required = b;
+	}
+
+	public boolean isImportMatch() {
+		return importMatch;
+	}
+
+	public boolean getImportMatch() {
+		return importMatch;
+	}
+
+	public void setImportMatch(boolean b) {
+		this.importMatch = b;
 	}
 }

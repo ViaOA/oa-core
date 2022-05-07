@@ -48,9 +48,10 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	protected ArrayList<OACalcInfo> alCalcInfo;
 	protected HashSet<String> hsHubCalcInfoName = new HashSet<String>();
 	protected String[] idProperties;
-	protected String[] importMatchProperties;
 	protected ArrayList<OAPropertyInfo> alPropertyInfo;
 	protected ArrayList<OAMethodInfo> alMethodInfo;
+	protected String[] importMatchPropertyNames;
+	protected String[] importMatchPropertyPaths;
 
 	protected boolean bUseDataSource = true;
 	protected boolean bLocalOnly = false; // dont send to OAServer
@@ -149,27 +150,15 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	}
 
 	public boolean hasImportMatchProperties() {
-		return getImportMatchProperties().length > 0;
+		return getImportMatchPropertyNames().length > 0;
 	}
 
-	public String[] getImportMatchProperties() {
-		if (this.importMatchProperties == null) {
-			this.importMatchProperties = new String[0];
-			for (OAPropertyInfo pi : getPropertyInfos()) {
-				if (pi.isImportMatch()) {
-					this.importMatchProperties = (String[]) OAArray.add(this.importMatchProperties, pi.getName());
-				}
-			}
-			for (OALinkInfo li : getLinkInfos()) {
-				if (!li.getUsed()) {
-					continue;
-				}
-				if (li.getType() == li.ONE && li.isImportMatch()) {
-					this.importMatchProperties = (String[]) OAArray.add(this.importMatchProperties, li.getName());
-				}
-			}
-		}
-		return this.importMatchProperties;
+	public String[] getImportMatchPropertyNames() {
+		return this.importMatchPropertyNames;
+	}
+
+	public String[] getImportMatchPropertyPaths() {
+		return this.importMatchPropertyPaths;
 	}
 
 	public List<OALinkInfo> getLinkInfos() {

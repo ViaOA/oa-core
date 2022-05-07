@@ -118,6 +118,10 @@ public class OAObjectInfoDelegate {
 			liRev.bNotUsed = true; // 20180615
 			oiRev.getLinkInfos().add(liRev);
 		}
+
+		// 20220503 load importMatch propertyPaths
+		OAAnnotationDelegate.updateImportMatches(oi);
+
 		return oi;
 	}
 
