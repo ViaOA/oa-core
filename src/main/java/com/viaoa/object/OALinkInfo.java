@@ -151,7 +151,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return bOwner;
 	}
 
-	/** note: a recursive link cant be owned by itself */
+	/* note: a recursive link cant be owned by itself */
 	public boolean getOwner() {
 		return bOwner;
 	}
