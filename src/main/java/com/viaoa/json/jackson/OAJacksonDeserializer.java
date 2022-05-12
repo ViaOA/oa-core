@@ -330,9 +330,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				jn = node.get(propertyName);
 				if (jn != null) {
 					Object val = convert(jn, pi);
-					if (val != null || pi.getKey()) {
-						hmNameValue.put(propertyName, new Tuple(pp, val));
-					}
+					hmNameValue.put(propertyName, new Tuple(pp, val));
 				}
 				pos++;
 			}
@@ -354,7 +352,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 						OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(keyProp);
 						for (String propertyName : importMatchPropertyNames) {
 							Tuple<OAPropertyPath, Object> t = hmNameValue.get(propertyName);
-							if (t == null) {
+							if (t == null || t.b == null) {
 								continue;
 							}
 
@@ -389,6 +387,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 						pos = 0;
 						String sql = "";
 						Object[] params = null;
+						boolean bValid = false;
 						for (String propertyName : importMatchPropertyNames) {
 							String propertyPath = oi.getImportMatchPropertyPaths()[pos++];
 							OAPropertyPath pp = new OAPropertyPath(objNew.getClass(), propertyPath);
@@ -403,12 +402,12 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 							}
 
 							Tuple<OAPropertyPath, Object> t = hmNameValue.get(propertyName);
-							Object val;
 							if (t == null) {
-								val = null;
-							} else {
-								val = t.b;
+								bValid = false;
+								break;
 							}
+							Object val = t.b;
+							bValid = true;
 
 							if (OAString.isNotEmpty(sql)) {
 								sql += " AND ";
@@ -416,22 +415,24 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 							sql += OAString.field(t.a.getPropertyPath(), ".", 2, 99) + " = ?";
 							params = OAArray.add(Object.class, params, val);
 						}
-						OASelect sel = new OASelect(li.getToObjectInfo().getForClass(), sql, params, "");
+						if (bValid) {
+							OASelect sel = new OASelect(li.getToObjectInfo().getForClass(), sql, params, "");
 
-						Object objLookup = sel.next();
-						Object objCurrent = OAObjectPropertyDelegate.getProperty(objNew, li.getName());
+							Object objLookup = sel.next();
+							Object objCurrent = OAObjectPropertyDelegate.getProperty(objNew, li.getName());
 
-						boolean bChanged = (objLookup != objCurrent);
+							boolean bChanged = (objLookup != objCurrent);
 
-						if (bChanged && objCurrent instanceof OAObjectKey) {
-							if (objLookup instanceof OAObject) {
-								OAObjectKey okx = ((OAObject) objLookup).getObjectKey();
-								bChanged = !okx.equals(objCurrent);
+							if (bChanged && objCurrent instanceof OAObjectKey) {
+								if (objLookup instanceof OAObject) {
+									OAObjectKey okx = ((OAObject) objLookup).getObjectKey();
+									bChanged = !okx.equals(objCurrent);
+								}
 							}
-						}
 
-						if (bChanged) {
-							objNew.setProperty(li.getName(), objLookup);
+							if (bChanged) {
+								objNew.setProperty(li.getName(), objLookup);
+							}
 						}
 					}
 				}

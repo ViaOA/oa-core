@@ -12,13 +12,15 @@ import java.util.Stack;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
@@ -178,7 +180,7 @@ public class OAJson {
 		}
 	}
 
-	public <T extends Object> T readObject(final String json, final Class<T> clazz) throws JsonProcessingException {
+	public <T> T readObject(final String json, final Class<T> clazz) throws JsonProcessingException {
 		T t = readObject(json, clazz, false);
 		return t;
 	}
@@ -186,7 +188,7 @@ public class OAJson {
 	/**
 	 * Convert a JSON string to an Object graph.
 	 */
-	public <T extends Object> T readObject(final String json, final Class<T> clazz, final boolean bUseValidation)
+	public <T> T readObject(final String json, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException {
 		this.stackLinkInfo = new Stack<>();
 		this.readObjectClass = clazz;
@@ -202,11 +204,21 @@ public class OAJson {
 				OAThreadLocalDelegate.setLoading(true);
 			}
 
+			Class c = clazz;
+			if (OAObject.class.isAssignableFrom(clazz)) {
+				c = OAObject.class;
+			}
+			JavaType jt = om.getTypeFactory().constructType(c);
+
+			obj = (T) om.readValue(json, jt);
+
+			/* was
 			if (OAObject.class.isAssignableFrom(clazz)) {
 				obj = (T) om.readValue(json, OAObject.class); // will call OAJacksonDeserializer
 			} else {
 				obj = (T) om.readValue(json, clazz);
 			}
+			*/
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -221,7 +233,7 @@ public class OAJson {
 	/**
 	 * Convert a JSON file to an OAObject graph.
 	 */
-	public <T extends OAObject> T readObject(final File file, final Class<T> clazz, final boolean bUseValidation)
+	public <T> T readObject(final File file, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException, IOException {
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
@@ -236,7 +248,16 @@ public class OAJson {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(true);
 			}
-			obj = (T) om.readValue(file, OAObject.class);
+
+			Class c = clazz;
+			if (OAObject.class.isAssignableFrom(clazz)) {
+				c = OAObject.class;
+			}
+			JavaType jt = om.getTypeFactory().constructType(c);
+
+			obj = (T) om.readValue(file, jt);
+
+			// was: obj = (T) om.readValue(file, OAObject.class);
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -248,7 +269,41 @@ public class OAJson {
 		return obj;
 	}
 
-	public <T extends OAObject> List<T> readList(final String json, final Class<T> clazz, final boolean bUseValidation)
+	public <K, V> Map<K, V> readMap(final String json, final Class<K> clazzKey, final Class<V> clazzValue,
+			final boolean bUseValidation)
+			throws JsonProcessingException, IOException {
+		this.readObjectClass = clazzValue;
+		ObjectMapper om = createObjectMapper();
+		this.stackLinkInfo = new Stack<>();
+		hmGuidObject = null;
+
+		Map<K, V> map;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(true);
+			}
+
+			Class c = clazzValue;
+			if (OAObject.class.isAssignableFrom(clazzValue)) {
+				c = OAObject.class;
+			}
+
+			MapType mt = om.getTypeFactory().constructMapType(Map.class, clazzKey, c);
+
+			map = (Map<K, V>) om.readValue(json, mt);
+		} finally {
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(false);
+			}
+			OAThreadLocalDelegate.setOAJackson(null);
+			readObjectClass = null;
+		}
+
+		return map;
+	}
+
+	public <T> List<T> readList(final String json, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException, IOException {
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
@@ -262,8 +317,16 @@ public class OAJson {
 				OAThreadLocalDelegate.setLoading(true);
 			}
 
-			list = (List<T>) om.readValue(json, new TypeReference<List<T>>() {
-			});
+			Class c = clazz;
+			if (OAObject.class.isAssignableFrom(clazz)) {
+				c = OAObject.class;
+			}
+			CollectionType ct = om.getTypeFactory().constructCollectionType(List.class, c);
+
+			list = (List<T>) om.readValue(json, ct);
+
+			//was:  list = (List<T>) om.readValue(json, new TypeReference<List<T>>() {
+			// });
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -275,7 +338,7 @@ public class OAJson {
 		return list;
 	}
 
-	public <T extends OAObject> List<T> readList(final File file, final Class<T> clazz, final boolean bUseValidation)
+	public <T> List<T> readList(final File file, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException, IOException {
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
@@ -289,8 +352,18 @@ public class OAJson {
 				OAThreadLocalDelegate.setLoading(true);
 			}
 
-			list = (List<T>) om.readValue(file, new TypeReference<List<T>>() {
-			});
+			Class c = clazz;
+			if (OAObject.class.isAssignableFrom(clazz)) {
+				c = OAObject.class;
+			}
+			CollectionType ct = om.getTypeFactory().constructCollectionType(List.class, c);
+
+			list = (List<T>) om.readValue(file, ct);
+
+			/*was
+				list = (List<T>) om.readValue(file, new TypeReference<List<T>>() {
+				});
+			*/
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);

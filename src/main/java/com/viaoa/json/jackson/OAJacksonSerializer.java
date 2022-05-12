@@ -148,11 +148,6 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			writeProperty(pi, gen, oaObj);
 		}
 
-		if (oaj.getWriteAsPojo()) {
-			gen.writeEndObject();
-			return;
-		}
-
 		final ArrayList<String> alPropertyPaths = oaj == null ? null : oaj.getPropertyPaths();
 		final boolean bIncludeOwned = oaj == null ? true : oaj.getIncludeOwned();
 
@@ -167,6 +162,12 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
 			if (li.getCalculated()) {
 				continue;
+			}
+
+			if (oaj.getWriteAsPojo()) {
+				if (!li.getOwner()) {
+					continue;
+				}
 			}
 
 			String propertyName = li.getLowerName();
@@ -243,6 +244,12 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			String propertyName = li.getLowerName();
 			if (!oaj.getUsePropertyCallback(oaObj, propertyName)) {
 				continue;
+			}
+
+			if (oaj.getWriteAsPojo()) {
+				if (!li.getOwner()) {
+					continue;
+				}
 			}
 
 			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bIncludeOwned, alPropertyPaths)) {
