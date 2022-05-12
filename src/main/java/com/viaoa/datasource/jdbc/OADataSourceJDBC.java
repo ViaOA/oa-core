@@ -42,6 +42,7 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
+import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
@@ -172,24 +173,49 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	public @Override void update(OAObject object, String[] includeProperties, String[] excludeProperties) {
+		if (!isAllowingBatch() && !isInTransaction()) {
+			OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
+			trans.setBatchUpdate(true);
+			trans.start();
+			try {
+				_update(object, includeProperties, excludeProperties);
+				trans.commit();
+			} catch (RuntimeException e) {
+				trans.rollback();
+				throw e;
+			}
+		} else {
+			_update(object, includeProperties, excludeProperties);
+		}
+	}
+
+	protected void _update(OAObject object, String[] includeProperties, String[] excludeProperties) {
 		OAObjectKey key = OAObjectKeyDelegate.getKey(object);
 		LOG.finer("object=" + object.getClass() + ", key=" + key);
 		UpdateDelegate.update(this, object, includeProperties, excludeProperties);
 	}
 
 	public @Override void insert(OAObject object) {
+		if (!isAllowingBatch() && !isInTransaction()) {
+			OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
+			trans.setBatchUpdate(true);
+			trans.start();
+			try {
+				_insert(object);
+				trans.commit();
+			} catch (RuntimeException e) {
+				trans.rollback();
+				throw e;
+			}
+		} else {
+			_insert(object);
+		}
+	}
+
+	protected void _insert(OAObject object) {
 		OAObjectKey key = OAObjectKeyDelegate.getKey(object);
 		LOG.finer("object=" + object.getClass() + ", key=" + key + ", isNew=" + object.isNew());
 		InsertDelegate.insert(this, object);
-		/*was
-		        try {
-		            InsertDelegate.insert(this, object);
-		        }
-		        catch (RuntimeException e) {
-		            LOG.log(Level.WARNING, "OADataSourceJDBC.insert ERROR: object="+object.getClass().getSimpleName()+", key="+key+", isNew="+object.isNew(), e);
-		            throw e;
-		        }
-		*/
 	}
 
 	public @Override void insertWithoutReferences(OAObject obj) {
@@ -326,7 +352,7 @@ public class OADataSourceJDBC extends OADataSource {
 
 	/**
 	 * Used when using an OATransaction with useBatch=true
-	 * 
+	 *
 	 * @return null if OATransaction is null or useBatch != true
 	 */
 	public Statement getBatchStatement(String message) {
@@ -362,7 +388,7 @@ public class OADataSourceJDBC extends OADataSource {
 
 	/**
 	 * Used when using an OATransaction with useBatch=true
-	 * 
+	 *
 	 * @return null if OATransaction is null or useBatch != true
 	 */
 	public PreparedStatement getBatchPreparedStatement(String sql) {
