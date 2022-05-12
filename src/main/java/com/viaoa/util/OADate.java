@@ -36,6 +36,7 @@ public class OADate extends OADateTime {
 	public final static String Format5 = "MMM dd, yyyy";
 	public final static String Format6 = "MMM dd, yy";
 
+	public final static String JdbcFormat = "yyyy-MM-dd";
 	public final static String JsonFormat = Format1;
 
 	// Unique for this subclass
