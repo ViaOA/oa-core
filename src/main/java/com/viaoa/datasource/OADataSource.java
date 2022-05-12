@@ -861,4 +861,10 @@ public abstract class OADataSource implements OADataSourceInterface {
 		final boolean bIsForBatch = tran != null && tran.getBatchUpdate();
 		return bIsForBatch;
 	}
+
+	public boolean isInTransaction() {
+		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+		return (tran != null);
+	}
+
 }
