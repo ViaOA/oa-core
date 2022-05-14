@@ -81,7 +81,8 @@ public class ResultSetIterator implements OADataSourceIterator {
 	Object[] arguments; // when using preparedStatement
 	private boolean bUsePreparedStatement;
 
-	public static final OAThrottle throttle = new OAThrottle(2500);
+	// 20220513 was: 2500
+	public static final OAThrottle throttle = new OAThrottle(500);
 
 	public String getQuery() {
 		return query;
