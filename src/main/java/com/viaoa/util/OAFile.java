@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Subclass of java.io.File that includes extra functionality.
@@ -41,7 +42,7 @@ public class OAFile extends java.io.File {
 
 	/**
 	 * Copy this file to another file.
-	 * 
+	 *
 	 * @see #copy(String,String)
 	 */
 	public boolean copyTo(String fileNameTo) {
@@ -55,7 +56,7 @@ public class OAFile extends java.io.File {
 
 	/**
 	 * Copy this file to another file.
-	 * 
+	 *
 	 * @see #copy(String,String)
 	 */
 	public boolean copyTo(OAFile fileTo) {
@@ -79,7 +80,7 @@ public class OAFile extends java.io.File {
 
 	/**
 	 * Converts fileName path to correct system file.separator characters.
-	 * 
+	 *
 	 * @return new String with corrected file path characters.
 	 */
 	public static String convertFileName(String fileName) {
@@ -88,7 +89,7 @@ public class OAFile extends java.io.File {
 
 	/**
 	 * Converts fileName path to correct system file.separator characters.
-	 * 
+	 *
 	 * @return new String with corrected file path characters.
 	 */
 	public static String convertFileName(String fileName, boolean bEndWithSlashChar) {
@@ -240,7 +241,7 @@ public class OAFile extends java.io.File {
 
 	/**
 	 * Copy a file from class/jar to file.
-	 * 
+	 *
 	 * @param c
 	 * @param resourceName class path name for file to read param fname file name to save as param estimatedSize
 	 * @return true if successful, false if resource did not exist
@@ -308,7 +309,7 @@ public class OAFile extends java.io.File {
 
 	/**
 	 * Read the contents of a text file from a specific class location. This will read from a jar file.
-	 * 
+	 *
 	 * @param fname '/' seperated file name, located from the class. If fname begins with '/' then the file will go to the root directory.
 	 */
 	public static String readTextFile(Class c, String fname, int estimatedSize) throws Exception {
@@ -373,6 +374,22 @@ public class OAFile extends java.io.File {
 		}
 		reader.close();
 		return new String(sb);
+	}
+
+	public static void readTextFile(String fname, final List<String> lst) throws Exception {
+		if (fname == null || lst == null) {
+			return;
+		}
+		fname = OAString.convertFileName(fname);
+		BufferedReader reader = new BufferedReader(new FileReader(fname));
+		for (;;) {
+			String line = reader.readLine();
+			if (line == null) {
+				break;
+			}
+			lst.add(line);
+		}
+		reader.close();
 	}
 
 	public static boolean writeTextFile(String fname, String data) throws Exception {
