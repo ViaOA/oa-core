@@ -146,10 +146,10 @@ public class OAString {
 	 *
 	 * <pre>
 	   see: http://www.w3.org/TR/REC-xml#NT-Char
-
+	
 	   Legal Chars ::=   #x9 | #xA | #xD | [#x20-#xD7FF] |
 	             [#xE000-#xFFFD] | [#x10000-#x10FFFF]
-
+	
 	   9, 10, 13
 	   tab, lf, cr
 	 * </pre>
@@ -1336,9 +1336,9 @@ public class OAString {
 	 * <b>Formatting Strings</b>
 	 *
 	 * <pre>
-
+	
 	 Example:  fmt(str,"12 L2.,$0(MASK)");
-
+	
 	 Format description for "12 L2,$0(MASK)":
 	     12 = width - not required.
 	          will pad with spaces if pad character is not defined.
@@ -1353,25 +1353,25 @@ public class OAString {
 	         that position is used for the amount of decimal places.
 	     Mask = must be in "()".  Use # character to have actual characters inserted,
 	            all other characters in mask will be inserted.
-
+	
 	 Examples:
-
+	
 	 fmt("1234.5", "R4,")
 	     "R4," = align right, 4 decimal places with comma seperators.
 	     output: "1,234.5000"
-
+	
 	 fmt("123.5", "R00")
 	     "R00" = align right, 0 decimal places (causes rounding), pad with '0' character
 	     output: "123"
-
+	
 	 fmt("123.5", "8R00")
 	     "8R00" = 8 width to fill,
 	     output: "00000123"
-
+	
 	 fmt("123.5", "8 R00")
 	     "8 R00" = 8 width, append one space, right justified, 0 decimal places, '0' fill
 	     output: "00000123 "
-
+	
 	 fmt("1231231234","13  R((###)###-####)")
 	     "13  R((###)###-####)" = 13 width, append 2 spaces, right justified, mask to use.
 	          Note: the mask must be put into () and use # to denote where to insert the
@@ -1870,10 +1870,10 @@ public class OAString {
 	 exclude "AEHIOUWY" or any char that is not a letter
 	 exclude all duplicates
 	 '0' pad to 4 chars             Note: this will also use digits
-
+	
 	 From: "BFPVCGJKQSZXDTLMNR"
 	 To  : "111122222222334556"
-
+	
 	 EXAMPLE:
 	 soundex(sndx,"Vincent")  sndx = "V523"
 	 soundex(sndx,"Via")      sndx = "V000"
@@ -2091,9 +2091,9 @@ public class OAString {
 	//        String s = OAString.fmt("1234.5678", "12R2,");
 	    OAString oas = new OAString();
 	    String s = oas.fmt(argv[0], argv[1]);
-
+	
 	    System.out.println("-------->"+s+"<------");
-
+	
 	    // double x = OAConv.toDouble("-12345.5678");
 	    int x = OAConv.toInt("-12345.5678");
 	    System.out.println("-------->"+OAConv.toString(x, "#,###.####")+"<------");
@@ -3845,13 +3845,57 @@ public class OAString {
 		return s;
 	}
 
-	public static void main(String[] args) {
+	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+	// https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
+
+	public static String bytesToHex(byte[] bytes) {
+		char[] hexChars = new char[bytes.length * 2];
+		for (int j = 0; j < bytes.length; j++) {
+			int v = bytes[j] & 0xFF;
+			hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+			hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+		}
+		return new String(hexChars);
+	}
+
+	public static byte[] hexToBytes(String hex) {
+		if (hex == null) {
+			return null;
+		}
+		int x = hex.length();
+		byte[] bs = new byte[x / 2];
+
+		for (int i = 0; i < x; i += 2) {
+			bs[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+					+ Character.digit(hex.charAt(i + 1), 16));
+		}
+		return bs;
+	}
+
+	public static void mainXx(String[] args) {
 		String s = String.format("%07d  %-10s", 12, "yyyyMMdd");
 		System.out.println("========> " + s);
 
 		s = "Item{Master";
 		String s2 = escapeJSON(s);
 		System.out.println(s + " => " + s2);
+	}
+
+	public static void main(String[] args) {
+		String s = "this is a test for the hex converter";
+		byte[] bs = s.getBytes();
+		String s21 = new String(bs);
+
+		String hex = bytesToHex(bs);
+
+		byte[] bs2 = hexToBytes(hex);
+
+		int x = OACompare.compare(bs, bs2);
+
+		String s2 = new String(bs2);
+
+		int xx = 4;
+		xx++;
 	}
 
 }
