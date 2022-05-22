@@ -307,6 +307,10 @@ public class OADataSourceJDBC extends OADataSource {
 										max, bDirty);
 	}
 
+	/**
+	 * Note: queryWhere needs to begin with "FROM TABLENAME WHERE ...", the queryOrder will be prefixed with "ORDER BY ". This is for cases
+	 * where there are joins, etc.
+	 */
 	public OADataSourceIterator selectPassthru(Class selectClass,
 			String queryWhere, String queryOrder,
 			int max, OAFilter filter, boolean bDirty) {
