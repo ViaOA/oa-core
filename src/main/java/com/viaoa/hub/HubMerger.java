@@ -77,6 +77,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 							// Hub
 	boolean bShareActiveObject; // if bShareEndHub, then this will set the sharedHub as sharing the AO
 	boolean bUseAll; // if false, then only use AO in the rootHub, otherwise all objects will be used.
+	boolean bRefreshOnActiveObjectChange;
 	boolean bIgnoreIsUsedFlag; // flag to have isUsed() return false;
 	private boolean bEnabled = true;
 	private boolean bIsRecusive;
@@ -2176,8 +2177,13 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 			if (!bEnabled) {
 				return;
 			}
-			if (this != dataRoot || this.node != nodeRoot || bUseAll) {
+			if (this != dataRoot || this.node != nodeRoot) {
 				return;
+			}
+			if (bUseAll) {
+				if (!bRefreshOnActiveObjectChange) {
+					return;
+				}
 			}
 
 			// if the AO is the same, then this can be skipped
@@ -2229,6 +2235,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
 	public boolean getUseAll() {
 		return bUseAll;
+	}
+
+	public boolean getRefreshOnActiveObjectChange() {
+		return bRefreshOnActiveObjectChange;
+	}
+
+	public void setRefreshOnActiveObjectChange(boolean b) {
+		this.bRefreshOnActiveObjectChange = b;
 	}
 
 	private static volatile ExecutorService executorService;

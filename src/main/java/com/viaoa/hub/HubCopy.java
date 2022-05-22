@@ -59,7 +59,6 @@ public class HubCopy<T extends OAObject> extends HubFilter<T> {
 		for (Object obj : h) {
 			hubMaster.add((T) obj);
 		}
-		;
 	}
 
 }
