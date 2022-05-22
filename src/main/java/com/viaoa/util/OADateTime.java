@@ -157,6 +157,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	public final static String JsonFormat = "yyyy-MM-dd'T'HH:mm:ss";
 	public final static String JsonFormatTZ = "yyyy-MM-dd'T'HH:mm:ssX";
 
+	public final static String JdbcFormat = "yyyy-MM-dd HH:mm:ss"; // SQL
+
 	/** default parse formats */
 	private static Vector vecDateTimeParseFormat;
 
@@ -1398,8 +1400,16 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	public OADateTime subtractDays(int amount) {
+		return addDays(-amount);
+	}
+
 	public OADateTime addDay() {
 		return addDays(1);
+	}
+
+	public OADateTime subtractDay() {
+		return addDays(-1);
 	}
 
 	/**
@@ -1412,6 +1422,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public OADateTime addWeeks(int amount) {
 		return addDays(amount * 7);
+	}
+
+	public OADateTime subtractWeeks(int amount) {
+		return addDays(-(amount * 7));
 	}
 
 	/**
@@ -1444,6 +1458,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	public OADateTime subtractMonths(int amount) {
+		return addMonths(-amount);
+	}
+
 	/**
 	 * Return an OADateTime where a specified amount of years is added.
 	 * <p>
@@ -1474,6 +1492,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	public OADateTime subtractYears(int amount) {
+		return addYears(-amount);
+	}
+
 	/**
 	 * Return an OADateTime where a specified amount of hours is added.
 	 * <p>
@@ -1499,6 +1521,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			poolGregorianCalendar.release(c);
 		}
 		return dtNew;
+	}
+
+	public OADateTime subtractHours(int amount) {
+		return addHours(-amount);
 	}
 
 	/**
@@ -1528,6 +1554,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	public OADateTime subtractMinutes(int amount) {
+		return addMinutes(-amount);
+	}
+
 	/**
 	 * Return an OADateTime where a specified amount of seconds is added.
 	 * <p>
@@ -1555,6 +1585,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	public OADateTime subtractSeconds(int amount) {
+		return addSeconds(-amount);
+	}
+
 	/**
 	 * Return an OADateTime where a specified amount of milliseconds is added.
 	 * <p>
@@ -1580,6 +1614,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			poolGregorianCalendar.release(c);
 		}
 		return dtNew;
+	}
+
+	public OADateTime subtractMilliSeconds(int amount) {
+		return addMilliSeconds(amount);
 	}
 
 	/**

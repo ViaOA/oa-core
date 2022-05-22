@@ -41,6 +41,8 @@ public class OATime extends OADateTime {
 	public final static String JsonFormat = "HH:mm:ss";
 	public final static String JsonFormatTZ = "HH:mm:ssX";
 
+	public final static String JdbcFormat = "HH:mm:ss"; // SQL
+
 	/** default parse formats */
 	private static Vector vecTimeParseFormat = new Vector(10, 10);
 
