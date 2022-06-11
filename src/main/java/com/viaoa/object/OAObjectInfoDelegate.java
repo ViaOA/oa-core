@@ -13,6 +13,7 @@ package com.viaoa.object;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -161,6 +162,10 @@ public class OAObjectInfoDelegate {
 				if (oi == null) {
 					oi = new OAObjectInfo();
 				}
+
+				// 20220610 moved here
+				OAAnnotationDelegate.update(oi, clazz);
+
 				initialize(oi, clazz); // this will load all props/links/primitives
 
 				Class superClass = clazz.getSuperclass(); // if there is a superclass, then combine with oaobjectinfo
@@ -170,9 +175,8 @@ public class OAObjectInfoDelegate {
 					oi.thisClass = clazz;
 				}
 
-				OAAnnotationDelegate.update(oi, clazz);
+				//was here: OAAnnotationDelegate.update(oi, clazz);
 
-				// 20120702
 				for (OALinkInfo li : oi.getLinkInfos()) {
 					if (li.bPrivateMethod) {
 						continue;
@@ -243,11 +247,14 @@ public class OAObjectInfoDelegate {
 				continue;
 			}
 
-			OAPropertyInfo pi = new OAPropertyInfo();
-			pi.setName(name);
-			pi.setClassType(m.getReturnType());
+			OAPropertyInfo pi = thisOI.getPropertyInfo(name);
+			if (pi == null) {
+				pi = new OAPropertyInfo();
+				pi.setName(name);
+				pi.setClassType(m.getReturnType());
+			}
 
-			for (int j = 0; thisOI.idProperties != null && j < thisOI.idProperties.length; j++) {
+			for (int j = 0; !pi.getId() && thisOI.idProperties != null && j < thisOI.idProperties.length; j++) {
 				if (name.equalsIgnoreCase(thisOI.idProperties[j])) {
 					pi.setId(true);
 					break;
@@ -1001,6 +1008,46 @@ public class OAObjectInfoDelegate {
 		return oaObj.nulls;
 	}
 
+	public static List<String> getPrimitiveNullPropertyNames(Class<? extends OAObject> clazz) {
+		if (clazz == null) {
+			return null;
+		}
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+
+		String[] ss = oi.getPrimitiveProperties();
+		return Arrays.asList(ss);
+	}
+
+	public static List<String> getPrimitiveNullProperties(OAObject oaObj) {
+		if (oaObj == null) {
+			return null;
+		}
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+
+		List<String> al = new ArrayList<>();
+
+		String[] ss = oi.getPrimitiveProperties();
+		for (int i = 0; i < ss.length; i++) {
+
+			int posByte = (i / 8);
+			int posBit = 7 - (i % 8);
+			if (posByte >= oaObj.nulls.length) {
+				break;
+			}
+			byte b = oaObj.nulls[posByte];
+
+			byte b2 = 1;
+			b2 = (byte) (b2 << posBit);
+			b = (byte) ((byte) b & (byte) b2);
+
+			if (b != 0) {
+				al.add(ss[i]);
+			}
+		}
+
+		return al;
+	}
+
 	public static boolean isPrimitiveNull(OAObject oaObj, String propertyName) {
 		if (oaObj == null || propertyName == null) {
 			return false;
@@ -1075,9 +1122,11 @@ public class OAObjectInfoDelegate {
 		}
 	}
 
-	/**
-	 * 20100930 I started this to use for reversing from TreeNode to get path to top/root this wont work, unless the parent nodes are also
-	 * used Take a property path that is "to" a class, and reverse it. Example: from a X class, the propPath "dept.manager.address.zipCode"
+	/*
+	 * 20100930 I started this to use for reversing from TreeNode to get path to top/root
+	 * this wont work, unless the parent nodes are also used
+	 * Take a property path that is "to" a class, and reverse it.
+	 * Example: from a X class, the propPath "dept.manager.address.zipCode"
 	 * where address.class would be the clazz; would return "manager.dept", used to get from an address to the dept.
 	 *
 	 * @param clazz
