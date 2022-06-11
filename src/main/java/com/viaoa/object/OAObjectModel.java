@@ -74,6 +74,28 @@ public class OAObjectModel {
 		setCreateUI(true);
 	}
 
+	public void defaultAll(boolean bOnOrOff) {
+		setAllowGotoList(bOnOrOff);
+		setAllowGotoEdit(bOnOrOff);
+		setAllowSearch(bOnOrOff);
+		setAllowHubSearch(bOnOrOff);
+		setAllowAdd(bOnOrOff);
+		setAllowNew(bOnOrOff);
+		setAllowRemove(bOnOrOff);
+		setAllowSave(bOnOrOff);
+		setAllowDelete(bOnOrOff);
+		setAllowClear(bOnOrOff);
+		setAllowCut(bOnOrOff);
+		setAllowCopy(bOnOrOff);
+		setAllowPaste(bOnOrOff);
+		setAllowMultiSelect(bOnOrOff);
+		setAllowTableFilter(bOnOrOff);
+		setAllowTableSorting(bOnOrOff);
+		setAllowFilter(bOnOrOff);
+		setAllowDownload(bOnOrOff);
+		setCreateUI(bOnOrOff);
+	}
+
 	public String getDisplayName() {
 		return displayName;
 	}
