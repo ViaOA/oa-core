@@ -169,6 +169,15 @@ public class HubAODelegate {
 			return;
 		}
 
+		/*qqqqqqqqqq testing
+		if (object instanceof OAObject) {
+			System.out.println(object.getClass().getSimpleName());
+			OAObject oa = (OAObject) object;
+			System.out.println("" + OAObjectInfoDelegate.getPrimitiveNullPropertyNames(oa.getClass()));
+			System.out.println("" + OAObjectInfoDelegate.getPrimitiveNullProperties(oa));
+		}
+		*/
+
 		if (thisHub.dataa.activeObject == object && !bForce) {
 			return;
 		}
