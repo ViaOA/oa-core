@@ -696,28 +696,28 @@ public class OAReflect {
 		if (clazz == null) {
 			return null;
 		}
-		if (clazz.equals(int.class)) {
+		if (clazz.equals(int.class) || clazz.equals(Integer.class)) {
 			return new Integer(0);
 		}
-		if (clazz.equals(boolean.class)) {
+		if (clazz.equals(boolean.class) || clazz.equals(Boolean.class)) {
 			return new Boolean(false);
 		}
-		if (clazz.equals(long.class)) {
+		if (clazz.equals(long.class) || clazz.equals(Long.class)) {
 			return new Long(0);
 		}
-		if (clazz.equals(double.class)) {
+		if (clazz.equals(double.class) || clazz.equals(Double.class)) {
 			return new Double(0.0D);
 		}
-		if (clazz.equals(byte.class)) {
+		if (clazz.equals(byte.class) || clazz.equals(Byte.class)) {
 			return new Byte((byte) 0);
 		}
-		if (clazz.equals(char.class)) {
+		if (clazz.equals(char.class) || clazz.equals(Character.class)) {
 			return new Character((char) 0);
 		}
-		if (clazz.equals(short.class)) {
+		if (clazz.equals(short.class) || clazz.equals(Short.class)) {
 			return new Short((short) 0);
 		}
-		if (clazz.equals(float.class)) {
+		if (clazz.equals(float.class) || clazz.equals(Float.class)) {
 			return new Float(0.0F);
 		}
 		return null;
@@ -726,17 +726,17 @@ public class OAReflect {
 	public static Object getEmptyPrimitive(Class c) {
 		Object response = null;
 		if (c.isPrimitive()) {
-			if (c.equals(boolean.class)) {
+			if (c.equals(boolean.class) || c.equals(Boolean.class)) {
 				response = true;
-			} else if (c.equals(int.class)) {
+			} else if (c.equals(int.class) || c.equals(Integer.class)) {
 				response = 0;
-			} else if (c.equals(long.class)) {
+			} else if (c.equals(long.class) || c.equals(Long.class)) {
 				response = 0L;
-			} else if (c.equals(short.class)) {
+			} else if (c.equals(short.class) || c.equals(Short.class)) {
 				response = (short) 0;
-			} else if (c.equals(double.class)) {
+			} else if (c.equals(double.class) || c.equals(Double.class)) {
 				response = 0.0D;
-			} else if (c.equals(float.class)) {
+			} else if (c.equals(float.class) || c.equals(Float.class)) {
 				response = 0.0F;
 			}
 		}
