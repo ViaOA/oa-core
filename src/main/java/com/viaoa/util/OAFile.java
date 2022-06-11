@@ -96,8 +96,15 @@ public class OAFile extends java.io.File {
 		if (fileName == null) {
 			return null;
 		}
-		fileName = fileName.replace('/', File.separatorChar);
-		fileName = fileName.replace('\\', File.separatorChar);
+
+		char ch = File.separatorChar;
+		if (ch == '/') {
+			fileName = fileName.replace('\\', '/');
+			fileName = OAString.convert(fileName, "//", "/");
+		} else {
+			fileName = fileName.replace('/', '\\');
+			fileName = OAString.convert(fileName, "\\\\", "\\");
+		}
 		if (bEndWithSlashChar && !fileName.endsWith(FS)) {
 			fileName += File.separatorChar;
 		}
