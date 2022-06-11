@@ -73,6 +73,15 @@ public class OAObjectReflectDelegate {
 		try {
 			Constructor constructor = clazz.getConstructor(new Class[] {});
 			obj = constructor.newInstance(new Object[] {});
+		} catch (NoSuchMethodException nsme) {
+			if (clazz.isPrimitive()) {
+				obj = OAReflect.getEmptyPrimitive(clazz);
+			} else if (OAReflect.isPrimitiveClassWrapper(clazz)) {
+				obj = OAReflect.getPrimitiveClassWrapperObject(clazz);
+			} else {
+				throw new RuntimeException("OAObject.createNewObject() cant get constructor() for class " + clazz.getName() + " "
+						+ nsme.getCause(), nsme);
+			}
 		} catch (InvocationTargetException te) {
 			throw new RuntimeException("OAObject.createNewObject() cant get constructor() for class " + clazz.getName() + " "
 					+ te.getCause(), te);
@@ -936,7 +945,7 @@ public class OAObjectReflectDelegate {
 
 		/*20171108 moved below. The issue with this is that this adds the Hub to oaObj.props before it runs the
 		 *    select (which loads data).  Another thread could get this empty hub before the objects are loaded.
-		
+
 		    // 20141204 added check to see if property is now there, in case it was deserialized and then
 		    //    the property was set by HubSerializeDelegate._readResolve
 		    if (bThisIsServer || OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, false) == null) {
