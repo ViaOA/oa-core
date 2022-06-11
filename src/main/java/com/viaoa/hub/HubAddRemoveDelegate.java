@@ -568,7 +568,9 @@ public class HubAddRemoveDelegate {
 
 		// need to check even if isLoading=true, since datasource could autoadd to a cache hub
 		if (thisHub.contains(obj)) {
-			return false;
+			if (thisHub.isOAObject()) {
+				return false;
+			}
 		}
 
 		if (!bIsLoading) {
@@ -868,7 +870,7 @@ public class HubAddRemoveDelegate {
 				}
 			}
 		} else {
-			if (thisHub.contains(obj)) {
+			if (thisHub.contains(obj) && thisHub.isOAObject()) {
 				return -1;
 			}
 			if (pos > 0) {
