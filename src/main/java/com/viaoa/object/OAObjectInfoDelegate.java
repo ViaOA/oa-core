@@ -26,6 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.hub.Hub;
 import com.viaoa.sync.OASync;
+import com.viaoa.util.OAArray;
 import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 
@@ -163,9 +164,6 @@ public class OAObjectInfoDelegate {
 					oi = new OAObjectInfo();
 				}
 
-				// 20220610 moved here
-				OAAnnotationDelegate.update(oi, clazz);
-
 				initialize(oi, clazz); // this will load all props/links/primitives
 
 				Class superClass = clazz.getSuperclass(); // if there is a superclass, then combine with oaobjectinfo
@@ -175,7 +173,7 @@ public class OAObjectInfoDelegate {
 					oi.thisClass = clazz;
 				}
 
-				//was here: OAAnnotationDelegate.update(oi, clazz);
+				OAAnnotationDelegate.update(oi, clazz);
 
 				for (OALinkInfo li : oi.getLinkInfos()) {
 					if (li.bPrivateMethod) {
@@ -184,6 +182,20 @@ public class OAObjectInfoDelegate {
 					Method method = OAObjectInfoDelegate.getMethod(oi, "get" + li.getName(), 0);
 					if (method == null) {
 						li.bPrivateMethod = true;
+					}
+				}
+
+				// 20220612 clean up tracking primitives
+				int x = oi.primitiveProps == null ? 0 : oi.primitiveProps.length;
+				for (int i = 0; i < x; i++) {
+					String prop = oi.primitiveProps[i];
+					OAPropertyInfo pi = oi.getPropertyInfo(prop);
+					if (pi != null && pi.getIsPrimitive() && !pi.getTrackPrimitiveNull()) {
+						if (!pi.getKey()) {
+							oi.primitiveProps = OAArray.removeAt(oi.primitiveProps, i);
+							i--;
+							x--;
+						}
 					}
 				}
 
@@ -274,7 +286,6 @@ public class OAObjectInfoDelegate {
 		Collections.sort(alPrimitive);
 		thisOI.primitiveProps = new String[alPrimitive.size()];
 		alPrimitive.toArray(thisOI.primitiveProps);
-		thisOI.primitiveMask = null;
 
 		// 20120827 track empty hubs
 		// this must be sorted, so that they will be in the same order used by OAObject.nulls, and created the same on all other computers
@@ -466,7 +477,6 @@ public class OAObjectInfoDelegate {
 		Collections.sort(alPrimitive);
 		thisOI.primitiveProps = new String[alPrimitive.size()];
 		alPrimitive.toArray(thisOI.primitiveProps);
-		thisOI.primitiveMask = null;
 
 		// combine LinkInfos
 		alThis = thisOI.getLinkInfos();
