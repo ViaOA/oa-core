@@ -214,12 +214,12 @@ public class OAAnnotationDelegate {
 			pi.setProcessed(oaprop.isProcessed());
 			pi.setHtml(oaprop.isHtml());
 			pi.setTimestamp(oaprop.isTimestamp());
-			pi.setTrackPrimitiveNull(oaprop.trackPrimitiveNull());
 			pi.setSubmit(oaprop.isSubmit());
 			pi.setIgnoreTimeZone(oaprop.ignoreTimeZone());
 			pi.setTimeZonePropertyPath(oaprop.timeZonePropertyPath());
 
 			pi.setClassType(m.getReturnType());
+			pi.setTrackPrimitiveNull(pi.getIsPrimitive() && oaprop.trackPrimitiveNull());
 
 			OAColumn oacol = (OAColumn) m.getAnnotation(OAColumn.class);
 			if (oacol != null) {
