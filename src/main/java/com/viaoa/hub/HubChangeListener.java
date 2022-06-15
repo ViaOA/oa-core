@@ -18,7 +18,6 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.util.OAAnyValueObject;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAConv;
@@ -506,15 +505,18 @@ public abstract class HubChangeListener {
 		hubProps = (HubProp[]) OAArray.add(HubProp.class, hubProps, newHubProp);
 		callOnChange();
 
-		Hub h = (hub == null) ? null : hub.getLinkHub(true);
-		if (h != null) {
-			if (HubLinkDelegate.isLinkAutoCreated(hub, true)) {
-				// need to listen for AO changes, newList, etc from the linkTo Hub
-				add(h, null, OAAnyValueObject.instance);
-			} else {
-				addHubValid(h);
+		// 20220615 removed, calling code needs to make additional add(..) for link hub (if needed)
+		/*
+			Hub h = (hub == null) ? null : hub.getLinkHub(true);
+			if (h != null) {
+				if (HubLinkDelegate.isLinkAutoCreated(hub, true)) {
+					// need to listen for AO changes, newList, etc from the linkTo Hub
+					add(h, null, OAAnyValueObject.instance);
+				} else {
+					addHubValid(h);
+				}
 			}
-		}
+		*/
 		return newHubProp;
 	}
 

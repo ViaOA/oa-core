@@ -163,20 +163,11 @@ public class HubAODelegate {
 	 * @param bCalledByShareHub true if the active object is being called when a Hub is being shared with an existing hub. This is so that
 	 *                          all of the shared hubs dont recv an event.
 	 */
-	public static void setActiveObject(final Hub thisHub, Object object, int pos, boolean bUpdateLink, boolean bForce,
-			boolean bCalledByShareHub, boolean bUpdateDetail) {
+	public static void setActiveObject(final Hub thisHub, Object object, final int pos, final boolean bUpdateLink, final boolean bForce,
+			final boolean bCalledByShareHub, final boolean bUpdateSharedHubDetail) {
 		if (thisHub == null) {
 			return;
 		}
-
-		/*qqqqqqqqqq testing
-		if (object instanceof OAObject) {
-			System.out.println(object.getClass().getSimpleName());
-			OAObject oa = (OAObject) object;
-			System.out.println("" + OAObjectInfoDelegate.getPrimitiveNullPropertyNames(oa.getClass()));
-			System.out.println("" + OAObjectInfoDelegate.getPrimitiveNullProperties(oa));
-		}
-		*/
 
 		if (thisHub.dataa.activeObject == object && !bForce) {
 			return;
@@ -214,7 +205,9 @@ public class HubAODelegate {
 		OAThreadLocalDelegate.unlock(thisHub);
 
 		thisHub.datau.setUpdatingActiveObject(true);
+
 		HubDetailDelegate.updateAllDetail(thisHub, bUpdateLink);
+
 		if (bUpdateLink) {
 			HubLinkDelegate.updateLinkProperty(thisHub, object, pos);
 		}
@@ -228,13 +221,14 @@ public class HubAODelegate {
 			}
 		};
 
-		Hub[] hubs = HubShareDelegate.getAllSharedHubs(thisHub, filter);
+		final Hub[] hubs = HubShareDelegate.getAllSharedHubs(thisHub, filter);
 
 		for (int i = 0; i < hubs.length; i++) {
 			Hub h = hubs[i];
 			if (h != thisHub && h.dataa == thisHub.dataa) {
 				h.datau.setUpdatingActiveObject(true);
-				if (bUpdateDetail) {
+
+				if (bUpdateSharedHubDetail) {
 					HubDetailDelegate.updateAllDetail(h, bUpdateLink);
 				}
 				if (bUpdateLink) {

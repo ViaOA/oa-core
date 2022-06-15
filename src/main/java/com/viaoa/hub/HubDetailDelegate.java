@@ -946,14 +946,15 @@ public class HubDetailDelegate {
 
 		if (type == HubDetail.OAOBJECT || type == HubDetail.OBJECT) {
 			hub.datau.setDefaultPos(0);
-			
+
 			// 20210506
-	        if (type == HubDetail.OAOBJECT && linkInfo.getCalculated() && linkInfo.getCalcDependentProperties() != null && linkInfo.getCalcDependentProperties().length > 0) {
-	            // need to use a hub listener if it's a calculated link that has dependent PPs
-	            thisHub.addHubListener(new HubListenerAdapter() {
-	                // no-op, just need to have it generate a property change whenever a dependent prop changes so that link hub is updated.
-	            }, propertyName);
-	        }
+			if (type == HubDetail.OAOBJECT && linkInfo.getCalculated() && linkInfo.getCalcDependentProperties() != null
+					&& linkInfo.getCalcDependentProperties().length > 0) {
+				// need to use a hub listener if it's a calculated link that has dependent PPs
+				thisHub.addHubListener(new HubListenerAdapter() {
+					// no-op, just need to have it generate a property change whenever a dependent prop changes so that link hub is updated.
+				}, propertyName);
+			}
 		}
 
 		if (!bFound) {
@@ -1282,6 +1283,28 @@ public class HubDetailDelegate {
 		return null;
 	}
 
+	public static String getPropertyPathToMasters(Hub thisHub) {
+		if (thisHub == null) {
+			return null;
+		}
+
+		String pp = "";
+		Hub h = thisHub;
+
+		for (;;) {
+			String s = getPropertyFromDetailToMaster(h);
+			if (OAString.isEmpty(s)) {
+				break;
+			}
+			pp = OAString.concat(pp, "", ".");
+			h = h.getMasterHub();
+			if (h == null) {
+				break;
+			}
+		}
+		return pp;
+	}
+
 	/**
 	 * Used for master/detail Hubs, returns the name of the property from the detail Hub to master Hub.
 	 * <p>
@@ -1353,14 +1376,14 @@ public class HubDetailDelegate {
 	public static Hub _getRealHub(Hub thisHub, int cnt) {
 	    Hub hubMaster = HubDetailDelegate.getMasterHub(thisHub);
 	    if (hubMaster == null) return thisHub;
-
+	
 	    if (cnt > 10) {
 	        LOG.log(Level.WARNING, "", new Exception("possible stackoverflow, thisHub="+thisHub+", masterHub="+hubMaster));
 	    }
 	    else {
 	        hubMaster = _getRealHub(hubMaster, cnt+1);
 	    }
-
+	
 	    Hub h = thisHub;
 	    OAObject o = HubDetailDelegate.getMasterObject(thisHub);
 	    if (o != null && o != hubMaster.getAO()) {
