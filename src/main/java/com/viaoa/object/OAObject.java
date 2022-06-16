@@ -120,8 +120,12 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	static {
 		// oaversion
-		String ver = "3.7.1.202202250";
-		// previous:  String ver = "3.7.0.202104100";
+        String ver = "3.7.2.202206160";
+		/*
+		 *  previous:  
+		 *  String ver = "3.7.0.202104100";
+		 *  String ver = "3.7.1.202202250";
+		 */
 		/*
 		try {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
