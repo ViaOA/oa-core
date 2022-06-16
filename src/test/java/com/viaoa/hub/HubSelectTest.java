@@ -25,7 +25,7 @@ public class HubSelectTest extends OAUnitTest {
         //assertEquals(0, hubServer.getSize());
 
         hubServer.cancelSelect();
-        assertNull(hubServer.getSelect());
+        // assertNull(hubServer.getSelect());
 /**qqqqq
         hubServer.refreshSelect();
         assertNotNull(hubServer.getSelect());
