@@ -143,7 +143,24 @@ public class OANetwork {
 	}
 
 	public static void main(String[] args) throws Exception {
-		findAllServers();
+		// findAllServers();
+		for (int i = -5; i < 5; i++) {
+			String sx = Integer.toBinaryString(i);
+			String s = showAsBinary(i);
+			System.out.println(i + " " + sx + " " + s);
+		}
+		int i = 4;
+		i++;
+	}
+
+	public static String showAsBinary(final int x) {
+		String s = "";
+		for (int i = 0; i < 32; i++) {
+			int xx = (x >> (31 - i));
+			xx &= 0x01;
+			s += (xx == 1 ? "1" : "0");
+		}
+		return s;
 	}
 
 }
