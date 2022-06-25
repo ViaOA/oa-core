@@ -10,71 +10,110 @@
 */
 package com.viaoa.util;
 
+/**
+ * Bitwise view on Integers;
+ *
+ * @author vvia
+ */
 public class OAInteger {
-    private int x;
-    private boolean bIsSet;
-    
-    public OAInteger() {
-    }
-    public OAInteger(int x) {
-        this.x = x;
-        bIsSet = true;
-    }
+	private int x;
+	private boolean bIsSet;
 
-    public int get() {
-        return x;
-    }
-    public void set(int x) {
-        this.x = x;
-        bIsSet = true;
-    }
-    
-    
-    public int add(int x) {
-        this.x += x;
-        return this.x;
-    }
-    public int add() {
-        return this.add(1);
-    }
-    public int subtract(int x) {
-        this.x -= x;
-        return this.x;
-    }
-    public int subtract() {
-        return this.subtract(1);
-    }
-    
-    public static void viewBytes(byte i) {
-        int[] ints = new int[1];
-        ints[0] = i & 0xFF;
-        ints = null;
-    }
+	public OAInteger() {
+	}
 
-    public static void viewBytes(int i) {
-        int[] ints = new int[4];
-        ints[0] = (i >>> 24);
-        ints[1] = (i >> 16) & 0xFF;
-        ints[2] = (i >> 8) & 0xFF;
-        ints[3] = i & 0xFF;
-        ints = null;
-    }
+	public OAInteger(int x) {
+		this.x = x;
+		bIsSet = true;
+	}
 
-    public static void viewBytes(long i) {
-        int[] ints = new int[8];
-        ints[0] = (int) (i >>> 56);
-        ints[1] = (int) (i >> 48) & 0xFF;
-        ints[2] = (int) (i >> 40) & 0xFF;
-        ints[3] = (int) (i >> 32) & 0xFF;
-        ints[4] = (int) (i >> 24) & 0xFF;
-        ints[5] = (int) (i >> 16) & 0xFF;
-        ints[6] = (int) (i >> 8) & 0xFF;
-        ints[7] = (int) (i & 0xFF);
-        ints = null;
-    }
+	public int get() {
+		return x;
+	}
 
-    public boolean isSet() {
-        return bIsSet;
-    }
-    
+	public void set(int x) {
+		this.x = x;
+		bIsSet = true;
+	}
+
+	public int add(int x) {
+		this.x += x;
+		return this.x;
+	}
+
+	public int add() {
+		return this.add(1);
+	}
+
+	public int subtract(int x) {
+		this.x -= x;
+		return this.x;
+	}
+
+	public int subtract() {
+		return this.subtract(1);
+	}
+
+	public static void viewBytes(byte i) {
+		int[] ints = new int[1];
+		ints[0] = i & 0xFF;
+		ints = null;
+	}
+
+	public static void viewBytes(int i) {
+		int[] ints = new int[4];
+		ints[0] = (i >>> 24);
+		ints[1] = (i >> 16) & 0xFF;
+		ints[2] = (i >> 8) & 0xFF;
+		ints[3] = i & 0xFF;
+		ints = null;
+	}
+
+	public static void viewBytes(long i) {
+		int[] ints = new int[8];
+		ints[0] = (int) (i >>> 56);
+		ints[1] = (int) (i >> 48) & 0xFF;
+		ints[2] = (int) (i >> 40) & 0xFF;
+		ints[3] = (int) (i >> 32) & 0xFF;
+		ints[4] = (int) (i >> 24) & 0xFF;
+		ints[5] = (int) (i >> 16) & 0xFF;
+		ints[6] = (int) (i >> 8) & 0xFF;
+		ints[7] = (int) (i & 0xFF);
+		ints = null;
+	}
+
+	public boolean isSet() {
+		return bIsSet;
+	}
+
+	public static String getAsBinary(final int x) {
+		String s = "";
+		for (int i = 0; i < 32; i++) {
+			int xx = (x >> (31 - i));
+			xx &= 0x01;
+			s += (xx == 1 ? "1" : "0");
+		}
+		return s;
+	}
+
+	public static String getAsBinary(final long x) {
+		String s = "";
+		for (int i = 0; i < 64; i++) {
+			long xx = (x >> (63 - i));
+			xx &= 0x01;
+			s += (xx == 1 ? "1" : "0");
+		}
+		return s;
+	}
+
+	public static void main(String[] args) throws Exception {
+		// findAllServers();
+		for (int i = -5; i < 5; i++) {
+			String sx = Integer.toBinaryString(i);
+			String s = getAsBinary(i);
+			System.out.println(i + " " + sx + " " + s);
+		}
+		int i = 4;
+		i++;
+	}
 }
