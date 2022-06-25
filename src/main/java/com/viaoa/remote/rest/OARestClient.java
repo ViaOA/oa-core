@@ -645,7 +645,7 @@ public class OARestClient {
 
 		if (invokeInfo.urlPath.indexOf("://") < 0) {
 			httpUrl = getBaseUrl();
-			if (httpUrl.indexOf("://") < 0) {
+			if (httpUrl == null || httpUrl.indexOf("://") < 0) {
 				if (OAString.isNotEmpty(this.protocol)) {
 					httpUrl = protocol + "://" + httpUrl;
 				} else {
