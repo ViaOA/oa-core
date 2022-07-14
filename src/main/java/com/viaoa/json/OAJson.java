@@ -2,10 +2,13 @@ package com.viaoa.json;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -29,6 +32,7 @@ import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
+import com.viaoa.object.OAObjectImportMatchDelegate.ImportMatch;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
@@ -38,28 +42,42 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 
 /**
- * OA + JSON that uses the Jackson library.
+ * JSON serialization for OA. Works dynamically with OAObject Graphs to allow property paths to be included.
  * <p>
- * This should be used directly for read/write with OAObject & Hub.
+ * This is also able to work with POJO classes that dont always have pkey properties, but instead use importMatch properties. OAJson will
+ * find (or create) the correct OAObject that does have the matching value(s). <br>
+ * ex: Customer.id, and Customer.custNumber, where OAObject Customer has an Id (pkey) and custNumber (int prop, but not key). The Pojo class
+ * does not have to have the Id.<br>
+ * also, a link could be an importMatch.
  * <p>
- * It internally uses Jackson's ObjectMapper.
+ * Internally uses (/depends on) Jackson's ObjectMapper.
  * <p>
  * Note: this is not thread safe, create and use a separate instance.
  *
  * @author vvia
  */
 public class OAJson {
-	private static ObjectMapper objectMapper;
+	private static volatile ObjectMapper objectMapper;
 
 	private final ArrayList<String> alPropertyPath = new ArrayList<>();
 	private boolean bIncludeOwned = true;
 	private boolean bIncludeAll;
+
+	private List<ImportMatch> alImportMatch = new ArrayList<>();
+
+	public List<ImportMatch> getImportMatchList() {
+		if (alImportMatch == null) {
+			alImportMatch = new ArrayList<>();
+		}
+		return alImportMatch;
+	}
 
 	/**
 	 * Make compatible with pojo version of oaobj, where importMatch property(ies) and link(s) are used instead of autoseq property Id
 	 */
 	private boolean bWriteAsPojo;
 
+	private OAObject root;
 	private Class readObjectClass;
 
 	private Stack<OALinkInfo> stackLinkInfo;
@@ -129,26 +147,30 @@ public class OAJson {
 		alPropertyPath.clear();
 	}
 
+	private static final Object lock = new Object();
+
 	public static ObjectMapper createObjectMapper() {
-		if (objectMapper != null) {
-			return objectMapper;
+		if (objectMapper == null) {
+			synchronized (lock) {
+				if (objectMapper == null) {
+					ObjectMapper objectMapperx = new ObjectMapper();
+					objectMapperx.registerModule(new JavaTimeModule());
+					objectMapperx.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+					objectMapperx.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+					objectMapperx.setSerializationInclusion(Include.NON_NULL);
+					// objectMapper.setDefaultPropertyInclusion(Include.NON_DEFAULT);
+
+					objectMapperx.registerModule(new OAJacksonModule());
+					objectMapperx.enable(SerializationFeature.INDENT_OUTPUT);
+					objectMapper = objectMapperx;
+				}
+			}
 		}
-		ObjectMapper objectMapperx = new ObjectMapper();
-		objectMapperx.registerModule(new JavaTimeModule());
-		objectMapperx.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-		objectMapperx.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		objectMapperx.setSerializationInclusion(Include.NON_NULL);
-		// objectMapper.setDefaultPropertyInclusion(Include.NON_DEFAULT);
-
-		objectMapperx.registerModule(new OAJacksonModule());
-		objectMapperx.enable(SerializationFeature.INDENT_OUTPUT);
-
-		objectMapper = objectMapperx;
-		return objectMapperx;
+		return objectMapper;
 	}
 
 	/**
-	 * Convert OAObject to a JSON string.
+	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */
 	public String write(Object obj) throws JsonProcessingException {
 		this.stackLinkInfo = new Stack<>();
@@ -166,6 +188,9 @@ public class OAJson {
 		return json;
 	}
 
+	/**
+	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
+	 */
 	public void write(Object obj, File file) throws JsonProcessingException, IOException {
 		this.stackLinkInfo = new Stack<>();
 		this.cascade = null;
@@ -180,13 +205,59 @@ public class OAJson {
 		}
 	}
 
+	/**
+	 * Convert OAObject to a JSON stream, including any owned Links, and links in propertyPaths.
+	 */
+	public void write(Object obj, final OutputStream stream) throws JsonProcessingException, IOException {
+		this.stackLinkInfo = new Stack<>();
+		this.cascade = null;
+		String json;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+
+			createObjectMapper().writerWithDefaultPrettyPrinter().writeValue(stream, obj);
+
+		} finally {
+			OAThreadLocalDelegate.setOAJackson(null);
+		}
+	}
+
+	/**
+	 * Read Object from JSON. If OAObject, then first search and find matching objects to read into.
+	 */
 	public <T> T readObject(final String json, final Class<T> clazz) throws JsonProcessingException {
 		T t = readObject(json, clazz, false);
 		return t;
 	}
 
+	private final LinkedList<Object> llStack = new LinkedList<>();
+
+	public LinkedList<Object> getStack() {
+		return llStack;
+	}
+
 	/**
-	 * Convert a JSON string to an Object graph.
+	 * Root object used from call to readIntoObject.
+	 */
+	public OAObject getRoot() {
+		return this.root;
+	}
+
+	/**
+	 * Read JSON into an existing root Object.
+	 */
+	public void readIntoObject(final String json, OAObject root, final boolean bUseValidation) throws JsonProcessingException {
+		if (root == null) {
+			return;
+		}
+		this.root = root;
+		readObject(json, root.getClass(), bUseValidation);
+	}
+
+	/**
+	 * Convert a JSON string to an Object graph. If OAObject, then first search and find matching objects to read into.
+	 *
+	 * @param bUseValidation if false (default) then setLoading(true) will be used before loading.
 	 */
 	public <T> T readObject(final String json, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException {
@@ -210,15 +281,60 @@ public class OAJson {
 			}
 			JavaType jt = om.getTypeFactory().constructType(c);
 
+			//qqqqqqqqqqqqqqqqqvv
+
 			obj = (T) om.readValue(json, jt);
 
-			/* was
-			if (OAObject.class.isAssignableFrom(clazz)) {
-				obj = (T) om.readValue(json, OAObject.class); // will call OAJacksonDeserializer
-			} else {
-				obj = (T) om.readValue(json, clazz);
+			//qqqqqqqqqqqqq
+
+			int xx = 4;
+			xx++;
+
+		} finally {
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(false);
 			}
-			*/
+			OAThreadLocalDelegate.setOAJackson(null);
+			readObjectClass = null;
+		}
+
+		return obj;
+	}
+
+	protected void afterReadJson() {
+		//qqqqqqqqqqqqqqqqqqq
+
+	}
+
+	/**
+	 * Read JSON from stream into Object.
+	 */
+	public <T> T readObject(final InputStream stream, final Class<T> clazz, final boolean bUseValidation)
+			throws JsonProcessingException, IOException {
+		this.readObjectClass = clazz;
+		ObjectMapper om = createObjectMapper();
+		this.stackLinkInfo = new Stack<>();
+
+		hmGuidObject = null;
+		Map<Integer, OAObject> hmGuidMap = getGuidMap();
+
+		T obj;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(true);
+			}
+
+			Class c = clazz;
+			if (OAObject.class.isAssignableFrom(clazz)) {
+				c = OAObject.class;
+			}
+			JavaType jt = om.getTypeFactory().constructType(c);
+
+			//qqqqqqqqqqqqqqqqqvv
+
+			obj = (T) om.readValue(stream, jt);
+
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -257,7 +373,8 @@ public class OAJson {
 
 			obj = (T) om.readValue(file, jt);
 
-			// was: obj = (T) om.readValue(file, OAObject.class);
+			//qqqqqqqqqqqqqqqqqvv
+
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -292,6 +409,9 @@ public class OAJson {
 			MapType mt = om.getTypeFactory().constructMapType(Map.class, clazzKey, c);
 
 			map = (Map<K, V>) om.readValue(json, mt);
+
+			//qqqqqqqqqqqqqqqqqvv
+
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -325,8 +445,8 @@ public class OAJson {
 
 			list = (List<T>) om.readValue(json, ct);
 
-			//was:  list = (List<T>) om.readValue(json, new TypeReference<List<T>>() {
-			// });
+			//qqqqqqqqqqqqqqqqqvv
+
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -360,10 +480,42 @@ public class OAJson {
 
 			list = (List<T>) om.readValue(file, ct);
 
-			/*was
-				list = (List<T>) om.readValue(file, new TypeReference<List<T>>() {
-				});
-			*/
+			//qqqqqqqqqqqqqqqqqvv
+		} finally {
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(false);
+			}
+			OAThreadLocalDelegate.setOAJackson(null);
+			readObjectClass = null;
+		}
+
+		return list;
+	}
+
+	public <T> List<T> readList(final InputStream stream, final Class<T> clazz, final boolean bUseValidation)
+			throws JsonProcessingException, IOException {
+		this.readObjectClass = clazz;
+		ObjectMapper om = createObjectMapper();
+		this.stackLinkInfo = new Stack<>();
+		hmGuidObject = null;
+
+		List<T> list;
+		try {
+			OAThreadLocalDelegate.setOAJackson(this);
+			if (!bUseValidation) {
+				OAThreadLocalDelegate.setLoading(true);
+			}
+
+			Class c = clazz;
+			if (OAObject.class.isAssignableFrom(clazz)) {
+				c = OAObject.class;
+			}
+			CollectionType ct = om.getTypeFactory().constructCollectionType(List.class, c);
+
+			list = (List<T>) om.readValue(stream, ct);
+
+			//qqqqqqqqqqqqqqqqqvv
+
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -415,46 +567,6 @@ public class OAJson {
 		}
 		return json;
 	}
-
-	/*
-	public String write(final Hub<? extends OAObject> hub) throws JsonProcessingException {
-		this.cascade = null;
-		final OACascade cascade = getCascade();
-
-		final ObjectMapper objectMapper = createObjectMapper();
-
-		ArrayNode nodeArray = objectMapper.createArrayNode();
-
-		try {
-			OAThreadLocalDelegate.setOAJackson(this);
-
-			for (final OAObject oaObj : hub) {
-				if (cascade.wasCascaded(oaObj, true)) {
-					// write single objKey or guid to arrayNode
-					OAObjectKey key = oaObj.getObjectKey();
-
-					String id = OAJson.convertObjectKeyToJsonSinglePartId(key);
-
-					if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
-						nodeArray.add(id);
-					} else {
-						nodeArray.add(OAConv.toLong(id));
-					}
-
-				} else {
-					JsonNode node = objectMapper.valueToTree(oaObj);
-					nodeArray.add(node);
-				}
-			}
-		} finally {
-			OAThreadLocalDelegate.setOAJackson(null);
-		}
-
-		String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(nodeArray);
-
-		return json;
-	}
-	*/
 
 	public <T extends OAObject> void readIntoHub(final File file, final Hub<T> hub, final boolean bUseValidation) throws Exception {
 		ObjectMapper om = createObjectMapper();
@@ -526,6 +638,8 @@ public class OAJson {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(true);
 			}
+
+			//qqqqqqqqqqqqqqqqqvv
 
 		} finally {
 			if (!bUseValidation) {
@@ -740,6 +854,9 @@ public class OAJson {
 			} else {
 				ObjectMapper om = oaj.createObjectMapper();
 				objx = om.readValue(node.toString(), paramClass);
+
+				//qqqqqqqqqqqqqqqqqvv
+
 			}
 			margs[i] = objx;
 			nodeArrayPos++;
@@ -808,11 +925,9 @@ public class OAJson {
 	}
 
 	public void beforeReadCallback(JsonNode node) {
-
 	}
 
 	public void afterReadCallback(JsonNode node, Object objNew) {
-
 	}
 
 	public void setWriteAsPojo(boolean b) {

@@ -397,6 +397,8 @@ public class OAAnnotationDelegate {
 
 			li.setDefaultContextPropertyPath(annotation.defaultContextPropertyPath());
 
+			li.setEqualPropertyPath(annotation.equalPropertyPath());
+
 			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
 				li.setEnabledProperty(eq.enabledProperty());

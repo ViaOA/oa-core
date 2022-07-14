@@ -46,13 +46,15 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private boolean bAutoCreateNew;
 	private String matchHub; // propertyPath to find matching hub
 	private String matchProperty; // propertyPath to match, using HubAutoMatch
-	boolean mustBeEmptyForDelete; // this link must be emtpy before other side can be deleted
+	boolean mustBeEmptyForDelete; // this link must be empty before other side can be deleted
 	private String uniqueProperty; // unique propertyPath
 	private String sortProperty; // sort propetyPath
 	private boolean sortAsc = true; // sort ascending
 	private String seqProperty; // sequence propetyPath
 	private boolean couldBeLarge;
 	private boolean oneAndOnlyOne;
+
+	private String equalPropertyPath;
 
 	// runtime
 	protected transient int cacheSize;
@@ -685,5 +687,13 @@ public class OALinkInfo { //implements java.io.Serializable {
 
 	public void setImportMatch(boolean b) {
 		this.importMatch = b;
+	}
+
+	public String getEqualPropertyPath() {
+		return equalPropertyPath;
+	}
+
+	public void setEqualPropertyPath(String s) {
+		equalPropertyPath = s;
 	}
 }

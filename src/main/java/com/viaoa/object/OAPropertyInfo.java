@@ -16,6 +16,11 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.hub.Hub;
 import com.viaoa.util.OAString;
 
+/**
+ * OAObject property metadata. This is loaded from method Annotations.
+ * 
+ * @author vvia
+ */
 public class OAPropertyInfo implements java.io.Serializable {
 	static final long serialVersionUID = 1L;
 

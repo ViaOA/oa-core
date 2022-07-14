@@ -94,9 +94,7 @@ public @interface OAOne {
 	boolean isOneAndOnlyOne() default false;
 
 	/**
-	 * Properties that this link needs to be in-sync with. For example: if this is for an Employee object, and this object also has an
-	 * employeeId property that used used to find Employee. This is usually only need properties are keys in this object to the other
-	 * object.
+	 * Properties that that are also foreign keys to other objects, which are used by Link=One.
 	 */
 	String[] usesProperties() default {};
 
@@ -106,6 +104,8 @@ public @interface OAOne {
 	String[] pojoNames() default {};
 
 	boolean importMatch() default false;
+
+	String equalPropertyPath() default "";
 }
 
 /*  OALinkInfo

@@ -27,7 +27,7 @@ import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
 
 /**
- * Used by OAJackson to convert OAObject(s) & Hub to JSON.
+ * Used by OAJson to convert OAObject(s) & Hub to JSON.
  */
 public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
@@ -137,8 +137,6 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				}
 			}
 		}
-
-		//qqqqqqqqqqq dont write again, if already used in importMatchPropertyNames qqqqqqqqqqqqq
 
 		// write (non-id) props
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {

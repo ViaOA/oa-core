@@ -50,7 +50,7 @@ public class OAObjectEventDelegate {
 	protected static void fireBeforePropertyChange(final OAObject oaObj, final String propertyName,
 			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged) {
 		_fireBeforePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged, false);
-	};
+	}
 
 	private static void _fireBeforePropertyChange(final OAObject oaObj, final String propertyName,
 			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged, final boolean bIsCheckingRef) {
@@ -279,7 +279,7 @@ public class OAObjectEventDelegate {
 					    }
 					};
 					OADataSource ds = OADataSource.getDataSource(oaObj.getClass(), filter);
-
+					
 					if (ds != null && (!(ds instanceof OADataSourceObjectCache))) {
 					    Iterator it = ds.select(oaObj.getClass(), propertyU+" = ?", new Object[] {newObj}, null, null, null, null, 2, filter, false);
 					    try {
@@ -453,7 +453,7 @@ public class OAObjectEventDelegate {
 		if (!bIsLoading) {
 			/*
 			OAObjectKey key = OAObjectKeyDelegate.getKey(oaObj);
-
+			
 			Object objOld = oldObj;
 			if (objOld instanceof OAObject) {
 				objOld = OAObjectKeyDelegate.getKey((OAObject) objOld);
@@ -477,8 +477,8 @@ public class OAObjectEventDelegate {
 			    newx = "byte[" + ((byte[])objNew).length +"]";
 			}
 			else newx = objNew;
-
-
+			
+			
 			String s = String.format("Change, class=%s, id=%s, property=%s, oldValue=%s, newVaue=%s",
 			        OAString.getClassName(oaObj.getClass()),
 			        key.toString(),
@@ -687,7 +687,7 @@ public class OAObjectEventDelegate {
 		}
 
 		/* 20101218 replaced by HubListenerTree
-
+		
 		// Check to see if a Calculated property is changed.
 		/ * how do properties from other link object notify this objects calc objects?
 		Answer: when you add a HubListener to Hub, it will create detail hub and
@@ -848,7 +848,7 @@ public class OAObjectEventDelegate {
 		    ex:  Section.setCatalog(catalog)  or  Section.setParentSection(section)
 		    This: "Section"
 		    Changed Prop: "Catalog" or "ParentSection"
-
+		
 		    linkInfo: from Section -> Catalog or ParentSection
 		    toLinkInfo: =  from  Catalog or ParentSection -> Sections
 		    liRecursive = "ParentSection"

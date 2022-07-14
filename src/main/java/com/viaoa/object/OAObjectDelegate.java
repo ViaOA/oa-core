@@ -180,7 +180,12 @@ public class OAObjectDelegate {
 			}
 			if (!bWasLoading && bInitializeWithDS) {
 				if (OAObjectDSDelegate.getAssignIdOnCreate(oaObj)) {
-					OAObjectDSDelegate.assignId(oaObj);
+					OAThreadLocalDelegate.setLoading(false);
+					try {
+						OAObjectDSDelegate.assignId(oaObj);
+					} finally {
+						OAThreadLocalDelegate.setLoading(true);
+					}
 				}
 			}
 			if (bSetChangedToFalse) {
