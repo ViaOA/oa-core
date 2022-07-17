@@ -17,8 +17,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
+import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -249,9 +251,17 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 					}
 
 					OASelect sel = new OASelect(oi.getForClass(), sql, importMatchValues, "");
-
 					objNew = sel.next();
 					sel.close();
+
+					// qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+					if (objNew == null) {
+						OAFinder finder = new OAFinder();
+						OAQueryFilter filter = new OAQueryFilter(oi.getForClass(), sql, importMatchValues);
+						finder.addFilter(filter);
+						objNew = (OAObject) OAObjectCacheDelegate.find(oi.getForClass(), finder);
+					}
+
 				}
 			}
 		}
