@@ -158,10 +158,6 @@ public class OADataSourceAuto extends OADataSource {
 
 			final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 			final String[] props = oi.getIdProperties();
-			if (props == null || props.length == 0) {
-				hmIgnoreClass.put(clazz, null);
-				return null;
-			}
 
 			if (NextNumber.class.equals(clazz)) {
 				return null; // there is one in the works
@@ -173,8 +169,8 @@ public class OADataSourceAuto extends OADataSource {
 			if (props != null && props.length > 0) {
 				for (String s : props) {
 					OAPropertyInfo pi = oi.getPropertyInfo(s);
-					if (pi.getAutoAssign()) {
-						nn.setProperty(props[0]);
+					if (pi != null && pi.getAutoAssign()) {
+						nn.setProperty(s);
 						break;
 					}
 				}

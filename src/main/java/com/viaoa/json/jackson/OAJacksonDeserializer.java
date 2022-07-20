@@ -46,6 +46,8 @@ import com.viaoa.util.Tuple;
 
 /**
  * Used by OAJson to convert JSON to OAObject(s).
+ * <p>
+ * This supports object graphs, and the use of importMatch properties.
  */
 public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
@@ -63,12 +65,10 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
 		OAObject obj = getObject(oi, node, null, null);
 
-		//qqqqqqqqqqqqqqqqqqqqq this might be the best place to put code to create importMatch objects
-
+		// use the import match property values to finish populating object graph
 		List<ImportMatch> alImportMatch = oaj.getImportMatchList();
 		for (ImportMatch im : alImportMatch) {
-			// qqqqqqqqq
-			OAObjectImportMatchDelegate.createObjects(im);
+			OAObjectImportMatchDelegate.process(im);
 		}
 
 		return obj;
@@ -128,8 +128,6 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 		final List<ImportMatch> alImportMatchInfo = oaj.getImportMatchList();
 
 		OAObject oaObj = _getObject3(oaj, oi, node, oaObjectToUse, extraWhereClause, extraWhereParam, alImportMatchInfo);
-
-		//qqqqqqqqqqq do clean up of 		alImportMatchInfo ... or pass on until end
 
 		return oaObj;
 	}
@@ -244,24 +242,51 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 					importMatchValues = OAArray.add(Object.class, importMatchValues, val);
 				}
 				if (sql != null) {
+					// first, see if extraWhere can be used to find objNew
+					boolean bWasSearched = false;
+					if (OAString.isNotEmpty(extraWhereClause) && extraWhereParam instanceof OAObject) {
+						String s = OAString.field(extraWhereClause, " = ", 1);
+						OALinkInfo li = oi.getLinkInfo(s);
+						OALinkInfo rli = li.getReverseLinkInfo();
+						Object objx = rli.getValue(extraWhereParam);
+						if (objx instanceof Hub) {
+							Hub hub = (Hub) objx;
 
-					if (OAString.isNotEmpty(extraWhereClause)) {
-						sql += " AND " + extraWhereClause;
-						importMatchValues = OAArray.add(Object.class, importMatchValues, extraWhereParam);
+							OAFinder finder = new OAFinder();
+							OAQueryFilter filter = new OAQueryFilter(oi.getForClass(), sql, importMatchValues);
+							finder.addFilter(filter);
+							objNew = finder.findFirst(hub);
+
+							bWasSearched = true;
+						} else if (objx instanceof OAObject) {
+							OAObject oaobj = (OAObject) objx;
+
+							OAFinder finder = new OAFinder();
+							OAQueryFilter filter = new OAQueryFilter(oi.getForClass(), sql, importMatchValues);
+							finder.addFilter(filter);
+							objNew = finder.findFirst(oaobj);
+
+							bWasSearched = true;
+						}
 					}
 
-					OASelect sel = new OASelect(oi.getForClass(), sql, importMatchValues, "");
-					objNew = sel.next();
-					sel.close();
+					if (!bWasSearched) {
+						if (OAString.isNotEmpty(extraWhereClause)) {
+							sql += " AND " + extraWhereClause;
+							importMatchValues = OAArray.add(Object.class, importMatchValues, extraWhereParam);
+						}
 
-					// qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
-					if (objNew == null) {
-						OAFinder finder = new OAFinder();
-						OAQueryFilter filter = new OAQueryFilter(oi.getForClass(), sql, importMatchValues);
-						finder.addFilter(filter);
-						objNew = (OAObject) OAObjectCacheDelegate.find(oi.getForClass(), finder);
+						OASelect sel = new OASelect(oi.getForClass(), sql, importMatchValues, "");
+						objNew = sel.next();
+						sel.close();
+
+						if (objNew == null) {
+							OAFinder finder = new OAFinder();
+							OAQueryFilter filter = new OAQueryFilter(oi.getForClass(), sql, importMatchValues);
+							finder.addFilter(filter);
+							objNew = (OAObject) OAObjectCacheDelegate.find(oi.getForClass(), finder);
+						}
 					}
-
 				}
 			}
 		}
@@ -341,7 +366,9 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			String propertyName = oaj.getPropertyNameCallback(objNew, li.getLowerName());
 			JsonNode nodex = node.get(propertyName);
 
-			if (nodex != null) {
+			if (nodex != null && nodex.isNull()) {
+				objNew.setProperty(li.getLowerName(), null);
+			} else if (nodex != null) {
 				hsLinkFound.add(li);
 				OAObject objx = getLinkObject(objNew, li, nodex);
 
@@ -472,6 +499,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			hsLinkFound.add(li);
 			final Map<String, Tuple<OAPropertyPath, Object>> hmNameValue = new HashMap<>();
 
+			boolean bIsNull = false;
 			int pos = 0;
 			for (final String propertyName : importMatchPropertyNames) {
 				String propertyPath = oix.getImportMatchPropertyPaths()[pos];
@@ -486,10 +514,19 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
 				jn = node.get(propertyName);
 				if (jn != null) {
-					Object val = convert(jn, pi);
-					hmNameValue.put(propertyName, new Tuple(pp, val));
+					if (jn.isNull()) {
+						bIsNull = true;
+					} else {
+						Object val = convert(jn, pi);
+						hmNameValue.put(propertyName, new Tuple(pp, val));
+					}
 				}
 				pos++;
+			}
+
+			if (bIsNull) {
+				objNew.setProperty(li.getLowerName(), null);
+				continue;
 			}
 
 			if (hmNameValue.size() == 0) {
@@ -629,8 +666,6 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 		return objNew;
 	}
 
-	//qqqqqqqqqqqqqqqqqqq
-
 	protected Object convert(final JsonNode jn, final OAPropertyInfo pi) {
 		if (jn == null) {
 			return null;
@@ -669,8 +704,6 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
 	protected OAObject getLinkObject(OAObject fromObject, OALinkInfo li, JsonNode nodeForLinkProperty) {
 		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
-
-		String namex = li.getName();//qqqqqqq
 
 		OAObject objNew = null;
 		if (nodeForLinkProperty.isObject()) {

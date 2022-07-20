@@ -115,6 +115,13 @@ public class OAJson {
 		return bIncludeAll;
 	}
 
+	protected void reset() {
+		if (alImportMatch != null) {
+			alImportMatch.clear();
+		}
+		this.stackLinkInfo = new Stack<>();
+	}
+
 	/**
 	 * Used internally to know the class of the root node.
 	 */
@@ -261,7 +268,7 @@ public class OAJson {
 	 */
 	public <T> T readObject(final String json, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException {
-		this.stackLinkInfo = new Stack<>();
+		reset();
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
 
@@ -281,14 +288,7 @@ public class OAJson {
 			}
 			JavaType jt = om.getTypeFactory().constructType(c);
 
-			//qqqqqqqqqqqqqqqqqvv
-
 			obj = (T) om.readValue(json, jt);
-
-			//qqqqqqqqqqqqq
-
-			int xx = 4;
-			xx++;
 
 		} finally {
 			if (!bUseValidation) {
@@ -311,6 +311,7 @@ public class OAJson {
 	 */
 	public <T> T readObject(final InputStream stream, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException, IOException {
+		reset();
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
 		this.stackLinkInfo = new Stack<>();
@@ -331,8 +332,6 @@ public class OAJson {
 			}
 			JavaType jt = om.getTypeFactory().constructType(c);
 
-			//qqqqqqqqqqqqqqqqqvv
-
 			obj = (T) om.readValue(stream, jt);
 
 		} finally {
@@ -351,9 +350,9 @@ public class OAJson {
 	 */
 	public <T> T readObject(final File file, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException, IOException {
+		reset();
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
-		this.stackLinkInfo = new Stack<>();
 
 		hmGuidObject = null;
 		Map<Integer, OAObject> hmGuidMap = getGuidMap();
@@ -389,9 +388,9 @@ public class OAJson {
 	public <K, V> Map<K, V> readMap(final String json, final Class<K> clazzKey, final Class<V> clazzValue,
 			final boolean bUseValidation)
 			throws JsonProcessingException, IOException {
+		reset();
 		this.readObjectClass = clazzValue;
 		ObjectMapper om = createObjectMapper();
-		this.stackLinkInfo = new Stack<>();
 		hmGuidObject = null;
 
 		Map<K, V> map;
@@ -425,9 +424,9 @@ public class OAJson {
 
 	public <T> List<T> readList(final String json, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException, IOException {
+		reset();
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
-		this.stackLinkInfo = new Stack<>();
 		hmGuidObject = null;
 
 		List<T> list;
@@ -445,8 +444,6 @@ public class OAJson {
 
 			list = (List<T>) om.readValue(json, ct);
 
-			//qqqqqqqqqqqqqqqqqvv
-
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -460,9 +457,9 @@ public class OAJson {
 
 	public <T> List<T> readList(final File file, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException, IOException {
+		reset();
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
-		this.stackLinkInfo = new Stack<>();
 		hmGuidObject = null;
 
 		List<T> list;
@@ -479,8 +476,6 @@ public class OAJson {
 			CollectionType ct = om.getTypeFactory().constructCollectionType(List.class, c);
 
 			list = (List<T>) om.readValue(file, ct);
-
-			//qqqqqqqqqqqqqqqqqvv
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -494,9 +489,9 @@ public class OAJson {
 
 	public <T> List<T> readList(final InputStream stream, final Class<T> clazz, final boolean bUseValidation)
 			throws JsonProcessingException, IOException {
+		reset();
 		this.readObjectClass = clazz;
 		ObjectMapper om = createObjectMapper();
-		this.stackLinkInfo = new Stack<>();
 		hmGuidObject = null;
 
 		List<T> list;
@@ -583,8 +578,8 @@ public class OAJson {
 	public <T extends OAObject> void readIntoHub(final ObjectMapper om, final JsonNode nodeRoot, final Hub<T> hub,
 			final boolean bUseValidation) throws Exception {
 
+		reset();
 		this.readObjectClass = hub.getObjectClass();
-		this.stackLinkInfo = new Stack<>();
 
 		hmGuidObject = null;
 		Map<Integer, OAObject> hmGuidMap = getGuidMap();
@@ -638,9 +633,6 @@ public class OAJson {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(true);
 			}
-
-			//qqqqqqqqqqqqqqqqqvv
-
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -865,7 +857,7 @@ public class OAJson {
 	}
 
 	public JsonNode readTree(String json) throws Exception {
-		this.stackLinkInfo = new Stack<>();
+		reset();
 		JsonNode node = createObjectMapper().readTree(json);
 		return node;
 	}

@@ -11,10 +11,10 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.oreillyauto.dev.tool.messagedesigner.model.oa.MessageSource;
-import com.oreillyauto.dev.tool.messagedesigner.model.oa.MessageType;
-import com.oreillyauto.dev.tool.messagedesigner.model.oa.MessageTypeRecord;
-import com.oreillyauto.dev.tool.messagedesigner.model.oa.propertypath.MessageSourcePP;
+import com.messagedesigner.model.oa.MessageSource;
+import com.messagedesigner.model.oa.MessageType;
+import com.messagedesigner.model.oa.MessageTypeRecord;
+import com.messagedesigner.model.oa.propertypath.MessageSourcePP;
 import com.viaoa.OAUnitTest;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObjectCacheDelegate;
