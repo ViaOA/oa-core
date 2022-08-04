@@ -59,6 +59,10 @@ public class OAConnection {
 		return bIsForBatch;
 	}
 
+	public Connection getConnection() {
+		return connection;
+	}
+
 	/**
 	 * Must be in an OATransaction that has allowBatch=true
 	 */
