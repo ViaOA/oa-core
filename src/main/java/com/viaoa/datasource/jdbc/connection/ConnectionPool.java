@@ -90,6 +90,20 @@ public class ConnectionPool implements Runnable {
 			int cntClosed = 0;
 
 			try {
+
+				for (int i = 0; i < alOAConnection.size(); i++) {
+					OAConnection con = alOAConnection.get(i);
+					if (con.connection.isClosed()) {
+						continue;
+					}
+					if (!con.connection.isValid(5)) {
+						if (!con.connection.isClosed()) {
+							con.connection.rollback();
+						}
+						con.connection.close();
+					}
+				}
+
 				lock.lock();
 				for (int i = 0; i < alOAConnection.size(); i++) {
 					OAConnection con = alOAConnection.get(i);
@@ -145,7 +159,8 @@ public class ConnectionPool implements Runnable {
 			try {
 				synchronized (threadLOCK) {
 					if (!bStopThread) {
-						threadLOCK.wait(1000 * 60 * 5);
+						int ms = 1000 * 60 * 1;
+						threadLOCK.wait(ms);
 					}
 				}
 			} catch (InterruptedException e) {
@@ -234,6 +249,9 @@ public class ConnectionPool implements Runnable {
 					if (used > 0) {
 						continue;
 					}
+				}
+				if (conx.connection.isClosed()) {
+					continue;
 				}
 				if (con == null || used <= con.getTotalUsed()) {
 					con = conx;
