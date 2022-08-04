@@ -22,67 +22,77 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME) 
+@Retention(RetentionPolicy.RUNTIME)
 public @interface OAMany {
-    Class toClass() default Object.class;
-  
-    String displayName() default "";
-    String description() default "";
-    
-    /**  @return true if this object is the owner */
-    boolean owner() default false;
-    
-    /**  @return true if this is a recursive relationship. */
-    boolean recursive() default false;
-    
-    /**  @return name used in the toClass that refers to this class. */
-    String reverseName() default "";
-    
-    /**  @return true if saving this class will save the many objects */
-    boolean cascadeSave() default false;
+	Class toClass() default Object.class;
 
-    /**  @return true if deleting this class will delete the many objects */
-    boolean cascadeDelete() default false;
-    
-    /**  @return property name used to store the order position for each object in the Hub */
-    String seqProperty() default "";
-    
-    String toolTip() default "";
-    String help() default "";
-    boolean hasCustomCode() default false;
-    int cacheSize() default 0;
-    
-    /** @return true if there is a a method for this method. */
-    boolean createMethod() default true;
-    
-    /**  @return path to find another hub to use for autocreating objects in this hub. */
-    String matchHub() default "";
-    
-    /**  @return works with matchHub, to know what property should match the objects in the matchHub. */
-    String matchProperty() default "";   // property that matchHub will use
-    
-    /**  @return true if this must be empty (hub.size=0) to delete the other object */
-    boolean mustBeEmptyForDelete() default false;
-    
-    /**  @return true if this is a calculated Hub. */
-    boolean isCalculated() default false;
+	String displayName() default "";
 
-    /**  @return true if calc hub is to be done on server side. */
-    boolean isServerSideCalc() default false;
-    
-    String uniqueProperty() default ""; 
-    
-    String sortProperty() default "";
-    boolean sortAsc() default true;
+	String description() default "";
 
-    String[] calcDependentProperties() default {};
+	/** @return true if this object is the owner */
+	boolean owner() default false;
 
-    String mergerPropertyPath() default "";
-    
-    boolean couldBeLarge() default false;
-    
-    /** flag to know if this is processed and will require User.editProcessed=true for it to be changed. */
-    boolean isProcessed() default false;
+	/** @return true if this is a recursive relationship. */
+	boolean recursive() default false;
+
+	/** @return name used in the toClass that refers to this class. */
+	String reverseName() default "";
+
+	/** @return true if saving this class will save the many objects */
+	boolean cascadeSave() default false;
+
+	/** @return true if deleting this class will delete the many objects */
+	boolean cascadeDelete() default false;
+
+	/** @return property name used to store the order position for each object in the Hub */
+	String seqProperty() default "";
+
+	String toolTip() default "";
+
+	String help() default "";
+
+	boolean hasCustomCode() default false;
+
+	int cacheSize() default 0;
+
+	/** @return true if there is a a method for this method. */
+	boolean createMethod() default true;
+
+	/** @return path to find another hub to use for autocreating objects in this hub. */
+	String matchHub() default "";
+
+	/** @return works with matchHub, to know what property should match the objects in the matchHub. */
+	String matchProperty() default ""; // property that matchHub will use
+
+	/** @return true if this must be empty (hub.size=0) to delete the other object */
+	boolean mustBeEmptyForDelete() default false;
+
+	/** @return true if this is a calculated Hub. */
+	boolean isCalculated() default false;
+
+	/** @return true if calc hub is to be done on server side. */
+	boolean isServerSideCalc() default false;
+
+	String uniqueProperty() default "";
+
+	String sortProperty() default "";
+
+	boolean sortAsc() default true;
+
+	String[] calcDependentProperties() default {};
+
+	String mergerPropertyPath() default "";
+
+	boolean couldBeLarge() default false;
+
+	/** flag to know if this is processed and will require User.editProcessed=true for it to be changed. */
+	boolean isProcessed() default false;
+
+	/**
+	 * Name/Value (enum) property to automatch.
+	 */
+	String autoCreateProperty() default "";
 }
 
 /*  OALinkInfo
@@ -99,7 +109,7 @@ public @interface OAMany {
     protected String reverseName;  // reverse property name
     boolean bOwner;  // this object is the owner of relationship
     private boolean bTransient;
-    
+
     // runtime
     protected transient int cacheSize;
     protected OALinkInfo revLinkInfo;

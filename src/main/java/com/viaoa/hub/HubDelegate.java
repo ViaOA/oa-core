@@ -767,12 +767,13 @@ public class HubDelegate {
 		if (thisHub.data.getAutoMatch() != null) {
 			thisHub.data.getAutoMatch().close();
 		}
-		if (hubMaster != null) {
-			HubAutoMatch am = new HubAutoMatch();
-			thisHub.data.setAutoMatch(am);
-			am.setServerSideOnly(bServerSideOnly);
-			am.init(thisHub, property, hubMaster);
-		}
+		// 20220802 now works with Enum (name/value) property
+		// if (hubMaster != null) {
+		HubAutoMatch am = new HubAutoMatch();
+		thisHub.data.setAutoMatch(am);
+		am.setServerSideOnly(bServerSideOnly);
+		am.init(thisHub, property, hubMaster);
+		// }
 	}
 
 	public static HubAutoMatch getAutoMatch(Hub thisHub) {

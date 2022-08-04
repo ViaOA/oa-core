@@ -629,6 +629,13 @@ public class OAObjectReflectDelegate {
 							if (hubMatch != null) {
 								hub.setAutoMatch(matchProperty, hubMatch, true); // serverSide only
 							}
+						} else {
+							// 20220802
+							String autoCreatProperty = linkInfo.getAutoCreateProperty();
+							if (OAString.isNotEmpty(autoCreatProperty)) {
+								// get enum property getter method, get return value that is Enum and then number of values 0..n
+								hub.setAutoMatch(autoCreatProperty, null, true); // serverSide only
+							}
 						}
 					}
 				}
@@ -945,7 +952,7 @@ public class OAObjectReflectDelegate {
 
 		/*20171108 moved below. The issue with this is that this adds the Hub to oaObj.props before it runs the
 		 *    select (which loads data).  Another thread could get this empty hub before the objects are loaded.
-
+		
 		    // 20141204 added check to see if property is now there, in case it was deserialized and then
 		    //    the property was set by HubSerializeDelegate._readResolve
 		    if (bThisIsServer || OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, false) == null) {
@@ -1061,8 +1068,11 @@ public class OAObjectReflectDelegate {
 					}
 				}
 
-				/**
-				 * 20171113 moved after hub is added if (hubMatch != null) { hub.setAutoMatch(matchProperty, hubMatch, true); }
+				/*
+				 * 20171113 moved after hub is added
+				 * if (hubMatch != null) {
+				 * 		hub.setAutoMatch(matchProperty, hubMatch, true);
+				 * }
 				 */
 			}
 		} else {
@@ -1094,6 +1104,15 @@ public class OAObjectReflectDelegate {
 		if (hubMatch != null && (bThisIsServer || (bIsCalc && !bIsServerSideCalc))) {
 			if (matchProperty != null && matchProperty.length() > 0) {
 				hub.setAutoMatch(matchProperty, hubMatch, true);
+			}
+		}
+
+		if (bThisIsServer || (bIsCalc && !bIsServerSideCalc)) {
+			// 20220802
+			String autoCreatProperty = linkInfo.getAutoCreateProperty();
+			if (OAString.isNotEmpty(autoCreatProperty)) {
+				// get enum property getter method, get return value that is Enum and then number of values 0..n
+				hub.setAutoMatch(autoCreatProperty, null, true); // serverSide only
 			}
 		}
 

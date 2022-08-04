@@ -55,6 +55,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private boolean oneAndOnlyOne;
 
 	private String equalPropertyPath;
+	private String autoCreateProperty;
 
 	// runtime
 	protected transient int cacheSize;
@@ -695,5 +696,13 @@ public class OALinkInfo { //implements java.io.Serializable {
 
 	public void setEqualPropertyPath(String s) {
 		equalPropertyPath = s;
+	}
+
+	public String getAutoCreateProperty() {
+		return this.autoCreateProperty;
+	}
+
+	public void setAutoCreateProperty(String prop) {
+		this.autoCreateProperty = prop;
 	}
 }
