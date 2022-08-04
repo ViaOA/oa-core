@@ -10,6 +10,7 @@
 */
 package com.viaoa.object;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -263,6 +264,19 @@ public class OAAnnotationDelegate {
 			if (oaprop.isNameValue()) {
 				Hub<String> h = pi.getNameValues();
 				try {
+					// 20220803 need to use enum names, since hub.nameValue is the display name.
+					Class cz = Class.forName(clazz.getName() + "$" + pi.getName());
+					Field[] allFields = cz.getDeclaredFields();
+
+					Method mz = cz.getMethod("values", new Class[] {});
+					Object objzs = mz.invoke(null, null);
+					int xz = Array.getLength(objzs);
+					for (int i = 0; i < xz; i++) {
+						Object objz = Array.get(objzs, i);
+						h.add(objz.toString());
+					}
+
+					/*was
 					Field f = clazz.getField("hub" + OAString.mfcu(name));
 					Object objx = f.get(null);
 					if (objx instanceof Hub) {
@@ -272,7 +286,10 @@ public class OAAnnotationDelegate {
 							}
 						}
 					}
+					*/
 				} catch (Exception e) {
+					System.out.println("exception loading enum names for class.property " + clazz.getSimpleName() + "." + pi.getName());
+					e.printStackTrace();
 				}
 			}
 
@@ -471,6 +488,12 @@ public class OAAnnotationDelegate {
 				s = null;
 			}
 			li.setMatchProperty(s);
+
+			s = annotation.autoCreateProperty();
+			if (s != null && s.length() == 0) {
+				s = null;
+			}
+			li.setAutoCreateProperty(s);
 
 			s = annotation.uniqueProperty();
 			if (s != null && s.length() == 0) {
