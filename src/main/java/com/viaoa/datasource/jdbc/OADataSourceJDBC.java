@@ -297,9 +297,16 @@ public class OADataSourceJDBC extends OADataSource {
 		}
 
 		if (whereObject != null) {
+			// 20220803
+			return SelectDelegate.select(	this, selectClass,
+											whereObject, propertyFromWhereObject,
+											queryWhere, params,
+											extraWhere, queryOrder, max, bDirty);
+			/*was:
 			return SelectDelegate.select(	this, selectClass,
 											whereObject, extraWhere, params, propertyFromWhereObject,
 											queryOrder, max, bDirty);
+											*/
 
 		}
 		return SelectDelegate.select(	this, selectClass,
@@ -326,7 +333,7 @@ public class OADataSourceJDBC extends OADataSource {
 			String queryWhere, Object[] params,
 			OAObject whereObject, String propertyFromWhereObject, String extraWhere, int max) {
 		if (whereObject != null) {
-			return SelectDelegate.count(this, selectClass, whereObject, extraWhere, params, propertyFromWhereObject, max);
+			return SelectDelegate.count(this, selectClass, whereObject, propertyFromWhereObject, queryWhere, params, extraWhere, max);
 		}
 		return SelectDelegate.count(this, selectClass, queryWhere, params, max);
 	}

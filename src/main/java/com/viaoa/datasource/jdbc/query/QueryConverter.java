@@ -270,13 +270,28 @@ public class QueryConverter {
 	/**
 	 * propertyFromWhereObject name of link to use, from whereObject from Table(clazz).getLinks()[].propertyName = propertyFromWhereObject
 	 */
-	public String convertToSql(Class selectClass, Object whereObject, String extraWhere, Object[] args, String propertyFromWhereObject,
+	public String convertToSql(Class selectClass, Object whereObject, String propertyFromWhereObject,
+			String queryWhere, Object[] args,
+			String extraWhere,
 			String orderBy) {
+
+		/*was
+		public String convertToSql(Class selectClass, Object whereObject, String extraWhere, Object[] args, String propertyFromWhereObject,
+			String orderBy) {
+			*/
+
 		reset();
 		Vector vecParam = new Vector(3, 3);
 		String s = convertToWhere(selectClass, whereObject, propertyFromWhereObject, vecParam);
 		if (selectObject != null || bEmpty) {
 			return "";
+		}
+
+		if (!OAString.isEmpty(queryWhere)) {
+			if (!OAString.isEmpty(s)) {
+				s = "(" + s + ") AND ";
+			}
+			s += queryWhere;
 		}
 
 		if (!OAString.isEmpty(extraWhere)) {
@@ -286,7 +301,7 @@ public class QueryConverter {
 			s += extraWhere;
 		}
 
-		for (int i = 0; args != null && i > args.length; i++) {
+		for (int i = 0; args != null && i < args.length; i++) {
 			vecParam.add(args[i]);
 		}
 		Object[] params = new Object[vecParam.size()];
@@ -296,13 +311,23 @@ public class QueryConverter {
 	}
 
 	// 20121013
-	public String convertToPreparedStatementSql(Class selectClass, Object whereObject, String extraWhere, Object[] args,
-			String propertyFromWhereObject, String orderBy) {
+	public String convertToPreparedStatementSql(Class selectClass,
+			Object whereObject, String propertyFromWhereObject,
+			String queryWhere, Object[] args,
+			String extraWhere,
+			String orderBy) {
 		reset();
 		Vector vecParam = new Vector(3, 3);
 		String s = convertToWhere(selectClass, whereObject, propertyFromWhereObject, vecParam);
 		if (selectObject != null || bEmpty) {
 			return "";
+		}
+
+		if (!OAString.isEmpty(queryWhere)) {
+			if (!OAString.isEmpty(s)) {
+				s = "(" + s + ") AND ";
+			}
+			s += queryWhere;
 		}
 
 		if (!OAString.isEmpty(extraWhere)) {
@@ -312,7 +337,7 @@ public class QueryConverter {
 			s += extraWhere;
 		}
 
-		for (int i = 0; args != null && i > args.length; i++) {
+		for (int i = 0; args != null && i < args.length; i++) {
 			vecParam.add(args[i]);
 		}
 		Object[] params = new Object[vecParam.size()];

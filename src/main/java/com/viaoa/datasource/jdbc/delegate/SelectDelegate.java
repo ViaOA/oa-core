@@ -224,10 +224,17 @@ public class SelectDelegate {
 		}
 	}
 
-	// 20121013 changes to use PreparedStatements for Selecting Many link
-	public static OADataSourceIterator select(OADataSourceJDBC ds, Class clazz, OAObject whereObject, String extraWhere, Object[] params,
-			String propertyFromWhereObject, String queryOrder, int max, boolean bDirty) {
-		// dont need to select if master object (whereObject) is new
+	public static OADataSourceIterator select(OADataSourceJDBC ds, Class clazz,
+			OAObject whereObject, String propertyFromWhereObject,
+			String queryWhere, Object[] params,
+			String extraWhere,
+			String queryOrder, int max, boolean bDirty) {
+
+		/*was:
+		public static OADataSourceIterator select(OADataSourceJDBC ds, Class clazz, OAObject whereObject, String extraWhere, Object[] params,
+				String propertyFromWhereObject, String queryOrder, int max, boolean bDirty) {
+			// dont need to select if master object (whereObject) is new
+		 */
 		if (whereObject == null || whereObject.getNew()) {
 			return null;
 		}
@@ -241,7 +248,8 @@ public class SelectDelegate {
 		if (dao == null || whereObject == null || OAString.isEmpty(propertyFromWhereObject) || (params != null && params.length > 0)
 				|| max > 0) {
 			QueryConverter qc = new QueryConverter(ds);
-			String query = getSelectSQL(ds, qc, clazz, whereObject, extraWhere, params, propertyFromWhereObject, queryOrder, max, bDirty);
+			String query = getSelectSQL(ds, qc, clazz, whereObject, propertyFromWhereObject, queryWhere, params, extraWhere, queryOrder,
+										max, bDirty);
 
 			ResultSetIterator rsi;
 			if (!bDirty && dao != null) {
@@ -260,10 +268,11 @@ public class SelectDelegate {
 		if (query == null) {
 			QueryConverter qc = new QueryConverter(ds);
 			query = "SELECT " + qc.getSelectColumns(clazz, bDirty);
-			query += " " + qc.convertToPreparedStatementSql(clazz, whereObject, extraWhere, params, propertyFromWhereObject, queryOrder);
+			query += " " + qc.convertToPreparedStatementSql(clazz, whereObject, propertyFromWhereObject, queryWhere, params, extraWhere,
+															queryOrder);
 
 			params = qc.getArguments();
-			if (params == null || params.length == 0) {
+			if (whereObject != null && (params == null || params.length == 0)) {
 				return null; // null reference
 			}
 			if (!bDirty) {
@@ -361,14 +370,18 @@ public class SelectDelegate {
 		return rsi;
 	}
 
-	public static String getSelectSQL(OADataSourceJDBC ds, QueryConverter qc, Class clazz, OAObject whereObject, String extraWhere,
-			Object[] args, String propertyFromWhereObject, String queryOrder, int max, boolean bDirty) {
+	public static String getSelectSQL(OADataSourceJDBC ds, QueryConverter qc, Class clazz,
+			OAObject whereObject, String propertyFromWhereObject,
+			String queryWhere, Object[] args,
+			String extraWhere,
+			String queryOrder, int max, boolean bDirty) {
+
 		if (propertyFromWhereObject == null) {
 			propertyFromWhereObject = "";
 		}
 		String query = "SELECT " + qc.getSelectColumns(clazz, bDirty);
 		//was: String query = "SELECT " + getMax(ds,max) + qc.getSelectColumns(clazz, bDirty);
-		query += " " + qc.convertToSql(clazz, whereObject, extraWhere, args, propertyFromWhereObject, queryOrder);
+		query += " " + qc.convertToSql(clazz, whereObject, propertyFromWhereObject, queryWhere, args, extraWhere, queryOrder);
 		return query;
 	}
 
@@ -485,11 +498,14 @@ public class SelectDelegate {
 	}
 
 	public static int count(OADataSourceJDBC ds, Class selectClass, Object whereObject, String propertyFromWhereObject, int max) {
-		return count(ds, selectClass, whereObject, null, null, propertyFromWhereObject, max);
+		return count(ds, selectClass, whereObject, propertyFromWhereObject, null, null, null, max);
 	}
 
-	public static int count(OADataSourceJDBC ds, Class selectClass, Object whereObject, String extraWhere, Object[] args,
-			String propertyFromWhereObject, int max) {
+	public static int count(OADataSourceJDBC ds, Class selectClass,
+			Object whereObject, String propertyFromWhereObject,
+			String queryWhere, Object[] args,
+			String extraWhere,
+			int max) {
 		if (whereObject instanceof OAObject) {
 			if (((OAObject) whereObject).getNew()) {
 				return 0;
@@ -500,7 +516,7 @@ public class SelectDelegate {
 			propertyFromWhereObject = "";
 		}
 		QueryConverter qc = new QueryConverter(ds);
-		String s = qc.convertToSql(selectClass, whereObject, extraWhere, args, propertyFromWhereObject, "");
+		String s = qc.convertToSql(selectClass, whereObject, propertyFromWhereObject, queryWhere, args, extraWhere, "");
 
 		s = "SELECT COUNT(*) " + s;
 		//was: s = "SELECT "+getMax(ds, max)+"COUNT(*) " + s;
