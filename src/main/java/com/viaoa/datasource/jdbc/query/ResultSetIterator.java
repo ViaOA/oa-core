@@ -181,10 +181,9 @@ public class ResultSetIterator implements OADataSourceIterator {
 				OAPerformance.LOG.fine(txt);
 			}
 			LOG.fine(txt);
-			//if (OAObject.getDebugMode()) {
-			System.out.println(txt);
-			//}
-
+			if (OAObject.getDebugMode()) {
+				System.out.println(txt);
+			}
 		}
 	}
 
