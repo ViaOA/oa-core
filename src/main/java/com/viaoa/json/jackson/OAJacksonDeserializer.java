@@ -625,7 +625,6 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			String propertyName = oaj.getPropertyNameCallback(objNew, li.getLowerName());
 			JsonNode nodex = node.get(propertyName);
 			if (nodex instanceof ArrayNode) {
-
 				Hub<OAObject> hub = (Hub<OAObject>) li.getValue(objNew);
 				ArrayNode nodeArray = (ArrayNode) nodex;
 
@@ -633,6 +632,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				int x = nodeArray.size();
 				for (int i = 0; i < x; i++) {
 					nodex = nodeArray.get(i);
+
 					OAObject objx = getLinkObject(objNew, li, nodex);
 					alNew.add(objx);
 				}
@@ -707,20 +707,39 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
 		OAObject objNew = null;
 		if (nodeForLinkProperty.isObject()) {
-			if (li.getOwner() && li.getAutoCreateNew() && li.getType() == OALinkInfo.ONE) {
+			if (li.getAutoCreateNew() && li.getType() == OALinkInfo.ONE) {
+				// was: if (li.getOwner() && li.getAutoCreateNew() && li.getType() == OALinkInfo.ONE) {
 				objNew = (OAObject) li.getValue(fromObject);
 				loadObject(objNew, nodeForLinkProperty);
 			} else {
 				String extraWhereClause = null;
 				Object extraWhereParam = null;
-				if (li.getOwner()) {
+
+				boolean b = li.getOwner();
+				if (!b) {
+					final String uniqueName = li.getUniqueProperty();
+					if (OAString.isNotEmpty(uniqueName)) {
+						OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(li.getToClass());
+						OAPropertyInfo pi = oi.getPropertyInfo(uniqueName);
+						if (pi != null) {
+							b = pi.getImportMatch();
+						} else {
+							OALinkInfo lix = oi.getLinkInfo(uniqueName);
+							if (lix != null) {
+								b = lix.getImportMatch();
+							}
+						}
+					}
+				}
+
+				if (b) {
 					OALinkInfo rli = li.getReverseLinkInfo();
 					extraWhereClause = rli.getName() + " = ?";
 					extraWhereParam = fromObject;
+
 				}
 				objNew = getObject(li.getToObjectInfo(), nodeForLinkProperty, extraWhereClause, extraWhereParam);
 			}
-
 		} else if (nodeForLinkProperty.isNull()) {
 			// no-op
 		} else if (nodeForLinkProperty.isNumber()) {
