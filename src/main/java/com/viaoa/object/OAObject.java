@@ -38,6 +38,7 @@ import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OALogger;
 import com.viaoa.util.OANotExist;
+import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 
 /**
@@ -120,9 +121,9 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	static {
 		// oaversion
-        String ver = "3.7.2.202206160";
+		String ver = "3.7.2.202206160";
 		/*
-		 *  previous:  
+		 *  previous:
 		 *  String ver = "3.7.0.202104100";
 		 *  String ver = "3.7.1.202202250";
 		 */
@@ -131,7 +132,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-		
+
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -1010,7 +1011,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	}
 
 	public boolean isSyncThread() {
-		return OARemoteThreadDelegate.isRemoteThread();
+		return OASyncDelegate.isSyncThread();
 	}
 
 	/**
@@ -1374,7 +1375,168 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return true;
 	}
 
+	/**
+	 * Hook during OAObject initialization.
+	 */
 	public void setObjectDefaults() {
+	}
+
+	// 20220807
+	/**
+	 * Used when the linked to Object has only one pkey property.
+	 */
+	public boolean setFkeyPropertyValue(final String linkName, final Object newValue) {
+		return setFkeyPropertyValue(linkName, null, newValue);
+	}
+
+	/**
+	 * @returns true if the value was changed. This is so that the reference/link can be marked as changed.
+	 */
+	public boolean setFkeyPropertyValue(final String linkName, String linkToPropertyName, Object newValue) {
+
+		if (OAString.isEmpty(linkName)) {
+			throw new RuntimeException("linkName cant be empty, link=" + linkName);
+		}
+
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, linkName);
+		if (linkInfo == null) {
+			throw new RuntimeException("linkName not found, link=" + linkName);
+		}
+
+		OAObjectInfo oiTo = linkInfo.getToObjectInfo();
+
+		int pos = -1;
+		String[] pkeyNames = oiTo.getIdProperties();
+
+		if (OAString.isEmpty(linkToPropertyName)) {
+			if (OAString.isNotEmpty(pkeyNames) && pkeyNames.length == 1) {
+				pos = 0;
+				linkToPropertyName = pkeyNames[pos];
+			} else {
+				throw new RuntimeException("linkToPropertyName can not be null, since that are " + pkeyNames.length + " pk properties");
+			}
+		} else {
+			int x = 0;
+			for (String s : pkeyNames) {
+				if (linkToPropertyName.equalsIgnoreCase(s)) {
+					pos = x;
+					break;
+				}
+				x++;
+			}
+			if (pos < 0) {
+				throw new RuntimeException("linkToPropertyName does not exist in link object=" + linkName);
+			}
+		}
+
+		Object obj = OAObjectPropertyDelegate.getProperty(this, linkName);
+
+		if (obj instanceof OAObject) {
+			obj = ((OAObject) obj).getObjectKey();
+		} else if (obj != null && !(obj instanceof OAObjectKey)) {
+			throw new RuntimeException("value is not an OAObjectKey");
+		}
+
+		OAObjectKey ok = (OAObjectKey) obj;
+
+		Object[] objs = new Object[pkeyNames.length];
+		if (ok != null) {
+			int i = 0;
+			for (Object objx : ok.getObjectIds()) {
+				objs[i++] = objx;
+			}
+		}
+
+		if (newValue == null) {
+			OAPropertyInfo pi = oiTo.getPropertyInfo(linkToPropertyName);
+			if (pi.getIsPrimitive()) {
+				newValue = OAReflect.getEmptyPrimitive(pi.getClassType());
+			}
+		}
+		objs[pos] = newValue;
+
+		OAObjectKey okNew = new OAObjectKey(objs, ok.getGuid(), ok.isNew());
+
+		if (ok.compareTo(okNew) == 0) {
+			return false;
+		}
+
+		OAObjectPropertyDelegate.setProperty(this, linkName, okNew);
+		return true;
+	}
+
+	// 20220807
+	/**
+	 * Used when the linked to Object has only one pkey property.
+	 */
+	public Object getFkeyPropertyValue(final String linkName) {
+		return getFkeyPropertyValue(linkName, null);
+	}
+
+	/**
+	 * Get the value of link to object id property.
+	 *
+	 * @param linkName           name of link in from this Object to link Object.
+	 * @param linkToPropertyName name of Id property in to Object.
+	 * @return
+	 */
+	public Object getFkeyPropertyValue(final String linkName, String linkToPropertyName) {
+		if (OAString.isEmpty(linkName)) {
+			throw new RuntimeException("linkName cant be empty, link=" + linkName);
+		}
+
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, linkName);
+		if (linkInfo == null) {
+			throw new RuntimeException("linkName not found, link=" + linkName);
+		}
+
+		OAObjectInfo oiTo = linkInfo.getToObjectInfo();
+
+		int pos = -1;
+		String[] pkeyNames = oiTo.getIdProperties();
+
+		if (OAString.isEmpty(linkToPropertyName)) {
+			if (OAString.isNotEmpty(pkeyNames) && pkeyNames.length == 1) {
+				pos = 0;
+				linkToPropertyName = pkeyNames[pos];
+			} else {
+				throw new RuntimeException("linkToPropertyName can not be null, since that are " + pkeyNames.length + " pk properties");
+			}
+		} else {
+			int x = 0;
+			for (String s : pkeyNames) {
+				if (linkToPropertyName.equalsIgnoreCase(s)) {
+					pos = x;
+					break;
+				}
+				x++;
+			}
+			if (pos < 0) {
+				throw new RuntimeException("linkToPropertyName does not exist in link object=" + linkName);
+			}
+		}
+
+		Object obj = OAObjectPropertyDelegate.getProperty(this, linkName);
+
+		if (obj instanceof OAObject) {
+			obj = ((OAObject) obj).getObjectKey();
+		}
+
+		Object result = null;
+		if (obj instanceof OAObjectKey) {
+			OAObjectKey ok = (OAObjectKey) obj;
+			result = ok.getObjectIds()[pos];
+		}
+
+		if (result == null) {
+			OAPropertyInfo pi = oiTo.getPropertyInfo(linkToPropertyName);
+			if (pi.getIsPrimitive()) {
+				result = OAReflect.getEmptyPrimitive(pi.getClassType());
+			}
+		}
+		return result;
 	}
 
 	// 20211210 used when a property is an Fkey
