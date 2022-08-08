@@ -1139,8 +1139,8 @@ public class OAThreadLocalDelegate {
 	    if (sc != null) setRemoteMultiplexerClient(sc.getRemoteMultiplexerClient());
 	    else setRemoteMultiplexerClient(null);
 	}
-	
-	
+
+
 	public static RemoteMultiplexerClient getRemoteMultiplexerClient() {
 	    RemoteMultiplexerClient mc;
 	    if (OAThreadLocalDelegate.TotalRemoteMultiplexerClient.get() == 0) {
@@ -1584,6 +1584,22 @@ public class OAThreadLocalDelegate {
 			}
 		}
 		return true;
+	}
+
+	public static boolean isSyncThread() {
+		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
+		return (ti != null && ti.bIsSyncThread);
+	}
+
+	public static boolean setSyncThread(boolean b) {
+		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(b);
+
+		if (ti == null) {
+			return false;
+		}
+		boolean b2 = ti.bIsSyncThread;
+		ti.bIsSyncThread = b;
+		return b2;
 	}
 
 }

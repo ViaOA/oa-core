@@ -74,6 +74,8 @@ public class OAThreadLocal {
 	protected volatile Object[] locks;
 	protected boolean bIsWaitingOnLock; // used on last lock - which is the only one that this could be waiting on.
 
+	protected boolean bIsSyncThread;
+
 	protected Object[] flags;
 
 	/**

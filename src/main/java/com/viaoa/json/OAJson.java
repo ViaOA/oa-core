@@ -280,6 +280,8 @@ public class OAJson {
 			OAThreadLocalDelegate.setOAJackson(this);
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(true);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -293,6 +295,8 @@ public class OAJson {
 		} finally {
 			if (!bUseValidation) {
 				OAThreadLocalDelegate.setLoading(false);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(false);
 			}
 			OAThreadLocalDelegate.setOAJackson(null);
 			readObjectClass = null;
