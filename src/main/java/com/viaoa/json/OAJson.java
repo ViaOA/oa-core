@@ -39,6 +39,7 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAConv;
+import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
 
 /**
@@ -60,6 +61,10 @@ public class OAJson {
 	private static volatile ObjectMapper objectMapper;
 
 	private final ArrayList<String> alPropertyPath = new ArrayList<>();
+
+	/**
+	 * Serialize flag to include links that are owned, for the root (/top level) object(s) only.
+	 */
 	private boolean bIncludeOwned = true;
 	private boolean bIncludeAll;
 
@@ -686,6 +691,11 @@ public class OAJson {
 		if (objs != null) {
 			boolean bHasId = false;
 			for (Object obj : objs) {
+
+				if (obj instanceof OADate) {
+					obj = ((OADate) obj).toString(OADate.JsonFormat);
+				}
+
 				bHasId |= (obj != null);
 				if (ids == null) {
 					ids = "" + obj;

@@ -221,7 +221,11 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 					if (id.indexOf('-') >= 0 || id.indexOf("guid.") == 0) {
 						gen.writeStringField(li.getLowerName(), id);
 					} else {
-						gen.writeNumberField(li.getLowerName(), OAConv.toLong(id));
+						if (OAString.isNumber(id)) {
+							gen.writeNumberField(li.getLowerName(), OAConv.toLong(id));
+						} else {
+							gen.writeStringField(li.getLowerName(), id);
+						}
 					}
 				}
 			}
@@ -250,7 +254,10 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				}
 			}
 
-			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bIncludeOwned, alPropertyPaths)) {
+			// only send owned objects for the root object(s)
+			boolean bx = bIncludeOwned && oaj.getStackLinkInfo().size() == 0;
+
+			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bx, alPropertyPaths)) {
 				try {
 					oaj.getStackLinkInfo().push(li);
 

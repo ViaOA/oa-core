@@ -132,7 +132,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-
+		
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -1545,6 +1545,9 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * when a property (when not isLoading) is changed, so that the link property can be updated to match.
 	 */
 	public boolean onFkeyPropertyChange(final String propertyName, final Object propertyValue) {
+		if (isLoading()) {
+			return false;
+		}
 		boolean bResult = false;
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
 		for (OALinkInfo li : oi.getLinkInfos()) {

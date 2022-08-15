@@ -17,8 +17,9 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 
 /**
- * Used to allow interaction with OAObject callback methods and other (ex: UI) components. OAObject has a class level
- * "callback(OAObjectCallback eq)" method and can have callbackXXX(OAObjectCallback eq)" methods defined for other props,calcs,links
+ * Used to allow interaction between OAObject callback methods and other (ex: UI) components. OAObject has a class level
+ * "callback(OAObjectCallback eq)" method and can have callbackXXX(OAObjectCallback eq)" methods defined for other props,calcs,links, and
+ * methods.
  *
  * @see OAObjectCallbackDelegate
  * @author vvia
@@ -172,7 +173,7 @@ public class OAObjectCallback {
 	public OAObjectCallback(Type type, int checkType) {
 	    this.type = type;
 	    this.checkType = checkType;
-
+	
 	    this.allowed = true;
 	}
 	*/
