@@ -13,7 +13,9 @@ package com.viaoa.hub;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import com.viaoa.object.OAObject;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.util.OAString;
 
 /**
  * Combines multiple hubs into one.
@@ -27,6 +29,7 @@ public class HubCombined<T> {
 	protected ArrayList<HubListener<T>> alHubListener;
 	protected final HubListener<T> hlMaster;
 	protected Hub<T> hubFirst;
+	protected volatile boolean bUpdatingMasterHub;
 
 	public HubCombined(final Hub<T> hubMaster, final Hub<T>... hubs) {
 		this.hubMaster = hubMaster;
@@ -40,6 +43,9 @@ public class HubCombined<T> {
 		hlMaster = new HubListenerAdapter<T>(this, "HubCombined.hubMaster", "") {
 			@Override
 			public void afterAdd(HubEvent<T> e) {
+				if (bUpdatingMasterHub) {
+					return;
+				}
 				T objx = e.getObject();
 				boolean bUsed = true;
 				for (Hub h : hubs) {
@@ -65,6 +71,9 @@ public class HubCombined<T> {
 
 			@Override
 			public void afterRemove(HubEvent<T> e) {
+				if (bUpdatingMasterHub) {
+					return;
+				}
 				T obj = e.getObject();
 				for (Hub<T> h : alHub) {
 					h.remove(obj);
@@ -73,6 +82,9 @@ public class HubCombined<T> {
 
 			@Override
 			public void beforeRemoveAll(HubEvent<T> e) {
+				if (bUpdatingMasterHub) {
+					return;
+				}
 				for (T obj : hubMaster) {
 					for (Hub<T> h : alHub) {
 						h.remove(obj);
@@ -105,6 +117,45 @@ public class HubCombined<T> {
 		return alHub;
 	}
 
+	public void add(final OAObject object, final String property) {
+		if (object == null) {
+			return;
+		}
+		if (OAString.isEmpty(property)) {
+			return;
+		}
+
+		final Hub<T> hubNew = new Hub();
+		T obj = (T) object.getProperty(property);
+		if (obj != null) {
+			hubNew.add(obj);
+		}
+		add(hubNew);
+
+		final Hub hub = new Hub();
+		hub.add(object);
+
+		HubListener hl = new HubListenerAdapter(this, "HubCombined.object", "") {
+			@Override
+			public void afterPropertyChange(HubEvent e) {
+				if (!property.equalsIgnoreCase(e.getPropertyName())) {
+					return;
+				}
+				Object objn = e.getNewValue();
+				Object objo = e.getOldValue();
+				if (objn == objo) {
+					return;
+				}
+
+				hub.clear();
+				if (objn != null) {
+					hub.add(objn);
+				}
+			}
+		};
+		hub.addHubListener(hl, property);
+	}
+
 	public void add(Hub<T> hub) {
 		if (alHub.size() == 0) {
 			hubFirst = hub;
@@ -114,7 +165,12 @@ public class HubCombined<T> {
 		HubListener hl = new HubListenerAdapter<T>() {
 			@Override
 			public void afterAdd(HubEvent<T> e) {
-				hubMaster.add(e.getObject());
+				try {
+					bUpdatingMasterHub = true;
+					hubMaster.add(e.getObject());
+				} finally {
+					bUpdatingMasterHub = false;
+				}
 			}
 
 			@Override
@@ -133,7 +189,12 @@ public class HubCombined<T> {
 					}
 				}
 				if (!bUsed) {
-					hubMaster.remove(obj);
+					try {
+						bUpdatingMasterHub = true;
+						hubMaster.remove(obj);
+					} finally {
+						bUpdatingMasterHub = false;
+					}
 				}
 			}
 
@@ -145,6 +206,7 @@ public class HubCombined<T> {
 			@Override
 			public void onNewList(HubEvent<T> e) {
 				try {
+					bUpdatingMasterHub = true;
 					OAThreadLocalDelegate.setLoading(true);
 					for (Object obj : hubMaster) {
 						boolean bUsed = false;
@@ -162,6 +224,7 @@ public class HubCombined<T> {
 						hubMaster.add(obj);
 					}
 				} finally {
+					bUpdatingMasterHub = false;
 					OAThreadLocalDelegate.setLoading(false);
 				}
 				HubEventDelegate.fireOnNewListEvent(hubMaster, true);
