@@ -306,9 +306,13 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 		ObjectOutputStream oos = new ObjectOutputStream(deflaterOutputStream);
 
 		for (Entry<Class, ArrayList> entry : hmClassList.entrySet()) {
+			Class c = entry.getKey();
+			if (!isClassSupported(c)) {
+				continue;
+			}
+
 			oos.writeBoolean(true);
 
-			Class c = entry.getKey();
 			oos.writeObject(c);
 
 			List al = entry.getValue();
