@@ -132,7 +132,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-		
+
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -971,6 +971,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 			Object objx = OAObjectPropertyDelegate.getProperty(this, prop, true, false);
 			if (objx == null) {
 				b = true;
+			} else if (!(objx instanceof OANotExist)) {
+				return false;
 			} else if (getProperty(prop) == null) {
 				b = true;
 			}
@@ -980,6 +982,15 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	public void removeNull(String propertyName) {
 		OAObjectInfoDelegate.setPrimitiveNull(this, propertyName, false);
+	}
+
+	public boolean getPrimitiveNull(String prop) {
+		boolean b = OAObjectReflectDelegate.getPrimitiveNull(this, prop);
+		return b;
+	}
+
+	public void setPrimitiveNull(String propertyName, boolean bNull) {
+		OAObjectReflectDelegate.setPrimitiveNull(this, propertyName, bNull);
 	}
 
 	/**
@@ -1383,25 +1394,56 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	// 20220807
 	/**
-	 * Used when the linked to Object has only one pkey property.
+	 * Set a fkey property for a Link.
+	 *
+	 * @param fkeyPropertyName name of fkey
+	 * @param newValue
+	 * @return
 	 */
-	public boolean setFkeyPropertyValue(final String linkName, final Object newValue) {
-		return setFkeyPropertyValue(linkName, null, newValue);
+	public boolean setFkeyProperty(final String fkeyPropertyName, final Object newValue) {
+		if (fkeyPropertyName == null) {
+			return false;
+		}
+
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		final OAPropertyInfo pi = oi.getPropertyInfo(fkeyPropertyName);
+		if (pi != null) {
+			for (OALinkInfo li : oi.getLinkInfos()) {
+				for (OAFkeyInfo fi : li.getFkeyInfos()) {
+					if (fi.getFromPropertyInfo() != pi) {
+						continue;
+					}
+					return setFkeyProperty(li.getName(), fi.getToPropertyInfo().getName(), newValue);
+				}
+			}
+		}
+
+		return setFkeyProperty(fkeyPropertyName, null, newValue);
 	}
 
 	/**
 	 * @returns true if the value was changed. This is so that the reference/link can be marked as changed.
 	 */
-	public boolean setFkeyPropertyValue(final String linkName, String linkToPropertyName, Object newValue) {
-
-		if (OAString.isEmpty(linkName)) {
-			throw new RuntimeException("linkName cant be empty, link=" + linkName);
-		}
+	public boolean setFkeyProperty(final String linkName, String linkToPropertyName, Object newValue) {
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
 		OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, linkName);
 		if (linkInfo == null) {
 			throw new RuntimeException("linkName not found, link=" + linkName);
+		}
+
+		if (newValue == null) {
+			Object oldValue = OAObjectPropertyDelegate.getProperty(this, linkName, false, true);
+			OAObjectPropertyDelegate.setProperty(this, linkName, null);
+
+			for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
+				OAPropertyInfo pi = fki.getFromPropertyInfo();
+				if (pi.getIsPrimitive()) {
+					setPrimitiveNull(pi.getName(), true);
+				}
+				firePropertyChange(pi.getName());
+			}
+			return (oldValue != null);
 		}
 
 		OAObjectInfo oiTo = linkInfo.getToObjectInfo();
@@ -1435,7 +1477,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		if (obj instanceof OAObject) {
 			obj = ((OAObject) obj).getObjectKey();
 		} else if (obj != null && !(obj instanceof OAObjectKey)) {
-			throw new RuntimeException("value is not an OAObjectKey");
+			throw new RuntimeException("the link's value is not an OAObject or OAObjectKey");
 		}
 
 		OAObjectKey ok = (OAObjectKey) obj;
@@ -1456,22 +1498,56 @@ public class OAObject implements java.io.Serializable, Comparable {
 		}
 		objs[pos] = newValue;
 
-		OAObjectKey okNew = new OAObjectKey(objs, ok.getGuid(), ok.isNew());
+		OAObjectKey okNew;
+		if (ok == null) {
+			okNew = new OAObjectKey(objs);
+		} else {
+			okNew = new OAObjectKey(objs, ok.getGuid(), ok.isNew());
+		}
 
-		if (ok.compareTo(okNew) == 0) {
+		if (ok != null && ok.compareTo(okNew) == 0) {
 			return false;
 		}
 
 		OAObjectPropertyDelegate.setProperty(this, linkName, okNew);
+
+		firePropertyChange(linkName);
+
+		for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
+			if (fki.getFromPropertyInfo().getIsPrimitive()) {
+				setPrimitiveNull(fki.getFromPropertyInfo().getName(), false);
+			}
+			firePropertyChange(fki.getFromPropertyInfo().getName());
+		}
 		return true;
 	}
 
 	// 20220807
 	/**
-	 * Used when the linked to Object has only one pkey property.
+	 * get the value of an fkey property.
 	 */
-	public Object getFkeyPropertyValue(final String linkName) {
-		return getFkeyPropertyValue(linkName, null);
+	public Object getFkeyProperty(final String fkeyPropertyName) {
+
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		OAPropertyInfo pi = oi.getPropertyInfo(fkeyPropertyName);
+
+		if (pi != null) {
+			for (OALinkInfo li : oi.getLinkInfos()) {
+				for (OAFkeyInfo fi : li.getFkeyInfos()) {
+					if (fi.getFromPropertyInfo() != pi) {
+						continue;
+					}
+					return getFkeyProperty(li.getName(), fi.getToPropertyInfo().getName());
+				}
+			}
+			return null;
+		}
+
+		OALinkInfo li = oi.getLinkInfo(fkeyPropertyName);
+		if (li == null) {
+			return null;
+		}
+		return getFkeyProperty(li.getName(), null);
 	}
 
 	/**
@@ -1481,7 +1557,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * @param linkToPropertyName name of Id property in to Object.
 	 * @return
 	 */
-	public Object getFkeyPropertyValue(final String linkName, String linkToPropertyName) {
+	public Object getFkeyProperty(final String linkName, String linkToPropertyName) {
 		if (OAString.isEmpty(linkName)) {
 			throw new RuntimeException("linkName cant be empty, link=" + linkName);
 		}
@@ -1530,20 +1606,22 @@ public class OAObject implements java.io.Serializable, Comparable {
 			result = ok.getObjectIds()[pos];
 		}
 
+		/* 20220917 commented out, unless this needs to return a primitive (not null)
 		if (result == null) {
 			OAPropertyInfo pi = oiTo.getPropertyInfo(linkToPropertyName);
 			if (pi.getIsPrimitive()) {
 				result = OAReflect.getEmptyPrimitive(pi.getClassType());
 			}
 		}
+		*/
 		return result;
 	}
-
-	// 20211210 used when a property is an Fkey
-	/**
+	/* 20220918 removed, replaced with new fkey* methods
+	// 20211210 used when a "real" property is also an Fkey
+	/ **
 	 * Allows an Object property (or more than one, for compound keys) to be an fkey to one (or more) of it's links. This method is used
 	 * when a property (when not isLoading) is changed, so that the link property can be updated to match.
-	 */
+	 * /
 	public boolean onFkeyPropertyChange(final String propertyName, final Object propertyValue) {
 		if (isLoading()) {
 			return false;
@@ -1554,14 +1632,14 @@ public class OAObject implements java.io.Serializable, Comparable {
 			if (li.getType() != li.TYPE_ONE) {
 				continue;
 			}
-
+	
 			final String[] props = li.getUsesProperties();
 			if (props == null || props.length == 0) {
 				continue;
 			}
-
+	
 			int posFound = -1;
-
+	
 			final OAObjectInfo oix = li.getToObjectInfo();
 			final String[] toProps = oix.getIdProperties();
 			for (int i = 0; i < props.length && toProps != null && i < toProps.length; i++) {
@@ -1580,7 +1658,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 				Object[] objs = ok.getObjectIds();
 				if (objs != null && posFound < objs.length && !propertyValue.equals(objs[posFound])) {
 					ok = OAObjectKeyDelegate.createChangedObjectKey((OAObject) obj, toProps[posFound], propertyValue);
-
+	
 					Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
 					if (objx != null) {
 						OAObjectPropertyDelegate.setProperty(this, li.getName(), objx);
@@ -1598,7 +1676,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 				}
 				objs[posFound] = propertyValue;
 				OAObjectKey ok = new OAObjectKey(objs);
-
+	
 				Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
 				if (objx != null) {
 					OAObjectPropertyDelegate.setProperty(this, li.getName(), objx);
@@ -1609,7 +1687,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 				Object[] objs = new Object[toProps.length];
 				objs[posFound] = propertyValue;
 				OAObjectKey ok = new OAObjectKey(objs);
-
+	
 				Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
 				if (objx != null) {
 					OAObjectPropertyDelegate.setProperty(this, li.getName(), objx);
@@ -1620,20 +1698,20 @@ public class OAObject implements java.io.Serializable, Comparable {
 		}
 		return bResult;
 	}
-
-	// 20211210 used when a property is an Fkey
+	
+	// 20211210 used when a "real" property is also an Fkey
 	public Object getValueFromLink(String propertyName, Object defaultValue) {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
 		for (OALinkInfo li : oi.getLinkInfos()) {
 			if (li.getType() != li.TYPE_ONE) {
 				continue;
 			}
-
+	
 			final String[] props = li.getUsesProperties();
 			if (props == null || props.length == 0) {
 				continue;
 			}
-
+	
 			Object obj = OAObjectPropertyDelegate.getProperty(this, li.getName());
 			if (obj instanceof OAObject) {
 				// call getter on correct prop
@@ -1643,7 +1721,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 					if (!propertyName.equalsIgnoreCase(props[i])) {
 						continue;
 					}
-
+	
 					Object valx = ((OAObject) obj).getProperty(toProps[i]);
 					if (valx != null) {
 						removeNull(propertyName);
@@ -1656,7 +1734,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 					if (!propertyName.equalsIgnoreCase(props[i])) {
 						continue;
 					}
-
+	
 					Object[] ids = ok.getObjectIds();
 					if (ids != null && i < ids.length && ids[i] != null) {
 						Object valx = ids[i];
@@ -1669,7 +1747,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 			}
 			continue;
 		}
-
+	
 		if (defaultValue != null) {
 			if (!OAObjectInfoDelegate.isPrimitiveNull(this, propertyName)) {
 				removeNull(propertyName);
@@ -1679,6 +1757,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		OAObjectInfoDelegate.setPrimitiveNull(this, propertyName, true);
 		return null;
 	}
+	*/
 
 	/**
 	 * Refresh by reselecting from DataSource
@@ -1781,5 +1860,29 @@ public class OAObject implements java.io.Serializable, Comparable {
 			}
 			i++;
 		}
+	}
+
+	/**
+	 * Get name/value pairs (enum) for a property.
+	 */
+	public Hub<String> getNameValues(String propertyName) {
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
+		if (pi == null) {
+			return null;
+		}
+		return pi.getNameValues();
+	}
+
+	/**
+	 * Get the display name for name/value pairs (enum) for a property.
+	 */
+	public Hub<String> getDisplayNameValues(String propertyName) {
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
+		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
+		if (pi == null) {
+			return null;
+		}
+		return pi.getDisplayNameValues();
 	}
 }

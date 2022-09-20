@@ -14,16 +14,15 @@ import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectHubDelegate;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectReflectDelegate;
-import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -143,19 +142,11 @@ public class HubAddRemoveDelegate {
 
 			if (thisHub.datam.liDetailToMaster != null) {
 				if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.ONE) {
-					String[] ss = thisHub.datam.liDetailToMaster.getUsesProperties();
-					boolean b = true;
-					if (ss != null) { // dont set to null if it's this object's primary key
-						OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(thisHub.getObjectClass());
-						for (String s : ss) {
-							OAPropertyInfo pi = oi.getPropertyInfo(s);
-							if (pi != null && oi.isIdProperty(s)) {
-								b = false;
-								break;
-							}
-						}
+					boolean b = false;
+					for (OAFkeyInfo fki : thisHub.datam.liDetailToMaster.getFkeyInfos()) {
+						b |= fki.getFromPropertyInfo().getKey();
 					}
-					if (b) {
+					if (!b) {
 						HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, null);
 					}
 				} else if (thisHub.datam.liDetailToMaster.getType() == OALinkInfo.MANY) {
@@ -1036,14 +1027,9 @@ public class HubAddRemoveDelegate {
 		if (li == null || li.getType() != li.TYPE_ONE) {
 			return true;
 		}
-		String[] props = li.getUsesProperties();
-		if (props == null) {
-			return true;
-		}
-		OAObjectInfo oi = thisHub.getOAObjectInfo();
-		for (String prop : props) {
-			OAPropertyInfo pi = oi.getPropertyInfo(prop);
-			if (pi != null && pi.getId()) {
+
+		for (OAFkeyInfo fki : li.getFkeyInfos()) {
+			if (fki.getFromPropertyInfo().getKey()) {
 				return false;
 			}
 		}

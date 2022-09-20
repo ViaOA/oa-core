@@ -21,7 +21,6 @@ import java.util.logging.Logger;
 import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAColumn;
-import com.viaoa.annotation.OAFkey;
 import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAIndex;
 import com.viaoa.annotation.OAIndexColumn;
@@ -417,11 +416,12 @@ public class OAAnnotationVerifier {
 				}
 			}
 
+			/* todo:
 			OAFkey fk = (OAFkey) m.getAnnotation(OAFkey.class);
 			if (fk == null) {
 				continue;
 			}
-
+			
 			String[] fkcols = fk.columns();
 			for (int j = 0; j < fkcols.length; j++) {
 				boolean b = false;
@@ -437,6 +437,7 @@ public class OAAnnotationVerifier {
 					bResult = false;
 				}
 			}
+			*/
 		}
 		for (boolean b : bs) {
 			if (!b) {

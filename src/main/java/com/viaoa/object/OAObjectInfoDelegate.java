@@ -124,6 +124,9 @@ public class OAObjectInfoDelegate {
 		// 20220503 load importMatch propertyPaths
 		OAAnnotationDelegate.updateImportMatches(oi);
 
+		// 20220918 load fkey
+		OAAnnotationDelegate.updateLinkFkeys(oi);
+
 		return oi;
 	}
 

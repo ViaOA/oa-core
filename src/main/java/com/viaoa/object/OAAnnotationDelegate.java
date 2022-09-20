@@ -11,7 +11,6 @@
 package com.viaoa.object;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -201,13 +200,15 @@ public class OAAnnotationDelegate {
 			}
 			pi.setDisplayName(s);
 
-			// 20211212 removed, use @OAColumn instead
-			// pi.setColumnName(oaprop.columnName());
+			s = oaprop.enumPropertyName();
+			if (!OAString.isEmpty(s)) {
+				pi.setEnumPropertyName(s);
+			}
 
 			pi.setMaxLength(oaprop.maxLength());
 			pi.setDisplayLength(oaprop.displayLength());
-			pi.setColumnName(oaprop.columnName()); // for UI grid/table header
-			pi.setColumnLength(oaprop.columnLength()); // for UI grid/table header
+			pi.setUIColumnName(oaprop.uiColumnName()); // for UI grid/table header
+			pi.setUIColumnLength(oaprop.uiColumnLength()); // for UI grid/table header
 			pi.setRequired(oaprop.required());
 			pi.setDecimalPlaces(oaprop.decimalPlaces());
 			pi.setId(m.getAnnotation(OAId.class) != null);
@@ -224,6 +225,7 @@ public class OAAnnotationDelegate {
 
 			OAColumn oacol = (OAColumn) m.getAnnotation(OAColumn.class);
 			if (oacol != null) {
+				pi.setOAColumn(oacol);
 				int x = oacol.maxLength();
 				if (x > 0) {
 					pi.setMaxLength(x);
@@ -262,31 +264,36 @@ public class OAAnnotationDelegate {
 			pi.setOAProperty(oaprop);
 
 			if (oaprop.isNameValue()) {
+				// 20220803, 20220917 populate hubs
 				Hub<String> h = pi.getNameValues();
+				Hub<String> h2 = pi.getDisplayNameValues();
 				try {
-					// 20220803 need to use enum names, since hub.nameValue is the display name.
 					Class cz = Class.forName(clazz.getName() + "$" + pi.getName());
-					Field[] allFields = cz.getDeclaredFields();
+					// Field[] allFields = cz.getDeclaredFields();
 
 					Method mz = cz.getMethod("values", new Class[] {});
 					Object objzs = mz.invoke(null, null);
 					int xz = Array.getLength(objzs);
+					Method displayMethod = null;
+					boolean bDisplayMethod = false;
 					for (int i = 0; i < xz; i++) {
 						Object objz = Array.get(objzs, i);
-						h.add(objz.toString());
-					}
 
-					/*was
-					Field f = clazz.getField("hub" + OAString.mfcu(name));
-					Object objx = f.get(null);
-					if (objx instanceof Hub) {
-						for (Object o : ((Hub) objx)) {
-							if (o instanceof String) {
-								h.add((String) o);
+						h.add(objz.toString());
+						if (displayMethod == null && !bDisplayMethod) {
+							bDisplayMethod = true;
+							try {
+								displayMethod = objz.getClass().getMethod("getDisplay", new Class[] {});
+							} catch (Exception e) {
 							}
 						}
+						if (displayMethod != null) {
+							Object objxs = displayMethod.invoke(objz, null);
+							h2.add(objxs.toString());
+						} else {
+							h2.add(objz.toString());
+						}
 					}
-					*/
 				} catch (Exception e) {
 					System.out.println("exception loading enum names for class.property " + clazz.getSimpleName() + "." + pi.getName());
 					e.printStackTrace();
@@ -305,6 +312,39 @@ public class OAAnnotationDelegate {
 				pi.setContextVisibleValue(eq.contextVisibleValue());
 				pi.setViewDependentProperties(eq.viewDependentProperties());
 				pi.setContextDependentProperties(eq.contextDependentProperties());
+			}
+		}
+
+		// fkey properties
+		for (Method m : methods) {
+			OAColumn oacol = (OAColumn) m.getAnnotation(OAColumn.class);
+			if (oacol == null) {
+				continue;
+			}
+
+			// fkey properties are in with the oi.propertyInfo
+			//     they are created based get/set methods that are not links
+			OAProperty oaprop = (OAProperty) m.getAnnotation(OAProperty.class);
+			if (oaprop != null) {
+				continue;
+			}
+
+			String name = getPropertyName(m.getName());
+
+			if (hs.contains("fkprop." + name)) {
+				continue;
+			}
+			hs.add("fkprop." + name);
+
+			OAPropertyInfo pi = oi.getPropertyInfo(name);
+			if (pi == null) {
+				continue;
+			}
+
+			pi.setOAColumn(oacol);
+			int x = oacol.maxLength();
+			if (x > 0) {
+				pi.setMaxLength(x);
 			}
 		}
 
@@ -398,9 +438,21 @@ public class OAAnnotationDelegate {
 			li.setCalculated(annotation.isCalculated());
 			li.setProcessed(annotation.isProcessed());
 			//li.setRecursive(annotation.recursive());
-			li.setUsesProperties(annotation.usesProperties());
+
+			for (OAFkey fkey : annotation.fkeys()) {
+				OAPropertyInfo pi = oi.getPropertyInfo(fkey.fromProperty());
+				OAFkeyInfo fki = new OAFkeyInfo();
+				fki.setOAFkey(fkey);
+				fki.setFromPropertyInfo(pi);
+
+				// this will be done by updateLinkFkeys(), after all OAObjectInfos are loaded
+				// pi = li.getToObjectInfo().getPropertyInfo(fkey.toProperty());
+				// fki.setToPropertyInfo(pi);
+
+				li.getFkeyInfos().add(fki);
+			}
+
 			li.setOAOne(annotation);
-			li.setPojoNames(annotation.pojoNames());
 
 			boolean b = annotation.isOneAndOnlyOne();
 			if (b) {
@@ -430,6 +482,7 @@ public class OAAnnotationDelegate {
 				li.setContextDependentProperties(eq.contextDependentProperties());
 			}
 		}
+
 		// Manys
 		for (final Method m : methods) {
 			Class c = m.getReturnType();
@@ -959,12 +1012,16 @@ public class OAAnnotationDelegate {
 
 		// 1: create pkey and regular columns
 		for (Method m : methods) {
+			OAProperty oaprop = (OAProperty) m.getAnnotation(OAProperty.class);
+			if (oaprop == null) {
+				continue;
+			}
+
 			OAColumn dbcol = (OAColumn) m.getAnnotation(OAColumn.class);
 			if (dbcol == null) {
 				continue;
 			}
 
-			OAProperty oaprop = (OAProperty) m.getAnnotation(OAProperty.class);
 			OAId oaid = (OAId) m.getAnnotation(OAId.class);
 
 			String name = name = getPropertyName(m.getName());
@@ -1012,13 +1069,23 @@ public class OAAnnotationDelegate {
 		}
 		// 2: create fkey columns and links
 		for (Method m : methods) {
+			OAProperty oaprop = (OAProperty) m.getAnnotation(OAProperty.class);
 			OAColumn dbcol = (OAColumn) m.getAnnotation(OAColumn.class);
-			OAFkey dbfk = (OAFkey) m.getAnnotation(OAFkey.class);
 			OAOne oaone = (OAOne) m.getAnnotation(OAOne.class);
 			OAMany oamany = (OAMany) m.getAnnotation(OAMany.class);
 			OALinkTable oalt = (OALinkTable) m.getAnnotation(OALinkTable.class);
 
-			if (dbfk != null) {
+			String[] fkcols = new String[0];
+			if (oaone != null) {
+				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+				for (OAFkey fk : oaone.fkeys()) {
+					OAPropertyInfo pi = oi.getPropertyInfo(fk.fromProperty());
+					fkcols = OAArray.add(fkcols, pi.getOAColumn().name());
+				}
+			}
+
+			if (fkcols.length > 0) {
+				// if (dbfk != null) {
 				if (dbcol != null) {
 					throw new Exception("fkey column should not have a column annotation defined, method is " + m.getName());
 				}
@@ -1053,10 +1120,10 @@ public class OAAnnotationDelegate {
 				// tables[COLORCODE].addLink("orders", tables[ORDER], "colorCode", new int[] {0});
 				//   tables[WORKER].addLink("orderProductionAreas", tables[ORDERPRODUCTIONAREA], "worker", new int[] {0});
 
-				String[] fkcols = dbfk.columns();
+				//was: String[] fkcols = dbfk.columns();
+
 				int[] poss = new int[0];
 				for (String sfk : fkcols) {
-					// 20211209 could be using it's own pkey columns, for the fkey column
 					Column col = table.getColumn(sfk, null);
 					if (col != null) {
 						poss = OAArray.add(poss, table.getColumnPosition(col));
@@ -1200,14 +1267,18 @@ public class OAAnnotationDelegate {
 			} else {
 				OALinkInfo li = (OALinkInfo) obj;
 
+				/*was, removed 20220918
 				String prefixName;
 				if (li.getPojoNames() != null && li.getPojoNames().length > 0) {
 					prefixName = "";
 				} else {
 					prefixName = li.getLowerName();
 				}
-
 				recurseUpdateImportMatches(	0, prefixName, li.getLowerName(), li, alPropertyName, alPropertyPath,
+											new HashSet<OALinkInfo>());
+				*/
+
+				recurseUpdateImportMatches(	0, "", li.getLowerName(), li, alPropertyName, alPropertyPath,
 											new HashSet<OALinkInfo>());
 			}
 		}
@@ -1245,10 +1316,11 @@ public class OAAnnotationDelegate {
 			}
 		}
 		if (!b) {
-			if (li.getPojoNames() != null && li.getPojoNames().length > 0) {
-				for (String sx : li.getPojoNames()) {
-					alPropertyName.add(sx);
-					String s = prefixPath + "." + sx;
+			// 20220918
+			if (li.getFkeyInfos().size() > 0) {
+				for (OAFkeyInfo fki : li.getFkeyInfos()) {
+					alPropertyName.add(fki.getFromPropertyInfo().getName());
+					String s = prefixPath + "." + fki.getFromPropertyInfo().getName();
 					alPropertyPath.add(s);
 				}
 			} else {
@@ -1331,4 +1403,22 @@ public class OAAnnotationDelegate {
 		}
 		return s;
 	}
+
+	/**
+	 * needs to be ran after OAObjectInfos are loaded
+	 */
+	public static void updateLinkFkeys(final OAObjectInfo oi) {
+		for (OALinkInfo li : oi.getLinkInfos()) {
+			if (li.getType() != OALinkInfo.ONE) {
+				continue;
+			}
+			for (OAFkeyInfo fki : li.getFkeyInfos()) {
+				OAFkey fkey = fki.getOAFkey();
+				OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(fkey.toProperty());
+				fki.setToPropertyInfo(pi);
+			}
+
+		}
+	}
+
 }

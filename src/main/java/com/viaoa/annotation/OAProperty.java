@@ -42,10 +42,10 @@ public @interface OAProperty {
 	int displayLength() default 0;
 
 	/** name to use for Grid/Table column heading */
-	String columnName() default "";
+	String uiColumnName() default "";
 
 	/** @return length of the column in a table/grid UI component. */
-	int columnLength() default 0;
+	int uiColumnLength() default 0;
 
 	String inputMask() default "";
 
@@ -142,4 +142,6 @@ public @interface OAProperty {
 	boolean sensitiveData() default false;
 
 	boolean importMatch() default false;
+
+	String enumPropertyName() default "";
 }

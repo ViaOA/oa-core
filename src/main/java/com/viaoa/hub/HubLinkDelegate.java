@@ -111,11 +111,13 @@ public class HubLinkDelegate {
 		if (!linkPosFlag) {
 			Class c = thisHub.datau.getLinkToGetMethod().getReturnType();
 			if (!c.equals(verifyClass)) {
-				if (c.isPrimitive()) {
-					c = OAReflect.getPrimitiveClassWrapper(c);
-				}
-				if (!c.equals(verifyClass)) {
-					throw new RuntimeException("property is wrong class, property=" + propertyTo + ", class=" + c);
+				if (!OAObject.class.equals(c)) {
+					if (c.isPrimitive()) {
+						c = OAReflect.getPrimitiveClassWrapper(c);
+					}
+					if (!c.equals(verifyClass)) {
+						throw new RuntimeException("property is wrong class, property=" + propertyTo + ", class=" + c);
+					}
 				}
 			}
 		}
@@ -139,13 +141,15 @@ public class HubLinkDelegate {
 						"wrong type of parameters for method, property:" + propertyTo + " class:" + thisHub.getObjectClass());
 			}
 			if (!cc[0].equals(verifyClass)) {
-				Class c = verifyClass;
-				if (c.isPrimitive()) {
-					c = OAReflect.getPrimitiveClassWrapper(c);
-				}
-				if (!cc[0].equals(c)) {
-					throw new RuntimeException(
-							"wrong type of parameter for method, property:" + propertyTo + " class:" + thisHub.getObjectClass());
+				if (!OAObject.class.equals(cc[0])) {
+					Class c = verifyClass;
+					if (c.isPrimitive()) {
+						c = OAReflect.getPrimitiveClassWrapper(c);
+					}
+					if (!cc[0].equals(c)) {
+						throw new RuntimeException(
+								"wrong type of parameter for method, property:" + propertyTo + " class:" + thisHub.getObjectClass());
+					}
 				}
 			}
 		}

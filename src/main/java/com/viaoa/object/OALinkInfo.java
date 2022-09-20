@@ -11,6 +11,8 @@
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
@@ -73,8 +75,6 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private Method objectCallbackMethod;
 	private String[] viewDependentProperties;
 	private String[] contextDependentProperties;
-	private String[] usesProperties;
-	private String[] pojoNames;
 
 	private String defaultPropertyPath;
 	private boolean defaultPropertyPathIsHierarchy;
@@ -86,6 +86,9 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private Method schedulerMethod;
 
 	private boolean importMatch;
+
+	// foreign key
+	private List<OAFkeyInfo> alFkeyInfo;
 
 	public OALinkInfo(String name, Class toClass, int type) {
 		this(name, toClass, type, false, false, null, false);
@@ -450,22 +453,15 @@ public class OALinkInfo { //implements java.io.Serializable {
 		contextDependentProperties = props;
 	}
 
-	public String[] getUsesProperties() {
-		return usesProperties;
-	}
-
-	public void setUsesProperties(String[] props) {
-		usesProperties = props;
-	}
-
-	public String[] getPojoNames() {
-		return pojoNames;
-	}
-
-	public void setPojoNames(String[] names) {
-		pojoNames = names;
-	}
-
+	/*
+		public String[] getPojoNames() {
+			return pojoNames;
+		}
+	
+		public void setPojoNames(String[] names) {
+			pojoNames = names;
+		}
+	*/
 	public String getMergerPropertyPath() {
 		return mergerPropertyPath;
 	}
@@ -704,5 +700,12 @@ public class OALinkInfo { //implements java.io.Serializable {
 
 	public void setAutoCreateProperty(String prop) {
 		this.autoCreateProperty = prop;
+	}
+
+	public List<OAFkeyInfo> getFkeyInfos() {
+		if (alFkeyInfo == null) {
+			alFkeyInfo = new ArrayList<OAFkeyInfo>();
+		}
+		return alFkeyInfo;
 	}
 }

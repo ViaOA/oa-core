@@ -13,7 +13,6 @@ package com.viaoa.hub;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -26,6 +25,7 @@ import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAFilter;
+import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
@@ -755,6 +755,32 @@ public class HubDetailDelegate {
 
 		// added support for using HubMerger if property path has more then one ending object/hub
 		Class clazz = thisHub.getObjectClass();
+
+		//qqqqqqqqqqq
+		final OAPropertyPath ppx = new OAPropertyPath(clazz, path);
+		OALinkInfo[] lis = ppx.getLinkInfos();
+		boolean bLastMany = false;
+		int cntMany = 0;
+
+		for (int i = 0; i <= lis.length; i++) {
+			OALinkInfo li;
+
+			if (i < lis.length) {
+				li = lis[i];
+			} else {
+				li = ppx.getEndLinkInfo();
+			}
+
+			if (li.getType() == OALinkInfo.MANY) {
+				bLastMany = true;
+				cntMany++;
+			} else {
+				bLastMany = false;
+			}
+			clazz = li.getToClass();
+		}
+
+		/* WAS:
 		StringTokenizer st = new StringTokenizer(path, ".");
 		boolean bLastMany = false;
 		int cntMany = 0;
@@ -775,6 +801,7 @@ public class HubDetailDelegate {
 			}
 			clazz = li.getToClass();
 		}
+		*/
 
 		if (cntMany > 1 || (cntMany > 0 && !bLastMany)) {
 			// use HubMerger to create DetailHub
@@ -1150,6 +1177,73 @@ public class HubDetailDelegate {
 		return getLinkInfoFromMasterToDetail(thisDetailHub);
 	}
 
+	/**
+	 * O2M master-details of same class and are not recursive "can only be one deep".<br>
+	 */
+	public static boolean getIsValidRecursive(final Hub hub) {
+		if (hub == null) {
+			return true;
+		}
+
+		OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterToDetail(hub);
+		if (li == null) {
+			return true;
+		}
+
+		if (li.getRecursive()) {
+			return true;
+		}
+
+		OALinkInfo liRev = li.getReverseLinkInfo();
+		if (liRev == null) {
+			return true;
+		}
+
+		if (li.getType() != OALinkInfo.TYPE_MANY || liRev.getType() != OALinkInfo.TYPE_ONE) {
+			return true;
+		}
+
+		if (!li.getToObjectInfo().equals(liRev.getToObjectInfo())) {
+			return true;
+		}
+
+		// same class and not recursive
+
+		Hub hubMaster = hub.getMasterHub();
+		if (hubMaster != null) {
+			OALinkInfo lix = HubDetailDelegate.getLinkInfoFromMasterToDetail(hubMaster);
+			if (lix == null) {
+				return true;
+			}
+			OALinkInfo lixRev = lix.getReverseLinkInfo();
+			if (lixRev == null) {
+				return true;
+			}
+			if (lix.getType() != OALinkInfo.TYPE_MANY || lixRev.getType() != OALinkInfo.TYPE_ONE) {
+				return true;
+			}
+			if (lix.getToObjectInfo().equals(lixRev.getToObjectInfo())) {
+				return false;
+			}
+			return true;
+		}
+
+		OAObject obj = hub.getMasterObject();
+		if (obj == null) {
+			return true;
+		}
+
+		OAObject obj2 = (OAObject) liRev.getValue(obj);
+		if (obj2 == null) {
+			return true;
+		}
+
+		if (obj2.getClass().equals(liRev.getToClass())) {
+			return false;
+		}
+		return true;
+	}
+
 	public static boolean getIsFromSameMasterHub(Hub hub1, Hub hub2) {
 		// if (HubDetailDelegate.getLinkInfoFromMasterToDetail(getOriginalHub().getMasterHub()) == HubDetailDelegate.getLinkInfoFromMasterToDetail(getPlatformCampaigns())) {
 		if (hub1 == null || hub2 == null) {
@@ -1376,14 +1470,14 @@ public class HubDetailDelegate {
 	public static Hub _getRealHub(Hub thisHub, int cnt) {
 	    Hub hubMaster = HubDetailDelegate.getMasterHub(thisHub);
 	    if (hubMaster == null) return thisHub;
-	
+
 	    if (cnt > 10) {
 	        LOG.log(Level.WARNING, "", new Exception("possible stackoverflow, thisHub="+thisHub+", masterHub="+hubMaster));
 	    }
 	    else {
 	        hubMaster = _getRealHub(hubMaster, cnt+1);
 	    }
-	
+
 	    Hub h = thisHub;
 	    OAObject o = HubDetailDelegate.getMasterObject(thisHub);
 	    if (o != null && o != hubMaster.getAO()) {

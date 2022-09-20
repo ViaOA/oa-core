@@ -7,17 +7,18 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Uses a HubMerger to get objects, and then adds the found objects to a groupBy object Hub property.
+ * Used for GroupBy Link Properties (OABuilder).<br>
+ * Uses a HubMerger to get objects, and then adds the found objects to a (calc) LinkProperty.
  * <p>
  * Example:<br>
  * mergerPP: [Orders]:open().orderItems.item <br>
  * groupByPP: [Orders].customer <br>
- * groupByProperty (in customer): Hub<Item> hubOpenOrderItems (calculated)<br>
+ * groupByProperty (in customer): Hub<Item> hubOpenOrderItems (groupBy calculated linkProperty)<br>
  * <p>
  * Example:<br>
  * mergerPP: [Orders]:open().orderItems <br>
  * groupByPP: [Orders].orderItems.item <br>
- * groupByProperty (in item): Hub<OrderItem> hubOpenOrderItems (calculated)<br>
+ * groupByProperty (in item): Hub<OrderItem> hubOpenOrderItems (groupBy calculated linkProperty)<br>
  *
  * @author vvia
  * @param <F> from object for the hub merger

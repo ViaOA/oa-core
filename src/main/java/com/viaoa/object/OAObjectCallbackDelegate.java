@@ -1151,12 +1151,15 @@ public class OAObjectCallbackDelegate {
 	 * Calls visible|enabled for this object and all of it's owner/parents
 	 */
 	protected static void ownerHierProcess(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName) {
-		_ownerHierProcess(objectCallback, oaObj, propertyName, null);
+		_ownerHierProcess(objectCallback, oaObj, propertyName, null, 0);
 	}
 
 	protected static void _ownerHierProcess(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName,
-			final OALinkInfo li) {
+			final OALinkInfo li, final int cnter) {
 		if (oaObj == null) {
+			return;
+		}
+		if (cnter > 50) {
 			return;
 		}
 		// recursive, goto top owner first
@@ -1167,7 +1170,7 @@ public class OAObjectCallbackDelegate {
 			OAObject objOwner = (OAObject) lix.getValue(oaObj);
 			if (objOwner != null) {
 				lix = lix.getReverseLinkInfo();
-				_ownerHierProcess(objectCallback, objOwner, lix.getName(), lix);
+				_ownerHierProcess(objectCallback, objOwner, lix.getName(), lix, cnter + 1);
 			}
 		}
 

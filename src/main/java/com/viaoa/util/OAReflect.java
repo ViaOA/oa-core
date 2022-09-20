@@ -155,6 +155,10 @@ public class OAReflect {
 		return getMethods(clazz, propertyPath, true);
 	}
 
+	public static Method[] getMethods(Class clazz, String propertyPath, boolean bThrowException) {
+		return getMethods(clazz, propertyPath, null, bThrowException);
+	}
+
 	/**
 	 * Get the methods for a property path.
 	 *
@@ -170,8 +174,9 @@ public class OAReflect {
 	 *         then null is returned.
 	 * @see #getPropertyValue(Object,Method) throws OAException if methods can not be found and bThrowException is true. also can use newer
 	 *      OAPropertyPath, which has more info, including the methods
+	 * @param substituteClass class to use if a link property is of type OAObject.class
 	 */
-	public static Method[] getMethods(Class clazz, String propertyPath, boolean bThrowException) {
+	public static Method[] getMethods(Class clazz, String propertyPath, final Class substituteClass, boolean bThrowException) {
 		// ex:  (c,"emp.dept.manager.lastname")
 		int pos, prev;
 		if (propertyPath == null) {
@@ -284,6 +289,10 @@ public class OAReflect {
 						}
 						throw new RuntimeException(e);
 					}
+				}
+
+				if (OAObject.class.equals(clazz) && substituteClass != null) {
+					clazz = substituteClass;
 				}
 			}
 			classLast = clazz;

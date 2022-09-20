@@ -27,6 +27,7 @@ import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.undo.OAUndoableEdit;
+import com.viaoa.util.OACompare;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAFilter;
@@ -143,36 +144,27 @@ public class OAObjectEventDelegate {
 		// 20211209 check for changes to link/property that affect this object's other property/link
 		if (!bIsCheckingRef) {
 			if (linkInfo != null) {
-				final String[] props = linkInfo.getUsesProperties();
-				if (props != null && props.length > 0) {
-					final OAObjectInfo oix = linkInfo.getToObjectInfo();
-					final String[] toProps = oix.getIdProperties();
-					for (int i = 0; i < props.length && toProps != null && i < toProps.length; i++) {
-						// see if this is a valid property change
-						_fireBeforePropertyChange(	oaObj, props[i],
-													oldObj == null ? null : ((OAObject) oldObj).getProperty(props[i]),
-													newObj == null ? null : ((OAObject) newObj).getProperty(toProps[i]),
-													bLocalOnly, false, true);
-					}
+				for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
+					_fireBeforePropertyChange(	oaObj, fki.getFromPropertyInfo().getName(),
+												oldObj == null ? null : ((OAObject) oldObj).getProperty(fki.getToPropertyInfo().getName()),
+												newObj == null ? null : ((OAObject) newObj).getProperty(fki.getToPropertyInfo().getName()),
+												bLocalOnly, false, true);
 				}
-			} else {
+			} else if (OAString.isNotEmpty(propertyName)) {
 				for (OALinkInfo li : oi.getLinkInfos()) {
 					if (li.getType() != li.TYPE_ONE) {
 						continue;
 					}
-					String[] ss = li.getUsesProperties();
-					if (ss != null) {
-						for (String s : ss) {
-							if (!propertyName.equalsIgnoreCase(s)) {
-								continue;
-							}
-							OAObjectKey okx = OAObjectKeyDelegate.createChangedObjectKey(oaObj, propertyName, newObj);
-							_fireBeforePropertyChange(	oaObj, li.getName(),
-														OAObjectPropertyDelegate.getProperty(oaObj, li.getName(), false, true),
-														okx,
-														bLocalOnly, false, true);
-							break;
+					for (OAFkeyInfo fki : li.getFkeyInfos()) {
+						if (!propertyName.equalsIgnoreCase(fki.getFromPropertyInfo().getName())) {
+							continue;
 						}
+						OAObjectKey okx = OAObjectKeyDelegate.createChangedObjectKey(oaObj, propertyName, newObj);
+						_fireBeforePropertyChange(	oaObj, li.getName(),
+													OAObjectPropertyDelegate.getProperty(oaObj, li.getName(), false, true),
+													okx,
+													bLocalOnly, false, true);
+						break;
 					}
 				}
 			}
@@ -279,7 +271,7 @@ public class OAObjectEventDelegate {
 					    }
 					};
 					OADataSource ds = OADataSource.getDataSource(oaObj.getClass(), filter);
-					
+
 					if (ds != null && (!(ds instanceof OADataSourceObjectCache))) {
 					    Iterator it = ds.select(oaObj.getClass(), propertyU+" = ?", new Object[] {newObj}, null, null, null, null, 2, filter, false);
 					    try {
@@ -343,16 +335,16 @@ public class OAObjectEventDelegate {
 	}
 
 	protected static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
-			boolean bLocalOnly, boolean bSetChanged, boolean bUnknownValues, final boolean bIsCheckingRef) {
+			final boolean bLocalOnly, final boolean bSetChanged, final boolean bUnknownValues, final boolean bIsCheckingRef) {
 		if (oaObj == null || propertyName == null) {
 			return;
 		}
 
 		String propertyU = propertyName.toUpperCase();
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 
-		if (oldObj != null) {
+		if (oldObj != null && !bUnknownValues) {
 			if (OAObjectReflectDelegate.getPrimitiveNull(oaObj, propertyU) || oldObj instanceof OANullObject) {
 				oldObj = null;
 			}
@@ -362,18 +354,18 @@ public class OAObjectEventDelegate {
 		if (newObj instanceof OANullObject) {
 			newObj = null;
 		}
-		if (newObj != null) {
-			OAObjectReflectDelegate.removePrimitiveNull(oaObj, propertyU);
-		} else { // 20121001 for byte[] props
-			OAObjectReflectDelegate.setPrimitiveNull(oaObj, propertyU);
+
+		if (newObj != null || !bUnknownValues) {
+			OAObjectReflectDelegate.setPrimitiveNull(oaObj, propertyU, (newObj == null));
 		}
+
 		if (oldObj instanceof OANullObject) {
 			oldObj = null;
 		}
 
-		OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, propertyU);
+		final OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, propertyU);
 		boolean bWasEmpty = false;
-		if (linkInfo != null && oldObj == null) {
+		if (!bUnknownValues && linkInfo != null && oldObj == null) {
 			// oldObj might never have been loaded before setMethod was called, which will have the oldValue=null -
 			//   need to check in oaObj.properties to see what orig value was.
 			oldObj = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, true, true);
@@ -435,7 +427,9 @@ public class OAObjectEventDelegate {
 		if (linkInfo != null) {
 			// must update ref properties before sending events
 			// 20110314: need to store nulls, so that it wont go back to server everytime
-			OAObjectPropertyDelegate.setPropertyCAS(oaObj, propertyName, newObj, origOldObj, bWasEmpty, false);
+			if (!bUnknownValues) {
+				OAObjectPropertyDelegate.setPropertyCAS(oaObj, propertyName, newObj, origOldObj, bWasEmpty, false);
+			}
 		} else {
 			// 20130318
 			if (propInfo != null && propInfo.isBlob()) {
@@ -517,7 +511,7 @@ public class OAObjectEventDelegate {
 		}
 
 		// 20151117 if one2one, and new value is null, then set prop to null in link prop
-		if (linkInfo != null) {
+		if (linkInfo != null && !bUnknownValues) {
 			OALinkInfo revLinkInfo = OAObjectInfoDelegate.getReverseLinkInfo(linkInfo);
 			if (revLinkInfo != null) {
 				if (revLinkInfo.type == OALinkInfo.ONE) {
@@ -567,7 +561,7 @@ public class OAObjectEventDelegate {
 		*/
 
 		// set to Changed
-		if (!bIsChangeProp && bSetChanged && !bChangeHold && (calcInfo == null)) {
+		if (!bIsChangeProp && bSetChanged && !bChangeHold && (calcInfo == null) && !bUnknownValues) {
 			if (!oaObj.isChanged()) {
 				if (linkInfo == null || !linkInfo.bCalculated) { // 20120429
 					try {
@@ -580,12 +574,12 @@ public class OAObjectEventDelegate {
 			}
 		}
 
-		if (linkInfo != null) {
+		if (linkInfo != null && !bUnknownValues) {
 			updateLink(oaObj, oi, linkInfo, oldObj, newObj);
 		}
 
 		// 20181126 moved from above
-		if (!bIsLoading) {
+		if (!bIsLoading && !bUnknownValues) {
 			if (oi.getHasTriggers()) {
 				HubEvent hubEvent = new HubEvent(oaObj, propertyName, oldObj, newObj);
 				try {
@@ -597,61 +591,44 @@ public class OAObjectEventDelegate {
 			}
 		}
 
-		// 20211210 check for changes to link/property that affect this object's other property/link
-		if (!bIsCheckingRef) {
+		// check for changes to link/property that affect this object's other property/link
+		if (!bIsCheckingRef && !bUnknownValues) {
 			if (linkInfo != null) {
-				final String[] props = linkInfo.getUsesProperties();
-				if (props != null && props.length > 0) {
-					final OAObjectInfo oix = linkInfo.getToObjectInfo();
-					final String[] toProps = oix.getIdProperties();
-					for (int i = 0; i < props.length && toProps != null && i < toProps.length; i++) {
-						firePropertyChange(	oaObj, props[i],
-											oldObj == null ? null : ((OAObject) oldObj).getProperty(props[i]),
-											newObj == null ? null : ((OAObject) newObj).getProperty(toProps[i]),
-											bLocalOnly, false, bUnknownValues, true);
-					}
+				for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
+					firePropertyChange(	oaObj, fki.getFromPropertyInfo().getName(),
+										oldObj == null ? null : ((OAObject) oldObj).getProperty(fki.getToPropertyInfo().getName()),
+										newObj == null ? null : ((OAObject) newObj).getProperty(fki.getToPropertyInfo().getName()),
+										bLocalOnly, false, bUnknownValues, true);
 				}
+
 			} else {
 				for (OALinkInfo li : oi.getLinkInfos()) {
 					if (li.getType() != li.TYPE_ONE) {
 						continue;
 					}
-					String[] ss = li.getUsesProperties();
-					if (ss == null || ss.length == 0) {
-						continue;
-					}
-					int pos = 0;
-					for (String s : ss) {
-						if (!propertyName.equalsIgnoreCase(s)) {
-							pos++;
+					for (OAFkeyInfo fki : li.getFkeyInfos()) {
+						if (!propertyName.equalsIgnoreCase(fki.getFromPropertyInfo().getName())) {
 							continue;
 						}
-
-						OAObjectKey okOld;
-						Object objx = OAObjectPropertyDelegate.getProperty(oaObj, li.getName(), false, true);
-						if (objx instanceof OAObject) {
-							objx = ((OAObject) objx).getObjectKey();
-						}
-						if (objx instanceof OAObjectKey) {
-							Object[] ids = ((OAObjectKey) objx).getObjectIds();
-							Object[] ids2 = new Object[ids.length];
-							for (int i = 0; i < ids.length; i++) {
-								ids2[i] = ids[i];
-							}
-							ids2[pos] = oldObj;
-							okOld = new OAObjectKey(ids2);
-						} else {
-							Object[] ids = new Object[ss.length];
-							ids[pos] = oldObj;
-							okOld = new OAObjectKey(ids);
-						}
-
+						OAObjectKey okNew = OAObjectKeyDelegate.createChangedObjectKey(oaObj, propertyName, newObj);
 						firePropertyChange(	oaObj, li.getName(),
-											okOld,
 											OAObjectPropertyDelegate.getProperty(oaObj, li.getName(), false, true),
+											okNew,
 											bLocalOnly, false, true, true);
-						break;
 					}
+				}
+			}
+		}
+
+		// 20220917 check if enum/nameValue property changed, and send helper enum properties changeEvent
+		// firePropertyChange for other help enumProperties
+		if (propInfo != null && propInfo.isNameValue()) {
+			for (OAPropertyInfo pi : oi.getPropertyInfos()) {
+				if (OACompare.isEqual(pi.getEnumPropertyName(), propInfo.getName(), true)) {
+					if (pi.getPrimitive() && pi.getTrackPrimitiveNull()) {
+						OAObjectReflectDelegate.setPrimitiveNull(oaObj, pi.getName(), (newObj == null));
+					}
+					firePropertyChange(oaObj, pi.getName(), null, null, bLocalOnly, bSetChanged, true, bIsCheckingRef);
 				}
 			}
 		}
@@ -687,7 +664,7 @@ public class OAObjectEventDelegate {
 		}
 
 		/* 20101218 replaced by HubListenerTree
-		
+
 		// Check to see if a Calculated property is changed.
 		/ * how do properties from other link object notify this objects calc objects?
 		Answer: when you add a HubListener to Hub, it will create detail hub and
@@ -848,7 +825,7 @@ public class OAObjectEventDelegate {
 		    ex:  Section.setCatalog(catalog)  or  Section.setParentSection(section)
 		    This: "Section"
 		    Changed Prop: "Catalog" or "ParentSection"
-		
+
 		    linkInfo: from Section -> Catalog or ParentSection
 		    toLinkInfo: =  from  Catalog or ParentSection -> Sections
 		    liRecursive = "ParentSection"

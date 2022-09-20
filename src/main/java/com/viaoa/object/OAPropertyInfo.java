@@ -12,13 +12,14 @@ package com.viaoa.object;
 
 import java.lang.reflect.Method;
 
+import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.hub.Hub;
 import com.viaoa.util.OAString;
 
 /**
  * OAObject property metadata. This is loaded from method Annotations.
- * 
+ *
  * @author vvia
  */
 public class OAPropertyInfo implements java.io.Serializable {
@@ -30,8 +31,8 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private int displayLength;
 
 	// UI grid/table column header name
-	private String columnName;
-	private int columnLength;
+	private String uiColumnName;
+	private int uiColumnLength;
 
 	private boolean required;
 	private boolean id;
@@ -47,6 +48,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private boolean isSHAHash;
 	private boolean isEncrypted;
 	private Hub<String> hubNameValue;
+	private Hub<String> hubDisplayNameValue;
 	private boolean isCurrency;
 	private transient Method objectCallbackMethod;
 	private boolean isProcessed;
@@ -78,6 +80,9 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private boolean sensitiveData;
 
 	private boolean importMatch;
+	private String enumPropertyName;
+
+	private OAColumn oaColumn;
 
 	public OAPropertyInfo() {
 	}
@@ -159,20 +164,20 @@ public class OAPropertyInfo implements java.io.Serializable {
 		this.displayLength = length;
 	}
 
-	public int getColumnLength() {
-		return columnLength;
+	public int getUIColumnLength() {
+		return uiColumnLength;
 	}
 
-	public void setColumnLength(int length) {
-		this.columnLength = length;
+	public void setUIColumnLength(int length) {
+		this.uiColumnLength = length;
 	}
 
-	public String getColumnName() {
-		return columnName;
+	public String getUIColumnName() {
+		return uiColumnName;
 	}
 
-	public void setColumnName(String colName) {
-		this.columnName = colName;
+	public void setUIColumnName(String colName) {
+		this.uiColumnName = colName;
 	}
 
 	public String getName() {
@@ -264,6 +269,13 @@ public class OAPropertyInfo implements java.io.Serializable {
 			hubNameValue = new Hub<String>(String.class);
 		}
 		return hubNameValue;
+	}
+
+	public Hub<String> getDisplayNameValues() {
+		if (hubDisplayNameValue == null) {
+			hubDisplayNameValue = new Hub<String>(String.class);
+		}
+		return hubDisplayNameValue;
 	}
 
 	public boolean isCurrency() {
@@ -478,4 +490,19 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return importMatch;
 	}
 
+	public void setEnumPropertyName(String s) {
+		this.enumPropertyName = s;
+	}
+
+	public String getEnumPropertyName() {
+		return this.enumPropertyName;
+	}
+
+	public OAColumn getOAColumn() {
+		return oaColumn;
+	}
+
+	public void setOAColumn(OAColumn c) {
+		this.oaColumn = c;
+	}
 }

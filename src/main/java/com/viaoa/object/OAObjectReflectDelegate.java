@@ -418,15 +418,33 @@ public class OAObjectReflectDelegate {
 			return false;
 		}
 		synchronized (oaObj) {
-			if (oaObj.nulls == null || oaObj.nulls.length == 0) {
+			if (oaObj.nulls == null) {
 				return false;
 			}
+			boolean bAllZero = true;
+			for (byte b : oaObj.nulls) {
+				if (b != 0) {
+					bAllZero = false;
+					break;
+				}
+			}
+			if (bAllZero) {
+				return false;
+			}
+
 			return OAObjectInfoDelegate.isPrimitiveNull(oaObj, propertyName);
 		}
 	}
 
-	// note: a primitive null can only be set by calling OAObjectReflectDelegate.setProperty(...)
-	protected static void setPrimitiveNull(OAObject oaObj, String propertyName) {
+	protected static void setPrimitiveNull(OAObject oaObj, String propertyName, boolean bNull) {
+		if (bNull) {
+			setPrimitiveNull(oaObj, propertyName);
+		} else {
+			removePrimitiveNull(oaObj, propertyName);
+		}
+	}
+
+	private static void setPrimitiveNull(OAObject oaObj, String propertyName) {
 		if (propertyName == null) {
 			return;
 		}
@@ -435,8 +453,7 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
-	// note: a primitive null can only be removed by OAObjectEventDelegate.firePropertyChagnge(...)
-	protected static void removePrimitiveNull(OAObject oaObj, String propertyName) {
+	private static void removePrimitiveNull(OAObject oaObj, String propertyName) {
 		if (oaObj.nulls == null || oaObj.nulls.length == 0) {
 			return;
 		}
@@ -1718,7 +1735,9 @@ public class OAObjectReflectDelegate {
 		try {
 			OAObjectPropertyDelegate.setPropertyLock(oaObj, linkPropertyName);
 			result = _getReferenceObject(oaObj, linkPropertyName, oi, li);
-			OAObjectPropertyDelegate.setPropertyCAS(oaObj, linkPropertyName, result, objOriginal, bDidNotExist, false);
+			if (result != null || objOriginal == null) {
+				OAObjectPropertyDelegate.setPropertyCAS(oaObj, linkPropertyName, result, objOriginal, bDidNotExist, false);
+			}
 		} finally {
 			OAObjectPropertyDelegate.releasePropertyLock(oaObj, linkPropertyName);
 			if (result instanceof OAObjectKey) {

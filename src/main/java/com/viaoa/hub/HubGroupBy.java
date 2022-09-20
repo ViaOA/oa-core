@@ -26,7 +26,7 @@ import com.viaoa.util.OAString;
 
 /*
  * Creates a groupBy hub using a new single hub and property path.
- *
+ * <br>
  * Equivalent of a database groupBy.
  * The combined Hub (see getCombinedHub) uses OAObject OAGroupBy<F, G>,
  * where G is the same class as the groupBy Hub and F is a hub of the from objects.
@@ -79,8 +79,8 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	/**
 	 * Create a hub of objects that are based on hubB.
 	 *
-	 * @param hubB
-	 * @param propertyPath
+	 * @param hubB         from hub
+	 * @param propertyPath to groupBy link property
 	 */
 	public HubGroupBy(Hub<F> hubB, String propertyPath, boolean bCreateNullList) {
 		this.hubGroupBy = null;
@@ -98,7 +98,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	}
 
 	/**
-	 * @param hubB            hub to use as the root.
+	 * @param hubB            from hub to use as the root.
 	 * @param propertyPath    to the groupBy property
 	 * @param hubPropertyName hub method for linkMany w/ type=groupBy
 	 */
@@ -115,25 +115,23 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	}
 
 	/**
-	 * Create a hub on objects that are based on hubB, and are grouped by hubA. This allows the combined hub to have a full list like a
-	 * left-join.
+	 * Create a hub on objects that are based on fromHub, and are grouped by hubGrpBy. This allows the combined hub to have a full list like
+	 * a left-join.
 	 *
-	 * @param propertyPath pp of the property from the right object to get left object. example: if hubDept, hubEmpOrders, then
-	 *                     "Employee.Department" HubGroupBy(hubEmpOrders, hubDept, "Employee.Department") -or- HubGroupBy(hubEmpOrders,
-	 *                     "Employee.Department")
+	 * @param propertyPath pp of the property from hubFrom to hubB.
 	 */
-	public HubGroupBy(Hub<F> hubB, Hub<G> hubFrom, String propertyPath, boolean bCreateNullList) {
-		this.hubFrom = hubB;
-		this.hubGroupBy = hubFrom;
-		this.classFrom = hubB.getObjectClass();
+	public HubGroupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath, boolean bCreateNullList) {
+		this.hubFrom = hubFrom;
+		this.hubGroupBy = hubGrpBy;
+		this.classFrom = hubFrom.getObjectClass();
 		this.classGroupBy = null;
 		this.propertyPath = propertyPath;
 		this.bCreateNullList = bCreateNullList;
 		setup();
 	}
 
-	public HubGroupBy(Hub<F> hubB, Hub<G> hubFrom, String propertyPath) {
-		this(hubB, hubFrom, propertyPath, true);
+	public HubGroupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath) {
+		this(hubFrom, hubGrpBy, propertyPath, true);
 	}
 
 	/**
@@ -1909,6 +1907,9 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	}
 
 	public String getGroupByPP() {
+		if (classGroupBy == null) {
+			return null;
+		}
 		String s = "(" + classGroupBy.toString() + ")GroupBy";
 		return s;
 	}

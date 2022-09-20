@@ -96,16 +96,13 @@ public @interface OAOne {
 	/**
 	 * Properties that that are also foreign keys to other objects, which are used by Link=One.
 	 */
-	String[] usesProperties() default {};
-
-	/**
-	 * Name of properties in pojo used as fkey(s).
-	 */
-	String[] pojoNames() default {};
+	String[] pkeyPropertyNames() default {};
 
 	boolean importMatch() default false;
 
 	String equalPropertyPath() default "";
+
+	OAFkey[] fkeys() default {};
 }
 
 /*  OALinkInfo

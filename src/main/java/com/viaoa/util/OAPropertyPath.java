@@ -356,10 +356,6 @@ public class OAPropertyPath<F> {
 		setup(clazz, false);
 	}
 
-	/**
-	 * @param clazz
-	 * @param bIgnorePrivateLink if true, then a link that does not have a get method will not throw an exception. Used by HubGroupBy
-	 */
 	public void setup(Class clazz, boolean bIgnorePrivateLink) {
 		String s = setup(null, clazz, bIgnorePrivateLink);
 		if (s != null) {
@@ -388,6 +384,14 @@ public class OAPropertyPath<F> {
 	}
 
 	public String setup(final Hub hub, Class clazz, final boolean bIgnorePrivateLink) {
+		return setup(hub, clazz, null, bIgnorePrivateLink);
+	}
+
+	/**
+	 * @param substituteClass    class to use if a link property is of type OAObject.class
+	 * @param bIgnorePrivateLink if true, then a link that does not have a get method will not throw an exception. Used by HubGroupBy
+	 */
+	public String setup(final Hub hub, Class clazz, final Class substituteClass, final boolean bIgnorePrivateLink) {
 		bNeedsDataToVerify = false;
 		if (clazz == null) {
 			bNeedsDataToVerify = true;
@@ -558,6 +562,10 @@ public class OAPropertyPath<F> {
 					}
 				}
 				paramCount = OAString.dcount(filterParamClean, ",");
+			}
+
+			if (OAObject.class.equals(clazz) && substituteClass != null) {
+				clazz = substituteClass;
 			}
 
 			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);

@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.object.OALeftJoin;
 import com.viaoa.object.OAObject;
+import com.viaoa.util.OACompare;
+import com.viaoa.util.OAString;
 
 /*
  * Combines two hubs into a new single hub to create the equivalent of
@@ -41,19 +43,25 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 	private Hub<OALeftJoin<A, B>> hubCombined;
 	private String propertyPath;
 	private String listenPropertyName;
+	private boolean bSetAO;
 
 	private final static AtomicInteger aiCnt = new AtomicInteger();
 
 	/**
 	 * Combine a left and right hubs on a propertyPath to form Hub.
-	 * 
+	 *
 	 * @param hubA         left object
 	 * @param hubB         right object
 	 * @param propertyPath pp of the property from the right object to get left object.
 	 */
 	public HubLeftJoin(Hub<A> hubA, Hub<B> hubB, String propertyPath) {
+		this(hubA, hubB, propertyPath, true);
+	}
+
+	public HubLeftJoin(Hub<A> hubA, Hub<B> hubB, String propertyPath, boolean bSetAO) {
 		this.hubA = hubA;
 		this.hubB = hubB;
+		this.bSetAO = bSetAO;
 		this.propertyPath = propertyPath;
 		setup();
 	}
@@ -70,7 +78,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 	}
 
 	void setup() {
-		getCombinedHub().addHubListener(new HubListenerAdapter() {
+		getCombinedHub().addHubListener(new HubListenerAdapter<OALeftJoin<A, B>>() {
 			@Override
 			public void afterChangeActiveObject(HubEvent e) {
 				// set the active object in hub A&B when hubCombine.AO is changed
@@ -83,6 +91,36 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 					hubB.setAO(obj.getB());
 				}
 			}
+
+			@Override
+			public void afterPropertyChange(HubEvent<OALeftJoin<A, B>> e) {
+				String name = e.getPropertyName();
+				if (OAString.isEmpty(name)) {
+					return;
+				}
+				if (!"b".equalsIgnoreCase(name)) {
+					return;
+				}
+
+				OALeftJoin lj = e.getObject();
+				if (lj == null) {
+					return;
+				}
+				Object oldValue = e.getOldValue();
+				Object newValue = e.getNewValue();
+
+				if (OACompare.isEqual(oldValue, newValue)) {
+					return;
+				}
+
+				if (oldValue != null) {
+					hubB.remove(oldValue);
+				}
+				if (newValue != null) {
+					hubB.add((B) newValue);
+				}
+			}
+
 		});
 
 		hubA.addHubListener(new HubListenerAdapter() {

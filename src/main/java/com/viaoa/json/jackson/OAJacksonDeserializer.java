@@ -385,7 +385,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 					objNew.setProperty(li.getLowerName(), objx);
 				}
 			} else {
-				final String[] ss = li.getUsesProperties();
+				final String[] ss = li.getKeyPropertyNames();
 				if (ss != null && ss.length > 0) {
 					ArrayList<Object> al = new ArrayList();
 					for (String s : ss) {
@@ -420,8 +420,6 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 						objNew.setProperty(li.getLowerName(), objx);
 					}
 				} else {
-					final String[] pojoNames = li.getPojoNames();
-
 					ArrayList<Object> al = new ArrayList();
 					OAObjectInfo oix = li.getToObjectInfo();
 					int pos = 0;
@@ -431,8 +429,8 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 						}
 
 						String name;
-						if (pojoNames != null && pos < pojoNames.length) {
-							name = pojoNames[pos++];
+						if (li.getFkeyProperties() != null && pos < li.getFkeyProperties().size()) {
+							name = li.getFkeyProperties().get(pos++).getName();
 						} else {
 							name = li.getLowerName() + pi.getName();
 						}

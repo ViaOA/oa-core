@@ -25,5 +25,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAFkey {
-	String[] columns();
+	String fromProperty();
+
+	// name of pkey property in the link.objectTo
+	String toProperty();
 }
