@@ -1061,6 +1061,10 @@ public class OAObjectInfoDelegate {
 		return al;
 	}
 
+	public static boolean getPrimitiveNull(OAObject oaObj, String propertyName) {
+		return isPrimitiveNull(oaObj, propertyName);
+	}
+
 	public static boolean isPrimitiveNull(OAObject oaObj, String propertyName) {
 		if (oaObj == null || propertyName == null) {
 			return false;

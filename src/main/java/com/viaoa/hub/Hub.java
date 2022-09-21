@@ -322,7 +322,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 			OASelect sel = data.getSelect();
 			if (sel != null) {
 			    boolean b = sel.isCounted();
-
+			
 			    if (!sel.hasBeenStarted()) {
 			        if (b) s += " counted: " + sel.getCount() + ", ";
 			        s += " not selected";
@@ -864,7 +864,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		}
 		/* 20200522 removed, caller should setLoading(..) if it's needed
 		 * otherwise, events from add will check isLoading and not run code.  Ex: M2M wont be set
-
+		
 		boolean b = (getSize() == 0);
 		if (b) {
 			OAThreadLocalDelegate.setLoading(true);
@@ -1036,7 +1036,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * Create a shared version of another Hub, so that this Hub will use the same objects as the shared hub. All events that affect the data
 	 * will be sent to all shared Hubs.
 	 *
-	 * @param bShareAO true=use same activeObject as shared hub, false:use seperate activeObject
+	 * @param bShareAO (default=false) if true, then use same activeObject as shared hub, false:use seperate activeObject
 	 * @see SharedHub
 	 */
 	public Hub<TYPE> createSharedHub(boolean bShareAO) {
@@ -1939,8 +1939,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	}
 
 	/**
-
-
+	
+	
 	 */
 	protected void setLinkHub(String propertyFrom, Hub linkHub, String propertyTo, boolean linkPosFlag) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
@@ -2294,9 +2294,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 
 	/*
 	    hub.onChangeAO( event -> {
-
+	
 	    });
-
+	
 	 */
 	public void onChangeAO(HubOnEventInterface onEvent) {
 		if (onEvent == null) {

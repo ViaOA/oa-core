@@ -74,7 +74,7 @@ public class Column { // need to select all with properyName!=null
 
 	public Column(String columnName, boolean fkey) {
 		this(columnName, "", 0, 0);
-		foreignKey = true;
+		foreignKey = fkey;
 	}
 
 	public Column(String columnName, String propertyName) {

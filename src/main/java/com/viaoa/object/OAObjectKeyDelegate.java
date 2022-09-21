@@ -36,7 +36,41 @@ public class OAObjectKeyDelegate {
 		return oaObj.guid;
 	}
 
-	public static OAObjectKey createChangedObjectKey(OAObject oaObj, String propertyName, Object propertyValue) {
+	public static OAObjectKey createChangedObjectKey(Class clazz, OAObjectKey objKey, String propertyName, Object newValue) {
+		if (propertyName == null || clazz == null) {
+			return null;
+		}
+
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		String[] ids = oi.getKeyProperties();
+
+		Object[] objsCurrent = null;
+		if (objKey != null) {
+			objsCurrent = objKey.getObjectIds();
+		}
+
+		Object[] objsNew = new Object[ids == null ? 0 : ids.length];
+
+		for (int i = 0; ids != null && i < ids.length; i++) {
+			if (propertyName.equalsIgnoreCase(ids[i])) {
+				objsNew[i] = newValue;
+			} else {
+				if (objsCurrent != null && i < objsCurrent.length) {
+					objsNew[i] = objsCurrent[i];
+				}
+			}
+		}
+
+		OAObjectKey ok;
+		if (objKey != null) {
+			ok = new OAObjectKey(objsNew, objKey.guid, objKey.bNew);
+		} else {
+			ok = new OAObjectKey(objsNew);
+		}
+		return ok;
+	}
+
+	public static OAObjectKey createChangedObjectKey(final OAObject oaObj, final String propertyName, final Object newValue) {
 		if (propertyName == null || oaObj == null || oaObj.objectKey == null) {
 			return null;
 		}
@@ -49,7 +83,7 @@ public class OAObjectKeyDelegate {
 
 		for (int i = 0; ids != null && i < ids.length; i++) {
 			if (propertyName.equalsIgnoreCase(ids[i])) {
-				objsNew[i] = propertyValue;
+				objsNew[i] = newValue;
 			} else {
 				if (objsCurrent != null && i < objsCurrent.length) {
 					objsNew[i] = objsCurrent[i];
@@ -288,7 +322,7 @@ public class OAObjectKeyDelegate {
 		public static OAObjectKey convertToObjectKey(OAObjectInfo oi, Object value) {
 	    if (oi == null || value == null) return null;
 	    if (value instanceof OAObjectKey) return (OAObjectKey) value;
-	
+
 	    String[] ids = oi.idProperties;
 	    if (ids != null && ids.length > 0) {
 	        Class c = OAObjectInfoDelegate.getPropertyClass(oi, ids[0]);

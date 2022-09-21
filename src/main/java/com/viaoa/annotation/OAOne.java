@@ -96,7 +96,7 @@ public @interface OAOne {
 	/**
 	 * Properties that that are also foreign keys to other objects, which are used by Link=One.
 	 */
-	String[] pkeyPropertyNames() default {};
+	// String[] pkeyPropertyNames() default {};
 
 	boolean importMatch() default false;
 
