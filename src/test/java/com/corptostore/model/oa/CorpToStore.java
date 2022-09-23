@@ -4,14 +4,6 @@ package com.corptostore.model.oa;
 import java.util.logging.Logger;
 
 import com.corptostore.delegate.oa.CorpToStoreDelegate;
-import com.corptostore.model.oa.CorpToStore;
-import com.corptostore.model.oa.Environment;
-import com.corptostore.model.oa.PurgeWindow;
-import com.corptostore.model.oa.StatusInfo;
-import com.corptostore.model.oa.StoreInfo;
-import com.corptostore.model.oa.StoreLockServiceInfo;
-import com.corptostore.model.oa.ThreadInfo;
-import com.corptostore.model.oa.TransmitBatchServiceInfo;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAFkey;

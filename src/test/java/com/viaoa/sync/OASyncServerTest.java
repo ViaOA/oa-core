@@ -47,7 +47,8 @@ import test.xice.tsam.remote.RemoteModelInterface;
 import test.xice.tsam.util.DataGenerator;
 
 /**
- * Run this manually, and then run OASyncClientTest multiple times, and then run it as a junit test.
+ * Server for Unit Tests Run this manually , Run this manually , Run this manually Run this manually, and then run OASyncClientTest multiple
+ * times, and then run it as a junit test.
  */
 public class OASyncServerTest {
 	private static Logger LOG = Logger.getLogger(OASyncServerTest.class.getName());

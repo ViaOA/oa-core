@@ -103,6 +103,9 @@ public @interface OAOne {
 	String equalPropertyPath() default "";
 
 	OAFkey[] fkeys() default {};
+
+	@Deprecated
+	String[] pojoNames() default {};
 }
 
 /*  OALinkInfo

@@ -207,8 +207,19 @@ public class OAAnnotationDelegate {
 
 			pi.setMaxLength(oaprop.maxLength());
 			pi.setDisplayLength(oaprop.displayLength());
-			pi.setUIColumnName(oaprop.uiColumnName()); // for UI grid/table header
-			pi.setUIColumnLength(oaprop.uiColumnLength()); // for UI grid/table header
+
+			s = oaprop.uiColumnName();
+			if (OAString.isEmpty(s)) {
+				s = oaprop.columnName();
+			}
+			pi.setUIColumnName(s); // for UI grid/table header
+
+			int x = oaprop.uiColumnLength();
+			if (x == 0) {
+				x = oaprop.columnLength();
+			}
+			pi.setUIColumnLength(x); // for UI grid/table header
+
 			pi.setRequired(oaprop.required());
 			pi.setDecimalPlaces(oaprop.decimalPlaces());
 			pi.setId(m.getAnnotation(OAId.class) != null);
@@ -226,7 +237,7 @@ public class OAAnnotationDelegate {
 			OAColumn oacol = (OAColumn) m.getAnnotation(OAColumn.class);
 			if (oacol != null) {
 				pi.setOAColumn(oacol);
-				int x = oacol.maxLength();
+				x = oacol.maxLength();
 				if (x > 0) {
 					pi.setMaxLength(x);
 				}
@@ -295,8 +306,9 @@ public class OAAnnotationDelegate {
 						}
 					}
 				} catch (Exception e) {
-					System.out.println("exception loading enum names for class.property " + clazz.getSimpleName() + "." + pi.getName());
-					e.printStackTrace();
+					System.out.println("OAAnnotationDelegate exception loading enum names for class.property " + clazz.getSimpleName() + "."
+							+ pi.getName() + ", exception: " + e);
+					// e.printStackTrace();
 				}
 			}
 
@@ -647,8 +659,11 @@ public class OAAnnotationDelegate {
 					s = name.toUpperCase();
 					if (s.endsWith("CALLBACK") && s.indexOf("$") < 0) {
 						if (!s.endsWith("MODELCALLBACK") && !s.startsWith("GET") && !s.startsWith("SET")) {
-							s = "missing @OAObjCallback() annotation, class=" + clazz + ", method=" + m + ", will continue";
-							LOG.log(Level.WARNING, s, new Exception(s));
+							OATriggerMethod tm = (OATriggerMethod) m.getAnnotation(OATriggerMethod.class);
+							if (tm == null) {
+								s = "note: missing @OAObjCallback() annotation, class=" + clazz + ", method=" + m + ", will continue";
+								LOG.log(Level.WARNING, s, new Exception(s));
+							}
 						}
 					} else {
 						continue;

@@ -753,23 +753,16 @@ public class HubDetailDelegate {
 			return thisHub; // since this is a recursive method
 		}
 
-		// added support for using HubMerger if property path has more then one ending object/hub
+		// support for using HubMerger if property path has more then one ending object/hub
 		Class clazz = thisHub.getObjectClass();
 
-		//qqqqqqqqqqq
 		final OAPropertyPath ppx = new OAPropertyPath(clazz, path);
 		OALinkInfo[] lis = ppx.getLinkInfos();
 		boolean bLastMany = false;
 		int cntMany = 0;
 
-		for (int i = 0; i <= lis.length; i++) {
-			OALinkInfo li;
-
-			if (i < lis.length) {
-				li = lis[i];
-			} else {
-				li = ppx.getEndLinkInfo();
-			}
+		for (int i = 0; i < lis.length; i++) {
+			OALinkInfo li = lis[i];
 
 			if (li.getType() == OALinkInfo.MANY) {
 				bLastMany = true;
@@ -1470,14 +1463,14 @@ public class HubDetailDelegate {
 	public static Hub _getRealHub(Hub thisHub, int cnt) {
 	    Hub hubMaster = HubDetailDelegate.getMasterHub(thisHub);
 	    if (hubMaster == null) return thisHub;
-
+	
 	    if (cnt > 10) {
 	        LOG.log(Level.WARNING, "", new Exception("possible stackoverflow, thisHub="+thisHub+", masterHub="+hubMaster));
 	    }
 	    else {
 	        hubMaster = _getRealHub(hubMaster, cnt+1);
 	    }
-
+	
 	    Hub h = thisHub;
 	    OAObject o = HubDetailDelegate.getMasterObject(thisHub);
 	    if (o != null && o != hubMaster.getAO()) {

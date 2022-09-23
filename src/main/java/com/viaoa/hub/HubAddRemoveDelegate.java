@@ -371,14 +371,14 @@ public class HubAddRemoveDelegate {
 		for (int pos=0 ; ; ) {
 		    Object obj = thisHub.elementAt(pos);
 		    if (obj == null) break;
-
+		
 		    if (obj == objLast) {
 		        // object was not deleted
 		        pos++;
 		        continue;
 		    }
 		    objLast = obj;
-
+		
 		    // 20140422 set to false, since clients will now have clear msg
 		    remove(thisHub, obj, false,
 		            false, false, bSetAOtoNull,

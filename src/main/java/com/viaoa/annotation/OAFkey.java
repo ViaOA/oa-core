@@ -25,8 +25,11 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAFkey {
-	String fromProperty();
+	String fromProperty() default "";
 
 	// name of pkey property in the link.objectTo
-	String toProperty();
+	String toProperty() default "";
+
+	@Deprecated // for old models only
+	String[] columns() default {};
 }

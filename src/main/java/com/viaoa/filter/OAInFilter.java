@@ -94,7 +94,7 @@ public class OAInFilter implements OAFilter {
 
 		this.pp = new OAPropertyPath(clazz, strPropPath);
 
-		if (!pp.isLastPropertyLinkInfo()) {
+		if (pp.getEndLinkInfo() == null) {
 			throw new RuntimeException("invalid propPath " + strPropPath + ", must end in a Link");
 		}
 

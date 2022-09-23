@@ -21,6 +21,7 @@ import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAFinder;
+import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -385,10 +386,11 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 					objNew.setProperty(li.getLowerName(), objx);
 				}
 			} else {
-				final String[] ss = li.getKeyPropertyNames();
-				if (ss != null && ss.length > 0) {
+
+				if (li.getFkeyInfos().size() > 0) {
 					ArrayList<Object> al = new ArrayList();
-					for (String s : ss) {
+					for (OAFkeyInfo fi : li.getFkeyInfos()) {
+						String s = fi.getFromPropertyInfo().getName();
 						OAPropertyInfo pi = oi.getPropertyInfo(s);
 						jn = node.get(pi.getLowerName());
 						if (jn == null) {
@@ -411,7 +413,8 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 								objx = (OAObject) OAObjectReflectDelegate.createNewObject(li.getToClass());
 								// need to populate
 								int i = 0;
-								for (String s : ss) {
+								for (OAFkeyInfo fi : li.getFkeyInfos()) {
+									String s = fi.getFromPropertyInfo().getName();
 									Object val = al.get(i++);
 									objx.setProperty(s, val);
 								}
@@ -429,8 +432,8 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 						}
 
 						String name;
-						if (li.getFkeyProperties() != null && pos < li.getFkeyProperties().size()) {
-							name = li.getFkeyProperties().get(pos++).getName();
+						if (li.getFkeyInfos() != null && pos < li.getFkeyInfos().size()) {
+							name = li.getFkeyInfos().get(pos++).getFromPropertyInfo().getName();
 						} else {
 							name = li.getLowerName() + pi.getName();
 						}

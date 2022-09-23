@@ -1139,8 +1139,8 @@ public class OAThreadLocalDelegate {
 	    if (sc != null) setRemoteMultiplexerClient(sc.getRemoteMultiplexerClient());
 	    else setRemoteMultiplexerClient(null);
 	}
-
-
+	
+	
 	public static RemoteMultiplexerClient getRemoteMultiplexerClient() {
 	    RemoteMultiplexerClient mc;
 	    if (OAThreadLocalDelegate.TotalRemoteMultiplexerClient.get() == 0) {
@@ -1524,7 +1524,7 @@ public class OAThreadLocalDelegate {
 
 	// 20200121
 	/**
-	 * Hubs that should be adjusted when trying to set activeObject and adjusting masterHub.AO
+	 * Hubs that should not be adjusted when trying to set activeObject and adjusting masterHub.AO
 	 */
 	public static void addDontAdjustHub(Hub hub) {
 		if (hub == null) {

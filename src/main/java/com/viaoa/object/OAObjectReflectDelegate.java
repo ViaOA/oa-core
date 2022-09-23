@@ -436,7 +436,12 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
-	protected static void setPrimitiveNull(OAObject oaObj, String propertyName, boolean bNull) {
+	/**
+	 * Set a primitive property null flag.
+	 * <p>
+	 * Note: this is meant to be called only by firePropertyChange, it will not send any event or make any other adjustments.
+	 */
+	public static void setPrimitiveNull(OAObject oaObj, String propertyName, boolean bNull) {
 		if (bNull) {
 			setPrimitiveNull(oaObj, propertyName);
 		} else {

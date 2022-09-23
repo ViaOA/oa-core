@@ -57,7 +57,7 @@ public class OAAnnotationDelegateTest extends OAUnitTest {
 
 		OAAnnotationDelegate.update(oi, c);
 
-		assertEquals(10, pi.getColumnLength());
+		assertEquals(10, pi.getUIColumnLength());
 		assertEquals(55, pi.getMaxLength());
 
 		OALinkInfo li = oi.getLinkInfo(Server.P_Applications);
@@ -211,6 +211,7 @@ public class OAAnnotationDelegateTest extends OAUnitTest {
 	}
 
 	protected void testUpdateDatabase(final Class clazz) throws Exception {
+		System.out.println(clazz.getName());
 		Database database = new Database();
 
 		// need to load all classes to be able to create database

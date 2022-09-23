@@ -62,11 +62,12 @@ public class OAPropertyPath<F> {
 	private Class[] filterClasses = new Class[0];
 	private Constructor[] filterConstructors = new Constructor[0];
 
+	/** NOTE: this also includes endLinkInfo */
 	private OALinkInfo[] linkInfos = new OALinkInfo[0];
 	private OALinkInfo[] recursiveLinkInfos = new OALinkInfo[0]; // for each linkInfos[]
-	private boolean bLastProperyLinkInfo;
 	private OAPropertyPath revPropertyPath;
 
+	// the ending propery in the property path will be one of these
 	private OAPropertyInfo endPropertyInfo;
 	private OACalcInfo endCalcInfo;
 	private OALinkInfo endLinkInfo;
@@ -195,10 +196,6 @@ public class OAPropertyPath<F> {
 			return null;
 		}
 		return methods[methods.length - 1].getAnnotation(OAOne.class);
-	}
-
-	public boolean isLastPropertyLinkInfo() {
-		return bLastProperyLinkInfo;
 	}
 
 	public String[] getProperties() {
@@ -575,12 +572,10 @@ public class OAPropertyPath<F> {
 				endPropertyInfo = null;
 				endCalcInfo = null;
 				linkInfos = (OALinkInfo[]) OAArray.add(OALinkInfo.class, linkInfos, li);
-				bLastProperyLinkInfo = true;
 			} else {
 				endPropertyInfo = OAObjectInfoDelegate.getPropertyInfo(oi, propertyName);
 				endCalcInfo = endPropertyInfo != null ? null : OAObjectInfoDelegate.getOACalcInfo(oi, propertyName);
 				endLinkInfo = null;
-				bLastProperyLinkInfo = false;
 			}
 
 			boolean bUsingToString;

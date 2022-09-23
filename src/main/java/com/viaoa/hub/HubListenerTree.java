@@ -127,7 +127,7 @@ public class HubListenerTree {
 				ArrayList al = null;
 				if (pp != null) {
 					OALinkInfo[] lis = pp.getLinkInfos();
-					if (lis != null && lis.length == 1 && pp.isLastPropertyLinkInfo()) {
+					if (lis != null && lis.length == 1 && pp.getEndLinkInfo() != null) {
 						al = new ArrayList();
 						for (final Object obja : HubListenerTree.this.root.hub) {
 							Object objz;

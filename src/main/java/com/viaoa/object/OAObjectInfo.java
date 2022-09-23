@@ -712,7 +712,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				oix = OAObjectInfoDelegate.getOAObjectInfo(li.getToClass());
 			}
 
-			if (!pp.isLastPropertyLinkInfo()) {
+			if (pp.getEndLinkInfo() == null) {
 				String[] ss = pp.getProperties();
 				if (!bSkipFirstNonManyProperty || ss.length > 1) {
 					TriggerInfo ti = oix._addTrigger(trigger, propPath, revPropPath, ss[ss.length - 1]);

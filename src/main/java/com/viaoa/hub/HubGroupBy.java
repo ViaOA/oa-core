@@ -316,19 +316,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 	/*  This is used to define the structure that is created for the split.
 	 *  <pre><code>
-	
+
 	    Original HubGroupBy  new HubGroupBy(hubApplicationGroup, hubMRADClient, "MRADClient.Application.ApplicationType.ApplicationGroup")
-	
+
 	    Split:
 	       GB1:     new HubGroupBy(hubMRADClient, "MRADClient.Application.ApplicationType")
 	       GB2:     new HubGroupBy(hubApplicationGroup, "ApplicationTypes")
 	       GBNew:   hubCombined is updated using setupSlit
-	
-	
+
+
 	      OAGroupBy   GB1       GB2          GBNew
 	      .A          appType   appType      appGroup
 	      .hubB       mrads     appGroups    mrads
-	
+
 	 </code></pre>
 	 * This is used when a propertyPath has a link where one of the createMethod=false. By having the source hub
 	 * for the leftmost HubB, and must also have the source HubA for the rightmost, two separate hgb can be used to update a 3rd

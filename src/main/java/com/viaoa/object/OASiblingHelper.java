@@ -84,7 +84,7 @@ public class OASiblingHelper<F extends OAObject> {
 		}
 
 		// see if last is a calc prop, and check dependent prop paths
-		if (pp.isLastPropertyLinkInfo()) {
+		if (pp.getEndLinkInfo() != null) {
 			return;
 		}
 		if (cnt > 3) {
@@ -188,7 +188,7 @@ public class OASiblingHelper<F extends OAObject> {
 
 	/**
 	 * Called by getSilbing to find root hub and pp.
-	 * 
+	 *
 	 * @param obj  object that is being used
 	 * @param prop property/reference that is getting
 	 * @return a hub and propertyPath that can be used to find siblings.

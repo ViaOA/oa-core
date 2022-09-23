@@ -44,8 +44,14 @@ public @interface OAProperty {
 	/** name to use for Grid/Table column heading */
 	String uiColumnName() default "";
 
+	@Deprecated
+	String columnName() default "";
+
 	/** @return length of the column in a table/grid UI component. */
 	int uiColumnLength() default 0;
+
+	@Deprecated
+	int columnLength() default 0;
 
 	String inputMask() default "";
 
