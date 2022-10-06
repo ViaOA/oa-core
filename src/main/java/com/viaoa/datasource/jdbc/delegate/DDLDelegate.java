@@ -11,10 +11,11 @@
 package com.viaoa.datasource.jdbc.delegate;
 
 import com.viaoa.datasource.jdbc.db.DBMetaData;
+import com.viaoa.util.OAString;
 
 /**
  * Delegate used to generate DDL for making database changes.
- * 
+ *
  * @author vvia
  */
 public class DDLDelegate {
@@ -141,7 +142,7 @@ public class DDLDelegate {
 			// sql += " FROM " + dbmd.leftBracket+fromTableName+dbmd.rightBracket;
 
 			if (whereClause != null && whereClause.length() > 0) {
-				// sql += ", " + dbmd.leftBracket+toTableName+dbmd.rightBracket;                
+				// sql += ", " + dbmd.leftBracket+toTableName+dbmd.rightBracket;
 				sql += " WHERE " + whereClause;
 			}
 			sql += ";";
@@ -184,29 +185,14 @@ public class DDLDelegate {
 		String s = "CREATE INDEX " + indexName + " ON " + dbmd.leftBracket + tableName + dbmd.rightBracket + " (" + columnNames + ");";
 		return s;
 	}
-	/*qqqqqq take out 
-	public static String getAddColumnInfoSQL(DBMetaData dbmd, String tableName, String columnInfo) {
-		String s = " COLUMN";
-		switch (dbmd.databaseType) {
-	    case DBMetaData.ACCESS:
-	        break;
-	    case DBMetaData.MYSQL:
-	        break;
-	    case DBMetaData.ORACLE:
-	        break;
-	    case DBMetaData.SQLSERVER:
-	    	s = "";
-	        break;
-	    case DBMetaData.DERBY:
-	        break;
-		}
-	
-		s = "ALTER TABLE " + dbmd.leftBracket + tableName + dbmd.rightBracket + " ADD"+s+" " + columnInfo + ";";
-	    return s;
-	}
-	**/
 
-	public static String getAddColumnSQL(DBMetaData dbmd, String tableName, String columnName, String type) {
+	public static String getCreateUniqueIndexSQL(DBMetaData dbmd, String tableName, String indexName, String columnName) {
+		String s = "CREATE UNIQUE INDEX " + indexName + " ON " + dbmd.leftBracket + tableName + dbmd.rightBracket + " (" + columnName
+				+ ");";
+		return s;
+	}
+
+	public static String getAlterAddColumnSQL(DBMetaData dbmd, String tableName, String columnName, String type) {
 		String s = " COLUMN";
 		switch (dbmd.databaseType) {
 		case DBMetaData.ACCESS:
@@ -228,30 +214,21 @@ public class DDLDelegate {
 
 	/**
 	 * Used to create the sql for adding a new column within a create new table command.
-	 * 
-	 * @param bLastColumn true if this is the last column being added for table.
 	 */
-	public static String getAddColumnSQL(DBMetaData dbmd, String columnName, String type, boolean bLastColumn) {
+	public static String getAddColumnSQL(DBMetaData dbmd, String columnName, String type) {
 		String s = dbmd.leftBracket + columnName + dbmd.rightBracket + " " + type;
-		if (!bLastColumn) {
-			s += ",";
-		}
 		return s;
 	}
 
 	/**
 	 * Used to create the sql for adding a new column within a create new table command.
-	 * 
-	 * @param params      example: "NOT NULL"
-	 * @param bLastColumn true if this is the last column being added for table.
+	 *
+	 * @param params example: "NOT NULL"
 	 */
-	public static String getAddColumnSQL(DBMetaData dbmd, String columnName, String type, String params, boolean bLastColumn) {
+	public static String getAddColumnSQL(DBMetaData dbmd, String columnName, String type, String params) {
 		String s = dbmd.leftBracket + columnName + dbmd.rightBracket + " " + type;
 		if (params != null && params.length() > 0) {
 			s += " " + params;
-		}
-		if (!bLastColumn) {
-			s += ",";
 		}
 		return s;
 	}
@@ -270,7 +247,7 @@ public class DDLDelegate {
 			sql = "ALTER TABLE " + dbmd.leftBracket + tableName + dbmd.rightBracket + " MODIFY COLUMN " + dbmd.leftBracket + columnName
 					+ dbmd.rightBracket + " " + newType + ";";
 			break;
-		case DBMetaData.SQLSERVER: // ok 2007/08/31, not tested 
+		case DBMetaData.SQLSERVER: // ok 2007/08/31, not tested
 		case DBMetaData.ACCESS: // this is correct for Access
 			sql = "ALTER TABLE " + dbmd.leftBracket + tableName + dbmd.rightBracket + " ALTER COLUMN " + dbmd.leftBracket + columnName
 					+ dbmd.rightBracket + " " + newType + ";";
@@ -304,19 +281,19 @@ public class DDLDelegate {
 		String sqlType = "VARCHAR(" + maxLen + ")";
 		switch (dbmd.databaseType) {
 		case DBMetaData.ACCESS:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			break;
 		case DBMetaData.MYSQL:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			break;
 		case DBMetaData.ORACLE:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			break;
 		case DBMetaData.SQLSERVER:
 			sqlType = "NVARCHAR(" + maxLen + ")";
 			break;
 		case DBMetaData.DERBY:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			break;
 		case DBMetaData.POSTGRES:
 			sqlType = "VARCHAR(" + maxLen + ")";
@@ -329,19 +306,19 @@ public class DDLDelegate {
 		String sqlType = "char(" + maxLen + ")";
 		switch (dbmd.databaseType) {
 		case DBMetaData.ACCESS:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			break;
 		case DBMetaData.MYSQL:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			break;
 		case DBMetaData.ORACLE:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			break;
 		case DBMetaData.SQLSERVER:
 			sqlType = "NCHAR(" + maxLen + ")";
 			break;
 		case DBMetaData.DERBY:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			break;
 		case DBMetaData.POSTGRES:
 			sqlType = "CHAR(" + maxLen + ")";
@@ -354,22 +331,22 @@ public class DDLDelegate {
 		String sqlType = "";
 		switch (dbmd.databaseType) {
 		case DBMetaData.ACCESS:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			sqlType = "memo";
 			break;
 		case DBMetaData.MYSQL:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			sqlType = "LONGTEXT";
 			break;
 		case DBMetaData.ORACLE:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			sqlType = "long";
 			break;
 		case DBMetaData.SQLSERVER:
 			sqlType = "NVARCHAR(MAX)";
 			break;
 		case DBMetaData.DERBY:
-			// todo: need to get correct unicode type for this DB    
+			// todo: need to get correct unicode type for this DB
 			sqlType = "CLOB"; // "CLOB("+maxLen+")";
 			break;
 		case DBMetaData.POSTGRES:
@@ -510,6 +487,23 @@ public class DDLDelegate {
 		return sqlType;
 	}
 
+	public static String getDateTimeTzType(DBMetaData dbmd) {
+		String sqlType = "DATETIME";
+		switch (dbmd.databaseType) {
+		case DBMetaData.POSTGRES:
+		case DBMetaData.MYSQL:
+			sqlType = "TIMESTAMPTZ"; // ?????? DATETIME
+			break;
+		case DBMetaData.ORACLE:
+			sqlType = "DATETZ";
+			break;
+		case DBMetaData.DERBY:
+			sqlType = "TIMESTAMPTZ"; // VALUES TIMESTAMP('1962-09-23 03:23:34.234')
+			break;
+		}
+		return sqlType;
+	}
+
 	public static String getTimestampType(DBMetaData dbmd) {
 		String sqlType = "TIMESTAMP";
 		switch (dbmd.databaseType) {
@@ -517,7 +511,20 @@ public class DDLDelegate {
 			sqlType = "TIMESTAMP";
 			break;
 		case DBMetaData.ORACLE: // see: http://docs.oracle.com/javase/1.5.0/docs/guide/jdbc/getstart/mapping.html
-			sqlType = "DATE";
+			sqlType = "DATET";
+			break;
+		}
+		return sqlType;
+	}
+
+	public static String getTimestampTzType(DBMetaData dbmd) {
+		String sqlType = "TIMESTAMPTZ";
+		switch (dbmd.databaseType) {
+		case DBMetaData.MYSQL:
+			sqlType = "TIMESTAMPTZ";
+			break;
+		case DBMetaData.ORACLE: // see: http://docs.oracle.com/javase/1.5.0/docs/guide/jdbc/getstart/mapping.html
+			sqlType = "DATETZ?";
 			break;
 		}
 		return sqlType;
@@ -592,4 +599,19 @@ public class DDLDelegate {
 		return s;
 	}
 
+	public static String getDefaultValue(DBMetaData dbmd, String type, String defaultValue) {
+		if (OAString.isEmpty(defaultValue)) {
+			return null;
+		}
+		if (defaultValue.startsWith("new OADate()")) {
+			defaultValue = "CURRENT_DATE";
+		} else if (defaultValue.startsWith("new OADateTime()")) {
+			defaultValue = "CURRENT_TIMESTAMP";
+		} else {
+			defaultValue += " ???? needs to be converted ????";
+		}
+		defaultValue = "DEFAULT " + defaultValue;
+
+		return defaultValue;
+	}
 }

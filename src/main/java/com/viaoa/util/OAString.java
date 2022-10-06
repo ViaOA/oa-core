@@ -16,7 +16,9 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import com.viaoa.hub.Hub;
@@ -2632,6 +2634,18 @@ public class OAString {
 			}
 		} else if (obj instanceof Hub) {
 			if (((Hub) obj).getSize() == 0) {
+				return true;
+			}
+		} else if (obj instanceof Map) {
+			if (((Map) obj).size() == 0) {
+				return true;
+			}
+		} else if (obj instanceof Set) {
+			if (((Set) obj).size() == 0) {
+				return true;
+			}
+		} else if (obj instanceof List) {
+			if (((List) obj).size() == 0) {
 				return true;
 			}
 		}

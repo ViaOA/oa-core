@@ -390,6 +390,9 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				if (li.getFkeyInfos().size() > 0) {
 					ArrayList<Object> al = new ArrayList();
 					for (OAFkeyInfo fi : li.getFkeyInfos()) {
+						if (fi.getFromPropertyInfo() == null) {
+							continue;
+						}
 						String s = fi.getFromPropertyInfo().getName();
 						OAPropertyInfo pi = oi.getPropertyInfo(s);
 						jn = node.get(pi.getLowerName());

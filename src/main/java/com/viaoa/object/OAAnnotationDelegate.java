@@ -1334,6 +1334,9 @@ public class OAAnnotationDelegate {
 			// 20220918
 			if (li.getFkeyInfos().size() > 0) {
 				for (OAFkeyInfo fki : li.getFkeyInfos()) {
+					if (fki.getFromPropertyInfo() == null) {
+						continue;
+					}
 					alPropertyName.add(fki.getFromPropertyInfo().getName());
 					String s = prefixPath + "." + fki.getFromPropertyInfo().getName();
 					alPropertyPath.add(s);

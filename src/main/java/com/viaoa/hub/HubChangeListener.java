@@ -18,10 +18,13 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectDelegate;
+import com.viaoa.util.OAAnyValueObject;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAConv;
+import com.viaoa.util.OAEmptyObject;
 import com.viaoa.util.OAFilter;
+import com.viaoa.util.OANotEmptyObject;
 import com.viaoa.util.OANotNullObject;
 import com.viaoa.util.OANullObject;
 import com.viaoa.util.OAString;
@@ -57,6 +60,8 @@ public abstract class HubChangeListener {
 		OnlySuperAdmin(true), // OAContext.isSuperAdmin must be true
 		PropertyNull(true),
 		PropertyNotNull(true),
+		PropertyEmpty(true),
+		PropertyNotEmpty(true),
 		ObjectCallbackEnabled(true),
 		ObjectCallbackVisible(true);
 
@@ -178,6 +183,14 @@ public abstract class HubChangeListener {
 
 	public HubProp addPropertyNotNull(Hub hub, String prop) {
 		return add(hub, prop, true, Type.PropertyNotNull);
+	}
+
+	public HubProp addPropertyEmpty(Hub hub, String prop) {
+		return add(hub, prop, true, Type.PropertyEmpty);
+	}
+
+	public HubProp addPropertyNotEmpty(Hub hub, String prop) {
+		return add(hub, prop, true, Type.PropertyNotEmpty);
 	}
 
 	public HubProp addPropertyChange(Hub hub, String prop) {
@@ -448,6 +461,20 @@ public abstract class HubChangeListener {
 			final boolean bAoOnly, String description) {
 		String newPropertyPath;
 		String[] props;
+
+		if (bUseCompareValue && compareValue != null) {
+			if (compareValue instanceof OANullObject) {
+				compareValue = Type.PropertyNull;
+			} else if (compareValue instanceof OANotNullObject) {
+				compareValue = Type.PropertyNotNull;
+			} else if (compareValue instanceof OAEmptyObject) {
+				compareValue = Type.PropertyEmpty;
+			} else if (compareValue instanceof OANotEmptyObject) {
+				compareValue = Type.PropertyNotEmpty;
+			} else if (compareValue instanceof OAAnyValueObject) {
+				compareValue = Type.AlwaysTrue;
+			}
+		}
 
 		if (propertyPath != null && propertyPath.indexOf('.') >= 0) {
 			newPropertyPath = propertyPath.replace('.', '_');
@@ -983,6 +1010,22 @@ public abstract class HubChangeListener {
 					b = (value != null);
 					if (!b) {
 						failureReason = "compare == null";
+					}
+					return b;
+				}
+
+				//qqqqqqqqqq			qqqqqqqqqqqqqqqqq
+				if (compareValue == Type.PropertyEmpty) {
+					b = OAString.isEmpty(value);
+					if (!b) {
+						failureReason = "compare PropertyEmpty=false";
+					}
+					return b;
+				}
+				if (compareValue == Type.PropertyNotEmpty) {
+					b = OAString.isNotEmpty(value);
+					if (!b) {
+						failureReason = "compare PropertyNotEmpty=false";
 					}
 					return b;
 				}
