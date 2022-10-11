@@ -12,6 +12,7 @@ package com.viaoa.object;
 
 import javax.swing.JLabel;
 
+import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.hub.Hub;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
@@ -22,6 +23,7 @@ import com.viaoa.util.OAString;
  * methods.
  *
  * @see OAObjectCallbackDelegate
+ * @see OAObjCallback annotation for example
  * @author vvia
  */
 public class OAObjectCallback {
@@ -173,7 +175,7 @@ public class OAObjectCallback {
 	public OAObjectCallback(Type type, int checkType) {
 	    this.type = type;
 	    this.checkType = checkType;
-	
+
 	    this.allowed = true;
 	}
 	*/

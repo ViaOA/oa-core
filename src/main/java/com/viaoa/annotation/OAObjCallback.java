@@ -20,6 +20,24 @@ import com.viaoa.object.OAObjectCallback;
 
 /**
  * Used to define OAObject callbacks, and dependent property paths for OAObjectCallback.enabled and visible
+ * <p>
+ * example for Property callback:
+ * 
+ * <pre>
+ * <code>
+	&#64;OAObjCallback(viewDependentProperties = { P_Name })
+	public void nameCallback(final OAObjectCallback callback) {
+		switch (callback.getType()) {
+			case AllowEnabled:
+				callback.setAllowed(false);
+				break;
+			}
+		}
+</code>
+ * </pre>
+ * 
+ * <br>
+ * For object callback use "public void callback(final OAObjectCallback callback) {"
  *
  * @see com.viaoa.object.OAObjectCallback
  * @author vvia
