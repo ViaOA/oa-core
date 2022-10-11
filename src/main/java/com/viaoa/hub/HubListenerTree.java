@@ -377,12 +377,23 @@ public class HubListenerTree {
 		}
 		if (calcProps == null) {
 			for (OALinkInfo li : oi.getLinkInfos()) {
-				if (li.getName().equalsIgnoreCase(property)) {
-					// System.out.println(">>>> "+property);
-					calcProps = li.getCalcDependentProperties();
-					property = li.getName();
-					break;
+				if (!li.getName().equalsIgnoreCase(property)) {
+					continue;
 				}
+
+				calcProps = li.getCalcDependentProperties();
+				property = li.getName();
+
+				// 20221011
+				if (li.getType() == OALinkInfo.MANY) {
+					if (calcProps == null) {
+						calcProps = new String[] { property };
+					} else {
+						calcProps = OAArray.add(calcProps, property);
+					}
+				}
+
+				break;
 			}
 		}
 		addListenerMain(hl, property, calcProps, bActiveObjectOnly, false);
@@ -430,6 +441,7 @@ public class HubListenerTree {
 		try {
 			OAThreadLocalDelegate.setHubListenerTree(true);
 			this.addListener(hl);
+
 			if (dependentPropertyPaths != null && dependentPropertyPaths.length > 0) {
 				synchronized (root) { // 20200401
 					addDependentListeners(property, hl, dependentPropertyPaths, bActiveObjectOnly, bAllowBackgroundThread);
