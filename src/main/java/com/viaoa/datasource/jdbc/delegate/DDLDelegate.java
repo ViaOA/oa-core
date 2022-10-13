@@ -170,6 +170,12 @@ public class DDLDelegate {
 			s = "DROP INDEX " + dbmd.leftBracket + tableName + dbmd.rightBracket + "." + indexName + ";";
 		} else if (dbmd.databaseType == DBMetaData.DERBY) {
 			s = "DROP INDEX " + indexName + ";";
+		} else if (dbmd.databaseType == DBMetaData.POSTGRES) {
+			s = "DROP INDEX " + indexName + ";";
+		} else if (dbmd.databaseType == DBMetaData.ORACLE) {
+			s = "DROP INDEX " + indexName + ";";
+		} else if (dbmd.databaseType == DBMetaData.MYSQL) {
+			s = "ALTER TABLE " + tableName + ". DROP INDEX " + indexName + ";";
 		} else {
 			s = "DROP INDEX " + indexName + " ON " + dbmd.leftBracket + tableName + dbmd.rightBracket + ";";
 		}
@@ -474,6 +480,8 @@ public class DDLDelegate {
 		String sqlType = "DATETIME"; // ??????
 		switch (dbmd.databaseType) {
 		case DBMetaData.POSTGRES:
+			sqlType = "TIMESTAMP WITHOUT TIME ZONE";
+			break;
 		case DBMetaData.MYSQL:
 			sqlType = "TIMESTAMP"; // ?????? DATETIME
 			break;
@@ -491,6 +499,8 @@ public class DDLDelegate {
 		String sqlType = "DATETIME";
 		switch (dbmd.databaseType) {
 		case DBMetaData.POSTGRES:
+			sqlType = "TIMESTAMP WITH TIME ZONE";
+			break;
 		case DBMetaData.MYSQL:
 			sqlType = "TIMESTAMPTZ"; // ?????? DATETIME
 			break;

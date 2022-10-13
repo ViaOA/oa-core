@@ -17,13 +17,18 @@ import java.lang.annotation.Target;
 
 /**
  * Defines indexes used in datasource.
+ * 
  * @author vvia
  */
 @Documented
 @Target({})
-@Retention(RetentionPolicy.RUNTIME) 
+@Retention(RetentionPolicy.RUNTIME)
 public @interface OAIndex {
-    String name();
-    OAIndexColumn[] columns();
-    boolean fkey() default false;  // is this index for an foreign key
+	String name();
+
+	OAIndexColumn[] columns();
+
+	boolean fkey() default false; // is this index for an foreign key
+
+	boolean unique() default false;
 }
