@@ -122,13 +122,7 @@ public class DDLDelegate {
 				sql += " WHERE " + whereClause;
 			}
 			break;
-		case DBMetaData.DERBY:
-		case DBMetaData.MYSQL:
-		case DBMetaData.ORACLE:
 		case DBMetaData.SQLSERVER:
-		case DBMetaData.POSTGRES:
-		case DBMetaData.OTHER:
-		default:
 			// this is for SQL Server, not sure about others.
 			sql = "UPDATE " + dbmd.leftBracket + toTableName + dbmd.rightBracket;
 			sql += " SET ";
@@ -140,6 +134,29 @@ public class DDLDelegate {
 				sql += dbmd.leftBracket + fromTableName + dbmd.rightBracket + "." + fromColumnNames[i];
 			}
 			// sql += " FROM " + dbmd.leftBracket+fromTableName+dbmd.rightBracket;
+
+			if (whereClause != null && whereClause.length() > 0) {
+				// sql += ", " + dbmd.leftBracket+toTableName+dbmd.rightBracket;
+				sql += " WHERE " + whereClause;
+			}
+			sql += ";";
+			break;
+		case DBMetaData.DERBY:
+		case DBMetaData.MYSQL:
+		case DBMetaData.ORACLE:
+		case DBMetaData.POSTGRES:
+		case DBMetaData.OTHER:
+		default:
+			// this is for SQL Server, not sure about others.
+			sql = "UPDATE " + dbmd.leftBracket + toTableName + dbmd.rightBracket;
+			sql += " SET ";
+			for (int i = 0; i < fromColumnNames.length; i++) {
+				if (i > 0) {
+					sql += ", ";
+				}
+				sql += toColumnNames[i] + " = ";
+				sql += fromColumnNames[i];
+			}
 
 			if (whereClause != null && whereClause.length() > 0) {
 				// sql += ", " + dbmd.leftBracket+toTableName+dbmd.rightBracket;
