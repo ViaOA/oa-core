@@ -1091,10 +1091,13 @@ public class OAAnnotationDelegate {
 			OALinkTable oalt = (OALinkTable) m.getAnnotation(OALinkTable.class);
 
 			String[] fkcols = new String[0];
-			if (oaone != null) {
+			if (oaone != null && oalt == null) {
 				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 				for (OAFkey fk : oaone.fkeys()) {
 					OAPropertyInfo pi = oi.getPropertyInfo(fk.fromProperty());
+					if (pi == null) {
+					    throw new Exception("Class "+clazz.getSimpleName()+" is missing get/set method for property "+fk.fromProperty()+", that should have been added with OAOne link "+m.getName());
+					}
 					fkcols = OAArray.add(fkcols, pi.getOAColumn().name());
 				}
 			}
