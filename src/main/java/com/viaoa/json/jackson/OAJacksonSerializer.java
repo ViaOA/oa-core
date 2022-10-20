@@ -364,7 +364,12 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		}
 
 		if (value instanceof String) {
-			gen.writeStringField(lowerName, (String) value);
+			if (pi.isJson()) {
+				gen.writeFieldName(lowerName);
+				gen.writeRawValue((String) value);
+			} else {
+				gen.writeStringField(lowerName, (String) value);
+			}
 		} else if (value instanceof Boolean) {
 			gen.writeBooleanField(lowerName, (boolean) value);
 		} else if (value instanceof BigDecimal) {

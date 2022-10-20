@@ -113,6 +113,8 @@ public @interface OAProperty {
 
 	boolean isHtml() default false;
 
+	boolean isJson() default false;
+
 	/** @return if true, then the property value must be unique. */
 	boolean isUnique() default false;
 

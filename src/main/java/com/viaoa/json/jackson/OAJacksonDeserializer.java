@@ -211,7 +211,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
 					jn = node.get(propertyName);
 					if (jn == null) {
-						if (pp.getEndPropertyInfo().isKey()) {
+						if (pp.getEndPropertyInfo() != null && pp.getEndPropertyInfo().isKey()) {
 							continue;
 						}
 						sql = null;
@@ -700,7 +700,7 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				}
 				objx = OAConv.convert(pi.getClassType(), jn.asText(), fmt);
 			} else {
-				objx = OAConv.convert(pi.getClassType(), jn.asText());
+				objx = OAConv.convert(pi.getClassType(), jn.toString()); //was: asText()
 			}
 		}
 		return objx;

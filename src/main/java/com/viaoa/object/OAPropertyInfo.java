@@ -53,6 +53,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private transient Method objectCallbackMethod;
 	private boolean isProcessed;
 	private boolean isHtml;
+	private boolean isJson;
 	private boolean isTimestamp;
 	private boolean bIsPrimitive;
 
@@ -282,6 +283,10 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return isCurrency;
 	}
 
+	public boolean getIsCurrency() {
+		return isCurrency;
+	}
+
 	public void setCurrency(boolean b) {
 		this.isCurrency = b;
 	}
@@ -290,8 +295,24 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return isHtml;
 	}
 
+	public boolean getIsHtml() {
+		return isHtml;
+	}
+
 	public void setHtml(boolean b) {
 		this.isHtml = b;
+	}
+
+	public boolean isJson() {
+		return isJson;
+	}
+
+	public boolean getIsJson() {
+		return isJson;
+	}
+
+	public void setJson(boolean b) {
+		this.isJson = b;
 	}
 
 	public boolean isTimestamp() {

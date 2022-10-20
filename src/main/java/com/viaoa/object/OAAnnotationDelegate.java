@@ -226,6 +226,7 @@ public class OAAnnotationDelegate {
 			pi.setUnique(oaprop.isUnique());
 			pi.setProcessed(oaprop.isProcessed());
 			pi.setHtml(oaprop.isHtml());
+			pi.setJson(oaprop.isJson());
 			pi.setTimestamp(oaprop.isTimestamp());
 			pi.setSubmit(oaprop.isSubmit());
 			pi.setIgnoreTimeZone(oaprop.ignoreTimeZone());
