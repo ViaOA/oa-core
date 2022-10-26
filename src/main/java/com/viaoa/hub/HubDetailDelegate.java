@@ -732,11 +732,6 @@ public class HubDetailDelegate {
 			return null;
 		}
 
-		// 2004/03/19 taken out, so that it can be set in this method
-		// if (linkHub != null) linkHub.checkObjectClass();
-		// ex:  ("dept.manager.orders.items.product.vendor")
-		//  or  ( {Dept.Class, Emp.class, Order.class, Item.class, Product.class, Vendor.class } )
-
 		if (path == null) {
 			Class[] c = classes;
 			if (c == null && lastClass != null) {
@@ -773,29 +768,6 @@ public class HubDetailDelegate {
 			clazz = li.getToClass();
 		}
 
-		/* WAS:
-		StringTokenizer st = new StringTokenizer(path, ".");
-		boolean bLastMany = false;
-		int cntMany = 0;
-		OALinkInfo li = null;
-		for (; st.hasMoreTokens();) {
-			String prop = st.nextToken();
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-			li = OAObjectInfoDelegate.getLinkInfo(oi, prop);
-			if (li == null) {
-				throw new IllegalArgumentException("Cant find " + prop + " for PropertyPath \"" + path + "\" starting with Class "
-						+ thisHub.getObjectClass().getName());
-			}
-			if (li.getType() == OALinkInfo.MANY) {
-				bLastMany = true;
-				cntMany++;
-			} else {
-				bLastMany = false;
-			}
-			clazz = li.getToClass();
-		}
-		*/
-
 		if (cntMany > 1 || (cntMany > 0 && !bLastMany)) {
 			// use HubMerger to create DetailHub
 			// see if HubDetail is already created
@@ -811,15 +783,13 @@ public class HubDetailDelegate {
 				}
 			}
 
-			// 20101220 added clazz param
 			if (detailHub == null) {
 				detailHub = new Hub(clazz);
 			}
-			//was: if (detailHub == null) detailHub = new Hub(clazz);
+
 			HubMerger hm = new HubMerger(thisHub, detailHub, path,
 					bShareActive, selectOrder, false);
 
-			// 2005/02/23 create HubDetail
 			HubDetail hd = new HubDetail(path, detailHub);
 			hd.referenceCount = 1;
 			if (thisHub.datau.getVecHubDetail() == null) {
@@ -830,61 +800,24 @@ public class HubDetailDelegate {
 			return detailHub;
 		}
 
-		int pos = path.indexOf('.');
-		String propertyName;
-		if (pos < 0) {
-			propertyName = path;
-		} else {
-			propertyName = path.substring(0, pos);
-		}
-
-		// verify class & property
-		Class newClass = null;
-		if (pos < 0) {
-			newClass = lastClass;
-		} else if (classes != null && classes.length > 0) {
-			newClass = classes[0];
-		}
+		final String propertyName = ppx.getProperties()[0];
+		final Class newClass = ppx.getClasses()[0];
 
 		// get LinkInfo
 		final OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(thisHub.data.getObjectInfo(), propertyName);
-
-		// find method
 		if (linkInfo == null) {
-			throw new RuntimeException("cant find linkInfo");
-		}
-
-		Method method = OAObjectInfoDelegate.getMethod(thisHub.data.getObjectInfo(), "get" + linkInfo.getName(), 0);
-		if (method == null) {
-			throw new RuntimeException("cant find method get" + linkInfo.getName());
-		}
-
-		// verify or get the type of class
-		Class returnClass = method.getReturnType();
-
-		// support for casting a property to a subclass ex:  "(Manager) Employee.Department"
-		propertyName = linkInfo.getName(); // in case a "cast" was used on the property
-
-		if (newClass != null) { // class is supplied
-			if (!newClass.equals(OAObjectInfoDelegate.getPropertyClass(thisHub.getObjectClass(), propertyName))) {
-				if (!(Hub.class.isAssignableFrom(returnClass))) {
-					throw new RuntimeException("classes do not match.");
-				}
-			}
-		} else {
-			newClass = OAObjectInfoDelegate.getPropertyClass(thisHub.getObjectClass(), propertyName);
-			if (newClass == null) {
-				throw new RuntimeException("cant find property class");
-			}
+			throw new RuntimeException(
+					"cant find linkInfo, hub=" + thisHub + ", propertyPath=" + path + ", property not found=" + propertyName);
 		}
 
 		// see what type of object the property returns: Array, Hub, OAObject, Object
+
 		int type = -1; // must be assign < 0
+		/* removed support for array
 		if (returnClass.isArray()) { // see if it is an Array
 			type = HubDetail.ARRAY;
 			returnClass = returnClass.getComponentType();
 		}
-
 		if (Hub.class.isAssignableFrom(returnClass)) {
 			if (type != HubDetail.ARRAY) {
 				type = HubDetail.HUB;
@@ -902,6 +835,13 @@ public class HubDetailDelegate {
 				type = HubDetail.OBJECT;
 			}
 		}
+		*/
+
+		if (linkInfo.getType() == OALinkInfo.TYPE_MANY) {
+			type = HubDetail.HUB;
+		} else {
+			type = HubDetail.OAOBJECT;
+		}
 
 		//  see if HubDetail is already created
 		Hub hub = null;
@@ -917,8 +857,8 @@ public class HubDetailDelegate {
 			}
 		}
 
-		// support for casting a property to a subclass ex:  "(Manager) Employee.Department"
-		newClass = linkInfo.getToClass(); // property path could be cast to a subclass name
+		final int pos2 = path.indexOf(')');
+		final int pos = path.indexOf(".", pos2 > 0 ? pos2 + 1 : 0);
 
 		boolean bFound = false;
 		if (hub == null) {
@@ -941,13 +881,13 @@ public class HubDetailDelegate {
 		}
 
 		if (pos < 0) {
-			if (detailHub != null) { // verify that linkHub can work
+			if (detailHub != null) {
 				if (detailHub.getObjectClass() == null) {
 					HubDelegate.setObjectClass(detailHub, newClass);
 				}
 				if (hub != null && !hub.getObjectClass().equals(detailHub.getObjectClass())) {
 					if (!hub.getObjectClass().isAssignableFrom(detailHub.getObjectClass())) {
-						throw new RuntimeException("ObjectClass is different.");
+						throw new RuntimeException("ObjectClass is different, hub=" + hub + ", path=" + path);
 					}
 				}
 				hub = detailHub;
@@ -967,7 +907,6 @@ public class HubDetailDelegate {
 		if (type == HubDetail.OAOBJECT || type == HubDetail.OBJECT) {
 			hub.datau.setDefaultPos(0);
 
-			// 20210506
 			if (type == HubDetail.OAOBJECT && linkInfo.getCalculated() && linkInfo.getCalcDependentProperties() != null
 					&& linkInfo.getCalcDependentProperties().length > 0) {
 				// need to use a hub listener if it's a calculated link that has dependent PPs
@@ -981,17 +920,7 @@ public class HubDetailDelegate {
 			updateDetail(thisHub, hd, hd.hubDetail, false);
 		}
 
-		int i = (classes == null) ? 0 : classes.length;
-		if (i > 0) {
-			i--;
-		}
-		Class[] c = new Class[i];
-
-		if (i > 0) {
-			System.arraycopy(classes, 1, c, 0, i);
-		}
-
-		return getDetailHub(hub, path, c, lastClass, detailHub, bShareActive, selectOrder);
+		return getDetailHub(hub, path, null, lastClass, detailHub, bShareActive, selectOrder);
 	}
 
 	/**

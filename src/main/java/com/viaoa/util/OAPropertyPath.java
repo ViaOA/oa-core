@@ -70,7 +70,7 @@ public class OAPropertyPath<F> {
 	// the ending propery in the property path will be one of these
 	private OAPropertyInfo endPropertyInfo;
 	private OACalcInfo endCalcInfo;
-	private OALinkInfo endLinkInfo;
+	private OALinkInfo endLinkInfo; // note: will also be in linkInfos
 
 	public OAPropertyPath(String propertyPath) {
 		this.propertyPath = propertyPath;
