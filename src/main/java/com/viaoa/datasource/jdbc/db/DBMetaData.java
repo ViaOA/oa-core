@@ -31,8 +31,10 @@ public class DBMetaData extends OAObject {
 	public final static int DERBY = 1;
 	public final static int SQLSERVER = 2;
 	public final static int ORACLE = 3;
+	@Deprecated
 	public final static int ACCESS = 4;
 	public final static int MYSQL = 5;
+	@Deprecated
 	public final static int BRIDGE = 6;
 	public final static int POSTGRES = 7;
 	public final static int DB2 = 8;
@@ -58,7 +60,7 @@ public class DBMetaData extends OAObject {
 	public String lowerCaseFunction;
 	public boolean supportsAutoAssign; // if true, db assigns id
 	public String autoAssignValue;
-	public String autoAssignType;
+	public String autoAssignType; // "optional" column type for auto assign
 
 	// 20200511 uses statement.setMaxRows(x) instead
 	// public String maxString; // ex: "LIMIT ?"; // use "?" to have the max amount entered
