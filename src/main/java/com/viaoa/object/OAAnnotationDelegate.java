@@ -308,7 +308,7 @@ public class OAAnnotationDelegate {
 					}
 				} catch (Exception e) {
 					System.out.println("OAAnnotationDelegate exception loading enum names for class.property " + clazz.getSimpleName() + "."
-							+ pi.getName() + ", exception: " + e);
+							+ pi.getName() + ", exception: " + e + ", will continue");
 					// e.printStackTrace();
 				}
 			}
@@ -1097,7 +1097,8 @@ public class OAAnnotationDelegate {
 				for (OAFkey fk : oaone.fkeys()) {
 					OAPropertyInfo pi = oi.getPropertyInfo(fk.fromProperty());
 					if (pi == null) {
-					    throw new Exception("Class "+clazz.getSimpleName()+" is missing get/set method for property "+fk.fromProperty()+", that should have been added with OAOne link "+m.getName());
+						throw new Exception("Class " + clazz.getSimpleName() + " is missing get/set method for property "
+								+ fk.fromProperty() + ", that should have been added with OAOne link " + m.getName());
 					}
 					fkcols = OAArray.add(fkcols, pi.getOAColumn().name());
 				}

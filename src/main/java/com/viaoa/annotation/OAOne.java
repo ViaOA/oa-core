@@ -104,7 +104,7 @@ public @interface OAOne {
 
 	OAFkey[] fkeys() default {};
 
-	@Deprecated
+	@Deprecated // replaced with fkeys
 	String[] pojoNames() default {};
 }
 
