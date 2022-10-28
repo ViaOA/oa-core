@@ -56,8 +56,6 @@ public class Column { // need to select all with properyName!=null
 	// 2007/03/08
 	public boolean caseSensitive;
 
-	// 2006/06/01
-	public boolean assignedByDatabase;
 	public boolean readOnly;
 
 	/** methods to get property value. */

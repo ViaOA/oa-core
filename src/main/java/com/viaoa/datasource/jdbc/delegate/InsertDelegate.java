@@ -58,16 +58,21 @@ public class InsertDelegate {
 		}
 
 		Column columnSkip = null;
-		Table table = ds.getDatabase().getTable(clazz);
-		if (table != null) {
-			Column[] columns = table.getColumns();
-			for (int i = 0; columns != null && i < columns.length; i++) {
-				if (ds.getDBMetaData().supportsAutoAssign && columns[i].assignNextNumber && columns[i].assignedByDatabase) {
-					columnSkip = columns[i];
-					break;
-				}
-			}
+		if (!ds.getAssignIdOnCreate() && ds.getDBMetaData().supportsAutoAssign) {
+    		Table table = ds.getDatabase().getTable(clazz);
+    		if (table != null) {
+    			Column[] columns = table.getColumns();
+    			for (int i = 0; columns != null && i < columns.length; i++) {
+    			    if (columns[i].assignNextNumber) {
+    					if (oaObj.isNull(columns[i].propertyName)) {
+    					    columnSkip = columns[i];  // assigned by DS
+    					}
+                        break;
+    				}
+    			}
+    		}
 		}
+		
 		Object[] objs = null;
 		try {
 			objs = getInsertSQL(ds, oaObj, clazz, columnSkip, bIncludeRefereces);
@@ -119,7 +124,7 @@ public class InsertDelegate {
 			Object obj = oaObj.getProperty(column.propertyName);
 			// see if column needs to be assigned to a seq number
 			// support for DB generated keys
-			if (column.primaryKey && column.assignedByDatabase) {
+			if (column.primaryKey && column.assignNextNumber) {
 				boolean b = false;
 				if (obj == null) {
 					b = true;

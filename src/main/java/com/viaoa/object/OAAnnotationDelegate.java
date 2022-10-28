@@ -1059,7 +1059,6 @@ public class OAAnnotationDelegate {
 				column.primaryKey = true;
 				column.guid = oaid.guid();
 				column.assignNextNumber = oaid.autoAssign();
-				column.assignedByDatabase = oaid.autoAssign();
 			}
 			if (oaprop != null) {
 				column.unicode = oaprop.isUnicode();
