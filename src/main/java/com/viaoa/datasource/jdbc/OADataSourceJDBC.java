@@ -144,6 +144,7 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	private void _assignId(OAObject object) {
+	    if (!dbmd.supportsAutoAssign) return;
 		Class clazz = object.getClass();
 		for (;;) {
 			Table table = database.getTable(clazz);
@@ -154,10 +155,9 @@ public class OADataSourceJDBC extends OADataSource {
 			Column[] columns = table.getColumns();
 			for (int i = 0; columns != null && i < columns.length; i++) {
 				Column column = columns[i];
-				if (dbmd.supportsAutoAssign && column.primaryKey && column.assignNextNumber) {
-					if (!column.assignedByDatabase) {
-						AutonumberDelegate.assignNumber(this, object, table, column);
-					}
+				if (column.primaryKey && column.assignNextNumber) {
+					AutonumberDelegate.assignNumber(this, object, table, column);
+					break;
 				}
 			}
 			clazz = clazz.getSuperclass();
@@ -283,7 +283,7 @@ public class OADataSourceJDBC extends OADataSource {
 			int max, OAFilter filter, boolean bDirty) {
 		// 20200219 need to convert whereObject/properyFromWhereObject to part of query if it's using a propertyPath
 		if (whereObject != null && propertyFromWhereObject != null && propertyFromWhereObject.indexOf(".") >= 0) {
-			OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+			OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject, true);
 			pp = pp.getReversePropertyPath();
 			if (OAString.isNotEmpty(queryWhere)) {
 				queryWhere += " AND ";
@@ -534,18 +534,19 @@ public class OADataSourceJDBC extends OADataSource {
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 		Table table = database.getTable(clazz);
-
+		
 		Column[] cols = table.getPrimaryKeyColumns();
 		if (cols == null || cols.length == 0) {
 			return;
 		}
-		if (cols[0].assignedByDatabase) {
+		if (cols[0].assignNextNumber) {
 			Connection connection = null;
 			Statement st = null;
 			try {
 				connection = getConnection();
 				st = connection.createStatement();
 
+				// make sure that db seq# is updated 
 				if (dbmd.getDatabaseType() == dbmd.POSTGRES) {
 					String sql = "SELECT setval('" + table.name + "_id_seq', (SELECT MAX(id) FROM " + table.name + "))";
 					LOG.fine(sql);
@@ -553,7 +554,7 @@ public class OADataSourceJDBC extends OADataSource {
 					st.close();
 				}
 			} catch (Exception e) {
-				LOG.log(Level.WARNING, "exception while updating seq", e);
+				LOG.log(Level.WARNING, "exception while updating seq, will continue", e);
 			} finally {
 				releaseConnection(connection);
 			}
