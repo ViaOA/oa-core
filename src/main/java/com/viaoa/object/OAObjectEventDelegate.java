@@ -608,9 +608,29 @@ public class OAObjectEventDelegate {
 		if (!bIsCheckingRef && !bUnknownValues) {
 			if (linkInfo != null) {
 				for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
+					Object oldValue = null;
+					if (oldObj instanceof OAObject) {
+						oldValue = oldObj == null ? null : ((OAObject) oldObj).getProperty(fki.getToPropertyInfo().getName());
+					} else if (oldObj instanceof OAObjectKey) {
+						oldValue = OAObjectKeyDelegate.getProperty(	linkInfo.getToClass(), (OAObjectKey) oldObj,
+																	fki.getToPropertyInfo().getName());
+					} else {
+						oldValue = oldObj;
+					}
+
+					Object newValue = null;
+					if (newObj instanceof OAObject) {
+						newValue = newObj == null ? null : ((OAObject) newObj).getProperty(fki.getToPropertyInfo().getName());
+					} else if (newObj instanceof OAObjectKey) {
+						newValue = OAObjectKeyDelegate.getProperty(	linkInfo.getToClass(), (OAObjectKey) newObj,
+																	fki.getToPropertyInfo().getName());
+					} else {
+						newValue = newObj;
+					}
+
 					firePropertyChange(	oaObj, fki.getFromPropertyInfo().getName(),
-										oldObj == null ? null : ((OAObject) oldObj).getProperty(fki.getToPropertyInfo().getName()),
-										newObj == null ? null : ((OAObject) newObj).getProperty(fki.getToPropertyInfo().getName()),
+										oldValue,
+										newValue,
 										bLocalOnly, false, bUnknownValues, true);
 				}
 
