@@ -242,7 +242,8 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 */
 	public Hub<F> getDetailHub() {
 		if (hubDetail == null) {
-			hubDetail = getCombinedHub().getDetailHub(OAGroupBy.P_Hub);
+			String pp = "(" + classFrom.getName() + ") " + OAGroupBy.P_Hub;
+			hubDetail = getCombinedHub().getDetailHub(pp);
 			HubDelegate.setObjectClass(hubDetail, classFrom);
 			hubDetail.addHubListener(new HubListenerAdapter() {
 				@Override
