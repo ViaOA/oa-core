@@ -630,7 +630,7 @@ public class OAPropertyPath<F> {
 				clazz = method.getReturnType();
 			}
 
-			if (clazz != null && clazz.equals(Hub.class)) {
+			if (clazz != null && clazz.equals(Hub.class) && castName == null) {
 				// try to find the ObjectClass for Hub
 				Class c = OAObjectInfoDelegate.getHubPropertyClass(classLast, propertyName);
 				if (c != null) {
