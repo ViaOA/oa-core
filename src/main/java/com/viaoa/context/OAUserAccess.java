@@ -13,12 +13,18 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Used to set the "boundaries" of what objects & properties/methods can be accessed by a user (or system). Used to determine if an object
- * is included in a propertyPath from a root OAObject/Hub.AO Separate methods for Visible and Enabled property paths, both On and Off (Not).
+ * Used to set the "boundaries" of what objects & properties/methods can be accessed by a user (or system). <br>
+ * Used to determine if an object is included in a propertyPath from a root OAObject/Hub.AO Separate methods for 
+ * Visible and Enabled property paths, both On and Off (Not).<br>
  * Has methods to add multiple obj/hub and propertyPaths, so that all are searched to see if an Object is included in any of the root +
- * paths. Allows for adding child[ren] OAUserAccess <code>
+ * paths. Allows for adding child[ren] OAUserAccess 
+ *
 
-Currently used by OARestServlet to determine what objects & PPs a user has access to.
+Used by OAContext<p> 
+
+<pre>
+<code>
+
 
     OAUserAccess ua = new OAUserAccess();
     ua.addVisible(buyer, BuyerPP.location().company().clients().products().campaigns().pp);
@@ -35,6 +41,7 @@ Currently used by OARestServlet to determine what objects & PPs a user has acces
     bx = ua.getHasVisible(null);
     bx = ua.getHasVisible(new Product());
 </code>
+</pre>
  *
  * @author vvia
  */
@@ -60,6 +67,7 @@ public class OAUserAccess {
 
 	private Package packageValid; // ignore/allow others
 
+	//qqqqqqqqqqqqq
 	// todo? add query extraWhereClause .....
 	//     ... or use current prop paths to build it ..
 	//    ex:  buyer.loc.company.clients.products.campaigns
@@ -70,6 +78,16 @@ public class OAUserAccess {
 		return false; // no changes made
 	}
 
+	public String getExtraWhereClause(Class clazz) {
+	    String whereClause = null;
+	    
+	    
+	    
+	    
+	    return whereClause;
+	}
+	
+	
 	// todo? allow param to determine if user has access
 	// ex:  buyer.isManager  ... if true then skip the rule
 
@@ -394,19 +412,30 @@ public class OAUserAccess {
 	}
 
 	/**
-	 * Checks to see if an OAObject & (optional) propertyName should be enabled. Uses the following steps: 0: starts with result set to
-	 * default value (true/false) 1: checks if the class is enabled (result set to true). 2: checks if the class is not enabled (result set
-	 * to false). 3: if property name, then checks if class+propertyName is enabled (result set to true). 4: if property name, then checks
-	 * if class+propertyName is not enabled (result set to false). 5: checks to see if obj [& prop] are in the enabled propert paths (result
-	 * set to true) 6: checks to see if obj [& prop] are in the not enabled propert paths (result set to false) 7: calls child[ren]
-	 * recursively setting result. 8: returns result
+	 * Checks to see if an OAObject & (optional) propertyName should be enabled. Uses the following steps: 
+	 * <ol>
+	 * <li>starts with result set to
+	 * default value (true/false) 
+	 * <li>checks if the class is enabled (result set to true). 
+	 * <li>checks if the class is not enabled (result set
+	 * to false). 
+	 * <li>if property name, then checks if class+propertyName is enabled (result set to true). 
+	 * <li>if property name, then checks
+	 * if class+propertyName is not enabled (result set to false). 
+	 * <li>checks to see if obj [& prop] are in the enabled propert paths (result
+	 * set to true) 
+	 * <li>checks to see if obj [& prop] are in the not enabled propert paths (result set to false) 
+	 * <li>calls child[ren]
+	 * recursively setting result. 
+	 * <li>returns result
+	 * </ol>
 	 */
 	protected boolean getEnabled(final OAObject obj, final Class cz, final String propertyName, final boolean bDefault) {
 		boolean bResult = bDefault;
 
 		if (cz != null && packageValid != null) {
 			if (packageValid.equals(cz.getPackage())) {
-				return true; // allow other packages
+				return true;
 			}
 		}
 
@@ -485,12 +514,16 @@ public class OAUserAccess {
 	}
 
 	/**
-	 * Checks to see if an OAObject & (optional) propertyName should be visible. Uses the following steps: 1: starts with result set to
-	 * default value (true/false) 1: checks if the class is enabled (result set to true). 2: checks if the class is not enabled (result set
-	 * to false). 3: if property name, then checks if class+propertyName is enabled (result set to true). 4: if property name, then checks
-	 * if class+propertyName is not enabled (result set to false). 5: checks to see if obj [& prop] are in the enabled propert paths (result
-	 * set to true) 6: checks to see if obj [& prop] are in the not enabled propert paths (result set to false) 7: calls child[ren]
-	 * recursively setting result. 8: returns result
+	 * Checks to see if an OAObject & (optional) propertyName should be visible. Uses the following steps:
+	 * <ol> 
+	 * <li>starts with result set to default value (true/false) 1: checks if the class is enabled (result set to true). 
+	 * <li>checks if the class is not enabled (result set to false). 
+	 * <li>if property name, then checks if class+propertyName is enabled (result set to true). 
+	 * <li>if property name, then checks if class+propertyName is not enabled (result set to false). 
+	 * <li>checks to see if obj [& prop] are in the enabled propert paths (result set to true) 
+	 * <li>checks to see if obj [& prop] are in the not enabled propert paths (result set to false) 
+	 * <li>calls child[ren] recursively setting result. 8: returns result
+	 * </ul>
 	 */
 	protected boolean getVisible(final OAObject obj, final Class cz, final String propertyName, final boolean bDefault) {
 		if (cz != null && packageValid != null) {

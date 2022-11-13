@@ -34,11 +34,16 @@ public class OAContext {
 
 	private static final Object NullContext = new Object();
 
-	// by default, this property is in AppUser
+	// by default, these property names are in AppUser
 	private static String adminPropertyPath = "Admin";
 	private static String superAdminPropertyPath = "SuperAdmin";
 	private static String allowEditProcessedPropertyPath = "EditProcessed";
 
+	
+	private OAContext() {
+	    // static methods only
+	}
+	
 	/**
 	 * Property path used to find the user property for allowing users to edit objects/properties/etc that are annotatied as processed.
 	 * Defaults to "EditProcessed"
