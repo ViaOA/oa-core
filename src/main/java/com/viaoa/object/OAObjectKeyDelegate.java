@@ -358,4 +358,24 @@ public class OAObjectKeyDelegate {
 		}
 		return new OAObjectKey(values);
 	}
+
+	public static Object getProperty(final Class clazz, final OAObjectKey objectKey, final String propertyName) {
+		if (clazz == null || objectKey == null || propertyName == null || objectKey.bEmpty) {
+			return null;
+		}
+
+		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		String[] ids = oi.getKeyProperties();
+		if (ids == null || ids.length == 0) {
+			return null;
+		}
+
+		for (int i = 0; ids != null && i < ids.length; i++) {
+			if (propertyName.equalsIgnoreCase(ids[i])) {
+				return ids[i];
+			}
+		}
+		return null;
+	}
+
 }
