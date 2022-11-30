@@ -692,11 +692,22 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				Class paramClass = pi.getClassType();
 				String fmt = null;
 				if (paramClass.equals(OADate.class)) {
-					fmt = "yyyy-MM-dd";
+					fmt = pi.getFormat();
+					if (OAString.isEmpty(fmt)) {
+						fmt = "yyyy-MM-dd";
+					}
 				} else if (paramClass.equals(OADateTime.class)) {
-					fmt = "yyyy-MM-dd'T'HH:mm:ss";
+					fmt = pi.getFormat();
+					if (OAString.isEmpty(fmt)) {
+						fmt = "yyyy-MM-dd'T'HH:mm:ss";
+					}
 				} else if (paramClass.equals(OATime.class)) {
-					fmt = "HH:mm:ss";
+					fmt = pi.getFormat();
+					if (OAString.isEmpty(fmt)) {
+						fmt = "HH:mm:ss";
+					}
+				} else {
+					fmt = pi.getFormat();
 				}
 				objx = OAConv.convert(pi.getClassType(), jn.asText(), fmt);
 			} else {

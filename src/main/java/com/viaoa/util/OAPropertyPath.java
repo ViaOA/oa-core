@@ -910,7 +910,7 @@ public class OAPropertyPath<F> {
 
 		OAProperty op = getOAPropertyAnnotation();
 		if (op != null) {
-			format = op.outputFormat();
+			format = op.format();
 			if (!OAString.isEmpty(format)) {
 				return format;
 			}

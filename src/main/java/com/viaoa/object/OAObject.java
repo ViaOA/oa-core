@@ -135,7 +135,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		    InputStream resourceAsStream = OAObject.class.getResourceAsStream("/META-INF/maven/com.viaoa/oa/pom.properties");
 		    Properties props = new Properties();
 		    props.load(resourceAsStream);
-		
+
 		    // String g = props.getProperty("groupId");
 		    // String a = props.getProperty("artifactId");
 		    ver = props.getProperty("version");
@@ -992,12 +992,12 @@ public class OAObject implements java.io.Serializable, Comparable {
 	public void removeNull(String propertyName) {
 		OAObjectInfoDelegate.setPrimitiveNull(this, propertyName, false);
 	}
-	
+
 	public boolean getPrimitiveNull(String prop) {
 		boolean b = OAObjectReflectDelegate.getPrimitiveNull(this, prop);
 		return b;
 	}
-	
+
 	public void setPrimitiveNull(String propertyName, boolean bNull) {
 		if (bNull) {
 			Object obj = getProperty(propertyName);
@@ -1636,14 +1636,12 @@ public class OAObject implements java.io.Serializable, Comparable {
 			result = ok.getObjectIds()[pos];
 		}
 
-		/* 20220917 commented out, unless this needs to return a primitive (not null)
 		if (result == null) {
 			OAPropertyInfo pi = oiTo.getPropertyInfo(linkToPropertyName);
 			if (pi.getIsPrimitive()) {
 				result = OAReflect.getEmptyPrimitive(pi.getClassType());
 			}
 		}
-		*/
 		return result;
 	}
 	/* 20220918 removed, replaced with new fkey* methods
@@ -1662,14 +1660,14 @@ public class OAObject implements java.io.Serializable, Comparable {
 			if (li.getType() != li.TYPE_ONE) {
 				continue;
 			}
-
+	
 			final String[] props = li.getUsesProperties();
 			if (props == null || props.length == 0) {
 				continue;
 			}
-
+	
 			int posFound = -1;
-
+	
 			final OAObjectInfo oix = li.getToObjectInfo();
 			final String[] toProps = oix.getIdProperties();
 			for (int i = 0; i < props.length && toProps != null && i < toProps.length; i++) {
@@ -1688,7 +1686,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 				Object[] objs = ok.getObjectIds();
 				if (objs != null && posFound < objs.length && !propertyValue.equals(objs[posFound])) {
 					ok = OAObjectKeyDelegate.createChangedObjectKey((OAObject) obj, toProps[posFound], propertyValue);
-
+	
 					Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
 					if (objx != null) {
 						OAObjectPropertyDelegate.setProperty(this, li.getName(), objx);
@@ -1706,7 +1704,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 				}
 				objs[posFound] = propertyValue;
 				OAObjectKey ok = new OAObjectKey(objs);
-
+	
 				Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
 				if (objx != null) {
 					OAObjectPropertyDelegate.setProperty(this, li.getName(), objx);
@@ -1717,7 +1715,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 				Object[] objs = new Object[toProps.length];
 				objs[posFound] = propertyValue;
 				OAObjectKey ok = new OAObjectKey(objs);
-
+	
 				Object objx = OAObjectCacheDelegate.getObject(li.getToClass(), ok);
 				if (objx != null) {
 					OAObjectPropertyDelegate.setProperty(this, li.getName(), objx);
@@ -1728,7 +1726,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		}
 		return bResult;
 	}
-
+	
 	// 20211210 used when a "real" property is also an Fkey
 	public Object getValueFromLink(String propertyName, Object defaultValue) {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
@@ -1736,12 +1734,12 @@ public class OAObject implements java.io.Serializable, Comparable {
 			if (li.getType() != li.TYPE_ONE) {
 				continue;
 			}
-
+	
 			final String[] props = li.getUsesProperties();
 			if (props == null || props.length == 0) {
 				continue;
 			}
-
+	
 			Object obj = OAObjectPropertyDelegate.getProperty(this, li.getName());
 			if (obj instanceof OAObject) {
 				// call getter on correct prop
@@ -1751,7 +1749,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 					if (!propertyName.equalsIgnoreCase(props[i])) {
 						continue;
 					}
-
+	
 					Object valx = ((OAObject) obj).getProperty(toProps[i]);
 					if (valx != null) {
 						removeNull(propertyName);
@@ -1764,7 +1762,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 					if (!propertyName.equalsIgnoreCase(props[i])) {
 						continue;
 					}
-
+	
 					Object[] ids = ok.getObjectIds();
 					if (ids != null && i < ids.length && ids[i] != null) {
 						Object valx = ids[i];
@@ -1777,7 +1775,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 			}
 			continue;
 		}
-
+	
 		if (defaultValue != null) {
 			if (!OAObjectInfoDelegate.isPrimitiveNull(this, propertyName)) {
 				removeNull(propertyName);

@@ -175,7 +175,7 @@ public class SalesOrderItem extends OAObject {
 		firePropertyChange(P_Location, old, this.location);
 	}
 
-	@OAProperty(displayName = "Custom Item", displayLength = 5, columnLength = 6, inputMask = "true;false;false", outputFormat = "true;false;false", columnName = "Custom", hasCustomCode = true)
+	@OAProperty(displayName = "Custom Item", displayLength = 5, columnLength = 6, format = "true;false;false", columnName = "Custom", hasCustomCode = true)
 	@OAColumn(sqlType = java.sql.Types.BOOLEAN)
 	public boolean getCustomItem() {
 		return customItem;

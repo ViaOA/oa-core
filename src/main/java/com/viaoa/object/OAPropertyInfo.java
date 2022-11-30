@@ -85,6 +85,8 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	private OAColumn oaColumn;
 
+	private String format;
+
 	public OAPropertyInfo() {
 	}
 
@@ -525,5 +527,13 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	public void setOAColumn(OAColumn c) {
 		this.oaColumn = c;
+	}
+
+	public String getFormat() {
+		return format;
+	}
+
+	public void setFormat(String format) {
+		this.format = format;
 	}
 }

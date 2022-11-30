@@ -235,6 +235,8 @@ public class OAAnnotationDelegate {
 			pi.setClassType(m.getReturnType());
 			pi.setTrackPrimitiveNull(pi.getIsPrimitive() && oaprop.trackPrimitiveNull());
 
+			pi.setFormat(oaprop.format());
+
 			OAColumn oacol = (OAColumn) m.getAnnotation(OAColumn.class);
 			if (oacol != null) {
 				pi.setOAColumn(oacol);

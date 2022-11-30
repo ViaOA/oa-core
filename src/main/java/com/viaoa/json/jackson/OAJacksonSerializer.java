@@ -387,13 +387,25 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		} else if (value instanceof Short) {
 			gen.writeNumberField(lowerName, (Short) value);
 		} else if (value instanceof OADate) {
-			String result = ((OADate) value).toString("yyyy-MM-dd");
+			String fmt = pi.getFormat();
+			if (OAString.isEmpty(fmt)) {
+				fmt = "yyyy-MM-dd";
+			}
+			String result = ((OADate) value).toString(fmt);
 			gen.writeStringField(lowerName, result);
 		} else if (value instanceof OATime) {
-			String result = ((OATime) value).toString("HH:mm:ss");
+			String fmt = pi.getFormat();
+			if (OAString.isEmpty(fmt)) {
+				fmt = "HH:mm:ss";
+			}
+			String result = ((OATime) value).toString(fmt);
 			gen.writeStringField(lowerName, result);
 		} else if (value instanceof OADateTime) {
-			String result = ((OADateTime) value).toString("yyyy-MM-dd'T'HH:mm:ss"); // "2020-12-26T19:21:09"
+			String fmt = pi.getFormat();
+			if (OAString.isEmpty(fmt)) {
+				fmt = "yyyy-MM-dd'T'HH:mm:ss";
+			}
+			String result = ((OADateTime) value).toString(fmt); // "2020-12-26T19:21:09"
 			gen.writeStringField(lowerName, result);
 		} else if (value instanceof byte[]) {
 			gen.writeBinaryField(lowerName, (byte[]) value);

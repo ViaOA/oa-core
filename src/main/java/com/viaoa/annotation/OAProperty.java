@@ -53,9 +53,7 @@ public @interface OAProperty {
 	@Deprecated
 	int columnLength() default 0;
 
-	String inputMask() default "";
-
-	String outputFormat() default "";
+	String format() default "";
 
 	boolean verify() default false;
 
