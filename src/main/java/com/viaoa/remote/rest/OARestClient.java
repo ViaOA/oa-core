@@ -631,7 +631,7 @@ public class OARestClient {
 	private static java.lang.reflect.Field fieldHttpsURLConnectMethod1;
 	private static java.lang.reflect.Field fieldHttpsURLConnectMethod2;
 
-	protected void callHttpEndPoint(OARestInvokeInfo invokeInfo)
+	public void callHttpEndPoint(OARestInvokeInfo invokeInfo)
 			throws Exception {
 
 		if (invokeInfo == null) {
@@ -724,13 +724,17 @@ public class OARestClient {
 		conn.setUseCaches(false);
 		conn.setAllowUserInteraction(false);
 
-		if (invokeInfo.byteArrayBody != null) {
-			conn.setRequestProperty("Content-Type", "application/octet-stream");
-			conn.setRequestProperty("Content-Length", "" + invokeInfo.byteArrayBody.length);
-		} else if (OAString.isNotEmpty(invokeInfo.jsonBody)) {
-			conn.setRequestProperty("Content-Type", "application/json");
-		} else if (OAString.isNotEmpty(invokeInfo.formData)) {
-			conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+		if (OAString.isEmpty(invokeInfo.contentType)) {
+			if (invokeInfo.byteArrayBody != null) {
+				conn.setRequestProperty("Content-Type", "application/octet-stream");
+				conn.setRequestProperty("Content-Length", "" + invokeInfo.byteArrayBody.length);
+			} else if (OAString.isNotEmpty(invokeInfo.textBody)) {
+				conn.setRequestProperty("Content-Type", "text/plain;charset=UTF-8");
+			} else if (OAString.isNotEmpty(invokeInfo.jsonBody)) {
+				conn.setRequestProperty("Content-Type", "application/json");
+			} else if (OAString.isNotEmpty(invokeInfo.formData)) {
+				conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+			}
 		}
 		conn.setRequestProperty("charset", "utf-8");
 		conn.setRequestProperty("Accept", "application/json, text/*;q=0.7");
@@ -767,6 +771,13 @@ public class OARestClient {
 			Writer writer = new OutputStreamWriter(out, "UTF-8");
 
 			writer.write(invokeInfo.jsonBody);
+			writer.close();
+			out.close();
+		} else if (OAString.isNotEmpty(invokeInfo.textBody)) {
+			OutputStream out = conn.getOutputStream();
+			Writer writer = new OutputStreamWriter(out, "UTF-8");
+
+			writer.write(invokeInfo.textBody);
 			writer.close();
 			out.close();
 		} else if (OAString.isNotEmpty(invokeInfo.formData)) {

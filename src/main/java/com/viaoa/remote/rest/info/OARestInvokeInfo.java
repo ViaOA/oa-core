@@ -61,6 +61,9 @@ public class OARestInvokeInfo {
 	 */
 	public String jsonBody;
 
+	public String contentType;
+	public String textBody;
+
 	/**
 	 * Uses http content type <br>
 	 * Used for params annotated as FormNameValue.
