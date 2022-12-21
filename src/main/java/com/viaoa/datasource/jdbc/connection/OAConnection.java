@@ -31,15 +31,15 @@ import com.viaoa.transaction.OATransaction;
 public class OAConnection {
 	private static Logger LOG = Logger.getLogger(OAConnection.class.getName());
 
-	protected Connection connection;
-	protected Vector<Pool> vecStatement = new Vector<Pool>(5, 5);
-	protected Vector<PreparedStatement> vecUsedPreparedStatement = new Vector<PreparedStatement>(5, 5);
-	protected Vector<PreparedStatement> vecUsedBatchPreparedStatement = new Vector<PreparedStatement>(5, 5);
+	protected final Connection connection;
+	protected final Vector<Pool> vecStatement = new Vector<Pool>(5, 5);
+	protected final Vector<PreparedStatement> vecUsedPreparedStatement = new Vector<PreparedStatement>(5, 5);
+	protected final Vector<PreparedStatement> vecUsedBatchPreparedStatement = new Vector<PreparedStatement>(5, 5);
 	protected volatile boolean bAvailable;
 	protected volatile boolean bGettingStatement;
 
-	private ConcurrentHashMap<String, ArrayList<PreparedStatement>> hmSqlToPreparedStatements = new ConcurrentHashMap<String, ArrayList<PreparedStatement>>();
-	private ConcurrentHashMap<PreparedStatement, String> hmPreparedStatementToSql = new ConcurrentHashMap<PreparedStatement, String>();
+	private final ConcurrentHashMap<String, ArrayList<PreparedStatement>> hmSqlToPreparedStatements = new ConcurrentHashMap<String, ArrayList<PreparedStatement>>();
+	private final ConcurrentHashMap<PreparedStatement, String> hmPreparedStatementToSql = new ConcurrentHashMap<PreparedStatement, String>();
 
 	volatile int cntGetStatement;
 	volatile int cntCreateStatement;
@@ -55,7 +55,7 @@ public class OAConnection {
 
 	public boolean isAllowingBatch() {
 		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
-		final boolean bIsForBatch = tran != null && tran.getBatchUpdate();
+		final boolean bIsForBatch = tran != null && tran.getUseBatch();
 		return bIsForBatch;
 	}
 
@@ -85,8 +85,8 @@ public class OAConnection {
 			return null;
 		}
 
-		if (bIsAllowingBatch && !bBatchUpdate) {
-			executeAnyBatches();
+		if (!bBatchUpdate && bIsAllowingBatch) {
+			executeOpenBatches();
 		}
 
 		synchronized (vecStatement) {
@@ -107,6 +107,7 @@ public class OAConnection {
 				pool.used = true;
 				pool.bIsForBatch = bBatchUpdate;
 				bGettingStatement = false;
+				pool.message = message;
 				return pool.statement;
 			}
 		}
@@ -167,38 +168,30 @@ public class OAConnection {
 		return bResult;
 	}
 
-	protected void executeAnyBatches() throws SQLException {
+	protected void executeOpenBatches() throws SQLException {
 		for (Pool pool : vecStatement) {
 			if (pool.used && pool.bIsForBatch) {
 				pool.statement.executeBatch();
-				pool.statement.clearBatch();
-				pool.used = false;
-				pool.bIsForBatch = false;
+				releaseStatement(pool.statement);
 			}
 		}
 		for (PreparedStatement ps : hmPreparedStatementToSql.keySet()) {
 			if (vecUsedBatchPreparedStatement.contains(ps)) {
 				ps.executeBatch();
-				ps.clearBatch();
-				vecUsedPreparedStatement.remove(ps);
-				vecUsedBatchPreparedStatement.remove(ps);
+				releasePreparedStatement(ps, true);
 			}
 		}
 	}
 
-	protected void clearAnyBatches() throws SQLException {
+	protected void clearOpenBatches() throws SQLException {
 		for (Pool pool : vecStatement) {
 			if (pool.used && pool.bIsForBatch) {
-				pool.statement.clearBatch();
-				pool.used = false;
-				pool.bIsForBatch = false;
+				releaseStatement(pool.statement);
 			}
 		}
 		for (PreparedStatement ps : hmPreparedStatementToSql.keySet()) {
 			if (vecUsedBatchPreparedStatement.contains(ps)) {
-				ps.executeBatch();
-				vecUsedPreparedStatement.remove(ps);
-				vecUsedBatchPreparedStatement.remove(ps);
+				releasePreparedStatement(ps, true);
 			}
 		}
 	}
@@ -223,7 +216,7 @@ public class OAConnection {
 		}
 
 		if (bIsAllowingBatch && !bBatchUpdate) {
-			executeAnyBatches();
+			executeOpenBatches();
 		}
 
 		ArrayList<PreparedStatement> alPreparedStatement;
@@ -303,7 +296,7 @@ public class OAConnection {
 			if (sql != null) {
 				ArrayList<PreparedStatement> al = hmSqlToPreparedStatements.get(sql);
 
-				if (al != null && ((bFound && !bCanBeReused) || al.size() > 5)) {
+				if (al != null && ((bFound && !bCanBeReused) || al.size() > 5 || hmSqlToPreparedStatements.size() > 25)) {
 					try {
 						if (!ps.isClosed()) {
 							ps.close();

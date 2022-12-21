@@ -18,7 +18,6 @@ import com.corptostore.model.oa.TransmitBatch;
 import com.corptostore.model.oa.propertypath.TesterStorePP;
 import com.corptostore.process.server.TransmitBatchDataGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.corptostore.delegate.oa.CorpToStoreDelegate;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
@@ -418,8 +417,8 @@ public class TesterDelegate {
 			store.setRegistered(ts.getHoldRegisteredDate());
 		}
 
-		OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
-		trans.setBatchUpdate(true);
+		OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_COMMITTED);
+		trans.setUseBatch(true);
 		trans.start();
 
 		try {
@@ -513,8 +512,8 @@ public class TesterDelegate {
 		OASelect<Store> sel = new OASelect<>(Store.class);
 		sel.select("", Store.P_StoreNumber);
 
-		OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
-		trans.setBatchUpdate(true);
+		OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_COMMITTED);
+		trans.setUseBatch(true);
 		trans.start();
 
 		try {

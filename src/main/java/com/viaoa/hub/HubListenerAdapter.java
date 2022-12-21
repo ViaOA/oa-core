@@ -151,4 +151,8 @@ public class HubListenerAdapter<T> implements HubListener<T> {
 	public String getDescription() {
 		return description;
 	}
+
+	@Override
+	public void beforeRefresh(HubEvent<T> e) {
+	}
 }

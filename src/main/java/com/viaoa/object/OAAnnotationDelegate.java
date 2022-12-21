@@ -1056,6 +1056,7 @@ public class OAAnnotationDelegate {
 			}
 			if (oaprop != null) {
 				column.decimalPlaces = oaprop.decimalPlaces();
+				column.json = oaprop.isJson();
 			}
 			if (oaid != null) {
 				column.primaryKey = true;

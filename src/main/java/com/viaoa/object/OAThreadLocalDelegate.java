@@ -67,6 +67,7 @@ public class OAThreadLocalDelegate {
 
 	private static final AtomicInteger TotalDontAdjustHub = new AtomicInteger();
 	private static final AtomicInteger TotalJackson = new AtomicInteger();
+	private static final AtomicInteger TotalIsRefreshing = new AtomicInteger();
 
 	protected static OAThreadLocal getThreadLocal(boolean bCreateIfNull) {
 		OAThreadLocal ti = threadLocal.get();
@@ -1139,8 +1140,8 @@ public class OAThreadLocalDelegate {
 	    if (sc != null) setRemoteMultiplexerClient(sc.getRemoteMultiplexerClient());
 	    else setRemoteMultiplexerClient(null);
 	}
-	
-	
+
+
 	public static RemoteMultiplexerClient getRemoteMultiplexerClient() {
 	    RemoteMultiplexerClient mc;
 	    if (OAThreadLocalDelegate.TotalRemoteMultiplexerClient.get() == 0) {
@@ -1600,6 +1601,51 @@ public class OAThreadLocalDelegate {
 		boolean b2 = ti.bIsSyncThread;
 		ti.bIsSyncThread = b;
 		return b2;
+	}
+
+	public static boolean isRefreshing() {
+		boolean b;
+		if (OAThreadLocalDelegate.TotalIsRefreshing.get() == 0) {
+			b = false;
+		} else {
+			b = isRefreshing(OAThreadLocalDelegate.getThreadLocal(false));
+		}
+		return b;
+	}
+
+	protected static boolean isRefreshing(OAThreadLocal ti) {
+		if (ti == null) {
+			return false;
+		}
+		return ti.refreshing > 0;
+	}
+
+	public static void setRefreshing(boolean b) {
+		// LOG.finer(""+b);
+		setRefreshing(OAThreadLocalDelegate.getThreadLocal(b), b);
+	}
+
+	private static long msRefreshingObject;
+
+	protected static boolean setRefreshing(OAThreadLocal ti, boolean b) {
+		if (ti == null) {
+			return false;
+		}
+		int x, x2;
+		boolean bPreviousValue;
+		if (b) {
+			bPreviousValue = (ti.refreshing > 0);
+			x = ++ti.refreshing;
+			x2 = OAThreadLocalDelegate.TotalIsRefreshing.getAndIncrement();
+		} else {
+			bPreviousValue = (ti.refreshing > 0);
+			x = --ti.refreshing;
+			x2 = OAThreadLocalDelegate.TotalIsRefreshing.decrementAndGet();
+		}
+		if (x > 50 || x < 0 || x2 > 50 || x2 < 0) {
+			msRefreshingObject = throttleLOG("TotalIsRefreshing=" + x2 + ", ti=" + x, msRefreshingObject);
+		}
+		return bPreviousValue;
 	}
 
 }

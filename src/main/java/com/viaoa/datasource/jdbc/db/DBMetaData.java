@@ -61,6 +61,7 @@ public class DBMetaData extends OAObject {
 	public boolean supportsAutoAssign; // if true, db assigns id
 	public String autoAssignValue;
 	public String autoAssignType; // "optional" column type for auto assign
+	public String jsonCast; // ex:  postgres needs '::jsonb'
 
 	// 20200511 uses statement.setMaxRows(x) instead
 	// public String maxString; // ex: "LIMIT ?"; // use "?" to have the max amount entered
@@ -75,7 +76,7 @@ public class DBMetaData extends OAObject {
 	/*
 	    DERBY:                   "org.apache.derby.jdbc.EmbeddedDriver"
 	    MS SQL Server            "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-	
+
 	    ODBC Bridge:             "sun.jdbc.odbc.JdbcOdbcDriver"
 	    INET (SQL-SERVER):       "com.inet.tds.TdsDriver"
 	    WEBLOGIC (SQL-SERVER):   "weblogic.jdbc.mssqlserver4.Driver"
@@ -89,7 +90,7 @@ public class DBMetaData extends OAObject {
 	/*
 	    Derby:                   "jdbc:derby:database"   to create: "jdbc:derby:database;create=true;collation=TERRITORY_BASED"
 	    MS SQL Server            "jdbc:sqlserver://localhost;port=1433;database=vetjobs;sendStringParametersAsUnicode=false;SelectMethod=cursor;ConnectionRetryCount=2;ConnectionRetryDelay=2"
-	
+
 	    INET (SQL-SERVER):       "jdbc:inetdae:127.0.0.1:1433?database=northwind&sql7=true"
 	    WEBLOGIC (SQL-SERVER):   "jdbc:weblogic:mssqlserver4:northwind@127.0.0.1:1433"
 	    ODBC-BRIDGE:             "jdbc:odbc:northwind"

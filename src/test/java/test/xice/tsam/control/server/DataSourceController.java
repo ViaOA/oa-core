@@ -91,7 +91,7 @@ public class DataSourceController {
 	public DataSourceController(ServerRoot serverRoot, Hub<ClientRoot> hubClientRoot) throws Exception {
 		this.serverRoot = serverRoot;
 		this.hubClientRoot = hubClientRoot;
-		// OAObject.setFinalizeSave(true); 
+		// OAObject.setFinalizeSave(true);
 
 		cacheFileName = Resource.getValue(Resource.DB_CacheFileName);
 		String driver = Resource.getValue(Resource.DB_JDBC_Driver);
@@ -114,7 +114,7 @@ public class DataSourceController {
 		if (!Resource.getBoolean(Resource.INI_SaveDataToDatabase, true)) {
 			LOG.fine("NOT saving to Database, " + Resource.INI_SaveDataToDatabase + " is false");
 			for (int i = 0; i < 20; i++) {
-				// System.out.println("DataSourceController. is NOT! saving to Database, " + Resource.INI_SaveDataToDatabase + " is false");        
+				// System.out.println("DataSourceController. is NOT! saving to Database, " + Resource.INI_SaveDataToDatabase + " is false");
 			}
 		}
 
@@ -485,7 +485,7 @@ public class DataSourceController {
 		if (dataFile.exists()) {
 			String backupName = null;
 
-			// save to daily/hourly/5minute 
+			// save to daily/hourly/5minute
 			OADate d = new OADate();
 			if (dateLastSerialize == null || !d.equals(dateLastSerialize)) {
 				dateLastSerialize = d;
@@ -716,7 +716,7 @@ public class DataSourceController {
 		}
 		System.out.println(cacheCnt + " objects updated from Cache");
 
-		OATransaction tran = new OATransaction(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
+		OATransaction tran = new OATransaction(java.sql.Connection.TRANSACTION_READ_COMMITTED);
 		try {
 			tran.start();
 			serverRoot.save(OAObject.CASCADE_ALL_LINKS);
@@ -731,7 +731,7 @@ public class DataSourceController {
 
 	/**
 	 * Calls verifyDatabaseTables to check for table/index/file corruption.
-	 * 
+	 *
 	 * @return true if database is good, else false if there is corruption.
 	 * @see #forwardRestoreBackupDatabase() to restore from backup and include log files for zero data loss.
 	 * @see #backupDatabase(String) to perform database files, and include log files - which will enable forward restores.
@@ -804,7 +804,7 @@ public class DataSourceController {
 
 	/**
 	 * This will make a backup of the live database, with rollforward support. The database will be under backupDirectory
-	 * 
+	 *
 	 * @param backupDirectory example: DB20100428
 	 * @throws Exception
 	 */
@@ -834,8 +834,8 @@ public class DataSourceController {
 			// this is the commad to disable log archive.  The '1' will delete previous log files
 			// SYSCS_UTIL.SYSCS_DISABLE_LOG_ARCHIVE_MODE(1)
 
-			// use this to restore 
-			// connect 'jdbc:derby:wombat;rollForwardRecoveryFrom=d:/backup/wombat';            
+			// use this to restore
+			// connect 'jdbc:derby:wombat;rollForwardRecoveryFrom=d:/backup/wombat';
 
 			LOG.config("Completed Database backup to " + backupDirectory);
 		} finally {
@@ -870,7 +870,7 @@ public class DataSourceController {
 		s = OAString.field(s, ":", OAString.dcount(s, ":"));
 		jdbcUrl += "/" + s;
 
-		/// this will open the database and perform a rollForward 
+		/// this will open the database and perform a rollForward
 		Connection connection = DriverManager.getConnection(jdbcUrl, dbmd.user, dbmd.password);
 		connection.close();
 
@@ -992,8 +992,8 @@ public class DataSourceController {
 				cmd = SSHExecuteDelegate.getSSHCommandLine(mc, mc.getStartScript());
 				cmd += " > console/start"+cnt+".log 2>&1 &";
 				pw.println("# START: "+cmd);
-				
-				cmd = SSHExecuteDelegate.getSSHCommandLine(mc, mc.getStopScript());                        
+
+				cmd = SSHExecuteDelegate.getSSHCommandLine(mc, mc.getStopScript());
 				cmd += " > console/stop"+cnt+".log 2>&1 &";
 				*/
 				pw.println("#  STOP: " + cmd);
@@ -1010,13 +1010,13 @@ public class DataSourceController {
 	/*
 	public static void main(String[] args) throws Exception {
 	    DataSourceController dsc = new DataSourceController();
-	
+
 	    dsc.loadServerRoot();
-	    
+
 	    // dsc.backupDatabase("c:\\temp\\dbBackDerby");
 	    dsc.isDataSourceReady();
 	    dsc.isDatabaseCorrupted();
-	    
+
 	    System.out.println("Done");
 	}
 	*/

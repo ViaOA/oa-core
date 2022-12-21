@@ -10,7 +10,6 @@
 */
 package com.viaoa.datasource.jdbc.delegate;
 
-import java.io.StringBufferInputStream;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Vector;
@@ -60,6 +59,13 @@ public class UpdateDelegate {
 	}
 
 	protected static void update(OADataSourceJDBC ds, OAObject oaObj, Class clazz, String[] includeProperties, String[] excludeProperties) {
+		if (ds.getIgnoreWrites()) {
+			return;
+		}
+		if (ds.getReadOnly()) {
+			throw new RuntimeException("datasource is set to readOnly=true");
+		}
+
 		Class cx = clazz.getSuperclass();
 		if (cx != null && !cx.equals(OAObject.class)) {
 			update(ds, oaObj, cx, includeProperties, excludeProperties);
@@ -316,8 +322,13 @@ public class UpdateDelegate {
 				}
 				for (int i = 0; i < sqlParams.length; i++) {
 					if (sqlParams[i] instanceof String) {
+						// 20221206
+						preparedStatement.setString(i + 1, (String) sqlParams[i]);
+
+						/*was
 						preparedStatement.setAsciiStream(	i + 1, new StringBufferInputStream((String) sqlParams[i]),
 															((String) sqlParams[i]).length());
+						*/
 					} else {
 						preparedStatement.setBytes(i + 1, (byte[]) (sqlParams[i]));
 					}
@@ -360,6 +371,14 @@ public class UpdateDelegate {
 		if (masterObject == null) {
 			return;
 		}
+
+		if (ds.getIgnoreWrites()) {
+			return;
+		}
+		if (ds.getReadOnly()) {
+			throw new RuntimeException("datasource is set to readOnly=true");
+		}
+
 		DBMetaData dbmd = ds.getDBMetaData();
 		// get link table (if one exists) and fkeys from masterTable to linkTable
 		Table fromTable = null;

@@ -45,7 +45,12 @@ public abstract class OADataSource implements OADataSourceInterface {
 	protected boolean bLast;
 	protected boolean bAssignNumberOnCreate = false; // if true, then Id will be assigned when object is created, else when saved
 	protected String guid; // seed value to use when creating GUID for seq assigned object keys
-	protected boolean bEnable = true;
+
+	protected boolean bEnabled = true;
+
+	private boolean bReadOnly;
+
+	private boolean bIgnoreWrites;
 
 	private static volatile OADataSource[] dsAll;
 
@@ -86,7 +91,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 			if (ds[i] == null) {
 				continue;
 			}
-			if (!ds[i].bEnable) {
+			if (!ds[i].bEnabled) {
 				continue;
 			}
 
@@ -120,16 +125,17 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Used to turn on/off a DataSource. If false, then requests to OADataSource.getDataSource will not return a disabled dataSource.
+	 * Used to turn on/off a DataSource from being found in datasource lookup.<br>
+	 * If false, then requests to OADataSource.getDataSource will not return a disabled dataSource.
 	 */
 	@Override
-	public void setEnabled(boolean b) {
-		this.bEnable = b;
+	public boolean getEnabled() {
+		return this.bEnabled;
 	}
 
 	@Override
-	public boolean getEnabled() {
-		return this.bEnable;
+	public void setEnabled(boolean b) {
+		this.bEnabled = b;
 	}
 
 	/**
@@ -858,13 +864,45 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	public boolean isAllowingBatch() {
 		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
-		final boolean bIsForBatch = tran != null && tran.getBatchUpdate();
+		final boolean bIsForBatch = tran != null && tran.getUseBatch();
 		return bIsForBatch;
 	}
 
 	public boolean isInTransaction() {
 		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
 		return (tran != null);
+	}
+
+	/**
+	 * Flag to know if datasource is read only.
+	 *
+	 * @param readOnly if false, then writes (insert/update/delete) will throw an exception.
+	 */
+	public void setReadOnly(boolean readOnly) {
+		this.bReadOnly = readOnly;
+	}
+
+	public boolean getReadOnly() {
+		return bReadOnly;
+	}
+
+	/**
+	 * Flag to know if datasource should ignore writes.
+	 *
+	 * @param ignoreWrites if true, then writes (insert/update/delete) will be ignored.
+	 */
+	public void setIgnoreWrites(boolean ignoreWrites) {
+		this.bIgnoreWrites = ignoreWrites;
+	}
+
+	public boolean getIgnoreWrites() {
+		if (bIgnoreWrites) {
+			final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+			if (tran != null && tran.getAllowWritesIfDsIsReadonly()) {
+				return false;
+			}
+		}
+		return bIgnoreWrites;
 	}
 
 }

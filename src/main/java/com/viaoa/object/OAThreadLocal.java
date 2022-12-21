@@ -122,4 +122,7 @@ public class OAThreadLocal {
 
 	// hubs that Hub.setAO should not adjust when getting pos
 	public Hub[] dontAdjustHubs;
+
+	protected int refreshing; // used by Hub.refresh, so that all queries can use "dirty" mode
+
 }

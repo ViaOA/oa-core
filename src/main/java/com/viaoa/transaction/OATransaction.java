@@ -16,10 +16,13 @@ import java.util.HashMap;
 import com.viaoa.object.OAThreadLocalDelegate;
 
 /**
- * Creates a transaction for a Thread. example: <code>
+ * Creates a transaction for a Thread. <br>
+ * example:
+ * <p>
+ * <code>
 
-    OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_SERIALIZABLE);
-    trans.setBatchInsertAndUpdate(true);
+    OATransaction trans = new OATransaction();
+    trans.setUseBatch(true);
     trans.start();
     ..
     trans.commit();
@@ -34,7 +37,9 @@ public class OATransaction {
 	private final int transactionLevel;
 	private final ArrayList<OATransactionListener> al = new ArrayList<OATransactionListener>();
 
-	private boolean bBatchUpdate;
+	private boolean bUseBatch;
+
+	private boolean bAllowWritesIfDsIsReadonly;
 
 	/*  java.sql.Connection isolation levels
 	    java.sql.Connection.X<br>
@@ -48,16 +53,28 @@ public class OATransaction {
 		this.transactionLevel = transactionLevel;
 	}
 
+	public OATransaction() {
+		this(java.sql.Connection.TRANSACTION_READ_COMMITTED);
+	}
+
 	public int getTransactionIsolationLevel() {
 		return transactionLevel;
 	}
 
-	public void setBatchUpdate(boolean b) {
-		this.bBatchUpdate = b;
+	public void setUseBatch(boolean b) {
+		this.bUseBatch = b;
 	}
 
-	public boolean getBatchUpdate() {
-		return this.bBatchUpdate;
+	public boolean getUseBatch() {
+		return this.bUseBatch;
+	}
+
+	public void setAllowWritesIfDsIsReadonly(boolean b) {
+		bAllowWritesIfDsIsReadonly = b;
+	}
+
+	public boolean getAllowWritesIfDsIsReadonly() {
+		return bAllowWritesIfDsIsReadonly;
 	}
 
 	public void start() {
@@ -112,4 +129,11 @@ public class OATransaction {
 	public Object remove(Object key) {
 		return hm.remove(key);
 	}
+
+	public void executeOpenBatches() {
+		for (OATransactionListener tl : al) {
+			tl.executeOpenBatches(this);
+		}
+	}
+
 }

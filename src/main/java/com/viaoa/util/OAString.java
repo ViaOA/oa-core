@@ -14,6 +14,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -1176,11 +1177,19 @@ public class OAString {
 		return count(str, sep) + 1;
 	}
 
+	public static int countMatches(String str, String sep) {
+		return dcount(str, sep);
+	}
+
 	public static int dcount(String str, char sep) {
 		if (str == null || str.length() == 0) {
 			return 0;
 		}
 		return count(str, sep + "") + 1;
+	}
+
+	public static int countMatches(String str, char sep) {
+		return dcount(str, sep);
 	}
 
 	/**
@@ -1205,6 +1214,38 @@ public class OAString {
 			pos += x;
 		}
 		return cnt;
+	}
+
+	public static String padStart(String value, int amount) {
+		return pad(value, amount, false, ' ');
+	}
+
+	public static String leftPad(String value, int amount) {
+		return pad(value, amount, false, ' ');
+	}
+
+	public static String padStart(String value, int amount, char padChar) {
+		return pad(value, amount, false, padChar);
+	}
+
+	public static String leftPad(String value, int amount, char padChar) {
+		return pad(value, amount, false, padChar);
+	}
+
+	public static String padEnd(String value, int amount) {
+		return pad(value, amount, true, ' ');
+	}
+
+	public static String padRight(String value, int amount) {
+		return pad(value, amount, true, ' ');
+	}
+
+	public static String rightEnd(String value, int amount, char padChar) {
+		return pad(value, amount, true, padChar);
+	}
+
+	public static String padEnd(String value, int amount, char padChar) {
+		return pad(value, amount, true, padChar);
 	}
 
 	/**
@@ -2137,6 +2178,10 @@ public class OAString {
 		return truncate(orig, width);
 	}
 
+	public static String abbreviate(String orig, int width) {
+		return truncate(orig, width);
+	}
+
 	public static String truncate(String orig, int width) {
 		if (orig == null) {
 			return null;
@@ -2605,12 +2650,20 @@ public class OAString {
 		return !isEmpty(obj, false);
 	}
 
+	public static boolean isNotNullAndNotEmpty(Object obj) {
+		return !isEmpty(obj, false);
+	}
+
 	/**
 	 * @return If null, then returns true; if String and length is 0, returns true; if array and length == 0, returns true. all others
 	 *         return false.
 	 * @see OACompare#isEmpty(Object)
 	 */
 	public static boolean isEmpty(Object obj) {
+		return isEmpty(obj, false);
+	}
+
+	public static boolean isNullOrEmpty(Object obj) {
 		return isEmpty(obj, false);
 	}
 
@@ -3226,25 +3279,36 @@ public class OAString {
 		return defaultString(str, "");
 	}
 
+	public static String nonNull(String str) {
+		return defaultString(str, "");
+	}
+
+	public static String nonNull(String str, String defaultValue) {
+		return defaultString(str, defaultValue);
+	}
+
 	public static String toNonNull(String str) {
-		if (str == null) {
-			return "";
-		}
-		return str;
+		return defaultString(str, "");
+	}
+
+	public static String toNonNull(String str, String defaultValue) {
+		return defaultString(str, defaultValue);
 	}
 
 	public static String getNonNull(String str) {
-		if (str == null) {
-			return "";
-		}
-		return str;
+		return defaultString(str, "");
+	}
+
+	public static String getNonNull(String str, String defaultValue) {
+		return defaultString(str, defaultValue);
 	}
 
 	public static String convertToNonNull(String str) {
-		if (str == null) {
-			return "";
-		}
-		return str;
+		return defaultString(str, "");
+	}
+
+	public static String convertToNonNull(String str, String defaultValue) {
+		return defaultString(str, defaultValue);
 	}
 
 	/**
@@ -3275,17 +3339,11 @@ public class OAString {
 	 * Convert to a string, if null then it returns ""
 	 */
 	public static String notNull(String s) {
-		if (s == null) {
-			s = "";
-		}
-		return s;
+		return defaultString(s, "");
 	}
 
 	public static String notNull(String str, String strIfNull) {
-		if (str == null) {
-			return strIfNull;
-		}
-		return str;
+		return defaultString(str, strIfNull);
 	}
 
 	public static String notEmpty(String str, String strIfEmpty) {
@@ -3293,6 +3351,24 @@ public class OAString {
 			return strIfEmpty;
 		}
 		return str;
+	}
+
+	public static String subString(String s, int pos) {
+		return substring(s, pos);
+	}
+
+	public static String substring(String s, int pos) {
+		if (s == null) {
+			return null;
+		}
+		if (s.length() <= pos) {
+			return "";
+		}
+		return s.substring(pos);
+	}
+
+	public static String subString(String s, int pos1, int pos2) {
+		return substring(s, pos1, pos2);
 	}
 
 	/**
@@ -3917,6 +3993,203 @@ public class OAString {
 
 		int xx = 4;
 		xx++;
+	}
+
+	public static int indexOf(String value, String searchValue) {
+		if (value == null || searchValue == null) {
+			return -1;
+		}
+		return value.indexOf(searchValue);
+	}
+
+	public static int indexOf(String value, String searchValue, int startPos) {
+		return indexOf(value, searchValue, startPos, false);
+	}
+
+	public static int indexOf(String value, String searchValue, int startPos, boolean bIgnoreCase) {
+		if (value == null || searchValue == null) {
+			return -1;
+		}
+		if (startPos >= searchValue.length()) {
+			return -1;
+		}
+		if (startPos < 0) {
+			startPos = 0;
+		}
+		if (bIgnoreCase) {
+			return value.toLowerCase().indexOf(searchValue.toLowerCase(), startPos);
+		}
+		return value.indexOf(searchValue, startPos);
+	}
+
+	public static int lastIndexOf(String value, String searchValue) {
+		return lastIndexOf(value, searchValue, false);
+	}
+
+	public static int lastIndexOf(String value, String searchValue, boolean bIgnoreCase) {
+		if (value == null || searchValue == null) {
+			return -1;
+		}
+		if (bIgnoreCase) {
+			return value.toLowerCase().lastIndexOf(searchValue.toLowerCase());
+		}
+		return value.lastIndexOf(searchValue);
+	}
+
+	public static boolean contains(String value, String searchValue, int startPos, boolean bIgnoreCase) {
+		return indexOf(value, searchValue, startPos, bIgnoreCase) >= 0;
+	}
+
+	public static boolean contains(String value, String searchValue, int startPos) {
+		return indexOf(value, searchValue, startPos, false) >= 0;
+	}
+
+	public static boolean contains(String value, String searchValue) {
+		return indexOf(value, searchValue, 0, false) >= 0;
+	}
+
+	public static String getLeft(String value, int amount) {
+		return substring(value, 0, amount);
+	}
+
+	public static String left(String value, int amount) {
+		return substring(value, 0, amount);
+	}
+
+	public static String getRight(String value, int amount) {
+		return right(value, amount);
+	}
+
+	public static String right(String value, int amount) {
+		if (value == null) {
+			return null;
+		}
+		int len = value.length();
+		if (len <= amount) {
+			return value;
+		}
+		return substring(value, len - amount, amount);
+	}
+
+	public static String mid(String value, int amount) {
+		if (value == null) {
+			return null;
+		}
+		if (amount < 1) {
+			return "";
+		}
+		int len = value.length();
+		if (len <= amount) {
+			return value;
+		}
+
+		int midPos = len / 2;
+
+		String s = substring(value, midPos - (amount / 2), amount);
+		return s;
+	}
+
+	public static String getMid(String value, int amount) {
+		return mid(value, amount);
+	}
+
+	public static String getMiddle(String value, int amount) {
+		return mid(value, amount);
+	}
+
+	public static String center(String value, int amount) {
+		return mid(value, amount);
+	}
+
+	public static String getCnter(String value, int amount) {
+		return mid(value, amount);
+	}
+
+	public static String upper(String value) {
+		if (value == null) {
+			return null;
+		}
+		return value.toUpperCase();
+	}
+
+	public static String toUpperCase(String value) {
+		return upper(value);
+	}
+
+	public static String getUpperCase(String value) {
+		return upper(value);
+	}
+
+	public static String lower(String value) {
+		if (value == null) {
+			return null;
+		}
+		return value.toLowerCase();
+	}
+
+	public static String toLowerCase(String value) {
+		return lower(value);
+	}
+
+	public static String getLowerCase(String value) {
+		return lower(value);
+	}
+
+	public static boolean startsWith(String value, String searchValue) {
+		return startsWith(value, searchValue, false);
+	}
+
+	public static boolean startsWith(String value, String searchValue, boolean bIgnoreCase) {
+		int x = indexOf(value, searchValue, 0, bIgnoreCase);
+		return x == 0;
+	}
+
+	public static boolean endsWith(String value, String searchValue) {
+		return endsWith(value, searchValue, false);
+	}
+
+	public static boolean endsWith(String value, String searchValue, boolean bIgnoreCase) {
+		if (value == null) {
+			return false;
+		}
+		if (searchValue == null) {
+			return false;
+		}
+		return value.endsWith(searchValue);
+	}
+
+	public static String appendIfMissing(String value, String searchValue) {
+		return appendIfMissing(value, searchValue, false);
+	}
+
+	public static String appendIfMissing(String value, String searchValue, boolean bIgnoreCase) {
+		if (searchValue == null) {
+			return value;
+		}
+		if (!endsWith(value, searchValue, bIgnoreCase)) {
+			if (value == null) {
+				return searchValue;
+			}
+			return value + searchValue;
+		}
+		return value;
+	}
+
+	public static String prefixIfMissing(String value, String searchValue) {
+		if (searchValue == null) {
+			return value;
+		}
+		if (!startsWith(value, searchValue)) {
+			if (value == null) {
+				return searchValue;
+			}
+			return searchValue + value;
+		}
+		return value;
+	}
+
+	public static String toString(byte[] bytes) {
+		return new String(bytes, Charset.defaultCharset());
 	}
 
 }

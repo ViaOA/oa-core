@@ -2348,6 +2348,20 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		});
 	}
 
+	// hub.onBeforeRefresh((e) -> reselect());
+
+	public void onBeforeRefresh(HubOnEventInterface onEvent) {
+		if (onEvent == null) {
+			return;
+		}
+		addHubListener(new HubListenerAdapter() {
+			@Override
+			public void beforeRefresh(HubEvent e) {
+				onEvent.onEvent(e);
+			}
+		});
+	}
+
 	public void onNewList(HubOnEventInterface onEvent) {
 		if (onEvent == null) {
 			return;

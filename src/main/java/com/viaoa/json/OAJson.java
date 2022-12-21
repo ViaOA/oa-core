@@ -200,6 +200,17 @@ public class OAJson {
 		return json;
 	}
 
+	public String convertToPretty(String json) throws JsonProcessingException {
+		return format(json);
+	}
+
+	public String format(String json) throws JsonProcessingException {
+		ObjectMapper mapper = createObjectMapper();
+		Object jsonObject = mapper.readValue(json, Object.class);
+		String prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
+		return prettyJson;
+	}
+
 	/**
 	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */
@@ -258,12 +269,17 @@ public class OAJson {
 	/**
 	 * Read JSON into an existing root Object.
 	 */
+	public void readIntoObject(final String json, OAObject root) throws JsonProcessingException {
+		readIntoObject(json, root, true);
+	}
+
 	public void readIntoObject(final String json, OAObject root, final boolean bUseValidation) throws JsonProcessingException {
 		if (root == null) {
 			return;
 		}
 		this.root = root;
 		readObject(json, root.getClass(), bUseValidation);
+		this.root = null;
 	}
 
 	/**

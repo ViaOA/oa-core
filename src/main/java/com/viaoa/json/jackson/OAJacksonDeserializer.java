@@ -343,6 +343,10 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 			String propertyName = oaj.getPropertyNameCallback(objNew, pi.getLowerName());
 
 			jn = node.get(propertyName);
+			if (jn == null) {
+				continue;
+			}
+
 			Object objx = convert(jn, pi);
 
 			objx = oaj.getPropertyValueCallback(objNew, pi.getLowerName(), objx);

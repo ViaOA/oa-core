@@ -268,11 +268,13 @@ public class OAObjectEventDelegate {
 
 				if (propInfo.getUnique() && newObj != null && !propInfo.getId() && !OAObjectDSDelegate.isAssigningId(oaObj)) {
 
-					// 20180629
-					OAObject obj = OAObjectUniqueDelegate.getUnique(oaObj.getClass(), propertyName, newObj, false);
-					if (obj != null && obj != oaObj) {
-						throw new RuntimeException("property is unique, and value already assigned to another object. Class="
-								+ oaObj.getClass().getSimpleName() + ", property=" + propertyName + ", value=" + newObj);
+					if (!bIsLoading) { // 20221219
+						// 20180629
+						OAObject obj = OAObjectUniqueDelegate.getUnique(oaObj.getClass(), propertyName, newObj, false);
+						if (obj != null && obj != oaObj) {
+							throw new RuntimeException("property is unique, and value already assigned to another object. Class="
+									+ oaObj.getClass().getSimpleName() + ", property=" + propertyName + ", value=" + newObj);
+						}
 					}
 
 					/*was:
@@ -608,6 +610,9 @@ public class OAObjectEventDelegate {
 		if (!bIsCheckingRef && !bUnknownValues) {
 			if (linkInfo != null) {
 				for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
+					if (fki.getFromPropertyInfo() == null) {
+						continue;
+					}
 					Object oldValue = null;
 					if (oldObj instanceof OAObject) {
 						oldValue = oldObj == null ? null : ((OAObject) oldObj).getProperty(fki.getToPropertyInfo().getName());

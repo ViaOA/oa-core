@@ -47,6 +47,8 @@ public class Column { // need to select all with properyName!=null
 
 	public boolean unicode;
 
+	public boolean json;
+
 	public boolean fullTextIndex;
 
 	public Link fkeyLink; // 20090301 set by Table.setColumns() & Table.setLinks() if this column is a fkey in a link

@@ -643,8 +643,24 @@ public class HubSelectDelegate {
 		return true;
 	}
 
-	// 20220311
+	// 20221209
 	public static boolean refresh(final Hub thisHub) {
+
+		boolean b = false;
+
+		OAThreadLocalDelegate.setRefreshing(true);
+		try {
+			HubEventDelegate.fireBeforeRefreshEvent(thisHub);
+			b = _refresh(thisHub);
+		} finally {
+			OAThreadLocalDelegate.setRefreshing(false);
+		}
+
+		return b;
+	}
+
+	// 20220311
+	protected static boolean _refresh(final Hub thisHub) {
 		if (thisHub == null) {
 			return false;
 		}

@@ -127,7 +127,7 @@ public class DBMetaDataDelegate {
 			dbmd.setDatesIncludeTime(false);
 			dbmd.setFkeysAutoCreateIndex(false);
 			// dbmd.setMaxString("LIMIT ?");
-
+			dbmd.jsonCast = "::jsonb";
 			dbmd.setSupportsAutoAssign(true);
 			dbmd.setAutoAssignType("SERIAL");
 

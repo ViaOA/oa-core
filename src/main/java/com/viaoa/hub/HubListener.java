@@ -195,4 +195,12 @@ public interface HubListener<T> extends EventListener {
 	public InsertLocation getLocation();
 
 	public void afterLoad(HubEvent<T> e);
+
+	/**
+	 * Event sent from Hub when a refresh is called.
+	 *
+	 * @see Hub#select Hub.select
+	 */
+	public void beforeRefresh(HubEvent<T> e);
+
 }

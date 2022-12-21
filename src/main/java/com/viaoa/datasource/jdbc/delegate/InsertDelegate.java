@@ -10,7 +10,6 @@
 */
 package com.viaoa.datasource.jdbc.delegate;
 
-import java.io.StringBufferInputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -52,6 +51,12 @@ public class InsertDelegate {
 	}
 
 	private static void insert(OADataSourceJDBC ds, OAObject oaObj, Class clazz, boolean bIncludeRefereces) {
+		if (ds.getIgnoreWrites()) {
+			return;
+		}
+		if (ds.getReadOnly()) {
+			throw new RuntimeException("datasource is set to readOnly=true");
+		}
 		Class c = clazz.getSuperclass();
 		if (c != null && !c.equals(OAObject.class)) {
 			insert(ds, oaObj, c, bIncludeRefereces);
@@ -59,20 +64,20 @@ public class InsertDelegate {
 
 		Column columnSkip = null;
 		if (!ds.getAssignIdOnCreate() && ds.getDBMetaData().supportsAutoAssign) {
-    		Table table = ds.getDatabase().getTable(clazz);
-    		if (table != null) {
-    			Column[] columns = table.getColumns();
-    			for (int i = 0; columns != null && i < columns.length; i++) {
-    			    if (columns[i].assignNextNumber) {
-    					if (oaObj.isNull(columns[i].propertyName)) {
-    					    columnSkip = columns[i];  // assigned by DS
-    					}
-                        break;
-    				}
-    			}
-    		}
+			Table table = ds.getDatabase().getTable(clazz);
+			if (table != null) {
+				Column[] columns = table.getColumns();
+				for (int i = 0; columns != null && i < columns.length; i++) {
+					if (columns[i].assignNextNumber) {
+						if (oaObj.isNull(columns[i].propertyName)) {
+							columnSkip = columns[i]; // assigned by DS
+						}
+						break;
+					}
+				}
+			}
 		}
-		
+
 		Object[] objs = null;
 		try {
 			objs = getInsertSQL(ds, oaObj, clazz, columnSkip, bIncludeRefereces);
@@ -175,6 +180,11 @@ public class InsertDelegate {
 				values.append(", ");
 			}
 			str.append(dbmd.leftBracket + column.columnName.toUpperCase() + dbmd.rightBracket);
+
+			// 20221206
+			if (value != null && column.json && OAString.isNotEmpty(dbmd.jsonCast)) {
+				value += dbmd.jsonCast;
+			}
 			values.append(value);
 
 			// check for case sensitive column
@@ -253,9 +263,9 @@ public class InsertDelegate {
 		if (oi.getUseDataSource()) {
 		    OAObject.OALOG.fine(s);
 		}
-
+		
 		LOG.fine(s);
-
+		
 		DBLogDelegate.logInsert(sqlInsert, params);
 		*/
 		DBLogDelegate.logInsert(sqlInsert, params);
@@ -276,8 +286,12 @@ public class InsertDelegate {
 
 				for (int i = 0; i < params.length; i++) {
 					if (params[i] instanceof String) {
+						// 20221206
+						preparedStatement.setString(i + 1, (String) params[i]);
+						/*was
 						preparedStatement.setAsciiStream(	i + 1, new StringBufferInputStream((String) params[i]),
 															((String) params[i]).length());
+						*/
 					} else {
 						preparedStatement.setBytes(i + 1, (byte[]) (params[i]));
 					}

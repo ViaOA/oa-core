@@ -311,7 +311,7 @@ public class ConnectionPool implements Runnable {
 		Class.forName(dbmd.driverJDBC).newInstance();
 		Connection connection = DriverManager.getConnection(dbmd.urlJDBC, dbmd.user, dbmd.password);
 		connection.setAutoCommit(true);
-		connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
+		connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_COMMITTED);
 		OAConnection oacon = new OAConnection(connection);
 		return oacon;
 	}
@@ -325,7 +325,7 @@ public class ConnectionPool implements Runnable {
 				}
 				try {
 					connection.setAutoCommit(true);
-					connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
+					connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_COMMITTED);
 					con.bAvailable = true;
 				} catch (SQLException e) {
 					LOG.log(Level.WARNING, "releaseConnection() exception", e);
@@ -356,14 +356,14 @@ public class ConnectionPool implements Runnable {
 		}
 
 		@Override
-		public void commit(OATransaction t) {
+		public void commit(OATransaction tran) {
 			if (conx == null) {
 				return;
 			}
 			try {
-				final OATransaction tran = OAThreadLocalDelegate.getTransaction();
-				if (tran != null && tran.getBatchUpdate()) {
-					conx.executeAnyBatches();
+				// final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+				if (tran != null && tran.getUseBatch()) {
+					conx.executeOpenBatches();
 				}
 				conx.connection.commit();
 			} catch (SQLException e) {
@@ -374,21 +374,36 @@ public class ConnectionPool implements Runnable {
 		}
 
 		@Override
-		public void rollback(OATransaction t) {
+		public void rollback(OATransaction tran) {
 			if (conx == null) {
 				return;
 			}
 
 			try {
-				final OATransaction tran = OAThreadLocalDelegate.getTransaction();
-				if (tran != null && tran.getBatchUpdate()) {
-					conx.clearAnyBatches();
+				// final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+				if (tran != null && tran.getUseBatch()) {
+					conx.clearOpenBatches();
 				}
 				conx.connection.rollback();
 			} catch (SQLException e) {
 				LOG.log(Level.WARNING, "OATransactionListener.rollback()", e);
 			} finally {
 				releaseConnection(conx.connection);
+			}
+		}
+
+		@Override
+		public void executeOpenBatches(OATransaction tran) {
+			if (conx == null) {
+				return;
+			}
+			try {
+				// final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+				if (tran != null && tran.getUseBatch()) {
+					conx.executeOpenBatches();
+				}
+			} catch (SQLException e) {
+				LOG.log(Level.WARNING, "OATransactionListener.executeBatchWork()", e);
 			}
 		}
 	}

@@ -40,6 +40,13 @@ public class DeleteDelegate {
 	}
 
 	private static void delete(OADataSourceJDBC ds, OAObject oaObj, Class clazz) {
+		if (ds.getIgnoreWrites()) {
+			return;
+		}
+		if (ds.getReadOnly()) {
+			throw new RuntimeException("datasource is set to readOnly=true");
+		}
+
 		String sql = null;
 		try {
 			sql = getDeleteSQL(ds, oaObj, clazz);

@@ -42,7 +42,6 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
-import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
@@ -144,7 +143,9 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	private void _assignId(OAObject object) {
-	    if (!dbmd.supportsAutoAssign) return;
+		if (!dbmd.supportsAutoAssign) {
+			return;
+		}
 		Class clazz = object.getClass();
 		for (;;) {
 			Table table = database.getTable(clazz);
@@ -173,9 +174,12 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	public @Override void update(OAObject object, String[] includeProperties, String[] excludeProperties) {
+		// 20221206
+		_update(object, includeProperties, excludeProperties);
+		/*was:
 		if (!isAllowingBatch() && !isInTransaction()) {
-			OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
-			trans.setBatchUpdate(true);
+			OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_COMMITTED);
+			trans.setUseBatch(true);
 			trans.start();
 			try {
 				_update(object, includeProperties, excludeProperties);
@@ -187,6 +191,7 @@ public class OADataSourceJDBC extends OADataSource {
 		} else {
 			_update(object, includeProperties, excludeProperties);
 		}
+		*/
 	}
 
 	protected void _update(OAObject object, String[] includeProperties, String[] excludeProperties) {
@@ -196,9 +201,12 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	public @Override void insert(OAObject object) {
+		// 20221206
+		_insert(object);
+		/*was
 		if (!isAllowingBatch() && !isInTransaction()) {
-			OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
-			trans.setBatchUpdate(true);
+			OATransaction trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_COMMITTED);
+			trans.setUseBatch(true);
 			trans.start();
 			try {
 				_insert(object);
@@ -210,6 +218,7 @@ public class OADataSourceJDBC extends OADataSource {
 		} else {
 			_insert(object);
 		}
+		*/
 	}
 
 	protected void _insert(OAObject object) {
@@ -534,7 +543,7 @@ public class OADataSourceJDBC extends OADataSource {
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 		Table table = database.getTable(clazz);
-		
+
 		Column[] cols = table.getPrimaryKeyColumns();
 		if (cols == null || cols.length == 0) {
 			return;
@@ -546,7 +555,7 @@ public class OADataSourceJDBC extends OADataSource {
 				connection = getConnection();
 				st = connection.createStatement();
 
-				// make sure that db seq# is updated 
+				// make sure that db seq# is updated
 				if (dbmd.getDatabaseType() == dbmd.POSTGRES) {
 					String sql = "SELECT setval('" + table.name + "_id_seq', (SELECT MAX(id) FROM " + table.name + "))";
 					LOG.fine(sql);

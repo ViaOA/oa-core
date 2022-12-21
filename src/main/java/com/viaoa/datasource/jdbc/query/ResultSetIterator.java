@@ -197,7 +197,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 		}
 		*/
 		// 20120227 add transaction
-		//        transaction = new OATransaction(Connection.TRANSACTION_READ_UNCOMMITTED);
+		//        transaction = new OATransaction(Connection.TRANSACTION_READ_COMMITTED);
 		//        transaction.start();
 
 		this.oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
@@ -400,11 +400,15 @@ public class ResultSetIterator implements OADataSourceIterator {
 				}
 			}
 
+			// 20221219 so that validation checks are not done (ex: unique values)
+			OAThreadLocalDelegate.setLoading(true);
+			/* was
 			if (!bDirty) {
 				OAThreadLocalDelegate.setLoading(true);
 			} else {
 				bDataSourceLoadingObject = false;
 			}
+			*/
 
 			if (!bDirty && dataAccessObject != null) {
 				resultSetInfo.reset(resultSet);

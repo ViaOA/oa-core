@@ -119,6 +119,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	protected OAFinder<?, TYPE> finder; // will be used instead of calling datasource
 	protected Hub<TYPE> hubSearch; // hub used to search from, instead of using DataSource
 	private boolean bDirty; // data should always be loaded from datasource
+	private boolean bDirtyWasSet;
 	private volatile boolean bIsSelectingNow;
 
 	/** Create a new OASelect that is not initialzed. */
@@ -385,6 +386,14 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		return order;
 	}
 
+	public void setOrderBy(String s) {
+		order = s;
+	}
+
+	public String getOrderBy() {
+		return order;
+	}
+
 	public void setSortBy(String s) {
 		setOrder(s);
 	}
@@ -624,6 +633,12 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		amountRead = 0;
 		amountCount = -1;
 		bUseFinder = false;
+
+		//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+		// 20221209
+		if (!bDirty && !bDirtyWasSet) {
+			bDirty = OAThreadLocalDelegate.isRefreshing();
+		}
 
 		if (hubSearch != null && finder == null) {
 			finder = new OAFinder(hubSearch, null);
@@ -936,6 +951,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	public void setDirty(boolean b) {
+		bDirtyWasSet = true;
 		this.bDirty = b;
 	}
 

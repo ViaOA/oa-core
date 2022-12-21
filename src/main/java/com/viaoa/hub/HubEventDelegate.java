@@ -416,6 +416,22 @@ public class HubEventDelegate {
 		}
 	}
 
+	public static void fireBeforeRefreshEvent(Hub thisHub) {
+		HubListener[] hl = getAllListeners(thisHub);
+		int x = hl.length;
+		if (x > 0) {
+			HubEvent hubEvent = new HubEvent(thisHub);
+			OAThreadLocalDelegate.addHubEvent(hubEvent);
+			try {
+				for (int i = 0; i < x; i++) {
+					hl[i].beforeRefresh(hubEvent);
+				}
+			} finally {
+				OAThreadLocalDelegate.removeHubEvent(hubEvent);
+			}
+		}
+	}
+
 	public static void fireBeforeSelectEvent(Hub thisHub) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;

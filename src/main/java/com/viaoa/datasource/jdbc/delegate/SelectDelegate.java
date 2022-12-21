@@ -643,7 +643,7 @@ public class SelectDelegate {
 		Statement statement = null;
 		OATransaction trans = null;
 		try {
-			//trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_UNCOMMITTED);
+			//trans = new OATransaction(java.sql.Connection.TRANSACTION_READ_COMMITTED);
 			//trans.start();
 
 			statement = ds.getStatement(query);
