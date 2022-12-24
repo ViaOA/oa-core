@@ -56,7 +56,6 @@ public class OAObjectImportMatchDelegate {
 		if (importMatch == null) {
 			return;
 		}
-
 		if (importMatch.fromObject == null || importMatch.liTo == null) {
 			return;
 		}

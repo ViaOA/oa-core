@@ -504,6 +504,10 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 				continue;
 			}
 
+			if (li.getToClass().equals(oi.getForClass())) {
+				continue;
+			}
+
 			hsLinkFound.add(li);
 			final Map<String, Tuple<OAPropertyPath, Object>> hmNameValue = new HashMap<>();
 
