@@ -56,8 +56,9 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private boolean couldBeLarge;
 	private boolean oneAndOnlyOne;
 
-	private String equalPropertyPath;
+	private String equalPropertyPath; // from this object
 	private String autoCreateProperty;
+	private String selectFromPropertyPath; // from this object to linkedTo object
 
 	// runtime
 	protected transient int cacheSize;
@@ -692,6 +693,14 @@ public class OALinkInfo { //implements java.io.Serializable {
 
 	public void setEqualPropertyPath(String s) {
 		equalPropertyPath = s;
+	}
+
+	public String getSelectFromPropertyPath() {
+		return selectFromPropertyPath;
+	}
+
+	public void setSelectFromPropertyPath(String s) {
+		selectFromPropertyPath = s;
 	}
 
 	public String getAutoCreateProperty() {

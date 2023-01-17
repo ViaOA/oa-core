@@ -482,6 +482,7 @@ public class OAAnnotationDelegate {
 			li.setDefaultContextPropertyPath(annotation.defaultContextPropertyPath());
 
 			li.setEqualPropertyPath(annotation.equalPropertyPath());
+			li.setSelectFromPropertyPath(annotation.selectFromPropertyPath());
 
 			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
@@ -590,6 +591,8 @@ public class OAAnnotationDelegate {
 			li.setCacheSize(annotation.cacheSize());
 			s = annotation.mergerPropertyPath();
 			li.setMergerPropertyPath(s);
+			li.setEqualPropertyPath(annotation.equalPropertyPath());
+			li.setSelectFromPropertyPath(annotation.selectFromPropertyPath());
 			li.setOAMany(annotation);
 
 			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
@@ -603,9 +606,7 @@ public class OAAnnotationDelegate {
 				li.setContextVisibleProperty(eq.contextVisibleProperty());
 				li.setContextVisibleValue(eq.contextVisibleValue());
 				li.setViewDependentProperties(eq.viewDependentProperties());
-				;
 				li.setContextDependentProperties(eq.contextDependentProperties());
-				;
 			}
 		}
 

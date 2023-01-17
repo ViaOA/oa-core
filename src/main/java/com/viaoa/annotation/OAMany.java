@@ -93,6 +93,10 @@ public @interface OAMany {
 	 * Name/Value (enum) property to automatch.
 	 */
 	String autoCreateProperty() default "";
+
+	String equalPropertyPath() default "";
+
+	String selectFromPropertyPath() default "";
 }
 
 /*  OALinkInfo

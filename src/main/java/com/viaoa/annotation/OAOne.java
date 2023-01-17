@@ -102,6 +102,8 @@ public @interface OAOne {
 
 	String equalPropertyPath() default "";
 
+	String selectFromPropertyPath() default "";
+
 	OAFkey[] fkeys() default {};
 
 	@Deprecated // replaced with fkeys
