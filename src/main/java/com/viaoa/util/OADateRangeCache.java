@@ -109,6 +109,20 @@ public abstract class OADateRangeCache<T> {
 	}
 
 	/**
+	 * Add dateRange with list of objects <T> to the cache.
+	 */
+	public void add(OADate beginDate, OADate endDate, List<T> list) {
+		alCache.add(new DateRange(beginDate, endDate, list));
+	}
+
+	/**
+	 * Add dateRange with list of objects <T> to the cache.
+	 */
+	public void add(DateRange dateRange) {
+		alCache.add(dateRange);
+	}
+
+	/**
 	 * Find all of the items in cache for a dateRange.
 	 *
 	 * @see #findMissingGaps(DateRange) to first find and add any missing dateRange gaps.
@@ -149,20 +163,6 @@ public abstract class OADateRangeCache<T> {
 			}
 		}
 		return al;
-	}
-
-	/**
-	 * Add dateRange with list of objects <T> to the cache.
-	 */
-	public void add(OADate beginDate, OADate endDate, List<T> list) {
-		alCache.add(new DateRange(beginDate, endDate, list));
-	}
-
-	/**
-	 * Add dateRange with list of objects <T> to the cache.
-	 */
-	public void add(DateRange dateRange) {
-		alCache.add(dateRange);
 	}
 
 	public void clearCache() {
