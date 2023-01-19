@@ -57,6 +57,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	protected boolean bLocalOnly = false; // dont send to OAServer
 	protected boolean bAddToCache = true; // add object to Cache
 	protected boolean bInitializeNewObjects = true; // initialize object properties (used by OAObject)
+	protected String name;
 	protected String displayName;
 	protected String lowerName;
 	protected String pluralName;
@@ -536,6 +537,14 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 	public boolean getInitializeNewObjects() {
 		return bInitializeNewObjects;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String s) {
+		this.name = s;
 	}
 
 	public String getDisplayName() {

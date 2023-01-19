@@ -85,6 +85,7 @@ public class OAAnnotationDelegate {
 			OAClass oaclass = (OAClass) clazz.getAnnotation(OAClass.class);
 			if (oaclass != null) {
 				hs.add("OAClass");
+				oi.setName(clazz.getSimpleName());
 				oi.setUseDataSource(oaclass.useDataSource());
 				oi.setLocalOnly(oaclass.localOnly());
 				oi.setAddToCache(oaclass.addToCache());

@@ -79,7 +79,7 @@ public class OADate extends OADateTime {
 			vecDateParseFormat.addElement("dd/MM/yyyy");
 			dateOutputFormat = "dd/MM/yyyy";
 		}
-		// SQL date formates
+		// SQL date formats
 		vecDateParseFormat.addElement("yyyy-MM-dd");
 	}
 
