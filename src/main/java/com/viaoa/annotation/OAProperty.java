@@ -150,4 +150,6 @@ public @interface OAProperty {
 	boolean importMatch() default false;
 
 	String enumPropertyName() default "";
+
+	boolean isFkeyOnly() default false;
 }

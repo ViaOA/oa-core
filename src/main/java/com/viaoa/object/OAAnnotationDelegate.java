@@ -195,6 +195,8 @@ public class OAAnnotationDelegate {
 
 			pi.setImportMatch(oaprop.importMatch());
 
+			pi.setFkeyOnly(oaprop.isFkeyOnly());
+
 			s = oaprop.displayName();
 			if (OAString.isEmpty(s)) {
 				s = OAString.getDisplayName(name);

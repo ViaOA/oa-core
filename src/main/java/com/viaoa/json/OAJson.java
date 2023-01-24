@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -41,6 +40,25 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
+
+/* qqqqqqqqqqqqqqqqqqq
+
+for dynamic serialization
+
+
+BeanSerializerModifier
+
+http://www.cowtowncoder.com/blog/archives/2011/02/entry_443.html
+
+QQQQQQQQQQQQQQQQ
+
+https://stackoverflow.com/questions/23101260/ignore-fields-from-java-object-dynamically-while-sending-as-json-from-spring-mvc
+module.addSerializer(JsonView.class, new JsonViewSerializer());
+* https://github.com/monitorjbl/json-view
+
+https://github.com/monitorjbl/json-view/blob/master/json-view/src/main/java/com/monitorjbl/json/JsonViewSerializer.java
+
+*/
 
 /**
  * JSON serialization for OA. Works dynamically with OAObject Graphs to allow property paths to be included.
@@ -85,7 +103,17 @@ public class OAJson {
 	private OAObject root;
 	private Class readObjectClass;
 
-	private Stack<OALinkInfo> stackLinkInfo;
+	private final Stack<StackItem> stack = new Stack<>();
+
+	public static class StackItem {
+		public StackItem parent; //qqqqq need to populate this
+		public OAObjectInfo oi;
+		public OALinkInfo li; // from parent
+		public JsonNode node;
+		public OAObject obj;
+		public OAObjectKey key;
+		public Hub hub;
+	}
 
 	/**
 	 * Used during reading, to be able to find refId that use guid for object key.
@@ -124,7 +152,7 @@ public class OAJson {
 		if (alImportMatch != null) {
 			alImportMatch.clear();
 		}
-		this.stackLinkInfo = new Stack<>();
+		this.stack.clear();
 	}
 
 	/**
@@ -161,16 +189,18 @@ public class OAJson {
 
 	private static final Object lock = new Object();
 
-	public static ObjectMapper createObjectMapper() {
+	public static ObjectMapper getObjectMapper() {
 		if (objectMapper == null) {
 			synchronized (lock) {
 				if (objectMapper == null) {
 					ObjectMapper objectMapperx = new ObjectMapper();
 					objectMapperx.registerModule(new JavaTimeModule());
 					objectMapperx.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+					objectMapperx.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 					objectMapperx.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-					objectMapperx.setSerializationInclusion(Include.NON_NULL);
-					// objectMapper.setDefaultPropertyInclusion(Include.NON_DEFAULT);
+
+					objectMapperx.setDefaultPropertyInclusion(Include.ALWAYS);
+					// objectMapperx.setSerializationInclusion(Include.NON_NULL);
 
 					objectMapperx.registerModule(new OAJacksonModule());
 					objectMapperx.enable(SerializationFeature.INDENT_OUTPUT);
@@ -185,13 +215,13 @@ public class OAJson {
 	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */
 	public String write(Object obj) throws JsonProcessingException {
-		this.stackLinkInfo = new Stack<>();
+		this.stack.clear();
 		this.cascade = null;
 		String json;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
 
-			json = createObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+			json = getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(obj);
 
 		} finally {
 			OAThreadLocalDelegate.setOAJackson(null);
@@ -205,7 +235,7 @@ public class OAJson {
 	}
 
 	public String format(String json) throws JsonProcessingException {
-		ObjectMapper mapper = createObjectMapper();
+		ObjectMapper mapper = getObjectMapper();
 		Object jsonObject = mapper.readValue(json, Object.class);
 		String prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
 		return prettyJson;
@@ -215,13 +245,13 @@ public class OAJson {
 	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */
 	public void write(Object obj, File file) throws JsonProcessingException, IOException {
-		this.stackLinkInfo = new Stack<>();
+		this.stack.clear();
 		this.cascade = null;
 		String json;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
 
-			createObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, obj);
+			getObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, obj);
 
 		} finally {
 			OAThreadLocalDelegate.setOAJackson(null);
@@ -232,13 +262,13 @@ public class OAJson {
 	 * Convert OAObject to a JSON stream, including any owned Links, and links in propertyPaths.
 	 */
 	public void write(Object obj, final OutputStream stream) throws JsonProcessingException, IOException {
-		this.stackLinkInfo = new Stack<>();
+		this.stack.clear();
 		this.cascade = null;
 		String json;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
 
-			createObjectMapper().writerWithDefaultPrettyPrinter().writeValue(stream, obj);
+			getObjectMapper().writerWithDefaultPrettyPrinter().writeValue(stream, obj);
 
 		} finally {
 			OAThreadLocalDelegate.setOAJackson(null);
@@ -251,12 +281,6 @@ public class OAJson {
 	public <T> T readObject(final String json, final Class<T> clazz) throws JsonProcessingException {
 		T t = readObject(json, clazz, false);
 		return t;
-	}
-
-	private final LinkedList<Object> llStack = new LinkedList<>();
-
-	public LinkedList<Object> getStack() {
-		return llStack;
 	}
 
 	/**
@@ -291,7 +315,7 @@ public class OAJson {
 			throws JsonProcessingException {
 		reset();
 		this.readObjectClass = clazz;
-		ObjectMapper om = createObjectMapper();
+		ObjectMapper om = getObjectMapper();
 
 		hmGuidObject = null;
 		getGuidMap();
@@ -338,8 +362,8 @@ public class OAJson {
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
-		ObjectMapper om = createObjectMapper();
-		this.stackLinkInfo = new Stack<>();
+		ObjectMapper om = getObjectMapper();
+		this.stack.clear();
 
 		hmGuidObject = null;
 		Map<Integer, OAObject> hmGuidMap = getGuidMap();
@@ -377,7 +401,7 @@ public class OAJson {
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
-		ObjectMapper om = createObjectMapper();
+		ObjectMapper om = getObjectMapper();
 
 		hmGuidObject = null;
 		Map<Integer, OAObject> hmGuidMap = getGuidMap();
@@ -415,7 +439,7 @@ public class OAJson {
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazzValue;
-		ObjectMapper om = createObjectMapper();
+		ObjectMapper om = getObjectMapper();
 		hmGuidObject = null;
 
 		Map<K, V> map;
@@ -451,7 +475,7 @@ public class OAJson {
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
-		ObjectMapper om = createObjectMapper();
+		ObjectMapper om = getObjectMapper();
 		hmGuidObject = null;
 
 		List<T> list;
@@ -484,7 +508,7 @@ public class OAJson {
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
-		ObjectMapper om = createObjectMapper();
+		ObjectMapper om = getObjectMapper();
 		hmGuidObject = null;
 
 		List<T> list;
@@ -516,7 +540,7 @@ public class OAJson {
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
-		ObjectMapper om = createObjectMapper();
+		ObjectMapper om = getObjectMapper();
 		hmGuidObject = null;
 
 		List<T> list;
@@ -562,12 +586,12 @@ public class OAJson {
 	}
 
 	public void write(final Hub<? extends OAObject> hub, File file) throws JsonProcessingException, IOException {
-		this.stackLinkInfo = new Stack<>();
+		this.stack.clear();
 		this.cascade = null;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
 
-			createObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, hub);
+			getObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, hub);
 
 		} finally {
 			OAThreadLocalDelegate.setOAJackson(null);
@@ -575,12 +599,12 @@ public class OAJson {
 	}
 
 	public String write(final Hub<? extends OAObject> hub) throws JsonProcessingException {
-		this.stackLinkInfo = new Stack<>();
+		this.stack.clear();
 		this.cascade = null;
 		String json;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-			final ObjectMapper objectMapper = createObjectMapper();
+			final ObjectMapper objectMapper = getObjectMapper();
 			json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(hub);
 		} finally {
 			OAThreadLocalDelegate.setOAJackson(null);
@@ -589,13 +613,13 @@ public class OAJson {
 	}
 
 	public <T extends OAObject> void readIntoHub(final File file, final Hub<T> hub, final boolean bUseValidation) throws Exception {
-		ObjectMapper om = createObjectMapper();
+		ObjectMapper om = getObjectMapper();
 		final JsonNode nodeRoot = om.readTree(file);
 		readIntoHub(om, nodeRoot, hub, bUseValidation);
 	}
 
 	public <T extends OAObject> void readIntoHub(final String json, final Hub<T> hub, final boolean bUseValidation) throws Exception {
-		ObjectMapper om = createObjectMapper();
+		ObjectMapper om = getObjectMapper();
 		final JsonNode nodeRoot = om.readTree(json);
 		readIntoHub(om, nodeRoot, hub, bUseValidation);
 	}
@@ -734,7 +758,7 @@ public class OAJson {
 			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
 
 		final OAJson oaj = new OAJson();
-		oaj.stackLinkInfo = new Stack<>();
+		oaj.stack.clear();
 
 		try {
 			OAThreadLocalDelegate.setOAJackson(oaj);
@@ -748,7 +772,7 @@ public class OAJson {
 	protected static String _convertMethodArgumentsToJson(final OAJson oaj, final Method method, final Object[] argValues,
 			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
 
-		final ObjectMapper om = oaj.createObjectMapper();
+		final ObjectMapper om = oaj.getObjectMapper();
 
 		final ArrayNode arrayNode = om.createArrayNode();
 
@@ -799,7 +823,7 @@ public class OAJson {
 	public static Object[] convertJsonToMethodArguments(String jsonArray, Method method) throws Exception {
 
 		final OAJson oaj = new OAJson();
-		final ObjectMapper om = oaj.createObjectMapper();
+		final ObjectMapper om = oaj.getObjectMapper();
 
 		JsonNode nodeRoot = om.readTree(jsonArray);
 
@@ -820,7 +844,7 @@ public class OAJson {
 
 	public static Object[] convertJsonToMethodArguments(ArrayNode nodeArray, Method method, final int[] skipParams) throws Exception {
 		final OAJson oaj = new OAJson();
-		final ObjectMapper om = oaj.createObjectMapper();
+		final ObjectMapper om = oaj.getObjectMapper();
 
 		Object[] objs = convertJsonToMethodArguments(oaj, nodeArray, method, null);
 		return objs;
@@ -874,7 +898,7 @@ public class OAJson {
 			if (OAObject.class.isAssignableFrom(paramClass)) {
 				objx = oaj.readObject(node.toString(), paramClass, false);
 			} else {
-				ObjectMapper om = oaj.createObjectMapper();
+				ObjectMapper om = oaj.getObjectMapper();
 				objx = om.readValue(node.toString(), paramClass);
 
 				//qqqqqqqqqqqqqqqqqvv
@@ -888,7 +912,7 @@ public class OAJson {
 
 	public JsonNode readTree(String json) throws Exception {
 		reset();
-		JsonNode node = createObjectMapper().readTree(json);
+		JsonNode node = getObjectMapper().readTree(json);
 		return node;
 	}
 
@@ -911,24 +935,18 @@ public class OAJson {
 	 */
 	public String getCurrentPropertyPath() {
 		String pp = "";
-		if (stackLinkInfo != null) {
-			OALinkInfo liPrev = null;
-			for (OALinkInfo li : stackLinkInfo) {
-				if (li == liPrev) {
-					continue; // recursive
-				}
-				if (pp.length() > 0) {
-					pp += ".";
-				}
-				pp += li.getLowerName();
-				liPrev = li;
+
+		for (StackItem si : getStack()) {
+			if (pp.length() > 0) {
+				pp = "." + pp;
 			}
+			pp = si.li.getLowerName() + pp;
 		}
 		return pp;
 	}
 
-	public Stack<OALinkInfo> getStackLinkInfo() {
-		return this.stackLinkInfo;
+	public Stack<StackItem> getStack() {
+		return this.stack;
 	}
 
 	// called during read/write
@@ -952,6 +970,11 @@ public class OAJson {
 	public void afterReadCallback(JsonNode node, Object objNew) {
 	}
 
+	/**
+	 * This will include additional properties that could be used in Pojo, but are not needed in the OAObject.<br>
+	 * For example, pojos that do not have pkey properties and rely other data for uniqueness. (importMatch, link with unique prop, key from
+	 * reference)
+	 */
 	public void setWriteAsPojo(boolean b) {
 		this.bWriteAsPojo = b;
 	}

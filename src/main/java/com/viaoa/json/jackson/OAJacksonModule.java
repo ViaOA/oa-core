@@ -15,7 +15,7 @@ public class OAJacksonModule extends SimpleModule {
 	public OAJacksonModule() {
 		super("OAJackson", new Version(1, 0, 0, "RELEASE", "com.viaoa", "jackson"));
 
-		addSerializer(OAObject.class, new OAJacksonSerializer());
+		addSerializer(OAObject.class, new OAJacksonSerializerPojo());
 		addDeserializer(OAObject.class, new OAJacksonDeserializer());
 
 		addSerializer(OADateTime.class, new OADateTimeSerializer());

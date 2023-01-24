@@ -86,6 +86,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private OAColumn oaColumn;
 
 	private String format;
+	private boolean isFkeyOnly;
 
 	public OAPropertyInfo() {
 	}
@@ -535,5 +536,21 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	public void setFormat(String format) {
 		this.format = format;
+	}
+
+	public boolean isFkeyOnly() {
+		return isFkeyOnly;
+	}
+
+	public boolean getIsFkeyOnly() {
+		return isFkeyOnly;
+	}
+
+	public void setFkeyOnly(boolean b) {
+		this.isFkeyOnly = b;
+	}
+
+	public void setIsFkeyOnly(boolean b) {
+		this.isFkeyOnly = b;
 	}
 }

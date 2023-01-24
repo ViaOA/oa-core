@@ -25,6 +25,8 @@ import javax.swing.SwingUtilities;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.HubEvent;
+import com.viaoa.pojo.OAObjectPojoLoader;
+import com.viaoa.pojo.Pojo;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAArray;
@@ -103,6 +105,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private String versionProperty;
 	private String versionLinkProperty;
 	private String timeSeriesProperty;
+
+	private Pojo pojo;
 
 	public OAObjectInfo() {
 		this(new String[] {});
@@ -1320,5 +1324,18 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 	public void setTimeSeriesProperty(String s) {
 		timeSeriesProperty = s;
+	}
+
+	/**
+	 * Maps a Java pojo (json) so that it can be used to parse into an OAObject.
+	 * <p>
+	 * see OABuilder model OABuilderPojo
+	 */
+	public Pojo getPojo() {
+		if (pojo == null) {
+			OAObjectPojoLoader loader = new OAObjectPojoLoader();
+			pojo = loader.loadIntoPojo(this);
+		}
+		return pojo;
 	}
 }

@@ -2096,7 +2096,7 @@ public class OARestMethodInfo {
 		}
 
 		final OAJson oaj = new OAJson();
-		final ObjectMapper om = oaj.createObjectMapper();
+		final ObjectMapper om = oaj.getObjectMapper();
 
 		// fall thru and find all OAObject, BodyObject, BodyJson
 		ObjectNode jsonNodeBody = om.createObjectNode();
@@ -2115,7 +2115,7 @@ public class OARestMethodInfo {
 			} else if (pi.paramType == OARestParam.ParamType.BodyObject) {
 
 				OAJson oajx = new OAJson();
-				ObjectMapper omx = oajx.createObjectMapper();
+				ObjectMapper omx = oajx.getObjectMapper();
 				oajx.addPropertyPaths(pi.alIncludePropertyPaths);
 
 				String jsonx = oajx.write(objArg);
