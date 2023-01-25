@@ -26,9 +26,6 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.object.OAObjectImportMatchDelegate;
-import com.viaoa.object.OAObjectImportMatchDelegate.ImportMatch;
-import com.viaoa.object.OAObjectImportMatchDelegate.ImportMatchDetail;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
@@ -36,9 +33,7 @@ import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.pojo.Pojo;
 import com.viaoa.pojo.PojoLink;
-import com.viaoa.pojo.PojoLinkFkey;
 import com.viaoa.pojo.PojoLinkOne;
 import com.viaoa.pojo.PojoLinkOneDelegate;
 import com.viaoa.pojo.PojoProperty;
@@ -49,7 +44,6 @@ import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
-import com.viaoa.util.Tuple;
 
 /*
 qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq In the works
@@ -83,48 +77,33 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 
-		oaj.getStack().clear();
+		OAObject root = oaj.getRoot(); // qqq need to cleared ?? qqqqqqqqqqqqqqq
 
-		OAObject root = oaj.getRoot(); // qqq need to clear qqqqqqqqqqqqqqq
+		//qqqqqqq oajson needs to be able to set seed stackItem(s)
+		// ex:   ReporterCorp / ReporterCorpProcessorInfo
+		//        to then load ReportInstanceProcess
 
-		loadObject(oaj, oi, root, node);
+		OAJson.StackItem stackItem = new OAJson.StackItem();
+		stackItem.oi = oi;
+		stackItem.obj = root;
+		stackItem.node = node;
+		//qqqqqqq was: oaj.getStack().push(stackItem);
 
-		//qqqqqqqqq clean up
+		load(oaj, stackItem);
+
+		/*qqqqqqqqq clean up qqqqqqq put this in new class
 
 		// use the import match property values to finish populating object graph
 		List<ImportMatch> alImportMatch = oaj.getImportMatchList();
 		for (ImportMatch im : alImportMatch) {
 			OAObjectImportMatchDelegate.process(im);
 		}
+		*/
 
-		return obj;
+		return stackItem.obj;
 	}
 
-	protected OAObject getObject(final OAObjectInfo oi, final JsonNode node) {
-		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
-		final Class clazz = oi.getForClass();
-
-		oaj.beforeReadCallback(node);
-		OAObject root = oaj.getRoot(); // qqq need to clear qqqqqqq
-
-		OAObject obj = _getObject1(oaj, oi, node, root, extraWhereClause, extraWhereParam);
-		return obj;
-	}
-
-	private void loadObject(final OAJson oaj, final OAObjectInfo oi, final OAObject oaObj, final JsonNode node) {
-		OAJson.StackItem stackItem = new OAJson.StackItem();
-		stackItem.oi = oi;
-		stackItem.obj = oaObj;
-		stackItem.node = node;
-		oaj.getStack().push(stackItem);
-
-		try {
-			load(oaj, stackItem);
-
-		} finally {
-			oaj.getStack().pop();
-		}
-	}
+	// ============= qqqqqqqqq put this is a separate class, so that deserialize can be thread safe, etc
 
 	protected void load(final OAJson oaj, final StackItem stackItem) {
 		if (stackItem == null) {
@@ -132,32 +111,25 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 		}
 
 		if (stackItem.obj == null) {
-			OAObject obj = getExistingObject(stackItem.oi.getForClass(), stackItem.node);
-			if (obj == null) {
+			getObject(oaj, stackItem);
 
+			if (stackItem.obj == null) {
+				stackItem.obj = (OAObject) OAObjectReflectDelegate.createNewObject(stackItem.oi.getForClass());
 			}
-			stackItem.obj = obj;
+
 		}
-
-		//qqqqqqqqqqq code to load object
-
-		OAObject oaObj = _getObject3(oaj, stackItem);
+		_load(oaj, stackItem);
 	}
 
-	//qqqqqqqqqqqqq dont create new one
-	//GOOD
-	private boolean getExistingObject(final OAJson oaj, final StackItem stackItem) {
+	private boolean getObject(final OAJson oaj, final StackItem stackItem) {
 
-		boolean b = getExistingObjectUsingPKeys(oaj, stackItem);
+		boolean b = getObjectUsingPKeys(oaj, stackItem);
 		if (!b) {
-			b = getExistingObjectUsingGuid(oaj, stackItem);
+			b = getObjectUsingGuid(oaj, stackItem);
 			if (!b) {
-				b = getExistingObjectUsingImportMatches(oaj, stackItem);
+				b = getObjectUsingImportMatches(oaj, stackItem);
 				if (!b) {
-					b = getExistingObjectUsingLinkUnique(oaj, stackItem);
-					if (!b) {
-						b = getExistingObjectUsingStack(oaj, stackItem);
-					}
+					b = getObjectUsingLinkUnique(oaj, stackItem);
 				}
 				//qqqqqqqq also, might want to optimise to find exising hubs that it can search in
 			}
@@ -165,346 +137,7 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 		return b;
 	}
 
-	//GOOD
-	private void getReferenceObject(final OAJson oaj, final StackItem stackItemParent, final OALinkInfo liOne) {
-
-		// STEP 1: see if the json has a node
-		JsonNode node = stackItemParent.node.get(liOne.getName());
-
-		if (node == null) {
-
-		} else if (node.isObject()) {
-			StackItem stackItem = new StackItem();
-			stackItem.parent = stackItemParent;
-			stackItem.oi = liOne.getToObjectInfo();
-			stackItem.li = liOne;
-			stackItem.node = node;
-
-			getObject(oaj, stackItem);
-
-			return;
-		} else if (node.isTextual()) {
-			String s = node.asText();
-			if (s.indexOf("guid.") == 0) {
-				s = s.substring(5);
-				int guid = Integer.parseInt(s);
-				if (oaj != null) {
-					objNew = oaj.getGuidMap().get(guid);
-				}
-			} else {
-				OAObjectKey ok = OAJson.convertJsonSinglePartIdToObjectKey(li.getToClass(), s);
-
-				objNew = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), ok);
-				if (objNew != null) {
-					fromObject.setProperty(li.getName(), objNew);
-				} else {
-					// just save the objectKey in the object's property ??
-					Object objx = OAObjectPropertyDelegate.getProperty(fromObject, li.getName(), false, true);
-					if (objx instanceof OAObjectKey) {
-						OAObjectPropertyDelegate.setPropertyCAS(fromObject, li.getName(), ok, objx);
-					} else if (objx instanceof OAObject) {
-						// need to get and replace, since it's loaded
-					} else if (objx == null) {
-						//  need to get and replace, since it could be loaded
-					}
-
-					// get from DS
-					objNew = (OAObject) OADataSource.getObject(li.getToClass(), ok);
-				}
-			}
-			return;
-		}
-
-		// Step 1B: use POJO to find using fkey/importMatch/linkUnique
-
-		PojoLinkOne plo = PojoLinkOneDelegate.getPojoLinkOne(stackItemParent.oi.getPojo(), liOne.getName());
-		if (plo == null) {
-			return;
-		}
-
-		//qqqqqq the linkOne from nodeFrom might be an jsonObject{}, and not keys/importMatches/etc
-
-		//qqqqq will either be json with value to object or fkey/importMatch/linkUnique qqqqqqqq
-
-		StackItem stackItemChild = new StackItem();
-		stackItemChild.parent = stackItemParent;
-		stackItemChild.oi = liOne.getToObjectInfo();
-		stackItemChild.li = liOne;
-		stackItemChild.node = null; // uses parent.node
-
-		boolean bUsesFkey = getReferenceKey(oaj, stackItemParent, stackItemChild);
-		if (bUsesFkey) {
-			if (stackItemChild.key == null) {
-				//qqqqqq set to null
-			} else {
-				//qqqqq try to find it, or just set the parent.ref.property = ok
-				//qqqqq set property
-			}
-		} else {
-			boolean bImportMatch = getReferenceUsingImportMatch(oaj, stackItemParent, stackItemChild);
-
-			if (!bImportMatch) {
-				boolean bLinkUnique = getReferenceUsingLinkUnique(oaj, stackItemParent, stackItemChild);
-
-				if (!bLinkUnique) {
-
-				}
-			}
-
-			//qqqqqqqqqqqqqqqqqqq also try to use stack ??
-
-			//qqqqqqqqqqq
-			// if not found, then put in a cache to find and update later
-
-		}
-		//qqqqqqqqq also include 1to1 link that has autocreate qqqqqqqqqqqqq
-
-	}
-
-	//GOOD
-	private boolean getReferenceUsingLinkUnique(final OAJson oaj, final StackItem stackItemParent, final StackItem stackItemChild) {
-
-		final List<PojoProperty> al = PojoLinkOneDelegate.getLinkUniquePojoProperties(	stackItemParent.oi.getPojo(),
-																						stackItemChild.li.getName());
-		if (al == null || al.size() == 0) {
-			return false;
-		}
-
-		//qqqqqqqqq only if you can get to the value for the equal property path
-
-		String s = stackItemChild.li.getEqualPropertyPath();
-		if (OAString.isEmpty(s)) {
-			return false;
-		}
-
-		OAPropertyPath pp = new OAPropertyPath(stackItemParent.oi.getForClass(), s);
-		OAObject equalObject = getExistingValueFromStack(oaj, stackItemChild, pp);
-
-		if (equalObject == null) {
-			return false;
-		}
-
-		int pos = 0;
-		String sql = null;
-		Object[] values = new Object[] {};
-
-		for (PojoProperty pjp : al) {
-			String propertyName = pjp.getName();
-			String propertyPath = pjp.getPropertyPath();
-
-			pp = new OAPropertyPath(stackItemParent.oi.getForClass(), propertyPath);
-
-			JsonNode jn = stackItemParent.node.get(propertyName);
-			if (jn == null) {
-				if (pp.getEndPropertyInfo() != null && pp.getEndPropertyInfo().isKey()) {
-					continue;
-				}
-				sql = null;
-				break;
-			}
-
-			if (sql == null) {
-				sql = "";
-			} else {
-				sql += " AND ";
-			}
-
-			sql += "(";
-
-			OAPropertyInfo pi;
-			if (OAString.isEmpty(propertyPath)) {
-				sql += propertyName + " = ?";
-				pi = stackItemParent.oi.getPropertyInfo(propertyName);
-			} else {
-				sql += propertyPath + " = ?";
-				pi = pp.getEndPropertyInfo();
-			}
-
-			Object val = convert(jn, pi);
-
-			if (val == null) {
-				sql = null;
-				break;
-			}
-
-			values = OAArray.add(Object.class, values, val);
-
-			sql += " AND ";
-
-			sql += stackItemChild.li.getReverseLinkInfo().getEqualPropertyPath() + " = ?";
-			values = OAArray.add(Object.class, values, equalObject);
-
-			sql += ")";
-		}
-
-		// qqqqqqqqqq might want to use reverse pp of toObj equal pp and do a find on that Hub
-
-		OAObject oaObj = null;
-		if (sql != null) {
-			OASelect sel = new OASelect(stackItemChild.oi.getForClass(), sql, values, "");
-			oaObj = sel.next();
-			sel.close();
-
-			if (oaObj == null) {
-				OAFinder finder = new OAFinder();
-				OAQueryFilter filter = new OAQueryFilter(stackItemChild.oi.getForClass(), sql, values);
-				finder.addFilter(filter);
-				oaObj = (OAObject) OAObjectCacheDelegate.find(stackItemChild.oi.getForClass(), finder);
-			}
-		}
-
-		return true;
-	}
-
-	//GOOD
-	private boolean getReferenceUsingImportMatch(final OAJson oaj, final StackItem stackItemParent, final StackItem stackItemChild) {
-
-		int pos = 0;
-		String sql = null;
-		Object[] values = new Object[] {};
-
-		for (PojoProperty pjp : PojoLinkOneDelegate.getImportMatchPojoProperties(	stackItemParent.oi.getPojo(),
-																					stackItemChild.li.getName())) {
-			String propertyName = pjp.getName();
-			String propertyPath = pjp.getPropertyPath();
-
-			OAPropertyPath pp = new OAPropertyPath(stackItemParent.oi.getForClass(), propertyPath);
-
-			JsonNode jn = stackItemParent.node.get(propertyName);
-			if (jn == null) {
-				if (pp.getEndPropertyInfo() != null && pp.getEndPropertyInfo().isKey()) {
-					continue;
-				}
-				sql = null;
-				break;
-			}
-
-			if (sql == null) {
-				sql = "";
-			} else {
-				sql += " AND ";
-			}
-
-			OAPropertyInfo pi;
-			if (OAString.isEmpty(propertyPath)) {
-				sql += propertyName + " = ?";
-				pi = stackItemParent.oi.getPropertyInfo(propertyName);
-			} else {
-				sql += propertyPath + " = ?";
-				pi = pp.getEndPropertyInfo();
-			}
-
-			Object val = convert(jn, pi);
-
-			if (val == null) {
-				sql = null;
-				break;
-			}
-
-			values = OAArray.add(Object.class, values, val);
-		}
-
-		OAObject oaObj = null;
-		if (sql != null) {
-			OASelect sel = new OASelect(stackItemParent.oi.getForClass(), sql, values, "");
-			oaObj = sel.next();
-			sel.close();
-
-			if (oaObj == null) {
-				OAFinder finder = new OAFinder();
-				OAQueryFilter filter = new OAQueryFilter(stackItemParent.oi.getForClass(), sql, values);
-				finder.addFilter(filter);
-				oaObj = (OAObject) OAObjectCacheDelegate.find(stackItemParent.oi.getForClass(), finder);
-			}
-		}
-		return oaObj;
-	}
-
-	//GOOD
-	private boolean getReferenceKey(final OAJson oaj, final StackItem stackItemParent, final StackItem stackItemChild) {
-		Map<String, Object> hm = new HashMap<>();
-		for (PojoProperty pjp : PojoLinkOneDelegate.getLinkFkeyPojoProperties(stackItemParent.oi.getPojo(), stackItemChild.li.getName())) {
-			String fkeyName = pjp.getName();
-			OAPropertyPath pp = new OAPropertyPath(stackItemParent.oi.getForClass(), pjp.getPropertyPath());
-			OAPropertyInfo pi = pp.getEndPropertyInfo();
-
-			JsonNode jn = stackItemParent.node.get(pi.getLowerName());
-			if (jn == null) {
-				hm.clear();
-				break;
-			}
-			Object objx = convert(jn, pi);
-			hm.put(pi.getName(), objx);
-		}
-		if (hm.size() == 0) {
-			return false;
-		}
-
-		ArrayList<Object> al = new ArrayList();
-		for (OAFkeyInfo fi : stackItemChild.li.getFkeyInfos()) {
-			if (fi.getFromPropertyInfo() == null) {
-				continue;
-			}
-			String s = fi.getFromPropertyInfo().getName();
-			Object objx = hm.get(s);
-			if (objx == null) {
-				al.clear();
-				break;
-			}
-			al.add(objx);
-		}
-		if (al.size() > 0) {
-			Object[] objs = al.toArray(new Object[al.size()]);
-			stackItemChild.key = new OAObjectKey(objs);
-		}
-		return true;
-	}
-
-	private boolean getExistingObjectUsingPKeys(final OAJson oaj, final StackItem stackItem) {
-		boolean bResult = false;
-
-		boolean bIdMissing = false;
-		ArrayList<Object> alKeys = new ArrayList();
-		for (OAPropertyInfo pi : stackItem.oi.getPropertyInfos()) {
-			if (!pi.getId()) {
-				continue;
-			}
-
-			String propertyName = pi.getLowerName();
-			if (!oaj.getUsePropertyCallback(null, propertyName)) {
-				continue;
-			}
-			propertyName = oaj.getPropertyNameCallback(null, propertyName);
-
-			JsonNode jn = stackItem.node.get(propertyName);
-
-			if (jn == null) {
-				bIdMissing = true;
-				continue;
-			}
-
-			Object objx = convert(jn, pi);
-
-			objx = oaj.getPropertyValueCallback(null, pi.getLowerName(), objx);
-
-			alKeys.add(objx);
-		}
-
-		if (!bIdMissing) {
-			final Class clazz = stackItem.oi.getForClass();
-			OAObjectKey objKey = new OAObjectKey(alKeys.toArray());
-			OAObject objNew = (OAObject) OAObjectCacheDelegate.get(clazz, objKey);
-
-			if (objNew == null) {
-				objNew = (OAObject) OADataSource.getObject(clazz, objKey);
-			}
-			stackItem.obj = objNew;
-			bResult = (objNew != null);
-		}
-		return bResult;
-	}
-
-	private boolean getExistingObjectUsingGuid(final OAJson oaj, final StackItem stackItem) {
+	private boolean getObjectUsingGuid(final OAJson oaj, final StackItem stackItem) {
 		//qqqqqqq todo:  quid could also be placeholder for object ref, ex: "customer": "guid.1234"
 		boolean bResult = false;
 		JsonNode jn = stackItem.node.get("guid");
@@ -518,7 +151,7 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 		return bResult;
 	}
 
-	private boolean getExistingObjectUsingImportMatches(final OAJson oaj, final StackItem stackItem) {
+	private boolean getObjectUsingImportMatches(final OAJson oaj, final StackItem stackItem) {
 		//qqqqqqqqqqqqqq todo:
 		//make sure that   oi.getImportMatchPropertyNames())  ==> pojoImportMatch.pojoProperty.propertyPath
 		boolean bResult = false;
@@ -604,7 +237,7 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 		return bResult;
 	}
 
-	private boolean getExistingObjectUsingLinkUnique(final OAJson oaj, final StackItem stackItem) {
+	private boolean getObjectUsingLinkUnique(final OAJson oaj, final StackItem stackItem) {
 		boolean bResult = false;
 
 		for (OALinkInfo li : stackItem.oi.getLinkInfos()) {
@@ -621,13 +254,22 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 			}
 
 			// see if you can get linkTo Object
+			StackItem stackItemChild = new StackItem();
+			stackItemChild.parent = stackItem;
+			stackItemChild.oi = li.getToObjectInfo();
+			stackItemChild.li = li;
 
-			OAObject obj = getExistingLinkOneObject(oaj, stackItem.oi, stackItem.node, li);
-			if (obj == null) {
+			if (stackItem.parent != null && stackItem.li == li) {
+				stackItemChild.obj = stackItem.parent.obj;
+			} else {
+				getReferenceObject(oaj, stackItemChild);
+			}
+
+			if (stackItemChild.obj == null) {
 				continue;
 			}
 
-			Hub hub = (Hub) rli.getValue(obj);
+			Hub hub = (Hub) rli.getValue(stackItemChild.obj);
 
 			OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), rli.getUniqueProperty());
 			OAPropertyInfo pi = pp.getEndPropertyInfo();
@@ -653,47 +295,7 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 		return bResult;
 	}
 
-	//qqqqqq what about jsonnode that is array => Hub
-
-	private boolean getExistingObjectUsingStack(final OAJson oaj, final StackItem stackItem) {
-		// qqqqqqqq combine this with previous method qqqqqqqq
-		boolean bResult = false;
-
-		//qqqqqqqqqqqqqqqqqqq
-		for (PojoLink pl : stackItem.oi.getPojo().getPojoLinks()) {
-			PojoLinkOne plo = pl.getPojoLinkOne();
-			if (plo == null) {
-				continue;
-			}
-			if (plo.getPojoImportMatches().size() == 0) {
-				continue;
-			}
-
-			for (PojoProperty pjp : PojoLinkOneDelegate.getImportMatchPojoProperties(plo)) {
-			}
-		}
-
-		return bResult;
-	}
-
-	private void getFirstObject(final OAJson oaj, final JsonNode node, final Class clazz, final OAObject object) {
-		if (node.isArray()) {
-			//qqqqqqqqq
-		} else if (node.isObject()) {
-			StackItem stackItem = new StackItem();
-			stackItem.obj = object;
-			stackItem.oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-			stackItem.node = node;
-
-			getExistingObject(oaj, stackItem);
-		} else {
-
-		}
-	}
-
-	//qqqqqqqqqqqqqqqqq
-
-	private OAObject _getObject3(final OAJson oaj, final StackItem stackItem) {
+	private void _load(final OAJson oaj, final StackItem stackItem) {
 
 		final Class clazz = stackItem.oi.getForClass();
 
@@ -727,7 +329,6 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 
 				objNew.setProperty(pi.getLowerName(), objx);
 			}
-
 
 			if (OAThreadLocalDelegate.isLoading()) {
 				OAObjectDelegate.initializeAfterLoading((OAObject) objNew, false, false);
@@ -771,8 +372,8 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 		// load links of type=one
 		final Set<OALinkInfo> setLinkFound = new HashSet<>();
 
-		// 1: linkOne with whole object
-		//qqqqqqqq use getExisting Object from it qqqqqqqqqqqqqq
+		//qqqqq might want to load objKey first, then any that are the whole object
+
 		for (final OALinkInfo li : stackItem.oi.getLinkInfos()) {
 			if (li.getType() != li.TYPE_ONE) {
 				continue;
@@ -784,7 +385,6 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 			if (!oaj.getUsePropertyCallback(objNew, li.getLowerName())) {
 				continue;
 			}
-
 
 			String propertyName = oaj.getPropertyNameCallback(objNew, li.getLowerName());
 			JsonNode nodeChild = stackItem.node.get(propertyName);
@@ -805,347 +405,437 @@ public class OAJacksonDeserializerNew extends JsonDeserializer<OAObject> {
 			stackItemChild.li = li;
 			stackItemChild.node = nodeChild;
 
+			//qqqqqqqqqqqqqqqqqqq only need objKey at this time qqqqqqqqq??
+			getReferenceObject(oaj, stackItemChild);
 
-//qqqqqqqqqqqqqqqqqqq only need objKey at this time qqqqqqqqq??
-			getReferenceObject(oaj, stackItemChild, li);
+			if (stackItemChild.obj != null) {
+				objNew.setProperty(li.getLowerName(), stackItemChild.obj);
+				//qqqqqqqqq
+			} else if (stackItemChild.key != null) {
+				objNew.setProperty(li.getLowerName(), stackItemChild.key);
+				//qqqqqqqqq
 
-			if (stack)
+			} else {
+				//qqqqqqqqq set to null, or do nothing ... or it's in cache to try at the end ??
 
+				if (stackItemChild.obj == null) {
+					stackItemChild.obj = (OAObject) OAObjectReflectDelegate.createNewObject(li.getToClass());
+					// need to populate
+					/*qqqqqqqq do this ??
+					int i = 0;
+					for (OAFkeyInfo fi : li.getFkeyInfos()) {
+						String s = fi.getFromPropertyInfo().getName();
+						Object val = al.get(i++);
+						objx.setProperty(s, val);
+					}
+					*/
+				}
 
-
+			}
 		}
 
-
-
-			if (nodex != null) {
-			setLinkFound.add(li);
-
-			// get pkey props from nodex, create objkey and store it as ref in objectNew
-			Map<String, Object> hm = new HashMap<>();
-			for (PojoProperty pjp : PojoLinkOneDelegate.getLinkFkeyPojoProperties(stackItem.oi.getPojo(), li.getName())) {
-				String fkeyName = pjp.getName();
-				OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), pjp.getPropertyPath());
-				OAPropertyInfo pi = pp.getEndPropertyInfo();
-
-				jn = nodex.get(pi.getLowerName());
-				if (jn == null) {
-					hm.clear();
-					break;
-				}
-				Object objx = convert(jn, pi);
-				hm.put(pi.getName(), objx);
+		// load links of type=many
+		for (OALinkInfo li : stackItem.oi.getLinkInfos()) {
+			if (li.getType() != li.TYPE_MANY) {
+				continue;
 			}
-			if (hm.size() > 0) {
-				ArrayList<Object> al = new ArrayList();
-				for (OAFkeyInfo fi : li.getFkeyInfos()) {
-					if (fi.getFromPropertyInfo() == null) {
-						continue;
-					}
-					String s = fi.getFromPropertyInfo().getName();
-					Object objx = hm.get(s);
-					if (objx == null) {
-						al.clear();
-						break;
-					}
-					al.add(objx);
-				}
-				if (al.size() > 0) {
-					setLinkFound.add(li);
-					Object[] objs = al.toArray(new Object[al.size()]);
-					OAObjectKey okx = new OAObjectKey(objs);
-
-					OAObject objx = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), okx);
-					if (objx == null) {
-						objx = (OAObject) OADataSource.getObject(li.getToClass(), okx);
-						if (objx == null) {
-							objx = (OAObject) OAObjectReflectDelegate.createNewObject(li.getToClass());
-							// need to populate
-							int i = 0;
-							for (OAFkeyInfo fi : li.getFkeyInfos()) {
-								String s = fi.getFromPropertyInfo().getName();
-								Object val = al.get(i++);
-								objx.setProperty(s, val);
-							}
-						}
-					}
-					objNew.setProperty(li.getLowerName(), objx);
-				}
+			if (li.getPrivateMethod()) {
+				continue;
 			}
 
-		}
-
-
-		// now, load the whole object
-		for (final OALinkInfo li : stackItem.oi.getLinkInfos()) {
-			if (!setLinkFound.contains(li)) {
+			if (!oaj.getUsePropertyCallback(objNew, li.getLowerName())) {
 				continue;
 			}
 
 			String propertyName = oaj.getPropertyNameCallback(objNew, li.getLowerName());
 			JsonNode nodex = stackItem.node.get(propertyName);
+			if (nodex instanceof ArrayNode) {
+				Hub<OAObject> hub = (Hub<OAObject>) li.getValue(objNew);
+				ArrayNode nodeArray = (ArrayNode) nodex;
 
-			if (nodex == null || nodex.isNull()) {
-				continue;
+				List<OAObject> alNew = new ArrayList();
+				int x = nodeArray.size();
+				for (int i = 0; i < x; i++) {
+					nodex = nodeArray.get(i);
+
+					/* qqqqqqqq need to create another stackItem
+					
+					OAObject objx = getLinkObject(objNew, li, nodex);
+					alNew.add(objx);
+					
+					*/
+				}
+
+				List<OAObject> alRemove = new ArrayList();
+				for (OAObject objx : hub) {
+					if (!alNew.contains(objx)) {
+						alRemove.add(objx);
+					}
+				}
+				for (OAObject objx : alNew) {
+					if (!hub.contains(objx)) {
+						hub.add(objx);
+					}
+				}
+				for (OAObject objx : alRemove) {
+					hub.remove(objx);
+				}
+
+				// same order
+				int i = 0;
+				for (OAObject objx : alNew) {
+					int pos = hub.getPos(objx);
+					hub.move(pos, i);
+					i++;
+				}
 			}
+		}
+		oaj.afterReadCallback(stackItem.node, objNew);
+	}
 
+	//qqqqqqqqqqqqqqqq REFERENCE OBJECTS
 
-			//qqqqqq
-			// new stackItem, etc, recursively load it
+	private void getReferenceObject(final OAJson oaj, final StackItem stackItemChild) {
+
+		final StackItem stackItemParent = stackItemChild.parent;
+		final OALinkInfo liOne = stackItemChild.li;
+
+		// STEP 1: see if the json has a node
+		JsonNode node = stackItemParent.node.get(liOne.getName());
+
+		if (node == null) {
+
+		} else if (node.isObject()) {
+			getObject(oaj, stackItemChild);
+			//qqqqqqq when does it load it ??
+			return;
+		} else if (node.isTextual()) {
+			String s = node.asText();
+			if (s.indexOf("guid.") == 0) {
+				s = s.substring(5);
+				int guid = Integer.parseInt(s);
+				if (oaj != null) {
+					stackItemChild.obj = oaj.getGuidMap().get(guid);
+					stackItemParent.obj.setProperty(stackItemChild.li.getName(), stackItemChild.obj);
+				}
+			} else {
+				OAObjectKey ok = OAJson.convertJsonSinglePartIdToObjectKey(stackItemChild.li.getToClass(), s);
+
+				stackItemChild.obj = (OAObject) OAObjectCacheDelegate.get(stackItemChild.li.getToClass(), ok);
+				if (stackItemChild.obj != null) {
+					stackItemParent.obj.setProperty(stackItemChild.li.getName(), stackItemChild.obj);
+				} else {
+					// just save the objectKey in the object's property ??
+					Object objx = OAObjectPropertyDelegate.getProperty(stackItemParent.obj, stackItemChild.li.getName(), false, true);
+					if (objx instanceof OAObjectKey) {
+						OAObjectPropertyDelegate.setPropertyCAS(stackItemParent.obj, stackItemChild.li.getName(), ok, objx);
+					} else if (objx instanceof OAObject) {
+						// need to get and replace, since it's loaded
+					} else if (objx == null) {
+						//  need to get and replace, since it could be loaded
+					}
+
+					// get from DS
+					stackItemChild.obj = (OAObject) OADataSource.getObject(stackItemChild.li.getToClass(), ok);
+				}
+			}
+			return;
 		}
 
+		// Step 1B: use POJO to find using fkey/importMatch/linkUnique
 
+		PojoLinkOne plo = PojoLinkOneDelegate.getPojoLinkOne(stackItemParent.oi.getPojo(), liOne.getName());
+		if (plo == null) {
+			return;
+		}
 
-qqqqqqqqq
-				}else
+		//qqqqqq the linkOne from nodeFrom might be an jsonObject{}, and not keys/importMatches/etc
 
-	{
+		//qqqqq will either be json with value to object or fkey/importMatch/linkUnique qqqqqqqq
+
+		boolean bUsesFkey = getReferenceKey(oaj, stackItemParent, stackItemChild);
+		if (bUsesFkey) {
+			if (stackItemChild.key == null) {
+				//qqqqqq set to null
+				stackItemParent.obj.setProperty(stackItemChild.li.getName(), null);
+			} else {
+				//qqqqq try to find it, or just set the parent.ref.property = ok
+				OAObjectPropertyDelegate.setProperty(stackItemParent.obj, stackItemChild.li.getName(), stackItemChild.key);
+			}
+		} else {
+			boolean bImportMatch = getReferenceUsingImportMatch(oaj, stackItemParent, stackItemChild);
+
+			if (!bImportMatch) {
+				boolean bLinkUnique = getReferenceUsingLinkUnique(oaj, stackItemParent, stackItemChild);
+				if (bLinkUnique) {
+					if (stackItemChild.obj != null) {
+						stackItemParent.obj.setProperty(stackItemChild.li.getName(), stackItemChild.obj);
+					} else {
+						OAObjectPropertyDelegate.setProperty(stackItemParent.obj, stackItemChild.li.getName(), stackItemChild.key); //qqqq not sure if this is returned
+					}
+
+				} else {
+					//qqqqqqq
+				}
+			}
+
+			//qqqqqqqqqqqqqqqqqqq also try to use stack ??
+
+			//qqqqqqqqqqq
+			// if not found, then put in a cache to find and update later
+
+		}
+		//qqqqqqqqq also include 1to1 link that has autocreate qqqqqqqqqqqqq
+
+	}
+
+	private boolean getReferenceKey(final OAJson oaj, final StackItem stackItemParent, final StackItem stackItemChild) {
+		Map<String, Object> hm = new HashMap<>();
+		for (PojoProperty pjp : PojoLinkOneDelegate.getLinkFkeyPojoProperties(stackItemParent.oi.getPojo(), stackItemChild.li.getName())) {
+			String fkeyName = pjp.getName();
+			OAPropertyPath pp = new OAPropertyPath(stackItemParent.oi.getForClass(), pjp.getPropertyPath());
+			OAPropertyInfo pi = pp.getEndPropertyInfo();
+
+			JsonNode jn = stackItemParent.node.get(pi.getLowerName());
+			if (jn == null) {
+				hm.clear();
+				break;
+			}
+			Object objx = convert(jn, pi);
+			hm.put(pi.getName(), objx);
+		}
+		if (hm.size() == 0) {
+			return false;
+		}
+
 		ArrayList<Object> al = new ArrayList();
-		OAObjectInfo oix = li.getToObjectInfo();
-		int pos = 0;
-		for (OAPropertyInfo pi : oix.getPropertyInfos()) {
+		for (OAFkeyInfo fi : stackItemChild.li.getFkeyInfos()) {
+			if (fi.getFromPropertyInfo() == null) {
+				continue;
+			}
+			String s = fi.getFromPropertyInfo().getName();
+			Object objx = hm.get(s);
+			if (objx == null) {
+				al.clear();
+				break;
+			}
+			al.add(objx);
+		}
+		if (al.size() > 0) {
+			Object[] objs = al.toArray(new Object[al.size()]);
+			stackItemChild.key = new OAObjectKey(objs);
+		}
+		return true;
+	}
+
+	private boolean getObjectUsingPKeys(final OAJson oaj, final StackItem stackItem) {
+		boolean bResult = false;
+
+		boolean bIdMissing = false;
+		ArrayList<Object> alKeys = new ArrayList();
+		for (OAPropertyInfo pi : stackItem.oi.getPropertyInfos()) {
 			if (!pi.getId()) {
 				continue;
 			}
 
-			String name;
-			if (li.getFkeyInfos() != null && pos < li.getFkeyInfos().size()) {
-				name = li.getFkeyInfos().get(pos++).getFromPropertyInfo().getName();
-			} else {
-				name = li.getLowerName() + pi.getName();
+			String propertyName = pi.getLowerName();
+			if (!oaj.getUsePropertyCallback(null, propertyName)) {
+				continue;
 			}
+			propertyName = oaj.getPropertyNameCallback(null, propertyName);
 
-			jn = node.get(name);
+			JsonNode jn = stackItem.node.get(propertyName);
+
 			if (jn == null) {
-				al.clear();
-				break;
+				bIdMissing = true;
+				continue;
 			}
+
 			Object objx = convert(jn, pi);
-			al.add(objx);
-		}
-		if (al.size() > 0) {
-			setLinkFound.add(li);
-			Object[] objs = al.toArray(new Object[al.size()]);
-			OAObjectKey okx = new OAObjectKey(objs);
 
-			OAObject objx = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), okx);
-			if (objx == null) {
-				objx = (OAObject) OADataSource.getObject(li.getToClass(), okx);
-				if (objx == null) {
-					objx = (OAObject) OAObjectReflectDelegate.createNewObject(li.getToClass());
-					// need to populate
-					int i = 0;
-					for (OAPropertyInfo pi : oix.getPropertyInfos()) {
-						if (!pi.getId()) {
-							continue;
-						}
-						Object val = objs[i++];
-						objx.setProperty(pi.getName(), val);
-					}
-				}
+			objx = oaj.getPropertyValueCallback(null, pi.getLowerName(), objx);
+
+			alKeys.add(objx);
+		}
+
+		if (!bIdMissing) {
+			final Class clazz = stackItem.oi.getForClass();
+			OAObjectKey objKey = new OAObjectKey(alKeys.toArray());
+			OAObject objNew = (OAObject) OAObjectCacheDelegate.get(clazz, objKey);
+
+			if (objNew == null) {
+				objNew = (OAObject) OADataSource.getObject(clazz, objKey);
 			}
-			objNew.setProperty(li.getLowerName(), objx);
+			stackItem.obj = objNew;
+			bResult = (objNew != null);
 		}
-	}}}
-
-	// load any (optional) ImportMatch properties for finding OneLinks.
-	//   These are "extra" properties added to Pojos that can use importMatch value(s) instead of p/fkey(s)
-	for(
-	final OALinkInfo li:oi.getLinkInfos())
-	{
-		if (li.getType() != li.TYPE_ONE) {
-			continue;
-		}
-		if (li.getPrivateMethod()) {
-			continue;
-		}
-		if (hsLinkFound.contains(li)) {
-			continue;
-		}
-
-		if (!oaj.getUsePropertyCallback(objNew, li.getLowerName())) {
-			continue;
-		}
-
-		final OAObjectInfo oix = li.getToObjectInfo();
-		final String[] importMatchPropertyNames = oix.getImportMatchPropertyNames();
-
-		if (importMatchPropertyNames == null || importMatchPropertyNames.length == 0) {
-			continue;
-		}
-
-		if (li.getToClass().equals(oi.getForClass())) {
-			continue;
-		}
-
-		hsLinkFound.add(li);
-		final Map<String, Tuple<OAPropertyPath, Object>> hmNameValue = new HashMap<>();
-
-		boolean bIsNull = false;
-		int pos = 0;
-		for (final String propertyName : importMatchPropertyNames) {
-			String propertyPath = oix.getImportMatchPropertyPaths()[pos];
-
-			OAPropertyPath pp;
-			if (OAString.isEmpty(propertyPath)) {
-				pp = new OAPropertyPath(li.getToClass(), propertyName);
-			} else {
-				pp = new OAPropertyPath(li.getToClass(), propertyPath);
-			}
-			OAPropertyInfo pi = pp.getEndPropertyInfo();
-
-			jn = node.get(propertyName);
-			if (jn != null) {
-				if (jn.isNull()) {
-					bIsNull = true;
-				} else {
-					Object val = convert(jn, pi);
-					hmNameValue.put(propertyName, new Tuple(pp, val));
-				}
-			}
-			pos++;
-		}
-
-		if (bIsNull) {
-			objNew.setProperty(li.getLowerName(), null);
-			continue;
-		}
-
-		if (hmNameValue.size() == 0) {
-			continue;
-		}
-
-		// see if oaObjKey can be created.  This is only when the linkTo's pkey prop values are included.
-		//   otherwise, the other values could be importMatch values that can be used to find the link object (at later time)
-
-		final String[] keyProps = li.getToObjectInfo().getKeyProperties();
-		final List<Object> alKey = new ArrayList<>();
-		for (String keyProp : keyProps) {
-			OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(keyProp);
-			for (String propertyName : importMatchPropertyNames) {
-				Tuple<OAPropertyPath, Object> t = hmNameValue.get(propertyName);
-				if (t == null || t.b == null) {
-					continue;
-				}
-
-				OAPropertyPath pp = t.a;
-				Object val = t.b;
-
-				OALinkInfo[] lis = pp.getLinkInfos();
-				if (lis != null && lis.length == 1 && pp.getEndPropertyInfo() == pi) {
-					alKey.add(val);
-				}
-			}
-		}
-		if (alKey.size() == keyProps.length) {
-			Object[] objs = alKey.toArray(new Object[alKey.size()]);
-			OAObjectKey okx = new OAObjectKey(objs);
-
-			OAObject objx = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), okx);
-			if (objx == null) {
-				objx = (OAObject) OADataSource.getObject(li.getToClass(), okx);
-				if (objx == null) {
-					objx = (OAObject) OAObjectReflectDelegate.createNewObject(li.getToClass());
-					// need to populate
-					int i = 0;
-					for (String keyProp : keyProps) {
-						Object val = alKey.get(i++);
-						objx.setProperty(keyProp, val);
-					}
-
-				}
-			}
-			objNew.setProperty(li.getLowerName(), objx);
-
-		} else {
-			ImportMatch imi = new ImportMatch();
-			imi.fromObject = objNew;
-			imi.liTo = li;
-
-			boolean bValid = false;
-			pos = 0;
-
-			for (String propertyName : importMatchPropertyNames) {
-				String propertyPath = oix.getImportMatchPropertyPaths()[pos++];
-
-				final OAPropertyPath pp = new OAPropertyPath(oix.getForClass(),
-						OAString.isNotEmpty(propertyPath) ? propertyPath : propertyName);
-
-				Tuple<OAPropertyPath, Object> t = hmNameValue.get(propertyName);
-				if (t == null) {
-					bValid = false;
-					break;
-				}
-				bValid = true;
-
-				ImportMatchDetail imd = new ImportMatchDetail();
-				imi.importMatchDetails.add(imd);
-				imd.propertyName = propertyName;
-				imd.value = t.b;
-				imd.propertyPath = t.a.getPropertyPath();
-			}
-
-			if (bValid) {
-				alImportMatch.add(imi);
-			}
-		}
+		return bResult;
 	}
 
-	// load links of type=many
-	for(
-	OALinkInfo li:oi.getLinkInfos())
-	{
-		if (li.getType() != li.TYPE_MANY) {
-			continue;
-		}
-		if (li.getPrivateMethod()) {
-			continue;
-		}
+	private boolean getReferenceUsingImportMatch(final OAJson oaj, final StackItem stackItemParent, final StackItem stackItemChild) {
 
-		if (!oaj.getUsePropertyCallback(objNew, li.getLowerName())) {
-			continue;
-		}
+		int pos = 0;
+		String sql = null;
+		Object[] values = new Object[] {};
 
-		String propertyName = oaj.getPropertyNameCallback(objNew, li.getLowerName());
-		JsonNode nodex = node.get(propertyName);
-		if (nodex instanceof ArrayNode) {
-			Hub<OAObject> hub = (Hub<OAObject>) li.getValue(objNew);
-			ArrayNode nodeArray = (ArrayNode) nodex;
+		for (PojoProperty pjp : PojoLinkOneDelegate.getImportMatchPojoProperties(	stackItemParent.oi.getPojo(),
+																					stackItemChild.li.getName())) {
+			String propertyName = pjp.getName();
+			String propertyPath = pjp.getPropertyPath();
 
-			List<OAObject> alNew = new ArrayList();
-			int x = nodeArray.size();
-			for (int i = 0; i < x; i++) {
-				nodex = nodeArray.get(i);
+			OAPropertyPath pp = new OAPropertyPath(stackItemParent.oi.getForClass(), propertyPath);
 
-				OAObject objx = getLinkObject(objNew, li, nodex);
-				alNew.add(objx);
-			}
-
-			List<OAObject> alRemove = new ArrayList();
-			for (OAObject objx : hub) {
-				if (!alNew.contains(objx)) {
-					alRemove.add(objx);
+			JsonNode jn = stackItemParent.node.get(propertyName);
+			if (jn == null) {
+				if (pp.getEndPropertyInfo() != null && pp.getEndPropertyInfo().isKey()) {
+					continue;
 				}
-			}
-			for (OAObject objx : alNew) {
-				if (!hub.contains(objx)) {
-					hub.add(objx);
-				}
-			}
-			for (OAObject objx : alRemove) {
-				hub.remove(objx);
+				sql = null;
+				break;
 			}
 
-			// same order
-			int i = 0;
-			for (OAObject objx : alNew) {
-				int pos = hub.getPos(objx);
-				hub.move(pos, i);
-				i++;
+			if (sql == null) {
+				sql = "";
+			} else {
+				sql += " AND ";
+			}
+
+			OAPropertyInfo pi;
+			if (OAString.isEmpty(propertyPath)) {
+				sql += propertyName + " = ?";
+				pi = stackItemParent.oi.getPropertyInfo(propertyName);
+			} else {
+				sql += propertyPath + " = ?";
+				pi = pp.getEndPropertyInfo();
+			}
+
+			Object val = convert(jn, pi);
+
+			if (val == null) {
+				sql = null;
+				break;
+			}
+
+			values = OAArray.add(Object.class, values, val);
+		}
+		if (sql == null) {
+			return false;
+		}
+
+		OAObject oaObj = null;
+		if (sql != null) {
+			OASelect sel = new OASelect(stackItemParent.oi.getForClass(), sql, values, "");
+			oaObj = sel.next();
+			sel.close();
+
+			if (oaObj == null) {
+				OAFinder finder = new OAFinder();
+				OAQueryFilter filter = new OAQueryFilter(stackItemParent.oi.getForClass(), sql, values);
+				finder.addFilter(filter);
+				oaObj = (OAObject) OAObjectCacheDelegate.find(stackItemParent.oi.getForClass(), finder);
 			}
 		}
-	}oaj.afterReadCallback(node,objNew);
+		return true;
+	}
 
-	return objNew;
+	//GOOD
+	private boolean getReferenceUsingLinkUnique(final OAJson oaj, final StackItem stackItemParent, final StackItem stackItemChild) {
+
+		final List<PojoProperty> al = PojoLinkOneDelegate.getLinkUniquePojoProperties(	stackItemParent.oi.getPojo(),
+																						stackItemChild.li.getName());
+		if (al == null || al.size() == 0) {
+			return false;
+		}
+
+		//qqqqqqqqq only if you can get to the value for the equal property path
+
+		String s = stackItemChild.li.getEqualPropertyPath();
+		if (OAString.isEmpty(s)) {
+			return false;
+		}
+
+		OAPropertyPath pp = new OAPropertyPath(stackItemParent.oi.getForClass(), s);
+
+		OAObject equalObject = null;
+		/*qqqqqqqqqqqq
+		 * to do
+		 * equalObject = getExistingValueFromStack(oaj, stackItemChild, pp);
+		 */
+
+		if (equalObject == null) {
+			return false;
+		}
+
+		int pos = 0;
+		String sql = null;
+		Object[] values = new Object[] {};
+
+		for (PojoProperty pjp : al) {
+			String propertyName = pjp.getName();
+			String propertyPath = pjp.getPropertyPath();
+
+			pp = new OAPropertyPath(stackItemParent.oi.getForClass(), propertyPath);
+
+			JsonNode jn = stackItemParent.node.get(propertyName);
+			if (jn == null) {
+				if (pp.getEndPropertyInfo() != null && pp.getEndPropertyInfo().isKey()) {
+					continue;
+				}
+				sql = null;
+				break;
+			}
+
+			if (sql == null) {
+				sql = "";
+			} else {
+				sql += " AND ";
+			}
+
+			sql += "(";
+
+			OAPropertyInfo pi;
+			if (OAString.isEmpty(propertyPath)) {
+				sql += propertyName + " = ?";
+				pi = stackItemParent.oi.getPropertyInfo(propertyName);
+			} else {
+				sql += propertyPath + " = ?";
+				pi = pp.getEndPropertyInfo();
+			}
+
+			Object val = convert(jn, pi);
+
+			if (val == null) {
+				sql = null;
+				break;
+			}
+
+			values = OAArray.add(Object.class, values, val);
+
+			sql += " AND ";
+
+			sql += stackItemChild.li.getReverseLinkInfo().getEqualPropertyPath() + " = ?";
+			values = OAArray.add(Object.class, values, equalObject);
+
+			sql += ")";
+		}
+
+		// qqqqqqqqqq might want to use reverse pp of toObj equal pp and do a find on that Hub
+
+		OAObject oaObj = null;
+		if (sql != null) {
+			OASelect sel = new OASelect(stackItemChild.oi.getForClass(), sql, values, "");
+			oaObj = sel.next();
+			sel.close();
+
+			if (oaObj == null) {
+				OAFinder finder = new OAFinder();
+				OAQueryFilter filter = new OAQueryFilter(stackItemChild.oi.getForClass(), sql, values);
+				finder.addFilter(filter);
+				oaObj = (OAObject) OAObjectCacheDelegate.find(stackItemChild.oi.getForClass(), finder);
+			}
+		}
+
+		return true;
 	}
 
 	protected Object convert(final JsonNode jn, final OAPropertyInfo pi) {
@@ -1195,84 +885,30 @@ qqqqqqqqq
 		return objx;
 	}
 
-	protected OAObject getLinkObject(OAObject fromObject, OALinkInfo li, JsonNode nodeForLinkProperty) {
-		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
-
-		OAObject objNew = null;
-		if (nodeForLinkProperty.isObject()) {
-			if (li.getAutoCreateNew() && li.getType() == OALinkInfo.ONE) {
-				// was: if (li.getOwner() && li.getAutoCreateNew() && li.getType() == OALinkInfo.ONE) {
-				objNew = (OAObject) li.getValue(fromObject);
-				loadObject(objNew, nodeForLinkProperty);
-			} else {
-				String extraWhereClause = null;
-				Object extraWhereParam = null;
-
-				boolean b = li.getOwner();
-				if (!b) {
-					final String uniqueName = li.getUniqueProperty();
-					if (OAString.isNotEmpty(uniqueName)) {
-						OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(li.getToClass());
-						OAPropertyInfo pi = oi.getPropertyInfo(uniqueName);
-						if (pi != null) {
-							b = pi.getImportMatch();
-						} else {
-							OALinkInfo lix = oi.getLinkInfo(uniqueName);
-							if (lix != null) {
-								b = lix.getImportMatch();
-							}
-						}
-					}
-				}
-
-				if (b) {
-					OALinkInfo rli = li.getReverseLinkInfo();
-					extraWhereClause = rli.getName() + " = ?";
-					extraWhereParam = fromObject;
-
-				}
-				objNew = getObject(li.getToObjectInfo(), nodeForLinkProperty, extraWhereClause, extraWhereParam);
+	private StackItem getObjectFromStack(StackItem stackItem, OAPropertyPath pp) {
+		if (stackItem == null) {
+			return null;
+		}
+		if (pp == null) {
+			return null;
+		}
+		StackItem si = stackItem;
+		for (OALinkInfo li : pp.getLinkInfos()) {
+			if (si.li != li) {
+				return null;
 			}
-		} else if (nodeForLinkProperty.isNull()) {
-			// no-op
-		} else if (nodeForLinkProperty.isNumber()) {
-			// single part id
-			OAObjectKey ok = new OAObjectKey(nodeForLinkProperty.asLong());
-			objNew = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), ok);
-			if (objNew == null) {
-				objNew = (OAObject) OADataSource.getObject(li.getToClass(), ok);
-			}
-		} else if (nodeForLinkProperty.isTextual()) {
-			String s = nodeForLinkProperty.asText();
-			if (s.indexOf("guid.") == 0) {
-				s = s.substring(5);
-				int guid = Integer.parseInt(s);
-				if (oaj != null) {
-					objNew = oaj.getGuidMap().get(guid);
-				}
-			} else {
-				OAObjectKey ok = OAJson.convertJsonSinglePartIdToObjectKey(li.getToClass(), s);
-
-				objNew = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), ok);
-				if (objNew != null) {
-					fromObject.setProperty(li.getName(), objNew);
-				} else {
-					// just save the objectKey in the object's property ??
-					Object objx = OAObjectPropertyDelegate.getProperty(fromObject, li.getName(), false, true);
-					if (objx instanceof OAObjectKey) {
-						OAObjectPropertyDelegate.setPropertyCAS(fromObject, li.getName(), ok, objx);
-					} else if (objx instanceof OAObject) {
-						// need to get and replace, since it's loaded
-					} else if (objx == null) {
-						//  need to get and replace, since it could be loaded
-					}
-
-					// get from DS
-					objNew = (OAObject) OADataSource.getObject(li.getToClass(), ok);
-				}
+			si = si.parent;
+			if (si == null) {
+				return null;
 			}
 		}
-		return objNew;
+		return si;
 	}
 
+	/*qqqqqqqqqqqqqqq
+	 * Propertypath that is currently being read/written.
+	  public String getCurrentPropertyPath() {
+	  		String pp = "";
+	  for (StackItem si : getStack()) { if (pp.length() > 0) { pp = "." + pp; } pp = si.li.getLowerName() + pp; } return pp; }
+	 */
 }

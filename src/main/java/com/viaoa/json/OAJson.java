@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -102,8 +101,7 @@ public class OAJson {
 
 	private OAObject root;
 	private Class readObjectClass;
-
-	private final Stack<StackItem> stack = new Stack<>();
+	private StackItem stackItem; //qqqqqqqqq
 
 	public static class StackItem {
 		public StackItem parent; //qqqqq need to populate this
@@ -152,7 +150,6 @@ public class OAJson {
 		if (alImportMatch != null) {
 			alImportMatch.clear();
 		}
-		this.stack.clear();
 	}
 
 	/**
@@ -215,7 +212,6 @@ public class OAJson {
 	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */
 	public String write(Object obj) throws JsonProcessingException {
-		this.stack.clear();
 		this.cascade = null;
 		String json;
 		try {
@@ -245,7 +241,6 @@ public class OAJson {
 	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */
 	public void write(Object obj, File file) throws JsonProcessingException, IOException {
-		this.stack.clear();
 		this.cascade = null;
 		String json;
 		try {
@@ -262,7 +257,6 @@ public class OAJson {
 	 * Convert OAObject to a JSON stream, including any owned Links, and links in propertyPaths.
 	 */
 	public void write(Object obj, final OutputStream stream) throws JsonProcessingException, IOException {
-		this.stack.clear();
 		this.cascade = null;
 		String json;
 		try {
@@ -363,7 +357,6 @@ public class OAJson {
 		reset();
 		this.readObjectClass = clazz;
 		ObjectMapper om = getObjectMapper();
-		this.stack.clear();
 
 		hmGuidObject = null;
 		Map<Integer, OAObject> hmGuidMap = getGuidMap();
@@ -586,7 +579,6 @@ public class OAJson {
 	}
 
 	public void write(final Hub<? extends OAObject> hub, File file) throws JsonProcessingException, IOException {
-		this.stack.clear();
 		this.cascade = null;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
@@ -599,7 +591,6 @@ public class OAJson {
 	}
 
 	public String write(final Hub<? extends OAObject> hub) throws JsonProcessingException {
-		this.stack.clear();
 		this.cascade = null;
 		String json;
 		try {
@@ -758,7 +749,6 @@ public class OAJson {
 			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
 
 		final OAJson oaj = new OAJson();
-		oaj.stack.clear();
 
 		try {
 			OAThreadLocalDelegate.setOAJackson(oaj);
@@ -928,25 +918,6 @@ public class OAJson {
 			parentNode = jn;
 		}
 		return parentNode;
-	}
-
-	/**
-	 * Propertypath that is currently being read/written.
-	 */
-	public String getCurrentPropertyPath() {
-		String pp = "";
-
-		for (StackItem si : getStack()) {
-			if (pp.length() > 0) {
-				pp = "." + pp;
-			}
-			pp = si.li.getLowerName() + pp;
-		}
-		return pp;
-	}
-
-	public Stack<StackItem> getStack() {
-		return this.stack;
 	}
 
 	// called during read/write
