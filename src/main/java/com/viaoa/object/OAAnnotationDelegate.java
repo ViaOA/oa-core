@@ -197,6 +197,8 @@ public class OAAnnotationDelegate {
 
 			pi.setFkeyOnly(oaprop.isFkeyOnly());
 
+			pi.setLowerName(oaprop.lowerName());
+
 			s = oaprop.displayName();
 			if (OAString.isEmpty(s)) {
 				s = OAString.getDisplayName(name);
@@ -438,6 +440,8 @@ public class OAAnnotationDelegate {
 			}
 
 			li.setImportMatch(annotation.importMatch());
+
+			li.setLowerName(annotation.lowerName());
 
 			s = annotation.displayName();
 			if (OAString.isEmpty(s)) {

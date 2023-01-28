@@ -24,6 +24,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAOne {
+	String lowerName() default "";
+
 	String displayName() default "";
 
 	String description() default "";

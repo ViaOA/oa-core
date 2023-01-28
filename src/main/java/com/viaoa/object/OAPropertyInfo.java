@@ -26,6 +26,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	static final long serialVersionUID = 1L;
 
 	private String name;
+	private String lowerName;
 
 	private int maxLength;
 	private int displayLength;
@@ -193,7 +194,14 @@ public class OAPropertyInfo implements java.io.Serializable {
 	}
 
 	public String getLowerName() {
+		if (OAString.isNotEmpty(lowerName)) {
+			return lowerName;
+		}
 		return OAString.mfcl(name);
+	}
+
+	public void setLowerName(String name) {
+		this.lowerName = name;
 	}
 
 	public String getDisplayName() {

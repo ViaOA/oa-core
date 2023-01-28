@@ -101,12 +101,17 @@ public class OAJson {
 
 	private OAObject root;
 	private Class readObjectClass;
-	private StackItem stackItem; //qqqqqqqqq
+	private StackItem stackItem;
 
 	public static class StackItem {
+
+		public StackItem() {
+
+		}
+
 		public StackItem parent; //qqqqq need to populate this
 		public OAObjectInfo oi;
-		public OALinkInfo li; // from parent
+		public OALinkInfo li; // from parent to child
 		public JsonNode node;
 		public OAObject obj;
 		public OAObjectKey key;
@@ -150,6 +155,7 @@ public class OAJson {
 		if (alImportMatch != null) {
 			alImportMatch.clear();
 		}
+		setStackItem(null);
 	}
 
 	/**
@@ -212,6 +218,7 @@ public class OAJson {
 	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */
 	public String write(Object obj) throws JsonProcessingException {
+		setStackItem(null);
 		this.cascade = null;
 		String json;
 		try {
@@ -241,6 +248,7 @@ public class OAJson {
 	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */
 	public void write(Object obj, File file) throws JsonProcessingException, IOException {
+		setStackItem(null);
 		this.cascade = null;
 		String json;
 		try {
@@ -257,6 +265,7 @@ public class OAJson {
 	 * Convert OAObject to a JSON stream, including any owned Links, and links in propertyPaths.
 	 */
 	public void write(Object obj, final OutputStream stream) throws JsonProcessingException, IOException {
+		setStackItem(null);
 		this.cascade = null;
 		String json;
 		try {
@@ -275,6 +284,14 @@ public class OAJson {
 	public <T> T readObject(final String json, final Class<T> clazz) throws JsonProcessingException {
 		T t = readObject(json, clazz, false);
 		return t;
+	}
+
+	public StackItem getStackItem() {
+		return stackItem;
+	}
+
+	public void setStackItem(StackItem si) {
+		this.stackItem = si;
 	}
 
 	/**
@@ -357,6 +374,7 @@ public class OAJson {
 		reset();
 		this.readObjectClass = clazz;
 		ObjectMapper om = getObjectMapper();
+		setStackItem(null);
 
 		hmGuidObject = null;
 		Map<Integer, OAObject> hmGuidMap = getGuidMap();
@@ -579,6 +597,7 @@ public class OAJson {
 	}
 
 	public void write(final Hub<? extends OAObject> hub, File file) throws JsonProcessingException, IOException {
+		setStackItem(null);
 		this.cascade = null;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
@@ -591,6 +610,7 @@ public class OAJson {
 	}
 
 	public String write(final Hub<? extends OAObject> hub) throws JsonProcessingException {
+		setStackItem(null);
 		this.cascade = null;
 		String json;
 		try {
@@ -749,6 +769,7 @@ public class OAJson {
 			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
 
 		final OAJson oaj = new OAJson();
+		oaj.setStackItem(null);
 
 		try {
 			OAThreadLocalDelegate.setOAJackson(oaj);
@@ -920,6 +941,30 @@ public class OAJson {
 		return parentNode;
 	}
 
+	/**
+	 * PropertyPath that is currently being read/written.
+	 */
+	public String getCurrentPropertyPath() {
+		StackItem si = stackItem;
+		if (si == null) {
+			return null;
+		}
+
+		String pp = null;
+		for (; si != null;) {
+			if (si.li != null) {
+				if (pp == null) {
+					pp = si.li.getLowerName();
+				} else {
+					pp = si.li.getLowerName() + "." + pp;
+				}
+			}
+			si = si.parent;
+		}
+
+		return pp;
+	}
+
 	// called during read/write
 	public String getPropertyNameCallback(Object obj, String defaultName) {
 		return defaultName;
@@ -953,4 +998,5 @@ public class OAJson {
 	public boolean getWriteAsPojo() {
 		return this.bWriteAsPojo;
 	}
+
 }

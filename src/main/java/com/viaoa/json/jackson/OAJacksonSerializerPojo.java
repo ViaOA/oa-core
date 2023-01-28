@@ -130,12 +130,14 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 				continue;
 			}
 
+			/*
 			if (oaj.getWriteAsPojo()) {
 				//qqqq make this dynamic and use propertyPaths to include
 				if (!li.getOwner()) {
 					continue;
 				}
 			}
+			*/
 
 			String propertyName = li.getLowerName();
 			if (!oaj.getUsePropertyCallback(oaObj, propertyName)) {
@@ -146,11 +148,13 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 
 			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bIncludeOwned, alPropertyPaths)) {
 				propertyName = oaj.getPropertyNameCallback(oaObj, propertyName);
+				OAJson.StackItem si = new OAJson.StackItem();
+				si.parent = oaj.getStackItem();
+				si.li = li;
+				si.obj = oaObj;
+				oaj.setStackItem(si);
+
 				try {
-					OAJson.StackItem si = new OAJson.StackItem();
-					si.li = li;
-					si.obj = oaObj;
-					oaj.getStack().push(si);
 
 					OAObject objx = (OAObject) li.getValue(oaObj);
 					objx = (OAObject) oaj.getPropertyValueCallback(oaObj, propertyName, objx);
@@ -169,7 +173,7 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 					}
 
 				} finally {
-					oaj.getStack().pop();
+					oaj.setStackItem(si.parent);
 				}
 			}
 
@@ -227,16 +231,19 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 			}
 
 			// only send owned objects for the root object(s)
-			boolean bx = bIncludeOwned && oaj.getStack().size() == 0;
+			boolean bx = bIncludeOwned;
+			if (bx) {
+				OAJson.StackItem si = oaj.getStackItem();
+				bx = si == null || si.parent == null;
+			}
 
 			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bx, alPropertyPaths)) {
+				OAJson.StackItem si = new OAJson.StackItem();
+				si.parent = oaj.getStackItem();
+				si.li = li;
+				// si.obj = oaObj;
+				oaj.setStackItem(si);
 				try {
-
-					OAJson.StackItem si = new OAJson.StackItem();
-					si.li = li;
-					// si.obj = oaObj;
-					oaj.getStack().push(si);
-
 					Hub hub = (Hub) li.getValue(oaObj);
 
 					gen.writeArrayFieldStart(propertyName);
@@ -262,7 +269,7 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 					}
 
 				} finally {
-					oaj.getStack().pop();
+					oaj.setStackItem(si.parent);
 					gen.writeEndArray();
 				}
 			} else {
@@ -364,7 +371,7 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 		if (li == null) {
 			return false;
 		}
-		if (bIncludeOwned && li.getOwner()) {
+		if (bIncludeOwned && (li.getOwner() || li.getAutoCreateNew())) {
 			return true;
 		}
 		if (alPropertyPaths == null) {
@@ -467,4 +474,5 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 			gen.writeStringField(lowerName, result);
 		}
 	}
+
 }

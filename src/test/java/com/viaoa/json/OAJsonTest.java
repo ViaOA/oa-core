@@ -5,6 +5,10 @@ import org.junit.Test;
 import com.corptostore.model.oa.CorpToStore;
 import com.corptostore.model.oa.PurgeWindow;
 import com.corptostore.model.pojo.CorpToStorePojoTest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 
 public class OAJsonTest {
@@ -52,4 +56,56 @@ public class OAJsonTest {
 		OAJsonTest test = new OAJsonTest();
 		test.jsonTest();
 	}
+
+	public String fixMessageAdjustOverstockControl(String json) throws JsonProcessingException {
+		OAJson oj = new OAJson();
+
+		// ObjectMapper om = RpgJsonConverter.getObjectMapper();
+		ObjectMapper om = oj.getObjectMapper();
+
+		ObjectNode nodeRoot = (ObjectNode) om.readTree(json);
+		JsonNode node = nodeRoot.get("subCode");
+		if (node.isTextual()) {
+			String value = node.asText();
+			value = removeLeadingZeros(value);
+			nodeRoot.put("subCode", value);
+		}
+
+		node = nodeRoot.get("plcd");
+		if (node.isTextual()) {
+			String value = node.asText();
+			value = removeLeadingZeros(value);
+			nodeRoot.put("plcd", value);
+		}
+
+		json = om.writeValueAsString(nodeRoot);
+		return json;
+	}
+
+	public String removeLeadingZeros(String json) {
+		for (;;) {
+			if (json == null || json.length() < 2) {
+				break;
+			}
+			if (json.charAt(0) != '0') {
+				break;
+			}
+			json = json.substring(1);
+		}
+		return json;
+	}
+
+	public static void main2(String[] args) throws Exception {
+		OAJsonTest oj = new OAJsonTest();
+
+		for (;;) {
+			String json = "";
+
+			json = oj.fixMessageAdjustOverstockControl(json);
+
+			int xx = 1;
+			xx++;
+		}
+	}
+
 }

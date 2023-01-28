@@ -183,7 +183,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 					OAObject objx = (OAObject) li.getValue(oaObj);
 					objx = (OAObject) oaj.getPropertyValueCallback(oaObj, propertyName, objx);
 
-					oaj.getStackObject().push(objx);
+					oaj.getStack().push(objx);
 
 					if (objx == null) {
 						gen.writeNullField(propertyName);
@@ -200,7 +200,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
 				} finally {
 					oaj.getStackLinkInfo().pop();
-					oaj.getStackObject().pop();
+					oaj.getStack().pop();
 				}
 			}
 
@@ -263,7 +263,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bx, alPropertyPaths)) {
 				try {
 					oaj.getStackLinkInfo().push(li);
-					oaj.getStackObject().push(null);
+					oaj.getStack().push(null);
 
 					Hub hub = (Hub) li.getValue(oaObj);
 

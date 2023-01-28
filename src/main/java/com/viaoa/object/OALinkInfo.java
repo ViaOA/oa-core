@@ -34,6 +34,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	public static final int TYPE_MANY = 1;
 
 	String name;
+	String lowerName;
 	String displayName;
 	Class toClass;
 	int type;
@@ -192,7 +193,14 @@ public class OALinkInfo { //implements java.io.Serializable {
 	}
 
 	public String getLowerName() {
+		if (OAString.isNotEmpty(lowerName)) {
+			return lowerName;
+		}
 		return OAString.mfcl(name);
+	}
+
+	public void setLowerName(String s) {
+		this.lowerName = s;
 	}
 
 	public String getDisplayName() {
@@ -458,7 +466,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 		public String[] getPojoNames() {
 			return pojoNames;
 		}
-	
+
 		public void setPojoNames(String[] names) {
 			pojoNames = names;
 		}
