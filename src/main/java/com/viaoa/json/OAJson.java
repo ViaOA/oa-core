@@ -115,7 +115,6 @@ public class OAJson {
 		public JsonNode node;
 		public OAObject obj;
 		public OAObjectKey key;
-		public Hub hub;
 	}
 
 	/**

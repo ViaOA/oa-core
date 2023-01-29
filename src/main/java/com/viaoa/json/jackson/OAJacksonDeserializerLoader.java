@@ -78,8 +78,17 @@ public class OAJacksonDeserializerLoader {
 		stackItem.oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 		stackItem.obj = root;
 		stackItem.node = node;
+
+		StackItem siHold = oajson.getStackItem();
 		oajson.setStackItem(stackItem);
-		load(stackItem);
+
+		try {
+			oajson.setStackItem(stackItem);
+			load(stackItem);
+
+		} finally {
+			oajson.setStackItem(siHold);
+		}
 		return (T) stackItem.obj;
 	}
 
@@ -98,23 +107,30 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	protected boolean getObject(final StackItem stackItem) {
-		boolean b = getObjectUsingStack(stackItem);
+		boolean b = (stackItem.obj != null);
 		if (!b) {
-			b = getObjectUsingGuid(stackItem);
+			b = getObjectUsingStack(stackItem);
 			if (!b) {
-				b = getObjectUsingPKeys(stackItem);
+				b = getObjectUsingGuid(stackItem);
 				if (!b) {
-					b = getObjectUsingImportMatches(stackItem);
+					b = getObjectUsingPKeys(stackItem);
 					if (!b) {
-						b = getObjectUsingLinkUnique(stackItem);
+						b = getObjectUsingNewObjectGuid(stackItem);
 						if (!b) {
-							//qqqqqqqqq need to create new ???
+							b = getObjectUsingImportMatches(stackItem);
+							if (!b) {
+								b = getObjectUsingLinkUnique(stackItem);
+								if (!b) {
+									// load(..) will call createObject
+								}
+							}
 						}
 					}
 				}
 			}
 		}
 		return b;
+
 	}
 
 	protected boolean getObjectUsingStack(final StackItem stackItem) {
@@ -186,7 +202,7 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	protected boolean getObjectUsingGuid(final StackItem stackItem) {
-		//qqqqqqq todo:  quid could also be placeholder for object ref, ex: "customer": "guid.1234"
+		// will see if object is already loaded from this json loader
 		boolean bResult = false;
 		JsonNode jn = stackItem.node.get("guid");
 		if (jn != null) {
@@ -219,10 +235,15 @@ public class OAJacksonDeserializerLoader {
 
 			if (jn == null) {
 				bIdMissing = true;
-				continue;
+				break;
 			}
 
 			Object objx = convert(jn, pi);
+
+			if (objx == null) {
+				bIdMissing = true;
+				break;
+			}
 
 			objx = oajson.getPropertyValueCallback(null, pi.getLowerName(), objx);
 
@@ -239,6 +260,19 @@ public class OAJacksonDeserializerLoader {
 			}
 			stackItem.obj = objNew;
 			bResult = (objNew != null);
+		}
+		return bResult;
+	}
+
+	protected boolean getObjectUsingNewObjectGuid(final StackItem stackItem) {
+		boolean bResult = false;
+
+		JsonNode jn = stackItem.node.get("guid");
+		if (jn != null) {
+			int guid = jn.asInt();
+			OAObjectKey objKey = new OAObjectKey(new Object[0], guid, true);
+			stackItem.obj = (OAObject) OAObjectCacheDelegate.get(stackItem.oi.getForClass(), objKey);
+			bResult = stackItem.obj != null;
 		}
 		return bResult;
 	}
@@ -330,6 +364,7 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	protected boolean getObjectUsingLinkUnique(final StackItem stackItem) {
+		// see if object can be found in an existing O2M hub that has a link.uniqueProp
 		boolean bResult = false;
 
 		for (OALinkInfo li : stackItem.oi.getLinkInfos()) {
@@ -351,10 +386,15 @@ public class OAJacksonDeserializerLoader {
 			stackItemChild.oi = li.getToObjectInfo();
 			stackItemChild.li = li;
 
-			if (stackItem.parent != null && stackItem.li == li) {
+			if (stackItem.parent != null && stackItem.li == rli) {
 				stackItemChild.obj = stackItem.parent.obj;
 			} else {
-				getReferenceObject(stackItemChild);
+				try {
+					oajson.setStackItem(stackItemChild);
+					getReferenceObject(stackItemChild);
+				} finally {
+					oajson.setStackItem(stackItem);
+				}
 			}
 
 			if (stackItemChild.obj == null) {
@@ -583,12 +623,24 @@ public class OAJacksonDeserializerLoader {
 				for (int i = 0; i < x; i++) {
 					nodex = nodeArray.get(i);
 
-					/* qqqqqqqq need to create another stackItem
+					StackItem stackItemChild = new StackItem();
+					stackItemChild.parent = stackItem;
+					stackItemChild.oi = li.getToObjectInfo();
+					stackItemChild.li = li;
+					stackItemChild.node = nodex;
+					try {
+						oajson.setStackItem(stackItemChild);
+						getObject(stackItemChild);
+					} finally {
+						oajson.setStackItem(stackItem);
+					}
 
-					OAObject objx = getLinkObject(objNew, li, nodex);
-					alNew.add(objx);
-
-					*/
+					//qqqqqq
+					if (stackItemChild.obj == null) {
+						//qqqqqqqq error
+					} else {
+						alNew.add(stackItemChild.obj);
+					}
 				}
 
 				List<OAObject> alRemove = new ArrayList();
