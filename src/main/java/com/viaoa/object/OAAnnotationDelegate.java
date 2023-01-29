@@ -238,7 +238,7 @@ public class OAAnnotationDelegate {
 			pi.setTimeZonePropertyPath(oaprop.timeZonePropertyPath());
 
 			pi.setClassType(m.getReturnType());
-			pi.setTrackPrimitiveNull(pi.getIsPrimitive() && oaprop.trackPrimitiveNull());
+			pi.setTrackPrimitiveNull(pi.getIsPrimitive() && oaprop.trackPrimitiveNull() && !oaprop.isFkeyOnly());
 
 			pi.setFormat(oaprop.format());
 
