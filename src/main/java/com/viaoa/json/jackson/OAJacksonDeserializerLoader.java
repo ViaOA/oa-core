@@ -92,6 +92,10 @@ public class OAJacksonDeserializerLoader {
 		return (T) stackItem.obj;
 	}
 
+	/**
+	 * Main method for loading JsonObject into a (new or existing) OAObject.<br>
+	 * Recursively will load all link objects.
+	 */
 	protected void load(final StackItem stackItem) {
 		if (stackItem == null) {
 			return;
@@ -542,59 +546,100 @@ public class OAJacksonDeserializerLoader {
 
 	protected void loadObjectOneLink(final StackItem stackItem, final StackItem stackItemChild) {
 
-		final OALinkInfo li = stackItemChild.li;
-
 		/* choices:
-			1: link.name json object node (use load object)
-			2: link.name json text node ("guid.999", or "obj-key")
-			3: use pojo link
-			3a: fkey props
-			3b: link match props
-			3c: linkUnique props
+		 	1: node with link name exists
+		 	1a: null
+			1b: object node (use load object)
+			1c: json number node, prop Id value (75)
+			1d: text node ("guid.999", or "obj-key")
+
+			2: use reference properties and pojo*
+			2a: fkey props
+			2b: link match props
+			2c: linkUnique props
 		*/
 
-		if (stackItemChild.node == null) {
-		} else if (stackItemChild.node.isNull()) {
-			stackItem.obj.setProperty(li.getLowerName(), null);
-			return;
-		} else if (stackItemChild.node.isObject()) {
-			getObject(stackItemChild);
-			stackItem.obj.setProperty(li.getLowerName(), stackItemChild.obj);
-			return;
-		} else if (stackItemChild.node.isTextual()) {
-			String s = stackItemChild.node.asText();
-			if (s.indexOf("guid.") == 0) {
-				s = s.substring(5);
-				int guid = Integer.parseInt(s);
-				if (oajson != null) {
-					stackItemChild.obj = oajson.getGuidMap().get(guid);
-				}
-				stackItem.obj.setProperty(li.getLowerName(), stackItemChild.obj);
-			} else {
-				stackItemChild.key = OAJson.convertJsonSinglePartIdToObjectKey(stackItemChild.li.getToClass(), s);
-				stackItemChild.obj = (OAObject) OAObjectCacheDelegate.get(stackItemChild.li.getToClass(), stackItemChild.key);
-				if (stackItemChild.obj == null) {
-					// get from DS
-					stackItemChild.obj = (OAObject) OADataSource.getObject(stackItemChild.li.getToClass(), stackItemChild.key);
-					if (stackItemChild.obj == null) {
-						//qqqqqqqqq test this, might need to use propetyDelegate to set the objKey and also send change event??
-						stackItem.obj.setProperty(li.getLowerName(), stackItemChild.key);
-					} else {
-						stackItem.obj.setProperty(li.getLowerName(), stackItemChild.obj);
-					}
-				}
-			}
-			return;
+		boolean b = loadObjectOneLink1(stackItemChild);
+		if (!b) {
+			getReferenceObject(stackItemChild);
 		}
 
-		getReferenceObject(stackItemChild);
+		if (stackItemChild.obj == null && stackItemChild.key != null) {
+			stackItemChild.obj = (OAObject) OAObjectCacheDelegate.get(stackItemChild.li.getToClass(), stackItemChild.key);
+			if (stackItemChild.obj == null) {
+				// get from DS
+				stackItemChild.obj = (OAObject) OADataSource.getObject(stackItemChild.li.getToClass(), stackItemChild.key);
+			}
+		}
 
-		if (stackItemChild.obj != null) {
-			stackItem.obj.setProperty(li.getLowerName(), stackItemChild.obj);
+		if (stackItemChild.obj != null || (b && stackItemChild.key == null)) {
+			stackItem.obj.setProperty(stackItemChild.li.getLowerName(), stackItemChild.obj);
+		} else if ((b && stackItemChild.key == null)) {
+			stackItem.obj.setProperty(stackItemChild.li.getLowerName(), null);
 		} else if (stackItemChild.key != null) {
 			//qqqqqqqqq test this, might need to use propetyDelegate to set the objKey and also send change event??
-			stackItem.obj.setProperty(li.getLowerName(), stackItemChild.key);
+			stackItem.obj.setProperty(stackItemChild.li.getLowerName(), stackItemChild.key);
+		} else {
+			//qqqqqqqq exception?? if it's not included (.. do nothing)
 		}
+	}
+
+	protected boolean loadObjectOneLink1(final StackItem stackItemChild) {
+		if (stackItemChild.node == null) {
+			return false;
+		}
+		if (loadObjectOneLink1a(stackItemChild)) {
+			return true;
+		}
+		if (loadObjectOneLink1b(stackItemChild)) {
+			load(stackItemChild);
+			return true;
+		}
+		if (loadObjectOneLink1c(stackItemChild)) {
+			return true;
+		}
+		if (loadObjectOneLink1d(stackItemChild)) {
+			return true;
+		}
+		return false;
+	}
+
+	protected boolean loadObjectOneLink1a(final StackItem stackItemChild) {
+		return stackItemChild.node.isNull();
+	}
+
+	protected boolean loadObjectOneLink1b(final StackItem stackItemChild) {
+		if (!stackItemChild.node.isObject()) {
+			return false;
+		}
+		load(stackItemChild);
+		return true;
+	}
+
+	protected boolean loadObjectOneLink1c(final StackItem stackItemChild) {
+		if (!stackItemChild.node.isNumber()) {
+			return false;
+		}
+		String id = stackItemChild.node.asText();
+		stackItemChild.key = OAJson.convertJsonSinglePartIdToObjectKey(stackItemChild.li.getToClass(), id);
+		return true;
+	}
+
+	protected boolean loadObjectOneLink1d(final StackItem stackItemChild) {
+		if (!stackItemChild.node.isTextual()) {
+			return false;
+		}
+		String s = stackItemChild.node.asText();
+		if (s.indexOf("guid.") == 0) {
+			s = s.substring(5);
+			int guid = Integer.parseInt(s);
+			if (oajson != null) {
+				stackItemChild.obj = oajson.getGuidMap().get(guid);
+			}
+		} else {
+			stackItemChild.key = OAJson.convertJsonSinglePartIdToObjectKey(stackItemChild.li.getToClass(), s);
+		}
+		return true;
 	}
 
 	protected void loadObjectManyLinks(final StackItem stackItem) {
@@ -628,9 +673,17 @@ public class OAJacksonDeserializerLoader {
 					stackItemChild.oi = li.getToObjectInfo();
 					stackItemChild.li = li;
 					stackItemChild.node = nodex;
+
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+
+					/*qqqqqqqqqqqqqq might not be a NodeObject ... but a ref to existing
+									*** see LinkOne code above for all options
+
+					*/
+
 					try {
 						oajson.setStackItem(stackItemChild);
-						getObject(stackItemChild);
+						load(stackItemChild);
 					} finally {
 						oajson.setStackItem(stackItem);
 					}
