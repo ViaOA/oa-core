@@ -165,7 +165,6 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	protected boolean getObjectUsingStackPKeys(final StackItem stackItemParent, final StackItem stackItemChild) {
-
 		if (stackItemParent.obj == null) {
 			return false;
 		}
@@ -681,7 +680,7 @@ public class OAJacksonDeserializerLoader {
 			1b: object node (use load object)
 			1c: json number node, prop Id value (75)
 			1d: text node ("guid.999", or "obj-key")
-		
+
 			2: use reference properties and pojo*
 			2a: fkey props
 			2b: link match props
@@ -852,11 +851,11 @@ public class OAJacksonDeserializerLoader {
 		1d: text node ("guid.999", or "obj-key")
 		*/
 
-		boolean b = loadObjectManyLinkPos1b(stackItemChild, pos);
+		boolean b = loadObjectManyLinkPos1b(stackItemChild, pos); // json object node
 		if (!b) {
-			b = loadObjectManyLinkPos1c(stackItemChild, pos);
+			b = loadObjectManyLinkPos1c(stackItemChild, pos); // json numeric node
 			if (!b) {
-				b = loadObjectManyLinkPos1d(stackItemChild, pos);
+				b = loadObjectManyLinkPos1d(stackItemChild, pos); // json text node for guid or multipart-key
 			}
 		}
 		if (b) {
@@ -907,13 +906,13 @@ public class OAJacksonDeserializerLoader {
 
 	}
 
-	//qqqqqqqqqqqqqqqq REFERENCE OBJECTS
+	// REFERENCE OBJECTS
 
-	// this does not load the object or set the parent's link property, only finds the matching one
+	// this does not load the object or set the parent's link property, only finds the matching one and updates stackItem.key/obj
 	protected void getReferenceObject(final StackItem stackItemChild) {
 		final StackItem stackItemParent = stackItemChild.parent;
 
-		boolean b = getReferenceUsingStackFKeys(stackItemChild);
+		boolean b = getReferenceUsingStackFKeys(stackItemParent, stackItemChild);
 		if (b) {
 			return;
 		}
@@ -930,12 +929,47 @@ public class OAJacksonDeserializerLoader {
 		}
 	}
 
-	protected boolean getReferenceUsingStackFKeys(final StackItem stackItemChild) {
-		return false; //qqqqqqqqqqqqqqqqqqqqqqqqqqqq
+	protected boolean getReferenceUsingStackFKeys(final StackItem stackItemParent, final StackItem stackItemChild) {
+		if (stackItemParent.obj == null) {
+			return false;
+		}
+
+		OAObjectKey ok = getObjectKeyFromFkeys(stackItemChild);
+		if (ok == null) {
+			return false;
+		}
+
+		if (stackItemChild.li.getType() != OALinkInfo.TYPE_MANY) {
+			OAObject objx = (OAObject) stackItemChild.li.getValue(stackItemParent.obj);
+			boolean b = (ok.equals(objx));
+			if (b) {
+				stackItemChild.obj = objx;
+			}
+			return b;
+		}
+
+		Hub hub = (Hub) stackItemChild.li.getValue(stackItemParent.obj);
+
+		OAObject objx = (OAObject) HubDataDelegate.getObject(hub, ok);
+		if (objx == null) {
+			return false;
+		}
+
+		stackItemChild.obj = objx;
+		return true;
 	}
 
-	//qqqqqqqqqqq PojoLinkOneDelegate.getLinkFkeyPojoProperties(    ... could be null
 	protected boolean getReferenceUsingFKeys(final StackItem stackItemParent, final StackItem stackItemChild) {
+		OAObjectKey ok = getObjectKeyFromFkeys(stackItemChild);
+		if (ok == null) {
+			return false;
+		}
+		stackItemChild.key = ok;
+		return true;
+	}
+
+	protected OAObjectKey getObjectKeyFromFkeys(final StackItem stackItemChild) {
+		final StackItem stackItemParent = stackItemChild.parent;
 		Map<String, Object> hm = new HashMap<>();
 		for (PojoProperty pjp : PojoLinkOneDelegate.getLinkFkeyPojoProperties(	stackItemParent.oi.getPojo(),
 																				stackItemChild.li.getLowerName())) {
@@ -952,7 +986,7 @@ public class OAJacksonDeserializerLoader {
 			hm.put(fkeyName, objx);
 		}
 		if (hm.size() == 0) {
-			return false;
+			return null;
 		}
 
 		ArrayList<Object> al = new ArrayList();
@@ -968,11 +1002,12 @@ public class OAJacksonDeserializerLoader {
 			}
 			al.add(objx);
 		}
-		if (al.size() > 0) {
-			Object[] objs = al.toArray(new Object[al.size()]);
-			stackItemChild.key = new OAObjectKey(objs);
+		if (al.size() == 0) {
+			return null;
 		}
-		return true;
+		Object[] objs = al.toArray(new Object[al.size()]);
+		OAObjectKey ok = new OAObjectKey(objs);
+		return ok;
 	}
 
 	protected boolean getReferenceUsingImportMatch(final StackItem stackItemParent, final StackItem stackItemChild) {
