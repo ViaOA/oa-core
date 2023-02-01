@@ -13,6 +13,7 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.json.OAJson;
 import com.viaoa.json.OAJson.StackItem;
 import com.viaoa.object.OAFinder;
@@ -83,9 +84,7 @@ public class OAJacksonDeserializerLoader {
 		oajson.setStackItem(stackItem);
 
 		try {
-			oajson.setStackItem(stackItem);
 			load(stackItem);
-
 		} finally {
 			oajson.setStackItem(siHold);
 		}
@@ -95,6 +94,9 @@ public class OAJacksonDeserializerLoader {
 	/**
 	 * Main method for loading JsonObject into a (new or existing) OAObject.<br>
 	 * Recursively will load all link objects.
+	 * <p>
+	 * * find or create a matching OAObject from an JsonObject.<br>
+	 * This will first use the stack, then guid, pkeys, importMatches, linkWithUnique.
 	 */
 	protected void load(final StackItem stackItem) {
 		if (stackItem == null) {
@@ -134,7 +136,6 @@ public class OAJacksonDeserializerLoader {
 			}
 		}
 		return b;
-
 	}
 
 	protected boolean getObjectUsingStack(final StackItem stackItem) {
@@ -144,9 +145,12 @@ public class OAJacksonDeserializerLoader {
 		}
 		boolean b = getObjectUsingStackAutoCreate(stackItemParent, stackItem);
 		if (!b) {
-			b = getObjectUsingStackLinkUnique(stackItemParent, stackItem);
+			b = getObjectUsingStackPKeys(stackItemParent, stackItem);
 			if (!b) {
-				b = getObjectUsingStackLinkEqualWithUnique(stackItemParent, stackItem);
+				b = getObjectUsingStackLinkUnique(stackItemParent, stackItem);
+				if (!b) {
+					b = getObjectUsingStackLinkEqualWithUnique(stackItemParent, stackItem);
+				}
 			}
 		}
 		return b;
@@ -157,11 +161,82 @@ public class OAJacksonDeserializerLoader {
 			return false;
 		}
 		stackItemChild.obj = (OAObject) stackItemChild.li.getValue(stackItemParent.obj);
+		return stackItemChild.obj != null;
+	}
+
+	protected boolean getObjectUsingStackPKeys(final StackItem stackItemParent, final StackItem stackItemChild) {
+
+		if (stackItemParent.obj == null) {
+			return false;
+		}
+
+		OAObjectKey ok = getObjectKeyForJsonObject(stackItemChild);
+		if (ok == null) {
+			return false;
+		}
+
+		if (stackItemChild.li.getType() != OALinkInfo.TYPE_MANY) {
+			OAObject objx = (OAObject) stackItemChild.li.getValue(stackItemParent.obj);
+			boolean b = (ok.equals(objx));
+			if (b) {
+				stackItemChild.obj = objx;
+			}
+			return b;
+		}
+
+		Hub hub = (Hub) stackItemChild.li.getValue(stackItemParent.obj);
+
+		OAObject objx = (OAObject) HubDataDelegate.getObject(hub, ok);
+		if (objx == null) {
+			return false;
+		}
+
+		stackItemChild.obj = objx;
 		return true;
 	}
 
-	protected boolean getObjectUsingStackLinkUnique(final StackItem stackItemParent, final StackItem stackItemChild) {
+	protected OAObjectKey getObjectKeyForJsonObject(final StackItem stackItem) {
+		boolean bIdMissing = false;
+		ArrayList<Object> alKeys = new ArrayList();
+		for (OAPropertyInfo pi : stackItem.oi.getPropertyInfos()) {
+			if (!pi.getId()) {
+				continue;
+			}
 
+			String propertyName = pi.getLowerName();
+			if (!oajson.getUsePropertyCallback(null, propertyName)) {
+				continue;
+			}
+			propertyName = oajson.getPropertyNameCallback(null, propertyName);
+
+			JsonNode jn = stackItem.node.get(propertyName);
+
+			if (jn == null) {
+				bIdMissing = true;
+				break;
+			}
+
+			Object objx = convert(jn, pi);
+
+			if (objx == null) {
+				bIdMissing = true;
+				break;
+			}
+
+			objx = oajson.getPropertyValueCallback(null, pi.getLowerName(), objx);
+
+			alKeys.add(objx);
+		}
+
+		if (bIdMissing) {
+			return null;
+		}
+
+		OAObjectKey objKey = new OAObjectKey(alKeys.toArray());
+		return objKey;
+	}
+
+	protected boolean getObjectUsingStackLinkUnique(final StackItem stackItemParent, final StackItem stackItemChild) {
 		OALinkInfo liMany = stackItemChild.li;
 		if (liMany.getType() != OALinkInfo.TYPE_MANY) {
 			return false;
@@ -201,8 +276,99 @@ public class OAJacksonDeserializerLoader {
 
 	protected boolean getObjectUsingStackLinkEqualWithUnique(final StackItem stackItemParent,
 			final StackItem stackItemChild) {
-		//qqqqqqqqqqq
-		return false;
+		// see if link equal pp is in the stack
+		String s = stackItemChild.li.getEqualPropertyPath();
+		if (s == null) {
+			return false;
+		}
+
+		final OAPropertyPath pp = new OAPropertyPath(stackItemParent.oi.getForClass(), s);
+		if (pp.getEndLinkInfo() == null) {
+			return false;
+		}
+		if (pp.getEndLinkInfo().getType() != OALinkInfo.TYPE_ONE) {
+			return false;
+		}
+
+		// see if it matches StackItems
+		StackItem siEquals = stackItemParent;
+		OALinkInfo[] lis = pp.getLinkInfos();
+		if (lis == null) {
+			return false;
+		}
+
+		for (int i = 0;; i++) {
+			if (i == lis.length) {
+				break;
+			}
+			if (siEquals == null) {
+				return false; // only using Stack in this method
+			}
+			if (siEquals.li == null) {
+				return false;
+			}
+			if (!lis[i].equals(siEquals.li.getReverseLinkInfo())) {
+				return false;
+			}
+			siEquals = siEquals.parent;
+		}
+
+		if (siEquals.obj == null) {
+			return false;
+		}
+
+		final List<PojoProperty> alPojoProperty = PojoLinkOneDelegate.getLinkUniquePojoProperties(	stackItemParent.oi.getPojo(),
+																									stackItemChild.li.getLowerName());
+		if (alPojoProperty == null || alPojoProperty.size() != 1) {
+			return false;
+		}
+		final PojoProperty pojoProperty = alPojoProperty.get(0);
+
+		OALinkInfo liRev = stackItemChild.li.getReverseLinkInfo();
+		s = liRev.getEqualPropertyPath();
+		if (s == null) {
+			return false;
+		}
+
+		OAPropertyPath ppx = new OAPropertyPath(stackItemChild.oi.getForClass(), s);
+		if (ppx.getEndLinkInfo() == null) {
+			return false;
+		}
+		if (ppx.getEndLinkInfo().getToObjectInfo() != pp.getEndLinkInfo().getToObjectInfo()) {
+			return false;
+		}
+
+		OAPropertyPath ppRev = ppx.getReversePropertyPath();
+		if (ppRev.getEndLinkInfo() == null) {
+			return false;
+		}
+		if (ppRev.getEndLinkInfo().getType() != OALinkInfo.TYPE_MANY) {
+			return false;
+		}
+		if (OAString.isEmpty(ppRev.getEndLinkInfo().getUniqueProperty())) {
+			return false;
+		}
+
+		Hub hub = (Hub) ppRev.getEndLinkInfo().getValue(siEquals.obj);
+
+		String uniqueFkeyName = pojoProperty.getName();
+
+		ppx = new OAPropertyPath(stackItemParent.oi.getForClass(), pojoProperty.getPropertyPath());
+		String uniquePropName = ppx.getEndPropertyInfo().getLowerName();
+
+		JsonNode jn = stackItemChild.node.get(uniquePropName);
+		Object uniqueValueToFind = convert(jn, ppx.getEndPropertyInfo());
+
+		if (uniqueValueToFind == null) {
+			return false;
+		}
+
+		OAObject objx = (OAObject) hub.find(uniquePropName, uniqueValueToFind);
+		if (objx == null) {
+			return false;
+		}
+		stackItemChild.obj = objx;
+		return true;
 	}
 
 	protected boolean getObjectUsingGuid(final StackItem stackItem) {
@@ -220,65 +386,30 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	protected boolean getObjectUsingPKeys(final StackItem stackItem) {
-		boolean bResult = false;
-
-		boolean bIdMissing = false;
-		ArrayList<Object> alKeys = new ArrayList();
-		for (OAPropertyInfo pi : stackItem.oi.getPropertyInfos()) {
-			if (!pi.getId()) {
-				continue;
-			}
-
-			String propertyName = pi.getLowerName();
-			if (!oajson.getUsePropertyCallback(null, propertyName)) {
-				continue;
-			}
-			propertyName = oajson.getPropertyNameCallback(null, propertyName);
-
-			JsonNode jn = stackItem.node.get(propertyName);
-
-			if (jn == null) {
-				bIdMissing = true;
-				break;
-			}
-
-			Object objx = convert(jn, pi);
-
-			if (objx == null) {
-				bIdMissing = true;
-				break;
-			}
-
-			objx = oajson.getPropertyValueCallback(null, pi.getLowerName(), objx);
-
-			alKeys.add(objx);
+		OAObjectKey objKey = getObjectKeyForJsonObject(stackItem);
+		if (objKey == null) {
+			return false;
 		}
 
-		if (!bIdMissing) {
-			final Class clazz = stackItem.oi.getForClass();
-			OAObjectKey objKey = new OAObjectKey(alKeys.toArray());
-			OAObject objNew = (OAObject) OAObjectCacheDelegate.get(clazz, objKey);
+		OAObject objNew = (OAObject) OAObjectCacheDelegate.get(stackItem.oi.getForClass(), objKey);
 
-			if (objNew == null) {
-				objNew = (OAObject) OADataSource.getObject(clazz, objKey);
-			}
-			stackItem.obj = objNew;
-			bResult = (objNew != null);
+		if (objNew == null) {
+			objNew = (OAObject) OADataSource.getObject(stackItem.oi.getForClass(), objKey);
 		}
-		return bResult;
+		stackItem.obj = objNew;
+		return (objNew != null);
 	}
 
 	protected boolean getObjectUsingNewObjectGuid(final StackItem stackItem) {
-		boolean bResult = false;
-
 		JsonNode jn = stackItem.node.get("guid");
-		if (jn != null) {
-			int guid = jn.asInt();
-			OAObjectKey objKey = new OAObjectKey(new Object[0], guid, true);
-			stackItem.obj = (OAObject) OAObjectCacheDelegate.get(stackItem.oi.getForClass(), objKey);
-			bResult = stackItem.obj != null;
+		if (jn == null) {
+			return false;
 		}
-		return bResult;
+
+		int guid = jn.asInt();
+		OAObjectKey objKey = new OAObjectKey(new Object[0], guid, true);
+		stackItem.obj = (OAObject) OAObjectCacheDelegate.get(stackItem.oi.getForClass(), objKey);
+		return (stackItem.obj != null);
 	}
 
 	protected boolean getObjectUsingImportMatches(final StackItem stackItem) {
@@ -349,22 +480,23 @@ public class OAJacksonDeserializerLoader {
 			}
 		}
 
-		if (sql != null) {
-			OASelect sel = new OASelect(stackItem.oi.getForClass(), sql, values, "");
-			OAObject objNew = sel.next();
-			sel.close();
-
-			if (objNew == null) {
-				OAFinder finder = new OAFinder();
-				OAQueryFilter filter = new OAQueryFilter(stackItem.oi.getForClass(), sql, values);
-				finder.addFilter(filter);
-				objNew = (OAObject) OAObjectCacheDelegate.find(stackItem.oi.getForClass(), finder);
-			}
-
-			stackItem.obj = objNew;
-			bResult = (objNew != null);
+		if (sql == null) {
+			return false;
 		}
-		return bResult;
+
+		OASelect sel = new OASelect(stackItem.oi.getForClass(), sql, values, "");
+		OAObject objNew = sel.next();
+		sel.close();
+
+		if (objNew == null) {
+			OAFinder finder = new OAFinder();
+			OAQueryFilter filter = new OAQueryFilter(stackItem.oi.getForClass(), sql, values);
+			finder.addFilter(filter);
+			objNew = (OAObject) OAObjectCacheDelegate.find(stackItem.oi.getForClass(), finder);
+		}
+
+		stackItem.obj = objNew;
+		return (objNew != null);
 	}
 
 	protected boolean getObjectUsingLinkUnique(final StackItem stackItem) {
@@ -425,9 +557,6 @@ public class OAJacksonDeserializerLoader {
 				return true;
 			}
 		}
-
-		//qqqqqqqqq also include 1to1 link that has autocreate qqqqqqqqqqqqq
-
 		return bResult;
 	}
 
@@ -552,7 +681,7 @@ public class OAJacksonDeserializerLoader {
 			1b: object node (use load object)
 			1c: json number node, prop Id value (75)
 			1d: text node ("guid.999", or "obj-key")
-
+		
 			2: use reference properties and pojo*
 			2a: fkey props
 			2b: link match props
@@ -584,21 +713,23 @@ public class OAJacksonDeserializerLoader {
 		}
 	}
 
+	//qqqqqq unit test with CorpToStore model ... to check multipart keys
+
 	protected boolean loadObjectOneLink1(final StackItem stackItemChild) {
 		if (stackItemChild.node == null) {
 			return false;
 		}
-		if (loadObjectOneLink1a(stackItemChild)) {
+		if (loadObjectOneLink1a(stackItemChild)) { // null
 			return true;
 		}
-		if (loadObjectOneLink1b(stackItemChild)) {
+		if (loadObjectOneLink1b(stackItemChild)) { // json object node (use load object)
 			load(stackItemChild);
 			return true;
 		}
-		if (loadObjectOneLink1c(stackItemChild)) {
+		if (loadObjectOneLink1c(stackItemChild)) { // json number node, prop Id value (75)
 			return true;
 		}
-		if (loadObjectOneLink1d(stackItemChild)) {
+		if (loadObjectOneLink1d(stackItemChild)) { // text node ("guid.999", or "obj-key")
 			return true;
 		}
 		return false;
@@ -659,88 +790,135 @@ public class OAJacksonDeserializerLoader {
 
 			String propertyName = oajson.getPropertyNameCallback(stackItem.obj, li.getLowerName());
 			JsonNode nodex = stackItem.node.get(propertyName);
-			if (nodex instanceof ArrayNode) {
-				Hub<OAObject> hub = (Hub<OAObject>) li.getValue(stackItem.obj);
-				ArrayNode nodeArray = (ArrayNode) nodex;
 
-				List<OAObject> alNew = new ArrayList();
-				int x = nodeArray.size();
-				for (int i = 0; i < x; i++) {
-					nodex = nodeArray.get(i);
+			if (!(nodex instanceof ArrayNode)) {
+				continue;
+			}
+			Hub<OAObject> hub = (Hub<OAObject>) li.getValue(stackItem.obj);
+			ArrayNode nodeArray = (ArrayNode) nodex;
 
-					StackItem stackItemChild = new StackItem();
-					stackItemChild.parent = stackItem;
-					stackItemChild.oi = li.getToObjectInfo();
-					stackItemChild.li = li;
-					stackItemChild.node = nodex;
+			List<OAObject> alNew = new ArrayList();
+			int x = nodeArray.size();
+			for (int i = 0; i < x; i++) {
+				nodex = nodeArray.get(i);
 
-qqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+				StackItem stackItemChild = new StackItem();
+				stackItemChild.parent = stackItem;
+				stackItemChild.oi = li.getToObjectInfo();
+				stackItemChild.li = li;
+				stackItemChild.node = nodex;
 
-					/*qqqqqqqqqqqqqq might not be a NodeObject ... but a ref to existing
-									*** see LinkOne code above for all options
-
-					*/
-
-					try {
-						oajson.setStackItem(stackItemChild);
-						load(stackItemChild);
-					} finally {
-						oajson.setStackItem(stackItem);
-					}
-
-					//qqqqqq
-					if (stackItemChild.obj == null) {
-						//qqqqqqqq error
-					} else {
-						alNew.add(stackItemChild.obj);
-					}
+				try {
+					oajson.setStackItem(stackItemChild);
+					loadObjectManyLinkPos(stackItemChild, i);
+					alNew.add(stackItemChild.obj);
+				} finally {
+					oajson.setStackItem(stackItem);
 				}
+			}
 
-				List<OAObject> alRemove = new ArrayList();
-				for (OAObject objx : hub) {
-					if (!alNew.contains(objx)) {
-						alRemove.add(objx);
-					}
-				}
-				for (OAObject objx : alNew) {
-					if (!hub.contains(objx)) {
-						hub.add(objx);
-					}
-				}
-				for (OAObject objx : alRemove) {
-					hub.remove(objx);
-				}
+			//qqqqqqqq test this to make sure that hub adds/removes/moves all work
 
-				// same order
-				int i = 0;
-				for (OAObject objx : alNew) {
-					int pos = hub.getPos(objx);
-					hub.move(pos, i);
-					i++;
+			List<OAObject> alRemove = new ArrayList();
+			for (OAObject objx : hub) {
+				if (!alNew.contains(objx)) {
+					alRemove.add(objx);
 				}
+			}
+			for (OAObject objx : alNew) {
+				if (!hub.contains(objx)) {
+					hub.add(objx);
+				}
+			}
+			for (OAObject objx : alRemove) {
+				hub.remove(objx);
+			}
+
+			// same order
+			int i = 0;
+			for (OAObject objx : alNew) {
+				int pos = hub.getPos(objx);
+				hub.move(pos, i);
+				i++;
 			}
 		}
 		oajson.afterReadCallback(stackItem.node, stackItem.obj);
+	}
+
+	protected void loadObjectManyLinkPos(final StackItem stackItemChild, final int pos) {
+		/*
+		1b: object node (use load object)
+		1c: json number node, prop Id value (75)
+		1d: text node ("guid.999", or "obj-key")
+		*/
+
+		boolean b = loadObjectManyLinkPos1b(stackItemChild, pos);
+		if (!b) {
+			b = loadObjectManyLinkPos1c(stackItemChild, pos);
+			if (!b) {
+				b = loadObjectManyLinkPos1d(stackItemChild, pos);
+			}
+		}
+		if (b) {
+			if (stackItemChild.obj == null && stackItemChild.key != null) {
+				stackItemChild.obj = (OAObject) OAObjectCacheDelegate.get(stackItemChild.li.getToClass(), stackItemChild.key);
+				if (stackItemChild.obj == null) {
+					// get from DS
+					stackItemChild.obj = (OAObject) OADataSource.getObject(stackItemChild.li.getToClass(), stackItemChild.key);
+				}
+			}
+		} else {
+			//qqqqqqq error
+		}
+	}
+
+	protected boolean loadObjectManyLinkPos1b(final StackItem stackItemChild, final int pos) {
+		if (!stackItemChild.node.isObject()) {
+			return false;
+		}
+		load(stackItemChild);
+		return true;
+	}
+
+	protected boolean loadObjectManyLinkPos1c(final StackItem stackItemChild, final int pos) {
+		if (!stackItemChild.node.isNumber()) {
+			return false;
+		}
+		String id = stackItemChild.node.asText();
+		stackItemChild.key = OAJson.convertJsonSinglePartIdToObjectKey(stackItemChild.li.getToClass(), id);
+		return true;
+	}
+
+	protected boolean loadObjectManyLinkPos1d(final StackItem stackItemChild, final int pos) {
+		if (!stackItemChild.node.isTextual()) {
+			return false;
+		}
+		String s = stackItemChild.node.asText();
+		if (s.indexOf("guid.") == 0) {
+			s = s.substring(5);
+			int guid = Integer.parseInt(s);
+			if (oajson != null) {
+				stackItemChild.obj = oajson.getGuidMap().get(guid);
+			}
+		} else {
+			stackItemChild.key = OAJson.convertJsonSinglePartIdToObjectKey(stackItemChild.li.getToClass(), s);
+		}
+		return true;
+
 	}
 
 	//qqqqqqqqqqqqqqqq REFERENCE OBJECTS
 
 	// this does not load the object or set the parent's link property, only finds the matching one
 	protected void getReferenceObject(final StackItem stackItemChild) {
-
 		final StackItem stackItemParent = stackItemChild.parent;
 
-		boolean b = getObjectUsingStack(stackItemChild);
+		boolean b = getReferenceUsingStackFKeys(stackItemChild);
 		if (b) {
 			return;
 		}
-		//qqqqqqqqqqqq plo not used, remove
-		PojoLinkOne plo = PojoLinkOneDelegate.getPojoLinkOne(stackItemParent.oi.getPojo(), stackItemChild.li.getLowerName());
-		if (plo == null) {
-			return;
-		}
 
-		boolean bUsesFkey = getReferenceKey(stackItemParent, stackItemChild);
+		boolean bUsesFkey = getReferenceUsingFKeys(stackItemParent, stackItemChild);
 		if (!bUsesFkey) {
 			boolean bImportMatch = getReferenceUsingImportMatch(stackItemParent, stackItemChild);
 			if (!bImportMatch) {
@@ -752,8 +930,12 @@ qqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 		}
 	}
 
+	protected boolean getReferenceUsingStackFKeys(final StackItem stackItemChild) {
+		return false; //qqqqqqqqqqqqqqqqqqqqqqqqqqqq
+	}
+
 	//qqqqqqqqqqq PojoLinkOneDelegate.getLinkFkeyPojoProperties(    ... could be null
-	protected boolean getReferenceKey(final StackItem stackItemParent, final StackItem stackItemChild) {
+	protected boolean getReferenceUsingFKeys(final StackItem stackItemParent, final StackItem stackItemChild) {
 		Map<String, Object> hm = new HashMap<>();
 		for (PojoProperty pjp : PojoLinkOneDelegate.getLinkFkeyPojoProperties(	stackItemParent.oi.getPojo(),
 																				stackItemChild.li.getLowerName())) {
@@ -761,13 +943,13 @@ qqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 			OAPropertyPath pp = new OAPropertyPath(stackItemParent.oi.getForClass(), pjp.getPropertyPath());
 			OAPropertyInfo pi = pp.getEndPropertyInfo();
 
-			JsonNode jn = stackItemParent.node.get(pi.getLowerName());
+			JsonNode jn = stackItemParent.node.get(fkeyName);
 			if (jn == null) {
 				hm.clear();
 				break;
 			}
 			Object objx = convert(jn, pi);
-			hm.put(pi.getLowerName(), objx);
+			hm.put(fkeyName, objx);
 		}
 		if (hm.size() == 0) {
 			return false;
@@ -794,7 +976,6 @@ qqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 	}
 
 	protected boolean getReferenceUsingImportMatch(final StackItem stackItemParent, final StackItem stackItemChild) {
-
 		int pos = 0;
 		String sql = null;
 		Object[] values = new Object[] {};
@@ -877,10 +1058,12 @@ qqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 		OAPropertyPath pp = new OAPropertyPath(stackItemParent.oi.getForClass(), s);
 
 		OAObject equalObject = null;
-		/*qqqqqqqqqqqq
-		 * to do
-		 * equalObject = getExistingValueFromStack(stackItemChild, pp);
-		 */
+
+		//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+
+		getObjectUsingStackLinkEqualWithUnique(stackItemParent, stackItemChild);
+
+		// equalObject = getStackExistingValueFromStack(stackItemChild, pp);
 
 		if (equalObject == null) {
 			return false;

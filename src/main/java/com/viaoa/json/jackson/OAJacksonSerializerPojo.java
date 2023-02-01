@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
+import com.viaoa.json.OAJson.StackItem;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -34,8 +35,11 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
 
+//qqqqqqqqqqqqqqqqqqqqqqqqqqqqq RENAME this qqqqqqqqqqqqqqqqqqqqqqqq
+
 /**
  * Used by OAJson to convert OAObject(s) & Hub to JSON. Includes mapping to work with POJO classes.
+ * <p>
  */
 public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 
@@ -46,13 +50,31 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 
 		final OAObject oaObj = (OAObject) value;
 
-		if (oaj != null) {
-			oaj.getCascade().wasCascaded(oaObj, true);
-		}
-
 		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
 
 		gen.writeStartObject();
+
+		boolean b = (oaj.getStackItem() == null);
+		if (b) {
+			StackItem stackItem = new StackItem();
+			stackItem.parent = null;
+			stackItem.oi = oi;
+			stackItem.li = null;
+			stackItem.obj = value;
+			oaj.setStackItem(stackItem);
+
+		}
+		try {
+			_serialize(oaj, oaObj, oi, value, gen, serializers);
+		} finally {
+			if (b) {
+				oaj.setStackItem(null);
+			}
+		}
+	}
+
+	protected void _serialize(final OAJson oaj, final OAObject oaObj, final OAObjectInfo oi, final OAObject value, final JsonGenerator gen,
+			final SerializerProvider serializers) throws IOException {
 
 		// write id props
 		boolean bNullId = true;
@@ -148,14 +170,13 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 
 			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bIncludeOwned, alPropertyPaths)) {
 				propertyName = oaj.getPropertyNameCallback(oaObj, propertyName);
-				OAJson.StackItem si = new OAJson.StackItem();
+				StackItem si = new StackItem();
 				si.parent = oaj.getStackItem();
 				si.li = li;
 				si.obj = oaObj;
 				oaj.setStackItem(si);
 
 				try {
-
 					OAObject objx = (OAObject) li.getValue(oaObj);
 					objx = (OAObject) oaj.getPropertyValueCallback(oaObj, propertyName, objx);
 
@@ -163,7 +184,6 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 						gen.writeNullField(propertyName);
 						bSerialized = true;
 					} else {
-
 						if (oaj != null && !oaj.getCascade().wasCascaded(objx, true)) {
 							bSerialized = true;
 							gen.writeObjectField(li.getLowerName(), objx);
@@ -231,17 +251,22 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 			}
 
 			// only send owned objects for the root object(s)
+			//    also include any owned auto-created linkOne owned links
 			boolean bx = bIncludeOwned;
 			if (bx) {
 				OAJson.StackItem si = oaj.getStackItem();
 				bx = si == null || si.parent == null;
+
+				//qqqqqqq create a rule & unit test for this
+				if (!bx && si.li.isOne2One() && si.li.getOwner() && si.li.getAutoCreateNew()) {
+					bx = true;
+				}
 			}
 
 			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bx, alPropertyPaths)) {
-				OAJson.StackItem si = new OAJson.StackItem();
+				StackItem si = new StackItem();
 				si.parent = oaj.getStackItem();
 				si.li = li;
-				// si.obj = oaObj;
 				oaj.setStackItem(si);
 				try {
 					Hub hub = (Hub) li.getValue(oaObj);
@@ -249,6 +274,7 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 					gen.writeArrayFieldStart(propertyName);
 
 					for (OAObject objx : (Hub<OAObject>) li.getValue(oaObj)) {
+						si.obj = objx;
 
 						// check cascade to see if its been sent ...if so, then only output key (/guid)
 						// note:  deserializer needs to check array values for object, string, number to "know" how to get it
@@ -379,9 +405,6 @@ public class OAJacksonSerializerPojo extends JsonSerializer<OAObject> {
 		}
 
 		String cpp = oaj.getCurrentPropertyPath();
-		if (cpp == null) {
-			return false;
-		}
 
 		cpp = OAString.append(cpp, li.getName(), ".");
 		cpp = cpp.toLowerCase();

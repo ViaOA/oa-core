@@ -155,6 +155,7 @@ public class OAJson {
 			alImportMatch.clear();
 		}
 		setStackItem(null);
+		cascade = null;
 	}
 
 	/**
@@ -374,6 +375,7 @@ public class OAJson {
 		this.readObjectClass = clazz;
 		ObjectMapper om = getObjectMapper();
 		setStackItem(null);
+		cascade = null;
 
 		hmGuidObject = null;
 		Map<Integer, OAObject> hmGuidMap = getGuidMap();
@@ -768,7 +770,6 @@ public class OAJson {
 			final List<String>[] lstIncludePropertyPathss, final int[] skipParams) throws Exception {
 
 		final OAJson oaj = new OAJson();
-		oaj.setStackItem(null);
 
 		try {
 			OAThreadLocalDelegate.setOAJackson(oaj);
