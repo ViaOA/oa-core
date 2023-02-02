@@ -37,6 +37,10 @@ import com.viaoa.util.OATime;
 
 //qqqqqqqqqqqqqqqqqqqqqqqqqqqqq RENAME this qqqqqqqqqqqqqqqqqqqqqqqq
 
+//qqqqq needs a wayto know that it's going to be read from a Pojo
+//     qqqqqqq and not send references instead of objects
+//              >> need to have pojo use the jsonObjId annoations for importMatch props ??
+
 /**
  * Used by OAJson to convert OAObject(s) & Hub to JSON. Includes mapping to work with POJO classes.
  * <p>
