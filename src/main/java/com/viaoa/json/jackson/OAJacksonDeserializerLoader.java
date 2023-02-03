@@ -172,7 +172,7 @@ public class OAJacksonDeserializerLoader {
 		if (stackItem.parent == null) {
 			return false;
 		}
-		if (!stackItem.li.getAutoCreateNew()) {
+		if (!stackItem.li.getAutoCreateNew() || !stackItem.li.isOne()) {
 			return false;
 		}
 		stackItem.obj = (OAObject) stackItem.li.getValue(stackItem.parent.obj);
@@ -321,11 +321,11 @@ public class OAJacksonDeserializerLoader {
 				return false;
 			}
 		}
-		if (alFound.size() == 1) {
-			stackItem.obj = alFound.get(0);
+		if (alFound.size() != 1) {
+			return false;
 		}
-
-		return false;
+		stackItem.obj = alFound.get(0);
+		return true;
 	}
 
 	protected OAObjectKey getObjectKeyForJsonObject(final StackItem stackItem) {
