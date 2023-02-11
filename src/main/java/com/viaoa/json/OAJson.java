@@ -305,24 +305,24 @@ public class OAJson {
 	 * Read JSON into an existing root Object.
 	 */
 	public void readIntoObject(final String json, OAObject root) throws JsonProcessingException {
-		readIntoObject(json, root, true);
+		readIntoObject(json, root, false);
 	}
 
-	public void readIntoObject(final String json, OAObject root, final boolean bUseValidation) throws JsonProcessingException {
+	public void readIntoObject(final String json, OAObject root, final boolean bIsLoading) throws JsonProcessingException {
 		if (root == null) {
 			return;
 		}
 		this.root = root;
-		readObject(json, root.getClass(), bUseValidation);
+		readObject(json, root.getClass(), bIsLoading);
 		this.root = null;
 	}
 
 	/**
 	 * Convert a JSON string to an Object graph. If OAObject, then first search and find matching objects to read into.
 	 *
-	 * @param bUseValidation if false (default) then setLoading(true) will be used before loading.
+	 * @param bIsLoading (default = false), if true then threadLocal.setLoading(true) will be used before loading.
 	 */
-	public <T> T readObject(final String json, final Class<T> clazz, final boolean bUseValidation)
+	public <T> T readObject(final String json, final Class<T> clazz, final boolean bIsLoading)
 			throws JsonProcessingException {
 		reset();
 		this.readObjectClass = clazz;
@@ -334,7 +334,7 @@ public class OAJson {
 		T obj;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(true);
 			} else {
 				OAThreadLocalDelegate.setSyncThread(true);
@@ -349,7 +349,7 @@ public class OAJson {
 			obj = (T) om.readValue(json, jt);
 
 		} finally {
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
 			} else {
 				OAThreadLocalDelegate.setSyncThread(false);
@@ -369,7 +369,7 @@ public class OAJson {
 	/**
 	 * Read JSON from stream into Object.
 	 */
-	public <T> T readObject(final InputStream stream, final Class<T> clazz, final boolean bUseValidation)
+	public <T> T readObject(final InputStream stream, final Class<T> clazz, final boolean bIsLoading)
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
@@ -383,8 +383,11 @@ public class OAJson {
 		T obj;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-			if (!bUseValidation) {
+
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(true);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -396,8 +399,10 @@ public class OAJson {
 			obj = (T) om.readValue(stream, jt);
 
 		} finally {
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(false);
 			}
 			OAThreadLocalDelegate.setOAJackson(null);
 			readObjectClass = null;
@@ -409,7 +414,7 @@ public class OAJson {
 	/**
 	 * Convert a JSON file to an OAObject graph.
 	 */
-	public <T> T readObject(final File file, final Class<T> clazz, final boolean bUseValidation)
+	public <T> T readObject(final File file, final Class<T> clazz, final boolean bIsLoading)
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
@@ -421,8 +426,10 @@ public class OAJson {
 		T obj;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(true);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -436,8 +443,10 @@ public class OAJson {
 			//qqqqqqqqqqqqqqqqqvv
 
 		} finally {
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(false);
 			}
 			OAThreadLocalDelegate.setOAJackson(null);
 			readObjectClass = null;
@@ -447,7 +456,7 @@ public class OAJson {
 	}
 
 	public <K, V> Map<K, V> readMap(final String json, final Class<K> clazzKey, final Class<V> clazzValue,
-			final boolean bUseValidation)
+			final boolean bIsLoading)
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazzValue;
@@ -457,8 +466,10 @@ public class OAJson {
 		Map<K, V> map;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(true);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(true);
 			}
 
 			Class c = clazzValue;
@@ -473,8 +484,10 @@ public class OAJson {
 			//qqqqqqqqqqqqqqqqqvv
 
 		} finally {
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(false);
 			}
 			OAThreadLocalDelegate.setOAJackson(null);
 			readObjectClass = null;
@@ -483,7 +496,7 @@ public class OAJson {
 		return map;
 	}
 
-	public <T> List<T> readList(final String json, final Class<T> clazz, final boolean bUseValidation)
+	public <T> List<T> readList(final String json, final Class<T> clazz, final boolean bIsLoading)
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
@@ -493,8 +506,10 @@ public class OAJson {
 		List<T> list;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(true);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -506,8 +521,10 @@ public class OAJson {
 			list = (List<T>) om.readValue(json, ct);
 
 		} finally {
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(false);
 			}
 			OAThreadLocalDelegate.setOAJackson(null);
 			readObjectClass = null;
@@ -516,7 +533,7 @@ public class OAJson {
 		return list;
 	}
 
-	public <T> List<T> readList(final File file, final Class<T> clazz, final boolean bUseValidation)
+	public <T> List<T> readList(final File file, final Class<T> clazz, final boolean bIsLoading)
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
@@ -526,8 +543,10 @@ public class OAJson {
 		List<T> list;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(true);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -538,8 +557,10 @@ public class OAJson {
 
 			list = (List<T>) om.readValue(file, ct);
 		} finally {
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(false);
 			}
 			OAThreadLocalDelegate.setOAJackson(null);
 			readObjectClass = null;
@@ -548,7 +569,7 @@ public class OAJson {
 		return list;
 	}
 
-	public <T> List<T> readList(final InputStream stream, final Class<T> clazz, final boolean bUseValidation)
+	public <T> List<T> readList(final InputStream stream, final Class<T> clazz, final boolean bIsLoading)
 			throws JsonProcessingException, IOException {
 		reset();
 		this.readObjectClass = clazz;
@@ -558,8 +579,10 @@ public class OAJson {
 		List<T> list;
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(true);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -573,8 +596,10 @@ public class OAJson {
 			//qqqqqqqqqqqqqqqqqvv
 
 		} finally {
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(false);
 			}
 			OAThreadLocalDelegate.setOAJackson(null);
 			readObjectClass = null;
@@ -624,20 +649,20 @@ public class OAJson {
 		return json;
 	}
 
-	public <T extends OAObject> void readIntoHub(final File file, final Hub<T> hub, final boolean bUseValidation) throws Exception {
+	public <T extends OAObject> void readIntoHub(final File file, final Hub<T> hub, final boolean bIsLoading) throws Exception {
 		ObjectMapper om = getObjectMapper();
 		final JsonNode nodeRoot = om.readTree(file);
-		readIntoHub(om, nodeRoot, hub, bUseValidation);
+		readIntoHub(om, nodeRoot, hub, bIsLoading);
 	}
 
-	public <T extends OAObject> void readIntoHub(final String json, final Hub<T> hub, final boolean bUseValidation) throws Exception {
+	public <T extends OAObject> void readIntoHub(final String json, final Hub<T> hub, final boolean bIsLoading) throws Exception {
 		ObjectMapper om = getObjectMapper();
 		final JsonNode nodeRoot = om.readTree(json);
-		readIntoHub(om, nodeRoot, hub, bUseValidation);
+		readIntoHub(om, nodeRoot, hub, bIsLoading);
 	}
 
 	public <T extends OAObject> void readIntoHub(final ObjectMapper om, final JsonNode nodeRoot, final Hub<T> hub,
-			final boolean bUseValidation) throws Exception {
+			final boolean bIsLoading) throws Exception {
 
 		reset();
 		this.readObjectClass = hub.getObjectClass();
@@ -647,6 +672,11 @@ public class OAJson {
 
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
+			if (bIsLoading) {
+				OAThreadLocalDelegate.setLoading(true);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(true);
+			}
 
 			if (nodeRoot.isArray()) {
 				ArrayNode nodeArray = (ArrayNode) nodeRoot;
@@ -688,15 +718,14 @@ public class OAJson {
 					}
 				}
 			} else {
-				// hub.add(readObject(json, hub.getObjectClass(), bUseValidation));
+				// hub.add(readObject(json, hub.getObjectClass(), bIsLoading));
 			}
 
-			if (!bUseValidation) {
-				OAThreadLocalDelegate.setLoading(true);
-			}
 		} finally {
-			if (!bUseValidation) {
+			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
+			} else {
+				OAThreadLocalDelegate.setSyncThread(false);
 			}
 			OAThreadLocalDelegate.setOAJackson(null);
 			readObjectClass = null;

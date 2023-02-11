@@ -134,9 +134,9 @@ public class OAThreadLocalDelegate {
 		return ti.loading > 0;
 	}
 
-	public static void setLoading(boolean b) {
+	public static boolean setLoading(boolean b) {
 		// LOG.finer(""+b);
-		setLoading(OAThreadLocalDelegate.getThreadLocal(b), b);
+		return setLoading(OAThreadLocalDelegate.getThreadLocal(b), b);
 	}
 
 	private static long msLoadingObject;
@@ -1140,8 +1140,8 @@ public class OAThreadLocalDelegate {
 	    if (sc != null) setRemoteMultiplexerClient(sc.getRemoteMultiplexerClient());
 	    else setRemoteMultiplexerClient(null);
 	}
-
-
+	
+	
 	public static RemoteMultiplexerClient getRemoteMultiplexerClient() {
 	    RemoteMultiplexerClient mc;
 	    if (OAThreadLocalDelegate.TotalRemoteMultiplexerClient.get() == 0) {

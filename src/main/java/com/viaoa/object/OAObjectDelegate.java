@@ -114,8 +114,7 @@ public class OAObjectDelegate {
 	 */
 	protected static void initialize(OAObject oaObj, OAObjectInfo oi, boolean bInitializeNulls, boolean bInitializeWithDS,
 			boolean bAddToCache, boolean bInitializeWithCS, boolean bSetChangedToFalse) {
-		final boolean bWasLoading = OAThreadLocalDelegate.isLoading();
-		OAThreadLocalDelegate.setLoading(true);
+		final boolean bWasLoading = OAThreadLocalDelegate.setLoading(true);
 		try {
 			if (oi == null) {
 				oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
@@ -202,6 +201,7 @@ public class OAObjectDelegate {
 			}
 			*/
 		} finally {
+			// note: this has to be false, not bWasLoading, since it also increments a counter in threadLocalDelegate
 			OAThreadLocalDelegate.setLoading(false);
 		}
 		if (!bWasLoading) {
