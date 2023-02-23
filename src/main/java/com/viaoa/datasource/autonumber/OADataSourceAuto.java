@@ -24,8 +24,8 @@ import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.OAFilter;
 
 /**
- * OADataSource that does not support selects or storage. Can be used to act as a "dummy" datasource. It will assign autoNumbers for new
- * objects that have object Id properties that are numbers and not initialized.
+ * OADataSource that does not support selects or storage. Can be used to act as a "dummy" datasource. It can assign autoNumbers for new
+ * objects that have object Id properties that are numbers and not initialized. (see setAssignIdOnCreate(true))
  * <p>
  * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
  */
