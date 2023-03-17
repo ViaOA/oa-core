@@ -9,6 +9,7 @@ public class PojoProperty implements java.io.Serializable {
 	protected volatile String upperName;
 	protected volatile String propertyPath;
 	protected volatile String javaType;
+	protected volatile int keyPos;
 
 	// References to other objects
 	// PojoImportMatch
@@ -53,6 +54,14 @@ public class PojoProperty implements java.io.Serializable {
 
 	public void setJavaType(String newValue) {
 		this.javaType = newValue;
+	}
+
+	public int getKeyPos() {
+		return keyPos;
+	}
+
+	public void setKeyPos(int newValue) {
+		this.keyPos = newValue;
 	}
 
 	@JsonIgnore
