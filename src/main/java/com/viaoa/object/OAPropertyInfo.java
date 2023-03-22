@@ -89,6 +89,9 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private String format;
 	private boolean isFkeyOnly;
 
+	private boolean noPojo;
+	private int pojoKeyPos;
+
 	public OAPropertyInfo() {
 	}
 
@@ -560,5 +563,21 @@ public class OAPropertyInfo implements java.io.Serializable {
 
 	public void setIsFkeyOnly(boolean b) {
 		this.isFkeyOnly = b;
+	}
+
+	public void setNoPojo(boolean b) {
+		this.noPojo = b;
+	}
+
+	public boolean getNoPojo() {
+		return noPojo;
+	}
+
+	public int getPojoKeyPos() {
+		return pojoKeyPos;
+	}
+
+	public void setPojoKeyPos(int pojoKeyPos) {
+		this.pojoKeyPos = pojoKeyPos;
 	}
 }

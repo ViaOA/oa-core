@@ -22,6 +22,7 @@ import java.io.Serializable;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObjectInfo;
+import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -60,23 +61,27 @@ public class OAObjectPojoLoader implements Serializable {
 			if (pd.getIsFkeyOnly()) {
 				continue;
 			}
+			if (pd.getNoPojo()) {
+				continue;
+			}
 			PojoRegularProperty pojoRegularProperty = new PojoRegularProperty();
-			pojo.getPojoRegularProperties().add(pojoRegularProperty);
 			pojoRegularProperty.setPojo(pojo);
+			pojo.getPojoRegularProperties().add(pojoRegularProperty);
 
 			PojoProperty pojoProperty = new PojoProperty();
+			pojoProperty.setPojoRegularProperty(pojoRegularProperty);
+			pojoRegularProperty.setPojoProperty(pojoProperty);
 			pojoProperty.setName(pd.getLowerName());
 			pojoProperty.setUpperName(pd.getName());
 			pojoProperty.setPropertyPath(pd.getLowerName());
 			// pojoProperty.setJavaType(pd.getType());
-
-			pojoRegularProperty.setPojoProperty(pojoProperty);
-			pojoProperty.setPojoRegularProperty(pojoRegularProperty);
 		}
 
 		// 2: one link properties
 		for (OALinkInfo lp : oi.getLinkInfos()) {
-
+			if (lp.getToObjectInfo().getNoPojo()) {
+				continue;
+			}
 			if (lp.getType() != OALinkInfo.TYPE_ONE) {
 				continue;
 			}
@@ -88,10 +93,12 @@ public class OAObjectPojoLoader implements Serializable {
 			}
 
 			PojoLink pojoLink = new PojoLink();
-			pojoLink.setName(lp.getLowerName());
+			pojoLink.setPojo(pojo);
 			pojo.getPojoLinks().add(pojoLink);
+			pojoLink.setName(lp.getLowerName());
 
 			PojoLinkOne pojoLinkOne = new PojoLinkOne();
+			pojoLinkOne.setPojoLink(pojoLink);
 			pojoLink.setPojoLinkOne(pojoLinkOne);
 
 			processPojoLinkOne(oi, "", pojo, pojoLinkOne, lp);
@@ -102,18 +109,25 @@ public class OAObjectPojoLoader implements Serializable {
 			if (lp.getType() != OALinkInfo.TYPE_MANY) {
 				continue;
 			}
-
 			if (lp.getPrivateMethod()) {
+				continue;
+			}
+			if (lp.getToObjectInfo().getNoPojo()) {
 				continue;
 			}
 
 			PojoLink pojoLink = new PojoLink();
-			pojoLink.setName(lp.getLowerName());
+			pojoLink.setPojo(pojo);
 			pojo.getPojoLinks().add(pojoLink);
+			pojoLink.setName(lp.getLowerName());
 
 			PojoLinkMany pojoLinkMany = new PojoLinkMany();
+			pojoLinkMany.setPojoLink(pojoLink);
 			pojoLink.setPojoLinkMany(pojoLinkMany);
 		}
+
+		markAllPojoPropertyKeys(pojo, oi);
+
 		return pojo;
 	}
 
@@ -127,9 +141,12 @@ public class OAObjectPojoLoader implements Serializable {
 			OAPropertyInfo propertyDef = fk.getFromPropertyInfo();
 
 			PojoLinkFkey plf = new PojoLinkFkey();
+			plf.setPojoLinkOne(pojoLinkOne);
 			pojoLinkOne.getPojoLinkFkeys().add(plf);
 
 			PojoProperty pjp = new PojoProperty();
+			pjp.setPojoLinkFkey(plf);
+			plf.setPojoProperty(pjp);
 			pjp.setName(propertyDef.getLowerName());
 			pjp.setUpperName(propertyDef.getName());
 
@@ -141,7 +158,6 @@ public class OAObjectPojoLoader implements Serializable {
 			}
 			pjp.setPropertyPath(s);
 
-			plf.setPojoProperty(pjp);
 		}
 
 		// 2.B: import match
@@ -163,8 +179,12 @@ public class OAObjectPojoLoader implements Serializable {
 				continue;
 			}
 			PojoImportMatch pim = new PojoImportMatch();
+			pim.setPojoLinkOne(plo);
 			plo.getPojoImportMatches().add(pim);
+
 			PojoProperty pjp = new PojoProperty();
+			pjp.setPojoImportMatch(pim);
+			pim.setPojoProperty(pjp);
 
 			String s = lp.getLowerName() + px.getName();
 			pjp.setName(s);
@@ -178,7 +198,6 @@ public class OAObjectPojoLoader implements Serializable {
 				s = prefixPropertyPath + "." + lp.getLowerName() + "." + px.getLowerName();
 			}
 			pjp.setPropertyPath(s);
-			pim.setPojoProperty(pjp);
 		}
 
 		for (OALinkInfo lpx : oix.getLinkInfos()) {
@@ -194,11 +213,13 @@ public class OAObjectPojoLoader implements Serializable {
 			}
 
 			PojoImportMatch pim = new PojoImportMatch();
+			pim.setPojoLinkOne(plo);
 			plo.getPojoImportMatches().add(pim);
 
 			PojoLinkOneReference plor = new PojoLinkOneReference();
-			plor.setName(lpx.getName());
+			plor.setPojoImportMatch(pim);
 			pim.setPojoLinkOneReference(plor);
+			plor.setName(lpx.getName());
 
 			PojoLinkOne plox = new PojoLinkOne();
 			plor.setPojoLinkOne(plox);
@@ -245,9 +266,12 @@ public class OAObjectPojoLoader implements Serializable {
 		final OAObjectInfo oix = lp.getToObjectInfo();
 		OAPropertyInfo px = oix.getPropertyInfo(uniqueName);
 		if (px != null) {
-			PojoLinkUnique plu = new PojoLinkUnique();
-			plo.setPojoLinkUnique(plu);
+
 			PojoProperty pjp = new PojoProperty();
+
+			PojoLinkUnique plu = new PojoLinkUnique();
+			plu.setPojoProperty(pjp);
+			plo.setPojoLinkUnique(plu);
 
 			pjp.setName(lp.getLowerName() + px.getName());
 			pjp.setUpperName(lp.getName() + px.getName());
@@ -261,7 +285,6 @@ public class OAObjectPojoLoader implements Serializable {
 			}
 			pjp.setPropertyPath(s);
 
-			plu.setPojoProperty(pjp);
 			return;
 		}
 
@@ -271,11 +294,13 @@ public class OAObjectPojoLoader implements Serializable {
 		}
 
 		PojoLinkUnique plu = new PojoLinkUnique();
+		plu.setPojoLinkOne(plo);
 		plo.setPojoLinkUnique(plu);
 
 		PojoLinkOneReference plor = new PojoLinkOneReference();
-		plor.setName(lpx.getName());
+		plor.setPojoLinkUnique(plu);
 		plu.setPojoLinkOneReference(plor);
+		plor.setName(lpx.getName());
 
 		PojoLinkOne plox = new PojoLinkOne();
 		plor.setPojoLinkOne(plox);
@@ -289,5 +314,148 @@ public class OAObjectPojoLoader implements Serializable {
 
 		processPojoLinkOne(oix, s, pojo, plox, lpx);
 		return;
+	}
+
+	protected void markAllPojoPropertyKeys(final Pojo pojo, final OAObjectInfo oi) {
+		// properties that are keys
+		boolean bFound = false;
+		for (PojoRegularProperty prp : pojo.getPojoRegularProperties()) {
+			OAPropertyInfo pi = oi.getPropertyInfo(prp.getPojoProperty().getName());
+			if (pi.getPojoKeyPos() > 0 || (!pi.getNoPojo() && (pi.getKey() || pi.getImportMatch()))) {
+				int kpos = pi.getPojoKeyPos();
+				prp.getPojoProperty().setKeyPos(kpos == 0 ? 1 : kpos);
+				bFound = true;
+			}
+		}
+		if (bFound) {
+			return;
+		}
+
+		for (PojoLink pl : pojo.getPojoLinks()) {
+			PojoLinkOne plo = pl.getPojoLinkOne();
+			if (plo == null) {
+				continue;
+			}
+
+			OALinkInfo li = oi.getLinkInfo(pl.getName());
+			if (li == null || li.isMany()) {
+				continue;
+			}
+
+			if (!li.getImportMatch()) {
+				continue;
+			}
+
+			bFound = markAllPojoPropertyKeys(plo, oi);
+		}
+		if (bFound) {
+			return;
+		}
+
+		// check to see if there is linkOne that isPojoSingleton, that revLink is many and has a unique prop
+		for (PojoLink pl : pojo.getPojoLinks()) {
+			PojoLinkOne plo = pl.getPojoLinkOne();
+			if (plo == null) {
+				continue;
+			}
+
+			OALinkInfo li = oi.getLinkInfo(pl.getName());
+
+			final OALinkInfo liRev = li.getReverseLinkInfo();
+			if (liRev == null || !liRev.isMany()) {
+				continue;
+			}
+
+			final String uniquePropName = liRev.getUniqueProperty();
+			if (OAString.isEmpty(uniquePropName)) {
+				continue;
+			}
+
+			if (!OAObjectInfoDelegate.isPojoSingleton(li.getToObjectInfo())) {
+				continue;
+			}
+
+			// flag unique prop PojoProperty.keyPos
+			OAPropertyInfo pi = oi.getPropertyInfo(uniquePropName);
+			if (pi != null) {
+				// find PojoProperty
+				for (PojoRegularProperty prp : pojo.getPojoRegularProperties()) {
+					if (uniquePropName.equalsIgnoreCase(prp.getPojoProperty().getName())) {
+						int kpos = pi.getPojoKeyPos();
+						prp.getPojoProperty().setKeyPos(kpos == 0 ? 1 : kpos);
+						bFound = true;
+						break;
+					}
+				}
+			} else {
+				li = oi.getLinkInfo(uniquePropName);
+				for (PojoLink plx : pojo.getPojoLinks()) {
+					if (uniquePropName.equalsIgnoreCase(plx.getName())) {
+						bFound = markAllPojoPropertyKeys(plx.getPojoLinkOne(), oi);
+					}
+				}
+			}
+		}
+	}
+
+	protected boolean markAllPojoPropertyKeys(final PojoLinkOne plo, final OAObjectInfo oi) {
+		boolean bFound = false;
+		for (PojoLinkFkey plf : plo.getPojoLinkFkeys()) {
+			PojoProperty pp = plf.getPojoProperty();
+
+			PojoLink pl = plo.getPojoLink();
+			OALinkInfo li = oi.getLinkInfo(pl.getName());
+			OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.field(pp.getPropertyPath(), ".", 2));
+
+			int kpos = pi.getPojoKeyPos();
+			pp.setKeyPos(kpos == 0 ? 1 : kpos);
+			bFound = true;
+		}
+		if (bFound) {
+			return true;
+		}
+
+		for (PojoImportMatch pim : plo.getPojoImportMatches()) {
+			PojoProperty pp = pim.getPojoProperty();
+
+			PojoLink pl = plo.getPojoLink();
+			OALinkInfo li = oi.getLinkInfo(pl.getName());
+			OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.field(pp.getPropertyPath(), ".", 2));
+
+			if (pp != null) {
+				int kpos = pi.getPojoKeyPos();
+				pp.setKeyPos(kpos == 0 ? 1 : kpos);
+				bFound = true;
+			} else {
+				PojoLinkOneReference plof = pim.getPojoLinkOneReference();
+				PojoLinkOne plox = plof.getPojoLinkOne();
+				bFound = markAllPojoPropertyKeys(plox, oi);
+			}
+		}
+		if (bFound) {
+			return true;
+		}
+
+		PojoLinkUnique plu = plo.getPojoLinkUnique();
+		if (plu == null) {
+			return false;
+		}
+
+		PojoProperty pp = plu.getPojoProperty();
+		if (pp != null) {
+			PojoLink pl = plo.getPojoLink();
+			OALinkInfo li = oi.getLinkInfo(pl.getName());
+			OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.field(pp.getPropertyPath(), ".", 2));
+
+			int kpos = pi.getPojoKeyPos();
+			pp.setKeyPos(kpos == 0 ? 1 : kpos);
+			bFound = true;
+		} else {
+			PojoLinkOneReference plof = plu.getPojoLinkOneReference();
+			PojoLinkOne plox = plof.getPojoLinkOne();
+			bFound = markAllPojoPropertyKeys(plox, oi);
+		}
+
+		return bFound;
 	}
 }

@@ -78,6 +78,12 @@ public @interface OAClass {
 	String versionLinkProperty() default "";
 
 	String timeSeriesProperty() default "";
+
+	boolean singleton() default false;
+
+	boolean pojoSingleton() default false;
+
+	boolean noPojo() default false;
 }
 
 /* used by OAObjectInfo

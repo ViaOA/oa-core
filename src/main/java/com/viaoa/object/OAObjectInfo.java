@@ -106,6 +106,9 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private String versionLinkProperty;
 	private String timeSeriesProperty;
 
+	private boolean singleton;
+	private boolean pojoSingleton;
+	private boolean noPojo;
 	private Pojo pojo;
 
 	public OAObjectInfo() {
@@ -1337,5 +1340,29 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			pojo = loader.loadIntoPojo(this);
 		}
 		return pojo;
+	}
+
+	public boolean getSingleton() {
+		return singleton;
+	}
+
+	public void setSingleton(boolean b) {
+		this.singleton = b;
+	}
+
+	public boolean getPojoSingleton() {
+		return pojoSingleton;
+	}
+
+	public void setPojoSingleton(boolean b) {
+		this.pojoSingleton = b;
+	}
+
+	public boolean getNoPojo() {
+		return noPojo;
+	}
+
+	public void setNoPojo(boolean b) {
+		this.noPojo = b;
 	}
 }

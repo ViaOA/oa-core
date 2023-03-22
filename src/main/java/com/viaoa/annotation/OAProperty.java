@@ -155,4 +155,15 @@ public @interface OAProperty {
 	String enumPropertyName() default "";
 
 	boolean isFkeyOnly() default false;
+
+	/**
+	 * Flag to know if this property is used in POJO.
+	 */
+	boolean noPojo() default false;
+
+	/**
+	 * If greater then 0 (1 based), this is a pkey (1+) property for the POJO.
+	 */
+	int pojoKeyPos() default 0;
+
 }

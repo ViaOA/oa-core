@@ -105,6 +105,10 @@ public class OAAnnotationDelegate {
 				oi.setVersionProperty(oaclass.versionProperty());
 				oi.setVersionLinkProperty(oaclass.versionLinkProperty());
 				oi.setTimeSeriesProperty(oaclass.timeSeriesProperty());
+
+				oi.setSingleton(oaclass.singleton());
+				oi.setPojoSingleton(oaclass.pojoSingleton());
+				oi.setNoPojo(oaclass.noPojo());
 			}
 			OAObjCallback eq = (OAObjCallback) clazz.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
@@ -319,6 +323,9 @@ public class OAAnnotationDelegate {
 					// e.printStackTrace();
 				}
 			}
+
+			pi.setNoPojo(oaprop.noPojo());
+			pi.setPojoKeyPos(oaprop.pojoKeyPos());
 
 			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {

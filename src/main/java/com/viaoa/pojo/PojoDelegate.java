@@ -63,11 +63,14 @@ public class PojoDelegate {
 	protected static List<PojoProperty> getPojoProperties(final Pojo pojo, final boolean bKeyOnly) {
 		final List<PojoProperty> al = new ArrayList<>();
 
-		int pos = 0;
 		for (PojoRegularProperty prp : pojo.getPojoRegularProperties()) {
 			if (!bKeyOnly || prp.getPojoProperty().getKeyPos() > 0) {
 				al.add(prp.getPojoProperty());
 			}
+		}
+
+		if (bKeyOnly && al.size() > 0) {
+			return al;
 		}
 
 		for (PojoLink pl : pojo.getPojoLinks()) {
@@ -75,7 +78,6 @@ public class PojoDelegate {
 			if (plo != null) {
 				getPojoProperties(plo, al, bKeyOnly);
 			}
-
 		}
 		return al;
 	}
@@ -83,7 +85,9 @@ public class PojoDelegate {
 	protected static void getPojoProperties(final PojoLinkOne plo, List<PojoProperty> al, final boolean bKeyOnly) {
 
 		for (PojoLinkFkey plf : plo.getPojoLinkFkeys()) {
-			al.add(plf.getPojoProperty());
+			if (!bKeyOnly || plf.getPojoProperty().getKeyPos() > 0) {
+				al.add(plf.getPojoProperty());
+			}
 		}
 
 		for (PojoImportMatch pim : plo.getPojoImportMatches()) {

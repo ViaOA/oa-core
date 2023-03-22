@@ -278,6 +278,8 @@ public class OAJson {
 		}
 	}
 
+	//qqqqqqqqqqq needs to know if reading POJO
+
 	/**
 	 * Read Object from JSON. If OAObject, then first search and find matching objects to read into.
 	 */
@@ -359,6 +361,21 @@ public class OAJson {
 		}
 
 		return obj;
+	}
+
+	//qqqqqqqqqq flag to know if the JSON that is being read is from a POJO.
+	private boolean bReadingPojo;
+
+	public void setReadingPojo(boolean b) {
+		this.bReadingPojo = b;
+	}
+
+	public boolean isReadingPojo() {
+		return bReadingPojo;
+	}
+
+	public boolean getReadingPojo() {
+		return bReadingPojo;
 	}
 
 	protected void afterReadJson() {

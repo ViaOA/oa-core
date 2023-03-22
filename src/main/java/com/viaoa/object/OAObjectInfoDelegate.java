@@ -650,7 +650,9 @@ public class OAObjectInfoDelegate {
 			if (liRev == null || !liRev.getUsed()) {
 				continue;
 			}
-			if (liRev.getOwner() && liRev.getType() == OALinkInfo.MANY) {
+			// 20220321
+			if (liRev.getOwner()) {
+				// was: if (liRev.getOwner() && liRev.getType() == OALinkInfo.MANY) {
 				if (!li.toClass.equals(thisOI.thisClass)) { // make sure that it is not also a recursive link.
 					thisOI.liLinkToOwner = li;
 					break;
@@ -1270,6 +1272,44 @@ public class OAObjectInfoDelegate {
 		}
 		oi.weakReferenceable = b ? 1 : 0;
 		return b;
+	}
+
+	public static boolean isPojoSingleton(final OAObjectInfo oi) {
+		if (oi == null) {
+			return false;
+		}
+
+		if (oi.getSingleton() || (!oi.getNoPojo() && oi.getPojoSingleton())) {
+			return true;
+		}
+
+		return isPojoSingleton2(oi);
+	}
+
+	// recursive
+	private static boolean isPojoSingleton2(final OAObjectInfo oi) {
+
+		int xx = 5;
+		xx++;
+
+		if (oi == null) {
+			return false;
+		}
+
+		OALinkInfo lix = getLinkToOwner(oi);
+		if (lix == null) {
+			return false;
+		}
+
+		OAObjectInfo oiOwner = lix.getToObjectInfo();
+
+		if (oiOwner.getSingleton() || (!oiOwner.getNoPojo() && oiOwner.getPojoSingleton())) {
+			return true;
+		}
+		if (!lix.getReverseLinkInfo().isOne()) {
+			return false;
+		}
+		return isPojoSingleton2(oiOwner);
 	}
 
 }
