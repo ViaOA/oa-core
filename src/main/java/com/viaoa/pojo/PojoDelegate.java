@@ -3,6 +3,8 @@ package com.viaoa.pojo;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.viaoa.object.OAObjectInfo;
+import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.OAString;
 
 public class PojoDelegate {
@@ -79,11 +81,21 @@ public class PojoDelegate {
 				getPojoProperties(plo, al, bKeyOnly);
 			}
 		}
+
+		al.sort((o1, o2) -> {
+			if (o1.getKeyPos() > o2.getKeyPos()) {
+				return 1;
+			}
+			if (o1.getKeyPos() < o2.getKeyPos()) {
+				return -1;
+			}
+			return 0;
+		});
+
 		return al;
 	}
 
 	protected static void getPojoProperties(final PojoLinkOne plo, List<PojoProperty> al, final boolean bKeyOnly) {
-
 		for (PojoLinkFkey plf : plo.getPojoLinkFkeys()) {
 			if (!bKeyOnly || plf.getPojoProperty().getKeyPos() > 0) {
 				al.add(plf.getPojoProperty());
@@ -116,6 +128,40 @@ public class PojoDelegate {
 				getPojoProperties(plox, al, bKeyOnly);
 			}
 		}
+	}
+
+	public static boolean hasPkey(final OAObjectInfo oi) {
+		for (PojoRegularProperty prp : oi.getPojo().getPojoRegularProperties()) {
+			if (prp.getPojoProperty().getKeyPos() > 0) {
+				OAPropertyInfo pi = oi.getPropertyInfo(prp.getPojoProperty().getName());
+				if (pi.getKey()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public static boolean hasImportMatchKey(final OAObjectInfo oi) {
+		for (PojoRegularProperty prp : oi.getPojo().getPojoRegularProperties()) {
+			if (prp.getPojoProperty().getKeyPos() > 0) {
+				OAPropertyInfo pi = oi.getPropertyInfo(prp.getPojoProperty().getName());
+				if (!pi.getKey() && pi.getImportMatch()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public static boolean hasLinkUniqueKey(final OAObjectInfo oi) {
+		for (final PojoProperty pp : getPojoPropertyKeys(oi.getPojo())) {
+			OAPropertyInfo pi = oi.getPropertyInfo(pp.getName());
+			if (!pi.getId() && !pi.getImportMatch()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
