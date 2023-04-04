@@ -271,9 +271,7 @@ public class OAObjectCacheDelegate {
 	private static boolean UnitTestMode;
 
 	/**
-	 * Flag to allow system to be running in test mode
-	 *
-	 * @param b
+	 * Flag to allow system to be running in test mode This is used by {@link #resetCache()}
 	 */
 	public static void setUnitTestMode(boolean b) {
 		UnitTestMode = b;

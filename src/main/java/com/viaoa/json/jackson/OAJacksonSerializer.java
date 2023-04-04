@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
+import com.viaoa.json.OAJson.StackItem;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -18,6 +19,14 @@ import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.pojo.Pojo;
+import com.viaoa.pojo.PojoImportMatch;
+import com.viaoa.pojo.PojoLink;
+import com.viaoa.pojo.PojoLinkFkey;
+import com.viaoa.pojo.PojoLinkOne;
+import com.viaoa.pojo.PojoLinkOneReference;
+import com.viaoa.pojo.PojoLinkUnique;
+import com.viaoa.pojo.PojoProperty;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
@@ -26,37 +35,14 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
 
+//qqqq needs to use "compoundKey"
+// qqqqqq concat string, separated by '-'
+
 /**
- * Used by OAJson to convert OAObject(s) & Hub to JSON.
+ * Used by OAJson to convert OAObject(s) & Hub to JSON. Includes mapping to work with POJO classes.
+ * <p>
  */
 public class OAJacksonSerializer extends JsonSerializer<OAObject> {
-
-	/*
-		see: https://spin.atomicobject.com/2016/07/01/custom-serializer-jackson/
-	*/
-
-	// stack of link objects from marshalling, that can be used to know the propertyPath
-	// private final Stack<OALinkInfo> stackLinkInfo = new Stack<>();
-
-	/*
-	public String getCurrentPropertyPath() {
-		String pp = "";
-		if (stackLinkInfo != null) {
-			OALinkInfo liPrev = null;
-			for (OALinkInfo li : stackLinkInfo) {
-				if (li == liPrev) {
-					continue; // recursive
-				}
-				if (pp.length() > 0) {
-					pp += ".";
-				}
-				pp += li.getLowerName();
-				liPrev = li;
-			}
-		}
-		return pp;
-	}
-	*/
 
 	@Override
 	public void serialize(final OAObject value, final JsonGenerator gen, final SerializerProvider serializers) throws IOException {
@@ -65,13 +51,34 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
 		final OAObject oaObj = (OAObject) value;
 
-		if (oaj != null) {
-			oaj.getCascade().wasCascaded(oaObj, true);
-		}
-
 		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
 
 		gen.writeStartObject();
+
+		boolean b = (oaj.getStackItem() == null);
+		if (b) {
+			StackItem stackItem = new StackItem();
+			stackItem.parent = null;
+			stackItem.oi = oi;
+			stackItem.li = null;
+			stackItem.obj = value;
+			oaj.setStackItem(stackItem);
+
+		}
+		try {
+			_serialize(oaj, oaObj, oi, value, gen, serializers);
+		} finally {
+			if (b) {
+				oaj.setStackItem(null);
+			}
+		}
+	}
+
+	protected void _serialize(final OAJson oaj, final OAObject oaObj, final OAObjectInfo oi, final OAObject value, final JsonGenerator gen,
+			final SerializerProvider serializers) throws IOException {
+
+		//qqqqqq if writeAsPojo, then this needs to us OAObjectInfo.pojo to determine Id properties
+		//qqq  if more than one, use compoundKey as string with '-'
 
 		// write id props
 		boolean bNullId = true;
@@ -117,33 +124,20 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			gen.writeNumberField("guid", oaObj.getGuid());
 		}
 
-		// write pojo importMatch properties
-		if (oaj.getWriteAsPojo() && OAString.isNotEmpty(oi.getImportMatchPropertyNames())) {
-			int pos = 0;
-			for (String propertyName : oi.getImportMatchPropertyNames()) {
-				String pp = oi.getImportMatchPropertyPaths()[pos++];
-				OAPropertyPath ppx = new OAPropertyPath(oi.getForClass(), pp);
-				OAPropertyInfo pi = ppx.getEndPropertyInfo();
-
-				Object objx = oaObj.getProperty(pp);
-
-				propertyName = oaj.getPropertyNameCallback(oaObj, propertyName);
-				objx = oaj.getPropertyValueCallback(oaObj, propertyName, objx);
-
-				if (objx == null) {
-					gen.writeNullField(propertyName);
-				} else {
-					writeProperty(pi, propertyName, objx, gen, oaObj);
-				}
-			}
-		}
-
 		// write (non-id) props
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
 			if (pi.getId()) {
 				continue;
 			}
+			if (pi.getIsFkeyOnly() && oaj.getWriteAsPojo()) {
+				continue;
+			}
 			writeProperty(pi, gen, oaObj);
+		}
+
+		if (oaj.getWriteAsPojo()) {
+			Pojo pojo = oi.getPojo();
+			writeExtraPojoProperties(oaj, oi, oaObj, gen);
 		}
 
 		final ArrayList<String> alPropertyPaths = oaj == null ? null : oaj.getPropertyPaths();
@@ -162,11 +156,14 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				continue;
 			}
 
+			/*
 			if (oaj.getWriteAsPojo()) {
+				//qqqq make this dynamic and use propertyPaths to include
 				if (!li.getOwner()) {
 					continue;
 				}
 			}
+			*/
 
 			String propertyName = li.getLowerName();
 			if (!oaj.getUsePropertyCallback(oaObj, propertyName)) {
@@ -177,19 +174,20 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
 			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bIncludeOwned, alPropertyPaths)) {
 				propertyName = oaj.getPropertyNameCallback(oaObj, propertyName);
-				try {
-					oaj.getStackLinkInfo().push(li);
+				StackItem si = new StackItem();
+				si.parent = oaj.getStackItem();
+				si.li = li;
+				si.obj = oaObj;
+				oaj.setStackItem(si);
 
+				try {
 					OAObject objx = (OAObject) li.getValue(oaObj);
 					objx = (OAObject) oaj.getPropertyValueCallback(oaObj, propertyName, objx);
-
-					oaj.getStack().push(objx);
 
 					if (objx == null) {
 						gen.writeNullField(propertyName);
 						bSerialized = true;
 					} else {
-
 						if (oaj != null && !oaj.getCascade().wasCascaded(objx, true)) {
 							bSerialized = true;
 							gen.writeObjectField(li.getLowerName(), objx);
@@ -199,8 +197,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 					}
 
 				} finally {
-					oaj.getStackLinkInfo().pop();
-					oaj.getStack().pop();
+					oaj.setStackItem(si.parent);
 				}
 			}
 
@@ -258,18 +255,30 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			}
 
 			// only send owned objects for the root object(s)
-			boolean bx = bIncludeOwned && oaj.getStackLinkInfo().size() == 0;
+			//    also include any owned auto-created linkOne owned links
+			boolean bx = bIncludeOwned;
+			if (bx) {
+				OAJson.StackItem si = oaj.getStackItem();
+				bx = si == null || si.parent == null;
+
+				//qqqqqqq create a rule & unit test for this
+				if (!bx && si.li.isOne2One() && si.li.getOwner() && si.li.getAutoCreateNew()) {
+					bx = true;
+				}
+			}
 
 			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bx, alPropertyPaths)) {
+				StackItem si = new StackItem();
+				si.parent = oaj.getStackItem();
+				si.li = li;
+				oaj.setStackItem(si);
 				try {
-					oaj.getStackLinkInfo().push(li);
-					oaj.getStack().push(null);
-
 					Hub hub = (Hub) li.getValue(oaObj);
 
 					gen.writeArrayFieldStart(propertyName);
 
 					for (OAObject objx : (Hub<OAObject>) li.getValue(oaObj)) {
+						si.obj = objx;
 
 						// check cascade to see if its been sent ...if so, then only output key (/guid)
 						// note:  deserializer needs to check array values for object, string, number to "know" how to get it
@@ -290,7 +299,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 					}
 
 				} finally {
-					oaj.getStackLinkInfo().pop();
+					oaj.setStackItem(si.parent);
 					gen.writeEndArray();
 				}
 			} else {
@@ -311,11 +320,88 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		gen.writeEndObject();
 	}
 
+	/**
+	 * Include other properties that could be needed for Pojo. Pojo classes dont always have a pkey property, but uniqueness can be found
+	 * using other data. Uses pojo information to determine other fkey'like values to include. This includes importMatch, links with unique
+	 * property, and fkeys from another link.
+	 * <p>
+	 * see OABuilder model OABuilderPojo
+	 */
+	protected void writeExtraPojoProperties(final OAJson oaj, final OAObjectInfo oi, final OAObject oaObj, final JsonGenerator gen)
+			throws IOException {
+		Pojo pojo = oi.getPojo();
+		for (PojoLink pl : pojo.getPojoLinks()) {
+			PojoLinkOne plo = pl.getPojoLinkOne();
+			if (plo != null) {
+				writePojoLinkOne(oaj, oi, oaObj, gen, plo);
+			}
+		}
+	}
+
+	protected void writePojoLinkOne(final OAJson oaj, final OAObjectInfo oi, final OAObject oaObj, final JsonGenerator gen,
+			final PojoLinkOne plo) throws IOException {
+
+		// fkeys
+		for (PojoLinkFkey plf : plo.getPojoLinkFkeys()) {
+			PojoProperty pjp = plf.getPojoProperty();
+			writePojoProperty(oaj, oi, oaObj, gen, pjp);
+		}
+
+		// importMatches
+		for (PojoImportMatch pim : plo.getPojoImportMatches()) {
+			PojoProperty pjp = pim.getPojoProperty();
+			if (pim != null) {
+				writePojoProperty(oaj, oi, oaObj, gen, pjp);
+			}
+
+			PojoLinkOneReference plor = pim.getPojoLinkOneReference();
+			if (plor == null) {
+				continue;
+			}
+			PojoLinkOne plox = plor.getPojoLinkOne();
+			writePojoLinkOne(oaj, oi, oaObj, gen, plo);
+		}
+
+		// link with unique property
+		PojoLinkUnique plu = plo.getPojoLinkUnique();
+		if (plu != null) {
+			PojoProperty pjp = plu.getPojoProperty();
+			if (pjp != null) {
+				writePojoProperty(oaj, oi, oaObj, gen, pjp);
+			}
+
+			PojoLinkOneReference plor = plu.getPojoLinkOneReference();
+			if (plor != null) {
+				PojoLinkOne plox = plor.getPojoLinkOne();
+				writePojoLinkOne(oaj, oi, oaObj, gen, plox);
+			}
+		}
+	}
+
+	protected void writePojoProperty(final OAJson oaj, final OAObjectInfo oi, final OAObject oaObj, final JsonGenerator gen,
+			final PojoProperty pjp) throws IOException {
+		String propertyName = pjp.getName();
+		String pp = pjp.getPropertyPath();
+		OAPropertyPath ppx = new OAPropertyPath(oi.getForClass(), pp);
+		OAPropertyInfo pi = ppx.getEndPropertyInfo();
+
+		Object objx = oaObj.getProperty(pp);
+
+		propertyName = oaj.getPropertyNameCallback(oaObj, propertyName);
+		objx = oaj.getPropertyValueCallback(oaObj, propertyName, objx);
+
+		if (objx == null) {
+			gen.writeNullField(propertyName);
+		} else {
+			writeProperty(pi, propertyName, objx, gen, oaObj);
+		}
+	}
+
 	protected boolean shouldInclude(OAJson oaj, OALinkInfo li, boolean bIncludeOwned, ArrayList<String> alPropertyPaths) {
 		if (li == null) {
 			return false;
 		}
-		if (bIncludeOwned && li.getOwner()) {
+		if (bIncludeOwned && (li.getOwner() || li.getAutoCreateNew())) {
 			return true;
 		}
 		if (alPropertyPaths == null) {
@@ -323,9 +409,6 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		}
 
 		String cpp = oaj.getCurrentPropertyPath();
-		if (cpp == null) {
-			return false;
-		}
 
 		cpp = OAString.append(cpp, li.getName(), ".");
 		cpp = cpp.toLowerCase();
@@ -418,4 +501,5 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			gen.writeStringField(lowerName, result);
 		}
 	}
+
 }

@@ -34,6 +34,7 @@ import com.viaoa.datasource.autonumber.OADataSourceAuto;
 import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAQueryFilter;
+import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -67,10 +68,15 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 	}
 
 	public OADataSourceObjectCache(boolean bRegister) {
-		super(false);
-		if (!bRegister) {
-			removeFromList();
-		}
+		this(null, bRegister, true);
+	}
+
+	public OADataSourceObjectCache(boolean bRegister, boolean bMakeLastDataSource) {
+		this(null, bRegister, bMakeLastDataSource);
+	}
+
+	public OADataSourceObjectCache(Hub hubNextNumber, boolean bRegister, boolean bMakeLastDataSource) {
+		super(hubNextNumber, bRegister, bMakeLastDataSource);
 	}
 
 	//TODO:  this does not sort

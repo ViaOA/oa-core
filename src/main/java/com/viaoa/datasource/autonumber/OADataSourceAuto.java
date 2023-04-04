@@ -41,9 +41,16 @@ public class OADataSourceAuto extends OADataSource {
 		this(true);
 	}
 
+	public OADataSourceAuto(boolean bRegister, boolean bMakeLastDataSource) {
+		this(null, bRegister, bMakeLastDataSource);
+	}
+
 	public OADataSourceAuto(boolean bMakeLastDataSource) {
-		this(null);
-		super.bLast = bMakeLastDataSource;
+		this(null, true, bMakeLastDataSource);
+	}
+
+	public OADataSourceAuto(Hub hubNextNumber) {
+		this(hubNextNumber, true, true);
 	}
 
 	/**
@@ -51,7 +58,12 @@ public class OADataSourceAuto extends OADataSource {
 	 * property. The objects in hubNextNumber also need to be saved (OAObject.save() or hubNextNumber.saveAll()). The objectId property will
 	 * be set when the object is created (OAObject constructor)
 	 */
-	public OADataSourceAuto(Hub hubNextNumber) {
+	public OADataSourceAuto(Hub hubNextNumber, boolean bRegister, boolean bMakeLastDataSource) {
+		super(bRegister);
+		if (bRegister) {
+			super.bLast = bMakeLastDataSource;
+		}
+
 		super.bLast = true;
 		if (hubNextNumber == null) {
 			hubNextNumber = hubNextNumberGlobal;

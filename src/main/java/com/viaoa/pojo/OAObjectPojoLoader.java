@@ -317,13 +317,37 @@ public class OAObjectPojoLoader implements Serializable {
 	}
 
 	protected void markAllPojoPropertyKeys(final Pojo pojo, final OAObjectInfo oi) {
-		// properties that are keys
+
+		// properties that are key(s)
 		boolean bFound = false;
 		for (PojoRegularProperty prp : pojo.getPojoRegularProperties()) {
 			OAPropertyInfo pi = oi.getPropertyInfo(prp.getPojoProperty().getName());
-			if (pi.getPojoKeyPos() > 0 || (!pi.getNoPojo() && (pi.getKey() || pi.getImportMatch()))) {
-				int kpos = pi.getPojoKeyPos();
-				prp.getPojoProperty().setKeyPos(kpos == 0 ? 1 : kpos);
+			if (pi.getPojoKeyPos() > 0) {
+				prp.getPojoProperty().setKeyPos(pi.getPojoKeyPos());
+				bFound = true;
+			}
+		}
+		if (bFound) {
+			return;
+		}
+
+		// pkey property that is single key
+		for (PojoRegularProperty prp : pojo.getPojoRegularProperties()) {
+			OAPropertyInfo pi = oi.getPropertyInfo(prp.getPojoProperty().getName());
+			if (pi.getKey() && !pi.getNoPojo()) {
+				prp.getPojoProperty().setKeyPos(1);
+				bFound = true;
+			}
+		}
+		if (bFound) {
+			return;
+		}
+
+		// importMatch property that is single key
+		for (PojoRegularProperty prp : pojo.getPojoRegularProperties()) {
+			OAPropertyInfo pi = oi.getPropertyInfo(prp.getPojoProperty().getName());
+			if (pi.getImportMatch()) {
+				prp.getPojoProperty().setKeyPos(1);
 				bFound = true;
 			}
 		}
@@ -365,6 +389,8 @@ public class OAObjectPojoLoader implements Serializable {
 			if (liRev == null || !liRev.isMany()) {
 				continue;
 			}
+
+			//qqqqqqqq should it also be owner ??
 
 			final String uniquePropName = liRev.getUniqueProperty();
 			if (OAString.isEmpty(uniquePropName)) {
