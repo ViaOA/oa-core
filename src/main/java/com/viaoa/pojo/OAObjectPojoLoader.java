@@ -138,8 +138,11 @@ public class OAObjectPojoLoader implements Serializable {
 
 		// 2.A: fkeys
 		for (OAFkeyInfo fk : lp.getFkeyInfos()) {
-			OAPropertyInfo propertyDef = fk.getFromPropertyInfo();
-
+			OAPropertyInfo propertyDef = fk.getToPropertyInfo();
+			if (propertyDef.getNoPojo()) {
+				continue;
+			}
+			propertyDef = fk.getFromPropertyInfo();
 			PojoLinkFkey plf = new PojoLinkFkey();
 			plf.setPojoLinkOne(pojoLinkOne);
 			pojoLinkOne.getPojoLinkFkeys().add(plf);
@@ -266,12 +269,13 @@ public class OAObjectPojoLoader implements Serializable {
 		final OAObjectInfo oix = lp.getToObjectInfo();
 		OAPropertyInfo px = oix.getPropertyInfo(uniqueName);
 		if (px != null) {
+			PojoLinkUnique plu = new PojoLinkUnique();
+			plu.setPojoLinkOne(plo);
+			plo.setPojoLinkUnique(plu);
 
 			PojoProperty pjp = new PojoProperty();
-
-			PojoLinkUnique plu = new PojoLinkUnique();
+			pjp.setPojoLinkUnique(plu);
 			plu.setPojoProperty(pjp);
-			plo.setPojoLinkUnique(plu);
 
 			pjp.setName(lp.getLowerName() + px.getName());
 			pjp.setUpperName(lp.getName() + px.getName());
@@ -376,6 +380,7 @@ public class OAObjectPojoLoader implements Serializable {
 			return;
 		}
 
+		// linkOne w/ unique and equalPp to a root/singleton object
 		// check to see if there is linkOne that isPojoSingleton, that revLink is many and has a unique prop
 		for (PojoLink pl : pojo.getPojoLinks()) {
 			PojoLinkOne plo = pl.getPojoLinkOne();
@@ -390,7 +395,7 @@ public class OAObjectPojoLoader implements Serializable {
 				continue;
 			}
 
-			//qqqqqqqq should it also be owner ??
+			//qqq should it also be owner ??
 
 			final String uniquePropName = liRev.getUniqueProperty();
 			if (OAString.isEmpty(uniquePropName)) {

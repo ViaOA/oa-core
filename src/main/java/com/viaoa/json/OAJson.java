@@ -115,6 +115,22 @@ public class OAJson {
 		public JsonNode node;
 		public OAObject obj;
 		public OAObjectKey key;
+
+		public String toString() {
+			String s;
+			if (parent == null) {
+				s = oi.getForClass().getSimpleName();
+				if (li != null) {
+					s += ":" + li.getName();
+				}
+			} else {
+				s = parent.toString();
+				if (li != null) {
+					s += "." + li.getName();
+				}
+			}
+			return s;
+		}
 	}
 
 	/**
