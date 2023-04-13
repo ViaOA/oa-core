@@ -523,7 +523,7 @@ public class OAJacksonDeserializerLoader {
 				hm.clear();
 				break;
 			}
-			hm.put(fkeyName, objx);
+			hm.put(fkeyName.toLowerCase(), objx);
 		}
 
 		OAObjectKey ok = null;
@@ -633,7 +633,6 @@ public class OAJacksonDeserializerLoader {
 		Object[] values = new Object[] {};
 
 		for (final PojoProperty pjp : alPojoProperty) {
-
 			OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), pjp.getPropertyPath());
 			OAPropertyInfo pi = pp.getEndPropertyInfo();
 
@@ -1085,49 +1084,6 @@ public class OAJacksonDeserializerLoader {
 			}
 		}
 		return objx;
-	}
-
-	// might not be used
-	protected OAObjectKey getObjectKeyForJsonObject(final StackItem stackItem) {
-		boolean bIdMissing = false;
-		ArrayList<Object> alKeys = new ArrayList();
-		for (OAPropertyInfo pi : stackItem.oi.getPropertyInfos()) {
-			if (!pi.getId()) {
-				continue;
-			}
-
-			String propertyName = pi.getLowerName();
-			if (!oajson.getUsePropertyCallback(null, propertyName)) {
-				continue;
-			}
-			propertyName = oajson.getPropertyNameCallback(null, propertyName);
-
-			JsonNode jn = stackItem.node.get(propertyName);
-
-			if (jn == null) {
-				bIdMissing = true;
-				break;
-			}
-
-			Object objx = convert(jn, pi);
-
-			if (objx == null) {
-				bIdMissing = true;
-				break;
-			}
-
-			//qqqq might need to be called in other methods
-			objx = oajson.getPropertyValueCallback(null, pi.getLowerName(), objx);
-
-			alKeys.add(objx);
-		}
-
-		if (bIdMissing) {
-			return null;
-		}
-
-		OAObjectKey objKey = new OAObjectKey(alKeys.toArray());
-		return objKey;
 	}
 
 	protected static class EqualQueryForObject {
