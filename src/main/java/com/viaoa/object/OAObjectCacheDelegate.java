@@ -1024,6 +1024,11 @@ public class OAObjectCacheDelegate {
 		return null;
 	}
 
+	public static <T> T getNewObjectUsingGuid(Class<T> clazz, int guid) {
+		OAObjectKey objKey = new OAObjectKey(new Object[0], guid, true);
+		return get(clazz, objKey);
+	}
+
 	/**
 	 * Used to retrieve any object.
 	 *
@@ -1330,7 +1335,7 @@ public class OAObjectCacheDelegate {
 		// LOG.fine("called");
 	    Enumeration enumx = OAObjectHashDelegate.hashCacheClass.keys();
 	    ci.getCacheHashMap().clear();
-
+	
 	    Object[] cs = OAObjectHashDelegate.hashCacheClass.keySet().toArray();
 		if (cs == null) return;
 		int x = cs.length;

@@ -335,11 +335,14 @@ public class OAObjectPojoLoader implements Serializable {
 			return;
 		}
 
+		// keys are numbered if they are compound. Since it's not found, then it is a single key.
+
 		// pkey property that is single key
 		for (PojoRegularProperty prp : pojo.getPojoRegularProperties()) {
 			OAPropertyInfo pi = oi.getPropertyInfo(prp.getPojoProperty().getName());
 			if (pi.getKey() && !pi.getNoPojo()) {
 				prp.getPojoProperty().setKeyPos(1);
+				pi.setPojoKeyPos(1);
 				bFound = true;
 			}
 		}
@@ -352,6 +355,7 @@ public class OAObjectPojoLoader implements Serializable {
 			OAPropertyInfo pi = oi.getPropertyInfo(prp.getPojoProperty().getName());
 			if (pi.getImportMatch()) {
 				prp.getPojoProperty().setKeyPos(1);
+				pi.setPojoKeyPos(1);
 				bFound = true;
 			}
 		}
@@ -414,6 +418,9 @@ public class OAObjectPojoLoader implements Serializable {
 					if (uniquePropName.equalsIgnoreCase(prp.getPojoProperty().getName())) {
 						int kpos = pi.getPojoKeyPos();
 						prp.getPojoProperty().setKeyPos(kpos == 0 ? 1 : kpos);
+						if (kpos == 0) {
+							pi.setPojoKeyPos(1);
+						}
 						bFound = true;
 						break;
 					}

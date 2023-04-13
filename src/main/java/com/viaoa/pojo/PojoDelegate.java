@@ -7,6 +7,9 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.OAString;
 
+//qqqqqqqqqqq create unit tests for these ... make sure pojo PojoProperty with keyPos > 0 is correct
+// qqqqqqqq for pkey, importmatch, linkUnique
+
 public class PojoDelegate {
 
 	public static PojoProperty getPojoProperty(Pojo pojo, String name) {
@@ -59,28 +62,12 @@ public class PojoDelegate {
 	}
 
 	public static List<PojoProperty> getPojoPropertyKeys(Pojo pojo) {
-		return getPojoProperties(pojo, true);
+		List<PojoProperty> al = getPojoProperties(pojo, true);
+		return al;
 	}
 
 	protected static List<PojoProperty> getPojoProperties(final Pojo pojo, final boolean bKeyOnly) {
-		final List<PojoProperty> al = new ArrayList<>();
-
-		for (PojoRegularProperty prp : pojo.getPojoRegularProperties()) {
-			if (!bKeyOnly || prp.getPojoProperty().getKeyPos() > 0) {
-				al.add(prp.getPojoProperty());
-			}
-		}
-
-		if (bKeyOnly && al.size() > 0) {
-			return al;
-		}
-
-		for (PojoLink pl : pojo.getPojoLinks()) {
-			PojoLinkOne plo = pl.getPojoLinkOne();
-			if (plo != null) {
-				getPojoProperties(plo, al, bKeyOnly);
-			}
-		}
+		final List<PojoProperty> al = _getPojoProperties(pojo, bKeyOnly);
 
 		al.sort((o1, o2) -> {
 			if (o1.getKeyPos() > o2.getKeyPos()) {
@@ -95,7 +82,27 @@ public class PojoDelegate {
 		return al;
 	}
 
-	protected static void getPojoProperties(final PojoLinkOne plo, List<PojoProperty> al, final boolean bKeyOnly) {
+	private static List<PojoProperty> _getPojoProperties(final Pojo pojo, final boolean bKeyOnly) {
+		final List<PojoProperty> al = new ArrayList<>();
+
+		for (PojoRegularProperty prp : pojo.getPojoRegularProperties()) {
+			if (!bKeyOnly || prp.getPojoProperty().getKeyPos() > 0) {
+				al.add(prp.getPojoProperty());
+			}
+		}
+
+		if (!bKeyOnly || al.size() == 0) {
+			for (PojoLink pl : pojo.getPojoLinks()) {
+				PojoLinkOne plo = pl.getPojoLinkOne();
+				if (plo != null) {
+					_getPojoProperties(plo, al, bKeyOnly);
+				}
+			}
+		}
+		return al;
+	}
+
+	private static void _getPojoProperties(final PojoLinkOne plo, List<PojoProperty> al, final boolean bKeyOnly) {
 		for (PojoLinkFkey plf : plo.getPojoLinkFkeys()) {
 			if (!bKeyOnly || plf.getPojoProperty().getKeyPos() > 0) {
 				al.add(plf.getPojoProperty());
@@ -111,7 +118,7 @@ public class PojoDelegate {
 			} else {
 				PojoLinkOneReference plof = pim.getPojoLinkOneReference();
 				PojoLinkOne plox = plof.getPojoLinkOne();
-				getPojoProperties(plox, al, bKeyOnly);
+				_getPojoProperties(plox, al, bKeyOnly);
 			}
 		}
 
@@ -125,7 +132,7 @@ public class PojoDelegate {
 			} else {
 				PojoLinkOneReference plof = plu.getPojoLinkOneReference();
 				PojoLinkOne plox = plof.getPojoLinkOne();
-				getPojoProperties(plox, al, bKeyOnly);
+				_getPojoProperties(plox, al, bKeyOnly);
 			}
 		}
 	}

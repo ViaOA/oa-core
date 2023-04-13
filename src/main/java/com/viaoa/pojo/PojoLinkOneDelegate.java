@@ -37,10 +37,39 @@ public class PojoLinkOneDelegate {
 			return null;
 		}
 		List<PojoProperty> alPjp = new ArrayList<>();
+
 		for (PojoLinkFkey plfk : plo.getPojoLinkFkeys()) {
 			alPjp.add(plfk.getPojoProperty());
 		}
+		return alPjp;
+	}
 
+	public static List<PojoProperty> getImportMatchPojoProperties(Pojo pojo, String linkName) {
+		PojoLinkOne plo = getPojoLinkOne(pojo, linkName);
+		if (plo == null) {
+			return null;
+		}
+		return getImportMatchPojoProperties(plo);
+	}
+
+	public static List<PojoProperty> getImportMatchPojoProperties(final PojoLinkOne plo) {
+		List<PojoProperty> alPjp = new ArrayList<>();
+		if (plo == null) {
+			return alPjp;
+		}
+
+		for (PojoImportMatch pim : plo.getPojoImportMatches()) {
+			PojoProperty pjp = pim.getPojoProperty();
+			if (pjp != null) {
+				alPjp.add(pjp);
+			} else {
+				PojoLinkOneReference plor = pim.getPojoLinkOneReference();
+				if (plor != null) {
+					PojoLinkOne plox = plor.getPojoLinkOne();
+					_getLinkOnePojoProperties(plox, alPjp);
+				}
+			}
+		}
 		return alPjp;
 	}
 
@@ -49,69 +78,79 @@ public class PojoLinkOneDelegate {
 		if (plo == null) {
 			return null;
 		}
-
 		return getLinkUniquePojoProperties(plo);
 	}
 
 	public static List<PojoProperty> getLinkUniquePojoProperties(final PojoLinkOne plo) {
-		if (plo == null) {
-			return null;
-		}
-
 		List<PojoProperty> alPjp = new ArrayList<>();
-		_getLinkUniquePojoProperties(plo, alPjp);
-		return alPjp;
-	}
-
-	protected static void _getLinkUniquePojoProperties(final PojoLinkOne plo, final List<PojoProperty> alPjp) {
+		if (plo == null) {
+			return alPjp;
+		}
 		PojoLinkUnique plu = plo.getPojoLinkUnique();
 		if (plu == null) {
-			return;
+			return alPjp;
 		}
+
 		PojoProperty pjp = plu.getPojoProperty();
 		if (pjp != null) {
 			alPjp.add(pjp);
+		} else {
+			PojoLinkOneReference plor = plu.getPojoLinkOneReference();
+			if (plor != null) {
+				PojoLinkOne plox = plor.getPojoLinkOne();
+				_getLinkOnePojoProperties(plox, alPjp);
+			}
 		}
-		PojoLinkOneReference plor = plu.getPojoLinkOneReference();
-		if (plor != null) {
-			PojoLinkOne plox = plor.getPojoLinkOne();
-			_getLinkUniquePojoProperties(plox, alPjp);
-		}
-	}
-
-	public static List<PojoProperty> getImportMatchPojoProperties(Pojo pojo, String linkName) {
-		PojoLinkOne plo = getPojoLinkOne(pojo, linkName);
-		if (plo == null) {
-			return null;
-		}
-
-		List<PojoProperty> alPjp = new ArrayList<>();
-		_getImportMatchPojoProperties(plo, alPjp);
-
 		return alPjp;
 	}
 
-	public static List<PojoProperty> getImportMatchPojoProperties(final PojoLinkOne plo) {
+	public static List<PojoProperty> getLinkOnePojoProperties(final PojoLinkOne plo) {
+		final List<PojoProperty> alPjp = new ArrayList<>();
 		if (plo == null) {
-			return null;
+			return alPjp;
 		}
-
-		List<PojoProperty> alPjp = new ArrayList<>();
-		_getImportMatchPojoProperties(plo, alPjp);
-
+		_getLinkOnePojoProperties(plo, alPjp);
 		return alPjp;
 	}
 
-	protected static void _getImportMatchPojoProperties(final PojoLinkOne plo, final List<PojoProperty> alPjp) {
+	protected static void _getLinkOnePojoProperties(final PojoLinkOne plo, final List<PojoProperty> alPjp) {
+		boolean b = false;
+		for (PojoLinkFkey plfk : plo.getPojoLinkFkeys()) {
+			alPjp.add(plfk.getPojoProperty());
+			b = true;
+		}
+		if (b) {
+			return;
+		}
+
 		for (PojoImportMatch pim : plo.getPojoImportMatches()) {
+			b = true;
 			PojoProperty pjp = pim.getPojoProperty();
 			if (pjp != null) {
 				alPjp.add(pjp);
+			} else {
+				PojoLinkOneReference plor = pim.getPojoLinkOneReference();
+				if (plor != null) {
+					PojoLinkOne plox = plor.getPojoLinkOne();
+					_getLinkOnePojoProperties(plox, alPjp);
+				}
 			}
-			PojoLinkOneReference plor = pim.getPojoLinkOneReference();
-			if (plor != null) {
-				PojoLinkOne plox = plor.getPojoLinkOne();
-				_getImportMatchPojoProperties(plox, alPjp);
+		}
+		if (b) {
+			return;
+		}
+
+		PojoLinkUnique plu = plo.getPojoLinkUnique();
+		if (plu != null) {
+			PojoProperty pjp = plu.getPojoProperty();
+			if (pjp != null) {
+				alPjp.add(pjp);
+			} else {
+				PojoLinkOneReference plor = plu.getPojoLinkOneReference();
+				if (plor != null) {
+					PojoLinkOne plox = plor.getPojoLinkOne();
+					_getLinkOnePojoProperties(plox, alPjp);
+				}
 			}
 		}
 	}

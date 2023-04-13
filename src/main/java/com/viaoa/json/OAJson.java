@@ -335,6 +335,19 @@ public class OAJson {
 		this.root = null;
 	}
 
+	public void readIntoObject(final InputStream is, OAObject root) throws JsonProcessingException, IOException {
+		readIntoObject(is, root, false);
+	}
+
+	public void readIntoObject(final InputStream is, OAObject root, final boolean bIsLoading) throws JsonProcessingException, IOException {
+		if (root == null) {
+			return;
+		}
+		this.root = root;
+		readObject(is, root.getClass(), bIsLoading);
+		this.root = null;
+	}
+
 	/**
 	 * Convert a JSON string to an Object graph. If OAObject, then first search and find matching objects to read into.
 	 *
@@ -986,6 +999,12 @@ public class OAJson {
 	public JsonNode readTree(String json) throws Exception {
 		reset();
 		JsonNode node = getObjectMapper().readTree(json);
+		return node;
+	}
+
+	public JsonNode readTree(InputStream is) throws Exception {
+		reset();
+		JsonNode node = getObjectMapper().readTree(is);
 		return node;
 	}
 
