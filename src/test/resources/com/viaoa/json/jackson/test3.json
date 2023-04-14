@@ -1,0 +1,104 @@
+{
+  "created" : "2023-04-10T11:58:13.893",
+  "stopped" : null,
+  "paused" : null,
+  "storeInfos" : [ {
+    "storeNumber" : 9000,
+    "created" : "2023-04-10T11:58:13.975",
+    "reportInstanceProcesses" : [ {
+      "counter" : 0,
+      "created" : "2023-04-10T11:58:13.983",
+      "completed" : null,
+      "fixedJson" : false,
+      "pypeError" : false,
+      "processingError" : false,
+      "pypeReportMessageId" : 7,
+      "reportId" : 1,
+      "storeInfoStoreNumber" : 9000,
+      "threadInfoName" : "name.0",
+      "reportInstanceProcessSteps" : [ {
+        "created" : "2023-04-10T11:58:13.986",
+        "used" : false,
+        "result" : null,
+        "success" : false,
+        "processStepStep" : "getReport",
+        "reportInstanceProcessCounter" : null
+      } ]
+    }, {
+      "counter" : 2,
+      "created" : "2023-04-10T11:58:13.987",
+      "completed" : null,
+      "fixedJson" : false,
+      "pypeError" : false,
+      "processingError" : false,
+      "pypeReportMessageId" : 11,
+      "reportId" : 1,
+      "storeInfoStoreNumber" : 9000,
+      "threadInfoName" : "name.0",
+      "reportInstanceProcessSteps" : [ ]
+    } ]
+  }, {
+    "storeNumber" : 9001,
+    "created" : "2023-04-10T11:58:13.978",
+    "reportInstanceProcesses" : [ {
+      "counter" : 1,
+      "created" : "2023-04-10T11:58:13.987",
+      "completed" : null,
+      "fixedJson" : false,
+      "pypeError" : false,
+      "processingError" : false,
+      "pypeReportMessageId" : 9,
+      "reportId" : 4,
+      "storeInfoStoreNumber" : 9001,
+      "threadInfoName" : "name.1",
+      "reportInstanceProcessSteps" : [ ]
+    } ]
+  } ],
+  "threadInfos" : [ {
+    "name" : "name.0",
+    "created" : "2023-04-10T11:58:13.979",
+    "paused" : null,
+    "stackTrace" : null,
+    "active" : false,
+    "lastActive" : null,
+    "activeCount" : 0,
+    "reportInstanceProcesses" : [ 0, 2 ]
+  }, {
+    "name" : "name.1",
+    "created" : "2023-04-10T11:58:13.979",
+    "paused" : null,
+    "stackTrace" : null,
+    "active" : false,
+    "lastActive" : null,
+    "activeCount" : 0,
+    "reportInstanceProcesses" : [ 1 ]
+  } ],
+  "reportInstanceProcessorInfo" : {
+    "created" : "2023-04-10T11:58:13.973",
+    "paused" : null,
+    "receivedCount" : 0,
+    "processedCount" : 0,
+    "fixedJsonCount" : 0,
+    "pypeErrorCount" : 0,
+    "processingErrorCount" : 0,
+    "reportInstanceProcesses" : [ 0, 1, 2 ],
+    "reportInfos" : [ {
+      "reportId" : 1,
+      "created" : "2023-04-10T11:58:13.98",
+      "receivedCount" : 0,
+      "processedCount" : 0,
+      "fixedJsonCount" : 0,
+      "processingErrorCount" : 0,
+      "reportInstanceProcesses" : [ 0, 2 ]
+    }, {
+      "reportId" : 4,
+      "created" : "2023-04-10T11:58:13.982",
+      "receivedCount" : 0,
+      "processedCount" : 0,
+      "fixedJsonCount" : 0,
+      "processingErrorCount" : 0,
+      "reportInstanceProcesses" : [ 1 ]
+    } ]
+  },
+  "reporterCorpParams" : [ ]
+}

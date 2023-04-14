@@ -1,0 +1,207 @@
+package com.auto.dev.reportercorp.model;
+
+import java.util.logging.Logger;
+
+import com.auto.dev.reportercorp.model.oa.StatusInfo;
+import com.auto.dev.reportercorp.model.oa.StatusInfoMessage;
+import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubCopy;
+import com.viaoa.hub.HubDelegate;
+import com.viaoa.hub.HubDetailDelegate;
+import com.viaoa.object.OAObjectCallbackDelegate;
+import com.viaoa.object.OAObjectModel;
+
+public class StatusInfoModel extends OAObjectModel {
+	private static Logger LOG = Logger.getLogger(StatusInfoModel.class.getName());
+
+	// Hubs
+	protected Hub<StatusInfo> hub;
+	// selected statusInfos
+	protected Hub<StatusInfo> hubMultiSelect;
+	// detail hubs
+	protected Hub<StatusInfoMessage> hubStatusInfoActivityMessages;
+	protected Hub<StatusInfoMessage> hubStatusInfoAlertMessages;
+	protected Hub<StatusInfoMessage> hubStatusInfoMessages;
+
+	// ObjectModels
+	protected StatusInfoMessageModel modelStatusInfoActivityMessages;
+	protected StatusInfoMessageModel modelStatusInfoAlertMessages;
+	protected StatusInfoMessageModel modelStatusInfoMessages;
+
+	public StatusInfoModel() {
+		setDisplayName("Status Info");
+		setPluralDisplayName("Status Infos");
+	}
+
+	public StatusInfoModel(Hub<StatusInfo> hubStatusInfo) {
+		this();
+		if (hubStatusInfo != null) {
+			HubDelegate.setObjectClass(hubStatusInfo, StatusInfo.class);
+		}
+		this.hub = hubStatusInfo;
+	}
+
+	public StatusInfoModel(StatusInfo statusInfo) {
+		this();
+		getHub().add(statusInfo);
+		getHub().setPos(0);
+	}
+
+	public Hub<StatusInfo> getOriginalHub() {
+		return getHub();
+	}
+
+	public Hub<StatusInfoMessage> getStatusInfoActivityMessages() {
+		if (hubStatusInfoActivityMessages == null) {
+			hubStatusInfoActivityMessages = getHub().getDetailHub(StatusInfo.P_StatusInfoActivityMessages);
+		}
+		return hubStatusInfoActivityMessages;
+	}
+
+	public Hub<StatusInfoMessage> getStatusInfoAlertMessages() {
+		if (hubStatusInfoAlertMessages == null) {
+			hubStatusInfoAlertMessages = getHub().getDetailHub(StatusInfo.P_StatusInfoAlertMessages);
+		}
+		return hubStatusInfoAlertMessages;
+	}
+
+	public Hub<StatusInfoMessage> getStatusInfoMessages() {
+		if (hubStatusInfoMessages == null) {
+			hubStatusInfoMessages = getHub().getDetailHub(StatusInfo.P_StatusInfoMessages);
+		}
+		return hubStatusInfoMessages;
+	}
+
+	public StatusInfo getStatusInfo() {
+		return getHub().getAO();
+	}
+
+	public Hub<StatusInfo> getHub() {
+		if (hub == null) {
+			hub = new Hub<StatusInfo>(StatusInfo.class);
+		}
+		return hub;
+	}
+
+	public Hub<StatusInfo> getMultiSelectHub() {
+		if (hubMultiSelect == null) {
+			hubMultiSelect = new Hub<StatusInfo>(StatusInfo.class);
+		}
+		return hubMultiSelect;
+	}
+
+	public StatusInfoMessageModel getStatusInfoActivityMessagesModel() {
+		if (modelStatusInfoActivityMessages != null) {
+			return modelStatusInfoActivityMessages;
+		}
+		modelStatusInfoActivityMessages = new StatusInfoMessageModel(getStatusInfoActivityMessages());
+		modelStatusInfoActivityMessages.setDisplayName("Status Info Message");
+		modelStatusInfoActivityMessages.setPluralDisplayName("Activity Messages");
+		if (HubDetailDelegate.getIsFromSameMasterHub(getOriginalHub(), getStatusInfoActivityMessages())) {
+			modelStatusInfoActivityMessages.setCreateUI(false);
+		}
+		modelStatusInfoActivityMessages.setForJfc(getForJfc());
+		modelStatusInfoActivityMessages.setAllowNew(false);
+		modelStatusInfoActivityMessages.setAllowSave(true);
+		modelStatusInfoActivityMessages.setAllowAdd(false);
+		modelStatusInfoActivityMessages.setAllowMove(false);
+		modelStatusInfoActivityMessages.setAllowRemove(false);
+		modelStatusInfoActivityMessages.setAllowDelete(true);
+		modelStatusInfoActivityMessages.setAllowRefresh(false);
+		modelStatusInfoActivityMessages.setAllowSearch(false);
+		modelStatusInfoActivityMessages.setAllowHubSearch(false);
+		modelStatusInfoActivityMessages.setAllowGotoEdit(true);
+		modelStatusInfoActivityMessages.setViewOnly(getViewOnly());
+		modelStatusInfoActivityMessages.setAllowTableFilter(true);
+		modelStatusInfoActivityMessages.setAllowTableSorting(true);
+		modelStatusInfoActivityMessages.setAllowMultiSelect(false);
+		modelStatusInfoActivityMessages.setAllowCopy(false);
+		modelStatusInfoActivityMessages.setAllowCut(false);
+		modelStatusInfoActivityMessages.setAllowPaste(false);
+		// call StatusInfo.statusInfoActivityMessagesModelCallback(StatusInfoMessageModel) to be able to customize this model
+		OAObjectCallbackDelegate.onObjectCallbackModel(	StatusInfo.class, StatusInfo.P_StatusInfoActivityMessages,
+														modelStatusInfoActivityMessages);
+
+		return modelStatusInfoActivityMessages;
+	}
+
+	public StatusInfoMessageModel getStatusInfoAlertMessagesModel() {
+		if (modelStatusInfoAlertMessages != null) {
+			return modelStatusInfoAlertMessages;
+		}
+		modelStatusInfoAlertMessages = new StatusInfoMessageModel(getStatusInfoAlertMessages());
+		modelStatusInfoAlertMessages.setDisplayName("Status Info Message");
+		modelStatusInfoAlertMessages.setPluralDisplayName("Alert Messages");
+		if (HubDetailDelegate.getIsFromSameMasterHub(getOriginalHub(), getStatusInfoAlertMessages())) {
+			modelStatusInfoAlertMessages.setCreateUI(false);
+		}
+		modelStatusInfoAlertMessages.setForJfc(getForJfc());
+		modelStatusInfoAlertMessages.setAllowNew(false);
+		modelStatusInfoAlertMessages.setAllowSave(true);
+		modelStatusInfoAlertMessages.setAllowAdd(false);
+		modelStatusInfoAlertMessages.setAllowMove(false);
+		modelStatusInfoAlertMessages.setAllowRemove(false);
+		modelStatusInfoAlertMessages.setAllowDelete(true);
+		modelStatusInfoAlertMessages.setAllowRefresh(false);
+		modelStatusInfoAlertMessages.setAllowSearch(false);
+		modelStatusInfoAlertMessages.setAllowHubSearch(false);
+		modelStatusInfoAlertMessages.setAllowGotoEdit(true);
+		modelStatusInfoAlertMessages.setViewOnly(getViewOnly());
+		modelStatusInfoAlertMessages.setAllowTableFilter(true);
+		modelStatusInfoAlertMessages.setAllowTableSorting(true);
+		modelStatusInfoAlertMessages.setAllowMultiSelect(false);
+		modelStatusInfoAlertMessages.setAllowCopy(false);
+		modelStatusInfoAlertMessages.setAllowCut(false);
+		modelStatusInfoAlertMessages.setAllowPaste(false);
+		// call StatusInfo.statusInfoAlertMessagesModelCallback(StatusInfoMessageModel) to be able to customize this model
+		OAObjectCallbackDelegate.onObjectCallbackModel(	StatusInfo.class, StatusInfo.P_StatusInfoAlertMessages,
+														modelStatusInfoAlertMessages);
+
+		return modelStatusInfoAlertMessages;
+	}
+
+	public StatusInfoMessageModel getStatusInfoMessagesModel() {
+		if (modelStatusInfoMessages != null) {
+			return modelStatusInfoMessages;
+		}
+		modelStatusInfoMessages = new StatusInfoMessageModel(getStatusInfoMessages());
+		modelStatusInfoMessages.setDisplayName("Status Info Message");
+		modelStatusInfoMessages.setPluralDisplayName("Status Info Messages");
+		if (HubDetailDelegate.getIsFromSameMasterHub(getOriginalHub(), getStatusInfoMessages())) {
+			modelStatusInfoMessages.setCreateUI(false);
+		}
+		modelStatusInfoMessages.setForJfc(getForJfc());
+		modelStatusInfoMessages.setAllowNew(false);
+		modelStatusInfoMessages.setAllowSave(true);
+		modelStatusInfoMessages.setAllowAdd(false);
+		modelStatusInfoMessages.setAllowMove(false);
+		modelStatusInfoMessages.setAllowRemove(false);
+		modelStatusInfoMessages.setAllowDelete(true);
+		modelStatusInfoMessages.setAllowRefresh(false);
+		modelStatusInfoMessages.setAllowSearch(false);
+		modelStatusInfoMessages.setAllowHubSearch(false);
+		modelStatusInfoMessages.setAllowGotoEdit(true);
+		modelStatusInfoMessages.setViewOnly(getViewOnly());
+		modelStatusInfoMessages.setAllowTableFilter(true);
+		modelStatusInfoMessages.setAllowTableSorting(true);
+		modelStatusInfoMessages.setAllowMultiSelect(true);
+		modelStatusInfoMessages.setAllowCopy(false);
+		modelStatusInfoMessages.setAllowCut(false);
+		modelStatusInfoMessages.setAllowPaste(false);
+		// call StatusInfo.statusInfoMessagesModelCallback(StatusInfoMessageModel) to be able to customize this model
+		OAObjectCallbackDelegate.onObjectCallbackModel(StatusInfo.class, StatusInfo.P_StatusInfoMessages, modelStatusInfoMessages);
+
+		return modelStatusInfoMessages;
+	}
+
+	public HubCopy<StatusInfo> createHubCopy() {
+		Hub<StatusInfo> hubStatusInfox = new Hub<>(StatusInfo.class);
+		HubCopy<StatusInfo> hc = new HubCopy<>(getHub(), hubStatusInfox, true);
+		return hc;
+	}
+
+	public StatusInfoModel createCopy() {
+		StatusInfoModel mod = new StatusInfoModel(createHubCopy().getHub());
+		return mod;
+	}
+}

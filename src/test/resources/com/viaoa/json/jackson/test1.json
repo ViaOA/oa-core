@@ -1,0 +1,104 @@
+{
+  "created" : "2023-04-10T11:53:02.926",
+  "stopped" : null,
+  "paused" : null,
+  "reportInstanceProcessorInfo" : {
+    "created" : "2023-04-10T11:53:03.001",
+    "paused" : null,
+    "receivedCount" : 0,
+    "processedCount" : 0,
+    "fixedJsonCount" : 0,
+    "pypeErrorCount" : 0,
+    "processingErrorCount" : 0,
+    "reportInstanceProcesses" : [ {
+      "counter" : 0,
+      "created" : "2023-04-10T11:53:03.012",
+      "completed" : null,
+      "fixedJson" : false,
+      "pypeError" : false,
+      "processingError" : false,
+      "pypeReportMessageId" : 7,
+      "reportId" : 1,
+      "storeInfoStoreNumber" : 9000,
+      "threadInfoName" : "name.0",
+      "reportInstanceProcessSteps" : [ {
+        "created" : "2023-04-10T11:53:03.016",
+        "used" : false,
+        "result" : null,
+        "success" : false,
+        "processStepStep" : "getReport",
+        "reportInstanceProcessCounter" : null
+      } ]
+    }, {
+      "counter" : 1,
+      "created" : "2023-04-10T11:53:03.017",
+      "completed" : null,
+      "fixedJson" : false,
+      "pypeError" : false,
+      "processingError" : false,
+      "pypeReportMessageId" : 9,
+      "reportId" : 4,
+      "storeInfoStoreNumber" : 9001,
+      "threadInfoName" : "name.1",
+      "reportInstanceProcessSteps" : [ ]
+    }, {
+      "counter" : 2,
+      "created" : "2023-04-10T11:53:03.017",
+      "completed" : null,
+      "fixedJson" : false,
+      "pypeError" : false,
+      "processingError" : false,
+      "pypeReportMessageId" : 11,
+      "reportId" : 1,
+      "storeInfoStoreNumber" : 9000,
+      "threadInfoName" : "name.0",
+      "reportInstanceProcessSteps" : [ ]
+    } ],
+    "reportInfos" : [ {
+      "reportId" : 1,
+      "created" : "2023-04-10T11:53:03.008",
+      "receivedCount" : 0,
+      "processedCount" : 0,
+      "fixedJsonCount" : 0,
+      "processingErrorCount" : 0,
+      "reportInstanceProcesses" : [ 0, 2 ]
+    }, {
+      "reportId" : 4,
+      "created" : "2023-04-10T11:53:03.011",
+      "receivedCount" : 0,
+      "processedCount" : 0,
+      "fixedJsonCount" : 0,
+      "processingErrorCount" : 0,
+      "reportInstanceProcesses" : [ 1 ]
+    } ]
+  },
+  "storeInfos" : [ {
+    "storeNumber" : 9000,
+    "created" : "2023-04-10T11:53:03.001",
+    "reportInstanceProcesses" : [ 0, 2 ]
+  }, {
+    "storeNumber" : 9001,
+    "created" : "2023-04-10T11:53:03.003",
+    "reportInstanceProcesses" : [ 1 ]
+  } ],
+  "threadInfos" : [ {
+    "name" : "name.0",
+    "created" : "2023-04-10T11:53:03.004",
+    "paused" : null,
+    "stackTrace" : null,
+    "active" : false,
+    "lastActive" : null,
+    "activeCount" : 0,
+    "reportInstanceProcesses" : [ 0, 2 ]
+  }, {
+    "name" : "name.1",
+    "created" : "2023-04-10T11:53:03.005",
+    "paused" : null,
+    "stackTrace" : null,
+    "active" : false,
+    "lastActive" : null,
+    "activeCount" : 0,
+    "reportInstanceProcesses" : [ 1 ]
+  } ],
+  "reporterCorpParams" : [ ]
+}

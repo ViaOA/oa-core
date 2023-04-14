@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.autonumber.OADataSourceAuto;
 import com.viaoa.hub.Hub;
 
@@ -221,7 +222,7 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 
 	@Test
 	public void refreshTest() {
-		reset();
+		reset(false);
 		OAObjectCacheDelegate.clearCache(Server.class);
 		OAObjectDelegate.setNextGuid(0);
 
@@ -234,6 +235,8 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 				return server;
 			}
 		};
+
+		OADataSource[] dss = OADataSource.getDataSources();
 
 		OAObjectCacheDelegate.refresh(Server.class);
 		assertEquals("worked", server.getHostName());

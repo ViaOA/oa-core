@@ -96,8 +96,6 @@ public class CorpToStoreDelegate {
 		OARestClient client = new OARestClient();
 		String url = corpToStore.getBaseUrl() + "/admin/storetransmit";
 
-		// http://rtl-p-tcapp-corpsync1a-1.oreillyauto.com/MessageServiceCorpToStore/admin/storetransmit
-
 		String json = client.callJsonEndpoint("get", url, "", "");
 		return json;
 	}

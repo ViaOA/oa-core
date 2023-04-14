@@ -1,0 +1,64 @@
+package com.auto.dev.reportercorp.model.oa.propertypath;
+
+import com.auto.dev.reportercorp.model.oa.StatusInfoMessage;
+
+public class StatusInfoMessagePP {
+	private static StatusInfoPPx statusInfo;
+	private static StatusInfoPPx statusInfoActivity;
+	private static StatusInfoPPx statusInfoAlert;
+
+	public static StatusInfoPPx statusInfo() {
+		if (statusInfo == null) {
+			statusInfo = new StatusInfoPPx(StatusInfoMessage.P_StatusInfo);
+		}
+		return statusInfo;
+	}
+
+	public static StatusInfoPPx statusInfoActivity() {
+		if (statusInfoActivity == null) {
+			statusInfoActivity = new StatusInfoPPx(StatusInfoMessage.P_StatusInfoActivity);
+		}
+		return statusInfoActivity;
+	}
+
+	public static StatusInfoPPx statusInfoAlert() {
+		if (statusInfoAlert == null) {
+			statusInfoAlert = new StatusInfoPPx(StatusInfoMessage.P_StatusInfoAlert);
+		}
+		return statusInfoAlert;
+	}
+
+	public static String id() {
+		String s = StatusInfoMessage.P_Id;
+		return s;
+	}
+
+	public static String created() {
+		String s = StatusInfoMessage.P_Created;
+		return s;
+	}
+
+	public static String type() {
+		String s = StatusInfoMessage.P_Type;
+		return s;
+	}
+
+	public static String message() {
+		String s = StatusInfoMessage.P_Message;
+		return s;
+	}
+
+	public static String counter() {
+		String s = StatusInfoMessage.P_Counter;
+		return s;
+	}
+
+	public static String exception() {
+		String s = StatusInfoMessage.P_Exception;
+		return s;
+	}
+
+	public static String pp() {
+		return ""; // this
+	}
+}
