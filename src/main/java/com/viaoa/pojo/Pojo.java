@@ -3,6 +3,13 @@ package com.viaoa.pojo;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * Root level maps an OAObject to a POJO.
+ * <p>
+ * See model OABuilderPojo.obx
+ * 
+ * @author vvia
+ */
 public class Pojo implements java.io.Serializable {
 	private static final long serialVersionUID = 1L;
 
