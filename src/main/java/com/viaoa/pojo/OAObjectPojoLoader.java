@@ -28,16 +28,17 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Load oaobject classes into pojo structure that will allow pojo (json) to be loaded automatically. <br>
+ * Load oaobject classes into pojo structure that will allow pojo (json) to be loaded automatically into OAObjects. <br>
+ * This is then used by json.OAJacksonDeserializerLoader to load POJOs to JSON to OAObjects.
  * <p>
- * Note: the pojo generator for oamodels might not have pkey properties, so this is a way to uses importMatches and unique values that are
- * defined in the model to find exact matches.
+ * Note: the pojo generator for oamodels might not have pkey properties for pojo objects, so this is a way to uses importMatches and link
+ * unique values that are defined in the model to find exact matches.
  * <p>
  * <ul>
  * there are three ways to match/find (ex: when deserializing) a json object with it's matching OAObject
  * <li>Class has one or more defined pkey properties that are included in the pojo class.
- * <li>Class has one or more properties or linkOnes.
- * <li>A one2many link has a unique property, and a equals propertyPath for them to share a common root.
+ * <li>Class has one or more properties or linkOnes that are importMatches.
+ * <li>A one2many link has a unique property, and a equals propertyPath for them to share a common root that make it unique.
  * </ul>
  * <p>
  * See OABuilder model OABuilderPojo.obx<br>
