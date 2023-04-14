@@ -204,9 +204,6 @@ public abstract class OADataSource implements OADataSourceInterface {
 		if (ds == null) {
 			return null;
 		}
-		if (!ds.supportsStorage()) {
-			return null;
-		}
 
 		String[] props = oi.getIdProperties();
 
