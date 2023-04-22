@@ -874,6 +874,12 @@ public class OAThreadLocalDelegate {
 	}
 
 	// UndoablePropertyChanges -----------------------
+
+	/**
+	 * Flag to know if property changes should be adding undoable events. <br>
+	 *
+	 * @see OAUndoManager
+	 */
 	public static void setCreateUndoablePropertyChanges(boolean b) {
 		// LOG.finer(""+b);
 		setCreateUndoablePropertyChanges(OAThreadLocalDelegate.getThreadLocal(b), b);
@@ -920,7 +926,14 @@ public class OAThreadLocalDelegate {
 		return ti.createUndoablePropertyChanges;
 	}
 
+	/**
+	 * Start a compound undoable.
+	 */
 	public static void startUndoable(String compoundName) {
+		startUndoable(OAThreadLocalDelegate.getThreadLocal(true), compoundName);
+	}
+
+	public static void startCompoundUndoable(String compoundName) {
 		startUndoable(OAThreadLocalDelegate.getThreadLocal(true), compoundName);
 	}
 
@@ -945,6 +958,10 @@ public class OAThreadLocalDelegate {
 	}
 
 	public static void endUndoable() {
+		endUndoable(OAThreadLocalDelegate.getThreadLocal(true));
+	}
+
+	public static void endCompoundUndoable() {
 		endUndoable(OAThreadLocalDelegate.getThreadLocal(true));
 	}
 
@@ -1140,8 +1157,8 @@ public class OAThreadLocalDelegate {
 	    if (sc != null) setRemoteMultiplexerClient(sc.getRemoteMultiplexerClient());
 	    else setRemoteMultiplexerClient(null);
 	}
-	
-	
+
+
 	public static RemoteMultiplexerClient getRemoteMultiplexerClient() {
 	    RemoteMultiplexerClient mc;
 	    if (OAThreadLocalDelegate.TotalRemoteMultiplexerClient.get() == 0) {

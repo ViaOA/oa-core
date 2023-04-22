@@ -40,37 +40,18 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
 
-/* qqqqqqqqqqqqqqqqqqq
-
-for dynamic serialization
-
-
-BeanSerializerModifier
-
-http://www.cowtowncoder.com/blog/archives/2011/02/entry_443.html
-
-QQQQQQQQQQQQQQQQ
-
-https://stackoverflow.com/questions/23101260/ignore-fields-from-java-object-dynamically-while-sending-as-json-from-spring-mvc
-module.addSerializer(JsonView.class, new JsonViewSerializer());
-* https://github.com/monitorjbl/json-view
-
-https://github.com/monitorjbl/json-view/blob/master/json-view/src/main/java/com/monitorjbl/json/JsonViewSerializer.java
-
-*/
-
 /**
  * JSON serialization for OA. Works dynamically with OAObject Graphs to allow property paths to be included.
  * <p>
- * This is also able to work with POJO classes that dont always have pkey properties, but instead use importMatch properties. OAJson will
- * find (or create) the correct OAObject that does have the matching value(s). <br>
+ * This is also able to work with POJO classes that dont always have pkey properties, but instead use importMatch properties or linkMany
+ * unique. OAJson will find (or create) the correct OAObject that does have the matching value(s). <br>
  * ex: Customer.id, and Customer.custNumber, where OAObject Customer has an Id (pkey) and custNumber (int prop, but not key). The Pojo class
  * does not have to have the Id.<br>
- * also, a link could be an importMatch.
+ * also, a link could be an importMatch (ex: custNumber can be flagged as an importMatch).
  * <p>
  * Internally uses (/depends on) Jackson's ObjectMapper.
  * <p>
- * Note: this is not thread safe, create and use a separate instance.
+ * Note: this is not thread safe.
  *
  * @author vvia
  */
@@ -103,34 +84,21 @@ public class OAJson {
 	private Class readObjectClass;
 	private StackItem stackItem;
 
-	public static class StackItem {
+	private boolean bReadingPojo;
 
-		public StackItem() {
+	/**
+	 * Flag to know if the JSON that is being read is from a POJO.
+	 */
+	public void setReadingPojo(boolean b) {
+		this.bReadingPojo = b;
+	}
 
-		}
+	public boolean isReadingPojo() {
+		return bReadingPojo;
+	}
 
-		public StackItem parent; //qqqqq need to populate this
-		public OAObjectInfo oi;
-		public OALinkInfo li; // from parent to child
-		public JsonNode node;
-		public OAObject obj;
-		public OAObjectKey key;
-
-		public String toString() {
-			String s;
-			if (parent == null) {
-				s = oi.getForClass().getSimpleName();
-				if (li != null) {
-					s += ":" + li.getName();
-				}
-			} else {
-				s = parent.toString();
-				if (li != null) {
-					s += "." + li.getName();
-				}
-			}
-			return s;
-		}
+	public boolean getReadingPojo() {
+		return bReadingPojo;
 	}
 
 	/**
@@ -156,7 +124,8 @@ public class OAJson {
 	}
 
 	/**
-	 * Flag to know if ALL references are included, default is false.
+	 * Flag to know if ALL references are included, default is false.<br>
+	 * Note that references will be used, so that duplicates are not created and circular references are avoided.
 	 */
 	public void setIncludeAll(boolean b) {
 		bIncludeAll = b;
@@ -172,6 +141,34 @@ public class OAJson {
 		}
 		setStackItem(null);
 		cascade = null;
+	}
+
+	public static class StackItem {
+		public StackItem() {
+		}
+
+		public StackItem parent;
+		public OAObjectInfo oi;
+		public OALinkInfo li; // from parent to child
+		public JsonNode node;
+		public OAObject obj;
+		public OAObjectKey key;
+
+		public String toString() {
+			String s;
+			if (parent == null) {
+				s = oi.getForClass().getSimpleName();
+				if (li != null) {
+					s += ":" + li.getName();
+				}
+			} else {
+				s = parent.toString();
+				if (li != null) {
+					s += "." + li.getName();
+				}
+			}
+			return s;
+		}
 	}
 
 	/**
@@ -278,7 +275,7 @@ public class OAJson {
 	}
 
 	/**
-	 * Convert OAObject to a JSON stream, including any owned Links, and links in propertyPaths.
+	 * Convert OAObject to a JSON stream.
 	 */
 	public void write(Object obj, final OutputStream stream) throws JsonProcessingException, IOException {
 		setStackItem(null);
@@ -293,8 +290,6 @@ public class OAJson {
 			OAThreadLocalDelegate.setOAJackson(null);
 		}
 	}
-
-	//qqqqqqqqqqq needs to know if reading POJO
 
 	/**
 	 * Read Object from JSON. If OAObject, then first search and find matching objects to read into.
@@ -392,24 +387,7 @@ public class OAJson {
 		return obj;
 	}
 
-	//qqqqqqqqqq flag to know if the JSON that is being read is from a POJO.
-	private boolean bReadingPojo;
-
-	public void setReadingPojo(boolean b) {
-		this.bReadingPojo = b;
-	}
-
-	public boolean isReadingPojo() {
-		return bReadingPojo;
-	}
-
-	public boolean getReadingPojo() {
-		return bReadingPojo;
-	}
-
 	protected void afterReadJson() {
-		//qqqqqqqqqqqqqqqqqqq
-
 	}
 
 	/**
@@ -486,8 +464,6 @@ public class OAJson {
 
 			obj = (T) om.readValue(file, jt);
 
-			//qqqqqqqqqqqqqqqqqvv
-
 		} finally {
 			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -526,9 +502,6 @@ public class OAJson {
 			MapType mt = om.getTypeFactory().constructMapType(Map.class, clazzKey, c);
 
 			map = (Map<K, V>) om.readValue(json, mt);
-
-			//qqqqqqqqqqqqqqqqqvv
-
 		} finally {
 			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);
@@ -638,9 +611,6 @@ public class OAJson {
 			CollectionType ct = om.getTypeFactory().constructCollectionType(List.class, c);
 
 			list = (List<T>) om.readValue(stream, ct);
-
-			//qqqqqqqqqqqqqqqqqvv
-
 		} finally {
 			if (bIsLoading) {
 				OAThreadLocalDelegate.setLoading(false);

@@ -447,7 +447,7 @@ public class OAJacksonDeserializerLoader {
 
 			boolean bHasNull = false;
 			ArrayList<Object> alKey = new ArrayList();
-			for (OAFkeyInfo fi : stackItem.li.getFkeyInfos()) {
+			for (OAFkeyInfo fi : li.getFkeyInfos()) {
 				if (fi.getFromPropertyInfo() == null) {
 					continue;
 				}
@@ -534,7 +534,7 @@ public class OAJacksonDeserializerLoader {
 					continue;
 				}
 				String s = fi.getFromPropertyInfo().getLowerName();
-				Object objx = hm.get(s);
+				Object objx = hm.get(s.toLowerCase());
 				if (objx == null) {
 					alPojoProperty.clear();
 					break;
@@ -853,7 +853,7 @@ public class OAJacksonDeserializerLoader {
 		OADataSourceIterator dsi = ds.select(stackItem.oi.getForClass(), sql, args, null, false);
 		Object objx = dsi.next();
 		if (objx == null && OADataSource.getDataSource(stackItem.oi.getForClass()) != ds) {
-			OASelect sel = new OASelect(stackItem.li.getToClass(), sql, args, null);
+			OASelect sel = new OASelect(stackItem.oi.getForClass(), sql, args, null);
 			objx = sel.next();
 		}
 		stackItem.obj = (OAObject) objx;
@@ -1228,23 +1228,39 @@ public class OAJacksonDeserializerLoader {
 		eq.plu = plu;
 
 		final OALinkInfo liToRef = stackItem.oi.getLinkInfo(plu.getPojoLinkOne().getPojoLink().getName());
-
 		final OALinkInfo liFromRef = liToRef.getReverseLinkInfo();
-
-		// get the root object used as equal link
-
-		String sppToMatch = liToRef.getEqualPropertyPath();
 
 		eq.propPath = liFromRef.getEqualPropertyPath();
 
+		// get the root object used in equalPp
+		String sppToMatch = liToRef.getEqualPropertyPath();
 		OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), sppToMatch);
-		eq.value = (OAObject) pp.getValue(stackItem.obj);
 
+		// see if any of the props in ppx can be skipped - if they are in stack
+		int pos = 0;
+		OALinkInfo[] lis = pp.getLinkInfos();
+		StackItem si = stackItem;
+		for (; lis != null && pos < lis.length;) {
+			if (si.li == null || lis[pos] != si.li.getReverseLinkInfo()) {
+				break;
+			}
+			pos++;
+			if (si.parent == null) {
+				break;
+			}
+			si = si.parent;
+		}
+
+		if (lis != null && pos < lis.length) {
+			eq.value = (OAObject) pp.getValue(si.obj, pos);
+		} else if (si != null) {
+			eq.value = si.obj;
+		}
 		if (eq.value != null) {
 			return eq;
 		}
 
-		// need to find the root object using other links that have the same pp
+		// find the root object using other links + equalPp
 		for (OALinkInfo lix : stackItem.oi.getLinkInfos()) {
 			if (!lix.isOne2Many()) {
 				continue;
@@ -1287,9 +1303,9 @@ public class OAJacksonDeserializerLoader {
 				OAPropertyPath ppx = new OAPropertyPath(stackItem.parent.oi.getForClass(), pps);
 
 				// see if any of the props in ppx can be skipped - if they are in stack
-				int pos = 0;
-				OALinkInfo[] lis = ppx.getLinkInfos();
-				StackItem si = stackItem.parent;
+				pos = 0;
+				lis = ppx.getLinkInfos();
+				si = stackItem.parent;
 				for (; lis != null && pos < lis.length;) {
 					if (si.li == null || lis[pos] != si.li.getReverseLinkInfo()) {
 						break;

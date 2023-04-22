@@ -515,11 +515,11 @@ public class OAObjectEventDelegate {
 		}
 
 		if (!bIsLoading) {
-			// 20110603 add support for creating undoable events if oaThreadLocal.createUndoablePropertyChanges=true
+			// 20110603 added support for creating undoable events if oaThreadLocal.createUndoablePropertyChanges=true
 			//      default=false, which means that the individual UI components are controlling this
 			if (OAThreadLocalDelegate.getCreateUndoablePropertyChanges()) {
 				if (OAUndoManager.getUndoManager() != null) {
-					OAUndoableEdit ue = OAUndoableEdit.createUndoablePropertyChange("", oaObj, propertyName, oldObj, newObj);
+					OAUndoableEdit ue = OAUndoableEdit.createUndoablePropertyChange(null, oaObj, propertyName, oldObj, newObj);
 					OAUndoManager.add(ue);
 				}
 			}
