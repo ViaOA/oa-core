@@ -939,6 +939,14 @@ public class OAThreadLocalDelegate {
 
 	private static long msUndoable;
 
+	public static boolean isCreatingCompoundUndoable() {
+		OAThreadLocal tl = OAThreadLocalDelegate.getThreadLocal(false);
+		if (tl == null) {
+			return false;
+		}
+		return tl.createUndoablePropertyChanges;
+	}
+
 	protected static void startUndoable(OAThreadLocal ti, String compoundName) {
 		if (ti == null) {
 			return;
@@ -1157,8 +1165,8 @@ public class OAThreadLocalDelegate {
 	    if (sc != null) setRemoteMultiplexerClient(sc.getRemoteMultiplexerClient());
 	    else setRemoteMultiplexerClient(null);
 	}
-
-
+	
+	
 	public static RemoteMultiplexerClient getRemoteMultiplexerClient() {
 	    RemoteMultiplexerClient mc;
 	    if (OAThreadLocalDelegate.TotalRemoteMultiplexerClient.get() == 0) {

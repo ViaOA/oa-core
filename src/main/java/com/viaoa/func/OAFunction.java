@@ -343,6 +343,30 @@ public class OAFunction {
 		return s;
 	}
 
+	public static int length(OAObject obj, String pp) {
+		Object val = obj.getProperty(pp);
+		if (val == null) {
+			return 0;
+		}
+		if (!(val instanceof String)) {
+			return 0;
+		}
+		return ((String) val).length();
+	}
+
+	public static int length(Hub hub, String pp) {
+		if (hub == null) {
+			return 0;
+		}
+		int len = 0;
+		for (Object obj : hub) {
+			if (obj instanceof OAObject) {
+				len += length((OAObject) obj, pp);
+			}
+		}
+		return len;
+	}
+
 	/* TODO:  function with math parser
 	public static String func(OAObject obj, String equation) {
 	    return null;

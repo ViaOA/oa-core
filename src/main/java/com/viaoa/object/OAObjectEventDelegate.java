@@ -286,7 +286,7 @@ public class OAObjectEventDelegate {
 					    }
 					};
 					OADataSource ds = OADataSource.getDataSource(oaObj.getClass(), filter);
-					
+
 					if (ds != null && (!(ds instanceof OADataSourceObjectCache))) {
 					    Iterator it = ds.select(oaObj.getClass(), propertyU+" = ?", new Object[] {newObj}, null, null, null, null, 2, filter, false);
 					    try {
@@ -452,9 +452,8 @@ public class OAObjectEventDelegate {
 			}
 		}
 
-		boolean bChangeHold = oaObj.changedFlag;
-
-		boolean bIsChangeProp = WORD_CHANGED.equals(propertyU);
+		final boolean bChangeHold = oaObj.changedFlag;
+		final boolean bIsChangeProp = WORD_CHANGED.equals(propertyU);
 		if (!bIsChangeProp) {
 			oaObj.changedFlag = true;
 		}
@@ -462,7 +461,7 @@ public class OAObjectEventDelegate {
 		if (!bIsLoading) {
 			/*
 			OAObjectKey key = OAObjectKeyDelegate.getKey(oaObj);
-
+			
 			Object objOld = oldObj;
 			if (objOld instanceof OAObject) {
 				objOld = OAObjectKeyDelegate.getKey((OAObject) objOld);
@@ -486,8 +485,8 @@ public class OAObjectEventDelegate {
 			    newx = "byte[" + ((byte[])objNew).length +"]";
 			}
 			else newx = objNew;
-
-
+			
+			
 			String s = String.format("Change, class=%s, id=%s, property=%s, oldValue=%s, newVaue=%s",
 			        OAString.getClassName(oaObj.getClass()),
 			        key.toString(),
@@ -518,8 +517,9 @@ public class OAObjectEventDelegate {
 			// 20110603 added support for creating undoable events if oaThreadLocal.createUndoablePropertyChanges=true
 			//      default=false, which means that the individual UI components are controlling this
 			if (OAThreadLocalDelegate.getCreateUndoablePropertyChanges()) {
-				if (OAUndoManager.getUndoManager() != null) {
-					OAUndoableEdit ue = OAUndoableEdit.createUndoablePropertyChange(null, oaObj, propertyName, oldObj, newObj);
+				if (!bIsChangeProp && OAUndoManager.getUndoManager() != null) {
+					OAUndoableEdit ue = OAUndoableEdit.createUndoablePropertyChange(null, oaObj, propertyName, oldObj, newObj,
+																					bChangeHold);
 					OAUndoManager.add(ue);
 				}
 			}
@@ -717,7 +717,7 @@ public class OAObjectEventDelegate {
 		}
 
 		/* 20101218 replaced by HubListenerTree
-		
+
 		// Check to see if a Calculated property is changed.
 		/ * how do properties from other link object notify this objects calc objects?
 		Answer: when you add a HubListener to Hub, it will create detail hub and
@@ -878,7 +878,7 @@ public class OAObjectEventDelegate {
 		    ex:  Section.setCatalog(catalog)  or  Section.setParentSection(section)
 		    This: "Section"
 		    Changed Prop: "Catalog" or "ParentSection"
-		
+
 		    linkInfo: from Section -> Catalog or ParentSection
 		    toLinkInfo: =  from  Catalog or ParentSection -> Sections
 		    liRecursive = "ParentSection"
