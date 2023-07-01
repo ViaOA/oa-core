@@ -141,18 +141,25 @@ public class OACompare {
 	}
 
 	public static boolean isNotEqual(Object value, Object matchValue) {
-		int x = compare(value, matchValue);
-		return x != 0;
+	    return !isEqual(value, matchValue);
 	}
 
 	public static boolean isEqual(Object value, Object matchValue, boolean bIgnoreCase) {
 		return isEqual(value, matchValue, bIgnoreCase, -1);
 	}
 
+    public static boolean isNotEqual(Object value, Object matchValue, boolean bIgnoreCase) {
+        return !isEqual(value, matchValue, bIgnoreCase, -1);
+    }
+	
 	public static boolean isEqual(Object value, Object matchValue, int decimalPlaces) {
 		return isEqual(value, matchValue, false, decimalPlaces);
 	}
 
+    public static boolean isNotEqual(Object value, Object matchValue, boolean bIgnoreCase, int decimalPlaces) {
+        return !isEqual(value, matchValue, bIgnoreCase, decimalPlaces);
+    }
+	
 	public static boolean isEqual(Object value, Object matchValue, boolean bIgnoreCase, int decimalPlaces) {
 		if (bIgnoreCase) {
 			if (value instanceof String) {
