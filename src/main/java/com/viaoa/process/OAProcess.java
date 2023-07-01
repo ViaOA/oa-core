@@ -104,6 +104,9 @@ public abstract class OAProcess implements Runnable {
         return cancelReason;
     }
 
+    public void setDone() {
+        done();
+    }
     public void done() {
         doneTime = System.currentTimeMillis();
     }
@@ -163,7 +166,5 @@ public abstract class OAProcess implements Runnable {
         long ms = System.currentTimeMillis();
         return ((maxTime + createdTime) > ms);
     }
-
-    
 }
 
