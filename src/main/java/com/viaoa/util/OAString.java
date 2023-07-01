@@ -2386,6 +2386,12 @@ public class OAString {
 			"Etiam ultricies nisl id lacus vulputate mattis. Nulla condimentum et metus vitae vestibulum. Aliquam ac risus eros. Vestibulum dignissim bibendum sapien, quis feugiat sapien lacinia nec. Mauris id justo pharetra, tincidunt est vel, varius libero. Ut efficitur nulla nec malesuada efficitur. Nulla luctus purus eu metus feugiat, eu semper metus viverra. Aliquam erat volutpat. Vivamus mollis turpis augue, eget maximus lorem convallis vel. Nam sed arcu vitae diam tempus malesuada id non nisl. Phasellus scelerisque nunc ut dapibus interdum.  "
 			+
 			"Donec ornare elementum laoreet. Sed diam mauris, eleifend quis lacinia at, egestas eu tellus. Sed neque augue, vestibulum ut arcu non, accumsan aliquet enim. Aliquam fringilla neque a enim pellentesque hendrerit. Sed ac semper arcu, vitae porta purus. Curabitur sit amet faucibus augue. Praesent accumsan elit ut sem dictum vulputate. Praesent sed tempus mauris, ut ultrices dolor. Nunc congue, tortor sed lacinia pulvinar, mauris mi molestie lorem, at rutrum lorem est euismod magna. Suspendisse sagittis mauris in interdum gravida. Phasellus a ante hendrerit, pulvinar urna eget, scelerisque massa.";
+    public static String getSampleText(int len) {
+        return getDummyText(len, len, len);
+    }
+    public static String getSampleText(int normal, int min, int max) {
+        return getDummyText(normal, min, max);
+    }
 
 	public static String getDummyText(int normal, int min, int max) {
 		// adjust min/max based on normal
@@ -2705,23 +2711,58 @@ public class OAString {
 		return false;
 	}
 
+	public static boolean isNotEqual(String s, String s2) {
+	    return !isEqual(s, s2);
+	}
+
 	public static boolean isEqual(String s, String s2) {
 		return isEqual(s, s2, false);
 	}
 
-	public static boolean isEqual(String s, String s2, boolean bIgnoreCase) {
-		if (s == s2) {
-			return true;
-		}
-		if (s == null || s2 == null) {
-			return false;
-		}
-		if (bIgnoreCase) {
-			return s.equalsIgnoreCase(s2);
-		}
-		return s.equals(s2);
-	}
+    public static boolean isEqualIgnoreCase(String s, String s2) {
+        return isEqual(s, s2, true);
+    }
+	
+    public static boolean isNotEqual(String s, String s2, boolean bIgnoreCase) {
+        return !isEqual(s, s2, bIgnoreCase);
+    }
 
+    public static boolean isNotEqual(String s, String s2, boolean bIgnoreCase, boolean bNullEqualsBlank) {
+        return !isEqual(s, s2, bIgnoreCase, bNullEqualsBlank);
+    }
+    public static boolean isNotEqualNullEqualsBlank(String s, String s2) {
+        return !isEqual(s, s2, false, true);
+    }
+    
+	public static boolean isEqual(String s, String s2, boolean bIgnoreCase) {
+	    return isEqual(s, s2, bIgnoreCase, false);
+	}
+	
+    public static boolean isEqualNullEqualsBlank(String s, String s2) {
+        return isEqual(s, s2, false, true);
+    }
+	
+	
+    public static boolean isEqual(String s, String s2, boolean bIgnoreCase, boolean bNullEqualsBlank) {
+        if (s == s2) {
+            return true;
+        }
+        if (s == null || s2 == null) {
+
+            if (bNullEqualsBlank) {
+                if (isEmpty(s) && isEmpty(s2)) return true;
+            }
+            
+            return false;
+        }
+        
+        if (bIgnoreCase) {
+            return s.equalsIgnoreCase(s2);
+        }
+        return s.equals(s2);
+    }
+	
+	
 	/**
 	 * Returns a "non-null" value
 	 *
