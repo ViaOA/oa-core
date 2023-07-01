@@ -214,8 +214,9 @@ public class OAAnnotationDelegate {
 				pi.setEnumPropertyName(s);
 			}
 
-			pi.setMaxLength(oaprop.maxLength());
 			pi.setDisplayLength(oaprop.displayLength());
+            pi.setMinLength(oaprop.minLength());
+            pi.setMaxLength(oaprop.maxLength());
 
 			s = oaprop.uiColumnName();
 			if (OAString.isEmpty(s)) {

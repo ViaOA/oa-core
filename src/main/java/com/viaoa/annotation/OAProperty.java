@@ -36,13 +36,11 @@ public @interface OAProperty {
 
 	boolean required() default false;
 
-	int maxLength() default 0;
-
-	int minLength() default 0;
-
 	int decimalPlaces() default -1;
 
 	int displayLength() default 0;
+    int minLength() default 0;
+    int maxLength() default 0;
 
 	/** name to use for Grid/Table column heading */
 	String uiColumnName() default "";

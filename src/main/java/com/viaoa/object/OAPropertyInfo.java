@@ -28,8 +28,9 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private String name;
 	private String lowerName;
 
-	private int maxLength;
 	private int displayLength;
+    private int minLength;
+    private int maxLength;
 
 	// UI grid/table column header name
 	private String uiColumnName;
@@ -156,14 +157,6 @@ public class OAPropertyInfo implements java.io.Serializable {
 		this.isProcessed = b;
 	}
 
-	public int getMaxLength() {
-		return maxLength;
-	}
-
-	public void setMaxLength(int maxLength) {
-		this.maxLength = maxLength;
-	}
-
 	public int getDisplayLength() {
 		return displayLength;
 	}
@@ -172,6 +165,22 @@ public class OAPropertyInfo implements java.io.Serializable {
 		this.displayLength = length;
 	}
 
+    public int getMinLength() {
+        return minLength;
+    }
+
+    public void setMinLength(int minLength) {
+        this.minLength = minLength;
+    }
+
+    public int getMaxLength() {
+        return maxLength;
+    }
+
+    public void setMaxLength(int maxLength) {
+        this.maxLength = maxLength;
+    }
+    
 	public int getUIColumnLength() {
 		return uiColumnLength;
 	}
