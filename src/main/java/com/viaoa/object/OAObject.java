@@ -380,12 +380,23 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return OAObjectCallbackDelegate.getVerifyPropertyChange(OAObjectCallback.CHECK_CallbackMethod, this, propertyName, oldValue,
 																newValue);
 	}
+    public boolean isValidPropertyChange(String propertyName, Object newValue) {
+        Object oldValue = getProperty(propertyName);
+        return OAObjectCallbackDelegate.getVerifyPropertyChange(OAObjectCallback.CHECK_CallbackMethod, this, propertyName, oldValue,
+                                                                newValue);
+    }
 
 	public OAObjectCallback getIsValidPropertyChangeObjectCallback(String propertyName, Object oldValue, Object newValue) {
 		OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(	OAObjectCallback.CHECK_CallbackMethod, this,
 																								propertyName, oldValue, newValue);
 		return eq;
 	}
+    public OAObjectCallback getIsValidPropertyChangeObjectCallback(String propertyName, Object newValue) {
+        Object oldValue = getProperty(propertyName);
+        OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(   OAObjectCallback.CHECK_CallbackMethod, this,
+                                                                                                propertyName, oldValue, newValue);
+        return eq;
+    }
 
 	public boolean isEnabled(String propertyName) {
 		return OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_ALL, null, this, propertyName);
@@ -438,6 +449,11 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return eq;
 	}
 
+    public OAObjectCallback getVerifySaveObjectCallback() {
+        OAObjectCallback eq = OAObjectCallbackDelegate.getVerifySaveObjectCallback(this, OAObjectCallback.CHECK_ALL);
+        return eq;
+    }
+	
 	/**
 	 * Flag to know if object is new and has not been saved.
 	 */
@@ -618,6 +634,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * objects are created in the Hub of the new object. Note: this is done on the server.
 	 *
 	 * @see OAObjectReflectDelegate#copyInto(OAObject, OAObject, String[], OACopyCallback)
+	 * @see OAObjectCallbackDelegate#getCopy(OAObject)
 	 */
 	public OAObject createCopy() {
 		return OAObjectReflectDelegate.createCopy(this, null);

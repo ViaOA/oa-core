@@ -32,7 +32,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
 
     // base hub
     protected Hub<F> hub;
-    protected ArrayList<T> alTo;    
+    protected List<T> alTo;    
 
     /* flag to know if searches that use a finder only use the root Hub's AO */
     private boolean bUseAOOnly;
@@ -96,6 +96,22 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final AtomicInteger aiSearch = new AtomicInteger(); 
     private final HashSet<Integer> hsGuid = new HashSet<>();
+    
+
+    
+    public OATypeAhead(List<T> arrayToUse) {
+        alTo = arrayToUse;
+    }
+
+    /**
+     * @param hub root hub used for searches
+     */
+    public OATypeAhead(Hub<F> hub, OATypeAheadParams params) {
+        if (hub == null) throw new IllegalArgumentException("hub can not be null");
+        this.hub = hub;
+        if (params == null) throw new IllegalArgumentException("params can not be null");
+        setup(params);
+    }
     
     
     /**
@@ -170,26 +186,6 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     }
     
 
-    /**
-     * 
-     * 
-     */
-    public OATypeAhead(ArrayList<T> arrayToUse) {
-        alTo = arrayToUse;
-    }
-    
-    
-    /**
-     * @param hub root hub used for searches
-
-     * @param params
-     */
-    public OATypeAhead(Hub<F> hub, OATypeAheadParams params) {
-        if (hub == null) throw new IllegalArgumentException("hub can not be null");
-        this.hub = hub;
-        if (params == null) throw new IllegalArgumentException("params can not be null");
-        setup(params);
-    }
     
     protected void setup(OATypeAheadParams params) {
         if (params == null) return;
@@ -256,7 +252,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     }
 
     
-    public ArrayList<T> search(String searchText) {
+    public List<T> search(String searchText) {
         this.searchText = searchText;
         try {
             final int cntSearch = aiSearch.incrementAndGet();
@@ -270,9 +266,43 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
             rwLock.writeLock().unlock();
         }
     }
- 
+
+//qqqqqqqqqqqqqqq    
+    public T findObjectUsingId(String id) {
+        final OAObjectKey ok = OAObjectKeyDelegate.convertToObjectKey(classTo, id);
+        
+        if (finder == null) {
+            if (hub != null) {
+                for (T obj : ((Hub<T>)hub)) {
+                    if (obj.getObjectKey().equals(ok)) return obj;
+                }
+            }
+            else if (alTo != null) {
+                for (T obj : alTo) {
+                    if (obj.getObjectKey().equals(ok)) return obj;
+                }
+            }
+        }
+        else {
+            OAFinder<F, T> finder2 = new OAFinder<F,T>(this.finderPropertyPath) {
+                @Override
+                protected boolean isUsed(T obj) {
+                    return obj.getObjectKey().equals(ok);
+                }
+            };
+                
+            if (bUseAOOnly) {
+                return finder2.findFirst();
+            }
+            else {
+                return finder.findFirst(hub);
+            }
+        }
+        return null;
+    }
     
-    protected ArrayList<T> _search(String searchText, final int cntSearch) {
+    
+    protected List<T> _search(String searchText, final int cntSearch) {
         if (cntSearch != aiSearch.get()) return null;
         if (searchText == null) {
             searchTextSplit = null;            
@@ -282,7 +312,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
             searchTextSplit = s.split(" ");
         }
         
-        ArrayList<T> alToFound;
+        List<T> alToFound;
         
         if (finder == null) {
             alToFound = new ArrayList<T>();

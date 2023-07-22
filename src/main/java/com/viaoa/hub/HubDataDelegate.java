@@ -143,7 +143,7 @@ public class HubDataDelegate {
         }
 	    return objs;
 	}
-    
+
     public static int getCurrentSize(Hub thisHub) {
         return thisHub.data.vector.size();
     }

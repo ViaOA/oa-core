@@ -28,13 +28,20 @@ import com.viaoa.object.OAObjectCallback.Type;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
+import com.viaoa.util.OAUnknownObject;
 
 /**
- * Allows OA to be able to control permission to object/hub, and allow other code/compenents to interact with objects. Works with OAObject
- * and Hub to determine what is allowed/permitted. Uses OAObject annoations, specific methods (onObjectCallback*, *Callback), and
- * HubListeners. Used to query objects, and find out if certain functions are enabled/visible/allowed, along with other interactive
- * settings/data. Used by OAObject (beforePropChange), Hub (add/remove/removeAll) to check if method is permitted/enabled. Used by
- * OAJfcController and Jfc to set UI components (enabled, visible, tooltip, rendering, etc)
+ * Allows OA to be able to control permission to object/hub, and allow other code/compenents to interact with objects. 
+ * Works with OAObject and Hub to determine what is allowed/permitted. 
+ * 
+ * Uses OAObject annoations, specific methods (onObjectCallback*, *Callback), and HubListeners.
+ * 
+ * This is used to query objects, and find out if certain functions are enabled/visible/allowed, along with other interactive
+ * settings/data. 
+ * 
+ * Used by OAObject (beforePropChange), Hub (add/remove/removeAll) to check if method is permitted/enabled. 
+ * 
+ * Used by OAJfcController and Jfc to set UI components (enabled, visible, tooltip, rendering, etc)
  *
  * @see OAObjectCallback for list of types that can be used.
  * @see OAObjCallback annotation that lists proppaths and values used for enabled/visible.
@@ -129,7 +136,7 @@ public class OAObjectCallbackDelegate {
 	}
 
 	/**
-	 * Call oaobject class callback with type=AllowSubmit, and then calls each prop, owned lins
+	 * Call oaobject class callback with type=AllowSubmit, and then calls each prop, owned links
 	 *
 	 * @param obj
 	 * @return
@@ -696,6 +703,14 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Used to get confirm message in advance, before the new value is known.
+	 * Calls getConfirmPropertyChangeObjectCallback, with newValue = OAUnknownObject.instance
+	 */
+    public static OAObjectCallback getPreConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, 
+            String confirmMessage, String confirmTitle) {
+        return getConfirmPropertyChangeObjectCallback(oaObj, property, OAUnknownObject.instance, confirmMessage, confirmTitle);
+    }
 	public static OAObjectCallback getConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, Object newValue,
 			String confirmMessage, String confirmTitle) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForPropertyChange, OAObjectCallback.CHECK_ALL, null,
@@ -761,6 +776,27 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+    public static OAObjectCallback getConfirmRemoveAllObjectCallback(final Hub hub, String confirmMessage,
+            String confirmTitle) {
+        OAObjectCallback objectCallback;
+        OAObject objMaster = hub.getMasterObject();
+        if (objMaster != null) {
+            String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+                objectCallback = new OAObjectCallback(Type.SetConfirmForRemoveAll, OAObjectCallback.CHECK_ALL, 
+                    hub, null, null, propertyName, null);
+            objectCallback.setConfirmMessage(confirmMessage);
+            objectCallback.setConfirmTitle(confirmTitle);
+            processObjectCallback(objectCallback);
+        } else {
+            objectCallback = new OAObjectCallback(Type.SetConfirmForRemoveAll, OAObjectCallback.CHECK_ALL, hub, null, null, null, null);
+            objectCallback.setConfirmMessage(confirmMessage);
+            objectCallback.setConfirmTitle(confirmTitle);
+        }
+        return objectCallback;
+    }
+	
+	
+	
 	public static OAObjectCallback getConfirmAddObjectCallback(final Hub hub, final OAObject oaObj, String confirmMessage,
 			String confirmTitle) {
 		OAObjectCallback objectCallback;

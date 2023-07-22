@@ -222,7 +222,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			if (ch == 'y') {
 				bYearFirst = true;
 			}
-			;
 		}
 		if (bMonthFirst) {
 			staticOutputFormat = "MM/dd/yyyy hh:mma";

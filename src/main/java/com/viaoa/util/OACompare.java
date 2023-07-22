@@ -17,9 +17,8 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 
-// 20140124
 /**
- * Used to compare objects, even if objects are different classes. Ex: String "1234" will equal double 1234.00 ex: boolean true will equal
+ * Uses coercion to compare objects, even if objects are different classes. Ex: String "1234" will equal double 1234.00 ex: boolean true will equal
  * any number but 0, any value except null, any string except '' blank Also allows for comparing with Hub or Array to another Hub/Array, or
  * single object (hub.AO or hub[0]&size=1, array.length=1&array[0])
  *

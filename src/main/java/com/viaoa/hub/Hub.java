@@ -438,6 +438,16 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		return anArray;
 	}
 
+    public List<TYPE> toList() {
+        HubSelectDelegate.loadAllData(this);
+        List<TYPE> al = new ArrayList<>();
+        for (TYPE obj : this) {
+            al.add(obj);
+        }
+        return al;
+    }
+	
+	
 	/**
 	 * Copy all objects in this hub to Hub h.
 	 */
@@ -2051,7 +2061,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		String s = HubAddRemoveDelegate.getCantRemoveAllMessage(this, checkType);
 		return s == null;
 	}
-
+	
 	public void setLoading(boolean b) {
 		OAThreadLocalDelegate.setLoading(b);
 	}

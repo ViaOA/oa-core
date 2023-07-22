@@ -53,7 +53,7 @@ public class OATypeAheadTest extends OAUnitTest {
         
         OATypeAhead<Program, Employee> ta = new OATypeAhead(h, tap);
         
-        ArrayList<Employee> al = ta.search("aaa");
+        List<Employee> al = ta.search("aaa");
         assertTrue(al.size() > 0);
         
         for (Employee e : al) {
