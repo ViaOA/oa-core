@@ -1000,15 +1000,25 @@ public class OAObjectCacheDelegate {
 				}
 			}
 			WeakReference ref;
+			final OAObjectKey ok = (OAObjectKey) key;
 
 			try {
 				tmh.rwl.readLock().lock();
-				ref = (WeakReference) tmh.treeMap.get(key);
-
+				ref = (WeakReference) tmh.treeMap.get(ok);
+				
 				// 20201109 check to see if it's in tree with only guid
-				if (ref == null && key instanceof OAObjectKey && ((OAObjectKey) key).guid != 0 && ((OAObjectKey) key).isNew()) {
-					OAObjectKey keyGuidOnly = new OAObjectKey((Object[]) null, ((OAObjectKey) key).guid, true);
+				if (ref == null && ok.guid != 0 && ok.isNew()) {
+					OAObjectKey keyGuidOnly = new OAObjectKey((Object[]) null, ok.guid, true);
 					ref = (WeakReference) tmh.treeMap.get(keyGuidOnly);
+				}
+				else if (ok.guid > 0 && ok.isEmpty()) { 
+				    // if searching for guid and key is not known 
+	                for (OAObjectKey okx : tmh.treeMap.keySet()) {
+	                    if (okx.guid == ok.guid) {
+	                        ref = (WeakReference) tmh.treeMap.get(okx);
+	                        break;
+	                    }
+	                }
 				}
 			} finally {
 				tmh.rwl.readLock().unlock();
@@ -1029,6 +1039,11 @@ public class OAObjectCacheDelegate {
 		return get(clazz, objKey);
 	}
 
+    public static <T> T getUsingGuid(Class<T> clazz, int guid) {
+        OAObjectKey objKey = new OAObjectKey(new Object[0], guid, false);
+        return get(clazz, objKey);
+    }
+	
 	/**
 	 * Used to retrieve any object.
 	 *

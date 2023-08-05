@@ -2099,6 +2099,9 @@ public class OAString {
 		return d != null;
 	}
 
+	
+	
+	
 	/**
 	 * Case sensitive, compares two String to see if they are equal. This will automatically check for nulls.
 	 *
@@ -2108,6 +2111,9 @@ public class OAString {
 	public static boolean equals(String s1, String s2) {
 		return equals(s1, s2, false);
 	}
+    public static boolean notEquals(String s1, String s2) {
+        return !equals(s1, s2, false);
+    }
 
 	/**
 	 * Compares two String to see if they are equal. This will automatically check for nulls.
@@ -2128,6 +2134,9 @@ public class OAString {
 		}
 		return s1.equals(s2);
 	}
+    public static boolean notEquals(String s1, String s2, boolean bIgnoreCase) {
+        return !equals(s1, s2, bIgnoreCase);
+    }
 
 	/* ***
 	public static void main(String[] argv) {

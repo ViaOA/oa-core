@@ -159,6 +159,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 
 	public final static String JdbcFormat = "yyyy-MM-dd HH:mm:ss"; // SQL
 
+	// format used by browser: : "YYYY-MM-DD'T'HH:mm";
+    public final static String HtmlInputDateTimeFormat = "yyyy-MM-dd'T'hh:mm"; // java format to use 
+	
 	/** default parse formats */
 	private static Vector vecDateTimeParseFormat;
 

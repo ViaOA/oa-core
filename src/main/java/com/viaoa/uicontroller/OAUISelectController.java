@@ -4,7 +4,6 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectCallbackDelegate;
-import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAStr;
 
 /**
@@ -29,6 +28,10 @@ public class OAUISelectController extends OAUIBaseController {
     public Hub getLinkToHub() {
         return linkToHub;
     }
+    public String getLinkPropertyName() {
+        return this.linkPropertyName;
+    }
+    
     
     @Override
     public boolean isEnabled() {
@@ -45,16 +48,33 @@ public class OAUISelectController extends OAUIBaseController {
         return eq.getAllowed();
     }
     
+    public boolean isEnabled(OAObject obj) {
+        if (!super.isEnabled()) return false;
+
+        if (linkToHub == null) {
+            return getHub().isValid();
+        }
+        
+        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, linkToHub, obj, linkPropertyName);
+        return eq.getAllowed();
+    }
+    
         
     @Override
     public boolean isVisible() {
         if (!super.isVisible()) return false;
         if (linkToHub == null) return true;
-        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(getHub(), (OAObject) linkToHub.getAO(), linkPropertyName);
+        return isVisible((OAObject) linkToHub.getAO());
+    }
+    
+    public boolean isVisible(OAObject linkToLinkObject) {
+        if (linkToHub == null) return true;
+        if (linkToLinkObject == null) return true;
+        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(linkToHub, linkToLinkObject, linkPropertyName);
         return eq.getAllowed();
     }
 
-    
+/*qqqqq    
     public boolean onChangeAO(final Object newValue) {
         if (_onChangeAO(newValue)) {
             String msg = getCompletedMessage();
@@ -64,15 +84,39 @@ public class OAUISelectController extends OAUIBaseController {
         }
         return true;
     }
+*/
+    
+    public boolean onAOChange(final OAObject origLinkHubAO, final OAObject origValue, final Object newValue) {
+        if (_onAOChange(origLinkHubAO, origValue, newValue)) {
+            String msg = getCompletedMessage();
+            if (OAStr.isNotEmpty(msg)) {
+                onCompleted(msg, getTitle()); 
+            }
+        }
+        return true;
+    }
+    
+    
+    private boolean _onAOChange(final OAObject origLinkHubAO, final OAObject origValue, final Object newValue) {
+        boolean bChangeAO = true;
 
-    private boolean _onChangeAO(final Object newValue) {
         if (linkToHub != null) {
-            final OAObject obj = (OAObject) linkToHub.getAO();
+            if (origLinkHubAO == null) return true;
+
+            if (newValue == origValue) {
+                return true;
+            }
+            
+            if (origLinkHubAO.getProperty(linkPropertyName) != origValue) {
+                // something else changed it
+                return true; 
+            }
+
             OAObjectCallback cb; 
             String s;
-    
+            
             // 1: confirm
-            cb = OAObjectCallbackDelegate.getConfirmPropertyChangeObjectCallback(obj, linkPropertyName, newValue, getConfirmMessage(), getTitle());
+            cb = OAObjectCallbackDelegate.getConfirmPropertyChangeObjectCallback(origLinkHubAO, linkPropertyName, newValue, getConfirmMessage(), getTitle());
             s = cb.getConfirmMessage();
             if (OAStr.isNotEmpty(s)) {
                 if (!onConfirm(s, OAStr.notEmpty(cb.getConfirmTitle(), getTitle()) )) {
@@ -81,22 +125,29 @@ public class OAUISelectController extends OAUIBaseController {
             }
             
             // 2: verify
-            cb = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, obj, linkPropertyName, null, newValue); 
+            cb = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, origLinkHubAO, linkPropertyName, origValue, newValue); 
             if (!cb.getAllowed()) {
                 onError(cb.getResponse(), cb.getDisplayResponse());
                 return false;
             }
+        
+            if (linkToHub.getAO() != origLinkHubAO) {
+                // changing the AO would update the wrong object in the link hub.    
+                bChangeAO = false;
+            }
         }
         
         // 3: call method
-        getHub().setAO(newValue);
-
-        return true;
+        if (bChangeAO) {
+            getHub().setAO(newValue);
+            return true;
+        }
+        return false;
     }
     
     /**
      * This can be used to get the confirm message before the actual new value is known.<br>
-     * This is used to send a confirm message to browser.
+     * This is used to send a confirm message (javascript) to browser.
      */
     public OAObjectCallback getPreConfirmMessage() {
         OAObjectCallback cb = null; 

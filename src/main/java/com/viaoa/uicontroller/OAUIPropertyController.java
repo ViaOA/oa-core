@@ -57,9 +57,10 @@ public class OAUIPropertyController extends OAUIBaseController {
     
     @Override
     public boolean isEnabled() {
+        return isEnabled((OAObject) hub.getAO());
+    }
+    public boolean isEnabled(OAObject obj) {
         if (!super.isEnabled()) return false;
-
-        OAObject obj = (OAObject) hub.getAO();
         if (obj == null) return false;
         
         OAObjectCallback eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getPropertyName());
@@ -68,14 +69,22 @@ public class OAUIPropertyController extends OAUIBaseController {
         
     @Override
     public boolean isVisible() {
+        return isVisible((OAObject) hub.getAO());
+    }
+    public boolean isVisible(OAObject obj) {
         if (!super.isVisible()) return false;
         
-        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(getHub(), (OAObject) hub.getAO(), getPropertyName());
+        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(getHub(), obj, getPropertyName());
         return eq.getAllowed();
     }
     
     public boolean onSetProperty(Object value) {
-        if (_onSetProperty(value)) {
+        final OAObject obj = (OAObject) hub.getAO();
+        return onSetProperty(obj, value);
+    }
+
+    public boolean onSetProperty(OAObject obj, Object value) {
+        if (_onSetProperty(obj, value)) {
             String msg = getCompletedMessage();
             if (OAStr.isNotEmpty(msg)) {
                 onCompleted(msg, getTitle()); 
@@ -84,9 +93,6 @@ public class OAUIPropertyController extends OAUIBaseController {
         return true;
     }
     
-    
-    
-
     /**
      * This can be used to get the confirm message before the actual new value is known.<br>
      * This is used to send a confirm message to browser.
@@ -102,8 +108,7 @@ public class OAUIPropertyController extends OAUIBaseController {
         return ignorePasswordValue;
     }
     
-    private boolean _onSetProperty(Object newValue) {
-        final OAObject obj = (OAObject) hub.getAO();
+    private boolean _onSetProperty(final OAObject obj, Object newValue) {
         OAObjectCallback cb; 
         String s;
 
@@ -162,17 +167,25 @@ public class OAUIPropertyController extends OAUIBaseController {
     public String getValueAsString() {
         if (hub == null) return null;
         final Object obj = hub.getAO();
+        return getValueAsString(obj);
+    }
+
+    public String getValueAsString(Object obj) {
         if (obj == null) return null;
         
         if (!(obj instanceof OAObject)) return OAConv.toString(obj, getFormat());
-        
         String s = ((OAObject) obj).getPropertyAsString(getPropertyName(), getFormat());
         return s;
     }
-
+    
     public Object getValue() {
         if (hub == null) return null;
         final Object obj = hub.getAO();
+        if (obj == null) return null;
+        return getValue(obj);
+    }
+
+    public Object getValue(Object obj) {
         if (obj == null) return null;
         
         if (!(obj instanceof OAObject)) return obj;

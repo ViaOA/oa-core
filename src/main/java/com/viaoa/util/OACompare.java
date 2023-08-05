@@ -259,8 +259,10 @@ public class OACompare {
 	}
 
 	/**
-	 * Compare objects, converting them (using OAConverter class) if necessary. Coercion Rules will use the following for converting values
-	 * before comparing: check if array type if check if Hub type value, matchValue can be any type of object, including Hub or Array.
+	 * Compare objects, converting them (using OAConverter class) if necessary. <br>
+	 * Coercion Rules will use the following for converting values
+	 * before comparing:<br>
+	 * check if array type if check if Hub type value, matchValue can be any type of object, including Hub or Array.
 	 * value, matchValue do not have to be same class. value or matchValue can be one of the following: OAAnyValueObject OANotExist
 	 * OANotNullObject OANullObject
 	 */

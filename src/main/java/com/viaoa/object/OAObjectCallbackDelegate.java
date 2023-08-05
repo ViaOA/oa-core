@@ -264,6 +264,10 @@ public class OAObjectCallbackDelegate {
 		callObjectCallbackMethod(em);
 	}
 
+    public static OAObjectCallback getAllowVisibleObjectCallback(Hub hub) {
+        return getAllowVisibleObjectCallback(hub, null, null);
+    }
+	
 	public static OAObjectCallback getAllowVisibleObjectCallback(Hub hub, OAObject oaObj, String name) {
 		if (hub == null && oaObj == null) {
 			return null;

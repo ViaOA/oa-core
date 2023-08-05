@@ -39,6 +39,10 @@ public class OADate extends OADateTime {
 	public final static String JdbcFormat = "yyyy-MM-dd"; // SQL
 	public final static String JsonFormat = Format1;
 
+    // format used by browser: "YYYY-MM-DD";
+    public final static String HtmlInputDateFormat = "yyyy-MM-dd"; // java format to use
+    
+    
 	// Unique for this subclass
 	/** default output format. Default is DateFormat.SHORT */
 	protected static String dateOutputFormat;
