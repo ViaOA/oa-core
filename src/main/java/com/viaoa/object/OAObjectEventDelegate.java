@@ -1033,6 +1033,9 @@ public class OAObjectEventDelegate {
 		}
 		// end of recursive logic
 
+		// 20230804
+		Hub hubRemovedFrom = null;
+		
 		if (oldObj instanceof OAObject && !bOldIsKeyOnly) {
 			try {
 				if (OAObjectCSDelegate.isServer(oaObj)
@@ -1042,7 +1045,7 @@ public class OAObjectEventDelegate {
 						Hub h = (Hub) obj;
 						if (h.contains(oaObj)) {
 							HubAddRemoveDelegate.remove(h, oaObj, false, true, false, true, false, false);
-							//was: h.remove(oaObj);
+							hubRemovedFrom = h;
 						}
 					}
 				}
@@ -1086,6 +1089,12 @@ public class OAObjectEventDelegate {
 				// 20110805 dont allow adjusting master if hub is not shared, or if it does not have a masterHub
 				boolean bAllowAdjustMaster = (newObj != null)
 						&& (hub.getSharedHub() != null && HubDetailDelegate.getHubWithMasterHub(hub) != null);
+				
+                // 20230804 dont allow master AO change on hub where object was removed
+				if (bAllowAdjustMaster && hubRemovedFrom != null && hub.getRealHub() == hubRemovedFrom) {
+				    bAllowAdjustMaster = false; 
+				}
+				
 				HubAODelegate.setActiveObject(hub, oaObj, bAllowAdjustMaster, false, false); // adjMaster, updateLink, force
 				//was: HubAODelegate.setActiveObject(hub, oaObj, (newObj != null), false, false); // adjMaster, updateLink, force
 			}

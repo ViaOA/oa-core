@@ -2410,5 +2410,4 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void refresh() {
 		HubSelectDelegate.refresh(this);
 	}
-
 }

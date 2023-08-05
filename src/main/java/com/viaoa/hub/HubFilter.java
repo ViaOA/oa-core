@@ -56,9 +56,9 @@ import com.viaoa.util.OAString;
  };
  * </pre>
  * <p>
- * Note: HubFilter will also monitor the link to hub+property and will make sure that the link to property value is included in the filtered
- * hub. If it isUsed=false, then it will only be added temporarily, until the linkToHub.AO is changed. For more information about this
- * package, see <a href="package-summary.html#package_description">documentation</a>.
+ * Note: HubFilter will also monitor the linkHub to hub+property and will make sure that the link to property value is included in the filtered
+ * hub. If it isUsed=false, then it will only be added temporarily, until the linkToHub.AO is changed. <br> 
+ * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
  */
 
 public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Serializable, OAFilter<T> {
