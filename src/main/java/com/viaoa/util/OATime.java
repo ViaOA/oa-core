@@ -44,7 +44,8 @@ public class OATime extends OADateTime {
 	public final static String JdbcFormat = "HH:mm:ss"; // SQL
 	
 	// format used by browser: : HH:mm   ... not all support seconds "HH:mm:ss"
-    public final static String HtmlInputTimeFormat = "hh:mm"; // java format to use 
+	// same as JsonFormat
+    // public final static String HtmlInputTimeFormat = "hh:mm"; // java format to use 
     
 
 	/** default parse formats */

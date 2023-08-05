@@ -40,7 +40,8 @@ public class OADate extends OADateTime {
 	public final static String JsonFormat = Format1;
 
     // format used by browser: "YYYY-MM-DD";
-    public final static String HtmlInputDateFormat = "yyyy-MM-dd"; // java format to use
+    // same as JsonFormat
+    // public final static String HtmlInputDateFormat = "yyyy-MM-dd"; // java format to use
     
     
 	// Unique for this subclass
