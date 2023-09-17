@@ -130,7 +130,7 @@ public class HubNewObject<F extends OAObject> {
 			OAThreadLocalDelegate.setLoading(false);
 		}
 		if (obj instanceof OAObject) {
-			OAObjectDelegate.initializeAfterLoading((OAObject) obj, false, false);
+			OAObjectDelegate.initializeAfterLoading((OAObject) obj);
 		}
 		return obj;
 	}
