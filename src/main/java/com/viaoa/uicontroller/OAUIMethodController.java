@@ -41,8 +41,12 @@ public class OAUIMethodController extends OAUIBaseController {
 
     
     public boolean onCallMethod() {
+        return onCallMethod(hub, (OAObject) hub.getAO());
+    }
+
+    public boolean onCallMethod(final Hub hub, final OAObject obj) {
         Response resp = new Response();
-        _onCallMethod(resp);
+        _onCallMethod(hub, obj, resp);
         if (resp.bCompleted) {
             String msg = getCompletedMessage();
             if (OAStr.isNotEmpty(msg)) {
@@ -51,17 +55,15 @@ public class OAUIMethodController extends OAUIBaseController {
         }
         return true;
     }
-
+    
     private static class Response {
         boolean bCompleted;
         Object result;
     }
     
-    private void _onCallMethod(final Response resp) {
-        final OAObject obj = (OAObject) hub.getAO();
+    private void _onCallMethod(final Hub hub, final OAObject obj, final Response resp) {
         OAObjectCallback cb; 
         String s;
-        
 
         // 1: confirm
         cb = OAObjectCallbackDelegate.getConfirmCommandObjectCallback(obj, getMethodName(), getConfirmMessage(), getTitle());
@@ -81,7 +83,7 @@ public class OAUIMethodController extends OAUIBaseController {
         }
             
         // 3: call method
-        resp.result = OAReflect.executeMethod(hub.getAO(), getMethodName());
+        resp.result = OAReflect.executeMethod(obj, getMethodName());
         resp.bCompleted = true;
     }
 
