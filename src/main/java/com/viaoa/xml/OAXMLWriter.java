@@ -33,6 +33,8 @@ import com.viaoa.util.OAString;
  * OAXMLWriter creates an XML file that can then be read using an OAXMLReader.<br>
  * If an object has already been stored in the file, then its key will be stored.
  * 
+ * NOTE: 20230917 Use OAXml instead (based on OAJson that uses jackson)
+ * 
  * @see OAXMLReader
  */
 public class OAXMLWriter {

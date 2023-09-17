@@ -51,6 +51,8 @@ import com.viaoa.util.OAString;
  * existing object: 1: if OAProperty.importMatch, then it will search to find a matching object 2: if objectId props, then it will search to
  * find a matching object 3: use guid if not found, then a new object will be created.
  *
+ * NOTE: 20230917 Use OAXml instead (based on OAJson that uses jackson)
+ * 
  * @see OAXMLWriter
  */
 public class OAXMLReader1 extends DefaultHandler {
