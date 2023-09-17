@@ -91,7 +91,11 @@ public class OAObjectDelegate {
 		return true;
 	}
 
-	public static void initializeAfterLoading(OAObject oaObj, boolean bAssignNewId, boolean bSetChangedToFalse) {
+	public static void initializeAfterLoading(OAObject oaObj) {
+		initializeAfterLoading(oaObj, false, false, false);
+	}
+	
+	public static void initializeAfterLoading(OAObject oaObj, boolean bAssignNewId, boolean bInitializeNulls, boolean bSetChangedToFalse) {
 		if (oaObj == null) {
 			return;
 		}
@@ -99,11 +103,10 @@ public class OAObjectDelegate {
 
 		boolean bInitializeWithCS = !oi.getLocalOnly() && OASync.isClient(oaObj.getClass());
 
-		// 20210116
-		initialize(oaObj, oi, false, bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
-		// was: initialize(oaObj, oi, oi.getInitializeNewObjects(), bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
+		initialize(oaObj, oi, bInitializeNulls, bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
 	}
 
+	
 	/**
 	 * @param oaObj
 	 * @param oi                if null, then the correct oi will be retrieved.
