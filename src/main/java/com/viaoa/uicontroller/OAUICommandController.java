@@ -8,14 +8,9 @@ import com.viaoa.util.OALogger;
 import com.viaoa.util.OAStr;
 
 /**
- * Controller used to have UI components interact with Hub and OAObjects.
+ * Controller used to have UI components commands interact with Hub and OAObjects.
  * <p>
  * 
- * Note:<br>
- * A future version will include an option to allow for real time using listereners, 
- * like OAJfcController does for the OAJfc Components.
- * 
- * @see OAObjectCallbackDelegate
  * @author vince
  */
 public class OAUICommandController extends OAUIBaseController {
@@ -23,9 +18,6 @@ public class OAUICommandController extends OAUIBaseController {
 
     private Command command;
 
-    //qqqqqqqq create option for a realtime version (set up HubChangeListeners, etc)
-    
-    
     public static enum Command {
         /**
          * Misc command that uses a Hub or AO.
@@ -117,12 +109,16 @@ public class OAUICommandController extends OAUIBaseController {
     }
 
     public boolean isEnabled() {
+        Hub h = getHub();
+        return isEnabled(h, (OAObject) h.getAO());
+    }    
+    
+    public boolean isEnabled(final Hub hub, final OAObject obj) {
         if (!hub.isValid()) return false;
         
         if (command.getChangesAO()) {
             Hub hubLink = hub.getLinkHub(true);
             if (hubLink != null) {
-                OAObject obj = (OAObject) hubLink.getAO();
                 if (obj == null) return false;
                 else {
                     if (!obj.isEnabled(hub.getLinkPath(true))) return false;                    
@@ -130,7 +126,6 @@ public class OAUICommandController extends OAUIBaseController {
             }
         }
         
-        final OAObject obj = (OAObject) hub.getAO();
         final int hubSize = hub.getSize();
         final int pos = hub.getPos();
         OAObjectCallback cb = null; 
@@ -208,9 +203,9 @@ public class OAUICommandController extends OAUIBaseController {
         return cb == null || cb.getAllowed();
     }
     
-
     public boolean onCommand() {
-        if (_onCommand()) {
+        final OAObject obj = (OAObject) hub.getAO();
+        if (_onCommand(hub, obj)) {
             String msg = getCompletedMessage();
             if (OAStr.isNotEmpty(msg)) {
                 onCompleted(msg, getTitle()); 
@@ -218,9 +213,8 @@ public class OAUICommandController extends OAUIBaseController {
         }
         return true;
     }
-
-    private boolean _onCommand() {
-        final OAObject obj = (OAObject) hub.getAO();
+    
+    private boolean _onCommand(final Hub hub, final OAObject obj) {
         OAObjectCallback cb; 
         OAObject newObject = null;
         String s;
@@ -295,7 +289,6 @@ public class OAUICommandController extends OAUIBaseController {
             break;
         }
         
-        
         // Step 2: check to see if there is a link hub change
         cb = null;
         if (command.getChangesAO()) {
@@ -322,8 +315,6 @@ public class OAUICommandController extends OAUIBaseController {
                 }
             }
         }
-        
-        
         
         // Step 3: confirm
         cb = null;
@@ -399,7 +390,7 @@ public class OAUICommandController extends OAUIBaseController {
         }
         
         // Step 4: actual command
-        return performCommand(bUseNewObject ? newObject : obj);
+        return performCommand(hub, bUseNewObject ? newObject : obj);
     }
 
 
@@ -414,7 +405,7 @@ public class OAUICommandController extends OAUIBaseController {
      * Call onError if needed.
      * @return true if command was performed, false otherwise.
      */
-    protected boolean performCommand(OAObject obj) {
+    protected boolean performCommand(final Hub hub, final OAObject obj) {
         switch (command) {
         case OtherUsesHub:
         case OtherUsesAO:
@@ -512,7 +503,7 @@ public class OAUICommandController extends OAUIBaseController {
      * <p>
      * This should be overwritten to supply the object to use. 
      */
-    public Object getManualObject() {
+    protected Object getManualObject() {
         return null;
     }
 }
