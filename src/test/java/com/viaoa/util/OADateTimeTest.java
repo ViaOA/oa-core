@@ -94,6 +94,30 @@ public class OADateTimeTest extends OAUnitTest {
 
         assertEquals(dt1.getHour(), dt2.getHour());
     }
+    
+    @Test
+    public void timezonTest3() {
+		OADateTime dt = new OADateTime();
+		
+		if (dt.get24Hour() < 5) {
+			dt = dt.subtractDay();
+		}
+		dt.clearTime();
+
+		String sz = dt.toString(OADateTime.RFC339Format);
+		
+		String tzn = "America/Phoenix";
+		
+		OADateTime dt2 = dt.convertTo(OATimeZone.getTimeZone(tzn));
+		String sz2 = dt2.toString(OADateTime.RFC339Format);
+		
+		TimeZone tzLocal = OATimeZone.getTimeZone(OATimeZone.getLocalOATimeZone().id);
+		OADateTime dt3 = dt.convertTo(tzLocal);
+		String sz3 = dt3.toString(OADateTime.RFC339Format);
+		
+		assertEquals(dt, dt3);
+    }
+    
 
     @Test
     public void dstTest() {
@@ -322,7 +346,7 @@ public class OADateTimeTest extends OAUnitTest {
         xx++;
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void mainH(String[] args) throws Exception {
 
         OADateTime dtNow = new OADateTime();
 
@@ -335,10 +359,10 @@ public class OADateTimeTest extends OAUnitTest {
         b = d.after(dtNow);
 
 
-        String s = dtNow.toString("EEEE dd MMMM yyyy hh:mm:ss a zzzz");
-        s = dtNow.toString("EEEE dd MMMM yyyy hh:mm:ss a Z");
-        s = dtNow.toString("EEEE dd MMMM yyyy hh:mm:ss a ZZ");
-        s = dtNow.toString("EEEE dd MMMM yyyy hh:mm:ss a ZZZ");
+        String s = dtNow.toString("EEEE dd MMMM yyyy hh:mm:ss a zzzz"); // Monday 04 September 2023 10:58:59 AM Eastern Daylight Time
+        s = dtNow.toString("EEEE dd MMMM yyyy hh:mm:ss a Z"); // Monday 04 September 2023 10:58:59 AM -0400
+        s = dtNow.toString("EEEE dd MMMM yyyy hh:mm:ss a ZZ"); // Monday 04 September 2023 10:58:59 AM -0400
+        s = dtNow.toString("EEEE dd MMMM yyyy hh:mm:ss a ZZZ"); // Monday 04 September 2023 10:58:59 AM -0400
 
         s = "Wed 29 Mar 2017 03:09:40 PM EDT";
         String fmt = "EEE dd MMM yyyy hh:mm:ss a z";
@@ -347,6 +371,11 @@ public class OADateTimeTest extends OAUnitTest {
 
         int xx = 4;
         xx++;
+    }
+
+    public static void main(String[] args) throws Exception {
+    	OADateTimeTest test = new OADateTimeTest();
+    	test.timezonTest3();
     }
 
     @Test

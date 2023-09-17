@@ -90,8 +90,9 @@ import java.util.Vector;
     a  am/pm marker            (Text)              PM
     k  hour in day (1~24)      (Number)            24
     K  hour in am/pm (0~11)    (Number)            0
-    z  time zone               (Text)              PST
+    z  time zone               (Text)              PST (might not use Abbrev anymore, andthis would be offset amount instead)
     zzzz                                           Pacific Standard Time
+    zz                         (UTC offset)        -05 
     X                          (hours)             -04
     XX                         (hrsMins)           -0400
     XXX                        (hrs:mins)          -04:00
@@ -136,6 +137,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	private static final long serialVersionUID = 1L;
 
 	public final static String FORMAT_long = "yyyy/MM/dd hh:mm:ss.S a";
+	public final static String FORMAT_xlong = "yyyy/MM/dd hh:mm:ss.S a z";
 
 	protected long _time;
 	protected TimeZone timeZone;
@@ -152,6 +154,15 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		simpleDateFormats = new SimpleDateFormat[12]; // keeps a pool of 12 that are shared in a "round robin" pool
 	}
 
+	
+	
+	// RFC-339 format 
+	// Note: the 'Z' is not a timezone, it means that the timezone should be set to UTC.  
+	//    The calling code should call dt.setTimeZoneUTC()
+	
+	public final static String RFC339Format = "yyyy-MM-dd'T'HH:mm:ss'Z'"; //  2023-09-04T07:11:12:32-0400
+	public final static String RFC339FormatWms = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"; //  2023-09-04T07:11:12:32.123-0400
+	
 	/** default output format */
 	protected static String staticOutputFormat;
 	public final static String JsonFormat = "yyyy-MM-dd'T'HH:mm:ss";
@@ -928,6 +939,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	public void setTimeZoneUTC() {
+		setTimeZone(OATimeZone.getTimeZoneUTC());
+	}
+	
 	/**
 	 * Change the tz and keep the same other values (day,month,hour,etc). Use convertTo(tz) to have values adjusted.
 	 */
@@ -953,11 +968,15 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 
 		this._time = calNew.getTimeInMillis();
-		this._time += ms;
+		// 20230910 removed this:
+		//was: ?? this._time += ms;
 
 		this.timeZone = tz;
 	}
 
+	/**
+	 * @see OATimeZone
+	 */
 	public TimeZone getTimeZone() {
 		return timeZone == null ? defaultTimeZone : timeZone;
 	}
@@ -1334,13 +1353,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return -1;
 	}
 
-	private static TimeZone tzUTC;
-
 	public OADateTime convertToUTC() {
-		if (tzUTC == null) {
-			tzUTC = TimeZone.getTimeZone("UTC");
-		}
-		return convertTo(tzUTC);
+		return convertTo(OATimeZone.getTimeZoneUTC());
 	}
 
 	/**
@@ -1370,6 +1384,30 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dt;
 	}
 
+	public OADateTime convertTo(OATimeZone.TZ tz) {
+		
+		OADateTime dt;
+		if (this instanceof OADate) {
+			dt = new OADate(this);
+		} else if (this instanceof OATime) {
+			dt = new OATime(this);
+		} else {
+			dt = new OADateTime(this);
+		}
+
+		if (tz != null) {
+			GregorianCalendar c = dt._getCal();
+			try {
+				c.setTimeZone(tz.timeZone);
+				dt = new OADateTime(c);
+			} finally {
+				poolGregorianCalendar.release(c);
+			}
+		}
+		return dt;
+	}
+	
+	
 	/**
 	 * Return an OADateTime where a specified amount of days is added.
 	 * <p>
@@ -1805,19 +1843,20 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @see OADateTime#valueOf to convert a string using global parse strings
 	 */
 	public static OADateTime valueOf(String strDateTime, String fmt) {
+		return valueOf(strDateTime, fmt, true);
+	}
+
+	public static OADateTime valueOf(String strDateTime, String fmt, boolean bTryOtherFormats) {
 		if (strDateTime == null) {
 			return null;
 		}
-		Date d = valueOfMain(strDateTime, fmt, vecDateTimeParseFormat, staticOutputFormat);
+		Date d = valueOfMain(strDateTime, fmt, bTryOtherFormats ? vecDateTimeParseFormat : null, bTryOtherFormats ? staticOutputFormat : null);
 		if (d == null) {
-			d = valueOfMain(fixDate(strDateTime), fmt, vecDateTimeParseFormat, staticOutputFormat);
-			if (d == null) {
-				return null;
-			}
+			return null;
 		}
 		return new OADateTime(d);
 	}
-
+	
 	/**
 	 * Internally used to fix a String date.
 	 */
@@ -1875,7 +1914,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 
 		Date date = null;
-		int x = vec.size();
+		int x = vec == null ? 0 : vec.size();
 
 		int j = (format == null) ? -1 : -2;
 		for (; j <= x && date == null; j++) {
@@ -1899,6 +1938,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 							break;
 						}
 					} catch (Exception e) {
+						int xx=3;
+						xx++;
 					}
 				}
 			}
@@ -1924,6 +1965,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			f = (format == null) ? staticOutputFormat : format;
 			if (f == null || f.length() == 0) {
 				f = "yyyy-MMM-dd hh:mma";
+				if (timeZone != null) f += " z";
 			}
 		}
 		return toStringMain(f);
@@ -2099,9 +2141,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return this.ignoreTimeZone;
 	}
 
-	public static void main(String[] args) throws Exception {
-
-		String sx = (new OADateTime()).toString("yyyy-MM-dd-HH.mm.ss.SSSSSS");
+	
+	public static void main2(String[] args) throws Exception {
+		OADateTime dt;
+		SimpleDateFormat sdf;
+		String sx;
+		
+		sx = (new OADateTime()).toString("yyyy-MM-dd-HH.mm.ss.SSSSSS");
 		Thread.sleep(1);
 		String sx2 = (new OADateTime()).toString("yyyy-MM-dd-HH.mm.ss.SSSSSS");
 
@@ -2121,11 +2167,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			System.err.println(String.format("(GMT%+d:%02d) %s", hour, minutes, id));
 		}
 
-		OADateTime dt = new OADateTime().addDays(3);
+		dt = new OADateTime().addDays(3);
 		String msg1 = dt.toString("yyyy-MM-dd'T'HH:mm:ssZ"); // 2019-11-08T20:31:21-0500
 		String msg2 = dt.toString("yyyy-MM-dd'T'HH:mm:ssXXX"); // 2019-11-08T20:31:21-05:00
 
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		// or SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy KK:mm:ss a Z" );
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 		String s = sdf.format(new Date());
@@ -2156,6 +2202,71 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		// test(777);
 	}
 
+	
+	
+	
+	public static void main(String[] args) throws Exception {
+		OADateTime dt;
+		String s, sx;
+		
+		sx = "2023-09-08T14:15:47.034Z";
+		dt = new OADateTime(sx, OADateTime.RFC339FormatWms);
+		s = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+		if (dt != null) dt.setTimeZoneUTC();
+		
+		s = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS z");
+		
+		dt = dt.convertToUTC();
+		s = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS z");
+		
+		dt = dt.convertTo(OATimeZone.getLocalTimeZone());
+		s = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS z");
+
+		// "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
+		sx = "2023-09-08T14:15:47.34Z";
+		dt = new OADateTime(sx, OADateTime.RFC339FormatWms);
+		s = dt.toString(OADateTime.RFC339FormatWms);
+		
+		
+		dt = OADateTime.valueOf(sx, "yyyy-MM-dd'T'HH:mm:ss.S'Z'", false);
+		s = dt.toString(OADateTime.RFC339FormatWms);
+		
+		
+		sx = "2023-09-08T14:15:47Z";
+		dt = new OADateTime(sx, OADateTime.RFC339Format);
+		
+		
+		dt = OADateTime.valueOf(sx, "yyyy-MM-dd'T'HH:mm:ss'Z'", false);
+		
+		/*
+		dt.setTimeZone(OATimeZone.getTimeZoneUTC());
+		
+		String sz = dt.toString(OADateTime.FORMAT_xlong);//qqqqq
+		sz = dt.toString(OADateTime.RFC339FormatWms);//qqqqq
+		
+		OADateTime dtz = dt.convertTo(OATimeZone.getLocalTimeZone());
+		sz = dtz.toString(OADateTime.FORMAT_xlong);//qqqqq
+		
+		dtz = new OADateTime(sz, "yyyy/MM/dd hh:mm:ss.S a z");
+		sz = dtz.toString(OADateTime.FORMAT_xlong);//qqqqq
+		*/
+		
+		int xx = 4;
+		xx++;
+	}	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	public static void test(int id) {
 		for (int i = 0;; i++) {
 			OADate dx = new OADate(1980 + ((int) (Math.random() * 50)), (int) (Math.random() * 12), (int) (Math.random() * 28));

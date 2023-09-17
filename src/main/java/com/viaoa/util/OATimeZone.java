@@ -2,7 +2,11 @@ package com.viaoa.util;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -13,24 +17,65 @@ import java.util.concurrent.TimeUnit;
  */
 public class OATimeZone {
 	private static ArrayList<TZ> alTZ;
+	private static String[] shortNames;
+	private static TimeZone tzUTC;
 
 	public static class TZ {
 		public String id;
-		public String gmtValue;
+		public String utcValue;  // ex:  -2:00
 		public String shortName;
 		public String longName;
+		public TimeZone timeZone;
 
 		public String getDisplay() {
-			return "(" + gmtValue + ") " + longName + " (" + shortName + ")";
+			return "(" + utcValue + ") " + id + " (" + longName + "/" + shortName + ")";
 		}
 	}
 
+
+	public static TimeZone getTimeZoneUTC() {
+		if (tzUTC == null) {
+			tzUTC = TimeZone.getTimeZone("UTC");
+		}
+		return tzUTC;
+	}
+	
+	
 	public static TZ getLocalOATimeZone() {
 		TimeZone timeZone = TimeZone.getDefault();
 		TZ tz = getOATimeZone(timeZone);
 		return tz;
 	}
 
+	public static TimeZone getLocalTimeZone() {
+		TimeZone timeZone = TimeZone.getDefault();
+		return timeZone;
+	}
+	
+	public static String[] getShortNames() {
+		if (shortNames != null) return shortNames;
+		
+		List<String> al = new ArrayList();
+		Set<String> set = new HashSet();
+		for (TZ tz : getOATimeZones()) {
+			if (!set.contains(tz.shortName)) {
+				set.add(tz.shortName);
+				al.add(tz.shortName);
+			}
+		}
+		al.sort(new Comparator<String>() {
+			@Override
+			public int compare(String o1, String o2) {
+				return OAStr.compare(o1, o2);
+			}
+		});
+		String[] ss = new String[al.size()];
+		al.toArray(ss);
+		
+		shortNames = ss;
+		return shortNames;
+	}
+	
 	public static ArrayList<TZ> getOATimeZones() {
 		if (alTZ != null) {
 			return alTZ;
@@ -62,30 +107,30 @@ public class OATimeZone {
 			// avoid -4:-30 issue
 			minutes = Math.abs(minutes);
 
-			String gmtValue = "";
+			String utcValue = "";
 			if (minutes == 0) {
-				if (hours >= 0) {
-					gmtValue = String.format("GMT+%02d", hours);
+				if (hours > 0) {
+					utcValue = String.format("UTC+%02d", hours);
 				} else {
-					gmtValue = String.format("GMT-%02d", Math.abs(hours));
+					utcValue = String.format("UTC-%02d", Math.abs(hours));
 				}
 			} else {
-				if (hours >= 0) {
-					gmtValue = String.format("GMT+%02d:%02d", hours, minutes);
+				if (hours > 0) {
+					utcValue = String.format("UTC+%02d:%02d", hours, minutes);
 				} else {
-					gmtValue = String.format("GMT-%02d:%02d", Math.abs(hours), minutes);
+					utcValue = String.format("UTC-%02d:%02d", Math.abs(hours), minutes);
 				}
 			}
 
-			String shortName = timeZone.getDisplayName(false, timeZone.SHORT, Locale.getDefault());
-
+			String shortName = timeZone.getDisplayName(timeZone.useDaylightTime(), timeZone.SHORT, Locale.getDefault());
 			String longName = timeZone.getDisplayName();
 
 			TZ tz = new TZ();
 			tz.id = timeZone.getID();
 			tz.shortName = shortName;
 			tz.longName = longName;
-			tz.gmtValue = gmtValue;
+			tz.utcValue = utcValue;
+			tz.timeZone = timeZone;
 			alTZ.add(tz);
 		}
 		return alTZ;
@@ -107,7 +152,7 @@ public class OATimeZone {
 		}
 
 		for (TZ tz : getOATimeZones()) {
-			if (value.equalsIgnoreCase(tz.id) || value.equalsIgnoreCase(tz.gmtValue) || value.equalsIgnoreCase(tz.shortName)
+			if (value.equalsIgnoreCase(tz.id) || value.equalsIgnoreCase(tz.utcValue) || value.equalsIgnoreCase(tz.shortName)
 					|| value.equalsIgnoreCase(tz.longName) || value.equalsIgnoreCase(tz.getDisplay())) {
 				timeZone = TimeZone.getTimeZone(tz.id);
 				if (timeZone != null) {
@@ -137,7 +182,7 @@ public class OATimeZone {
 		}
 
 		for (TZ tz : getOATimeZones()) {
-			if (value.equalsIgnoreCase(tz.id) || value.equalsIgnoreCase(tz.gmtValue) || value.equalsIgnoreCase(tz.shortName)
+			if (value.equalsIgnoreCase(tz.id) || value.equalsIgnoreCase(tz.utcValue) || value.equalsIgnoreCase(tz.shortName)
 					|| value.equalsIgnoreCase(tz.longName) || value.equalsIgnoreCase(tz.getDisplay())) {
 				return tz;
 			}
