@@ -52,11 +52,6 @@ public class OAJsonTest {
 		xx++;
 	}
 
-	public static void main(String[] args) throws Exception {
-		OAJsonTest test = new OAJsonTest();
-		test.jsonTest();
-	}
-
 	public String fixMessageAdjustOverstockControl(String json) throws JsonProcessingException {
 		OAJson oj = new OAJson();
 
@@ -106,6 +101,11 @@ public class OAJsonTest {
 			int xx = 1;
 			xx++;
 		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		OAJsonTest test = new OAJsonTest();
+		test.jsonTest();
 	}
 
 }

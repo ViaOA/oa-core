@@ -168,7 +168,7 @@ public class OAJacksonDeserializerLoader {
 		if (OAThreadLocalDelegate.isLoading()) {
 			OAThreadLocalDelegate.setLoading(false);
 			try {
-				OAObjectDelegate.initializeAfterLoading((OAObject) stackItem.obj, bNeedsAssignedId, false);
+				OAObjectDelegate.initializeAfterLoading((OAObject) stackItem.obj, bNeedsAssignedId, false, false);
 			} finally {
 				OAThreadLocalDelegate.setLoading(true);
 			}

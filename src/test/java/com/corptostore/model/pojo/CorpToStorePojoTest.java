@@ -1,5 +1,7 @@
 package com.corptostore.model.pojo;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.viaoa.json.OAJson;
 
 /**
@@ -59,6 +61,8 @@ public class CorpToStorePojoTest {
 
 		// Object obj2 = oj.readObject(json, CorpToStore.class, true);
 
+
+		
 		return json;
 	}
 

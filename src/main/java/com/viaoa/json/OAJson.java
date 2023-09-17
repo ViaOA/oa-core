@@ -56,7 +56,7 @@ import com.viaoa.util.OAString;
  * @author vvia
  */
 public class OAJson {
-	private static volatile ObjectMapper objectMapper;
+	private static volatile ObjectMapper jsonObjectMapper;
 
 	private final ArrayList<String> alPropertyPath = new ArrayList<>();
 
@@ -205,10 +205,10 @@ public class OAJson {
 
 	private static final Object lock = new Object();
 
-	public static ObjectMapper getObjectMapper() {
-		if (objectMapper == null) {
+	public static ObjectMapper getJsonObjectMapper() {
+		if (jsonObjectMapper == null) {
 			synchronized (lock) {
-				if (objectMapper == null) {
+				if (jsonObjectMapper == null) {
 					ObjectMapper objectMapperx = new ObjectMapper();
 					objectMapperx.registerModule(new JavaTimeModule());
 					objectMapperx.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -220,13 +220,17 @@ public class OAJson {
 
 					objectMapperx.registerModule(new OAJacksonModule());
 					objectMapperx.enable(SerializationFeature.INDENT_OUTPUT);
-					objectMapper = objectMapperx;
+					jsonObjectMapper = objectMapperx;
 				}
 			}
 		}
-		return objectMapper;
+		return jsonObjectMapper;
 	}
 
+	public ObjectMapper getObjectMapper() {
+		return getJsonObjectMapper();
+	}
+	
 	/**
 	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */
