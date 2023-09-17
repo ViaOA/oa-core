@@ -270,7 +270,7 @@ public class TesterDelegate {
 			String result;
 			try {
 				result = CorpToStoreDelegate.getStoreTransmitInfo(cts);
-				ObjectMapper om = OAJson.getObjectMapper();
+				ObjectMapper om = OAJson.getJsonObjectMapper();
 				HashMap hm = om.readValue(result, HashMap.class);
 
 				hm.forEach((k, v) -> {
