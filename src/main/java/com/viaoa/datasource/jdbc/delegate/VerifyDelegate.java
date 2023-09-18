@@ -22,6 +22,7 @@ import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Index;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.util.OAStr;
 import com.viaoa.util.OAString;
 
 /**
@@ -347,6 +348,7 @@ public class VerifyDelegate {
 				LOG.warning("DB ERROR: key columns for link do not match: " + t.name + "." + link.propertyName);
 				bError = true;
 			}
+			
 			for (int j = 0; j < cols.length; j++) {
 				int t1 = cols[j].type;
 				int t2 = revCols[j].type;

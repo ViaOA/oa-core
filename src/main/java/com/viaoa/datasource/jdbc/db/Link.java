@@ -27,6 +27,9 @@ public class Link {
     public Column[] fkeys;  // foreign key columns that need to match pkey/fkey in toTable
     /** name of reference property in reference table that references this table.*/
     public String reversePropertyName;
+
+    Method methodGet;
+    Table table;
     
     public Link() {
     }
@@ -50,8 +53,6 @@ public class Link {
         return toTable.getLink(reversePropertyName);
     }
 
-    Method methodGet;
-    Table table;
     
     /**
         Method used to get reference property.

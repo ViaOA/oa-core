@@ -114,12 +114,14 @@ public class InsertDelegate {
 		ArrayList<Object> alValue = null;
 		String value;
 		DBMetaData dbmd = ds.getDBMetaData();
+		boolean bFkeysIncluded = true;
 		for (int i = 0; columns != null && i < columns.length; i++) {
 			Column column = columns[i];
 			if (column == columnSkip) {
 				continue;
 			}
 			if (column.propertyName == null || column.propertyName.length() == 0) {
+                if (column.foreignKey) bFkeysIncluded = false;
 				continue;
 			}
 			if (column.readOnly) {
@@ -207,42 +209,47 @@ public class InsertDelegate {
 			}
 		}
 
-		// update Fkeys
-		Link[] links = table.getLinks();
-		for (int i = 0; bIncludeRefereces && links != null && i < links.length; i++) {
-			if (links[i].fkeys == null || (links[i].fkeys.length == 0)) {
-				continue;
-			}
-			if (links[i].fkeys[0].primaryKey) {
-				continue; // one2many, or one2one (where Key is the fkey)
-			}
-
-			OAObjectKey key = OAObjectReflectDelegate.getPropertyObjectKey(oaObj, links[i].propertyName);
-			if (key == null) {
-				continue; // null
-			}
-			Object[] ids;
-			ids = key.getObjectIds();
-
-			Column[] fkeys = table.getLinkToColumns(links[i], links[i].toTable);
-			if (fkeys == null) {
-				continue;
-			}
-			if (fkeys.length != links[i].fkeys.length) {
-				continue;
-			}
-			for (int j = 0; j < fkeys.length; j++) {
-				Object objProperty = ((ids == null) || (j >= ids.length)) ? null : ids[j];
-				value = ConverterDelegate.convert(dbmd, fkeys[j], objProperty);
-				if (str.length() > 0) {
-					str.append(", ");
-					values.append(", ");
-				}
-
-				str.append(dbmd.leftBracket + links[i].fkeys[j].columnName.toUpperCase() + dbmd.rightBracket);
-				values.append(value);
-			}
+		/* 20230918 OAObject now has fkey properties */
+		if (!bFkeysIncluded) {
+    		// update Fkeys
+    		Link[] links = table.getLinks();
+    		for (int i = 0; bIncludeRefereces && links != null && i < links.length; i++) {
+    			if (links[i].fkeys == null || (links[i].fkeys.length == 0)) {
+    				continue;
+    			}
+    			if (links[i].fkeys[0].primaryKey) {
+    				continue; // one2many, or one2one (where Key is the fkey)
+    			}
+    
+    			OAObjectKey key = OAObjectReflectDelegate.getPropertyObjectKey(oaObj, links[i].propertyName);
+    			if (key == null) {
+    				continue; // null
+    			}
+    			Object[] ids;
+    			ids = key.getObjectIds();
+    
+    			Column[] fkeys = table.getLinkToColumns(links[i], links[i].toTable);
+    			if (fkeys == null) {
+    				continue;
+    			}
+    			if (fkeys.length != links[i].fkeys.length) {
+    				continue;
+    			}
+    			for (int j = 0; j < fkeys.length; j++) {
+    				Object objProperty = ((ids == null) || (j >= ids.length)) ? null : ids[j];
+    				value = ConverterDelegate.convert(dbmd, fkeys[j], objProperty);
+    				if (str.length() > 0) {
+    					str.append(", ");
+    					values.append(", ");
+    				}
+    
+    				str.append(dbmd.leftBracket + links[i].fkeys[j].columnName.toUpperCase() + dbmd.rightBracket);
+    				values.append(value);
+    			}
+    		}
 		}
+		
+		
 		str = new StringBuffer("INSERT INTO " + dbmd.leftBracket + table.name.toUpperCase() + dbmd.rightBracket + " (" + str + ") VALUES ("
 				+ values + ")");
 		return new Object[] { new String(str), alValue };

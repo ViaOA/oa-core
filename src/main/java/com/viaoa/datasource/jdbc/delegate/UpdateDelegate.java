@@ -125,9 +125,11 @@ public class UpdateDelegate {
 		StringBuffer sbWhere = new StringBuffer(128);
 		String value;
 		DBMetaData dbmd = ds.getDBMetaData();
+		boolean bFkeysIncluded = true;
 		for (int i = 0; columns != null && i < columns.length; i++) {
 			Column column = columns[i];
 			if (column.propertyName == null || column.propertyName.length() == 0) {
+			    if (column.foreignKey) bFkeysIncluded = false;
 				continue;
 			}
 			if (column.readOnly) {
@@ -233,70 +235,73 @@ public class UpdateDelegate {
 			}
 		}
 
-		Link[] links = table.getLinks();
-		for (int i = 0; links != null && i < links.length; i++) {
-			if (links[i].fkeys == null || (links[i].fkeys.length == 0)) {
-				continue;
-			}
-			if (links[i].fkeys[0].primaryKey) {
-				continue; // one2many, or one2one (where Key is the fkey)
-			}
-
-			if (includeProperties != null && includeProperties.length > 0) {
-				boolean b = false;
-				if (links[i].propertyName == null) {
-					continue;
-				}
-				for (int j = 0; !b && j < includeProperties.length; j++) {
-					if (links[i].propertyName.equalsIgnoreCase(includeProperties[j])) {
-						b = true;
-					}
-				}
-				if (!b) {
-					continue;
-				}
-			}
-			if (excludeProperties != null && excludeProperties.length > 0) {
-				boolean b = false;
-				if (links[i].propertyName == null) {
-					b = true;
-				} else {
-					for (int j = 0; !b && j < excludeProperties.length; j++) {
-						if (links[i].propertyName.equalsIgnoreCase(excludeProperties[j])) {
-							b = true;
-						}
-					}
-				}
-				if (b) {
-					continue;
-				}
-			}
-
-			OAObjectKey key = OAObjectReflectDelegate.getPropertyObjectKey(oaObj, links[i].propertyName);
-			Object[] ids;
-			if (key != null) {
-				ids = key.getObjectIds();
-			} else {
-				ids = null;
-			}
-
-			Column[] fkeys = table.getLinkToColumns(links[i], links[i].toTable);
-			if (fkeys == null) {
-				continue;
-			}
-			if (fkeys.length != links[i].fkeys.length) {
-				continue;
-			}
-			for (int j = 0; j < fkeys.length; j++) {
-				Object objProperty = ((ids == null) || (j >= ids.length)) ? null : ids[j];
-				value = ConverterDelegate.convert(dbmd, fkeys[j], objProperty);
-				if (sbSet.length() > 0) {
-					sbSet.append(", ");
-				}
-				sbSet.append(dbmd.leftBracket + links[i].fkeys[j].columnName.toUpperCase() + dbmd.rightBracket + " = " + value);
-			}
+        /* 20230918 OAObject now has fkey properties */
+		if (!bFkeysIncluded) {
+    		Link[] links = table.getLinks();
+    		for (int i = 0; links != null && i < links.length; i++) {
+    			if (links[i].fkeys == null || (links[i].fkeys.length == 0)) {
+    				continue;
+    			}
+    			if (links[i].fkeys[0].primaryKey) {
+    				continue; // one2many, or one2one (where Key is the fkey)
+    			}
+    
+    			if (includeProperties != null && includeProperties.length > 0) {
+    				boolean b = false;
+    				if (links[i].propertyName == null) {
+    					continue;
+    				}
+    				for (int j = 0; !b && j < includeProperties.length; j++) {
+    					if (links[i].propertyName.equalsIgnoreCase(includeProperties[j])) {
+    						b = true;
+    					}
+    				}
+    				if (!b) {
+    					continue;
+    				}
+    			}
+    			if (excludeProperties != null && excludeProperties.length > 0) {
+    				boolean b = false;
+    				if (links[i].propertyName == null) {
+    					b = true;
+    				} else {
+    					for (int j = 0; !b && j < excludeProperties.length; j++) {
+    						if (links[i].propertyName.equalsIgnoreCase(excludeProperties[j])) {
+    							b = true;
+    						}
+    					}
+    				}
+    				if (b) {
+    					continue;
+    				}
+    			}
+    
+    			OAObjectKey key = OAObjectReflectDelegate.getPropertyObjectKey(oaObj, links[i].propertyName);
+    			Object[] ids;
+    			if (key != null) {
+    				ids = key.getObjectIds();
+    			} else {
+    				ids = null;
+    			}
+    
+    			Column[] fkeys = table.getLinkToColumns(links[i], links[i].toTable);
+    			if (fkeys == null) {
+    				continue;
+    			}
+    			if (fkeys.length != links[i].fkeys.length) {
+    				continue;
+    			}
+    			for (int j = 0; j < fkeys.length; j++) {
+    				Object objProperty = ((ids == null) || (j >= ids.length)) ? null : ids[j];
+    				value = ConverterDelegate.convert(dbmd, fkeys[j], objProperty);
+    				if (sbSet.length() > 0) {
+    					sbSet.append(", ");
+    				}
+    				sbSet.append(dbmd.leftBracket + links[i].fkeys[j].columnName.toUpperCase() + dbmd.rightBracket + " = " + value);
+    			}
+    		}
 		}
-
+		
 		if (sbSet.length() == 0) {
 			return null;
 		}
