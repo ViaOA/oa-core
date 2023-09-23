@@ -231,6 +231,10 @@ public class OAJson {
 		return getJsonObjectMapper();
 	}
 	
+	public String toJson(Object obj) throws JsonProcessingException {
+		return write(obj);
+	}
+	
 	/**
 	 * Convert OAObject to a JSON string, including any owned Links, and links in propertyPaths.
 	 */

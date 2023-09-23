@@ -1,6 +1,7 @@
 package com.viaoa.xml;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -41,5 +42,8 @@ public class OAXml extends OAJson {
 		return getXmlObjectMapper();
 	}
 
+	public String toXml(Object obj) throws JsonProcessingException {
+		return write(obj);
+	}
 	
 }
