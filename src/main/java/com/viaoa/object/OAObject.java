@@ -124,12 +124,13 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	static {
 		// oaversion
-		String ver = "3.7.3.202212260";
+		String ver = "3.7.4.202310070";
 		/*
 		 *  previous:
 		 *  String ver = "3.7.0.202104100";
 		 *  String ver = "3.7.1.202202250";
 		 *  String ver = "3.7.2.202206160";
+         *  String ver = "3.7.3.202212260";
 		 */
 		/*
 		try {

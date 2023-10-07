@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.viaoa</groupId>
     <artifactId>oa-core</artifactId>
-    <version>3.7.3</version>
+    <version>3.7.4</version>
     <packaging>jar</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -255,8 +255,16 @@
             </plugin>
 
 
-            <!-- qqqq need to have this run when sending to maven central repo, a 
-                password window will popup when building -->
+            <!-- 
+                uses GnuGP windows
+                * make sure tha gpg agent is running      
+                PS C:\Program Files (x86)\GnuPG\bin> gpgconf -Qqq-launch pgg-agent
+                PS C:\Program Files (x86)\GnuPG\bin> gpg-agent
+                gpg-agent[6632]: gpg-agent running and available
+                
+               need to have this run when sending to maven central repo, 
+               a password window used to popup when building 
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
