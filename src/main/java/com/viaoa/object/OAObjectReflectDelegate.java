@@ -649,14 +649,14 @@ public class OAObjectReflectDelegate {
 								}
 							}
 							if (hubMatch != null) {
-								hub.setAutoMatch(matchProperty, hubMatch, true); // serverSide only
+								hub.setAutoMatch(matchProperty, hubMatch, true, oaObj, linkInfo.getMatchStopProperty()); // serverSide only
 							}
 						} else {
 							// 20220802
 							String autoCreatProperty = linkInfo.getAutoCreateProperty();
 							if (OAString.isNotEmpty(autoCreatProperty)) {
 								// get enum property getter method, get return value that is Enum and then number of values 0..n
-								hub.setAutoMatch(autoCreatProperty, null, true); // serverSide only
+								hub.setAutoMatch(autoCreatProperty, null, true, oaObj, linkInfo.getMatchStopProperty()); // serverSide only
 							}
 						}
 					}
@@ -1125,7 +1125,7 @@ public class OAObjectReflectDelegate {
 		// 20171113 moved from above
 		if (hubMatch != null && (bThisIsServer || (bIsCalc && !bIsServerSideCalc))) {
 			if (matchProperty != null && matchProperty.length() > 0) {
-				hub.setAutoMatch(matchProperty, hubMatch, true);
+				hub.setAutoMatch(matchProperty, hubMatch, true, oaObj, linkInfo.getMatchStopProperty());
 			}
 		}
 
@@ -1134,7 +1134,7 @@ public class OAObjectReflectDelegate {
 			String autoCreatProperty = linkInfo.getAutoCreateProperty();
 			if (OAString.isNotEmpty(autoCreatProperty)) {
 				// get enum property getter method, get return value that is Enum and then number of values 0..n
-				hub.setAutoMatch(autoCreatProperty, null, true); // serverSide only
+				hub.setAutoMatch(autoCreatProperty, null, true, oaObj, linkInfo.getMatchStopProperty()); // serverSide only
 			}
 		}
 

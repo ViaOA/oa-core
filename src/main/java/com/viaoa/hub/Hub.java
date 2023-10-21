@@ -1448,6 +1448,10 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		HubDelegate.setAutoMatch(this, property, hubMaster, bServerSideOnly);
 	}
 
+	public void setAutoMatch(String property, Hub hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
+		HubDelegate.setAutoMatch(this, property, hubMaster, bServerSideOnly, objStop, stopProperty);
+	}
+	
 	/**
 	 * Makes sure that for each object in a hubMaster, there exists an object in this hub.
 	 *

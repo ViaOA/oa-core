@@ -65,6 +65,8 @@ public @interface OAMany {
 	/** @return works with matchHub, to know what property should match the objects in the matchHub. */
 	String matchProperty() default ""; // property that matchHub will use
 
+	String matchStopProperty() default "";
+	
 	/** @return true if this must be empty (hub.size=0) to delete the other object */
 	boolean mustBeEmptyForDelete() default false;
 

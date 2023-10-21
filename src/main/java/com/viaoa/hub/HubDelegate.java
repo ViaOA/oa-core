@@ -772,7 +772,19 @@ public class HubDelegate {
 		HubAutoMatch am = new HubAutoMatch();
 		thisHub.data.setAutoMatch(am);
 		am.setServerSideOnly(bServerSideOnly);
-		am.init(thisHub, property, hubMaster);
+		am.init(thisHub, property, hubMaster, null, null);
+		// }
+	}
+	public static void setAutoMatch(Hub thisHub, String property, Hub hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
+		if (thisHub.data.getAutoMatch() != null) {
+			thisHub.data.getAutoMatch().close();
+		}
+		// 20220802 now works with Enum (name/value) property
+		// if (hubMaster != null) {
+		HubAutoMatch am = new HubAutoMatch();
+		thisHub.data.setAutoMatch(am);
+		am.setServerSideOnly(bServerSideOnly);
+		am.init(thisHub, property, hubMaster, objStop, stopProperty);
 		// }
 	}
 

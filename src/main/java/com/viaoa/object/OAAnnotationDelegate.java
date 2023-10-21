@@ -109,6 +109,7 @@ public class OAAnnotationDelegate {
 				oi.setSingleton(oaclass.singleton());
 				oi.setPojoSingleton(oaclass.pojoSingleton());
 				oi.setNoPojo(oaclass.noPojo());
+				oi.setJsonUsesCapital(oaclass.jsonUsesCapital());
 			}
 			OAObjCallback eq = (OAObjCallback) clazz.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
@@ -573,6 +574,12 @@ public class OAAnnotationDelegate {
 			}
 			li.setMatchProperty(s);
 
+			s = annotation.matchStopProperty();
+			if (s != null && s.length() == 0) {
+				s = null;
+			}
+			li.setMatchStopProperty(s);
+			
 			s = annotation.autoCreateProperty();
 			if (s != null && s.length() == 0) {
 				s = null;

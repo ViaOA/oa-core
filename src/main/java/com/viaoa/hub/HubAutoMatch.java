@@ -22,7 +22,9 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.util.OAConv;
 import com.viaoa.util.OAReflect;
+import com.viaoa.util.OAStr;
 
 /**
  * Makes sure that for each object in a master hub, there exists an object with a reference to it in a second hub.
@@ -36,6 +38,12 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	protected String property;
 	protected boolean bManuallyCalled;
 	private boolean bServerSideOnly;
+	private boolean bEnabled = true;
+	
+	
+	protected OAObject objStop;
+	protected String stopProperty; 
+
 
 	protected transient Method getMethod, setMethod;
 
@@ -51,20 +59,28 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 */
 	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, boolean bManuallyCalled) {
 		this.bManuallyCalled = bManuallyCalled;
-		init(hub, property, hubMaster);
+		init(hub, property, hubMaster, null, null);
 	}
 
 	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster) {
 		this(hub, property, hubMaster, false);
 	}
 
+	/**
+	 * @param stopProperty propertyPath from hubMaster that is used to stop if true
+	 */
+	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, OAObject objStop, String stopProperty) {
+		init(hub, property, hubMaster, objStop, stopProperty);
+	}
+	
+	
 	public HubAutoMatch() {
 	}
 
 	private boolean bInit;
 
 	// required to call if using the second empty constructor
-	public void init(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster) {
+	public void init(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, OAObject objStop, String stopProperty) {
 		if (bInit) {
 			return;
 		}
@@ -83,9 +99,14 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		if (!bManuallyCalled && hubMaster != null) {
 			hubMaster.addHubListener(this);
 		}
+		this.objStop = objStop;
+		this.stopProperty = stopProperty;
+		
 		setProperty(property);
 	}
 
+	
+	
 	/**
 	 * This needs to be set to true if it is only created on the server, but client applications will be using the same Hub that is
 	 * filtered. This is so that changes on the hub will be published to the clients, even if initiated on an OAClientThread.
@@ -150,6 +171,15 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	private AtomicBoolean abUpdating = new AtomicBoolean(false);
 
 	public void update() {
+		if (!getEnabled()) return;
+		
+		if (objStop != null && OAStr.isNotEmpty(this.stopProperty)) {
+			Object obj = objStop.getProperty(this.stopProperty);
+			if (OAConv.toBoolean(obj)) {
+				return;
+			}
+		}
+		
 		if (!abUpdating.compareAndSet(false, true)) {
 			return; // already updating
 		}
@@ -361,4 +391,13 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 		update();
 	}
+
+	public void setEnabled(boolean b) {
+		this.bEnabled = b;
+	}
+
+	public boolean getEnabled() {
+		return this.bEnabled;
+	}
+
 }

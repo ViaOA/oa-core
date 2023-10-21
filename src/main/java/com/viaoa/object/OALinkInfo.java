@@ -49,6 +49,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private boolean bAutoCreateNew;
 	private String matchHub; // propertyPath to find matching hub
 	private String matchProperty; // propertyPath to match, using HubAutoMatch
+	private String matchStopProperty;  
 	boolean mustBeEmptyForDelete; // this link must be empty before other side can be deleted
 	private String uniqueProperty; // unique propertyPath
 	private String sortProperty; // sort propetyPath
@@ -335,6 +336,14 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return this.matchProperty;
 	}
 
+	public void setMatchStopProperty(String prop) {
+		this.matchStopProperty = prop;
+	}
+
+	public String getMatchStopProperty() {
+		return this.matchStopProperty;
+	}
+	
 	public void setUniqueProperty(String prop) {
 		this.uniqueProperty = prop;
 	}
