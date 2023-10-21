@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -220,12 +221,17 @@ public class OAJson {
 
 					objectMapperx.registerModule(new OAJacksonModule());
 					objectMapperx.enable(SerializationFeature.INDENT_OUTPUT);
+					
+//qqqqqqqqqqqqq 20231012 create new option ??					
+// 					objectMapperx.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);					
+					
 					jsonObjectMapper = objectMapperx;
 				}
 			}
 		}
 		return jsonObjectMapper;
 	}
+	
 
 	public ObjectMapper getObjectMapper() {
 		return getJsonObjectMapper();

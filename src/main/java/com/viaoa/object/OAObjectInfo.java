@@ -110,6 +110,9 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private boolean pojoSingleton;
 	private boolean noPojo;
 	private Pojo pojo;
+	private boolean bJsonUsesCapital; // JSON properties are titled (begin with capital letter)
+	
+	
 
 	public OAObjectInfo() {
 		this(new String[] {});
@@ -1139,6 +1142,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 	public boolean getLookup() {
 		return bLookup;
+	}
+
+	public boolean getJsonUsesCapital() {
+		return bJsonUsesCapital;
+	}
+	public void setJsonUsesCapital(boolean b) {
+		this.bJsonUsesCapital = b;
 	}
 
 	protected boolean bPreSelect;

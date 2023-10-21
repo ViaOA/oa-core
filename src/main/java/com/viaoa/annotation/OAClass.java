@@ -84,6 +84,8 @@ public @interface OAClass {
 	boolean pojoSingleton() default false;
 
 	boolean noPojo() default false;
+	
+	boolean jsonUsesCapital() default false;  // JSON names use a capital letter (titled case)
 }
 
 /* used by OAObjectInfo

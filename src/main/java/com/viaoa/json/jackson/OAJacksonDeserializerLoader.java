@@ -218,7 +218,8 @@ public class OAJacksonDeserializerLoader {
 				if (!oajson.getUsePropertyCallback(null, propertyName)) {
 					continue;
 				}
-				propertyName = oajson.getPropertyNameCallback(null, propertyName);
+				
+				propertyName = oajson.getPropertyNameCallback(null, stackItem.oi.getJsonUsesCapital() ? pi.getName() : propertyName);
 
 				JsonNode jn = stackItem.node.get(propertyName);
 
@@ -299,7 +300,9 @@ public class OAJacksonDeserializerLoader {
 				continue;
 			}
 
-			String propertyName = oajson.getPropertyNameCallback(stackItem.obj, pi.getLowerName());
+			String propertyName = stackItem.oi.getJsonUsesCapital() ? pi.getName() : pi.getLowerName();
+			
+			propertyName = oajson.getPropertyNameCallback(stackItem.obj, propertyName);
 
 			JsonNode jn = stackItem.node.get(propertyName);
 			if (jn == null) {
@@ -332,7 +335,7 @@ public class OAJacksonDeserializerLoader {
 		stackItemChild.parent = stackItem;
 		stackItemChild.oi = li.getToObjectInfo();
 		stackItemChild.li = li;
-		stackItemChild.node = stackItem.node.get(li.getLowerName());
+		stackItemChild.node = stackItem.node.get(stackItem.oi.getJsonUsesCapital() ? li.getName() : li.getLowerName());
 
 		try {
 			oajson.setStackItem(stackItemChild);
@@ -371,7 +374,7 @@ public class OAJacksonDeserializerLoader {
 			return;
 		}
 
-		String propertyName = oajson.getPropertyNameCallback(stackItem.obj, li.getLowerName());
+		String propertyName = oajson.getPropertyNameCallback(stackItem.obj, stackItem.oi.getJsonUsesCapital() ? li.getName() : li.getLowerName());
 		JsonNode nodex = stackItem.node.get(propertyName);
 
 		if (!(nodex instanceof ArrayNode)) {
@@ -451,15 +454,31 @@ public class OAJacksonDeserializerLoader {
 				if (fi.getFromPropertyInfo() == null) {
 					continue;
 				}
-				String s = fi.getFromPropertyInfo().getLowerName();
-				JsonNode jn = stackItem.parent.node.get(s);
-				Object objx = convert(jn, fi.getToPropertyInfo());
-				alKey.add(objx);
-				bHasNull |= (objx == null);
+
+				JsonNode jn = null;
+				if (stackItem.parent != null) {
+					if (stackItem.parent.li.getReverseLinkInfo() == li) {
+						String s = stackItem.oi.getJsonUsesCapital() ? fi.getFromPropertyInfo().getName() : fi.getFromPropertyInfo().getLowerName();
+						jn = stackItem.parent.node.get(s);
+					}
+				}
+				if (jn == null) {
+					String s = li.getToObjectInfo().getJsonUsesCapital() ? fi.getToPropertyInfo().getName() : fi.getToPropertyInfo().getLowerName();
+					jn = stackItem.node.get(s);
+				}
+
+				if (jn == null) {
+					bHasNull = true;
+				}
+				else {
+					Object objx = convert(jn, fi.getToPropertyInfo());
+					alKey.add(objx);
+					bHasNull |= (objx == null);
+				}
 			}
 
 			Object[] objs = alKey.toArray(new Object[alKey.size()]);
-			OAObjectKey ok = new OAObjectKey(objs);
+			OAObjectKey ok = (bHasNull || objs == null || objs.length == 0) ? null : new OAObjectKey(objs);
 
 			OAObject obj;
 			if (bHasNull) {
@@ -470,6 +489,7 @@ public class OAJacksonDeserializerLoader {
 					obj = (OAObject) OADataSource.getObject(li.getToClass(), ok);
 				}
 			}
+			
 			if (obj == null && ok != null) {
 				OAObjectPropertyDelegate.setProperty(stackItem.obj, li.getName(), ok);
 			} else {
@@ -721,7 +741,7 @@ public class OAJacksonDeserializerLoader {
 			for (String key : keys) {
 				OAPropertyInfo pi = stackItem.oi.getPropertyInfo(key);
 
-				JsonNode jn = stackItem.node.get(pi.getLowerName());
+				JsonNode jn = stackItem.node.get(stackItem.oi.getJsonUsesCapital() ? pi.getName() : pi.getLowerName());
 				Object val = convert(jn, pi);
 
 				if (val == null) {
