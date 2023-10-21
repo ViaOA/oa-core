@@ -187,7 +187,7 @@ public class OAEqualPathFilter implements OAFilter {
 
 		if (ppTo == null) {
 			ppTo = new OAPropertyPath(obj.getClass(), strToPropPath);
-			//qqqqqqq put in OAInFilter
+			//qqqqqqq put in OAInFilter ?
 			if (!bHasFilter) {
 				String[] ss = ppTo.getFilterNames();
 				if (ss != null) {
@@ -202,8 +202,14 @@ public class OAEqualPathFilter implements OAFilter {
 		}
 
 		Object objx = ppTo.getValue(obj);
-
-		boolean b = (objx == objFromPPValue);
+		
+		boolean b;
+		if (objx instanceof Hub) {
+			b = ((Hub) objx).contains(objFromPPValue); 
+		}
+		else {
+			b = (objx == objFromPPValue);
+		}
 		return b;
 	}
 
@@ -219,6 +225,10 @@ public class OAEqualPathFilter implements OAFilter {
 
 		if (objFrom != null && ppTo != null && select.getWhereObject() == null) {
 			if (ppTo != null) {
+				OALinkInfo li = ppTo.getEndLinkInfo();
+				if (li != null && li.getType() == OALinkInfo.MANY) {
+					return true;
+				}
 				OAPropertyPath ppRev = ppTo.getReversePropertyPath(true);
 				select.setWhereObject((OAObject) objFromPPValue, ppRev.getPropertyPath());
 				if (bHasFilter) {
