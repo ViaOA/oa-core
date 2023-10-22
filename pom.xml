@@ -258,7 +258,8 @@
             <!-- 
                 uses GnuGP windows
                 * make sure tha gpg agent is running      
-                PS C:\Program Files (x86)\GnuPG\bin> gpgconf -Qqq-launch pgg-agent
+                  ** take out the "Qqq" in the next line
+                PS C:\Program Files (x86)\GnuPG\bin> gpgconf -Qqq-launch gpg-agent
                 PS C:\Program Files (x86)\GnuPG\bin> gpg-agent
                 gpg-agent[6632]: gpg-agent running and available
                 
