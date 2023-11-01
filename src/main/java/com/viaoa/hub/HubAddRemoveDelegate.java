@@ -334,6 +334,7 @@ public class HubAddRemoveDelegate {
 		boolean bIsDeleting = OAThreadLocalDelegate.isDeleting(thisHub);
 		if (!bIsDeleting && (thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()) && thisHub.isOAObject()) {
 			Vector vecRemove = thisHub.data.getVecRemove();
+			final boolean bWasEmpty = vecRemove.size() == 0;
 			for (Object obj : objs) {
 				if (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().removeElement(obj)) {
 					// no-op
@@ -341,7 +342,7 @@ public class HubAddRemoveDelegate {
 					if (vecRemove == null) {
 						vecRemove = HubDataDelegate.createVecRemove(thisHub);
 					}
-					if (vecRemove.indexOf(obj) < 0) {
+					if (bWasEmpty || vecRemove.indexOf(obj) < 0) {
 						vecRemove.addElement(obj);
 					}
 				}
@@ -500,7 +501,6 @@ public class HubAddRemoveDelegate {
 		}
 		return null;
 	}
-
 	public static boolean add(final Hub thisHub, final Object obj) {
 		if (thisHub == null || obj == null) {
 			return false;
@@ -577,7 +577,7 @@ public class HubAddRemoveDelegate {
 		}
 
 		if (obj instanceof OAObject) {
-			if (HubDataDelegate.contains(thisHub, obj)) {
+			if (HubDataDelegate.contains(thisHub, obj, true)) {
 				// this code has been moved before the listeners are notified.  Else listeners could ask for more objects
 
 				if (!bIsLoading) {

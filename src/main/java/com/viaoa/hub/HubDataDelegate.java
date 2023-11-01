@@ -125,7 +125,7 @@ public class HubDataDelegate {
             thisHub.data.vector.copyInto(anArray);
         }
     }
-	
+
 	public static Object[] toArray(Hub thisHub) {
 	    thisHub.getSize(); // call before sync, in case it needs to load
         Object[] objs;
@@ -625,7 +625,10 @@ public class HubDataDelegate {
 	    return thisHub.data.getNewListCount();
 	}
 */
-    public static boolean contains(Hub hub, Object obj) {
+	public static boolean contains(Hub hub, Object obj) {
+		return contains(hub, obj, false);
+	}
+	public static boolean contains(Hub hub, Object obj, final boolean bJustAdded) {
         if (hub == null || obj == null) return false;
         if (!(obj instanceof OAObject)) {
             if (!hub.data.isOAObjectFlag()) {
@@ -635,9 +638,19 @@ public class HubDataDelegate {
             if (obj == null) return false;
         }        
         
-        if (hub.data.vector.size() < 25) {
+        int size = hub.data.vector.size(); 
+        if (size < 25) {
             return containsDirect(hub, obj);
         }
+        
+        if (bJustAdded) {
+        	for (int i=1; i<3; i++) {
+        		if (hub.data.vector.elementAt(size-i) == obj) {
+        			return true;
+        		}
+        	}
+        }
+        
         if (!hub.data.isOAObjectFlag()) {
             return containsDirect(hub, obj);
         }

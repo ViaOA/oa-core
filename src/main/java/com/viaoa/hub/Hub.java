@@ -863,6 +863,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	}
 
 	public void add(List<TYPE> list) {
+		if (list == null) return;
 		for (TYPE obj : list) {
 			HubAddRemoveDelegate.add(this, obj);
 		}

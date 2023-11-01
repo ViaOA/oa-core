@@ -1694,8 +1694,7 @@ public class OAThreadLocalDelegate {
 		return HubShareDelegate.isUsingSameSharedHub(h, hx);
 	}
 	
-	public static void setFastLoading(Hub hub) {
-		
+	public static void setFastLoadingHub(Hub hub) {
 		setFastLoadingHub(OAThreadLocalDelegate.getThreadLocal(true), hub);
 	}
 
