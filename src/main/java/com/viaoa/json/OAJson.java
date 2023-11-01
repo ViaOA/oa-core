@@ -41,6 +41,14 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
 
+/* NOTES:
+ 
+    @JsonProperty("TaxableGroup")
+
+
+
+*/
+
 /**
  * JSON serialization for OA. Works dynamically with OAObject Graphs to allow property paths to be included.
  * <p>
@@ -58,7 +66,10 @@ import com.viaoa.util.OAString;
  */
 public class OAJson {
 	private static volatile ObjectMapper jsonObjectMapper;
+	protected static final Object lock = new Object();
 
+	protected ObjectMapper objectMapper;
+	
 	private final ArrayList<String> alPropertyPath = new ArrayList<>();
 
 	/**
@@ -204,38 +215,49 @@ public class OAJson {
 		alPropertyPath.clear();
 	}
 
-	private static final Object lock = new Object();
 
 	public static ObjectMapper getJsonObjectMapper() {
 		if (jsonObjectMapper == null) {
 			synchronized (lock) {
 				if (jsonObjectMapper == null) {
-					ObjectMapper objectMapperx = new ObjectMapper();
-					objectMapperx.registerModule(new JavaTimeModule());
-					objectMapperx.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-					objectMapperx.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-					objectMapperx.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-					objectMapperx.setDefaultPropertyInclusion(Include.ALWAYS);
-					// objectMapperx.setSerializationInclusion(Include.NON_NULL);
-
-					objectMapperx.registerModule(new OAJacksonModule());
-					objectMapperx.enable(SerializationFeature.INDENT_OUTPUT);
-					
-//qqqqqqqqqqqqq 20231012 create new option ??					
-// 					objectMapperx.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);					
-					
-					jsonObjectMapper = objectMapperx;
+					jsonObjectMapper = createJsonObjectMapper();					
 				}
 			}
 		}
 		return jsonObjectMapper;
 	}
-	
 
-	public ObjectMapper getObjectMapper() {
-		return getJsonObjectMapper();
+	public static ObjectMapper createJsonObjectMapper() {
+		ObjectMapper objectMapperx = new ObjectMapper();
+		objectMapperx.registerModule(new JavaTimeModule());
+		objectMapperx.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		objectMapperx.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+		objectMapperx.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+		objectMapperx.setDefaultPropertyInclusion(Include.ALWAYS);
+		// objectMapperx.setSerializationInclusion(Include.NON_NULL);
+
+		objectMapperx.registerModule(new OAJacksonModule());
+		objectMapperx.enable(SerializationFeature.INDENT_OUTPUT);
+					
+		return objectMapperx;
 	}
+	
+	public ObjectMapper getObjectMapper() {
+		if (objectMapper == null) {
+			objectMapper = getJsonObjectMapper();
+		}
+		return objectMapper;
+	}
+	public ObjectMapper getUnsharedObjectMapper() {
+		objectMapper = createJsonObjectMapper();
+		return objectMapper;
+	}
+	
+	public void setCaseInsensitive() {
+		getUnsharedObjectMapper().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+	}
+	
 	
 	public String toJson(Object obj) throws JsonProcessingException {
 		return write(obj);

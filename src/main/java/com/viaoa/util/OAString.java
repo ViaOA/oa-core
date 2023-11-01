@@ -4242,4 +4242,37 @@ public class OAString {
 		return new String(bytes, Charset.defaultCharset());
 	}
 
+	/**
+	 * Find the number of decimal places for a String decimal number.
+	 * Ignores trailing '0'.
+	 * <p>
+	 * Examples:  "123.25" = 2<br>
+	 * "123.2000" = true=1, false=4<br>
+	 * "123.2001" = 4<br>
+	 * "123.249" = 3<br.
+	 * "123.00" = true=0, false=2<br>
+	 * @param num
+	 * @param bIgnoreTrailingZeros dont count trailing '0' digits.
+	 * @return
+	 */
+	public static int getNumberOfDecimalPlaces(String num, boolean bIgnoreTrailingZeros) {
+		if (num == null) return 0;
+		int x = num.length();
+		if (x == 0) return 0;
+		boolean bSkipZeros = true;
+		int cnt = 0;
+		for (int i=x-1; i>=0; i--) {
+			char ch = num.charAt(i);
+			if (ch == '.') break;
+			if (!Character.isDigit(ch)) return 0;
+			if (bSkipZeros) { 
+				if (ch == '0' && bIgnoreTrailingZeros) continue;
+				bSkipZeros = false;
+			}
+			cnt++;
+		}
+		return cnt;
+	}
+	
+	
 }
