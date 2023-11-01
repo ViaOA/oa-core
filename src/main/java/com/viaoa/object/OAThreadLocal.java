@@ -124,5 +124,7 @@ public class OAThreadLocal {
 	public Hub[] dontAdjustHubs;
 
 	protected int refreshing; // used by Hub.refresh, so that all queries can use "dirty" mode
+	
+	public Hub fastLoadingHub; // used to flag a Hub that it is loading.  A newList event is sent when it's set to null
 
 }

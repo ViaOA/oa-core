@@ -20,9 +20,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import com.viaoa.context.OAContext;
-import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubShareDelegate;
+import com.viaoa.hub.*;
 import com.viaoa.json.OAJson;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -1672,5 +1670,44 @@ public class OAThreadLocalDelegate {
 		}
 		return bPreviousValue;
 	}
+
+	/**
+	 * @see OAThreadLocal#fastLoading
+	 */
+	public static Hub getFastLoadingHub() {
+		return getFastLoadingHub(OAThreadLocalDelegate.getThreadLocal(false));
+	}
+
+	protected static Hub getFastLoadingHub(OAThreadLocal ti) {
+		if (ti == null) {
+			return null;
+		}
+		return ti.fastLoadingHub;
+	}
+
+	
+	public static boolean isFastLoadingHub(Hub h) {
+		if (h == null) return false;
+		Hub hx = getFastLoadingHub();
+		if (hx == null) return false;
+		if (h == hx) return true;
+		return HubShareDelegate.isUsingSameSharedHub(h, hx);
+	}
+	
+	public static void setFastLoading(Hub hub) {
+		
+		setFastLoadingHub(OAThreadLocalDelegate.getThreadLocal(true), hub);
+	}
+
+	protected static void setFastLoadingHub(OAThreadLocal ti, Hub hub) {
+		if (ti == null) {
+			return ;
+		}
+		if (ti.fastLoadingHub != null) {
+			HubEventDelegate.fireOnNewListEvent(ti.fastLoadingHub, true);
+		}
+		ti.fastLoadingHub = hub;
+	}
+
 
 }
