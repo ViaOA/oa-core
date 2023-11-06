@@ -10,10 +10,7 @@
 */
 package com.viaoa.object;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -22,15 +19,12 @@ import java.util.logging.Logger;
 import com.viaoa.context.OAContext;
 import com.viaoa.hub.*;
 import com.viaoa.json.OAJson;
-import com.viaoa.remote.OARemoteThread;
-import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.process.OAProcess;
+import com.viaoa.remote.*;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.undo.OAUndoManager;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
-import com.viaoa.util.Tuple3;
+import com.viaoa.util.*;
 
 /**
  * Delegate class used to store information about the local thread. This is used internally throughout OA to set specific features for a
@@ -1709,4 +1703,32 @@ public class OAThreadLocalDelegate {
 	}
 
 
+	/**
+	 * @see OAThreadLocal#process
+	 */
+	public static OAProcess getProcess() {
+		return getProcess(OAThreadLocalDelegate.getThreadLocal(false));
+	}
+
+	protected static OAProcess getProcess(OAThreadLocal ti) {
+		if (ti == null) {
+			return null;
+		}
+		return ti.process;
+	}
+
+	
+	public static void setProcess(OAProcess process) {
+		setProcess(OAThreadLocalDelegate.getThreadLocal(true), process);
+	}
+
+	protected static void setProcess(OAThreadLocal ti, OAProcess process) {
+		if (ti == null) {
+			return ;
+		}
+		ti.process = process;
+	}
+
+	
+	
 }

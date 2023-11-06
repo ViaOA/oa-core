@@ -29,11 +29,12 @@ public class OAConverterString implements OAConverterInterface {
     	// convert a value to a string.  Use the converter for value.getClass() to do this.
         if (value == null) {
             if (fmt != null) value = OAString.field(fmt,";",3);
-            if (value == null) value = "";
-        	return (String) value;
+            if (value != null) return (String) value;
+            if (fmt == null || fmt.length() == 0) return null;
+            value = "";
         }
         if (value instanceof String) {
-            if (fmt != null) value = OAString.fmt((String)value, fmt);
+            if (fmt != null && fmt.length() > 0) value = OAString.fmt((String)value, fmt);
             return (String) value;
         }
         

@@ -1443,8 +1443,8 @@ public class OAString {
 	}
 
 	private static String _fmt(String str, String format) {
-		if (format == null) {
-			return "";
+		if (format == null || format.length() == 0) {
+			return str;
 		}
 
 		// see if format is for a data/time

@@ -94,6 +94,9 @@ public abstract class OAProcess implements Runnable {
     public boolean wasCancelled() {
         return bCancelled;
     }
+    public boolean isCancelled() {
+        return bCancelled;
+    }
     public boolean getCancelled() {
         return bCancelled;
     }
@@ -120,7 +123,7 @@ public abstract class OAProcess implements Runnable {
     public Exception getException() {
         return exception;
     }
-    protected void setException(Exception ex) {
+    public void setException(Exception ex) {
         exception = ex;;
     }
     

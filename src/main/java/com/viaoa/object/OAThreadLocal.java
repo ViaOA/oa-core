@@ -12,9 +12,9 @@ package com.viaoa.object;
 
 import java.util.ArrayList;
 
-import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubEvent;
+import com.viaoa.hub.*;
 import com.viaoa.json.OAJson;
+import com.viaoa.process.OAProcess;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.Tuple3;
@@ -127,4 +127,5 @@ public class OAThreadLocal {
 	
 	public Hub fastLoadingHub; // used to flag a Hub that it is loading.  A newList event is sent when it's set to null
 
+	public OAProcess process;
 }

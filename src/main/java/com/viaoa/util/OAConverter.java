@@ -801,7 +801,7 @@ public class OAConverter {
 			clazz = OAReflect.getPrimitiveClassWrapper(clazz);
 		}
 		if (value != null && value.getClass().equals(clazz)) {
-			if (fmt == null) {
+			if (fmt == null || fmt.length() == 0) {
 				return value;
 			}
 		}
