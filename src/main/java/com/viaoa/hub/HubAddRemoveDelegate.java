@@ -334,7 +334,7 @@ public class HubAddRemoveDelegate {
 		boolean bIsDeleting = OAThreadLocalDelegate.isDeleting(thisHub);
 		if (!bIsDeleting && (thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()) && thisHub.isOAObject()) {
 			Vector vecRemove = thisHub.data.getVecRemove();
-			final boolean bWasEmpty = vecRemove.size() == 0;
+			final boolean bWasEmpty = vecRemove == null ? true : vecRemove.size() == 0;
 			for (Object obj : objs) {
 				if (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().removeElement(obj)) {
 					// no-op
@@ -501,13 +501,16 @@ public class HubAddRemoveDelegate {
 		}
 		return null;
 	}
-	public static boolean add(final Hub thisHub, final Object obj) {
+    public static boolean add(final Hub thisHub, final Object obj) {
+        return add(thisHub, obj, false);
+    }
+	public static boolean add(final Hub thisHub, final Object obj, final boolean bAlreadyCalledContains) {
 		if (thisHub == null || obj == null) {
 			return false;
 		}
 		if (thisHub.datau.getSharedHub() != null) {
 			if (thisHub.getEnabled()) {
-				return add(thisHub.datau.getSharedHub(), obj);
+				return add(thisHub.datau.getSharedHub(), obj, bAlreadyCalledContains);
 			}
 		}
 
@@ -532,7 +535,7 @@ public class HubAddRemoveDelegate {
 			if (!bIsLoading) {
 				OAThreadLocalDelegate.lock(thisHub);
 			}
-			b = _add(thisHub, obj, bIsLoading);
+			b = _add(thisHub, obj, bIsLoading, bAlreadyCalledContains);
 		} finally {
 			if (!bIsLoading) {
 				OAThreadLocalDelegate.unlock(thisHub);
@@ -544,7 +547,7 @@ public class HubAddRemoveDelegate {
 		return b;
 	}
 
-	private static boolean _add(final Hub thisHub, final Object obj, final boolean bIsLoading) {
+	private static boolean _add(final Hub thisHub, final Object obj, final boolean bIsLoading, final boolean bAlreadyCalledContains) {
 		if (obj instanceof OAObjectKey) {
 			// store OAObjectKey.  Real object will be retrieved when it is accessed
 			return internalAdd(thisHub, obj, true, true);
@@ -558,7 +561,7 @@ public class HubAddRemoveDelegate {
 		}
 
 		// need to check even if isLoading=true, since datasource could autoadd to a cache hub
-		if (thisHub.contains(obj)) {
+		if (!bAlreadyCalledContains && thisHub.contains(obj)) {
 			if (thisHub.isOAObject()) {
 				return false;
 			}
