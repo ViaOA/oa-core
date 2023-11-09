@@ -667,11 +667,12 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 			if (obj != null) {
 				if (hubMaster == null || hubMaster.getObjectClass().isAssignableFrom(obj.getClass())) {
 					if (isUsed(obj)) {
-						if (hub == null || !hub.contains(obj)) {
+					    // 20231109 added bIsInitialzing
+						if (hub == null || bIsInitialzing || !hub.contains(obj)) {
 							if (obj == objTemp) {
 								objTemp = null;
 							}
-							if (hubMaster == null || hubMaster.contains(obj)) {
+							if (hubMaster == null || bIsInitialzing || hubMaster.contains(obj)) {
 								addObject(obj, bIsInitialzing);
 							}
 						}
@@ -883,7 +884,11 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		if (hub == null || bClosed) {
 			return;
 		}
-		hub.add(obj);
+	    
+		// 20231109 faster way to add with calling contains
+		HubAddRemoveDelegate.add(hub, obj, bIsInitialzing);
+		// was:  hub.add(obj);
+		
 		if (bShareAO && hubMaster != null) {
 			if (obj == hubMaster.getAO()) {
 				bIgnoreSettingAO = true;
