@@ -2962,14 +2962,15 @@ public class OAString {
 
 			boolean bWhitespace;
 			if (i != lineLength) {
-				bWhitespace = (" \n\r\f\b\t".indexOf(ch) >= 0);
+				bWhitespace = Character.isWhitespace(ch); // (" \n\r\f\b\t".indexOf(ch) >= 0);
 			} else {
 				bWhitespace = false;
 			}
 
 			if (i == lineLength || ch == sep) {
 				if (qchar > 0 && lastQpos < 1) {
-					startPos--;
+				    if (i != lineLength) continue; // sep inside of quotes
+			        startPos--;
 				}
 				if (i == startPos) {
 					alString.add("");
@@ -4272,6 +4273,21 @@ public class OAString {
 			cnt++;
 		}
 		return cnt;
+	}
+	
+	public static String removeLeading(String s, char ch) {
+	    if (s == null) return s;
+	    
+	    int x = s.length();
+	    int i = 0;
+	    for ( ; i<x; i++) {
+	        if (s.charAt(i) != ch) {
+	            break;
+	        }
+	    }
+	    if (i == 0) return s;
+	    if (i == x) return "";
+	    return s.substring(i);
 	}
 	
 	
