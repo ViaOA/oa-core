@@ -837,31 +837,31 @@ public class OAThreadLocalDelegate {
 		if (ti == null) {
 			return false;
 		}
-		return ti.hubMergerIsChangingCount > 0;
+		return ti.hubMergerChangingCount > 0;
 	}
 
-	public static void setHubMergerIsChanging(boolean b) {
+	public static void setHubMergerChanging(boolean b) {
 		// LOG.finer(""+b);
-		setHubMergerIsChanging(OAThreadLocalDelegate.getThreadLocal(b), b);
+		setHubMergerChanging(OAThreadLocalDelegate.getThreadLocal(b), b);
 	}
 
-	private static long msHubMergerIsChanging;
+	private static long msHubMergerChanging;
 
-	protected static void setHubMergerIsChanging(OAThreadLocal ti, boolean b) {
+	protected static void setHubMergerChanging(OAThreadLocal ti, boolean b) {
 		if (ti == null) {
 			return;
 		}
 		int x;
 
 		if (b) {
-			ti.hubMergerIsChangingCount++;
+			ti.hubMergerChangingCount++;
 			x = OAThreadLocalDelegate.TotalHubMergerChanging.getAndIncrement();
 		} else {
-			ti.hubMergerIsChangingCount--;
+			ti.hubMergerChangingCount--;
 			x = OAThreadLocalDelegate.TotalHubMergerChanging.decrementAndGet();
 		}
 		if (x > 200 || x < 0) {
-			msHubMergerIsChanging = throttleLOG("TotalHubMergerChanging=" + x, msHubMergerIsChanging);
+			msHubMergerChanging = throttleLOG("TotalHubMergerChanging=" + x, msHubMergerChanging);
 		}
 	}
 
