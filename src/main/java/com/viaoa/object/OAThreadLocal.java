@@ -128,4 +128,6 @@ public class OAThreadLocal {
 	public Hub fastLoadingHub; // used to flag a Hub that it is loading.  A newList event is sent when it's set to null
 
 	public OAProcess process;
+	
+	public OAThreadLocalHubMergerCallback[] hubMergerCallback;
 }

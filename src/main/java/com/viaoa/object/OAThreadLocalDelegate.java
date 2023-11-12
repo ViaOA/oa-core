@@ -859,12 +859,39 @@ public class OAThreadLocalDelegate {
 		} else {
 			ti.hubMergerChangingCount--;
 			x = OAThreadLocalDelegate.TotalHubMergerChanging.decrementAndGet();
+			
+			if (ti.hubMergerChangingCount == 0) {
+		        if (ti.hubMergerCallback != null) {
+		            for (OAThreadLocalHubMergerCallback cb : ti.hubMergerCallback) {
+		                cb.callback();
+		            }
+		            ti.hubMergerCallback = null;
+		        }
+			}
 		}
 		if (x > 200 || x < 0) {
 			msHubMergerChanging = throttleLOG("TotalHubMergerChanging=" + x, msHubMergerChanging);
 		}
 	}
 
+    public static void addHubMergerCallback(OAThreadLocalHubMergerCallback cb) {
+        if (cb == null) return;
+        addHubMergerCallback(OAThreadLocalDelegate.getThreadLocal(true), cb);
+    }
+	
+    protected static void addHubMergerCallback(OAThreadLocal ti, OAThreadLocalHubMergerCallback cb) {
+        if (ti == null) return;
+        if (cb == null) return;
+        
+        if (ti.hubMergerChangingCount == 0) {
+            cb.callback();
+            return;
+        }
+        ti.hubMergerCallback = (OAThreadLocalHubMergerCallback[]) OAArray.add(OAThreadLocalHubMergerCallback.class, ti.hubMergerCallback, cb);
+    }
+	
+	
+	
 	// UndoablePropertyChanges -----------------------
 
 	/**
@@ -1729,6 +1756,5 @@ public class OAThreadLocalDelegate {
 		ti.process = process;
 	}
 
-	
 	
 }
