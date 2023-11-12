@@ -15,12 +15,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAReflect;
@@ -44,6 +39,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	protected OAObject objStop;
 	protected String stopProperty; 
 
+    private boolean bDebug;
 
 	protected transient Method getMethod, setMethod;
 
@@ -170,7 +166,11 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
 	private AtomicBoolean abUpdating = new AtomicBoolean(false);
 
-	public void update() {
+    public void update() {
+        _update(true);
+    }
+	
+	protected void _update(final boolean bCheckInSync) {
 		if (!getEnabled()) return;
 		
 		if (objStop != null && OAStr.isNotEmpty(this.stopProperty)) {
@@ -183,17 +183,26 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		if (!abUpdating.compareAndSet(false, true)) {
 			return; // already updating
 		}
-		try {
-			if (HubDelegate.getCurrentState(hub, null, null) != HubDelegate.HubCurrentStateEnum.InSync) {
-				return;
-			}
-			if (hubMaster != null && HubDelegate.getCurrentState(hubMaster, null, null) != HubDelegate.HubCurrentStateEnum.InSync) {
-				return;
-			}
-			if (bServerSideOnly) {
-				OARemoteThreadDelegate.sendMessages(true);
-			}
+        if (bServerSideOnly) {
+            OARemoteThreadDelegate.sendMessages(true);
+        }
 
+        try {
+            if (bCheckInSync) {
+    			if (HubDelegate.getCurrentState(hub, null, null) != HubDelegate.HubCurrentStateEnum.InSync) {
+    				return;
+    			}
+    			if (hubMaster != null && HubDelegate.getCurrentState(hubMaster, null, null) != HubDelegate.HubCurrentStateEnum.InSync) {
+    			    OAThreadLocalDelegate.addHubMergerCallback(new OAThreadLocalHubMergerCallback() {
+                        @Override
+                        public void callback() {
+                            _update(false);
+                        }
+                    });
+    				return;
+    			}
+            }
+            
 			if (hubMaster != null) {
 				_update1();
 			} else {
