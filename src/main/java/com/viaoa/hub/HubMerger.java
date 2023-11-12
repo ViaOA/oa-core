@@ -1590,7 +1590,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
 		// ============ HubListener for Hub used for child
 		public @Override void beforeRemoveAll(HubEvent e) {
-		    boolean b = (hub == hubRoot);
+		    final boolean b = (hub == hubRoot);
 			try {
 				if (b) {
 					OAThreadLocalDelegate.setHubMergerChanging(true);
@@ -1837,7 +1837,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 			if (node.child != null && node.child.liFromParentToChild.getType() == OALinkInfo.ONE) {
 
 				// dont call close on Node.data. This will instead call remove()
-				final boolean bIsMergerChanging = OAThreadLocalDelegate.isHubMergerChanging();
+				// not used: final boolean bIsMergerChanging = OAThreadLocalDelegate.isHubMergerChanging();
 				for (; node.child.data != null && node.child.data.hub != null;) {
 					Object obj = node.child.data.hub.getAt(0);
 					if (obj == null) {
