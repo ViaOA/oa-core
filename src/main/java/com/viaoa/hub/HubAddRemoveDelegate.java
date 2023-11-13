@@ -10,22 +10,11 @@
 */
 package com.viaoa.hub;
 
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Logger;
 
-import com.viaoa.object.OAFkeyInfo;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectCallbackDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectReflectDelegate;
-import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.remote.OARemoteThread;
-import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.object.*;
+import com.viaoa.remote.*;
 import com.viaoa.util.OAString;
 
 /**
@@ -1032,7 +1021,8 @@ public class HubAddRemoveDelegate {
 		}
 
 		for (OAFkeyInfo fki : li.getFkeyInfos()) {
-			if (fki.getFromPropertyInfo().getKey()) {
+		    OAPropertyInfo pi = fki.getFromPropertyInfo();
+			if (pi != null && pi.getKey()) {
 				return false;
 			}
 		}
