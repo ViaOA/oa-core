@@ -1297,7 +1297,9 @@ public class OAConverter {
 	 * @see OAString#format(String,String)
 	 */
 	public static String toString(Object obj, String fmt) {
-		return (String) convert(String.class, obj, fmt);
+		String s = (String) convert(String.class, obj, fmt);
+		if (s == null) return "";
+		return s;
 	}
 
 	/**
