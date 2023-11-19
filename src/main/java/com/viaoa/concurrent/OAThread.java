@@ -27,4 +27,14 @@ public class OAThread extends Thread {
 			OAThreadLocalDelegate.setContext(null);
 		}
 	}
+	
+	public static void sleep(long ms) {
+	    if (ms <= 0) return;
+	    try {
+	        Thread.sleep(ms);
+	    }
+	    catch (Exception e) {
+	    }
+	}
+	
 }
