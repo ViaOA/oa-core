@@ -85,7 +85,6 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			throw new IllegalArgumentException("hub can not be null");
 		}
 		if (hubMaster == null) {
-			//qqqqqqqqqqqqqqqqqq
 			// 20220802 now allows auto match on Enum property
 			// throw new IllegalArgumentException("hubMaster can not be null");
 		}
@@ -97,6 +96,9 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 		this.objStop = objStop;
 		this.stopProperty = stopProperty;
+		
+		//qqqqqqqq to do:
+		// add listener on objStore.stopProperty ??
 		
 		setProperty(property);
 	}

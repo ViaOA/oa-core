@@ -528,8 +528,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			long ts2 = System.currentTimeMillis();
 
 			msg = String.format(
-								"client=%d, id=%,d, object=%s, extra=%s, uncompressed=%,d, compressed=%,d, totalObjects=%,d, %,dms",
-								clientId, id, object,
+								"client=%d, id=%,d, class=%s, extra=%s, uncompressed=%,d, compressed=%,d, totalObjects=%,d, %,dms",
+								clientId, id, object.getClass().getSimpleName(),
 								extraObject == null ? "null" : extraObject.getClass().getSimpleName(),
 								sizeBefore, sizeAfter, totalObjectsWritten, (ts2 - ts));
 		} else {
@@ -545,8 +545,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 
 			long ts2 = System.currentTimeMillis();
 			msg = String.format(
-								"client=%d, id=%,d, object=%s, extra=%s, totalObjects=%,d, %,dms",
-								clientId, id, object,
+								"client=%d, id=%,d, class=%s, extra=%s, totalObjects=%,d, %,dms",
+								clientId, id, object.getClass().getSimpleName(),
 								extraObject == null ? "null" : extraObject.getClass().getSimpleName(),
 								totalObjectsWritten, (ts2 - ts));
 		}
@@ -650,8 +650,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 
 			long ts2 = System.currentTimeMillis();
 
-			msg = String.format("id=%,d, object=%s, extra=%s, compressed=%,d, uncompressed=%,d, totalObjects=%,d, %,dms",
-								id, object,
+			msg = String.format("id=%,d, class=%s, extra=%s, compressed=%,d, uncompressed=%,d, totalObjects=%,d, %,dms",
+								id, object.getClass().getSimpleName(),
 								extraObject == null ? "null" : extraObject.getClass().getSimpleName(),
 								sizeBefore, sizeAfter, totalObjectsWritten, (ts2 - ts));
 		} else {
@@ -667,8 +667,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			totalObjectsWritten = stream.readInt();
 
 			long ts2 = System.currentTimeMillis();
-			msg = String.format("id=%,d, object=%s, extra=%s, totalObjects=%,d, %,dms",
-								id, object,
+			msg = String.format("id=%,d, class=%s, extra=%s, totalObjects=%,d, %,dms",
+								id, object.getClass().getSimpleName(),
 								extraObject == null ? "null" : extraObject.getClass().getSimpleName(),
 								totalObjectsWritten, (ts2 - ts));
 		}

@@ -105,6 +105,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private String versionProperty;
 	private String versionLinkProperty;
 	private String timeSeriesProperty;
+    private String freezeProperty;
 
 	private boolean singleton;
 	private boolean pojoSingleton;
@@ -1339,6 +1340,14 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		timeSeriesProperty = s;
 	}
 
+    public String getFreezeProperty() {
+        return freezeProperty;
+    }
+
+    public void setFreezeProperty(String s) {
+        freezeProperty = s;
+    }
+	
 	/**
 	 * Maps a Java pojo (json) so that it can be used to parse into an OAObject.
 	 * <p>

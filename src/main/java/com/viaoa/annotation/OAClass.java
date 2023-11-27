@@ -79,6 +79,8 @@ public @interface OAClass {
 
 	String timeSeriesProperty() default "";
 
+    String freezeProperty() default "";
+	
 	boolean singleton() default false;
 
 	boolean pojoSingleton() default false;

@@ -16,7 +16,7 @@ package com.viaoa.process;
  * @author vvia
  *
  */
-public abstract class OAProcess implements Runnable {
+public class OAProcess implements Runnable {
     private volatile int currentStep;
 
     private boolean bBlock;
@@ -30,7 +30,7 @@ public abstract class OAProcess implements Runnable {
     private final long createdTime;
     private volatile long doneTime;
     
-    private String name, description;
+    private String name, description, status;
 
     private String[] steps;
     private volatile long estimatedTime;
@@ -38,6 +38,10 @@ public abstract class OAProcess implements Runnable {
     private volatile Exception exception;
     
     private long maxTime;
+    
+    private String returnMessage;
+
+    private boolean pause;
 
     /**
      * 
@@ -80,6 +84,13 @@ public abstract class OAProcess implements Runnable {
     }
     public void setDescription(String s) {
         this.description = s;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+    public void setStatus(String s) {
+        this.status = s;
     }
     
     public long getCreatedTime() {
@@ -138,7 +149,7 @@ public abstract class OAProcess implements Runnable {
         return (steps == null ? 0 : steps.length);
     }
     
-    protected void setCurrentStep(int x) {
+    public void setCurrentStep(int x) {
         this.currentStep = x;
     }
     public int getCurrentStep() {
@@ -168,6 +179,28 @@ public abstract class OAProcess implements Runnable {
         if (maxTime < 1) return false;
         long ms = System.currentTimeMillis();
         return ((maxTime + createdTime) > ms);
+    }
+    
+    public String getReturnMessage() {
+        return returnMessage;
+    }
+    public void setReturnMessage(String msg) {
+        this.returnMessage = msg;
+    }
+
+    public void setPause(boolean b) {
+        this.pause = b;
+    }
+    public boolean isPaused() {
+        return pause;
+    }
+    public boolean getPause() {
+        return pause;
+    }
+
+    @Override
+    public void run() {
+        // custom code can overwrite this
     }
 }
 

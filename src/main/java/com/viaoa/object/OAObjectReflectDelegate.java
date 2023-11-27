@@ -40,13 +40,7 @@ import com.viaoa.hub.HubShareDelegate;
 import com.viaoa.hub.HubSortDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OANotExist;
-import com.viaoa.util.OANullObject;
-import com.viaoa.util.OAReflect;
-import com.viaoa.util.OAString;
+import com.viaoa.util.*;
 
 public class OAObjectReflectDelegate {
 
@@ -1124,7 +1118,7 @@ public class OAObjectReflectDelegate {
 		}
 		// 20171113 moved from above
 		if (hubMatch != null && (bThisIsServer || (bIsCalc && !bIsServerSideCalc))) {
-			if (matchProperty != null && matchProperty.length() > 0) {
+			if (OAStr.isNotEmpty(matchProperty)) {
 				hub.setAutoMatch(matchProperty, hubMatch, true, oaObj, linkInfo.getMatchStopProperty());
 			}
 		}
@@ -1963,6 +1957,34 @@ public class OAObjectReflectDelegate {
 					if (b) { // 20190220
 						setProperty((OAObject) ref, li.getReverseLinkInfo().getName(), oaObj, null);
 					}
+
+					// 20231126 check for equalPropertyPath
+                    String s = li.getEqualPropertyPath();
+                    if (OAStr.isNotEmpty(s)) {
+                        OAPropertyPath pp = new OAPropertyPath(oaObj.getClass(), s);
+                        final OAObject matchValue = (OAObject) pp.getValue(oaObj);
+                        
+                        final OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+                        s = liRev.getEqualPropertyPath();
+                        if (OAStr.isNotEmpty(s)) {
+                            if (s.indexOf('.') < 0) {
+                                ((OAObject) ref).setProperty(s, matchValue);
+                            }
+                            else {
+                                pp = new OAPropertyPath(li.getToClass(), s);
+                                OAPropertyPath ppRev = pp.getReversePropertyPath();
+                                s = ppRev.getPropertyPath();
+                                s = s.substring(0, s.lastIndexOf('.'));
+                                
+                                Object ref2 = matchValue.getProperty(s); 
+                                if (ref2 instanceof OAObject) {
+                                    s = liRev.getEqualPropertyPath();
+                                    s = s.substring(0, s.indexOf('.'));
+                                    ((OAObject) ref).setProperty(s, ref2);
+                                }
+                            }
+                        }
+                    }
 				}
 			}
 		}

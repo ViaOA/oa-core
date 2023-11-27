@@ -105,6 +105,7 @@ public class OAAnnotationDelegate {
 				oi.setVersionProperty(oaclass.versionProperty());
 				oi.setVersionLinkProperty(oaclass.versionLinkProperty());
 				oi.setTimeSeriesProperty(oaclass.timeSeriesProperty());
+                oi.setFreezeProperty(oaclass.freezeProperty());
 
 				oi.setSingleton(oaclass.singleton());
 				oi.setPojoSingleton(oaclass.pojoSingleton());

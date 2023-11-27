@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * @author vvia
  */
 public class OATimeZone {
-	private static ArrayList<TZ> alTZ;
+	private static volatile ArrayList<TZ> alTZ;
 	private static String[] shortNames;
 	private static TimeZone tzUTC;
 
@@ -76,11 +76,19 @@ public class OATimeZone {
 		return shortNames;
 	}
 	
+	private static final Object lockTimeZones = new Object();
 	public static ArrayList<TZ> getOATimeZones() {
-		if (alTZ != null) {
-			return alTZ;
+		if (alTZ == null) {
+	        synchronized (lockTimeZones) {
+	            if (alTZ == null) {
+	                alTZ = _getOATimeZones();
+	            }	            
+	        }
 		}
-		alTZ = new ArrayList<>();
+        return alTZ;
+	}	
+    protected static ArrayList<TZ> _getOATimeZones() {
+        ArrayList<TZ> alTZ = new ArrayList<>();
 
 		String[] tzs = TimeZone.getAvailableIDs();
 		final ArrayList<TimeZone> al = new ArrayList<>();
