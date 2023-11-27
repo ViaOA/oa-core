@@ -124,7 +124,12 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	static {
 		// oaversion
-		String ver = "3.7.6.202310220";  // dev branch, version: 3.7.6-SNAPSHOT
+	    
+	    // pom version: 3.7.6
+		String ver = "3.7.6.202311270";
+		
+        // NEXT: String ver = "3.7.7.202311270"   dev branch, pom version: 3.7.7-SNAPSHOT
+		
 		/*
 		 *  previous:
 		 *  String ver = "3.7.0.202104100";
