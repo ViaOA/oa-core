@@ -286,11 +286,11 @@ public class OAObjectCacheDelegate {
 	 * @see #removeAllObjects()
 	 * @see #clearCache(Class)
 	 */
-	public static void resetCache() throws Exception {
+	public static void resetCache() {
 		LOG.warning("call to reset cache, UnitTestMode=" + UnitTestMode);
 		// 20191002
 		if (!UnitTestMode) {
-			throw new Exception("Can only call reset cache if UnitTestMode is true");
+			throw new RuntimeException("Can only call reset cache if UnitTestMode is true");
 		}
 		OAObjectHashDelegate.hashCacheClass.clear();
 		OAObjectHashDelegate.hashCacheListener.clear();
