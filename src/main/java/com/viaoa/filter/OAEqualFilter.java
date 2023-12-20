@@ -17,9 +17,7 @@ import com.viaoa.filter.OAFilterDelegate.FinderInfo;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.util.*;
 
 /**
  * Creates a filter to see if the value from the propertyPath is equals the filter value.
@@ -33,6 +31,7 @@ public class OAEqualFilter implements OAFilter {
     private boolean bIgnoreCase;//was: =true;
     private OAPropertyPath pp;
     private OAFinder finder;
+    private int deciPlaces = -1;
 
     public OAEqualFilter(Object matchValue) {
         this.matchValue = matchValue;
@@ -48,6 +47,18 @@ public class OAEqualFilter implements OAFilter {
         this.matchValue = matchValue;
     }
 
+    public OAEqualFilter(OAPropertyPath pp, Object matchValue, boolean bIgnoreCase) {
+        this.pp = pp;
+        this.matchValue = matchValue;
+        this.bIgnoreCase = bIgnoreCase;
+    }
+
+    public OAEqualFilter(OAPropertyPath pp, Object matchValue, int deciPlaces) {
+        this.pp = pp;
+        this.matchValue = matchValue;
+        this.deciPlaces = deciPlaces;
+    }
+    
     
     /**
      * Default is true.
@@ -56,6 +67,13 @@ public class OAEqualFilter implements OAFilter {
         this.bIgnoreCase = b;
     }
 
+    public void setDeciPlaces(int dp) {
+        this.deciPlaces = dp;
+    }
+    public int getDeciPlaces() {
+        return this.deciPlaces;
+    }
+    
     private boolean bSetup;
     private int cntError;
     
@@ -92,7 +110,15 @@ public class OAEqualFilter implements OAFilter {
             return h.contains(matchValue);
         }
         boolean b = bIgnoreCase && (obj instanceof String) && (matchValue instanceof String);
-        return OACompare.isEqual(obj, matchValue, b);
+        if (b) return OACompare.isEqual(obj, matchValue, b);
+        
+        if (deciPlaces >= 0 && obj != null && matchValue != null) {
+            if (OAReflect.isFloat(obj.getClass()) && OAReflect.isFloat(matchValue.getClass())) {
+                return OACompare.isEqual(obj, matchValue, deciPlaces);
+            }
+        }
+
+        return OACompare.isEqual(obj, matchValue);
     }
     
     protected Object getPropertyValue(Object obj) {
