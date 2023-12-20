@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -233,7 +233,10 @@ public class OAJson {
 		objectMapperx.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 		objectMapperx.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 		objectMapperx.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
+		
+		objectMapperx.enable(JsonParser.Feature.ALLOW_COMMENTS);
+        objectMapperx.enable(JsonParser.Feature.ALLOW_YAML_COMMENTS);
+		
 		objectMapperx.setDefaultPropertyInclusion(Include.ALWAYS);
 		// objectMapperx.setSerializationInclusion(Include.NON_NULL);
 
