@@ -877,8 +877,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		addFilter(new OAQueryFilter(c, pp));
 	}
 
-	public void addQueryFilter(Class<F> c, String pp, Object[] args) {
-		addFilter(new OAQueryFilter(c, pp, args));
+	public void addQueryFilter(Class<F> c, String query, Object[] args) {
+		addFilter(new OAQueryFilter(c, query, args));
 	}
 
 	public void addEqualFilter(String pp, Object val) {
