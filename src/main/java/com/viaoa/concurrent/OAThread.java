@@ -27,11 +27,23 @@ public class OAThread extends Thread {
 			OAThreadLocalDelegate.setContext(null);
 		}
 	}
-	
+
+    public static void yield() {
+        sleep(0);
+    }
+
+    public static void delay(long ms) {
+        sleep(ms);
+    }
+    
 	public static void sleep(long ms) {
 	    if (ms <= 0) return;
 	    try {
-	        Thread.sleep(ms);
+            if (ms > 0) {
+                Thread.sleep(ms);
+            } else {
+                Thread.yield();
+            }
 	    }
 	    catch (Exception e) {
 	    }
