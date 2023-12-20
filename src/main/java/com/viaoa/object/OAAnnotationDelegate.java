@@ -303,6 +303,7 @@ public class OAAnnotationDelegate {
 					Method displayMethod = null;
 					boolean bDisplayMethod = false;
 					for (int i = 0; i < xz; i++) {
+					    if (i == 0 && h.size() > 0) break;
 						Object objz = Array.get(objzs, i);
 
 						h.add(objz.toString());
