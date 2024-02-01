@@ -12,6 +12,7 @@ package com.viaoa.datasource.jdbc.db;
 
 import java.lang.reflect.Method;
 
+import com.viaoa.object.*;
 import com.viaoa.util.OAReflect;
 
 /**
@@ -105,7 +106,8 @@ public class Column { // need to select all with properyName!=null
 		if (methodGet == null && table != null) {
 			Class clazz = table.getSupportClass();
 			if (clazz != null && propertyName != null && propertyName.length() != 0) {
-				methodGet = OAReflect.getMethod(clazz, "get" + propertyName);
+			    methodGet = OAObjectInfoDelegate.getMethod(clazz, "get" + propertyName);
+				//was: methodGet = OAReflect.getMethod(clazz, "get" + propertyName);
 			}
 		}
 		return methodGet;
@@ -118,7 +120,8 @@ public class Column { // need to select all with properyName!=null
 		if (methodSet == null && table != null) {
 			Class clazz = table.getSupportClass();
 			if (clazz != null && propertyName != null && propertyName.length() != 0) {
-				methodSet = OAReflect.getMethod(clazz, "set" + propertyName);
+			    methodSet = OAObjectInfoDelegate.getMethod(clazz, "set" + propertyName);
+				//was: methodSet = OAReflect.getMethod(clazz, "set" + propertyName);
 			}
 		}
 		return methodSet;
