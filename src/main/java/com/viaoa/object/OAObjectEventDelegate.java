@@ -548,14 +548,6 @@ public class OAObjectEventDelegate {
 				sendHubPropertyChange(oaObj, propertyName, oldObj, newObj, linkInfo);
 			}
 			OAObjectCacheDelegate.fireAfterPropertyChange(oaObj, origKey, propertyName, oldObj, newObj, bLocalOnly, true);
-
-			if (propInfo != null && propInfo.isNameValue()) {
-				//qqqqqqqq "AsString" might need to be "String" or "Int" depending on what real property name is qqqqqqq
-				if (OAObjectHubDelegate.isInHub(oaObj)) {
-					sendHubPropertyChange(oaObj, propertyName + "AsString", oldObj, newObj, linkInfo);
-				}
-				OAObjectCacheDelegate.fireAfterPropertyChange(oaObj, origKey, propertyName + "AsString", oldObj, newObj, bLocalOnly, true);
-			}
 		}
 
 		oaObj.changedFlag = bChangeHold;
