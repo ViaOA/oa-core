@@ -10,35 +10,12 @@
 */
 package com.viaoa.object;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.lang.reflect.*;
+import java.util.*;
 
-import com.viaoa.filter.OAAndFilter;
-import com.viaoa.filter.OABetweenFilter;
-import com.viaoa.filter.OABetweenOrEqualFilter;
-import com.viaoa.filter.OAEmptyFilter;
-import com.viaoa.filter.OAEqualFilter;
-import com.viaoa.filter.OAGreaterFilter;
-import com.viaoa.filter.OAGreaterOrEqualFilter;
-import com.viaoa.filter.OALessFilter;
-import com.viaoa.filter.OALessOrEqualFilter;
-import com.viaoa.filter.OALikeFilter;
-import com.viaoa.filter.OANotEmptyFilter;
-import com.viaoa.filter.OANotLikeFilter;
-import com.viaoa.filter.OANotNullFilter;
-import com.viaoa.filter.OANullFilter;
-import com.viaoa.filter.OAOrFilter;
-import com.viaoa.filter.OAQueryFilter;
-import com.viaoa.hub.CustomHubFilter;
-import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
-import com.viaoa.hub.HubFilter;
-import com.viaoa.hub.HubSortDelegate;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.filter.*;
+import com.viaoa.hub.*;
+import com.viaoa.util.*;
 
 // 20140124
 /**
@@ -408,6 +385,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return null;
 	}
 
+	
 	/**
 	 * Finds the first matching value. If searching for a null, then this would return a null, so use the canFindFirst method instead.
 	 */
@@ -462,6 +440,190 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return obj;
 	}
 
+	
+    public T findLast() {
+        ArrayList<T> al = find();
+        if (al == null) return null;
+        int x = al.size();
+        if (x == 0) return null;
+        return al.get(x-1);
+    }
+    public T findLast(F objectRoot) {
+        ArrayList<T> al = find(objectRoot);
+        if (al == null) return null;
+        int x = al.size();
+        if (x == 0) return null;
+        return al.get(x-1);
+    }
+    public T findLast(Hub<F> hub) {
+        ArrayList<T> al = find(hub);
+        if (al == null) return null;
+        int x = al.size();
+        if (x == 0) return null;
+        return al.get(x-1);
+    }
+
+
+    static protected abstract class CompareFilter implements OAFilter {
+        final String pp;
+        Object objFound;
+        Object valueFound;
+        
+        boolean bCancel;
+        
+        public CompareFilter(final String pp) {
+            this.pp = pp;
+        }
+        @Override
+        public boolean isUsed(final Object obj) {
+            if (bCancel) return true;
+            if (!(obj instanceof OAObject)) return false;
+            Object objValue = ((OAObject)obj).getProperty(pp);
+            if (objFound == null) {
+                objFound = obj;
+                valueFound = objValue;
+                return true;
+            }
+           
+            int x = OACompare.compare(objValue,  valueFound);
+            if (isCompareUsed(x)) {
+                objFound = obj;
+                valueFound = objValue;
+                return true;
+            }
+            return false;
+        }
+        protected void cancel() {
+            this.bCancel = true;
+        }
+        abstract boolean isCompareUsed(int compareValue);
+    }
+    
+    
+    public T findLargest(final String pp) {
+        CompareFilter cf = new CompareFilter(pp) {
+            @Override
+            boolean isCompareUsed(int compareValue) {
+                return compareValue >= 0;
+            }
+        };
+        addFilter(cf);
+        T t = findLast();
+        cf.cancel();
+        return t;
+    }
+    public T findLargest(F objectRoot, String pp) {
+        CompareFilter cf = new CompareFilter(pp) {
+            @Override
+            boolean isCompareUsed(int compareValue) {
+                return compareValue >= 0;
+            }
+        };
+        addFilter(cf);
+        T t = findLast(objectRoot);
+        cf.cancel();
+        return t;
+    }
+    public T findLargest(Hub<F> hub, String pp) {
+        CompareFilter cf = new CompareFilter(pp) {
+            @Override
+            boolean isCompareUsed(int compareValue) {
+                return compareValue >= 0;
+            }
+        };
+        addFilter(cf);
+        T t = findLast(hub);
+        cf.cancel();
+        return t;
+    }
+    
+    public T findSmallest(final String pp) {
+        CompareFilter cf = new CompareFilter(pp) {
+            @Override
+            boolean isCompareUsed(int compareValue) {
+                return compareValue <= 0;
+            }
+        };
+        addFilter(cf);
+        T t = findLast();
+        cf.cancel();
+        return t;
+    }
+    public T findSmallest(F objectRoot, String pp) {
+        CompareFilter cf = new CompareFilter(pp) {
+            @Override
+            boolean isCompareUsed(int compareValue) {
+                return compareValue <= 0;
+            }
+        };
+        addFilter(cf);
+        T t = findLast(objectRoot);
+        cf.cancel();
+        return t;
+    }
+    public T findSmallest(Hub<F> hub, String pp) {
+        CompareFilter cf = new CompareFilter(pp) {
+            @Override
+            boolean isCompareUsed(int compareValue) {
+                return compareValue <= 0;
+            }
+        };
+        addFilter(cf);
+        T t = findLast(hub);
+        cf.cancel();
+        return t;
+    }
+
+    static protected class DuplicateFilter implements OAFilter {
+        final String pp;
+        boolean bCancel;
+        final Map<Object, OAObject> hm = new HashMap<>();
+        final Map<Object, OAObject> hm2 = new HashMap<>();
+        
+        public DuplicateFilter(final String pp) {
+            this.pp = pp;
+        }
+        @Override
+        public boolean isUsed(final Object obj) {
+            if (bCancel) return true;
+            if (!(obj instanceof OAObject)) return false;
+            
+            Object objValue = ((OAObject)obj).getProperty(pp);
+            if (objValue == null) return false;
+           
+            OAObject objx = hm.get(objValue);
+            if (objx != null) {
+                hm2.put(objValue, objx);
+                return true;
+            }
+            else {
+                hm.put(objValue, (OAObject) obj);
+            }
+            return false;
+        }
+        protected void cancel() {
+            this.bCancel = true;
+        }
+    }
+    
+    /**
+     * Returns all objects that have another object with a duplicate value for a property (path).<br>
+     * Note: null values are not included.
+     */
+    public ArrayList<T> findDuplicates(F objectRoot, String pp) {
+        DuplicateFilter f = new DuplicateFilter(pp);
+        addFilter(f);
+        ArrayList<T> al = find(objectRoot);
+        f.cancel();
+        f.hm.clear();
+        
+        for (Map.Entry<Object, OAObject> entry : f.hm2.entrySet()) {
+            al.add((T) entry.getValue());
+        }
+        f.hm2.clear();
+        return al;
+    }
+    
 	/**
 	 * Given the propertyPath, find all of the objects from a root object.
 	 *
