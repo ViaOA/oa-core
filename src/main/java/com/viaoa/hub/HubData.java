@@ -68,14 +68,10 @@ public class HubData implements java.io.Serializable {
         this.objClass = objClass;
     }
 	
-    static int qq;    
     private HubDatax getHubDatax() {
         if (hubDatax == null) {
             synchronized (this) {
                 if (hubDatax == null) {
-                    if (++qq % 500 == 0) {
-                        LOG.finer((qq)+") HubDatax created");
-                    }
                     this.hubDatax = new HubDatax();
                 }
             }
@@ -83,17 +79,6 @@ public class HubData implements java.io.Serializable {
         return hubDatax;
     }
     
-/*    
-    public int getNewListCount() {
-        if (hubDatax == null) return 0;
-        return hubDatax.newListCount;
-    }
-    public void setNewListCount(int newListCount) {
-        if (hubDatax != null || newListCount != 0) {
-            getHubDatax().newListCount = newListCount;
-        }
-    }
-*/    
     public Vector getVecAdd() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
@@ -187,7 +172,6 @@ public class HubData implements java.io.Serializable {
 
     private static ConcurrentHashMap<HubData, Thread> hmLoadingAllData = new ConcurrentHashMap<HubData, Thread>(23, .85f);
 
-    
     public boolean isLoadingAllData() {
         Thread t = hmLoadingAllData.get(this);
         if (t == null) return false;
