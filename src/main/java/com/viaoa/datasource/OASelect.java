@@ -121,6 +121,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	private boolean bDirty; // data should always be loaded from datasource
 	private boolean bDirtyWasSet;
 	private volatile boolean bIsSelectingNow;
+	private volatile boolean bHasNextCompleted;
 
 	/** Create a new OASelect that is not initialzed. */
 	public OASelect() {
@@ -224,6 +225,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 			order = null;
 			whereObject = null;
 		}
+		bHasNextCompleted = false;
 		amountCount = -1;
 		amountRead = -1;
 		bCancelled = false;
@@ -804,6 +806,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	public synchronized TYPE _next() {
+        if (hasNextCompleted()) return null;
 		if (!bHasBeenStarted) {
 			select();
 		}
@@ -881,6 +884,11 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		}
 		OASelectManager.remove(this);
 		alFinderResults = null;
+		bHasNextCompleted = true;
+	}
+	
+	public boolean hasNextCompleted() {
+	    return bHasNextCompleted;
 	}
 
 	public boolean hasNext() {
@@ -891,6 +899,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 * Returns true if more objects are available to be loaded.
 	 */
 	public synchronized boolean hasMore() {
+	    if (hasNextCompleted()) return false;
 		if (!bHasBeenStarted) {
 			select();
 		}
