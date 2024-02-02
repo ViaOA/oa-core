@@ -1,6 +1,7 @@
 package com.viaoa.concurrent;
 
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.util.OADateTime;
 
 /**
  * Allows a thread to have the same context as the thread that created it.
@@ -35,6 +36,10 @@ public class OAThread extends Thread {
     public static void delay(long ms) {
         sleep(ms);
     }
+
+    public static void sleepSeconds(long sec) {
+        sleep(sec * 1000);
+    }
     
 	public static void sleep(long ms) {
 	    if (ms <= 0) return;
@@ -48,5 +53,18 @@ public class OAThread extends Thread {
 	    catch (Exception e) {
 	    }
 	}
+
+    public static void sleepUntil(OADateTime dt) {
+        sleepUntil(dt, 0);
+    }
 	
+    public static void sleepUntil(OADateTime dt, long maxSeconds) {
+        if (dt == null) return;
+        
+        OADateTime dtNow = new OADateTime();
+        if (dtNow.before(dt)) {
+            long secs = dtNow.betweenSeconds(dt);
+            sleepSeconds( Math.min(secs, maxSeconds < 1 ? secs : maxSeconds) );
+        }
+    }
 }
