@@ -96,14 +96,16 @@ public class HubLinkDelegate {
 		thisHub.datau.setLinkFromPropertyName(propertyFrom);
 		thisHub.datau.setLinkFromGetMethod(null);
 		if (propertyFrom != null) { // otherwise, use object
-			thisHub.datau.setLinkFromGetMethod(OAReflect.getMethod(thisHub.getObjectClass(), "get" + propertyFrom));
+            thisHub.datau.setLinkFromGetMethod(OAObjectInfoDelegate.getMethod(thisHub.getObjectClass(), "get" + propertyFrom));
+			//was: thisHub.datau.setLinkFromGetMethod(OAReflect.getMethod(thisHub.getObjectClass(), "get" + propertyFrom));
 			if (thisHub.datau.getLinkFromGetMethod() == null) {
 				throw new RuntimeException("cant find method for property " + propertyFrom);
 			}
 			verifyClass = thisHub.datau.getLinkFromGetMethod().getReturnType();
 		}
-
-		thisHub.datau.setLinkToGetMethod(OAReflect.getMethod(linkToHub.getObjectClass(), "get" + propertyTo));
+		
+        thisHub.datau.setLinkToGetMethod(OAObjectInfoDelegate.getMethod(linkToHub.getObjectClass(), "get" + propertyTo));
+		//was: thisHub.datau.setLinkToGetMethod(OAReflect.getMethod(linkToHub.getObjectClass(), "get" + propertyTo));
 		if (thisHub.datau.getLinkToGetMethod() == null) {
 			throw new RuntimeException(
 					"cant find method for property \"" + propertyTo + "\" from linkToHub class=" + linkToHub.getObjectClass());
