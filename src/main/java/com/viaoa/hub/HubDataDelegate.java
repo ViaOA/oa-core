@@ -12,7 +12,6 @@ package com.viaoa.hub;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.object.*;
@@ -117,7 +116,6 @@ public class HubDataDelegate {
             HubCSDelegate.clearHubChanges(thisHub);
         }
 	}
-	
 	
     protected static void copyInto(Hub thisHub, Object anArray[]) {
         synchronized (thisHub.data) {

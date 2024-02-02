@@ -108,7 +108,7 @@ public class OAObjectDeleteDelegateTest extends OAUnitTest {
 		// has to call ds to get it
 		objx = OAObjectReflectDelegate.getReferenceObject(is, is.P_CeoLocation);
 		assertEquals(++cntSelect, aiSelect.get());
-		assertEquals(objx, loc);
+		assertEquals(loc, objx);
 
 		is.delete();
 		assertEquals(cntSelect += 19, aiSelect.get());
