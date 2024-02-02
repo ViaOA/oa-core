@@ -505,7 +505,7 @@ public class HubAddRemoveDelegate {
 
 		final boolean bIsLoading = OAThreadLocalDelegate.isLoading();
 		if (!bIsLoading && thisHub.data.getSortListener() != null) {
-			// use getCurrentSize to guess that it will go at the end, in
+			// use getCurrentSize to "guess" that it will go at the end, in
 			//  cases where this is loaded in order.
 			insert(thisHub, obj, thisHub.getCurrentSize());
 			return true;
@@ -788,16 +788,14 @@ public class HubAddRemoveDelegate {
 				HubDelegate.setObjectClass(thisHub, c);
 			}
 		}
-
-		// 20140826 removed to make faster.  Another object could have the same objectId
-		/*
-		OAObjectKey key;
-		if (obj instanceof OAObject) key = OAObjectKeyDelegate.getKey((OAObject)obj);
-		else key = OAObjectKeyDelegate.convertToObjectKey(thisHub.getObjectClass(), obj);
-		*/
-		// if (HubDataDelegate.getObject(thisHub, key) != null) return false;
-
+		
 		if (thisHub.data.getSortListener() != null) {
+		    // 20240118 need to make sure object is not already loaded
+		    //    the Id could match, but the sort prop does not match
+            if (thisHub.contains(obj) && thisHub.isOAObject()) {
+                return -1;
+            }
+		    
 			// 20170608 quicksort
 			int head = -1;
 			int tail = thisHub.data.vector.size();
@@ -833,7 +831,6 @@ public class HubAddRemoveDelegate {
 						if (thisHub.data.getSortListener().comparator.compare(obj, cobj) != 0) {
 							break;
 						}
-						;
 					}
 					for (i = pos + 1; i < tail; i++) {
 						cobj = thisHub.elementAt(i);
@@ -843,7 +840,6 @@ public class HubAddRemoveDelegate {
 						if (thisHub.data.getSortListener().comparator.compare(obj, cobj) != 0) {
 							break;
 						}
-						;
 					}
 					break;
 				} else if (c < 0) {
