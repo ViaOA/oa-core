@@ -148,11 +148,13 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			}
 		}
 		if (property != null) {
-			getMethod = OAReflect.getMethod(hub.getObjectClass(), "get" + property);
+		    getMethod = OAObjectInfoDelegate.getMethod(hub.getObjectClass(), "get" + property);
+			//was: getMethod = OAReflect.getMethod(hub.getObjectClass(), "get" + property);
 			if (getMethod == null) {
 				throw new RuntimeException("getMethod for property \"" + property + "\" in class " + hub.getObjectClass());
 			}
-			setMethod = OAReflect.getMethod(hub.getObjectClass(), "set" + property);
+            setMethod = OAObjectInfoDelegate.getMethod(hub.getObjectClass(), "set" + property);
+			//was: setMethod = OAReflect.getMethod(hub.getObjectClass(), "set" + property);
 			if (setMethod == null) {
 				throw new RuntimeException("setMethod for property \"" + property + "\" in class " + hub.getObjectClass());
 			}

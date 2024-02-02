@@ -566,7 +566,7 @@ public class OAPropertyPath<F> {
 			}
 
 			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-			OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
+			final OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
 			if (li != null) {
 				endLinkInfo = li;
 				endPropertyInfo = null;
@@ -589,7 +589,10 @@ public class OAPropertyPath<F> {
 			}
 			this.properties = (String[]) OAArray.add(String.class, this.properties, propertyName);
 
-			Method method = OAReflect.getMethod(clazz, mname, 0);
+			// 20240131
+            Method method = OAObjectInfoDelegate.getMethod(oi, mname, 0);
+            //was: Method method = OAReflect.getMethod(clazz, mname, 0);
+			
 			bLastMethodHasHubParam = false;
 			if (method == null) {
 				if (posDot < 0) {
