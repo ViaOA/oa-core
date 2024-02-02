@@ -132,6 +132,9 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			if (pi.getIsFkeyOnly() && oaj.getWriteAsPojo()) {
 				continue;
 			}
+			if (pi.getEnumPropertyName() != null) {
+			    if (pi.getName().endsWith("String")) continue;
+			}
 			writeProperty(pi, gen, oaObj);
 		}
 
@@ -446,9 +449,11 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			return;
 		}
 
+		/* there are now prop*Enum and prop*String properties that will be a String
 		if (pi.isNameValue() && (value instanceof Integer)) {
 			value = (String) pi.getNameValues().get((Integer) value);
 		}
+		*/
 
 		if (value instanceof String) {
 			if (pi.isJson()) {

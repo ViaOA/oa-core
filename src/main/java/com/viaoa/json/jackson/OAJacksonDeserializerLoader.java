@@ -1065,15 +1065,20 @@ public class OAJacksonDeserializerLoader {
 		if (jn.isNull()) {
 			objx = null;
 		} else {
-			if (pi.isNameValue()) {
+			if (pi.isNameValue()) {  
 				objx = jn.asText();
 				if (objx != null) {
+				    boolean bFound = false;
 					for (int i = 0; i < pi.getNameValues().size(); i++) {
 						if (((String) objx).equalsIgnoreCase(pi.getNameValues().get(i))) {
 							objx = i;
+							bFound = true;
 							break;
 						}
 					}
+	                if (!bFound) {
+	                    objx = OAConv.convert(Integer.class, objx, null);
+	                }
 				}
 			} else if (jn.isNumber()) {
 				objx = OAConv.convert(pi.getClassType(), jn.asText(), null);
