@@ -148,7 +148,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * Used to serialize an object.
 	 * 
 	 * @param object         root object to serialize.
-	 * @param bCompress      use compression
+	 * @param bCompress      use compression (not needed if the stream is compressed)
 	 * @param bAllReferences flag to know if all references or no references should be serialized with object. see
 	 *                       #setExcludedClasses(Class[]) to include reference classes should not be serialized.
 	 */
@@ -674,7 +674,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		}
 
 		if (totalObjectsWritten > 100000 || totalObjectsWritten < 0) {
-			msg += " totalObjectsWritten=" + totalObjectsWritten;
+			msg += String.format(" totalObjectsRead=%,d",  totalObjectsWritten);
 			// LOG.warning(rcnter+") "+msg);
 		}
 
