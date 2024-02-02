@@ -459,51 +459,6 @@ public class OAObjectEventDelegate {
 		}
 
 		if (!bIsLoading) {
-			/*
-			OAObjectKey key = OAObjectKeyDelegate.getKey(oaObj);
-			
-			Object objOld = oldObj;
-			if (objOld instanceof OAObject) {
-				objOld = OAObjectKeyDelegate.getKey((OAObject) objOld);
-			}
-			Object objNew = newObj;
-			if (objNew instanceof OAObject) {
-				objNew = OAObjectKeyDelegate.getKey((OAObject) objNew);
-			}
-			*/
-
-			/*
-			Object oldx;
-			if (objOld instanceof byte[]) {
-			    oldx = "byte[" + ((byte[])objOld).length +"]";
-			}
-			else oldx = objOld;
-			*/
-			/*
-			Object newx;
-			if (objNew instanceof byte[]) {
-			    newx = "byte[" + ((byte[])objNew).length +"]";
-			}
-			else newx = objNew;
-			
-			
-			String s = String.format("Change, class=%s, id=%s, property=%s, oldValue=%s, newVaue=%s",
-			        OAString.getClassName(oaObj.getClass()),
-			        key.toString(),
-			        propertyName,
-			        OAConv.toString(oldx),
-			        OAConv.toString(newx)
-			);
-			if (oi.bUseDataSource) { // 20120429
-			    if (calcInfo == null) {
-			        if (linkInfo == null || !linkInfo.bCalculated) {
-			            OAObject.OALOG.fine(s);
-			        }
-			    }
-			}
-			LOG.fine(s);
-			*/
-
 			if (!bLocalOnly) {
 				// prior to 20100406, this was always calling these methods
 				OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message

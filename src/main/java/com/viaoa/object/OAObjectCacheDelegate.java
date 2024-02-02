@@ -1208,7 +1208,8 @@ public class OAObjectCacheDelegate {
 		if (bDisableCache) {
 			return null;
 		}
-		final boolean bSkipDeleted = true; //qqqq todo: make as param
+		
+		final boolean bSkipDeleted = true; // todo: make as param ??
 
 		TreeMapHolder tmh = getTreeMapHolder(clazz, false);
 		if (tmh == null) {

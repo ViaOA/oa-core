@@ -17,9 +17,8 @@ import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.util.OAFilter;
 
 /**
- * Used to find and filter objects in OAObjectCache. Note, all queries require that a non-null Filter be used. If filter is null, then no
- * results will be returned.
- *
+ * Used to find and filter objects in OAObjectCache.
+ * 
  * @author vvia
  */
 public class ObjectCacheIterator<T> implements OADataSourceIterator {
@@ -77,7 +76,7 @@ public class ObjectCacheIterator<T> implements OADataSourceIterator {
 			if (bFetchIsDone) {
 				return null;
 			}
-			lastFetchObject = (T) OAObjectCacheDelegate.find(lastFetchObject, clazz, filter, false, false, 50, (ArrayList) alFetchObjects);
+			lastFetchObject = (T) OAObjectCacheDelegate.find(lastFetchObject, clazz, filter, false, false, 100, (ArrayList) alFetchObjects);
 			if (lastFetchObject == null) {
 				bFetchIsDone = true;
 				if (alFetchObjects.size() == 0) {
@@ -102,18 +101,5 @@ public class ObjectCacheIterator<T> implements OADataSourceIterator {
 
 	public int getMax() {
 		return max;
-	}
-
-	public void remove() {
-	}
-
-	@Override
-	public String getQuery() {
-		return null;
-	}
-
-	@Override
-	public String getQuery2() {
-		return null;
 	}
 }

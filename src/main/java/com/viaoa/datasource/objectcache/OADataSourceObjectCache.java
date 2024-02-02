@@ -10,16 +10,11 @@
 */
 package com.viaoa.datasource.objectcache;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.*;
 import java.util.logging.Logger;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -27,408 +22,466 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 import com.viaoa.comm.io.OAObjectInputStream;
-import com.viaoa.datasource.OADataSource;
-import com.viaoa.datasource.OADataSourceEmptyIterator;
-import com.viaoa.datasource.OADataSourceIterator;
+import com.viaoa.datasource.*;
 import com.viaoa.datasource.autonumber.OADataSourceAuto;
 import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAComparator;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OALogger;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.object.*;
+import com.viaoa.util.*;
 
 // 20140124
 /**
- * OADataSource for OAObjectCache.
+ * OADataSource for storing objects in serialized file.
  * <p>
- * Uses OAFinder to find objects. This will use OAObjectCache.selectAllHubs along with any OAObject.OAClass.rootTreePropertyPaths ex:
- * "[Router]."+Router.P_UserLogins+"."+UserLogin.P_User to find all of the objects available. subclassed to allow initializeObject(..) to
- * auto assign Object Ids
+ *
  */
 public class OADataSourceObjectCache extends OADataSourceAuto {
-	private static final Logger LOG = OALogger.getLogger(OADataSourceObjectCache.class);
+    private static final Logger LOG = OALogger.getLogger(OADataSourceObjectCache.class);
 
-	private final ConcurrentHashMap<Class, ArrayList> hmClassList = new ConcurrentHashMap();
+    private final ConcurrentHashMap<Class, Set> hmClass = new ConcurrentHashMap();
+    
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-	public OADataSourceObjectCache() {
-		this(true);
-	}
+    public OADataSourceObjectCache() {
+        this(true);
+    }
 
-	public OADataSourceObjectCache(boolean bRegister) {
-		this(null, bRegister, true);
-	}
+    public OADataSourceObjectCache(boolean bRegister) {
+        this(null, bRegister, true);
+    }
 
-	public OADataSourceObjectCache(boolean bRegister, boolean bMakeLastDataSource) {
-		this(null, bRegister, bMakeLastDataSource);
-	}
+    public OADataSourceObjectCache(boolean bRegister, boolean bMakeLastDataSource) {
+        this(null, bRegister, bMakeLastDataSource);
+    }
 
-	public OADataSourceObjectCache(Hub hubNextNumber, boolean bRegister, boolean bMakeLastDataSource) {
-		super(hubNextNumber, bRegister, bMakeLastDataSource);
-	}
+    public OADataSourceObjectCache(Hub hubNextNumber, boolean bRegister, boolean bMakeLastDataSource) {
+        super(hubNextNumber, bRegister, bMakeLastDataSource);
+    }
 
-	//TODO:  this does not sort
+    @Override
+    public OADataSourceIterator select(final Class selectClass, String queryWhere, Object[] params, String queryOrder, OAObject whereObject, String propertyFromWhereObject,
+        String extraWhere, int max, OAFilter filterx, boolean bDirty) {
 
-	@Override
-	public OADataSourceIterator select(final Class selectClass,
-			String queryWhere, Object[] params, String queryOrder,
-			OAObject whereObject, String propertyFromWhereObject, String extraWhere,
-			int max, OAFilter filterx, boolean bDirty) {
+        if (extraWhere != null && OAString.isNotEmpty(extraWhere.trim())) {
+            try {
+                OAFilter filter2 = new OAQueryFilter(selectClass, extraWhere, null);
+                if (filterx == null) {
+                    filterx = filter2;
+                }
+                else {
+                    filterx = new OAAndFilter(filterx, filter2);
+                }
+            }
+            catch (Exception e) {
+                throw new RuntimeException("query parsing failed", e);
+            }
+        }
 
-		if (extraWhere != null && OAString.isNotEmpty(extraWhere.trim())) {
-			try {
-				OAFilter filter2 = new OAQueryFilter(selectClass, extraWhere, null);
-				if (filterx == null) {
-					filterx = filter2;
-				} else {
-					filterx = new OAAndFilter(filterx, filter2);
-				}
-			} catch (Exception e) {
-				throw new RuntimeException("query parsing failed", e);
-			}
-		}
+        if (!OAString.isEmpty(queryWhere)) {
+            try {
+                OAFilter filter2 = new OAQueryFilter(selectClass, queryWhere, params);
+                if (filterx == null) {
+                    filterx = filter2;
+                }
+                else {
+                    filterx = new OAAndFilter(filterx, filter2);
+                }
+            }
+            catch (Exception e) {
+                throw new RuntimeException("query parsing failed", e);
+            }
+        }
 
-		if (!OAString.isEmpty(queryWhere)) {
-			try {
-				OAFilter filter2 = new OAQueryFilter(selectClass, queryWhere, params);
-				if (filterx == null) {
-					filterx = filter2;
-				} else {
-					filterx = new OAAndFilter(filterx, filter2);
-				}
-			} catch (Exception e) {
-				throw new RuntimeException("query parsing failed", e);
-			}
-		} else if (whereObject != null && propertyFromWhereObject != null) {
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(whereObject.getClass());
-			OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
-			if (li != null) {
-				li = li.getReverseLinkInfo();
-			} else {
-				// 20200219 check to see if it's a propertyPath.  If so, then add to the query and re-select
-				OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+        if (whereObject != null && OAStr.isNotEmpty(propertyFromWhereObject)) {
+            // 20240123
+            OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(whereObject.getClass());
+            OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
 
-				OALinkInfo[] lis = pp.getLinkInfos();
-				if (lis != null) {
-					for (int i = 0; i < lis.length; i++) {
-						if (lis[i].getType() != OALinkInfo.ONE) {
-							break;
-						}
-						Object objx = lis[i].getValue(whereObject);
-						whereObject = (OAObject) objx;
+            if (li == null) {
+                // 20200219 check to see if propertyFromWhereObject is a propertyPath. 
+                //   If so, then add to the query and re-select
+                OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
 
-						if (whereObject == null) {
-							return new OADataSourceEmptyIterator();
-						}
-						// shorten pp
-						int pos = propertyFromWhereObject.indexOf('.');
-						int pos2 = propertyFromWhereObject.indexOf(')');
-						if (pos < pos2) {
-							pos = propertyFromWhereObject.indexOf('.', pos2);
-						}
-						propertyFromWhereObject = propertyFromWhereObject.substring(pos + 1);
-						pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
-					}
-				}
-				pp = pp.getReversePropertyPath();
-				if (pp == null) {
-					return new OADataSourceEmptyIterator();
-				}
+                OALinkInfo[] lis = pp.getLinkInfos();
+                if (lis != null && lis.length > 0) {
+                    for (int i = 0; i < lis.length; i++) {
+                        if (lis[i].getType() != OALinkInfo.ONE) {
+                            break;
+                        }
+                        Object objx = lis[i].getValue(whereObject);
+                        whereObject = (OAObject) objx;
 
-				if (OAString.isNotEmpty(queryWhere)) {
-					queryWhere += " AND ";
-				} else if (queryWhere == null) {
-					queryWhere = "";
-				}
-				queryWhere += pp.getPropertyPath() + " == ?";
-				params = OAArray.add(Object.class, params, whereObject);
-				return select(selectClass, queryWhere, params, queryOrder, null, null, extraWhere, max, filterx, bDirty);
-			}
+                        if (whereObject == null) {
+                            return new OADataSourceEmptyIterator();
+                        }
+                        // shorten pp
+                        int pos = propertyFromWhereObject.indexOf('.');
+                        int pos2 = propertyFromWhereObject.indexOf(')');
+                        if (pos < pos2) {
+                            pos = propertyFromWhereObject.indexOf('.', pos2);
+                        }
+                        propertyFromWhereObject = propertyFromWhereObject.substring(pos + 1);
+                        pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+                    }
+                }
+                else {
+                    throw new RuntimeException("whereObject's propertyFromWhereObject is not a valid link, whereObject=" + whereObject
+                            + ", propertyFromWhereObject=" + propertyFromWhereObject);
+                }
+                
+                pp = pp.getReversePropertyPath();
+                if (pp == null) {
+                    return new OADataSourceEmptyIterator();
+                }
 
-			if (li != null) {
-				final OAObject whereObjectx = whereObject;
-				final OALinkInfo lix = li;
-				OAFilter filter2 = new OAEqualFilter(li.getName(), whereObject) {
-					public boolean isUsed(Object obj) {
-						boolean b;
-						if (obj instanceof OAObject) {
-							Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, lix.getName());
-							b = OACompare.isEqual(objx, whereObjectx);
-						} else {
-							b = super.isUsed(obj);
-						}
-						return b;
-					}
-				};
-				if (filterx == null) {
-					filterx = filter2;
-				} else {
-					filterx = new OAAndFilter(filterx, filter2);
-				}
-			} else {
-				throw new RuntimeException("whereObject's propertyFromWhereObject is not a valid link, whereObject=" + whereObject
-						+ ", propertyFromWhereObject=" + propertyFromWhereObject);
-			}
-		} else {
-			filterx = new OAFilter() {
-				@Override
-				public boolean isUsed(Object obj) {
-					return true;
-				}
-			};
-		}
+                if (OAString.isNotEmpty(queryWhere)) {
+                    queryWhere += " AND ";
+                }
+                else if (queryWhere == null) {
+                    queryWhere = "";
+                }
+                queryWhere += pp.getPropertyPath() + " == ?";
+                params = OAArray.add(Object.class, params, whereObject);
+                return select(selectClass, queryWhere, params, queryOrder, null, null, extraWhere, max, filterx, bDirty);
+            }
+            
+            
+            // find using equalPropertyPath, or equalPropertyPath
+            final OALinkInfo liRev = li.getReverseLinkInfo();
+            String spp = liRev.getSelectFromPropertyPath();
+            if (OAStr.isNotEmpty(spp)) {
+                OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
+                pp = pp.getReversePropertyPath();
+                spp = pp.getPropertyPath();
+            }
+            else {
+                spp = li.getEqualPropertyPath();
+                if (OAStr.isNotEmpty(spp)) {
+                    String s = liRev.getEqualPropertyPath();
+                    if (OAStr.isNotEmpty(s)) {
+                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
+                        pp = pp.getReversePropertyPath();
+                        s = pp.getPropertyPath();
+                        spp += "." + s;
+                    }
+                    else spp = null;
+                }
+            }
 
-		ObjectCacheIterator itx = new ObjectCacheIterator(selectClass, filterx);
-		itx.setMax(max);
+            if (OAStr.isNotEmpty(spp)) {
+                final OAObject whereObjectx = whereObject;
+                final OAFilter filterz = filterx;
+                OAFinder f = new OAFinder(spp) {
+                    protected boolean isUsed(OAObject obj) {
+                        Object objx = OAObjectPropertyDelegate.getProperty(obj, liRev.getName(), false, true);
+                        if (objx instanceof OAObjectKey) {
+                            return objx.equals(whereObjectx.getObjectKey());
+                        }
+                        if (objx != whereObjectx) return false;
+                        if (filterz == null) return true;
+                        return filterz.isUsed(obj);
+                    }
+                };
 
-		if (OAString.isNotEmpty(queryOrder)) {
-			OAComparator comparator = new OAComparator(selectClass, queryOrder, true);
-			ArrayList al = new ArrayList();
-			for (; itx.hasNext();) {
-				al.add(itx.next());
-			}
-			Collections.sort(al, comparator);
+                final List al = f.find(whereObject);
+                if (OAString.isNotEmpty(queryOrder)) {
+                    OAComparator comparator = new OAComparator(selectClass, queryOrder, true);
+                    Collections.sort(al, comparator);
+                }
 
-			final Iterator itSorted = al.iterator();
+                OADataSourceIterator dsi = new OADataSourceListIterator(al);
+                return dsi;
+            }
 
-			final String queryWhere2 = queryWhere;
+            
+            // else ... need to add filter to objectCache iterator
+            final OAObject whereObjectx = whereObject;
+            OAFilter filter2 = new OAEqualFilter(li.getName(), whereObject) {
+                public boolean isUsed(Object obj) {
+                    boolean b;
+                    if (obj instanceof OAObject) {
+                        Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, liRev.getName());
+                        b = (whereObjectx == objx);
+                        //was:  b = b || OACompare.isEqual(objx, whereObjectx);
+                    }
+                    else {
+                        b = super.isUsed(obj);
+                    }
+                    return b;
+                }
+            };
+            if (filterx == null) filterx = filter2;
+            else filterx = new OAAndFilter(filterx, filter2);
+        }
 
-			OADataSourceIterator dsi = new OADataSourceIterator() {
-				@Override
-				public boolean hasNext() {
-					return itSorted.hasNext();
-				}
+        ObjectCacheIterator itx = new ObjectCacheIterator(selectClass, filterx);
+        itx.setMax(max);
 
-				@Override
-				public Object next() {
-					return itSorted.next();
-				}
+        if (OAString.isNotEmpty(queryOrder)) {
+            OAComparator comparator = new OAComparator(selectClass, queryOrder, true);
+            ArrayList al = new ArrayList();
+            for (; itx.hasNext();) {
+                al.add(itx.next());
+            }
+            Collections.sort(al, comparator);
 
-				@Override
-				public String getQuery() {
-					return queryWhere2;
-				}
+            OADataSourceIterator dsi = new OADataSourceListIterator(al);
+            return dsi;
+        }
 
-				@Override
-				public String getQuery2() {
-					return null;
-				}
+        return itx;
+    }
 
-				@Override
-				public void remove() {
-				}
-			};
-			return dsi;
-		}
+    @Override
+    public OADataSourceIterator selectPassthru(Class selectClass, String queryWhere, String queryOrder, int max, OAFilter filter, boolean bDirty) {
 
-		return itx;
-	}
+        // 20211012 same as select for this datasource
+        return select(selectClass, queryWhere, null, queryOrder, null, null, null, max, filter, bDirty);
+        /*
+         * was: if (!OAString.isEmpty(queryWhere)) { filter = new OAFilter() {
+         * @Override public boolean isUsed(Object obj) { return false; } }; } return new ObjectCacheIterator(selectClass, filter);
+         */
+    }
 
-	@Override
-	public OADataSourceIterator selectPassthru(Class selectClass,
-			String queryWhere, String queryOrder,
-			int max, OAFilter filter, boolean bDirty) {
+    public @Override void assignId(OAObject obj) {
+        super.assignId(obj); // have autonumber handle this
+    }
 
-		// 20211012 same as select for this datasource
-		return select(selectClass, queryWhere, null, queryOrder, null, null, null, max, filter, bDirty);
+    public boolean getSupportsPreCount() {
+        return false;
+    }
 
-		/*was:
-		if (!OAString.isEmpty(queryWhere)) {
-			filter = new OAFilter() {
-				@Override
-				public boolean isUsed(Object obj) {
-					return false;
-				}
-			};
-		}
-		return new ObjectCacheIterator(selectClass, filter);
-		*/
-	}
+    protected boolean isOtherDataSource() {
+        OADataSource[] dss = OADataSource.getDataSources();
+        return dss != null && dss.length > 1;
+    }
 
-	public @Override void assignId(OAObject obj) {
-		super.assignId(obj); // have autonumber handle this
-	}
+    @Override
+    public boolean isClassSupported(Class clazz, OAFilter filter) {
+        if (filter == null) {
+            if (isOtherDataSource()) {
+                return false;
+            }
+            return super.isClassSupported(clazz, filter);
+        }
+        // only if all objects are loaded, or no other DS
+        if (!isOtherDataSource()) {
+            return true;
+        }
 
-	public boolean getSupportsPreCount() {
-		return false;
-	}
+        if (OAObjectCacheDelegate.getSelectAllHub(clazz) != null) {
+            return true;
+        }
+        return false;
+    }
 
-	protected boolean isOtherDataSource() {
-		OADataSource[] dss = OADataSource.getDataSources();
-		return dss != null && dss.length > 1;
-	}
+    @Override
+    public void insert(OAObject object) {
+        super.insert(object);
+        if (object == null) {
+            return;
+        }
+        Set hs = getSet(object.getClass());
+        
+        try {
+            lock.writeLock().lock();
+            hs.add(object);
+        }
+        finally {
+            lock.writeLock().unlock();
+        }        
+    }
 
-	@Override
-	public boolean isClassSupported(Class clazz, OAFilter filter) {
-		if (filter == null) {
-			if (isOtherDataSource()) {
-				return false;
-			}
-			return super.isClassSupported(clazz, filter);
-		}
-		// only if all objects are loaded, or no other DS
-		if (!isOtherDataSource()) {
-			return true;
-		}
+    
+    public void saveToStorageFile(File file, Object extraObject) throws Exception {
+        LOG.fine("saving to storage file=" + file);
+        if (file == null) {
+            return;
+        }
+        
+        FileOutputStream fos = new FileOutputStream(file);
+        BufferedOutputStream bos = new BufferedOutputStream(fos, 64 * 1024); 
 
-		if (OAObjectCacheDelegate.getSelectAllHub(clazz) != null) {
-			return true;
-		}
-		return false;
-	}
+        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
+        DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(bos, deflater, 32 * 1024);
 
-	@Override
-	public void insert(OAObject object) {
-		super.insert(object);
-		if (object == null) {
-			return;
-		}
-		List al = getList(object.getClass());
-		al.add(object);
-	}
+        ObjectOutputStream oos = new ObjectOutputStream(deflaterOutputStream);
 
-	public void saveToStorageFile(File file) throws Exception {
-		LOG.fine("saving to storage file=" + file);
-		if (file == null) {
-			return;
-		}
-		FileOutputStream fos = new FileOutputStream(file);
+        try {
+            lock.writeLock().lock();
+            _saveToStorageFile(file, oos, extraObject);
+        }
+        finally {
+            deflaterOutputStream.finish();
+            deflaterOutputStream.close();
+            bos.close();
+            fos.close();
 
-		Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-		DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(fos, deflater, 1024 * 16);
+            lock.writeLock().unlock();
+        }
+        LOG.fine("saved to storage file=" + file);
+    }        
+        
 
-		ObjectOutputStream oos = new ObjectOutputStream(deflaterOutputStream);
+    protected void _saveToStorageFile(File file, ObjectOutputStream oos, Object extraObject) throws Exception {
+        oos.writeBoolean(extraObject != null);
+        if (extraObject != null) {
+            OAObjectSerializer wrap = new OAObjectSerializer(extraObject, false, true);
+            wrap.setIncludeBlobs(true);
+            oos.writeObject(wrap);
+        }
+        
+        for (Entry<Class, Set> entry : hmClass.entrySet()) {
+            Class c = entry.getKey();
+            if (!isClassSupported(c)) {
+                continue;
+            }
 
-		for (Entry<Class, ArrayList> entry : hmClassList.entrySet()) {
-			Class c = entry.getKey();
-			if (!isClassSupported(c)) {
-				continue;
-			}
+            oos.writeBoolean(true);
+            oos.writeObject(c);
 
-			oos.writeBoolean(true);
+            Set hs = entry.getValue();
+            
+            OAObjectSerializer wrap = new OAObjectSerializer(hs, false, false);
+            wrap.setIncludeBlobs(true);
+            oos.writeObject(wrap);
+        }
+        oos.writeBoolean(false);
+        oos.close();
+    }
 
-			oos.writeObject(c);
+    public boolean loadFromStorageFile(final File file) throws Exception {
+        LOG.fine("loading to storage file=" + file);
+        if (file == null) {
+            return false;
+        }
+        if (!file.exists()) {
+            LOG.fine("storage file=" + file + " does not exist");
+            return false;
+        }
+        
+        FileInputStream fis = new FileInputStream(file);
+        BufferedInputStream bis = new BufferedInputStream(fis, 64 * 1024);
 
-			List al = entry.getValue();
-			OAObjectSerializer wrap = new OAObjectSerializer(al, false, false);
-			wrap.setIncludeBlobs(true);
-			oos.writeObject(wrap);
-		}
-		oos.writeBoolean(false);
-		oos.close();
+        Inflater inflater = new Inflater();
+        InflaterInputStream inflaterInputStream = new InflaterInputStream(fis, inflater, 32 * 1024);
 
-		deflaterOutputStream.finish();
-		deflaterOutputStream.close();
-		fos.close();
-		LOG.fine("saved to storage file=" + file);
-	}
+        OAObjectInputStream ois = new OAObjectInputStream(inflaterInputStream);
+        
+        boolean bResult = false;
+        try {
+            lock.writeLock().lock();
+            bResult = _loadFromStorageFile(file, ois);
+        }
+        finally {
+            ois.close();
+            fis.close();
 
-	public boolean loadFromStorageFile(final File file) throws Exception {
-		LOG.fine("loading to storage file=" + file);
-		if (file == null) {
-			return false;
-		}
-		if (!file.exists()) {
-			LOG.fine("storage file=" + file + " does not exist");
-			return false;
-		}
+            lock.writeLock().unlock();
+        }
+        LOG.fine("loaded storage file=" + file);
+        return bResult;
+    }
+    
+    protected boolean _loadFromStorageFile(final File file, OAObjectInputStream ois) throws Exception {
+        int cnt = 0;
+        
+        boolean b = ois.readBoolean();
+        if (b) {
+            OAObjectSerializer wrap = (OAObjectSerializer) ois.readObject();
+            Object extra = wrap.getObject();
+            cnt++;
+        }
+        
+        for (;;) {
+            b = ois.readBoolean();
+            if (!b) {
+                break;
+            }
+            cnt++;
+            Class c = (Class) ois.readObject();
+            OAObjectSerializer wrap = (OAObjectSerializer) ois.readObject();
+            Set hs = (Set) wrap.getObject();
+            hmClass.put(c, hs);
+        }
 
-		FileInputStream fis = new FileInputStream(file);
-		Inflater inflater = new Inflater();
-		InflaterInputStream inflaterInputStream = new InflaterInputStream(fis, inflater, 1024 * 16);
+        return (cnt > 0);
+    }
 
-		OAObjectInputStream ois = new OAObjectInputStream(inflaterInputStream);
+    private Set getSet(Class c) {
+        if (c == null) {
+            return null;
+        }
+        Set hs = hmClass.get(c);
+        if (hs == null) {
+            synchronized (hmClass) {
+                hs = hmClass.get(c);
+                if (hs == null) {
+                    hs = new HashSet();
+                    hmClass.put(c, hs);
+                }
+            }
+        }
+        return hs;
+    }
 
-		int cnt = 0;
-		for (;;) {
-			boolean b = ois.readBoolean();
-			if (!b) {
-				break;
-			}
-			cnt++;
-			Class c = (Class) ois.readObject();
-			OAObjectSerializer wrap = (OAObjectSerializer) ois.readObject();
-			ArrayList al = (ArrayList) wrap.getObject();
-			hmClassList.put(c, al);
-		}
+    @Override
+    public void insertWithoutReferences(OAObject obj) {
+        super.insertWithoutReferences(obj);
+        if (obj == null) {
+            return;
+        }
+        Set hs = getSet(obj.getClass());
+        
+        try {
+            lock.writeLock().lock();
+            if (!hs.contains(obj)) {
+                hs.add(obj);
+            }
+        }
+        finally {
+            lock.writeLock().unlock();
+        }
+    }
 
-		ois.close();
-		fis.close();
-		LOG.fine("loaded storage file=" + file);
-		return (cnt > 0);
-	}
+    @Override
+    public void delete(OAObject obj) {
+        super.delete(obj);
+        if (obj == null) {
+            return;
+        }
+        final Class c = obj.getClass();
+        Set hs = (Set) hmClass.get(c);
+        if (hs != null) {
+            try {
+                lock.writeLock().lock();
+                hs.remove(obj);
+            }
+            finally {
+                lock.writeLock().unlock();
+            }
+        }
+    }
 
-	private ArrayList getList(Class c) {
-		if (c == null) {
-			return null;
-		}
-		ArrayList al = hmClassList.get(c);
-		if (al == null) {
-			synchronized (hmClassList) {
-				al = new ArrayList();
-				hmClassList.put(c, al);
-			}
-		}
-		return al;
-	}
+    @Override
+    public void deleteAll(Class c) {
+        super.deleteAll(c);
+        if (c == null) {
+            return;
+        }
+        Set hs = (Set) hmClass.get(c);
+        if (hs != null) {
+            try {
+                lock.writeLock().lock();
+                hs.clear();
+            }
+            finally {
+                lock.writeLock().unlock();
+            }
+        }
+        OAObjectCacheDelegate.removeAllObjects(c);
+    }
 
-	@Override
-	public void insertWithoutReferences(OAObject obj) {
-		super.insertWithoutReferences(obj);
-		if (obj == null) {
-			return;
-		}
-		List al = getList(obj.getClass());
-		if (!al.contains(obj)) {
-			al.add(obj);
-		}
-	}
-
-	@Override
-	public void delete(OAObject obj) {
-		super.delete(obj);
-		if (obj == null) {
-			return;
-		}
-		final Class c = obj.getClass();
-		ArrayList al = (ArrayList) hmClassList.get(c);
-		if (al != null) {
-			al.remove(obj);
-		}
-	}
-
-	@Override
-	public void deleteAll(Class c) {
-		super.deleteAll(c);
-		if (c == null) {
-			return;
-		}
-		ArrayList al = (ArrayList) hmClassList.get(c);
-		if (al != null) {
-			al.clear();
-		}
-		OAObjectCacheDelegate.removeAllObjects(c);
-	}
-
-	public void addToStorage(OAObject obj, boolean bIsLoading) {
-		if (obj == null) {
-			return;
-		}
-		ArrayList al = getList(obj.getClass());
-		if (!bIsLoading || !al.contains(obj)) {
-			al.add(obj);
-		}
-	}
 }
