@@ -40,8 +40,7 @@ import com.viaoa.datasource.jdbc.db.Index;
 import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAString;
+import com.viaoa.util.*;
 
 /**
  * Delegate used load OAObject annotations into OAObjectInfo, Database, etc
@@ -294,7 +293,10 @@ public class OAAnnotationDelegate {
 				Hub<String> h = pi.getNameValues();
 				Hub<String> h2 = pi.getDisplayNameValues();
 				try {
-					Class cz = Class.forName(clazz.getName() + "$" + pi.getName());
+				    Method mx = OAReflect.getMethod(clazz, "get" + pi.getName()+"Enum");
+				    Class cz;
+				    if (mx != null) cz = mx.getReturnType();
+				    else cz = Class.forName(clazz.getName() + "$" + pi.getName());
 					// Field[] allFields = cz.getDeclaredFields();
 
 					Method mz = cz.getMethod("values", new Class[] {});
