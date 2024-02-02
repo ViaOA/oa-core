@@ -151,7 +151,8 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         Class c = hub.getObjectClass();
         if (c == null) return;
         
-        Method met = OAReflect.getMethod(c, "set"+propertyName);
+        Method met = OAObjectInfoDelegate.getMethod(c, "set" + propertyName);
+        //was: Method met = OAReflect.getMethod(c, "set"+propertyName);
         if (met == null) {
             throw new RuntimeException("setter method not found for property "+propertyName+", class="+c);
         }
