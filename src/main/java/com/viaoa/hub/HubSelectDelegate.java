@@ -63,6 +63,10 @@ public class HubSelectDelegate {
 	private static ConcurrentHashMap<Hub, Integer> hmHubFetch = new ConcurrentHashMap<Hub, Integer>(11, .85f);
 
 	protected static int fetchMore(Hub thisHub, OASelect sel, int famt) {
+        if (sel == null) {
+            return 0;
+        }
+        if (sel.hasNextCompleted()) return 0;
 		try {
 			// get fetch lock
 			for (;;) {
@@ -73,7 +77,8 @@ public class HubSelectDelegate {
 					}
 					try {
 						hmHubFetch.put(thisHub, 1);
-						hmHubFetch.wait(5);
+						Thread.yield();
+						//was: hmHubFetch.wait(1);
 					} catch (Exception e) {
 					}
 				}
@@ -93,6 +98,7 @@ public class HubSelectDelegate {
 		if (sel == null) {
 			return 0;
 		}
+        if (sel.hasNextCompleted()) return 0;
 		int fa = sel.getFetchAmount(); // default amount to load
 
 		HubData hubData = thisHub.data;
@@ -171,6 +177,7 @@ public class HubSelectDelegate {
 		if (sel == null) {
 			return false;
 		}
+        if (sel.hasNextCompleted()) return false;
 		if (!sel.hasBeenStarted()) {
 			sel.select();
 		}
@@ -181,6 +188,7 @@ public class HubSelectDelegate {
 		if (sel == null) {
 			return false;
 		}
+        if (sel.hasNextCompleted()) return false;
 		if (!sel.hasBeenStarted()) {
 			sel.select();
 		}
@@ -199,8 +207,12 @@ public class HubSelectDelegate {
 			return;
 		}
 
+		if (select == null || select.hasNextCompleted()) {
+		    return;
+		}
+		
+        long ms = 0;
 		int i = 0;
-		boolean bLongTime = false;
 		for (;; i++) {
 			boolean bCanRun = false;
 			synchronized (thisHub.data) {
@@ -229,25 +241,18 @@ public class HubSelectDelegate {
 			// else wait and try again
 			if (select == null) {
 				if (i >= 500) {
-					break;
+				    if (System.currentTimeMillis() - ms > 500) {
+				        break;
+				    }
 				}
-				if (i > 25) {
-					bLongTime = true;
+				else if (i == 25) {
+				    if (ms == 0) ms = System.currentTimeMillis();
 				}
 			}
 			try {
-				Thread.sleep(2);
+			    Thread.yield();
 			} catch (Exception e) {
 			}
-		}
-
-		if (bLongTime) {
-			String s = "waiting on another thread to finish loadAllData, msTime=" + (i * 2);
-			if (i >= 500) {
-				s += ", timeout, will continue";
-			}
-			s += ", thisHub=" + thisHub;
-			LOG.warning(s);
 		}
 	}
 
@@ -299,23 +304,6 @@ public class HubSelectDelegate {
 				throw new RuntimeException("select cant be changed for detail hub");
 			}
 
-			/* 20200522 removed this, calling code should be setting the whereObj.  Now defined in oabuilder and code gen
-			if (thisHub.datam.getMasterObject() != null) {
-			    if (thisHub.datam.getMasterObject() != select.getWhereObject()) {
-			        if (select.getWhere() == null || select.getWhere().length() == 0) {
-			            OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(thisHub.datam.getMasterObject().getClass());
-			            if (oi.getUseDataSource()) {
-			                select.setWhereObject(thisHub.datam.getMasterObject());
-			            }
-			        }
-			        else {
-			            // cant call select on a hub that is a detail hub
-			            // 20140308 removed, ex:  ServerRoot.getOrders() has a select
-			            // throw new RuntimeException("cant call select on a detail hub");
-			        }
-			    }
-			}
-			*/
 		}
 		if (select.getWhereObject() != null) {
 			if (thisHub.datam.liDetailToMaster != null && select.getWhereObject() == thisHub.datam.getMasterObject()) {
