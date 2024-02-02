@@ -13,7 +13,7 @@ package com.viaoa.util;
 /** 
     Object used internally to represent any value (null, or not-null). 
 */
-public class OAAnyValueObject implements java.io.Serializable {
+public class OAAnyValueObject implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
     public static final OAAnyValueObject instance = new OAAnyValueObject();
     

@@ -271,47 +271,114 @@ public class OACompare {
 			return 0;
 		}
 
-		if (value instanceof OAAnyValueObject || matchValue instanceof OAAnyValueObject) {
-			return 0;
-		}
-		if (value instanceof OANotExist) {
-			if (matchValue == null) {
-				return 0;
-			}
-			return -1;
-		}
-		if (matchValue instanceof OANotExist) {
-			if (value == null) {
-				return 0;
-			}
-			return 1;
-		}
-		if (value instanceof OANullObject) {
-			if (matchValue == null) {
-				return 0;
-			}
-			return -1;
-		}
-		if (matchValue instanceof OANullObject) {
-			if (value == null) {
-				return 0;
-			}
-			return 1;
-		}
-		if (value instanceof OANotNullObject) {
-			if (matchValue != null) {
-				return 0;
-			}
-			return 1;
-		}
-		if (matchValue instanceof OANotNullObject) {
-			if (value != null) {
-				return 0;
-			}
-			return -1;
+        if ((value instanceof Boolean) && (matchValue instanceof Boolean)) {
+            boolean b = ((Boolean) value).equals(matchValue);
+            if (b == true) return 0;
+            if ( ((Boolean) value).booleanValue()) return 1;
+            return -1;
+        }
+		
+        boolean b1 = value == null || (value instanceof String);
+        boolean b2 = matchValue == null || (matchValue instanceof String);
+		if (b1 && b2) {
+		    if (value == matchValue) return 0;
+		    if (value != null) {
+		        if (value == null) return -1;
+		        if (matchValue == null) return 1;
+		        int x = ((String) value).compareTo((String) matchValue);
+		        return x;
+		    }
 		}
 
-		// 20200916
+		if (decimalPlaces <= 0) {
+            b1 = value != null && (value instanceof Integer);
+            if (b1) {
+                b2 = matchValue != null && (matchValue instanceof Integer);
+                if (b2) {
+                    int x  = ((Integer) value).compareTo((Integer) matchValue);
+                    return x;
+                }
+            }
+		}
+		
+        if (value instanceof OASpecialCompareObject || matchValue instanceof OASpecialCompareObject) {
+    		if (value instanceof OAAnyValueObject || matchValue instanceof OAAnyValueObject) {
+    			return 0;
+    		}
+    		if (value instanceof OANotExist) {
+    			if (matchValue == null || (matchValue instanceof OANotExist)) {
+    				return 0;
+    			}
+    			return -1;
+    		}
+    		if (matchValue instanceof OANotExist) {
+    			if (value == null) {
+    				return 0;
+    			}
+    			return 1;
+    		}
+    		if (value instanceof OANullObject) {
+    			if (matchValue == null || (matchValue instanceof OANullObject)) {
+    				return 0;
+    			}
+    			return 1;
+    		}
+    		if (matchValue instanceof OANullObject) {
+    			if (value == null) {
+    				return 0;
+    			}
+    			return -1;
+    		}
+    		if (value instanceof OANotNullObject) {
+    			if (matchValue != null) {
+    				return 0;
+    			}
+    			return 1;
+    		}
+    		if (matchValue instanceof OANotNullObject) {
+    			if (value != null) {
+    				return 0;
+    			}
+    			return -1;
+    		}
+    
+            if (value instanceof OAEmptyObject) {
+                if (matchValue == null || "".equals(matchValue) || (matchValue instanceof OAEmptyObject)) {
+                    return 0;
+                }
+                return 1;
+            }
+            if (matchValue instanceof OAEmptyObject) {
+                if (value == null || "".equals(value)) {
+                    return 0;
+                }
+                return -1;
+            }
+    
+            if (value instanceof OANotEmptyObject) {
+                if ((matchValue != null && !"".equals(matchValue)) || (matchValue instanceof OANotEmptyObject)) {
+                    return 0;
+                }
+                return -1;
+            }
+            if (matchValue instanceof OANotEmptyObject) {
+                if (value != null && !"".equals(value)) {
+                    return 0;
+                }
+                return 1;
+            }
+            if (value instanceof OAUnknownObject) {
+                if (matchValue instanceof OAUnknownObject) {
+                    return 0;
+                }
+                return 1;
+            }
+            if (matchValue instanceof OAUnknownObject) {
+                return -1;
+            }
+        }
+        
+        
 		if (!(value instanceof Boolean) && !(matchValue instanceof Boolean)) {
 			// 20191126
 			if (value instanceof OAObjectKey) {

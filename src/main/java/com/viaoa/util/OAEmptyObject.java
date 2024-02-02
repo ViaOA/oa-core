@@ -15,7 +15,7 @@ package com.viaoa.util;
  *
  * @see OAString#isEmpty(Object)
  */
-public class OAEmptyObject implements java.io.Serializable {
+public class OAEmptyObject implements OASpecialCompareObject, java.io.Serializable {
 	static final long serialVersionUID = 1L;
 	public static final OAEmptyObject instance = new OAEmptyObject();
 

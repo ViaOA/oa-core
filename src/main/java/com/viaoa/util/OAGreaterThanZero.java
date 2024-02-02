@@ -13,7 +13,7 @@ package com.viaoa.util;
 /** 
     Object used internally to represent a number &gt; 0 
 */
-public class OAGreaterThanZero implements java.io.Serializable {
+public class OAGreaterThanZero implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
     public static final OAGreaterThanZero instance = new OAGreaterThanZero();
     

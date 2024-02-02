@@ -13,7 +13,7 @@ package com.viaoa.util;
 /** 
     Object used internally to represent a value that was not found 
 */
-public class OANotExist implements java.io.Serializable {
+public class OANotExist implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
     public static final OANotExist instance = new OANotExist();
     

@@ -13,7 +13,7 @@ package com.viaoa.util;
 /** 
     Object used internally to represent a non-null value. 
 */
-public class OANotNullObject implements java.io.Serializable {
+public class OANotNullObject implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
     public static final OANotNullObject instance = new OANotNullObject();
     

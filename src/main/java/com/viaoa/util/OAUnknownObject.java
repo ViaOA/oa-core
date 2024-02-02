@@ -13,7 +13,7 @@ package com.viaoa.util;
 /** 
     Object used internally to represent unknown value (equal to nothing except itself). 
 */
-public class OAUnknownObject implements java.io.Serializable {
+public class OAUnknownObject implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
     public static final OAUnknownObject instance = new OAUnknownObject();
     
