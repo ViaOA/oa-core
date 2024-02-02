@@ -60,6 +60,7 @@ public class OAString {
 			sb.append(word);
 		}
 		if (sb == null) {
+		    if (line.length() > 0 && line.charAt(0) == ' ') return "";
 			return line;
 		}
 		return new String(sb);
@@ -4276,20 +4277,25 @@ public class OAString {
 	}
 	
 	public static String removeLeading(String s, char ch) {
-	    if (s == null) return s;
-	    
-	    int x = s.length();
-	    int i = 0;
-	    for ( ; i<x; i++) {
-	        if (s.charAt(i) != ch) {
-	            break;
-	        }
-	    }
-	    if (i == 0) return s;
-	    if (i == x) return "";
-	    return s.substring(i);
+	    return removeLeading(s, ch, 0);
 	}
 	
+    public static String removeLeading(String s, char ch, int maxAmount) {
+        if (s == null) return s;
+        if (maxAmount <= 0) return s;
+        
+        int x = s.length();
+        int i = 0;
+        for ( ; i<x; i++) {
+            if (s.charAt(i) != ch) {
+                break;
+            }
+            if (maxAmount > 0 && i >= maxAmount) break;
+        }
+        if (i == 0) return s;
+        if (i == x) return "";
+        return s.substring(i);
+    }
 	
 	
 }
