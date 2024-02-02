@@ -11,6 +11,8 @@
 package com.viaoa.datasource.jdbc.db;
 
 import java.lang.reflect.*;
+
+import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.*;
 
 /** 
@@ -61,7 +63,8 @@ public class Link {
         if (methodGet == null && table != null) {
             Class clazz = table.getSupportClass();
             if (clazz != null && propertyName != null && propertyName.length() != 0) {
-                methodGet = OAReflect.getMethod(clazz, "get"+propertyName);
+                methodGet = OAObjectInfoDelegate.getMethod(clazz, "get" + propertyName);
+                //was: methodGet = OAReflect.getMethod(clazz, "get"+propertyName);
             }
         }
         return methodGet;
