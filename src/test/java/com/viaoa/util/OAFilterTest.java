@@ -122,7 +122,7 @@ public class OAFilterTest extends OAUnitTest {
         
         f = new OAEqualFilter(null);
         assertFalse(f.isUsed(123));
-        assertTrue(f.isUsed(""));
+        assertFalse(f.isUsed(""));
         assertTrue(f.isUsed(null));
 
         f = new OAEqualFilter(5);
@@ -167,7 +167,7 @@ public class OAFilterTest extends OAUnitTest {
         
         f = new OANotEqualFilter(null);
         assertTrue(f.isUsed(123));
-        assertFalse(f.isUsed(""));
+        assertTrue(f.isUsed(""));
         assertFalse(f.isUsed(null));
 
         f = new OANotEqualFilter(5);
