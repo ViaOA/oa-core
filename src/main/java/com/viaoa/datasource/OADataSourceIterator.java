@@ -17,12 +17,18 @@ import com.viaoa.object.OASiblingHelper;
 public interface OADataSourceIterator extends Iterator {
     
 
-    public String getQuery();
-    public String getQuery2();
+    public default String getQuery() {
+        return null;
+    }
+    public default String getQuery2() {
+        return null;
+    }
     
     public default OASiblingHelper getSiblingHelper() {
         return null;
     }
     
-
+    @Override
+    default void remove() {
+    }
 }
