@@ -541,13 +541,13 @@ public class OAObject implements java.io.Serializable, Comparable {
 		if (obj == this) {
 			return 0;
 		}
-		if (!obj.getClass().equals(this.getClass())) {
-			if (obj instanceof OAObject) {
-				return -1;
-			}
-			return OACompare.compare(obj, OAObjectKeyDelegate.getKey(this));
+        if (obj instanceof OAObject) { 
+    		if (!obj.getClass().equals(this.getClass())) {
+    		    return 1;
+    		}
+	        return OAObjectKeyDelegate.getKey(this).compareTo(OAObjectKeyDelegate.getKey((OAObject) obj));
 		}
-		return OAObjectKeyDelegate.getKey(this).compareTo(obj);
+		return OACompare.compare(OAObjectKeyDelegate.getKey(this), obj);
 	}
 
 	/**
