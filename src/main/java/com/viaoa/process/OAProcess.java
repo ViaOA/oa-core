@@ -10,37 +10,42 @@
 */
 package com.viaoa.process;
 
-
 /**
- * Similiar to a future or promise to track a process.
+ * Similar to a future or promise to track and manage a running process.
  * @author vvia
- *
  */
 public class OAProcess implements Runnable {
-    private volatile int currentStep;
 
     private boolean bBlock;
     private long maxBlockTime;
     
-    private boolean bAllowCancel;
-    private volatile boolean bCancelled;
-    private volatile long cancelTime;
-    private volatile String cancelReason;
-
+    
     private final long createdTime;
+    
+    private boolean bAllowCancel;
+    private volatile boolean bRequestCancel;
+    private volatile long requestCancelTime;
+    private volatile String requestCancelReason;
+    
+    private volatile boolean bWasCancelled;
+    private volatile long cancelledTime;
+    private volatile String cancelledReason;
+    
+    
     private volatile long doneTime;
+    private volatile String doneMessage;
+    
     
     private String name, description, status;
+    private volatile long estimatedTime;
 
     private String[] steps;
-    private volatile long estimatedTime;
+    private volatile int currentStep;
     
     private volatile Exception exception;
     
     private long maxTime;
     
-    private String returnMessage;
-
     private boolean pause;
 
     /**
@@ -50,11 +55,10 @@ public class OAProcess implements Runnable {
         createdTime = System.currentTimeMillis();
     }
 
-    
-    public void setCanCancel(boolean b) {
+    public void setAllowCancel(boolean b) {
         this.bAllowCancel = b;
     }
-    public boolean getCanCancel() {
+    public boolean getAllowCancel() {
         return bAllowCancel;
     }
 
@@ -97,38 +101,65 @@ public class OAProcess implements Runnable {
         return createdTime;
     }
     
-    public void cancel(String reason) {
-        this.bCancelled = true;
-        this.cancelTime = System.currentTimeMillis();
-        cancelReason = reason;
+    public boolean getRequestedToCancel() {
+        return this.requestCancelTime != 0;
     }
-    public boolean wasCancelled() {
-        return bCancelled;
+    public void requestCancel(String reason) {
+        this.bRequestCancel = true;
+        this.requestCancelTime = System.currentTimeMillis();
+        requestCancelReason = reason;
     }
-    public boolean isCancelled() {
-        return bCancelled;
+    public String getRequestCancelReason() {
+        return requestCancelReason;
     }
-    public boolean getCancelled() {
-        return bCancelled;
+    public long getRequestCancelTime() {
+        return requestCancelTime;
     }
-    public long getCancelTime() {
-        return cancelTime;
-    }
-    public String getCancelReason() {
-        return cancelReason;
-    }
+    
 
-    public void setDone() {
-        done();
+    /**
+     * This is used to set WasCancelled=true if requestedToCancel==true
+     * @return value of wasCancelled
+     */
+    public boolean confirmRequestToCancel() {
+        if (!getWasCancelled() && getRequestedToCancel()) {
+            setWasCancelled(true);
+        }
+        return getWasCancelled();
     }
-    public void done() {
+    
+    
+    public void setWasCancelled(boolean b) {
+        bWasCancelled = b;
+        if (b) this.cancelledTime = System.currentTimeMillis();
+    }
+    public boolean getWasCancelled() {
+        return bWasCancelled;
+    }
+    
+    public String getCancelledReason() {
+        return this.cancelledReason;
+    }
+    public void setCancelledReason(String s) {
+        this.cancelledReason = s;
+    }
+    
+    
+    public void setDone() {
         doneTime = System.currentTimeMillis();
     }
-    public boolean isDone() {
+    public boolean getDone() {
         return (doneTime > 0);
     }
     public long getDoneTime() {
         return doneTime;
+    }
+    
+    public String getDoneMessage() {
+        return doneMessage;
+    }
+    public void setDoneMessage(String s) {
+        this.doneMessage = s;
     }
     
     public Exception getException() {
@@ -181,13 +212,6 @@ public class OAProcess implements Runnable {
         return ((maxTime + createdTime) > ms);
     }
     
-    public String getReturnMessage() {
-        return returnMessage;
-    }
-    public void setReturnMessage(String msg) {
-        this.returnMessage = msg;
-    }
-
     public void setPause(boolean b) {
         this.pause = b;
     }
