@@ -52,7 +52,6 @@ public class HubDataDelegate {
 	}
 	public static void resizeToFit(Hub thisHub) {
 		if (thisHub.data.vector == null) return; // could be called during serialization
-//LOG.config("resizing, from:"+thisHub.data.vector.capacity()+", to:"+x+", hub:"+thisHub);//qqqqqqqq                        
 		thisHub.data.vector.trimToSize();
 	}
 
@@ -173,10 +172,6 @@ public class HubDataDelegate {
         int pos;
         if (bIsRemovingAll) {
             pos = -1;
-            /*
-            if (thisHub.data.vector.remove(obj)) pos = 0;
-            else pos = -1;
-            */
         }
         else {
 	        pos = thisHub.getPos(obj);
@@ -186,7 +181,6 @@ public class HubDataDelegate {
         }
 
 	    if (pos >= 0) {
-
 	        boolean b = (obj instanceof OAObject);	        
             if (b) {
                 b = ((thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()));
@@ -194,7 +188,13 @@ public class HubDataDelegate {
                     if ( ((OAObject) obj).isChanged()) {
                         if (thisHub.datam.getMasterObject() != null) {
                             // could be ServerRoot
-                            b = true;
+                            OALinkInfo li = thisHub.datam.liDetailToMaster;
+                            if (li != null && !li.getCalculated()) {
+                                li = li.getReverseLinkInfo();
+                                if (li != null && !li.getCalculated()) {
+                                    b = true;
+                                }
+                            }
                         }
                     }
                 }
@@ -434,6 +434,7 @@ public class HubDataDelegate {
 	    <p>
 	    Note: if masterHub (or one of its shared) has a linkHub, it will still be updated.
 	*/
+	
 	public static int getPos(final Hub thisHub, Object object, final boolean adjustMaster, final boolean bUpdateLink) {
 	    int pos;
 	    if (object == null || thisHub == null) return -1;
@@ -630,26 +631,31 @@ public class HubDataDelegate {
 	}
 	public static boolean contains(Hub hub, Object obj, final boolean bJustAdded) {
         if (hub == null || obj == null) return false;
+        
+        final int size = hub.data.vector.size();
+        if (size == 0) return false;
+
+        if (bJustAdded) {
+            for (int i=1; i<3; i++) {
+                if (hub.data.vector.elementAt(size-i) == obj) {
+                    return true;
+                }
+            }
+        }
+        
+        if (size < 35) {
+            if (size == 0) return false;
+            return containsDirect(hub, obj);
+        }
+        
         if (!(obj instanceof OAObject)) {
             if (!hub.data.isOAObjectFlag()) {
                 return containsDirect(hub, obj);
             }
+            // oaObjectKey, or Id value
             obj = OAObjectCacheDelegate.get(hub.getObjectClass(), obj);
             if (obj == null) return false;
         }        
-        
-        int size = hub.data.vector.size(); 
-        if (size < 25) {
-            return containsDirect(hub, obj);
-        }
-        
-        if (bJustAdded) {
-        	for (int i=1; i<3; i++) {
-        		if (hub.data.vector.elementAt(size-i) == obj) {
-        			return true;
-        		}
-        	}
-        }
         
         if (!hub.data.isOAObjectFlag()) {
             return containsDirect(hub, obj);
@@ -658,14 +664,20 @@ public class HubDataDelegate {
         boolean b = OAObjectHubDelegate.isAlreadyInHub((OAObject) obj, hub);
         return b;
     }
+	
+	
     public static boolean containsDirect(Hub hub, Object obj) {
         if (hub == null || obj == null) return false;
-        if (hub.data.vector.size() > 125 && hub.data.getSortListener() != null) {
-            int x = findUsingQuickSort(hub, obj);
-            if (x == 1) return true;
-            if (x == 2) return false;
-            if (x == -1) return false;
-            if (x == -3) return false;
+        int x = hub.data.vector.size();
+        if (x == 0) return false;
+        if (x > 125) {
+            if (hub.data.getSortListener() != null) {
+                x = findUsingQuickSort(hub, obj);
+                if (x == 1) return true;
+                if (x == 2) return false;
+                if (x == -1) return false;
+                if (x == -3) return false;
+            }
         }
         return hub.data.vector.contains(obj);
     }
