@@ -100,10 +100,10 @@ public class OAFile extends java.io.File {
 		char ch = File.separatorChar;
 		if (ch == '/') {
 			fileName = fileName.replace('\\', '/');
-			fileName = OAString.convert(fileName, "//", "/");
+			//was:  fileName = OAString.convert(fileName, "//", "/");
 		} else {
 			fileName = fileName.replace('/', '\\');
-			fileName = OAString.convert(fileName, "\\\\", "\\");
+			//was: fileName = OAString.convert(fileName, "\\\\", "\\"); // bug: if using \\comp\c$\abc\xyz
 		}
 		if (bEndWithSlashChar && !fileName.endsWith(FS)) {
 			fileName += File.separatorChar;

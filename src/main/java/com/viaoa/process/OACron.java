@@ -27,7 +27,7 @@ import com.viaoa.util.OAString;
         *     *     *   *    *        command to be executed
         -     -     -   -    -
         |     |     |   |    |
-        |     |     |   |    +----- day of week (0-6) (Sunday=0) - Java: 1-7 (Sunday=1)
+        |     |     |   |    +----- day of week (0-6) (Sunday=0) - *Java: 1-7 (Sunday=1)
         |     |     |   +---------- month (1-12) - Java: 0-11    
         |     |     +-------------- day of month (1-31), also allows "last"
         |     +-------------------- hour (0 - 23)

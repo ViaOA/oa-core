@@ -173,37 +173,45 @@ public class OACompare {
 	}
 
 	public static boolean isBetween(Object value, Object fromValue, Object toValue) {
-		if (value == null) {
-			return false;
-		}
-		if (toValue == null) {
-			return false;
-		}
-		int x = compare(value, fromValue);
-		if (x <= 0) {
-			return false;
-		}
-
-		x = compare(value, toValue);
-		if (x >= 0) {
-			return false;
-		}
-		return true;
+		return isBetween(value, fromValue, toValue, -1);
 	}
 
+    public static boolean isBetween(Object value, Object fromValue, Object toValue, int deciPlaces) {
+        if (value == null) {
+            return false;
+        }
+        if (toValue == null) {
+            return false;
+        }
+        int x = compare(value, fromValue, deciPlaces);
+        if (x <= 0) {
+            return false;
+        }
+
+        x = compare(value, toValue, deciPlaces);
+        if (x >= 0) {
+            return false;
+        }
+        return true;
+    }
+	
+	
 	public static boolean isEqualOrBetween(Object value, Object fromValue, Object toValue) {
+	    return isEqualOrBetween(value, fromValue, toValue, -1);
+	}
+    public static boolean isEqualOrBetween(Object value, Object fromValue, Object toValue, int deciPlaces) {
 		if (value == null) {
 			return (fromValue == null);
 		}
 		if (toValue == null) {
 			return false;
 		}
-		int x = compare(value, fromValue);
+		int x = compare(value, fromValue, deciPlaces);
 		if (x < 0) {
 			return false;
 		}
 
-		x = compare(value, toValue);
+		x = compare(value, toValue, deciPlaces);
 		if (x > 0) {
 			return false;
 		}
@@ -211,38 +219,65 @@ public class OACompare {
 	}
 
 	public static boolean isBetweenOrEqual(Object value, Object fromValue, Object toValue) {
-		return isEqualOrBetween(value, fromValue, toValue);
+		return isEqualOrBetween(value, fromValue, toValue, -1);
 	}
+    public static boolean isBetweenOrEqual(Object value, Object fromValue, Object toValue, int deciPlaces) {
+        return isEqualOrBetween(value, fromValue, toValue, deciPlaces);
+    }
 
 	public static boolean isGreater(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x > 0;
 	}
+    public static boolean isGreater(Object value, Object fromValue, int deciPlaces) {
+        int x = compare(value, fromValue, deciPlaces);
+        return x > 0;
+    }
 
 	public static boolean isEqualOrGreater(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x >= 0;
 	}
+    public static boolean isEqualOrGreater(Object value, Object fromValue, int deciPlaces) {
+        int x = compare(value, fromValue, deciPlaces);
+        return x >= 0;
+    }
 
 	public static boolean isGreaterOrEqual(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x >= 0;
 	}
+    public static boolean isGreaterOrEqual(Object value, Object fromValue, int deciPlaces) {
+        int x = compare(value, fromValue, deciPlaces);
+        return x >= 0;
+    }
 
 	public static boolean isLess(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x < 0;
 	}
+    public static boolean isLess(Object value, Object fromValue, int deciPlaces) {
+        int x = compare(value, fromValue, deciPlaces);
+        return x < 0;
+    }
 
 	public static boolean isEqualOrLess(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x <= 0;
 	}
+    public static boolean isEqualOrLess(Object value, Object fromValue, int deciPlaces) {
+        int x = compare(value, fromValue, deciPlaces);
+        return x <= 0;
+    }
 
 	public static boolean isLessOrEqual(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x <= 0;
 	}
+    public static boolean isLessOrEqual(Object value, Object fromValue, int deciPlaces) {
+        int x = compare(value, fromValue, deciPlaces);
+        return x <= 0;
+    }
 
 	public static int compare(int a, int b) {
 		if (a == b) {

@@ -225,6 +225,30 @@ public class OADate extends OADateTime {
 		return (i <= 0);
 	}
 
+    public boolean betweenOrEqual(Object obj1, Object obj2) {
+        return isBetweenOrEqual(obj1, obj2);
+    }
+    public boolean isBetweenOrEqual(Object obj1, Object obj2) {
+        int i = compareTo(obj1);
+        if (i < 0) {
+            return false;
+        }
+        i = compareTo(obj2);
+        return (i <= 0);
+    }
+
+    public boolean betweenNotEqual(Object obj1, Object obj2) {
+        return isBetweenNotEqual(obj1, obj2);
+    }
+    public boolean isBetweenNotEqual(Object obj1, Object obj2) {
+        int i = compareTo(obj1);
+        if (i <= 0) {
+            return false;
+        }
+        i = compareTo(obj2);
+        return (i < 0);
+    }
+    
 	/**
 	 * Converts this date to a String value using default format. The default format is the first format that has been set: "format",
 	 * "dateOutputFormat" else or "yyyy-MMM-dd" See OADateTime for list of formatting symbols.
@@ -319,4 +343,5 @@ public class OADate extends OADateTime {
 		LocalDate ld = LocalDate.of(getYear(), getMonth() + 1, getDay());
 		return ld;
 	}
+
 }
