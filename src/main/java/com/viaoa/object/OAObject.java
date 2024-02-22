@@ -335,6 +335,9 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * Generic way for getting any property or value as a String value.
 	 */
 	public String getPropertyAsString(String propName) {
+	    
+	    // todo:  get format used by propertyInfo	    
+	    
 		return getPropertyAsString(propName, null);
 	}
 

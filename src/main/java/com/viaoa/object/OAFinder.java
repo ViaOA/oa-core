@@ -1053,6 +1053,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		addFilter(f);
 	}
 
+    public void addEqualFilter(String pp, Object matchValue, int decimalPlaces) {
+        OAEqualFilter f = new OAEqualFilter(pp, matchValue, decimalPlaces);
+        addFilter(f);
+    }
+	
 	public void addTrueFilter(String pp) {
 		addFilter(new OAEqualFilter(pp, Boolean.TRUE));
 	}

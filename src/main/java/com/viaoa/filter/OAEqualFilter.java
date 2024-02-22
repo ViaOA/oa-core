@@ -47,12 +47,20 @@ public class OAEqualFilter implements OAFilter {
         this.matchValue = matchValue;
     }
 
+    public OAEqualFilter(String pp, Object matchValue,  boolean bIgnoreCase) {
+        this(pp==null?null:new OAPropertyPath(pp), matchValue, bIgnoreCase);
+    }
+    
     public OAEqualFilter(OAPropertyPath pp, Object matchValue, boolean bIgnoreCase) {
         this.pp = pp;
         this.matchValue = matchValue;
         this.bIgnoreCase = bIgnoreCase;
     }
 
+    public OAEqualFilter(String pp, Object matchValue, int deciPlaces) {
+        this(pp==null?null:new OAPropertyPath(pp), matchValue, deciPlaces);
+    }
+    
     public OAEqualFilter(OAPropertyPath pp, Object matchValue, int deciPlaces) {
         this.pp = pp;
         this.matchValue = matchValue;
