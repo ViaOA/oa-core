@@ -1,13 +1,6 @@
 package com.viaoa.util;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,6 +13,21 @@ public class OATimeZone {
 	private static String[] shortNames;
 	private static TimeZone tzUTC;
 
+    public static final String TZ_NewYork = "America/New_York"; // Eastern
+	public static final String TZ_Chicago = "America/Chicago";  // Central
+    public static final String TZ_Phoenix = "America/Phoenix"; // Mountain
+    public static final String TZ_LosAngeles = "America/Los_Angeles";  // Pacific
+    public static final String TZ_Anchorage = "America/Anchorage";
+    public static final String TZ_London = "Europe/London";
+    public static final String TZ_Tokyo = "Asia/Tokyo";
+    public static final String TZ_HongKong = "Asia/Hong_Kong";
+    public static final String TZ_GMT = "GMT";
+    public static final String TZ_UTC = "UTC";
+    public static final String TZ_Zulu = "Zulu";  // UTC-00
+    // public static final String TZ_ = "";
+    
+		
+	
 	public static class TZ {
 		public String id;
 		public String utcValue;  // ex:  -2:00
@@ -77,11 +85,17 @@ public class OATimeZone {
 	}
 	
 	private static final Object lockTimeZones = new Object();
+	private static long msNextUpdate = 0;
+	
 	public static ArrayList<TZ> getOATimeZones() {
-		if (alTZ == null) {
+		if (alTZ == null || msNextUpdate < System.currentTimeMillis()) {
 	        synchronized (lockTimeZones) {
 	            if (alTZ == null) {
 	                alTZ = _getOATimeZones();
+	                
+	                OADate d = new OADate();
+	                d = (OADate) d.addDay();
+	                msNextUpdate = d.getTime();
 	            }	            
 	        }
 		}
@@ -198,9 +212,40 @@ public class OATimeZone {
 		return null;
 	}
 
-	public static void main(String[] args) {
-		getOATimeZones();
+    public static void main(String[] args) {
+        {
+            OATimeZone.TZ tz = OATimeZone.getOATimeZone("America/Chicago");  
+            OADateTime dtNow = (new OADateTime()).convertTo(tz);
+            OADate dToday = new OADate( dtNow.convertTo(tz) );
+            int i = 0;
+            i++;
+        }
+        
+	    int i = 0;
+	    for (TZ tz : getOATimeZones()) {
+	        System.out.println((++i) + ") " + tz.getDisplay());
+	    }
 
+        final OATimeZone.TZ tzz = OATimeZone.getOATimeZone("America/Chicago");  
+        final OADateTime dtNowz = (new OADateTime()).convertTo(tzz);
+		
+		
+		TZ tz1 = getOATimeZone("UTC-06");
+		TZ tz2 = getOATimeZone("CST");
+        TZ tz3 = getOATimeZone("CDT");
+        
+        
+        OATimeZone.TZ tz = OATimeZone.getOATimeZone("America/Chicago");
+        OADateTime dtNow = new OADateTime();
+
+        OADateTime dtNowCST = dtNow.convertTo(tz);
+        OADateTime dtx = dtNow.convertTo(tz1);
+        dtx = dtNow.convertTo(tz2);
+        dtx = dtNow.convertTo(tz3);
+		
+		
+		int xx = 4;
+		xx++;
 		//System.out.println(tz.getDisplay());
 	}
 }

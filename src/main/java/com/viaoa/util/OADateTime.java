@@ -1400,6 +1400,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			try {
 				c.setTimeZone(tz.timeZone);
 				dt = new OADateTime(c);
+				
+		        if (this instanceof OADate) {
+		            dt = new OADate(dt);
+		        } else if (this instanceof OATime) {
+                    dt = new OATime(dt);
+		        }
 			} finally {
 				poolGregorianCalendar.release(c);
 			}
