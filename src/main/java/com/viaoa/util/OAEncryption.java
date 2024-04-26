@@ -227,6 +227,15 @@ public class OAEncryption {
 		return hash;
 	}
 
+    public static String getUUID(String value) {
+        String s = UUID.fromString(value).toString();
+        return s;
+    }
+    public static String getUUID() {
+        String s = UUID.randomUUID().toString();
+        return s;
+    }
+	
 	public static void main(String[] args) throws Exception {
 		String s = "";
 
@@ -254,9 +263,5 @@ public class OAEncryption {
 		System.out.println("Hashed ==> \"" + s4 + "\"");
 	}
 
-	public static String getUUID(String base) {
-		String s = UUID.randomUUID().toString();
-		return s;
-	}
 
 }
