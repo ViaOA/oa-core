@@ -803,7 +803,7 @@ public class OAJacksonDeserializerLoader {
 			} else {
 				String pp = stackItem.li.getSelectFromPropertyPath();
 				if (OAString.isNotEmpty(pp)) {
-					OAPropertyPath ppx = new OAPropertyPath(stackItem.oi.getForClass(), pp);
+					OAPropertyPath ppx = new OAPropertyPath(stackItem.parent.oi.getForClass(), pp);
 					hub = (Hub) ppx.getValue(stackItem.parent.obj);
 				}
 			}
