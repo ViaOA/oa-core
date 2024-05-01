@@ -560,7 +560,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 	public String getDisplayName() {
 		if (displayName == null && thisClass != null) {
-			displayName = thisClass.getName();
+			displayName = thisClass.getSimpleName();
 		}
 		return displayName;
 	}

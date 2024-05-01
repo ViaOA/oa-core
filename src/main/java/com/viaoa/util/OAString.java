@@ -4058,6 +4058,10 @@ public class OAString {
 		return indexOf(value, searchValue, startPos, false);
 	}
 
+    public static int indexOf(String value, String searchValue, boolean bIgnoreCase) {
+        return indexOf(value, searchValue, 0, bIgnoreCase);
+    }
+	
 	public static int indexOf(String value, String searchValue, int startPos, boolean bIgnoreCase) {
 		if (value == null || searchValue == null) {
 			return -1;
