@@ -122,6 +122,9 @@ public class OAFile extends java.io.File {
 		return filePath;
 	}
 
+	/**
+	 * Get the direcory (path) for a file path.
+	 */
 	public static String getDirectoryName(String filePath) {
 		filePath = filePath.replace('\\', '/');
 		String dir = ".";
