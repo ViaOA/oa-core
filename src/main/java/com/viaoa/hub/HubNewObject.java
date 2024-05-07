@@ -71,6 +71,7 @@ public class HubNewObject<F extends OAObject> {
 				return;
 			}
 			((OAObject) obj).setAutoAdd(false);
+			hubMain.remove(obj); // in case it's a selectAll Hub and it was added
 		});
 
 		hubNewObject.onRemove((event) -> {
@@ -91,7 +92,7 @@ public class HubNewObject<F extends OAObject> {
 		if (obj != null) {
 			OAObjectKey ok = obj.getObjectKey();
 			if (obj.isNew() && ok.isEmpty()) {
-				obj.setObjectDefaults();
+				// obj.setObjectDefaults(); // 20240507 this should be called when object is created. 
 				if (OAObjectDSDelegate.getAssignIdOnCreate(obj)) {
 					OAObjectDSDelegate.assignId(obj);
 				}
