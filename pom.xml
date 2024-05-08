@@ -273,7 +273,9 @@
                  note: a password window used to popup when building, but not now 
                  
                * see console output to where it is sent to maven central  
-               do the same for oa-jfc, oa-web                 
+               do the same for oa-jfc, oa-web 
+               
+               see: https://help.sonatype.com/en/configuring-your-project-for-deployment.html#deployment-with-the-nexus-staging-maven-plugin
             -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
