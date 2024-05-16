@@ -32,7 +32,7 @@ public class OAXml extends OAJson {
 		if (xmlObjectMapper == null) {
 			synchronized (lock) {
 				if (xmlObjectMapper == null) {
-					createXmlObjectMapper();
+				    xmlObjectMapper = createXmlObjectMapper();
 				}				
 			}
 		}

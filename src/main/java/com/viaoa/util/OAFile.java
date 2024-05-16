@@ -235,7 +235,7 @@ public class OAFile extends java.io.File {
 		InputStream is = new FileInputStream(file);
 		OutputStream os = new FileOutputStream(fileTo);
 
-		int bufferSize = 1024 * 8;
+		int bufferSize = 32 * 1024;
 		byte[] bs = new byte[bufferSize];
 
 		for (int i = 0;; i++) {
