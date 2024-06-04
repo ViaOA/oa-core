@@ -148,13 +148,14 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             }
             
             
-            // find using equalPropertyPath, or equalPropertyPath
+            // find using selectFromPropertyPath, or equalPropertyPath
             final OALinkInfo liRev = li.getReverseLinkInfo();
             String spp = liRev.getSelectFromPropertyPath();
             if (OAStr.isNotEmpty(spp)) {
                 OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
                 pp = pp.getReversePropertyPath();
-                spp = pp.getPropertyPath();
+                if (pp == null) spp = null;
+                else spp = pp.getPropertyPath();
             }
             else {
                 spp = li.getEqualPropertyPath();
@@ -163,8 +164,11 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                     if (OAStr.isNotEmpty(s)) {
                         OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
                         pp = pp.getReversePropertyPath();
-                        s = pp.getPropertyPath();
-                        spp += "." + s;
+                        if (pp == null) spp = null;
+                        else {
+                            s = pp.getPropertyPath();
+                            spp += "." + s;
+                        }
                     }
                     else spp = null;
                 }

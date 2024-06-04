@@ -31,7 +31,7 @@ import com.viaoa.util.OAString;
  * Load oaobject classes into pojo structure that will allow pojo (json) to be loaded automatically into OAObjects. <br>
  * This is then used by json.OAJacksonDeserializerLoader to load POJOs to JSON to OAObjects.
  * <p>
- * Note: the pojo generator for oamodels might not have pkey properties for pojo objects, so this is a way to uses importMatches and link
+ * Note: the pojo generator for oamodels might not have pkey properties for pojo objects, so this is a way to use importMatches and link
  * unique values that are defined in the model to find exact matches.
  * <p>
  * <ul>
@@ -248,6 +248,7 @@ public class OAObjectPojoLoader implements Serializable {
 		}
 
 		final OALinkInfo lpRev = lp.getReverseLinkInfo();
+		if (lpRev == null) return;
 		final String pp = lpRev.getEqualPropertyPath();
 		if (OAString.isEmpty(pp)) {
 			return;

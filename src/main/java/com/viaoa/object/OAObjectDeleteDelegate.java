@@ -128,18 +128,21 @@ public class OAObjectDeleteDelegate {
                 if (OAStr.isNotEmpty(spp)) {
                     OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
                     pp = pp.getReversePropertyPath();
-                    spp = pp.getPropertyPath();
+                    if (pp == null) spp = null;
+                    else spp = pp.getPropertyPath();
                 }
                 else {
                     spp = li.getEqualPropertyPath();
                     if (OAStr.isNotEmpty(spp)) {
                         String s = liRev.getEqualPropertyPath();
                         if (OAStr.isNotEmpty(s)) {
-                            // qqqqq need to reverse it and add to spp  qqqqqqqqqqqqqq
                             OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
                             pp = pp.getReversePropertyPath();
-                            s = pp.getPropertyPath();
-                            spp += "." + s;
+                            if (pp == null) spp = null;
+                            else {
+                                s = pp.getPropertyPath();
+                                spp += "." + s;
+                            }
                         }
                         else spp = null;
                     }
@@ -228,7 +231,8 @@ public class OAObjectDeleteDelegate {
 				if (OAStr.isNotEmpty(spp)) {
                     OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
 				    pp = pp.getReversePropertyPath();
-                    spp = pp.getPropertyPath();
+				    if (pp == null) spp = null;
+				    else spp = pp.getPropertyPath();
 				}
 				else {
 				    spp = li.getEqualPropertyPath();
@@ -237,8 +241,11 @@ public class OAObjectDeleteDelegate {
 	                    if (OAStr.isNotEmpty(s)) {
 	                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
 	                        pp = pp.getReversePropertyPath();
-	                        s = pp.getPropertyPath();
-	                        spp += "." + s;
+	                        if (pp == null) spp = null;
+	                        else {
+	                            s = pp.getPropertyPath();
+	                            spp += "." + s;
+	                        }
 	                    }
 	                    else spp = null;
 				    }

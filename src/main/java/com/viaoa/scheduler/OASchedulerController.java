@@ -127,9 +127,9 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         OAPropertyPath pp = new OAPropertyPath(hubFrom.getObjectClass(), ppSchedule);
         
         OAPropertyPath ppRev = pp.getReversePropertyPath();
-        OALinkInfo[] lis = ppRev.getLinkInfos();
+        OALinkInfo[] lis = ppRev == null ? null : ppRev.getLinkInfos();
         if (lis == null || lis.length == 0) {
-            
+            // no-op
         }
         else if (lis.length == 1 && lis[0].getType() == OALinkInfo.TYPE_MANY) {
             type = 1;

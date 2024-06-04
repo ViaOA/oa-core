@@ -1310,14 +1310,16 @@ public class OAJacksonDeserializerLoader {
 				int x = OAString.dcount(s, ".") - OAString.dcount(sppToMatch, ".");
 				OAPropertyPath ppx = new OAPropertyPath(stackItem.oi.getForClass(), s);
 				ppx = ppx.getReversePropertyPath();
-				OALinkInfo[] lisx = ppx.getLinkInfos();
-
-				for (int i = 0; i < x; i++) {
-					if (extraPp == null) {
-						extraPp = "";
-					}
-					extraPp += ".";
-					extraPp += lisx[i].getName();
+				if (ppx != null) {
+    				OALinkInfo[] lisx = ppx.getLinkInfos();
+    
+    				for (int i = 0; i < x; i++) {
+    					if (extraPp == null) {
+    						extraPp = "";
+    					}
+    					extraPp += ".";
+    					extraPp += lisx[i].getName();
+    				}
 				}
 			} else {
 				continue;

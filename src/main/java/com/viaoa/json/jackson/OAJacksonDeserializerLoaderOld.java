@@ -650,6 +650,9 @@ public class OAJacksonDeserializerLoaderOld {
 		}
 
 		OAPropertyPath ppRev = ppx.getReversePropertyPath();
+        if (ppRev == null) {
+            return false;
+        }
 		if (ppRev.getEndLinkInfo() == null) {
 			return false;
 		}
@@ -953,6 +956,9 @@ public class OAJacksonDeserializerLoaderOld {
 		}
 
 		OAPropertyPath ppEquals2Rev = ppEquals2.getReversePropertyPath();
+        if (ppEquals2Rev == null) {
+            return false;
+        }
 		if (ppEquals2Rev.getEndLinkInfo() == null) {
 			return false;
 		}
@@ -1079,6 +1085,9 @@ public class OAJacksonDeserializerLoaderOld {
 		}
 
 		OAPropertyPath ppRev = ppx.getReversePropertyPath();
+        if (ppRev == null) {
+            return;
+        }
 		if (ppRev.getEndLinkInfo() == null) {
 			return;
 		}
@@ -1775,6 +1784,7 @@ public class OAJacksonDeserializerLoaderOld {
 		}
 
 		OAPropertyPath ppRev = ppx.getReversePropertyPath();
+		if (ppRev == null) return false;
 		if (ppRev.getEndLinkInfo() == null) {
 			return false;
 		}
@@ -2150,6 +2160,9 @@ public class OAJacksonDeserializerLoaderOld {
 		}
 
 		OAPropertyPath ppEquals2Rev = ppEquals2.getReversePropertyPath();
+        if (ppEquals2Rev == null) {
+            return false;
+        }
 		if (ppEquals2Rev.getEndLinkInfo() == null) {
 			return false;
 		}

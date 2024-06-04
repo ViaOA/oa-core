@@ -26,6 +26,9 @@ import com.viaoa.sync.OASyncDelegate;
  * Undo Support for OA.gui components.
  *
  * @see #createUndoManager see UndoableController
+ * 
+ * @see OAThreadLocalDelegate 
+ * 
  */
 public class OAUndoManager extends UndoManager {
 

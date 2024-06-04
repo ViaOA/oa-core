@@ -76,15 +76,7 @@ public class HubGroupByOrig<A extends OAObject, B extends OAObject> {
         hubB = new Hub<B>((Class<B>) cs[cs.length-1]);
         HubMerger hm = new HubMerger(hubA, hubB, propertyPath, false, true);
         
-        
-        OAPropertyPath ppRev;
-        try {
-            ppRev = pp.getReversePropertyPath();
-        }
-        catch (Exception e) {
-            ppRev = null;
-        }
-        
+        OAPropertyPath ppRev = pp.getReversePropertyPath();
         if (ppRev != null) {
             hubDetail = hubB.getDetailHub(ppRev.getPropertyPath());
             hubDetailFiltered = new Hub(hubA.getObjectClass());
