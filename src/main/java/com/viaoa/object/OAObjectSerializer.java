@@ -560,11 +560,10 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		*/
 
 		wcnter++;
-		LOG.fine(wcnter + ") " + msg);
-
-		OAPerformance.LOG.fine(wcnter + ") " + msg);
 		if (OAObject.getDebugMode()) {
-			System.out.println("OAObjectSerializer.writeObject " + wcnter + ") " + msg);
+	        LOG.finer(wcnter + ") " + msg);
+	        OAPerformance.LOG.finer(wcnter + ") " + msg);
+			// System.out.println("OAObjectSerializer.writeObject " + wcnter + ") " + msg);
 		}
 	}
 
@@ -679,10 +678,10 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		}
 
 		rcnter++;
-		LOG.fine(rcnter + ") " + msg);
-		OAPerformance.LOG.fine(rcnter + ") " + msg);
 		if (OAObject.getDebugMode()) {
-			System.out.println("OAObjectSerializer.readObject " + rcnter + ") " + msg);
+	        LOG.finer(rcnter + ") " + msg);
+	        OAPerformance.LOG.finer(rcnter + ") " + msg);
+			// System.out.println("OAObjectSerializer.readObject " + rcnter + ") " + msg);
 		}
 	}
 

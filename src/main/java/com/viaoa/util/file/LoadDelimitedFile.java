@@ -49,10 +49,16 @@ public abstract class LoadDelimitedFile {
         int pos = 0;
         String[] flds = new String[0];
         StringTokenizer tok = new StringTokenizer(line, sep, true);
+        boolean bLastWasSep = true;
         for ( ;tok.hasMoreTokens(); ) {
             String word = tok.nextToken();
             if (word.equals(sep)) {
                 pos++;
+                if (bLastWasSep) {
+                    flds = Arrays.copyOf(flds, pos);
+                    flds[pos-1] = "";
+                }
+                bLastWasSep = true;
             }
             else {
                 int x = word.length();
@@ -63,6 +69,7 @@ public abstract class LoadDelimitedFile {
                 }
                 flds = Arrays.copyOf(flds, pos+1);
                 flds[pos] = word;
+                bLastWasSep = false;
             }
         }
         return flds;
