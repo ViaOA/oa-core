@@ -12,9 +12,7 @@ package com.viaoa.hub;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.object.OACascade;
@@ -350,10 +348,17 @@ public class HubDelegate {
 	 * @param arrayList same as hubNew, but using an arrayList
 	 * @return level of status.
 	 */
-	public static <T> HubCurrentStateEnum getCurrentState(final Hub<T> thisHub, final Hub<T> hubNew, final ArrayList<T> alNew) {
+    public static <T> HubCurrentStateEnum getCurrentState(final Hub<T> thisHub, final Hub<T> hubNew, final ArrayList<T> alNew) {
+        return _getCurrentState(thisHub, hubNew, alNew, new HashSet<Hub>());
+    }
+	protected static <T> HubCurrentStateEnum _getCurrentState(final Hub<T> thisHub, final Hub<T> hubNew, final ArrayList<T> alNew, final Set<Hub> hmHub) {
 		if (thisHub == null) {
 			return HubCurrentStateEnum.InSync;
 		}
+		if (hmHub.contains(thisHub)) {
+            return null;
+		}
+		hmHub.add(thisHub);
 
 		Hub hub = thisHub;
 		Hub hubMaster;
@@ -454,7 +459,7 @@ public class HubDelegate {
 		if (hubFilter != null) {
 			Hub hubx = hubFilter.getMasterHub();
 
-			HubCurrentStateEnum hcs = getCurrentState(hubx, null, null);
+			HubCurrentStateEnum hcs = _getCurrentState(hubx, null, null, hmHub);
 			if (hcs == HubCurrentStateEnum.InSync) {
 				return hcs;
 			}
@@ -463,7 +468,7 @@ public class HubDelegate {
 			}
 
 			Hub hubTemp = new Hub();
-			getCurrentState(hubx, hubTemp, null);
+			_getCurrentState(hubx, hubTemp, null, hmHub);
 
 			for (Object objx : hubTemp) {
 				if (!hubFilter.isUsed(objx)) {
@@ -482,7 +487,7 @@ public class HubDelegate {
 			if (al != null) {
 				HubCurrentStateEnum hcs = null;
 				for (Hub hubx : al) {
-					hcs = getCurrentState(hubx, null, null);
+					hcs = _getCurrentState(hubx, null, null, hmHub);
 					if (hcs != HubCurrentStateEnum.InSync) {
 						break;
 					}
@@ -495,7 +500,7 @@ public class HubDelegate {
 				}
 
 				for (Hub hubx : al) {
-					getCurrentState(hubx, hubNew, alNew);
+					hcs = _getCurrentState(hubx, hubNew, alNew, hmHub);
 				}
 				return hcs;
 			}
@@ -503,7 +508,7 @@ public class HubDelegate {
 		} else if (hubMerger != null) {
 			Hub hubx = hubMerger.getRootHub();
 
-			HubCurrentStateEnum hcs = getCurrentState(hubx, null, null);
+			HubCurrentStateEnum hcs = _getCurrentState(hubx, null, null, hmHub);
 
 			if (hcs == HubCurrentStateEnum.InSync) {
 				if (!OAThreadLocalDelegate.isHubMergerChanging() && !hubMerger.isLoadingCombinedHub()) {
@@ -517,7 +522,7 @@ public class HubDelegate {
 
 			Hub hubTemp = new Hub();
 
-			getCurrentState(hubx, hubTemp, null);
+			_getCurrentState(hubx, hubTemp, null, hmHub);
 
 			OAFinder finder = new OAFinder(hubMerger.getPath());
 
