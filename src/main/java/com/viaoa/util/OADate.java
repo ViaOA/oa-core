@@ -134,6 +134,7 @@ public class OADate extends OADateTime {
 	 */
 	public OADate(OADateTime odt) {
 		super(odt);
+        this.timeZone = null;
 		clearTime();
 	}
 
