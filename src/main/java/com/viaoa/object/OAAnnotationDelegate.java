@@ -97,7 +97,10 @@ public class OAAnnotationDelegate {
 				oi.setLookup(oaclass.isLookup());
 				oi.setProcessed(oaclass.isProcessed());
 				oi.setPluralName(oaclass.pluralName());
-				oi.setLowerName(oaclass.lowerName());
+				
+	            s = oaclass.lowerName();
+	            if (OAStr.isEmpty(s)) s = OAString.mfcl(clazz.getSimpleName()); 
+	            oi.setLowerName(s);
 
 				oi.setSoftDeleteProperty(oaclass.softDeleteProperty());
 				oi.setSoftDeleteReasonProperty(oaclass.softDeleteProperty());
@@ -185,7 +188,7 @@ public class OAAnnotationDelegate {
 			if (oaprop == null) {
 				continue;
 			}
-			String name = getPropertyName(m.getName());
+			final String name = getPropertyName(m.getName());
 			if (hs.contains("prop." + name)) {
 				continue;
 			}
@@ -198,12 +201,14 @@ public class OAAnnotationDelegate {
 				oi.addPropertyInfo(pi);
 			}
 
+			s = oaprop.lowerName();
+            if (OAStr.isEmpty(s)) s = OAString.mfcl(name); 
+            pi.setLowerName(s);
+
 			pi.setImportMatch(oaprop.importMatch());
 
 			pi.setFkeyOnly(oaprop.isFkeyOnly());
-
-			pi.setLowerName(oaprop.lowerName());
-
+			
 			s = oaprop.displayName();
 			if (OAString.isEmpty(s)) {
 				s = OAString.getDisplayName(name);
@@ -410,6 +415,10 @@ public class OAAnnotationDelegate {
 			} else {
 				ci.setDependentProperties(annotation.properties());
 			}
+			
+            s = annotation.lowerName();
+            if (OAStr.isEmpty(s)) s = OAString.mfcl(name); 
+            ci.setLowerName(s);
 			ci.setOACalculatedProperty(annotation);
 			ci.setClassType(m.getReturnType());
 			ci.setHtml(annotation.isHtml());
@@ -454,7 +463,9 @@ public class OAAnnotationDelegate {
 
 			li.setImportMatch(annotation.importMatch());
 
-			li.setLowerName(annotation.lowerName());
+            s = annotation.lowerName();
+            if (OAStr.isEmpty(s)) s = OAString.mfcl(name); 
+            li.setLowerName(s);
 
 			s = annotation.displayName();
 			if (OAString.isEmpty(s)) {
@@ -552,6 +563,10 @@ public class OAAnnotationDelegate {
 			}
 			hs.add("link." + name);
 
+            s = annotation.lowerName();
+            if (OAStr.isEmpty(s)) s = OAString.mfcl(name); 
+            li.setLowerName(s);
+			
 			s = annotation.displayName();
 			if (OAString.isEmpty(s)) {
 				s = OAString.getDisplayName(name);

@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
 import com.viaoa.annotation.OACalculatedProperty;
+import com.viaoa.util.OAString;
 
 /** Used to define calculated properties for OAObject.  A Calculated property is a read only property that
     depends on other properties for its value. 
@@ -55,6 +56,7 @@ public class OACalcInfo implements java.io.Serializable {
     private static Logger LOG = Logger.getLogger(OACalcInfo.class.getName());
     
     String name;
+    String lowerName;
     String[] dependentProperties;  // dependent properties
     private OACalculatedProperty oaCalculatedProperty;
     private Class classType;
@@ -109,6 +111,18 @@ public class OACalcInfo implements java.io.Serializable {
     public String getName() {
         return name;
     }
+    
+    public String getLowerName() {
+        if (OAString.isNotEmpty(lowerName)) {
+            return lowerName;
+        }
+        return OAString.mfcl(name);
+    }
+
+    public void setLowerName(String name) {
+        this.lowerName = name;
+    }
+    
     
     public boolean isHtml() {
         return isHtml;
