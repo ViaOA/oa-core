@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.viaoa</groupId>
     <artifactId>oa-core</artifactId>
-    <version>3.7.8</version>
+    <version>3.7.9</version>
     <packaging>jar</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -257,23 +257,19 @@
 
             <!-- 
                == mavencentral deploy ==
-               run mvn "clean"
-               run mvn "deploy" 
-               
+                run mvn "clean"
+                run mvn "deploy" 
+
                 uses GnuGP windows
-                
-                was:
                     ** make sure tha gpg agent is running      
                       * take out the "Qqq" in the next line
-                    PS C:\Program Files (x86)\GnuPG\bin> gpgconf -Qqq-launch gpg-agent
-                    PS C:\Program Files (x86)\GnuPG\bin> gpg-agent
-                    gpg-agent[6632]: gpg-agent running and available
-                
-               need to have this run when sending to maven central repo, 
-                 note: a password window used to popup when building, but not now 
-                 
-               * see console output to where it is sent to maven central  
-               do the same for oa-jfc, oa-web 
+                    powershell
+                    cd C:\Program Files (x86)\GnuPG\bin
+                    gpgconf -Qqq-launch gpg-agent
+                    gpg-agent
+                    "gpg-agent[6632]: gpg-agent running and available"
+
+               .m2/settings.xml needs to have server for ossrh, that uses token for user/pw, that are generated under user profile on mavencentral                
                
                see: https://help.sonatype.com/en/configuring-your-project-for-deployment.html#deployment-with-the-nexus-staging-maven-plugin
             -->
@@ -292,6 +288,8 @@
                 </executions>
             </plugin>
 
+
+
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -299,7 +297,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <nexusUrl>https://oss.sonatype.org</nexusUrl>
 
                     <!-- Set this to true and the release will automatically proceed and 
                         sync to Central Repository will follow -->
