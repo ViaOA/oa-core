@@ -13,10 +13,7 @@ package com.viaoa.util;
 import java.sql.Time;
 import java.text.DateFormat;
 import java.time.LocalDate;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * Date class that combines Calendar, Date and SimpleDateFormat into a single class.
@@ -125,17 +122,16 @@ public class OADate extends OADateTime {
 	 * Create a new date that uses a specified Calendar.
 	 */
 	public OADate(Calendar c) {
-		super(c);
-		clearTime();
+		super(c.get(c.YEAR), c.get(c.MONTH), c.get(c.DATE));
+		this.timeZone = c.getTimeZone();
 	}
 
 	/**
 	 * Create a new date that uses a specified OADateTime.
 	 */
 	public OADate(OADateTime odt) {
-		super(odt);
-        this.timeZone = null;
-		clearTime();
+		super(odt.getYear(), odt.getMonth(), odt.getDay());
+		this.timeZone = odt.getTimeZone();
 	}
 
 	/**

@@ -25,8 +25,11 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Vector;
 
-/*
-    Superclass of OADate and OATime that combines Calendar, Date and SimpleDateFormat.
+/**
+    Superclass of OADate and OATime that combines Calendar, Date, Time, TimeZone, Calendar, LocalDateTime, and SimpleDateFormat.
+
+<pre>
+    Formatting:
 
     MM/dd HH:mm:ss
     MM/dd/yy HH:mm:ss
@@ -66,7 +69,7 @@ import java.util.Vector;
     Formatting Symbols used for output display.
 
     SEE: https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html
-    <pre>
+
     G  era designator          (Text)              AD
     y  year                    (Number)            1996
     M  month in year           (Number)            1, 2, 3, 4 .. 10, 11, 12
@@ -113,22 +116,12 @@ import java.util.Vector;
     "yyyy.MMMMM.dd GGG hh:mm aaa"     ->>  1996.July.10 AD 12:08 PM
     "yyyy.MM.dd HH:mm:ss.SSS"
 
-
     "E dd M yyyy hh:mm:ss a z"          ->> Thu 30 3 2017 11:58:21 AM EDT
     "EE dd MM yyyy hh:mm:ss a zz"       ->> Thu 30 03 2017 11:58:52 AM EDT
     "EEE dd MMM yyyy hh:mm:ss a zzz"    ->> Thu 30 Mar 2017 11:59:35 AM EDT
     "EEEE dd MMMM yyyy hh:mm:ss a zzzz" ->> Thursday 30 March 2017 12:00:33 PM Eastern Daylight Time
-
-
-
     </pre>
-
     <br>
-    Formatting is used to convert OADateTime to a String and also for parsing a String to create
-    an OADateTime.
-    <p><b>Note:</b>
-    OADateTimes are not affected by timezone.  A date/time created on one system will be the same on
-    another machine, even if the timezone is different.
 
     @see #setGlobalOutputFormat
     @see java.text.SimpleDateFormat
@@ -154,7 +147,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		simpleDateFormats = new SimpleDateFormat[12]; // keeps a pool of 12 that are shared in a "round robin" pool
 	}
 
-	
 	
 	// RFC-339 format 
 	// Note: the 'Z' is not a timezone, it means that the timezone should be set to UTC.  
@@ -189,7 +181,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		defaultTimeZone = tz;
 	}
 
-	public static TimeZone getDefaulttimeZone() {
+	public static TimeZone getDefaultTimeZone() {
 		return defaultTimeZone;
 	}
 
@@ -358,8 +350,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			this._time = System.currentTimeMillis();
 		} else {
 			this._time = c.getTimeInMillis();
-		}
-		if (c != null) {
 			this.timeZone = c.getTimeZone();
 		}
 	}
@@ -444,7 +434,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	/**
 	 * @param year  full year (not year minus 1900 like Date)
 	 * @param month 0-11
-	 * @param day   day of the month
+	 * @param day   day of the month 1-31
 	 */
 	public OADateTime(int year, int month, int day) {
 		this(new Date(year - 1900, month, day));
@@ -468,16 +458,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		this._time += milsecs;
 	}
 
-	/**
-	 * Flag to know if the date.time (long ms) value should be sent, which is the raw value. Default is false, so times do not get
-	 * converted.
-	 */
-	private static final boolean bSerializeTimeValue = false;
-	//todo: set up a getter/setter for this?
-	//   qqqq client apps would need to make sure that they are the same as server
 
-	// This will fix the bug in JDK and will keep date/times the same across different timezones.
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
+	    // 20240805  
+	    if (timeZone != null && timeZone != defaultTimeZone) {
+            stream.writeInt(9990); // version
+            stream.writeUTF(timeZone.getID());
+	    }
+	    
 		if (this instanceof OADate) {
 			GregorianCalendar cal = _getCal();
 			try {
@@ -521,9 +509,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		// might want to add TimeZone
-		// in.defaultReadObject();
 		int x = in.readInt();
+		String tzId = null;
+		if (x == 9990) {
+		    tzId = in.readUTF();
+	        x = in.readInt();
+		}
+		
 		if (x == 9997) {
 			int year = in.readInt();
 			int month = in.readInt();
@@ -564,6 +556,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			this._time = d.getTime();
 			this._time += milisecond;
 		}
+		
+		if (tzId != null) {
+		    TimeZone tz = OATimeZone.getTimeZoneById(tzId);
+		    this.timeZone = tz;
+		}
+		
 	}
 
 	private int getField(int fld) {
@@ -705,7 +703,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			c.set(c.YEAR, 1970);
 			c.set(c.MONTH, c.JANUARY);
 			c.set(c.DATE, 1);
-			_time = c.getTimeInMillis();
+			
+			// these are added to make sure timezone is calculated correctly
+			c.set(c.HOUR_OF_DAY, get24Hour());
+            c.set(c.MINUTE, getMinute());
+            c.set(c.SECOND, getSecond());
+            c.set(c.MILLISECOND, getMilliSecond());
+			
+            _time = c.getTimeInMillis();
 		} finally {
 			_releaseCal(c);
 		}
@@ -942,9 +947,16 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	public void setTimeZoneUTC() {
 		setTimeZone(OATimeZone.getTimeZoneUTC());
 	}
+
+    public void setTimeZone(OATimeZone.TZ tz) {
+        setTimeZone(tz.timeZone);
+    }
+	
 	
 	/**
-	 * Change the tz and keep the same other values (day,month,hour,etc). Use convertTo(tz) to have values adjusted.
+	 * Change the tz and keep the same other values (day,month,hour,etc). 
+	 * This changes the time (long) value.
+	 * Use convertTo(tz) to have values adjusted and the time (long) to stay the same.
 	 */
 	public void setTimeZone(TimeZone tz) {
 		if (tz == timeZone) {
@@ -968,9 +980,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 
 		this._time = calNew.getTimeInMillis();
-		// 20230910 removed this:
-		//was: ?? this._time += ms;
-
 		this.timeZone = tz;
 	}
 
@@ -1343,7 +1352,25 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			dtThis = this;
 			dtObj = d;
 		}
-
+		if (dtThis instanceof OADate) {
+		    if (dtThis.getYear() == dtObj.getYear()) {
+	            if (dtThis.getMonth() == dtObj.getMonth()) {
+	                if (dtThis.getDay() == dtObj.getDay()) {
+	                    return 0;
+	                }
+	            }
+		    }
+		}
+		else if (dtThis instanceof OATime) {
+            if (dtThis.get24Hour() == dtObj.get24Hour()) {
+                if (dtThis.getSecond() == dtObj.getSecond()) {
+                    if (dtThis.getMilliSecond() == dtObj.getMilliSecond()) {
+                        return 0;
+                    }
+                }
+            }
+        }
+		
 		if (dtThis._time == dtObj._time) {
 			return 0;
 		}
@@ -1358,10 +1385,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Convert the current dt to a different tz, and adjusting it's values
-	 *
-	 * @param tz
-	 * @return
+	 * Convert the current dt to a different tz, which will adjust the (long) time value, affecting  (year,month,day,hour) values
+	 * Note: for OADate year,month,day(,hour,min..) are not affected, only the timezone
+	 * Note: for OATime only hour and timezone are affected.
 	 */
 	public OADateTime convertTo(TimeZone tz) {
 		OADateTime dt;
@@ -1377,6 +1403,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		try {
 			c.setTimeZone(tz);
 			dt = new OADateTime(c);
+            if (this instanceof OADate) {
+                dt = new OADate(dt);
+            } else if (this instanceof OATime) {
+                dt = new OATime(dt);
+            }
 		} finally {
 			poolGregorianCalendar.release(c);
 		}
@@ -1385,7 +1416,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	public OADateTime convertTo(OATimeZone.TZ tz) {
-		
 		OADateTime dt;
 		if (this instanceof OADate) {
 			dt = new OADate(this);
@@ -1396,19 +1426,21 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 
 		if (tz != null) {
-			GregorianCalendar c = dt._getCal();
-			try {
-				c.setTimeZone(tz.timeZone);
-				dt = new OADateTime(c);
-				
-		        if (this instanceof OADate) {
-		            dt = new OADate(dt);
-		        } else if (this instanceof OATime) {
-                    dt = new OATime(dt);
-		        }
-			} finally {
-				poolGregorianCalendar.release(c);
-			}
+            if (this instanceof OADate) {
+                dt.setTimeZone(tz);
+            }
+            else {
+    		    GregorianCalendar c = dt._getCal();
+    			try {
+    				c.setTimeZone(tz.timeZone);
+    				dt = new OADateTime(c);
+    		        if (this instanceof OATime) {
+                        dt = new OATime(dt);
+    		        }
+    			} finally {
+    				poolGregorianCalendar.release(c);
+    			}
+            }
 		}
 		return dt;
 	}
@@ -2262,16 +2294,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		int xx = 4;
 		xx++;
 	}	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	public static void test(int id) {
 		for (int i = 0;; i++) {

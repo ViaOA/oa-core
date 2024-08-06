@@ -121,8 +121,8 @@ public class OATime extends OADateTime {
 	 */
 	public OATime(OADateTime od) {
 		super(od);
-        this.timeZone = null;
 		clearDate();
+		this.timeZone = od.getTimeZone();
 	}
 
 	/**

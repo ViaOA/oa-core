@@ -32,7 +32,7 @@ import com.viaoa.util.OATime;
 
 /*
 
-* can now use propertyPaths with hubs in them, the results will be comma seperated string
+* can now use propertyPaths with hubs in them, the results will be comma separated string
 
         <%=ifnot CustomItem%>
             <%=item.name%>
@@ -62,7 +62,7 @@ import com.viaoa.util.OATime;
 
 
       <%=foreach SalesOrderItems%>
-      <%=foreachend SalesOrderItems%>
+      <%=foreachend SalesOrderItems%>   or   <%=foreachend%> 
 
         <td style="text-align:right">
             <%=count$, "R,"%>

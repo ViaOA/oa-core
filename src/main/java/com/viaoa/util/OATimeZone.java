@@ -1,7 +1,7 @@
 package com.viaoa.util;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Helper for building timezone list, display and lookups.
@@ -13,24 +13,33 @@ public class OATimeZone {
 	private static String[] shortNames;
 	private static TimeZone tzUTC;
 
+    public static final String TZ_Eastern = "America/New_York";
     public static final String TZ_NewYork = "America/New_York"; // Eastern
-	public static final String TZ_Chicago = "America/Chicago";  // Central
+    
+    public static final String TZ_Central = "America/Chicago";  // Central
+    public static final String TZ_Chicago = "America/Chicago";  // Central
+    
+    public static final String TZ_Mountain = "America/Phoenix"; 
     public static final String TZ_Phoenix = "America/Phoenix"; // Mountain
+    
+    public static final String TZ_Pacific = "America/Los_Angeles";
     public static final String TZ_LosAngeles = "America/Los_Angeles";  // Pacific
+    
     public static final String TZ_Anchorage = "America/Anchorage";
     public static final String TZ_London = "Europe/London";
     public static final String TZ_Tokyo = "Asia/Tokyo";
     public static final String TZ_HongKong = "Asia/Hong_Kong";
+
     public static final String TZ_GMT = "GMT";
-    public static final String TZ_UTC = "UTC";
     public static final String TZ_Zulu = "Zulu";  // UTC-00
     // public static final String TZ_ = "";
     
+    public static final String TZ_UTC = "UTC";
 		
 	
 	public static class TZ {
 		public String id;
-		public String utcValue;  // ex:  -2:00
+		public String utcValue; 
 		public String shortName;
 		public String longName;
 		public TimeZone timeZone;
@@ -198,6 +207,46 @@ public class OATimeZone {
 		return null;
 	}
 
+	/**
+	 * 
+	 * @param value number from UTC, 0 to +14, and -12 to 0
+	 * @return
+	 */
+    public static TZ getUtcTimeZone(int value) {
+        String s = "UTC" + (value > 0 ? "+" : "-") + String.format("%02d", Math.abs(value));
+        for (TZ tz : getOATimeZones()) {
+            if (s.equalsIgnoreCase(tz.utcValue)) {
+                return tz;
+            }
+        }
+        return null;
+    }
+
+    private static ArrayList<TZ> alTZhold;
+    private static Map<String, TZ> hmTZbyId = new ConcurrentHashMap();
+    
+    public static TimeZone getTimeZoneById(String id) {
+        if (alTZhold != alTZ) {
+            hmTZbyId.clear();
+            alTZhold = alTZ;
+        }
+
+        if (OAString.isEmpty(id)) {
+            id = TimeZone.getDefault().getID();
+        }
+        
+        TZ tzx = hmTZbyId.get(id);
+        if (tzx != null) return tzx.timeZone;
+        
+        for (TZ tz : getOATimeZones()) {
+            if (id.equalsIgnoreCase(tz.id)) {
+                hmTZbyId.put(id, tz);
+                return tz.timeZone;
+            }
+        }
+        return null;
+    }
+    
 	public static TZ getOATimeZone(String value) {
 		if (OAString.isEmpty(value)) {
 			value = TimeZone.getDefault().getID();

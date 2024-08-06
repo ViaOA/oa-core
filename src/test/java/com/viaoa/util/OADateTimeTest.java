@@ -1,20 +1,25 @@
 package com.viaoa.util;
 
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
-
-import org.junit.Test;
-
 import static org.junit.Assert.*;
+
+import java.util.*;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
 
 public class OADateTimeTest extends OAUnitTest {
 
-//qqqqqqqqqqq create test for new OADateTime(OADate, OATime)    
+    public static OATimeZone.TZ tzChicago;
+
+    @Before
+    public void init() {
+        tzChicago = OATimeZone.getOATimeZone(OATimeZone.TZ_Chicago);  
+    }
+    
+        
     
     @Test
     public void dateTimeTest() {
@@ -373,7 +378,7 @@ public class OADateTimeTest extends OAUnitTest {
         xx++;
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void mainJ(String[] args) throws Exception {
     	OADateTimeTest test = new OADateTimeTest();
     	test.timezonTest3();
     }
@@ -461,5 +466,180 @@ public class OADateTimeTest extends OAUnitTest {
             dt = dt.addDays(1);
         }
     }
+    
+    @Test 
+    public void convertToTZ() throws Exception {
+        OADateTime dt = new OADateTime();
+        OADateTime dt2 = dt.convertTo(tzChicago);  
+        assertEquals(0, dt.compare(dt2));
+        
+        dt = dt.addDay();
+        dt2 = dt2.addDay();
+        assertEquals(0, dt.compare(dt2));
+        
+        dt.setTimeZone(tzChicago);
+        assertNotEquals(0, dt.compare(dt2));
+    }
+    
+    @Test 
+    public void convertToTZ_date() throws Exception {
+        OADate dt = new OADate();
+        assertNotNull(dt.getTimeZone());
+        assertEquals(0, dt.get24Hour());
+        
+        OADate dt2 = (OADate) dt.convertTo(tzChicago);  
+        assertNotNull(dt.getTimeZone());
+        assertEquals(0, dt2.get24Hour());
+        
+        dt.equals(dt2);
+        assertEquals(dt, dt2);
+    }
+    
+    @Test 
+    public void convertToTZ_time() throws Exception {
+        OATime dt = new OATime();
+        int day = dt.getDay();
+        int hr = dt.get24Hour();
+        
+        dt = (OATime) dt.convertTo(tzChicago);
+        int day2 = dt.getDay();
+        assertEquals(day, day2);
+        
+        int hr2 = dt.get24Hour();
+        assertNotEquals(hr, hr2);
+        
+        dt = (OATime) dt.convertTo(tzChicago);
+        int hr3 = dt.get24Hour();
+        assertEquals(hr2, hr3);
+    }
+    
+    @Test 
+    public void convertToTZ_2() throws Exception {
+        /*
+         * Change timeZone for OADateTime can change the year/month/day/hour, and the Timezone
+         */
+        final OADateTime dtNowCentralTime = (new OADateTime(2024, OADateTime.JULY, 01, 0, 0, 0)).convertTo(tzChicago);
+        assertEquals(tzChicago.timeZone, dtNowCentralTime.getTimeZone());
+        assertNotEquals(OADateTime.JULY, dtNowCentralTime.getMonth());
+        assertNotEquals(1, dtNowCentralTime.getDay());
+        assertNotEquals(0, dtNowCentralTime.get24Hour());
+        assertEquals(0, dtNowCentralTime.getMinute());
+        assertEquals(0, dtNowCentralTime.getSecond());
+        
+    }
+
+    @Test 
+    public void convertToTZ_3() throws Exception {
+        /*
+         * Change timeZone for OADate should not change the month/day/year, only the Timezone
+         */
+        OADate d = new OADate(2024, OADateTime.JULY, 1);
+        d = (OADate) d.convertTo(tzChicago);
+        
+        assertEquals(tzChicago.timeZone, d.getTimeZone());
+        assertEquals(OADateTime.JULY, d.getMonth());
+        assertEquals(1, d.getDay());
+        assertEquals(0, d.get24Hour());
+        assertEquals(0, d.getMinute());
+        assertEquals(0, d.getSecond());
+    }
+
+    @Test 
+    public void convertToTZ_4() throws Exception {
+        /*
+         * changing timezone for OATime should only change the hour (not y/m/d..)
+         */
+        OATime d = new OATime(0, 0, 0);
+        
+        assertEquals(1970, d.getYear());
+        assertEquals(d.JAN, d.getMonth());
+        assertEquals(1, d.getDay());
+        assertEquals(0, d.get24Hour());
+        assertEquals(0, d.getMinute());
+        assertEquals(0, d.getSecond());
+        
+        d.setTimeZone(tzChicago);
+        assertEquals(tzChicago.timeZone, d.getTimeZone());
+        assertEquals(1970, d.getYear());
+        assertEquals(d.JAN, d.getMonth());
+        assertEquals(1, d.getDay());
+        assertEquals(0, d.get24Hour());
+        assertEquals(0, d.getMinute());
+        assertEquals(0, d.getSecond());
+        
+        d = new OATime(0, 0, 0);
+        d = (OATime) d.convertTo(tzChicago);
+        assertEquals(tzChicago.timeZone, d.getTimeZone());
+        assertEquals(1970, d.getYear());
+        assertEquals(d.JAN, d.getMonth());
+        assertEquals(1, d.getDay());
+        assertNotEquals(0, d.get24Hour());
+        assertEquals(0, d.getMinute());
+        assertEquals(0, d.getSecond());
+        
+        
+    }
+    
+    
+    @Test 
+    public void convertToTZ_a() throws Exception {
+        OADateTime dtNowCentralTime = (new OADateTime()).convertTo(tzChicago);
+        dtNowCentralTime.set24Hour(0);
+
+        final OADate dCentral = new OADate(dtNowCentralTime.getYear(), dtNowCentralTime.getMonth(), dtNowCentralTime.getDay());
+
+        OADateTime dt = new OADateTime(dtNowCentralTime);
+        dt.setTimeZone(OATimeZone.getOATimeZone(OATimeZone.TZ_NewYork));
+        
+        OADate d = new OADate(dtNowCentralTime);
+        
+        
+        
+        
+        int xx = 4;
+        xx++;
+    }
+    
+    @Test 
+    public void convertToTZ_b() throws Exception {
+        for (int i=-12; i<14; i++) {
+            OATimeZone.TZ tz = OATimeZone.getUtcTimeZone(i);
+            assertNotNull(tz);
+        }
+
+    }
+    
+    
+    public static void main(String[] args) throws Exception {
+        OATimeZone.getOATimeZone(OATimeZone.TZ_Chicago);  
+        OADateTimeTest test = new OADateTimeTest();
+        test.convertToTZ_a();
+    }
+    
+    @Test 
+    public void convertToTZ3() throws Exception {
+        OADate dt = new OADate();
+        int h = dt.get24Hour();
+        
+        dt.convertTo(tzChicago);
+        int h2 = dt.get24Hour();
+        
+        assertEquals(0, h);
+        assertEquals(h, h2);
+    }
+    
+    @Test 
+    public void convertToTZ4() throws Exception {
+        OADate dt = new OADate();
+        int h = dt.get24Hour();
+
+        dt.setTimeZone(tzChicago);
+        int h2 = dt.get24Hour();
+        
+        assertEquals(0, h);
+        assertEquals(h, h2);
+    }
+    
+    
 }
 
