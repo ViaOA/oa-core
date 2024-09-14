@@ -10,25 +10,14 @@
 */
 package com.viaoa.template;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.model.oa.VString;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAProperties;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OATime;
+import com.viaoa.object.*;
+import com.viaoa.util.*;
 
 /*
 
@@ -62,7 +51,7 @@ import com.viaoa.util.OATime;
 
 
       <%=foreach SalesOrderItems%>
-      <%=foreachend SalesOrderItems%>   or   <%=foreachend%> 
+      <%=foreachend SalesOrderItems%>   or   <%=foreachend%>   or <%=end%>
 
         <td style="text-align:right">
             <%=count$, "R,"%>
@@ -125,6 +114,7 @@ import com.viaoa.util.OATime;
  *  <tr header='true'>  used by first row of a table, that will be printed as heading when table spans multiple pages.
  *  <div pagebreak='no'>  block tag to disable page breaks.
  *
+ *  <div pagebreak='yes'>  block tag to force a page breaks.
  *
  *  OAHTMLReport will automatically set property values for $DATE, $TIME, $PAGE parameters
  *  <br>
@@ -239,6 +229,11 @@ public class OATemplate<F extends OAObject> {
 
 		if (rootTreeNode == null) {
 			rootTreeNode = createTree(template);
+			
+			if (template.toLowerCase().indexOf("<html") >= 0) {
+    			// check for case where foreach has it's own table row
+    	        removeRowTags(rootTreeNode);
+			}
 		}
 
 		// need to find out which object to use
@@ -305,7 +300,7 @@ public class OATemplate<F extends OAObject> {
 	}
 
 	protected TreeNode createTree(String doc) {
-		//qqqq        alDependentProperties.clear();
+		//qqqq   alDependentProperties.clear();
 		if (doc == null) {
 			doc = "";
 		}
@@ -318,9 +313,150 @@ public class OATemplate<F extends OAObject> {
 		alToken = parseTokens(html);
 		posToken = 0;
 		parse(root);
+		
 		return root;
 	}
 
+	protected void removeRowTags(TreeNode treeNode) {
+	    if (treeNode == null) return;
+	    
+        final int x = treeNode.alChildren.size();
+	    
+	    for (int i=0; i<x; i++) {
+	        final TreeNode tn = treeNode.alChildren.get(i);
+	        
+	        if (tn.tagType == TagType.ForEach) {
+	            _removeRowTags(treeNode, i);
+	        }
+	        removeRowTags(tn);
+        }
+	}
+
+	
+	protected void _removeRowTags(TreeNode treeNode, int childPos) {
+	    
+	    TreeNode tn = treeNode.alChildren.get(childPos-1);
+        _removeRowTagsBefore(tn);
+
+        tn = treeNode.alChildren.get(childPos).alChildren.get(0).alChildren.get(0);
+        _removeRowTagsAfter(tn);
+        
+        int x = treeNode.alChildren.get(childPos).alChildren.get(0).alChildren.size();
+        tn = treeNode.alChildren.get(childPos).alChildren.get(0).alChildren.get(x-1);
+        _removeRowTagsBefore(tn);
+        
+        tn = treeNode.alChildren.get(childPos+1);
+        _removeRowTagsAfter(tn);
+        
+        int qq = 4;
+        qq++;
+           
+	}
+	
+	protected void _removeRowTagsBefore(TreeNode treeNode) {
+        /*        
+             <tr>
+                <td>
+        */        
+
+        String find = "<tr><td>";
+        int findPos = find.length() - 1;
+        
+        String find2 = "<table";
+        int findPos2 = find2.length() - 1;
+
+        String find3 = "</tr";
+        int findPos3 = find3.length() - 1;
+        
+        String s = treeNode.arg1;
+        
+        for (int i=s.length()-1; i>=0; i--) {
+            char ch = s.charAt(i);
+            ch = Character.toLowerCase(ch);
+            char ch2 = find.charAt(findPos);
+            if (ch == ch2) {
+                findPos--;
+                if (findPos < 0) {
+                    s = s.substring(0, i);
+                    break;
+                }
+            }
+            
+            ch2 = find2.charAt(findPos2);
+            if (ch == ch2) {
+                findPos2--;
+                if (findPos2 < 0) {
+                    break;
+                }
+            }
+
+            ch2 = find3.charAt(findPos3);
+            if (ch == ch2) {
+                findPos3--;
+                if (findPos3 < 0) {
+                    break;
+                }
+            }
+        }
+        treeNode.arg1 = s;
+	}        
+    protected void _removeRowTagsAfter(TreeNode treeNode) {
+        
+        String s = treeNode.arg1;
+        
+/*  remove beginning qqqqqq      
+        ForeachEND
+                </td>
+              </tr>
+  
+*/        
+        String find = "</td></tr>";
+        int findPos = 0;
+        int x = s.length();
+        
+        String find2 = "<tr>";
+        int findPos2 = 0;
+
+        String find3 = "</table";
+        int findPos3 = 0;
+        
+        for (int i=0; i<x; i++) {
+            char ch = s.charAt(i);
+            ch = Character.toLowerCase(ch);
+            char ch2 = find.charAt(findPos);
+            if (ch == ch2) {
+                findPos++;
+                if (findPos == find.length()) {
+                    s = s.substring(i+1);
+                    break;
+                }
+            }
+            
+            ch2 = find2.charAt(findPos2);
+            if (ch == ch2) {
+                findPos2++;
+                if (findPos2 == find2.length()) {
+                    break;
+                }
+            }
+            
+            ch2 = find3.charAt(findPos3);
+            if (ch == ch2) {
+                findPos3++;
+                if (findPos3 == find3.length()) {
+                    break;
+                }
+            }
+        }
+        treeNode.arg1 = s;
+    }
+	
+	
+	
+	
+	
+	
+	
 	protected String preprocess(String doc) {
 		return preprocess(doc, null);
 	}
@@ -568,7 +704,7 @@ public class OATemplate<F extends OAObject> {
 		TagType tagType;
 		String arg1, arg2, arg3;
 		String errorMsg;
-		ArrayList<TreeNode> alChildren = new ArrayList<TreeNode>(5);
+		final ArrayList<TreeNode> alChildren = new ArrayList<TreeNode>(5);
 	}
 
 	static class Token {
@@ -702,6 +838,9 @@ public class OATemplate<F extends OAObject> {
 		}
 		return b;
 	}
+	
+	
+	private int cntInDataGrid;
 
 	protected boolean _generate(final TreeNode node, final OAObject obj, final Hub hub, StringBuilder sb, final OAProperties props,
 			final int cntStop) {
@@ -730,25 +869,59 @@ public class OATemplate<F extends OAObject> {
 				bProcessChildren = false;
 				Object objValue;
 				if (obj != null && !OAString.isEmpty(node.arg1)) {
-					objValue = this.getProperty(obj, node.arg1);
+					objValue = obj.getProperty(node.arg1);
 				} else {
 					objValue = hub;
 				}
 
 				if (objValue instanceof Hub) {
-					Hub h = (Hub) objValue;
-					for (int i = 0;; i++) {
-						hmForEachCounter.put(node.arg1, i + 1);
-						OAObject oa = (OAObject) h.elementAt(i);
-						if (oa == null) {
-							break;
-						}
-						for (TreeNode dn : node.alChildren) {
-							if (!generate(dn, oa, hub, sb, props, cntStop)) {
-								return false;
-							}
-						}
-					}
+	                final OAObjectGrid og = createObjectGrid(node, (Hub) objValue);
+	                if (og != null) {
+	                    cntInDataGrid++;
+	                    int x = og.getRowCount();
+	                    
+	                    final Map<String, Integer> hmPropertyToColumn = new HashMap();
+                        int col = 0;
+                        for (OAObjectGrid.Column colx : og.getColumns()) {
+                            String spp = og.getPropertyPathFromRoot(colx, "");
+                            hmPropertyToColumn.put(spp, col);
+                            col++;
+                        }
+	                    
+	                    for (int row = 0; row < x; row++) {
+	                        hmForEachCounter.put(node.arg1, row + 1); //qqqq might want counter to be object counter, not row counter
+	                        TreeNode node2 = node.alChildren.get(0);
+	                        for (TreeNode dn : node2.alChildren) {
+                                OAObject oa = null; 
+	                            if (dn.tagType == TagType.GetProp || dn.tagType == TagType.ForEach) {
+	                                // find column in dataGrid
+	                                OAPropertyPath pp = new OAPropertyPath( ((Hub) objValue).getObjectClass(), dn.arg1);
+	                                final String sppLinks = pp.getPropertyPathLinksOnly();
+	                                col = hmPropertyToColumn.get(sppLinks);
+                                    oa = (OAObject) og.getObject(row, col);
+	                            }
+	                            if (!generate(dn, oa, hub, sb, props, cntStop)) {
+	                                return false;
+	                            }
+	                        }
+	                    }
+                        cntInDataGrid--;
+	                }
+	                else {
+	                    final Hub h = (Hub) objValue;
+    					for (int i = 0;; i++) {
+    						hmForEachCounter.put(node.arg1, i + 1);
+    						OAObject oa = (OAObject) h.elementAt(i);
+    						if (oa == null) {
+    							break;
+    						}
+    						for (TreeNode dn : node.alChildren) {
+    							if (!generate(dn, oa, hub, sb, props, cntStop)) {
+    								return false;
+    							}
+    						}
+    					}
+	                }
 				} else {
 					if (obj != null) {
 						LOG.warning("Hub for 'Foreach' not found");
@@ -943,7 +1116,59 @@ public class OATemplate<F extends OAObject> {
 		return true;
 	}
 
-	/**
+	protected OAObjectGrid createObjectGrid(TreeNode node, Hub hub) {
+        OAObjectGrid og = new OAObjectGrid();
+        final OAObjectGrid.Column colRoot = og.addColumn(hub);
+        
+        node = node.alChildren.get(0); // nodes between foreach .. end
+        boolean bRequired = false;
+        for (TreeNode cn : node.alChildren) {
+            if (cn.tagType != TagType.GetProp) {
+                if (cn.tagType != TagType.ForEach) continue;
+            }
+        
+            // make columns for pp
+            OAPropertyPath pp = new OAPropertyPath(hub.getObjectClass(), cn.arg1);
+            OALinkInfo[] lis = pp.getLinkInfos();
+            if (lis == null || lis.length == 0) {
+                continue; // root column
+            }
+            
+            OAObjectGrid.Column colParent = colRoot;
+            OAObjectGrid.Column colFound = null;
+            for (OALinkInfo li : lis) {
+                if (li.getType() == OALinkInfo.TYPE_MANY) {
+                    if (cn.tagType != TagType.ForEach) {
+                        bRequired = true;
+                    }
+                }
+                boolean bFound = false;
+                for (OAObjectGrid.Column colx : og.getColumns()) {
+                    if (colFound != null) {
+                        if (colx.getFromColumn() != colFound) continue;
+                    }
+                    String sppx = colx.getPropertyPath();
+                    if (OAStr.isEmpty(sppx)) continue;
+                    if (sppx.equalsIgnoreCase(li.getName())) {
+                        colFound = colx;
+                        bFound = true;
+                        break;
+                    }
+                }
+                if (!bFound) {
+                    colFound = og.addDetailColumn(colParent, li.getName());
+                }
+                colParent = colFound;
+            }
+        }
+        if (!bRequired) {
+            if (cntInDataGrid == 0) return null;
+        }
+        og.createGrid();
+        return og;
+    }
+
+    /**
 	 * Called to be able to convert before adding to output string.
 	 */
 	protected String getOutputText(String s) {
@@ -1031,6 +1256,12 @@ public class OATemplate<F extends OAObject> {
 			}
 		} else {
 			if (obj != null && propertyName.length() > 0) {
+			    
+			    if (cntInDataGrid > 0) {
+			        int x = OAStr.dcount(propertyName, '.');
+			        if (x > 1) propertyName = OAStr.field(propertyName, '.', x);
+			    }
+			    
 				Object objx;
 				if (obj != null) {
 					objx = this.getProperty(obj, propertyName);
@@ -1114,4 +1345,5 @@ public class OATemplate<F extends OAObject> {
 		}
 		return oaObj.getProperty(propertyName);
 	}
+	
 }
