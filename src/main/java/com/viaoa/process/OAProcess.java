@@ -118,8 +118,9 @@ public class OAProcess implements Runnable {
     
 
     /**
-     * This is used to set WasCancelled=true if requestedToCancel==true
-     * @return value of wasCancelled
+     * This is used to check if requestedToCancel=true,  
+     * and if so will call setWasCancelled=true and return true.
+     * Otherwise, returns false (no request to cancel has been made).
      */
     public boolean confirmRequestToCancel() {
         if (!getWasCancelled() && getRequestedToCancel()) {
@@ -133,6 +134,12 @@ public class OAProcess implements Runnable {
         bWasCancelled = b;
         if (b) this.cancelledTime = System.currentTimeMillis();
     }
+    
+    /**
+     * Check to see if this process wasCancelled=true.
+     * Use confirmRequestCancel so that a requestToCancel can be used to 
+     * then have process cancelled.
+     */
     public boolean getWasCancelled() {
         return bWasCancelled;
     }
