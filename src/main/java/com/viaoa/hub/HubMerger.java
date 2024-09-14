@@ -132,7 +132,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 	 * @param hubRoot            root Hub. The active object of this Hub will be used to get all objects in the propertyPath.
 	 * @param hubCombinedObjects will have all of the objects from the active object of the hubRoot, using propertyPath. If
 	 *                           hubCombinedObjects.getObjectClass() is null, then it will be assigned the correct class.
-	 * @param propertyPath       dot seperated property path from the class of rootHub to the class of combinedHub.
+	 * @param propertyPath       property path from the class of rootHub to the class of combinedHub.
 	 * @param bShareActiveObject if true then the Active Object from found hub will be shared.
 	 * @param bUseAll            if true, then each object in hubRoot will be used. If false, then only the Active Object is used.
 	 * @param bIncludeRootHub    if the objects in the rootHub should also be included.
