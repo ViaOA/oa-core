@@ -527,19 +527,19 @@ public class OAString {
 								break;
 							}
 						}
-
 						j = 0;
 					}
 					continue;
 				}
 			}
 			if (j > 0) {
+                // i needs to be set back to startpos+1 and search from there
+                i -= j;
 				if (sb != null) {
-					// go back to previously matched chars
-					int b = i - j;
-					sb.append(line.substring(b, b + j));
+					sb.append(line.charAt(i));
 				}
-				j = 0;
+                j = 0;
+                continue;
 			}
 			if (i >= xl || (endPos >= 0 && i >= endPos)) {
 				break;
@@ -1372,6 +1372,7 @@ public class OAString {
 		return OAConv.toString(value, OADate.getGlobalOutputFormat());
 	}
 
+	// main format format main
 	/**
 	 * fmt/format javadoc Used to format/mask Strings using a "Pick like" format/mask String.
 	 * <p>
@@ -1390,7 +1391,7 @@ public class OAString {
 	 ' ' = trailing blanks that will be added to the end of formatted String.
 	     L = L, R, or C justified
 	     2 = decimal places - can only be ONE digit.  Rounding will be used.
-	     . = if value has to be truncated, then "..." will be the last 3 chars.  Only used with "L" justified.
+	     . = if value has to be truncated, then "..." will be used.  Only used with "L" or "R" justified.
 	     , = if you want commas to seperate numbers
 	     $ = dollar sign, only if 'R' justified  puts it in first char
 	     0 = any pad character - default space. Dont put this 1 after L/R, since
@@ -1423,6 +1424,8 @@ public class OAString {
 	     output: "(123)123-1234  "
 	 fmt("CustomerName", "8L.")
 	      output: "Custo..."
+     fmt("CustomerName", "7R.")
+          output: "...omer"
 	 * </pre>
 	 */
 	public static String format(String str, String format) {
@@ -1563,7 +1566,7 @@ public class OAString {
 				dollar = true;
 				break;
 			case '.':
-				if (lr == 'L' && !bDots) {
+				if ((lr == 'L' || lr == 'R') && !bDots) {
 					bDots = true;
 					break;
 				}
@@ -1647,11 +1650,15 @@ public class OAString {
 		if (i > len) {
 			if (len != 0) {
 				if (lr == 'R') {
-					str = str.substring(i - len);
+                    if (bDots && len > 3) {
+                        str = "..." + str.substring( (i - len) + 3);
+                    } else {
+                        str = str.substring(i - len);
+                    }
 				} else {
 					if (lr == 'L') {
 						if (bDots && len > 3) {
-							str = str.substring(0, len - 1) + "...";
+							str = str.substring(0, len - 3) + "...";
 						} else {
 							str = str.substring(0, len);
 						}
@@ -3565,7 +3572,7 @@ public class OAString {
 		if (orig == null) {
 			orig = "";
 		}
-		if (sep != null && orig.length() > 0) {
+		else if (sep != null && orig.length() > 0) {
 			orig = sep + orig;
 		}
 		orig = prepend + orig;
