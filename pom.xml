@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.viaoa</groupId>
     <artifactId>oa-core</artifactId>
-    <version>3.7.9</version>
+    <version>3.7.10</version>
     <packaging>jar</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -206,7 +206,13 @@
                     <keystore>${keystore.path}</keystore>
                     <alias>${keystore.alias}</alias>
                     <storepass>${keystore.store.password}</storepass>
-                    <!-- <tsa>http://sha256timestamp.ws.symantec.com/sha256/timestamp</tsa> -->
+                    
+<!-- 20230916 qqq qqqqqqqqqqqqqqqqqqqqqq                   
+no longer online .....   
+                    <tsa>http://sha256timestamp.ws.symantec.com/sha256/timestamp</tsa>
+                     
+                    <tsa>http://timestamp.digicert.com</tsa>
+try this new one time qqqqqqqqqqqqqqqqqq  -->                    
                 </configuration>
             </plugin>
 
