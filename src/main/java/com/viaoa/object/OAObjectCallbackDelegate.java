@@ -386,7 +386,9 @@ public class OAObjectCallbackDelegate {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !liRev.getCalculated()) {
 				objectCallback = new OAObjectCallback(Type.AllowAdd, checkType, hub, null, objMaster, liRev.getName(), objAdd);
-				processObjectCallback(objectCallback);
+                if (li.getProcessed()) objectCallback.setAllowed(false);
+                processObjectCallback(objectCallback);
+                if (!objectCallback.getAllowed()) objectCallback.setResponse("not allowed, link processed=true");
 			}
 		}
 		if (objectCallback == null) {
@@ -411,7 +413,9 @@ public class OAObjectCallbackDelegate {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !liRev.getCalculated()) {
 				objectCallback = new OAObjectCallback(Type.VerifyAdd, checkType, hub, null, objMaster, liRev.getName(), oaObj);
-				processObjectCallback(objectCallback);
+                if (li.getProcessed()) objectCallback.setAllowed(false);
+                processObjectCallback(objectCallback);
+                if (!objectCallback.getAllowed()) objectCallback.setResponse("not allowed, link processed=true");
 			}
 		}
 		if (objectCallback == null) {
@@ -468,9 +472,10 @@ public class OAObjectCallbackDelegate {
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !liRev.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.AllowNew, OAObjectCallback.CHECK_ALL, hub, null, objMaster, liRev.getName(),
-						null);
+				objectCallback = new OAObjectCallback(Type.AllowNew, OAObjectCallback.CHECK_ALL, hub, null, objMaster, liRev.getName(), null);
+				if (li.getProcessed()) objectCallback.setAllowed(false);
 				processObjectCallback(objectCallback);
+                if (!objectCallback.getAllowed()) objectCallback.setResponse("not allowed, link processed=true");
 			} else {
 				objectCallback = getAllowNewObjectCallback(hub.getObjectClass());
 				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
@@ -501,7 +506,9 @@ public class OAObjectCallbackDelegate {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !li.getCalculated()) {
 				objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, objMaster, liRev.getName(), objRemove);
+                if (li.getProcessed()) objectCallback.setAllowed(false);
 				processObjectCallback(objectCallback);
+                if (!objectCallback.getAllowed()) objectCallback.setResponse("not allowed, link processed=true");
 			}
 		}
 		if (objectCallback == null) {
@@ -532,7 +539,9 @@ public class OAObjectCallbackDelegate {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !li.getCalculated()) {
 				objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, objMaster, liRev.getName(), objRemove);
+                if (li.getProcessed()) objectCallback.setAllowed(false);
 				processObjectCallback(objectCallback);
+                if (!objectCallback.getAllowed()) objectCallback.setResponse("not allowed, link processed=true");
 			}
 		}
 		if (objectCallback == null) {
@@ -563,7 +572,9 @@ public class OAObjectCallbackDelegate {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !li.getCalculated()) {
 				objectCallback = new OAObjectCallback(Type.AllowRemoveAll, checkType, hub, null, objMaster, liRev.getName(), null);
+                if (li.getProcessed()) objectCallback.setAllowed(false);
 				processObjectCallback(objectCallback);
+                if (!objectCallback.getAllowed()) objectCallback.setResponse("not allowed, link processed=true");
 			}
 		}
 		if (objectCallback == null) {
@@ -594,7 +605,9 @@ public class OAObjectCallbackDelegate {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !li.getCalculated()) {
 				objectCallback = new OAObjectCallback(Type.VerifyRemoveAll, checkType, hub, null, objMaster, liRev.getName(), null);
+                if (li.getProcessed()) objectCallback.setAllowed(false);
 				processObjectCallback(objectCallback);
+                if (!objectCallback.getAllowed()) objectCallback.setResponse("not allowed, link processed=true");
 			}
 		}
 		if (objectCallback == null) {
@@ -669,7 +682,9 @@ public class OAObjectCallbackDelegate {
 			if (liRev != null && !liRev.getCalculated()) {
 				objectCallback = new OAObjectCallback(Type.AllowDelete, OAObjectCallback.CHECK_ALL, hub, null, objMaster, liRev.getName(),
 						objDelete);
-				processObjectCallback(objectCallback);
+                if (li.getProcessed()) objectCallback.setAllowed(false);
+                processObjectCallback(objectCallback);
+                if (!objectCallback.getAllowed()) objectCallback.setResponse("not allowed, link processed=true");
 			} else {
 				objectCallback = getAllowNewObjectCallback(hub.getObjectClass());
 				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
@@ -696,7 +711,9 @@ public class OAObjectCallbackDelegate {
 				OALinkInfo liRev = li.getReverseLinkInfo();
 				if (liRev != null && !li.getCalculated()) {
 					objectCallback = new OAObjectCallback(Type.VerifyDelete, checkType, hub, null, objMaster, liRev.getName(), objDelete);
-					processObjectCallback(objectCallback);
+	                if (li.getProcessed()) objectCallback.setAllowed(false);
+	                processObjectCallback(objectCallback);
+	                if (!objectCallback.getAllowed()) objectCallback.setResponse("not allowed, link processed=true");
 				}
 			}
 		}
