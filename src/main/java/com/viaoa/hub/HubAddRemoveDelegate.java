@@ -66,7 +66,7 @@ public class HubAddRemoveDelegate {
 			if (!thisHub.getAllowRemove(OAObjectCallback.CHECK_CallbackMethod, obj)) {
 				//was: if (!canRemove(thisHub, obj)) {
 				if (!OAThreadLocalDelegate.isDeleting(obj)) {
-					throw new RuntimeException("Cant remove object, can remove returned false");
+					throw new RuntimeException("Cant remove object, "+obj.getClass().getSimpleName()+", Hub can remove returned false");
 				}
 			}
 		}
