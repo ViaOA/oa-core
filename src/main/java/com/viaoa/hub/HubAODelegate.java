@@ -156,7 +156,7 @@ public class HubAODelegate {
 	}
 
 	/**
-	 * Main setActiveObject Naviagational method that sets the current active object. This is the central routine for changing the
+	 * Main setActiveObject Navigational method that sets the current active object. This is the central routine for changing the
 	 * ActiveObject. It is used by setPos, setActiveObject(int), setActiveObject(object), setActiveObject(object,boolean), replace,
 	 * setSharedHub
 	 *

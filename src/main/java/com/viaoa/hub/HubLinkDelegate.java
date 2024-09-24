@@ -170,13 +170,17 @@ public class HubLinkDelegate {
 		HubEventDelegate.addHubListener(linkToHub, thisHub.datau.getHubLinkEventListener());
 		thisHub.datau.getHubLinkEventListener().onNewList(null);
 
-		// 20121028
 		Object ao = thisHub.datau.getLinkToHub().getActiveObject();
-		int pos = thisHub.datau.getLinkToHub().getPos();
-
-		// fire a fake changeActiveObject
-		HubEventDelegate.fireAfterChangeActiveObjectEvent(thisHub.datau.getLinkToHub(), ao, pos, true);
-		//was: HubEventDelegate.fireAfterChangeActiveObjectEvent(thisHub.datau.linkToHub, thisHub.datau.linkToHub.getActiveObject(), 0, true);
+		 
+		if (ao == null) { // 20240919
+		    thisHub.setActiveObject(null);
+		}
+		else {
+        	int pos = thisHub.datau.getLinkToHub().getPos();
+        	// fire a fake changeActiveObject to have correct thisHub.ao set
+        	HubEventDelegate.fireAfterChangeActiveObjectEvent(thisHub.datau.getLinkToHub(), ao, pos, true);
+		}
+		
 		HubEventDelegate.fireAfterPropertyChange(thisHub, null, "Link", null, null, null);
 	}
 
