@@ -31,10 +31,10 @@ import com.viaoa.util.OAString;
 import com.viaoa.util.OAUnknownObject;
 
 /**
- * Allows OA to be able to control permission to object/hub, and allow other code/compenents to interact with objects. 
+ * Allows OA to be able to control permission to object/hub, and allow other code/components to interact with objects. 
  * Works with OAObject and Hub to determine what is allowed/permitted. 
  * 
- * Uses OAObject annoations, specific methods (onObjectCallback*, *Callback), and HubListeners.
+ * Uses OAObject annotations, specific methods (onObjectCallback*, *Callback), and HubListeners.
  * 
  * This is used to query objects, and find out if certain functions are enabled/visible/allowed, along with other interactive
  * settings/data. 
@@ -44,7 +44,7 @@ import com.viaoa.util.OAUnknownObject;
  * Used by OAJfcController and Jfc to set UI components (enabled, visible, tooltip, rendering, etc)
  *
  * @see OAObjectCallback for list of types that can be used.
- * @see OAObjCallback annotation that lists proppaths and values used for enabled/visible.
+ * @see OAObjCallback annotation that lists prop paths and values used for enabled/visible.
  * @see OAAnnotationDelegate to see how class and annotation information is stored in Info objects (class/prop/calc/link/method)
  * @author vvia
  */
@@ -1601,7 +1601,7 @@ public class OAObjectCallbackDelegate {
 	}
 
 	/**
-	 * Used by HubChangedListener.addXxx to listen to dependencies found for an ObjectCallback.
+	 * Used by HubChangeListener.addXxx to listen to dependencies found for an ObjectCallback.
 	 */
 	public static void addObjectCallbackChangeListeners(final Hub hub, final Class cz, final String prop, String ppPrefix,
 			final HubChangeListener changeListener, final boolean bEnabled) {

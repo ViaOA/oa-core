@@ -338,9 +338,6 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * Generic way for getting any property or value as a String value.
 	 */
 	public String getPropertyAsString(String propName) {
-	    
-	    // todo:  get format used by propertyInfo	    
-	    
 		return getPropertyAsString(propName, null);
 	}
 
@@ -356,14 +353,15 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * @param propName
 	 * @param fmt
 	 */
-	public String getPropertyAsString(String propName, String fmt) {
-		Object obj = getProperty(propName);
-		if (obj == null) {
-			return ""; // note: if null is sent to OAConvert.toString(...), it wont know the correct class to use to - since obj=null
-		}
-		return OAConverter.toString(obj, fmt);
-	}
-
+    public String getPropertyAsString(String propName, String fmt) {
+        Object obj = getProperty(propName);
+        if (obj == null) {
+            if (fmt == null || fmt.length() == 0) return ""; 
+        }
+        return OAConverter.toString(obj, fmt);
+    }
+	
+	
 	/*
 	    Generic way for getting any property or value as a String value.
 	    @return if value is null then nullValue, else formatted value using OAConverter.toString(value,fmt)

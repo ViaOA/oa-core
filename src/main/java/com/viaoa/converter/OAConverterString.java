@@ -28,8 +28,10 @@ public class OAConverterString implements OAConverterInterface {
     protected String convertToString(Object value, String fmt) {
     	// convert a value to a string.  Use the converter for value.getClass() to do this.
         if (value == null) {
-            if (fmt != null) value = OAString.field(fmt,";",3);
-            if (value != null) return (String) value;
+            if (fmt != null) {
+                value = OAString.field(fmt,";",3);
+                if (value != null) return (String) value;
+            }
             if (fmt == null || fmt.length() == 0) return null;
             value = "";
         }

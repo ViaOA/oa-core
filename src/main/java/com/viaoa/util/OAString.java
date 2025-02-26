@@ -1474,7 +1474,7 @@ public class OAString {
 					return dt.toString(format);
 				} catch (Exception e) {
 				}
-			} else if (str != null && str.length() < 9) {
+			} else if (str != null && str.length() < 9 && OAStr.isNumber(str)) {
 				// try number
 				try {
 					Number num = OAConv.toDouble(str);
@@ -2146,19 +2146,6 @@ public class OAString {
         return !equals(s1, s2, bIgnoreCase);
     }
 
-	/* ***
-	public static void main(String[] argv) {
-	//        String s = OAString.fmt("1234.5678", "12R2,");
-	    OAString oas = new OAString();
-	    String s = oas.fmt(argv[0], argv[1]);
-
-	    System.out.println("-------->"+s+"<------");
-
-	    // double x = OAConv.toDouble("-12345.5678");
-	    int x = OAConv.toInt("-12345.5678");
-	    System.out.println("-------->"+OAConv.toString(x, "#,###.####")+"<------");
-	}
-	*****/
 
 	public static String toString(Object obj) {
 		if (obj == null) {
@@ -2639,31 +2626,6 @@ public class OAString {
 		return newLine;
 	}
 
-	public static void mainXX(String[] args) {
-		String s = "Tymczak";
-		System.out.println(soundex(s));
-		System.out.println(soundex("Ashcraft"));
-	}
-
-	public static void mainX(String[] args) {
-
-		long xx = (long) (1234 * 1e5);
-		xx += 56789;
-		xx = (xx % 7777);
-		String codex = "" + xx;
-		String codexx = "V";
-		for (int ix = 0; ix < codex.length(); ix++) {
-			if ((Math.random() * 10) > 5) {
-				codexx += (char) ('a' + ((int) (Math.random() * 26.0)));
-			}
-			codexx += codex.charAt(ix);
-			if ((Math.random() * 10) > 5) {
-				codexx += (char) ('A' + ((int) (Math.random() * 26.0)));
-			}
-		}
-
-		System.out.println("Codexx=" + codexx);
-	}
 
 	public static boolean notEmpty(Object obj) {
 		return !isEmpty(obj, false);
@@ -3623,9 +3585,7 @@ public class OAString {
 
 	public static String concat(String toText, String value, String sepChar, boolean bForce) {
 		if (!bForce && (value == null || value.length() == 0)) {
-			if (toText == null) {
-				return "";
-			}
+			if (toText == null) return "";  // always return non-null, so a null check does not have be used.
 			return toText;
 		}
 		if (value == null) {
@@ -3868,6 +3828,67 @@ public class OAString {
 		return s;
 	}
 
+	public static String escapeJS(final String text, final char jsQuoteChar) {
+	    return escapeJs(text, jsQuoteChar, false);
+	}
+
+	protected static String escapeJs(final String text, final char jsQuoteChar, final boolean bIsJsCodeEmbeddedInHtml) {
+        if (text == null) return "";
+        final int x = text.length();
+        StringBuilder sb = null;
+
+        for (int i = 0; i < x; i++) {
+            char ch = text.charAt(i);
+
+            if (ch == '\r' || ch == '\n' || ch == '\\' || ch == jsQuoteChar || (bIsJsCodeEmbeddedInHtml && (ch == '\'' || ch == '\"'))) {
+                if (sb == null) {
+                    sb = new StringBuilder(x + 4);
+                    if (i > 0) sb.append(text.substring(0, i));
+                }
+
+                if (ch == '\'') {
+                    if (bIsJsCodeEmbeddedInHtml) sb.append("\\x27"); // x27 = "\'"
+                    //was if (bIsJsCodeEmbeddedInHtml) sb.append("\\x5Cx27");  //  x5C = "\"   x27 = "\'"
+                    else sb.append("\\" + jsQuoteChar);
+                }
+                else if (ch == '\"') {
+                    if (bIsJsCodeEmbeddedInHtml) sb.append("\\x22"); // x22 = "\""
+                    //was if (bIsJsCodeEmbeddedInHtml) sb.append("\\x5Cx22");  //  x5C = "\"   x22 = "\""
+                    else sb.append("\\" + jsQuoteChar);
+                }
+                else if (ch == '<') {
+                    sb.append("&lt;");
+                }
+                else if (ch == '>') {
+                    sb.append("&gt;");
+                }
+                else if (ch == '\n') {
+                    if (!bIsJsCodeEmbeddedInHtml) sb.append("\\n");
+                    else sb.append("\\n"); //  \n
+                    //was else sb.append("\\x5Cn"); //  \n
+                }
+                else if (ch == '\r') {
+                    // no-op
+                }
+                else if (ch == '\\') {
+                    if (!bIsJsCodeEmbeddedInHtml) sb.append("\\\\");
+                    else sb.append("\\");
+                    //was: else sb.append("\\x5C\\x5C"); // x5C = "\"
+                }
+            }
+            else {
+                if (sb != null) sb.append(ch);
+            }
+        }
+
+        if (sb == null) {
+            return text;
+        }
+        return sb.toString();
+    }
+	
+	
+	
 	public static String escapeJSON(String s) {
 		if (s == null) {
 			return null;
@@ -3878,6 +3899,7 @@ public class OAString {
 	}
 
 	static void escapeJSON(String s, StringBuffer sb) {
+	    if (s == null) return;
 		final int len = s.length();
 		for (int i = 0; i < len; i++) {
 			char ch = s.charAt(i);
@@ -3885,6 +3907,9 @@ public class OAString {
 			case '"':
 				sb.append("\\\"");
 				break;
+            case '\'':
+                sb.append("\\\'");
+                break;
 			case '\\':
 				sb.append("\\\\");
 				break;
@@ -3903,9 +3928,11 @@ public class OAString {
 			case '\t':
 				sb.append("\\t");
 				break;
+			/*
 			case '/':
 				sb.append("\\/");
 				break;
+			*/
 			default:
 				// http://www.unicode.org/versions/Unicode5.1.0/
 				if ((ch >= '\u0000' && ch <= '\u001F') || (ch >= '\u007F' && ch <= '\u009F') || (ch >= '\u2000' && ch <= '\u20FF')) {
@@ -4028,31 +4055,6 @@ public class OAString {
 		return bs;
 	}
 
-	public static void mainXx(String[] args) {
-		String s = String.format("%07d  %-10s", 12, "yyyyMMdd");
-		System.out.println("========> " + s);
-
-		s = "Item{Master";
-		String s2 = escapeJSON(s);
-		System.out.println(s + " => " + s2);
-	}
-
-	public static void main(String[] args) {
-		String s = "this is a test for the hex converter";
-		byte[] bs = s.getBytes();
-		String s21 = new String(bs);
-
-		String hex = bytesToHex(bs);
-
-		byte[] bs2 = hexToBytes(hex);
-
-		int x = OACompare.compare(bs, bs2);
-
-		String s2 = new String(bs2);
-
-		int xx = 4;
-		xx++;
-	}
 
 	public static int indexOf(String value, String searchValue) {
 		if (value == null || searchValue == null) {
@@ -4308,5 +4310,68 @@ public class OAString {
         return s.substring(i);
     }
 	
-	
+//qqqqqqq MAIN MAIN MAIN testing
+
+
+    public static void mainXX(String[] args) {
+        String s = "Tymczak";
+        System.out.println(soundex(s));
+        System.out.println(soundex("Ashcraft"));
+    }
+
+    public static void mainX(String[] args) {
+        long xx = (long) (1234 * 1e5);
+        xx += 56789;
+        xx = (xx % 7777);
+        String codex = "" + xx;
+        String codexx = "V";
+        for (int ix = 0; ix < codex.length(); ix++) {
+            if ((Math.random() * 10) > 5) {
+                codexx += (char) ('a' + ((int) (Math.random() * 26.0)));
+            }
+            codexx += codex.charAt(ix);
+            if ((Math.random() * 10) > 5) {
+                codexx += (char) ('A' + ((int) (Math.random() * 26.0)));
+            }
+        }
+        System.out.println("Codexx=" + codexx);
+    }
+
+    public static void mainXx(String[] args) {
+        String s = String.format("%07d  %-10s", 12, "yyyyMMdd");
+        System.out.println("========> " + s);
+
+        s = "Item{Master";
+        String s2 = escapeJSON(s);
+        System.out.println(s + " => " + s2);
+    }
+
+    public static void main(String[] args) {
+        String s = "this is a test for the hex converter";
+        byte[] bs = s.getBytes();
+        String s21 = new String(bs);
+
+        String hex = bytesToHex(bs);
+
+        byte[] bs2 = hexToBytes(hex);
+
+        int x = OACompare.compare(bs, bs2);
+
+        String s2 = new String(bs2);
+
+        int xx = 4;
+        xx++;
+    }
+    
+    public static void mainz(String[] argv) {
+        String s = OAString.fmt("1234.5678", "12R2,");
+        OAString oas = new OAString();
+        s = oas.fmt(argv[0], argv[1]);
+
+        System.out.println("-------->"+s+"<------");
+
+        // double x = OAConv.toDouble("-12345.5678");
+        int x = OAConv.toInt("-12345.5678");
+        System.out.println("-------->"+OAConv.toString(x, "#,###.####")+"<------");
+    }
 }

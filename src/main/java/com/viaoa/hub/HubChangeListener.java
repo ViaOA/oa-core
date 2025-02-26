@@ -30,9 +30,14 @@ import com.viaoa.util.OANullObject;
 import com.viaoa.util.OAString;
 
 /**
- * Allows listening for changes to 1 or more Hubs and property paths. Can include compare values, that can then be checked using getValue()
- * to see if all conditions are true. Use add method to add as many checks and hubs as necessary. calling getValue will determine if all of
- * the conditions are true. ex: AO != null, objectCallbackEnabled=true, propValue==X, etc.
+ * Allows listening for changes to 1 or more Hubs, property paths, rules, etc. 
+ * Can include compare values, that can then be checked using getValue()
+ * to see if all conditions are true. 
+ * 
+ * Use the add* methods to add as many checks and hubs as necessary. calling getValue will determine if all of
+ * the conditions are true. 
+ *
+ * example: AO != null, objectCallbackEnabled=true, propValue==X, etc.
  *
  * @author vincevia
  */

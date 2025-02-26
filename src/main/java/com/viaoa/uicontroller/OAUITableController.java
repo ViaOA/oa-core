@@ -1,50 +1,53 @@
 package com.viaoa.uicontroller;
 
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.util.*;
 
+/*qqqqqqqqqqq
+
+todo: if table is not enabled, then dont allow changing active row
+
+*/
+
 /**
- * Used by UI Components that use a Hub to present a list to choose from.
- * Once a value is selected then it will set the AO in the Hub.
- * If there is a Link Hub, then the new select Value will be verified before setting.
+ * Used by UI Components that use a Hub to present a listing to populate an HTML Table.
+ * 
  * For multi-select, it uses a hubSelect.
  * 
  * @author vince
  */
-public abstract class OAUISelectController  {
+public abstract class OAUITableController  {
 
     private OAUIController controlHub;
     private OAUIController controlLinkHub;
+    
     private Hub hub;
-    private String propertyPath;
     private Hub hubLink;
     private String linkPropertyName; 
-    private final boolean bInitialized;
     private Hub hubSelect;
+
     private HubListenerAdapter hlSelect;
+
+    private HubListenerAdapter hlTableColumns;
+    private String gridListenerName;
+    private static final AtomicInteger aiNameCounter = new AtomicInteger();
     
+    private final boolean bInitialized;
+
     
-    public OAUISelectController(Hub hub, String propertyPath, Hub hubSelect, boolean bCallReset) {
+    public OAUITableController(Hub hub, Hub hubSelect, String[] columnPropertyPaths) {
         this.hub = hub;
-        this.propertyPath = propertyPath;
         this.hubSelect = hubSelect;
         
         getUIController();
         getLinkUIController();
         
         if (hubSelect != null) {
-            hubSelect.addHubListener(new HubListenerAdapter() {
-                void updateSelected() {
-                    int[] poss = new int[0];
-                    int pos = 0;
-                    for (Object obj : OAUISelectController.this.getHub()) {
-                        boolean b  = OAUISelectController.this.getSelectHub().contains(obj);
-                        if (b) poss = OAArray.add(poss,  pos);
-                        pos++;
-                    }
-                    OAUISelectController.this.setSelected(poss);
-                }
+            hlSelect = new HubListenerAdapter() {
                 @Override
                 public void afterAdd(HubEvent e) {
                     updateSelected();
@@ -65,22 +68,39 @@ public abstract class OAUISelectController  {
                 public void afterRemoveAll(HubEvent e) {
                     updateSelected();
                 }
-            });
+            };
+            hubSelect.addHubListener(hlSelect);
+        }
+        
+        if (columnPropertyPaths != null && columnPropertyPaths.length > 0) {
+            this.gridListenerName = "table_"+aiNameCounter.incrementAndGet();
+            
+            hlTableColumns = new HubListenerAdapter() {
+                @Override
+                public void afterPropertyChange(final HubEvent e) {
+                    if (!gridListenerName.equalsIgnoreCase(e.getPropertyName())) return;
+                    int row = getHub().getPos(e.getObject());
+                    changed(row);
+                }
+            };
+        
+            hub.addHubListener(hlTableColumns, gridListenerName, columnPropertyPaths);
         }
         
         bInitialized = true;
-        if (bCallReset) reset();
+        if (hubSelect != null) updateSelected();
     }
     
+
     public Hub getHub() {
         return getUIController().getHub();
     }
-    public String getPropertyName() {
-        return getUIController().getPropertyPath();
-    }
+    
     public Hub getSelectHub() {
         return hubSelect;
     }
+    
+    
     public Hub getLinkHub() {
         if (getLinkUIController() == null) return null;
         return getLinkUIController().getHub();
@@ -90,26 +110,24 @@ public abstract class OAUISelectController  {
         return getLinkUIController().getPropertyPath();
     }
     
-    
     public void reset() {
         getUIController().reset();
         OAUIController c = getLinkUIController();
         if (c != null) c.reset();
     }
+
     
     public void close() {
         getUIController().close();
-        OAUIController c = getLinkUIController();
-        if (c != null) c.close();
-        if (hubSelect != null) {
-            hubSelect.removeHubListener(hlSelect);
-        }
+        if (controlLinkHub != null) controlLinkHub.close();
+        if (hlSelect != null) hubSelect.removeHubListener(hlSelect);
+        if (hlTableColumns != null) hub.removeListener(hlTableColumns);
     }
     
     protected OAUIController getUIController() {
         if (controlHub != null) return controlHub ;
         
-        controlHub = new OAUIController(hub, null, propertyPath, false, HubChangeListener.Type.HubValid) {
+        controlHub = new OAUIController(hub, null, null, false, HubChangeListener.Type.HubValid) {
             @Override
             protected void reset() {
                 if (bInitialized) {
@@ -118,53 +136,45 @@ public abstract class OAUISelectController  {
             }
             @Override
             public void updateComponent(Object object) {
-                OAUISelectController.this.updateComponent(object);
+                // OAUITableController.this.updateComponent(object);
             }
             @Override
             public void updateLabel(Object object) {
-                OAUISelectController.this.updateLabel(object);
+                // OAUITableController.this.updateLabel(object);
             }
 
             @Override
             public void afterAdd(HubEvent e) {
-                OAUISelectController.this.add(e.getObject());
+                OAUITableController.this.add(e.getObject());
             }
             @Override
             public void afterChangeActiveObject(HubEvent e) {
-                if (OAUISelectController.this.getSelectHub() == null) {
-                    OAUISelectController.this.setSelected(hub.getPos(e.getObject()));
-                }
+                OAUITableController.this.setChangeAO(hub.getPos(e.getObject()));
             }
             @Override
             public void afterInsert(HubEvent e) {
-                OAUISelectController.this.insert(e.getObject(), e.getPos());
+                OAUITableController.this.insert(e.getObject(), e.getPos());
             }
             @Override
             public void afterMove(HubEvent e) {
-                OAUISelectController.this.remove(e.getFromPos());
-                OAUISelectController.this.insert(e.getObject(), e.getToPos());
+                OAUITableController.this.remove(e.getFromPos());
+                OAUITableController.this.insert(e.getObject(), e.getToPos());
             }
             @Override
             public void afterNewList(HubEvent e) {
-                OAUISelectController.this.newList();
-            }
-            @Override
-            public void afterPropertyChange(HubEvent e) {
-                if (OAStr.isEqualIgnoreCase(e.getPropertyName(), OAUISelectController.this.propertyPath)) {
-                    OAUISelectController.this.changed(e.getObject());
-                }
+                OAUITableController.this.newList();
             }
             @Override
             public void afterRemove(HubEvent e) {
-                OAUISelectController.this.remove(e.getPos());
+                OAUITableController.this.remove(e.getPos());
             }
             @Override
             public void afterRemoveAll(HubEvent e) {
-                OAUISelectController.this.clear();
+                OAUITableController.this.clear();
             }
             @Override
             public void afterSort(HubEvent e) {
-                OAUISelectController.this.newList();
+                OAUITableController.this.newList();
             }
         };
         return controlHub;
@@ -200,11 +210,11 @@ public abstract class OAUISelectController  {
             }
             @Override
             public void updateComponent(Object object) {
-                OAUISelectController.this.updateComponent(object);
+                // OAUITableController.this.updateComponent(object);
             }
             @Override
             public void updateLabel(Object object) {
-                OAUISelectController.this.updateLabel(object);
+                // OAUITableController.this.updateLabel(object);
             }
         };
         
@@ -228,14 +238,22 @@ public abstract class OAUISelectController  {
         return b;
     }
     
-    public String getValueAsString(Object obj) {
-        return getUIController().getValueAsString(obj);
+    protected void updateSelected() {
+        int[] poss = new int[0];
+        int pos = 0;
+        for (Object obj : OAUITableController.this.getHub()) {
+            boolean b  = OAUITableController.this.getSelectHub().contains(obj);
+            if (b) poss = OAArray.add(poss,  pos);
+            pos++;
+        }
+        setMultiSelect(poss);
     }
     
-    public void setSelected(int pos) {
-        setSelected(new int[] {pos});
+    
+    public void setChangeAO(int pos) {
+        setMultiSelect(new int[] {pos});
     }
-    public void setSelected(int[] poss) {
+    public void setMultiSelect(int[] poss) {
     }
     public void add(Object obj) {
     }
@@ -247,29 +265,7 @@ public abstract class OAUISelectController  {
     }
     public void newList() {
     }
-    public void changed(Object object) {
+    public void changed(int row) {
     }
-
-    
-    
-    /** 
-     * Called when a change is necessary for UI component. 
-     * */
-    public abstract void updateComponent(Object object);
-    
-
-    public abstract void updateLabel(Object object);
-    
-    
-    
-    //qqqqqqqq events from client JS to change hub.AO ... need to validate ...
-    /*
-    call this to check hubLink.AO change is valid ...
-    
-    1: isEnabled
-    2: public String isValid(final Object obj, Object newValue)
-    3: [confirm]
-    4: hubLink.setAO(newValue) 
-    */
     
 }

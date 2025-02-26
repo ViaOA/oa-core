@@ -11,6 +11,12 @@ import com.viaoa.util.OAEncryption;
 import com.viaoa.util.OAStr;
 import com.viaoa.util.OAString;
 
+
+/**
+ *  *************** NOTE ***********************
+ *  This is replaced by OAUIController
+ *  *************** NOTE ***********************
+ */
 public class OAUIPropertyController extends OAUIBaseController {
 
     private final String propertyName;

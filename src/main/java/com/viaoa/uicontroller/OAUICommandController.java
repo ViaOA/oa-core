@@ -7,91 +7,123 @@ import com.viaoa.object.*;
 import com.viaoa.util.OALogger;
 import com.viaoa.util.OAStr;
 
+
+//qqqqqqqqqqqqqqqqq 20250116 under construction
+
+
 /**
  * Controller used to have UI components commands interact with Hub and OAObjects.
  * <p>
  * 
  * @author vince
  */
-public class OAUICommandController extends OAUIBaseController {
+public class OAUICommandController extends OAUIController {
     private static final Logger LOG = OALogger.getLogger(OAUICommandController.class);
 
     private Command command;
 
+    
+/*qqqqq these need to be added    
+    public static final ButtonCommand CUT = ButtonCommand.Cut;
+    public static final ButtonCommand COPY = ButtonCommand.Copy;
+    public static final ButtonCommand PASTE = ButtonCommand.Paste;
+
+    public static final ButtonCommand OBJECT_METHOD = ButtonCommand.ObjectMethod;
+    public static final ButtonCommand HUB_METHOD = ButtonCommand.HubMethod;
+    public static final ButtonCommand OK = ButtonCommand.Ok;
+    public static final ButtonCommand REFRESH = ButtonCommand.Refresh;
+    public static final ButtonCommand STATIC_OBJECT_METHOD = ButtonCommand.StaticObjectMethod;
+    Cancel, 
+    Wizard;
+*/    
+    
     public static enum Command {
         /**
          * Misc command that uses a Hub or AO.
          * These should overwrite performCommand.
          */
-        OtherUsesHub, OtherUsesAO,
+        OtherUsesHub(HubChangeListener.Type.HubValid), 
+        OtherUsesAO(HubChangeListener.Type.AoNotNull),
         /**
          * Save the current object.
          */
-        Save, // might want to use submit command instead of Save 
+        Save(HubChangeListener.Type.AoNotNull), // might want to use submit command instead of Save 
         /**
          * Nav commands for changing active object.
          */
-        First(true), Last(true),
-        Next(true), Previous(true), 
+        First(true, HubChangeListener.Type.HubNotEmpty), 
+        Last(true, HubChangeListener.Type.HubNotEmpty),
+        Next(true, HubChangeListener.Type.HubNotEmpty), 
+        Previous(true, HubChangeListener.Type.HubNotEmpty), 
         
         /**
          * Delete the Hub.AO
          */
-        Delete(true), 
+        Delete(true, HubChangeListener.Type.AoNotNull), 
         /**
          * Remove the Hub.AO
          */
-        Remove(true),
+        Remove(true, HubChangeListener.Type.AoNotNull),
         /**
          * Remove all objects in Hub.
          */
-        RemoveAll(true),
+        RemoveAll(true, HubChangeListener.Type.HubNotEmpty),
         /**
          * Submit (save) the current object.
          * Uses the OAObject.isSubmitted to check.
          */
-        Submit,
+        Submit(HubChangeListener.Type.AoNotNull),
 
         /**
          * Create new object and add or insert.
          */
-        InsertNew(true), AddNew(true),
+        InsertNew(true, HubChangeListener.Type.HubValid), 
+        AddNew(true, HubChangeListener.Type.HubValid),
         /**
          * Manually add or insert.  This will call getManualObject to supply the object to use.
          */
-        NewManual(true), AddManual(true),
+        NewManual(true, HubChangeListener.Type.HubValid), 
+        AddManual(true, HubChangeListener.Type.HubValid),
         /**
          * Manually change the Hub AO, by calling getManualObject to get the object to use.
          */
-        ManualChangeAO(true),
+        ManualChangeAO(true, HubChangeListener.Type.HubNotEmpty),
         /**
          * Set Hub AO to null.
          */
-        ClearAO(true), 
+        ClearAO(true, HubChangeListener.Type.AoNotNull), 
         /**
          * Used to go to the Hub AO.
          */
-        GoTo, 
-        HubSearch(true), 
-        Search,
+        GoTo(HubChangeListener.Type.HubValid), 
+        HubSearch(true, HubChangeListener.Type.HubValid), 
+        Search(HubChangeListener.Type.HubValid),
         /**
          * Creates a copy of the current AO and adds to Hub.
          */
-        Copy,
-        Select, 
+        Copy(HubChangeListener.Type.AoNotNull),
+        Select(HubChangeListener.Type.HubValid), 
         /**
          * Calls OAObject.refresh on the current AO.
          */
-        Refresh;
-        
+        Refresh(HubChangeListener.Type.AoNotNull),
+        /**
+         * Move Hub.AO
+         */
+        MoveUp(true, HubChangeListener.Type.AoNotNull),
+        MoveDown(true, HubChangeListener.Type.AoNotNull);
+    
+        HubChangeListener.Type changeListenerType;
         
         private boolean bChangesAO;
         
-        private Command() {
+        private Command(HubChangeListener.Type type) {
+            this.changeListenerType = type;
         }
         
-        private Command(boolean changesAO) {
+        private Command(boolean changesAO, HubChangeListener.Type type) {
             this.bChangesAO = changesAO;
+            this.changeListenerType = type;
         }
         
         public boolean getChangesAO() {
@@ -100,7 +132,7 @@ public class OAUICommandController extends OAUIBaseController {
     }
 
     public OAUICommandController(Hub hub, Command command) {
-        super(hub);
+        super(hub, null, null, true, command.changeListenerType);
         this.command = command;
     }
 
@@ -197,6 +229,13 @@ public class OAUICommandController extends OAUIBaseController {
             break;
         case Refresh:
             return pos >= 0;
+        case MoveUp:
+//qqqqqqqqqqqqqqqqqqqqqqq
+            cb = OAObjectCallbackDelegate.getAllowNewObjectCallback(hub);
+
+            break;
+        case MoveDown:
+            break;
         default:
             LOG.warning("Unhandled command "+command+" for OAUICommandController");
         }
@@ -505,5 +544,13 @@ public class OAUICommandController extends OAUIBaseController {
      */
     protected Object getManualObject() {
         return null;
+    }
+
+    @Override
+    public void updateComponent(Object object) {
+    }
+
+    @Override
+    public void updateLabel(Object object) {
     }
 }

@@ -20,7 +20,7 @@ import com.viaoa.model.oa.VString;
 import com.viaoa.util.*;
 
 /**
- * Bootstrap TypeAhead support, used by TextField and MultiValueTextField to do searches.
+ * OATypeAhead support, used by TextField to do searches.
  * 
  * For styling, see oajsp.css
  * 
@@ -167,7 +167,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         /** flag to have TA show the full value on the textfield */
         public boolean showHint=false;
         
-        public boolean useAOOnly=true;
+        public boolean useAOOnly=false;
         
         void setup() {
             if (OAString.isEmpty(displayPropertyPath)) {
@@ -267,7 +267,6 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         }
     }
 
-//qqqqqqqqqqqqqqq    
     public T findObjectUsingId(String id) {
         final OAObjectKey ok = OAObjectKeyDelegate.convertToObjectKey(classTo, id);
         

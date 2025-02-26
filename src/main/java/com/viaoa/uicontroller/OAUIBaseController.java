@@ -7,6 +7,11 @@ import com.viaoa.util.OALogger;
 
 /**
  * Base Controller used to have UI components interact with Hub and OAObjects.
+ * 
+ *  *************** NOTE ***********************
+ *  This is replaced by OAUIController
+ *  *************** NOTE ***********************
+ *  
  * <p>
  * @author vince
  */

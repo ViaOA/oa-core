@@ -668,7 +668,7 @@ public class HubAddRemoveDelegate {
 	 * Swap the position of two different objects within the hub. This will call the move method. Sends a hubMove event to all HubListeners.
 	 *
 	 * @param posFrom position of object to move
-	 * @param posTo   position where object should be after the move
+	 * @param posTo   position where object should be "after the move" is completed.
 	 */
 	protected static void move(final Hub thisHub, final int posFrom, int posTo) {
 		if (posFrom == posTo) {
