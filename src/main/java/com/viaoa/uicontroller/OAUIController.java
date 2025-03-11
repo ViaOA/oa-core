@@ -18,16 +18,11 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
 import com.viaoa.hub.HubChangeListener.HubProp;
+import com.viaoa.model.oa.VString;
+import com.viaoa.object.*;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.hub.HubTemp;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectCallbackDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
-import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.template.OATemplate;
 import com.viaoa.undo.OAUndoableEdit;
 import com.viaoa.util.*;
@@ -118,7 +113,7 @@ public abstract class OAUIController extends HubListenerAdapter {
     protected char conversion;
     
     // This is used to handle password/encrypted data
-    private final static String ignorePasswordValue = "******";
+    private final static String maskPasswordValue = "******";
 
     private String title;
     private String description;
@@ -500,10 +495,34 @@ public abstract class OAUIController extends HubListenerAdapter {
     }
 
     public String getValueAsString(Object obj, String fmt) {
+        return getValueAsString(obj, fmt, -1);
+    }
+    
+    public String getValueAsString(Object obj, final String fmt, final int maxLength) {
         String s;
         if (obj == null) s = "";
-        else if (obj instanceof OAObject && OAStr.indexOf(propertyPath, ".") < 0) {
-            s = ((OAObject) obj).getPropertyAsString(propertyPath, fmt);
+        else if (obj instanceof OAObject) {
+            if (oaPropertyPath != null && oaPropertyPath.getHasHubProperty()) {
+                final VString vs = new VString("");
+                OAFinder finder = new OAFinder(oaPropertyPath.getPropertyPathLinksOnly()) {
+                    @Override
+                    protected void onFound(OAObject obj) {
+                        Object objx = obj.getProperty(oaPropertyPath.getLastPropertyName());
+                        if (maxLength < 0 || vs.getValue().length() < maxLength) {
+                            String s = OAConv.toString(objx, getFormat());
+                            vs.setValue(OAString.concat(vs.getValue(), s, ", "));
+                            if (maxLength > 0 && vs.getValue().length() >= maxLength) {
+                                vs.setValue(vs.getValue().substring(0, maxLength-3) + "...");
+                            }
+                        }
+                    }
+                };
+                finder.find((OAObject) obj);
+                s = vs.getValue();
+            }        
+            else {
+                s = ((OAObject) obj).getPropertyAsString(propertyPath, fmt);
+            }
         }
         else {
             obj = getValue(obj);
@@ -543,14 +562,14 @@ public abstract class OAUIController extends HubListenerAdapter {
             } else if (conversion == 'J' || conversion == 'j') {
                 text = OAString.makeJavaIndentifier(text);
             } else if (conversion == 'S' || conversion == 's') {
-                if (ignorePasswordValue.equals(text)) return; // no change
+                if (maskPasswordValue.equals(text)) return; // no change
                 text = OAString.getSHAHash(text);
             } else if (conversion == 'P' || conversion == 'p') {
-                if (ignorePasswordValue.equals(text)) return; // no change
+                if (maskPasswordValue.equals(text)) return; // no change
                 text = OAString.getSHAHash(text);
             } else if (conversion == 'E' || conversion == 'e') {
                 try {
-                    if (ignorePasswordValue.equals(text)) return; // no change
+                    if (maskPasswordValue.equals(text)) return; // no change
                     text = OAEncryption.encrypt(text);
                 } catch (Exception e) {
                     throw new RuntimeException("encryption failed", e);
@@ -564,6 +583,12 @@ public abstract class OAUIController extends HubListenerAdapter {
         }
     }
 
+    public void setValueDirectly(Object obj, Object newValue) {
+        if (obj instanceof OAObject) {
+            ((OAObject) obj).setProperty(propertyPath, newValue, null);
+        }
+    }    
+    
     /**
      * Flag to enable undo, default is true.
      */
@@ -1544,8 +1569,8 @@ public abstract class OAUIController extends HubListenerAdapter {
         return bRequired;
     }
 
-    public static String getIgnorePasswordValue() {
-        return ignorePasswordValue;
+    public static String getMaskPasswordValue() {
+        return maskPasswordValue;
     }
     
 

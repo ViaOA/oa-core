@@ -2012,6 +2012,9 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 				}
 
 				afterAdd2(e);
+			}
+			catch (ArrayIndexOutOfBoundsException ex) {
+			    // ignore
 			} finally {
 				if (b) {
 					OAThreadLocalDelegate.setHubMergerChanging(false);

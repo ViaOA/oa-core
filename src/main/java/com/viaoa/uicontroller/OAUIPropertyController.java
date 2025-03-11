@@ -24,7 +24,7 @@ public class OAUIPropertyController extends OAUIBaseController {
     private char conversion;
     
     // This is used to handle password/encrypted data
-    private final static String ignorePasswordValue = "*****";
+    private final static String maskPasswordValue = "*****";
 
     
     public OAUIPropertyController(Hub hub, String propertyName) {
@@ -110,8 +110,8 @@ public class OAUIPropertyController extends OAUIBaseController {
     }
     */
 
-    public static String getIgnorePasswordValue() {
-        return ignorePasswordValue;
+    public static String getMaskPasswordValue() {
+        return maskPasswordValue;
     }
     
     private boolean _onSetProperty(final OAObject obj, Object newValue) {
@@ -132,14 +132,14 @@ public class OAUIPropertyController extends OAUIBaseController {
             } else if (conversion == 'J' || conversion == 'j') {
                 text = OAString.makeJavaIndentifier(text);
             } else if (conversion == 'S' || conversion == 's') {
-                if (ignorePasswordValue.equals(text)) return true;
+                if (maskPasswordValue.equals(text)) return true;
                 text = OAString.getSHAHash(text);
             } else if (conversion == 'P' || conversion == 'p') {
-                if (ignorePasswordValue.equals(text)) return true;
+                if (maskPasswordValue.equals(text)) return true;
                 text = OAString.getSHAHash(text);
             } else if (conversion == 'E' || conversion == 'e') {
                 try {
-                    if (ignorePasswordValue.equals(text)) return true;
+                    if (maskPasswordValue.equals(text)) return true;
                     text = OAEncryption.encrypt(text);
                 } catch (Exception e) {
                     throw new RuntimeException("encryption failed", e);

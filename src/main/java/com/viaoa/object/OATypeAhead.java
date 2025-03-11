@@ -22,7 +22,7 @@ import com.viaoa.util.*;
 /**
  * OATypeAhead support, used by TextField to do searches.
  * 
- * For styling, see oajsp.css
+ * For styling, see oa-web.css
  * 
  */
 public class OATypeAhead<F extends OAObject,T extends OAObject> {

@@ -19,6 +19,7 @@ public abstract class OAUISelectController  {
     private Hub hub;
     private String propertyPath;
     private Hub hubLink;
+    private boolean linkOnPos;
     private String linkPropertyName; 
     private final boolean bInitialized;
     private Hub hubSelect;
@@ -190,6 +191,7 @@ public abstract class OAUISelectController  {
         }
 
         if (hubLink == null) return null;
+        linkOnPos = HubLinkDelegate.getLinkedOnPos(hub);
         
         controlLinkHub = new OAUIController(hubLink, null, linkPropertyName, true, HubChangeListener.Type.AoNotNull) {
             @Override
@@ -228,8 +230,17 @@ public abstract class OAUISelectController  {
         return b;
     }
     
+
+    public String getValueAsString(Hub hubFrom, Object obj) {
+        Object objx = getLinkUIController().getValue(obj);
+        if (linkOnPos && objx instanceof Number) objx = getHub().getAt(OAConv.toInt(objx));  
+        String s = getUIController().getValueAsString(objx);
+        return s;
+    }
+    
     public String getValueAsString(Object obj) {
-        return getUIController().getValueAsString(obj);
+        String s = getUIController().getValueAsString(obj);
+        return s;
     }
     
     public void setSelected(int pos) {
