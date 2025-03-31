@@ -118,13 +118,9 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
 			@Override
 			public RemoteSessionInterface getRemoteSession(ClientInfo clientInfo, RemoteClientCallbackInterface callback) {
 				RemoteMultiplexer3Test.this.clientCallbackOnServer = callback;
-				RemoteSessionInterface rsi = new RemoteSessionImpl(1) {
+				RemoteSessionInterface rsi = new RemoteSessionImpl(1, null) {
 					@Override
 					public void sendException(String msg, Throwable ex) {
-					}
-
-					@Override
-					public void removeGuids(int[] guids) {
 					}
 
 					@Override

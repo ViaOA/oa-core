@@ -340,6 +340,18 @@ public class OASyncCombinedClient {
                         
                         rs.refresh(masterObjectClass, masterObjectKey, hubPropertyName);
                     }
+
+                    @Override
+                    public void serverDelete(Class objectClass, OAObjectKey objectKey) {
+                        // TODO Auto-generated method stub
+//qqqqqqqqqqqqqqqqqqqqqqqq                        
+                    }
+
+                    @Override
+                    public void clientDelete(Class objectClass, OAObjectKey objectKey) {
+                        // TODO Auto-generated method stub
+//qqqqqqqqqqqqqqqqqqqqqqq                        
+                    }
                 };
                 return remoteSync;
             }
@@ -466,6 +478,16 @@ public class OASyncCombinedClient {
                         catch (Exception e) {
                             LOG.log(Level.WARNING, "", e);
                         }
+                    }
+                    @Override
+                    public void serverDelete(Class objectClass, OAObjectKey objectKey) {
+                        // TODO Auto-generated method stub
+//qqqqqqqqqqqqqqqqqqqqqqqq                        
+                    }
+                    @Override
+                    public void clientDelete(Class objectClass, OAObjectKey objectKey) {
+                        // TODO Auto-generated method stub
+//qqqqqqqqqqqqqqqqqqqqqqqq                        
                     }
                 };
                 return remoteSync;

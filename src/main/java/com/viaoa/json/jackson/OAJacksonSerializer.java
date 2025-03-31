@@ -257,20 +257,8 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				}
 			}
 
-			// only send owned objects for the root object(s)
-			//    also include any owned auto-created linkOne owned links
-			boolean bx = bIncludeOwned;
-			if (bx) {
-				OAJson.StackItem si = oaj.getStackItem();
-				bx = si == null || si.parent == null;
 
-				//qqqqqqq create a rule & unit test for this
-				if (!bx && si.li.isOne2One() && si.li.getOwner() && si.li.getAutoCreateNew()) {
-					bx = true;
-				}
-			}
-
-			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bx, alPropertyPaths)) {
+			if ((oaj != null && oaj.getIncludeAll()) || shouldInclude(oaj, li, bIncludeOwned, alPropertyPaths)) {
 				StackItem si = new StackItem();
 				si.parent = oaj.getStackItem();
 				si.li = li;
@@ -404,22 +392,34 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		if (li == null) {
 			return false;
 		}
-		if (bIncludeOwned && (li.getOwner() || li.getAutoCreateNew())) {
-			return true;
-		}
-		if (alPropertyPaths == null) {
+
+		OAJson.StackItem si = oaj.getStackItem();
+		
+		if (alPropertyPaths == null || alPropertyPaths.size() == 0) {
+	        if (bIncludeOwned && (li.getOwner() || li.getAutoCreateNew())) {
+	            boolean bx = si == null || si.parent == null; // root only
+	            return bx;
+	        }
 			return false;
 		}
-
+		
+		
 		String cpp = oaj.getCurrentPropertyPath();
+        if (cpp != null) cpp = cpp.toLowerCase();
 
-		cpp = OAString.append(cpp, li.getName(), ".");
-		cpp = cpp.toLowerCase();
+		String cpp2 = OAString.append(cpp, li.getName().toLowerCase(), ".");
 
 		for (String pp : alPropertyPaths) {
-			if (pp.toLowerCase().indexOf(cpp) == 0) {
-				return true;
-			}
+            if (pp.toLowerCase().indexOf(cpp2) == 0) {
+                return true;
+            }
+		    
+		    if (!bIncludeOwned) continue;
+		    
+            if (cpp != null && pp.toLowerCase().indexOf(cpp) != 0) continue;
+            if (li.getOwner() || li.getAutoCreateNew()) {
+                return true;
+            }
 		}
 
 		return false;

@@ -24,6 +24,7 @@ import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 @OARemoteInterface()
 public interface RemoteClientInterface {
 
+    @OARemoteMethod(returnOnQueueSocket = true)
 	OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties);
 
 	Object getDetail(int id, Class masterClass, OAObjectKey masterObjectKey, String property, boolean bForHubMerger);
@@ -37,12 +38,15 @@ public interface RemoteClientInterface {
 	Object getDetailNow(int id, Class masterClass, OAObjectKey masterObjectKey,
 			String property, String[] masterProps, OAObjectKey[] siblingKeys, boolean bForHubMerger);
 
+	@OARemoteMethod(returnOnQueueSocket = true)
 	Object datasource(int command, Object[] objects);
 
 	@OARemoteMethod(noReturnValue = true)
 	void datasourceNoReturn(int command, Object[] objects);
 
+    /* moved to  remoteSync  serverDelete, clientDelete
 	boolean delete(Class objectClass, OAObjectKey objectKey);
+	*/
 
 	boolean deleteAll(Class objectClass, OAObjectKey objectKey, String hubPropertyName);
 

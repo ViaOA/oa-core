@@ -1181,7 +1181,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 			throw new RuntimeException("method " + mname + ", isRemoable=false, thread=" + Thread.currentThread());
 		}
 
-		OASyncClient sc = OASync.getSyncClient();
+		final OASyncClient sc = OASync.getSyncClient();
 		if (sc == null) {
 			throw new RuntimeException("method " + mname + ", OASyncClient=null, thread=" + Thread.currentThread());
 		}
@@ -1209,14 +1209,9 @@ public class OAObject implements java.io.Serializable, Comparable {
 			throw new RuntimeException("method " + mname + ", isRemoable=false, thread=" + Thread.currentThread());
 		}
 
-		OASyncClient sc = OASync.getSyncClient();
+		final OASyncClient sc = OASync.getSyncClient();
 		if (sc == null) {
 			throw new RuntimeException("method " + mname + ", OASyncClient=null, thread=" + Thread.currentThread());
-		}
-
-		// 20190918
-		if (OAObjectCSDelegate.isInNewObjectCache(this)) {
-			OAObjectCSDelegate.addToServerSideCache(this);
 		}
 
 		RemoteServerInterface rs;
@@ -1230,7 +1225,10 @@ public class OAObject implements java.io.Serializable, Comparable {
 			throw new RuntimeException("method " + mname + ", RemoteServerInterface=null, thread=" + Thread.currentThread());
 		}
 
-		Object val = rs.runRemoteMethod(getClass(), OAObjectKeyDelegate.getKey(this), mname, args);
+		
+		Object val;
+		if (!sc.isObjectOnServer(this)) val = rs.runRemoteMethod2(this, mname, args); 		
+		else val = rs.runRemoteMethod(getClass(), OAObjectKeyDelegate.getKey(this), mname, args);
 
 		return val;
 	}
@@ -1485,25 +1483,15 @@ public class OAObject implements java.io.Serializable, Comparable {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
 		OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, linkName);
 		if (linkInfo == null) {
-			throw new RuntimeException("linkName not found, link=" + linkName);
+			// throw new RuntimeException("linkName not found, link=" + linkName);
+		    return false;
 		}
 
 		if (newValue == null) {
 			Object oldValue = OAObjectPropertyDelegate.getProperty(this, linkName, false, true);
-			OAObjectPropertyDelegate.setProperty(this, linkName, null);
-
-			for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
-				OAPropertyInfo pi = fki.getFromPropertyInfo();
-				if (pi == null) {
-					continue;
-				}
-				if (pi.getIsPrimitive() && pi.getTrackPrimitiveNull()) {
-					OAObjectInfoDelegate.setPrimitiveNull(this, pi.getName(), true);
-				} else {
-					firePropertyChange(pi.getName());
-				}
-			}
-			return (oldValue != null);
+			if (oldValue == null) return false;
+			OAObjectReflectDelegate.setProperty(this, linkName, null, null);
+			return true;
 		}
 
 		OAObjectInfo oiTo = linkInfo.getToObjectInfo();
@@ -1516,7 +1504,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 				pos = 0;
 				linkToPropertyName = pkeyNames[pos];
 			} else {
-				throw new RuntimeException("linkToPropertyName can not be null, since that are " + pkeyNames.length + " pk properties");
+				// throw new RuntimeException("linkToPropertyName can not be null, since that are " + pkeyNames.length + " pk properties");
+			    return false;
 			}
 		} else {
 			int x = 0;
@@ -1528,7 +1517,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 				x++;
 			}
 			if (pos < 0) {
-				throw new RuntimeException("linkToPropertyName does not exist in link object=" + linkName);
+				// throw new RuntimeException("linkToPropertyName does not exist in link object=" + linkName);
+                return false;
 			}
 		}
 
@@ -1537,7 +1527,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 		if (obj instanceof OAObject) {
 			obj = ((OAObject) obj).getObjectKey();
 		} else if (obj != null && !(obj instanceof OAObjectKey)) {
-			throw new RuntimeException("the link's value is not an OAObject or OAObjectKey");
+			// throw new RuntimeException("the link's value is not an OAObject or OAObjectKey");
+		    return false;
 		}
 
 		OAObjectKey ok = (OAObjectKey) obj;
@@ -1569,9 +1560,15 @@ public class OAObject implements java.io.Serializable, Comparable {
 			return false;
 		}
 
+        if (ok != null) okNew = new OAObjectKey(objs);
+		OAObject objNew = (OAObject) OAObjectCacheDelegate.get(linkInfo.getToClass(), okNew);
+		if (objNew != null) okNew = objNew.getObjectKey();
+		
+        OAObjectReflectDelegate.setProperty(this, linkName, objNew != null ? objNew : okNew, null);
+		
+		
+        /*qqqqqq
 		OAObjectPropertyDelegate.setProperty(this, linkName, okNew);
-
-		firePropertyChange(linkName);
 
 		for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
 			if (fki.getFromPropertyInfo().getIsPrimitive()) {
@@ -1579,6 +1576,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 			}
 			firePropertyChange(fki.getFromPropertyInfo().getName());
 		}
+		*/
 		return true;
 	}
 
@@ -1619,13 +1617,15 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 */
 	public Object getFkeyProperty(final String linkName, String linkToPropertyName) {
 		if (OAString.isEmpty(linkName)) {
-			throw new RuntimeException("linkName cant be empty, link=" + linkName);
+			// throw new RuntimeException("linkName cant be empty, link=" + linkName);
+		    return null;
 		}
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
 		OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, linkName);
 		if (linkInfo == null) {
-			throw new RuntimeException("linkName not found, link=" + linkName);
+			// throw new RuntimeException("linkName not found, link=" + linkName);
+            return null;
 		}
 
 		OAObjectInfo oiTo = linkInfo.getToObjectInfo();

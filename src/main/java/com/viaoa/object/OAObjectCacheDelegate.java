@@ -907,10 +907,7 @@ public class OAObjectCacheDelegate {
 				tmh.rwl.writeLock().unlock();
 			}
 			if (b) {
-				// allow object to be removed from CS
-				if (key.guid > 0) {
-					OAObjectCSDelegate.objectRemovedFromCache(obj, key.guid);
-				}
+				OAObjectCSDelegate.objectFinalized(obj);
 			}
 		}
 	}

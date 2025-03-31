@@ -24,8 +24,7 @@ import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.sync.OASync;
-import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.sync.*;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.util.OAFilter;
 
@@ -442,11 +441,8 @@ public class OADataSourceClient extends OADataSource {
 				if (obj == null) {
 					break;
 				}
-				// the server will add the object to the session cache (server side) if it is not in a hub w/master
-				if (OAObjectHubDelegate.isInHubWithMaster((OAObject) obj)) {
-					OAObjectCSDelegate.removeFromServerSideCache((OAObject) obj);
-				}
-				hubReadAhead.add(obj);
+			    OAObjectCSDelegate.updateObjectsWithoutHubs((OAObject) obj);
+                hubReadAhead.add(obj);
 			}
 		}
 

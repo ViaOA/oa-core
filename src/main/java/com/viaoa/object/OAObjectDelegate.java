@@ -178,7 +178,7 @@ public class OAObjectDelegate {
 
 			if (bInitializeWithCS) {
 				// must be before DS init, since it could add to local client cache
-				OAObjectCSDelegate.initialize(oaObj);
+				OAObjectCSDelegate.objectCreated(oaObj);
 			}
 			if (!bWasLoading && bInitializeWithDS) {
 				if (OAObjectDSDelegate.getAssignIdOnCreate(oaObj)) {
@@ -247,7 +247,7 @@ public class OAObjectDelegate {
 			obj.guid = localGuidCounter.decrementAndGet();
 		} else {
 			if (!OASyncDelegate.isServer(obj)) {
-				obj.guid = OAObjectCSDelegate.getServerGuid(obj);
+				obj.guid = OAObjectCSDelegate.getGuidFromServer(obj);
 				if (obj.guid == 0) {
 					obj.guid = getNextGuid();
 				}
@@ -262,7 +262,7 @@ public class OAObjectDelegate {
 		if (oaObj == null) {
 			return;
 		}
-		int guid = OAObjectCSDelegate.getServerGuid(oaObj);
+		int guid = OAObjectCSDelegate.getGuidFromServer(oaObj);
 		if (oaObj.guid == 0) {
 			oaObj.guid = getNextGuid();
 		}

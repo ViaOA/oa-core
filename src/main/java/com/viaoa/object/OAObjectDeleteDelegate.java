@@ -34,12 +34,26 @@ public class OAObjectDeleteDelegate {
 		}
 		boolean b = OAObjectCSDelegate.delete(oaObj);
 		if (!b) {
-			return; // done on server
+			return;
 		}
 		OACascade cascade = new OACascade();
 		delete(oaObj, cascade);
 	}
 
+    public static void syncServerDelete(OAObject oaObj) {
+        OACascade cascade = new OACascade();
+        delete(oaObj, cascade);
+    }
+	
+	
+//qqqqqqqqq need to call next thread once it does the delete qqqqqqqqqqq	
+	
+//qqqqqqqqq called by OASyncClient to only delete objects that are in client's cache
+	public static void syncClientDelete(OAObject oaObj) {
+        OACascade cascade = new OACascade();
+        delete(oaObj, cascade);
+	}
+	
 	/**
 	 * Used to know if an object has been deleted, by calling OAObject.delete().
 	 */
@@ -75,9 +89,11 @@ public class OAObjectDeleteDelegate {
 		if (cascade.wasCascaded(oaObj, true)) {
 			return;
 		}
+		
+		final boolean bIsSyncClient = OASync.isClient(oaObj);
 
 		final Hub[] hubs = OAObjectHubDelegate.getHubReferences(oaObj);
-		if (hubs != null) {
+		if (!bIsSyncClient && hubs != null) {
 			for (Hub h : hubs) {
 				if (h == null) {
 					continue;
@@ -88,7 +104,10 @@ public class OAObjectDeleteDelegate {
 		try {
 			OAThreadLocalDelegate.setDeleting(oaObj, true);
 
-			OAObjectDeleteDelegate.deleteChildren(oaObj, cascade); // delete children first
+			if (!bIsSyncClient) {
+			    OAObjectDeleteDelegate.deleteChildren(oaObj, cascade); // delete children first
+			}
+			
 			if (!oaObj.getNew()) {
 				try {
 					OAObjectDeleteDelegate.onDelete(oaObj); // this will delete from OADataSource
@@ -311,6 +330,11 @@ public class OAObjectDeleteDelegate {
 		} finally {
 			OAThreadLocalDelegate.setDeleting(oaObj, false);
 		}
+
+//qqqqqqqqqqqqqqqqqqqqqqq		
+        OAObjectCSDelegate.sendDeleteToClients(oaObj);
+//qqqq        boolean b = OAObjectCSDelegate.delete(oaObj);		
+		
 		if (hubs != null) {
 			for (Hub h : hubs) {
 				if (h != null) {

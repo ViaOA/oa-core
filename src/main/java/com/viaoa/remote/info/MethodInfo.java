@@ -47,4 +47,7 @@ public class MethodInfo {
     public boolean dontUseQueue;
     
     public int timeoutSeconds = 0;
+    
+    /** option for server broadcast to run in RemoteThread */
+    public boolean runInRemoteThread;
 }

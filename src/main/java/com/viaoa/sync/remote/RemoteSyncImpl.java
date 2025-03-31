@@ -17,14 +17,7 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubAddRemoveDelegate;
 import com.viaoa.hub.HubDataDelegate;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCSDelegate;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
-import com.viaoa.object.OAObjectSerializer;
+import com.viaoa.object.*;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAThrottle;
@@ -270,4 +263,26 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		HubAddRemoveDelegate.refresh(hub, hubNew);
 	}
 
+    @Override
+    public void serverDelete(Class objectClass, OAObjectKey objectKey) {
+        OAObject obj = getObject(objectClass, objectKey, false);
+        if (obj == null) {
+            return;
+        }
+        if (!OASync.isServer(obj)) return;
+        OAObjectDeleteDelegate.syncServerDelete(obj);
+    }
+	
+	
+    @Override
+    public void clientDelete(Class objectClass, OAObjectKey objectKey) {
+        OAObject obj = getObject(objectClass, objectKey, false);
+        if (obj == null) {
+            return;
+        }
+        if (!OASync.isClient(obj)) return;
+        OAObjectDeleteDelegate.syncClientDelete(obj);
+    }
+
+    
 }

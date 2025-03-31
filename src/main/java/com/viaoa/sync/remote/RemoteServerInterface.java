@@ -23,6 +23,7 @@ public interface RemoteServerInterface {
 
 	boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule);
 
+    @OARemoteMethod(returnOnQueueSocket = true)
 	OAObject getObject(Class objectClass, OAObjectKey objectKey);
 
 	RemoteSessionInterface getRemoteSession(
@@ -49,13 +50,19 @@ public interface RemoteServerInterface {
 	/**
 	 * Used by OAObject.remote to run a remote command from an OAObject.
 	 */
-	@OARemoteMethod
+	@OARemoteMethod(returnOnQueueSocket = true)
 	Object runRemoteMethod(Class clazz, OAObjectKey objKey, String methodName, Object[] args);
 
+    /**
+     * Used by OAObject.remote to run a remote command from an OAObject.
+     */
+    @OARemoteMethod(returnOnQueueSocket = true)
+    Object runRemoteMethod2(OAObject obj, String methodName, Object[] args);
+	
 	/**
 	 * Used by OAObject.remote to run a remote command for a Hub of OAObjects.
 	 */
-	@OARemoteMethod
+	@OARemoteMethod(returnOnQueueSocket = true)
 	Object runRemoteMethod(Hub hub, String methodName, Object[] args);
 
 	@OARemoteMethod(dontUseQueue = true)
@@ -64,6 +71,6 @@ public interface RemoteServerInterface {
 	/**
 	 * Used by OAObjectUniqueDelegate.getUnique to find a unique oaobject
 	 */
-	@OARemoteMethod
+	@OARemoteMethod(returnOnQueueSocket = true)
 	OAObject getUnique(Class<? extends OAObject> clazz, final String propertyName, Object uniqueKey, boolean bAutoCreate);
 }

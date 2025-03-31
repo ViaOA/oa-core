@@ -19,6 +19,7 @@ import java.lang.annotation.Target;
 /**
  * Information about remote Interfaces.
  * Important:  this needs to be added to the Interface, not the Impl class.
+ * @see OARemoteSyncInterface
  * @author vvia
  */
 @Documented

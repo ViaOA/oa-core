@@ -14,14 +14,14 @@ package com.viaoa.object;
  * Callback object for OAObjectSerializer
  * @author vincevia
  * @see OAObjectSerializer
- * note: do not serialize this, since it will also include it's outclass, etc.
+ * note: do not serialize this, since it will also include it's outer class, etc.
  */
 public abstract class OAObjectSerializerCallback {
     private OAObjectSerializer os;
     
 
     /** 
-     * Called by OAObjectServializer
+     * Called by OAObjectSerializer
      */
     void setOAObjectSerializer(OAObjectSerializer os) {
         this.os = os;

@@ -10,13 +10,8 @@
 */
 package com.viaoa.remote;
 
-import java.util.ArrayList;
-
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheListener;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
-import com.viaoa.sync.OASyncDelegate;
 
 public class OARemoteThreadDelegate {
 
@@ -26,7 +21,8 @@ public class OARemoteThreadDelegate {
     }
 
     /**
-     * used to check to make sure that a RemoteThread is not holding up the msg queue
+     * Used to check to check if a RemoteThread has reach it's "mark"/purpose
+     * for the method that it's currently processing. 
      */
     public static boolean isSafeToCallRemoteMethod() {
         Thread t = Thread.currentThread();
@@ -36,6 +32,10 @@ public class OARemoteThreadDelegate {
         return false;
     }
     
+    /**
+     * By default OARemoteThreads do not sent messages. 
+     * This is to check if OARemoteThread.sendMessages is true.
+     */
     public static boolean shouldSendMessages() {
         Thread t = Thread.currentThread();
         if (!(t instanceof OARemoteThread)) return true;
@@ -43,8 +43,8 @@ public class OARemoteThreadDelegate {
     }
 
     /**
-     * this will start another thread to process the next msg in the queue.
-     * returns true if current thread is remoteThread.
+     * This is called once the msg that is being processed has met it's "mark".
+     * This will notify another OARemoteThread to process the next msg in the queue.
      */
     public static void startNextThread() {
         Thread t = Thread.currentThread();
@@ -53,9 +53,12 @@ public class OARemoteThreadDelegate {
             if (rt.startedNextThread) return;
             rt.startNextThread();
         }
-        // 20160121
         OAThreadLocalDelegate.notifyWaitingThread();
     }
+    
+    /**
+     * Check to see if nextThread has been started.
+     */
     public static boolean startedNextThread() {
         Thread t = Thread.currentThread();
         if (t instanceof OARemoteThread) {
@@ -65,7 +68,9 @@ public class OARemoteThreadDelegate {
         return true;
     }
 
-    
+    /**
+     * Get the current RequestInfo message that is being processed by this thread.
+     */
     public static RequestInfo getRequestInfo() {
         Thread t = Thread.currentThread();
         if (t instanceof OARemoteThread) {
@@ -75,7 +80,9 @@ public class OARemoteThreadDelegate {
         return null;
     }
     
-    
+    /**
+     * Flat to have oasync msgs sent to other computers.
+     */
     public static boolean sendMessages() {
         return sendMessages(true);
     }
@@ -105,6 +112,12 @@ public class OARemoteThreadDelegate {
         OARemoteThread rt = (OARemoteThread) t;
         return rt.getAllowRunnable();
     }
+    
+    /**
+     * If this is an OARemoteThread, then add this to background thread processing.
+     * @param r runnable to run.
+     * @return true if runnable was added to que for background OARemoteThreads to process.
+     */
     public static boolean queueEvent(Runnable r) {
         Thread t = Thread.currentThread();
         if (!(t instanceof OARemoteThread)) return false;

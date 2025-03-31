@@ -794,14 +794,14 @@ public class OASyncDelegate {
 	/**
 	 * Used by OAObject so that object guid is created/managed on the server.
 	 */
-	public static int getObjectGuid(Class c) {
+	public static int getGuidFromServer(Class c) {
 		if (c == null) {
-			return getObjectGuid((Package) null);
+			return getGuidFromServer((Package) null);
 		}
-		return getObjectGuid(getPackage(c));
+		return getGuidFromServer(getPackage(c));
 	}
 
-	public static int getObjectGuid(Package p) {
+	public static int getGuidFromServer(Package p) {
 		if (p == null) {
 			p = ObjectPackage;
 		}

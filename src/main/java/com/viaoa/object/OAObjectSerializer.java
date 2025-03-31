@@ -69,6 +69,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 
 	private transient OAObjectSerializerCallback callback;
 
+	private transient OAObjectSerializer holdOAObjectSerializer; 
+	
 	private static volatile int wcnter;
 	private static volatile int rcnter;
 
@@ -237,8 +239,10 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		for (int i=0; i<indent; i++) msg += "  ";
 		System.out.println(msg+""+oaObj.getClass()+" "+oaObj.getObjectKey().getGuid());
 		 */
-
 		totalObjectsWritten++;
+		
+        if (holdOAObjectSerializer != null) holdOAObjectSerializer.beforeSerialize(oaObj);
+		
 		if (callback != null) {
 			// save and push current settings into stack
 			Tuple<String[], String[]> t = new Tuple<String[], String[]>(includeProps, excludeProps);
@@ -256,7 +260,10 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * Called by OAObjectSerializeDelegate.writeObject(), after an object has been serialized.
 	 */
 	void afterSerialize(OAObject obj) {
-		// indent--;        
+		// indent--;
+	    
+        if (holdOAObjectSerializer != null) holdOAObjectSerializer.afterSerialize(obj);
+	    
 		if (callback != null) {
 			callback.afterSerialize(obj);
 		}
@@ -454,16 +461,21 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * serializing.
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-		try {
-			OAThreadLocalDelegate.setObjectSerializer(this);
-			_writeObject(stream);
-		} catch (Throwable e) {
-			LOG.log(Level.WARNING, "OAObjectSerializer.writeObject exception", e);
-			// note: this is ignored when invoked by RMI
-			throw new IOException("OAObjectSerializer.writeObject exception", e);
-		} finally {
-			OAThreadLocalDelegate.setObjectSerializer(null);
-		}
+	    
+	    this.holdOAObjectSerializer = OAThreadLocalDelegate.getObjectSerializer();
+        try {
+            OAThreadLocalDelegate.setObjectSerializer(this);
+            _writeObject(stream);
+        } 
+        catch (Throwable e) {
+            LOG.log(Level.WARNING, "OAObjectSerializer.writeObject exception", e);
+            // note: this is ignored when invoked by RMI
+            throw new IOException("OAObjectSerializer.writeObject exception", e);
+        }
+        finally {
+            OAThreadLocalDelegate.setObjectSerializer(this.holdOAObjectSerializer);
+            this.holdOAObjectSerializer = null;
+        }
 	}
 
 	public long getCompressedWritten() {
@@ -529,7 +541,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 
 			msg = String.format(
 								"client=%d, id=%,d, class=%s, extra=%s, uncompressed=%,d, compressed=%,d, totalObjects=%,d, %,dms",
-								clientId, id, object.getClass().getSimpleName(),
+								clientId, id, 
+								object == null ? "null" : object.getClass().getSimpleName(),
 								extraObject == null ? "null" : extraObject.getClass().getSimpleName(),
 								sizeBefore, sizeAfter, totalObjectsWritten, (ts2 - ts));
 		} else {
@@ -546,7 +559,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			long ts2 = System.currentTimeMillis();
 			msg = String.format(
 								"client=%d, id=%,d, class=%s, extra=%s, totalObjects=%,d, %,dms",
-								clientId, id, object.getClass().getSimpleName(),
+								clientId, id, 
+								object==null ? "null" : object.getClass().getSimpleName(),
 								extraObject == null ? "null" : extraObject.getClass().getSimpleName(),
 								totalObjectsWritten, (ts2 - ts));
 		}
@@ -650,7 +664,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			long ts2 = System.currentTimeMillis();
 
 			msg = String.format("id=%,d, class=%s, extra=%s, compressed=%,d, uncompressed=%,d, totalObjects=%,d, %,dms",
-								id, object.getClass().getSimpleName(),
+								id, 
+								object == null ? "null" : object.getClass().getSimpleName(),
 								extraObject == null ? "null" : extraObject.getClass().getSimpleName(),
 								sizeBefore, sizeAfter, totalObjectsWritten, (ts2 - ts));
 		} else {
@@ -667,7 +682,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 
 			long ts2 = System.currentTimeMillis();
 			msg = String.format("id=%,d, class=%s, extra=%s, totalObjects=%,d, %,dms",
-								id, object.getClass().getSimpleName(),
+								id, 
+								object == null ? "null" : object.getClass().getSimpleName(),
 								extraObject == null ? "null" : extraObject.getClass().getSimpleName(),
 								totalObjectsWritten, (ts2 - ts));
 		}
@@ -740,6 +756,10 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	public void setCallback(OAObjectSerializerCallback callback) {
 		this.callback = callback;
 		callback.setOAObjectSerializer(this);
+	}
+	
+	public OAObjectSerializerCallback getCallback() {
+	    return this.callback;
 	}
 
 	public static void main(String[] args) throws Exception {

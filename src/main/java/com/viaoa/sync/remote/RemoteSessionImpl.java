@@ -14,55 +14,86 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectReflectDelegate;
-import com.viaoa.object.OAObjectSaveDelegate;
+import com.viaoa.object.*;
 import com.viaoa.sync.model.ClientInfo;
 
-// see: OAClient
 
+/**
+ * Server side client session.
+ */
 public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	private static Logger LOG = Logger.getLogger(RemoteSessionImpl.class.getName());
-	protected ConcurrentHashMap<Integer, OAObject> hashServerCache = new ConcurrentHashMap<Integer, OAObject>();
-	protected ConcurrentHashMap<OAObject, OAObject> hashLock = new ConcurrentHashMap<OAObject, OAObject>();
-	protected int sessionId;
 
-	public RemoteSessionImpl(int sessionId) {
+    protected final int sessionId;
+
+    /**
+     *  List of guids that are on the client.
+     *  This is used for filtering sync messages that are sent to clients.
+     *  
+     *  This is added:
+     *  1: whenever objects are serialized to the client.
+     *  2: when an object is created on client and objectCreated is called. 
+     */
+    protected final Map<Integer, Boolean> hmGuid;
+    
+    
+	protected final ConcurrentHashMap<OAObject, OAObject> hashLock = new ConcurrentHashMap<OAObject, OAObject>();
+    protected final ConcurrentHashMap<Integer, OAObject> hmObjectsWithoutHubs = new ConcurrentHashMap<>();
+
+	public RemoteSessionImpl(int sessionId, Map<Integer, Boolean> hmGuid) {
 		this.sessionId = sessionId;
+		this.hmGuid = hmGuid;
 	}
 
-	@Override
-	public void addToServerCache(OAObject obj) {
-		int guid = OAObjectDelegate.getGuid(obj);
-		hashServerCache.put(guid, obj);
-		int x = hashServerCache.size();
-		if (x % 250 == 0) {
-			LOG.fine("sessionId=" + sessionId + ", cache size=" + x + ", obj=" + obj + ", guid=" + guid);
-		}
-	}
 
-	@Override
-	public void removeFromServerCache(int[] guids) {
-		if (guids == null) {
-			return;
-		}
-		for (int guid : guids) {
-			OAObject obj = hashServerCache.remove(guid);
-		}
-		int x = hashServerCache.size();
-		if (x > 0 && x % 100 == 0) {
-			LOG.fine("sessionId=" + sessionId + ", cache size=" + x);
-		}
+	/**
+	 * Add to guid to cache, to know what objects are on client.
+	 */
+    @Override
+    public void objectCreated(int guid) {
+        hmGuid.putIfAbsent(guid, false);
+    }
+    
+    
+    /**
+     * Called by client side OAObject.finalize, to remove the guids from hmGuid/Cache.
+     */
+    @Override
+    public void objectsFinalized(int[] guids) {
+        if (guids == null) return;
+        for (int guid : guids) {
+            hmGuid.remove(guid);
+            hmObjectsWithoutHubs.remove(guid);
+        }
+    }
+	
+    
+    /**
+     * Used to manage OAObject on client to make sure that they are not GCd on Server. 
+     */
+    @Override
+	public void updateObjectsWithoutHubs(Class c, OAObjectKey ok, boolean bIsInHub) {
+	    if (c == null || ok == null) return;
+	    if (bIsInHub) {
+	        hmObjectsWithoutHubs.remove(ok.getGuid());
+	    }
+	    else {
+    	    OAObject obj = (OAObject) OAObjectCacheDelegate.get(c, ok);
+    	    if (obj != null) {
+                int guid = ok.getGuid();
+                hmObjectsWithoutHubs.put(guid, obj);
+    	    }
+	    }
+        int x = hmObjectsWithoutHubs.size();
+        if (x % 100 == 0) {
+            LOG.fine("sessionId=" + sessionId + ", cache size=" + x);
+        }
 	}
-
+ 
 	// called by server to save any client cached objects
 	public void saveCache(OACascade cascade, int iCascadeRule) {
-		LOG.fine("sessionId=" + sessionId + ", cache size=" + hashServerCache.size());
-		for (Map.Entry<Integer, OAObject> entry : hashServerCache.entrySet()) {
+		LOG.fine("sessionId=" + sessionId + ", cache size=" + hmObjectsWithoutHubs.size());
+		for (Map.Entry<Integer, OAObject> entry : hmObjectsWithoutHubs.entrySet()) {
 			OAObject obj = entry.getValue();
 			if (!obj.wasDeleted()) {
 				OAObjectSaveDelegate.save(obj, iCascadeRule, cascade);
@@ -70,18 +101,14 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 		}
 	}
 
-	/**
-	 * GUIDs of the objects removed from oaObject cache on server.
-	 */
-	@Override
-	public abstract void removeGuids(int[] guids);
-
 	// called by server when client is disconnected
-	public void clearCache() {
-		hashServerCache.clear();
-		LOG.fine("sessionId=" + sessionId + ", cache size=" + hashServerCache.size());
+	public void clearCaches() {
+	    hmObjectsWithoutHubs.clear();
+		if (hmGuid != null) hmGuid.clear();
+		LOG.fine("sessionId=" + sessionId + ", cache size=" + hmObjectsWithoutHubs.size());
 	}
 
+	
 	@Override
 	public boolean setLock(Class objectClass, OAObjectKey objectKey, boolean bLock) {
 		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, objectKey);
@@ -110,14 +137,15 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 		LOG.fine("sessionId=" + sessionId + ", cache size=" + hashLock.size());
 	}
 
-	@Override
+	// not used	
+	// @Override
 	public OAObject createNewObject(Class clazz) {
 		OAObject obj = (OAObject) OAObjectReflectDelegate.createNewObject(clazz);
-		LOG.fine("sessionId=" + sessionId + ", obj=" + obj);
-		addToServerCache(obj);
+        objectCreated(obj.getGuid());
+		updateObjectsWithoutHubs(clazz, obj.getObjectKey(),  false);
 		return obj;
 	}
-
+	
 	@Override
 	public boolean isLockedByThisClient(Class objectClass, OAObjectKey objectKey) {
 		Object obj = OAObjectCacheDelegate.get(objectClass, objectKey);
@@ -148,4 +176,5 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	@Override
 	public void update(ClientInfo ci) {
 	}
+	
 }

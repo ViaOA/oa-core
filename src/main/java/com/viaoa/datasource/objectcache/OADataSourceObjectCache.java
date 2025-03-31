@@ -347,7 +347,6 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             oos.writeObject(c);
 
             Set hs = entry.getValue();
-            
             OAObjectSerializer wrap = new OAObjectSerializer(hs, false, false);
             wrap.setIncludeBlobs(true);
             oos.writeObject(wrap);
@@ -357,7 +356,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
     }
 
     public boolean loadFromStorageFile(final File file) throws Exception {
-        LOG.fine("loading to storage file=" + file);
+        LOG.fine("loading from storage file=" + file);
         if (file == null) {
             return false;
         }
@@ -399,6 +398,19 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             cnt++;
         }
         
+        for (final Class c : OAObjectCacheDelegate.getClasses()) {
+            OAObjectCacheDelegate.callback(c, new OACallback() {
+                @Override
+                public boolean updateObject(Object obj) {
+                    Set hs = getSet(c);
+                    if (!hs.contains(obj)) {
+                        hs.add(obj);
+                    }
+                    return true;
+                }
+            });
+        }
+        
         for (;;) {
             b = ois.readBoolean();
             if (!b) {
@@ -410,7 +422,6 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             Set hs = (Set) wrap.getObject();
             hmClass.put(c, hs);
         }
-
         return (cnt > 0);
     }
 

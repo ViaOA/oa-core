@@ -21,7 +21,7 @@ import com.viaoa.hub.HubDelegate;
 import com.viaoa.hub.HubSerializeDelegate;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
-import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.sync.*;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
 
@@ -277,7 +277,7 @@ public class OAObjectSerializeDelegate {
 	    indentx--;
 	}
 	*/
-	protected static void _writeObject(OAObject oaObj, java.io.ObjectOutputStream stream) throws IOException {
+	protected static void _writeObject(final OAObject oaObj, java.io.ObjectOutputStream stream) throws IOException {
 		//if (xxx % 1000 == 0) System.out.println((xxx)+") writeObject "+oaObj);
 		if (oaObj == null) {
 			return;
@@ -286,12 +286,14 @@ public class OAObjectSerializeDelegate {
 		if (serializer != null) {
 			serializer.beforeSerialize(oaObj);
 		}
+		
 		final OAObjectInfo oi = OAObjectHashDelegate.hashObjectInfo.get(oaObj.getClass());
 		final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
-		final boolean bNewObjectCache = !bIsServer && OAObjectCSDelegate.isInNewObjectCache(oaObj);
+		final boolean bIsObjectOnServer = bIsServer || OASync.getSyncClient().isObjectOnServer(oaObj);
 
+		
 		if (stream instanceof RemoteObjectOutputStream) {
-			if (bNewObjectCache) {
+			if (!bIsObjectOnServer) {
 				stream.writeByte((byte) 2);
 			} else if (!OASyncDelegate.isServer(oaObj.getClass())) {
 				// only need to send key to the server
@@ -308,7 +310,7 @@ public class OAObjectSerializeDelegate {
 
 		stream.defaultWriteObject(); // does not write references (transient)
 
-		_writeProperties(oi, bIsServer, oaObj, stream, serializer, bNewObjectCache); // this will write transient properties
+		_writeProperties(oi, bIsServer, oaObj, stream, serializer, bIsObjectOnServer); // this will write transient properties
 
 		// 20200102 include blobs
 		if (serializer != null && serializer.getIncludeBlobs()) {
@@ -327,8 +329,8 @@ public class OAObjectSerializeDelegate {
 
 		stream.writeObject(OAObjectDelegate.FALSE); // end of property list
 
-		if (bNewObjectCache) {
-			OAObjectCSDelegate.removeFromNewObjectCache(oaObj);
+		if (!bIsObjectOnServer) {
+	        OASync.getSyncClient().objectSentToServer(oaObj);
 		}
 
 		// 20141124
@@ -338,7 +340,7 @@ public class OAObjectSerializeDelegate {
 	}
 
 	protected static void _writeProperties(final OAObjectInfo oi, final boolean bIsServer, final OAObject oaObj,
-			final java.io.ObjectOutputStream stream, final OAObjectSerializer serializer, final boolean bNewObjectCache)
+			final java.io.ObjectOutputStream stream, final OAObjectSerializer serializer, final boolean bIsObjectSentOnServer)
 			throws IOException {
 		// this method can not support synchronized blocks, since multiple threads could be calling it and then cause deadlock
 		// default way for OAServer to send objects.  Clients always send objectKeys.
@@ -395,12 +397,12 @@ public class OAObjectSerializeDelegate {
 				continue;
 			}
 
-			boolean b = bNewObjectCache;
+			boolean bShouldSerialize = !bIsObjectSentOnServer;
 			if (serializer != null && obj != null && !(obj instanceof byte[])) {
-				b = serializer.shouldSerializeReference(oaObj, (String) key, obj, li);
+			    bShouldSerialize = serializer.shouldSerializeReference(oaObj, (String) key, obj, li);
 			}
 
-			if (b) {
+			if (bShouldSerialize) {
 				if (serializer != null && obj instanceof OAObject) {
 					// option to dont send oaobj if it is already on the client
 					obj = serializer.getReferenceValueToSend(obj);
@@ -412,42 +414,42 @@ public class OAObjectSerializeDelegate {
 					if (bIsServer) {
 						obj = OAObjectKeyDelegate.getKey((OAObject) obj);
 					}
-					b = true;
+					bShouldSerialize = true;
 				} else if (obj == null || obj instanceof OAObjectKey) {
-					b = true;
+				    bShouldSerialize = true;
 				} else if (obj instanceof Hub) {
 					// see if a hub.size=0 can be sent
 
 					Hub hubx = (Hub) obj;
-					if (bNewObjectCache) {
-						b = true; // this is when the client is sending an object that the server does not have
+					if (!bIsObjectSentOnServer) {
+					    bShouldSerialize = true; // this is when the client is sending an object that the server does not have
 					} else if (hubx.size() > 0 || hubx.getSharedHub() != null) {
-						b = false; // dont send
+					    bShouldSerialize = false; // dont send
 					} else {
 						// if hx.size=0
 						if (!bIsServer || li == null) {
 							obj = null;
-							b = true;
+							bShouldSerialize = true;
 						} else {
 							// server. need to make sure that autoMatch (if needed) was set up.
 							String matchProperty = li.getMatchProperty();
 							if (matchProperty != null && matchProperty.length() > 0) {
 								if (HubDelegate.getAutoMatch(hubx) != null) {
 									obj = null;
-									b = true;
+									bShouldSerialize = true;
 								}
 								// otherwise, need to call oaObj.getHub(..), so that it's created with an autoMatch  
 							} else {
 								// 20150826 this was missing (not sure why), needs to send a null for empty hub
 								obj = null;
-								b = true;
+								bShouldSerialize = true;
 							}
 						}
 					}
 				}
 			}
 
-			if (b) {
+			if (bShouldSerialize) {
 				stream.writeObject(key);
 				if (obj == null) {
 					obj = OANullObject.instance;

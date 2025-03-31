@@ -10,6 +10,8 @@
 */
 package com.viaoa.sync.remote;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
@@ -29,10 +31,12 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	private ClientGetDetail clientGetDetail;
 	private volatile RemoteDataSource remoteDataSource;
 	private int sessionId;
+	private final Map<Integer, Boolean> hmGuid;
 
-	public RemoteClientImpl(int sessionId) {
+	public RemoteClientImpl(int sessionId, Map<Integer, Boolean> hmGuid) {
 		this.sessionId = sessionId;
-		clientGetDetail = new ClientGetDetail(sessionId) {
+		this.hmGuid = hmGuid;
+		clientGetDetail = new ClientGetDetail(sessionId, hmGuid) {
 			@Override
 			protected void loadDataInBackground(OAObject obj, String property) {
 				RemoteClientImpl.this.loadDataInBackground(obj, property);
@@ -52,24 +56,6 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		clientGetDetail.close();
 		clientGetDetail = null;
 		remoteDataSource = null;
-	}
-
-	/**
-	 * this is called when objects are removed on the client, so that the guid can be removed from the clientGetDetail cache of object.guids
-	 * that have been sent to client.
-	 */
-	public void removeGuids(int[] guids) {
-		if (guids == null) {
-			return;
-		}
-		if (clientGetDetail == null) {
-			return;
-		}
-		int x = guids.length;
-		for (int i = 0; i < x; i++) {
-			clientGetDetail.removeGuid(guids[i]);
-			//LOG.fine("remove guid="+guids[i]+" for "+sessionId);
-		}
 	}
 
 	@Override
@@ -103,7 +89,11 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 						// used when an object from ds is not already in a hub with master.
 						@Override
 						public void setCached(OAObject obj) {
-							RemoteClientImpl.this.setCached(obj);
+                            if (hmGuid != null) {
+                                int guid = obj.getGuid();
+                                hmGuid.putIfAbsent(guid, false);
+                            }
+							RemoteClientImpl.this.updateObjectCache(obj);
 						}
 					};
 				}
@@ -165,14 +155,13 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 			return null;
 		}
 		OAObject objx = OAObjectReflectDelegate.createCopy(obj, excludeProperties);
-		setCached(objx);
 		return objx;
 	}
 
 	/**
-	 * Called to add objects to a client's server side cache, so that server with not GC the object.
+	 * Called to add objects to a client's server side cache, so that server will not GC the object.
 	 */
-	public abstract void setCached(OAObject obj);
+	public abstract void updateObjectCache(OAObject obj);
 
 	@Override
 	public boolean deleteAll(Class objectClass, OAObjectKey objectKey, String hubPropertyName) {
@@ -224,6 +213,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		return (Hub) objx;
 	}
 
+	/* moved to  remoteSync  serverDelete, clientDelete
 	@Override
 	public boolean delete(Class objectClass, OAObjectKey objectKey) {
 		OAObject obj = getObject(objectClass, objectKey);
@@ -233,6 +223,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		obj.delete();
 		return true;
 	}
+	*/
 
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey) {

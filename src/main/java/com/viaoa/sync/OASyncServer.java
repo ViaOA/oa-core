@@ -24,13 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
-import com.viaoa.object.OAObjectUniqueDelegate;
+import com.viaoa.hub.Hub;
+import com.viaoa.object.*;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
 import com.viaoa.sync.file.ServerFile;
@@ -182,7 +177,8 @@ public class OASyncServer {
 		}
 		cx.remoteClientCallback = callback;
 
-		rs = new RemoteSessionImpl(ci.getConnectionId()) {
+        Map<Integer, Boolean> hm = getRemoteMultiplexerServer().getSession(ci.getConnectionId(), false).getGuidHashMap();
+		rs = new RemoteSessionImpl(ci.getConnectionId(), hm) {
 			boolean bClearedCache;
 
 			@Override
@@ -203,7 +199,7 @@ public class OASyncServer {
 			public void saveCache(OACascade cascade, int iCascadeRule) {
 				super.saveCache(cascade, iCascadeRule);
 				if (!bClearedCache && cx.ci.getDisconnected() != null) {
-					clearCache();
+					clearCaches();
 					bClearedCache = true;
 				}
 			}
@@ -226,18 +222,6 @@ public class OASyncServer {
 			public void update(ClientInfo ci) {
 				OASyncServer.this.onUpdate(ci);
 			}
-
-			@Override
-			public void removeGuids(int[] guids) {
-				if (guids == null) {
-					return;
-				}
-				removeFromServerCache(guids);
-				if (cx.remoteClient != null) {
-					cx.remoteClient.removeGuids(guids); // remove from getDetail cache/tree
-				}
-			}
-
 		};
 		cx.remoteSession = rs;
 		return rs;
@@ -292,13 +276,15 @@ public class OASyncServer {
 		if (rc != null) {
 			return rc;
 		}
-		rc = new RemoteClientImpl(ci.getConnectionId()) {
+		
+		Map<Integer, Boolean> hm = getRemoteMultiplexerServer().getSession(ci.getConnectionId(), false).getGuidHashMap();
+		rc = new RemoteClientImpl(ci.getConnectionId(), hm) {
 			/**
 			 * Add objects that need to be cached to the session. This is used by datasource and copy methods.
 			 */
 			@Override
-			public void setCached(OAObject obj) {
-				cx.remoteSession.addToServerCache(obj);
+			public void updateObjectCache(OAObject obj) {
+				cx.remoteSession.updateObjectsWithoutHubs( obj.getClass(), obj.getObjectKey(), OAObjectHubDelegate.isInHubWithMaster(obj) );
 			}
 
 			@Override
@@ -481,6 +467,9 @@ public class OASyncServer {
 					ClientInfoExt cx = hmClientInfoExt.get(connectionId);
 					if (cx != null && cx.remoteClientCallback != null) {
 						cx.remoteClientCallback.stop(title, msg);
+						if (getSession(connectionId, false) != null) {
+						    this.removeSession(connectionId);
+						}
 					}
 				}
 
@@ -497,6 +486,93 @@ public class OASyncServer {
 					super.removeSession(connectionId);
 					OASyncServer.this.onSessionRemoved(connectionId);
 				}
+				
+                @Override
+                protected boolean shouldSendSyncMessageToClient(RequestInfo ri, ConcurrentHashMap<Integer, Boolean> hmGuid) {
+			        String mn = ri.method.getName();
+			        if ("propertyChange".equals(mn)) {
+			            OAObjectKey ok = (OAObjectKey) ri.args[1];
+			            int x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+			        }
+			        else if ("removeFromHub".equals(mn)) {
+			            OAObjectKey ok = (OAObjectKey) ri.args[4];
+			            int x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+
+			            ok = (OAObjectKey) ri.args[1];
+			            x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+			            
+			        }
+			        else if ("addToHub".equals(mn) || "insertInHub".equals(mn)) {
+			            OAObjectKey ok = (OAObjectKey) ri.args[1];
+			            int x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+			            
+			            //see if this client has the hub loaded by looking at an object in it
+			            Class c = (Class) ri.args[0];
+			            OAObject obj = (OAObject) OAObjectCacheDelegate.get(c, ok);
+			            Object objx = OAObjectPropertyDelegate.getProperty(obj, (String) ri.args[2]);
+			            if (objx instanceof Hub) {
+			                Hub hub = (Hub) objx;
+			                if (hub.size() > 1) {
+			                    objx = hub.get(0);
+			                    if (objx == ri.args[3]) objx = hub.get(1);
+			                    if (objx instanceof OAObject) {
+			                        x = ((OAObject) objx).getGuid();
+			                        if (!hmGuid.containsKey(x)) return false; // hub not loaded
+			                    }
+			                }
+			            }
+			        }
+			        else if ("addToNewHub".equals(mn)) {
+			            OAObjectKey ok = (OAObjectKey) ri.args[1];
+			            int x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+			        }
+			        else if ("removeFromHub".equals(mn)) {
+			            OAObjectKey ok = (OAObjectKey) ri.args[4];
+			            int x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+			            
+			            ok = (OAObjectKey) ri.args[1];
+			            x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+			            
+			            //see if this client has the hub loaded by looking at an object in it
+			            Class c = (Class) ri.args[0];
+			            OAObject obj = (OAObject) OAObjectCacheDelegate.get(c, ok);
+			            Object objx = OAObjectPropertyDelegate.getProperty(obj, (String) ri.args[2]);
+			            if (objx instanceof Hub) {
+			                Hub hub = (Hub) objx;
+			                if (hub.size() > 1) {
+			                    objx = hub.get(0);
+			                    if (((OAObject)objx).getObjectKey() == ri.args[3]) objx = hub.get(1);
+			                    if (objx instanceof OAObject) {
+			                        x = ((OAObject) objx).getGuid();
+			                        if (!hmGuid.containsKey(x)) return false; // hub not loaded
+			                    }
+			                }
+			            }
+			        }
+			        else if ("moveObjectInHub".equals(mn)) {
+			            OAObjectKey ok = (OAObjectKey) ri.args[1];
+			            int x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+			        }
+			        else if ("clearHubChanges".equals(mn)) {
+			            OAObjectKey ok = (OAObjectKey) ri.args[1];
+			            int x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+			        }
+			        else if ("clientDelete".equals(mn)) {
+			            OAObjectKey ok = (OAObjectKey) ri.args[1];
+			            int x = ok.getGuid();
+			            if (!hmGuid.containsKey(x)) return false;
+			        }
+			        return true;
+			    }
 			};
 
 			// register remote objects

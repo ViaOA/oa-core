@@ -38,8 +38,7 @@ import com.viaoa.hub.HubMerger;
 import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.hub.HubShareDelegate;
 import com.viaoa.hub.HubSortDelegate;
-import com.viaoa.sync.OASync;
-import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.sync.*;
 import com.viaoa.util.*;
 
 public class OAObjectReflectDelegate {
@@ -313,10 +312,8 @@ public class OAObjectReflectDelegate {
 		if (li == null) {
 			if (value == null && clazz.isPrimitive()) {
 				bPrimitiveNull = true;
-			} else {
-				if (value != null || !clazz.equals(String.class)) { // conversion will convert a null to a String "" (blank)
-					value = OAConverter.convert(clazz, value, fmt); // convert to right type of class value
-				}
+			} else if (value != null) { 
+				value = OAConverter.convert(clazz, value, fmt); // convert to right type of class value
 			}
 		} else if (value == null) { // must be a reference property, being set to null value.
 			if (previousValue == null) {
@@ -840,9 +837,10 @@ public class OAObjectReflectDelegate {
 		HashMap<OAObjectKey, Hub> hmSiblingHub = null;
 		final String matchProperty = linkInfo.getMatchProperty();
 
+		
 		if (hub != null) {
 		} else if (!bThisIsServer && !oi.getLocalOnly() && (!bIsCalc || bIsServerSideCalc)
-				&& !OAObjectCSDelegate.isInNewObjectCache(oaObj)) {
+				&& OASync.getSyncClient().isObjectOnServer(oaObj)) {
 			// request from server
 			hub = OAObjectCSDelegate.getServerReferenceHub(oaObj, linkPropertyName);
 			if (hub == null) {
@@ -1942,7 +1940,7 @@ public class OAObjectReflectDelegate {
 			if (b && oaObj.isDeleted() && !bIsServer) {
 				// 20151117 dont autocreate new if this is deleted
 			} else {
-				if (!bIsServer && !OAObjectCSDelegate.isInNewObjectCache(oaObj)) {
+				if (!bIsServer && OASync.getSyncClient().isObjectOnServer(oaObj)) {
 					ref = OAObjectCSDelegate.getServerReference(oaObj, linkPropertyName);
 				} else {
 					ref = OAObjectReflectDelegate.createNewObject(li.getToClass());

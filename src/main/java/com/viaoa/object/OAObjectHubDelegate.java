@@ -180,7 +180,7 @@ public class OAObjectHubDelegate {
                             }
                         }
                         
-                        if (b) OAObjectCSDelegate.addToServerSideCache(oaObj);
+                        if (b) OAObjectCSDelegate.updateObjectsWithoutHubs(oaObj);
                     }
                 }
             }
@@ -400,7 +400,7 @@ public class OAObjectHubDelegate {
         if (bReused) aiReuseWeakRefArray.incrementAndGet();
 
         if (bRemoveFromServerCache && OASyncDelegate.isClient(oaObj.getClass()) && OARemoteThreadDelegate.shouldSendMessages()) {
-            OAObjectCSDelegate.removeFromServerSideCache(oaObj);
+            OAObjectCSDelegate.updateObjectsWithoutHubs(oaObj);
         }
         return true;
     }

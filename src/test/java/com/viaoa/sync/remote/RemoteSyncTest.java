@@ -92,6 +92,16 @@ public class RemoteSyncTest extends OAUnitTest {
                 // TODO Auto-generated method stub
                 
             }
+            @Override
+            public void serverDelete(Class objectClass, OAObjectKey objectKey) {
+                // TODO Auto-generated method stub
+//qqqqqqqqqqqqqqqqqqq                
+            }
+            @Override
+            public void clientDelete(Class objectClass, OAObjectKey objectKey) {
+                // TODO Auto-generated method stub
+//qqqqqqqqqqqqqqqqqqq                
+            }
         };
         return rsi;
     }

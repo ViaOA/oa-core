@@ -34,13 +34,24 @@ public @interface OARemoteMethod {
     
     int timeoutSeconds() default 0;
     
-    // if true and the return value is a remote object, then it will not use a queue when messaging (even if parent uses a msg queue)
+    /**
+     * if true, then it will not use a queue for the return value (even if parent uses a msg queue)
+     */
     boolean dontUseQueueForReturnValue() default false;
     
-    // do not use queue (even if parent uses a msg queue)
+    /**
+     * Do not use queue (even if parent uses a msg queue).
+     */
     boolean dontUseQueue() default false;
     
-    // send return value using the socket that writes queued messages from the server to the client
+    /**
+     * send return value using the socket that writes queued messages from the server to the client
+     */
     boolean returnOnQueueSocket() default false;
+    
+    /**
+     * Server side broadcast option to have the server runn the method using an OARemoteThread.
+     */
+    boolean runInRemoteThread() default false; 
 }
 

@@ -8,6 +8,8 @@ import com.viaoa.hub.Hub;
 import com.viaoa.util.*;
 
 
+// See: OATemplate when populating a html Table /grid 
+
 //qqqqqqqqqqqqqqqqqq stack column
 
 //qqqqqqqqqq add sort PPs

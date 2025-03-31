@@ -372,7 +372,9 @@ public class OAObjectKeyDelegate {
 
 		for (int i = 0; ids != null && i < ids.length; i++) {
 			if (propertyName.equalsIgnoreCase(ids[i])) {
-				return ids[i];
+			    if (objectKey.getObjectIds().length > i) {
+			        return objectKey.getObjectIds()[i];
+			    }
 			}
 		}
 		return null;

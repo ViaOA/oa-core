@@ -134,10 +134,10 @@ public class HubCSDelegate {
 	    }
 	    */
 	    
-	    // 20140314 dont need to send if masterObject is only on client so far
-        if (OAObjectCSDelegate.isInNewObjectCache(master)) {
-	        return;
-	    }
+        final OASyncClient sc = OASyncDelegate.getSyncClient();
+        if (sc != null) {
+            if (!sc.isObjectOnServer(master)) return;
+        }
 
         // 20160630
         final boolean bIsLoading = OAThreadLocalDelegate.isLoading(); 
@@ -146,12 +146,8 @@ public class HubCSDelegate {
                 if (OASyncDelegate.isServer(master)) {
                     return; 
                 }
-                if (OAObjectCSDelegate.isInNewObjectCache(master)) {
-                    return;
-                }
             }
         }
-
         
         // 20110323 note: must send object, other clients might not have it.        
         RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(thisHub);

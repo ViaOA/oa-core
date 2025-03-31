@@ -43,22 +43,20 @@ import com.viaoa.util.OAPool;
 import com.viaoa.util.OAReflect;
 import com.viaoa.util.Tuple;
 
-/* DEBUGing
- *  use this for debugging, so that remote methods wont timeout while debugging:
- *      MultiplexerClient.DEBUG = true;
- */
 
 /**
  * Remoting client, that allows a client to access Objects on a server, and call methods on those objects.
  * <p>
- * It allows for any method to have args that are remote objects, which would allow the server to call the client. <br>
- * <p. A method can also return a remote object. Broadcasting is supported, where calling a method on a remote object will be invoked on all
+ * It allows for any method to have args that are remote objects, which would allow the server to call the client. 
+ * <p> A method can also return a remote object. Broadcasting is supported, where calling a method on a remote object will be invoked on all
  * other clients and server. This is similar to RMI, except that it allows for many objects (on either server or client) to be remote, with
  * less overhead. <br>
  * Example: get a remote object "A" from server call method "a.test(argX)", where arg is a RemoteClass - the server will then be able to
  * call methods on argX.
  * <p>
- * Note: OARemoteThread is used to process requests, so the current Thread can be check to 'know' if it's a remote call.
+ * Note: OARemoteThread is used to process requests, so the current Thread can be check to 'know' if it's running a remote call.
+ * <p>
+ * DEBUG'ing - uses OAObject.getDebugMode(), if true then remote methods wont timeout.
  *
  * @author vvia
  */
@@ -69,27 +67,31 @@ public class OARemoteMultiplexerClient {
 	private OAMultiplexerClient multiplexerClient;
 
 	// remote objects that have already been retrieved from server.
-	private ConcurrentHashMap<String, Object> hmLookup = new ConcurrentHashMap<String, Object>();
+	private final ConcurrentHashMap<String, Object> hmLookup = new ConcurrentHashMap<String, Object>();
 
 	// used to uniquely identify any objects that this client sends to server.
-	private AtomicInteger aiBindCount = new AtomicInteger();
+	private final AtomicInteger aiBindCount = new AtomicInteger();
 
 	// pool of vsockets
 	private OAPool<VirtualSocket> poolVirtualSocketCtoS;
 
 	// mapping for Remote objects
-	private ConcurrentHashMap<String, BindInfo> hmNameToBind = new ConcurrentHashMap<String, BindInfo>();
+	private final ConcurrentHashMap<String, BindInfo> hmNameToBind = new ConcurrentHashMap<String, BindInfo>();
 	// used to manage GC for remote objects.  See performDGC.
-	private ReferenceQueue referenceQueue = new ReferenceQueue();
+	private final  ReferenceQueue referenceQueue = new ReferenceQueue();
 
 	// performance enhancement for ObjectSteams
-	private ConcurrentHashMap<Integer, ObjectStreamClass> hmClassDescInput = new ConcurrentHashMap<Integer, ObjectStreamClass>();
-	private ConcurrentHashMap<String, Integer> hmClassDescOutput = new ConcurrentHashMap<String, Integer>();
-	private AtomicInteger aiClassDescOutput = new AtomicInteger();
+	private final ConcurrentHashMap<Integer, ObjectStreamClass> hmClassDescInput = new ConcurrentHashMap<Integer, ObjectStreamClass>();
+	private final ConcurrentHashMap<String, Integer> hmClassDescOutput = new ConcurrentHashMap<String, Integer>();
+	private final AtomicInteger aiClassDescOutput = new AtomicInteger();
 
-	private ConcurrentHashMap<Integer, RequestInfo> hmAsyncRequestInfo = new ConcurrentHashMap<Integer, RequestInfo>();
-	private AtomicInteger aiMessageId = new AtomicInteger();
+	private final ConcurrentHashMap<Integer, RequestInfo> hmAsyncRequestInfo = new ConcurrentHashMap<Integer, RequestInfo>();
+	private final AtomicInteger aiMessageId = new AtomicInteger();
 
+    private final ConcurrentHashMap<String, Object> hmProxyCtoS = new ConcurrentHashMap<String, Object>();
+    private ConcurrentHashMap<String, Object> hmProxyBroadcast = new ConcurrentHashMap<String, Object>();
+
+	
 	/**
 	 * Creates a new Distributed Client, using the ICEClient multiplexer connection as the transport.
 	 */
@@ -150,6 +152,7 @@ public class OARemoteMultiplexerClient {
 		oos.writeByte(RequestInfo.Type.CtoS_GetBroadcastClass.ordinal());
 		oos.writeAsciiString(lookupName);
 		oos.flush();
+		oos.close(); // 20250318
 
 		RemoteObjectInputStream ois = new RemoteObjectInputStream(socket, hmClassDescInput);
 		Exception ex = null;
@@ -159,7 +162,7 @@ public class OARemoteMultiplexerClient {
 		} else {
 			c = (Class) ois.readObject();
 		}
-
+		ois.close(); // 20250318
 		releaseSocketForCtoS(socket);
 		LOG.fine("lookupName=" + lookupName + ", interface class=" + c);
 		if (ex != null) {
@@ -197,13 +200,16 @@ public class OARemoteMultiplexerClient {
 		oos.writeByte(RequestInfo.Type.CtoS_GetLookupInfo.ordinal());
 		oos.writeAsciiString(lookupName);
 		oos.flush();
+        oos.close(); // 20250318
 
 		RemoteObjectInputStream ois = new RemoteObjectInputStream(socket, hmClassDescInput);
 		if (!ois.readBoolean()) {
+		    ois.close(); // 20250318
 			Exception ex = new Exception((String) ois.readObject());
 			throw ex;
 		}
 		Object[] objs = (Object[]) ois.readObject();
+        ois.close(); // 20250318
 		Class c = (Class) objs[0];
 		boolean bUsesQueue = (Boolean) objs[1];
 		boolean bIsBroadcast = (Boolean) objs[2];
@@ -230,12 +236,10 @@ public class OARemoteMultiplexerClient {
 
 	/** create a name that will be unique on the server. */
 	protected String createBindName(RequestInfo ri) {
-
 		String bindName = "C." + ri.socket.getConnectionId() + "." + aiBindCount.incrementAndGet();
 		return bindName;
 	}
 
-	private ConcurrentHashMap<String, Object> hmProxyCtoS = new ConcurrentHashMap<String, Object>();
 
 	/**
 	 * Create a proxy instance for an Object that is on the server. This is used for lookups and when the server returns a remote instance.
@@ -275,8 +279,6 @@ public class OARemoteMultiplexerClient {
 		LOG.fine("Created proxy instance, class=" + c + ", name=" + name);
 		return proxy;
 	}
-
-	private ConcurrentHashMap<String, Object> hmProxyBroadcast = new ConcurrentHashMap<String, Object>();
 
 	protected Object getProxyForBroadcast(String name, Class c, Object callback) throws Exception {
 		if (name == null) {
@@ -361,6 +363,7 @@ public class OARemoteMultiplexerClient {
 								}
 							}
 						}
+						// if (i>5) System.out.println(i+" CLIENT IS Waiting on REQUEST TO RETURN "+ri.toLogString());						
 						ri.wait(1000); // request timeout
 					}
 				}
@@ -546,6 +549,7 @@ public class OARemoteMultiplexerClient {
 			oos.writeInt(ri.messageId);
 		}
 		oos.flush();
+        oos.close(); // 20250318
 
 		if (ri.type == RequestInfo.Type.CtoS_SocketRequest) {
 			RemoteObjectInputStream ois = new RemoteObjectInputStream(ri.socket, hmClassDescInput);
@@ -574,6 +578,7 @@ public class OARemoteMultiplexerClient {
 				}
 			}
 			ri.methodInvoked = true;
+            ois.close(); // 20250318
 		}
 		return true;
 	}
@@ -647,7 +652,7 @@ public class OARemoteMultiplexerClient {
 	}
 
 	// used to assign unique int for each StoC vsocket
-	private AtomicInteger aiCountForStoC = new AtomicInteger();
+	private final AtomicInteger aiCountForStoC = new AtomicInteger();
 	// flag to know if the initial StoC vsocket has been created
 	private volatile boolean bFirstStoCsocketCreated;
 
@@ -720,6 +725,7 @@ public class OARemoteMultiplexerClient {
 				// note: too many threads can increase the vsockets, and reduce the msgQue speed
 
 				int x = alRemoteThread.size();
+				
 				if (x < 10) {
 					break;
 				}
@@ -930,6 +936,7 @@ public class OARemoteMultiplexerClient {
 		}
 		if (type == RequestInfo.Type.StoC_CloseObjectInputStream) {
 			// server is requesting to close the ois
+		    ois.close(); // 20250318
 			return null;
 		}
 
@@ -945,6 +952,7 @@ public class OARemoteMultiplexerClient {
 		boolean b = false;
 		try {
 			b = _processSocket(ri, ois);
+			// System.out.println(String.format("processStoCSocket ri=%s", ri.toLogString())); 
 		} finally {
 			ri.nsEnd = System.nanoTime();
 			if (b) {
@@ -957,7 +965,7 @@ public class OARemoteMultiplexerClient {
 		return null;
 	}
 
-	private LinkedBlockingQueue<RequestInfo> queRequestInfo = new LinkedBlockingQueue<RequestInfo>();
+	private final LinkedBlockingQueue<RequestInfo> queRequestInfo = new LinkedBlockingQueue<RequestInfo>();
 
 	/**
 	 * que that has a remoteThread process the request
@@ -987,7 +995,7 @@ public class OARemoteMultiplexerClient {
 		t.start();
 	}
 
-	private LinkedBlockingQueue<RequestInfo> queSyncRequestInfo = new LinkedBlockingQueue<RequestInfo>();
+	private final LinkedBlockingQueue<RequestInfo> queSyncRequestInfo = new LinkedBlockingQueue<RequestInfo>();
 
 	/**
 	 * que that is for sync requests, and sync return values/ack
@@ -1001,6 +1009,9 @@ public class OARemoteMultiplexerClient {
 						if (ri == null) {
 							continue;
 						}
+						
+						// System.out.println("SyncRequestQueueThread msg=  "+ri.toLogString());                        
+						
 						if (ri.type == RequestInfo.Type.CtoS_QueuedBroadcast) {
 							if (ri.bind != null && ri.bind.isOASync) {
 								if (ri.connectionId == multiplexerClient.getConnectionId()) {
@@ -1079,10 +1090,11 @@ public class OARemoteMultiplexerClient {
 	private LinkedBlockingQueue<Tuple<RequestInfo, Runnable>> queSyncRunnable = new LinkedBlockingQueue<Tuple<RequestInfo, Runnable>>();
 
 	/**
-	 * Called by oaRemoteThead.addRunnable()
+	 * Called by oaRemoteThread.addRunnable()
 	 */
 	private void addSyncRunnable(RequestInfo ri, Runnable r) {
 		int x = queSyncRunnable.size();
+		
 		if (x > 500) {
 			LOG.fine("adding runnable, queSize=" + (queSyncRunnable.size() + 1));
 		}
@@ -1131,6 +1143,7 @@ public class OARemoteMultiplexerClient {
 				aiSyncRunnableQueueThread.incrementAndGet();
 			}
 		}
+		
 		if (b) {
 			//System.out.println("createSyncRunnableQueueThread =====> total="+total+", busy="+busy+", AVAIL="+avail+", queSize="+queSyncRunnable.size());
 			createSyncRunnableQueueThread();
@@ -1271,6 +1284,7 @@ public class OARemoteMultiplexerClient {
 					rix.exception = ri.exception;
 					rix.exceptionMessage = ri.exceptionMessage;
 					rix.bHadOASyncEvent = ri.bHadOASyncEvent;
+					
 					if (ri.bHadOASyncEvent) {
 						// 20180225 need to put on sync que, so that it waits for sync events to be processed first
 						queSyncRequestInfo.put(rix);
@@ -1321,7 +1335,7 @@ public class OARemoteMultiplexerClient {
 					ri.exceptionMessage = "StoC requestInfo not found";
 					return true;
 				}
-
+				
 				// if oasync was called by remoteThread, then dont put in queue, which would have made it take more remoteThreads to get to it.
 				//     instead, notify it when it is received back from the server.
 				if (rix.bind.isOASync && !rix.isRemoteThread) {
@@ -1468,7 +1482,6 @@ public class OARemoteMultiplexerClient {
 	}
 
 	private void _processMessageForStoC(RequestInfo ri) throws Exception {
-
 		if (ri.bind == null) {
 			ri.bind = getBindInfo(ri.bindName);
 			if (ri.bind == null) {
@@ -1614,6 +1627,7 @@ public class OARemoteMultiplexerClient {
 					oos.writeObject(ri.response);
 				}
 				oos.flush();
+		        oos.close(); // 20250318
 				releaseSocketForCtoS(socket);
 			} else {
 				RemoteObjectOutputStream oos = new RemoteObjectOutputStream(ri.socket, hmClassDescOutput, aiClassDescOutput);
@@ -1637,6 +1651,7 @@ public class OARemoteMultiplexerClient {
 					oos.writeObject(ri.response);
 				}
 				oos.flush();
+		        oos.close(); // 20250318
 			}
 		} else {
 			if (ri.exception != null) {

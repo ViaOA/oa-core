@@ -20,7 +20,7 @@ public abstract class RemoteRestClientImpl extends RemoteClientImpl {
 	private static Logger LOG = Logger.getLogger(RemoteRestClientImpl.class.getName());
 
 	public RemoteRestClientImpl(int sessionId) {
-		super(sessionId);
+		super(sessionId, null);
 	}
 
 	/**

@@ -10,10 +10,7 @@
 */
 package com.viaoa.sync.remote;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.TreeMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
@@ -32,9 +29,9 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OANotExist;
 
 /**
- * This is used on the server for each clientSession, that creates a RemoteClientImpl for getDetail(..) remote requests. This class will
- * return the object/s for the request, and extra objects to include. This works directly with OASyncClient.getDetail(..), returning a
- * custom serializer for it.
+ * Used by ClientSession on Server, that creates an object graph for getDetail(..) remote requests. 
+ * This class will return the objects and property paths, along with extra objects to include. 
+ * This works directly with OASyncClient.getDetail(..), returning a custom serializer for it.
  * 
  * @author vvia
  */
@@ -42,36 +39,24 @@ public class ClientGetDetail {
 	private static Logger LOG = Logger.getLogger(ClientGetDetail.class.getName());
 	private final int clientId;
 
-	// tracks guid for all oaObjects serialized, the Boolean: true=all references have been sent, false=object has been sent (might not have all references)
-	private final TreeMap<Integer, Boolean> treeSerialized = new TreeMap<Integer, Boolean>();
-	private final ReentrantReadWriteLock rwLockTreeSerialized = new ReentrantReadWriteLock();
+	// tracks guid for all oaObjects sent to client, used by sync filter to know which objects exist on client app.
+	private final Map<Integer, Boolean> hmGuid;
 
-	public ClientGetDetail(int clientId) {
+	
+	public ClientGetDetail(int clientId, Map<Integer, Boolean> hmGuid) {
 		this.clientId = clientId;
+		this.hmGuid = hmGuid;
 	}
 
 	public void removeGuid(int guid) {
-		try {
-			rwLockTreeSerialized.writeLock().lock();
-			treeSerialized.remove(guid);
-		} finally {
-			rwLockTreeSerialized.writeLock().unlock();
-		}
+	    hmGuid.remove(guid);
 	}
 
 	public void addGuid(int guid) {
-		try {
-			rwLockTreeSerialized.writeLock().lock();
-			if (treeSerialized.get(guid) == null) {
-				treeSerialized.put(guid, false);
-			}
-		} finally {
-			rwLockTreeSerialized.writeLock().unlock();
-		}
+	    hmGuid.put(guid, false);
 	}
 
 	public void close() {
-		treeSerialized.clear();
 	}
 
 	//    private static volatile int cntx;
@@ -91,7 +76,7 @@ public class ClientGetDetail {
 	 */
 	public Object getDetail(final int id, final Class masterClass, final OAObjectKey masterObjectKey,
 			final String property, final String[] masterProps, final OAObjectKey[] siblingKeys, final boolean bForHubMerger) {
-
+	    
 		if (masterObjectKey == null || property == null) {
 			return null;
 		}
@@ -343,19 +328,12 @@ public class ClientGetDetail {
 				int guid = OAObjectKeyDelegate.getKey(obj).getGuid();
 				boolean bx = hsSendingGuid.remove(guid);
 				// update tree of sent objects
-				try {
-					rwLockTreeSerialized.writeLock().lock();
-					if (bx || treeSerialized.get(guid) == null) {
-						treeSerialized.put(guid, bx);
-					}
-				} finally {
-					rwLockTreeSerialized.writeLock().unlock();
-				}
+                hmGuid.put(guid, bx);
 			}
 
 			// this will "tell" OAObjectSerializer which reference properties to include with each OAobj
 			@Override
-			protected void beforeSerialize(final OAObject obj) {
+			public void beforeSerialize(final OAObject obj) {
 				// parent object - will send all references
 				if (obj == masterObject) {
 					if (bMasterSent) {
@@ -607,9 +585,8 @@ public class ClientGetDetail {
 				}
 
 				int guid = key.getGuid();
-				rwLockTreeSerialized.readLock().lock();
-				Object objx = treeSerialized.get(guid);
-				rwLockTreeSerialized.readLock().unlock();
+				
+				Object objx = hmGuid.get(guid);
 				boolean b = objx != null && ((Boolean) objx).booleanValue();
 				if (b) {
 					return false; // already sent with all refs
@@ -629,23 +606,18 @@ public class ClientGetDetail {
 		if (!(obj instanceof OAObject)) {
 			return false;
 		}
-		rwLockTreeSerialized.readLock().lock();
-		Object objx;
-		try {
-			objx = treeSerialized.get(((OAObject) obj).getObjectKey().getGuid());
-		} finally {
-			rwLockTreeSerialized.readLock().unlock();
-		}
-		return (objx != null);
+		
+		int guid = ((OAObject) obj).getObjectKey().getGuid();
+		return hmGuid.containsKey(guid);
 	}
 
 	private boolean wasFullySentToClient(Object obj) {
 		if (!(obj instanceof OAObject)) {
 			return false;
 		}
-		rwLockTreeSerialized.readLock().lock();
-		Object objx = treeSerialized.get(((OAObject) obj).getObjectKey().getGuid());
-		rwLockTreeSerialized.readLock().unlock();
+		
+        int guid = ((OAObject) obj).getObjectKey().getGuid();
+		Object objx = hmGuid.get(guid);
 		if (objx instanceof Boolean) {
 			return ((Boolean) objx).booleanValue();
 		}

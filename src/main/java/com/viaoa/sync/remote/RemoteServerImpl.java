@@ -103,6 +103,32 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		return objResult;
 	}
 
+	
+
+    @Override
+    public Object runRemoteMethod2(OAObject obj, String methodName, Object[] args) {
+        Class clazz = obj.getClass();
+        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(clazz);
+
+        int x = 0;
+        if (args != null && args.length > 0) {
+            x += args.length;
+        }
+        Method method = OAObjectInfoDelegate.getMethod(oi, methodName, x);
+
+        if (method == null) {
+            throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());
+        }
+        Object objResult = null;
+        try {
+            objResult = method.invoke(obj, args);
+        } catch (Exception e) {
+            throw new RuntimeException("exception calling method=" + methodName + ", class=" + clazz.getSimpleName(), e);
+        }
+        return objResult;
+    }
+	
+	
 	@Override
 	public Object runRemoteMethod(Hub hub, String methodName, Object[] args) {
 		if (hub == null) {

@@ -23,8 +23,7 @@ import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.hub.HubShareDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
-import com.viaoa.sync.OASync;
-import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.sync.*;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.undo.OAUndoableEdit;
 import com.viaoa.util.OACompare;
@@ -76,9 +75,8 @@ public class OAObjectEventDelegate {
 				if (OASyncDelegate.isServer(oaObj)) { // 20150604 if client, then it needs to send prop change to server
 					return;
 				}
-				if (OAObjectCSDelegate.isInNewObjectCache(oaObj)) { // 20160212 created on client, has not been sent to server yet
-					return;
-				}
+				OASyncClient sc = OASync.getSyncClient(); 
+				if (sc != null && !sc.isObjectOnServer(oaObj)) return;
 			}
 		} else if (!OARemoteThreadDelegate.isRemoteThread()) {
 			// 20180617 validate
@@ -142,6 +140,7 @@ public class OAObjectEventDelegate {
 		}
 
 		// 20211209 check for changes to link/property that affect this object's other property/link
+		/* 20250327 qqqqqqqqq removed, dont want to send fkey msgs
 		if (!bIsCheckingRef) {
 			if (linkInfo != null) {
 				for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
@@ -182,6 +181,7 @@ public class OAObjectEventDelegate {
 				}
 			}
 		}
+		*/
 
 		if (toLinkInfo != null && toLinkInfo.bRecursive) {
 			OALinkInfo liRecursive = OAObjectInfoDelegate.getRecursiveLinkInfo(oi, OALinkInfo.ONE); // ex: "ParentSection"
@@ -223,24 +223,24 @@ public class OAObjectEventDelegate {
 		// 20170420 check to see if owner is being reassigned to null
 		if (linkInfo != null && oldObj instanceof OAObject && newObj == null && !oaObj.isDeleted() && !oaObj.isNew()
 				&& linkInfo.getType() == OALinkInfo.ONE && !linkInfo.getCalculated()) {
-			if (!OAThreadLocalDelegate.isDeleting() && OASync.isServer()) {
-				OAObjectInfo oix = OAObjectInfoDelegate.getOAObjectInfo((OAObject) oldObj);
-				if (!oix.getLookup() && !oix.getPreSelect()) {
-					cntSetOwnerNull++;
-					if (throttleSetOwnerNull.check()) {
-						String s = "FYI (no exception), reference is being set to null, object=" + oaObj.getClass().getSimpleName()
-								+ ", property=" + propertyName + ", new value=" + newObj + ", old value=" + oldObj;
-						RuntimeException e = new RuntimeException(s);
-						LOG.log(Level.FINE, "cnt=" + (cntSetOwnerNull) + " " + s, e);
-					}
-				}
-			}
+		    if (linkInfo.getReverseLinkInfo().getOwner()) {		    
+    			if (!OAThreadLocalDelegate.isDeleting() && OASync.isServer()) {
+    				OAObjectInfo oix = OAObjectInfoDelegate.getOAObjectInfo((OAObject) oldObj);
+    				if (!oix.getLookup() && !oix.getPreSelect()) {
+    					cntSetOwnerNull++;
+    					if (throttleSetOwnerNull.check()) {
+    						String s = "FYI (no exception), reference is being set to null, object=" + oaObj.getClass().getSimpleName()
+    								+ ", property=" + propertyName + ", new value=" + newObj + ", old value=" + oldObj;
+    						RuntimeException e = new RuntimeException(s);
+    						LOG.log(Level.FINE, "cnt=" + (cntSetOwnerNull) + " " + s, e);
+    					}
+    				}
+    			}
+		    }
 		}
 
 		if (linkInfo == null && !OARemoteThreadDelegate.isRemoteThread()) {
 			OAPropertyInfo propInfo = OAObjectInfoDelegate.getPropertyInfo(oi, propertyU);
-
-			// 20200728
 			if (!bIsLoading && propInfo != null && propInfo.getIsSubmit() && newObj != null) {
 				if (OAConv.toBoolean(newObj)) {
 					OAObjectCallback eq = OAObjectCallbackDelegate.getAllowSubmitObjectCallback(oaObj);
@@ -323,7 +323,12 @@ public class OAObjectEventDelegate {
 
 		if (!bLocalOnly && !bIsLoading) {
 			// 20140314 if it is in newObjectCache (this computer only), then dont send prop changes
-			if (!OAObjectCSDelegate.isInNewObjectCache(oaObj)) {
+		    boolean b = OASync.isServer();
+		    if (!b) {
+	            OASyncClient sc = OASync.getSyncClient(); 
+	            b = (sc != null && sc.isObjectOnServer(oaObj));
+		    }
+            if (b) {
 				OAObjectCSDelegate.fireBeforePropertyChange(oaObj, propertyName, oldObj, newObj);
 			}
 		}
@@ -425,8 +430,7 @@ public class OAObjectEventDelegate {
 			}
 		}
 
-		// 20100406
-		boolean bIsLoading = OAThreadLocalDelegate.isLoading();
+		final boolean bIsLoading = OAThreadLocalDelegate.isLoading();
 
 		OAObjectKey origKey;
 		if (propInfo != null && propInfo.getId()) {
@@ -555,6 +559,7 @@ public class OAObjectEventDelegate {
 		}
 
 		// check for changes to link/property that affect this object's other property/link
+		/*qqqqqqq 20250327 removed: dont want to send fkey properties msgs   
 		if (!bIsCheckingRef && !bUnknownValues) {
 			if (linkInfo != null) {
 				for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
@@ -580,7 +585,6 @@ public class OAObjectEventDelegate {
 					} else {
 						newValue = newObj;
 					}
-
 					firePropertyChange(	oaObj, fki.getFromPropertyInfo().getName(),
 										oldValue,
 										newValue,
@@ -619,6 +623,7 @@ public class OAObjectEventDelegate {
 				}
 			}
 		}
+		*/
 
 		// 20220917 check if enum/nameValue property changed, and send helper enum properties changeEvent
 		// firePropertyChange for other help enumProperties

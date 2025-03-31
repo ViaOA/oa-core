@@ -18,31 +18,32 @@ import com.viaoa.sync.model.ClientInfo;
 
 
 /**
- * session for client. 
+ * Used to manage a Client session on the Server. 
  */
 @OARemoteInterface()
 public interface RemoteSessionInterface {
     
     /**
-     * create a new object on the server,
-     * and call addToCache
-     */
-    OAObject createNewObject(Class clazz);
-
-    /**
-     * Used to make sure that object is stored in the server side 
-     * @param obj
-
+     * This is called when a new OAObject is created on the Client, 
+     * so that the Server side Session can use it when filtering broadcast msgs.
      */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
-    void addToServerCache(OAObject obj);
+    void objectCreated(int guid);
 
     /**
-     * Objects on server side cache, that are on client that might get gc'd on server.
+     * Called by client OAObject finalization, to remove guid from server side client session.
      */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
-    void removeFromServerCache(int[] guids);
+    void objectsFinalized(int[] guids);
 
+    /**
+     * Used to make sure that objects are stored in the server side and wont be GCd.
+     * This is used when a client removes an OAObject from hubs, which means it might not be referenceable on the server (and get GC'd)
+     * This will keep it referenceable on the server  
+     */
+    @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
+    void updateObjectsWithoutHubs(Class c, OAObjectKey ok, boolean bIsInHub);
+    
     
     boolean setLock(Class objectClass, OAObjectKey objectKey, boolean bLock);
     boolean isLocked(Class objectClass, OAObjectKey objectKey);
@@ -55,13 +56,6 @@ public interface RemoteSessionInterface {
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
     void sendException(String msg, Throwable ex);
 
-    @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
-    /**
-     * Objects that have been GDd on the client, so that the server can be remove them from
-     * the session cache and guid tree of objects that have been sent to client - so they can be resent if needed again.
-     */
-    void removeGuids(int[] guids);
-    
     @OARemoteMethod(dontUseQueue=true)
     String ping(String msg);
     

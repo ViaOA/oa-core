@@ -16,8 +16,10 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
 
 /**
- * Thread that is used to process all remote method calls.
- *
+ * 
+ * Thread that is used to process broadcast remote method calls.
+ * By default, any "ripple effect" messages caused by this thread are not sent since each client will do the same thing.
+ * 
  * @author vvia
  */
 public class OARemoteThread extends Thread {
@@ -32,10 +34,7 @@ public class OARemoteThread extends Thread {
 	public volatile boolean watingOnLock;
 	public volatile long msStartNextThread;
 	public volatile long msLastUsed;
-
-	// volatile boolean sendMessages;  // if false then events are not sent, since this is processing a message
-
-	private volatile int sendMessageCount;
+	private volatile int sendMessageCount;  // if ==  0 (default) then sendMessages is false, else true
 
 	public OARemoteThread() {
 	}
@@ -69,7 +68,11 @@ public class OARemoteThread extends Thread {
 		r.run();
 	}
 
-	// note: this is overwritten to start a new thread
+	/**
+	 * Called once this thread has reached it's main "mark" for the method that it is 
+	 * running, so that a new thread can process the next message.
+	 * note: this is overwritten to start a new thread
+	 */
 	public void startNextThread() {
 		startedNextThread = true;
 		msStartNextThread = System.currentTimeMillis();
@@ -126,7 +129,5 @@ public class OARemoteThread extends Thread {
 		// reset thread local
 		OAThreadLocalDelegate.setContext(null);
 		OAThreadLocalDelegate.setAdmin(false);
-
 	}
-
 }

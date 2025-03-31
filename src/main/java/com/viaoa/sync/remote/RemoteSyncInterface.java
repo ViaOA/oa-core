@@ -15,7 +15,7 @@ import java.util.Comparator;
 
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
+import com.viaoa.remote.multiplexer.annotation.*;
 
 @OARemoteInterface(isOASync=true)
 public interface RemoteSyncInterface {
@@ -25,6 +25,8 @@ public interface RemoteSyncInterface {
 
     // HubCSDelegate
     boolean addToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj);
+    
+    // uses serializer to include addition properties
     boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj);
     
     boolean insertInHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj, int pos);
@@ -42,8 +44,8 @@ public interface RemoteSyncInterface {
      */
     void refresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName);
     
-    // moved to remoteClient so that it will be performed on the server
-    // boolean deleteAll(Class objectClass, OAObjectKey objectKey, String hubPropertyName);
+    @OARemoteMethod(runInRemoteThread = true) 
+    void serverDelete(Class objectClass, OAObjectKey objectKey);
+
+    void clientDelete(Class objectClass, OAObjectKey objectKey);
 }
-
-

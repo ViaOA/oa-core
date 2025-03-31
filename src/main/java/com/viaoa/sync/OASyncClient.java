@@ -28,18 +28,7 @@ import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
-import com.viaoa.object.OAObjectSerializeDelegate;
-import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.object.OAPerformance;
-import com.viaoa.object.OASiblingHelperDelegate;
-import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
@@ -73,7 +62,7 @@ public class OASyncClient {
 	private ClientInfo clientInfo;
 
 	private RemoteServerInterface remoteServerInterface;
-	private RemoteSessionInterface remoteClientInterface;
+	private RemoteSessionInterface remoteSessionInterface;
 	private RemoteClientInterface remoteClientSyncInterface;
 	private RemoteSyncInterface remoteSyncInterface;
 	private RemoteSyncInterface remoteSyncImpl;
@@ -81,13 +70,23 @@ public class OASyncClient {
 	private int serverHostPort;
 	private final boolean bUpdateSyncDelegate; // flag to know if this is the main client. Otherwise it could be a combinedSyncClient
 
-	// used by getDetail
-	private OAObject[] lastMasterObjects = new OAObject[10];
-	private int lastMasterCnter;
 	private final Package packagex;
 
 	private OADataSourceClient dataSourceClient;
 
+    private final AtomicInteger aiCntGetDetail = new AtomicInteger();
+    private final ConcurrentHashMap<Integer, Boolean> hmIgnoreSibling = new ConcurrentHashMap<Integer, Boolean>();
+
+    private static final ConcurrentHashMap<Integer, Integer> hmNewObjectsNotYetSent = new ConcurrentHashMap<Integer, Integer>(31, .75f);
+
+    /**
+     * Objects that have been added on the server.session so that it wont be GCd on the server.
+     */
+    private static final ConcurrentHashMap<Integer, Integer> hmObjectsWithoutHubs = new ConcurrentHashMap<Integer, Integer>(31, .75f);
+    private volatile LinkedBlockingQueue<OAObject> queObjectsWithoutHubs;
+    private Thread threadObjectsWithoutHubs;
+    
+	
 	public OASyncClient(String serverHostName, int serverHostPort) {
 		this(null, serverHostName, serverHostPort);
 	}
@@ -107,6 +106,41 @@ public class OASyncClient {
 		//was: if (bUpdateSyncDelegate) OASyncDelegate.setSyncClient(packagex, this);
 	}
 
+	
+    public void start() throws Exception {
+        LOG.config("starting");
+
+        getClientInfo();
+        getMultiplexerClient().setKeepAlive(115);
+
+        LOG.fine("starting multiplexer client");
+        getMultiplexerClient().start(); // this will connect to server using multiplexer
+
+        LOG.fine("multiplexer client connected, connectionId=" + getMultiplexerClient().getConnectionId());
+
+        clientInfo.setConnectionId(getMultiplexerClient().getConnectionId());
+
+        if (bUpdateSyncDelegate) {
+            OASyncDelegate.setSyncClient(packagex, this);
+        }
+
+        LOG.fine("getting remote objects for OASyncClient");
+        getRemoteServer();
+        getRemoteSession();
+        getRemoteClient();
+        getRemoteSync();
+        if (bUpdateSyncDelegate) {
+            startDistributedGCThread();
+            startObjectsWithoutHubsThread();;
+            
+            LOG.fine("creating OADataSourceClient for remote database access");
+            getOADataSourceClient();
+        }
+        clientInfo.setStarted(true);
+        LOG.config("startup completed successful");
+    }
+	
+	
 	public void startUpdateThread(final int seconds) {
 		Thread t = new Thread(new Runnable() {
 			@Override
@@ -130,8 +164,6 @@ public class OASyncClient {
 		t.start();
 	}
 
-	private final AtomicInteger aiCntGetDetail = new AtomicInteger();
-	private final ConcurrentHashMap<Integer, Boolean> hmIgnoreSibling = new ConcurrentHashMap<Integer, Boolean>();
 
 	/**
 	 * This is sent to the server using ClientGetDetail, by using a customized objectSerializer
@@ -218,7 +250,6 @@ public class OASyncClient {
 			LOG.log(Level.WARNING, "getDetail error", e);
 		}
 
-		lastMasterObjects[lastMasterCnter++ % lastMasterObjects.length] = masterObject;
 		int cntSib = 0;
 
 		Object resultHold = result;
@@ -332,13 +363,6 @@ public class OASyncClient {
 		return remoteServerInterface;
 	}
 
-	// used for oasync callback (messages from other computers)
-	public RemoteSyncInterface getRemoteSyncImpl() throws Exception {
-		if (remoteSyncImpl == null) {
-			remoteSyncImpl = new RemoteSyncImpl();
-		}
-		return remoteSyncImpl;
-	}
 
 	public RemoteSyncInterface getRemoteSync() throws Exception {
 		if (remoteSyncInterface == null) {
@@ -350,14 +374,22 @@ public class OASyncClient {
 		return remoteSyncInterface;
 	}
 
+    // used for oasync callback (messages from other computers)
+    public RemoteSyncInterface getRemoteSyncImpl() throws Exception {
+        if (remoteSyncImpl == null) {
+            remoteSyncImpl = new RemoteSyncImpl();
+        }
+        return remoteSyncImpl;
+    }
+	
 	public RemoteSessionInterface getRemoteSession() throws Exception {
-		if (remoteClientInterface == null) {
-			remoteClientInterface = getRemoteServer().getRemoteSession(getClientInfo(), getRemoteClientCallback());
+		if (remoteSessionInterface == null) {
+			remoteSessionInterface = getRemoteServer().getRemoteSession(getClientInfo(), getRemoteClientCallback());
 			if (bUpdateSyncDelegate) {
-				OASyncDelegate.setRemoteSession(packagex, remoteClientInterface);
+				OASyncDelegate.setRemoteSession(packagex, remoteSessionInterface);
 			}
 		}
-		return remoteClientInterface;
+		return remoteSessionInterface;
 	}
 
 	private RemoteClientCallbackInterface remoteCallback;
@@ -422,42 +454,6 @@ public class OASyncClient {
 		return clientInfo;
 	}
 
-	public void start() throws Exception {
-		LOG.config("starting");
-
-		getClientInfo();
-		getMultiplexerClient().setKeepAlive(115);
-
-		LOG.fine("starting multiplexer client");
-		getMultiplexerClient().start(); // this will connect to server using multiplexer
-
-		LOG.fine("multiplexer client connected, connectionId=" + getMultiplexerClient().getConnectionId());
-
-		clientInfo.setConnectionId(getMultiplexerClient().getConnectionId());
-
-		if (bUpdateSyncDelegate) {
-			OASyncDelegate.setSyncClient(packagex, this);
-		}
-
-		LOG.fine("getting remote object for Client Session");
-		getRemoteServer();
-		getRemoteSync();
-		getRemoteSession();
-		getRemoteClient();
-		if (bUpdateSyncDelegate) {
-			startQueueGuidThread();
-			startQueueGuidThread2();
-		}
-
-		if (bUpdateSyncDelegate) {
-			LOG.fine("creating OADataSourceClient for remote database access");
-			getOADataSourceClient();
-		}
-
-		clientInfo.setStarted(true);
-
-		LOG.config("startup completed successful");
-	}
 
 	public OADataSourceClient getOADataSourceClient() {
 		if (dataSourceClient == null) {
@@ -651,30 +647,65 @@ public class OASyncClient {
 		LOG.fine(ri.toLogString());
 	}
 
+    
+    /**
+     * called when object is finalized.
+     */
+    public void objectCreated(OAObject obj) {
+        if (obj == null) return;
+        int guid = obj.getGuid();
+        if (guid < 0) return;
+        
+        hmNewObjectsNotYetSent.put(guid, guid);
+        try {
+            RemoteSessionInterface rs = getRemoteSession();
+            rs.objectCreated(guid);
+        }
+        catch (Exception e) {
+        }
+    }
+
+    public void objectSentToServer(OAObject obj) {
+        // called by OAObjectSerializer
+        if (obj == null) return;
+        int guid = obj.getGuid();
+        if (guid < 0) return;
+        hmNewObjectsNotYetSent.remove(guid);
+    }
+    
+    public boolean isObjectOnServer(OAObject obj) {
+        if (obj == null) return false;
+        int guid = obj.getGuid();
+        if (guid < 0) return false;
+        return hmNewObjectsNotYetSent.get(guid) == null;
+    }
+
+    
+	
 	/**
-	 * called when object is removed from object cache called by oaObject.finalize, and removeFromServerSideCache
+	 * called when object is finalized.
 	 */
-	public void objectRemoved(int guid) {
+	public void objectFinalized(int guid) {
+	    if (guid < 0) return;
 		try {
-			if (guid > 0 && bUpdateSyncDelegate) {
-				LinkedBlockingQueue<Integer> q = queRemoveGuid;
-				if (q != null) {
-					q.add(guid);
+			if (bUpdateSyncDelegate) {
+				if (queObjectsFinalized != null) {
+				    queObjectsFinalized.add(guid);
 				}
 			}
 		} catch (Exception e) {
 		}
 	}
 
-	private volatile LinkedBlockingQueue<Integer> queRemoveGuid;
-	private Thread threadRemoveGuid;
+	private volatile LinkedBlockingQueue<Integer> queObjectsFinalized;
+	private Thread threadDistributedGC;
 
-	private void startQueueGuidThread() {
-		if (queRemoveGuid != null) {
+	private void startDistributedGCThread() {
+		if (queObjectsFinalized != null) {
 			return;
 		}
-		queRemoveGuid = new LinkedBlockingQueue<Integer>();
-		threadRemoveGuid = new Thread(new Runnable() {
+		queObjectsFinalized = new LinkedBlockingQueue<Integer>();
+		threadDistributedGC = new Thread(new Runnable() {
 			long msLastError;
 			int cntError;
 			int[] guids = new int[150];
@@ -684,14 +715,14 @@ public class OASyncClient {
 				RemoteSessionInterface rsi = null;
 				for (int guidPos = 0;;) {
 					try {
-						int guid = queRemoveGuid.take();
+						int guid = queObjectsFinalized.take();
 						guids[guidPos++ % 150] = guid;
 						if (guidPos % 150 == 0) {
 							if (rsi == null) {
 								rsi = OASyncClient.this.getRemoteSession();
 							}
 							if (rsi != null) {
-								rsi.removeGuids(guids);
+								rsi.objectsFinalized(guids);
 							}
 						}
 					} catch (Exception e) {
@@ -700,7 +731,7 @@ public class OASyncClient {
 						if (++cntError > 5) {
 							if (ms - 2000 < msLastError) {
 								LOG.warning("too many errors, will stop this GuidRemove thread (not critical)");
-								queRemoveGuid = null;
+								queObjectsFinalized = null;
 								break;
 							} else {
 								cntError = 0;
@@ -710,62 +741,69 @@ public class OASyncClient {
 					}
 				}
 			}
-		}, "OASyncClient.RemoveGuid");
-		threadRemoveGuid.setPriority(Thread.MIN_PRIORITY);
-		threadRemoveGuid.setDaemon(true);
-		threadRemoveGuid.start();
+		}, "OASyncClient.DistributedGC");
+		threadDistributedGC.setPriority(Thread.MIN_PRIORITY);
+		threadDistributedGC.setDaemon(true);
+		threadDistributedGC.start();
 	}
 
+	
 	/**
-	 * called when object is removed from object cache called by oaObject.finalize, and removeFromServerSideCache
+	 * called when object is removed from Hub(s) and could be GC'd on server.
 	 */
-	public void removeFromServerCache(int guid) {
+	public void updateObjectsWithoutHubs(OAObject obj) {
+        final int guid = obj.getGuid();
+        if (guid < 0) return;
+	    
+        final boolean b = OAObjectHubDelegate.isInHubWithMaster(obj);
+        if (b) {
+            if (hmObjectsWithoutHubs.get(guid) == null) return;
+            hmObjectsWithoutHubs.remove(guid);
+        }
+        else {
+            if (hmObjectsWithoutHubs.get(guid) != null) return;
+            hmObjectsWithoutHubs.put(guid, guid);
+        }
+	    
 		try {
-			if (guid > 0 && bUpdateSyncDelegate) {
-				LinkedBlockingQueue<Integer> q = queRemoveGuid2;
+			if (obj != null && bUpdateSyncDelegate) {
+				LinkedBlockingQueue<OAObject> q = queObjectsWithoutHubs;
 				if (q != null) {
-					q.add(guid);
+					q.add(obj);
 				}
 			}
 		} catch (Exception e) {
 		}
 	}
 
-	private volatile LinkedBlockingQueue<Integer> queRemoveGuid2;
-	private Thread threadRemoveGuid2;
-
-	private void startQueueGuidThread2() {
-		if (queRemoveGuid2 != null) {
+	private void startObjectsWithoutHubsThread() {
+		if (queObjectsWithoutHubs != null) {
 			return;
 		}
-		queRemoveGuid2 = new LinkedBlockingQueue<Integer>();
-		threadRemoveGuid2 = new Thread(new Runnable() {
+		queObjectsWithoutHubs = new LinkedBlockingQueue<>();
+		threadObjectsWithoutHubs = new Thread(new Runnable() {
 			long msLastError;
 			int cntError;
-			int[] guids = new int[150];
 
 			@Override
 			public void run() {
 				RemoteSessionInterface rsi = null;
-				for (int guidPos = 0;;) {
+				for (;;) {
 					try {
-						int guid = queRemoveGuid2.take();
-						guids[guidPos++ % 150] = guid;
-						if (guidPos % 150 == 0) {
-							if (rsi == null) {
-								rsi = OASyncClient.this.getRemoteSession();
-							}
-							if (rsi != null) {
-								rsi.removeFromServerCache(guids);
-							}
+						OAObject obj = queObjectsWithoutHubs.take();
+						if (rsi == null) {
+							rsi = OASyncClient.this.getRemoteSession();
+						}
+						if (rsi != null) {
+						    boolean b = OAObjectHubDelegate.isInHubWithMaster(obj);
+						    rsi.updateObjectsWithoutHubs(obj.getClass(), obj.getObjectKey(), b);
 						}
 					} catch (Exception e) {
-						LOG.log(Level.WARNING, "Error in removeGuid thread", e);
+						LOG.log(Level.WARNING, "Error in ObjectsWithoutHubs thread", e);
 						long ms = System.currentTimeMillis();
 						if (++cntError > 5) {
 							if (ms - 2000 < msLastError) {
 								LOG.warning("too many errors, will stop this GuidRemove thread (not critical)");
-								queRemoveGuid2 = null;
 								break;
 							} else {
 								cntError = 0;
@@ -775,10 +813,10 @@ public class OASyncClient {
 					}
 				}
 			}
-		}, "OASyncClient.RemoveGuid2");
-		threadRemoveGuid2.setPriority(Thread.MIN_PRIORITY);
-		threadRemoveGuid2.setDaemon(true);
-		threadRemoveGuid2.start();
+		}, "OASyncClient.ObjectsWithoutHubs");
+		threadObjectsWithoutHubs.setPriority(Thread.MIN_PRIORITY);
+		threadObjectsWithoutHubs.setDaemon(true);
+		threadObjectsWithoutHubs.start();
 	}
 
 	public boolean uploadFile(String toFileName, File file) throws Exception {

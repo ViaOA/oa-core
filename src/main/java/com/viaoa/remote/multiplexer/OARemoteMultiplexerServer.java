@@ -10,8 +10,7 @@
 */
 package com.viaoa.remote.multiplexer;
 
-import java.io.ObjectStreamClass;
-import java.io.Serializable;
+import java.io.*;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
@@ -19,21 +18,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.comm.multiplexer.io.VirtualServerSocket;
 import com.viaoa.comm.multiplexer.io.VirtualSocket;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.hub.Hub;
+import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.BindInfo;
@@ -43,11 +38,6 @@ import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.util.OACircularQueue;
 import com.viaoa.util.OACompressWrapper;
 import com.viaoa.util.OAReflect;
-
-/*** DEBUGing 
- *  use this for debugging, so that remote methods wont timeout while debugging:  
- *      MultiplexerServer.DEBUG = true;
- */
 
 /**
  * Server component used to allow remoting method calls with Clients. Uses a MultiplexerServer for
@@ -66,7 +56,9 @@ import com.viaoa.util.OAReflect;
  * </ol>
  *
  * Note:
- * OARemoteThread is used to process requests. 
+ * OARemoteThread is used to process requests.
+ * <p> 
+ * DEBUG'ing - uses OAObject.getDebugMode(), if true then remote methods wont timeout.
  * 
  * @author vvia
  */
@@ -230,8 +222,13 @@ public class OARemoteMultiplexerServer {
     }
 
     private boolean _processSocketCtoSRequest(final RequestInfo ri, final Session session) throws Exception {
-        RemoteObjectInputStream ois = new RemoteObjectInputStream(ri.socket, session.hmClassDescInput);
-
+        final RemoteObjectInputStream ois = new RemoteObjectInputStream(ri.socket, session.hmClassDescInput);
+        boolean b = _processSocketCtoSRequest(ri, session, ois);
+        ois.close(); // 20250318
+        return b;
+    }
+    
+    private boolean _processSocketCtoSRequest(final RequestInfo ri, final Session session, final RemoteObjectInputStream ois) throws Exception {
         // wait for next message
         ri.type = RequestInfo.getType(ois.readByte());
         // 1:CtoS_QueuedRequest recv from client
@@ -259,6 +256,7 @@ public class OARemoteMultiplexerServer {
                 oos.writeObject(ri.exceptionMessage);
             }
             oos.flush();
+            oos.close(); // 20250318
             return true;
         }
         if (ri.type == RequestInfo.Type.CtoS_GetBroadcastClass) {
@@ -284,6 +282,7 @@ public class OARemoteMultiplexerServer {
                 oos.writeObject(ri.exceptionMessage);
             }
             oos.flush();
+            oos.close(); // 20250318
             return true;
         }
         if (ri.type == RequestInfo.Type.CtoS_RemoveSessionBroadcastThread) {
@@ -386,8 +385,16 @@ public class OARemoteMultiplexerServer {
                 oos.writeByte(3);
                 resp = ri.response;
             }
-            oos.writeObject(resp);
+
+            try {
+                OAThreadLocalDelegate.setObjectSerializer(session.oaObjectSerializer);
+                oos.writeObject(resp);
+            }
+            finally {
+                OAThreadLocalDelegate.setObjectSerializer(null);
+            }
             oos.flush();
+            oos.close(); // 20250318
             return false;            
         }
 
@@ -554,6 +561,7 @@ public class OARemoteMultiplexerServer {
                 session.addSocketForStoC(ri.socket);
             }
         }
+        
         afterInvokeForStoC(ri);
 
         if (ri.exception != null) throw ri.exception;
@@ -668,13 +676,23 @@ public class OARemoteMultiplexerServer {
             oos.writeByte(ri.type.ordinal());
             oos.writeAsciiString(ri.bind.name);
             oos.writeAsciiString(ri.methodInfo.methodNameSignature);
-            oos.writeObject(ri.args);
+            
+            try {
+                OAThreadLocalDelegate.setObjectSerializer(session.oaObjectSerializer);
+                oos.writeObject(ri.args);
+            }
+            finally {
+                OAThreadLocalDelegate.setObjectSerializer(null);
+            }
             oos.flush();
+            oos.close(); // 20250318
 
             if (ri.type == RequestInfo.Type.StoC_SocketRequest) {
                 RemoteObjectInputStream ois = new RemoteObjectInputStream(ri.socket, session.hmClassDescInput);
                 byte b = ois.readByte();
                 Object objx = ois.readObject();
+                ois.close(); // 20250318
+                
                 if (b == 0) ri.exception = (Exception) objx;
                 else if (b == 1) ri.exceptionMessage = (String) objx;
                 else {
@@ -923,7 +941,7 @@ public class OARemoteMultiplexerServer {
         return bind;
     }
 
-    public Object createBroadcast(final String bindName, Class interfaceClass, String queueName, int queueSize) {
+    public <T> T createBroadcast(final String bindName, Class<T> interfaceClass, String queueName, int queueSize) {
         return createBroadcast(bindName, null, interfaceClass, queueName, queueSize);
     }
 
@@ -942,7 +960,7 @@ public class OARemoteMultiplexerServer {
      * @return proxy instance where all methods will be sent to and invoked on all clients
      * see RemoteMultiplexerClient#createBroadcastProxy(String, Object)
      */
-    public Object createBroadcast(String bindName, Object callback, Class interfaceClass, String queueName, int queueSize) {
+    public <T> T createBroadcast(String bindName, Object callback, Class<T> interfaceClass, String queueName, int queueSize) {
         if (bindName == null) throw new IllegalArgumentException("bindName can not be null");
         if (interfaceClass == null) throw new IllegalArgumentException("interfaceClass can not be null");
         if (callback != null && !interfaceClass.isAssignableFrom(callback.getClass())) {
@@ -950,7 +968,6 @@ public class OARemoteMultiplexerServer {
         }
         if (queueSize < 100) {
             queueSize = 100;
-            // throw new IllegalArgumentException("queueSize must be greater then 100");
         }
 
         if (queueName == null) queueName = bindName;
@@ -965,15 +982,15 @@ public class OARemoteMultiplexerServer {
                 return ri.response;
             }
         };
-        Object obj = Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[] { interfaceClass }, handler);
+        T obj = (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[] { interfaceClass }, handler);
 
-        //20150505 need to have the server process the queue, since clients wait for server to "catch up"
+        // need to have the server process the queue, since clients wait for server to "catch up"
         //if (callback != null) {
-            // create thread to get messages from queue
-            setupBroadcastQueueReader(bind.asyncQueueName, bind.name);
-        //}
+        // create thread to get messages from queue
+        setupBroadcastQueueReader(bind.asyncQueueName, bind.name);
         return obj;
     }
+
 
     // server is calling a remote broadcast method
     protected RequestInfo onInvokeBroadcast(BindInfo bind, Method method, Object[] args) throws Exception {
@@ -1144,6 +1161,9 @@ public class OARemoteMultiplexerServer {
                     // only one client gets this
                 }
                 else if (ri.type == RequestInfo.Type.StoC_QueuedBroadcast) {
+                   if (ri.methodInfo != null && ri.methodInfo.runInRemoteThread) {
+                       invokeUsingRemoteThread(ri, true);
+                   }
                 }
                 else if (ri.type == RequestInfo.Type.StoC_QueuedResponse) {
                     // 8:CtoS_QueuedRequest flag as processed
@@ -1502,9 +1522,35 @@ public class OARemoteMultiplexerServer {
     private  static class VirtualSocketInfo {
         VirtualSocket vs;
         RemoteObjectOutputStream oos;
-        long tsLast;
+        private long tsLastReset = System.currentTimeMillis();
         int cntWrite;
         int cntUnflushed;
+        
+        public VirtualSocketInfo() {
+            reset();
+        }
+        
+        public boolean shouldClose() {
+            // note: oos internally has a reference cache ([]) that can get large - need to limit how long it lasts. 
+            if (oos == null) return false;
+            if (cntWrite == 0) return false;
+            if (cntWrite > 50) return true;
+            if (tsLastReset + 5000 < System.currentTimeMillis()) return true;
+            return false;
+        }
+        public void reset() {
+            if (oos != null) {
+                try {
+                    oos.flush();
+                    oos.close();
+                }
+                catch (IOException ex)  {}
+                oos = null;
+            }
+            tsLastReset = System.currentTimeMillis();
+            cntWrite = 0;
+            cntUnflushed = 0;
+        }
     }
     
     /**
@@ -1513,13 +1559,36 @@ public class OARemoteMultiplexerServer {
      * @author vvia
      * @see #removeSession to have this session removed from collection.
      */
-    class Session {
+    public class Session {
         public int connectionId;
         public Socket realSocket;
         private volatile boolean bDisconnected;
+        
+        int cntTotalMsgs;        
+        int cntTotalMsgsSent;        
+        
         private HashMap<String, VirtualSocketInfo> hmAsyncQueueSocket = new HashMap<String, VirtualSocketInfo>();  
 
+        // tracks guid for all oaObjects serialized, the Boolean: true=all references have been sent, false=object has been sent (might not have all references)
+        private final ConcurrentHashMap<Integer, Boolean> hmGuid = new ConcurrentHashMap<Integer, Boolean>(); 
+        private final OAObjectSerializer oaObjectSerializer;
+        
         public Session() {
+            oaObjectSerializer = new OAObjectSerializer(null, false, new OAObjectSerializerCallback() {
+                @Override
+                protected void beforeSerialize(OAObject obj) {
+                    int x = obj.getGuid();
+                    hmGuid.putIfAbsent(x, false);
+                }
+                @Override
+                public boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object obj, boolean bDefault) {
+                    return false; // ignore all
+                }
+            }); 
+        }
+        
+        public ConcurrentHashMap<Integer, Boolean> getGuidHashMap() {
+            return hmGuid;
         }
         
         // performance enhancement for ObjectSteams
@@ -1598,6 +1667,7 @@ public class OARemoteMultiplexerServer {
                     RemoteObjectOutputStream oos = new RemoteObjectOutputStream(socket);
                     oos.writeByte(RequestInfo.Type.StoC_CreateNewStoCSocket.ordinal());
                     oos.flush();
+                    oos.close(); // 20250318
                 }
             }
             return socket;
@@ -1641,8 +1711,17 @@ public class OARemoteMultiplexerServer {
             return bind;
         }
 
-        // 20151129
         public void writeOnQueueSocket(final RequestInfo ri) throws Exception {
+            try {
+                OAThreadLocalDelegate.setObjectSerializer(oaObjectSerializer);
+                _writeOnQueueSocketX(ri);
+            }
+            finally {
+                OAThreadLocalDelegate.setObjectSerializer(null);
+            }
+        }
+        
+        protected void _writeOnQueueSocketX(final RequestInfo ri) throws Exception {
             String qname = ri.bind.asyncQueueName;
 
             VirtualSocketInfo vsi = hmAsyncQueueSocket.get(qname);
@@ -1651,13 +1730,12 @@ public class OARemoteMultiplexerServer {
                 return;
             }
             
-            VirtualSocket vsocket = vsi.vs;
+            final VirtualSocket vsocket = vsi.vs;
             
             synchronized (vsocket) {
                 if (vsi.oos == null) {
-                    vsi.oos = new RemoteObjectOutputStream(vsocket, hmClassDescOutput, aiClassDescOutput);
+                    vsi.oos = new RemoteObjectOutputStream(vsi.vs, hmClassDescOutput, aiClassDescOutput);
                     vsi.oos.writeByte(RequestInfo.Type.StoC_StartObjectInputStream.ordinal());
-                    vsi.tsLast = System.currentTimeMillis();
                 }
                 
                 vsi.oos.writeByte(ri.type.ordinal());
@@ -1682,17 +1760,14 @@ public class OARemoteMultiplexerServer {
                 
                 // flush to stream
                 vsi.cntWrite++;
-                if (vsi.cntWrite > 50) {
+                if (vsi.shouldClose()) {
                     vsi.oos.writeByte(RequestInfo.Type.StoC_CloseObjectInputStream.ordinal());
-                    vsi.oos.flush();
-                    vsi.cntWrite = 0;
-                    vsi.oos = null;
+                    vsi.reset();
                 }
                 else {
                     vsi.oos.flush();
                 }
                 vsi.cntUnflushed = 0;
-                vsi.tsLast = System.currentTimeMillis();
             }
         }
         
@@ -1737,16 +1812,17 @@ public class OARemoteMultiplexerServer {
             vsi.vs = vsocket;
             
             hmAsyncQueueSocket.put(asyncQueueName, vsi);
-            
+
             try {
+                OAThreadLocalDelegate.setObjectSerializer(oaObjectSerializer);
                 _writeQueueMessages(cque, vsi, startQuePos);
             }
             finally {
+                OAThreadLocalDelegate.setObjectSerializer(null);
                 cque.unregisterSession(connectionId);
                 releaseSocketForStoC(vsocket);
             }
         }
-        
         
         // used to send broadcast messages to client
         private void _writeQueueMessages(final OACircularQueue<RequestInfo> cque, final VirtualSocketInfo vsi, long qpos)
@@ -1755,7 +1831,8 @@ public class OARemoteMultiplexerServer {
             final VirtualSocket vsocket = vsi.vs;
             final int connectionId = vsocket.getConnectionId();
             final HashSet<Integer> hsQueuedRequest = new HashSet<Integer>();
-            
+            long msSetKeepAlive = System.currentTimeMillis();
+
             for (int i=0;;i++) {
                 if (vsocket.isClosed()) {
                     if (realSocket != null && !realSocket.isClosed()) {
@@ -1764,37 +1841,24 @@ public class OARemoteMultiplexerServer {
                     return;
                 }
 
-                long ts = System.currentTimeMillis();
                 
                 synchronized (vsocket) {
                     // check to see if stream should be flushed
-                    if (vsi.oos != null && vsi.cntUnflushed > 0) {
-                        if (cque.getHeadPostion() == qpos) {
-                            if (vsi.cntWrite > 100) {
-                                vsi.oos.writeByte(RequestInfo.Type.StoC_CloseObjectInputStream.ordinal());
+                    if (vsi.oos != null) {
+                        if (vsi.shouldClose()) {
+                            vsi.oos.writeByte(RequestInfo.Type.StoC_CloseObjectInputStream.ordinal());
+                            vsi.reset();
+                        }
+                        else if (cque.getHeadPostion() == qpos) {
+                            if (vsi.cntUnflushed > 0) {
                                 vsi.oos.flush();
-                                vsi.cntWrite = 0;
-                                vsi.oos = null;
+                                vsi.cntUnflushed = 0;
                             }
-                            else {
-                                vsi.oos.flush();
-                            }
-                            vsi.cntUnflushed = 0;
-                            vsi.tsLast = ts;
                         }
                         else {
-                            if (vsi.cntWrite > 250) {
-                                vsi.oos.writeByte(RequestInfo.Type.StoC_CloseObjectInputStream.ordinal());
+                            if (vsi.cntUnflushed > 25) {
                                 vsi.oos.flush();
                                 vsi.cntUnflushed = 0;
-                                vsi.cntWrite = 0;
-                                vsi.oos = null;
-                                vsi.tsLast = ts;
-                            }
-                            else if (vsi.tsLast+250 < ts) {
-                                vsi.oos.flush();
-                                vsi.cntUnflushed = 0;
-                                vsi.tsLast = ts;
                             }
                         }
                     }
@@ -1819,6 +1883,16 @@ public class OARemoteMultiplexerServer {
                     if (ri == null || ri.bind == null) {
                         continue;
                     }
+                    
+                    cntTotalMsgs++;
+                    
+                    // 30250318 filter
+                    if (ri.connectionId != connectionId) {
+                        if (ri.bind.isOASync) {
+                            if (!shouldSendSyncMessageToClient(ri, this.hmGuid)) continue;
+                        }
+                    }
+                    
                     if (ri.type == RequestInfo.Type.StoC_QueuedBroadcast) {
                     }                    
                     else if (ri.type == RequestInfo.Type.CtoS_QueuedBroadcast) {
@@ -1863,8 +1937,16 @@ public class OARemoteMultiplexerServer {
                         continue;
                     }
 
+                    cntTotalMsgsSent++;
+//qqqqqqqqqqqqqqqq                    
+ // System.out.println(String.format("%,d/%,d) Session._writeQueueMessages  msg=%s", cntTotalMsgsSent, cntTotalMsgs, ri.toLogString()));                    
+                    
                     waitForProcessedByServer(ri);
-                    cque.keepAlive(connectionId); 
+                    long msNow = System.currentTimeMillis();
+                    if (msSetKeepAlive + 5000 < msNow) {
+                        cque.keepAlive(connectionId);
+                        msSetKeepAlive = msNow;
+                    }
 
                     synchronized (vsocket) {
                         vsi.cntUnflushed++;
@@ -1873,7 +1955,6 @@ public class OARemoteMultiplexerServer {
                         if (vsi.oos == null) {
                             vsi.oos = new RemoteObjectOutputStream(vsocket, hmClassDescOutput, aiClassDescOutput);
                             vsi.oos.writeByte(RequestInfo.Type.StoC_StartObjectInputStream.ordinal());
-                            vsi.tsLast = System.currentTimeMillis();
                         }
                         RemoteObjectOutputStream oos = vsi.oos;
                         
@@ -1973,6 +2054,7 @@ public class OARemoteMultiplexerServer {
     }
     protected void waitForProcessedByServer(RequestInfo ri) {
         if (ri == null) return;
+        if (ri.processedByServerQueue) return;
         if (!ri.bind.usesQueue) return;
         
         // 20160215 dont wait if thread is already processing a que request
@@ -1990,7 +2072,7 @@ public class OARemoteMultiplexerServer {
         synchronized (ri) {
             for (int i=0; !ri.processedByServerQueue; i++) {
                 try {
-                    ri.wait(1000);
+                    ri.wait(100);
                 }
                 catch (Exception e) {}
             }
@@ -2022,4 +2104,12 @@ public class OARemoteMultiplexerServer {
         }        
         return 0;
     }
+    
+    /**
+     * Used to filter out broadcast msgs that get sent to clients.
+     */
+    protected boolean shouldSendSyncMessageToClient(RequestInfo ri, ConcurrentHashMap<Integer, Boolean> hmGuid) {
+        return true;
+    }
+    
 }

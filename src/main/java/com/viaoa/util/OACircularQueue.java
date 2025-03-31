@@ -421,7 +421,6 @@ public abstract class OACircularQueue<TYPE> {
     
     private TYPE[] _getMessages(final int sessionId, final Session session, long posTail, final int maxReturnAmount, final int maxWait) throws Exception {
         int amt;
-        
         if ((posTail + queueSize) < queueHeadPosition) {
             if (session != null) session.bOverrun = true;
             throw new Exception("message queue overrun, sessionId="+sessionId+", pos="+posTail+", headPos="+queueHeadPosition);

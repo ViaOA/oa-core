@@ -165,6 +165,7 @@ public class BindInfo {
 				mi.dontUseQueue = remoteMethod.dontUseQueue();
 				mi.dontUseQueueForReturnValue = remoteMethod.dontUseQueueForReturnValue();
 				mi.returnOnQueueSocket = remoteMethod.returnOnQueueSocket();
+                mi.runInRemoteThread = remoteMethod.runInRemoteThread();
 			}
 
 			// check to see if any of the params are remote
