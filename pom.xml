@@ -156,6 +156,18 @@
                 </excludes>
             </resource>
         </resources>
+
+<!-- qqqq not needed, this is the default for mvn         
+  <testResources>
+    <testResource>
+      <directory>src/test/resources</directory>
+      <includes>
+        <include>**/*</include>
+      </includes>
+    </testResource>
+  </testResources>
+qqqqqqqq -->        
+        
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
