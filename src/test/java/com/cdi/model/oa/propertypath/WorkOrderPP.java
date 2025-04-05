@@ -111,5 +111,14 @@ public class WorkOrderPP {
         String s = WorkOrder.P_IconColor;
         return s;
     }
+
+    public static String totalPrice() {
+        String s = WorkOrder.P_TotalPrice;
+        return s;
+    }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

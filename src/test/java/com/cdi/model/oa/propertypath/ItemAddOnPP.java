@@ -52,5 +52,9 @@ public class ItemAddOnPP {
         String s = ItemAddOn.P_CodeName;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

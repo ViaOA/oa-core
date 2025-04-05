@@ -42,10 +42,6 @@ public class MoldPPx implements PPxInterface, Serializable {
         return pp + "." + Mold.P_Name;
     }
 
-    public String location() {
-        return pp + "." + Mold.P_Location;
-    }
-
     public String onHand() {
         return pp + "." + Mold.P_OnHand;
     }

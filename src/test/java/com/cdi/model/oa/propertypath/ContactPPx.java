@@ -60,6 +60,14 @@ public class ContactPPx implements PPxInterface, Serializable {
         return pp + "." + Contact.P_Notes;
     }
 
+    public String loginId() {
+        return pp + "." + Contact.P_LoginId;
+    }
+
+    public String password() {
+        return pp + "." + Contact.P_Password;
+    }
+
     @Override
     public String toString() {
         return pp;

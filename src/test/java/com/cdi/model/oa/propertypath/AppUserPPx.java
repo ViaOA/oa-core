@@ -51,6 +51,14 @@ public class AppUserPPx implements PPxInterface, Serializable {
         return pp + "." + AppUser.P_Admin;
     }
 
+    public String superAdmin() {
+        return pp + "." + AppUser.P_SuperAdmin;
+    }
+
+    public String editProcessed() {
+        return pp + "." + AppUser.P_EditProcessed;
+    }
+
     public String firstName() {
         return pp + "." + AppUser.P_FirstName;
     }
@@ -61,10 +69,6 @@ public class AppUserPPx implements PPxInterface, Serializable {
 
     public String inactiveDate() {
         return pp + "." + AppUser.P_InactiveDate;
-    }
-
-    public String editProcessed() {
-        return pp + "." + AppUser.P_EditProcessed;
     }
 
     public String note() {

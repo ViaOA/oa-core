@@ -120,5 +120,9 @@ public class QuickbookPP {
         String s = Quickbook.P_FinerConsole;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

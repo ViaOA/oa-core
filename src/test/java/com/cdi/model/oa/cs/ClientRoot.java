@@ -22,6 +22,9 @@ public class ClientRoot extends OAObject {
     public static final String PROPERTY_Id = "Id";
     public static final String PROPERTY_ConnectionInfo = "ConnectionInfo";
     /*$$Start: ClientRoot1 $$*/
+    // autoCreateOne
+    public static final String P_CreateOneItemQuoteHub = "CreateOneItemQuoteHub";
+    // Hubs for Client UI
     public static final String P_SearchSalesOrders = "SearchSalesOrders";
     public static final String P_NewSalesOrders = "NewSalesOrders";
     public static final String P_SearchOrders1 = "SearchOrders1";
@@ -48,6 +51,9 @@ public class ClientRoot extends OAObject {
 
     // Hub
     /*$$Start: ClientRoot2 $$*/
+    // autoCreateOne local
+    protected transient Hub<ItemQuote> hubCreateOneItemQuote;
+    // Hubs for Client UI
     protected transient Hub<SalesOrder> hubSearchSalesOrders;
     protected transient Hub<SalesOrder> hubNewSalesOrders;
     protected transient Hub<Order> hubSearchOrders1;
@@ -82,6 +88,17 @@ public class ClientRoot extends OAObject {
 	}
 	
     /*$$Start: ClientRoot3 $$*/
+    // autoCreatedOne local
+    @OAMany(toClass = ItemQuote.class, cascadeSave = true)
+    public Hub<ItemQuote> getCreateOneItemQuoteHub() {
+        if (hubCreateOneItemQuote == null) {
+            hubCreateOneItemQuote = (Hub<ItemQuote>) super.getHub(P_CreateOneItemQuoteHub);
+            hubCreateOneItemQuote.add(new ItemQuote());
+        }
+        return hubCreateOneItemQuote;
+    }
+
+    // Hubs for Client UI
     @OAMany(toClass = SalesOrder.class, cascadeSave = true)
     public Hub<SalesOrder> getSearchSalesOrders() {
         if (hubSearchSalesOrders == null) {

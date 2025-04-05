@@ -36,5 +36,9 @@ public class TruckPP {
         String s = Truck.P_Capacity;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

@@ -162,6 +162,10 @@ public class SalesOrderPPx implements PPxInterface, Serializable {
         return pp + "." + SalesOrder.P_SubmitError;
     }
 
+    public String purchaseOrder() {
+        return pp + "." + SalesOrder.P_PurchaseOrder;
+    }
+
     public String totalItemOurPrice() {
         return pp + "." + SalesOrder.P_TotalItemOurPrice;
     }

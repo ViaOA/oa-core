@@ -73,5 +73,9 @@ public class AppUserLoginPP {
         String s = AppUserLogin.P_FreeMemory;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

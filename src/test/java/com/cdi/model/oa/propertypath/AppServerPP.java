@@ -36,5 +36,9 @@ public class AppServerPP {
         String s = AppServer.P_Release;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

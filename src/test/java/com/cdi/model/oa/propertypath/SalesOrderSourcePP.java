@@ -26,5 +26,9 @@ public class SalesOrderSourcePP {
         String s = SalesOrderSource.P_Description;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

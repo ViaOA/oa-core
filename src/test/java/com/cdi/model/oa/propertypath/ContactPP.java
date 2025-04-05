@@ -48,5 +48,19 @@ public class ContactPP {
         String s = Contact.P_Notes;
         return s;
     }
+
+    public static String loginId() {
+        String s = Contact.P_LoginId;
+        return s;
+    }
+
+    public static String password() {
+        String s = Contact.P_Password;
+        return s;
+    }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

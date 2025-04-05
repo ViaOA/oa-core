@@ -25,5 +25,9 @@ public class ScheduleTypePP {
         String s = ScheduleType.P_FillPercentage;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

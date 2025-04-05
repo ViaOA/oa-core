@@ -5,9 +5,10 @@ import java.util.logging.*;
 
 import com.viaoa.object.*;
 import com.viaoa.annotation.*;
-import com.viaoa.datasource.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
+import com.viaoa.datasource.*;
+
 import com.cdi.model.*;
 import com.cdi.model.oa.*;
 import com.cdi.model.oa.propertypath.*;
@@ -83,15 +84,10 @@ public class SalesOrderSalesPersonFilterModel {
     
     public UserSearchModel getSalesOrderSalesPersonUserSearchModel() {
         if (modelSalesOrderSalesPersonUserSearch != null) return modelSalesOrderSalesPersonUserSearch;
-        modelSalesOrderSalesPersonUserSearch = new UserSearchModel() {
-            @Override
-            public void performSearch() {
-                getUserSearch().setExtraWhere("salesPersonList = true");
-                OAFilter filter = new UserSalesPersonFilter();
-                getUserSearch().setExtraWhereFilter(filter);
-                super.performSearch();
-            }
-        };
+        modelSalesOrderSalesPersonUserSearch = new UserSearchModel();
+        modelSalesOrderSalesPersonUserSearch.getUserSearch().setExtraWhere("salesPersonList = true");
+        OAFilter filter = new UserSalesPersonFilter();
+        modelSalesOrderSalesPersonUserSearch.getUserSearch().setExtraWhereFilter(filter);
         return modelSalesOrderSalesPersonUserSearch;
     }
     

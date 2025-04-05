@@ -5,9 +5,10 @@ import java.util.logging.*;
 
 import com.viaoa.object.*;
 import com.viaoa.annotation.*;
-import com.viaoa.datasource.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
+import com.viaoa.datasource.*;
+
 import com.cdi.model.*;
 import com.cdi.model.oa.*;
 import com.cdi.model.oa.filter.*;
@@ -24,21 +25,24 @@ public class SalesOrderCloseMethodModel {
     // ObjectModels
     
     // object used for method data
-    protected SalesOrderCloseMethod method;
+    protected SalesOrderCloseMethod salesOrderCloseMethod;
     
     public SalesOrderCloseMethodModel() {
     }
     
     // object used to input query data, to be used by methodHub
+    public SalesOrderCloseMethod getSalesOrderCloseMethod() {
+        if (salesOrderCloseMethod == null) salesOrderCloseMethod = new SalesOrderCloseMethod();
+        return salesOrderCloseMethod;
+    }
     public SalesOrderCloseMethod getMethod() {
-        if (method == null) method = new SalesOrderCloseMethod();
-        return method;
+        return getSalesOrderCloseMethod();
     }
     
     public Hub<SalesOrderCloseMethod> getHub() {
         if (hub == null) {
             hub = new Hub<SalesOrderCloseMethod>(SalesOrderCloseMethod.class);
-            hub.add(getMethod());
+            hub.add(getSalesOrderCloseMethod());
             hub.setPos(0);
         }
         return hub;

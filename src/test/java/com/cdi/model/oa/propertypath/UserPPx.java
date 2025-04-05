@@ -40,6 +40,16 @@ public class UserPPx implements PPxInterface, Serializable {
         return ppx;
     }
 
+    public ChatMessagePPx chatMessages() {
+        ChatMessagePPx ppx = new ChatMessagePPx(this, User.P_ChatMessages);
+        return ppx;
+    }
+
+    public ChatSessionPPx chatSessions() {
+        ChatSessionPPx ppx = new ChatSessionPPx(this, User.P_ChatSessions);
+        return ppx;
+    }
+
     public WorkOrderPPx inspectWorkOrders() {
         WorkOrderPPx ppx = new WorkOrderPPx(this, User.P_InspectWorkOrders);
         return ppx;

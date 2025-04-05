@@ -76,6 +76,14 @@ public class DeliveryTruckPPx implements PPxInterface, Serializable {
         return pp + "." + DeliveryTruck.P_IconColor;
     }
 
+    public String totalWeight() {
+        return pp + "." + DeliveryTruck.P_TotalWeight;
+    }
+
+    public String totalPrice() {
+        return pp + "." + DeliveryTruck.P_TotalPrice;
+    }
+
     @Override
     public String toString() {
         return pp;

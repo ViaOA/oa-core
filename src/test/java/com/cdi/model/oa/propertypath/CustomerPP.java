@@ -151,9 +151,18 @@ public class CustomerPP {
         return s;
     }
 
+    public static String allowUserAccess() {
+        String s = Customer.P_AllowUserAccess;
+        return s;
+    }
+
     public static String cityStateZip() {
         String s = Customer.P_CityStateZip;
         return s;
+    }
+
+    public static String pp() {
+        return ""; // this
     }
 }
  

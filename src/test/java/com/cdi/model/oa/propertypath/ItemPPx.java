@@ -50,8 +50,8 @@ public class ItemPPx implements PPxInterface, Serializable {
         return ppx;
     }
 
-    public OrderItemPPx OpenOrderItems() {
-        OrderItemPPx ppx = new OrderItemPPx(this, Item.P_OpenOrderItems);
+    public OpenOrderItemPPx openOrderItem() {
+        OpenOrderItemPPx ppx = new OpenOrderItemPPx(this, Item.P_OpenOrderItem);
         return ppx;
     }
 
@@ -113,6 +113,10 @@ public class ItemPPx implements PPxInterface, Serializable {
 
     public String specialOnly() {
         return pp + "." + Item.P_SpecialOnly;
+    }
+
+    public String location() {
+        return pp + "." + Item.P_Location;
     }
 
     public String price() {

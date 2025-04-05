@@ -175,6 +175,11 @@ public class SalesOrderPP {
         return s;
     }
 
+    public static String purchaseOrder() {
+        String s = SalesOrder.P_PurchaseOrder;
+        return s;
+    }
+
     public static String totalItemOurPrice() {
         String s = SalesOrder.P_TotalItemOurPrice;
         return s;
@@ -258,6 +263,10 @@ public class SalesOrderPP {
     public static String reopen() {
         String s = "reopen";
         return s;
+    }
+
+    public static String pp() {
+        return ""; // this
     }
 }
  

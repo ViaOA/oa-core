@@ -1449,7 +1449,6 @@ public class OAObject implements java.io.Serializable, Comparable {
 	// 20220807
 	/**
 	 * Set a fkey property for a Link.
-	 *
 	 * @param fkeyPropertyName name of fkey
 	 * @param newValue
 	 * @return
@@ -1467,46 +1466,34 @@ public class OAObject implements java.io.Serializable, Comparable {
 					if (fi.getFromPropertyInfo() != pi) {
 						continue;
 					}
-					return setFkeyProperty(li.getName(), fi.getToPropertyInfo().getName(), newValue);
+					return setFkeyProperty(fkeyPropertyName, li, fi, newValue);
 				}
 			}
 		}
-
-		return setFkeyProperty(fkeyPropertyName, null, newValue);
+		return false;
 	}
 
 	/**
 	 * @returns true if the value was changed. This is so that the reference/link can be marked as changed.
 	 */
-	public boolean setFkeyProperty(final String linkName, String linkToPropertyName, Object newValue) {
+	protected boolean setFkeyProperty(final String fkeyPropertyName, final OALinkInfo linkInfo, final OAFkeyInfo fi, Object newValue) {
+	    final String linkName = linkInfo.getName();
+	    String linkToPropertyName = fi.getToPropertyInfo().getName();
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.getClass());
-		OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, linkName);
-		if (linkInfo == null) {
-			// throw new RuntimeException("linkName not found, link=" + linkName);
-		    return false;
-		}
-
+        final Object oldValue = OAObjectPropertyDelegate.getProperty(this, linkName, false, true);
+		
 		if (newValue == null) {
-			Object oldValue = OAObjectPropertyDelegate.getProperty(this, linkName, false, true);
 			if (oldValue == null) return false;
-			OAObjectReflectDelegate.setProperty(this, linkName, null, null);
-			return true;
 		}
 
 		OAObjectInfo oiTo = linkInfo.getToObjectInfo();
 
 		int pos = -1;
-		String[] pkeyNames = oiTo.getIdProperties();
+		final String[] pkeyNames = oiTo.getIdProperties();
 
-		if (OAString.isEmpty(linkToPropertyName)) {
-			if (OAString.isNotEmpty(pkeyNames) && pkeyNames.length == 1) {
-				pos = 0;
-				linkToPropertyName = pkeyNames[pos];
-			} else {
-				// throw new RuntimeException("linkToPropertyName can not be null, since that are " + pkeyNames.length + " pk properties");
-			    return false;
-			}
+		if (OAString.isNotEmpty(pkeyNames) && pkeyNames.length == 1) {
+			pos = 0;
+			linkToPropertyName = pkeyNames[pos];
 		} else {
 			int x = 0;
 			for (String s : pkeyNames) {
@@ -1516,25 +1503,23 @@ public class OAObject implements java.io.Serializable, Comparable {
 				}
 				x++;
 			}
-			if (pos < 0) {
-				// throw new RuntimeException("linkToPropertyName does not exist in link object=" + linkName);
-                return false;
-			}
 		}
+        if (pos < 0) {
+            return false;
+        }
 
-		Object obj = OAObjectPropertyDelegate.getProperty(this, linkName);
+        
+		Object obj = oldValue;
 
 		if (obj instanceof OAObject) {
 			obj = ((OAObject) obj).getObjectKey();
 		} else if (obj != null && !(obj instanceof OAObjectKey)) {
-			// throw new RuntimeException("the link's value is not an OAObject or OAObjectKey");
 		    return false;
 		}
-
 		OAObjectKey ok = (OAObjectKey) obj;
 
 		Object[] objs = new Object[pkeyNames.length];
-		if (ok != null) {
+		if (pos > 1 && ok != null) {
 			int i = 0;
 			for (Object objx : ok.getObjectIds()) {
 				objs[i++] = objx;
@@ -1542,41 +1527,25 @@ public class OAObject implements java.io.Serializable, Comparable {
 		}
 
 		if (newValue == null) {
-			OAPropertyInfo pi = oiTo.getPropertyInfo(linkToPropertyName);
+			OAPropertyInfo pi = fi.getToPropertyInfo();
 			if (pi.getIsPrimitive()) {
 				newValue = OAReflect.getEmptyPrimitive(pi.getClassType());
 			}
 		}
 		objs[pos] = newValue;
 
-		OAObjectKey okNew;
-		if (ok == null) {
-			okNew = new OAObjectKey(objs);
-		} else {
-			okNew = new OAObjectKey(objs, ok.getGuid(), ok.isNew());
-		}
+		final OAObjectKey okNew = new OAObjectKey(objs);
 
 		if (ok != null && ok.compareTo(okNew) == 0) {
 			return false;
 		}
 
-        if (ok != null) okNew = new OAObjectKey(objs);
-		OAObject objNew = (OAObject) OAObjectCacheDelegate.get(linkInfo.getToClass(), okNew);
-		if (objNew != null) okNew = objNew.getObjectKey();
-		
-        OAObjectReflectDelegate.setProperty(this, linkName, objNew != null ? objNew : okNew, null);
-		
-		
-        /*qqqqqq
-		OAObjectPropertyDelegate.setProperty(this, linkName, okNew);
-
-		for (OAFkeyInfo fki : linkInfo.getFkeyInfos()) {
-			if (fki.getFromPropertyInfo().getIsPrimitive()) {
-				OAObjectInfoDelegate.setPrimitiveNull(this, fki.getFromPropertyInfo().getName(), false);
-			}
-			firePropertyChange(fki.getFromPropertyInfo().getName());
+		if (isLoading()) {
+	        OAObjectPropertyDelegate.setProperty(this, linkName, okNew);
+	        return true;
 		}
-		*/
+		
+        OAObjectReflectDelegate.setProperty(this, linkName, okNew, null);
 		return true;
 	}
 

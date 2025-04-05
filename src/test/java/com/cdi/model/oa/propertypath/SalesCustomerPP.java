@@ -113,5 +113,9 @@ public class SalesCustomerPP {
         String s = "updateSalesCustomer";
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

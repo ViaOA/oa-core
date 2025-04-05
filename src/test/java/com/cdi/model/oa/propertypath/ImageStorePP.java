@@ -4,10 +4,16 @@ package com.cdi.model.oa.propertypath;
 import com.cdi.model.oa.*;
  
 public class ImageStorePP {
+    private static ChatMessagePPx chatMessage;
     private static ItemPPx item;
     private static SalesOrderNotePPx salesOrderNotes;
     private static WebPartPPx webPart;
      
+
+    public static ChatMessagePPx chatMessage() {
+        if (chatMessage == null) chatMessage = new ChatMessagePPx(ImageStore.P_ChatMessage);
+        return chatMessage;
+    }
 
     public static ItemPPx item() {
         if (item == null) item = new ItemPPx(ImageStore.P_Item);
@@ -52,6 +58,10 @@ public class ImageStorePP {
     public static String updated() {
         String s = ImageStore.P_Updated;
         return s;
+    }
+
+    public static String pp() {
+        return ""; // this
     }
 }
  

@@ -53,5 +53,9 @@ public class ItemQuotePP {
         String s = ItemQuote.P_TotalWeight;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

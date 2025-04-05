@@ -139,6 +139,10 @@ public class OrderPPx implements PPxInterface, Serializable {
         return pp + "." + Order.P_LastUpdate;
     }
 
+    public String purchaseOrder() {
+        return pp + "." + Order.P_PurchaseOrder;
+    }
+
     public String isOpen() {
         return pp + "." + Order.P_IsOpen;
     }

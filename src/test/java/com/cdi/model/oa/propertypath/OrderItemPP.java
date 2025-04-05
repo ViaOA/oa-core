@@ -4,16 +4,16 @@ package com.cdi.model.oa.propertypath;
 import com.cdi.model.oa.*;
  
 public class OrderItemPP {
-    private static ItemPPx groupByItem;
+    private static OpenOrderItemPPx groupByOpenOrderItems;
     private static ItemPPx item;
     private static OrderPPx order;
     private static OrderItemCommentPPx orderItemComments;
     private static WOItemPPx woItems;
      
 
-    public static ItemPPx groupByItem() {
-        if (groupByItem == null) groupByItem = new ItemPPx(OrderItem.P_GroupByItem);
-        return groupByItem;
+    public static OpenOrderItemPPx groupByOpenOrderItems() {
+        if (groupByOpenOrderItems == null) groupByOpenOrderItems = new OpenOrderItemPPx(OrderItem.P_GroupByOpenOrderItems);
+        return groupByOpenOrderItems;
     }
 
     public static ItemPPx item() {
@@ -124,6 +124,15 @@ public class OrderItemPP {
     public static String unshippedQuantity() {
         String s = OrderItem.P_UnshippedQuantity;
         return s;
+    }
+
+    public static String totalWeight() {
+        String s = OrderItem.P_TotalWeight;
+        return s;
+    }
+
+    public static String pp() {
+        return ""; // this
     }
 }
  

@@ -38,5 +38,9 @@ public class ItemCategoryPP {
         String s = ItemCategory.P_Description;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

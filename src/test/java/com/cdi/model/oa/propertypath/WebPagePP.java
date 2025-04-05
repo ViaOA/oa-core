@@ -47,5 +47,9 @@ public class WebPagePP {
         String s = WebPage.P_Seq;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

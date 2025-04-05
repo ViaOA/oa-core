@@ -68,5 +68,19 @@ public class DeliveryTruckPP {
         String s = DeliveryTruck.P_IconColor;
         return s;
     }
+
+    public static String totalWeight() {
+        String s = DeliveryTruck.P_TotalWeight;
+        return s;
+    }
+
+    public static String totalPrice() {
+        String s = DeliveryTruck.P_TotalPrice;
+        return s;
+    }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

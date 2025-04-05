@@ -31,5 +31,9 @@ public class PalletPP {
         String s = Pallet.P_Seq;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

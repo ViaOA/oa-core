@@ -32,5 +32,9 @@ public class OrderNotePP {
         String s = OrderNote.P_Note;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

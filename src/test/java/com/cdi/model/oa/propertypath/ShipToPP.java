@@ -87,5 +87,9 @@ public class ShipToPP {
         String s = ShipTo.P_CityStateZip;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

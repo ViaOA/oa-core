@@ -21,5 +21,9 @@ public class OrderItemCommentPP {
         String s = OrderItemComment.P_Description;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

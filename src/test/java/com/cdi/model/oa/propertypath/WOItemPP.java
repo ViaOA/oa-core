@@ -32,5 +32,14 @@ public class WOItemPP {
         String s = WOItem.P_MinDays;
         return s;
     }
+
+    public static String price() {
+        String s = WOItem.P_Price;
+        return s;
+    }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

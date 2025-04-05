@@ -111,6 +111,10 @@ public class WorkOrderPPx implements PPxInterface, Serializable {
         return pp + "." + WorkOrder.P_IconColor;
     }
 
+    public String totalPrice() {
+        return pp + "." + WorkOrder.P_TotalPrice;
+    }
+
     public WorkOrderPPx openFilter() {
         WorkOrderPPx ppx = new WorkOrderPPx(this, ":open()");
         return ppx;

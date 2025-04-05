@@ -134,5 +134,9 @@ public class SalesOrderItemPP {
         String s = "assignSameItemAddOn";
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

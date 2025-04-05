@@ -25,8 +25,8 @@ public class OrderItemPPx implements PPxInterface, Serializable {
         pp = s;
     }
 
-    public ItemPPx groupByItem() {
-        ItemPPx ppx = new ItemPPx(this, OrderItem.P_GroupByItem);
+    public OpenOrderItemPPx groupByOpenOrderItems() {
+        OpenOrderItemPPx ppx = new OpenOrderItemPPx(this, OrderItem.P_GroupByOpenOrderItems);
         return ppx;
     }
 
@@ -120,6 +120,15 @@ public class OrderItemPPx implements PPxInterface, Serializable {
 
     public String unshippedQuantity() {
         return pp + "." + OrderItem.P_UnshippedQuantity;
+    }
+
+    public String totalWeight() {
+        return pp + "." + OrderItem.P_TotalWeight;
+    }
+
+    public OrderItemPPx hasRemainingQuantityFilter() {
+        OrderItemPPx ppx = new OrderItemPPx(this, ":hasRemainingQuantity()");
+        return ppx;
     }
 
     @Override

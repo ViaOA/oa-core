@@ -37,5 +37,9 @@ public class WebItemPP {
         String s = WebItem.P_LastChanged;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

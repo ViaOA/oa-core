@@ -27,11 +27,6 @@ public class MoldPP {
         return s;
     }
 
-    public static String location() {
-        String s = Mold.P_Location;
-        return s;
-    }
-
     public static String onHand() {
         String s = Mold.P_OnHand;
         return s;
@@ -60,6 +55,10 @@ public class MoldPP {
     public static String codeName() {
         String s = Mold.P_CodeName;
         return s;
+    }
+
+    public static String pp() {
+        return ""; // this
     }
 }
  

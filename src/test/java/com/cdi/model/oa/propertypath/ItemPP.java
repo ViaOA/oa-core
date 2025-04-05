@@ -9,7 +9,7 @@ public class ItemPP {
     private static ItemCategoryPPx itemCategory;
     private static ItemQuotePPx itemQuotes;
     private static MoldPPx mold;
-    private static OrderItemPPx OpenOrderItems;
+    private static OpenOrderItemPPx openOrderItem;
     private static OrderItemPPx orderItems;
     private static ProductionAreaPPx productionArea;
     private static SalesOrderItemPPx salesOrderItems;
@@ -41,9 +41,9 @@ public class ItemPP {
         return mold;
     }
 
-    public static OrderItemPPx OpenOrderItems() {
-        if (OpenOrderItems == null) OpenOrderItems = new OrderItemPPx(Item.P_OpenOrderItems);
-        return OpenOrderItems;
+    public static OpenOrderItemPPx openOrderItem() {
+        if (openOrderItem == null) openOrderItem = new OpenOrderItemPPx(Item.P_OpenOrderItem);
+        return openOrderItem;
     }
 
     public static OrderItemPPx orderItems() {
@@ -116,6 +116,11 @@ public class ItemPP {
         return s;
     }
 
+    public static String location() {
+        String s = Item.P_Location;
+        return s;
+    }
+
     public static String price() {
         String s = Item.P_Price;
         return s;
@@ -149,6 +154,10 @@ public class ItemPP {
     public static String codeName() {
         String s = Item.P_CodeName;
         return s;
+    }
+
+    public static String pp() {
+        return ""; // this
     }
 }
  

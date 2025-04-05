@@ -5,9 +5,10 @@ import java.util.logging.*;
 
 import com.viaoa.object.*;
 import com.viaoa.annotation.*;
-import com.viaoa.datasource.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
+import com.viaoa.datasource.*;
+
 import com.cdi.model.*;
 import com.cdi.model.oa.*;
 import com.cdi.model.oa.filter.*;
@@ -30,21 +31,24 @@ public class SalesOrderItemAssignSameItemAddOnMethodModel {
     protected ItemAddOnSearchModel modelItemAddOnSearch;
     
     // object used for method data
-    protected SalesOrderItemAssignSameItemAddOnMethod method;
+    protected SalesOrderItemAssignSameItemAddOnMethod salesOrderItemAssignSameItemAddOnMethod;
     
     public SalesOrderItemAssignSameItemAddOnMethodModel() {
     }
     
     // object used to input query data, to be used by methodHub
+    public SalesOrderItemAssignSameItemAddOnMethod getSalesOrderItemAssignSameItemAddOnMethod() {
+        if (salesOrderItemAssignSameItemAddOnMethod == null) salesOrderItemAssignSameItemAddOnMethod = new SalesOrderItemAssignSameItemAddOnMethod();
+        return salesOrderItemAssignSameItemAddOnMethod;
+    }
     public SalesOrderItemAssignSameItemAddOnMethod getMethod() {
-        if (method == null) method = new SalesOrderItemAssignSameItemAddOnMethod();
-        return method;
+        return getSalesOrderItemAssignSameItemAddOnMethod();
     }
     
     public Hub<SalesOrderItemAssignSameItemAddOnMethod> getHub() {
         if (hub == null) {
             hub = new Hub<SalesOrderItemAssignSameItemAddOnMethod>(SalesOrderItemAssignSameItemAddOnMethod.class);
-            hub.add(getMethod());
+            hub.add(getSalesOrderItemAssignSameItemAddOnMethod());
             hub.setPos(0);
         }
         return hub;
@@ -78,15 +82,10 @@ public class SalesOrderItemAssignSameItemAddOnMethodModel {
     
     public ItemAddOnSearchModel getItemAddOnSearchModel() {
         if (modelItemAddOnSearch != null) return modelItemAddOnSearch;
-        modelItemAddOnSearch = new ItemAddOnSearchModel() {
-            @Override
-            public void performSearch() {
-                getItemAddOnSearch().setExtraWhere("discontinuedDate = null");
-                OAFilter filter = new ItemAddOnActiveFilter();
-                getItemAddOnSearch().setExtraWhereFilter(filter);
-                super.performSearch();
-            }
-        };
+        modelItemAddOnSearch = new ItemAddOnSearchModel();
+        modelItemAddOnSearch.getItemAddOnSearch().setExtraWhere("discontinuedDate = null");
+        OAFilter filter = new ItemAddOnActiveFilter();
+        modelItemAddOnSearch.getItemAddOnSearch().setExtraWhereFilter(filter);
         return modelItemAddOnSearch;
     }
 }

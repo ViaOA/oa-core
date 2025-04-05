@@ -62,5 +62,9 @@ public class OrderContactPP {
         String s = OrderContact.P_FollowupCompleted;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

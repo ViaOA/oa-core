@@ -31,5 +31,9 @@ public class TaxCodePP {
         String s = TaxCode.P_CodeAndRate;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

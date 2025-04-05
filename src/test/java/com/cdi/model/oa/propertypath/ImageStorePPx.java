@@ -25,6 +25,11 @@ public class ImageStorePPx implements PPxInterface, Serializable {
         pp = s;
     }
 
+    public ChatMessagePPx chatMessage() {
+        ChatMessagePPx ppx = new ChatMessagePPx(this, ImageStore.P_ChatMessage);
+        return ppx;
+    }
+
     public ItemPPx item() {
         ItemPPx ppx = new ItemPPx(this, ImageStore.P_Item);
         return ppx;

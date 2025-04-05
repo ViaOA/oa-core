@@ -42,5 +42,9 @@ public class DeliveryPP {
         String s = Delivery.P_ToolTip;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

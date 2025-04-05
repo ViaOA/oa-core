@@ -33,5 +33,9 @@ public class WODeliveryPP {
         String s = WODelivery.P_Created;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

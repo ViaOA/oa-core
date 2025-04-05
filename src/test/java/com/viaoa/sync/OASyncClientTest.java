@@ -26,9 +26,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.hub.HubMerger;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.object.*;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.sync.remote.RemoteBroadcastInterface;
 import com.viaoa.sync.remote.RemoteTsamInterface;
@@ -208,8 +206,8 @@ public class OASyncClientTest extends OAUnitTest {
 			return;
 		}
 
-		remoteApp.isRunningAsDemo();
-		remoteApp.getRelease();
+		boolean b = remoteApp.isRunningAsDemo();
+		String s = remoteApp.getRelease();
 
 		final Site site = serverRoot.getSites().getAt(0);
 		site.setProduction(false); // if true, then this is the trigger on server to start a new thread
@@ -260,7 +258,7 @@ public class OASyncClientTest extends OAUnitTest {
 				break;
 			}
 		}
-		boolean b = site.getProduction();
+		b = site.getProduction();
 
 		// the afterPropertyChange are sent in another queue, so it can be behind, wait up to 5 seconds
 		for (int i = 0; i < 5; i++) {
@@ -577,6 +575,12 @@ public class OASyncClientTest extends OAUnitTest {
 
 	@Before
 	public void setup() throws Exception {
+	    
+        OAObjectCacheDelegate.setUnitTestMode(true);
+        OAObjectCacheDelegate.resetCache();
+        OAObjectCacheDelegate.setUnitTestMode(false);
+	    
+	    
 		OAObject.setDebugMode(true);
 		syncClient = new OASyncClient("localhost", port) {
 			@Override

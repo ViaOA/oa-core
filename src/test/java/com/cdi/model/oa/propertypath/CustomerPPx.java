@@ -142,6 +142,10 @@ public class CustomerPPx implements PPxInterface, Serializable {
         return pp + "." + Customer.P_InactiveDate;
     }
 
+    public String allowUserAccess() {
+        return pp + "." + Customer.P_AllowUserAccess;
+    }
+
     public String cityStateZip() {
         return pp + "." + Customer.P_CityStateZip;
     }

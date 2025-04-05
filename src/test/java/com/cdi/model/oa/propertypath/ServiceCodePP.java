@@ -41,5 +41,9 @@ public class ServiceCodePP {
         String s = ServiceCode.P_QbListId;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

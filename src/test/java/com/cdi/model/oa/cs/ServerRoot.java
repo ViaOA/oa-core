@@ -25,19 +25,17 @@ public class ServerRoot extends OAObject {
     public static final String P_Id = "Id";
 
     /*$$Start: ServerRoot1 $$*/
-    // lookups, preselects, autoCreated
-    public static final String P_AppServers = "AppServers";
+    // lookups, preselects
     public static final String P_AppUsers = "AppUsers";
     public static final String P_ColorCodes = "ColorCodes";
     public static final String P_Countries = "Countries";
     public static final String P_ItemAddOns = "ItemAddOns";
     public static final String P_ItemCategories = "ItemCategories";
-    public static final String P_ItemQuotes = "ItemQuotes";
     public static final String P_Pallets = "Pallets";
     public static final String P_PriceCodes = "PriceCodes";
     public static final String P_ProductionAreas = "ProductionAreas";
-    public static final String P_Quickbooks = "Quickbooks";
     public static final String P_Regions = "Regions";
+    public static final String P_ReportClasses = "ReportClasses";
     public static final String P_SalesOrderSources = "SalesOrderSources";
     public static final String P_SalesOrderStatuses = "SalesOrderStatuses";
     public static final String P_ScheduleTypes = "ScheduleTypes";
@@ -46,35 +44,37 @@ public class ServerRoot extends OAObject {
     public static final String P_Textures = "Textures";
     public static final String P_Users = "Users";
     public static final String P_WebPages = "WebPages";
+    // autoCreateOne
+    public static final String P_CreateOneAppServerHub = "CreateOneAppServerHub";
+    public static final String P_CreateOneQuickbookHub = "CreateOneQuickbookHub";
     // filters
     public static final String P_ActiveCustomers = "ActiveCustomers";
     public static final String P_ActiveItems = "ActiveItems";
     public static final String P_ActiveItemAddOns = "ActiveItemAddOns";
+    public static final String P_HasOpenOrderItemsOpenOrderItems = "HasOpenOrderItemsOpenOrderItems";
     public static final String P_OpenOrders = "OpenOrders";
     public static final String P_OpenSalesOrders = "OpenSalesOrders";
     // UI containers
     public static final String P_NewSalesOrders = "NewSalesOrders";
     public static final String P_OpenWorkOrders = "OpenWorkOrders";
     public static final String P_InvalidOrders = "InvalidOrders";
-    public static final String P_AppUserLogins = "AppUserLogins";
+    public static final String P_LastDayAppUserLogins = "LastDayAppUserLogins";
     public static final String P_AppUserErrors = "AppUserErrors";
     /*$$End: ServerRoot1 $$*/
 
     protected int id;
     /*$$Start: ServerRoot2 $$*/
-    // lookups, preselects, autoCreated
-    protected transient Hub<AppServer> hubAppServers;
+    // lookups, preselects
     protected transient Hub<AppUser> hubAppUsers;
     protected transient Hub<ColorCode> hubColorCodes;
     protected transient Hub<Country> hubCountries;
     protected transient Hub<ItemAddOn> hubItemAddOns;
     protected transient Hub<ItemCategory> hubItemCategories;
-    protected transient Hub<ItemQuote> hubItemQuotes;
     protected transient Hub<Pallet> hubPallets;
     protected transient Hub<PriceCode> hubPriceCodes;
     protected transient Hub<ProductionArea> hubProductionAreas;
-    protected transient Hub<Quickbook> hubQuickbooks;
     protected transient Hub<Region> hubRegions;
+    protected transient Hub<ReportClass> hubReportClasses;
     protected transient Hub<SalesOrderSource> hubSalesOrderSources;
     protected transient Hub<SalesOrderStatus> hubSalesOrderStatuses;
     protected transient Hub<ScheduleType> hubScheduleTypes;
@@ -83,10 +83,14 @@ public class ServerRoot extends OAObject {
     protected transient Hub<Texture> hubTextures;
     protected transient Hub<User> hubUsers;
     protected transient Hub<WebPage> hubWebPages;
+    // autoCreateOne
+    protected transient Hub<AppServer> hubCreateOneAppServer;
+    protected transient Hub<Quickbook> hubCreateOneQuickbook;
     // filters
     protected transient Hub<Customer> hubActiveCustomers;
     protected transient Hub<Item> hubActiveItems;
     protected transient Hub<ItemAddOn> hubActiveItemAddOns;
+    protected transient Hub<OpenOrderItem> hubHasOpenOrderItemsOpenOrderItems;
     protected transient Hub<Order> hubOpenOrders;
     protected transient Hub<SalesOrder> hubOpenSalesOrders;
     // UI containers
@@ -114,14 +118,7 @@ public class ServerRoot extends OAObject {
 	}
 
     /*$$Start: ServerRoot3 $$*/
-    // lookups, preselects, autoCreated
-    @OAMany(toClass = AppServer.class, cascadeSave = true)
-    public Hub<AppServer> getAppServers() {
-        if (hubAppServers == null) {
-            hubAppServers = (Hub<AppServer>) super.getHub(P_AppServers);
-        }
-        return hubAppServers;
-    }
+    // lookups, preselects
     @OAMany(toClass = AppUser.class, cascadeSave = true)
     public Hub<AppUser> getAppUsers() {
         if (hubAppUsers == null) {
@@ -158,13 +155,6 @@ public class ServerRoot extends OAObject {
         }
         return hubItemCategories;
     }
-    @OAMany(toClass = ItemQuote.class, cascadeSave = true)
-    public Hub<ItemQuote> getItemQuotes() {
-        if (hubItemQuotes == null) {
-            hubItemQuotes = (Hub<ItemQuote>) super.getHub(P_ItemQuotes);
-        }
-        return hubItemQuotes;
-    }
     @OAMany(toClass = Pallet.class, sortProperty = Pallet.P_Seq, cascadeSave = true)
     public Hub<Pallet> getPallets() {
         if (hubPallets == null) {
@@ -186,19 +176,19 @@ public class ServerRoot extends OAObject {
         }
         return hubProductionAreas;
     }
-    @OAMany(toClass = Quickbook.class, cascadeSave = true)
-    public Hub<Quickbook> getQuickbooks() {
-        if (hubQuickbooks == null) {
-            hubQuickbooks = (Hub<Quickbook>) super.getHub(P_Quickbooks);
-        }
-        return hubQuickbooks;
-    }
     @OAMany(toClass = Region.class, sortProperty = Region.P_Code, cascadeSave = true)
     public Hub<Region> getRegions() {
         if (hubRegions == null) {
             hubRegions = (Hub<Region>) super.getHub(P_Regions);
         }
         return hubRegions;
+    }
+    @OAMany(toClass = ReportClass.class, cascadeSave = true, isProcessed = true)
+    public Hub<ReportClass> getReportClasses() {
+        if (hubReportClasses == null) {
+            hubReportClasses = (Hub<ReportClass>) super.getHub(P_ReportClasses);
+        }
+        return hubReportClasses;
     }
     @OAMany(toClass = SalesOrderSource.class, sortProperty = SalesOrderSource.P_Name, cascadeSave = true)
     public Hub<SalesOrderSource> getSalesOrderSources() {
@@ -256,6 +246,21 @@ public class ServerRoot extends OAObject {
         }
         return hubWebPages;
     }
+    // autoCreatedOne
+    @OAMany(toClass = AppServer.class, cascadeSave = true)
+    public Hub<AppServer> getCreateOneAppServerHub() {
+        if (hubCreateOneAppServer == null) {
+            hubCreateOneAppServer = (Hub<AppServer>) super.getHub(P_CreateOneAppServerHub);
+        }
+        return hubCreateOneAppServer;
+    }
+    @OAMany(toClass = Quickbook.class, cascadeSave = true)
+    public Hub<Quickbook> getCreateOneQuickbookHub() {
+        if (hubCreateOneQuickbook == null) {
+            hubCreateOneQuickbook = (Hub<Quickbook>) super.getHub(P_CreateOneQuickbookHub);
+        }
+        return hubCreateOneQuickbook;
+    }
     // filters
     @OAMany(toClass = Customer.class, sortProperty = Customer.P_Name, cascadeSave = true)
     public Hub<Customer> getActiveCustomers() {
@@ -277,6 +282,13 @@ public class ServerRoot extends OAObject {
             hubActiveItemAddOns = (Hub<ItemAddOn>) super.getHub(P_ActiveItemAddOns);
         }
         return hubActiveItemAddOns;
+    }
+    @OAMany(toClass = OpenOrderItem.class, cascadeSave = true)
+    public Hub<OpenOrderItem> getHasOpenOrderItemsOpenOrderItems() {
+        if (hubHasOpenOrderItemsOpenOrderItems == null) {
+            hubHasOpenOrderItemsOpenOrderItems = (Hub<OpenOrderItem>) super.getHub(P_HasOpenOrderItemsOpenOrderItems);
+        }
+        return hubHasOpenOrderItemsOpenOrderItems;
     }
     @OAMany(toClass = Order.class, sortProperty = Order.P_SalesOrderNumber, cascadeSave = true)
     public Hub<Order> getOpenOrders() {
@@ -315,9 +327,9 @@ public class ServerRoot extends OAObject {
         return hubInvalidOrders;
     }
     @OAMany(toClass = AppUserLogin.class, cascadeSave = true, isProcessed = true)
-    public Hub<AppUserLogin> getAppUserLogins() {
+    public Hub<AppUserLogin> getLastDayAppUserLogins() {
         if (hubAppUserLogins == null) {
-            hubAppUserLogins = (Hub<AppUserLogin>) super.getHub(P_AppUserLogins);
+            hubAppUserLogins = (Hub<AppUserLogin>) super.getHub(P_LastDayAppUserLogins);
         }
         return hubAppUserLogins;
     }

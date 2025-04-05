@@ -47,6 +47,10 @@ public class WOItemPPx implements PPxInterface, Serializable {
         return pp + "." + WOItem.P_MinDays;
     }
 
+    public String price() {
+        return pp + "." + WOItem.P_Price;
+    }
+
     @Override
     public String toString() {
         return pp;

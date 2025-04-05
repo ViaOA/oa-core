@@ -52,5 +52,9 @@ public class PriceCodePP {
         String s = PriceCode.P_Seq;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

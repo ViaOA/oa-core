@@ -71,5 +71,9 @@ public class WebPartPP {
         String s = WebPart.P_LastChanged;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

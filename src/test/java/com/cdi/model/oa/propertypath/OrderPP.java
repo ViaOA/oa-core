@@ -146,6 +146,11 @@ public class OrderPP {
         return s;
     }
 
+    public static String purchaseOrder() {
+        String s = Order.P_PurchaseOrder;
+        return s;
+    }
+
     public static String isOpen() {
         String s = Order.P_IsOpen;
         return s;
@@ -204,6 +209,10 @@ public class OrderPP {
     public static String updateWorkOrders() {
         String s = "updateWorkOrders";
         return s;
+    }
+
+    public static String pp() {
+        return ""; // this
     }
 }
  

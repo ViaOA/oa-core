@@ -7,6 +7,8 @@ public class UserPP {
     private static AppUserPPx appUser;
     private static SalesOrderPPx assignedSalesOrders;
     private static WorkOrderPPx assignedWorkOrders;
+    private static ChatMessagePPx chatMessages;
+    private static ChatSessionPPx chatSessions;
     private static WorkOrderPPx inspectWorkOrders;
     private static OrderNotePPx orderNotes;
     private static SalesOrderNotePPx salesOrderNotes;
@@ -26,6 +28,16 @@ public class UserPP {
     public static WorkOrderPPx assignedWorkOrders() {
         if (assignedWorkOrders == null) assignedWorkOrders = new WorkOrderPPx(User.P_AssignedWorkOrders);
         return assignedWorkOrders;
+    }
+
+    public static ChatMessagePPx chatMessages() {
+        if (chatMessages == null) chatMessages = new ChatMessagePPx(User.P_ChatMessages);
+        return chatMessages;
+    }
+
+    public static ChatSessionPPx chatSessions() {
+        if (chatSessions == null) chatSessions = new ChatSessionPPx(User.P_ChatSessions);
+        return chatSessions;
     }
 
     public static WorkOrderPPx inspectWorkOrders() {
@@ -271,6 +283,10 @@ public class UserPP {
     public static String updateAppUser() {
         String s = "updateAppUser";
         return s;
+    }
+
+    public static String pp() {
+        return ""; // this
     }
 }
  

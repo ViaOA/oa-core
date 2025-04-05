@@ -48,5 +48,9 @@ public class SalesOrderNotePP {
         String s = SalesOrderNote.P_FollowedUp;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

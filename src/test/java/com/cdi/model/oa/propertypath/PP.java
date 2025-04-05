@@ -31,6 +31,18 @@ public class PP {
     public static AppUserLoginPPx appUserLogins() {
         return new AppUserLoginPPx("AppUserLogins");
     }
+    public static ChatMessagePPx chatMessage() {
+        return new ChatMessagePPx("ChatMessage");
+    }
+    public static ChatMessagePPx chatMessages() {
+        return new ChatMessagePPx("ChatMessages");
+    }
+    public static ChatSessionPPx chatSession() {
+        return new ChatSessionPPx("ChatSession");
+    }
+    public static ChatSessionPPx chatSessions() {
+        return new ChatSessionPPx("ChatSessions");
+    }
     public static ColorCodePPx colorCode() {
         return new ColorCodePPx("ColorCode");
     }
@@ -109,6 +121,12 @@ public class PP {
     public static MoldPPx molds() {
         return new MoldPPx("Molds");
     }
+    public static OpenOrderItemPPx openOrderItem() {
+        return new OpenOrderItemPPx("OpenOrderItem");
+    }
+    public static OpenOrderItemPPx openOrderItems() {
+        return new OpenOrderItemPPx("OpenOrderItems");
+    }
     public static OrderPPx order() {
         return new OrderPPx("Order");
     }
@@ -174,6 +192,24 @@ public class PP {
     }
     public static RegionPPx regions() {
         return new RegionPPx("Regions");
+    }
+    public static ReportPPx report() {
+        return new ReportPPx("Report");
+    }
+    public static ReportPPx reports() {
+        return new ReportPPx("Reports");
+    }
+    public static ReportClassPPx reportClass() {
+        return new ReportClassPPx("ReportClass");
+    }
+    public static ReportClassPPx reportClasses() {
+        return new ReportClassPPx("ReportClasses");
+    }
+    public static ReportDefPPx reportDef() {
+        return new ReportDefPPx("ReportDef");
+    }
+    public static ReportDefPPx reportDefs() {
+        return new ReportDefPPx("ReportDefs");
     }
     public static SalesCustomerPPx salesCustomer() {
         return new SalesCustomerPPx("SalesCustomer");

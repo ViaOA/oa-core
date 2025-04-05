@@ -27,5 +27,9 @@ public class WorkOrderPalletPP {
         String s = WorkOrderPallet.P_Amount;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

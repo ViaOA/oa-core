@@ -41,5 +41,9 @@ public class ColorCodePP {
         String s = ColorCode.P_CodeName;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  

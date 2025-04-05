@@ -31,18 +31,16 @@ public class ModelDelegate {
 
     /*$$Start: ModelDelegate1 $$*/
     // lookups, preselects
-    private static final Hub<AppServer> hubAppServers = new Hub<AppServer>(AppServer.class);
     private static final Hub<AppUser> hubAppUsers = new Hub<AppUser>(AppUser.class);
     private static final Hub<ColorCode> hubColorCodes = new Hub<ColorCode>(ColorCode.class);
     private static final Hub<Country> hubCountries = new Hub<Country>(Country.class);
     private static final Hub<ItemAddOn> hubItemAddOns = new Hub<ItemAddOn>(ItemAddOn.class);
     private static final Hub<ItemCategory> hubItemCategories = new Hub<ItemCategory>(ItemCategory.class);
-    private static final Hub<ItemQuote> hubItemQuotes = new Hub<ItemQuote>(ItemQuote.class);
     private static final Hub<Pallet> hubPallets = new Hub<Pallet>(Pallet.class);
     private static final Hub<PriceCode> hubPriceCodes = new Hub<PriceCode>(PriceCode.class);
     private static final Hub<ProductionArea> hubProductionAreas = new Hub<ProductionArea>(ProductionArea.class);
-    private static final Hub<Quickbook> hubQuickbooks = new Hub<Quickbook>(Quickbook.class);
     private static final Hub<Region> hubRegions = new Hub<Region>(Region.class);
+    private static final Hub<ReportClass> hubReportClasses = new Hub<ReportClass>(ReportClass.class);
     private static final Hub<SalesOrderSource> hubSalesOrderSources = new Hub<SalesOrderSource>(SalesOrderSource.class);
     private static final Hub<SalesOrderStatus> hubSalesOrderStatuses = new Hub<SalesOrderStatus>(SalesOrderStatus.class);
     private static final Hub<ScheduleType> hubScheduleTypes = new Hub<ScheduleType>(ScheduleType.class);
@@ -51,10 +49,15 @@ public class ModelDelegate {
     private static final Hub<Texture> hubTextures = new Hub<Texture>(Texture.class);
     private static final Hub<User> hubUsers = new Hub<User>(User.class);
     private static final Hub<WebPage> hubWebPages = new Hub<WebPage>(WebPage.class);
+    // autoCreateOne
+    private static final Hub<AppServer> hubCreateOneAppServer = new Hub<AppServer>(AppServer.class);
+    private static final Hub<ItemQuote> hubCreateOneItemQuote = new Hub<ItemQuote>(ItemQuote.class);
+    private static final Hub<Quickbook> hubCreateOneQuickbook = new Hub<Quickbook>(Quickbook.class);
     // filters
     private static final Hub<Customer> hubActiveCustomers = new Hub<Customer>(Customer.class);
     private static final Hub<Item> hubActiveItems = new Hub<Item>(Item.class);
     private static final Hub<ItemAddOn> hubActiveItemAddOns = new Hub<ItemAddOn>(ItemAddOn.class);
+    private static final Hub<OpenOrderItem> hubHasOpenOrderItemsOpenOrderItems = new Hub<OpenOrderItem>(OpenOrderItem.class);
     private static final Hub<Order> hubOpenOrders = new Hub<Order>(Order.class);
     private static final Hub<SalesOrder> hubOpenSalesOrders = new Hub<SalesOrder>(SalesOrder.class);
     // UI containers
@@ -80,7 +83,7 @@ public class ModelDelegate {
     private static final Hub<SalesOrder> hubSearchSalesOrders1 = new Hub<SalesOrder>(SalesOrder.class);
     private static final Hub<Truck> hubSearchTrucks = new Hub<Truck>(Truck.class);
     private static final Hub<WorkOrder> hubSearchWorkOrders = new Hub<WorkOrder>(WorkOrder.class);
-    private static final Hub<AppUserLogin> hubAppUserLogins = new Hub<AppUserLogin>(AppUserLogin.class);
+    private static final Hub<AppUserLogin> hubLastDayAppUserLogins = new Hub<AppUserLogin>(AppUserLogin.class);
     private static final Hub<AppUserError> hubAppUserErrors = new Hub<AppUserError>(AppUserError.class);
     /*$$End: ModelDelegate1 $$*/    
     
@@ -90,18 +93,16 @@ public class ModelDelegate {
 
         /*$$Start: ModelDelegate2 $$*/
         // lookups, preselects
-        setSharedHub(getAppServers(), rootServer.getAppServers());
         setSharedHub(getAppUsers(), rootServer.getAppUsers());
         setSharedHub(getColorCodes(), rootServer.getColorCodes());
         setSharedHub(getCountries(), rootServer.getCountries());
         setSharedHub(getItemAddOns(), rootServer.getItemAddOns());
         setSharedHub(getItemCategories(), rootServer.getItemCategories());
-        setSharedHub(getItemQuotes(), rootServer.getItemQuotes());
         setSharedHub(getPallets(), rootServer.getPallets());
         setSharedHub(getPriceCodes(), rootServer.getPriceCodes());
         setSharedHub(getProductionAreas(), rootServer.getProductionAreas());
-        setSharedHub(getQuickbooks(), rootServer.getQuickbooks());
         setSharedHub(getRegions(), rootServer.getRegions());
+        setSharedHub(getReportClasses(), rootServer.getReportClasses());
         setSharedHub(getSalesOrderSources(), rootServer.getSalesOrderSources());
         setSharedHub(getSalesOrderStatuses(), rootServer.getSalesOrderStatuses());
         setSharedHub(getScheduleTypes(), rootServer.getScheduleTypes());
@@ -110,10 +111,15 @@ public class ModelDelegate {
         setSharedHub(getTextures(), rootServer.getTextures());
         setSharedHub(getUsers(), rootServer.getUsers());
         setSharedHub(getWebPages(), rootServer.getWebPages());
+        // autoCreateOne
+        setSharedHub(getCreateOneAppServerHub(), rootServer.getCreateOneAppServerHub());
+        if (rootClient != null) setSharedHub(getCreateOneItemQuoteHub(), rootClient.getCreateOneItemQuoteHub());
+        setSharedHub(getCreateOneQuickbookHub(), rootServer.getCreateOneQuickbookHub());
         // filters
         setSharedHub(getActiveCustomers(), rootServer.getActiveCustomers());
         setSharedHub(getActiveItems(), rootServer.getActiveItems());
         setSharedHub(getActiveItemAddOns(), rootServer.getActiveItemAddOns());
+        setSharedHub(getHasOpenOrderItemsOpenOrderItems(), rootServer.getHasOpenOrderItemsOpenOrderItems());
         setSharedHub(getOpenOrders(), rootServer.getOpenOrders());
         setSharedHub(getOpenSalesOrders(), rootServer.getOpenSalesOrders());
         // UI containers
@@ -139,7 +145,7 @@ public class ModelDelegate {
         if (rootClient != null) setSharedHub(getSearchSalesOrders1(), rootClient.getSearchSalesOrders1());
         if (rootClient != null) setSharedHub(getSearchTrucks(), rootClient.getSearchTrucks());
         if (rootClient != null) setSharedHub(getSearchWorkOrders(), rootClient.getSearchWorkOrders());
-        getAppUserLogins().setSharedHub(rootServer.getAppUserLogins());
+        getLastDayAppUserLogins().setSharedHub(rootServer.getLastDayAppUserLogins());
         getAppUserErrors().setSharedHub(rootServer.getAppUserErrors());
         /*$$End: ModelDelegate2 $$*/    
     
@@ -191,9 +197,6 @@ public class ModelDelegate {
     
     
     /*$$Start: ModelDelegate3 $$*/
-    public static Hub<AppServer> getAppServers() {
-        return hubAppServers;
-    }
     public static Hub<AppUser> getAppUsers() {
         return hubAppUsers;
     }
@@ -209,9 +212,6 @@ public class ModelDelegate {
     public static Hub<ItemCategory> getItemCategories() {
         return hubItemCategories;
     }
-    public static Hub<ItemQuote> getItemQuotes() {
-        return hubItemQuotes;
-    }
     public static Hub<Pallet> getPallets() {
         return hubPallets;
     }
@@ -221,11 +221,11 @@ public class ModelDelegate {
     public static Hub<ProductionArea> getProductionAreas() {
         return hubProductionAreas;
     }
-    public static Hub<Quickbook> getQuickbooks() {
-        return hubQuickbooks;
-    }
     public static Hub<Region> getRegions() {
         return hubRegions;
+    }
+    public static Hub<ReportClass> getReportClasses() {
+        return hubReportClasses;
     }
     public static Hub<SalesOrderSource> getSalesOrderSources() {
         return hubSalesOrderSources;
@@ -251,6 +251,25 @@ public class ModelDelegate {
     public static Hub<WebPage> getWebPages() {
         return hubWebPages;
     }
+    // autoCreateOne
+    public static Hub<AppServer> getCreateOneAppServerHub() {
+        return hubCreateOneAppServer;
+    }
+    public static AppServer getAppServer() {
+        return hubCreateOneAppServer.getAt(0);
+    }
+    public static Hub<ItemQuote> getCreateOneItemQuoteHub() {
+        return hubCreateOneItemQuote;
+    }
+    public static ItemQuote getItemQuote() {
+        return hubCreateOneItemQuote.getAt(0);
+    }
+    public static Hub<Quickbook> getCreateOneQuickbookHub() {
+        return hubCreateOneQuickbook;
+    }
+    public static Quickbook getQuickbook() {
+        return hubCreateOneQuickbook.getAt(0);
+    }
     public static Hub<Customer> getActiveCustomers() {
         return hubActiveCustomers;
     }
@@ -259,6 +278,9 @@ public class ModelDelegate {
     }
     public static Hub<ItemAddOn> getActiveItemAddOns() {
         return hubActiveItemAddOns;
+    }
+    public static Hub<OpenOrderItem> getHasOpenOrderItemsOpenOrderItems() {
+        return hubHasOpenOrderItemsOpenOrderItems;
     }
     public static Hub<Order> getOpenOrders() {
         return hubOpenOrders;
@@ -332,8 +354,8 @@ public class ModelDelegate {
     public static Hub<WorkOrder> getSearchWorkOrders() {
         return hubSearchWorkOrders;
     }
-    public static Hub<AppUserLogin> getAppUserLogins() {
-        return hubAppUserLogins;
+    public static Hub<AppUserLogin> getLastDayAppUserLogins() {
+        return hubLastDayAppUserLogins;
     }
     public static Hub<AppUserError> getAppUserErrors() {
         return hubAppUserErrors;

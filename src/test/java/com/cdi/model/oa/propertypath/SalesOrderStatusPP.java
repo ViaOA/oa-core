@@ -26,5 +26,9 @@ public class SalesOrderStatusPP {
         String s = SalesOrderStatus.P_Description;
         return s;
     }
+
+    public static String pp() {
+        return ""; // this
+    }
 }
  
