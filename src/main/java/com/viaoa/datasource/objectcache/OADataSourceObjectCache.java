@@ -100,7 +100,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
 
             if (li == null) {
-                // 20200219 check to see if propertyFromWhereObject is a propertyPath. 
+                // check to see if propertyFromWhereObject is a propertyPath. 
                 //   If so, then add to the query and re-select
                 OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
 
@@ -148,6 +148,25 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             }
             
             
+            // 20250407 use reference object from oaobj.properties[]
+            Object objx = OAObjectPropertyDelegate.getProperty(whereObject, propertyFromWhereObject);
+            final List al = new ArrayList();
+            if (!(objx instanceof Hub)) {
+                if (objx instanceof OAObject && (filterx == null || filterx.isUsed(objx))) al.add(objx);
+            }
+            else {
+                for (Object obj2 : ((Hub)objx)) {
+                    if (filterx == null || filterx.isUsed(obj2)) al.add(obj2);
+                }
+            }
+            if (OAString.isNotEmpty(queryOrder)) {
+                OAComparator comparator = new OAComparator(selectClass, queryOrder, true);
+                Collections.sort(al, comparator);
+            }
+            OADataSourceIterator dsi = new OADataSourceListIterator(al);
+            return dsi;
+            
+            /* was: 
             // find using selectFromPropertyPath, or equalPropertyPath
             final OALinkInfo liRev = li.getReverseLinkInfo();
             String spp = liRev.getSelectFromPropertyPath();
@@ -198,7 +217,6 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 OADataSourceIterator dsi = new OADataSourceListIterator(al);
                 return dsi;
             }
-
             
             // else ... need to add filter to objectCache iterator
             final OAObject whereObjectx = whereObject;
@@ -218,6 +236,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             };
             if (filterx == null) filterx = filter2;
             else filterx = new OAAndFilter(filterx, filter2);
+            */
         }
 
         ObjectCacheIterator itx = new ObjectCacheIterator(selectClass, filterx);

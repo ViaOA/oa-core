@@ -649,7 +649,7 @@ public class OASyncClient {
 
     
     /**
-     * called when object is finalized.
+     * called when object is created.  See OAObjectDelegate.initialize(..)
      */
     public void objectCreated(OAObject obj) {
         if (obj == null) return;

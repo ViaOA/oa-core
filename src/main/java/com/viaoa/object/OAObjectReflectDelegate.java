@@ -1964,7 +1964,7 @@ public class OAObjectReflectDelegate {
                         
                         final OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
                         s = liRev.getEqualPropertyPath();
-                        if (OAStr.isNotEmpty(s)) {
+                        if (matchValue != null && OAStr.isNotEmpty(s)) {
                             if (s.indexOf('.') < 0) {
                                 ((OAObject) ref).setProperty(s, matchValue);
                             }
