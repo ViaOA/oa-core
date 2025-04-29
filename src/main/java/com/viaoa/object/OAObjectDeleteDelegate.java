@@ -21,6 +21,7 @@ import com.viaoa.hub.HubDSDelegate;
 import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.hub.HubDelegate;
 import com.viaoa.hub.HubEventDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.*;
@@ -45,10 +46,7 @@ public class OAObjectDeleteDelegate {
         delete(oaObj, cascade);
     }
 	
-	
-//qqqqqqqqq need to call next thread once it does the delete qqqqqqqqqqq	
-	
-//qqqqqqqqq called by OASyncClient to only delete objects that are in client's cache
+    // called by OASyncClient to only delete objects that are in client's cache
 	public static void syncClientDelete(OAObject oaObj) {
         OACascade cascade = new OACascade();
         delete(oaObj, cascade);
@@ -124,198 +122,199 @@ public class OAObjectDeleteDelegate {
 			
 	        // doesn't store hub if M2M&Private: reverse linkInfo does not have a method.
 	        //   since this could have a lot of references (ex: VetJobs JobCategory has m2m Jobs)
-			for (OALinkInfo li : oi.getLinkInfos()) {
-				if (!li.getPrivateMethod()) {
-					continue;
-				}
-				if (!li.getUsed()) {
-					continue;
-				}
-				if (li.getType() != OALinkInfo.TYPE_MANY) {
-					continue;
-				}
-
-				final OALinkInfo liRev = li.getReverseLinkInfo();
-				if (liRev == null) {
-					continue;
-				}
-				if (liRev.getType() != OALinkInfo.TYPE_MANY) {
-					continue;
-				}
-
-                String spp = liRev.getSelectFromPropertyPath();
-                if (OAStr.isNotEmpty(spp)) {
-                    OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
-                    pp = pp.getReversePropertyPath();
-                    if (pp == null) spp = null;
-                    else spp = pp.getPropertyPath();
-                }
-                else {
-                    spp = li.getEqualPropertyPath();
+			if (!bIsSyncClient) {
+    			for (OALinkInfo li : oi.getLinkInfos()) {
+    				if (!li.getPrivateMethod()) {
+    					continue;
+    				}
+    				if (!li.getUsed()) {
+    					continue;
+    				}
+    				if (li.getType() != OALinkInfo.TYPE_MANY) {
+    					continue;
+    				}
+    
+    				final OALinkInfo liRev = li.getReverseLinkInfo();
+    				if (liRev == null) {
+    					continue;
+    				}
+    				if (liRev.getType() != OALinkInfo.TYPE_MANY) {
+    					continue;
+    				}
+    
+                    String spp = liRev.getSelectFromPropertyPath();
                     if (OAStr.isNotEmpty(spp)) {
-                        String s = liRev.getEqualPropertyPath();
-                        if (OAStr.isNotEmpty(s)) {
-                            OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
-                            pp = pp.getReversePropertyPath();
-                            if (pp == null) spp = null;
-                            else {
-                                s = pp.getPropertyPath();
-                                spp += "." + s;
+                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
+                        pp = pp.getReversePropertyPath();
+                        if (pp == null) spp = null;
+                        else spp = pp.getPropertyPath();
+                    }
+                    else {
+                        spp = li.getEqualPropertyPath();
+                        if (OAStr.isNotEmpty(spp)) {
+                            String s = liRev.getEqualPropertyPath();
+                            if (OAStr.isNotEmpty(s)) {
+                                OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
+                                pp = pp.getReversePropertyPath();
+                                if (pp == null) spp = null;
+                                else {
+                                    s = pp.getPropertyPath();
+                                    spp += "." + s;
+                                }
                             }
+                            else spp = null;
                         }
-                        else spp = null;
+                    }
+    				
+                    if (OAStr.isNotEmpty(spp)) {
+                        OAFinder f = new OAFinder(spp) {
+                            protected boolean isUsed(OAObject obj) {
+                                Object objx = liRev.getValue(obj);
+                                if (objx instanceof Hub) {
+                                    Hub hx = (Hub) objx;
+                                    hx.remove(oaObj);
+                                }
+                                return false;
+                            }
+                        };
+                        f.setUseOnlyLoadedData(true);
+                        f.find(oaObj);
+                    }
+                    else {
+        				OAObjectCacheDelegate.callback(new OACallback() {
+        					@Override
+        					public boolean updateObject(Object obj) {
+        						if (OAObjectReflectDelegate.isReferenceNullOrNotLoadedOrEmptyHub((OAObject) obj, liRev.getName())) {
+        							return true;
+        						}
+        						Object objx = liRev.getValue(obj);
+        						if (!(objx instanceof Hub)) {
+        							return true;
+        						}
+        						Hub hx = (Hub) objx;
+        						hx.remove(oaObj);
+        						return true;
+        					}
+        				}, li.getToClass());
+                    }
+    			}
+
+    			// M2M with revLink.private needs to clear Hub
+                for (OALinkInfo li : oi.getLinkInfos()) {
+                    if (li.getPrivateMethod()) {
+                        continue;
+                    }
+                    if (!li.getUsed()) {
+                        continue;
+                    }
+                    if (li.getType() != OALinkInfo.TYPE_MANY) {
+                        continue;
+                    }
+    
+                    final OALinkInfo liRev = li.getReverseLinkInfo();
+                    if (liRev == null) {
+                        continue;
+                    }
+                    if (liRev.getType() != OALinkInfo.TYPE_MANY) {
+                        continue;
+                    }
+                    if (liRev.getPrivateMethod()) {
+                        Hub hubx = (Hub) li.getValue(oaObj);
+                        hubx.clear();
                     }
                 }
-				
-                if (OAStr.isNotEmpty(spp)) {
-                    OAFinder f = new OAFinder(spp) {
-                        protected boolean isUsed(OAObject obj) {
-                            Object objx = liRev.getValue(obj);
-                            if (objx instanceof Hub) {
-                                Hub hx = (Hub) objx;
-                                hx.remove(oaObj);
-                            }
-                            return false;
-                        }
-                    };
-                    f.setUseOnlyLoadedData(true);
-                    f.find(oaObj);
-                }
-                else {
-    				OAObjectCacheDelegate.callback(new OACallback() {
-    					@Override
-    					public boolean updateObject(Object obj) {
-    						if (OAObjectReflectDelegate.isReferenceNullOrNotLoadedOrEmptyHub((OAObject) obj, liRev.getName())) {
-    							return true;
-    						}
-    						Object objx = liRev.getValue(obj);
-    						if (!(objx instanceof Hub)) {
-    							return true;
-    						}
-    						Hub hx = (Hub) objx;
-    						hx.remove(oaObj);
-    						return true;
-    					}
-    				}, li.getToClass());
-                }
-			}
-			
-			// M2M with revLink.private needs to clear Hub
-            for (OALinkInfo li : oi.getLinkInfos()) {
-                if (li.getPrivateMethod()) {
-                    continue;
-                }
-                if (!li.getUsed()) {
-                    continue;
-                }
-                if (li.getType() != OALinkInfo.TYPE_MANY) {
-                    continue;
-                }
-
-                final OALinkInfo liRev = li.getReverseLinkInfo();
-                if (liRev == null) {
-                    continue;
-                }
-                if (liRev.getType() != OALinkInfo.TYPE_MANY) {
-                    continue;
-                }
-                if (liRev.getPrivateMethod()) {
-                    Hub hubx = (Hub) li.getValue(oaObj);
-                    hubx.clear();
-                }
-            }
-			
-			// 20180130
-			// M2O where M is private
-			for (final OALinkInfo li : oi.getLinkInfos()) {
-				if (!li.getPrivateMethod()) {
-					continue;
-				}
-				if (!li.getUsed()) {
-					continue;
-				}
-				if (li.getType() != OALinkInfo.TYPE_MANY) {
-					continue;
-				}
-				final OALinkInfo liRev = li.getReverseLinkInfo();
-				if (liRev == null) {
-					continue;
-				}
-				if (liRev.getType() != OALinkInfo.TYPE_ONE) {
-					continue;
-				}
-
-				//  use find ... but dont want it to load reference (short curcuit on pp)
-				String spp = liRev.getSelectFromPropertyPath();
-				if (OAStr.isNotEmpty(spp)) {
-                    OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
-				    pp = pp.getReversePropertyPath();
-				    if (pp == null) spp = null;
-				    else spp = pp.getPropertyPath();
-				}
-				else {
-				    spp = li.getEqualPropertyPath();
-				    if (OAStr.isNotEmpty(spp)) {
-				        String s = liRev.getEqualPropertyPath();
-	                    if (OAStr.isNotEmpty(s)) {
-	                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
-	                        pp = pp.getReversePropertyPath();
-	                        if (pp == null) spp = null;
-	                        else {
-	                            s = pp.getPropertyPath();
-	                            spp += "." + s;
-	                        }
-	                    }
-	                    else spp = null;
-				    }
-				}
-				
-                if (OAStr.isNotEmpty(spp)) {
-                    OAFinder f = new OAFinder(spp) {
-                        protected boolean isUsed(OAObject obj) {
-                            Object objx = liRev.getValue(obj);
-                            if (objx instanceof OAObjectKey) {
-                                if (!objx.equals(oaObj.getObjectKey())) {
+    			
+    			// 20180130
+    			// M2O where M is private
+    			for (final OALinkInfo li : oi.getLinkInfos()) {
+    				if (!li.getPrivateMethod()) {
+    					continue;
+    				}
+    				if (!li.getUsed()) {
+    					continue;
+    				}
+    				if (li.getType() != OALinkInfo.TYPE_MANY) {
+    					continue;
+    				}
+    				final OALinkInfo liRev = li.getReverseLinkInfo();
+    				if (liRev == null) {
+    					continue;
+    				}
+    				if (liRev.getType() != OALinkInfo.TYPE_ONE) {
+    					continue;
+    				}
+    
+    				//  use find ... but dont want it to load reference (short curcuit on pp)
+    				String spp = liRev.getSelectFromPropertyPath();
+    				if (OAStr.isNotEmpty(spp)) {
+                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
+    				    pp = pp.getReversePropertyPath();
+    				    if (pp == null) spp = null;
+    				    else spp = pp.getPropertyPath();
+    				}
+    				else {
+    				    spp = li.getEqualPropertyPath();
+    				    if (OAStr.isNotEmpty(spp)) {
+    				        String s = liRev.getEqualPropertyPath();
+    	                    if (OAStr.isNotEmpty(s)) {
+    	                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
+    	                        pp = pp.getReversePropertyPath();
+    	                        if (pp == null) spp = null;
+    	                        else {
+    	                            s = pp.getPropertyPath();
+    	                            spp += "." + s;
+    	                        }
+    	                    }
+    	                    else spp = null;
+    				    }
+    				}
+    				
+                    if (OAStr.isNotEmpty(spp)) {
+                        OAFinder f = new OAFinder(spp) {
+                            protected boolean isUsed(OAObject obj) {
+                                Object objx = liRev.getValue(obj);
+                                if (objx instanceof OAObjectKey) {
+                                    if (!objx.equals(oaObj.getObjectKey())) {
+                                        return false;
+                                    }
+                                    OAObjectPropertyDelegate.removeProperty((OAObject) obj, liRev.getName(), false);
                                     return false;
+                                } else {
+                                    if (objx != oaObj) {
+                                        return false;
+                                    }
                                 }
-                                OAObjectPropertyDelegate.removeProperty((OAObject) obj, liRev.getName(), false);
+                                ((OAObject) obj).setProperty(liRev.getName(), null);
                                 return false;
-                            } else {
-                                if (objx != oaObj) {
-                                    return false;
-                                }
                             }
-                            ((OAObject) obj).setProperty(liRev.getName(), null);
-                            return false;
-                        }
-                    };
-                    f.setUseOnlyLoadedData(true);
-                    f.find(oaObj);
-                }
-                else {
-    				OAObjectCacheDelegate.callback(new OACallback() {
-    					@Override
-    					public boolean updateObject(Object obj) {
-    						Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, liRev.getName(), false, false);
-    						if (objx instanceof OAObjectKey) {
-    							if (!objx.equals(oaObj.getObjectKey())) {
-    								return true;
-    							}
-    							OAObjectPropertyDelegate.removeProperty((OAObject) obj, liRev.getName(), false);
-    							return true;
-    						} else {
-    							if (objx != oaObj) {
-    								return true;
-    							}
-    						}
-    						((OAObject) obj).setProperty(liRev.getName(), null);
-    						return true;
-    					}
-    				}, li.getToClass());
-                }
-				
-			}
-
+                        };
+                        f.setUseOnlyLoadedData(true);
+                        f.find(oaObj);
+                    }
+                    else {
+        				OAObjectCacheDelegate.callback(new OACallback() {
+        					@Override
+        					public boolean updateObject(Object obj) {
+        						Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, liRev.getName(), false, false);
+        						if (objx instanceof OAObjectKey) {
+        							if (!objx.equals(oaObj.getObjectKey())) {
+        								return true;
+        							}
+        							OAObjectPropertyDelegate.removeProperty((OAObject) obj, liRev.getName(), false);
+        							return true;
+        						} else {
+        							if (objx != oaObj) {
+        								return true;
+        							}
+        						}
+        						((OAObject) obj).setProperty(liRev.getName(), null);
+        						return true;
+        					}
+        				}, li.getToClass());
+                    }
+    			}
+			} 
+			
             // remove from all hubs (needs to be after above code)
             if (hubs != null) {
                 for (Hub h : hubs) {
@@ -331,9 +330,7 @@ public class OAObjectDeleteDelegate {
 			OAThreadLocalDelegate.setDeleting(oaObj, false);
 		}
 
-//qqqqqqqqqqqqqqqqqqqqqqq		
-        OAObjectCSDelegate.sendDeleteToClients(oaObj);
-//qqqq        boolean b = OAObjectCSDelegate.delete(oaObj);		
+        if (!bIsSyncClient) OAObjectCSDelegate.sendDeleteToClients(oaObj);
 		
 		if (hubs != null) {
 			for (Hub h : hubs) {
@@ -342,6 +339,8 @@ public class OAObjectDeleteDelegate {
 				}
 			}
 		}
+		
+		OARemoteThreadDelegate.startNextThread();
 	}
 
 	/**
