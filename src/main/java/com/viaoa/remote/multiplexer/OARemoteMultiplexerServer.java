@@ -1466,7 +1466,9 @@ public class OARemoteMultiplexerServer {
                         }
                     }
                     catch (Exception e) {
-                        LOG.log(Level.WARNING, "error in remoteThread loop, will continue", e);
+                        String s = requestInfo == null ? "null" : requestInfo.toLogString();
+                        LOG.log(Level.WARNING, "error in remoteThread loop, will continue. requestInfo="+s, e);
+                        requestInfo = null;
                     }
                 }
             }

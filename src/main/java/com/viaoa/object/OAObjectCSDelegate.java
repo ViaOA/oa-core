@@ -128,7 +128,7 @@ public class OAObjectCSDelegate {
     }
 
     /**
-     * 20150815 returns true if this should be deleted on this computer, false if it is done on the server. 
+     * returns true if this should be deleted on this computer, false if it is done on the server. 
     */
     protected static boolean delete(final OAObject obj) {
         if (obj == null) return false;
@@ -140,6 +140,9 @@ public class OAObjectCSDelegate {
 
         RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(obj.getClass());
         if (rs == null) return true;
+
+        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());
+        if (oi.getLocalOnly()) return true; 
         
         if (OASyncDelegate.isServer(obj.getClass())) { 
             // this will invoke on the server using OARemoteThread
@@ -147,12 +150,9 @@ public class OAObjectCSDelegate {
             return false;  
         }
 
-        // OAClient
+        // this is running as OAClient
         if (!OARemoteThreadDelegate.shouldSendMessages()) return true;
         if (OAThreadLocalDelegate.isSuppressCSMessages()) return true;
-        
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());
-        if (oi.getLocalOnly()) return true; 
         
         rs.serverDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
         
@@ -167,16 +167,8 @@ public class OAObjectCSDelegate {
         if (rs == null) return;
         
         if (!OASyncDelegate.isServer(obj.getClass())) return;
-//qqqqqqqqqqqqqqqqqqqqqq needs to send these to client if on RemoteThread        
+        // needs to send these to client if on RemoteThread        
         
-        /*qqqqqq
-        Thread t = Thread.currentThread();
-        if (t instanceof OARemoteThread) {
-            if (!((OARemoteThread) t).getSendMessages()) return;
-            // dont use this, which is the default:  
-            //   if (!OARemoteThreadDelegate.shouldSendMessages()) return;
-        }
-        */
         if (OAThreadLocalDelegate.isSuppressCSMessages()) return;
         
         OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());

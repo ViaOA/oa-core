@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
-import com.viaoa.util.OAArray;
+import com.viaoa.util.*;
 
 
 /**
@@ -44,8 +44,14 @@ public abstract class LoadDelimitedFile {
         reader.close();
     }
     
+    
+    //qqqqqqqqq need to either change code for String sep.length > 1,  or use char sep
+    
     // parse line into columns
     public String[] parse(String line, String sep, boolean bQuoted, int lineNumber) {
+        String[] flds = OAString.parseLine(line, sep.charAt(0), bQuoted);
+        return flds;
+        /* this has bug: when there is a ',' inside of a value that is quoted
         int pos = 0;
         String[] flds = new String[0];
         StringTokenizer tok = new StringTokenizer(line, sep, true);
@@ -73,6 +79,7 @@ public abstract class LoadDelimitedFile {
             }
         }
         return flds;
+        */
     }
         
     public abstract void process(String[] columns, int lineNumber);

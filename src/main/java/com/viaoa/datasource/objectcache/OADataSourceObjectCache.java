@@ -418,13 +418,11 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         }
         
         for (final Class c : OAObjectCacheDelegate.getClasses()) {
+            final Set hs = getSet(c);
             OAObjectCacheDelegate.callback(c, new OACallback() {
                 @Override
                 public boolean updateObject(Object obj) {
-                    Set hs = getSet(c);
-                    if (!hs.contains(obj)) {
-                        hs.add(obj);
-                    }
+                    hs.add(obj);
                     return true;
                 }
             });
@@ -439,6 +437,10 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             Class c = (Class) ois.readObject();
             OAObjectSerializer wrap = (OAObjectSerializer) ois.readObject();
             Set hs = (Set) wrap.getObject();
+            
+            Set hs2 = getSet(c);
+            if (hs2 != null) hs.addAll(hs2);
+            
             hmClass.put(c, hs);
         }
         return (cnt > 0);
