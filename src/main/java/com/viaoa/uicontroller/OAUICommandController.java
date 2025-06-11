@@ -23,6 +23,12 @@ public class OAUICommandController extends OAUIController {
     private Command command;
 
     
+    private String updateProperty;
+    private OAObject updateObject;
+    private Object updateValue;
+    
+    
+    
 /*qqqqq these need to be added    
     public static final ButtonCommand CUT = ButtonCommand.Cut;
     public static final ButtonCommand COPY = ButtonCommand.Copy;
@@ -36,6 +42,9 @@ public class OAUICommandController extends OAUIController {
     Cancel, 
     Wizard;
 */    
+    
+    
+    
     
     public static enum Command {
         /**
@@ -519,6 +528,30 @@ public class OAUICommandController extends OAUIController {
             LOG.warning("Unhandled command "+command+" for OAUICommandController, title="+getTitle());
         }
         
+        if (updateProperty != null) {
+            try {
+                if (updateObject != null) {
+                    updateObject.setProperty(updateProperty, updateValue);
+                } else {
+                    if (hubSelect != null) {
+                        for (Object objx : hubSelect) {
+                            if (objx instanceof OAObject) {
+                                ((OAObject) objx).setProperty(updateProperty, updateValue);
+                            }
+                        }
+                    }
+                    if (getHub() != null) {
+                        Object objx = getHub().getAO();
+                        if (objx instanceof OAObject) {
+                            ((OAObject) objx).setProperty(updateProperty, updateValue);
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                throw new RuntimeException("OAUICommandController update property=" + updateProperty, ex);
+            }
+        }
+        
         return true;
     }
     
@@ -552,5 +585,17 @@ public class OAUICommandController extends OAUIController {
 
     @Override
     public void updateLabel(Object object) {
+    }
+
+    public void setUpdateObject(String property, Object newValue) {
+        this.updateObject = null;
+        this.updateProperty = property;
+        this.updateValue = newValue;
+
+        addEnabledCheck(getHub(), HubChangeListener.Type.AoNotNull);
+        addEnabledEditQueryCheck(getHub(), property);
+        addVisibleEditQueryCheck(getHub(), property);
+
+        callUpdate();
     }
 }
