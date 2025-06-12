@@ -183,6 +183,11 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
                 dropDownDisplayFormat = displayFormat;
             }
         }
+
+        public void setDisplayTemplate(String string) {
+            // TODO Auto-generated method stub
+//qqqqqqqqqqqqqqqqqqqqqqqqqqqq            
+        }
     }
     
 

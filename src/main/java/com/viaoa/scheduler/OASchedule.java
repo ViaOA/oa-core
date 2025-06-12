@@ -5,7 +5,8 @@ import java.util.TreeSet;
 import com.viaoa.util.OADateTime;
 
 /**
- * Used to combine DateTime ranges that could overlap, and then iterate through them in datetime order.
+ * Used to combine DateTime ranges that could overlap, and then iterate through them 
+ * in datetime order.
  * 
  * @author vvia
  */
