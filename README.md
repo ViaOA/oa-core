@@ -26,8 +26,6 @@ Visit [www.viaoa.com](https://www.viaoa.com) for more information.
 
 Visit [OA-Core Javadoc](http://viaoa.github.io/oa-core/docs/index.html)
 
-Read [OA Object Graph](doc/OAObjectGraph.pdf)
-
 
 Current release on Maven Central: 
     Group Id: com.viaoa
