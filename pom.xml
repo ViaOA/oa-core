@@ -40,7 +40,7 @@
   <developers>
     <developer>
       <name>Vince Via</name>
-      <email>vince@viaoa.com</email>
+      <email>vvia@viaoa.com</email>
       <organization>Via Object Architects</organization>
       <organizationUrl>http://www.viaoa.com</organizationUrl>
     </developer>
@@ -158,11 +158,7 @@
       <directory>src/test/resources</directory> <includes> <include>**/*</include> 
       </includes> </testResource> </testResources> qqqqqqqq -->
 
-
-
-
     <plugins>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -228,7 +224,6 @@
             try this new one time qqq -->
         </configuration>
       </plugin>
-
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
