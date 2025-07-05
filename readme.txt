@@ -1,6 +1,6 @@
 
 
-Create the javadoc so that it is available at:
+to create the javadoc so that it is available at:
    https://viaoa.github.io/oa-core/docs/index.html 
 
 use "dev" branch 
