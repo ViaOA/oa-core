@@ -366,7 +366,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             oos.writeObject(c);
 
             Set hs = entry.getValue();
-            OAObjectSerializer wrap = new OAObjectSerializer(hs, false, false);
+            OAObjectSerializer wrap = new OAObjectSerializer(hs, false, true);
             wrap.setIncludeBlobs(true);
             oos.writeObject(wrap);
         }
