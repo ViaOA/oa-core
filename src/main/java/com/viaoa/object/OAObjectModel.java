@@ -45,11 +45,16 @@ public class OAObjectModel {
 	protected boolean bCreateUI;
 	protected boolean bAllowMove;
 
+	// if  true, then use a splitPane to show children that are link=Many
+	protected boolean bAllowChildrenSplitPanel;  
+	
+	
 	protected String displayName;
 	protected String pluralDisplayName;
 
 	// flag to know if this model is used by JFC UI apps, in which case it can use Hubs that are loaded in swingWorker thread
 	protected boolean bForJfc;
+	
 
 	public OAObjectModel() {
 		// if (isLoading()) return;
@@ -312,4 +317,12 @@ public class OAObjectModel {
 	public void setAllowRefresh(boolean b) {
 		bAllowRefresh = b;
 	}
+	
+	public boolean getAllowChildrenSplitPanel() {
+		return bAllowChildrenSplitPanel;
+	}
+	public void setAllowChildrenSplitPanel(boolean b) {
+		bAllowChildrenSplitPanel = b;
+	}
+	
 }
