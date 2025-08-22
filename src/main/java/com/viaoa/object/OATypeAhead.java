@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.hub.*;
 import com.viaoa.model.oa.VString;
+import com.viaoa.template.OATemplate;
 import com.viaoa.util.*;
 
 /**
@@ -71,6 +72,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     protected OAPropertyPath ppDropDownDisplay;
     protected String dropDownDisplayFormat;
 
+    
     /**
      * additional custom finder for filtering T objects
      */
@@ -97,6 +99,12 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     private final AtomicInteger aiSearch = new AtomicInteger(); 
     private final HashSet<Integer> hsGuid = new HashSet<>();
     
+    protected String matchTemplate;
+    protected OATemplate templateMatch;
+    protected String displayTemplate;
+    protected OATemplate templateDisplay;
+    protected String dropDownDisplayTemplate;
+    protected OATemplate templateDropDownDisplay;
 
     
     public OATypeAhead(List<T> arrayToUse) {
@@ -140,6 +148,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         return ta;
     }
     
+
     
     /**
      * Helper class to enter all of the params.
@@ -149,15 +158,22 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         public String finderPropertyPath;
         
         public String matchPropertyPath;
-        
+        public String matchTemplate;
+        protected OATemplate templateMatch;
+
         public String displayPropertyPath; 
         public String displayFormat;    
+        public String displayTemplate;
+        protected OATemplate templateDisplay;
         
         public String sortValuePropertyPath; 
         public String sortValueFormat;    
         
         public String dropDownDisplayPropertyPath;
-        public String dropDownDisplayFormat;    
+        public String dropDownDisplayFormat;
+        public String dropDownDisplayTemplate;
+        protected OATemplate templateDropDownDisplay;
+        
 
         public OAFilter<T> filter;
         
@@ -178,15 +194,6 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
                     displayFormat = null;
                 }                
             }
-            if (OAString.isEmpty(dropDownDisplayPropertyPath)) {
-                dropDownDisplayPropertyPath = displayPropertyPath;
-                dropDownDisplayFormat = displayFormat;
-            }
-        }
-
-        public void setDisplayTemplate(String string) {
-            // TODO Auto-generated method stub
-//qqqqqqqqqqqqqqqqqqqqqqqqqqqq            
         }
     }
     
@@ -250,6 +257,24 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         }
 
         this.filter = params.filter;
+        
+        if (OAString.isEmpty(dropDownDisplayPropertyPath)) {
+            dropDownDisplayPropertyPath = displayPropertyPath;
+            dropDownDisplayFormat = displayFormat;
+        }
+        
+        this.matchTemplate = params.matchTemplate;
+		if (OAString.isNotEmpty(matchTemplate)) {
+			templateMatch = new OATemplate<>(matchTemplate);
+		}
+		this.displayTemplate = params.displayTemplate;
+		if (OAString.isNotEmpty(displayTemplate)) {
+			templateDisplay = new OATemplate<>(displayTemplate);
+		}
+		this.dropDownDisplayTemplate = params.dropDownDisplayTemplate;
+		if (OAString.isNotEmpty(dropDownDisplayTemplate)) {
+			templateDropDownDisplay = new OATemplate<>(dropDownDisplayTemplate);
+		}
     }
 
     public String getSearchText() {
@@ -410,6 +435,12 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     /** callback during search to get the value to use for matching */
     protected String getMatchValue(T obj) {
         Object objCompare;
+        
+        if (templateMatch != null) {
+        	String s = templateMatch.process(obj);
+        	return s;
+        }
+        
         if (ppMatch != null) {
             objCompare = ppMatch.getValue(obj);
         }
@@ -444,6 +475,12 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     /** callback during search to get the display value of a selected &lt;T&gt; object. */
     public String getDisplayValue(T obj) {
         String s;
+
+        if (templateDisplay != null) {
+        	s = templateDisplay.process(obj);
+        	return s;
+        }
+        
         if (ppDisplay != null) {
             s = ppDisplay.getValueAsString(null, obj, displayFormat);
         }
@@ -452,9 +489,18 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         }
         return s;
     }
+    
+    
     /** callback during search to get the dropdown display value of matching T objects.*/
     public String getDropDownDisplayValue(T obj) {
         String s;
+    
+        if (templateDropDownDisplay != null) {
+        	s = templateDropDownDisplay.process(obj);
+        	return s;
+        }
+        
+        
         if (ppDropDownDisplay != null) {
             s = ppDropDownDisplay.getValueAsString(null, obj, dropDownDisplayFormat);
         }
@@ -463,6 +509,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         }
         return s;
     }
+    
     /** callback during search to get the sort value of matching T objects. */
     public String getSortValue(T obj) {
         String s;
