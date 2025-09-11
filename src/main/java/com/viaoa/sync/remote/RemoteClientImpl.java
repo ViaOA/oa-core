@@ -115,6 +115,21 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		return result;
 	}
 
+	
+	@Override
+	public Object datasourceReturnOnQueue(int command, Object[] objects) {
+		Object result = null;
+		try {
+			result = getRemoteDataSource().datasource(command, objects);
+		} catch (Exception e) {
+			RuntimeException ex = new RuntimeException(
+					"Exception in remoteClient.datasource, command=" + command + ", original exception msg=" + e.toString(), e);
+			throw (ex);
+		}
+		return result;
+	}
+	
+	
 	@Override
 	public void datasourceNoReturn(int command, Object[] objects) {
 		try {

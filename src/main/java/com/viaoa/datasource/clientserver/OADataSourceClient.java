@@ -231,21 +231,21 @@ public class OADataSourceClient extends OADataSource {
 		if (obj == null) {
 			return;
 		}
-		getRemoteClient().datasource(SAVE, new Object[] { obj });
+		getRemoteClient().datasourceReturnOnQueue(SAVE, new Object[] { obj });
 	}
 
 	public @Override void delete(OAObject obj) {
 		if (obj == null) {
 			return;
 		}
-		getRemoteClient().datasource(DELETE, new Object[] { obj });
+		getRemoteClient().datasourceReturnOnQueue(DELETE, new Object[] { obj });
 	}
 
 	public @Override void deleteAll(Class c) {
 		if (c == null) {
 			return;
 		}
-		getRemoteClient().datasource(DELETE_ALL, new Object[] { c });
+		getRemoteClient().datasourceReturnOnQueue(DELETE_ALL, new Object[] { c });
 	}
 
 	@Override
@@ -357,7 +357,7 @@ public class OADataSourceClient extends OADataSource {
 	}
 
 	public @Override void assignId(OAObject obj) {
-		getRemoteClient().datasource(ASSIGN_ID, new Object[] { obj });
+		getRemoteClient().datasourceReturnOnQueue(ASSIGN_ID, new Object[] { obj });
 	}
 
 	public @Override boolean willCreatePropertyValue(OAObject object, String propertyName) {

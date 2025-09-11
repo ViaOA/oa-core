@@ -40,7 +40,9 @@ public class RequestInfo {
         CtoS_SocketRequest(false, true),
         CtoS_SocketRequestNoResponse(false, false),
         
+       
         // send on socket and have it returned on the same socket that the queue uses.
+        //   note: does not get added to the queue, it is just written directly to the vsocket used by the queue. 
         CtoS_ReturnOnQueueSocket(true, true, true),
         
         CtoS_QueuedRequest(true, true),

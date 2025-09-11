@@ -38,8 +38,14 @@ public interface RemoteClientInterface {
 	Object getDetailNow(int id, Class masterClass, OAObjectKey masterObjectKey,
 			String property, String[] masterProps, OAObjectKey[] siblingKeys, boolean bForHubMerger);
 
-	@OARemoteMethod(returnOnQueueSocket = true)
+
+	
+	@OARemoteMethod(returnOnQueueSocket = true) // dont add response to queue, write directly to socket used by queue
 	Object datasource(int command, Object[] objects);
+	
+	
+	@OARemoteMethod() // add to queue
+	Object datasourceReturnOnQueue(int command, Object[] objects);
 
 	@OARemoteMethod(noReturnValue = true)
 	void datasourceNoReturn(int command, Object[] objects);
