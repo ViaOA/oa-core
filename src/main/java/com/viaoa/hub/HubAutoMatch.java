@@ -309,23 +309,33 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 	}
 
+	/*
 	private int maxEnumValue;
 	private boolean bMaxEnumValueChecked;
+	*/
 
 	private void _update2() {
+		/*
 		if (!bMaxEnumValueChecked) {
 			maxEnumValue = findMaxEnumValue();
 			bMaxEnumValueChecked = false;
 		}
+		*/
 
-		for (int i = hub.getSize(); i <= maxEnumValue; i++) {
+		Class cz = hub.getObjectClass();
+
+		Hub<String> hubEnumValues = OAObjectEnumDelegate.getDisplayNameValues(cz, property);
+		int max = hubEnumValues.size();
+		
+		
+		for (int i = hub.getSize(); i < max; i++) {
 			createNewObject(i);
 		}
 	}
 
+	/*was: 20250908
 	private int findMaxEnumValue() {
-		Class cz = hub.getObjectClass();
-
+		
 		Field field = null;
 
 		String name = "hub" + property;
@@ -344,10 +354,11 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 				max = ((Hub) objx).getSize() - 1;
 			}
 		} catch (Exception ex) {
-			//qqq
+			//qqqqqqq
 		}
 		return max;
 	}
+	*/
 
 	/**
 	 * Called before removing an object that does not have a matching value.
