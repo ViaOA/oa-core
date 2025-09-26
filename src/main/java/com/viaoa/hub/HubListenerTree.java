@@ -386,13 +386,14 @@ public class HubListenerTree {
 
 				// 20221011
 				if (li.getType() == OALinkInfo.MANY) {
+					/* 20250924 removed, causes stackoverflow if there are dependentProps
 					if (calcProps == null) {
 						calcProps = new String[] { property };
 					} else {
 						calcProps = OAArray.add(calcProps, property);
 					}
+					*/
 				}
-
 				break;
 			}
 		}
