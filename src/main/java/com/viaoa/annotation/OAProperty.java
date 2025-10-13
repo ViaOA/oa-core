@@ -140,6 +140,8 @@ public @interface OAProperty {
 	 */
 	boolean isSubmit() default false;
 
+	boolean isObjectStatus() default false;
+	
 	String timeZonePropertyPath() default "";
 
 	boolean isUpper() default false;

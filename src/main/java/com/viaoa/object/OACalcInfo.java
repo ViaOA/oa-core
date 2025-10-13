@@ -67,7 +67,8 @@ public class OACalcInfo implements java.io.Serializable {
     boolean bIsForHub;  
     private transient Method objectCallbackMethod;
     private boolean isHtml;
-
+    private boolean isObjectStatus;
+    
     private String[] viewDependentProperties;
     private String[] contextDependentProperties;
 
@@ -130,6 +131,17 @@ public class OACalcInfo implements java.io.Serializable {
     public void setHtml(boolean b) {
         this.isHtml = b;
     }
+    
+	public void setObjectStatus(boolean b) {
+		this.isObjectStatus = b;
+	}
+	public boolean getObjectStatus() {
+		return this.isObjectStatus;
+	}
+
+	public boolean isObjectStatus() {
+		return this.isObjectStatus;
+	}
     
     /** get property paths of all dependent properties */
     public String[] getDependentProperties() {

@@ -245,6 +245,7 @@ public class OAAnnotationDelegate {
 			pi.setJson(oaprop.isJson());
 			pi.setTimestamp(oaprop.isTimestamp());
 			pi.setSubmit(oaprop.isSubmit());
+			pi.setObjectStatus(oaprop.isObjectStatus());
 			pi.setIgnoreTimeZone(oaprop.ignoreTimeZone());
 			pi.setTimeZonePropertyPath(oaprop.timeZonePropertyPath());
 
@@ -422,6 +423,7 @@ public class OAAnnotationDelegate {
 			ci.setOACalculatedProperty(annotation);
 			ci.setClassType(m.getReturnType());
 			ci.setHtml(annotation.isHtml());
+			ci.setObjectStatus(annotation.isObjectStatus());
 
 			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {

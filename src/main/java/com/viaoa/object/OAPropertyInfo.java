@@ -64,6 +64,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private String visibleProperty;
 	private boolean visibleValue;
 	private boolean isSubmit;
+	private boolean isObjectStatus;
 
 	private String contextEnabledProperty;
 	private boolean contextEnabledValue;
@@ -462,6 +463,17 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return this.isSubmit;
 	}
 
+	public void setObjectStatus(boolean b) {
+		this.isObjectStatus = b;
+	}
+	public boolean getObjectStatus() {
+		return this.isObjectStatus;
+	}
+
+	public boolean isObjectStatus() {
+		return this.isObjectStatus;
+	}
+	
 	public boolean getIgnoreTimeZone() {
 		return ignoreTimeZone;
 	}

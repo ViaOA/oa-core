@@ -68,6 +68,8 @@ public @interface OACalculatedProperty {
 
 	boolean isHtml() default false;
 
+	boolean isObjectStatus() default false;
+	
 	String columnName() default "";
 
 	String toolTip() default "";
