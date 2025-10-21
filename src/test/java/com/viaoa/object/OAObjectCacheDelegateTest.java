@@ -344,11 +344,11 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 		serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey());
 		assertEquals(serverx, server);
 
-		OAObjectKey ok = new OAObjectKey(null, server.getObjectKey().getGuid(), server.getObjectKey().isNew());
+		OAObjectKey ok = new OAObjectKey(null, server.getObjectKey().getGuid());
 		serverx = OAObjectCacheDelegate.get(Server.class, ok);
 
 		server.setId(0); // unset
-		OAObjectKeyDelegate.setKey(server, ok); // set back to guid only
+		// OAObjectKeyDelegate.setKey(server, ok); // set back to guid only
 		oi.setAddToCache(true); // cache will still have the ok=guid
 
 		serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey()); // key only has guid

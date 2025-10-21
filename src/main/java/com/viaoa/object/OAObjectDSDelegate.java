@@ -10,13 +10,17 @@
 */
 package com.viaoa.object;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 
 public class OAObjectDSDelegate {
-	private static Logger LOG = Logger.getLogger(OAObjectDSDelegate.class.getName());
+	private static final Logger LOG = Logger.getLogger(OAObjectDSDelegate.class.getName());
 
+    static private final ConcurrentHashMap<Long, Long> hmAssigningId = new ConcurrentHashMap<Long, Long>(17, 0.75F);
+	
 	/**
 	 * Initialize a newly created OAObject.
 	 */
@@ -36,7 +40,10 @@ public class OAObjectDSDelegate {
 		}
 	}
 
-	// 20160505
+    public static Map<Long, Long> getAssigningIdMap() {
+        return hmAssigningId;
+    }
+	
 	/**
 	 * Flag to know that the DS is assigning the Id, and that the value does not need to be verified by the propertyChange event
 	 */
@@ -44,20 +51,18 @@ public class OAObjectDSDelegate {
 		if (obj == null) {
 			return;
 		}
-		int g = OAObjectDelegate.getGuid(obj);
+		long g = OAObjectDelegate.getGuid(obj);
 		if (b) {
-			OAObjectHashDelegate.getAssigningIdHash().put(g, g);
+			OAObjectDSDelegate.getAssigningIdMap().put(g, g);
 		} else {
-			OAObjectHashDelegate.getAssigningIdHash().remove(g);
+			OAObjectDSDelegate.getAssigningIdMap().remove(g);
 		}
 	}
 
 	public static boolean isAssigningId(OAObject obj) {
-		if (obj == null) {
-			return false;
-		}
-		int g = OAObjectDelegate.getGuid(obj);
-		return OAObjectHashDelegate.getAssigningIdHash().containsKey(g);
+		if (obj == null) return false;
+		long g = OAObjectDelegate.getGuid(obj);
+		return OAObjectDSDelegate.getAssigningIdMap().containsKey(g);
 	}
 
 	public static boolean getAssignIdOnCreate(OAObject oaObj) {

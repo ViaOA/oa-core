@@ -113,8 +113,16 @@ public class OAObjectCallback {
 		UpdateLabel(false), // update the jlabel that belongs to a component
 		GetFormat(false); // use: format
 
-		public boolean checkOwner;
-		public boolean checkEnabledFirst;
+		protected boolean checkOwner;
+		protected boolean checkEnabledFirst;
+		
+		public boolean isCheckOwner() {
+			return checkOwner;
+		}
+		public boolean isCheckEnabledFirst() {
+			return checkEnabledFirst;
+		}
+		
 
 		Type(boolean checkOwner) {
 			this.checkOwner = checkOwner;

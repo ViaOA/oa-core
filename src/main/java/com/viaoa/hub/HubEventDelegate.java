@@ -69,7 +69,7 @@ public class HubEventDelegate {
 		}
 	}
 
-	public static void fireAfterRemoveEvent(Hub thisHub, final Object obj, int pos) {
+	public static <T> void fireAfterRemoveEvent(Hub<T> thisHub, final T obj, int pos) {
 		if (OAThreadLocalDelegate.isLoading()) {
 			return;
 		}
@@ -104,11 +104,12 @@ public class HubEventDelegate {
 				}
 			}
 		}
-		OAObjectCacheDelegate.fireAfterRemoveEvent(thisHub, obj);
+		if (obj instanceof OAObject) {
+			OAObjectCacheDelegate.fireAfterRemoveEvent( (Hub<OAObject>) thisHub, (OAObject) obj);
+		}
 		//OAObjectCacheDelegate.fireAfterRemoveEvent(thisHub, obj, pos);
 		//fireMasterObjectChangeEvent(thisHub, false);
 
-		// 20160304
 		if (obj instanceof OAObject && !((OAObject) obj).isLoading()) {
 			OAObject objx = thisHub.datam.getMasterObject();
 			if (objx != null) {
@@ -242,7 +243,7 @@ public class HubEventDelegate {
 		}
 	}
 
-	public static void fireAfterAddEvent(Hub thisHub, final Object obj, int pos) {
+	public static <T> void fireAfterAddEvent(Hub<T> thisHub, final T obj, int pos) {
 		if (OAThreadLocalDelegate.isLoading()) {
 			return;
 		}
@@ -277,7 +278,9 @@ public class HubEventDelegate {
 				}
 			}
 		}
-		OAObjectCacheDelegate.fireAfterAddEvent(thisHub, obj);
+		if (obj instanceof OAObject) {
+			OAObjectCacheDelegate.fireAfterAddEvent((Hub<OAObject>) thisHub, (OAObject) obj);
+		}
 		//OAObjectCacheDelegate.fireAfterAddEvent(thisHub, obj, pos);
 		//fireMasterObjectChangeEvent(thisHub, false);
 
@@ -333,7 +336,7 @@ public class HubEventDelegate {
 		}
 	}
 
-	public static void fireAfterInsertEvent(Hub thisHub, final Object obj, int pos) {
+	public static <T> void fireAfterInsertEvent(Hub<T> thisHub, final T obj, int pos) {
 		if (OAThreadLocalDelegate.isLoading()) {
 			return;
 		}
@@ -368,11 +371,13 @@ public class HubEventDelegate {
 				}
 			}
 		}
-		OAObjectCacheDelegate.fireAfterAddEvent(thisHub, obj);
+		if (obj instanceof OAObject) {
+			OAObjectCacheDelegate.fireAfterAddEvent((Hub<OAObject>) thisHub, (OAObject) obj);
+		}
+
 		//OAObjectCacheDelegate.fireAfterInsertEvent(thisHub, obj, pos);
 		//fireMasterObjectChangeEvent(thisHub, false);
 
-		// 20160304
 		if (obj instanceof OAObject) {
 			OAObject objx = thisHub.datam.getMasterObject();
 			if (objx != null) {

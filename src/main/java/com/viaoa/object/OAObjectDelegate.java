@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,16 +48,16 @@ public class OAObjectDelegate {
 	/** Static global lock used when setting global properties (ex: guidCounter) */
 
 	/** global counter used for local objects. Value is positive */
-	static protected AtomicInteger guidCounter = new AtomicInteger(); // unique identifier needed for objects past from client/server
+	static protected final AtomicLong guidCounter = new AtomicLong(); // unique identifier needed for objects past from client/server
 
 	/** global counter used for local objects. Value is negative */
-	static protected AtomicInteger localGuidCounter = new AtomicInteger();
+	static protected final AtomicLong localGuidCounter = new AtomicLong();
 
 	/** Flag to know if finalized objects should be automatically saved. Default is false. */
 	protected static boolean bFinalizeSave = false;
 
 	/** tracks which OAObjects should not automatically add themself to a detailHub when an oaObj property is set. */
-	private static final ConcurrentHashMap<Integer, Integer> hmAutoAdd = new ConcurrentHashMap<Integer, Integer>();
+	private static final ConcurrentHashMap<Long, Long> hmAutoAdd = new ConcurrentHashMap<Long, Long>();
 
 	/**
 	 * Called by OAObject constructor to assign guid and initialize new OAObject. If OAObjectFlagDelegate.isLoading() == false then
@@ -225,11 +225,14 @@ public class OAObjectDelegate {
 		boolean old = oaObj.newFlag;
 		oaObj.newFlag = b;
 		OAObjectEventDelegate.fireBeforePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
+		
+/*qqqqqqq		
 		try {
 			OAObjectKeyDelegate.updateKey(oaObj, false);
 		} catch (Exception e) {
 			LOG.log(Level.WARNING, "oaObj=" + oaObj.getClass() + ", key=" + OAObjectKeyDelegate.getKey(oaObj), e);
 		}
+*/		
 		OAObjectEventDelegate.firePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
 		if (!b) {
 			setAutoAdd(oaObj, true);
@@ -262,19 +265,19 @@ public class OAObjectDelegate {
 		if (oaObj == null) {
 			return;
 		}
-		int guid = OAObjectCSDelegate.getGuidFromServer(oaObj);
+		long guid = OAObjectCSDelegate.getGuidFromServer(oaObj);
 		if (oaObj.guid == 0) {
 			oaObj.guid = getNextGuid();
 		}
 		setAsNewObject(oaObj, guid);
 	}
 
-	public static void setAsNewObject(final OAObject oaObj, int guid) {
+	public static void setAsNewObject(final OAObject oaObj, long guid) {
 		if (oaObj == null) {
 			return;
 		}
 		oaObj.newFlag = true;
-		oaObj.objectKey = null;
+//qqqqqq was:		oaObj.objectKey = null;
 		oaObj.guid = guid;
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
@@ -316,15 +319,15 @@ public class OAObjectDelegate {
 	/**
 	 * Gets the next GUID for the current computer. also called by OAObjectServerImpl.java
 	 */
-	public static int getNextGuid() {
+	public static long getNextGuid() {
 		return guidCounter.incrementAndGet(); // cant be 0
 	}
 
-	public static int getNextFiftyGuids() {
+	public static long getNextFiftyGuids() {
 		return guidCounter.getAndAdd(50) + 1;
 	}
 
-	public static void setNextGuid(int x) {
+	public static void setNextGuid(long x) {
 		guidCounter.set(x);
 	}
 
@@ -341,9 +344,9 @@ public class OAObjectDelegate {
 	/**
 	 * Used when "reading" serialized objects.
 	 */
-	protected static void updateGuid(int guid) {
+	protected static void updateGuid(long guid) {
 		for (;;) {
-			int g = guidCounter.get();
+			long g = guidCounter.get();
 			if (g >= guid) {
 				break;
 			}
@@ -624,6 +627,7 @@ public class OAObjectDelegate {
 	 * @param oaObj
 	 * @param oldKey
 	 */
+/*20251015 not used anymore	
 	protected static void rehash(OAObject oaObj, OAObjectKey oldKey) {
 		// Need to rehash all Hashtables that OAObject is stored in:
 		// 1: CacheDelegate hashtable
@@ -632,12 +636,13 @@ public class OAObjectDelegate {
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 		if (oi.getAddToCache()) {
-			OAObjectCacheDelegate.rehash(oaObj, oldKey);
+			OAObjectCacheDelegate.propertyKeyValueChanged(oaObj);
 		}
 		OAObjectHashDelegate.rehash(oaObj, oldKey);
 	}
-
-	public static int getGuid(OAObject obj) {
+**/
+	
+	public static long getGuid(OAObject obj) {
 		if (obj == null) {
 			return -1;
 		}

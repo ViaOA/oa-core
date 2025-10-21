@@ -165,7 +165,7 @@ public class OAObjectInfoDelegateTest extends OAUnitTest {
 	public void testRecursive() {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Location.class);
 
-		OAObjectHashDelegate.hashObjectInfo.clear();
+		OAObjectInfoDelegate.getObjectInfoMap().clear();
 
 		OALinkInfo li1 = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 		assertNotNull(li1);
@@ -173,7 +173,7 @@ public class OAObjectInfoDelegateTest extends OAUnitTest {
 		OALinkInfo li2 = oi.getRecursiveLinkInfo(OALinkInfo.ONE);
 		assertNotNull(li2);
 
-		OAObjectHashDelegate.hashObjectInfo.clear();
+		OAObjectInfoDelegate.getObjectInfoMap().clear();
 
 		li2 = oi.getRecursiveLinkInfo(OALinkInfo.ONE);
 		assertNotNull(li2);
@@ -184,7 +184,7 @@ public class OAObjectInfoDelegateTest extends OAUnitTest {
 
 	@Test
 	public void testLinkToOwner() {
-		OAObjectHashDelegate.hashObjectInfo.clear();
+		OAObjectInfoDelegate.getObjectInfoMap().clear();
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Location.class);
 

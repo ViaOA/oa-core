@@ -84,7 +84,7 @@ public class OAObjectCSDelegate {
 
     public static void updateObjectsWithoutHubs(OAObject obj) {
         if (obj == null) return;
-        int guid = obj.getGuid();
+        long guid = obj.getGuid();
         if (guid < 0) return;
 
         OASyncClient sc = OASyncDelegate.getSyncClient(obj.getClass());
@@ -105,15 +105,15 @@ public class OAObjectCSDelegate {
          return null;
      }
 	
-     protected static int getGuidFromServer(OAObject obj) {
+     protected static long getGuidFromServer(OAObject obj) {
          Class c;
          if (obj == null) c = Object.class;
          else c = obj.getClass();
          return getGuidFromServer(c);
      }
-     protected static int getGuidFromServer(Class clazz) {
+     protected static long getGuidFromServer(Class clazz) {
          if (clazz == null) clazz = Object.class;
-         int guid = OASyncDelegate.getGuidFromServer(clazz);
+         long guid = OASyncDelegate.getGuidFromServer(clazz);
          return guid;
     }
 

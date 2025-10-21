@@ -168,12 +168,13 @@ public class OAObjectCallbackDelegate {
 
 		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
+			if (OAString.isNotEmpty(pi.getEnumPropertyName())) continue;
 			Object val = obj.getProperty(pi.getName());
 			final OAObjectCallback emx = new OAObjectCallback(Type.VerifyPropertyChange, OAObjectCallback.CHECK_ALL, null, null, obj,
 					pi.getName(), val);
 
 			if (val instanceof String) {
-				if (((String) val).length() > pi.getMaxLength()) {
+				if (((String) val).length() > pi.getMaxLength() && pi.getMaxLength() > 0) {
 					emx.setAllowed(false);
 					String s = pi.getDisplayName() + " max length exceeded, max=" + pi.getMaxLength() + ", value="
 							+ OAString.format((String) val, "40L..");
@@ -376,7 +377,7 @@ public class OAObjectCallbackDelegate {
 		OAObjectCallback objectCallback = null;
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
 			objectCallback = new OAObjectCallback(Type.AllowAdd, checkType, hub, null, null, null, objAdd);
-			if ((checkType & OAObjectCallback.CHECK_Processed) > 0) {
+			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
@@ -490,7 +491,7 @@ public class OAObjectCallbackDelegate {
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
 			objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, null, null, objRemove);
-			if ((checkType & OAObjectCallback.CHECK_Processed) > 0) {
+			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
@@ -521,7 +522,7 @@ public class OAObjectCallbackDelegate {
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
 			objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, null, null, objRemove);
-			if ((checkType & OAObjectCallback.CHECK_Processed) > 0) {
+			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
@@ -552,7 +553,7 @@ public class OAObjectCallbackDelegate {
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
 			objectCallback = new OAObjectCallback(Type.AllowRemoveAll, checkType, hub, null, null, null, null);
-			if ((checkType & OAObjectCallback.CHECK_Processed) > 0) {
+			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
@@ -583,7 +584,7 @@ public class OAObjectCallbackDelegate {
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
 			objectCallback = new OAObjectCallback(Type.VerifyRemoveAll, checkType, hub, null, null, null, null);
-			if ((checkType & OAObjectCallback.CHECK_Processed) > 0) {
+			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
@@ -685,7 +686,7 @@ public class OAObjectCallbackDelegate {
 
 			if (li == null || (li.getPrivateMethod() && objMaster == null)) {
 				objectCallback = new OAObjectCallback(Type.VerifyDelete, checkType, hub, null, null, null, objDelete);
-				if ((checkType & OAObjectCallback.CHECK_Processed) > 0) {
+				if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
 					if (hub.getOAObjectInfo().getProcessed()) {
 						updateEditProcessed(objectCallback);
 					}
@@ -916,13 +917,13 @@ public class OAObjectCallbackDelegate {
 
 		// follow the first link (if any), if it is not owner
 		if (bCheckIncludeMaster && hubThis != null
-				&& (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst
+				&& (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()
 						|| objectCallback.getType() == Type.AllowVisible)) {
 			OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterHubToDetail(hubThis);
 			if (li != null && !li.getOwner()) {
 				OAObject objx = hubThis.getMasterObject();
 				if (objx != null) {
-					if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) {
+					if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()) {
 						int ct = (objectCallback.getCheckType() ^ objectCallback.CHECK_IncludeMaster) ^ objectCallback.CHECK_Processed;
 						OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, ct, hubThis.getMasterHub(), null, objx,
 								li.getName(), null);
@@ -947,11 +948,11 @@ public class OAObjectCallbackDelegate {
 			}
 		}
 
-		if (oaObj != null && objectCallback.getType().checkOwner) {
+		if (oaObj != null && objectCallback.getType().isCheckOwner()) {
 			ownerHierProcess(objectCallback, oaObj, propertyName);
 		}
 		if (bCheckProcessedCheck && oi.getProcessed() && OAString.isEmpty(propertyName) && objectCallback.getAllowed()
-				&& ((objectCallback.getType() == Type.AllowEnabled) || objectCallback.getType().checkEnabledFirst)) {
+				&& ((objectCallback.getType() == Type.AllowEnabled) || objectCallback.getType().isCheckEnabledFirst())) {
 			updateEditProcessed(objectCallback);
 		}
 
@@ -1053,7 +1054,7 @@ public class OAObjectCallbackDelegate {
 					objectCallback.setResponse(s);
 				}
 			}
-		} else if ((objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst)
+		} else if ((objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst())
 				&& OAString.isNotEmpty(propertyName)) {
 			// was: else if (objectCallback.getAllowed() && (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) && OAString.isNotEmpty(propertyName)) {
 			if (oaObj == null) {
@@ -1150,7 +1151,7 @@ public class OAObjectCallbackDelegate {
 		Hub[] hubs = OAObjectHubDelegate.getHubReferences(oaObj);
 
 		// call the callback method, this can override eq.allowed
-		if (OAString.isNotEmpty(propertyName) && objectCallback.getType().checkEnabledFirst) {
+		if (OAString.isNotEmpty(propertyName) && objectCallback.getType().isCheckEnabledFirst()) {
 			OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, OAObjectCallback.CHECK_CallbackMethod, null, null,
 					oaObj, propertyName, null);
 			objectCallbackX.setAllowed(objectCallback.getAllowed());
@@ -1313,7 +1314,7 @@ public class OAObjectCallbackDelegate {
 					objectCallback.setResponse(s);
 				}
 			}
-		} else if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) {
+		} else if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()) {
 			//was:  else if ( (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) && !(OASync.isServer() && OAThreadLocalDelegate.getContext() == null)) {
 
 			// final boolean bCheckProcessedCheck = (objectCallback.getCheckType() & OAObjectCallback.CHECK_Processed) != 0;
@@ -1415,7 +1416,7 @@ public class OAObjectCallbackDelegate {
 	// called directly if hub.masterObject=null
 	protected static void processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
-		if (objectCallback.getType().checkEnabledFirst) {
+		if (objectCallback.getType().isCheckEnabledFirst()) {
 			OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled);
 			objectCallbackX.setAllowed(objectCallback.getAllowed());
 			objectCallbackX.setPropertyName(objectCallback.getPropertyName());
@@ -1464,11 +1465,6 @@ public class OAObjectCallbackDelegate {
 					break;
 
 				case AllowNew:
-					if (hubEvent == null) {
-						hubEvent = new HubEvent(hub);
-					}
-					b = hl[i].getAllowAdd(hubEvent, b);
-					break;
 				case AllowAdd:
 					if (hubEvent == null) {
 						hubEvent = new HubEvent(hub);
