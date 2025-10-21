@@ -530,7 +530,7 @@ public class HubShareDelegate {
 					try {
 						Object obj = thisHub.datau.getLinkToHub().getActiveObject();
 						if (obj != null) {
-							obj = thisHub.datau.getLinkToGetMethod().invoke(obj, null);
+							obj = thisHub.datau.getLinkToGetMethod().invoke(obj, (Object[]) null);
 						}
 
 						// 20110110 the link value is in the process of being changed - see HubDataDelegate.getPos(...)
@@ -697,7 +697,7 @@ public class HubShareDelegate {
 				try {
 					Object obj = h.datau.getLinkToHub().getActiveObject();
 					if (obj != null) {
-						obj = h.datau.getLinkToGetMethod().invoke(obj, null);
+						obj = h.datau.getLinkToGetMethod().invoke(obj, (Object[]) null);
 					}
 
 					// 20110110 the link value is in the process of being changed - see HubDataDelegate.getPos(...)

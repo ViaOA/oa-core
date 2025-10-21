@@ -56,10 +56,10 @@ public class HubSaveDelegate {
 	        bM2M = dm.liDetailToMaster != null && OAObjectInfoDelegate.isMany2Many(dm.liDetailToMaster);
 	        
 	        if (bM2M) {
-		        Object[] objAdds = HubDataDelegate.getAddedObjects(thisHub);
+		        OAObject[] objAdds = HubDataDelegate.getAddedObjects(thisHub);
 	        	for (int i=0; objAdds!=null && i<objAdds.length; i++) {
-	        		Object obj = objAdds[i];
-	        		if (obj instanceof OAObject && ((OAObject)obj).getNew()) {
+	        		OAObject obj = objAdds[i];
+	        		if (obj != null && ((OAObject)obj).getNew()) {
 			            OAObjectSaveDelegate._saveObjectOnly((OAObject) obj, cascade);
 	        		}
 	        	}

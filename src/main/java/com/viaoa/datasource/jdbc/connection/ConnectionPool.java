@@ -66,7 +66,7 @@ public class ConnectionPool implements Runnable {
 			thread = null;
 			bStopThread = true;
 			synchronized (threadLOCK) {
-				threadLOCK.notify();
+				threadLOCK.notifyAll();
 			}
 			closeAllConnections();
 		}
@@ -159,7 +159,7 @@ public class ConnectionPool implements Runnable {
 			try {
 				synchronized (threadLOCK) {
 					if (!bStopThread) {
-						int ms = 1000 * 60 * 1;
+						int ms = 1000 * 60 * 10;
 						threadLOCK.wait(ms);
 					}
 				}
@@ -566,9 +566,9 @@ public class ConnectionPool implements Runnable {
 				String s = String.format(	"%d) JDBC Connection, Statements current=%d/used=%d/created=%,d/queries=%,d," +
 						" Prepared current=%d/used=%d/created=%,d/queries=%,d",
 											cnter++,
-											con.vecStatement.size(), con.getCurrentlyUsedStatementCount(), con.cntCreateStatement,
+											con.alStatement.size(), con.getCurrentlyUsedStatementCount(), con.cntCreateStatement,
 											con.cntGetStatement,
-											con.getTotalPreparedStatements(), con.vecUsedPreparedStatement.size(),
+											con.getTotalPreparedStatements(), con.alUsedPreparedStatement.size(),
 											con.cntCreatePreparedStatement, con.cntGetPreparedStatement);
 				if (!con.bAvailable) {
 					s += (" * connection not available");

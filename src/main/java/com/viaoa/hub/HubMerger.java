@@ -87,7 +87,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
     public int TotalHubListeners; // for testing only
 
-    public static AtomicInteger aiHubListenerCount = new AtomicInteger(); // number of HubListeners used by all HubMerger
+    public static final AtomicInteger aiHubListenerCount = new AtomicInteger(); // number of HubListeners used by all HubMerger
 
     private boolean bServerSideOnly;
 
@@ -1534,7 +1534,6 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 lock.readLock().lock();
                 if (alChildren == null || node.child == null) {
                     if (bShareEndHub) {
-                        // 20110809 might need to unset hubCombied.sharedHub
                         if (hubCombined != null) {
                             hubCombined.setSharedHub(null);
                         }

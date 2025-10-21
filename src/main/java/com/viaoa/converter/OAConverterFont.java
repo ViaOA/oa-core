@@ -39,6 +39,7 @@ public class OAConverterFont implements OAConverterInterface {
         if (value instanceof String) {
             String sValue = (String) value;
             Font font = Font.decode(sValue);
+            return font;
         }
         return null;
     }

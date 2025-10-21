@@ -58,7 +58,7 @@ public class OAArrayTest extends OAUnitTest {
 		assertEquals(xs[0], 1);
 		assertEquals(xs[1], 2);
 
-		xs = OAArray.add(xs, new Integer(3));
+		xs = OAArray.add(xs, Integer.valueOf(3));
 		assertEquals(xs.length, 3);
 		assertEquals(xs[0], 1);
 		assertEquals(xs[1], 2);

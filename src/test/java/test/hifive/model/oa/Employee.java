@@ -1734,22 +1734,8 @@ public class Employee extends OAObject {
 		return;
 	}
 
-	@Override
-	public OAObjectKey getObjectKey() {
-		if (objectKey == null) {
-			if (id == 0) {
-				int xx = 4;
-				xx++;
-			}
-		}
-		return super.getObjectKey();
-	}
 
 	public void load(ResultSet rs, int id) throws SQLException {
-		if (objectKey != null) {
-			int xx = 4;
-			xx++;
-		}
 		this.id = id;
 		java.sql.Date date;
 		date = rs.getDate(2);

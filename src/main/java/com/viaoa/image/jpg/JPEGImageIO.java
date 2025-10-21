@@ -127,7 +127,7 @@ public class JPEGImageIO {
         if (numberOfComponentsInFrame != 4) {
             // Read image with YUV color encoding.
             img = readImageFromYUVorGray(new ByteArrayInputStream(byteArray));
-        } else if (numberOfComponentsInFrame == 4) {
+        } else {
 
             // Try to instantiate an ICC_Profile from the app2ICCProfile
             ICC_Profile profile = null;

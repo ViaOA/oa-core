@@ -146,7 +146,7 @@ public abstract class MultiplexerInputStreamController {
                     continue;
                 }
                 _nextReadId = readId; // this is the VS.id that needs to read the data after the header
-                vs._lockObject.notify();
+                vs._lockObject.notifyAll();
             }
 
             synchronized (READLOCK) { // wait for VSocket (vsId=nextReadId) to perform read.

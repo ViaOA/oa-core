@@ -6,7 +6,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -355,7 +355,7 @@ public class OAFinderTest extends OAUnitTest {
 		HifiveDataGenerator data = new HifiveDataGenerator();
 		data.createSampleData();
 
-		Vector<String> vec = OAObjectCacheDelegate.getInfo();
+		List<String> vec = OAObjectCacheDelegate.getInfo();
 		for (String s : vec) {
 			System.out.println(s);
 		}

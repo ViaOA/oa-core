@@ -29,11 +29,11 @@ public class DeleteDelegate {
 	private static Logger LOG = Logger.getLogger(DeleteDelegate.class.getName());
 
 	public static void delete(OADataSourceJDBC ds, OAObject object) {
-		if (object == null || !(object instanceof OAObject)) {
+		if (object == null) {
 			return;
 		}
-		if (((OAObject) object).getNew()) {
-			LOG.fine("delete called on a new object, class=" + object.getClass().getName() + ", key=" + OAObjectKeyDelegate.getKey(object));
+		if (object.getNew()) {
+			LOG.finer("delete called on a new object, class=" + object.getClass().getName() + ", key=" + OAObjectKeyDelegate.getKey(object));
 			return;
 		}
 		delete(ds, object, object.getClass());

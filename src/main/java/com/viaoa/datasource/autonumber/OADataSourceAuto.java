@@ -178,7 +178,7 @@ public class OADataSourceAuto extends OADataSource {
 			nn = new NextNumber();
 			nn.setId(clazz.getName());
 
-			if (props != null && props.length > 0) {
+			if (props != null) {
 				for (String s : props) {
 					OAPropertyInfo pi = oi.getPropertyInfo(s);
 					if (pi != null && pi.getAutoAssign()) {

@@ -116,7 +116,7 @@ public class OAConverterColor implements OAConverterInterface {
             return OAString.colorToHex(color).toUpperCase();
         }
         if (Number.class.isAssignableFrom(toClass)) {
-        	return new Integer(color.getRGB());
+        	return Integer.valueOf(color.getRGB());
         }
         return null;
     }

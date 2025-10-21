@@ -500,7 +500,7 @@ public class HubDetailDelegate {
 				try {
 					Object obj = hubWithLink.datau.getLinkToHub().getActiveObject();
 					if (obj != null) {
-						obj = hubWithLink.datau.getLinkToGetMethod().invoke(obj, null);
+						obj = hubWithLink.datau.getLinkToGetMethod().invoke(obj, (Object[]) null);
 					}
 					if (hubWithLink.datau.isLinkPos()) {
 						int x = -1;

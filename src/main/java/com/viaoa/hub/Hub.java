@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.stream.Stream;
 
@@ -2215,7 +2216,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 			}
 
 			@Override
-			public TYPE next() {
+			public TYPE next() throws NoSuchElementException {
 				int x = list.size();
 				if (pos < x) {
 					++pos;

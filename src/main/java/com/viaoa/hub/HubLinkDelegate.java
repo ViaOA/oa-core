@@ -280,7 +280,7 @@ public class HubLinkDelegate {
 						if (obj == null) {
 							break;
 						}
-						Object obj2 = thisHub.datau.getLinkToGetMethod().invoke(obj, null);
+						Object obj2 = thisHub.datau.getLinkToGetMethod().invoke(obj, (Object[]) null);
 						if (obj2 == fromObject) {
 							thisHub.datau.getLinkToHub().setAO(obj);
 							return;
@@ -310,7 +310,7 @@ public class HubLinkDelegate {
 			linkToObject = thisHub.datau.getLinkToHub().getActiveObject();
 		}
 		if (linkToObject != null) {
-			Object obj = thisHub.datau.getLinkToGetMethod().invoke(linkToObject, null);
+			Object obj = thisHub.datau.getLinkToGetMethod().invoke(linkToObject, (Object[]) null);
 			if (thisHub.datau.isLinkPos()) { // allow number returned to set pos of active object, set by setLinkOnPos()
 				if (obj instanceof Number) {
 					int x = ((Number) obj).intValue();
@@ -320,7 +320,7 @@ public class HubLinkDelegate {
 						b = (pos != -1) && ((OAObject) linkToObject).isNull(thisHub.datau.getLinkToPropertyName());
 					}
 					if (x != pos || b) {
-						thisHub.datau.getLinkToSetMethod().invoke(linkToObject, new Object[] { new Integer(pos) });
+						thisHub.datau.getLinkToSetMethod().invoke(linkToObject, new Object[] { Integer.valueOf(pos) });
 						if (pos == -1 && linkToObject instanceof OAObject) { // 20131101 setting to null
 							((OAObject) linkToObject).setNull(thisHub.datau.getLinkToPropertyName());
 						}
@@ -375,7 +375,7 @@ public class HubLinkDelegate {
 					}
 				}
 				if (linkObject != null) {
-					linkObject = thisHub.datau.getLinkToGetMethod().invoke(linkObject, null);
+					linkObject = thisHub.datau.getLinkToGetMethod().invoke(linkObject, (Object[]) null);
 				}
 			}
 			if (thisHub.datau.isLinkPos()) {
@@ -394,7 +394,7 @@ public class HubLinkDelegate {
 						linkObject = null;
 						break;
 					}
-					Object obj2 = thisHub.datau.getLinkFromGetMethod().invoke(obj, null);
+					Object obj2 = thisHub.datau.getLinkFromGetMethod().invoke(obj, (Object[]) null);
 					if ((linkObject == obj2) || (obj2 != null && obj2.equals(linkObject))) {
 						linkObject = obj;
 						break;
@@ -766,7 +766,7 @@ public class HubLinkDelegate {
 				}
 			}
 
-			// 20110810 if fromHub AO=null and linkToHub.AO=null then fromHub.isValid
+			// if fromHub AO=null and linkToHub.AO=null then fromHub.isValid
 			//             if linkToHub.AO is changed to != null, but fromHub.AO is still null, then need to set bForce=true
 			//                so listeners will be notified of the change
 			// ex: in SalesOrder there is a hubCustomer linked to it that needs to know when SalesOrder.AO is not null

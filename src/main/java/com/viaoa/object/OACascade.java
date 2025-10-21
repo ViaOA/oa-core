@@ -28,7 +28,7 @@ import com.viaoa.hub.Hub;
 public class OACascade {
 	private static Logger LOG = Logger.getLogger(OACascade.class.getName());
 	// convert to this?  private IdentityHashMap hmCascade;
-	private TreeSet<Integer> treeObject;
+	private TreeSet<Long> treeObject;
 	private TreeSet<Hub> treeHub;
 	private ReentrantReadWriteLock rwLock;
 	private ReentrantReadWriteLock rwLockHub;
@@ -111,7 +111,7 @@ public class OACascade {
 			if (rwLock != null) {
 				rwLock.writeLock().lock();
 			}
-			treeObject = new TreeSet<Integer>();
+			treeObject = new TreeSet<Long>();
 			if (rwLock != null) {
 				rwLock.writeLock().unlock();
 			}

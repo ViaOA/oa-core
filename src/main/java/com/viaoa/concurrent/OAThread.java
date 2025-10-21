@@ -42,7 +42,7 @@ public class OAThread extends Thread {
     }
     
 	public static void sleep(long ms) {
-	    if (ms <= 0) return;
+	    if (ms < 0) return;
 	    try {
             if (ms > 0) {
                 Thread.sleep(ms);

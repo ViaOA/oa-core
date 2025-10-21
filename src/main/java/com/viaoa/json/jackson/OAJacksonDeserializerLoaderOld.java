@@ -208,7 +208,7 @@ public class OAJacksonDeserializerLoaderOld {
 			} else {
 				if (stackItem.li.getAutoCreateNew()) {
 					OAObjectKey ok = stackItem.obj.getObjectKey();
-					if (ok.isNew()) {
+					if (stackItem.obj.isNew()) {
 						loadObjectIdProperties(stackItem);
 					}
 				}
@@ -690,7 +690,7 @@ public class OAJacksonDeserializerLoaderOld {
 		boolean bResult = false;
 		JsonNode jn = stackItem.node.get("guid");
 		if (jn != null) {
-			int guid = jn.asInt();
+			long guid = jn.asLong();
 
 			OAObject objNew = oajson.getGuidMap().get(guid);
 			stackItem.obj = objNew;
@@ -721,8 +721,8 @@ public class OAJacksonDeserializerLoaderOld {
 			return false;
 		}
 
-		int guid = jn.asInt();
-		OAObjectKey objKey = new OAObjectKey(new Object[0], guid, true);
+		long guid = jn.asLong();
+		OAObjectKey objKey = new OAObjectKey(new Object[0], guid);
 		stackItem.obj = (OAObject) OAObjectCacheDelegate.get(stackItem.oi.getForClass(), objKey);
 		return (stackItem.obj != null);
 	}
@@ -1138,7 +1138,7 @@ public class OAJacksonDeserializerLoaderOld {
 
 		JsonNode jn = stackItem.node.get("guid");
 		if (jn != null) {
-			int guid = jn.asInt();
+			long guid = jn.asLong();
 			if (oajson != null) {
 				oajson.getGuidMap().put(guid, stackItem.obj);
 			}
@@ -1290,7 +1290,7 @@ public class OAJacksonDeserializerLoaderOld {
 		String s = stackItemChild.node.asText();
 		if (s.indexOf("guid.") == 0) {
 			s = s.substring(5);
-			int guid = Integer.parseInt(s);
+			long guid = Long.parseLong(s);
 			if (oajson != null) {
 				stackItemChild.obj = oajson.getGuidMap().get(guid);
 			}
@@ -1447,7 +1447,7 @@ public class OAJacksonDeserializerLoaderOld {
 		String s = stackItem.node.asText();
 		if (s.indexOf("guid.") == 0) {
 			s = s.substring(5);
-			int guid = Integer.parseInt(s);
+			long guid = Long.parseLong(s);
 			if (oajson != null) {
 				stackItem.obj = oajson.getGuidMap().get(guid);
 			}

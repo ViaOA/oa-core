@@ -49,7 +49,7 @@ public class OALogRecord extends OAObject {
     public static OAObjectInfo getOAObjectInfo() {
         return oaObjectInfo;
     }
-    protected static OAObjectInfo oaObjectInfo;
+    protected static final OAObjectInfo oaObjectInfo;
     static {
         oaObjectInfo = new OAObjectInfo(new String[] {});
          

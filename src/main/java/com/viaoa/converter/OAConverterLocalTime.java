@@ -58,7 +58,7 @@ public class OAConverterLocalTime implements OAConverterInterface {
 			LocalTime lt = (LocalTime) value;
 		}
 		if (value instanceof OADate) {
-			OADate d = (OADate) value;
+			// OADate d = (OADate) value;
 			LocalTime lt = LocalTime.of(0, 0, 0);
 			return lt;
 		}

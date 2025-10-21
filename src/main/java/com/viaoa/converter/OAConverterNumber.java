@@ -111,13 +111,13 @@ public class OAConverterNumber implements OAConverterInterface {
 	protected Number convertToNumber(Class clazz, Object value, String fmt) {
 		Number num = null;
 		if (value == null) {
-			num = new Double(0.0D);
+			num = Double.valueOf(0.0D);
 		} else if (value instanceof Number) {
 			num = (Number) value;
 		} else if (value instanceof String) {
 			String sValue = (String) value;
 			if (sValue.length() == 0) {
-				num = new Double(0.0D);
+				num = Double.valueOf(0.0D);
 			} else {
 				if (fmt == null) {
 					fmt = "#,###";
@@ -147,11 +147,11 @@ public class OAConverterNumber implements OAConverterInterface {
 				}
 			}
 		} else if (value instanceof Character) {
-			num = new Integer(((Character) value).charValue());
+			num = Integer.valueOf(((Character) value).charValue());
 		} else if (value instanceof Boolean) {
-			num = new Integer(((Boolean) value).booleanValue() == true ? 1 : 0);
+			num = Integer.valueOf(((Boolean) value).booleanValue() == true ? 1 : 0);
 		} else if (value instanceof OADateTime) {
-			num = new Long(((OADateTime) value).getTime());
+			num = Long.valueOf(((OADateTime) value).getTime());
 		} else if (value instanceof Rectangle) {
 			Rectangle r = (Rectangle) value;
 			long l = 0L;
@@ -160,13 +160,13 @@ public class OAConverterNumber implements OAConverterInterface {
 			l += ((long) r.y) << 32;
 			l += ((long) r.width) << 16;
 			l += ((long) r.height);
-			num = new Long(l);
+			num = Long.valueOf(l);
 		} else if (value instanceof Color) {
 			Color c = (Color) value;
-			num = new Long(c.getRGB());
+			num = Long.valueOf(c.getRGB());
 		} else if (value instanceof Enum) {
 			Enum e = (Enum) value;
-			num = new Long(e.ordinal());
+			num = Long.valueOf(e.ordinal());
 		}
 
 		if (value instanceof byte[]) {
@@ -177,19 +177,19 @@ public class OAConverterNumber implements OAConverterInterface {
 			if (num.getClass().equals(clazz)) {
 				;
 			} else if (clazz.equals(Integer.class)) {
-				num = new Integer(num.intValue());
+				num = Integer.valueOf(num.intValue());
 			} else if (clazz.equals(Long.class)) {
-				num = new Long(num.longValue());
+				num = Long.valueOf(num.longValue());
 			} else if (clazz.equals(BigDecimal.class)) {
 				num = new BigDecimal(num.toString());
 			} else if (clazz.equals(Double.class)) {
-				num = new Double(num.doubleValue());
+				num = Double.valueOf(num.doubleValue());
 			} else if (clazz.equals(Float.class)) {
-				num = new Float(num.floatValue());
+				num = Float.valueOf(num.floatValue());
 			} else if (clazz.equals(Short.class)) {
-				num = new Short(num.shortValue());
+				num = Short.valueOf(num.shortValue());
 			} else if (clazz.equals(Byte.class)) {
-				num = new Byte(num.byteValue());
+				num = Byte.valueOf(num.byteValue());
 			}
 		}
 		return num;

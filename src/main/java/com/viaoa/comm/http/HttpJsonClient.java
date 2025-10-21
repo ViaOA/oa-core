@@ -238,10 +238,13 @@ public class HttpJsonClient {
 		if (OAString.isNotEmpty(jsonRequest)) {
 			OutputStream out = conn.getOutputStream();
 			Writer writer = new OutputStreamWriter(out, "UTF-8");
-
-			writer.write(jsonRequest);
-			writer.close();
-			out.close();
+			try {
+				writer.write(jsonRequest);
+			}
+			finally {
+				writer.close();
+				out.close();
+			}
 		}
 
 		String setcookie = conn.getHeaderField("Set-Cookie");

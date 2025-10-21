@@ -40,7 +40,7 @@ import com.viaoa.util.*;
 public class OADataSourceObjectCache extends OADataSourceAuto {
     private static final Logger LOG = OALogger.getLogger(OADataSourceObjectCache.class);
 
-    private final ConcurrentHashMap<Class, Set> hmClass = new ConcurrentHashMap();
+    private final ConcurrentHashMap<Class, Set> hmClass = new ConcurrentHashMap<>();
     
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -287,7 +287,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             if (isOtherDataSource()) {
                 return false;
             }
-            return super.isClassSupported(clazz, filter);
+            return super.isClassSupported(clazz, null);
         }
         // only if all objects are loaded, or no other DS
         if (!isOtherDataSource()) {
@@ -450,16 +450,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         if (c == null) {
             return null;
         }
-        Set hs = hmClass.get(c);
-        if (hs == null) {
-            synchronized (hmClass) {
-                hs = hmClass.get(c);
-                if (hs == null) {
-                    hs = new HashSet();
-                    hmClass.put(c, hs);
-                }
-            }
-        }
+        Set hs = hmClass.computeIfAbsent(c, k -> new HashSet());
         return hs;
     }
 

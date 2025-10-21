@@ -1251,6 +1251,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public boolean equals(Object obj) {
 		try {
+			// Warning: calling compareTo could cause an infinite loop if compareTo calls equals.
 			int i = compareTo(obj);
 			return (i == 0);
 		} catch (Exception e) {

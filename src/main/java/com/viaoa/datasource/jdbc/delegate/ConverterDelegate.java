@@ -198,7 +198,7 @@ public class ConverterDelegate {
 			String fmt = null;
 			if (decimalPlaces > 0) {
 				if (obj instanceof BigDecimal) {
-					if (decimalPlaces <= 0 || ((BigDecimal) obj).scale() <= decimalPlaces) {
+					if (((BigDecimal) obj).scale() <= decimalPlaces) {
 						return ((BigDecimal) obj).toPlainString();
 					}
 				}

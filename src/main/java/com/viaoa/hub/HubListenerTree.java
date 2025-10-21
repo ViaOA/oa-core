@@ -251,7 +251,7 @@ public class HubListenerTree {
 				} else {
 					Object value = null;
 					try {
-						value = m.invoke(oaObj, null);
+						value = m.invoke(oaObj, (Object[]) null);
 					} catch (Exception e) {
 						LOG.log(Level.FINE, "error calling " + oaObj.getClass().getName() + ".getProperty(\"" + propName + "\")", e);
 					}

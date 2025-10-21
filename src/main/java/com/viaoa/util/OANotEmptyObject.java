@@ -28,7 +28,8 @@ public class OANotEmptyObject implements OASpecialCompareObject, java.io.Seriali
 
 	@Override
 	public boolean equals(Object obj) {
-		return OAString.isNotEmpty(obj);
+		if (obj == OANotEmptyObject.instance) return true;
+		return OAConverter.isNotEmpty(obj);
 	}
 
 	@Override

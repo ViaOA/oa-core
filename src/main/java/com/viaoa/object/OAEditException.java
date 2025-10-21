@@ -23,15 +23,15 @@ public class OAEditException extends RuntimeException {
     }
 
     public OAEditException(OAObject obj, String property, long newValue) {
-        this(obj, property, new Long(newValue));
+        this(obj, property, Long.valueOf(newValue));
     }
 
     public OAEditException(OAObject obj, String property, double newValue) {
-        this(obj, property, new Double(newValue));
+        this(obj, property, Double.valueOf(newValue));
     }
     
     public OAEditException(OAObject obj, String property, boolean newValue) {
-        this(obj, property, new Boolean(newValue));
+        this(obj, property, Boolean.valueOf(newValue));
     }
     
     public Object getNewValue() {

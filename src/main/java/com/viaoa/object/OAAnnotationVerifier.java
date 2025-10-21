@@ -565,8 +565,7 @@ public class OAAnnotationVerifier {
 			for (Column c : t2.getColumns()) {
 				h.remove(c.columnName.toUpperCase());
 			}
-
-			p("mismatch in number of columns");
+			p("mismatch in number of columns "+h);
 			bResult = false;
 		}
 		for (Column c : t1.getColumns()) {

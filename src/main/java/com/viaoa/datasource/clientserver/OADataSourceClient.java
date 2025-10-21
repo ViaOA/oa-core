@@ -12,6 +12,7 @@ package com.viaoa.datasource.clientserver;
 
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
@@ -143,7 +144,7 @@ public class OADataSourceClient extends OADataSource {
 		return false;
 	}
 
-	private HashMap<String, Integer> hmMax = new HashMap<String, Integer>();
+	private Map<String, Integer> hmMax = new HashMap<String, Integer>();
 
 	public int getMaxLength(Class c, String propertyName) {
 		String key = (c.getName() + "-" + propertyName).toUpperCase();
@@ -169,7 +170,7 @@ public class OADataSourceClient extends OADataSource {
 			return;
 		}
 		String key = (c.getName() + "-" + propertyName).toUpperCase();
-		hmMax.put(key, new Integer(length));
+		hmMax.put(key, Integer.valueOf(length));
 	}
 
 	protected void verifyConnection() {
@@ -202,7 +203,7 @@ public class OADataSourceClient extends OADataSource {
 			b = ((Boolean) obj).booleanValue();
 		}
 
-		hashClass.put(clazz, new Boolean(b));
+		hashClass.put(clazz, Boolean.valueOf(b));
 		return b;
 	}
 

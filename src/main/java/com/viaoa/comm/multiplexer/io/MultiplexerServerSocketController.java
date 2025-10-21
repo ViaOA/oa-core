@@ -300,7 +300,7 @@ public class MultiplexerServerSocketController {
             _alSocketController.add(vsc);
         }
         synchronized (TIMEOUTLOCK) {
-            TIMEOUTLOCK.notify();
+            TIMEOUTLOCK.notifyAll();
         }
     }
 

@@ -604,4 +604,12 @@ public class OAArray {
 			obja[i] = objNew[i];
 		}
 	}
+	
+	public static boolean hasNull(Object[] objs) {
+		if (objs == null) return false;
+		for (int i=0; i<objs.length; i++) {
+			if (objs[i] == null) return true;
+		}
+		return false;
+	}
 }

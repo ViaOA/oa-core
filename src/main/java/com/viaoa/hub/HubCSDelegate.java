@@ -34,7 +34,7 @@ public class HubCSDelegate {
      */
     public static void removeAllFromHub(Hub thisHub) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
-        if (!(thisHub.datam.getMasterObject() instanceof OAObject)) return;
+        if (thisHub.datam.getMasterObject() == null) return;
         if (OAThreadLocalDelegate.isSuppressCSMessages()) return;
         if (!OARemoteThreadDelegate.shouldSendMessages()) {
             return;
@@ -67,7 +67,7 @@ public class HubCSDelegate {
 	 */
 	public static void removeFromHub(Hub thisHub, OAObject obj, int pos) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
-        if (!(thisHub.datam.getMasterObject() instanceof OAObject)) return;
+        if (thisHub.datam.getMasterObject() == null) return;
         if (OAThreadLocalDelegate.isSuppressCSMessages()) return;
         if (!OARemoteThreadDelegate.shouldSendMessages()) {
             return;
@@ -125,7 +125,7 @@ public class HubCSDelegate {
         // send ADD message
         
         final OAObject master = (OAObject) thisHub.datam.getMasterObject();
-        if (!(master instanceof OAObject)) return;
+        if (master == null) return;
 	    if (OAObjectInfoDelegate.getOAObjectInfo(master).getLocalOnly()) return;
 
 	    /* 20160826 removed, since this is only needed when loading oaobj.hub, which already suppresses messages when loading
@@ -217,7 +217,7 @@ public class HubCSDelegate {
             }
         }
 
-        if (!(thisHub.datam.getMasterObject() instanceof OAObject)) return false;
+        if (thisHub.datam.getMasterObject() == null) return false;
         if (OAObjectInfoDelegate.getOAObjectInfo((OAObject)thisHub.datam.getMasterObject()).getLocalOnly()) return false;
 
         // must have a master object to be able to know which hub to add object to
@@ -353,7 +353,7 @@ public class HubCSDelegate {
             if (liRev != null && liRev.getCalculated()) return false;
         }
 
-        if (!(thisHub.datam.getMasterObject() instanceof OAObject)) return false;
+        if (thisHub.datam.getMasterObject() == null) return false;
         if (OAObjectInfoDelegate.getOAObjectInfo((OAObject)thisHub.datam.getMasterObject()).getLocalOnly()) return false;
 
         RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(thisHub);

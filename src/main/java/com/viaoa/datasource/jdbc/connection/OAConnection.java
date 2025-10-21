@@ -15,8 +15,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,14 +33,14 @@ public class OAConnection {
 	private static Logger LOG = Logger.getLogger(OAConnection.class.getName());
 
 	protected final Connection connection;
-	protected final Vector<Pool> vecStatement = new Vector<Pool>(5, 5);
-	protected final Vector<PreparedStatement> vecUsedPreparedStatement = new Vector<PreparedStatement>(5, 5);
-	protected final Vector<PreparedStatement> vecUsedBatchPreparedStatement = new Vector<PreparedStatement>(5, 5);
+	protected final List<Pool> alStatement = new ArrayList<>();
+	protected final List<PreparedStatement> alUsedPreparedStatement = new ArrayList<>();
+	protected final List<PreparedStatement> alUsedBatchPreparedStatement = new ArrayList<PreparedStatement>();
 	protected volatile boolean bAvailable;
 	protected volatile boolean bGettingStatement;
 
-	private final ConcurrentHashMap<String, ArrayList<PreparedStatement>> hmSqlToPreparedStatements = new ConcurrentHashMap<String, ArrayList<PreparedStatement>>();
-	private final ConcurrentHashMap<PreparedStatement, String> hmPreparedStatementToSql = new ConcurrentHashMap<PreparedStatement, String>();
+	private final Map<String, List<PreparedStatement>> hmSqlToPreparedStatements = new ConcurrentHashMap<>();
+	private final Map<PreparedStatement, String> hmPreparedStatementToSql = new ConcurrentHashMap<PreparedStatement, String>();
 
 	volatile int cntGetStatement;
 	volatile int cntCreateStatement;
@@ -89,17 +90,17 @@ public class OAConnection {
 			executeOpenBatches();
 		}
 
-		synchronized (vecStatement) {
-			int x = vecStatement.size();
+		synchronized (alStatement) {
+			int x = alStatement.size();
 			for (int i = 0; i < x; i++) {
-				Pool pool = (Pool) vecStatement.elementAt(i);
+				Pool pool = (Pool) alStatement.get(i);
 				if (pool.used) {
 					if (!bBatchUpdate) {
 						continue;
 					}
 				}
 				if (pool.statement.isClosed()) {
-					vecStatement.remove(i);
+					alStatement.remove(i);
 					i--;
 					x--;
 					continue;
@@ -117,13 +118,13 @@ public class OAConnection {
 
 		Pool pool = new Pool(statement, true, message);
 		pool.bIsForBatch = bBatchUpdate;
-		synchronized (vecStatement) {
-			vecStatement.addElement(pool);
+		synchronized (alStatement) {
+			alStatement.add(pool);
 			bGettingStatement = false;
 		}
 
-		if (vecStatement.size() > 20) {
-			LOG.warning("StatementPool is getting large, current=" + vecStatement.size());
+		if (alStatement.size() > 20) {
+			LOG.warning("StatementPool is getting large, current=" + alStatement.size());
 		}
 
 		return statement;
@@ -133,10 +134,10 @@ public class OAConnection {
 	public boolean releaseStatement(Statement statement) {
 
 		boolean bResult = false;
-		synchronized (vecStatement) {
-			int x = vecStatement.size();
+		synchronized (alStatement) {
+			int x = alStatement.size();
 			for (int i = 0; i < x; i++) {
-				Pool pool = (Pool) vecStatement.elementAt(i);
+				Pool pool = (Pool) alStatement.get(i);
 				if (pool.statement != statement) {
 					continue;
 				}
@@ -149,7 +150,7 @@ public class OAConnection {
 
 					pool.used = false;
 					bResult = true;
-					if (vecStatement.size() < 10) {
+					if (alStatement.size() < 10) {
 						break;
 					}
 					if (!statement.isClosed()) {
@@ -158,7 +159,7 @@ public class OAConnection {
 				} catch (Exception e) {
 					LOG.log(Level.WARNING, "Exception releasing statement", e);
 				}
-				vecStatement.remove(i);
+				alStatement.remove(i);
 				break;
 			}
 		}
@@ -169,14 +170,14 @@ public class OAConnection {
 	}
 
 	protected void executeOpenBatches() throws SQLException {
-		for (Pool pool : vecStatement) {
+		for (Pool pool : alStatement) {
 			if (pool.used && pool.bIsForBatch) {
 				pool.statement.executeBatch();
 				releaseStatement(pool.statement);
 			}
 		}
 		for (PreparedStatement ps : hmPreparedStatementToSql.keySet()) {
-			if (vecUsedBatchPreparedStatement.contains(ps)) {
+			if (alUsedBatchPreparedStatement.contains(ps)) {
 				ps.executeBatch();
 				releasePreparedStatement(ps, true);
 			}
@@ -184,13 +185,13 @@ public class OAConnection {
 	}
 
 	protected void clearOpenBatches() throws SQLException {
-		for (Pool pool : vecStatement) {
+		for (Pool pool : alStatement) {
 			if (pool.used && pool.bIsForBatch) {
 				releaseStatement(pool.statement);
 			}
 		}
 		for (PreparedStatement ps : hmPreparedStatementToSql.keySet()) {
-			if (vecUsedBatchPreparedStatement.contains(ps)) {
+			if (alUsedBatchPreparedStatement.contains(ps)) {
 				releasePreparedStatement(ps, true);
 			}
 		}
@@ -219,29 +220,31 @@ public class OAConnection {
 			executeOpenBatches();
 		}
 
-		ArrayList<PreparedStatement> alPreparedStatement;
-		synchronized (vecUsedPreparedStatement) {
+		List<PreparedStatement> alPreparedStatement;
+		synchronized (alUsedPreparedStatement) {
 			cntGetPreparedStatement++;
-			alPreparedStatement = hmSqlToPreparedStatements.get(sql);
-			if (alPreparedStatement == null) {
-				alPreparedStatement = new ArrayList<PreparedStatement>();
-				hmSqlToPreparedStatements.put(sql, alPreparedStatement);
-			} else {
-				for (PreparedStatement ps : alPreparedStatement) {
-					if (!vecUsedPreparedStatement.contains(ps)) {
-						vecUsedPreparedStatement.addElement(ps);
-						bGettingStatement = false;
-						if (!bBatchUpdate) {
-							return ps;
-						}
-					}
-					if (bBatchUpdate) {
-						bGettingStatement = false;
-						if (!vecUsedBatchPreparedStatement.contains(ps)) {
-							vecUsedBatchPreparedStatement.addElement(ps);
-						}
+			alPreparedStatement = hmSqlToPreparedStatements.computeIfAbsent(sql, k -> 
+				{
+					ArrayList<PreparedStatement> al = new ArrayList<PreparedStatement>();
+					return al;
+				}
+			);
+			
+			
+			for (PreparedStatement ps : alPreparedStatement) {
+				if (!alUsedPreparedStatement.contains(ps)) {
+					alUsedPreparedStatement.add(ps);
+					bGettingStatement = false;
+					if (!bBatchUpdate) {
 						return ps;
 					}
+				}
+				if (bBatchUpdate) {
+					bGettingStatement = false;
+					if (!alUsedBatchPreparedStatement.contains(ps)) {
+						alUsedBatchPreparedStatement.add(ps);
+					}
+					return ps;
 				}
 			}
 		}
@@ -254,10 +257,10 @@ public class OAConnection {
 		}
 		cntCreatePreparedStatement++;
 
-		synchronized (vecUsedPreparedStatement) {
-			vecUsedPreparedStatement.addElement(ps);
+		synchronized (alUsedPreparedStatement) {
+			alUsedPreparedStatement.add(ps);
 			if (bBatchUpdate) {
-				vecUsedBatchPreparedStatement.addElement(ps);
+				alUsedBatchPreparedStatement.add(ps);
 			}
 			bGettingStatement = false;
 			alPreparedStatement.add(ps);
@@ -268,33 +271,33 @@ public class OAConnection {
 
 	public boolean releasePreparedStatement(PreparedStatement ps, boolean bCanBeReused) {
 		boolean bFound = false;
-		synchronized (vecUsedPreparedStatement) {
-			int x = vecUsedPreparedStatement.size();
+		synchronized (alUsedPreparedStatement) {
+			int x = alUsedPreparedStatement.size();
 			for (int i = 0; i < x; i++) {
-				PreparedStatement ps2 = vecUsedPreparedStatement.elementAt(i);
+				PreparedStatement ps2 = alUsedPreparedStatement.get(i);
 				if (ps2 != ps) {
 					continue;
 				}
 
-				if (vecUsedBatchPreparedStatement.contains(ps)) {
+				if (alUsedBatchPreparedStatement.contains(ps)) {
 					try {
 						ps.clearBatch();
 					} catch (Exception e) {
 					}
-					vecUsedBatchPreparedStatement.remove(ps);
+					alUsedBatchPreparedStatement.remove(ps);
 				}
 
-				vecUsedPreparedStatement.removeElementAt(i);
+				alUsedPreparedStatement.remove(i);
 				bFound = true;
 				break;
 			}
 		}
 
-		synchronized (vecUsedPreparedStatement) {
+		synchronized (alUsedPreparedStatement) {
 			// see if the ps can be closed and removed from cache.
 			String sql = hmPreparedStatementToSql.get(ps);
 			if (sql != null) {
-				ArrayList<PreparedStatement> al = hmSqlToPreparedStatements.get(sql);
+				List<PreparedStatement> al = hmSqlToPreparedStatements.get(sql);
 
 				if (al != null && ((bFound && !bCanBeReused) || al.size() > 5 || hmSqlToPreparedStatements.size() > 25)) {
 					try {
@@ -315,7 +318,7 @@ public class OAConnection {
 	}
 
 	public int getTotalUsed() {
-		int x = vecUsedPreparedStatement.size();
+		int x = alUsedPreparedStatement.size();
 		x += getCurrentlyUsedStatementCount();
 		if (bGettingStatement) {
 			x++;
@@ -326,10 +329,10 @@ public class OAConnection {
 	protected int getCurrentlyUsedStatementCount() {
 		int totalUsed = 0;
 		;
-		synchronized (vecStatement) {
-			int x = vecStatement.size();
+		synchronized (alStatement) {
+			int x = alStatement.size();
 			for (int i = 0; i < x; i++) {
-				Pool pool = (Pool) vecStatement.elementAt(i);
+				Pool pool = alStatement.get(i);
 				if (pool.used) {
 					totalUsed++;
 				}
@@ -338,17 +341,17 @@ public class OAConnection {
 		return totalUsed;
 	}
 
-	public void getInfo(Vector vec) {
+	public void getInfo(List vec) {
 		try {
 			if (connection.isClosed()) {
-				vec.addElement("   Connection is closed");
+				vec.add("   Connection is closed");
 			}
 		} catch (Exception e) {
 		}
-		synchronized (vecStatement) {
-			int x = vecStatement.size();
+		synchronized (alStatement) {
+			int x = alStatement.size();
 			for (int i = 0; i < x; i++) {
-				Pool pool = (Pool) vecStatement.elementAt(i);
+				Pool pool = alStatement.get(i);
 				if (pool.used) {
 					// vec.addElement("  "+i+") "+pool.message);
 				}
@@ -382,7 +385,7 @@ public class OAConnection {
 
 	public int getTotalPreparedStatements() {
 		int i = 0;
-		for (Entry<String, ArrayList<PreparedStatement>> entry : hmSqlToPreparedStatements.entrySet()) {
+		for (Entry<String, List<PreparedStatement>> entry : hmSqlToPreparedStatements.entrySet()) {
 			i += entry.getValue().size();
 		}
 		return i;

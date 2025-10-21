@@ -79,7 +79,7 @@ public class OAEqualPathFilter implements OAFilter {
 	protected void setup() {
 		strFromPropPath = strFromPropPathOrig;
 		if (strFromPropPath == null) {
-			// 20221203 empty pp is valid
+			// empty pp is valid
 			// return;
 		}
 		if (objFrom == null && hubFrom == null) {

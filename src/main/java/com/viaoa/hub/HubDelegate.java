@@ -44,8 +44,8 @@ import com.viaoa.util.OANullObject;
  */
 public class HubDelegate {
 	private static Logger LOG = Logger.getLogger(HubDelegate.class.getName());
-	public static final Boolean TRUE = new Boolean(true);
-	public static final Boolean FALSE = new Boolean(false);
+	public static final Boolean TRUE = Boolean.valueOf(true);
+	public static final Boolean FALSE = Boolean.valueOf(false);
 
 	public static boolean getChanged(Hub thisHub, int iCascadeRule, OACascade cascade) {
 		if (cascade.wasCascaded(thisHub, true)) {
@@ -119,7 +119,7 @@ public class HubDelegate {
 						return true;
 					}
 				}
-				object2 = m.invoke(object, null);
+				object2 = m.invoke(object, (Object[]) null);
 				if (object2 == null) {
 					return true;
 				}
@@ -150,7 +150,7 @@ public class HubDelegate {
 					continue;
 				}
 
-				Object obj2 = m.invoke(obj, null);
+				Object obj2 = m.invoke(obj, (Object[]) null);
 				if (obj2 == null) {
 					continue;
 				}
@@ -631,7 +631,7 @@ public class HubDelegate {
 		} else {
 			// 20120907 cases where there is not a public method created, and would use a link table.
 			Method method = OAObjectInfoDelegate.getMethod(dm.liDetailToMaster);
-			if (method == null || ((method.getModifiers() & (Modifier.PRIVATE)) > 0)) {
+			if (method == null || ((method.getModifiers() & (Modifier.PRIVATE)) != 0)) {
 				bHasMethod = false;
 				updateMany2ManyLinks(thisHub, dm); // update any link tables
 			}
@@ -679,13 +679,9 @@ public class HubDelegate {
 		// cross update opposite hub vecAdd/Remove
 		for (int i = 0; adds != null && i < adds.length; i++) {
 			b = true;
-			if (!(adds[i] instanceof OAObject)) {
-				continue;
-			}
-			OAObject obj = (OAObject) adds[i];
-			if (obj.getNew()) {
-				continue;
-			}
+			if (adds[i] == null) continue;
+			OAObject obj = adds[i];
+			if (obj.getNew()) continue;
 			Object objx = OAObjectReflectDelegate.getRawReference(obj, dm.liDetailToMaster.getName());
 			if (objx instanceof Hub) {
 				HubDataDelegate.removeFromAddedList((Hub) objx, dm.getMasterObject());
@@ -693,9 +689,7 @@ public class HubDelegate {
 		}
 		for (int i = 0; removes != null && i < removes.length; i++) {
 			b = true;
-			if (!(removes[i] instanceof OAObject)) {
-				continue;
-			}
+			if (removes[i] == null) continue;
 			OAObject obj = (OAObject) removes[i];
 			Object objx = OAObjectReflectDelegate.getRawReference(obj, dm.liDetailToMaster.getName());
 			if (objx instanceof Hub) {
@@ -874,9 +868,7 @@ public class HubDelegate {
 		boolean bSupportStorage = oi.getSupportsStorage();
 
 		Object master = HubDelegate.getMasterObject(hub);
-		if (!(master instanceof OAObject)) {
-			return;
-		}
+		if (master == null) return;
 
 		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
 		if (li == null) {

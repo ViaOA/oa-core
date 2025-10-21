@@ -12,7 +12,6 @@ package com.viaoa.object;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
-// java1.2
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,7 +111,7 @@ import com.viaoa.util.OAString;
  *      datasource independent queries based on object and property paths.
  */
 @XmlTransient()
-public class OAObject implements java.io.Serializable, Comparable {
+public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 	private static final long serialVersionUID = 1L; // internally used by Java Serialization to identify this version of OAObject.
 
@@ -165,8 +164,8 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	private static final Logger LOG = OALogger.getLogger(OAObject.class);
 
-	protected int guid; // global identifier for this object
-	protected volatile OAObjectKey objectKey; // Object identifier, used by Hub/HubController for hashing, etc.
+	protected long guid; // global identifier for this object
+//	protected volatile OAObjectKey objectKey; // Object identifier
 	protected volatile boolean changedFlag = true; // flag to know if this object has been changed
 	protected volatile boolean newFlag = true; // flag to know if this object is new (not yet saved).  The object key properties can be changed as long as isNew is true.
 	protected byte[] nulls; // keeps track of which primitive type properties that are NULL. Uses bit position, based on OAObjectInfo getPrimitiveProperties() position
@@ -202,7 +201,6 @@ public class OAObject implements java.io.Serializable, Comparable {
 	public static final int CASCADE_ALL_LINKS = 4;
 
 	public static volatile int cntNew;
-	public static volatile int cntFinal;
 
 	/**
 	 * Creates new OAObject and calls OAObjectDelegate.initialize()
@@ -263,21 +261,21 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * @see #setProperty(String, Object, String)
 	 */
 	public void setProperty(String propName, int value) {
-		OAObjectReflectDelegate.setProperty(this, propName, new Integer(value), null);
+		OAObjectReflectDelegate.setProperty(this, propName, Integer.valueOf(value), null);
 	}
 
 	/* calls setProperty()
 	    @see #setProperty(String, Object, String)
 	*/
 	public void setProperty(String propName, long value) {
-		OAObjectReflectDelegate.setProperty(this, propName, new Long(value), null);
+		OAObjectReflectDelegate.setProperty(this, propName, Long.valueOf(value), null);
 	}
 
 	/* calls setProperty()
 	    @see #setProperty(String, Object, String)
 	*/
 	public void setProperty(String propName, double value) {
-		OAObjectReflectDelegate.setProperty(this, propName, new Double(value), null);
+		OAObjectReflectDelegate.setProperty(this, propName, Double.valueOf(value), null);
 	}
 
 	/* calls setProperty()
@@ -504,56 +502,46 @@ public class OAObject implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * OAObjects are equal if:
-	 * <ul>
-	 * <li>the objects are the same address.
-	 * <li>the objects are the same class and the values of the propertyIds are equal. If both objects isNew() and either one has a its
-	 * propertyId.isNull(), then they will never be equal.
-	 * <li>if the object being compared to is equal to the objectId property of this object.
-	 * </ul>
-	 *
-	 * @param obj object to compare to, object or objects[] to compare this object's objectId(s) with or OAObjectKey to compare with this
-	 *            object's objectId
+	 * OAObjects are equal if guid is the same.
 	 */
 	public final boolean equals(Object obj) {
-		if (obj == null) {
-			return false;
+		if (obj == null) return false;
+		if (obj == this) return true;
+		
+		long otherGuid;
+        if (obj instanceof OAObject) { 
+    		otherGuid = ((OAObject) obj).guid;
 		}
-		if (obj == this) {
-			return true;
+        else if (obj instanceof OAObjectKey) { 
+    		otherGuid = ((OAObjectKey) obj).getGuid();
 		}
-
-		//20141125 if obj is oaObj, then need to make sure that they are same class
-		if (obj instanceof OAObject) {
-			if (!obj.getClass().equals(this.getClass())) {
-				return false;
-			}
-		}
-
-		return OAObjectKeyDelegate.getKey(this).equals(obj);
+        else {
+        	return false;
+        }
+		return (this.guid == otherGuid);
 	}
 
-	//20140128 add hashCode
 	@Override
 	public int hashCode() {
-		return OAObjectKeyDelegate.getKey(this).hashCode();
+		return (int) (guid ^ (guid >>> 32));
 	}
 
 	public int compareTo(Object obj) {
-		if (obj == null) {
-			return 1;
-		}
-		if (obj == this) {
-			return 0;
-		}
+		if (obj == null) return 1;
+		if (obj == this) return 0;
+		long otherGuid;
         if (obj instanceof OAObject) { 
-    		if (!obj.getClass().equals(this.getClass())) {
-    		    return 1;
-    		}
-	        return OAObjectKeyDelegate.getKey(this).compareTo(OAObjectKeyDelegate.getKey((OAObject) obj));
+    		otherGuid = ((OAObject) obj).guid;
 		}
-		return OACompare.compare(OAObjectKeyDelegate.getKey(this), obj);
+        else if (obj instanceof OAObjectKey) { 
+    		otherGuid = ((OAObjectKey) obj).getGuid();
+		}
+        else {
+        	return 1;
+        }
+		return Long.compare(this.guid, otherGuid);
 	}
+	
 
 	/**
 	 * Returns true if this object is new or any changes have been made to this object or any objects in Links that are CASCADE=true
@@ -677,16 +665,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return OAObjectDelegate.bFinalizeSave;
 	}
 
-	/**
-	 * Removes object from HubController and calls super.finalize().
-	 */
-	protected void finalize() throws Throwable {
-		OAObjectDelegate.finalizeObject(this);
-		super.finalize();
-		cntFinal++;
-		//if (cntFinal % 500 == 0) System.out.println(cntFinal+") finalize OAObject.guid="+guid+" "+this.getClass().getSimpleName());
-	}
-
+	
 	/**
 	 * True if this object is in process of being loaded.
 	 */
@@ -716,17 +695,17 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/* @see #fireBeforePropertyChange(String, Object, Object, boolean, boolean) firePropertyChange */
 	protected void fireBeforePropertyChange(String property, int oldObj, int newObj) {
-		fireBeforePropertyChange(property, new Integer(oldObj), new Integer(newObj));
+		fireBeforePropertyChange(property, Integer.valueOf(oldObj), Integer.valueOf(newObj));
 	}
 
 	/* @see #fireBeforePropertyChange(String, Object, Object, boolean, boolean) firePropertyChange */
 	protected void fireBeforePropertyChange(String property, long oldObj, long newObj) {
-		fireBeforePropertyChange(property, new Long(oldObj), new Long(newObj));
+		fireBeforePropertyChange(property, Long.valueOf(oldObj), Long.valueOf(newObj));
 	}
 
 	/* @see #fireBeforePropertyChange(String, Object, Object, boolean, boolean) firePropertyChange */
 	protected void fireBeforePropertyChange(String property, double oldObj, double newObj) {
-		fireBeforePropertyChange(property, new Double(oldObj), new Double(newObj));
+		fireBeforePropertyChange(property, Double.valueOf(oldObj), Double.valueOf(newObj));
 	}
 
 	protected void firePropertyChange(String propertyName, Object oldObj, Object newObj, boolean bLocalOnly) {
@@ -757,17 +736,17 @@ public class OAObject implements java.io.Serializable, Comparable {
 
 	/* @see #firePropertyChange(String, Object, Object, boolean, boolean) firePropertyChange */
 	protected void firePropertyChange(String property, int oldObj, int newObj) {
-		firePropertyChange(property, new Integer(oldObj), new Integer(newObj));
+		firePropertyChange(property, Integer.valueOf(oldObj), Integer.valueOf(newObj));
 	}
 
 	/* @see #firePropertyChange(String, Object, Object, boolean, boolean) firePropertyChange */
 	protected void firePropertyChange(String property, long oldObj, long newObj) {
-		firePropertyChange(property, new Long(oldObj), new Long(newObj));
+		firePropertyChange(property, Long.valueOf(oldObj), Long.valueOf(newObj));
 	}
 
 	/* @see #firePropertyChange(String, Object, Object, boolean, boolean) firePropertyChange */
 	protected void firePropertyChange(String property, double oldObj, double newObj) {
-		firePropertyChange(property, new Double(oldObj), new Double(newObj));
+		firePropertyChange(property, Double.valueOf(oldObj), Double.valueOf(newObj));
 	}
 
 	/*
@@ -787,7 +766,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 	    @see #firePropertyChange(String, Object, Object, boolean, boolean) firePropertyChange
 	*/
 	protected void fireLocalPropertyChange(String property, int oldObj, int newObj) {
-		firePropertyChange(property, new Integer(oldObj), new Integer(newObj), true);
+		firePropertyChange(property, Integer.valueOf(oldObj), Integer.valueOf(newObj), true);
 	}
 
 	/*
@@ -1106,7 +1085,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		return OAObjectKeyDelegate.getKey(this);
 	}
 
-	public int getGuid() {
+	public long getGuid() {
 		return guid;
 	}
 
@@ -1793,12 +1772,14 @@ public class OAObject implements java.io.Serializable, Comparable {
 	 * Refresh by reselecting from DataSource
 	 */
 	public void refresh() {
+		if (isNew()) return;
+
 		OASyncClient sc = OASync.getSyncClient();
 		if (sc != null) {
 			OASync.getRemoteClient().refresh(getClass(), getObjectKey());
 			return;
 		}
-
+		
 		OADataSource ds = OADataSource.getDataSource(getClass());
 		if (ds == null) {
 			return;
@@ -1808,10 +1789,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		Object objx = ds.getObject(oi, getClass(), getObjectKey(), true);
 
 		if (objx == null) {
-			// deleted already
-			if (objx == null) {
-				this.setDeleted(true);
-			}
+			this.setDeleted(true);
 		} else {
 			if (this.getDeleted()) {
 				this.setDeleted(false);

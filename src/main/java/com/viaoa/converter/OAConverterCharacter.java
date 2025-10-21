@@ -50,17 +50,17 @@ public class OAConverterCharacter implements OAConverterInterface {
         if (value instanceof Character) return (Character) value;
         if (value instanceof String) {
             String str = (String)value;
-            if (str.length() == 1) return new Character(str.charAt(0));
+            if (str.length() == 1) return Character.valueOf(str.charAt(0));
             return null;
         }
         
         if (value instanceof Number) {
             int x = ((Number) value).intValue();
-            if (x >= Character.MIN_VALUE && x <= Character.MAX_VALUE) return new Character((char)x);
+            if (x >= Character.MIN_VALUE && x <= Character.MAX_VALUE) return Character.valueOf((char)x);
             return null;
         }
         if (value instanceof Boolean) {
-            return new Character( ((Boolean)value).booleanValue() ? 'T' : 'F' );
+            return Character.valueOf( ((Boolean)value).booleanValue() ? 'T' : 'F' );
         }
         return null;
     }

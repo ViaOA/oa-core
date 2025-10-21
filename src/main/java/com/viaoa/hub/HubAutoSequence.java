@@ -30,7 +30,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(HubAutoSequence.class.getName());
 
-    public static int AutoSequenceHubListenerCount;
+    public static int autoSequenceHubListenerCount;
     
     protected Hub hub;
     protected String propertyName;
@@ -118,12 +118,12 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     public void setHub(Hub hub) {
         if (this.hub != null) {
             this.hub.removeHubListener(this);
-            AutoSequenceHubListenerCount--;
+            autoSequenceHubListenerCount--;
         }
         this.hub = hub;
         if (hub != null) {
             hub.addHubListener(this);
-            AutoSequenceHubListenerCount++;
+            autoSequenceHubListenerCount++;
         }
         this.propertySetMethod = null;
         setup();
@@ -211,7 +211,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     }
     
     private void _resequence(int startPos) {
-        startPos = 0; // 20200409 since deletes dont reseq and can leave gaps
+        startPos = 0; // since deletes dont reseq and can leave gaps
         int cnt = aiResequenceCnt.incrementAndGet();
         int x = hub.getSize();  // only seq loaded objects
         for (int i=startPos; i<x; i++) {
@@ -221,7 +221,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
             
             // if this is ClientThread then need to send to other clients
             try {
-                propertySetMethod.invoke(obj, new Object[] { new Integer(i+startNumber) });
+                propertySetMethod.invoke(obj, new Object[] { Integer.valueOf(i+startNumber) });
             }
             catch (Exception e) {
                 throw new RuntimeException(e);

@@ -36,8 +36,6 @@ public class Database {
 	 */
 	public Table getTable(Class clazz) {
 		if (clazz == null) {
-			int xx = 4;
-			xx++;
 			return null;
 		}
 		return (Table) hash.get(clazz);

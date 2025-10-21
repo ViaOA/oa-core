@@ -67,7 +67,7 @@ public class OAConverterBoolean implements OAConverterInterface {
                 if (!b) {
                     s = OAString.field(fmt,";",2);
                     b = (s.equalsIgnoreCase(str));
-                    if (!b) return null;
+                    if (!b) return null; // does not match either
                     b = false;
                 }
             }
@@ -96,11 +96,11 @@ public class OAConverterBoolean implements OAConverterInterface {
                     else b = (str.length() > 0);
                 }
             }
-            return new Boolean(b);
+            return Boolean.valueOf(b);
         }
             
         if (value instanceof Number) {
-            return new Boolean(((Number) value).doubleValue() != 0.0);
+            return Boolean.valueOf(((Number) value).doubleValue() != 0.0);
         }
         char c = 0;
         b = false;
@@ -114,7 +114,7 @@ public class OAConverterBoolean implements OAConverterInterface {
         }
         if (b) {
             if (c == 'T' || c == 't' || c == 'Y' || c == 'y' || (Character.isDigit(c) && c != '0')) b = true;
-            return new Boolean(b);
+            return Boolean.valueOf(b);
         }
         return (value != null);
     }
@@ -131,9 +131,9 @@ public class OAConverterBoolean implements OAConverterInterface {
             return bValue.toString();
         }
         if (toClass.equals(Integer.class)) {
-            if (bValue == null) return new Integer(0);;
-            if ( bValue.booleanValue() ) return new Integer(1);
-            return new Integer(0);
+            if (bValue == null) return Integer.valueOf(0);;
+            if ( bValue.booleanValue() ) return Integer.valueOf(1);
+            return Integer.valueOf(0);
         }
         return null;
     }

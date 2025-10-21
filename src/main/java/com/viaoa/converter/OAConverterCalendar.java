@@ -74,7 +74,7 @@ public class OAConverterCalendar implements OAConverterInterface {
             return new OATime(dtValue);
         }
         if (Number.class.isAssignableFrom(toClass)) {
-            return new Long(dtValue.getDate().getTime());
+            return Long.valueOf(dtValue.getDate().getTime());
         }
         return null;
     }

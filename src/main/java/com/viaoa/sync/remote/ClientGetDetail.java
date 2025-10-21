@@ -40,19 +40,19 @@ public class ClientGetDetail {
 	private final int clientId;
 
 	// tracks guid for all oaObjects sent to client, used by sync filter to know which objects exist on client app.
-	private final Map<Integer, Boolean> hmGuid;
+	private final Map<Long, Boolean> hmGuid;
 
 	
-	public ClientGetDetail(int clientId, Map<Integer, Boolean> hmGuid) {
+	public ClientGetDetail(int clientId, Map<Long, Boolean> hmGuid) {
 		this.clientId = clientId;
 		this.hmGuid = hmGuid;
 	}
 
-	public void removeGuid(int guid) {
+	public void removeGuid(long guid) {
 	    hmGuid.remove(guid);
 	}
 
-	public void addGuid(int guid) {
+	public void addGuid(long guid) {
 	    hmGuid.put(guid, false);
 	}
 
@@ -82,7 +82,7 @@ public class ClientGetDetail {
 		}
 		final long msStart = System.currentTimeMillis();
 
-		Object masterObject = OAObjectReflectDelegate.getObject(masterClass, masterObjectKey);
+		OAObject masterObject = OAObjectReflectDelegate.getObject(masterClass, masterObjectKey);
 		if (masterObject == null) {
 			// get from datasource
 			masterObject = (OAObject) OADataSource.getObject(masterClass, masterObjectKey);
@@ -129,15 +129,15 @@ public class ClientGetDetail {
 		}
 
 		int cntMasterPropsLoaded = 0;
-		if (masterProps != null && masterObject instanceof OAObject) {
+		if (masterProps != null && masterObject != null) {
 			boolean bx = true;
 			for (String s : masterProps) {
 				bx = bx && (System.currentTimeMillis() < (msStart + 50));
 				if (bx) {
-					((OAObject) masterObject).getProperty(s);
+					masterObject.getProperty(s);
 					cntMasterPropsLoaded++;
 				} else {
-					loadDataInBackground((OAObject) masterObject, s);
+					loadDataInBackground(masterObject, s);
 				}
 			}
 		}
@@ -321,11 +321,11 @@ public class ClientGetDetail {
 		OAObjectSerializerCallback callback = new OAObjectSerializerCallback() {
 			boolean bMasterSent;
 			// keep track of which objects are being sent to client in this serialization
-			HashSet<Integer> hsSendingGuid = new HashSet<Integer>();
+			HashSet<Long> hsSendingGuid = new HashSet<Long>();
 
 			@Override
 			protected void afterSerialize(OAObject obj) {
-				int guid = OAObjectKeyDelegate.getKey(obj).getGuid();
+				long guid = OAObjectKeyDelegate.getKey(obj).getGuid();
 				boolean bx = hsSendingGuid.remove(guid);
 				// update tree of sent objects
                 hmGuid.put(guid, bx);
@@ -584,7 +584,7 @@ public class ClientGetDetail {
 					return false; // extra data does not send it's references
 				}
 
-				int guid = key.getGuid();
+				long guid = key.getGuid();
 				
 				Object objx = hmGuid.get(guid);
 				boolean b = objx != null && ((Boolean) objx).booleanValue();
@@ -607,7 +607,7 @@ public class ClientGetDetail {
 			return false;
 		}
 		
-		int guid = ((OAObject) obj).getObjectKey().getGuid();
+		long guid = ((OAObject) obj).getObjectKey().getGuid();
 		return hmGuid.containsKey(guid);
 	}
 
@@ -616,11 +616,9 @@ public class ClientGetDetail {
 			return false;
 		}
 		
-        int guid = ((OAObject) obj).getObjectKey().getGuid();
-		Object objx = hmGuid.get(guid);
-		if (objx instanceof Boolean) {
-			return ((Boolean) objx).booleanValue();
-		}
-		return false;
+        long guid = ((OAObject) obj).getObjectKey().getGuid();
+		Boolean bx = hmGuid.get(guid);
+		if (bx == null) return false;
+		return bx.booleanValue();
 	}
 }

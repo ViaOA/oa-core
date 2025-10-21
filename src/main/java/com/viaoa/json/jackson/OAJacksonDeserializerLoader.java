@@ -141,8 +141,7 @@ public class OAJacksonDeserializerLoader {
 				createObject(stackItem);
 			} else {
 				if (stackItem.li != null && stackItem.li.getAutoCreateNew()) {
-					OAObjectKey ok = stackItem.obj.getObjectKey();
-					if (ok.isNew()) {
+					if (stackItem.obj.isNew()) {
 						// 2b:
 						loadObjectIdProperties(stackItem);
 					}
@@ -283,7 +282,7 @@ public class OAJacksonDeserializerLoader {
 		if (!bUsesPojo) {
 			JsonNode jn = stackItem.node.get("guid");
 			if (jn != null) {
-				int guid = jn.asInt();
+				long guid = jn.asLong();
 				if (oajson != null) {
 					oajson.getGuidMap().put(guid, stackItem.obj);
 				}

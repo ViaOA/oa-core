@@ -165,7 +165,7 @@ public class OAMultiplexerClient {
                         }
                         if (msLast < 1) msLast = msNow;
 
-                        long msWait = (keepAliveSeconds * 1000) - (msNow - msLast);
+                        long msWait = (keepAliveSeconds * 1000L) - (msNow - msLast);
                         if (msWait > 0) {
                             Thread.sleep(msWait);
                         }

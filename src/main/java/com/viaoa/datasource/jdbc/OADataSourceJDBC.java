@@ -541,7 +541,7 @@ public class OADataSourceJDBC extends OADataSource {
 			return;
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		// OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 		Table table = database.getTable(clazz);
 
 		Column[] cols = table.getPrimaryKeyColumns();
@@ -565,6 +565,12 @@ public class OADataSourceJDBC extends OADataSource {
 			} catch (Exception e) {
 				LOG.log(Level.WARNING, "exception while updating seq, will continue", e);
 			} finally {
+				if (st != null) {
+					try {
+						st.close();
+					}
+					catch (Exception ex) {};
+				}
 				releaseConnection(connection);
 			}
 		}

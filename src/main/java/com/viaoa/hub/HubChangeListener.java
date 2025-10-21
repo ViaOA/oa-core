@@ -70,7 +70,11 @@ public abstract class HubChangeListener {
 		ObjectCallbackEnabled(true),
 		ObjectCallbackVisible(true);
 
-		public boolean bUseAoOnly; // instead of the full hub
+		private boolean bUseAoOnly; // instead of the full hub
+		
+		public boolean useAoOnly() {
+			return bUseAoOnly;
+		}
 
 		Type(boolean b) {
 			this.bUseAoOnly = b;

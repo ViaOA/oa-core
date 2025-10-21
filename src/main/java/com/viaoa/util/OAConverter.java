@@ -10,6 +10,7 @@
 */
 package com.viaoa.util;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -20,6 +21,9 @@ import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import com.viaoa.converter.OAConverterArray;
@@ -51,6 +55,7 @@ import com.viaoa.converter.OAConverterTimeZone;
 import com.viaoa.converter.OAConverterTimestamp;
 import com.viaoa.converter.OAConverterZoneId;
 import com.viaoa.converter.OAConverterZonedDateTime;
+import com.viaoa.hub.Hub;
 
 /**
  * Conversion class for converting Objects from one form to another. Most common usage is to convert Objects to Strings, String to Objects,
@@ -839,7 +844,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, double value, String fmt) {
-		return convert(clazz, new Double(value), fmt);
+		return convert(clazz, Double.valueOf(value), fmt);
 	}
 
 	/**
@@ -849,7 +854,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, double value) {
-		return convert(clazz, new Double(value), null);
+		return convert(clazz, Double.valueOf(value), null);
 	}
 
 	/**
@@ -859,7 +864,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, float value, String fmt) {
-		return convert(clazz, new Float(value), fmt);
+		return convert(clazz, Float.valueOf(value), fmt);
 	}
 
 	/**
@@ -869,7 +874,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, float value) {
-		return convert(clazz, new Float(value), null);
+		return convert(clazz, Float.valueOf(value), null);
 	}
 
 	/**
@@ -879,7 +884,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, long value, String fmt) {
-		return convert(clazz, new Long(value), fmt);
+		return convert(clazz, Long.valueOf(value), fmt);
 	}
 
 	/**
@@ -889,7 +894,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, long value) {
-		return convert(clazz, new Long(value), null);
+		return convert(clazz, Long.valueOf(value), null);
 	}
 
 	/**
@@ -899,7 +904,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, int value, String fmt) {
-		return convert(clazz, new Integer(value), fmt);
+		return convert(clazz, Integer.valueOf(value), fmt);
 	}
 
 	/**
@@ -909,7 +914,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, int value) {
-		return convert(clazz, new Integer(value), null);
+		return convert(clazz, Integer.valueOf(value), null);
 	}
 
 	/**
@@ -919,7 +924,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, short value, String fmt) {
-		return convert(clazz, new Short(value), fmt);
+		return convert(clazz, Short.valueOf(value), fmt);
 	}
 
 	/**
@@ -929,7 +934,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, short value) {
-		return convert(clazz, new Short(value), null);
+		return convert(clazz, Short.valueOf(value), null);
 	}
 
 	/**
@@ -939,7 +944,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, char value, String fmt) {
-		return convert(clazz, new Character(value), fmt);
+		return convert(clazz, Character.valueOf(value), fmt);
 	}
 
 	/**
@@ -949,7 +954,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, char value) {
-		return convert(clazz, new Character(value), null);
+		return convert(clazz, Character.valueOf(value), null);
 	}
 
 	/**
@@ -959,7 +964,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, byte value, String fmt) {
-		return convert(clazz, new Byte(value), fmt);
+		return convert(clazz, Byte.valueOf(value), fmt);
 	}
 
 	/**
@@ -969,7 +974,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, byte value) {
-		return convert(clazz, new Byte(value), null);
+		return convert(clazz, Byte.valueOf(value), null);
 	}
 
 	/**
@@ -979,7 +984,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, boolean value, String fmt) {
-		return convert(clazz, new Boolean(value), fmt);
+		return convert(clazz, Boolean.valueOf(value), fmt);
 	}
 
 	/**
@@ -989,7 +994,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static Object convert(Class clazz, boolean value) {
-		return convert(clazz, new Boolean(value), null);
+		return convert(clazz, Boolean.valueOf(value), null);
 	}
 
 	/**
@@ -1424,6 +1429,57 @@ public class OAConverter {
 		return (String) convert(String.class, b, null);
 	}
 
+	public static boolean isNotEmpty(Object obj) {
+		return !isEmpty(obj, false);
+	}
+	
+	public static boolean isNotEmpty(Object obj, boolean bTrim) {
+		return !isEmpty(obj, bTrim);
+	}
+	
+	public static boolean isEmpty(Object obj) {
+		return isEmpty(obj, false);
+	}
+	
+	public static boolean isEmpty(Object obj, boolean bTrim) {
+		if (obj == null) {
+			return true;
+		}
+		if (obj instanceof String) {
+			if (bTrim) {
+				if (((String) obj).trim().length() == 0) {
+					return true;
+				}
+			} else {
+				if (((String) obj).length() == 0) {
+					return true;
+				}
+			}
+		} else if (obj.getClass().isArray()) {
+			if (Array.getLength(obj) == 0) {
+				return true;
+			}
+		} else if (obj instanceof Hub) {
+			if (((Hub) obj).getSize() == 0) {
+				return true;
+			}
+		} else if (obj instanceof Map) {
+			if (((Map) obj).size() == 0) {
+				return true;
+			}
+		} else if (obj instanceof Set) {
+			if (((Set) obj).size() == 0) {
+				return true;
+			}
+		} else if (obj instanceof List) {
+			if (((List) obj).size() == 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	
 	public static void main(String[] args) {
 
 		double d = 0.0;

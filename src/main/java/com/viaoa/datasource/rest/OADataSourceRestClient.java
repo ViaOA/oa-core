@@ -12,6 +12,7 @@ package com.viaoa.datasource.rest;
 
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
@@ -70,11 +71,8 @@ public class OADataSourceRestClient extends OADataSource {
 			return bGetAssignIdOnCreate;
 		}
 		verifyConnection();
-		Object obj = getRestAPI().getAssignIdOnCreate();
+		bGetAssignIdOnCreate = getRestAPI().getAssignIdOnCreate();
 		bCalledGetAssignIdOnCreate = true;
-		if (obj instanceof Boolean) {
-			bGetAssignIdOnCreate = ((Boolean) obj).booleanValue();
-		}
 		return bGetAssignIdOnCreate;
 	}
 
@@ -84,26 +82,21 @@ public class OADataSourceRestClient extends OADataSource {
 		return getRestAPI().isAvailable();
 	}
 
-	private HashMap<String, Integer> hmMax = new HashMap<String, Integer>();
+	private final Map<String, Integer> hmMax = new HashMap<String, Integer>();
 
 	@Override
 	public int getMaxLength(Class c, String propertyName) {
 		String key = (c.getName() + "-" + propertyName).toUpperCase();
-		Object objx = hmMax.get(key);
-		if (objx != null) {
-			return ((Integer) objx).intValue();
+		Integer ix = hmMax.get(key);
+		if (ix != null) {
+			return ix.intValue();
 		}
 
 		int iResult;
 		verifyConnection();
-		Object obj = getRestAPI().getMaxLength(c, propertyName);
-		if (obj instanceof Integer) {
-			iResult = ((Integer) obj).intValue();
-		} else {
-			iResult = -1;
-		}
-		hmMax.put(key, iResult);
-		return iResult;
+		int max = getRestAPI().getMaxLength(c, propertyName);
+		hmMax.put(key, max);
+		return max;
 	}
 
 	public void setMaxLength(Class c, String propertyName, int length) {
@@ -111,7 +104,7 @@ public class OADataSourceRestClient extends OADataSource {
 			return;
 		}
 		String key = (c.getName() + "-" + propertyName).toUpperCase();
-		hmMax.put(key, new Integer(length));
+		hmMax.put(key, Integer.valueOf(length));
 	}
 
 	protected void verifyConnection() {
@@ -219,20 +212,14 @@ public class OADataSourceRestClient extends OADataSource {
 			whereClass = whereObject.getClass();
 		}
 
-		Object obj = getRestAPI().count(selectClass, queryWhere, params, whereClass, whereId, propertyFromWhereObject, extraWhere, max);
-		if (obj instanceof Integer) {
-			return ((Integer) obj).intValue();
-		}
-		return -1;
+		int cnt = getRestAPI().count(selectClass, queryWhere, params, whereClass, whereId, propertyFromWhereObject, extraWhere, max);
+		return cnt;
 	}
 
 	@Override
 	public int countPassthru(Class selectClass, String queryWhere, int max) {
-		Object obj = getRestAPI().countPassthru(selectClass, queryWhere, max);
-		if (obj instanceof Integer) {
-			return ((Integer) obj).intValue();
-		}
-		return -1;
+		int cnt = getRestAPI().countPassthru(selectClass, queryWhere, max);
+		return cnt;
 	}
 
 	private boolean bCalledSupportsStorage;
@@ -245,11 +232,8 @@ public class OADataSourceRestClient extends OADataSource {
 			return bSupportsStorage;
 		}
 
-		Object obj = getRestAPI().supportsStorage();
+		bSupportsStorage = getRestAPI().supportsStorage();
 		bCalledSupportsStorage = true;
-		if (obj instanceof Boolean) {
-			bSupportsStorage = ((Boolean) obj).booleanValue();
-		}
 		return bSupportsStorage;
 	}
 

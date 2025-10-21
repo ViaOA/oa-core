@@ -116,7 +116,7 @@ public class OAJson {
 	/**
 	 * Used during reading, to be able to find refId that use guid for object key.
 	 */
-	private Map<Integer, OAObject> hmGuidObject;
+	private Map<Long, OAObject> hmGuidObject;
 
 	/**
 	 * Used during writing, to know if an object has already been output. If so, then it will output refId of one of the following: 1: an
@@ -441,7 +441,7 @@ public class OAJson {
 		cascade = null;
 
 		hmGuidObject = null;
-		Map<Integer, OAObject> hmGuidMap = getGuidMap();
+		Map<Long, OAObject> hmGuidMap = getGuidMap();
 
 		T obj;
 		try {
@@ -484,7 +484,7 @@ public class OAJson {
 		ObjectMapper om = getObjectMapper();
 
 		hmGuidObject = null;
-		Map<Integer, OAObject> hmGuidMap = getGuidMap();
+		Map<Long, OAObject> hmGuidMap = getGuidMap();
 
 		T obj;
 		try {
@@ -670,7 +670,7 @@ public class OAJson {
 		return cascade;
 	}
 
-	public Map<Integer, OAObject> getGuidMap() {
+	public Map<Long, OAObject> getGuidMap() {
 		if (hmGuidObject == null) {
 			hmGuidObject = new HashMap();
 		}
@@ -723,7 +723,7 @@ public class OAJson {
 		this.readObjectClass = hub.getObjectClass();
 
 		hmGuidObject = null;
-		Map<Integer, OAObject> hmGuidMap = getGuidMap();
+		Map<Long, OAObject> hmGuidMap = getGuidMap();
 
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);
@@ -756,7 +756,7 @@ public class OAJson {
 						String s = node.textValue();
 						if (s.indexOf("guid.") == 0) {
 							s = s.substring(5);
-							int guid = Integer.parseInt(s);
+							long guid = Long.parseLong(s);
 							hub.add((T) getGuidMap().get(guid));
 						} else {
 							// convert multipart key to OAObjectKey

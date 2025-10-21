@@ -717,10 +717,8 @@ public class HubSelectDelegate {
 		OASelect sel = getSelect(thisHub);
 
 		if (sel == null) {
-			Object obj = thisHub.getMasterObject();
-			if (!(obj instanceof OAObject)) {
-				return false;
-			}
+			OAObject obj = thisHub.getMasterObject();
+			if (obj == null) return false;
 
 			OALinkInfo linkInfo = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
 			if (linkInfo == null) {

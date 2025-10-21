@@ -138,7 +138,6 @@ public class OADataSourceRestImpl implements OADataSourceRestInterface {
 			return 0;
 		}
 
-		//qqqqqqqqqqqqqqqqqqqqq
 		//qqqqqqqq todo: get where object (if whereObjectClass != null)
 		OAObject objWhere = null;
 

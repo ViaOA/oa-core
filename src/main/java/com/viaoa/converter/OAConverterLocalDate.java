@@ -65,7 +65,7 @@ public class OAConverterLocalDate implements OAConverterInterface {
 			return ld;
 		}
 		if (value instanceof OATime) {
-			OATime t = (OATime) value;
+			// OATime t = (OATime) value;
 			LocalDate ld = LocalDate.of(0, Month.JANUARY, 0);
 			return ld;
 		}
@@ -75,8 +75,8 @@ public class OAConverterLocalDate implements OAConverterInterface {
 			return ld;
 		}
 		if (value instanceof java.sql.Time) {
-			OADateTime dt = new OADateTime((java.sql.Time) value);
-			LocalDate ld = LocalDate.of(0, Month.JANUARY, 0);
+			// OADateTime dt = new OADateTime((java.sql.Time) value);
+			LocalDate ld = LocalDate.of(0, Month.JANUARY, 0); 
 			return ld;
 		}
 		if (value instanceof Date) {
@@ -102,7 +102,7 @@ public class OAConverterLocalDate implements OAConverterInterface {
 		}
 
 		if (value instanceof LocalTime) {
-			LocalTime lt = (LocalTime) value;
+			// LocalTime lt = (LocalTime) value;
 			LocalDate ld = LocalDate.of(0, Month.JANUARY, 1);
 			return ld;
 		}

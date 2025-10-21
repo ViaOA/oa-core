@@ -91,7 +91,7 @@ public class HubNewObject<F extends OAObject> {
 
 		if (obj != null) {
 			OAObjectKey ok = obj.getObjectKey();
-			if (obj.isNew() && ok.isEmpty()) {
+			if (obj.isNew() && !ok.hasValidObjectIds()) {
 				// obj.setObjectDefaults(); // 20240507 this should be called when object is created. 
 				if (OAObjectDSDelegate.getAssignIdOnCreate(obj)) {
 					OAObjectDSDelegate.assignId(obj);
@@ -110,7 +110,7 @@ public class HubNewObject<F extends OAObject> {
 
 		if (obj != null) {
 			OAObjectKey ok = obj.getObjectKey();
-			if (obj.isNew() && ok.isEmpty()) {
+			if (obj.isNew() && !ok.hasValidObjectIds()) {
 				obj.delete();
 			}
 		}
@@ -130,9 +130,7 @@ public class HubNewObject<F extends OAObject> {
 		} finally {
 			OAThreadLocalDelegate.setLoading(false);
 		}
-		if (obj instanceof OAObject) {
-			OAObjectDelegate.initializeAfterLoading((OAObject) obj);
-		}
+		OAObjectDelegate.initializeAfterLoading((OAObject) obj);
 		return obj;
 	}
 

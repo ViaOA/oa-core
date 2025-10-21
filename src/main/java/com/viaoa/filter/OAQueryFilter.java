@@ -592,8 +592,8 @@ public class OAQueryFilter<T> implements OAFilter {
 
 		query = "(date, store_number) in (?)";
 		List list = new ArrayList();
-		list.add(new OAObjectKey());
-		list.add(new OAObjectKey());
+		// list.add(new OAObjectKey());
+		// list.add(new OAObjectKey());
 		qf = new OAQueryFilter(Object.class, query, new Object[] { list });
 
 		int xx = 4;

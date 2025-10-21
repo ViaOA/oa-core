@@ -169,12 +169,12 @@ public class OAComparator implements Comparator {
             }
             if (prop.equalsIgnoreCase("desc") && bAllowDesc) {
                 bAllowDesc = false;
-                alAsc.add(new Boolean(false));
+                alAsc.add(Boolean.valueOf(false));
                 continue;
             }
             if (prop.equalsIgnoreCase("asc") && bAllowDesc) {
                 bAllowDesc = false;
-                alAsc.add(new Boolean(true));
+                alAsc.add(Boolean.valueOf(true));
                 continue;
             }
             
@@ -188,7 +188,7 @@ public class OAComparator implements Comparator {
             }
             al.add(ms);
         }
-        if (bAllowDesc) alAsc.add(new Boolean(bAscending));
+        if (bAllowDesc) alAsc.add(Boolean.valueOf(bAscending));
         methodss = new Method[al.size()][];
 
         al.toArray(methodss);

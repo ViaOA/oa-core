@@ -14,14 +14,14 @@ public class OAConverterEnum implements OAConverterInterface {
     
     public Object convert(Class clazz, Object value, String fmt) {
         if (value == null || clazz == null) return null;
-        if (value != null && value.getClass().equals(clazz)) return value;
+        if (value.getClass().equals(clazz)) return value;
         
         if (clazz.isEnum()) {
             Object[] enums = clazz.getEnumConstants();
             for (Object obj : enums) {
                 Enum e = (Enum) obj;
                 String s = e.toString();
-                if (s != null && value instanceof String && s.equalsIgnoreCase((String)value)) return e;
+                if (s != null && s.equalsIgnoreCase((String)value)) return e;
                 else {
                     int x = e.ordinal();
                     if (value.equals(x)) return e;

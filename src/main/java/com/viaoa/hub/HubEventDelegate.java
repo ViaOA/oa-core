@@ -956,7 +956,7 @@ public class HubEventDelegate {
 		Hub h = thisHub;
 
 		// go to beginning of shared hub chain
-		if (type < 2 && type != 3) {
+		if (type < 2) {
 			for (; h.datau.getSharedHub() != null;) {
 				h = h.datau.getSharedHub();
 			}

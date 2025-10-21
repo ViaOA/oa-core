@@ -10,6 +10,8 @@
 */
 package com.viaoa.datasource;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import com.viaoa.object.OAObject;
@@ -40,7 +42,7 @@ import com.viaoa.util.OAFilter;
  * @see OASelect
  */
 public abstract class OADataSource implements OADataSourceInterface {
-	private static Vector vecDataSource = new Vector(5, 5);
+	private static List<OADataSource> alDataSource = new ArrayList();
 	protected String name;
 	protected boolean bLast;
 	protected boolean bAssignNumberOnCreate = false; // if true, then Id will be assigned when object is created, else when saved
@@ -60,11 +62,11 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	public static OADataSource[] getDataSources() {
 		if (dsAll == null) {
-			synchronized (vecDataSource) {
+			synchronized (alDataSource) {
 				if (dsAll == null) {
-					int x = vecDataSource.size();
+					int x = alDataSource.size();
 					dsAll = new OADataSource[x];
-					vecDataSource.copyInto(dsAll);
+					alDataSource.toArray(dsAll);
 				}
 			}
 		}
@@ -293,9 +295,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 
 	public OADataSource(boolean bRegister) {
 		if (bRegister) {
-			synchronized (vecDataSource) {
+			synchronized (alDataSource) {
 				dsAll = null;
-				vecDataSource.addElement(this);
+				alDataSource.add(this);
 				dataSourceChangeCnter++;
 			}
 		}
@@ -316,12 +318,12 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * Static method to close all registered DataSources.
 	 */
 	public static void closeAll() {
-		synchronized (vecDataSource) {
+		synchronized (alDataSource) {
 			dataSourceChangeCnter++;
-			while (vecDataSource.size() > 0) {
-				((OADataSource) vecDataSource.elementAt(0)).close();
+			while (alDataSource.size() > 0) {
+				((OADataSource) alDataSource.get(0)).close();
 			}
-			vecDataSource.removeAllElements();
+			alDataSource.clear();
 			dsAll = null;
 		}
 	}
@@ -335,8 +337,8 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	public void removeFromList() {
-		synchronized (vecDataSource) {
-			vecDataSource.removeElement(this);
+		synchronized (alDataSource) {
+			alDataSource.remove(this);
 			dataSourceChangeCnter++;
 			dsAll = null;
 		}
@@ -349,11 +351,11 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	@Override
 	public void reopen(int pos) {
-		synchronized (vecDataSource) {
-			if (!vecDataSource.contains(this)) {
-				int x = vecDataSource.size();
+		synchronized (alDataSource) {
+			if (!alDataSource.contains(this)) {
+				int x = alDataSource.size();
 				pos = Math.max(0, Math.min(x, pos));
-				vecDataSource.insertElementAt(this, pos);
+				alDataSource.add(pos, this);
 				dataSourceChangeCnter++;
 				dsAll = null;
 			}
@@ -373,11 +375,11 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * Sets the position of this OADataSource within the list of datasources. (0 based).
 	 */
 	public void setPosition(int pos) {
-		synchronized (vecDataSource) {
+		synchronized (alDataSource) {
 			if (pos < 0) {
 				pos = 0;
 			}
-			int x = vecDataSource.indexOf(this);
+			int x = alDataSource.indexOf(this);
 			if (x < 0) {
 				return;
 			}
@@ -385,12 +387,12 @@ public abstract class OADataSource implements OADataSourceInterface {
 				return;
 			}
 			dataSourceChangeCnter++;
-			vecDataSource.removeElementAt(x);
-			x = vecDataSource.size();
+			alDataSource.remove(x);
+			x = alDataSource.size();
 			if (pos > x) {
 				pos = x;
 			}
-			vecDataSource.insertElementAt(this, pos);
+			alDataSource.add(pos, this);
 			dsAll = null;
 		}
 	}
@@ -401,7 +403,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return -1 if not found, else position (0 based)
 	 */
 	public int getPosition() {
-		return vecDataSource.indexOf(this);
+		return alDataSource.indexOf(this);
 	}
 
 	/**
@@ -505,12 +507,10 @@ public abstract class OADataSource implements OADataSourceInterface {
 		if (obj == null) {
 			return;
 		}
-		if (obj instanceof OAObject) {
-			if (((OAObject) obj).getNew()) {
-				insert(obj);
-			} else {
-				update(obj);
-			}
+		if (obj.getNew()) {
+			insert(obj);
+		} else {
+			update(obj);
 		}
 	}
 

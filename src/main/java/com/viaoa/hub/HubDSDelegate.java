@@ -41,7 +41,6 @@ public class HubDSDelegate {
         if (hub == null) return;
         Object objMaster = hub.getMasterObject();
         if (objMaster == null) return;
-        if (!(objMaster instanceof OAObject)) return;
         if (!OAObject.class.isAssignableFrom(hub.getObjectClass())) {
             return;
         }

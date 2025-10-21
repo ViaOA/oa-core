@@ -64,6 +64,7 @@ public class OAExecutorService {
         aiTotalSubmitted.incrementAndGet();
         Future f = getExecutorService().submit(r);
         Object objx = f.get(maxWait, tu);
+        objx = null; // no-op
         return f;
     }
     
@@ -78,6 +79,7 @@ public class OAExecutorService {
         aiTotalSubmitted.incrementAndGet();
         Future f = getExecutorService().submit(c);
         Object objx = f.get(maxWait, tu);
+        objx = null; // no-op
         return f;
     }
 

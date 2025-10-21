@@ -492,10 +492,11 @@ public class HubDataDelegate {
                 else {
                 	OALinkInfo liMany = OAObjectInfoDelegate.getReverseLinkInfo(liRecursiveOne);
                 	if (liMany != null) {
-                        if (hashRecursiveHubDetail.get(thisHub) == null) {
+                        hashRecursiveHubDetail.computeIfAbsent(thisHub, k -> {
                             HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
-                            if (dm.liDetailToMaster != null) hashRecursiveHubDetail.put(thisHub, dm.liDetailToMaster);
-                        }
+                            if (dm.liDetailToMaster != null) return dm.liDetailToMaster;
+                        	return null;
+                        });
                     	Object val = OAObjectReflectDelegate.getProperty((OAObject)parent, liMany.getName());
                     	// reassign the sharedHub to correct recursive hub in the hierarchy
                     	HubShareDelegate.setSharedHub(thisHub, (Hub) val, false, object);
@@ -511,10 +512,11 @@ public class HubDataDelegate {
                     if (parent != null) {
                         OALinkInfo li = OAObjectInfoDelegate.getReverseLinkInfo(thisHub.datam.liDetailToMaster);
                         if (li != null) {
-                            if (hashRecursiveHubDetail.get(thisHub) == null) {
+                            hashRecursiveHubDetail.computeIfAbsent(thisHub, k -> {
                                 HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
-                                if (dm.liDetailToMaster != null) hashRecursiveHubDetail.put(thisHub, dm.liDetailToMaster);
-                            }
+                                if (dm.liDetailToMaster != null) return  dm.liDetailToMaster;
+                                return null;
+                            });
                             Object val = OAObjectReflectDelegate.getProperty((OAObject)parent, li.getName());
                             HubShareDelegate.setSharedHub(thisHub, (Hub) val, false, object);
                             pos = getPos((Hub)val, object, adjustMaster, bUpdateLink);
@@ -547,7 +549,7 @@ public class HubDataDelegate {
     /**
      * Used by HubDataDelegate.getPos(..) when finding the object for recursive links
      */
-    static private final ConcurrentHashMap<Hub, OALinkInfo> hashRecursiveHubDetail = new ConcurrentHashMap<Hub, OALinkInfo>(11, 0.75F);
+    static private final Map<Hub, OALinkInfo> hashRecursiveHubDetail = new ConcurrentHashMap<Hub, OALinkInfo>(11, 0.75F);
     
 	
 	
@@ -680,7 +682,6 @@ public class HubDataDelegate {
         return hub.data.vector.contains(obj);
     }
     
-    // 20170608
     /**
      * performs a quicksort search if the hub is loaded.
      * @return

@@ -1017,7 +1017,6 @@ public class OAImageUtil {
 				double sW = 0.0d;
 
 				sH = ((double) maxH) / h;
-				sH = maxH / h;
 
 				if (maxW > 0 && w > maxW) {
 					sW = ((double) maxW) / w;

@@ -27,14 +27,10 @@ class HubDataUnique implements java.io.Serializable {
 	private static Logger LOG = Logger.getLogger(HubDataUnique.class.getName());
 	private transient volatile HubDataUniquex hubDataUniquex;  // extended settings
 
-static int qq;    
     private HubDataUniquex getHubDataUniquex() {
         if (hubDataUniquex == null) {
             synchronized (this) {
                 if (hubDataUniquex == null) {
-                    if (++qq % 500 == 0) {
-                        LOG.fine((qq)+") HubDataUniquex created");
-                    }
                     this.hubDataUniquex = new HubDataUniquex();
                 }
             }

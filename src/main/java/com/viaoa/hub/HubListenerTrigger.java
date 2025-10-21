@@ -311,11 +311,8 @@ public class HubListenerTrigger<T> {
 		boolean bWasAdded = false;
 
 		if ((lis.length > 0 && lis[0].getType() == OALinkInfo.ONE) || (lis.length == 0 && props.length == 1)) {
-			ArrayList<String> al = hsExtraProperties.get(props[0].toUpperCase());
-			if (al == null) {
-				al = new ArrayList<String>();
-				hsExtraProperties.put(props[0].toUpperCase(), al);
-			}
+			ArrayList<String> al = hsExtraProperties.computeIfAbsent(props[0].toUpperCase(), k -> new ArrayList<String>()); 
+			
 			if (propertyName != null && !al.contains(propertyName.toUpperCase())) {
 				al.add(propertyName.toUpperCase());
 				bWasAdded = true;

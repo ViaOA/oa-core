@@ -10,48 +10,44 @@
 */
 package com.viaoa.hub;
 import java.util.*;
-import java.lang.ref.*;  // java1.2
+import java.lang.ref.*; 
 
 /** 
     Used by OA components to create temporary hubs when using Object without a Hub.
-    <p>
-    For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
 */
 public class HubTemp {
     Hub hub;
     Object object;
     int cnt;
 
-    
     /** 
-        Temp Hub objects used when a Hub is needed for a OAObject that does not have a Hub.
+        Temp Hub objects used when a Hub is needed for an OAObject that does not have a Hub.
     */
-    private static transient Hashtable hashClass = new Hashtable();
+    private static final Map<Class, Map<Object, WeakReference<HubTemp>>> hmClass = new HashMap<>();
     
-    static Hashtable getHash(Class c) {
+    static Map getMap(Class c) {
         if (c == null) return null;
-        Hashtable h = (Hashtable) hashClass.get(c);
-        if (h == null) {
-            synchronized (hashClass) {
-                // make sure it hasnt been created by another thread
-                h = (Hashtable) hashClass.get(c);
-                if (h == null) {
-                    h = new Hashtable();
-                    hashClass.put(c, h);
+        Map hm = (Map) hmClass.get(c);
+        if (hm == null) {
+            synchronized (hmClass) {
+                hm = hmClass.get(c);
+                if (hm == null) {
+                    hm = new HashMap();
+                    hmClass.put(c, hm);
                 }
             }
         }
-        return h;
+        return hm;
     }
     
     public static Hub createHub(Object hubObject) {
         if (hubObject == null) return null;
         
-        Hashtable hash = getHash(hubObject.getClass());
+        Map<Object, WeakReference<HubTemp>> hm = getMap(hubObject.getClass());
         
         HubTemp ht = null;
-        synchronized (hash) {
-            WeakReference ref = (WeakReference) hash.get(hubObject);
+        synchronized (hm) {
+            WeakReference ref = hm.get(hubObject);
             if (ref != null) ht = (HubTemp) ref.get();
             if (ht != null) ht.cnt++;
             else {
@@ -61,7 +57,7 @@ public class HubTemp {
                 ht.cnt = 1;
                 ht.hub.add(hubObject);
                 ht.hub.setActiveObject(0);
-                hash.put(hubObject, new WeakReference(ht));
+                hm.put(hubObject, new WeakReference(ht));
             }
         }
         return ht.hub;
@@ -70,9 +66,9 @@ public class HubTemp {
     public static int getCount(Object hubObject) {
         if (hubObject == null) return 0;
         
-        Hashtable hash = getHash(hubObject.getClass());
-        synchronized (hash) {
-            WeakReference ref = (WeakReference) hash.get(hubObject);
+        Map hm = getMap(hubObject.getClass());
+        synchronized (hm) {
+            WeakReference ref = (WeakReference) hm.get(hubObject);
             if (ref == null) return 0;
             HubTemp ht = (HubTemp) ref.get();
             if (ht == null) return 0;
@@ -81,24 +77,26 @@ public class HubTemp {
     }
     
 
-    public static synchronized void deleteHub(Object hubObject) {
+    public static void deleteHub(Object hubObject) {
         if (hubObject == null) return;
-        Hashtable hash = getHash(hubObject.getClass());
-
-        WeakReference ref = (WeakReference) hash.get(hubObject);  // java1.2
-        if (ref == null) return;
         
-        HubTemp ht = (HubTemp) ref.get(); 
-
-        if (ht == null || (ht.object == hubObject && (--ht.cnt) == 0) ) hash.remove(hubObject);
+        Map<Object, WeakReference> hm = getMap(hubObject.getClass());
+        if (hm == null) return;
+        
+        WeakReference<HubTemp> ref;
+        synchronized (hm) {
+        	ref = hm.get(hubObject); 
+        	if (ref == null) return;
+            HubTemp ht = ref.get(); 
+            if (ht == null || (ht.object == hubObject && (--ht.cnt) == 0) ) hm.remove(hubObject);
+        }
     }
     
     public static int getCount() {
-        Enumeration enumx = hashClass.elements();
-        int cnt = 0;
-        for ( ;enumx.hasMoreElements(); ) {
-            Hashtable h = (Hashtable) enumx.nextElement();
-            cnt += h.size();
+    	int cnt = 0;
+        for (Class c : hmClass.keySet()) {
+            Map h = getMap(c); 
+            if (h != null) cnt += h.size();
         }    
         return cnt;
     }

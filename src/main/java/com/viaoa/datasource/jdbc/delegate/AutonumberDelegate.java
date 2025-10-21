@@ -12,6 +12,7 @@ package com.viaoa.datasource.jdbc.delegate;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -30,8 +31,7 @@ import com.viaoa.object.OAObjectReflectDelegate;
 public class AutonumberDelegate {
 	private static Logger LOG = Logger.getLogger(AutonumberDelegate.class.getName());
 
-	private static final ConcurrentHashMap<String, AtomicInteger> hashNext = new ConcurrentHashMap<String, AtomicInteger>(39, .75f); // Table.name.upper, Integer
-	private static final Object LOCK = new Object();
+	private static final Map<String, AtomicInteger> hmTabeNextSeq = new ConcurrentHashMap<String, AtomicInteger>(39, .75f); // Table.name.upper, Integer
 
 	/**
 	 * Assigns autonumber properties. If guid is being used, then it will prefix the autonumber.
@@ -46,7 +46,7 @@ public class AutonumberDelegate {
 		if (column.guid && dbmd.guid != null) {
 			value = dbmd.guid + "-" + id;
 		} else {
-			value = new Integer(id);
+			value = Integer.valueOf(id);
 		}
 
 		try {
@@ -70,7 +70,7 @@ public class AutonumberDelegate {
 			if (id < idNext) {
 				break;
 			}
-			AtomicInteger ai = hashNext.get(table.name.toUpperCase());
+			AtomicInteger ai = hmTabeNextSeq.get(table.name.toUpperCase());
 			if (ai == null || ai.compareAndSet(idNext, id + 1)) {
 				break; // else need to try again
 			}
@@ -105,48 +105,43 @@ public class AutonumberDelegate {
 			// LOG.finer("table="+table.name+", column="+pkColumn.columnName+", bAutoIncrement="+bAutoIncrement);
 		}
 
-		int max = 0;
 		final String hashId = table.name.toUpperCase();
-		AtomicInteger ai = hashNext.get(hashId);
-		if (ai == null) {
-			synchronized (LOCK) {
-				ai = hashNext.get(hashId);
-				if (ai == null) {
-					if (ds == null) {
-						max = 1;
-					} else {
-						DBMetaData dbmd = ds.getDBMetaData();
-						String query = "";
-						if (pkColumn.guid && dbmd.guid != null && dbmd.guid.length() > 0) {
-							query = getMaxGuidQuery(dbmd, table, pkColumn);
-						} else {
-							query = getMaxIdQuery(dbmd, table, pkColumn);
-						}
+		AtomicInteger ai = hmTabeNextSeq.computeIfAbsent(hashId, k -> {
+			int max = 0;
+			if (ds == null) {
+				max = 1;
+			} else {
+				DBMetaData dbmd = ds.getDBMetaData();
+				String query = "";
+				if (pkColumn.guid && dbmd.guid != null && dbmd.guid.length() > 0) {
+					query = getMaxGuidQuery(dbmd, table, pkColumn);
+				} else {
+					query = getMaxIdQuery(dbmd, table, pkColumn);
+				}
 
-						Statement statement = null;
-						try {
-							statement = ds.getStatement(query);
-							ResultSet rs = statement.executeQuery(query);
-							if (rs.next()) {
-								max = (rs.getInt(1) + 1);
-							}
-							rs.close();
-							LOG.fine("table=" + table.name + ", column=" + pkColumn.columnName + ", max=" + max + ", query=" + query
-									+ ", hash=" + hashNext);
-						} catch (Exception e) {
-							throw new RuntimeException("OADataSource.getNextNumber() failed for " + table.name + " Query:" + query, e);
-						} finally {
-							if (statement != null) {
-								ds.releaseStatement(statement);
-							}
-						}
+				Statement statement = null;
+				try {
+					statement = ds.getStatement(query);
+					ResultSet rs = statement.executeQuery(query);
+					if (rs.next()) {
+						max = (rs.getInt(1) + 1);
 					}
-					ai = new AtomicInteger(max);
-					hashNext.put(hashId, ai);
+					rs.close();
+					LOG.fine("table=" + table.name + ", column=" + pkColumn.columnName + ", max=" + max + ", query=" + query
+							+ ", hash=" + hmTabeNextSeq);
+				} catch (Exception e) {
+					throw new RuntimeException("OADataSource.getNextNumber() failed for " + table.name + " Query:" + query, e);
+				} finally {
+					if (statement != null) {
+						ds.releaseStatement(statement);
+					}
 				}
 			}
-		}
+			AtomicInteger aix = new AtomicInteger(max);
+			return aix;
+		});
 
+		int max;
 		if (bAutoIncrement) {
 			max = ai.getAndIncrement();
 		} else {

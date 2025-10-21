@@ -1,5 +1,6 @@
 package com.viaoa.datasource;
 
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 public class OADataSourceEmptyIterator implements OADataSourceIterator {
@@ -10,7 +11,8 @@ public class OADataSourceEmptyIterator implements OADataSourceIterator {
 	}
 
 	@Override
-	public Object next() {
+	public Object next() throws NoSuchElementException {
+		// ?? if no more elements, then this should throw NoSuchElementException
 		return null;
 	}
 

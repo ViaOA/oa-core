@@ -2,10 +2,11 @@ package com.viaoa.util;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.List;
 
 public class OADateChangeController {
 
-	private static final ArrayList<WeakReference<Callback>> alCallback = new ArrayList<>();
+	private static final List<WeakReference<Callback>> alCallback = new ArrayList<>();
 	private static Thread thread;
 
 	public interface Callback {
@@ -25,17 +26,16 @@ public class OADateChangeController {
 				return;
 			}
 
+			Thread thread = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					process();
+				}
+			}, "OADateChangeNotifier");
+			thread.setDaemon(true);
+			thread.setPriority(Thread.MIN_PRIORITY);
+			thread.start();
 		}
-
-		thread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				process();
-			}
-		}, "OADateChangeNotifier");
-		thread.setDaemon(true);
-		thread.setPriority(Thread.MIN_PRIORITY);
-		thread.start();
 	}
 
 	protected static void process() {

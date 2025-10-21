@@ -94,7 +94,7 @@ public class HubAddRemoveDelegate {
 		if (!bIsRemovingAll || bSendEvent) {
 			pos = HubDataDelegate.getPos(thisHub, obj, false, false); // dont adjust master or update link when finding the position of the object.
 			if (pos < 0) {
-				//20140312 Hub might be changing, wait until _remove is called
+				// Hub might be changing, wait until _remove is called
 				// return;
 			}
 			if (bSendEvent) {
@@ -585,8 +585,7 @@ public class HubAddRemoveDelegate {
 								}
 							}
 						}
-					} else if (obj instanceof OAObject && ((OAObject) obj).isNew()) {
-						// 20201212
+					} else if (((OAObject) obj).isNew()) {
 						Hub hubx = HubSelectDelegate.getSelectWhereHub(thisHub);
 						if (hubx != null) {
 							Object objx = hubx.getAO();

@@ -306,7 +306,7 @@ public class OAAnnotationDelegate {
 					// Field[] allFields = cz.getDeclaredFields();
 
 					Method mz = cz.getMethod("values", new Class[] {});
-					Object objzs = mz.invoke(null, null);
+					Object objzs = mz.invoke(null, (Object[]) null);
 					int xz = Array.getLength(objzs);
 					Method displayMethod = null;
 					boolean bDisplayMethod = false;
@@ -323,7 +323,7 @@ public class OAAnnotationDelegate {
 							}
 						}
 						if (displayMethod != null) {
-							Object objxs = displayMethod.invoke(objz, null);
+							Object objxs = displayMethod.invoke(objz, (Object[]) null);
 							h2.add(objxs.toString());
 						} else {
 							h2.add(objz.toString());
@@ -538,7 +538,7 @@ public class OAAnnotationDelegate {
 			if (!Hub.class.isAssignableFrom(c)) {
 				continue; // 20111027 added
 			}
-			if ((m.getModifiers() & Modifier.STATIC) > 0) {
+			if ((m.getModifiers() & Modifier.STATIC) != 0) {
 				continue;
 			}
 
@@ -1086,7 +1086,7 @@ public class OAAnnotationDelegate {
 
 			OAId oaid = (OAId) m.getAnnotation(OAId.class);
 
-			String name = name = getPropertyName(m.getName());
+			String name = getPropertyName(m.getName());
 
 			String colName = dbcol.name(); // will be "", if the property name should be used.
 			if (colName == null || colName.length() == 0) {

@@ -15,12 +15,10 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
-import java.util.Hashtable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -514,7 +512,7 @@ public class MultiplexerSocketController {
             getOutputStreamController().sendCommand(CMD_CloseVSocket, vs._id);
         }
         synchronized (vs._lockObject) {
-            vs._lockObject.notify();
+            vs._lockObject.notifyAll();
         }
         getVirtualSocketHashMap().remove(vs._id);
     }
@@ -586,7 +584,7 @@ public class MultiplexerSocketController {
             VirtualSocket[] vss = getMultiplexerSockets();
             for (VirtualSocket vs : vss) {
                 synchronized (vs._lockObject) {
-                    vs._lockObject.notify();
+                    vs._lockObject.notifyAll();
                 }
             }
         }

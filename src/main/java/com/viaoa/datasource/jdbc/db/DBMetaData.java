@@ -108,8 +108,6 @@ public class DBMetaData extends OAObject {
 	public int minConnections = 3;
 
 	public DBMetaData() {
-		int xx = 4;
-		xx++;
 	}
 
 	public DBMetaData(int databaseType) {
