@@ -434,10 +434,9 @@ public class OAObjectEventDelegate {
 
 		OAObjectKey origKey;
 		if (propInfo != null && propInfo.getId()) {
-			origKey = OAObjectKeyDelegate.getKey(oaObj, propertyName, oldObj); // make sure key uses the prevId, so that it can be found on other computers
-
-			if (!bIsLoading || !oaObj.isNew()) { // 20210116
-				OAObjectKeyDelegate.updateKey(oaObj, true); // this will make sure that it is a valid (unique) value
+			origKey = OAObjectKeyDelegate.createChangedObjectKey(oaObj, propertyName, oldObj); // make sure key uses the prevId, so that it can be found on other computers
+			if (!bIsLoading || !oaObj.isNew()) {
+				OAObjectKeyDelegate.afterChangedObjectKeyProperty(oaObj, origKey, true); // this will make sure that it is a valid (unique) value
 			}
 		} else {
 			origKey = OAObjectKeyDelegate.getKey(oaObj);
@@ -491,10 +490,8 @@ public class OAObjectEventDelegate {
 				if (revLinkInfo.type == OALinkInfo.ONE) {
 					if (oldObj instanceof OAObjectKey) {
 						if (OASync.isClient(oaObj)) { // 20151117 dont get from server if this is client
-							Object objx = OAObjectCacheDelegate.get(linkInfo.toClass, (OAObjectKey) oldObj);
-							if (objx instanceof OAObject) {
-								OAObjectPropertyDelegate.setPropertyCAS((OAObject) objx, revLinkInfo.getName(), null, oaObj);
-							}
+							OAObject objx = OAObjectCacheDelegate.get(linkInfo.toClass, (OAObjectKey) oldObj);
+							OAObjectPropertyDelegate.setPropertyCAS(objx, revLinkInfo.getName(), null, oaObj);
 						}
 					}
 				}

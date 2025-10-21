@@ -149,6 +149,7 @@ public class OAObjectDSDelegate {
 		}
 		Class clazz = obj.getClass();
 		OADataSource ds = OADataSource.getDataSource(clazz);
+		if (ds == null) return null;
 		return ds.getPropertyBlobValue(obj, propName);
 	}
 

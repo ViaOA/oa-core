@@ -37,8 +37,8 @@ public class OAObjectHubDelegate {
     public static void fireMasterObjectHubChangeEvent(Hub thisHub, boolean bRefreshFlag) {
         if (thisHub == null) return;
 
-        Object objMaster = HubDelegate.getMasterObject(thisHub);
-        if (!(objMaster instanceof OAObject)) return;
+        OAObject objMaster = HubDelegate.getMasterObject(thisHub);
+        if (objMaster == null) return;
 
         String prop = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
         if (prop == null) return;
@@ -123,7 +123,7 @@ public class OAObjectHubDelegate {
                     // compress: get last one, move it back to this slot
                     for (; lastEndPos > pos; lastEndPos--) {
                         if (oaObj.weakhubs[lastEndPos] == null) continue;
-                        if (oaObj.weakhubs[lastEndPos] instanceof WeakReference && ((WeakReference) oaObj.weakhubs[lastEndPos]).get() == null) {
+                        if (oaObj.weakhubs[lastEndPos].get() == null) {
                             oaObj.weakhubs[lastEndPos] = null;
                             continue;
                         }
@@ -156,10 +156,9 @@ public class OAObjectHubDelegate {
                 }
             }
 
-            // 20150827
             if (!OASyncDelegate.isClient(oaObj)) return;
             
-            // 20130707 could be a hub from hubMerger, that populates with One references
+            // could be a hub from hubMerger, that populates with One references
             // which means that the one reference keeps it from gc
             if (!bIsOnHubFinalize && hub.getMasterObject() != null) {
                 // 20141201 add !bIsOnHubFinalize so that if it is from a Hub finalize, then dont 

@@ -64,7 +64,6 @@ public class OAObjectEmptyHubDelegate {
         
         Object objx = hm.get(x);
         if (objx == null) return;
-        if (!(objx instanceof String[])) return;
 
         hm.remove(x);
         
