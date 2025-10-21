@@ -17,6 +17,7 @@ import java.io.ObjectStreamClass;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectPropertyDelegate;
@@ -31,9 +32,9 @@ import com.viaoa.util.Tuple;
  * @author vvia
  */
 public class OAObjectInputStream extends ObjectInputStream {
-    private HashMap<String, Boolean> hmReplace = new HashMap<String, Boolean>();
+    private Map<String, Boolean> hmReplace = new HashMap<String, Boolean>();
     private String oldPackageName, newPackageName;
-    private HashMap<String, String> hmReplaceName = new HashMap<String, String>();
+    private Map<String, String> hmReplaceName = new HashMap<String, String>();
 
     public OAObjectInputStream(InputStream is) throws IOException {
         this(is, null, null);
@@ -106,7 +107,7 @@ public class OAObjectInputStream extends ObjectInputStream {
             if (objx == null) {
                 hmReplace.put(newName, true);
                 bReplace = true;
-                Class c = Class.forName(newName);
+                //Class c = Class.forName(newName);
                 bReplace = false;
                 hmReplace.put(newName, false);
             }

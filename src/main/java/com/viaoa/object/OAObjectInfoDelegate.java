@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.viaoa.annotation.OAClass;
@@ -34,6 +35,15 @@ public class OAObjectInfoDelegate {
 
 	private static final Object Lock = new Object();
 
+    private static final Map<Class, Map<String, Method>> hmClassMethod = new ConcurrentHashMap<>(151, 0.75F);
+    private static final Map<Class, Set<String>> hmClassMethodNotFound = new ConcurrentHashMap<>(151, 0.75F);
+    private static final Map<OALinkInfo, ReentrantReadWriteLock> hmLinkInfoCacheLock = new ConcurrentHashMap<>(47,0.75f);
+	private static final Map<OALinkInfo, List> hmLinkInfoCacheList = new ConcurrentHashMap<OALinkInfo, List>(47,0.75f);
+    private static final Map<OALinkInfo, Set> hmLinkInfoCacheSet = new ConcurrentHashMap<OALinkInfo, Set>(47,0.75f);
+	private static final Map<OAObjectInfo, Hub> hmRootHub = new ConcurrentHashMap<OAObjectInfo, Hub>(41, .75f);
+    private static final Map<Class, OAObjectInfo> hmObjectInfo = new ConcurrentHashMap<Class, OAObjectInfo>(147, 0.75F);
+	
+	
 	/**
 	 * Return the OAObjectInfo for this object Class.
 	 */
@@ -46,17 +56,16 @@ public class OAObjectInfoDelegate {
 		return getOAObjectInfo(obj);
 	}
 
-	// 20140305 needs to be able to make sure that reverse link is created
 	public static OAObjectInfo getOAObjectInfo(Class clazz) {
 		OAObjectInfo oi;
 		if (clazz != null) {
-			oi = OAObjectHashDelegate.hashObjectInfo.get(clazz);
+			oi = OAObjectInfoDelegate.hmObjectInfo.get(clazz);
 			if (oi != null) {
 				return oi;
 			}
 		}
 		if (clazz == null || !OAObject.class.isAssignableFrom(clazz) || OAObject.class.equals(clazz)) {
-			oi = OAObjectHashDelegate.hashObjectInfo.get(String.class); // fake out so that null is never returned
+			oi = OAObjectInfoDelegate.hmObjectInfo.get(String.class); // fake out so that null is never returned
 			if (oi != null) {
 				return oi;
 			}
@@ -78,8 +87,7 @@ public class OAObjectInfoDelegate {
 			return oi;
 		}
 
-		// 20220124
-		oi = OAObjectHashDelegate.hashObjectInfo.get(clazz);
+		oi = OAObjectInfoDelegate.hmObjectInfo.get(clazz);
 		if (oi != null) {
 			return oi;
 		}
@@ -140,13 +148,13 @@ public class OAObjectInfoDelegate {
 			clazz = String.class; // fake out so that null is never returned
 		}
 
-		OAObjectInfo oi = OAObjectHashDelegate.hashObjectInfo.get(clazz);
+		OAObjectInfo oi = OAObjectInfoDelegate.hmObjectInfo.get(clazz);
 		if (oi != null) {
 			return oi;
 		}
 
 		synchronized (Lock) {
-			oi = (OAObjectInfo) OAObjectHashDelegate.hashObjectInfo.get(clazz);
+			oi = (OAObjectInfo) OAObjectInfoDelegate.hmObjectInfo.get(clazz);
 			if (oi != null) {
 				return oi;
 			}
@@ -156,7 +164,7 @@ public class OAObjectInfoDelegate {
 				try {
 					m = clazz.getMethod("getOAObjectInfo", new Class[] {});
 					if (m != null) {
-						oi = (OAObjectInfo) m.invoke(null, null);
+						oi = (OAObjectInfo) m.invoke(null, (Object[]) null);
 					}
 				} catch (Exception e) {
 					//System.out.println("OAObjectInfoDelegate.getOAObjectInfo "+e);
@@ -202,13 +210,13 @@ public class OAObjectInfoDelegate {
 					}
 				}
 
-				OAObjectHashDelegate.hashObjectInfo.put(clazz, oi);
+				OAObjectInfoDelegate.hmObjectInfo.put(clazz, oi);
 			}
 
 			if (oi == null) {
 				oi = new OAObjectInfo();
 				initialize(oi, clazz);
-				OAObjectHashDelegate.hashObjectInfo.put(clazz, oi);
+				OAObjectInfoDelegate.hmObjectInfo.put(clazz, oi);
 			}
 		}
 		return oi;
@@ -246,7 +254,7 @@ public class OAObjectInfoDelegate {
 			}
 
 			if (m.getReturnType().equals(Hub.class)) {
-				if ((m.getModifiers() & Modifier.STATIC) > 0) {
+				if ((m.getModifiers() & Modifier.STATIC) != 0) {
 					continue;
 				}
 				alHub.add(name.toUpperCase());
@@ -255,7 +263,7 @@ public class OAObjectInfoDelegate {
 			}
 
 			if (OAObject.class.isAssignableFrom(m.getReturnType())) {
-				if ((m.getModifiers() & Modifier.STATIC) > 0) {
+				if ((m.getModifiers() & Modifier.STATIC) != 0) {
 					continue;
 				}
 				createLink(thisOI, name, m.getReturnType(), OALinkInfo.ONE);
@@ -650,9 +658,7 @@ public class OAObjectInfoDelegate {
 			if (liRev == null || !liRev.getUsed()) {
 				continue;
 			}
-			// 20220321
 			if (liRev.getOwner()) {
-				// was: if (liRev.getOwner() && liRev.getType() == OALinkInfo.MANY) {
 				if (!li.toClass.equals(thisOI.thisClass)) { // make sure that it is not also a recursive link.
 					thisOI.liLinkToOwner = li;
 					break;
@@ -672,9 +678,9 @@ public class OAObjectInfoDelegate {
 			return;
 		}
 		if (h == null) {
-			OAObjectHashDelegate.hashRootHub.remove(thisOI);
+			OAObjectInfoDelegate.hmRootHub.remove(thisOI);
 		} else {
-			OAObjectHashDelegate.hashRootHub.put(thisOI, h);
+			OAObjectInfoDelegate.hmRootHub.put(thisOI, h);
 		}
 	}
 
@@ -682,7 +688,7 @@ public class OAObjectInfoDelegate {
 		if (thisOI == null) {
 			return null;
 		}
-		return (Hub) OAObjectHashDelegate.hashRootHub.get(thisOI);
+		return (Hub) OAObjectInfoDelegate.hmRootHub.get(thisOI);
 	}
 
 	/**
@@ -693,30 +699,9 @@ public class OAObjectInfoDelegate {
 			return false;
 		}
 
-		ReentrantReadWriteLock rwLock = OAObjectHashDelegate.hashLinkInfoCacheLock.get(li);
-		ArrayList alCache = null;
-		HashSet hsCache = null;
-
-		if (rwLock == null) {
-			synchronized (OAObjectHashDelegate.hashLinkInfoCacheLock) {
-				rwLock = OAObjectHashDelegate.hashLinkInfoCacheLock.get(li);
-				if (rwLock == null) {
-					rwLock = new ReentrantReadWriteLock();
-					OAObjectHashDelegate.hashLinkInfoCacheLock.put(li, rwLock);
-
-					boolean bIsServer = OASync.isServer(hub);
-
-					alCache = new ArrayList(li.cacheSize + 1);
-					OAObjectHashDelegate.hashLinkInfoCacheArrayList.put(li, alCache);
-					hsCache = new HashSet(li.cacheSize + 3, .85f);
-					OAObjectHashDelegate.hashLinkInfoCacheHashSet.put(li, hsCache);
-				}
-			}
-		}
-		if (alCache == null) {
-			alCache = (ArrayList) OAObjectHashDelegate.hashLinkInfoCacheArrayList.get(li);
-			hsCache = (HashSet) OAObjectHashDelegate.hashLinkInfoCacheHashSet.get(li);
-		}
+		ReentrantReadWriteLock rwLock = OAObjectInfoDelegate.hmLinkInfoCacheLock.computeIfAbsent(li,  k -> new ReentrantReadWriteLock());
+		List alCache = OAObjectInfoDelegate.hmLinkInfoCacheList.computeIfAbsent(li, k -> new ArrayList(li.cacheSize + 1));
+		Set hsCache = OAObjectInfoDelegate.hmLinkInfoCacheSet.computeIfAbsent(li, k -> new HashSet(li.cacheSize + 3, .85f)); 
 
 		try {
 			rwLock.writeLock().lock();
@@ -726,7 +711,7 @@ public class OAObjectInfoDelegate {
 		}
 	}
 
-	private static boolean _cacheHub(OALinkInfo li, Hub hub, ArrayList alCache, HashSet hsCache) {
+	private static boolean _cacheHub(OALinkInfo li, Hub hub, List alCache, Set hsCache) {
 		if (hsCache.contains(hub)) {
 			return true;
 		}
@@ -755,7 +740,7 @@ public class OAObjectInfoDelegate {
 		if (li == null || hub == null) {
 			return false;
 		}
-		ReentrantReadWriteLock rwLock = OAObjectHashDelegate.hashLinkInfoCacheLock.get(li);
+		ReentrantReadWriteLock rwLock = OAObjectInfoDelegate.hmLinkInfoCacheLock.get(li);
 		if (rwLock == null) {
 			return false;
 		}
@@ -763,7 +748,7 @@ public class OAObjectInfoDelegate {
 		try {
 			rwLock.readLock().lock();
 
-			HashSet hs = (HashSet) OAObjectHashDelegate.hashLinkInfoCacheHashSet.get(li);
+			Set hs = OAObjectInfoDelegate.hmLinkInfoCacheSet.get(li);
 			return hs != null && hs.contains(hub);
 		} finally {
 			rwLock.readLock().unlock();
@@ -815,13 +800,13 @@ public class OAObjectInfoDelegate {
 		}
 		methodName = methodName.toUpperCase();
 		final Class clazz = oi.thisClass;
-		Map<String, Method> map = OAObjectHashDelegate.getHashClassMethod(clazz);
+		Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
 		Method method = map.get(methodName);
 		if (method != null && argumentCount < 0) {
 			return method;
 		}
 		if (method == null) {
-			Set<String> set = OAObjectHashDelegate.getHashClassMethodNotFound(clazz);
+			Set<String> set = OAObjectInfoDelegate.getClassMethodNotFoundMap(clazz);
 			if (set.contains(methodName)) {
 				return null;
 			}
@@ -839,7 +824,7 @@ public class OAObjectInfoDelegate {
 			method = OAReflect.getMethod(clazz, methodName, argumentCount);
 			if (method == null) {
 				if (!bRecalc) {
-					OAObjectHashDelegate.getHashClassMethodNotFound(clazz).add(methodName);
+					OAObjectInfoDelegate.getClassMethodNotFoundMap(clazz).add(methodName);
 				}
 				return null;
 			}
@@ -855,7 +840,7 @@ public class OAObjectInfoDelegate {
 		}
 		methodName = methodName.toUpperCase();
 		Class clazz = oi.thisClass;
-		final Map<String, Method> map = OAObjectHashDelegate.getHashClassMethod(clazz);
+		final Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
 		Method method = map.get(methodName);
 		if (method != null) {
 			Class[] cs = method.getParameterTypes();
@@ -871,19 +856,18 @@ public class OAObjectInfoDelegate {
 	}
 
 	protected static void storeMethod(Class clazz, Method method) {
-		Map<String, Method> map = OAObjectHashDelegate.getHashClassMethod(clazz);
+		Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
 		method.setAccessible(true); // 20130131
 		map.put(method.getName().toUpperCase(), method);
 	}
 
-	// testing
 	public static Method[] getAllMethods(OAObjectInfo oi) {
 		Class clazz = oi.thisClass;
-		Map<String, Method> map = OAObjectHashDelegate.getHashClassMethod(clazz);
-		Method[] ms = new Method[map.size()]; // todo: not threadsafe, method could be null
+		Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
+		Method[] ms = new Method[map.size()];
 		int i = 0;
-		for (String s : map.keySet()) {
-			ms[i] = (Method) map.get(s);
+		for (Method mx : map.values()) {
+			ms[i++] = mx;
 		}
 		return ms;
 	}
@@ -960,11 +944,12 @@ public class OAObjectInfoDelegate {
 	}
 
 	public static OALinkInfo getLinkInfo(OAObjectInfo oi, Class toClass) {
+		if (oi == null || toClass == null) return null;
 		for (OALinkInfo li : oi.getLinkInfos()) {
 			if (!li.getUsed()) {
 				continue;
 			}
-			if (li.getToClass().equals(toClass)) {
+			if (toClass.equals(li.getToClass())) {
 				return li;
 			}
 		}
@@ -1000,7 +985,11 @@ public class OAObjectInfoDelegate {
 
 	public static boolean isHubProperty(OAObjectInfo oi, String propertyName) {
 		Method m = getMethod(oi.thisClass, "get" + propertyName);
-		return (m != null && m.getReturnType().equals(Hub.class));
+		if (m == null) return false;
+		
+		Class c = m.getReturnType();
+		if (c == null) return false;
+		return (c.equals(Hub.class));
 	}
 
 	public static Object[] getPropertyIdValues(OAObject oaObj) {
@@ -1009,6 +998,7 @@ public class OAObjectInfoDelegate {
 		}
 		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 		String[] ids = oi.idProperties;
+		if (ids == null) return new Object[0];
 		Object[] objs = new Object[ids.length];
 		for (int i = 0; i < ids.length; i++) {
 			objs[i] = OAObjectReflectDelegate.getProperty(oaObj, ids[i]);
@@ -1174,6 +1164,7 @@ public class OAObjectInfoDelegate {
 			boolean bFound = false;
 			for (OALinkInfo li : oi.getLinkInfos()) {
 				OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+				if (liRev == null) continue;
 				if (value.equalsIgnoreCase(liRev.getName())) {
 					if (clazz.equals(liRev.getToClass())) {
 						if (revPropertyPath.length() > 0) {
@@ -1312,4 +1303,18 @@ public class OAObjectInfoDelegate {
 		return isPojoSingleton2(oiOwner);
 	}
 
+	protected static Map<String, Method> getClassMethodMap(Class clazz) {
+		Map<String, Method> map = hmClassMethod.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
+    	return map;
+	}
+
+    protected static Set<String> getClassMethodNotFoundMap(Class clazz) {
+        Set<String> map = hmClassMethodNotFound.computeIfAbsent(clazz, k -> new HashSet<String>(3, .75f));
+        return map;
+    }
+
+    public static Map<Class, OAObjectInfo> getObjectInfoMap() {
+    	return hmObjectInfo;
+    }
+	
 }

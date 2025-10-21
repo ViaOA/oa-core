@@ -12,6 +12,7 @@ package com.viaoa.object;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,7 +42,7 @@ public class OAObjectEventDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectEventDelegate.class.getName());
 	private static final String WORD_CHANGED = "CHANGED";
 
-	private static long msThrottle;
+	private static volatile long msThrottle;
 	private static int cntError;
 
 	/**
@@ -193,7 +194,8 @@ public class OAObjectEventDelegate {
 						throw new RuntimeException("Can not set the Parent to itself");
 					}
 					// cant assign a child of this object as the new parent - causes orphaned objects
-					for (Object obj = newObj;;) {
+					Object obj = newObj;
+					for (int i=0; i<100; i++) {
 						obj = OAObjectReflectDelegate.getProperty((OAObject) obj, liRecursive.getName());
 						if (obj == null) {
 							break;
@@ -223,7 +225,8 @@ public class OAObjectEventDelegate {
 		// 20170420 check to see if owner is being reassigned to null
 		if (linkInfo != null && oldObj instanceof OAObject && newObj == null && !oaObj.isDeleted() && !oaObj.isNew()
 				&& linkInfo.getType() == OALinkInfo.ONE && !linkInfo.getCalculated()) {
-		    if (linkInfo.getReverseLinkInfo().getOwner()) {		    
+			OALinkInfo rev = linkInfo.getReverseLinkInfo();
+		    if (rev != null && rev.getOwner()) {		    
     			if (!OAThreadLocalDelegate.isDeleting() && OASync.isServer()) {
     				OAObjectInfo oix = OAObjectInfoDelegate.getOAObjectInfo((OAObject) oldObj);
     				if (!oix.getLookup() && !oix.getPreSelect()) {
@@ -790,7 +793,7 @@ public class OAObjectEventDelegate {
 
 		// find all Hubs using this as the active object.
 		// By changing a reference property, the object could be moved to another hub
-		ArrayList<Hub> alUpdateHub = null;
+		List<Hub> alUpdateHub = null;
 		if (oldObj != null || liRecursive != null) {
 			Hub[] hubs = OAObjectHubDelegate.getHubReferences(oaObj);
 			if (hubs != null) {

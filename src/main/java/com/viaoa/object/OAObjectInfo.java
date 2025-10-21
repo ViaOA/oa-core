@@ -400,7 +400,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private volatile boolean bHasBlobProperty;
 	private volatile boolean bCheckHasBlobProperty;
 
-	public boolean getHasBlobPropery() {
+	public boolean getHasBlobProperty() {
 		if (bCheckHasBlobProperty) {
 			return bHasBlobProperty;
 		}
@@ -412,6 +412,9 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			}
 		}
 		return bHasBlobProperty;
+	}
+	public boolean getHasBlobPropery() {
+		return getHasBlobProperty();
 	}
 
 	private HashMap<String, OAPropertyInfo> hmPropertyInfo;
@@ -753,13 +756,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		CopyOnWriteArrayList<TriggerInfo> al = hmTriggerInfo.get(listenProperty.toUpperCase());
 		if (al == null) {
 			bFound = false;
-			synchronized (hmTriggerInfo) {
-				al = hmTriggerInfo.get(listenProperty.toUpperCase());
-				if (al == null) {
-					al = new CopyOnWriteArrayList<OAObjectInfo.TriggerInfo>();
-					hmTriggerInfo.put(listenProperty.toUpperCase(), al);
-				}
-			}
+			al = hmTriggerInfo.computeIfAbsent(listenProperty.toUpperCase(), k -> new CopyOnWriteArrayList<OAObjectInfo.TriggerInfo>()); 
 		}
 		for (TriggerInfo ti : al) {
 			if (ti.trigger.triggerListener == trigger.triggerListener) {
@@ -1062,7 +1059,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		// 2 = data not found
 
 		OAFinder finder = new OAFinder(ti.ppToRootClass) {
-			HashSet<Integer> hs = new HashSet<Integer>();
+			HashSet<Long> hs = new HashSet<Long>();
 
 			@Override
 			protected void onFound(OAObject objRoot) {
@@ -1070,7 +1067,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 					return;
 				}
 
-				int g = OAObjectKeyDelegate.getKey(objRoot).getGuid();
+				long g = OAObjectKeyDelegate.getKey(objRoot).getGuid();
 				if (hs.contains(g)) {
 					return;
 				}
