@@ -83,11 +83,7 @@ public class OASyncDelegate {
 		if (c == null) {
 			p = ObjectPackage;
 		} else {
-			p = hmClassPackage.get(c);
-			if (p == null) {
-				p = c.getPackage();
-				hmClassPackage.put(c, p);
-			}
+			p = hmClassPackage.computeIfAbsent(c, k -> c.getPackage());
 		}
 		return p;
 	}
@@ -150,9 +146,7 @@ public class OASyncDelegate {
 		if (p != null && p != ObjectPackage) {
 			if (ss != null) {
 				hmSyncServer.put(p, ss);
-				if (hmSyncServer.get(ObjectPackage) == null) {
-					hmSyncServer.put(ObjectPackage, ss);
-				}
+				hmSyncServer.computeIfAbsent(ObjectPackage, k -> ss);
 				if (oaSyncServer == null) {
 					oaSyncServer = ss;
 				} else if (oaSyncServer != ss) {
@@ -243,9 +237,7 @@ public class OASyncDelegate {
 		if (p != null && p != ObjectPackage) {
 			if (sc != null) {
 				hmSyncClient.put(p, sc);
-				if (hmSyncClient.get(ObjectPackage) == null) {
-					hmSyncClient.put(ObjectPackage, sc);
-				}
+				hmSyncClient.computeIfAbsent(ObjectPackage, k -> sc);
 				if (oaSyncClient == null) {
 					oaSyncClient = sc;
 				} else if (oaSyncClient != sc) {
@@ -336,9 +328,8 @@ public class OASyncDelegate {
 		if (p != null && p != ObjectPackage) {
 			if (rs != null) {
 				hmRemoteServer.put(p, rs);
-				if (hmRemoteServer.get(ObjectPackage) == null) {
-					hmRemoteServer.put(ObjectPackage, rs);
-				}
+				hmRemoteServer.computeIfAbsent(ObjectPackage, k -> rs);
+
 				if (remoteServerInterface == null) {
 					remoteServerInterface = rs;
 				} else if (remoteServerInterface != rs) {
@@ -429,9 +420,7 @@ public class OASyncDelegate {
 		if (p != null && p != ObjectPackage) {
 			if (rs != null) {
 				hmRemoteSession.put(p, rs);
-				if (hmRemoteSession.get(ObjectPackage) == null) {
-					hmRemoteSession.put(ObjectPackage, rs);
-				}
+				hmRemoteSession.computeIfAbsent(ObjectPackage, k -> rs);
 				if (remoteSessionInterface == null) {
 					remoteSessionInterface = rs;
 				} else if (remoteSessionInterface != rs) {
@@ -522,9 +511,7 @@ public class OASyncDelegate {
 		if (p != null && p != ObjectPackage) {
 			if (rc != null) {
 				hmRemoteClient.put(p, rc);
-				if (hmRemoteClient.get(ObjectPackage) == null) {
-					hmRemoteClient.put(ObjectPackage, rc);
-				}
+				hmRemoteClient.computeIfAbsent(ObjectPackage, k -> rc);
 				if (remoteClientInterface == null) {
 					remoteClientInterface = rc;
 				} else if (remoteClientInterface != rc) {
@@ -616,9 +603,7 @@ public class OASyncDelegate {
 		if (p != null && p != ObjectPackage) {
 			if (rs != null) {
 				hmRemoteSync.put(p, rs);
-				if (hmRemoteSync.get(ObjectPackage) == null) {
-					hmRemoteSync.put(ObjectPackage, rs);
-				}
+				hmRemoteSync.computeIfAbsent(ObjectPackage, k -> rs);
 				if (remoteSyncInterface == null) {
 					remoteSyncInterface = rs;
 				} else if (remoteSyncInterface != rs) {
@@ -788,27 +773,27 @@ public class OASyncDelegate {
 	}
 
 	private final static Object NextGuidLock = new Object();
-	private static int nextGuid;
-	private static int maxNextGuid;
+	private static long nextGuid;
+	private static long maxNextGuid;
 
 	/**
 	 * Used by OAObject so that object guid is created/managed on the server.
 	 */
-	public static int getGuidFromServer(Class c) {
+	public static long getGuidFromServer(Class c) {
 		if (c == null) {
 			return getGuidFromServer((Package) null);
 		}
 		return getGuidFromServer(getPackage(c));
 	}
 
-	public static int getGuidFromServer(Package p) {
+	public static long getGuidFromServer(Package p) {
 		if (p == null) {
 			p = ObjectPackage;
 		}
 		if (isServer(p)) {
 			return OAObjectDelegate.getNextGuid();
 		}
-		int x;
+		long x;
 		synchronized (NextGuidLock) {
 			if (nextGuid == maxNextGuid) {
 				try {

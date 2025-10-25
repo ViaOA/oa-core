@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -191,7 +193,7 @@ public class OAObjectReflectDelegate {
 					return null;
 				}
 				try {
-					return m.invoke(oaObj, null);
+					return m.invoke(oaObj, (Object[]) null);
 				} catch (InvocationTargetException e) {
 					String s;
 					if (oaObj != null) {
@@ -229,7 +231,7 @@ public class OAObjectReflectDelegate {
 			return;
 		}
 
-		// 20120822 add support for propertyPath
+		// add support for propertyPath
 		if (propName.indexOf('.') >= 0) {
 			int pos = propName.lastIndexOf('.');
 			String s = propName.substring(0, pos);
@@ -299,7 +301,7 @@ public class OAObjectReflectDelegate {
 					//was: OAObjectPropertyDelegate.removeProperty(oaObj, propName, true);
 				} else {
 					if (!(value instanceof OAObject) && !(value instanceof OAObjectKey)) {
-						value = OAObjectKeyDelegate.convertToObjectKey(li.getToObjectInfo(), value);
+						value = OAObjectKeyDelegate.createObjectKey(li.getToClass(), value);
 					}
 					OAObjectPropertyDelegate.setProperty(oaObj, propName, value);
 				}
@@ -325,21 +327,21 @@ public class OAObjectReflectDelegate {
 			}
 			if (previousValue instanceof OAObjectKey) {
 				OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) value);
-				if (k.equals(previousValue)) {
+				if (OAObjectKeyDelegate.isForSameOAObject(null, k, (OAObjectKey) previousValue)) {
 					OAObjectPropertyDelegate.setProperty(oaObj, propName, value);
-					return; // no change, was storing key, now storing oaObject
+					return; // no change; was storing key; now storing oaObject
 				}
 			}
 		} else { //  (value NOT instanceof OAObject) either OAObjectKey or value of key
 			if (!(value instanceof OAObjectKey)) {
-				value = OAObjectKeyDelegate.convertToObjectKey(li.getToObjectInfo(), value);
+				value = OAObjectKeyDelegate.createObjectKey(li.getToClass(), value);
 			}
 			if (value.equals(previousValue)) {
 				return; // no change
 			}
 			if (previousValue instanceof OAObject) {
 				OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) previousValue);
-				if (k.equals(value)) {
+				if (OAObjectKeyDelegate.isForSameOAObject(null, k, (OAObjectKey) value)) {
 					return; // no change
 				}
 			}
@@ -393,8 +395,7 @@ public class OAObjectReflectDelegate {
 			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 			OALinkInfo li = oi.getLinkInfo(propertyName);
 			if (li != null && li.getType() == li.ONE) {
-				oi = li.getToObjectInfo();
-				value = OAObjectKeyDelegate.convertToObjectKey(oi, value);
+				value = OAObjectKeyDelegate.createObjectKey(li.getToClass(), value);
 			}
 		}
 		OAObjectPropertyDelegate.setProperty(oaObj, propertyName, value);
@@ -499,7 +500,7 @@ public class OAObjectReflectDelegate {
 				if (value instanceof Hub) {
 					throw new RuntimeException("cant not set the Hub for " + propName);
 				}
-				value = OAObjectKeyDelegate.convertToObjectKey(li.toClass, value);
+				value = OAObjectKeyDelegate.createObjectKey(li.toClass, value);
 			}
 		}
 
@@ -538,7 +539,7 @@ public class OAObjectReflectDelegate {
 		}
 
 		if (!(key instanceof OAObjectKey)) {
-			key = OAObjectKeyDelegate.convertToObjectKey(clazz, key);
+			key = OAObjectKeyDelegate.createObjectKey(clazz, key);
 		}
 
 		OAObject oaObj = (OAObject) OAObjectCacheDelegate.get(clazz, (OAObjectKey) key);
@@ -714,7 +715,7 @@ public class OAObjectReflectDelegate {
 	}
 
 	// keeps track of siblings that are "in flight"
-	private static final ConcurrentHashMap<Integer, Boolean> hmIgnoreSibling = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<Long, Boolean> hmIgnoreSibling = new ConcurrentHashMap<>();
 
 	private static Hub _getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder,
 			boolean bSequence, Hub hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo) {
@@ -757,7 +758,7 @@ public class OAObjectReflectDelegate {
 			// since it is in props with a null, then it was placed that way to mean it has 0 objects
 			//   by OAObjectSerializeDelegate._writeObject
 			if (linkInfo == null) {
-				hub = new Hub(linkInfo.toClass);
+				hub = new Hub();
 				OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, hub);
 				return hub;
 			}
@@ -839,6 +840,7 @@ public class OAObjectReflectDelegate {
 
 		
 		if (hub != null) {
+			// no-op
 		} else if (!bThisIsServer && !oi.getLocalOnly() && (!bIsCalc || bIsServerSideCalc)
 				&& OASync.getSyncClient().isObjectOnServer(oaObj)) {
 			// request from server
@@ -1007,7 +1009,7 @@ public class OAObjectReflectDelegate {
 							continue;
 						}
 						OAObjectKey okx = (OAObjectKey) valx;
-						if (okx.equals(oaObj.getObjectKey())) {
+						if (OAObjectKeyDelegate.isForSameOAObject(null, okx, oaObj.getObjectKey())) {
 							hub.add(objx);
 						} else if (hmSiblingHub != null) {
 							Hub hx = hmSiblingHub.get(okx);
@@ -1050,8 +1052,9 @@ public class OAObjectReflectDelegate {
 					// keep the hub sorted on server only
 					HubSortDelegate.sort(hub, sortOrder, bSortAsc, null, true);// dont sort, or send out sort msg (since no other client has this hub yet)
 					final OAPropertyInfo pi = oi.getPropertyInfo(sortOrder);
+					
 					if (pi == null || String.class.equals(pi.getClassType())) {
-						hub.resort(); // 20180613 dont trust db sorting, this will not send out event
+						hub.resort(); // dont trust db sorting, this will not send out event
 					}
 
 					if (hmSiblingHub != null) {
@@ -1059,9 +1062,6 @@ public class OAObjectReflectDelegate {
 						for (Entry<OAObjectKey, Hub> entry : hmSiblingHub.entrySet()) {
 							Hub hx = entry.getValue();
 							HubSortDelegate.sort(hx, sortOrder, bSortAsc, null, true);
-							if (pi == null || String.class.equals(pi.getClassType())) {
-								hub.resort(); // 20180613 dont trust db sorting, this will not send out event
-							}
 						}
 					}
 				}
@@ -1116,7 +1116,7 @@ public class OAObjectReflectDelegate {
 		}
 		// 20171113 moved from above
 		if (hubMatch != null && (bThisIsServer || (bIsCalc && !bIsServerSideCalc))) {
-			if (OAStr.isNotEmpty(matchProperty)) {
+			if (OAString.isNotEmpty(matchProperty)) {
 				hub.setAutoMatch(matchProperty, hubMatch, true, oaObj, linkInfo.getMatchStopProperty());
 			}
 		}
@@ -1921,7 +1921,7 @@ public class OAObjectReflectDelegate {
 						sel.select();
 						for (; sel.hasMore();) {
 							OAObject refx = sel.next(); // this will load into objCache w/weakRef
-							if (refx.getObjectKey().equals(key)) {
+							if (OAObjectKeyDelegate.isForSameOAObject(null, refx.getObjectKey(), key)) {
 								ref = refx;
 							}
 						}
@@ -1958,13 +1958,13 @@ public class OAObjectReflectDelegate {
 
 					// 20231126 check for equalPropertyPath
                     String s = li.getEqualPropertyPath();
-                    if (OAStr.isNotEmpty(s)) {
+                    if (OAString.isNotEmpty(s)) {
                         OAPropertyPath pp = new OAPropertyPath(oaObj.getClass(), s);
                         final OAObject matchValue = (OAObject) pp.getValue(oaObj);
                         
                         final OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
                         s = liRev.getEqualPropertyPath();
-                        if (matchValue != null && OAStr.isNotEmpty(s)) {
+                        if (matchValue != null && OAString.isNotEmpty(s)) {
                             if (s.indexOf('.') < 0) {
                                 ((OAObject) ref).setProperty(s, matchValue);
                             }
@@ -2330,13 +2330,13 @@ public class OAObjectReflectDelegate {
 	}
 
 	public static OAObject createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback) {
-		HashMap<Integer, Object> hmNew = new HashMap<Integer, Object>();
+		HashMap<Long, Object> hmNew = new HashMap<Long, Object>();
 		OAObject obj = _createCopy(oaObj, excludeProperties, copyCallback, hmNew);
 		return obj;
 	}
 
 	public static OAObject _createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
-			HashMap<Integer, Object> hmNew) {
+			Map<Long, Object> hmNew) {
 		if (oaObj == null) {
 			return null;
 		}
@@ -2379,12 +2379,12 @@ public class OAObjectReflectDelegate {
 	 * objects are created in the Hub of the new object. OACopyCallback can be used to control what is copied.
 	 */
 	public static void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback) {
-		HashMap<Integer, Object> hmNew = new HashMap<Integer, Object>();
+		HashMap<Long, Object> hmNew = new HashMap<Long, Object>();
 		copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 	}
 
 	public static void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
-			HashMap<Integer, Object> hmNew) {
+			HashMap<Long, Object> hmNew) {
 		try {
 			OAThreadLocalDelegate.setLoading(true);
 			OAThreadLocalDelegate.setSuppressCSMessages(true);
@@ -2401,7 +2401,7 @@ public class OAObjectReflectDelegate {
 	 *      it is set by copyInto
 	 */
 	public static void _copyInto(final OAObject oaObj, final OAObject newObject, final String[] excludeProperties,
-			final OACopyCallback copyCallback, final HashMap<Integer, Object> hmNew) {
+			final OACopyCallback copyCallback, final Map<Long, Object> hmNew) {
 		if (oaObj == null || newObject == null) {
 			return;
 		}
@@ -2488,10 +2488,10 @@ public class OAObjectReflectDelegate {
 					if (copyCallback != null) {
 						objx = copyCallback.createCopy(oaObj, li.getName(), hub, obj);
 						if (obj == objx) {
-							objx = _createCopy((OAObject) obj, (String[]) null, copyCallback, hmNew);
+							objx = _createCopy(obj, (String[]) null, copyCallback, hmNew);
 						}
 					} else {
-						objx = _createCopy((OAObject) obj, (String[]) null, copyCallback, hmNew);
+						objx = _createCopy(obj, (String[]) null, copyCallback, hmNew);
 						//was: objx = obj.createCopy();
 					}
 				}
@@ -2587,12 +2587,12 @@ public class OAObjectReflectDelegate {
 
 	// recursively checks 3 levels for replaced objects
 	private static boolean shouldMakeACopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
-			HashMap<Integer, Object> hmNew, int cnt, HashSet<Integer> hsVisitor) {
+			Map<Long, Object> hmNew, int cnt, Set<Long> hsVisitor) {
 		if (oaObj == null) {
 			return false;
 		}
 		if (hsVisitor == null) {
-			hsVisitor = new HashSet<Integer>(101, .75f);
+			hsVisitor = new HashSet<Long>(101, .75f);
 		} else if (hsVisitor.contains(OAObjectDelegate.getGuid(oaObj))) {
 			return false;
 		}
@@ -2639,8 +2639,8 @@ public class OAObjectReflectDelegate {
 						return true;
 					}
 
-					if (cnt < 3 && obj instanceof OAObject) {
-						if (shouldMakeACopy((OAObject) obj, excludeProperties, copyCallback, hmNew, cnt + 1, hsVisitor)) {
+					if (cnt < 3 && obj != null) {
+						if (shouldMakeACopy(obj, excludeProperties, copyCallback, hmNew, cnt + 1, hsVisitor)) {
 							return true;
 						}
 					}

@@ -1090,13 +1090,17 @@ public abstract class HubChangeListener {
 				if (hp.compareValue == null) {
 					return false;
 				}
-				//if (this.compareValue != hp.compareValue) {
+				if (OACompare.compare(this.compareValue, hp.compareValue) != 0) {
+					return false;
+				}
+				/*was:
 				if (!this.compareValue.equals(hp.compareValue)) {
 					if (!this.compareValue.equals(OAConv.convert(this.compareValue.getClass(), hp.compareValue))) {
 						return false;
 					}
 				}
-				//}
+				*/
+				//
 			} else if (hp.compareValue != null) {
 				return false;
 			}

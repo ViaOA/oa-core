@@ -730,39 +730,30 @@ public class OAObjectCacheDelegate {
 			if (key instanceof OAObject) {
 				key = OAObjectKeyDelegate.getKey((OAObject) key);
 			} else {
-				key = OAObjectKeyDelegate.convertToObjectKey(clazz, key);
+				key = OAObjectKeyDelegate.createObjectKey(clazz, key);
 			}
 		}
-		
 		OAObject obj = null;
 		final OAObjectKey ok = (OAObjectKey) key;
-		if (ok.getGuid() != 0) {
-			obj = getOAObjectCache().getObject(clazz, ok.getGuid()); 
-		}
-		else {
-			OAObjectKey okNew = new OAObjectKey(ok.getObjectIds());
-			obj = getOAObjectCache().getObject(clazz,  okNew);
-		}
-		return (T) obj;
+		return get(clazz, ok);
 	}
 	
+	public static <T extends OAObject> T get(Class<T> clazz, OAObjectKey ok) {
+		if (clazz == null || ok == null) return null;
+		OAObject obj = getOAObjectCache().getObject(clazz, ok); 
+		return (T) obj;
+	}
+
+//qqqqqq remove this method ??	
 	public static <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, long guid) {
 		Object obj = getOAObjectCache().getObject((Class<OAObject>) clazz, guid); 
 		return (T) obj;
-	}
-	public static <T extends OAObject> T getNewObjectUsingGuid_OLD(Class<T> clazz, long guid) {
-		OAObjectKey objKey = new OAObjectKey(new Object[0], guid);
-		return get(clazz, objKey);
 	}
 
 	public static <T extends OAObject> T getUsingGuid(Class<T> clazz, long guid) {
 		Object obj = getOAObjectCache().getObject(clazz, guid); 
 		return (T) obj;
 	}
-	public static <T extends OAObject> T getUsingGuid_OLD(Class<T> clazz, long guid) {
-        OAObjectKey objKey = new OAObjectKey(new Object[0], guid);
-        return get(clazz, objKey);
-    }
 	
 	/**
 	 * Used to retrieve any object.

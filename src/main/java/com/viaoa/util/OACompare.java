@@ -11,11 +11,14 @@
 package com.viaoa.util;
 
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Collection;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAObjectKeyDelegate;
 
 /**
  * Uses coercion to compare objects, even if objects are different classes. Ex: String "1234" will equal double 1234.00 ex: boolean true will equal
@@ -295,11 +298,8 @@ public class OACompare {
 
 	/**
 	 * Compare objects, converting them (using OAConverter class) if necessary. <br>
-	 * Coercion Rules will use the following for converting values
-	 * before comparing:<br>
-	 * check if array type if check if Hub type value, matchValue can be any type of object, including Hub or Array.
-	 * value, matchValue do not have to be same class. value or matchValue can be one of the following: OAAnyValueObject OANotExist
-	 * OANotNullObject OANullObject
+	 * Coercion Rules are used for converting values before comparing.<br>
+	 * value or matchValue can be one of the OASpecialCompareObject subclasses.
 	 */
 	public static int compare(Object value, Object matchValue, final int decimalPlaces) {
 		if (value == matchValue) {
@@ -307,34 +307,44 @@ public class OACompare {
 		}
 
         if ((value instanceof Boolean) && (matchValue instanceof Boolean)) {
-            boolean b = ((Boolean) value).equals(matchValue);
-            if (b == true) return 0;
-            if ( ((Boolean) value).booleanValue()) return 1;
-            return -1;
+        	return Boolean.compare((Boolean)value, (Boolean)matchValue);
         }
 		
         boolean b1 = value == null || (value instanceof String);
         boolean b2 = matchValue == null || (matchValue instanceof String);
 		if (b1 && b2) {
 		    if (value == matchValue) return 0;
-		    if (value != null) {
-		        if (value == null) return -1;
-		        if (matchValue == null) return 1;
-		        int x = ((String) value).compareTo((String) matchValue);
-		        return x;
-		    }
-		}
+		    if (value == null) return -1;
+		    if (matchValue == null) return 1;
+		    return ((String)value).compareTo((String)matchValue);
+		}		
 
-		if (decimalPlaces <= 0) {
-            b1 = value != null && (value instanceof Integer);
-            if (b1) {
-                b2 = matchValue != null && (matchValue instanceof Integer);
-                if (b2) {
-                    int x  = ((Integer) value).compareTo((Integer) matchValue);
-                    return x;
-                }
-            }
-		}
+		// Fast path: both values are Numbers
+		if (value instanceof Number && matchValue instanceof Number) {
+		    Number n1 = (Number) value;
+		    Number n2 = (Number) matchValue;
+
+		    // Case 1: No rounding
+		    if (decimalPlaces <= 0) {
+		        // Optimize for identical numeric wrapper types
+		        if (n1.getClass() == n2.getClass()) {
+		            if (n1 instanceof Integer)   return Integer.compare(n1.intValue(),   n2.intValue());
+		            if (n1 instanceof Long)      return Long.compare(n1.longValue(),     n2.longValue());
+		            if (n1 instanceof Short)     return Short.compare(n1.shortValue(),   n2.shortValue());
+		            if (n1 instanceof Byte)      return Byte.compare(n1.byteValue(),     n2.byteValue());
+		            if (n1 instanceof Double)    return Double.compare(n1.doubleValue(), n2.doubleValue());
+		            if (n1 instanceof Float)     return Float.compare(n1.floatValue(),   n2.floatValue());
+		            if (n1 instanceof BigDecimal) return ((BigDecimal)n1).compareTo((BigDecimal)n2);
+		            if (n1 instanceof BigInteger) return ((BigInteger)n1).compareTo((BigInteger)n2);
+		        }
+		    }
+
+		    // Case 2: Rounding enabled 
+		    double d1 = n1.doubleValue();
+		    double d2 = n2.doubleValue();
+
+		    return OAConv.compare(d1, d2, decimalPlaces);
+		}				
 		
         if (value instanceof OASpecialCompareObject || matchValue instanceof OASpecialCompareObject) {
     		if (value instanceof OAAnyValueObject || matchValue instanceof OAAnyValueObject) {
@@ -412,31 +422,15 @@ public class OACompare {
                 return -1;
             }
         }
+
+        if (value instanceof OAObject || value instanceof OAObjectKey || matchValue instanceof OAObject || matchValue instanceof OAObjectKey) {
+    	    OAObjectKey ka = OAObjectKeyDelegate.createObjectKey(value);
+    	    OAObjectKey kb = OAObjectKeyDelegate.createObjectKey(matchValue);
+    	  
+    	    if (OAObjectKeyDelegate.isForSameOAObject(null, ka, kb)) return 0;
+    	    return ka.compareTo(kb);
+    	}        
         
-        
-		if (!(value instanceof Boolean) && !(matchValue instanceof Boolean)) {
-			// 20191126
-			if (value instanceof OAObjectKey) {
-				int x = ((OAObjectKey) value).compareTo(matchValue);
-				return x;
-			}
-			if (matchValue instanceof OAObjectKey) {
-				int x = ((OAObjectKey) matchValue).compareTo(value);
-				return x;
-			}
-			if (value instanceof OAObject && matchValue instanceof OAObject) {
-				int x = ((OAObject) value).compareTo((OAObject) matchValue);
-				return x;
-			}
-			if (value instanceof OAObject) {
-				int x = ((OAObject) value).compareTo(matchValue);
-				return x;
-			}
-			if (matchValue instanceof OAObject) {
-				int x = ((OAObject) matchValue).compareTo(value);
-				return x;
-			}
-		}
 
 		Class classValue = (value == null) ? null : value.getClass();
 		Class classMatchValue = (matchValue == null) ? null : matchValue.getClass();
@@ -447,13 +441,7 @@ public class OACompare {
 				// all objects must be same
 				int x1 = Array.getLength(value);
 				int x2 = Array.getLength(matchValue);
-				if (x1 < x2) {
-					return -1;
-				}
-				if (x1 > x2) {
-					return 1;
-				}
-				for (int i = 0; i < x1; i++) {
+				for (int i = 0; i < x1 && i < x2; i++) {
 					Object v1 = Array.get(value, i);
 					Object v2 = Array.get(matchValue, i);
 					int x = compare(v1, v2);
@@ -461,13 +449,13 @@ public class OACompare {
 						return x;
 					}
 				}
+				if (x1 > x2) return 1;
+				if (x1 < x2) return -1;
 				return 0;
 			}
 			if (matchValue == null) {
 				int x = Array.getLength(value);
-				if (x == 0) {
-					return 0;
-				}
+				if (x == 0) return 0;
 				return 1;
 			}
 			if (classMatchValue.equals(Boolean.class)) {
@@ -503,7 +491,7 @@ public class OACompare {
 				if (x == 0) {
 					return 0;
 				}
-				return 1;
+				return -1;
 			}
 			if (classValue.equals(Boolean.class)) {
 				boolean b = OAConv.toBoolean(value);
@@ -541,16 +529,15 @@ public class OACompare {
 				Hub h2 = (Hub) matchValue;
 				int x1 = h1.getSize();
 				int x2 = h2.getSize();
+				for (int i = 0; i < x1 && i < x2; i++) {
+					int x = compare(h1.getAt(i), h2.getAt(i));
+					if (x != 0) return x;
+				}
 				if (x1 < x2) {
 					return -1;
 				}
 				if (x1 > x2) {
 					return 1;
-				}
-				for (int i = 0; i < x1; i++) {
-					if (h1.getAt(i) != h2.getAt(i)) {
-						return -1;
-					}
 				}
 				return 0;
 			}
@@ -690,7 +677,7 @@ public class OACompare {
 			if (value.equals(matchValue)) {
 				return 0;
 			}
-			return -1;
+			return value.toString().compareTo(matchValue.toString());
 		}
 		int x = ((Comparable) value).compareTo(matchValue);
 		return x;

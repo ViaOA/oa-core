@@ -295,7 +295,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 
 	// 20171222 add prefetch into hub, so that OAThreadLocalDelegate.setGetDetailHub could be used
 	private Hub hubReadAhead;
-	private HashSet<Integer> hsObjectWasLoaded;
+	private HashSet<Long> hsObjectWasLoaded;
 	private OASiblingHelper siblingHelper;
 
 	public synchronized Object next() {
@@ -684,7 +684,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 			} else if (paramType.equals(float.class)) {
 				obj = Float.valueOf(s);
 			} else if (paramType.equals(char.class)) {
-				obj = new Character(s.charAt(0));
+				obj = Character.valueOf(s.charAt(0));
 			} else {
 				if (java.util.Date.class.isAssignableFrom(paramType)) {
 					if (bDatesIncludeTime) {
@@ -713,21 +713,21 @@ public class ResultSetIterator implements OADataSourceIterator {
 		} else if (obj instanceof Number) {
 			Number num = (Number) obj;
 			if (paramType.equals(int.class)) {
-				obj = new Integer(num.intValue());
+				obj = Integer.valueOf(num.intValue());
 			} else if (paramType.equals(boolean.class)) {
-				obj = new Boolean(num.intValue() != 0);
+				obj = Boolean.valueOf(num.intValue() != 0);
 			} else if (paramType.equals(double.class)) {
-				obj = new Double(num.doubleValue());
+				obj = Double.valueOf(num.doubleValue());
 			} else if (paramType.equals(String.class)) {
 				obj = num.toString();
 			} else if (paramType.equals(long.class)) {
-				obj = new Long(num.longValue());
+				obj = Long.valueOf(num.longValue());
 			} else if (paramType.equals(short.class)) {
-				obj = new Short(num.shortValue());
+				obj = Short.valueOf(num.shortValue());
 			} else if (paramType.equals(float.class)) {
-				obj = new Float(num.floatValue());
+				obj = Float.valueOf(num.floatValue());
 			} else if (paramType.equals(char.class)) {
-				obj = new Character((char) num.shortValue());
+				obj = Character.valueOf((char) num.shortValue());
 			} else if (paramType.equals(java.awt.Color.class)) {
 				obj = new java.awt.Color(num.intValue());
 			}
@@ -750,19 +750,19 @@ public class ResultSetIterator implements OADataSourceIterator {
 			if (paramType.equals(boolean.class)) {
 				;
 			} else if (paramType.equals(int.class)) {
-				obj = new Integer(b ? 1 : 0);
+				obj = Integer.valueOf(b ? 1 : 0);
 			} else if (paramType.equals(double.class)) {
-				obj = new Double(b ? 1.0 : 0.0);
+				obj = Double.valueOf(b ? 1.0 : 0.0);
 			} else if (paramType.equals(String.class)) {
 				obj = obj.toString();
 			} else if (paramType.equals(long.class)) {
-				obj = new Long((long) (b ? 1 : 0));
+				obj = Long.valueOf((long) (b ? 1 : 0));
 			} else if (paramType.equals(short.class)) {
-				obj = new Short((short) (b ? 1 : 0));
+				obj = Short.valueOf((short) (b ? 1 : 0));
 			} else if (paramType.equals(float.class)) {
-				obj = new Float((float) (b ? 1.0f : 0.0f));
+				obj = Float.valueOf((float) (b ? 1.0f : 0.0f));
 			} else if (paramType.equals(char.class)) {
-				obj = new Character((char) (b ? '1' : '0'));
+				obj = Character.valueOf((char) (b ? '1' : '0'));
 			}
 		}
 
@@ -775,9 +775,9 @@ public class ResultSetIterator implements OADataSourceIterator {
 					}
 				} else {
 					if (obj.equals(objectTrue)) {
-						obj = new Boolean(true);
+						obj = Boolean.TRUE;
 					} else if (obj.equals(objectFalse)) {
-						obj = new Boolean(false);
+						obj = Boolean.FALSE;
 					} else {
 						// throw new OADataSourceException(OADataSourceJDBC.this,"ResultSetIterator.next() "+" method "+method.getName()+" cant convert "+obj+" to a boolean, it does not match objectTrue or objectFalse values");
 					}

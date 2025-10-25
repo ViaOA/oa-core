@@ -208,11 +208,7 @@ public class OAUICommandController extends OAUIController {
             cb = obj.getAllowSubmit();
             break;
         case InsertNew:
-            cb = OAObjectCallbackDelegate.getAllowNewObjectCallback(hub);
-            break;
         case AddNew:
-            cb = OAObjectCallbackDelegate.getAllowNewObjectCallback(hub);
-            break;
         case NewManual:
         case AddManual:
             cb = OAObjectCallbackDelegate.getAllowNewObjectCallback(hub);
@@ -239,9 +235,7 @@ public class OAUICommandController extends OAUIController {
         case Refresh:
             return pos >= 0;
         case MoveUp:
-//qqqqqqqqqqqqqqqqqqqqqqq
             cb = OAObjectCallbackDelegate.getAllowNewObjectCallback(hub);
-
             break;
         case MoveDown:
             break;
@@ -493,13 +487,7 @@ public class OAUICommandController extends OAUIController {
             hub.setAO(obj);
             break;
         case AddNew:
-            hub.add(obj);
-            hub.setAO(obj);
-            break;
         case NewManual:
-            hub.add(obj);
-            hub.setAO(obj);
-            break;
         case AddManual:
             hub.add(obj);
             hub.setAO(obj);

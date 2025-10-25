@@ -195,9 +195,9 @@ public class OAObjectSaveDelegate {
 									if (!oaRef.getNew()) {
 										break;
 									}
-									Thread t = hmSaveNewLock.get(new Integer(oaRef.guid));
+									Thread t = hmSaveNewLock.get(Long.valueOf(oaRef.guid));
 									if (t == null) {
-										hmSaveNewLock.put(new Integer(oaRef.guid), Thread.currentThread());
+										hmSaveNewLock.put(Long.valueOf(oaRef.guid), Thread.currentThread());
 										bSave = true;
 										break;
 									}
@@ -224,7 +224,7 @@ public class OAObjectSaveDelegate {
 								oaRef.changedFlag = true; // so that it will be save/updated
 
 								synchronized (hmSaveNewLock) {
-									hmSaveNewLock.remove(new Integer(oaRef.guid));
+									hmSaveNewLock.remove(Long.valueOf(oaRef.guid));
 									hmSaveNewLock.notifyAll();
 								}
 
@@ -266,7 +266,7 @@ public class OAObjectSaveDelegate {
 		}
 	}
 
-	private static final HashMap<Integer, Thread> hmSaveNewLock = new HashMap<Integer, Thread>(11);
+	private static final HashMap<Long, Thread> hmSaveNewLock = new HashMap<Long, Thread>(11);
 
 	/**
 
@@ -283,12 +283,12 @@ public class OAObjectSaveDelegate {
 					if (!oaObj.isNew()) {
 						return true; // already saved
 					}
-					Thread t = hmSaveNewLock.get(new Integer(oaObj.guid));
+					Thread t = hmSaveNewLock.get(Long.valueOf(oaObj.guid));
 					if (t == null) {
 						if (i > 0) {
 							return true; // already saved
 						}
-						hmSaveNewLock.put(new Integer(oaObj.guid), Thread.currentThread());
+						hmSaveNewLock.put(Long.valueOf(oaObj.guid), Thread.currentThread());
 						break;
 					}
 					try {
@@ -326,7 +326,7 @@ public class OAObjectSaveDelegate {
 		} finally {
 			if (bIsNew) {
 				synchronized (hmSaveNewLock) {
-					hmSaveNewLock.remove((Object) (new Integer(oaObj.guid))); // needs to use Object instead of primitive
+					hmSaveNewLock.remove((Object) (Long.valueOf(oaObj.guid))); // needs to use Object instead of primitive
 					hmSaveNewLock.notifyAll();
 				}
 			}

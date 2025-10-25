@@ -1277,7 +1277,7 @@ public class OATemplate<F extends OAObject> {
 					}
 
 					String fmtx = null;
-					if (bUseFormat && OAString.isEmpty(fmt) && obj instanceof OAObject) {
+					if (bUseFormat && OAString.isEmpty(fmt) && obj != null) {
 						bFmt = false;
 						OAPropertyPath pp = new OAPropertyPath(obj.getClass(), propertyName, true);
 						fmtx = pp.getFormat();

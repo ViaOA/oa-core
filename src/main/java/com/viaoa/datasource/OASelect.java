@@ -106,10 +106,10 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	protected int amountRead = -1;
 	protected volatile int amountCount = -1;
 	protected Object[] params;
-	public volatile transient OADataSourceIterator query;
+	protected volatile transient OADataSourceIterator query;
 
-	public static final int defalutFetchAmount = 45;
-	protected int fetchAmount = defalutFetchAmount; // used by Hub to know how many to read at a time
+	public static final int defaultFetchAmount = 45;
+	protected int fetchAmount = defaultFetchAmount; // used by Hub to know how many to read at a time
 	protected volatile boolean bCancelled;
 	protected volatile boolean bHasBeenStarted;
 	protected boolean bUseFinder;

@@ -25,6 +25,7 @@ import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
@@ -331,7 +332,7 @@ public class OAJacksonDeserializerLoaderOld {
 
 		if (stackItem.li.isOne()) {
 			OAObject objx = (OAObject) stackItem.li.getValue(stackItem.parent.obj);
-			boolean b = (ok.equals(objx));
+			boolean b = OAObjectKeyDelegate.isForSameOAObject(null, ok, objx.getObjectKey());
 			if (b) {
 				stackItem.obj = objx;
 			}
@@ -1658,7 +1659,8 @@ public class OAJacksonDeserializerLoaderOld {
 
 		if (stackItem.li.getType() != OALinkInfo.TYPE_MANY) {
 			OAObject objx = (OAObject) stackItem.li.getValue(stackItem.parent.obj);
-			boolean b = (ok.equals(objx));
+			//was: boolean b = (ok.equals(objx));
+			boolean b = OAObjectKeyDelegate.isForSameOAObject(null, ok, objx.getObjectKey());
 			if (b) {
 				stackItem.obj = objx;
 			}

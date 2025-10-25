@@ -355,7 +355,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 					if (x2 > x) {
 						return false;
 					}
-					hmLinkInfoCount.put(linkInfo, new Integer(x2 + 1));
+					hmLinkInfoCount.put(linkInfo, Integer.valueOf(x2 + 1));
 				}
 			}
 		}

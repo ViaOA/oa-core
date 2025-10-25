@@ -48,7 +48,7 @@ public class OASelectManager {
             public void run() {
                 for (;;) {
                     try {
-                        Thread.sleep(timeLimitInSeconds * 1000);
+                        Thread.sleep(timeLimitInSeconds * 1000L);
                         performCleanup();
                     }
                     catch (Exception e) {
@@ -64,13 +64,13 @@ public class OASelectManager {
     
     public static void remove(OASelect sel) {
         final int id = sel.getId();
-        WeakReference<OASelect> ref = hmSelect.remove(id);
+        hmSelect.remove(id);
     }    
 
     protected static void performCleanup() {
         LOG.finer("checking selects");
         long time = new Date().getTime();
-        time -= (timeLimitInSeconds * 1000);
+        time -= (timeLimitInSeconds * 1000L);
 
         int iTotal = hmSelect.size();
         Set<Map.Entry<Integer, WeakReference<OASelect>>> set = hmSelect.entrySet();

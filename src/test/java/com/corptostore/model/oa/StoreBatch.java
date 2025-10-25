@@ -135,7 +135,7 @@ public class StoreBatch extends OAObject {
 		this.transmitBatchDate = transmitBatchDate;
 		this.batchId = batchId;
 		setProperty(P_Batch, new OAObjectKey(this.batchId));
-		setProperty(P_StoreTransmitBatch, new OAObjectKey(this.storeNumber, this.transmitBatchDate));
+		setProperty(P_StoreTransmitBatch, new OAObjectKey(new Object[] {this.storeNumber, this.transmitBatchDate} ));
 
 		this.changedFlag = false;
 		this.newFlag = false;

@@ -274,7 +274,7 @@ public class OAObjectDeleteDelegate {
                             protected boolean isUsed(OAObject obj) {
                                 Object objx = liRev.getValue(obj);
                                 if (objx instanceof OAObjectKey) {
-                                    if (!objx.equals(oaObj.getObjectKey())) {
+                                    if (!OAObjectKeyDelegate.isForSameOAObject(null, (OAObjectKey) objx, oaObj.getObjectKey())) {
                                         return false;
                                     }
                                     OAObjectPropertyDelegate.removeProperty((OAObject) obj, liRev.getName(), false);

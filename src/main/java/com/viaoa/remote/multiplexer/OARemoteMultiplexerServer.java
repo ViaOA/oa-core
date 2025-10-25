@@ -130,14 +130,14 @@ public class OARemoteMultiplexerServer {
         session.realSocket = socket;
     }
 
-    public Session getSession(int connectionId, boolean bCreateIfNull) {
-        Session session = hmSession.get(connectionId);
-        if (session == null && bCreateIfNull) {
-            session = new Session();
-            session.connectionId = connectionId;
-            hmSession.put(connectionId, session);
+    public Session getSession(final int connectionId, final boolean bCreateIfNull) {
+        Session session = hmSession.computeIfAbsent(connectionId, k -> {
+	        if (!bCreateIfNull) return null;
+            Session session2 = new Session();
+            session2.connectionId = connectionId;
             LOG.fine("create session, connectionId="+connectionId);
-        }
+            return session2;
+        });
         return session;
     }
     
@@ -179,6 +179,7 @@ public class OARemoteMultiplexerServer {
 
     // new vsocket connection for client to server messages
     protected void onNewConnectionForCtoS(Socket socket) {
+    	if (!(socket instanceof VirtualSocket)) return;
         final VirtualSocket vSocket = (VirtualSocket) socket;
         Thread t = new Thread(new Runnable() {
             @Override
@@ -507,6 +508,7 @@ public class OARemoteMultiplexerServer {
      * call methods on a client's remote object.
      */
     protected void onNewConnectionForStoC(Socket socket) {
+    	if (!(socket instanceof VirtualSocket)) return;
         final VirtualSocket vSocket = (VirtualSocket) socket;
         int connectionId = vSocket.getConnectionId();
         Session session = getSession(connectionId, true);
@@ -894,7 +896,9 @@ public class OARemoteMultiplexerServer {
     protected BindInfo getBindInfo(String name, Object obj, Class interfaceClass, String queueName, int queueSize) {
         return getBindInfo(null, name, obj, interfaceClass, false, queueName, queueSize, false);
     }
-    protected BindInfo getBindInfo(BindInfo biParent, String name, Object obj, Class interfaceClass, boolean bIsBroadcast, String queueName, int queueSize, boolean bDontUseQueue) {
+    protected BindInfo getBindInfo(final BindInfo biParent, final String name, final Object obj, final Class interfaceClass, 
+    		final boolean bIsBroadcast, final String queueName, final int queueSize, final boolean bDontUseQueue) {
+    	
         if (name == null || interfaceClass == null) {
             throw new IllegalArgumentException("name and interfaceClass can not be null");
         }
@@ -902,43 +906,39 @@ public class OARemoteMultiplexerServer {
             throw new IllegalArgumentException("interfaceClass must be a Java interface");
         }
         
-        BindInfo bind = hmNameToBind.get(name);
-        if (bind != null) return bind;
-        if (biParent != null) {
-            queueName = biParent.asyncQueueName;  
-            queueSize = biParent.asyncQueueSize;
-        }
-        
-        bind = new BindInfo(name, obj, interfaceClass, referenceQueue, bIsBroadcast, queueName, queueSize);
-
-        bind.loadMethodInfo();
-        hmNameToBind.put(name, bind);
-        
-        if (bind.usesQueue && !bDontUseQueue) {
-            OACircularQueue<RequestInfo> cq = hmAsyncCircularQueue.get(bind.asyncQueueName);
-            if (cq == null) {
-                synchronized (hmAsyncCircularQueue) {
-                    if (cq == null) {
-                        cq = new OACircularQueue<RequestInfo>(bind.asyncQueueSize) {
-                            @Override
-                            protected boolean shouldWaitOnSlowSession(int sessionId, int msSinceLastRead) {
-                                if (msSinceLastRead > 5000) return false;  // dont wait over 5 seconds
-                                Session session = getSession(sessionId, false);
-                                if (session == null) return false;
-                                if (session.bDisconnected) return false;
-                                if (session.realSocket == null) return false;
-                                if (session.realSocket.isClosed()) return false;
-                                return true;
-                            }
-                            
-                        };
-                        cq.setName(queueName);
-                        hmAsyncCircularQueue.put(bind.asyncQueueName, cq);
-                    }
-                }
-            }
-        }
-        return bind;
+        BindInfo bindx = hmNameToBind.computeIfAbsent(name, k -> {
+        	String queueName2 = queueName;
+        	int queueSize2 = queueSize; 
+	        if (biParent != null) {
+	            queueName2 = biParent.asyncQueueName;  
+	            queueSize2 = biParent.asyncQueueSize;
+	        }
+	        
+	        final BindInfo bind = new BindInfo(name, obj, interfaceClass, referenceQueue, bIsBroadcast, queueName2, queueSize2);
+	        bind.loadMethodInfo();
+	        
+	        if (bind.usesQueue && !bDontUseQueue) {
+		    	final String queueName3 = queueName2;
+		        hmAsyncCircularQueue.computeIfAbsent(bind.asyncQueueName, k2 -> {
+		        	OACircularQueue<RequestInfo> cqNew = new OACircularQueue<RequestInfo>(bind.asyncQueueSize) {
+		                @Override
+		                protected boolean shouldWaitOnSlowSession(int sessionId, int msSinceLastRead) {
+		                    if (msSinceLastRead > 5000) return false;  // dont wait over 5 seconds
+		                    Session session = getSession(sessionId, false);
+		                    if (session == null) return false;
+		                    if (session.bDisconnected) return false;
+		                    if (session.realSocket == null) return false;
+		                    if (session.realSocket.isClosed()) return false;
+		                    return true;
+		                }
+		            };
+		            cqNew.setName(queueName3);
+		            return cqNew;
+		        });
+	        }
+	        return bind;
+        });
+        return bindx;
     }
 
     public <T> T createBroadcast(final String bindName, Class<T> interfaceClass, String queueName, int queueSize) {
@@ -1262,7 +1262,7 @@ public class OARemoteMultiplexerServer {
 
             long ms2 = System.currentTimeMillis();
             // this can be removed, sanity check only
-            if (maxSeconds > 0 && (ms2-ms1) >= (maxSeconds * 1000)) {
+            if (maxSeconds > 0 && (ms2-ms1) >= (maxSeconds * 1000L)) {
                 StackTraceElement[] stes = remoteThread.getStackTrace();
                 Exception ex = new Exception();
                 ex.setStackTrace(stes);
@@ -1572,14 +1572,14 @@ public class OARemoteMultiplexerServer {
         private HashMap<String, VirtualSocketInfo> hmAsyncQueueSocket = new HashMap<String, VirtualSocketInfo>();  
 
         // tracks guid for all oaObjects serialized, the Boolean: true=all references have been sent, false=object has been sent (might not have all references)
-        private final ConcurrentHashMap<Integer, Boolean> hmGuid = new ConcurrentHashMap<Integer, Boolean>(); 
+        private final ConcurrentHashMap<Long, Boolean> hmGuid = new ConcurrentHashMap<Long, Boolean>(); 
         private final OAObjectSerializer oaObjectSerializer;
         
         public Session() {
             oaObjectSerializer = new OAObjectSerializer(null, false, new OAObjectSerializerCallback() {
                 @Override
                 protected void beforeSerialize(OAObject obj) {
-                    int x = obj.getGuid();
+                    long x = obj.getGuid();
                     hmGuid.putIfAbsent(x, false);
                 }
                 @Override
@@ -1589,7 +1589,7 @@ public class OARemoteMultiplexerServer {
             }); 
         }
         
-        public ConcurrentHashMap<Integer, Boolean> getGuidHashMap() {
+        public ConcurrentHashMap<Long, Boolean> getGuidHashMap() {
             return hmGuid;
         }
         
@@ -2110,7 +2110,7 @@ public class OARemoteMultiplexerServer {
     /**
      * Used to filter out broadcast msgs that get sent to clients.
      */
-    protected boolean shouldSendSyncMessageToClient(RequestInfo ri, ConcurrentHashMap<Integer, Boolean> hmGuid) {
+    protected boolean shouldSendSyncMessageToClient(RequestInfo ri, ConcurrentHashMap<Long, Boolean> hmGuid) {
         return true;
     }
     

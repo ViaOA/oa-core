@@ -34,13 +34,13 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
      *  1: whenever objects are serialized to the client.
      *  2: when an object is created on client and objectCreated is called. 
      */
-    protected final Map<Integer, Boolean> hmGuid;
+    protected final Map<Long, Boolean> hmGuid;
     
     
 	protected final ConcurrentHashMap<OAObject, OAObject> hashLock = new ConcurrentHashMap<OAObject, OAObject>();
-    protected final ConcurrentHashMap<Integer, OAObject> hmObjectsWithoutHubs = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<Long, OAObject> hmObjectsWithoutHubs = new ConcurrentHashMap<>();
 
-	public RemoteSessionImpl(int sessionId, Map<Integer, Boolean> hmGuid) {
+	public RemoteSessionImpl(int sessionId, Map<Long, Boolean> hmGuid) {
 		this.sessionId = sessionId;
 		this.hmGuid = hmGuid;
 	}
@@ -50,7 +50,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 * Add to guid to cache, to know what objects are on client.
 	 */
     @Override
-    public void objectCreated(int guid) {
+    public void objectCreated(long guid) {
         hmGuid.putIfAbsent(guid, false);
     }
     
@@ -59,9 +59,9 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
      * Called by client side OAObject.finalize, to remove the guids from hmGuid/Cache.
      */
     @Override
-    public void objectsFinalized(int[] guids) {
+    public void objectsFinalized(long[] guids) {
         if (guids == null) return;
-        for (int guid : guids) {
+        for (long guid : guids) {
             hmGuid.remove(guid);
             hmObjectsWithoutHubs.remove(guid);
         }
@@ -80,7 +80,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	    else {
     	    OAObject obj = (OAObject) OAObjectCacheDelegate.get(c, ok);
     	    if (obj != null) {
-                int guid = ok.getGuid();
+                long guid = ok.getGuid();
                 hmObjectsWithoutHubs.put(guid, obj);
     	    }
 	    }
@@ -93,7 +93,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	// called by server to save any client cached objects
 	public void saveCache(OACascade cascade, int iCascadeRule) {
 		LOG.fine("sessionId=" + sessionId + ", cache size=" + hmObjectsWithoutHubs.size());
-		for (Map.Entry<Integer, OAObject> entry : hmObjectsWithoutHubs.entrySet()) {
+		for (Map.Entry<Long, OAObject> entry : hmObjectsWithoutHubs.entrySet()) {
 			OAObject obj = entry.getValue();
 			if (!obj.wasDeleted()) {
 				OAObjectSaveDelegate.save(obj, iCascadeRule, cascade);

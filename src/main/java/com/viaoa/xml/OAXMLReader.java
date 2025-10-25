@@ -327,11 +327,11 @@ public class OAXMLReader {
 				}
 				hm.remove(id);
 			}
-			int iguid = 0;
+			long iguid = 0;
 			if (guid != null && guid.length() > 1) {
-				iguid = OAConv.toInt(guid.substring(1));
+				iguid = OAConv.toLong(guid.substring(1));
 			}
-			final OAObjectKey key = new OAObjectKey(values, iguid, false);
+			final OAObjectKey key = new OAObjectKey(values, iguid);
 
 			// try to find using matching props
 			final String[] matchProps = getImportMatching() ? oi.getImportMatchPropertyNames() : null;

@@ -681,8 +681,9 @@ public class OARestClient {
 
 			try {
 				if (fieldHttpURLConnectMethod == null) {
-					fieldHttpURLConnectMethod = HttpURLConnection.class.getDeclaredField("method");
-					fieldHttpURLConnectMethod.setAccessible(true);
+					java.lang.reflect.Field fld = HttpURLConnection.class.getDeclaredField("method");
+					fld.setAccessible(true);
+					fieldHttpURLConnectMethod = fld;
 				}
 				fieldHttpURLConnectMethod.set(conn, invokeInfo.httpMethod);
 			} catch (Throwable t) {
@@ -692,8 +693,9 @@ public class OARestClient {
 			if (conn instanceof HttpsURLConnection) {
 				try {
 					if (fieldHttpsURLConnectMethod1 == null) {
-						fieldHttpsURLConnectMethod1 = HttpsURLConnection.class.getDeclaredField("delegate");
-						fieldHttpsURLConnectMethod1.setAccessible(true);
+						java.lang.reflect.Field fld = HttpsURLConnection.class.getDeclaredField("delegate");
+						fld.setAccessible(true);
+						fieldHttpsURLConnectMethod1 = fld;
 					}
 					Object conx = fieldHttpsURLConnectMethod1.get(conn);
 					if (conx instanceof HttpURLConnection) {
@@ -702,8 +704,9 @@ public class OARestClient {
 					}
 
 					if (fieldHttpsURLConnectMethod2 == null) {
-						fieldHttpsURLConnectMethod2 = conx.getClass().getDeclaredField("httpsURLConnection");
-						fieldHttpsURLConnectMethod2.setAccessible(true);
+						java.lang.reflect.Field fld = conx.getClass().getDeclaredField("httpsURLConnection");
+						fld.setAccessible(true);
+						fieldHttpsURLConnectMethod2 = fld;
 					}
 					HttpsURLConnection con2 = (HttpsURLConnection) fieldHttpsURLConnectMethod2.get(conx);
 

@@ -37,7 +37,7 @@ public class OAObjectSchedulerDelegate {
         OAScheduler scheduler = new OAScheduler(objSearch, date, date);
         
         try {
-            method.invoke(objThis, scheduler);
+            method.invoke(objThis, new Object[] {scheduler});
         }
         catch (Exception e) {
             throw new RuntimeException("exception while invoking scheduler callback method="+method+", for object="+objThis, e);
@@ -57,7 +57,7 @@ public class OAObjectSchedulerDelegate {
         if (method == null) return;
         
         try {
-            method.invoke(objThis, scheduler);
+            method.invoke(objThis, new Object[] {scheduler});
         }
         catch (Exception e) {
             throw new RuntimeException("exception while invoking scheduler callback method="+method+", for object="+objThis, e);

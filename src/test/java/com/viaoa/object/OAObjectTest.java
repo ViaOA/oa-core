@@ -45,7 +45,7 @@ public class OAObjectTest extends OAUnitTest {
 		assertTrue(server.isNull(Server.P_Id));
 
 		// test: guid should be 1
-		int x = OAObjectDelegate.getGuid(server);
+		long x = OAObjectDelegate.getGuid(server);
 		assertEquals(x, 1);
 
 		assertEquals(server.getId(), 0);
@@ -91,7 +91,7 @@ public class OAObjectTest extends OAUnitTest {
 	public void idAndGuidTest() {
 		reset(false);
 
-		int gidNext = OAObjectDelegate.getNextGuid() + 1;
+		long gidNext = OAObjectDelegate.getNextGuid() + 1;
 
 		Server server = new Server();
 
@@ -99,7 +99,7 @@ public class OAObjectTest extends OAUnitTest {
 		Server serv = (Server) OAObjectCacheDelegate.get(Server.class, 0); // should not work, Id is null
 		assertEquals(null, serv);
 
-		OAObjectKey key = new OAObjectKey(null, gidNext, true);
+		OAObjectKey key = new OAObjectKey(null, gidNext);
 		serv = (Server) OAObjectCacheDelegate.get(Server.class, key);
 		assertEquals(serv, server);
 
@@ -134,7 +134,7 @@ public class OAObjectTest extends OAUnitTest {
 
 		// test: guid should be 2
 		gidNext++;
-		int x = OAObjectDelegate.getGuid(server2);
+		long x = OAObjectDelegate.getGuid(server2);
 		assertEquals(x, gidNext);
 
 		assertEquals(0, server2.getId());

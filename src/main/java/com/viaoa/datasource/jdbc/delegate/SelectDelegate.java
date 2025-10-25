@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -45,11 +46,11 @@ import com.viaoa.util.OAString;
 public class SelectDelegate {
 	private static Logger LOG = Logger.getLogger(SelectDelegate.class.getName());
 
-	private static ConcurrentHashMap<WhereObjectSelect, String> hmPreparedStatementSql = new ConcurrentHashMap<WhereObjectSelect, String>();
-	private static ConcurrentHashMap<Class, String> hmPreparedStatementSqlx = new ConcurrentHashMap<Class, String>();
+	private static final Map<WhereObjectSelect, String> hmPreparedStatementSql = new ConcurrentHashMap<WhereObjectSelect, String>();
+	private static final Map<Class, String> hmPreparedStatementSqlx = new ConcurrentHashMap<Class, String>();
 
-	private static ConcurrentHashMap<Class, String> hmPreparedStatementSqlxDirty = new ConcurrentHashMap<Class, String>();
-	private static ConcurrentHashMap<Class, Column[]> hmPreparedStatementSqlxDirtyColumns = new ConcurrentHashMap<Class, Column[]>();
+	private static final Map<Class, String> hmPreparedStatementSqlxDirty = new ConcurrentHashMap<Class, String>();
+	private static final Map<Class, Column[]> hmPreparedStatementSqlxDirtyColumns = new ConcurrentHashMap<Class, Column[]>();
 
 	/*
 	public static Iterator select(OADataSourceJDBC ds, Class clazz, String queryWhere, String queryOrder, int max, boolean bDirty) {
@@ -312,13 +313,12 @@ public class SelectDelegate {
 
 		ResultSetIterator rsi;
 		if (!bDirty && dao != null) {
-			String sql = hmPreparedStatementSqlx.get(clazz);
-			if (sql == null) {
-				sql = dao.getSelectColumns();
-				sql = "SELECT " + sql;
-				sql += " FROM " + table.name + " WHERE ";
+			String sql = hmPreparedStatementSqlx.computeIfAbsent(clazz, ckey -> {
+				String sqlx = dao.getSelectColumns();
+				sqlx = "SELECT " + sqlx;
+				sqlx += " FROM " + table.name + " WHERE ";
 
-				// 20211212 query columns must match same order as used by objKey properties
+				// query columns must match same order as used by objKey properties
 				OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(clazz);
 				boolean b = false;
 				String[] ss = oi.getKeyProperties();
@@ -327,44 +327,41 @@ public class SelectDelegate {
 						if (!b) {
 							b = true;
 						} else {
-							sql += " AND ";
+							sqlx += " AND ";
 						}
 						Column col = table.getPropertyColumn(propName);
-						sql += col.columnName + " = ?";
+						sqlx += col.columnName + " = ?";
 					}
 				}
-				hmPreparedStatementSqlx.put(clazz, sql);
-			}
+				return sqlx;
+			});
 			rsi = new ResultSetIterator(ds, clazz, dao, sql, key.getObjectIds());
 		} else {
-			String sql = hmPreparedStatementSqlxDirty.get(clazz);
-			Column[] columns = hmPreparedStatementSqlxDirtyColumns.get(clazz);
-
-			if (sql == null) {
+			String sql = hmPreparedStatementSqlxDirty.computeIfAbsent(clazz, ckey -> {
 				QueryConverter qc = new QueryConverter(ds);
-				sql = "SELECT " + qc.getSelectColumns(clazz, bDirty); // could use dao
-				sql += " FROM " + table.name + " WHERE ";
+				String sqlNew = "SELECT " + qc.getSelectColumns(clazz, bDirty); // could use dao
+				sqlNew += " FROM " + table.name + " WHERE ";
 
-				// 20211212 query columns must match same order as used by objKey properties
+				// query columns must match same order as used by objKey properties
 				OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(clazz);
 				boolean b = false;
 				String[] ss = oi.getKeyProperties();
 				if (ss != null) {
 					for (String propName : ss) {
-						if (!b) {
-							b = true;
-						} else {
-							sql += " AND ";
-						}
+						if (b) sqlNew += " AND ";
+						b = true;
 						Column col = table.getPropertyColumn(propName);
-						sql += col.columnName + " = ?";
+						sqlNew += col.columnName + " = ?";
 					}
 				}
-				hmPreparedStatementSqlxDirty.put(clazz, sql);
-				columns = qc.getSelectColumnArray(clazz);
+				Column[] columns = qc.getSelectColumnArray(clazz);
 				hmPreparedStatementSqlxDirtyColumns.put(clazz, columns);
-			}
+				return sqlNew;
+			});			
+			
+			Column[] columns = hmPreparedStatementSqlxDirtyColumns.get(clazz);			
 			rsi = new ResultSetIterator(ds, clazz, columns, sql, key.getObjectIds(), 0);
+			
 		}
 		rsi.setDirty(bDirty);
 		return rsi;
@@ -790,8 +787,8 @@ public class SelectDelegate {
 
 			al = new ArrayList<>();
 			while (rs.next()) {
-				OAObjectKey ok1 = new OAObjectKey(rs.getInt(1));
-				OAObjectKey ok2 = new OAObjectKey(rs.getInt(2));
+				OAObjectKey ok1 = OAObjectKeyDelegate.createObjectKey((Object) rs.getInt(1));
+				OAObjectKey ok2 = OAObjectKeyDelegate.createObjectKey((Object) rs.getInt(2));
 				al.add(new ManyToMany(ok1, ok2));
 			}
 		} catch (Exception e) {

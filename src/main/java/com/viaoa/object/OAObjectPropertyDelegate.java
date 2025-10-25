@@ -193,7 +193,7 @@ public class OAObjectPropertyDelegate {
 	}
 
 	public static boolean removePropertyIfNull(OAObject oaObj, String name, boolean bFirePropertyChange) {
-		if (oaObj.properties == null || name == null) {
+		if (oaObj == null || oaObj.properties == null || name == null) {
 			return false;
 		}
 		Object value = null;
@@ -409,7 +409,7 @@ public class OAObjectPropertyDelegate {
 								return oaObj.properties[i + 1];
 							}
 							OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) newValue);
-							if (!matchValue.equals(k)) {
+							if (!OAObjectKeyDelegate.isForSameOAObject(null, (OAObjectKey)matchValue, k)) {
 								return oaObj.properties[i + 1];
 							}
 						}
@@ -536,16 +536,11 @@ public class OAObjectPropertyDelegate {
 		String key = OAObjectDelegate.getGuid(oaObj) + "." + name.toUpperCase();
 		PropertyLock lock;
 		final Thread threadThis = Thread.currentThread();
-		synchronized (oaObj) {
-			lock = hmLock.get(key);
-			if (lock == null) {
-				lock = new PropertyLock(threadThis);
-				hmLock.put(key, lock);
-				return true;
-			}
-			if (lock.thread == threadThis) {
-				return true;
-			}
+		
+		
+		lock = hmLock.computeIfAbsent(key, k -> new PropertyLock(threadThis));
+		if (lock.thread == threadThis) {
+			return true;
 		}
 
 		hmLockedThread.put(threadThis, lock.thread);
@@ -731,7 +726,7 @@ public class OAObjectPropertyDelegate {
 				continue;
 			}
 			if (!OAObjectPropertyDelegate.isPropertyLoaded(obj, li.getName())) {
-				continue; // 20160827 added
+				continue;
 			}
 
 			Object parent = li.getValue(obj); // parent
@@ -740,7 +735,7 @@ public class OAObjectPropertyDelegate {
 			}
 
 			if (!OAObjectPropertyDelegate.isPropertyLoaded((OAObject) parent, liRev.getName())) {
-				continue; // 20171230
+				continue;
 			}
 
 			if (liRev.getCacheSize() > 0) {
@@ -764,9 +759,7 @@ public class OAObjectPropertyDelegate {
 				if (cascade == null) {
 					cascade = new OACascade();
 				}
-				// 20191019
 				cascade.wasCascaded(obj, true);
-				// was: cascade.add(obj);
 				setReferenceable((OAObject) parent, bReferenceable, cascade);
 			}
 		}

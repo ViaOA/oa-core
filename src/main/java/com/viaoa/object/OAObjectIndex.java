@@ -5,95 +5,99 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.util.OAArray;
 
 /**
- * Indexes OAObjects by pkey Property values to it's OAObject.guid value.
- * <br>
- * Return value is (long) guid, which is used to lookup OAObject using OAObjectCache.
+ * Used by OAObjectCache, that Indexes OAObjects by pkey Property values (using OAObjectIndexKey) to it's OAObject.guid value.
  * <br>
  * This is managed by OAObjectCache, including updates when an indexed property is changed.
  * <br>
- * Note: only OAObjectKey with non-null objectIds[] is added.
+ * Note: only OAObjectKey that have all non-null objectIds[] are added.
  *  
- * Also called by OAObjectCache weakref queue when an OAObject weakref is GC'd 
+ * Also called by OAObjectCache weakref queue when an OAObject weakref is GC'd, removing from this index. 
  * 
  * @see OAObjectInfoDelegate.getPropertyIdValues(..) and OAObjectKey.
- * 
  */
 public class OAObjectIndex {
+	private final ConcurrentHashMap<Class<? extends OAObject>, ConcurrentHashMap<OAObjectIndexKey, Long>> hmGuidByIndexKey = new ConcurrentHashMap<>(151, 0.75F);
 
-	private final ConcurrentHashMap<Class<? extends OAObject>, ConcurrentHashMap<OAObjectKey, Long>> hmOAObjectById = new ConcurrentHashMap<>(151, 0.75F);
-
-	public long lookupGuid(Class<? extends OAObject> c, Object... ids) {
-		if (c == null) return 0L;
-		if (ids == null || ids.length == 0) return 0L;
-		if (OAArray.hasNull(ids)) return 0L;
-		OAObjectKey ok = new OAObjectKey(ids);
-		return lookupGuid(c, ok);
+//qqqqq change to add(..)	
+	public boolean addToIndex(final OAObject obj) {
+		if (obj == null) return false;
+		OAObjectKey ok = OAObjectKeyDelegate.getKey(obj);
+		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
+		Class<? extends OAObject> c = obj.getClass();
+		return addToIndex(c, ik, obj.getGuid());
 	}
 
-	/**
-	 * @return 0 if not found.  
-	 */
+	protected boolean addToIndex(final OAObject obj, OAObjectKey ok) {
+		if (obj == null) return false;
+		if (ok == null) return false;
+		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
+		return addToIndex(obj.getClass(), ik, obj.getGuid());
+	}
+	
+	protected boolean addToIndex(final Class<? extends OAObject> c, OAObjectIndexKey ik, long guid) {
+		if (c == null || ik == null || guid == 0 || !ik.hasValidIds()) return false;
+		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.computeIfAbsent(c, k -> new ConcurrentHashMap<>());
+		hm.put(ik, guid);
+		return true;
+	}
+	
+	
+//qqqqqqq change to getGuid(..)	
+	public long lookupGuid(Class<? extends OAObject> c, Object[] ids) {
+		if (c == null) return 0L;
+		OAObjectIndexKey ik = new OAObjectIndexKey(ids);
+		return lookupGuid(c, ik);
+	}
+
 	public long lookupGuid(final Class<? extends OAObject> c, final OAObjectKey ok) {
 		if (c == null) return 0L;
 		if (ok == null) return 0L;
-		if (!ok.hasValidObjectIds()) return 0L;
-		ConcurrentHashMap<OAObjectKey, Long> hm = hmOAObjectById.get(c);
-		if (hm == null) {
-			return 0L;
-		}
-		
-		Long guid = hm.get(ok);
-		if (guid == null) return 0L;
-		return guid;
+		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
+		return lookupGuid(c, ik);
+	}
+
+	protected long lookupGuid(final Class<? extends OAObject> c, final OAObjectIndexKey ik) {
+		if (c == null || ik == null || !ik.hasValidIds()) return 0L;
+		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.get(c);
+		if (hm == null) return 0;
+		return hm.get(ik);
 	}
 	
-
-	public boolean addToIndex(final OAObject obj) {
-		if (obj == null) return false;
-		
-		OAObjectKey ok = OAObjectKeyDelegate.getKey(obj);
-		return addToIndex(obj, ok);
-	}
 	
-	public boolean addToIndex(final OAObject obj, OAObjectKey ok) {
-		if (obj == null) return false;
-		if (ok == null) return false;
-		if (!ok.hasValidObjectIds()) return false;
-
-		final Class<? extends OAObject> clazz = obj.getClass();
-		ConcurrentHashMap<OAObjectKey, Long> hm = hmOAObjectById.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
-
-		long guid = obj.getGuid();
-		hm.put(ok, guid);
-		return true;
-	}
 	
 	public boolean removeFromIndex(OAObject obj) {
 		if (obj == null) return false;
 		Class<? extends OAObject> c = obj.getClass();
-		ConcurrentHashMap<OAObjectKey, Long> hm = hmOAObjectById.get(c);
-		if (hm == null) return false;
-		
-		OAObjectKey ok = new OAObjectKey(obj);
-		return (ok.hasValidObjectIds() && hm.remove(ok) != null);
+		OAObjectKey ok = OAObjectKeyDelegate.createObjectKey(obj);
+		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
+		return removeFromIndex(c, ik);
+	}
+	
+	public boolean removeFromIndex(Class<? extends OAObject> c, OAObjectKey ok) {
+		if (c == null || ok == null) return false;
+		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
+		return removeFromIndex(c, ik);
 	}
 
-	public boolean removeFromIndex(Class<? extends OAObject> clazz, OAObjectKey ok) {
-		if (clazz == null || ok == null || !ok.hasValidObjectIds()) return false;
-		ConcurrentHashMap<OAObjectKey, Long> hm = hmOAObjectById.get(clazz);
+	protected boolean removeFromIndex(final Class<? extends OAObject> c, OAObjectIndexKey ik) {
+		if (c == null || ik == null || !ik.hasValidIds()) return false;
+		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.computeIfAbsent(c, k -> new ConcurrentHashMap<>());
 		if (hm == null) return false;
-		return (hm.remove(ok) != null);
+		return (hm.remove(ik) != null);
 	}
+	
+	
 	
 	public void updateIndex(final OAObject obj, OAObjectKey okNew, OAObjectKey okOld) {
 		if (obj == null) return;
 
+		Class c = obj.getClass();
 		if (okNew != null && okNew.equals(okOld)) return;
 		
-		if (okNew != null && okNew.hasValidObjectIds()) {
+		if (okNew != null) {
 			addToIndex(obj, okNew);
 		}
-		if (okOld != null && okOld.hasValidObjectIds()) {
+		if (okOld != null) {
 			removeFromIndex(obj.getClass(), okOld);
 		}
 	}

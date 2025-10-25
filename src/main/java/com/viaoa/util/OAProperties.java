@@ -337,9 +337,7 @@ public class OAProperties extends java.util.Properties implements Serializable {
     public int getInt(String name) {
         Object obj = getProperty(name);
         if (obj == null) return -1;
-        if (obj instanceof String) {
-            obj = (Object) OAConv.convert(Integer.class, obj);
-        }
+        obj = (Object) OAConv.convert(Integer.class, obj);
         if (obj == null || !(obj instanceof Number)) return -1;
         return ((Number)obj).intValue();
     }
@@ -352,10 +350,7 @@ public class OAProperties extends java.util.Properties implements Serializable {
     public int getInt(String name, int iDefault) {
         Object obj = getProperty(name);
         if (obj == null) return iDefault;
-        if (obj == null) return -1;
-        if (obj instanceof String) {
-            obj = (Object) OAConv.convert(Integer.class, obj);
-        }
+        obj = (Object) OAConv.convert(Integer.class, obj);
         if (obj == null || !(obj instanceof Number)) return -1;
         return ((Number)obj).intValue();
     }

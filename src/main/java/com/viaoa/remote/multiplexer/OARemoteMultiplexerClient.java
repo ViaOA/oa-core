@@ -200,16 +200,16 @@ public class OARemoteMultiplexerClient {
 		oos.writeByte(RequestInfo.Type.CtoS_GetLookupInfo.ordinal());
 		oos.writeAsciiString(lookupName);
 		oos.flush();
-        oos.close(); // 20250318
+        oos.close();
 
 		RemoteObjectInputStream ois = new RemoteObjectInputStream(socket, hmClassDescInput);
 		if (!ois.readBoolean()) {
-		    ois.close(); // 20250318
+		    ois.close();
 			Exception ex = new Exception((String) ois.readObject());
 			throw ex;
 		}
 		Object[] objs = (Object[]) ois.readObject();
-        ois.close(); // 20250318
+        ois.close();
 		Class c = (Class) objs[0];
 		boolean bUsesQueue = (Boolean) objs[1];
 		boolean bIsBroadcast = (Boolean) objs[2];
@@ -846,7 +846,7 @@ public class OARemoteMultiplexerClient {
 					if (requestInfo != null) {
 						requestInfo.methodInvoked = true;
 					}
-					Lock.notify();
+					Lock.notifyAll();
 				}
 			}
 		};
@@ -982,7 +982,7 @@ public class OARemoteMultiplexerClient {
 
 						OARemoteThread t = getRemoteThread(ri, true);
 						synchronized (t.Lock) {
-							t.Lock.notify(); // have RemoteClientThread call processMessageforStoC(..)
+							t.Lock.notifyAll(); // have RemoteClientThread call processMessageforStoC(..)
 						}
 					} catch (Exception e) {
 						LOG.log(Level.WARNING, "RequestQueueThread error", e);
@@ -1051,7 +1051,7 @@ public class OARemoteMultiplexerClient {
 						t.setAllowRunnable(true); // so that oasync methods will be able to have event processing done in a threadpool
 
 						synchronized (t.Lock) {
-							t.Lock.notify(); // have RemoteClientThread call processMessageforStoC(..)
+							t.Lock.notifyAll(); // have RemoteClientThread call processMessageforStoC(..)
 							for (int i = 0; t.requestInfo == ri && !ri.methodInvoked; i++) {
 								if (i >= (maxSeconds * 10)) {
 									if (!OAObject.getDebugMode()) {

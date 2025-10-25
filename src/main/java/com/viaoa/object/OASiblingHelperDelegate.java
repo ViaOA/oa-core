@@ -64,7 +64,7 @@ public class OASiblingHelperDelegate {
 	 * @return list of keys that are siblings
 	 */
 	public static OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount,
-			ConcurrentHashMap<Integer, Boolean> hmIgnore) {
+			ConcurrentHashMap<Long, Boolean> hmIgnore) {
 		OAThreadLocal tl = OAThreadLocalDelegate.getThreadLocal(true);
 		if (tl.cntGetSiblingCalled++ > 0) {
 			return new OAObjectKey[0];
@@ -114,7 +114,7 @@ public class OASiblingHelperDelegate {
 	}
 
 	private static OAObjectKey[] _getSiblings(final OAObject mainObject, final String property, final int maxAmount,
-			ConcurrentHashMap<Integer, Boolean> hmIgnore, final long msStarted) {
+			ConcurrentHashMap<Long, Boolean> hmIgnore, final long msStarted) {
 		if (mainObject == null || OAString.isEmpty(property) || maxAmount < 1) {
 			return null;
 		}
@@ -417,7 +417,7 @@ public class OASiblingHelperDelegate {
 			final OALinkInfo linkInfo,
 			final OAObject mainObject,
 			final HashMap<OAObjectKey, OAObject> hmTypeOneObjKey, // for calling thread, refobjs already looked at
-			final ConcurrentHashMap<Integer, Boolean> hmIgnore, // for all threads
+			final ConcurrentHashMap<Long, Boolean> hmIgnore, // for all threads
 			final int maxAmount,
 			final long msStarted,
 			final int runCount) {
@@ -472,10 +472,6 @@ public class OASiblingHelperDelegate {
 
 				if (!bExisted) {
 					OAObjectKey ok = oaObject.getObjectKey();
-					if (ok.guid == 0) {
-						ok.guid = oaObject.getGuid();
-					}
-
 					alFoundObjectKey.add(ok);
 					if (alFoundObjectKey.size() >= maxAmount) {
 						stop();

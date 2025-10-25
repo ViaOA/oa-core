@@ -507,39 +507,24 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	public final boolean equals(Object obj) {
 		if (obj == null) return false;
 		if (obj == this) return true;
-		
-		long otherGuid;
-        if (obj instanceof OAObject) { 
-    		otherGuid = ((OAObject) obj).guid;
-		}
-        else if (obj instanceof OAObjectKey) { 
-    		otherGuid = ((OAObjectKey) obj).getGuid();
-		}
-        else {
-        	return false;
-        }
+		if (!(obj instanceof OAObject)) return false;
+		long otherGuid = ((OAObject) obj).getGuid();
 		return (this.guid == otherGuid);
 	}
 
 	@Override
 	public int hashCode() {
-		return (int) (guid ^ (guid >>> 32));
+		return Long.hashCode(guid);
 	}
 
 	public int compareTo(Object obj) {
 		if (obj == null) return 1;
 		if (obj == this) return 0;
-		long otherGuid;
-        if (obj instanceof OAObject) { 
-    		otherGuid = ((OAObject) obj).guid;
+        if (obj instanceof OAObject) {
+    		long otherGuid = ((OAObject) obj).getGuid();
+    		return Long.compare(this.guid, otherGuid);
 		}
-        else if (obj instanceof OAObjectKey) { 
-    		otherGuid = ((OAObjectKey) obj).getGuid();
-		}
-        else {
-        	return 1;
-        }
-		return Long.compare(this.guid, otherGuid);
+    	return this.getClass().getName().compareTo(obj.getClass().getName());
 	}
 	
 

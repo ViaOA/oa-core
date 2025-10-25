@@ -100,30 +100,35 @@ public class OATriggerDelegate {
 	}
 
 	private static volatile ThreadPoolExecutor executorService;
-
-	// thread pool to handle tasks that can run in the background.
+	
 	protected static ExecutorService getExecutorService() {
-		if (executorService != null) {
-			return executorService;
-		}
-
-		ThreadFactory tf = new ThreadFactory() {
-			AtomicInteger ai = new AtomicInteger();
-
-			@Override
-			public Thread newThread(Runnable r) {
-				Thread t = new Thread(r);
-				t.setName("OATrigger.thread." + ai.getAndIncrement());
-				t.setDaemon(true);
-				t.setPriority(Thread.NORM_PRIORITY);
-				return t;
-			}
-		};
-
-		// min/max must be equal, since new threads are only created when queue is full
-		executorService = new ThreadPoolExecutor(5, 5, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(Integer.MAX_VALUE), tf);
-		executorService.allowCoreThreadTimeOut(true);
-
-		return executorService;
+	    return Holder.INSTANCE;
 	}
+
+	private static class Holder {
+	    static final ExecutorService INSTANCE = createExecutor();
+
+	    private static ExecutorService createExecutor() {
+	        ThreadFactory tf = new ThreadFactory() {
+	            private final AtomicInteger ai = new AtomicInteger();
+	            @Override
+	            public Thread newThread(Runnable r) {
+	                Thread t = new Thread(r);
+	                t.setName("OATrigger.thread." + ai.getAndIncrement());
+	                t.setDaemon(true);
+	                t.setPriority(Thread.NORM_PRIORITY);
+	                return t;
+	            }
+	        };
+	        ThreadPoolExecutor exec = new ThreadPoolExecutor(
+	                5, 5, 60L, TimeUnit.SECONDS,
+	                new LinkedBlockingQueue<>(Integer.MAX_VALUE),
+	                tf);
+	        exec.allowCoreThreadTimeOut(true);
+	        return exec;
+	    }
+	}
+
+	
+	
 }

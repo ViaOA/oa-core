@@ -41,7 +41,7 @@ public class RemoteFileImpl implements RemoteFileInterface {
         fname = OAString.convertFileName(fname);
         File f = new File(fname);
         if (f.exists()) {
-            return new Long(f.lastModified());
+            return f.lastModified();
         }
         return -1;
     }

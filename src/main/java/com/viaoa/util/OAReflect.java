@@ -504,7 +504,7 @@ public class OAReflect {
 
 		Object obj;
 		try {
-			obj = method.invoke(object, null);
+			obj = method.invoke(object, (Object[]) null);
 		} catch (Exception e) {
 			String msg = "Error calling Method " + method + ", using object=" + object;
 			throw new RuntimeException(msg, e);
@@ -706,28 +706,28 @@ public class OAReflect {
 			return null;
 		}
 		if (clazz.equals(int.class) || clazz.equals(Integer.class)) {
-			return new Integer(0);
+			return Integer.valueOf(0);
 		}
 		if (clazz.equals(boolean.class) || clazz.equals(Boolean.class)) {
-			return new Boolean(false);
+			return Boolean.valueOf(false);
 		}
 		if (clazz.equals(long.class) || clazz.equals(Long.class)) {
-			return new Long(0);
+			return Long.valueOf(0);
 		}
 		if (clazz.equals(double.class) || clazz.equals(Double.class)) {
-			return new Double(0.0D);
+			return Double.valueOf(0.0D);
 		}
 		if (clazz.equals(byte.class) || clazz.equals(Byte.class)) {
-			return new Byte((byte) 0);
+			return Byte.valueOf((byte) 0);
 		}
 		if (clazz.equals(char.class) || clazz.equals(Character.class)) {
-			return new Character((char) 0);
+			return Character.valueOf((char) 0);
 		}
 		if (clazz.equals(short.class) || clazz.equals(Short.class)) {
-			return new Short((short) 0);
+			return Short.valueOf((short) 0);
 		}
 		if (clazz.equals(float.class) || clazz.equals(Float.class)) {
-			return new Float(0.0F);
+			return Float.valueOf(0.0F);
 		}
 		return null;
 	}

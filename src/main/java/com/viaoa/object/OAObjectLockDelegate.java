@@ -32,6 +32,9 @@ import com.viaoa.sync.remote.RemoteSessionInterface;
 */
 public class OAObjectLockDelegate {
     
+    private static final Map<Object, Object> hmLock = new HashMap(11, 0.75F);
+	
+	
     /** 
 	    Used to set a lock on an Object.
 	    see #lock(Object,Object,Object) lock
@@ -46,18 +49,18 @@ public class OAObjectLockDelegate {
 	    }
 	            
 	    OALock newLock = new OALock(object, null, null);
-	    synchronized (OAObjectHashDelegate.hashLock) {
+	    synchronized (OAObjectLockDelegate.hmLock) {
 	        for (;;) {
-	            OALock lock = (OALock) OAObjectHashDelegate.hashLock.get(object);
+	            OALock lock = (OALock) OAObjectLockDelegate.hmLock.get(object);
 	            if (lock == null) break;
 	            try {
 	                lock.waitCnt++;
-	                OAObjectHashDelegate.hashLock.wait();
+	                OAObjectLockDelegate.hmLock.wait();
 	            }
 	            catch (InterruptedException e) {
 	            }
 	        }
-	        OAObjectHashDelegate.hashLock.put(object, newLock);
+	        OAObjectLockDelegate.hmLock.put(object, newLock);
 	    }
 	}
 	
@@ -74,9 +77,9 @@ public class OAObjectLockDelegate {
             return;
         }
 	    
-	    synchronized (OAObjectHashDelegate.hashLock) {
-	    	OAObjectHashDelegate.hashLock.remove(object);
-	    	OAObjectHashDelegate.hashLock.notifyAll();
+	    synchronized (OAObjectLockDelegate.hmLock) {
+	    	OAObjectLockDelegate.hmLock.remove(object);
+	    	OAObjectLockDelegate.hmLock.notifyAll();
 	    }
 	}
 	
@@ -90,8 +93,8 @@ public class OAObjectLockDelegate {
         if (rc != null) {
             return rc.isLocked(object.getClass(), object.getObjectKey());
         }
-        synchronized (OAObjectHashDelegate.hashLock) {
-            return (OAObjectHashDelegate.hashLock.get(object) != null);
+        synchronized (OAObjectLockDelegate.hmLock) {
+            return (OAObjectLockDelegate.hmLock.get(object) != null);
         }
         
 	}

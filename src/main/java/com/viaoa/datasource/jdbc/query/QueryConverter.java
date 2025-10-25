@@ -895,11 +895,7 @@ public class QueryConverter {
 					if (xx > 1 && column != null && column.primaryKey && columns.length == 1) {
 						final Linkinfo liLast = vecLink.size() == 0 ? null : (Linkinfo) vecLink.elementAt(vecLink.size() - 1);
 						if (!liLast.bMany) {
-							if (liLast.parent.bMany) {
-								column = liLast.linkFromParent.fkeys[columnsPos];
-							} else {
-								column = liLast.linkFromParent.fkeys[columnsPos];
-							}
+							column = liLast.linkFromParent.fkeys[columnsPos];
 							vecLink.removeElementAt(--xx);
 						}
 					}
@@ -972,7 +968,7 @@ public class QueryConverter {
 					}
 					s += colName;
 				}
-				if (s.indexOf(", ") > 0) {
+				if (s.indexOf(", ") >= 0) {
 					s = "(" + s + ")";
 				}
 			} else if (token.type == OAQueryTokenType.QUESTION) {

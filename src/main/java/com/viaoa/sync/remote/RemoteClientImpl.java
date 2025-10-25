@@ -31,9 +31,9 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	private ClientGetDetail clientGetDetail;
 	private volatile RemoteDataSource remoteDataSource;
 	private int sessionId;
-	private final Map<Integer, Boolean> hmGuid;
+	private final Map<Long, Boolean> hmGuid;
 
-	public RemoteClientImpl(int sessionId, Map<Integer, Boolean> hmGuid) {
+	public RemoteClientImpl(int sessionId, Map<Long, Boolean> hmGuid) {
 		this.sessionId = sessionId;
 		this.hmGuid = hmGuid;
 		clientGetDetail = new ClientGetDetail(sessionId, hmGuid) {
@@ -90,7 +90,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 						@Override
 						public void setCached(OAObject obj) {
                             if (hmGuid != null) {
-                                int guid = obj.getGuid();
+                                long guid = obj.getGuid();
                                 hmGuid.putIfAbsent(guid, false);
                             }
 							RemoteClientImpl.this.updateObjectCache(obj);

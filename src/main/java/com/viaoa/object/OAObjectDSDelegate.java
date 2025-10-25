@@ -111,7 +111,7 @@ public class OAObjectDSDelegate {
 		OAObject oaObj = null;
 		if (ds != null) {
 			if (!(key instanceof OAObjectKey)) {
-				key = OAObjectKeyDelegate.convertToObjectKey(clazz, key);
+				key = OAObjectKeyDelegate.createObjectKey(clazz, key);
 			}
 			oaObj = (OAObject) ds.getObject(clazz, key);
 		}

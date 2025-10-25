@@ -24,6 +24,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.util.OACompare;
 import com.viaoa.util.OAString;
 
 /**
@@ -565,7 +566,7 @@ public class OAObjectDelegate {
 
 			if (!st.hasMoreTokens()) {
 				// last property, check against findValue
-				if (result == findValue || (result != null && result.equals(findValue))) {
+				if (result == findValue || (result != null && OACompare.compare(result, findValue) == 0)) {
 					Object[] objs = new Object[] { base };
 					return objs;
 				}
@@ -726,4 +727,10 @@ public class OAObjectDelegate {
 		}
 		return !hmAutoAdd.containsKey(oaObj.guid);
 	}
+	
+	public static Object[] getPropertyIdValues(OAObject obj) {
+		if (obj == null) return null;
+		return OAObjectInfoDelegate.getPropertyIdValues(obj);
+	}
+	
 }

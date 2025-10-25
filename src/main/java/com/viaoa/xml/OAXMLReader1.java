@@ -502,7 +502,7 @@ public class OAXMLReader1 extends DefaultHandler {
 				}
 				hash.remove(id);
 			}
-			final OAObjectKey key = new OAObjectKey(values, OAConv.toInt(guid), false);
+			final OAObjectKey key = new OAObjectKey(values, OAConv.toLong(guid));
 			final String[] matchProps = getImportMatching() ? oi.getImportMatchPropertyNames() : null;
 			final String[] matchPropPaths = getImportMatching() ? oi.getImportMatchPropertyPaths() : null;
 			List<Object> al = new ArrayList<>();

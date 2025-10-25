@@ -368,19 +368,20 @@ public class HubDataDelegate {
 	    return (thisHub.data.changed);
 	}
 	
-	public static Object getObject(Hub thisHub, Object key) {
-		if (key == null) return null;
+	public static Object getObject(final Hub thisHub, Object key) {
+		if (thisHub == null || key == null) return null;
 	    if (!(key instanceof OAObjectKey)) {
 	    	if (key instanceof OAObject) key = OAObjectKeyDelegate.getKey((OAObject) key);
-	    	else key = OAObjectKeyDelegate.convertToObjectKey(thisHub.getObjectClass(), key);
+	    	else key = OAObjectKeyDelegate.createObjectKey(thisHub.getObjectClass(), key);
 	    }
 		for (int i=0; ; i++) {
 			Object obj = getObjectAt(thisHub, i);
 			if (obj == null) break;
 			if (obj == key) return obj;
 			if (obj instanceof OAObject) {
-				Object k = OAObjectKeyDelegate.getKey((OAObject) obj);
-				if (k.equals(key)) return obj;
+				OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) obj);
+				// note: dont send class to isForSameOAObject: dont want it to do a cache lookup
+				if (OAObjectKeyDelegate.isForSameOAObject(null, k, (OAObjectKey) key)) return obj;
 			}
 		}
 		return null;
@@ -645,7 +646,9 @@ public class HubDataDelegate {
         
         if (size < 35) {
             if (size == 0) return false;
-            return containsDirect(hub, obj);
+            boolean b = containsDirect(hub, obj);
+            if (b) return true;
+            if (obj.getClass().equals(hub.getObjectClass())) return false;
         }
         
         if (!(obj instanceof OAObject)) {

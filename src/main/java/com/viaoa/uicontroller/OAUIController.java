@@ -483,9 +483,7 @@ public abstract class OAUIController extends HubListenerAdapter {
             if (!(obj instanceof OAObject)) {
                 return obj;
             }
-            if (obj instanceof OAObject) {
-                obj = ((OAObject) obj).getProperty(propertyPath);
-            }
+            obj = ((OAObject) obj).getProperty(propertyPath);
         }
         return obj;
     }

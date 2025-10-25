@@ -60,20 +60,20 @@ public abstract class RemoteDataSource {
 			obj = datasourceNext((String) objects[0]);
 			break;
 		case OADataSourceClient.IT_HASNEXT:
-			obj = new Boolean(datasourceHasNext((String) objects[0]));
+			obj = Boolean.valueOf(datasourceHasNext((String) objects[0]));
 			break;
 		case OADataSourceClient.IS_AVAILABLE:
 			ds = getDataSource();
 			if (ds != null) {
 				b = ds.isAvailable();
-				obj = new Boolean(b);
+				obj = Boolean.valueOf(b);
 			}
 			break;
 		case OADataSourceClient.GET_ASSIGN_ID_ON_CREATE:
 			ds = getDataSource();
 			if (ds != null) {
 				b = ds.getAssignIdOnCreate();
-				obj = new Boolean(b);
+				obj = Boolean.valueOf(b);
 			} else {
 				obj = Boolean.FALSE;
 			}
@@ -84,13 +84,13 @@ public abstract class RemoteDataSource {
 			if (ds != null) {
 				x = ds.getMaxLength(clazz, (String) objects[1]);
 				// System.out.println("note: RemoteDataSource call to MAX_LENGTH when it should be on the client.");
-				obj = new Integer(x);
+				obj = Integer.valueOf(x);
 			}
 			break;
 		case OADataSourceClient.IS_CLASS_SUPPORTED:
 			clazz = (Class) objects[0];
 			ds = getDataSource(clazz);
-			obj = new Boolean((ds != null));
+			obj = Boolean.valueOf((ds != null));
 			break;
 
 		case OADataSourceClient.UPDATE_MANY2MANY_LINKS:
@@ -174,9 +174,9 @@ public abstract class RemoteDataSource {
 				}
 
 				x = ds.count(clazz, queryWhere, params, (OAObject) whereObject, propFromWhereObject, extraWhere, max);
-				obj = new Integer(x);
+				obj = Integer.valueOf(x);
 			} else {
-				obj = new Integer(-1);
+				obj = Integer.valueOf(-1);
 			}
 			break;
 
@@ -185,9 +185,9 @@ public abstract class RemoteDataSource {
 			ds = getDataSource(clazz);
 			if (ds != null) {
 				x = ds.countPassthru(clazz, (String) objects[1], (Integer) objects[2]);
-				obj = new Integer(x);
+				obj = Integer.valueOf(x);
 			} else {
-				obj = new Integer(-1);
+				obj = Integer.valueOf(-1);
 			}
 			break;
 
@@ -195,7 +195,7 @@ public abstract class RemoteDataSource {
 			ds = getDataSource();
 			if (ds != null) {
 				b = ds.supportsStorage();
-				obj = new Boolean(b);
+				obj = Boolean.valueOf(b);
 			} else {
 				obj = null;
 			}
@@ -313,7 +313,7 @@ public abstract class RemoteDataSource {
 			return (OAObject) obj;
 		}
 
-		OAObjectKey key = OAObjectKeyDelegate.convertToObjectKey(objectClass, obj);
+		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(objectClass, obj);
 
 		OAObject objNew = (OAObject) OAObjectCacheDelegate.get(objectClass, key);
 		if (objNew == null) {

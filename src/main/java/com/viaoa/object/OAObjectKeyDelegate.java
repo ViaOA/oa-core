@@ -10,34 +10,143 @@
 */
 package com.viaoa.object;
 
+import java.util.Arrays;
 import java.util.List;
-
+import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
-import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
-import com.viaoa.util.OAString;
 
+/**
+ * Helper for using OAObjectKey. 
+ */
 public class OAObjectKeyDelegate {
 
+	public static OAObjectKey createObjectKey(OAObject obj) {
+		if (obj == null) return null;
+		OAObjectKey key = new OAObjectKey(OAObjectDelegate.getPropertyIdValues(obj), obj.getGuid());
+		return key;
+	}
+
+	public static OAObjectKey createObjectKey(Object[] ids, long guid) {
+		return createObjectKey((OAObjectInfo) null, ids, guid);
+	}
+	
+	public static OAObjectKey createObjectKey(final Class c, final Object ...ids) {
+		return createObjectKey(c, 0L, ids);
+	}
+	
+	public static OAObjectKey createObjectKey(final Class<? extends OAObject> c, final long guid, final Object ...ids) {
+		if (ids != null && ids.length == 1) {
+			if (ids[0] instanceof OAObject) {
+				return getObjectKey((OAObject) ids[0]);
+			}
+		}
+		OAObjectInfo oi = c == null ? null : OAObjectInfoDelegate.getObjectInfo(c);
+		return createObjectKey(oi, ids, guid);
+	}
+	
+	// main
+	public static OAObjectKey createObjectKey(OAObjectInfo oi, Object[] ids, long guid) {
+		if (oi != null && ids != null && ids.length > 0) {
+			String[] idProperties = oi.idProperties;
+			if (idProperties != null && idProperties.length == ids.length) {
+				for (int i = 0; i < idProperties.length; i++) {
+					if (ids[i] instanceof OAObjectKey) {
+						continue;
+					}
+					else if (!(ids[i] instanceof OAObject)) { // note: OAObjectKey constructor will handle id values that are OAObject
+						Class c = OAObjectInfoDelegate.getPropertyClass(oi, idProperties[i]);
+						ids[i] = OAConverter.convert(c, ids[i], null);
+					}
+				}
+			}
+		}
+		return new OAObjectKey(ids, guid);
+	}
+	
+	public static OAObjectKey createObjectKey(Object id) {
+		if (id == null) return null;
+		if (id instanceof OAObjectKey) return (OAObjectKey) id;
+		if (id instanceof OAObject) return createObjectKey((OAObject) id);
+		if (id.getClass().isArray()) return createObjectKey((OAObjectInfo) null, (Object[]) id, 0L);
+		return createObjectKey((OAObjectInfo) null, new Object[] {id}, 0L);
+	}
+
+	public static OAObjectKey createObjectKey(Object... ids) {
+		if (ids == null || ids.length == 0) return null;
+		return createObjectKey((OAObjectInfo) null, (Object[]) ids, 0L);
+	}
+	
+
 	/**
-	 * returns the OAObjectKey that uniquely represents this object.
+	 * Checks two objectKeys to see if they represent the same OAObject.
+	 * Either the guids are non-0 and match, or the objectIds are equal.
+	 * <p>
+	 * Note: OAObjectKey.equals requires guid and objectIds to exactly match.<br>
+	 * Note: used by OACompare.compare method.  
 	 */
+	public static boolean isForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey key, final OAObjectKey key2) {
+		if (key == null || key2 == null) return false;
+		
+		if (key.equals(key2)) return true;
+		
+		long g = key.getGuid();
+		long g2 = key2.getGuid();
+		Object[] ids = key.getObjectIds(); 
+		Object[] ids2 = key2.getObjectIds();
+		
+		if (g != 0L && g2 != 0L) {
+			if (g != g2) return false;
+			if (ids == null || ids2 == null) return true;
+		}
+
+		if (ids != null && ids2 != null) {
+			return Arrays.equals(ids, ids2);	    
+		}
+
+		// one could have guid and the other objectIds
+		if (clazz != null) {
+			if ((g != 0 && ids == null) && (g2 == 0 && ids2 != null)) {
+				OAObject obj = OAObjectCacheDelegate.get(clazz, key);
+				if (obj == null) return false;
+				OAObjectKey okx = obj.getObjectKey();
+				return Arrays.equals(okx.getObjectIds(), ids2);	    
+			}
+			else if ((g == 0 && ids != null) && (g2 != 0 && ids2 == null)) {
+				OAObject obj = OAObjectCacheDelegate.get(clazz, key2);
+				if (obj == null) return false;
+				OAObjectKey okx = obj.getObjectKey();
+				return Arrays.equals(okx.getObjectIds(), ids);	    
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Find existing OAObject for key, either in cache or in datasource.
+	 */
+	public static <T extends OAObject> OAObject getOAObject(Class<T> c, OAObjectKey key) {
+		if (c == null || key == null) return null;
+		OAObject obj = OAObjectCacheDelegate.get(c, key);
+		if (obj != null) return obj;
+		obj = (OAObject) OADataSource.getObject(c, key);
+		return obj;
+	}
+	
+	
 	public static OAObjectKey getKey(OAObject oaObj) {
-		if (oaObj.objectKey == null) {
-			oaObj.objectKey = new OAObjectKey(oaObj);
-		}
-		return oaObj.objectKey;
+		return createObjectKey(oaObj);		
+	}
+	public static OAObjectKey getObjectKey(OAObject oaObj) {
+		return createObjectKey(oaObj);		
+	}
+	public static long getGuid(OAObject oaObj) {
+		if (oaObj == null) return 0;
+		return oaObj.getGuid();
 	}
 
-	public static int getGuid(OAObject oaObj) {
-		if (oaObj == null) {
-			return -1;
-		}
-		return oaObj.guid;
-	}
-
-	public static OAObjectKey createChangedObjectKey(Class clazz, OAObjectKey objKey, String propertyName, Object newValue) {
-		if (propertyName == null || clazz == null) {
+	public static OAObjectKey createChangedObjectKey(Class<? extends OAObject> clazz, OAObjectKey objKey, String propertyName, Object newValue) {
+		if (clazz == null) {
 			return null;
 		}
 
@@ -52,7 +161,7 @@ public class OAObjectKeyDelegate {
 		Object[] objsNew = new Object[ids == null ? 0 : ids.length];
 
 		for (int i = 0; ids != null && i < ids.length; i++) {
-			if (propertyName.equalsIgnoreCase(ids[i])) {
+			if (propertyName != null && propertyName.equalsIgnoreCase(ids[i])) {
 				objsNew[i] = newValue;
 			} else {
 				if (objsCurrent != null && i < objsCurrent.length) {
@@ -63,123 +172,56 @@ public class OAObjectKeyDelegate {
 
 		OAObjectKey ok;
 		if (objKey != null) {
-			ok = new OAObjectKey(objsNew, objKey.guid, objKey.bNew);
+			ok = new OAObjectKey(objsNew, objKey.getGuid());
 		} else {
 			ok = new OAObjectKey(objsNew);
 		}
 		return ok;
 	}
 
-	public static OAObjectKey createChangedObjectKey(final OAObject oaObj, final String propertyName, final Object newValue) {
-		if (propertyName == null || oaObj == null || oaObj.objectKey == null) {
-			return null;
-		}
-
-		Object[] objsCurrent = oaObj.objectKey.getObjectIds();
-
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
-		String[] ids = oi.getKeyProperties();
-		Object[] objsNew = new Object[ids == null ? 0 : ids.length];
-
-		for (int i = 0; ids != null && i < ids.length; i++) {
-			if (propertyName.equalsIgnoreCase(ids[i])) {
-				objsNew[i] = newValue;
-			} else {
-				if (objsCurrent != null && i < objsCurrent.length) {
-					objsNew[i] = objsCurrent[i];
-				}
-			}
-		}
-
-		OAObjectKey ok = new OAObjectKey(objsNew, oaObj.guid, oaObj.newFlag);
-		return ok;
-	}
 
 	/**
-	 * Create a new key, based on property change. Used by OAObjectEventDelegate.
+	 * Called when an object's property Id value is changed.  
+	 * This will verify the change, and then update the OAObjectCache.
+	 * <p>
+	 * Used by OAObjectEventDelegate.firePropertyChange 
+	 *  
+	 * @param okOld previous object key. (not used)
+	 * @param bVerify if true, then verifies that there is not another object with same objectKey.
+	 * @throws a runtime exception if change is not permitted.
 	 */
-	public static OAObjectKey getKey(OAObject oaObj, String property, Object propertyValue) {
-		OAObjectKey ok;
-		if (OAString.isEmpty(property)) {
-			ok = new OAObjectKey(new Object[] { propertyValue }, oaObj.guid, oaObj.newFlag);
-		} else {
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-			String[] idPropertyNames = oi.getIdProperties();
-			Object[] idValues = new Object[idPropertyNames == null ? 0 : idPropertyNames.length];
-
-			Object[] origIds = oaObj.objectKey == null ? null : oaObj.objectKey.getObjectIds();
-
-			for (int i = 0; idPropertyNames != null && i < idPropertyNames.length; i++) {
-				if (property.equalsIgnoreCase(idPropertyNames[i])) {
-					idValues[i] = propertyValue;
-				} else {
-					if (origIds != null && i < origIds.length) {
-						idValues[i] = origIds[i];
-					}
-				}
-			}
-			ok = new OAObjectKey(idValues, oaObj.guid, oaObj.newFlag);
-		}
-		return ok;
-	}
-
-	protected static void setKey(OAObject oaObj, OAObjectKey key) {
-		oaObj.objectKey = key;
-	}
-
-	/**
-	 * Used to update Hubs and HubController when an objects unique values (property Id) are changed.<br>
-	 *
-	 * @return true if HubController is updated
-	 * @see OAObjectKey
-	 */
-	protected static boolean updateKey(OAObject oaObj, boolean bVerify) {
-		if (oaObj.objectKey == null) {
-			getKey(oaObj);
-			return false;
-		}
-
-		// replace old key
-		OAObjectKey oldKey = oaObj.objectKey;
-		oaObj.objectKey = new OAObjectKey(oaObj);
-		if (oaObj.objectKey.exactEquals(oldKey)) { // no change
-			oaObj.objectKey = oldKey;
-			return false;
-		}
-
+	protected static boolean afterChangedObjectKeyProperty(final OAObject oaObj, final OAObjectKey okOrig, boolean bVerify) {
+		if (oaObj == null) return false;
+		final OAObjectKey okNew = createObjectKey(oaObj);
+		
 		if (bVerify) {
-			// if change is coming from the server, then it has already been verified
 			if (OAObjectCSDelegate.isRemoteThread()) {
 				bVerify = false;
 			}
-		}
-
-		// 20090906 dont need to verify if database/etc has assigned it
-		if (bVerify) {
-			if (OAObjectDSDelegate.isAssigningId(oaObj)) {
-				bVerify = false;
-			} else if (OAThreadLocalDelegate.isLoading()) {
-				bVerify = false;
+			if (bVerify) {
+				if (OAObjectDSDelegate.isAssigningId(oaObj)) {
+					bVerify = false;
+				} else if (OAThreadLocalDelegate.isLoading()) {
+					bVerify = false;
+				}
 			}
 		}
 
-		// make sure objectId is unique.  Check in Cache, on Server, in Database
 		if (bVerify) {
-			String s = verifyKeyChange(oaObj, oaObj.objectKey);
+			// make sure objectId is unique.  Check in Cache, on Server, in Database
+			String s = verifyKeyChange(oaObj, okNew);
 			if (s != null) {
-				oaObj.objectKey = oldKey;
 				throw new RuntimeException(s);
 			}
 		}
 
-		// START Rehashing Key ========================
-		OAObjectDelegate.rehash(oaObj, oldKey);
-		// END Rehashing Key ==========================
+		// update cache indexes
+		OAObjectCacheDelegate.propertyKeyValueChanged(oaObj);
 
 		// need to recalc keys for all children that have this object as part of their object key
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 		List al = oi.getLinkInfos();
-		for (int i = 0; i < al.size(); i++) {
+		for (int i = 0; al != null && i < al.size(); i++) {
 			OALinkInfo li = (OALinkInfo) al.get(i);
 			if (li.getPrivateMethod()) {
 				continue;
@@ -210,11 +252,11 @@ public class OAObjectKeyDelegate {
 						if (oa == null) {
 							break;
 						}
-						updateKey(oa, false);
+						OAObjectCacheDelegate.propertyKeyValueChanged(oa);
 					}
 				}
 			} else if (obj instanceof OAObject) {
-				updateKey((OAObject) obj, false);
+				OAObjectCacheDelegate.propertyKeyValueChanged((OAObject) obj);
 			}
 		}
 		return true;
@@ -231,7 +273,7 @@ public class OAObjectKeyDelegate {
 			}
 		}
 
-		Object objInCache = OAObjectCacheDelegate.get(oaObj.getClass(), newObjectKey);
+		OAObject objInCache = OAObjectCacheDelegate.get(oaObj.getClass(), newObjectKey);
 		if ((objInCache == null || objInCache == oaObj)) {
 			if (oi == null) {
 				oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
@@ -242,7 +284,7 @@ public class OAObjectKeyDelegate {
 			}
 		}
 
-		if (objInCache instanceof OAObject && objInCache != oaObj && ((OAObject) objInCache).getDeleted()) {
+		if (objInCache != null && objInCache != oaObj && objInCache.getDeleted()) {
 			OAObjectCacheDelegate.removeObject((OAObject) objInCache);
 			objInCache = null;
 		}
@@ -273,7 +315,7 @@ public class OAObjectKeyDelegate {
 						oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 					}
 					if (oi.getUseDataSource()) {
-						objInCache = OAObjectDSDelegate.getObject(oi, oaObj.getClass(), newObjectKey);
+						objInCache = (OAObject) OAObjectDSDelegate.getObject(oi, oaObj.getClass(), newObjectKey);
 						if (objInCache != oaObj && objInCache != null) {
 							Object[] ids = newObjectKey.getObjectIds();
 							// Object[] ids = OAObjectInfoDelegate.getPropertyIdValues(oaObj);
@@ -282,7 +324,7 @@ public class OAObjectKeyDelegate {
 								if (i > 0) {
 									s += " ";
 								}
-								s += s + ids[i];
+								s += ids[i];
 							}
 							return ("ObjectId \"" + s + "\" already used");// by another object - "+oaObj.getClass());
 						}
@@ -293,74 +335,10 @@ public class OAObjectKeyDelegate {
 		return null;
 	}
 
-	/**
-	 * Convert a value to an OAObjectKey
-	 */
-	public static OAObjectKey convertToObjectKey(OAObjectInfo oi, Object value) {
-		if (oi == null || value == null) {
-			return null;
-		}
-		if (value instanceof OAObjectKey) {
-			return (OAObjectKey) value;
-		}
-
-		String[] ids = oi.idProperties;
-		if (ids != null && ids.length > 0) {
-			Class c = OAObjectInfoDelegate.getPropertyClass(oi, ids[0]);
-			value = OAConverter.convert(c, value, null);
-		} else if (OAObject.class.isAssignableFrom(oi.getForClass())) {
-			// 20120729 oaObject without pkey property, which will only use guid for key
-			int guid = OAConv.toInt(value);
-			OAObjectKey key = new OAObjectKey();
-			key.guid = guid;
-			return key;
-		}
-		return new OAObjectKey(value);
-	}
-
-	/*was:
-		public static OAObjectKey convertToObjectKey(OAObjectInfo oi, Object value) {
-	    if (oi == null || value == null) return null;
-	    if (value instanceof OAObjectKey) return (OAObjectKey) value;
-
-	    String[] ids = oi.idProperties;
-	    if (ids != null && ids.length > 0) {
-	        Class c = OAObjectInfoDelegate.getPropertyClass(oi, ids[0]);
-	        value = OAConverter.convert(c, value, null);
-	    }
-	    return new OAObjectKey(value);
-	}
-	*/
-	public static OAObjectKey convertToObjectKey(Class clazz, Object value) {
-		if (clazz == null || value == null) {
-			return null;
-		}
-		if (value instanceof OAObjectKey) {
-			return (OAObjectKey) value;
-		}
-		if (value instanceof OAObject) {
-			return ((OAObject) value).getObjectKey();
-		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-		return convertToObjectKey(oi, value);
-	}
-
-	public static OAObjectKey convertToObjectKey(Class clazz, Object[] values) {
-		if (clazz == null || values == null) {
-			return null;
-		}
-
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-		String[] ids = oi.idProperties;
-		for (int i = 0; ids != null && i < ids.length; i++) {
-			Class c = OAObjectInfoDelegate.getPropertyClass(clazz, ids[0]);
-			values[i] = OAConverter.convert(c, values[i], null);
-		}
-		return new OAObjectKey(values);
-	}
-
-	public static Object getProperty(final Class clazz, final OAObjectKey objectKey, final String propertyName) {
-		if (clazz == null || objectKey == null || propertyName == null || objectKey.bEmpty) {
+	
+	
+	public static Object getProperty(final Class<? extends OAObject> clazz, final OAObjectKey objectKey, final String propertyName) {
+		if (clazz == null || objectKey == null || propertyName == null) {
 			return null;
 		}
 
@@ -380,4 +358,5 @@ public class OAObjectKeyDelegate {
 		return null;
 	}
 
+	
 }

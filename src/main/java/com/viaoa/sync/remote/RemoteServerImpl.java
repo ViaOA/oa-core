@@ -62,7 +62,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	}
 
 	@Override
-	public int getNextFiftyObjectGuids() {
+	public long getNextFiftyObjectGuids() {
 		return OAObjectDelegate.getNextFiftyGuids();
 	}
 

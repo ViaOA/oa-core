@@ -256,7 +256,7 @@ public class OAObjectEventDelegate {
 
 			if (propInfo != null) {
 				if (propInfo.getId() && !OAObjectDSDelegate.isAssigningId(oaObj)) {
-					OAObjectKey okx = OAObjectKeyDelegate.createChangedObjectKey(oaObj, propertyName, newObj);
+					OAObjectKey okx = OAObjectKeyDelegate.createChangedObjectKey(oaObj.getClass(), oaObj.getObjectKey(), propertyName, newObj);
 					String s = OAObjectKeyDelegate.verifyKeyChange(oaObj, okx);
 					if (s != null) {
 						throw new RuntimeException(s);
@@ -402,7 +402,7 @@ public class OAObjectEventDelegate {
 		if (oldObj instanceof OAObjectKey) {
 			boolean b = false;
 			if (newObj instanceof OAObject) {
-				if (OAObjectKeyDelegate.getKey((OAObject) newObj).equals(oldObj)) {
+				if (OAObjectKeyDelegate.isForSameOAObject(null, OAObjectKeyDelegate.getKey((OAObject) newObj), (OAObjectKey) oldObj)) {
 					oldObj = newObj;
 					b = true;
 				}
@@ -437,7 +437,7 @@ public class OAObjectEventDelegate {
 
 		OAObjectKey origKey;
 		if (propInfo != null && propInfo.getId()) {
-			origKey = OAObjectKeyDelegate.createChangedObjectKey(oaObj, propertyName, oldObj); // make sure key uses the prevId, so that it can be found on other computers
+			origKey = OAObjectKeyDelegate.createChangedObjectKey(oaObj.getClass(), oaObj.getObjectKey(), propertyName, oldObj); // make sure key uses the prevId, so that it can be found on other computers
 			if (!bIsLoading || !oaObj.isNew()) {
 				OAObjectKeyDelegate.afterChangedObjectKeyProperty(oaObj, origKey, true); // this will make sure that it is a valid (unique) value
 			}

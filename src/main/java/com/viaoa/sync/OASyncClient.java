@@ -50,7 +50,7 @@ import com.viaoa.util.OALogUtil;
  * @see OASync
  */
 public class OASyncClient {
-	protected static Logger LOG = Logger.getLogger(OASyncClient.class.getName());
+	protected static final Logger LOG = Logger.getLogger(OASyncClient.class.getName());
 
 	/** this is used to create a connection (socket) to server. */
 	private OAMultiplexerClient multiplexerClient;
@@ -75,14 +75,14 @@ public class OASyncClient {
 	private OADataSourceClient dataSourceClient;
 
     private final AtomicInteger aiCntGetDetail = new AtomicInteger();
-    private final ConcurrentHashMap<Integer, Boolean> hmIgnoreSibling = new ConcurrentHashMap<Integer, Boolean>();
+    private final ConcurrentHashMap<Long, Boolean> hmIgnoreSibling = new ConcurrentHashMap<Long, Boolean>();
 
-    private static final ConcurrentHashMap<Integer, Integer> hmNewObjectsNotYetSent = new ConcurrentHashMap<Integer, Integer>(31, .75f);
+    private static final ConcurrentHashMap<Long, Long> hmNewObjectsNotYetSent = new ConcurrentHashMap<Long, Long>(31, .75f);
 
     /**
      * Objects that have been added on the server.session so that it wont be GCd on the server.
      */
-    private static final ConcurrentHashMap<Integer, Integer> hmObjectsWithoutHubs = new ConcurrentHashMap<Integer, Integer>(31, .75f);
+    private static final ConcurrentHashMap<Long, Long> hmObjectsWithoutHubs = new ConcurrentHashMap<Long, Long>(31, .75f);
     private volatile LinkedBlockingQueue<OAObject> queObjectsWithoutHubs;
     private Thread threadObjectsWithoutHubs;
     
@@ -153,7 +153,7 @@ public class OASyncClient {
 						if (!OAObject.getDebugMode()) {
 							getRemoteSession().update(clientInfo);
 						}
-						Thread.sleep(seconds * 1000);
+						Thread.sleep(seconds * 1000L);
 					} catch (Exception e) {
 						break;
 					}
@@ -653,7 +653,7 @@ public class OASyncClient {
      */
     public void objectCreated(OAObject obj) {
         if (obj == null) return;
-        int guid = obj.getGuid();
+        long guid = obj.getGuid();
         if (guid < 0) return;
         
         hmNewObjectsNotYetSent.put(guid, guid);
@@ -668,14 +668,14 @@ public class OASyncClient {
     public void objectSentToServer(OAObject obj) {
         // called by OAObjectSerializer
         if (obj == null) return;
-        int guid = obj.getGuid();
+        long guid = obj.getGuid();
         if (guid < 0) return;
         hmNewObjectsNotYetSent.remove(guid);
     }
     
     public boolean isObjectOnServer(OAObject obj) {
         if (obj == null) return false;
-        int guid = obj.getGuid();
+        long guid = obj.getGuid();
         if (guid < 0) return false;
         return hmNewObjectsNotYetSent.get(guid) == null;
     }
@@ -685,7 +685,7 @@ public class OASyncClient {
 	/**
 	 * called when object is finalized.
 	 */
-	public void objectFinalized(int guid) {
+	public void objectFinalized(long guid) {
 	    if (guid < 0) return;
 		try {
 			if (bUpdateSyncDelegate) {
@@ -697,25 +697,25 @@ public class OASyncClient {
 		}
 	}
 
-	private volatile LinkedBlockingQueue<Integer> queObjectsFinalized;
+	private volatile LinkedBlockingQueue<Long> queObjectsFinalized;
 	private Thread threadDistributedGC;
 
 	private void startDistributedGCThread() {
 		if (queObjectsFinalized != null) {
 			return;
 		}
-		queObjectsFinalized = new LinkedBlockingQueue<Integer>();
+		queObjectsFinalized = new LinkedBlockingQueue<Long>();
 		threadDistributedGC = new Thread(new Runnable() {
 			long msLastError;
 			int cntError;
-			int[] guids = new int[150];
+			long[] guids = new long[150];
 
 			@Override
 			public void run() {
 				RemoteSessionInterface rsi = null;
 				for (int guidPos = 0;;) {
 					try {
-						int guid = queObjectsFinalized.take();
+						long guid = queObjectsFinalized.take();
 						guids[guidPos++ % 150] = guid;
 						if (guidPos % 150 == 0) {
 							if (rsi == null) {
@@ -752,7 +752,7 @@ public class OASyncClient {
 	 * called when object is removed from Hub(s) and could be GC'd on server.
 	 */
 	public void updateObjectsWithoutHubs(OAObject obj) {
-        final int guid = obj.getGuid();
+        final long guid = obj.getGuid();
         if (guid < 0) return;
 	    
         final boolean b = OAObjectHubDelegate.isInHubWithMaster(obj);

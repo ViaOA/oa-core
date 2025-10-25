@@ -1339,7 +1339,7 @@ public class OARestMethodInfo {
 	}
 
 	protected void verifyUrlPath(String msgPrefix, List<String> alErrors) {
-		if (!restMethod.methodType().requiresUrlPath) {
+		if (!restMethod.methodType().requiresUrlPath()) {
 			if (OAString.isNotEmpty(urlPath)) {
 				String s = "creates it's own UrlPath and should not have a urlPath defined";
 				alErrors.add(msgPrefix + s);
@@ -1566,11 +1566,7 @@ public class OARestMethodInfo {
 			break;
 		case OARemote:
 		case OAObjectMethodCall:
-			mt = "POST";
-			break;
 		case OAInsert:
-			mt = "POST";
-			break;
 		case OAUpdate:
 			mt = "POST";
 			break;

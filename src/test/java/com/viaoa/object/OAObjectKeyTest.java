@@ -30,14 +30,14 @@ public class OAObjectKeyTest extends OAUnitTest {
     @Test
     public void newTest() {
         reset();
-        OAObjectKey key = new OAObjectKey(null, 12, true);
-        OAObjectKey key2 = new OAObjectKey(null, 12, true);
+        OAObjectKey key = new OAObjectKey(null, 12);
+        OAObjectKey key2 = new OAObjectKey(null, 12);
         assertEquals(key, key2);
         
-        key2 = new OAObjectKey(null, 12, false);
+        key2 = new OAObjectKey(null, 12);
         assertEquals(key, key2);
 
-        key2 = new OAObjectKey(null, 13, false);
+        key2 = new OAObjectKey(null, 13);
         assertTrue(!key.equals(key2));
         reset();
     }    
@@ -49,7 +49,7 @@ public class OAObjectKeyTest extends OAUnitTest {
         OAObjectKey key2 = new OAObjectKey(1);
         assertEquals(key, key2);
 
-        key2 = new OAObjectKey(new Object[]{1}, 14, true);
+        key2 = new OAObjectKey(new Object[]{1}, 14);
         assertEquals(key, key2);
         reset();
     }
@@ -57,13 +57,13 @@ public class OAObjectKeyTest extends OAUnitTest {
     @Test
     public void moreThenOneIdTest() {
         reset();
-        OAObjectKey key = new OAObjectKey(1, 2, 3);
+        OAObjectKey key = new OAObjectKey(new Object[] {1, 2, 3});
         
         Object[] objs = key.getObjectIds();
-        assertTrue(objs.length == 3 && objs[0].equals(new Integer(1)) && objs[1].equals(new Integer(2)) && objs[2].equals(new Integer(3)));
+        assertTrue(objs.length == 3 && objs[0].equals(Integer.valueOf(1)) && objs[1].equals(Integer.valueOf(2)) && objs[2].equals(Integer.valueOf(3)));
         assertEquals(key.getGuid(), 0);
         
-        OAObjectKey key2 = new OAObjectKey(1, 2, 3);
+        OAObjectKey key2 = new OAObjectKey(new Object[] {1, 2, 3});
         assertTrue(key.equals(key2));
         assertEquals(key.getGuid(), 0);
         reset();

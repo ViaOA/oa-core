@@ -134,7 +134,7 @@ public class RequestInfo {
 
         double d;
         if (nsStart == 0 || nsEnd == 0) d = -1.0d;
-        else d = (nsEnd - nsStart) / 1000000;
+        else d = (nsEnd - nsStart) / 1000000.0D;
 
         msg += String.format("|%.1f",  d);
         

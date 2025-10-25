@@ -18,6 +18,7 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAFilter;
@@ -146,7 +147,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @param id is the property key value for the object.
 	 */
 	public static Object getObject(Class clazz, String id) {
-		OAObjectKey key = new OAObjectKey(id);
+		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
@@ -156,7 +157,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @param id is the property key value for the object.
 	 */
 	public static Object getObject(Class clazz, int id) {
-		OAObjectKey key = new OAObjectKey(id);
+		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
@@ -166,22 +167,27 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @param id is the property key value for the object.
 	 */
 	public static Object getObject(Class clazz, long id) {
-		OAObjectKey key = new OAObjectKey(id);
+		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/**
-	 * Used to retreive a single object from DataSource.
+	 * Used to retrieve a single object from DataSource.
 	 *
 	 * @param id is the property key value for the object.
 	 */
 	public static Object getObject(Class clazz, Object id) {
-		OAObjectKey key = new OAObjectKey(id);
+		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(clazz, id);
 		return getObject(clazz, key);
 	}
 
+	public static Object getObject(Class clazz, Object[] ids) {
+		OAObjectKey key = new OAObjectKey(ids);
+		return getObject(clazz, key);
+	}
+	
 	/**
-	 * Used to retreive a single object from DataSource.
+	 * Used to retrieve a single object from DataSource.
 	 *
 	 * @param key is the object key for the object.
 	 */

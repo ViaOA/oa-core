@@ -76,11 +76,11 @@ public class OASyncCombinedClient {
         
 
         private final Object NextGuidLock = new Object();
-        private int nextGuid;
-        private int maxNextGuid;
+        private long nextGuid;
+        private long maxNextGuid;
         
-        int getNextGuid() {
-            int x = 0;
+        long getNextGuid() {
+            long x = 0;
             synchronized (NextGuidLock) {
                 if (nextGuid == maxNextGuid) {
                     try {
@@ -217,14 +217,14 @@ public class OASyncCombinedClient {
                         if (oi.isIdProperty(propertyName)) {
                             // dont send pkey changes                        
                             // update key with new value, replace old with new in mapper
-                            OAObjectKey newServerKey = new OAObjectKey(new Object[] {newValue}, origServerKey.getGuid(), origServerKey.isNew());
+                            OAObjectKey newServerKey = new OAObjectKey(new Object[] {newValue}, origServerKey.getGuid());
                             mapper.hmServerToClient.remove(origServerKey);
                             mapper.hmServerToClient.put(newServerKey, clientKey);
                         }
                         else if (propertyName.equalsIgnoreCase("new")) {
                             if (!(newValue instanceof Boolean)) return false;
                             mapper.hmServerToClient.remove(origServerKey);
-                            OAObjectKey newServerKey = new OAObjectKey(origServerKey.getObjectIds(), origServerKey.getGuid(), ((Boolean)newValue).booleanValue());
+                            OAObjectKey newServerKey = new OAObjectKey(origServerKey.getObjectIds(), origServerKey.getGuid());
                             mapper.hmServerToClient.put(newServerKey, clientKey);
                         }
                         else if (propertyName.equalsIgnoreCase("changed")) {
@@ -517,16 +517,7 @@ public class OASyncCombinedClient {
 
     
     private Mapper getMapper(ClientSession cs, Class c) {
-        Mapper mapper = cs.hmClassToMapper.get(c);
-        if (mapper == null) {
-            synchronized (cs.hmClassToMapper) {
-                mapper = cs.hmClassToMapper.get(c);
-                if (mapper == null) {
-                    mapper = new Mapper();
-                    cs.hmClassToMapper.put(c, mapper);
-                }
-            }
-        }
+        Mapper mapper = cs.hmClassToMapper.computeIfAbsent(c, k -> new Mapper());
         return mapper;
     }
 
@@ -580,7 +571,7 @@ public class OASyncCombinedClient {
                 Mapper m = getMapper(session, c);
                 OAObjectKey k2 = mapper.hmClientToServer.get(k);
                 if (keyServer == null) {
-                    k2 = new OAObjectKey(null, OAObjectDelegate.getNextGuid(), true);
+                    k2 = new OAObjectKey(null, OAObjectDelegate.getNextGuid());
                     mapper.hmClientToServer.put(k, k2);
                     mapper.hmServerToClient.put(k2, k);
                 }

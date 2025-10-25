@@ -322,7 +322,11 @@ public @interface OARestMethod {
 		 */
 		OADelete(false);
 
-		public boolean requiresUrlPath = true;
+		protected boolean requiresUrlPath = true;
+		
+		public boolean requiresUrlPath() {
+			return requiresUrlPath;
+		}
 
 		MethodType() {
 		}

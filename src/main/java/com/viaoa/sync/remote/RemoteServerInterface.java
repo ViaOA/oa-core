@@ -42,7 +42,7 @@ public interface RemoteServerInterface {
 	String getDisplayMessage();
 
 	@OARemoteMethod(dontUseQueue = true)
-	int getNextFiftyObjectGuids();
+	long getNextFiftyObjectGuids();
 
 	@OARemoteMethod(noReturnValue = true, dontUseQueue = true)
 	void refreshCache(Class clazz);

@@ -10,7 +10,9 @@
 */
 package com.viaoa.undo;
 
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.swing.undo.CannotUndoException;
@@ -34,7 +36,8 @@ public class OAUndoManager extends UndoManager {
 
 	private static Logger LOG = Logger.getLogger(OAUndoManager.class.getName());
 
-	protected static Hashtable hash = new Hashtable(); // key=thread
+	protected static final Map<Thread, Integer> hmThreadCounter = new HashMap(); 
+	
 	protected static OAUndoManager undoManager;
 	protected static boolean bVerbose;
 	protected static boolean bIgnoreAll;
@@ -222,7 +225,7 @@ public class OAUndoManager extends UndoManager {
 			int i = 0;
 			Thread t = Thread.currentThread();
 			if (!bResetToZero) {
-				Integer ii = (Integer) hash.get(t);
+				Integer ii = (Integer) hmThreadCounter.get(t);
 				if (ii != null) {
 					i = ii.intValue();
 				}
@@ -234,9 +237,9 @@ public class OAUndoManager extends UndoManager {
 			}
 
 			if (i > 0) {
-				hash.put(t, new Integer(i));
+				hmThreadCounter.put(t, i);
 			} else {
-				hash.remove(t);
+				hmThreadCounter.remove(t);
 			}
 		}
 	}
@@ -265,7 +268,7 @@ public class OAUndoManager extends UndoManager {
 
 		int i = 0;
 		Thread t = Thread.currentThread();
-		Integer ii = (Integer) hash.get(t);
+		Integer ii = (Integer) hmThreadCounter.get(t);
 		if (ii != null) {
 			i = ii.intValue();
 		}

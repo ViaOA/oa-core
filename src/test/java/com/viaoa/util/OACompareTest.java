@@ -4,9 +4,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.util.Arrays;
+
 import org.junit.Test;
 
+import com.messagedesigner.model.oa.MessageGroup;
+import com.messagedesigner.model.oa.MessageType;
 import com.viaoa.OAUnitTest;
+import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAObjectPropertyDelegate;
 
 public class OACompareTest extends OAUnitTest {
 
@@ -75,7 +83,6 @@ public class OACompareTest extends OAUnitTest {
 		assertTrue(OACompare.isEqual("fx", true));
 		assertTrue(OACompare.isEqual(false, ""));
 		assertTrue(OACompare.isEqual(false, null));
-
 	}
 
 	@Test
@@ -141,4 +148,203 @@ public class OACompareTest extends OAUnitTest {
 		assertEquals(0, OACompare.compare(true, new String[] { "z" }));
 	}
 
+	@Test
+	public void testOAObjectKey() {
+		OAObjectKey ok = new OAObjectKey(123);
+		assertEquals(0, ok.getGuid());
+		assertTrue( Arrays.equals(ok.getObjectIds(), new Object[]{123}));
+		
+		MessageGroup mg = new MessageGroup();
+		assertTrue(mg.getObjectKey().getGuid() > 0L);
+		
+		MessageType mt = new MessageType();
+		assertTrue(mt.getObjectKey().getGuid() > 0L);
+		mt.setId(11);
+		ok = mt.getObjectKey();
+		
+		OAObjectPropertyDelegate.setProperty(mg, mg.P_MessageType, ok);
+		
+		MessageType mtx = mg.getMessageType();
+		
+		assertEquals(mt, mtx);
+	}
+	
+	@Test
+	public void testCompare() {
+		int x;
+		
+		x = OACompare.compare("abc", "abc");
+		assertTrue(x == 0);
+
+		x = OACompare.compare("abc", "abc ");
+		assertTrue(x != 0);
+
+		x = OACompare.compare(true, true);
+		assertTrue(x == 0);
+
+		x = OACompare.compare(true, false);
+		assertTrue(x != 0);
+
+		x = OACompare.compare(true, Boolean.TRUE);
+		assertTrue(x == 0);
+		
+
+		x = OACompare.compare(null, null);
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(null, "");
+		assertTrue(x != 0);
+		
+		x = OACompare.compare("ab", "ab");
+		assertTrue(x == 0);
+		
+		
+		x = OACompare.compare(1,  1, 0);
+		assertTrue(x == 0);
+		x = OACompare.compare(1,  2, 0);
+		assertTrue(x < 0);
+		x = OACompare.compare(3,  2, 0);
+		assertTrue(x > 0);
+
+		x = OACompare.compare(3,  BigDecimal.valueOf(3));
+		assertTrue(x == 0);
+
+		x = OACompare.compare(3,  BigDecimal.valueOf(3));
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(3, 3.000001, 1);
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(3, 3L);
+		assertTrue(x == 0);
+
+		x = OACompare.compare((short)3, 3L);
+		assertTrue(x == 0);
+
+		double d = 12.345999;
+		x = OACompare.compare(d, d);
+		assertTrue(x == 0);
+		x = OACompare.compare(d, 12.345999d);
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(1.2345,  1.2345111, 4);
+		assertTrue(x == 0);
+		x = OACompare.compare(1.2345,  1.2345111, 5);
+		assertTrue(x < 0);
+		x = OACompare.compare(1.23452,  1.23451119, 5);
+		assertTrue(x > 0);
+		x = OACompare.compare(1.23452,  1.23451119, 4);
+		assertTrue(x == 0);
+		x = OACompare.compare(1.2345,  1.2344999, 3);
+		assertTrue(x > 0);
+
+		x = OACompare.compare('a', OANotExist.instance);
+		assertTrue(x != 0);
+		x = OACompare.compare(null, OAAnyValueObject.instance);
+		assertTrue(x == 0);
+		x = OACompare.compare(null, OANullObject.instance);
+		assertTrue(x == 0);
+		x = OACompare.compare(null, OANotNullObject.instance);
+		assertTrue(x != 0);
+
+		x = OACompare.compare(null, OAEmptyObject.instance);
+		assertTrue(x == 0);
+		x = OACompare.compare("", OAEmptyObject.instance);
+		assertTrue(x == 0);
+		
+		
+		MessageType mt = new MessageType();
+		mt.setId(777);
+		OAObjectKey ok = mt.getObjectKey();
+		
+		x = OACompare.compare(mt, ok);
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(mt, mt.getId());
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(mt.getObjectKey(), mt.getId());
+		assertTrue(x == 0);
+		
+		
+		ok = new OAObjectKey((Object[]) null, mt.getGuid());
+		x = OACompare.compare(mt, ok);
+		assertTrue(x == 0);
+		
+		ok = new OAObjectKey(new Object[] { mt.getId() });
+		x = OACompare.compare(mt, ok);
+		assertTrue(x == 0);
+		
+		ok = new OAObjectKey(new Object[] { mt.getId() });
+		x = OACompare.compare(new Object[] { mt.getId() }, ok);
+		assertTrue(x == 0);
+		
+
+		ok = new OAObjectKey(new Object[] { 123, "abc" }, 123);
+		OAObjectKey ok2 = new OAObjectKey(new Object[] { 123, "abc" }, 123);
+		x = OACompare.compare(ok, ok2);
+		assertTrue(x == 0);
+		x = ok.compareTo(ok2);
+		assertTrue(x == 0);
+		assertTrue(ok.equals(ok2));
+
+		ok = new OAObjectKey(new Object[] { 123, "abc" }, 123);
+		ok2 = new OAObjectKey(new Object[] { 678, "abcDEF" }, 123);
+		x = OACompare.compare(ok, ok2); // only checks guids
+		assertTrue(x == 0);
+		assertFalse(ok.equals(ok2));
+		
+		
+
+		ok = new OAObjectKey(new Object[] { 123, "abc" });
+		ok2 = new OAObjectKey(new Object[] { 123, "abc" }, 567);
+		x = OACompare.compare(ok, ok2);
+		assertTrue(x == 0);
+		x = ok.compareTo(ok2);
+		assertTrue(x != 0);
+		assertFalse(ok.equals(ok2));
+		
+		
+		ok = new OAObjectKey(new Object[] { 123, "abc" }, 123);
+		ok2 = new OAObjectKey(new Object[] { 123, "abc" }, 678);
+		x = OACompare.compare(ok, ok2);
+		assertTrue(x != 0);
+		x = ok.compareTo(ok2);
+		assertTrue(x != 0);
+		
+		
+		x = OACompare.compare(new String[] {"a"}, new String[] {"a"});
+		assertTrue(x == 0);
+		x = OACompare.compare(new String[] {"a", "b"}, new String[] {"a"});
+		assertTrue(x != 0);
+		x = OACompare.compare(new String[] {"a"}, new String[] {"a", "b"});
+		assertTrue(x != 0);
+		
+		x = OACompare.compare(new String[] {"a"}, true);
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(true, new String[] {"a"});
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(true, "true");
+		assertTrue(x == 0);
+		x = OACompare.compare("true", true);
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(123.455, "123.455", 3);
+		assertTrue(x == 0);
+
+		x = OACompare.compare(123.459, "123.46", 2);
+		assertTrue(x == 0);
+		
+		x = OACompare.compare(mt, mt);
+		assertTrue(x == 0);
+		
+		
+		int xx = 35;
+		xx++;
+		
+	}
+	
+	
 }

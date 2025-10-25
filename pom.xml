@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.viaoa</groupId>
   <artifactId>oa-core</artifactId>
-  <version>3.7.12</version>
+  <version>3.8.0</version>
   <packaging>jar</packaging>
 
   <name>${project.groupId}:${project.artifactId}</name>
@@ -162,11 +162,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <version>3.14.1</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-          <release>8</release>
+          <release>11</release>
+          <encoding>UTF-8</encoding>
         </configuration>
       </plugin>
 
@@ -300,6 +299,33 @@
           <autoPublish>true</autoPublish>
         </configuration>
       </plugin>
+
+
+<plugin>
+  <groupId>com.github.spotbugs</groupId>
+  <artifactId>spotbugs-maven-plugin</artifactId>
+  <version>4.8.3.0</version>
+  <configuration>
+    <effort>Max</effort> <!-- Max = deeper analysis -->
+    <threshold>Low</threshold> <!-- Low = show all issues -->
+    <xmlOutput>true</xmlOutput>
+    <failOnError>false</failOnError>
+	<FindBugsFilter>
+	  <Match>
+	    <Bug pattern="NP_NULL_ON_SOME_PATH|UWF_UNWRITTEN_FIELD|DM_STRING_CTOR"/>
+	  </Match>
+	</FindBugsFilter>
+  </configuration>
+  
+  <executions>
+    <execution>
+      <phase>verify</phase>
+      <goals>
+        <goal>spotbugs</goal>
+      </goals>
+    </execution>
+  </executions>
+</plugin>
 
     </plugins>
   </build>

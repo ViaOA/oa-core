@@ -579,7 +579,7 @@ public class OAThreadLocalDelegate {
 	private static int errorCnt;
 
 	// used for lock/unlock
-	protected static ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+	protected static final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
 
 	static volatile int openLockCnt;
 	static volatile int lockCnt;
@@ -751,7 +751,7 @@ public class OAThreadLocalDelegate {
 			cntDeadlock++;
 			synchronized (tlOwner) {
 				tlOwner.bIsWaitingOnLock = false;
-				tlOwner.notify();
+				tlOwner.notifyAll();
 			}
 
 			LOG.warning("LOCK:OAThreadLocalDelegate: Found Deadlock, obj=" + lockObject + ", releasing one of the locks");
@@ -814,7 +814,7 @@ public class OAThreadLocalDelegate {
 			if (tls != null && bIsLockOwner && !bMoreLocks) {
 				synchronized (tls[0]) {
 					tls[0].bIsWaitingOnLock = false; // notify the next one waiting
-					tls[0].notify();
+					tls[0].notifyAll();
 				}
 			}
 		}
@@ -1200,7 +1200,7 @@ public class OAThreadLocalDelegate {
 	}
 	*/
 
-	// 20160121 allows an object to wait to be notified by OARemoteThreadDelegate.startNextThread()
+	// allows an object to wait to be notified by OARemoteThreadDelegate.startNextThread()
 	public static void setNotifyObject(Object obj) {
 		if (obj == null) {
 			if (OAThreadLocalDelegate.TotalNotifyWaitingObject.get() == 0) {
@@ -1209,7 +1209,7 @@ public class OAThreadLocalDelegate {
 			OAThreadLocal tl = OAThreadLocalDelegate.getThreadLocal(false);
 			if (tl != null && (tl.notifyObject != null)) {
 				TotalNotifyWaitingObject.decrementAndGet();
-				tl.notifyObject = obj;
+				tl.notifyObject = null;
 			}
 		} else {
 			OAThreadLocal tl = OAThreadLocalDelegate.getThreadLocal(true);

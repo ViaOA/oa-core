@@ -454,32 +454,29 @@ public class OAConverter {
 	 * Convert to a long, with "assumed" decimalPlaces
 	 */
 	public static long toLong(double d, int decimalPlaces) {
-		if (decimalPlaces < 0) {
-			return (long) d;
-		}
+	    if (decimalPlaces < 0) return (long) d;
+	    if (decimalPlaces > 15) decimalPlaces = 15; // prevent FP drift
 
-		boolean bNegative;
-		if (d < 0) {
-			d = Math.abs(d);
-			bNegative = true;
-		} else {
-			bNegative = false;
-		}
+	    if (Double.isNaN(d)) return 0;
+	    if (Double.isInfinite(d)) return (d > 0) ? Long.MAX_VALUE : Long.MIN_VALUE;
 
-		double decimalValue = Math.pow(10, decimalPlaces);
-		d *= decimalValue;
+	    boolean negative = d < 0;
+	    if (negative) d = -d;
 
-		long x = StrictMath.round(d);
-		if (bNegative) {
-			x *= -1;
-		}
-		return x;
+	    double scale = Math.pow(10, decimalPlaces);
+	    double scaled = d * scale;
+
+	    long result = StrictMath.round(scaled);
+	    return negative ? -result : result;
 	}
 
 	/**
 	 * Compare two doubles, using fixed decimal places.
 	 */
 	public static int compare(double d1, double d2, int decimalPlaces) {
+		if (Double.isNaN(d1) || Double.isNaN(d2)) return Double.compare(d1, d2);
+		if (Double.isInfinite(d1) || Double.isInfinite(d2)) return Double.compare(d1, d2);
+		
 		long l1 = toLong(d1, decimalPlaces);
 		long l2 = toLong(d2, decimalPlaces);
 		if (l1 == l2) {

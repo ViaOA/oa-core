@@ -28,13 +28,13 @@ public interface RemoteSessionInterface {
      * so that the Server side Session can use it when filtering broadcast msgs.
      */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
-    void objectCreated(int guid);
+    void objectCreated(long guid);
 
     /**
      * Called by client OAObject finalization, to remove guid from server side client session.
      */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
-    void objectsFinalized(int[] guids);
+    void objectsFinalized(long[] guids);
 
     /**
      * Used to make sure that objects are stored in the server side and wont be GCd.

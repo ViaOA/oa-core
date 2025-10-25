@@ -1594,7 +1594,7 @@ public class OAString {
 				} else {
 					s = "#" + s;
 				}
-				str = OAConv.toString(new Double(d), s);
+				str = OAConv.toString(Double.valueOf(d), s);
 			} catch (Exception e) {
 			}
 		}
@@ -2666,26 +2666,9 @@ public class OAString {
 					return true;
 				}
 			}
-		} else if (obj.getClass().isArray()) {
-			if (Array.getLength(obj) == 0) {
-				return true;
-			}
-		} else if (obj instanceof Hub) {
-			if (((Hub) obj).getSize() == 0) {
-				return true;
-			}
-		} else if (obj instanceof Map) {
-			if (((Map) obj).size() == 0) {
-				return true;
-			}
-		} else if (obj instanceof Set) {
-			if (((Set) obj).size() == 0) {
-				return true;
-			}
-		} else if (obj instanceof List) {
-			if (((List) obj).size() == 0) {
-				return true;
-			}
+		} 
+		else {
+			return OAConverter.isEmpty(obj, bTrim);
 		}
 		return false;
 	}
@@ -3151,7 +3134,7 @@ public class OAString {
 			}
 			char ch = text.charAt(i);
 			if (!bStarted) {
-				if (ch == ' ' | ch == '\t') {
+				if (ch == ' ' || ch == '\t') {
 					lastPos++;
 					continue;
 				}
@@ -3761,7 +3744,7 @@ public class OAString {
 			int x2 = (int) (Math.random() * x1);
 			int x3 = x1 + ((int) (Math.random() * x * 2));
 			s = getDummyText(x1, x2, x3);
-			System.out.printf("%d) %d,%d,%d=%d => %s \n", i, x1, x2, x3, s.length(), OAString.format(s, "120l."));
+			System.out.printf("%d) %d,%d,%d=%d => %s %n", i, x1, x2, x3, s.length(), OAString.format(s, "120l."));
 
 		}
 	}

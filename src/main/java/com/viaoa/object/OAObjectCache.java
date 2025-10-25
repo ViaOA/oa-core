@@ -9,9 +9,7 @@ import java.util.logging.Logger;
 import com.viaoa.model.oa.VBoolean;
 
 /**
- * Caches OAObjects by guid, and uses the OAObjectIndexDelegate to index using OAObject pkey propery values.
- * 
- * @see OAObjectIndex for lookups based on OAObject pkey property values.
+ * Caches OAObjects by guid, and uses the OAObjectIndex to index using OAObject pkey/ID propery values.
  */
 public class OAObjectCache {
 	private static Logger LOG = Logger.getLogger(OAObjectCache.class.getName());
@@ -41,8 +39,18 @@ public class OAObjectCache {
 		hm.clear();
 	}
 	
-	
 
+	@SuppressWarnings("unchecked")
+	public <T extends OAObject> T getObject(Class<T> c, long guid) {
+		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(c);
+		if (hm == null) return null;
+		OAWeakRef<? extends OAObject> wr = hm.get(guid);
+		if ((++cntGetObject % 100) == 0) checkReferenceQueue();
+		if (wr == null) return null;
+		return (T) wr.get();
+	}
+	
+	
 	public <T extends OAObject> T getObject(Class<T> clazz, Object[] ids) {
 		if (clazz == null || ids == null) return null;
 		OAObjectKey ok = new OAObjectKey(ids);
@@ -71,7 +79,7 @@ public class OAObjectCache {
 		final Class<? extends OAObject> clazz = obj.getClass();
 		final ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
 		
-		final OAObjectKey ok = new OAObjectKey(obj);
+		final OAObjectKey ok = OAObjectKeyDelegate.createObjectKey((OAObject) obj);
 		
 		boolean[] bsWasFound = new boolean[] {true};
 
@@ -93,15 +101,6 @@ public class OAObjectCache {
 	}
 
 
-	@SuppressWarnings("unchecked")
-	public <T extends OAObject> T getObject(Class<T> c, long guid) {
-		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(c);
-		if (hm == null) return null;
-		OAWeakRef<? extends OAObject> wr = hm.get(guid);
-		if ((++cntGetObject % 100) == 0) checkReferenceQueue();
-		if (wr == null) return null;
-		return (T) wr.get();
-	}
 
 	protected void checkReferenceQueue() {
 		for (int i=0; i<5000; i++) {

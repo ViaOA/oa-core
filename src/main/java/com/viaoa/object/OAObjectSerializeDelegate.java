@@ -26,16 +26,15 @@ import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
 
 public class OAObjectSerializeDelegate {
-	private static Logger LOG = Logger.getLogger(OAObjectSerializeDelegate.class.getName());
+	private static final Logger LOG = Logger.getLogger(OAObjectSerializeDelegate.class.getName());
 
 	protected static void _readObject(OAObject oaObj, java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		// 20140310 client only needs to send the key to the server
+		// client only needs to send the key to the server
 		if (in instanceof RemoteObjectInputStream) {
 			byte bx = in.readByte();
 			if (bx == 1) {
 				OAObjectKey ok = (OAObjectKey) in.readObject();
-				OAObjectKeyDelegate.setKey(oaObj, ok);
-				oaObj.guid = ok.guid;
+				oaObj.guid = ok.getGuid();
 				cntDup--;
 				return;
 			} else if (bx == 2) {
@@ -80,7 +79,7 @@ public class OAObjectSerializeDelegate {
 			}
 
 			// 20200102 include blobs
-			if (value instanceof byte[] && oi.getHasBlobPropery()) {
+			if (value instanceof byte[] && oi.getHasBlobProperty()) {
 				OAPropertyInfo pi = oi.getPropertyInfo(key);
 				if (pi != null && pi.isBlob()) {
 					byte[] bs = (byte[]) value;
@@ -108,7 +107,6 @@ public class OAObjectSerializeDelegate {
 		if (oaObjRead.guid == 0) {
 			LOG.warning("received object with guid=0, obj=" + oaObjRead + ", reassigning a new guid");
 			OAObjectDelegate.assignGuid(oaObjRead);
-			oaObjRead.objectKey.guid = oaObjRead.guid;
 		}
 
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObjRead);
@@ -145,7 +143,7 @@ public class OAObjectSerializeDelegate {
 				if (localValue instanceof OAObjectKey && (value instanceof OAObject)) {
 					OAObjectKey k1 = (OAObjectKey) localValue;
 					OAObjectKey k2 = OAObjectKeyDelegate.getKey((OAObject) value);
-					if (k1.equals(k2)) {
+					if (OAObjectKeyDelegate.isForSameOAObject(null, k1, k2)) {
 						OAObjectPropertyDelegate.setPropertyCAS(oaObjUse, key, value, localValue);
 					}
 					continue;
@@ -194,14 +192,11 @@ public class OAObjectSerializeDelegate {
 	public static volatile int cntNew;
 	public static volatile int cntSkip;
 
-	private static boolean replaceReferences(OAObject oaObjFrom, OAObject oaObjTo, OALinkInfo linkInfo, Object value) {
-		// 20130215 value can be null
+	private static boolean replaceReferences(final OAObject oaObjFrom, final OAObject oaObjTo, final OALinkInfo linkInfo, Object value) {
 		if (linkInfo == null) {
 			return false;
-			//was: if (value == null || linkInfo == null) return false;
 		}
 
-		// 20130215
 		if (value == null) {
 			return true;
 		}
@@ -248,7 +243,7 @@ public class OAObjectSerializeDelegate {
 			if (ref == null) {
 				return true;
 			}
-			if (ref == oaObjFrom || ref.equals(oaObjFrom.objectKey)) {
+			if (ref == oaObjFrom || ( (ref instanceof OAObjectKey) && OAObjectKeyDelegate.isForSameOAObject(null, (OAObjectKey)ref, OAObjectKeyDelegate.getKey(oaObjFrom))) )  {
 				OAObjectPropertyDelegate.setPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
 			} else {
 				if (ref instanceof WeakReference) {
@@ -287,7 +282,7 @@ public class OAObjectSerializeDelegate {
 			serializer.beforeSerialize(oaObj);
 		}
 		
-		final OAObjectInfo oi = OAObjectHashDelegate.hashObjectInfo.get(oaObj.getClass());
+		final OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(oaObj.getClass());
 		final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
 		final boolean bIsObjectOnServer = bIsServer || OASync.getSyncClient().isObjectOnServer(oaObj);
 
@@ -314,7 +309,7 @@ public class OAObjectSerializeDelegate {
 
 		// 20200102 include blobs
 		if (serializer != null && serializer.getIncludeBlobs()) {
-			if (oi.getHasBlobPropery()) {
+			if (oi.getHasBlobProperty()) {
 				for (OAPropertyInfo pi : oi.getPropertyInfos()) {
 					if (pi.isBlob()) {
 						byte[] bs = (byte[]) oaObj.getProperty(pi.getName());
