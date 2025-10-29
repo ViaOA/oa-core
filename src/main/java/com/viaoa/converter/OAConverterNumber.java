@@ -1,48 +1,80 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.converter;
 
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.math.BigDecimal;
-import java.math.MathContext;
+import java.math.BigInteger;
 import java.text.DecimalFormat;
-import java.text.Format;
 import java.text.ParsePosition;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Pattern;
 
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAReflect;
+import com.viaoa.util.OAStr;
 import com.viaoa.util.OAString;
 
 /**
- * Convert to/from a Number value. <br>
- * <b>Converting the following to a Number</b>
+ * Converter for parsing and formatting numeric values, supporting a wide variety
+ * of source types and optional {@link DecimalFormat} formatting patterns.
+ *
+ * <h3>Conversion to {@code Number}</h3>
+ * Supported input types:
  * <ul>
- * <li>null returns a number with value = 0
- * <li>Any type of Number
- * <li>String, using an optional format.
- * <li>Color
- * <li>Character
- * <li>Boolean
- * <li>Rectangle by encoding x,y,w,h in 16bit positions (64 bits required).
- * <li>All others value will return null.
+ *   <li>{@code null} → {@code Double.valueOf(0)}</li>
+ *   <li>Any {@link Number} subtype</li>
+ *   <li>{@link String} — parsed using {@code fmt} when provided</li>
+ *   <li>{@code byte[]} — converted to {@link BigInteger}</li>
+ *   <li>{@link Character} — Unicode numeric value</li>
+ *   <li>{@link Boolean} — {@code true → 1}, {@code false → 0}</li>
+ *   <li>{@link java.awt.Color} — packed RGB integer representation</li>
+ *   <li>{@link java.awt.Rectangle} — packed 64-bit integer encoding:
+ *     <pre>{@code [x:16 bits][y:16 bits][width:16 bits][height:16 bits]}</pre>
+ *   </li>
+ *   <li>{@link Enum} — ordinal value</li>
+ *   <li>{@link OADateTime} — epoch milliseconds via {@link OADateTime#getTime()}</li>
  * </ul>
- * <br>
- * <b>Converting a Number to any of the following</b>
+ *
+ * <p>When parsing a string:</p>
+ * <ol>
+ *   <li>Try {@code fmt} as provided (default: {@code "#,###"})</li>
+ *   <li>If that fails, remove grouping/currency characters
+ *       via {@link #cleanNumber(String)}</li>
+ *   <li>If still failing, retry with default pattern</li>
+ * </ol>
+ *
+ * <p>Suffix multipliers supported:</p>
  * <ul>
- * <li>String, using an optional format.
+ *   <li>{@code 12k → 12000}</li>
+ *   <li>{@code 3.2M → 3200000}</li>
  * </ul>
- * <p>
+ *
+ * <h3>Conversion to {@code String}</h3>
+ * <ul>
+ *   <li>Numeric formats use {@link DecimalFormat#format(Object)}</li>
+ *   <li>Alignment/formatting masks with R/L/C use {@link OAStr#format(String, String)}</li>
+ * </ul>
+ *
+ *
+   * <p>
  * Format String Symbol Meaning (same as DecimalFormat)
  * 
  * <pre>
@@ -62,87 +94,140 @@ import com.viaoa.util.OAString;
          is used instead of the decimal separator.
  X      any other characters can be used in the prefix or suffix
  '      used to quote special characters in a prefix or suffix.
- 
+ </pre>
+ <p>
  Examples:
+ <pre>
  IntegerFormat     = #,###
  DecimalFormat     = #,##0.00
  MoneyFormat       = \u00A4#,##0.00
  BooleanFormat     = true;false;null
- 
- ALSO** support for OAString.format
- * </pre>
- * <p>
- * NOTE: this also does rounding when digits are truncated.
- * 
+ </pre>
+ *
+ * <h3>Performance & Concurrency</h3>
+ * <ul>
+ *   <li>Pools {@link DecimalFormat} instances keyed by format pattern</li>
+ *   <li>Exclusive formatter ownership enforced using {@link ReentrantReadWriteLock}</li>
+ *   <li>Each pooled formatter is reused only when {@code used == false}</li>
+ * </ul>
+ *
+ * <h3>Examples</h3>
+ * <pre>{@code
+ * OAConverterNumber conv = new OAConverterNumber();
+ *
+ * Number n1 = conv.convert(Double.class, "123.45", "#,##0.00"); // 123.45
+ * Number n2 = conv.convert(Long.class, new OADateTime(), null); // epoch millis
+ *
+ * String s1 = conv.convertToString(1234.5, "#,##0.00"); // "1,234.50"
+ * String s2 = conv.convertToString(42, "R10");          // right-align
+ * }</pre>
+ *
+ * <p><strong>Note:</strong> Rounding behavior is controlled by DecimalFormat when
+ * fractional digits are truncated.</p>
+ *
  * @see OAConverter
- * @see OAString#format(double, String)
+ * @see DecimalFormat
+ * @see OAStr#format(String, String)
  */
-public class OAConverterNumber implements OAConverterInterface {
+public class OAConverterNumber implements OAConverterInterface<Number> {
 
-	/**
-	 * Convert to/from a Number value.
-	 * 
-	 * @return Object of type clazz if conversion can be done, else null.
-	 */
-	public Object convert(Class clazz, Object value, String fmt) {
+	protected static final Double DOUBLE_ZERO = Double.valueOf(0.0d);	
+	protected static final String DEFAULT_PATTERN = "#,###";
+	protected static final Pattern CLEAN_PATTERN = Pattern.compile("[,$ ]");	
+	
+	protected final List<FormatPool> alFormatPool = new ArrayList<>();
+	protected final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+	
+	
+    /**
+     * Converts a value into a {@link Number} using an optional format pattern.
+     * <p>
+     * The conversion behavior depends on the runtime type of {@code value}:
+     * <ul>
+     *   <li>{@code null} → {@code Double.valueOf(0)}</li>
+     *   <li>{@code Number} → returned as-is (or converted to requested {@code Number} subclass)</li>
+     *   <li>{@code String} → parsed using {@link DecimalFormat} with the given {@code fmt}</li>
+     *   <li>{@code byte[]} → new {@link BigInteger} from the byte array</li>
+     *   <li>{@code Character} → Unicode numeric code point</li>
+     *   <li>{@code Boolean} → {@code true → 1} / {@code false → 0}</li>
+     *   <li>{@link java.awt.Color} → packed RGB integer value</li>
+     *   <li>{@link java.awt.Rectangle} → packed 64-bit value
+     *       {@code [x][y][width][height]} (16 bits each)</li>
+     *   <li>{@link Enum} → {@code ordinal()}</li>
+     *   <li>{@link OADateTime} → epoch milliseconds from {@link OADateTime#getTime()}</li>
+     * </ul>
+     *
+     * <h4>String Parsing Behavior</h4>
+     * <ol>
+     *   <li>Attempt using provided format {@code fmt}
+     *       (default: {@code "#,###"})</li>
+     *   <li>If parsing fails, invalid chars such as {@code $, , space}
+     *       are removed via {@link #cleanNumber(String)}</li>
+     *   <li>Retry with cleaned value</li>
+     *   <li>On final failure: return {@code null}</li>
+     * </ol>
+     *
+     * <p>Suffix multipliers such as {@code k} and {@code M} are supported:
+     * {@code "25k" → 25000}, {@code "3.5M" → 3500000}.</p>
+     *
+     * @param clazz The desired {@code Number} subclass to return (ex: {@code Integer.class} or {@code Double.class})
+     * @param value The value to convert; may be {@code null}
+     * @param fmt   Optional formatting/parsing pattern; may be {@code null}
+     *
+     * @return a {@link Number} matching {@code clazz}, zero for {@code null},
+     *         or {@code null} if conversion is not possible
+     *
+     * @see #cleanNumber(String)
+     * @see DecimalFormat
+     */
+	@Override
+	public Number convert(Class<Number> clazz, Object value, String fmt) {
 		if (clazz == null) {
 			return null;
 		}
 
 		if (value != null && value.getClass().equals(clazz)) {
-			return value;
+			return (Number) value;
 		}
 		if (clazz.isPrimitive()) {
 			clazz = OAReflect.getPrimitiveClassWrapper(clazz);
 		}
 
-		if (Number.class.isAssignableFrom(clazz)) {
-			return convertToNumber(clazz, value, fmt);
-		}
-		if (value != null && value instanceof Number) {
-			return convertFromNumber(clazz, (Number) value, fmt);
-		}
-		return null;
-	}
-
-	/**
-	 * Returns Number subclass to match clazz parameter, 0 if value is null, or null if it can not be parsed.
-	 */
-	protected Number convertToNumber(Class clazz, Object value, String fmt) {
 		Number num = null;
 		if (value == null) {
-			num = Double.valueOf(0.0D);
+			num = DOUBLE_ZERO;
 		} else if (value instanceof Number) {
 			num = (Number) value;
 		} else if (value instanceof String) {
 			String sValue = (String) value;
 			if (sValue.length() == 0) {
-				num = Double.valueOf(0.0D);
+				num = DOUBLE_ZERO;
 			} else {
 				if (fmt == null) {
-					fmt = "#,###";
+					fmt = DEFAULT_PATTERN;
 				} else {
 					fmt = fmt.replace('$', '\u00A4');
 				}
 
 				for (int i = 0; i < 3; i++) {
 					FormatPool fp = getFormatter(fmt);
+					final ParsePosition pp = new ParsePosition(0);
 					try {
-						ParsePosition pp = new ParsePosition(0);
-						num = ((DecimalFormat) fp.fmt).parse(sValue, pp);
+						pp.setIndex(0);
+						num = fp.decimalFormat.parse(sValue, pp);
 						if (pp.getIndex() == sValue.length()) {
 							break;
 						}
 						num = null;
 					} catch (Exception e) {
 					} finally {
-						fp.used = false;
+						releaseFormatter(fp);
 					}
 
 					if (i == 0) {
 						sValue = cleanNumber(sValue);
 					} else if (i == 1) {
-						fmt = "#,###";
+						fmt = DEFAULT_PATTERN;
 					}
 				}
 			}
@@ -165,7 +250,7 @@ public class OAConverterNumber implements OAConverterInterface {
 			Color c = (Color) value;
 			num = Long.valueOf(c.getRGB());
 		} else if (value instanceof Enum) {
-			Enum e = (Enum) value;
+			Enum<?> e = (Enum<?>) value;
 			num = Long.valueOf(e.ordinal());
 		}
 
@@ -181,7 +266,9 @@ public class OAConverterNumber implements OAConverterInterface {
 			} else if (clazz.equals(Long.class)) {
 				num = Long.valueOf(num.longValue());
 			} else if (clazz.equals(BigDecimal.class)) {
-				num = new BigDecimal(num.toString());
+				if (num instanceof BigDecimal) { /* no-op */ }
+				else if (num instanceof BigInteger) num = new BigDecimal((BigInteger) num);
+				else num = BigDecimal.valueOf(num.doubleValue());				
 			} else if (clazz.equals(Double.class)) {
 				num = Double.valueOf(num.doubleValue());
 			} else if (clazz.equals(Float.class)) {
@@ -196,16 +283,7 @@ public class OAConverterNumber implements OAConverterInterface {
 	}
 
 	String cleanNumber(String value) {
-		char[] chars = { ',', '$', ' ' };
-		for (int j = 0; j < chars.length; j++) {
-			for (;;) {
-				int x = value.indexOf(chars[j]);
-				if (x < 0) {
-					break;
-				}
-				value = value.substring(0, x) + value.substring(x + 1);
-			}
-		}
+		value = CLEAN_PATTERN.matcher(value).replaceAll("");
 
 		int x = value.length();
 		if (x > 0) {
@@ -213,98 +291,120 @@ public class OAConverterNumber implements OAConverterInterface {
 			if (c == 'k' || c == 'K') {
 				value = value.substring(0, x - 1) + "000";
 			}
+			else if (c == 'm' || c == 'M') {
+				value = value.substring(0, x - 1) + "000000";
+			}
 		}
 		return value;
 	}
 
-	protected Vector vec = new Vector(5, 5);
 
 	protected FormatPool getFormatter(String fmt) {
+		if (fmt == null) fmt = "";
 		FormatPool fp = null;
-		synchronized (vec) {
-			int x = vec.size();
-			int i = 0;
-			for (; i < x; i++) {
-				fp = (FormatPool) vec.elementAt(i);
-				if (!fp.used) {
-					((DecimalFormat) fp.fmt).applyPattern(fmt);
+		FormatPool fpAvail = null;
+		try {
+			lock.writeLock().lock();
+			for (FormatPool fpx : alFormatPool) {
+				if (fpx.used) continue;
+				if (fmt.equals(fpx.fmt)) {
+					fp = fpx;
 					break;
 				}
+				fpAvail = fpx;
 			}
-			if (i == x) {
-				fp = new FormatPool(new DecimalFormat(fmt));
-				vec.addElement(fp);
+
+			if (fp == null) {
+				if (fpAvail != null) {
+					fp = fpAvail;
+					fp.decimalFormat.applyPattern(fmt);
+					fp.fmt = fmt;
+				}
+				else {
+					fp = new FormatPool(fmt, new DecimalFormat(fmt));
+					alFormatPool.add(fp);
+				}
 			}
 			fp.used = true;
 		}
+		finally {
+			lock.writeLock().unlock();
+		}
+		
 		return fp;
 	}
 
-	class FormatPool {
-		boolean used;
-		Format fmt;
+	protected void releaseFormatter(FormatPool fp) {
+		try {
+			lock.writeLock().lock();
+			fp.used = false;
+		}
+		finally {
+			lock.writeLock().unlock();
+		}
+	}
+	
+	
+	static class FormatPool {
+		volatile String fmt;
+		volatile boolean used;
+		DecimalFormat decimalFormat;
 
-		public FormatPool(Format fmt) {
+		public FormatPool(String fmt, DecimalFormat deciFmt) {
 			this.fmt = fmt;
+			this.decimalFormat = deciFmt;
 		}
 	}
 
-	protected Object convertFromNumber(Class toClass, Number numValue, String fmt) {
-		if (toClass.equals(String.class)) {
-			if (fmt == null) {
-				return numValue.toString();
-			}
-
-			if (fmt.length() > 1 && fmt.indexOf('R') >= 0 || fmt.indexOf('L') >= 0 || fmt.indexOf('C') >= 0) {
-				return OAString.format(numValue.toString(), fmt);
-			}
-
-			String s = null;
-			FormatPool fp = getFormatter(fmt);
-			try {
-				s = ((DecimalFormat) fp.fmt).format(numValue);
-			} finally {
-				fp.used = false;
-			}
-			return s;
+    /**
+     * Formats a numeric value into a textual representation using an optional
+     * format pattern.
+     *
+     * <p>If the format mask contains alignment symbols:</p>
+     * <ul>
+     *   <li>{@code 'R'} → right align</li>
+     *   <li>{@code 'L'} → left align</li>
+     *   <li>{@code 'C'} → center align</li>
+     * </ul>
+     * then {@link OAStr#format(String, String)} is used to apply alignment rules.
+     *
+     * <p>Otherwise, the given {@code fmt} is interpreted as a
+     * {@link DecimalFormat} pattern.</p>
+     *
+     * <p>If {@code fromValue} is {@code null}, an empty string ({@code ""}) is returned.</p>
+     *
+     * @param fromValue Value to be formatted; may be {@code null}
+     * @param fmt       Optional formatting/align mask; may be {@code null}
+     *
+     * @return formatted string, never {@code null}
+     *
+     * @see DecimalFormat#format(Object)
+     * @see OAStr#format(String, String)
+     */
+	@Override
+	public String convertToString(Number fromValue, String fmt) {
+		String s;
+		if (fromValue == null) {
+			return "";
 		}
-		return null;
+		if (OAStr.isEmpty(fmt)) {
+			s = fromValue.toString();
+		}
+		else { 
+			if (fmt.length() > 1 && (fmt.indexOf('R') >= 0 || fmt.indexOf('L') >= 0 || fmt.indexOf('C') >= 0)) {
+				s = OAString.format(fromValue.toString(), fmt);
+			}
+			else {
+				FormatPool fp = getFormatter(fmt);
+				try {
+					s = fp.decimalFormat.format(fromValue);
+				} finally {
+					releaseFormatter(fp);
+				}
+			}
+		}
+		if (s == null) s = "";
+		return s;
 	}
-
-	public static void main(String[] args) {
-		BigDecimal bd = BigDecimal.valueOf(1.23456);
-		BigDecimal bd2 = bd.setScale(3, BigDecimal.ROUND_HALF_UP);
-		// System.out.println(bd + " -> "+bd2);
-
-		DecimalFormat fmt = new DecimalFormat("#.000000000000000");
-		// System.out.println(fmt.format(bd));
-
-		MathContext mc = new MathContext(2); // this will only have 4 digits 
-
-		bd = new BigDecimal("125.00");
-		System.out.println("==>" + bd.toPlainString());
-		System.out.println("==>" + bd.scale());
-
-		bd = bd.setScale(0); // 4 decimals
-		System.out.println("==>" + bd);
-		bd = bd.round(mc);
-		System.out.println("==>" + bd);
-
-		bd = bd.multiply(BigDecimal.valueOf(2.1));
-
-		bd = bd.setScale(8, BigDecimal.ROUND_HALF_UP);
-		System.out.println("==>" + bd);
-		//System.out.println("==>"+bd+", "+bd.setScale(2));        
-
-		// bd = bd.round(mc);
-
-		//bd = bd.setScale(8, BigDecimal.ROUND_HALF_UP);
-		bd2 = new BigDecimal(125);
-		bd2 = bd2.setScale(4);
-		//bd2 = bd2.round(mc);
-
-		System.out.println("==>" + (bd.equals(bd2)) + ", bd=" + bd + ", bd2=" + bd2);
-
-	}
-
+	
 }

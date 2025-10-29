@@ -1,66 +1,113 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.converter;
 
 import com.viaoa.util.*;
 
 /**
-    Convert to/from a Boolean value.
-    <br>
-    <b>Converts the following to a Boolean</b>
-    <ul>
-    <li>String: 
-        if fmt is not null, then compares with true, false format values (case insensitive).  
-        If none match then null is returned.
-        If fmt is null then returns true if value equals "true", "yes", "t", "y" (all case insensitive).  
-        Otherwise false.
-    <li>Number: true if value != 0.  Otherwise false.
-    <li>Character: true if 't', 'y', isDigit() and not '0' (case insensitive).  Otherwise false.
-    <li>All others value will return null.
-    </ul>
-    <br>
-    <b>Converts a Boolean to any of the following</b>
-    <ul>
-    <li>String, using an optional format.
-    </ul>
+ * Converter for transforming values into {@link Boolean} and formatting
+ * Boolean values into text using optional format rules.
+ *
+ * <h3>Conversion to {@code Boolean}</h3>
+ * Behavior depends on the runtime type of {@code fromValue}:
+ * <ul>
+ *   <li>{@link Boolean} — returned directly</li>
+ *   <li>{@code null} — {@code Boolean.FALSE}</li>
+ *   <li>{@link String}:
+ *     <ul>
+ *       <li>If {@code fmt} is provided (e.g. {@code "yes;no;maybe"}), the first
+ *           entry is treated as {@code true} and the second as {@code false};
+ *           if no match, returns {@code null}</li>
+ *       <li>Without {@code fmt}, case‐insensitive checks:</li>
+ *       <ul>
+ *         <li>{@code "true"}, {@code "yes"}, {@code "t"}, {@code "y"} → true</li>
+ *         <li>Numeric strings → true if any digit is non-zero</li>
+ *         <li>Empty or falsy strings → false</li>
+ *       </ul>
+ *     </ul>
+ *   </li>
+ *   <li>{@link Number} — true if value is not zero</li>
+ *   <li>{@link Character} — true if {@code 'T','t','Y','y'} or numeric non-zero</li>
+ *   <li>Other non-null values → {@code true}</li>
+ * </ul>
+ *
+ * <h3>Formatting from {@code Boolean}</h3>
+ * <ul>
+ *   <li>If {@code fmt} is provided, returns:
+ *     <ol>
+ *       <li>true → first field</li>
+ *       <li>false → second field</li>
+ *       <li>null → third field</li>
+ *     </ol>
+ *     (fields separated by {@code ';'})</li>
+ *   <li>Without {@code fmt}, returns {@code "true"} or {@code "false"}</li>
+ *   <li>Null returns {@code ""}</li>
+ * </ul>
+ *
+ * <h3>Examples</h3>
+ * <pre>{@code
+ * OAConverterBoolean conv = new OAConverterBoolean();
+ *
+ * Boolean b1 = conv.convert(Boolean.class, "Y", null); // true
+ * Boolean b2 = conv.convert(Boolean.class, "0", null); // false
+ * Boolean b3 = conv.convert(Boolean.class, "no", "yes;no;null"); // false
+ * Boolean b4 = conv.convert(Boolean.class, "maybe", "yes;no;null"); // null
+ *
+ * String s1 = conv.convertToString(Boolean.TRUE, "yes;no;none"); // "yes"
+ * String s2 = conv.convertToString(null, "yes;no;none");         // "none"
+ * }</pre>
+ *
+ * @see com.viaoa.util.OAConverter
+ * @see OAStr#format(String, String)
+ */
+public class OAConverterBoolean implements OAConverterInterface<Boolean> {
 
-    @see OAConverter
-*/
-public class OAConverterBoolean implements OAConverterInterface {
-
+	
     /**
-        Convert to/from a Boolean value.
-        @param clazz Class to convert to.  
-        @param value if converting to boolean, then any type.  If converting from boolean, then boolean value or null.
-        @param fmt format string to determine values for true, false, null.  Ex: "true;false;null", "yes;no;maybe"
-        @return Object of type clazz if conversion can be done, else null.
-    */
-    public Object convert(Class clazz, Object value, String fmt) {
-        if (clazz == null) return null;
-        if (clazz.equals(Boolean.class) || clazz.equals(boolean.class)) return convertToBoolean(value, fmt);
-        if (value == null || value instanceof Boolean) return convertFromBoolean(clazz, (Boolean) value, fmt);
-        return null;
-    }        
-
-    public Boolean convertToBoolean(Object value, String fmt) {
-        if (value instanceof Boolean) {
-            return (Boolean) value;
+     * Converts the supplied {@code fromValue} into a {@link Boolean} using optional
+     * format rules. See the class-level documentation for full conversion rules.
+     *
+     * @param thisClass the target type (always {@code Boolean.class})
+     * @param fromValue the value to convert; may be {@code null}
+     * @param fmt       optional semicolon-delimited mask supporting custom text
+     *                  representations for true/false/null (e.g. "yes;no;unknown")
+     *
+     * @return
+     *     <ul>
+     *       <li>{@link Boolean} value determined by type mapping</li>
+     *       <li>{@code Boolean.FALSE} when {@code fromValue} is {@code null}</li>
+     *       <li>{@code null} if {@code fmt} is supplied and {@code fromValue}
+     *           does not match any token</li>
+     *     </ul>
+     *
+     * @see OAStr#isNotEmpty(CharSequence)
+     * @see java.lang.Boolean
+     */
+	@Override
+	public Boolean convert(Class<Boolean> thisClass, Object fromValue, String fmt) {
+        if (fromValue instanceof Boolean) {
+            return (Boolean) fromValue;
         }
-        if (value == null) {
+        if (fromValue == null) {
             return Boolean.FALSE;
         }
         
         boolean b = false;
-        if (value instanceof String) {
-            String str = (String)value;
+        if (fromValue instanceof String) {
+            String str = (String)fromValue;
             if (fmt != null && fmt.length() > 0) {
                 String s = OAString.field(fmt,";",1);
                 b = (s.equalsIgnoreCase(str));
@@ -99,44 +146,64 @@ public class OAConverterBoolean implements OAConverterInterface {
             return Boolean.valueOf(b);
         }
             
-        if (value instanceof Number) {
-            return Boolean.valueOf(((Number) value).doubleValue() != 0.0);
+        if (fromValue instanceof Number) {
+            return Boolean.valueOf(((Number) fromValue).doubleValue() != 0.0);
         }
         char c = 0;
         b = false;
-        if (value instanceof Byte) {
-             c = (char) ((Byte)value).byteValue();
+        if (fromValue instanceof Byte) {
+             c = (char) ((Byte)fromValue).byteValue();
              b = true;
         }            
-        if (value instanceof Character) {
-            c = ((Character)value).charValue();
+        if (fromValue instanceof Character) {
+            c = ((Character)fromValue).charValue();
             b = true;
         }
         if (b) {
             if (c == 'T' || c == 't' || c == 'Y' || c == 'y' || (Character.isDigit(c) && c != '0')) b = true;
             return Boolean.valueOf(b);
         }
-        return (value != null);
+        return (fromValue != null);
     }
 
-    public Object convertFromBoolean(Class toClass, Boolean bValue, String fmt) {
-        if (toClass.equals(String.class)) {
-            // fmt is three values to use for true/false/null sep by ';'  ex: "yes;no;none"
-            if (fmt != null) {
-                if (bValue == null) return OAString.field(fmt,";",3);
-                if ( bValue.booleanValue() ) return OAString.field(fmt,";",1);
-                return OAString.field(fmt,";",2);
-            }
-            if (bValue == null) return "";
-            return bValue.toString();
+    /**
+     * Converts a {@link Boolean} into a formatted {@link String} value.
+     *
+     * <p>When {@code fmt} is provided, it must contain one, two, or three
+     * semicolon-delimited fields representing:</p>
+     * <ol>
+     *   <li>value for {@code true}</li>
+     *   <li>value for {@code false} (optional)</li>
+     *   <li>value for {@code null} (optional)</li>
+     * </ol>
+     *
+     * <p>Behavior summary:</p>
+     * <ul>
+     *   <li>No {@code fmt} → {@code "true"} or {@code "false"}</li>
+     *   <li>{@code fromValue == null} → empty string unless {@code fmt} supplies a null token</li>
+     * </ul>
+     *
+     * @param fromValue Boolean to format; may be {@code null}
+     * @param fmt       optional semicolon-delimited format mask; may be {@code null}
+     *
+     * @return non-null formatted string for UI output
+     *
+     * @see OAStr#format(String, String)
+     */
+	@Override
+	public String convertToString(Boolean fromValue, String fmt) {
+        // fmt is three values to use for true/false/null sep by ';'  ex: "yes;no;none"
+		String s;
+        if (fmt != null) {
+            if (fromValue == null) s = OAString.field(fmt, ";", 3);
+            else if (fromValue.booleanValue()) s = OAString.field(fmt, ";", 1);
+            else s = OAString.field(fmt, ";", 2);
         }
-        if (toClass.equals(Integer.class)) {
-            if (bValue == null) return Integer.valueOf(0);;
-            if ( bValue.booleanValue() ) return Integer.valueOf(1);
-            return Integer.valueOf(0);
+        else {
+	        if (fromValue == null) s = "";
+	        else s = fromValue.toString();
         }
-        return null;
+		return (s == null ? "" : s);
     }
-
 }
 

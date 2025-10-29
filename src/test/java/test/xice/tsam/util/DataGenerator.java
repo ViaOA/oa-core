@@ -26,7 +26,7 @@ public class DataGenerator {
     OASelect sel;
     Hub hub;
     int x;
-    private static ServerRoot serverRoot;
+    public static ServerRoot serverRoot;
     
     
     public static ServerRoot getServerRoot() throws Exception {

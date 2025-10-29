@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.converter;
 
 import java.time.Instant;
@@ -17,106 +22,116 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 
 /**
- * Convert to/from a Date value. <br>
- * <b>Converting the following to a Date</b>
+ * Converter for transforming values into {@link java.util.Date} instances and
+ * formatting {@link java.util.Date} into display-friendly {@link String} values.
+ *
+ * <h3>Conversion Rules</h3>
+ * The following input types are supported when converting to {@code java.util.Date}:
  * <ul>
- * <li>String: converts to a Date, using optional format for parsing.
- * <li>OADateTime: returns Date value.
- * <li>All others value will return null.
- * </ul>
- * <br>
- * <b>Converts a Date to any of the following</b>
- * <ul>
- * <li>String, using an optional format.
+ *   <li>{@code null} → {@code null}</li>
+ *   <li>{@link Date} — returned directly</li>
+ *   <li>{@link String} — parsed using {@link OADateTime#valueOf(String, String)};
+ *       if blank, returns {@code null}</li>
+ *   <li>{@link byte[]} — interpreted as epoch milliseconds</li>
+ *   <li>{@link OADateTime} — converted using underlying epoch milliseconds</li>
+ *   <li>{@link Number} — epoch milliseconds preserved</li>
+ *   <li>{@link Instant} — converted using {@link Date#from(Instant)}</li>
+ *   <li>{@link LocalDate} — interpreted at system-default zone start-of-day</li>
+ *   <li>{@link LocalDateTime} — system-default zone used to derive instant</li>
+ *   <li>{@link ZonedDateTime} — exact instant preserved</li>
  * </ul>
  *
- * @see OAConverter
+ * <p><strong>Date and Time Semantics:</strong><br>
+ * {@link Date} represents a precise moment on the UTC timeline. When converting
+ * from a date-only type such as {@link LocalDate}, the system default time zone
+ * determines the instant that reflects start-of-day for that date.</p>
+ *
+ * <h3>Formatting Behavior</h3>
+ * <ul>
+ *   <li>Formatting is delegated to {@link OADate#toString(String)}</li>
+ *   <li>If {@code fromValue} is {@code null}, this method returns {@code ""}</li>
+ *   <li>When {@code fmt} is {@code null}, format is determined by OA defaults</li>
+ * </ul>
+ *
+ * <h3>Examples</h3>
+ * <pre>{@code
+ * OAConverterDate conv = new OAConverterDate();
+ *
+ * Date d = conv.convert(Date.class, "2025-10-30", "yyyy-MM-dd");
+ * String s = conv.convertToString(d, "MM/dd/yyyy");  // "10/30/2025"
+ * }</pre>
+ *
+ * @see OAConverterInterface
  * @see OADateTime
+ * @see OADate
  */
-public class OAConverterDate implements OAConverterInterface {
-	// !!!!! REMEMBER:  date.month values are 0-11
+public class OAConverterDate implements OAConverterInterface<Date> {
 
-	/**
-	 * Convert to/from a Date value.
-	 *
-	 * @param clazz Class to convert to.
-	 * @param value to convert
-	 * @param fmt   format string
-	 * @return Object of type clazz if conversion can be done, else null.
-	 * @see OADateTime
-	 */
-	public Object convert(Class clazz, Object value, String fmt) {
-		if (clazz == null) {
+	
+	
+    /**
+     * Converts a supplied value into a {@link java.util.Date}.
+     *
+     * <p>If {@code fmt} is provided and {@code fromValue} is a {@link String},
+     * parsing is delegated to {@link OADateTime#valueOf(String, String)}.</p>
+     *
+     * @param thisClass the expected result type (always {@code Date.class})
+     * @param fromValue the source value to convert; may be {@code null}
+     * @param fmt optional format mask when parsing {@link String} values
+     * @return a {@link Date} instance representing the input, or {@code null}
+     *         when conversion is not possible
+     */
+	@Override
+	public Date convert(Class<Date> thisClass, Object fromValue, String fmt) {
+		if (fromValue == null) {
 			return null;
 		}
-		if (clazz.equals(Date.class)) {
-			return convertToDate(value, fmt);
-		}
-		if (value != null && value instanceof Date) {
-			return convertFromDate(clazz, (Date) value, fmt);
-		}
-		return null;
-	}
-
-	protected Date convertToDate(Object value, String fmt) {
-		if (value == null) {
-			return null;
-		}
-		if (value instanceof Date) {
-			return (Date) value;
+		if (fromValue instanceof Date) {
+			return (Date) fromValue;
 		}
 
-		if (value instanceof String) {
-			if (((String) value).length() == 0) {
-				return null;
-			}
-			OADateTime dt = (OADateTime) OADateTime.valueOf((String) value, fmt);
-			if (dt == null) {
-				return null;
-			}
-			return dt.getDate();
+		if (fromValue instanceof String) {
+		    String s = ((String) fromValue).trim();
+		    if (s.isEmpty()) return null;
+		    OADateTime dt = OADateTime.valueOf(s, fmt);
+		    return (dt == null) ? null : new Date(dt.getTime());
+		}		
+
+		if (fromValue instanceof byte[]) {
+			return new java.util.Date(new java.math.BigInteger((byte[]) fromValue).longValue());
 		}
 
-		if (value instanceof byte[]) {
-			return new java.util.Date(new java.math.BigInteger((byte[]) value).longValue());
+		if (fromValue instanceof OADateTime) {
+			return ((OADateTime) fromValue).getDate();
 		}
 
-		if (value instanceof OADateTime) {
-			return ((OADateTime) value).getDate();
-		}
-
-		if (value instanceof Number) {
-			long x = ((Number) value).longValue();
+		if (fromValue instanceof Number) {
+			long x = ((Number) fromValue).longValue();
 			return new Date(x);
 		}
 
-		if (value instanceof Instant) {
-			Date out = Date.from((Instant) value);
+		if (fromValue instanceof Instant) {
+			Date out = Date.from((Instant) fromValue);
 			return out;
 		}
 
-		if (value instanceof LocalDate) {
-			LocalDate ld = (LocalDate) value;
-			Date out = new Date(ld.getYear() - 1900, (ld.getMonth().getValue()) - 1, ld.getDayOfMonth());
-			return out;
+		if (fromValue instanceof LocalDate) {
+			LocalDate ld = (LocalDate) fromValue;
+			return Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant());
 		}
 
-		// if (value instanceof LocalTime) {
-
-		if (value instanceof LocalDateTime) {
-			LocalDateTime ldt = (LocalDateTime) value;
+		if (fromValue instanceof LocalDateTime) {
+			LocalDateTime ldt = (LocalDateTime) fromValue;
 			Date out = Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
 			return out;
 		}
 
-		if (value instanceof ZonedDateTime) {
-			ZonedDateTime zdt = (ZonedDateTime) value;
+		if (fromValue instanceof ZonedDateTime) {
+			ZonedDateTime zdt = (ZonedDateTime) fromValue;
 			Date out = Date.from(zdt.toInstant());
 			return out;
 		}
@@ -124,29 +139,22 @@ public class OAConverterDate implements OAConverterInterface {
 		return null;
 	}
 
-	protected Object convertFromDate(Class toClass, Date dateValue, String fmt) {
-		if (toClass.equals(String.class)) {
-			if (dateValue == null) {
-				return null;
-			}
-			OADate od = new OADate(dateValue);
-			return od.toString(fmt);
-		}
-
-		return null;
+    /**
+     * Converts a {@link java.util.Date} to a formatted {@link String}.
+     *
+     * @param fromValue the {@code Date} to convert; may be {@code null}
+     * @param fmt optional date formatting mask; if {@code null}, the OA default
+     *            date formatting rules are applied
+     * @return formatted date text, or {@code ""} when {@code fromValue} is null
+     */
+	@Override
+	public String convertToString(Date fromValue, String fmt) {
+		if (fromValue == null) return "";
+		OADate od = new OADate(fromValue);
+		String s = od.toString(fmt);
+		return (s == null ? "" : s);
 	}
 
-	public static void main(String[] args) {
 
-		LocalDateTime ldt = LocalDateTime.now();
-		Date out = Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
-		Object obj = OAConv.convert(Date.class, ldt);
 
-		LocalDate ld = LocalDate.now();
-		Date out2 = new Date(ld.getYear() - 1900, (ld.getMonth().getValue()) - 1, ld.getDayOfMonth());
-		Object obj2 = OAConv.convert(Date.class, ld);
-
-		int xx = 4;
-		xx++;
-	}
 }

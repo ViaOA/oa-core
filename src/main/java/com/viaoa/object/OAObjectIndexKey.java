@@ -22,6 +22,10 @@ public final class OAObjectIndexKey {
 		return true;
 	}
     
+	public Object[] getIds() {
+		return this.ids;
+	}
+	
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

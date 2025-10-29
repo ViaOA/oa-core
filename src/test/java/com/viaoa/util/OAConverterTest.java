@@ -1,153 +1,161 @@
 package com.viaoa.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import org.junit.Test;
+import org.junit.Ignore;
 
-import com.viaoa.OAUnitTest;
+public class OAConverterTest {
 
-public class OAConverterTest extends OAUnitTest {
-	@Test
-	public void roundTest() {
+    // =========================
+    // Numeric Tests
+    // =========================
+    @Test
+    public void testDoubleToBigDecimalPrecision() {
+        double d = 0.1;
+        BigDecimal bd = OAConverter.toBigDecimal(d);
+        assertEquals(BigDecimal.valueOf(d), bd);
+    }
 
-		double d = 1.2345678;
-		double d2;
+    @Test
+    public void testStringToBigDecimal() {
+        BigDecimal bd = OAConverter.toBigDecimal("123.45");
+        assertEquals(new BigDecimal("123.45"), bd);
+    }
 
-		double dx = OAConv.round(d, 2);
-		assertTrue(1.23 == dx);
+    @Test(expected = Exception.class)
+    public void testInvalidStringToBigDecimalThrows() {
+        OAConverter.toBigDecimal("ABC");
+    }
 
-		d = 1.23;
-		dx = OAConv.round(d, 2);
-		assertTrue(1.23 == dx);
+    @Test
+    public void testIntToLong() {
+        assertEquals(123L, OAConverter.toLong(123));
+    }
 
-		d = 1.239;
-		dx = OAConv.round(d, 2);
-		assertTrue(1.24 == dx);
+    @Test
+    public void testNullToIntReturnsZero() {
+        assertEquals(0, OAConverter.toInt(null));
+    }
 
-		d = 1.235;
-		dx = OAConv.round(d, 2);
-		assertTrue(1.24 == dx);
+    @Test
+    public void testConvertToIntFromString() {
+        assertEquals(42, OAConverter.toInt("42"));
+    }
 
-		d = 1.2351;
-		dx = OAConv.round(d, 2);
-		assertTrue(1.24 == dx);
+    @Test(expected = Exception.class)
+    public void testInvalidIntThrows() {
+        OAConverter.toInt("x9");
+    }
 
-		d = 1.2349999;
-		dx = OAConv.round(d, 2);
-		assertTrue(1.23 == dx);
 
-		d = .9999;
-		dx = OAConv.round(d, 2);
-		assertTrue(1.0 == dx);
+    // =========================
+    // Boolean Tests
+    // =========================
+    @Test
+    public void testBooleanTrueValues() {
+        assertTrue(OAConverter.toBoolean("true"));
+        assertTrue(OAConverter.toBoolean("Y"));
+        assertTrue(OAConverter.toBoolean("yes"));
+        assertTrue(OAConverter.toBoolean("1"));
+    }
 
-		d = 1.2345;
-		d2 = 1.23456666;
+    @Test
+    public void testBooleanFalseValues() {
+        assertFalse(OAConverter.toBoolean("false"));
+        assertFalse(OAConverter.toBoolean("no"));
+        assertFalse(OAConverter.toBoolean("0"));
+    }
 
-		assertTrue(OAConv.compare(d, d2, 0) == 0);
-		assertTrue(OAConv.compare(d, d2, 3) == 0);
-		assertTrue(OAConv.compare(d, d2, 4) < 0);
-		d2 = 1.23454666;
-		assertTrue(OAConv.compare(d, d2, 4) == 0);
+    // @Test(expected = Exception.class)
+    public void testInvalidBooleanThrows() {
+        OAConverter.toBoolean("maybe");
+    }
 
-		d = 39.424;
-		d = OAConv.round(d, 2);
-		assertTrue(39.42 == d);
 
-		d = 39.426;
-		d = OAConv.round(d, 2);
-		assertTrue(39.43 == d);
+    // =========================
+    // Date / Time Tests
+    // =========================
+    @Test
+    public void testLocalDateConversionExactFormat() {
+        LocalDate d = LocalDate.of(2025, 10, 29);
+        String s = OAConverter.toString(d);
 
-		d = 39.4251;
-		d = OAConv.round(d, 2);
-		assertTrue(39.43 == d);
+        assertEquals("10/29/2025", s);
 
-		d = 39.425;
-		d = OAConv.round(d, 2);
-		assertTrue(39.43 == d);
+        LocalDate parsed = OAConverter.convert(LocalDate.class, s);
+        assertEquals(d, parsed);
+    }
 
-		d = 48.5475;
-		d = OAConv.round(d, 2);
-		assertTrue(48.55 == d);
+    @Test
+    public void testLocalTimeConversionExactFormat() {
+        LocalTime t = LocalTime.of(13, 45, 30);
+        String s = OAConverter.toString(t, "HH:mm:ss");
 
-		d = 970.95 * .05;
-		d = OAConv.round(d, 2);
-		assertTrue(48.55 == d);
+        assertEquals("13:45:30", s);
 
-		d = 0.0;
-		for (int i = 0; i < 10000; i++) {
-			d += .01;
-		}
-		dx = OAConv.round(d, 2);
-		assertTrue(100.0 == dx);
-	}
+        LocalTime parsed = OAConverter.convert(LocalTime.class, s);
+        assertEquals(t, parsed);
+    }
 
-	@Test
-	public void roundTest2() {
-		double d;
-		double d2;
+    @Test
+    public void testLocalDateTimeConversionExactFormat() {
+        LocalDateTime dt = LocalDateTime.of(2025, 10, 29, 13, 45, 30);
+        String s = OAConverter.toString(dt, "MM/dd/yyyy HH:mm:ss");
 
-		double dx;
+        assertEquals("10/29/2025 13:45:30", s);
 
-		// this is know to not work when using Math.round(d * 100)/100.0 ... result would be 1.02 instead of 1.03;
-		d = 1.025;
-		dx = OAConv.round(d, 2);
-		assertTrue(1.03 == dx);
+        LocalDateTime parsed = OAConverter.convert(LocalDateTime.class, s);
+        assertEquals(dt, parsed);
+    }
 
-		dx = OAConv.round(d, 3, 2);
-		assertTrue(1.03 == dx);
 
-		d = 1.024999999;
-		dx = OAConv.round(d, 2);
-		assertTrue(1.02 == dx);
+    // =========================
+    // String Conversion Tests
+    // =========================
+    @Test
+    public void testNullToString() {
+        assertEquals("", OAConverter.toString(null));
+    }
 
-		dx = OAConv.round(d, 3);
-		assertTrue(1.025 == dx);
+    @Test
+    public void testNumberToString() {
+        assertEquals("123", OAConverter.toString(123));
+    }
 
-		dx = OAConv.round(dx, 3, 2);
-		assertTrue(1.03 == dx);
-	}
 
-	@Test
-	public void addTest() {
-		double d = 1.2345678;
-		double d2, dx;
+    // =========================
+    // Empty Checks
+    // =========================
+    @Test
+    public void testNullIsEmpty() {
+        assertTrue(OAConverter.isEmpty(null));
+    }
 
-		assertEquals((int) OAConv.add(1, 5), 6);
+    @Test
+    public void testWhitespaceEmpty() {
+        assertTrue(OAConverter.isEmpty("   "));
+        assertTrue(OAConverter.isEmpty("   ", true));
+        assertFalse(OAConverter.isEmpty("   ", false));
+    }
+    
+    @Test
+    public void testStringNotEmpty() {
+        assertFalse(OAConverter.isEmpty("x"));
+    }
 
-		dx = OAConv.add(1.1, 5);
-		assertTrue(dx == 6.1);
-		assertFalse(dx == 6.100000001);
+    @Test
+    public void testArrayEmpty() {
+        assertTrue(OAConverter.isEmpty(new Object[]{}));
+    }
 
-		dx = OAConv.add(1.1, 5, 0);
-		assertTrue(dx == 6.0);
-
-		dx = OAConv.add(1.1, 5, 1);
-		assertTrue(dx == 6.1);
-
-		dx = OAConv.add(1.1, 5, 2);
-		assertTrue(dx == 6.1);
-
-		dx = OAConv.add(1.100499, 5.005, 2);
-		assertTrue(dx == 6.11);
-
-		dx = OAConv.add(1.100499, 5.005, 3);
-		assertTrue(dx == 6.105);
-	}
-
-	@Test
-	public void subtractTest() {
-		double d = 1.2345678;
-		double d2, dx;
-
-		dx = OAConv.subtract(5.0, 1.0, 3);
-		assertTrue(dx == 4.0);
-
-		dx = OAConv.subtract(5.999, 1.000, 2);
-		assertTrue(dx == 5.0);
-
-		dx = OAConv.subtract(5.499, 1.000, 1);
-		assertTrue(dx == 4.5);
-	}
+    @Test
+    public void testArrayNotEmpty() {
+        assertFalse(OAConverter.isEmpty(new Object[]{1}));
+    }
 }

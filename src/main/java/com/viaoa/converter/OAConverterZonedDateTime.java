@@ -1,168 +1,176 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.converter;
 
-import java.sql.Date;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.Month;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.math.BigInteger;
+import java.time.*;
+import java.util.Date;
 
-import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OATime;
 
 /**
- * Convert to/from a ZonedDateDateTime value. <br>
- * See OADateTime for format definitions.
+ * Converter for transforming values into {@link ZonedDateTime} and formatting
+ * them using OA {@link OADateTime} rules.
  *
- * @see OAConverter
+ * <h3>Conversion Rules</h3>
+ * Supported input types include:
+ * <ul>
+ *     <li>{@code null} → {@code null}</li>
+ *     <li>{@link ZonedDateTime} – returned directly</li>
+ *     <li>{@link OADateTime} – full date, time, and timezone preserved</li>
+ *     <li>{@link OADate} – converted using midnight in the date's timezone</li>
+ *     <li>{@link OATime} – combined with Epoch date (1970-01-01),
+ *         preserving its configured timezone</li>
+ *     <li>{@link String} – parsed using {@link OADateTime#valueOf(String, String)},
+ *         trimmed before parsing</li>
+ *     <li>{@link java.sql.Time} – defaults to system timezone</li>
+ *     <li>{@link java.sql.Date} – interpreted via {@link OADateTime},
+ *         timezone from system default</li>
+ *     <li>{@link Number} – interpreted as epoch milliseconds</li>
+ *     <li>{@code byte[]} – interpreted as epoch milliseconds</li>
+ *     <li>{@link Instant} – converted using the <strong>system default timezone</strong></li>
+ *     <li>{@link LocalDateTime} – zone assumed to be system default</li>
+ *     <li>{@link LocalDate} – midnight, system default timezone</li>
+ *     <li>{@link LocalTime} – Epoch date (1970-01-01), system default timezone</li>
+ * </ul>
+ *
+ * <p><strong>Timezone Strategy:</strong><br>
+ * If a source type does not supply its own timezone, or it cannot be
+ * determined reliably, the <strong>system default timezone</strong> is applied
+ * to maintain consistent behavior across the OA platform.</p>
+ *
+ * <h3>String Formatting Rules</h3>
+ * <ul>
+ *     <li>{@code null} → empty string {@code ""}</li>
+ *     <li>Formatted using {@link OADateTime#toString(String)}</li>
+ *     <li>{@code fmt} is passed directly to the formatter</li>
+ * </ul>
+ *
+ * <p><strong>Developer Guidance:</strong><br>
+ * Round-trip conversions between date-only or time-only types (e.g.,
+ * {@link LocalDate}, {@link LocalTime}, {@link java.sql.Time}, {@link Instant})
+ * will lose some original information by design, since those types do not
+ * contain complete date+time+zone fields.</p>
+ *
+ * @see OAConverterInterface
+ * @see ZonedDateTime
  * @see OADateTime
  */
-public class OAConverterZonedDateTime implements OAConverterInterface {
+public class OAConverterZonedDateTime implements OAConverterInterface<ZonedDateTime> {
 
-	/**
-	 * Convert to/from a LocalDateTime value.
-	 *
-	 * @return Object of type clazz if conversion can be done, else null.
-	 */
-	public Object convert(Class clazz, Object value, String fmt) {
-		if (clazz == null) {
-			return null;
-		}
-		if (clazz.equals(ZonedDateTime.class)) {
-			return convertToZonedDateTime(value, fmt);
-		}
-		if (value != null && value instanceof ZonedDateTime) {
-			return convertFromZonedDateTime(clazz, (ZonedDateTime) value, fmt);
-		}
-		return null;
-	}
+    private static final LocalDate EPOCH_DATE = LocalDate.of(1970, 1, 1);
 
-	protected ZonedDateTime convertToZonedDateTime(Object value, String fmt) {
-		if (value == null) {
-			return null;
-		}
+    @Override
+    public ZonedDateTime convert(Class<ZonedDateTime> thisClass, Object fromValue, String fmt) {
+        if (fromValue == null) return null;
+        if (fromValue instanceof ZonedDateTime) return (ZonedDateTime) fromValue;
 
-		if (value instanceof ZonedDateTime) {
-			ZonedDateTime zdt = (ZonedDateTime) value;
-			return zdt;
-		}
-		if (value instanceof OADateTime) {
-			OADateTime dt = (OADateTime) value;
-			ZonedDateTime zdt = ZonedDateTime.of(	dt.getYear(), dt.getMonth() + 1, dt.getDay(), dt.get24Hour(), dt.getMinute(),
-													dt.getSecond(),
-													(int) (dt.getMilliSecond() / Math.pow(10, 6)),
-													dt.getTimeZone().toZoneId());
-			return zdt;
-		}
-		if (value instanceof OADate) {
-			OADate d = (OADate) value;
-			ZonedDateTime zdt = ZonedDateTime.of(d.getYear(), d.getMonth() + 1, d.getDay(), 0, 0, 0, 0, d.getTimeZone().toZoneId());
-			return zdt;
-		}
-		if (value instanceof OATime) {
-			OATime t = (OATime) value;
-			ZonedDateTime zdt = ZonedDateTime.of(	0, Month.JANUARY.getValue(), 0, t.get24Hour(), t.getMinute(),
-													t.getSecond(),
-													(int) (t.getMilliSecond() / Math.pow(10, 6)),
-													t.getTimeZone().toZoneId());
-			return zdt;
-		}
-		if (value instanceof String) {
-			OADateTime dt = OADateTime.valueOf((String) value, fmt);
-			ZonedDateTime zdt = ZonedDateTime.of(	dt.getYear(), dt.getMonth() + 1, dt.getDay(), dt.get24Hour(), dt.getMinute(),
-													dt.getSecond(),
-													(int) (dt.getMilliSecond() / Math.pow(10, 6)),
-													dt.getTimeZone().toZoneId());
-			return zdt;
-		}
-		if (value instanceof java.sql.Time) {
-			OADateTime dt = new OADateTime((java.sql.Time) value);
-			ZonedDateTime zdt = ZonedDateTime.of(	0, Month.JANUARY.getValue(), 0, dt.get24Hour(), dt.getMinute(),
-													dt.getSecond(),
-													(int) (dt.getMilliSecond() / Math.pow(10, 6)),
-													dt.getTimeZone().toZoneId());
-			return zdt;
-		}
-		if (value instanceof Date) {
-			OADateTime dt = new OADateTime((Date) value);
-			ZonedDateTime zdt = ZonedDateTime.of(	0, Month.JANUARY.getValue(), 0, 0, 0, 0, 0,
-													dt.getTimeZone().toZoneId());
-			return zdt;
-		}
-		if (value instanceof byte[]) {
-			OADateTime dt = new OADateTime(new java.math.BigInteger((byte[]) value).longValue());
-			ZonedDateTime zdt = ZonedDateTime.of(	dt.getYear(), dt.getMonth() + 1, dt.getDay(), dt.get24Hour(), dt.getMinute(),
-													dt.getSecond(),
-													(int) (dt.getMilliSecond() / Math.pow(10, 6)),
-													dt.getTimeZone().toZoneId());
-			return zdt;
-		}
-		if (value instanceof Number) {
-			OADateTime dt = new OADateTime(((Number) value).longValue());
-			ZonedDateTime zdt = ZonedDateTime.of(	dt.getYear(), dt.getMonth() + 1, dt.getDay(), dt.get24Hour(), dt.getMinute(),
-													dt.getSecond(),
-													(int) (dt.getMilliSecond() / Math.pow(10, 6)),
-													dt.getTimeZone().toZoneId());
-			return zdt;
-		}
+        if (fromValue instanceof OADateTime) {
+            return toZDT((OADateTime) fromValue);
+        }
 
-		if (value instanceof Instant) {
-			LocalDateTime ldt = LocalDateTime.ofInstant((Instant) value, ZoneId.systemDefault());
-			ZonedDateTime zdt = ZonedDateTime.of(ldt, ZoneId.systemDefault());
-			return zdt;
-		}
+        if (fromValue instanceof OADate) {
+            OADate d = (OADate) fromValue;
+            return ZonedDateTime.of(
+                    LocalDate.of(d.getYear(), d.getMonth() + 1, d.getDay()),
+                    LocalTime.MIDNIGHT,
+                    d.getTimeZone().toZoneId());
+        }
 
-		if (value instanceof LocalDateTime) {
-			LocalDateTime ldt = (LocalDateTime) value;
-			ZonedDateTime zdt = ZonedDateTime.of(ldt, ZoneId.systemDefault());
-			return zdt;
-		}
+        if (fromValue instanceof OATime) {
+            OATime t = (OATime) fromValue;
+            return ZonedDateTime.of(EPOCH_DATE,
+                    toLocalTime(t),
+                    t.getTimeZone().toZoneId());
+        }
 
-		if (value instanceof LocalDate) {
-			LocalDate ld = (LocalDate) value;
-			LocalDateTime ldt = LocalDateTime.of(ld.getYear(), ld.getMonth(), ld.getDayOfMonth(), 0, 0, 0);
-			ZonedDateTime zdt = ZonedDateTime.of(ldt, ZoneId.systemDefault());
-			return zdt;
-		}
+        if (fromValue instanceof String) {
+            try {
+                String s = ((String) fromValue).trim();
+                if (s.isEmpty()) return null;
+                return toZDT(OADateTime.valueOf(s, fmt));
+            }
+            catch (Throwable t) {
+                return null;
+            }
+        }
 
-		if (value instanceof LocalTime) {
-			LocalTime lt = (LocalTime) value;
-			LocalDateTime ldt = LocalDateTime.of(0, Month.JANUARY, 1, lt.getHour(), lt.getMinute(), lt.getSecond(), lt.getNano());
-			ZonedDateTime zdt = ZonedDateTime.of(ldt, ZoneId.systemDefault());
-			return zdt;
-		}
+        if (fromValue instanceof java.sql.Time) {
+            return toZDT(new OADateTime((java.sql.Time) fromValue));
+        }
 
-		return null;
-	}
+        if (fromValue instanceof java.sql.Date) {
+            return toZDT(new OADateTime((java.sql.Date) fromValue));
+        }
 
-	protected Object convertFromZonedDateTime(Class toClass, ZonedDateTime zdt, String fmt) {
-		if (zdt == null || toClass == null) {
-			return null;
-		}
-		if (toClass.equals(String.class)) {
-			OADateTime dt = new OADateTime(new java.sql.Date(Date.from(zdt.toInstant()).getTime()));
-			return dt.toString(fmt);
-		}
-		if (Number.class.isAssignableFrom(toClass)) {
-			OADateTime dt = new OADateTime(new java.sql.Date(Date.from(zdt.toInstant()).getTime()));
-			long lx = dt.getTime();
-			return lx;
-		}
-		return null;
-	}
+        if (fromValue instanceof byte[]) {
+            long tm = new BigInteger((byte[]) fromValue).longValue();
+            return toZDT(new OADateTime(tm));
+        }
 
+        if (fromValue instanceof Number) {
+            return toZDT(new OADateTime(((Number) fromValue).longValue()));
+        }
+
+        if (fromValue instanceof Instant) {
+            return ZonedDateTime.ofInstant((Instant) fromValue,
+                    ZoneId.systemDefault());
+        }
+
+        if (fromValue instanceof LocalDateTime) {
+            return ((LocalDateTime) fromValue).atZone(ZoneId.systemDefault());
+        }
+
+        if (fromValue instanceof LocalDate) {
+            return ((LocalDate) fromValue)
+                    .atStartOfDay(ZoneId.systemDefault());
+        }
+
+        if (fromValue instanceof LocalTime) {
+            return ZonedDateTime.of(EPOCH_DATE,
+                    (LocalTime) fromValue,
+                    ZoneId.systemDefault());
+        }
+
+        return null;
+    }
+
+    private ZonedDateTime toZDT(OADateTime dt) {
+        LocalDate ld = LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
+        LocalTime lt = toLocalTime(dt);
+        return ZonedDateTime.of(ld, lt, dt.getTimeZone().toZoneId());
+    }
+
+    private LocalTime toLocalTime(OATime t) {
+        int nanos = t.getMilliSecond() * 1_000_000;
+        return LocalTime.of(t.get24Hour(), t.getMinute(), t.getSecond(), nanos);
+    }
+
+    private LocalTime toLocalTime(OADateTime dt) {
+        int nanos = dt.getMilliSecond() * 1_000_000;
+        return LocalTime.of(dt.get24Hour(), dt.getMinute(), dt.getSecond(), nanos);
+    }
+
+    @Override
+    public String convertToString(ZonedDateTime fromValue, String fmt) {
+        if (fromValue == null) return "";
+        OADateTime dt = new OADateTime(Date.from(fromValue.toInstant()));
+        return dt.toString(fmt);
+    }
 }
+

@@ -281,9 +281,19 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 
 	private void test(int id) {
 		Server server = new Server();
+		int idOrig = server.getId();
+		OAObjectKey okOrig = server.getObjectKey();
+
 		Server serverx = (Server) OAObjectCacheDelegate.get(server);
 		assertEquals(server, serverx);
 
+		serverx = (Server) OAObjectCacheDelegate.get(Server.class, idOrig);
+		assertEquals(server, serverx);
+
+		serverx = (Server) OAObjectCacheDelegate.get(Server.class, okOrig);
+		assertEquals(server, serverx);
+		
+		
 		server.setId(id);
 		serverx = (Server) OAObjectCacheDelegate.get(server);
 		assertEquals(server, serverx);
@@ -307,14 +317,11 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 
 	@Test
 	public void cacheGetTest() {
-		reset(false); // no ds, no auto assign Id
+		reset(true); 
 
-		Server server = new Server(); // no id
-		Server serverx = OAObjectCacheDelegate.get(Server.class, server.getGuid());
-		assertNull(serverx);
-
-		serverx = OAObjectCacheDelegate.get(Server.class, 0);
-		assertNull(serverx);
+		Server server = new Server(); 
+		Server serverx = OAObjectCacheDelegate.get(Server.class, server.getId());
+		assertEquals(server, serverx);
 
 		serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey());
 		assertEquals(server, serverx);
@@ -323,40 +330,53 @@ public class OAObjectCacheDelegateTest extends OAUnitTest {
 	@Test
 	public void testGetObjectWhenIdIsChanged() {
 		reset(false); // no ds, no auto assign Id
-
+		OAObjectKey ok;
 		Server server = new Server(); // no id
-
-		Server serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey()); // key only has guid
-		assertEquals(server, serverx);
-
-		serverx = OAObjectCacheDelegate.get(Server.class, server.getGuid()); // expects an Id value, not guid
-		assertNull(serverx);
-
-		serverx = OAObjectCacheDelegate.get(Server.class, 0); // does not have an Id assigned, still using guid for objKey
-		assertNull(serverx);
-
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Server.class);
-		// dont update cache when Id is changed
-		oi.setAddToCache(false);
-		server.setId(7777);
-
-		// wont find new key, but will find it using guid
-		serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey());
-		assertEquals(serverx, server);
-
-		OAObjectKey ok = new OAObjectKey(null, server.getObjectKey().getGuid());
-		serverx = OAObjectCacheDelegate.get(Server.class, ok);
-
-		server.setId(0); // unset
-		// OAObjectKeyDelegate.setKey(server, ok); // set back to guid only
-		oi.setAddToCache(true); // cache will still have the ok=guid
+		long guid = server.getGuid();
+		
+		Server serverx;
 
 		serverx = OAObjectCacheDelegate.get(Server.class, server.getObjectKey()); // key only has guid
 		assertEquals(server, serverx);
 
-		server.setId(4);
+		serverx = OAObjectCacheDelegate.get(Server.class, 0);
+		assertNull(serverx);
+		
+		assertEquals(server.getGuid(), server.getObjectKey().getGuid());
+
+		
+		
+		server.setId(7777);
+		assertEquals(7777, server.getId());
+		ok = server.getObjectKey();
+		assertEquals(server.getGuid(), ok.getGuid());
+		assertEquals(1, ok.getObjectIds().length);
+		assertEquals(server.getId(), ok.getObjectIds()[0]);
+		assertEquals(server.getGuid(), ok.getGuid());
+		
+		serverx = OAObjectCacheDelegate.get(Server.class, ok);
+		assertEquals(serverx, server);
+
+		ok = new OAObjectKey(null, server.getObjectKey().getGuid());
+		serverx = OAObjectCacheDelegate.get(Server.class, ok);
+		assertEquals(serverx, server);
+
+		ok = new OAObjectKey(new Object[] { 7777 }, 0L);
+		serverx = OAObjectCacheDelegate.get(Server.class, ok);
+		assertEquals(serverx, server);
+		
+		
+		server.setId(0); // unset
+		assertEquals(0, server.getId());
+		
+		ok = new OAObjectKey(new Object[] { 7777 }, 0L);
 		serverx = OAObjectCacheDelegate.get(Server.class, ok);
 		assertNull(serverx);
+		
+		ok = new OAObjectKey(new Object[] { 0 }, 0L);
+		serverx = OAObjectCacheDelegate.get(Server.class, ok);
+		assertEquals(serverx, server);
+		
 	}
 
 }

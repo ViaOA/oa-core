@@ -296,6 +296,8 @@ public class OAObjectCacheDelegate {
 		if (!UnitTestMode) {
 			throw new RuntimeException("Can only call reset cache if UnitTestMode is true");
 		}
+
+		objectCache.clearCache();
 		OAObjectCacheDelegate.hmCacheListener.clear();
 		aiListenerCount.set(0);
 		synchronized (OAObjectCacheDelegate.hmCacheSelectAllHub) {
@@ -560,7 +562,7 @@ public class OAObjectCacheDelegate {
 
 	private static OAObject _add(final OAObject obj, final boolean bErrorIfExists, boolean bAddToSelectAll,
 			final boolean bSendAddEventInAnotherThread) {
-		final OAObjectKey key = OAObjectKeyDelegate.getKey(obj);
+		final OAObjectKey key = OAObjectKeyDelegate.createObjectKey(obj);
 		OAObject objResult;
 
 		objResult = _add2(obj, key, bErrorIfExists, bAddToSelectAll, bSendAddEventInAnotherThread);
@@ -572,38 +574,36 @@ public class OAObjectCacheDelegate {
 			final boolean bSendAddEventInAnotherThread) {
 
 		if (obj == null) return null;
-
-		OAObject objFound;
-		
-		OAObjectKey ok = obj.getObjectKey();
-		if (ok != null && ok.hasValidObjectIds()) {
-			objFound = getOAObjectCache().getObject(obj.getClass(), ok);
+		if (key == null) {
+			throw new RuntimeException("Adding to object cache without a key"); 
 		}
-		else objFound = null;
-		if (objFound == null) objFound = getOAObjectCache().getObject(obj.getClass(), obj.getGuid());
+		
+		final Class clazz = obj.getClass();
+		final long guid = key.getGuid();
+		if (guid == 0L) {
+			throw new RuntimeException("Adding to object cache without a valid key (guid!=0), key="+key); 
+		}
+		
+		final OAObject objFound = getOAObjectCache().getObject(clazz, guid);
 
 		boolean bSendAddEvent = false;
 		int mode = OAThreadLocalDelegate.getObjectCacheAddMode();
 		if (objFound == null) {
 			if (mode != IGNORE_ALL) {
-				getOAObjectCache().updateObject(obj);
+				getOAObjectCache().updateObject(obj, key, clazz);
 				bSendAddEvent = true;
 			}			
 		}
 		else {
-			if (mode == NO_DUPS) {
+			if (obj != objFound && mode == NO_DUPS) {
 				if (bErrorIfExists) {
 					throw new RuntimeException("OAObjectCacheDelegate.add() object already exists " + obj);
 				}
-				bAddToSelectAll = false;
 			}
-			/*
-			else if (mode == OVERWRITE_DUPS) {
-			} 
-			*/
 			else {
-				bAddToSelectAll = false;
+				getOAObjectCache().updateObject(obj, key, clazz);
 			}
+			bAddToSelectAll = false;
 		}
 
 		if (bAddToSelectAll) {
@@ -698,7 +698,7 @@ public class OAObjectCacheDelegate {
 
 	
 	static public void removeObject(final OAObject obj) {
-		//qqqqqqqqqqqq no-op, wait for it to be gc'd ??
+		getOAObjectCache().removeObject(obj);
 	}
 	
 

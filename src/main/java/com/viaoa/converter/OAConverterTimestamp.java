@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.converter;
 
 import java.sql.Timestamp;
@@ -17,119 +22,145 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
 
 /**
- * Convert to/from a Timestamp value. <br>
- * <b>Converting the following to a Date</b>
+ * Converter for transforming values into {@link java.sql.Timestamp} and
+ * producing formatted {@link String} values from timestamp instances.
+ *
+ * <h3>Conversion Behavior</h3>
+ * The following input types are supported:
  * <ul>
- * <li>String, using optional format for parsing.
- * <li>OADateTime
- * <li>Date
- * <li>All others value will return null.
+ *   <li>{@code null} → {@code null}</li>
+ *   <li>{@link Timestamp} — returned directly</li>
+ *   <li>{@link String} — parsed using {@link OADateTime#valueOf(String, String)};
+ *       if blank, returns {@code null}</li>
+ *   <li>{@link OADateTime} — epoch milliseconds preserved</li>
+ *   <li>{@link java.util.Date} — epoch milliseconds preserved</li>
+ *   <li>{@link Instant} — preserved as absolute point in time</li>
+ *   <li>{@link LocalDate} — interpreted as start-of-day in the system default zone</li>
+ *   <li>{@link LocalDateTime} — interpreted in the system default zone</li>
+ *   <li>{@link ZonedDateTime} — exact instant preserved</li>
+ *   <li>{@code byte[]} — interpreted as a long value containing epoch milliseconds</li>
+ *   <li>{@link Number} — interpreted as epoch milliseconds</li>
  * </ul>
- * <br>
- * <b>Converts a Time to any of the following</b>
+ *
+ * <p><strong>Zone and Epoch Notes:</strong><br>
+ * {@link java.sql.Timestamp} stores a precise moment on the UTC timeline.
+ * When converting from {@code LocalDate}/{@code LocalDateTime}, the value is
+ * evaluated using {@link ZoneId#systemDefault()}. Applications running across
+ * multiple regions should ensure this matches the expected business rules.</p>
+ *
+ * <h3>Formatting Behavior</h3>
  * <ul>
- * <li>String, using an optional format.
+ *   <li>If {@code fmt} is supplied, formatting is performed via {@link OADateTime#toString(String)}</li>
+ *   <li>If value is {@code null}, returns {@code ""} for UI-safe output</li>
+ *   <li>Formatting defaults are governed by global OA date/time settings</li>
  * </ul>
- * 
- * @see OAConverter
+ *
+ * <h3>Examples</h3>
+ * <pre>{@code
+ * OAConverterTimestamp conv = new OAConverterTimestamp();
+ *
+ * Timestamp ts = conv.convert(Timestamp.class, "2025-10-28 14:20", "yyyy-MM-dd HH:mm");
+ * String s = conv.convertToString(ts, "MM/dd/yyyy HH:mm:ss");
+ * }</pre>
+ *
+ * @see OAConverterInterface
  * @see OADateTime
- * @see OATime
+ * @see Timestamp
  */
-public class OAConverterTimestamp implements OAConverterInterface {
-	// !!!!! REMEMBER:  date.month values are 0-11
-
-	/**
-	 * Convert to/from a Time value.
-	 * 
-	 * @param clazz Class to convert to.
-	 * @param value to convert
-	 * @param fmt   format string
-	 * @return Object of type clazz if conversion can be done, else null.
-	 * @see OADateTime
-	 */
-	public Object convert(Class clazz, Object value, String fmt) {
-		if (clazz == null) {
+public class OAConverterTimestamp implements OAConverterInterface<Timestamp> {
+	
+	
+    /**
+     * Converts a supplied value into a {@link Timestamp}.
+     * <p>
+     * If {@code fmt} is provided and {@code fromValue} is a {@link String},
+     * parsing is delegated to {@link OADateTime#valueOf(String, String)}.
+     * </p>
+     *
+     * @param thisClass the expected result type (always {@code Timestamp.class})
+     * @param fromValue the source value to convert; may be {@code null}
+     * @param fmt optional input format mask when parsing {@link String} values
+     * @return a {@link Timestamp} instance representing the input value,
+     *         or {@code null} when conversion is not possible
+     */
+	@Override
+	public Timestamp convert(Class<Timestamp> thisClass, Object fromValue, String fmt) {
+		if (fromValue == null) {
 			return null;
 		}
-		if (clazz.equals(Timestamp.class)) {
-			return convertToTimestamp(value, fmt);
-		}
-		if (value != null && value instanceof Timestamp) {
-			return convertFromTimestamp(clazz, (Timestamp) value, fmt);
-		}
-		return null;
-	}
-
-	protected Timestamp convertToTimestamp(Object value, String fmt) {
-		if (value == null) {
-			return null;
-		}
-		if (value instanceof Timestamp) {
-			return (Timestamp) value;
+		if (fromValue instanceof Timestamp) {
+			return (Timestamp) fromValue;
 		}
 
-		if (value instanceof String) {
-			OADateTime d = (OADateTime) OADateTime.valueOf((String) value, fmt);
-			if (d == null) {
-				return null;
-			}
-			return new java.sql.Timestamp(d.getDate().getTime());
+		if (fromValue instanceof String) {
+			String s = ((String) fromValue).trim();
+			if (s.isEmpty()) return null;
+			fromValue = OADateTime.valueOf((String) fromValue, fmt);
 		}
 
-		if (value instanceof OADateTime) {
-			return new Timestamp(((OADateTime) value).getDate().getTime());
+		if (fromValue instanceof OADateTime) {
+			return new Timestamp(((OADateTime) fromValue).getTime());
 		}
 
-		if (value instanceof java.util.Date) {
-			return new Timestamp(((java.util.Date) value).getTime());
+		if (fromValue instanceof java.util.Date) {
+			return new Timestamp(((java.util.Date) fromValue).getTime());
 		}
 
-		if (value instanceof byte[]) {
-			return new Timestamp(new java.math.BigInteger((byte[]) value).longValue());
+		if (fromValue instanceof byte[]) {
+			return new Timestamp(new java.math.BigInteger((byte[]) fromValue).longValue());
 		}
 
-		if (value instanceof Instant) {
-			Timestamp out = Timestamp.from((Instant) value);
+		if (fromValue instanceof Instant) {
+			Timestamp out = Timestamp.from((Instant) fromValue);
 			return out;
 		}
 
-		if (value instanceof LocalDate) {
-			LocalDate ld = (LocalDate) value;
-			Timestamp out = new Timestamp(ld.getYear() - 1900, (ld.getMonth().getValue()) - 1, ld.getDayOfMonth(), 0, 0, 0, 0);
-			return out;
+		if (fromValue instanceof LocalDate) {
+			LocalDate ld = (LocalDate) fromValue;
+			Instant inst = ld.atStartOfDay(ZoneId.systemDefault()).toInstant();
+			return Timestamp.from(inst);
 		}
 
-		// if (value instanceof LocalTime) {
-
-		if (value instanceof LocalDateTime) {
-			LocalDateTime ldt = (LocalDateTime) value;
+		if (fromValue instanceof LocalDateTime) {
+			LocalDateTime ldt = (LocalDateTime) fromValue;
 			Timestamp out = Timestamp.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
 			return out;
 		}
 
-		if (value instanceof ZonedDateTime) {
-			ZonedDateTime zdt = (ZonedDateTime) value;
+		if (fromValue instanceof ZonedDateTime) {
+			ZonedDateTime zdt = (ZonedDateTime) fromValue;
 			Timestamp out = Timestamp.from(zdt.toInstant());
 			return out;
 		}
 
+		if (fromValue instanceof Number) {
+		    return new Timestamp(((Number) fromValue).longValue());
+		}		
+		
 		return null;
 	}
 
-	protected Object convertFromTimestamp(Class toClass, Timestamp tsValue, String fmt) {
-		if (toClass.equals(String.class)) {
-			if (tsValue == null) {
-				return null;
-			}
-			OADateTime od = new OADateTime(tsValue);
-			return od.toString(fmt);
+    /**
+     * Converts a {@link Timestamp} to a formatted {@link String}.
+     * <p>
+     * If {@code fmt} is {@code null}, output format is determined by global OA
+     * date/time settings through {@link OADateTime#toString(String)}.
+     * </p>
+     *
+     * @param fromValue the timestamp to convert; may be {@code null}
+     * @param fmt optional format mask; if {@code null}, the OA default is used
+     * @return formatted timestamp string, or {@code ""} when {@code fromValue} is null
+     */	
+	@Override
+	public String convertToString(Timestamp fromValue, String fmt) {
+		if (fromValue == null) {
+			return "";
 		}
-		return null;
+		OADateTime od = new OADateTime(fromValue);
+		String s = od.toString(fmt);
+		return (s == null ? "" : s);
 	}
-
 }

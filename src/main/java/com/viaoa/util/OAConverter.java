@@ -1,17 +1,23 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,13 +26,12 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 
-import com.viaoa.converter.OAConverterArray;
 import com.viaoa.converter.OAConverterBigDecimal;
 import com.viaoa.converter.OAConverterBoolean;
 import com.viaoa.converter.OAConverterCalendar;
@@ -58,51 +63,81 @@ import com.viaoa.converter.OAConverterZonedDateTime;
 import com.viaoa.hub.Hub;
 
 /**
- * Conversion class for converting Objects from one form to another. Most common usage is to convert Objects to Strings, String to Objects,
- * Formatting, Decimal Arithmetic.<br>
  * <p>
- * contains two key static methods: toString(Object, format) &amp; toObject(class, String, format)
+ * Core conversion utility used throughout the OA framework.
+ * Provides a centralized mechanism to convert values between
+ * supported Java types including:
+ * </p>
+ * <ul>
+ *   <li>String formatting and parsing</li>
+ *   <li>Numeric type conversions</li>
+ *   <li>Date/Time conversions (Java Time & OA temporal types)</li>
+ *   <li>Boolean, Character, Class, Enum and UI types (Color, Font, Dimension, Rectangle)</li>
+ * </ul>
  *
+ * <p>
+ * The conversion system is extensible. Custom type converters can be
+ * registered globally using {@link #addConverter(Class, OAConverterInterface)}.
+ * Converters are selected by target class and searched up the class
+ * inheritance hierarchy until a match is found.
+ * </p>
+ *
+ * <p>
+ * Most OA applications use {@link #toString(Object, String)} and
+ * {@link #convert(Class, Object, String)} either directly or indirectly
+ * through OA UI and serialization components.
+ * </p>
+ *
+ * @see OAConverterInterface
  * @see OAConverterNumber
- * @see OAConverterOADate
- * @see OAString#format(String,String) OAString.format()
- * @see OADate
+ * @see OAConverterDate
  */
 public class OAConverter {
 
-	protected static Hashtable hashtable = new Hashtable(10, .75f);
-
+    /**
+     * Global registry of converters keyed by logical model class.
+     * Populated statically during startup through {@link #addConverter}.
+     *
+     * <p>Thread safe and cached for performance.</p>
+     */
+	protected static final Map<Class<?>, OAConverterInterface<?>> hmClassConverter = new ConcurrentHashMap<>(10, 0.75f);
+	
+	
+    /**
+     * Default formatting values used by {@link #getFormat(Class)}.
+     * These values are not automatically applied unless requested by
+     * the caller, typically through:
+     * <ul>
+     *   <li>{@link #toString(Object, boolean)}</li>
+     *   <li>UI components or serialization pipelines</li>
+     * </ul>
+     */	
 	protected static String dateFormat, timeFormat, dateTimeFormat,
 			integerFormat, decimalFormat, bigDecimalFormat, moneyFormat = "\u00A4#,##0.00", booleanFormat;
 
+	
 	static {
 		addConverter(String.class, new OAConverterString());
 		addConverter(Number.class, new OAConverterNumber());
 		addConverter(Character.class, new OAConverterCharacter());
 		addConverter(Boolean.class, new OAConverterBoolean());
 		addConverter(BigDecimal.class, new OAConverterBigDecimal());
-
 		addConverter(java.sql.Date.class, new OAConverterSqlDate());
 		addConverter(java.sql.Time.class, new OAConverterTime());
 		addConverter(java.sql.Timestamp.class, new OAConverterTimestamp());
 		addConverter(java.util.Date.class, new OAConverterDate());
-
 		addConverter(com.viaoa.util.OADateTime.class, new OAConverterOADateTime());
 		addConverter(com.viaoa.util.OADate.class, new OAConverterOADate());
 		addConverter(com.viaoa.util.OATime.class, new OAConverterOATime());
-
 		addConverter(Calendar.class, new OAConverterCalendar());
-
 		addConverter(java.awt.Point.class, new OAConverterPoint());
 		addConverter(java.awt.Dimension.class, new OAConverterDimension());
 		addConverter(java.awt.Rectangle.class, new OAConverterRectangle());
 		addConverter(java.awt.Color.class, new OAConverterColor());
 		addConverter(java.awt.Font.class, new OAConverterFont());
-
 		addConverter(Enum.class, new OAConverterEnum());
 		addConverter(TimeZone.class, new OAConverterTimeZone());
 		addConverter(Class.class, new OAConverterClass());
-
 		addConverter(LocalDateTime.class, new OAConverterLocalDateTime());
 		addConverter(LocalDate.class, new OAConverterLocalDate());
 		addConverter(LocalTime.class, new OAConverterLocalTime());
@@ -111,37 +146,62 @@ public class OAConverter {
 		addConverter(ZoneId.class, new OAConverterZoneId());
 	}
 
-	private static OAConverterArray oaConverterArray = new OAConverterArray();
-
-	/**
-	 * Returns a OAConverterInterface Object for a specific Class.
-	 *
-	 * @see OAConverterInterface
-	 */
-	public static OAConverterInterface getConverter(Class clazz) {
-		if (clazz != null && clazz.isPrimitive()) {
-			clazz = OAReflect.getPrimitiveClassWrapper(clazz);
-		}
-		for (; clazz != null;) {
-			OAConverterInterface ci = (OAConverterInterface) hashtable.get(clazz);
-			if (ci != null) {
-				return ci;
-			}
-			clazz = clazz.getSuperclass();
-			if (clazz == null || clazz.equals(Object.class)) {
-				break;
-			}
-		}
-		return null;
+    /**
+     * Registers a converter instance for a specific Java type.
+     * <p>
+     * If a converter already exists for the class, the new one
+     * replaces it.
+     *
+     * @param clazz target type to convert to/from
+     * @param converter implementation handling conversions
+     */
+	public static <T> void addConverter(Class<T> clazz, OAConverterInterface<T> converter) {
+	    hmClassConverter.put(clazz, converter);
 	}
+	
+    /**
+     * Lookup a converter for a specific class.
+     *
+     * <p>Resolution behavior:</p>
+     * <ul>
+     *   <li>If class is primitive, it is automatically boxed</li>
+     *   <li>Direct lookup in registry</li>
+     *   <li>Search up class inheritance hierarchy (superclasses only)</li>
+     *   <li>Returns null if no converter is found</li>
+     * </ul>
+     *
+     * @return converter instance or null
+     */	
+	@SuppressWarnings("unchecked")
+	public static <T> OAConverterInterface<T> getConverter(Class<T> clazz) {
+	    if (clazz == null) return null;
+	    if (clazz.isPrimitive()) {
+	        clazz = (Class<T>) OAReflect.getPrimitiveClassWrapper(clazz);
+	    }
 
-	public static void addConverter(Class clazz, OAConverterInterface oci) {
-		hashtable.put(clazz, oci);
-	}
-
-	/**
-	 * Returns formatting default String to use for specific Class.
-	 */
+	    for (Class<?> c = clazz; c != null && c != Object.class; c = c.getSuperclass()) {
+	        OAConverterInterface<?> ci = hmClassConverter.get(c);
+	        if (ci != null) {
+	            return (OAConverterInterface<T>) ci;
+	        }
+	    }
+	    return null;
+	}	
+	
+    /**
+     * Returns the default format string associated with a specific type.
+     * <p>
+     * This is not automatically applied unless requested by the caller.
+     * Used primarily by:
+     * </p>
+     * <ul>
+     *   <li>UI display formatting</li>
+     *   <li>toString(obj, true)</li>
+     * </ul>
+     *
+     * @param clazz type being formatted
+     * @return suggested default format, or null if none
+     */
 	public static String getFormat(Class clazz) {
 		if (clazz == null || clazz.equals(String.class)) {
 			return null;
@@ -181,6 +241,25 @@ public class OAConverter {
 
 		if (clazz.equals(boolean.class) || clazz.equals(Boolean.class)) {
 			return getBooleanFormat();
+		}
+		
+		if (clazz.equals(LocalDate.class)) {
+		    return getDateFormat();
+		}
+		if (clazz.equals(LocalTime.class)) {
+		    return getTimeFormat();
+		}
+		if (clazz.equals(LocalDateTime.class)) {
+		    return getDateTimeFormat();
+		}
+		if (clazz.equals(ZonedDateTime.class)) {
+		    return getDateTimeFormat();
+		}
+		if (clazz.equals(Instant.class)) {
+		    return getDateTimeFormat();
+		}
+		if (clazz.equals(ZoneId.class)) {
+		    return null;
 		}
 
 		return null;
@@ -242,7 +321,7 @@ public class OAConverter {
 	 * @see OADate#OADate for format options and default formatting/parsing values
 	 */
 	public static String getDateTimeFormat() {
-		if (timeFormat == null) {
+		if (dateTimeFormat == null) {
 			return OADateTime.getGlobalOutputFormat();
 		}
 		return dateTimeFormat;
@@ -336,7 +415,7 @@ public class OAConverter {
 	 * <p>
 	 * Note: OAConverter.toString() will not automatically use this format unless it is sent as a parameter. This method is to be used as a
 	 * global area for other APIs to store default system formatting. param fmt is a String with a semicolon seperating the three values
-	 * "true;false;null" Example: ("true;false");
+	 * "true;false;null" Example: ("t;f;");
 	 */
 	public static String getBooleanFormat() {
 		return booleanFormat;
@@ -351,926 +430,361 @@ public class OAConverter {
 		booleanFormat = fmt;
 	}
 
+
 	/**
-	 * Uses BigDecimal to round number to "decimalPlaces" amount of decimal numbers.
-	 * <p>
-	 * <b>Notes:</b><br>
-	 * Since doubles are floating point numbers, there is a chance for loss of precision.<br>
-	 * For rounding, this could cause a problem when the digit that is being removed should be a 5, in which case the previous (left) digit
-	 * might need to be changed based on the type of rounding that is being performed (ex: BigDecimal.ROUND_HALF_UP, ROUND_HALF_DOWN, etc.).
-	 * <p>
-	 * Floating point numbers mostly lose precision when being used for a lot of calculations.
-	 * <p>
-	 * Example: number "1.5" could be represented as "1.499999" or "1.500001" as a double, which would affect how/if it is rounded. <br>
-	 * The round method allows you to specify the number of decimal places that you know the number currently should accurately have. The
-	 * round method will first round the number to this amount of decimal places before performing the round.
-	 * <p>
-	 * ex: 1.25 could be 1.2499999 or 1.2500001. If the accurateDecimalPlaces is 3, and the rounding is 2, then it will return 1.25.
-	 * <p>
-	 * SEE: https://stackoverflow.com/questions/2808535/round-a-double-to-2-decimal-places
-	 * <p>
+	 * Convert a given value to a specified Java type.
 	 *
-	 * @param accurateDecimalPlaces is number of decimal places that number should have. See note above.
-	 * @param decimalPlaces         is number of decimal places that number needs to be rounded to.
-	 * @param roundType             is type of rounding to perform. See BigDecimal for types of rounding, ex: BigDecimal.ROUND_HALF_UP
-	 * @see BigDecimal
-	 */
-	public static double round(double d, int accurateDecimalPlaces, int decimalPlaces, int roundType) {
-		if (roundType == BigDecimal.ROUND_HALF_UP) { // && accurateDecimalPlaces > decimalPlaces) {
-			return roundHalfUp(d, accurateDecimalPlaces, decimalPlaces);
-		}
-		String s = Double.toString(d);
-		BigDecimal bd = new BigDecimal(s);
-		//was:  BigDecimal bd = new BigDecimal(d);   // not as precise as using string
-		if (accurateDecimalPlaces > decimalPlaces) {
-			bd = bd.setScale(accurateDecimalPlaces, roundType);
-		}
-		bd = bd.setScale(decimalPlaces, roundType);
-		return bd.doubleValue();
-	}
-
-	/**
-	 * Uses BigDecimal to round number to "decimalPlaces" amount of decimal numbers.
-	 * <p>
-	 * By Default, uses BigDecimal.ROUND_HALF_UP.
+	 * <p>Resolution behavior:</p>
+	 * <ul>
+	 *   <li>If {@code clazz} is primitive, it is automatically boxed</li>
+	 *   <li>Searches converter registry based on the target class</li>
+	 *   <li>If no converter is found, returns the value if already assignable</li>
+	 *   <li>If value is already compatible and no format is applied, it is returned as-is</li>
+	 *   <li>Otherwise delegates to the type converter</li>
+	 * </ul>
 	 *
-	 * @param accurateDecimalPlaces is number of decimal places that number should have. See note above.
-	 * @param decimalPlaces         number of decimal places to round to
-	 * @see #round(double,int,int,int) Notes about rounding
-	 * @see BigDecimal
-	 */
-	public static double round(double d, int accurateDecimalPlaces, int decimalPlaces) {
-		//if (accurateDecimalPlaces > decimalPlaces) {
-		double dx = roundHalfUp(d, accurateDecimalPlaces, decimalPlaces);
-		return dx;
-		//}
-		// return round(d, accurateDecimalPlaces, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	// always uses Half RoundUp
-	public static double roundHalfUp(double d, int accurateDecimalPlaces, int decimalPlaces) {
-		if (accurateDecimalPlaces >= decimalPlaces) {
-			long x = (long) Math.pow(10, accurateDecimalPlaces);
-			double dx = d * x;
-			dx = Math.round(dx);
-
-			dx /= ((double) x);
-			d = dx;
-		}
-		// get one extra digit and check for >= 5
-		long x = (long) Math.pow(10, decimalPlaces + 1);
-
-		boolean bNeg = d < 0.0;
-		if (bNeg) {
-			d *= -1;
-		}
-
-		long lx = (long) (d * x);
-		int remainder = (int) (lx % 10);
-		lx -= remainder;
-		if (remainder >= 5) {
-			lx += 10;
-		}
-
-		double dx = lx / ((double) x);
-		if (bNeg) {
-			dx *= -1;
-		}
-		return dx;
-	}
-
-	/**
-	 * Rounds double to decimal places.
 	 * <p>
-	 * By Default, uses BigDecimal.ROUND_HALF_UP.
+	 * This method is the core conversion entry point used by UI, persistence,
+	 * and serialization frameworks throughout OA.
+	 * </p>
 	 *
-	 * @param decimalPlaces number of decimal places to round to
+	 * @param clazz target type for desired result
+	 * @param value original value, may be null or any type
+	 * @param fmt optional format used by converter (may be null or empty)
+	 * @param <T> resulting type
+	 * @return converted value or null if no valid conversion could be performed
 	 */
-	public static double round(double d, int decimalPlaces) {
-		return round(d, 0, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	/**
-	 * Convert to a long, with "assumed" decimalPlaces
-	 */
-	public static long toLong(double d, int decimalPlaces) {
-	    if (decimalPlaces < 0) return (long) d;
-	    if (decimalPlaces > 15) decimalPlaces = 15; // prevent FP drift
-
-	    if (Double.isNaN(d)) return 0;
-	    if (Double.isInfinite(d)) return (d > 0) ? Long.MAX_VALUE : Long.MIN_VALUE;
-
-	    boolean negative = d < 0;
-	    if (negative) d = -d;
-
-	    double scale = Math.pow(10, decimalPlaces);
-	    double scaled = d * scale;
-
-	    long result = StrictMath.round(scaled);
-	    return negative ? -result : result;
-	}
-
-	/**
-	 * Compare two doubles, using fixed decimal places.
-	 */
-	public static int compare(double d1, double d2, int decimalPlaces) {
-		if (Double.isNaN(d1) || Double.isNaN(d2)) return Double.compare(d1, d2);
-		if (Double.isInfinite(d1) || Double.isInfinite(d2)) return Double.compare(d1, d2);
-		
-		long l1 = toLong(d1, decimalPlaces);
-		long l2 = toLong(d2, decimalPlaces);
-		if (l1 == l2) {
-			return 0;
-		}
-		return (l1 > l2) ? 1 : -1;
-	}
-
-	/**
-	 * Compare two doubles, using fixed decimal places.
-	 */
-	public static boolean isEqual(double d1, double d2, int decimalPlaces) {
-		return compare(d1, d2, decimalPlaces) == 0;
-	}
-
-	public static boolean isEqual(double d1, double d2) {
-		return compare(d1, d2, 0) == 0;
-	}
-
-	private static final int MATH_OP_MULTIPLY = 0;
-	private static final int MATH_OP_DIVIDE = 1;
-	private static final int MATH_OP_ADD = 2;
-	private static final int MATH_OP_SUBTRACT = 3;
-
-	/**
-	 * Math operations used when working with floating point numbers. Numbers are rounded before and after operation.
-	 */
-	private static double mathOp(int opType, Number n1, Number n2, int decimalPlaces, int roundType) {
-		BigDecimal bd1;
-		if (n1 instanceof BigDecimal) {
-			bd1 = (BigDecimal) n1;
-		} else {
-			bd1 = new BigDecimal(n1 == null ? 0.0 : n1.doubleValue());
-		}
-		if (decimalPlaces >= 0 && roundType >= 0) {
-			bd1 = bd1.setScale(decimalPlaces, roundType);
-		}
-
-		BigDecimal bd2;
-		if (n2 instanceof BigDecimal) {
-			bd2 = (BigDecimal) n2;
-		} else {
-			bd2 = new BigDecimal(n2 == null ? 0.0 : n2.doubleValue());
-		}
-		if (decimalPlaces >= 0 && roundType >= 0) {
-			bd2 = bd2.setScale(decimalPlaces, roundType);
-		}
-
-		switch (opType) {
-		case MATH_OP_MULTIPLY:
-			bd1 = bd1.multiply(bd2);
-			break;
-		case MATH_OP_DIVIDE:
-			int x = roundType;
-			if (x <= 0) {
-				x = BigDecimal.ROUND_HALF_UP;
-			}
-			bd1 = bd1.divide(bd2, x);
-			break;
-		case MATH_OP_ADD:
-			bd1 = bd1.add(bd2);
-			break;
-		case MATH_OP_SUBTRACT:
-			bd1 = bd1.subtract(bd2);
-			break;
-		}
-
-		if (decimalPlaces >= 0 && roundType >= 0) {
-			bd1 = bd1.setScale(decimalPlaces, roundType);
-		}
-		return bd1.doubleValue();
-	}
-
-	private static double mathOp(int opType, double d, Number n, int decimalPlaces, int roundType) {
-		return mathOp(opType, new BigDecimal(Double.toString(d)), n, decimalPlaces, roundType);
-	}
-
-	private static double mathOp(int opType, Number d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(opType, d, new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	private static double mathOp(int opType, double d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(opType, new BigDecimal(Double.toString(d)), new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	private static double mathOp(int opType, Number n1, Number n2, int decimalPlaces) {
-		return mathOp(opType, n1, n2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	private static double mathOp(int opType, double d, Number n, int decimalPlaces) {
-		return mathOp(opType, new BigDecimal(Double.toString(d)), n, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	private static double mathOp(int opType, Number d, double d1, int decimalPlaces) {
-		return mathOp(opType, d, new BigDecimal(Double.toString(d1)), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	private static double mathOp(int opType, double d, double d1, int decimalPlaces) {
-		return mathOp(opType, new BigDecimal(d), new BigDecimal(Double.toString(d1)), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	// ADD METHODS
-	public static double add(Number n1, Number n2, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_ADD, n1, n2, decimalPlaces, roundType);
-	}
-
-	public static double add(double d, Number n, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_ADD, new BigDecimal(Double.toString(d)), n, decimalPlaces, roundType);
-	}
-
-	public static double add(Number d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_ADD, d, new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	public static double add(double d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_ADD, new BigDecimal(Double.toString(d)), new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	public static double add(Number n1, Number n2, int decimalPlaces) {
-		return mathOp(MATH_OP_ADD, n1, n2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double add(double d, Number n, int decimalPlaces) {
-		return mathOp(MATH_OP_ADD, new BigDecimal(Double.toString(d)), n, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double add(Number d, double d1, int decimalPlaces) {
-		return mathOp(MATH_OP_ADD, d, new BigDecimal(Double.toString(d1)), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double add(double d1, double d2, int decimalPlaces) {
-		double d = d1 + d2;
-		return round(d, decimalPlaces);
-		//was: return mathOp(MATH_OP_ADD, new BigDecimal(d1), new BigDecimal(d2), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double add(Number n1, Number n2) {
-		return mathOp(MATH_OP_ADD, n1, n2, -1, -1);
-	}
-
-	public static double add(double d, Number n) {
-		return mathOp(MATH_OP_ADD, new BigDecimal(Double.toString(d)), n, -1, -1);
-	}
-
-	public static double add(Number d, double d1) {
-		return mathOp(MATH_OP_ADD, d, new BigDecimal(Double.toString(d1)), -1, -1);
-	}
-
-	public static double add(double d, double d1) {
-		return mathOp(MATH_OP_ADD, new BigDecimal(Double.toString(d)), new BigDecimal(Double.toString(d1)), -1, -1);
-	}
-
-	// SUBTRACT METHODS
-	public static double subtract(Number n1, Number n2, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_SUBTRACT, n1, n2, decimalPlaces, roundType);
-	}
-
-	public static double subtract(double d, Number n, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_SUBTRACT, new BigDecimal(Double.toString(d)), n, decimalPlaces, roundType);
-	}
-
-	public static double subtract(Number d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_SUBTRACT, d, new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	public static double subtract(double d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_SUBTRACT, new BigDecimal(Double.toString(d)), new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	public static double subtract(Number n1, Number n2, int decimalPlaces) {
-		return mathOp(MATH_OP_SUBTRACT, n1, n2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double subtract(double d, Number n, int decimalPlaces) {
-		return mathOp(MATH_OP_SUBTRACT, new BigDecimal(Double.toString(d)), n, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double subtract(Number d, double d1, int decimalPlaces) {
-		return mathOp(MATH_OP_SUBTRACT, d, new BigDecimal(Double.toString(d1)), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double subtract(double d1, double d2, int decimalPlaces) {
-		double d = d1 - d2;
-		return round(d, decimalPlaces);
-		// return mathOp(MATH_OP_SUBTRACT, new BigDecimal(Double.toString(d1)), new BigDecimal(Double.toString(d2)), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double subtract(Number n1, Number n2) {
-		return mathOp(MATH_OP_SUBTRACT, n1, n2, -1, -1);
-	}
-
-	public static double subtract(double d, Number n) {
-		return mathOp(MATH_OP_SUBTRACT, new BigDecimal(Double.toString(d)), n, -1, -1);
-	}
-
-	public static double subtract(Number d, double d1) {
-		return mathOp(MATH_OP_SUBTRACT, d, new BigDecimal(Double.toString(d1)), -1, -1);
-	}
-
-	public static double subtract(double d1, double d2) {
-		return mathOp(MATH_OP_SUBTRACT, new BigDecimal(Double.toString(d1)), new BigDecimal(Double.toString(d2)), -1, -1);
-	}
-
-	// MULTIPLY METHODS
-	public static double multiply(Number n1, Number n2, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_MULTIPLY, n1, n2, decimalPlaces, roundType);
-	}
-
-	public static double multiply(double d, Number n, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_MULTIPLY, new BigDecimal(Double.toString(d)), n, decimalPlaces, roundType);
-	}
-
-	public static double multiply(Number d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_MULTIPLY, d, new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	public static double multiply(double d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_MULTIPLY, new BigDecimal(Double.toString(d)), new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	public static double multiply(Number n1, Number n2, int decimalPlaces) {
-		return mathOp(MATH_OP_MULTIPLY, n1, n2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double multiply(double d, Number n, int decimalPlaces) {
-		return mathOp(MATH_OP_MULTIPLY, new BigDecimal(Double.toString(d)), n, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double multiply(Number d, double d1, int decimalPlaces) {
-		return mathOp(MATH_OP_MULTIPLY, d, new BigDecimal(Double.toString(d1)), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double multiply(double d1, double d2, int decimalPlaces) {
-		double d = d1 * d2;
-		return round(d, decimalPlaces);
-		//was: return mathOp(MATH_OP_MULTIPLY, new BigDecimal(Double.toString(d1)), new BigDecimal(Double.toString(d2)), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double multiply(Number n1, Number n2) {
-		return mathOp(MATH_OP_MULTIPLY, n1, n2, -1, -1);
-	}
-
-	public static double multiply(double d, Number n) {
-		return mathOp(MATH_OP_MULTIPLY, new BigDecimal(Double.toString(d)), n, -1, -1);
-	}
-
-	public static double multiply(Number d, double d1) {
-		return mathOp(MATH_OP_MULTIPLY, d, new BigDecimal(Double.toString(d1)), -1, -1);
-	}
-
-	public static double multiply(double d, double d1) {
-		return mathOp(MATH_OP_MULTIPLY, new BigDecimal(Double.toString(d)), new BigDecimal(Double.toString(d1)), -1, -1);
-	}
-
-	// DIVIDE METHODS
-	public static double divide(Number n1, Number n2, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_DIVIDE, n1, n2, decimalPlaces, roundType);
-	}
-
-	public static double divide(double d, Number n, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_DIVIDE, new BigDecimal(Double.toString(d)), n, decimalPlaces, roundType);
-	}
-
-	public static double divide(Number d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_DIVIDE, d, new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	public static double divide(double d, double d1, int decimalPlaces, int roundType) {
-		return mathOp(MATH_OP_DIVIDE, new BigDecimal(Double.toString(d)), new BigDecimal(Double.toString(d1)), decimalPlaces, roundType);
-	}
-
-	public static double divide(Number n1, Number n2, int decimalPlaces) {
-		return mathOp(MATH_OP_DIVIDE, n1, n2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double divide(double d, Number n, int decimalPlaces) {
-		return mathOp(MATH_OP_DIVIDE, new BigDecimal(Double.toString(d)), n, decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double divide(Number d, double d1, int decimalPlaces) {
-		return mathOp(MATH_OP_DIVIDE, d, new BigDecimal(Double.toString(d1)), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double divide(double d1, double d2, int decimalPlaces) {
-		double d = d1 / d2;
-		return round(d, decimalPlaces);
-		//was: return mathOp(MATH_OP_DIVIDE, new BigDecimal(Double.toString(d1)), new BigDecimal(Double.toString(d2)), decimalPlaces, BigDecimal.ROUND_HALF_UP);
-	}
-
-	public static double divide(Number n1, Number n2) {
-		return mathOp(MATH_OP_DIVIDE, n1, n2, -1, -1);
-	}
-
-	public static double divide(double d, Number n) {
-		return mathOp(MATH_OP_DIVIDE, new BigDecimal(Double.toString(d)), n, -1, -1);
-	}
-
-	public static double divide(Number d, double d1) {
-		return mathOp(MATH_OP_DIVIDE, d, new BigDecimal(Double.toString(d1)), -1, -1);
-	}
-
-	public static double divide(double d, double d1) {
-		return mathOp(MATH_OP_DIVIDE, new BigDecimal(Double.toString(d)), new BigDecimal(Double.toString(d1)), -1, -1);
-	}
-
-	//========== Convert from one type to another type
-
-	/**
-	 * Convert an object "value" to another type "clazz" using a format "fmt"
-	 * <p>
-	 * This will call getConverter(clazz). If the converter is null or it returns a null, then getConverter(value.getClass()) will be
-	 * called.
-	 * <p>
-	 * <b>Note:</b> If clazz is String and value is null, then a blank String "" is returned.
-	 *
-	 * @param fmt is format to use for parsing/formatting. returns converted object of type clazz or null if converstion can not be done.
-	 * @see #getConverter
-	 */
-	public static Object convert(Class clazz, Object value, String fmt) {
-		if (clazz == null) {
-			return value;
-		}
+	@SuppressWarnings("unchecked")
+	public static <T> T convert(Class<T> clazz, Object value, String fmt) {
+		if (clazz == null) return null;
 		if (clazz.isPrimitive()) {
-			clazz = OAReflect.getPrimitiveClassWrapper(clazz);
-		}
-		if (value != null && value.getClass().equals(clazz)) {
-			if (fmt == null || fmt.length() == 0) {
-				return value;
-			}
+			clazz = (Class<T>) OAReflect.getPrimitiveClassWrapper(clazz);
 		}
 
-		OAConverterInterface oci = OAConverter.getConverter(clazz);
-		if (oci == null && value != null) {
-			oci = OAConverter.getConverter(value.getClass());
-		}
-		if (oci != null) {
-			if (Object.class.equals(clazz)) {
-				return value; // 20091009
+		OAConverterInterface<T> oci = OAConverter.getConverter(clazz);
+		if (oci == null) {
+			if (value != null && clazz.isAssignableFrom(value.getClass())) {
+				return (T) value;
 			}
-			return oci.convert(clazz, value, fmt);
+			return null;
 		}
-		if (value != null && clazz.isAssignableFrom(value.getClass())) {
-			return value;
+		if (value != null && clazz.isAssignableFrom(value.getClass()) && OAStr.isEmpty(fmt)) {
+			return (T) value;
 		}
-		return null;
+		return oci.convert(clazz, value, fmt);
 	}
 
 	/**
-	 * Convert an Object to another type "clazz".
+	 * Convert a value to the specified Java type using default formatting rules.
 	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
+	 * @param clazz target type
+	 * @param value source value, may be null
+	 * @return converted value or null if no conversion exists
+	 * @see #convert(Class, Object, String)
 	 */
-	public static Object convert(Class clazz, Object value) {
+	public static <T> T convert(Class<T> clazz, Object value) {
 		return convert(clazz, value, null);
 	}
 
 	/**
-	 * Convert a double to another type "clazz".
+	 * Convert an Object to a {@code double}.
 	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, double value, String fmt) {
-		return convert(clazz, Double.valueOf(value), fmt);
-	}
-
-	/**
-	 * Convert a double to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, double value) {
-		return convert(clazz, Double.valueOf(value), null);
-	}
-
-	/**
-	 * Convert a float to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, float value, String fmt) {
-		return convert(clazz, Float.valueOf(value), fmt);
-	}
-
-	/**
-	 * Convert an float to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, float value) {
-		return convert(clazz, Float.valueOf(value), null);
-	}
-
-	/**
-	 * Convert a long to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, long value, String fmt) {
-		return convert(clazz, Long.valueOf(value), fmt);
-	}
-
-	/**
-	 * Convert a long to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, long value) {
-		return convert(clazz, Long.valueOf(value), null);
-	}
-
-	/**
-	 * Convert an int to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, int value, String fmt) {
-		return convert(clazz, Integer.valueOf(value), fmt);
-	}
-
-	/**
-	 * Convert an int to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, int value) {
-		return convert(clazz, Integer.valueOf(value), null);
-	}
-
-	/**
-	 * Convert a short to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, short value, String fmt) {
-		return convert(clazz, Short.valueOf(value), fmt);
-	}
-
-	/**
-	 * Convert an short to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, short value) {
-		return convert(clazz, Short.valueOf(value), null);
-	}
-
-	/**
-	 * Convert a char to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, char value, String fmt) {
-		return convert(clazz, Character.valueOf(value), fmt);
-	}
-
-	/**
-	 * Convert a char to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, char value) {
-		return convert(clazz, Character.valueOf(value), null);
-	}
-
-	/**
-	 * Convert a byte to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, byte value, String fmt) {
-		return convert(clazz, Byte.valueOf(value), fmt);
-	}
-
-	/**
-	 * Convert a byte to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, byte value) {
-		return convert(clazz, Byte.valueOf(value), null);
-	}
-
-	/**
-	 * Convert a boolean to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, boolean value, String fmt) {
-		return convert(clazz, Boolean.valueOf(value), fmt);
-	}
-
-	/**
-	 * Convert a boolean to another type "clazz".
-	 *
-	 * @return converted object of type clazz or null if conversion could not be completed.
-	 * @see #convert(Class,Object,String)
-	 */
-	public static Object convert(Class clazz, boolean value) {
-		return convert(clazz, Boolean.valueOf(value), null);
-	}
-
-	/**
-	 * Convert an Object to a double.
-	 *
-	 * @return value converted into a double
-	 * @see #convert(Class,Object,String)
-	 * @throws IllegalArgumentException if number is not a valid number
-	 */
+	 * @param value source value to convert
+	 * @return converted double value
+	 * @throws IllegalArgumentException if value cannot be converted to a number
+	 */	
 	public static double toDouble(Object value) {
 		Number num = (Number) convert(double.class, value);
 		if (num == null) {
-			throw new IllegalArgumentException("OAConverter.toDouble(): " + value + " cant be converted to double");
+			throw new IllegalArgumentException("OAConverter.toDouble(): '" + value + "' cant be converted to double");
 		}
 		return num.doubleValue();
 	}
 
 	/**
-	 * Convert an Object to a BigDecimal.
+	 * Convert an Object to a {@link BigDecimal}.
 	 *
-	 * @return value converted into a double
-	 * @see #convert(Class,Object,String)
-	 * @throws IllegalArgumentException if number is not a valid number
+	 * @param value source value to convert
+	 * @return BigDecimal result
+	 * @throws IllegalArgumentException if value cannot be converted to a BigDecimal
 	 */
 	public static BigDecimal toBigDecimal(Object value) {
 		BigDecimal num = (BigDecimal) convert(BigDecimal.class, value);
 		if (num == null) {
-			throw new IllegalArgumentException("OAConverter.toBigDecimal(): " + value + " cant be converted to double");
+			throw new IllegalArgumentException("OAConverter.toBigDecimal(): '" + value + "' cant be converted to BigDecimal");
 		}
 		return num;
 	}
 
+	/**
+	 * Convenience alias for {@link #toBigDecimal(Object)}.
+	 */
 	public static BigDecimal toBD(Object value) {
 		return toBigDecimal(value);
 	}
 
+	/**
+	 * Convert a decimal String into a BigDecimal instance.
+	 *
+	 * @param value string representing a numeric value
+	 * @return BigDecimal parsed value
+	 * @throws NumberFormatException if string is not a valid number
+	 */
 	public static BigDecimal toBigDecimal(String value) {
 		BigDecimal bd = new BigDecimal(value);
 		return bd;
 	}
 
+	/** Alias for {@link #toBigDecimal(String)}. */
 	public static BigDecimal toBD(String value) {
 		BigDecimal bd = new BigDecimal(value);
 		return bd;
 	}
 
+	/**
+	 * Convert a double into a BigDecimal, preserving decimal precision.
+	 *
+	 * @param value numeric value
+	 * @return BigDecimal representation
+	 */
 	public static BigDecimal toBigDecimal(double value) {
-		BigDecimal bd = new BigDecimal(Double.toString(value));
+		BigDecimal bd = BigDecimal.valueOf(value);
 		return bd;
 	}
-
+	
+	/** Alias for {@link #toBigDecimal(double)}. */
 	public static BigDecimal toBD(double value) {
-		BigDecimal bd = new BigDecimal(Double.toString(value));
-		return bd;
-	}
-
-	public static BigDecimal toBigDecimal(double value, int decimalPlaces) {
-		BigDecimal bd = (new BigDecimal(Double.toString(value))).setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP);
-		return bd;
-	}
-
-	public static BigDecimal toBD(double value, int decimalPlaces) {
-		BigDecimal bd = (new BigDecimal(Double.toString(value))).setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP);
-		return bd;
-	}
-
-	public static BigDecimal toBigDecimal(Object value, String fmt) {
-		BigDecimal num = (BigDecimal) convert(BigDecimal.class, value, fmt);
-		if (num == null) {
-			throw new IllegalArgumentException("OAConverter.toBigDecimal(): " + value + " cant be converted to double");
-		}
-		return num;
-	}
-
-	public static BigDecimal toBD(Object value, String fmt) {
-		BigDecimal num = (BigDecimal) convert(BigDecimal.class, value, fmt);
-		if (num == null) {
-			throw new IllegalArgumentException("OAConverter.toBigDecimal(): " + value + " cant be converted to double");
-		}
-		return num;
+		return toBigDecimal(value);
 	}
 
 	/**
-	 * Convert an Object to a float.
+	 * Convert a double into a scaled BigDecimal.
 	 *
-	 * @return value converted into a float
-	 * @see #convert(Class,Object,String)
-	 * @throws IllegalArgumentException if number is not a valid number
+	 * @param value          numeric value
+	 * @param decimalPlaces  number of decimal places to round to
+	 * @return scaled BigDecimal
+	 */	
+	public static BigDecimal toBigDecimal(double value, int decimalPlaces) {
+		BigDecimal bd = BigDecimal.valueOf(value).setScale(decimalPlaces, RoundingMode.HALF_UP);
+		return bd;
+	}
+
+	/** Alias for {@link #toBigDecimal(double, int)}. */
+	public static BigDecimal toBD(double value, int decimalPlaces) {
+		return toBigDecimal(value, decimalPlaces);
+	}
+
+	/**
+	 * Convert an Object to a {@link BigDecimal} using a formatting hint.
+	 *
+	 * @param value string or numeric value
+	 * @param fmt optional format string
+	 * @return converted BigDecimal
+	 * @throws IllegalArgumentException if conversion fails
+	 */
+	public static BigDecimal toBigDecimal(Object value, String fmt) {
+		BigDecimal num = convert(BigDecimal.class, value, fmt);
+		if (num == null) {
+			throw new IllegalArgumentException("OAConverter.toBigDecimal(): '" + value + "' cant be converted to BigDecimal");
+		}
+		return num;
+	}
+
+	/** Alias for {@link #toBigDecimal(Object, String)}. */
+	public static BigDecimal toBD(Object value, String fmt) {
+		return toBigDecimal(value, fmt);
+	}
+
+	/**
+	 * Convert an Object to a {@code float}.
+	 *
+	 * @param value source value
+	 * @return converted float value
+	 * @throws IllegalArgumentException if conversion fails
 	 */
 	public static float toFloat(Object value) {
-		Number num = (Number) convert(float.class, value);
+		Number num = convert(float.class, value);
 		if (num == null) {
-			throw new IllegalArgumentException("OAConverter.toFloat(): " + value + " cant be converted to float");
+			throw new IllegalArgumentException("OAConverter.toFloat(): '" + value + "' cant be converted to float");
 		}
 		return num.floatValue();
 	}
 
 	/**
-	 * Convert an Object to a long.
+	 * Convert an Object to a {@code long}.
 	 *
-	 * @return value converted into a long
-	 * @see #convert(Class,Object,String)
-	 * @throws IllegalArgumentException if number is not a valid number
+	 * @param value source value
+	 * @return converted long value, {@code 0L} if value is null
+	 * @throws IllegalArgumentException if conversion fails
 	 */
 	public static long toLong(Object value) {
-		if (value == null) {
-			return 0L;
-		}
-		Number num = (Number) convert(long.class, value);
+		if (value == null) return 0L;
+		Number num = convert(long.class, value);
 		if (num == null) {
-			throw new IllegalArgumentException("OAConverter.toLong():" + value + " cant be converted to long");
+			throw new IllegalArgumentException("OAConverter.toLong(): '" + value + "' cant be converted to long");
 		}
 		return num.longValue();
 	}
 
 	/**
-	 * Convert an Object to an int.
+	 * Convert an Object to an {@code int}.
 	 *
-	 * @return value converted into an int
-	 * @see #convert(Class,Object,String)
-	 * @throws IllegalArgumentException if number is not a valid number
+	 * @param value source value
+	 * @return converted int value, {@code 0} if value is null
+	 * @throws IllegalArgumentException if conversion fails
 	 */
 	public static int toInt(Object value) {
-		if (value == null) {
-			return (int) 0;
-		}
-		Number num = (Number) convert(int.class, value);
+		if (value == null) return (int) 0;
+		Number num = convert(int.class, value);
 		if (num == null) {
-			throw new IllegalArgumentException("OAConverter.toInt(): string " + value + " cant be converted to int");
+			throw new IllegalArgumentException("OAConverter.toInt(): Object '" + value + "' cant be converted to int");
 		}
 		return num.intValue();
 	}
 
 	/**
-	 * Convert an Object to a short.
+	 * Convert an Object to a {@code short}.
 	 *
-	 * @return value converted into a short
-	 * @see #convert(Class,Object,String)
-	 * @throws IllegalArgumentException if number is not a valid number
+	 * @param value source value
+	 * @return converted short value, {@code 0} if value is null
+	 * @throws IllegalArgumentException if conversion fails
 	 */
 	public static short toShort(Object value) {
-		if (value == null) {
-			return (short) 0;
-		}
+		if (value == null) return (short) 0;
 		Number num = (Number) convert(short.class, value);
 		if (num == null) {
-			throw new IllegalArgumentException("OAConverter.toShort(): " + value + " cant be converted to short");
+			throw new IllegalArgumentException("OAConverter.toShort(): '" + value + "' cant be converted to short");
 		}
 		return num.shortValue();
 	}
 
 	/**
-	 * Convert an Object to a char.
+	 * Convert an Object to a {@code char}.
 	 *
-	 * @return value converted into a char
-	 * @see #convert(Class,Object,String)
-	 * @throws IllegalArgumentException if number is not a valid number
+	 * @param value source value
+	 * @return converted character, or {@code 0} if null
+	 * @throws IllegalArgumentException if conversion fails
 	 */
 	public static char toChar(Object value) {
-		if (value == null) {
-			return (char) 0;
-		}
+		if (value == null) return (char) 0;
 		Character c = (Character) convert(char.class, value);
 		if (c == null) {
-			throw new IllegalArgumentException("OAConverter.toChar(): " + value + " cant be converted to char");
+			throw new IllegalArgumentException("OAConverter.toChar(): '" + value + "' cant be converted to char");
 		}
 		return c.charValue();
 	}
 
 	/**
-	 * Convert an Object to a byte.
+	 * Convert an Object to a {@code byte}.
 	 *
-	 * @return value converted into a byte
-	 * @see #convert(Class,Object,String)
-	 * @throws IllegalArgumentException if number is not a valid number
+	 * @param value source value
+	 * @return converted byte, or {@code 0} if null
+	 * @throws IllegalArgumentException if conversion fails
 	 */
 	public static byte toByte(Object value) {
-		if (value == null) {
-			return (byte) 0;
-		}
-		Byte c = (Byte) convert(byte.class, value);
+		if (value == null) return (byte) 0;
+		Byte c = convert(byte.class, value);
 		if (c == null) {
-			throw new IllegalArgumentException("OAConverter.toByte(): " + value + " cant be converted to byte");
+			throw new IllegalArgumentException("OAConverter.toByte(): '" + value + "' cant be converted to byte");
 		}
 		return c.byteValue();
 	}
 
 	/**
-	 * Convert an Object to a boolean.
+	 * Convert an Object to a {@code boolean}.
 	 *
-	 * @return value converted into a boolean
-	 * @see #convert(Class,Object,String)
-	 * @throws IllegalArgumentException if number is not a valid number
+	 * @param value source value
+	 * @return converted boolean, {@code false} if null
+	 * @throws IllegalArgumentException if conversion fails
 	 */
 	public static boolean toBoolean(Object value) {
-		if (value == null) {
-			return false;
-		}
+		if (value == null) return false;
 		Boolean b = (Boolean) convert(boolean.class, value);
 		if (b == null) {
-			throw new IllegalArgumentException("OAConverter.toBoolean(): " + value + " cant be converted to boolean");
-		}
-		return b.booleanValue();
-	}
-
-	public static boolean toBoolean(Object value, String fmt) {
-		if (value == null) {
-			return false;
-		}
-		Boolean b = (Boolean) convert(boolean.class, value, fmt);
-		if (b == null) {
-			throw new IllegalArgumentException("OAConverter.toBoolean(): " + value + " cant be converted to boolean");
+			throw new IllegalArgumentException("OAConverter.toBoolean(): '" + value + "' cant be converted to boolean");
 		}
 		return b.booleanValue();
 	}
 
 	/**
-	 * Convert a String to an OADateTime.
+	 * Convert an Object to a {@code boolean} using a custom format.
+	 *
+	 * @param value source value
+	 * @param fmt   conversion format (e.g., "yes;no;")
+	 * @return converted boolean, {@code false} if null
+	 * @throws IllegalArgumentException if conversion fails
+	 */
+	public static boolean toBoolean(Object value, String fmt) {
+		if (value == null) return false;
+		Boolean b = (Boolean) convert(boolean.class, value, fmt);
+		if (b == null) {
+			throw new IllegalArgumentException("OAConverter.toBoolean(): '" + value + "' cant be converted to boolean");
+		}
+		return b.booleanValue();
+	}
+
+	/** Convert a String to {@link OADateTime}.
 	 *
 	 * @return OADateTime or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
 	 */
 	public static OADateTime toDateTime(String value, String fmt) {
-		return (OADateTime) convert(OADateTime.class, value, fmt);
+		return convert(OADateTime.class, value, fmt);
 	}
 
 	/**
-	 * Convert a String to an OADateTime.
+	 * Convert a String to {@link OADateTime}, using default parsing rules. 
 	 *
 	 * @return OADateTime or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 */
 	public static OADateTime toDateTime(String value) {
-		return (OADateTime) convert(OADateTime.class, value, null);
+		return convert(OADateTime.class, value, null);
 	}
 
 	/**
-	 * Convert a String to an OADate.
+	 * Convert an Object to {@link OADateTime}. 
 	 *
 	 * @return OADate or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
 	 */
 	public static OADate toDate(Object value, String fmt) {
-		return (OADate) convert(OADate.class, value, fmt);
+		return convert(OADate.class, value, fmt);
 	}
 
 	/**
-	 * Convert a String to an OADate.
+	 * Convert an Object to {@link OADateTime}, using default parsing rules. 
 	 *
 	 * @return OADate or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
 	 */
 	public static OADate toDate(Object value) {
-		return (OADate) convert(OADate.class, value);
+		return convert(OADate.class, value);
 	}
 
 	/**
-	 * Convert a String to an OATime.
+	 * Convert a String to {@link OATime}
 	 *
 	 * @return OATime or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
 	 */
 	public static OATime toTime(Object value, String fmt) {
-		return (OATime) convert(OATime.class, value, fmt);
+		return convert(OATime.class, value, fmt);
 	}
 
 	/**
-	 * Convert a String to an OATime.
+	 * Convert a String to {@link OATime}.
 	 *
 	 * @return OATime or null if conversion could not be completed.
 	 * @see #convert(Class,Object,String)
 	 * @see OADateTime
 	 */
 	public static OATime toTime(Object value) {
-		return (OATime) convert(OATime.class, value);
+		return convert(OATime.class, value);
 	}
 
 	/**
@@ -1283,6 +797,12 @@ public class OAConverter {
 		return toString(obj, null);
 	}
 
+	/**
+	 * Convert an Object to a String, with option to use default formatting.
+	 *
+	 * @return if obj is null then a blank string is returned, otherwise String version of obj.
+	 * @see #convert(Class,Object,String)
+	 */
 	public static String toString(Object obj, boolean bUseDefaultFormat) {
 		String fmt = null;
 		if (bUseDefaultFormat && obj != null) {
@@ -1292,20 +812,20 @@ public class OAConverter {
 	}
 
 	/**
-	 * Convert an Object to a String, using a specific format. For formatters, see below.
+	 * Convert a value to String using an optional format.
 	 *
-	 * @return if obj is null then a blank string is returned, otherwise String version of obj.
-	 * @see #convert(Class,Object,String)
-	 * @see OAString#format(String,String)
+	 * @param obj value to convert
+	 * @param fmt optional format String
+	 * @return String value (never null)
 	 */
 	public static String toString(Object obj, String fmt) {
-		String s = (String) convert(String.class, obj, fmt);
+		String s = convert(String.class, obj, fmt);
 		if (s == null) return "";
 		return s;
 	}
 
 	/**
-	 * Convert a double to a String, using a specific format. For formatters, see below.
+	 * Convert a double to a String, using a specific format..
 	 *
 	 * @return String version of a double
 	 * @see OAConverterNumber
@@ -1313,7 +833,7 @@ public class OAConverter {
 	 * @see OAString#format(String,String)
 	 */
 	public static String toString(double d, String fmt) {
-		return (String) convert(String.class, d, fmt);
+		return convert(String.class, d, fmt);
 	}
 
 	public static String toString(double d, boolean bUseDefaultFormat) {
@@ -1332,7 +852,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static String toString(double d) {
-		return (String) convert(String.class, d, null);
+		return convert(String.class, d, null);
 	}
 
 	/**
@@ -1355,7 +875,7 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static String toString(long l) {
-		return (String) convert(String.class, l, null);
+		return convert(String.class, l, null);
 	}
 
 	public static String toString(long l, boolean bUseDefaultFormat) {
@@ -1373,7 +893,7 @@ public class OAConverter {
 	 * @see OAConverterCharacter
 	 */
 	public static String toString(char c) {
-		return (String) convert(String.class, c, null);
+		return convert(String.class, c, null);
 	}
 
 	public static String toString(char c, boolean bUseDefaultFormat) {
@@ -1390,7 +910,7 @@ public class OAConverter {
 	 * @see OAString#format(String,String)
 	 */
 	public static String toString(boolean b, String fmt) {
-		return (String) convert(String.class, b, fmt);
+		return convert(String.class, b, fmt);
 	}
 
 	public static String toString(boolean b, boolean bUseDefaultFormat) {
@@ -1412,7 +932,7 @@ public class OAConverter {
 	 * @see OAString#format(String,String)
 	 */
 	public static String toString(Boolean b, String fmt) {
-		return (String) convert(String.class, b, fmt);
+		return convert(String.class, b, fmt);
 	}
 
 	/**
@@ -1423,21 +943,26 @@ public class OAConverter {
 	 * @see #convert(Class,Object,String)
 	 */
 	public static String toString(boolean b) {
-		return (String) convert(String.class, b, null);
+		return convert(String.class, b, null);
 	}
 
-	public static boolean isNotEmpty(Object obj) {
-		return !isEmpty(obj, false);
-	}
-	
-	public static boolean isNotEmpty(Object obj, boolean bTrim) {
-		return !isEmpty(obj, bTrim);
-	}
-	
-	public static boolean isEmpty(Object obj) {
-		return isEmpty(obj, false);
-	}
-	
+	/**
+	 * Check whether a value is considered empty.
+	 *
+	 * <p>Supported empty types:</p>
+	 * <ul>
+	 *   <li>{@link String} — zero-length or whitespace based on {@code bTrim}</li>
+	 *   <li>Arrays — length == 0</li>
+	 *   <li>{@link Hub} — size == 0</li>
+	 *   <li>{@link Map} — size == 0</li>
+	 *   <li>{@link List} — size == 0</li>
+	 *   <li>{@link Set} — size == 0</li>
+	 * </ul>
+	 *
+	 * @param obj  value to check
+	 * @param bTrim apply trim when evaluating Strings
+	 * @return true if value is empty
+	 */	
 	public static boolean isEmpty(Object obj, boolean bTrim) {
 		if (obj == null) {
 			return true;
@@ -1476,87 +1001,19 @@ public class OAConverter {
 		return false;
 	}
 
+	/** Default empty check without trimming. */
+	public static boolean isEmpty(Object obj) {
+		return isEmpty(obj, true);
+	}
 	
-	public static void main(String[] args) {
-
-		double d = 0.0;
-		for (int i = 0; i < 1000; i++) {
-			d += .01;
-			d = round(d, 2);
-		}
-
-		double dx = round(d, 2);
-
-		dx = 256.025;
-		/*
-		dx = round(dx, 3, 2);
-
-		dx = 1.025;
-
-		dx *= 100.0;
-		dx /= 100.0;
-		*/
-
-		// .025 is a problem
-		dx = .025;
-		dx += 1.0; // 1.025
-		dx *= 100.0; // 102.499999..
-		dx = round(dx, 2, 0);
-
-		dx = 1.024999999;
-		dx = round(dx, 3, 2);
-
-		dx = 1.024999999;
-		dx = round(dx, 3, 2, BigDecimal.ROUND_HALF_UP);
-
-		dx = 1.024999999;
-		dx = round(dx, 3, 2); // <<<< this is wrong ... should be 1.3
-
-		dx = 1.024999999;
-		dx = round(dx, 2, 2);
-
-		dx = 1.02500000001;
-		dx = round(dx, 3, 2);
-
-		dx = 1.02500000001;
-		dx = round(dx, 2, 2);
-
-		dx = 1.64999999;
-		dx = round(dx, 4, 2, BigDecimal.ROUND_HALF_UP);
-
-		double newNum = Math.floor(256.025 * 100 + 0.5) / 100;
-		newNum = Math.rint(256.025 * 100) / 100;
-
-		dx = 256.025;
-		dx = Math.round(dx * 100) / 100.0d;
-
-		dx = 2560.25;
-		dx = Math.round(dx * 10) / 10.0d;
-
-		Object objx = OAConv.convert(int.class, new OADateTime());
-
-		objx = OAConv.convert(long.class, new OADateTime());
-
-		objx = OAConv.convert(String.class, new OADateTime());
-
-		objx = OAConv.convert(OADate.class, new OADateTime());
-
-		objx = OAConv.convert(OADateTime.class, new OADateTime());
-
-		objx = OAConv.convert(boolean.class, new OADateTime());
-
-		// -4.1 => -5.0
-		d = -4.5;
-
-		d = OAConv.divide(1.0, 3.0, 4);
-
-		System.out.println("Math.round " + d + " == " + Math.round(d));
-
-		double d2 = round(d, 0, 0, BigDecimal.ROUND_HALF_UP);
-		System.out.println("BigDecimal " + d + " == " + d2);
-
-		d = OAConverter.round(d, 0);
-		System.out.println("new round " + d + " == " + d);
+	/** Negation of {@link #isEmpty(Object)}. */
+	public static boolean isNotEmpty(Object obj) {
+		return !isEmpty(obj, true);
+	}
+	
+	/** Negation of {@link #isEmpty(Object, boolean)}. */
+	public static boolean isNotEmpty(Object obj, boolean bTrim) {
+		return !isEmpty(obj, bTrim);
 	}
 
 }

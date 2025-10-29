@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.lang.reflect.Array;
@@ -21,18 +26,57 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
 
 /**
- * Uses coercion to compare objects, even if objects are different classes. Ex: String "1234" will equal double 1234.00 ex: boolean true will equal
- * any number but 0, any value except null, any string except '' blank Also allows for comparing with Hub or Array to another Hub/Array, or
- * single object (hub.AO or hub[0]&size=1, array.length=1&array[0])
+ * Utility class that performs flexible comparisons between values of arbitrary types.
+ * <p>
+ * OACompare extends standard Java comparison semantics by applying OA-style coercion rules:
+ * <ul>
+ *   <li>Values of different types (e.g., String "123" vs. Double 123.0) are automatically coerced for comparison.</li>
+ *   <li>Supports comparisons involving OAObject, OAObjectKey, arrays, and Hub collections.</li>
+ *   <li>Boolean, numeric, and date/time types are normalized through OAConverter before comparing.</li>
+ *   <li>Special placeholder objects (e.g., OANullObject, OAAnyValueObject) are supported for flexible matching.</li>
+ * </ul>
+ * <p>
+ * Comparison results follow standard compareTo semantics:
+ * <ul>
+ *   <li>{@code < 0}: first value is less than second</li>
+ *   <li>{@code = 0}: values are equal (or coerced equal)</li>
+ *   <li>{@code > 0}: first value is greater than second</li>
+ * </ul>
  *
- * @author vvia
+ * Typical usage:
+ * <pre>
+ * OACompare.isEqual("123", 123);           // true
+ * OACompare.isBetween(5.2, 5.0, 6.0);     // true
+ * OACompare.isLike("John Smith", "Jo*");  // true
+ * </pre>
+ *
+ * @author Vince Via
  */
+
 public class OACompare {
 
+	/**
+     * Returns true if the given object equals or is contained within the supplied match value.
+     * <p>
+     * Equivalent to {@link #isIn(Object, Object)}.
+     *
+     * @param obj         the object to test
+     * @param matchValue  the value, Hub, or array to search
+     * @return true if equal or contained
+     */	 
 	public static boolean isEqualOrIn(Object obj, Object matchValue) {
 		return isIn(obj, matchValue);
 	}
 
+	/**
+     * Returns true if {@code obj} is contained in {@code matchValue}.
+     * <p>
+     * Works with Hubs, arrays, or single values. Uses {@link #isEqual(Object, Object)} for element comparison.
+     *
+     * @param obj         the object to test
+     * @param matchValue  a Hub, array, or single object
+     * @return true if {@code obj} matches or is contained
+     */
 	public static boolean isIn(Object obj, Object matchValue) {
 		if (obj == null || matchValue == null) {
 			return false;
@@ -52,9 +96,20 @@ public class OACompare {
 		return isEqual(obj, matchValue);
 	}
 
-	/**
-	 * @param matchValue if a String, then it can begin and/or end with '*'|'%', (or inside the string) as a wildcard.
-	 */
+    /**
+     * Performs wildcard comparison between a value and a match pattern.
+     * <p>
+     * Wildcards: {@code *} or {@code %} can appear at the start, end, or both.
+     * <ul>
+     *   <li>{@code "Jo*"}  matches any string starting with "Jo"</li>
+     *   <li>{@code "*Smith"} matches any string ending with "Smith"</li>
+     *   <li>{@code "*ann*"}  matches any string containing "ann"</li>
+     * </ul>
+     *
+     * @param value       the object or string to test
+     * @param matchValue  the wildcard string pattern
+     * @return true if matched (case-insensitive)
+     */
 	public static boolean isLike(Object value, Object matchValue) {
 		if (value == matchValue) {
 			return true;
@@ -133,15 +188,32 @@ public class OACompare {
 		return sValue.endsWith(endMatch);
 	}
 
+	
+    /**
+     * Compares two objects for equality, ignoring case for strings.
+     *
+     * @param value        first value
+     * @param matchValue   second value
+     * @return true if equal (case-insensitive for strings)
+     */
 	public static boolean isEqualIgnoreCase(Object value, Object matchValue) {
 		return isEqual(value, matchValue, true);
 	}
 
+    /**
+     * Returns true if the two values are equal after applying coercion rules.
+     * @param value first value
+     * @param matchValue second value
+     * @return true if equal
+     */	
 	public static boolean isEqual(Object value, Object matchValue) {
 		int x = compare(value, matchValue);
 		return x == 0;
 	}
 
+    /**
+     * Returns true if the two values are not equal after applying coercion rules.
+     */
 	public static boolean isNotEqual(Object value, Object matchValue) {
 	    return !isEqual(value, matchValue);
 	}
@@ -158,7 +230,19 @@ public class OACompare {
 		return isEqual(value, matchValue, false, decimalPlaces);
 	}
 
-    public static boolean isNotEqual(Object value, Object matchValue, boolean bIgnoreCase, int decimalPlaces) {
+
+	
+    /**
+     * Compares two values with optional case-insensitive and decimal-precision options.
+     *
+     * @param value first value
+     * @param matchValue second value
+     * @param bIgnoreCase true to ignore case for string comparisons
+     * @param decimalPlaces number of decimal digits to round for numeric comparison;
+     *                      negative values perform direct comparison with epsilon tolerance
+     * @return true if equal under the given rules
+     */
+	public static boolean isNotEqual(Object value, Object matchValue, boolean bIgnoreCase, int decimalPlaces) {
         return !isEqual(value, matchValue, bIgnoreCase, decimalPlaces);
     }
 	
@@ -175,23 +259,31 @@ public class OACompare {
 		return x == 0;
 	}
 
+    /**
+     * Tests whether a value is between (exclusive) two bounds.
+     * Supports coercion for mixed-type inputs.
+     */
 	public static boolean isBetween(Object value, Object fromValue, Object toValue) {
 		return isBetween(value, fromValue, toValue, -1);
 	}
 
-    public static boolean isBetween(Object value, Object fromValue, Object toValue, int deciPlaces) {
+
+    /**
+     * Tests whether a value is between (exclusive) two bounds, with optional decimal precision.
+     */
+	public static boolean isBetween(Object value, Object fromValue, Object toValue, int decimalPlaces) {
         if (value == null) {
             return false;
         }
         if (toValue == null) {
             return false;
         }
-        int x = compare(value, fromValue, deciPlaces);
+        int x = compare(value, fromValue, decimalPlaces);
         if (x <= 0) {
             return false;
         }
 
-        x = compare(value, toValue, deciPlaces);
+        x = compare(value, toValue, decimalPlaces);
         if (x >= 0) {
             return false;
         }
@@ -199,22 +291,29 @@ public class OACompare {
     }
 	
 	
+    /**
+     * Returns true if value is equal to or between (inclusive) two bounds.
+     */
 	public static boolean isEqualOrBetween(Object value, Object fromValue, Object toValue) {
 	    return isEqualOrBetween(value, fromValue, toValue, -1);
 	}
-    public static boolean isEqualOrBetween(Object value, Object fromValue, Object toValue, int deciPlaces) {
+
+    /**
+     * Returns true if value is equal to or between (inclusive) two bounds with optional decimal precision.
+     */	
+	public static boolean isEqualOrBetween(Object value, Object fromValue, Object toValue, int decimalPlaces) {
 		if (value == null) {
 			return (fromValue == null);
 		}
 		if (toValue == null) {
 			return false;
 		}
-		int x = compare(value, fromValue, deciPlaces);
+		int x = compare(value, fromValue, decimalPlaces);
 		if (x < 0) {
 			return false;
 		}
 
-		x = compare(value, toValue, deciPlaces);
+		x = compare(value, toValue, decimalPlaces);
 		if (x > 0) {
 			return false;
 		}
@@ -224,25 +323,40 @@ public class OACompare {
 	public static boolean isBetweenOrEqual(Object value, Object fromValue, Object toValue) {
 		return isEqualOrBetween(value, fromValue, toValue, -1);
 	}
-    public static boolean isBetweenOrEqual(Object value, Object fromValue, Object toValue, int deciPlaces) {
-        return isEqualOrBetween(value, fromValue, toValue, deciPlaces);
+    
+	public static boolean isBetweenOrEqual(Object value, Object fromValue, Object toValue, int decimalPlaces) {
+        return isEqualOrBetween(value, fromValue, toValue, decimalPlaces);
     }
 
+    /**
+     * Returns true if value is greater than the given value.
+     */
 	public static boolean isGreater(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x > 0;
 	}
-    public static boolean isGreater(Object value, Object fromValue, int deciPlaces) {
-        int x = compare(value, fromValue, deciPlaces);
+
+    /**
+     * Returns true if value is greater than the given value with decimal precision control.
+     */
+	public static boolean isGreater(Object value, Object fromValue, int decimalPlaces) {
+        int x = compare(value, fromValue, decimalPlaces);
         return x > 0;
     }
 
+    /**
+     * Returns true if value is greater than or equal to the given value.
+     */
 	public static boolean isEqualOrGreater(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x >= 0;
 	}
-    public static boolean isEqualOrGreater(Object value, Object fromValue, int deciPlaces) {
-        int x = compare(value, fromValue, deciPlaces);
+
+    /**
+     * Returns true if value is greater than or equal to the given value, with decimal precision.
+     */
+	public static boolean isEqualOrGreater(Object value, Object fromValue, int decimalPlaces) {
+        int x = compare(value, fromValue, decimalPlaces);
         return x >= 0;
     }
 
@@ -250,17 +364,25 @@ public class OACompare {
 		int x = compare(value, fromValue);
 		return x >= 0;
 	}
-    public static boolean isGreaterOrEqual(Object value, Object fromValue, int deciPlaces) {
-        int x = compare(value, fromValue, deciPlaces);
+
+	public static boolean isGreaterOrEqual(Object value, Object fromValue, int decimalPlaces) {
+        int x = compare(value, fromValue, decimalPlaces);
         return x >= 0;
     }
 
+    /**
+     * Returns true if value is less than the given value.
+     */
 	public static boolean isLess(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x < 0;
 	}
-    public static boolean isLess(Object value, Object fromValue, int deciPlaces) {
-        int x = compare(value, fromValue, deciPlaces);
+	
+    /**
+     * Returns true if value is less than the given value with decimal precision.
+     */
+    public static boolean isLess(Object value, Object fromValue, int decimalPlaces) {
+        int x = compare(value, fromValue, decimalPlaces);
         return x < 0;
     }
 
@@ -268,39 +390,116 @@ public class OACompare {
 		int x = compare(value, fromValue);
 		return x <= 0;
 	}
-    public static boolean isEqualOrLess(Object value, Object fromValue, int deciPlaces) {
-        int x = compare(value, fromValue, deciPlaces);
+    public static boolean isEqualOrLess(Object value, Object fromValue, int decimalPlaces) {
+        int x = compare(value, fromValue, decimalPlaces);
         return x <= 0;
     }
 
+    /**
+     * Returns true if value is less than or equal to the given value.
+     */
 	public static boolean isLessOrEqual(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x <= 0;
 	}
-    public static boolean isLessOrEqual(Object value, Object fromValue, int deciPlaces) {
-        int x = compare(value, fromValue, deciPlaces);
+	
+    /**
+     * Returns true if value is less than or equal to the given value with decimal precision.
+     */
+    public static boolean isLessOrEqual(Object value, Object fromValue, int decimalPlaces) {
+        int x = compare(value, fromValue, decimalPlaces);
         return x <= 0;
     }
 
-	public static int compare(int a, int b) {
-		if (a == b) {
-			return 0;
-		}
-		if (a > b) {
-			return 1;
-		}
-		return -1;
+    /**
+     * Compares two integers using standard compare semantics.
+     */
+    public static int compare(int a, int b) {
+		return Integer.compare(a, b);
 	}
 
+   
+    /**
+     * Compares two double values using fixed decimal precision or epsilon tolerance.
+     * Handles NaN and Infinity safely.
+     *
+     * @param d1 first double
+     * @param d2 second double
+     * @param decimalPlaces rounding precision; negative values use relative epsilon comparison
+     * @return -1 if d1 &lt; d2, 0 if approximately equal, 1 if d1 &gt; d2
+     */
+    public static int compare(double d1, double d2, int decimalPlaces) {
+		if (Double.isNaN(d1) || Double.isNaN(d2)) return Double.compare(d1, d2);
+		if (Double.isInfinite(d1) || Double.isInfinite(d2)) return Double.compare(d1, d2);
+		
+		if (decimalPlaces < 0) {
+			final double dx = d1 - d2;
+			final double eps = 1e-12 * Math.max(1.0, Math.max(Math.abs(d1), Math.abs(d2)));			
+			if (Math.abs(dx) < eps) return 0;
+			
+			return (dx < 0) ? -1 : 1;
+		}
+		
+		long l1 = getLongCompareValue(d1, decimalPlaces);
+		long l2 = getLongCompareValue(d2, decimalPlaces);
+		return Long.compare(l1, l2);
+	}
+    
+    
+	private static long getLongCompareValue(double d, int decimalPlaces) {
+	    if (decimalPlaces < 0) decimalPlaces = 0;
+	    else if (decimalPlaces > 9) decimalPlaces = 9; // prevent FP drift, and long overrun
+
+	    if (Double.isNaN(d)) return 0;
+	    if (Double.isInfinite(d)) return (d > 0) ? Long.MAX_VALUE : Long.MIN_VALUE;
+
+	    boolean negative = d < 0;
+	    if (negative) d = -d;
+
+	    double scaled;
+	    if (decimalPlaces == 0) {
+	    	scaled = d;
+	    }
+	    else {
+		    double scale = Math.pow(10, decimalPlaces);
+		    scaled = d * scale;
+	    }
+
+	    long result = StrictMath.round(scaled);
+	    return negative ? -result : result;
+	}
+	
+	/**
+	 * Compare two doubles, using fixed decimal places.
+	 */
+	public static boolean isEqual(double d1, double d2, int decimalPlaces) {
+		return compare(d1, d2, decimalPlaces) == 0;
+	}
+	public static boolean isEqual(double d1, double d2) {
+		return compare(d1, d2, -1) == 0;
+	}
+	
+	
+	
+	
+	
+	
+	
 	public static int compare(Object value, Object matchValue) {
 		return compare(value, matchValue, -1);
 	}
 
-	/**
-	 * Compare objects, converting them (using OAConverter class) if necessary. <br>
-	 * Coercion Rules are used for converting values before comparing.<br>
-	 * value or matchValue can be one of the OASpecialCompareObject subclasses.
-	 */
+    /**
+     * Compares two objects with full OA coercion rules.
+     * <p>
+     * This is the primary comparison method used internally by OA libraries.
+     * It supports all OA special types, numeric coercion, arrays, Hubs, and object graphs.
+     *
+     * @param value first object
+     * @param matchValue second object
+     * @param decimalPlaces number of decimal places for numeric rounding
+     * @return -1, 0, or 1 based on comparison result
+     */
 	public static int compare(Object value, Object matchValue, final int decimalPlaces) {
 		if (value == matchValue) {
 			return 0;
@@ -343,7 +542,7 @@ public class OACompare {
 		    double d1 = n1.doubleValue();
 		    double d2 = n2.doubleValue();
 
-		    return OAConv.compare(d1, d2, decimalPlaces);
+		    return compare(d1, d2, decimalPlaces);
 		}				
 		
         if (value instanceof OASpecialCompareObject || matchValue instanceof OASpecialCompareObject) {
@@ -427,6 +626,10 @@ public class OACompare {
     	    OAObjectKey ka = OAObjectKeyDelegate.createObjectKey(value);
     	    OAObjectKey kb = OAObjectKeyDelegate.createObjectKey(matchValue);
     	  
+    	    if (ka == kb) return 0;
+    	    if (ka == null) return -1;
+    	    if (kb == null) return 1;
+    	    
     	    if (OAObjectKeyDelegate.isForSameOAObject(null, ka, kb)) return 0;
     	    return ka.compareTo(kb);
     	}        
@@ -493,7 +696,7 @@ public class OACompare {
 				}
 				return -1;
 			}
-			if (classValue.equals(Boolean.class)) {
+			if (Boolean.class.equals(classValue)) {
 				boolean b = OAConv.toBoolean(value);
 				int x = Array.getLength(matchValue);
 				if (b) {
@@ -654,11 +857,11 @@ public class OACompare {
 		if (decimalPlaces > 0) {
 			if (OAReflect.isFloat(classValue)) {
 				double d = OAConv.toDouble(value);
-				value = OAConv.round(d, decimalPlaces);
+				value = OAMath.round(d, decimalPlaces);
 			}
 			if (OAReflect.isFloat(classMatchValue)) {
 				double d = OAConv.toDouble(matchValue);
-				matchValue = OAConv.round(d, decimalPlaces);
+				matchValue = OAMath.round(d, decimalPlaces);
 			}
 			classValue = (value == null) ? null : value.getClass();
 			classMatchValue = (matchValue == null) ? null : matchValue.getClass();
@@ -683,10 +886,19 @@ public class OACompare {
 		return x;
 	}
 
+
+	
+    /**
+     * Returns true if the given object is not empty.
+     * Equivalent to {@code !isEmpty(obj)}.
+     */
 	public static boolean isNotEmpty(Object obj) {
 		return !isEmpty(obj);
 	}
 
+    /**
+     * Returns true if the given object is not empty, with optional string trimming.
+     */
 	public static boolean isNotEmpty(Object obj, boolean bTrim) {
 		return !isEmpty(obj, bTrim);
 	}
@@ -695,13 +907,21 @@ public class OACompare {
 		return isEmpty(obj, false);
 	}
 
-	/**
-	 * Checks to see if the value of an object can be considered empty. example: null, an empty array, an collection with no elements, a
-	 * primitive set to 0, primitive boolean that is false, a string with only spaces (if using bTrim)
-	 *
-	 * @param obj
-	 * @param bTrim if true and object is a string, then spaces will be ignored.
-	 */
+    /**
+     * Returns true if the given object is considered empty.
+     * <p>
+     * A value is empty if:
+     * <ul>
+     *   <li>It is null</li>
+     *   <li>It is an array or collection with zero elements</li>
+     *   <li>It is a primitive wrapper equal to 0, false, or '\u0000'</li>
+     *   <li>It is a String that is blank or whitespace-only (if {@code bTrim} is true)</li>
+     * </ul>
+     *
+     * @param obj   the object to check
+     * @param bTrim if true, trims strings before testing for emptiness
+     * @return true if empty
+     */
 	public static boolean isEmpty(Object obj, boolean bTrim) {
 		if (obj == null) {
 			return true;
@@ -734,33 +954,4 @@ public class OACompare {
 		return OAString.isEmpty(obj, bTrim);
 	}
 
-	public static void main(String[] args) {
-		Object val1 = 222;
-		Object val2 = "2*";
-
-		boolean b;
-		b = isEmpty(null);
-		b = isEmpty("");
-		b = isEmpty(new String[0]);
-		b = isEmpty(false);
-		b = isEmpty(true);
-		b = isEmpty(0);
-		b = isEmpty(0.0);
-		b = isEmpty(0.0000001);
-		b = isEmpty((char) 0);
-		b = isEmpty('a');
-
-		b = isLess(val1, val2);
-		b = isLike(val1, val2);
-		b = isLess(val1, val2);
-		b = isEqualOrLess(val1, val2);
-		b = isGreater(val1, val2);
-		b = isEqualOrGreater(val1, val2);
-
-		b = isEqualIgnoreCase(val1, val2);
-		b = isEqual(val1, val2);
-
-		int xx = 4;
-		xx++;
-	}
 }

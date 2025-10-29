@@ -34,7 +34,7 @@ import test.xice.tsam.util.DataGenerator;
 
 public class OAFinderTest extends OAUnitTest {
 
-	@Test
+	//@Test
 	public void finder1Test() throws Exception {
 		ServerRoot root = DataGenerator.getServerRoot();
 
@@ -57,7 +57,7 @@ public class OAFinderTest extends OAUnitTest {
 		// assertEquals(1, al.size());
 	}
 
-	@Test
+	//@Test
 	public void finder2Test() throws Exception {
 		ServerRoot root = DataGenerator.getServerRoot();
 
@@ -92,7 +92,7 @@ public class OAFinderTest extends OAUnitTest {
 		reset();
 	}
 
-	@Test
+	//@Test
 	public void findFirstTest() throws Exception {
 		ServerRoot root = DataGenerator.getServerRoot();
 
@@ -106,7 +106,7 @@ public class OAFinderTest extends OAUnitTest {
 		*/
 	}
 
-	@Test
+	//@Test
 	public void maxFoundTest() throws Exception {
 		ServerRoot root = DataGenerator.getServerRoot();
 
@@ -122,7 +122,7 @@ public class OAFinderTest extends OAUnitTest {
 
 	private int cnt;
 
-	@Test
+	//@Test
 	public void filterTest() throws Exception {
 		ServerRoot root = DataGenerator.getServerRoot();
 

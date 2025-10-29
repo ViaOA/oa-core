@@ -457,7 +457,7 @@ public class AwardCardOrder extends OAObject {
                 if (emp == null) return false;
                 double d = 0;//EmployeeDelegate.getPointValueForCard(emp, v.getValue());
                 double d2 = getInspireOrderPointsAvailable();
-                return OAConv.compare(d, d2, 2) <= 0;
+                return OACompare.compare(d, d2, 2) <= 0;
             }
         };
         hf.addDependentProperty(h, OAString.cpp(PROPERTY_InspireOrder, InspireOrder.PROPERTY_PointsUsed));

@@ -341,10 +341,42 @@ public class OACompareTest extends OAUnitTest {
 		assertTrue(x == 0);
 		
 		
-		int xx = 35;
+		int xx = 4;
 		xx++;
 		
 	}
+/*
 	
+	public static void main(String[] args) {
+		Object val1 = 222;
+		Object val2 = "2*";
+
+		boolean b;
+		b = isEmpty(null);
+		b = isEmpty("");
+		b = isEmpty(new String[0]);
+		b = isEmpty(false);
+		b = isEmpty(true);
+		b = isEmpty(0);
+		b = isEmpty(0.0);
+		b = isEmpty(0.0000001);
+		b = isEmpty((char) 0);
+		b = isEmpty('a');
+
+		b = isLess(val1, val2);
+		b = isLike(val1, val2);
+		b = isLess(val1, val2);
+		b = isEqualOrLess(val1, val2);
+		b = isGreater(val1, val2);
+		b = isEqualOrGreater(val1, val2);
+
+		b = isEqualIgnoreCase(val1, val2);
+		b = isEqual(val1, val2);
+
+		int xx = 4;
+		xx++;
+	}
+	
+*/	
 	
 }

@@ -39,6 +39,11 @@ public class OAObjectCache {
 		hm.clear();
 	}
 	
+	public void clearCache() {
+		hmOAObjectByGuid.clear();
+		objectIndex.clear();
+	}
+	
 
 	@SuppressWarnings("unchecked")
 	public <T extends OAObject> T getObject(Class<T> c, long guid) {
@@ -74,12 +79,16 @@ public class OAObjectCache {
 	 * 
 	 * @return true if object already existed in cache.
 	 */
-	public boolean updateObject(final OAObject obj) {
+	public <T extends OAObject> boolean updateObject(final T obj) {
 		if (obj == null) return false;
-		final Class<? extends OAObject> clazz = obj.getClass();
-		final ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
-		
 		final OAObjectKey ok = OAObjectKeyDelegate.createObjectKey((OAObject) obj);
+		final Class<T> clazz = (Class<T>) obj.getClass();
+		return updateObject(obj, ok, clazz);
+	}	
+	
+	protected <T extends OAObject> boolean updateObject(final T obj, final OAObjectKey ok, final Class<T> clazz) {
+		if (obj == null || ok == null) return false;
+		final ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
 		
 		boolean[] bsWasFound = new boolean[] {true};
 
@@ -100,6 +109,22 @@ public class OAObjectCache {
 		return bsWasFound[0];
 	}
 
+	
+	public <T extends OAObject> boolean removeObject(final T obj) {
+		if (obj == null) return false;
+		final OAObjectKey ok = OAObjectKeyDelegate.createObjectKey((OAObject) obj);
+		final Class<T> clazz = (Class<T>) obj.getClass();
+		
+		final ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+		if (hm == null) return false;
+		
+		OAWeakRef<? extends OAObject> wrOld = hm.remove(ok.getGuid());
+		if (wrOld == null) return false;
+		
+		objectIndex.removeFromIndex(clazz, wrOld.key);
+		return true;
+	}	
+	
 
 
 	protected void checkReferenceQueue() {

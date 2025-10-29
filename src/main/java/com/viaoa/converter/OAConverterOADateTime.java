@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.converter;
 
 import java.sql.Date;
@@ -16,123 +21,123 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
-import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OATime;
 
 /**
- * Convert to/from a OADateTime value. <br>
- * <b>Converts the following to an OADateTime</b>
- * <ul>
- * <li>String, using optional format string.
- * <li>Time
- * <li>Date
- * <li>OADate
- * <li>OATime
- * <li>All others value will return null.
- * </ul>
- * <br>
- * <b>Converts an OADateTime to any of the following</b>
- * <ul>
- * <li>String, using an optional format.
- * </ul>
- * See OADateTime for format definitions.
+ * Converter for transforming values into {@link OADateTime} instances and
+ * formatting them into display-friendly {@link String} values.
  *
- * @see OAConverter
- * @see OADateTime
+ * <h3>Conversion Rules</h3>
+ * The following input types are supported when converting to {@code OADateTime}:
+ * <ul>
+ *   <li>{@code null} → {@code null}</li>
+ *   <li>{@link OADateTime} — returned directly</li>
+ *   <li>{@link OADate} — date-only converted to date/time container</li>
+ *   <li>{@link OATime} — time-only converted to date/time container</li>
+ *   <li>{@link String} — parsed via {@link OADateTime#valueOf(String, String)}</li>
+ *   <li>{@link java.sql.Time} — time preserved; date inferred by {@link OADateTime}</li>
+ *   <li>{@link java.sql.Date} — date preserved; time set to 00:00 in system zone</li>
+ *   <li>{@link byte[]} — interpreted as epoch milliseconds</li>
+ *   <li>{@link Number} — epoch milliseconds preserved</li>
+ *   <li>{@link Instant} — retained as instant on UTC timeline</li>
+ *   <li>{@link LocalDate} — interpreted as start-of-day in system default zone</li>
+ *   <li>{@link LocalDateTime} — interpreted in system default zone</li>
+ *   <li>{@link ZonedDateTime} — exact instant preserved</li>
+ * </ul>
+ *
+ * <p><strong>Semantics:</strong><br>
+ * {@link OADateTime} represents a full date and time value. When converting
+ * from date-only or time-only types, missing components are filled using OA
+ * conventions (e.g., start-of-day for date-only).</p>
+ *
+ * <h3>Formatting Behavior</h3>
+ * <ul>
+ *   <li>Formatting uses {@link OADateTime#toString(String)}</li>
+ *   <li>If {@code fromValue} is {@code null}, returns {@code ""}</li>
+ *   <li>If {@code fmt} is {@code null}, OA default formatting rules apply</li>
+ * </ul>
  */
-public class OAConverterOADateTime implements OAConverterInterface {
+public class OAConverterOADateTime implements OAConverterInterface<OADateTime> {
 
-	/**
-	 * Convert to/from a OADateTime value.
-	 *
-	 * @return Object of type clazz if conversion can be done, else null.
-	 */
-	public Object convert(Class clazz, Object value, String fmt) {
-		if (clazz == null) {
+    /**
+     * Converts a source value into an {@link OADateTime}.
+     *
+     * <p>If {@code fmt} is provided and {@code fromValue} is a {@link String},
+     * parsing is delegated to {@link OADateTime#valueOf(String, String)}.</p>
+     *
+     * @param thisClass expected return type (always {@code OADateTime.class})
+     * @param fromValue value to convert; may be {@code null}
+     * @param fmt optional parsing mask for {@link String} input values
+     * @return converted {@link OADateTime} instance, or {@code null}
+     *         when conversion is not possible
+     */	
+	@Override
+	public OADateTime convert(Class<OADateTime> thisClass, Object fromValue, String fmt) {
+		if (fromValue == null) {
 			return null;
 		}
-		if (clazz.equals(OADateTime.class)) {
-			return convertToOADateTime(value, fmt);
+		if (fromValue instanceof OADateTime) {
+			return (OADateTime) fromValue;
 		}
-		if (value != null && value instanceof OADateTime) {
-			return convertFromOADateTime(clazz, (OADateTime) value, fmt);
+		if (fromValue instanceof OADate) {
+			return new OADateTime((OADate) fromValue);
 		}
-		return null;
-	}
-
-	protected OADateTime convertToOADateTime(Object value, String fmt) {
-		if (value == null) {
-			return null;
+		if (fromValue instanceof OATime) {
+			return new OADateTime((OATime) fromValue);
 		}
-		if (value instanceof OADateTime) {
-			return (OADateTime) value;
+		if (fromValue instanceof String) {
+		    String s = ((String) fromValue).trim();
+		    if (s.isEmpty()) return null;
+			return OADateTime.valueOf(s, fmt);
 		}
-		if (value instanceof OADate) {
-			return new OADateTime((OADate) value);
+		if (fromValue instanceof java.sql.Time) {
+			return new OADateTime((java.sql.Time) fromValue);
 		}
-		if (value instanceof OATime) {
-			return new OADateTime((OATime) value);
+		if (fromValue instanceof Date) {
+			return new OADateTime((Date) fromValue);
 		}
-		if (value instanceof String) {
-			return OADateTime.valueOf((String) value, fmt);
+		if (fromValue instanceof byte[]) {
+			return new OADateTime(new java.math.BigInteger((byte[]) fromValue).longValue());
 		}
-		if (value instanceof java.sql.Time) {
-			return new OADateTime((java.sql.Time) value);
-		}
-		if (value instanceof Date) {
-			return new OADateTime((Date) value);
-		}
-		if (value instanceof byte[]) {
-			return new OADateTime(new java.math.BigInteger((byte[]) value).longValue());
-		}
-		if (value instanceof Number) {
-			return new OADateTime(((Number) value).longValue());
+		if (fromValue instanceof Number) {
+			return new OADateTime(((Number) fromValue).longValue());
 		}
 
-		if (value instanceof Instant) {
-			OADateTime out = new OADateTime((Instant) value);
+		if (fromValue instanceof Instant) {
+			OADateTime out = new OADateTime((Instant) fromValue);
 			return out;
 		}
 
-		if (value instanceof LocalDate) {
-			OADateTime dt = new OADate((LocalDate) value);
+		if (fromValue instanceof LocalDate) {
+			OADateTime dt = new OADate((LocalDate) fromValue);
 			return dt;
 		}
 
-		// if (value instanceof LocalTime) {
-
-		if (value instanceof LocalDateTime) {
-			OADateTime out = new OADateTime((LocalDateTime) value);
+		if (fromValue instanceof LocalDateTime) {
+			OADateTime out = new OADateTime((LocalDateTime) fromValue);
 			return out;
 		}
 
-		if (value instanceof ZonedDateTime) {
-			OADateTime out = new OADateTime((ZonedDateTime) value);
+		if (fromValue instanceof ZonedDateTime) {
+			OADateTime out = new OADateTime((ZonedDateTime) fromValue);
 			return out;
 		}
 
 		return null;
 	}
 
-	protected Object convertFromOADateTime(Class toClass, OADateTime dtValue, String fmt) {
-		if (dtValue == null || toClass == null) {
-			return null;
-		}
-		if (toClass.equals(String.class)) {
-			return ((OADateTime) dtValue).toString(fmt);
-		}
-		if (toClass.equals(OADate.class)) {
-			return new OADate(dtValue);
-		}
-		if (toClass.equals(OATime.class)) {
-			return new OATime(dtValue);
-		}
-		if (Number.class.isAssignableFrom(toClass)) {
-			return Long.valueOf(dtValue.getDate().getTime());
-		}
-		return null;
+    /**
+     * Formats an {@link OADateTime} into a {@link String}.
+     *
+     * @param fromValue the date/time to convert; may be {@code null}
+     * @param fmt optional formatting mask; if {@code null}, OA defaults apply
+     * @return formatted value (never {@code null}); empty when {@code fromValue} is null
+     */
+	@Override
+	public String convertToString(OADateTime fromValue, String fmt) {
+		if (fromValue == null) return "";
+		return fromValue.toString(fmt);
 	}
-
 }

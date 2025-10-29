@@ -442,7 +442,7 @@ public class Order extends OAObject {
         double balance = customer.getCurrentBalance();
     
         double orderTotal = this.getTotalPrice();
-        int x = OAConv.compare(balance, orderTotal, 2);
+        int x = OACompare.compare(balance, orderTotal, 2);
     
         if (x == 0) result = Order.PAYMENTSTATUS_PAID;
         else if (balance >  0) result = Order.PAYMENTSTATUS_PARTIAL;

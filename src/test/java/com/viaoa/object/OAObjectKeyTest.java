@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.util.OACompare;
 
 import test.xice.tsac3.model.oa.Server;
 
@@ -50,7 +51,10 @@ public class OAObjectKeyTest extends OAUnitTest {
         assertEquals(key, key2);
 
         key2 = new OAObjectKey(new Object[]{1}, 14);
-        assertEquals(key, key2);
+        assertNotEquals(key, key2);
+
+        assertEquals(0, OACompare.compare(key, key2));
+        
         reset();
     }
     

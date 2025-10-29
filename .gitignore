@@ -26,3 +26,4 @@ test.bin
 hs_err_pid*
 /target/
 /target_test-classes/
+/oa-core/

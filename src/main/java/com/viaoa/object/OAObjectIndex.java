@@ -60,7 +60,9 @@ public class OAObjectIndex {
 		if (c == null || ik == null || !ik.hasValidIds()) return 0L;
 		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.get(c);
 		if (hm == null) return 0;
-		return hm.get(ik);
+		Long lx = hm.get(ik);
+		if (lx == null) return 0L;
+		return lx.longValue();
 	}
 	
 	
@@ -100,6 +102,10 @@ public class OAObjectIndex {
 		if (okOld != null) {
 			removeFromIndex(obj.getClass(), okOld);
 		}
+	}
+	
+	public void clear() {
+		hmGuidByIndexKey.clear();
 	}
 	
 }

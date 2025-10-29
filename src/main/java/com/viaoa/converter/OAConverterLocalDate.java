@@ -1,134 +1,146 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.converter;
 
-import java.sql.Date;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.Month;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Date;
 
-import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OATime;
 
 /**
- * Convert to/from a LocalDateDateTime value. <br>
- * See OADateTime for format definitions.
+ * Converter for transforming values into {@link LocalDate} and formatting them
+ * using OA {@link OADate} rules.
  *
- * @see OAConverter
- * @see OADateTime
+ * <h3>Conversion Rules</h3>
+ * Supported source types and behavior:
+ * <ul>
+ *     <li>{@code null} → {@code null}</li>
+ *     <li>{@link LocalDate} – returned directly</li>
+ *     <li>{@link OADate} – full date preserved</li>
+ *     <li>{@link OATime} – converted to Epoch date (1970-01-01),
+ *         as no date information exists</li>
+ *     <li>{@link String} – parsed using {@link OADate#valueOf(String, String)},
+ *         value trimmed prior to parsing</li>
+ *     <li>{@link java.sql.Date} – converted via {@link OADateTime} and system timezone</li>
+ *     <li>{@link java.sql.Time} – converted to Epoch date (1970-01-01)</li>
+ *     <li>{@link Number} – interpreted as epoch milliseconds</li>
+ *     <li>{@code byte[]} – interpreted as epoch milliseconds (first 8 bytes)</li>
+ *     <li>{@link Instant} – converted using the <strong>system default timezone</strong></li>
+ *     <li>{@link LocalTime} – Epoch date + time discarded</li>
+ *     <li>{@link ZonedDateTime} – {@code toLocalDate()}, zone/offset discarded</li>
+ * </ul>
+ *
+ * <p><strong>Timezone behavior:</strong><br>
+ * When required (e.g., {@link Instant}, numeric types, SQL types), conversion
+ * uses the system default timezone to determine the resulting LocalDate.</p>
+ *
+ * <h3>Formatting Rules</h3>
+ * <ul>
+ *     <li>{@code null} → empty string {@code ""}</li>
+ *     <li>Formatted using {@link OADate#toString(String)}</li>
+ *     <li>{@code fmt} is passed directly to the formatter</li>
+ * </ul>
+ *
+ * <p>This converter standardizes multiple date representations into
+ * {@link LocalDate}, preserving only the calendar date.</p>
+ *
+ * @see OAConverterInterface
+ * @see OADate
+ * @see LocalDate
  */
-public class OAConverterLocalDate implements OAConverterInterface {
+public class OAConverterLocalDate implements OAConverterInterface<LocalDate> {
 
-	/**
-	 * Convert to/from a LocalDate value.
-	 *
-	 * @return Object of type clazz if conversion can be done, else null.
-	 */
-	public Object convert(Class clazz, Object value, String fmt) {
-		if (clazz == null) {
-			return null;
-		}
-		if (clazz.equals(LocalDate.class)) {
-			return convertToLocalDate(value, fmt);
-		}
-		if (value != null && value instanceof LocalDate) {
-			return convertFromLocalDate(clazz, (LocalDate) value, fmt);
-		}
-		return null;
-	}
+    private static final LocalDate EPOCH_DATE = LocalDate.of(1970, 1, 1);
 
-	protected LocalDate convertToLocalDate(Object value, String fmt) {
-		if (value == null) {
-			return null;
-		}
+    @Override
+    public LocalDate convert(Class<LocalDate> thisClass, Object fromValue, String fmt) {
+        if (fromValue == null) return null;
+        if (fromValue instanceof LocalDate) return (LocalDate) fromValue;
 
-		if (value instanceof LocalDate) {
-			LocalDate ld = (LocalDate) value;
-		}
-		if (value instanceof OADate) {
-			OADate d = (OADate) value;
-			LocalDate ld = LocalDate.of(d.getYear(), d.getMonth() + 1, d.getDay());
-			return ld;
-		}
-		if (value instanceof OATime) {
-			// OATime t = (OATime) value;
-			LocalDate ld = LocalDate.of(0, Month.JANUARY, 0);
-			return ld;
-		}
-		if (value instanceof String) {
-			OADate dt = (OADate) OADate.valueOf((String) value, fmt);
-			LocalDate ld = LocalDate.of(dt.getYear(), Month.of(dt.getMonth() + 1), dt.getDay());
-			return ld;
-		}
-		if (value instanceof java.sql.Time) {
-			// OADateTime dt = new OADateTime((java.sql.Time) value);
-			LocalDate ld = LocalDate.of(0, Month.JANUARY, 0); 
-			return ld;
-		}
-		if (value instanceof Date) {
-			OADateTime dt = new OADateTime((Date) value);
-			LocalDate ld = LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
-			return ld;
-		}
-		if (value instanceof byte[]) {
-			OADateTime dt = new OADateTime(new java.math.BigInteger((byte[]) value).longValue());
-			LocalDate ld = LocalDate.of(dt.getYear(), Month.of(dt.getMonth() + 1), dt.getDay());
-			return ld;
-		}
-		if (value instanceof Number) {
-			OADateTime dt = new OADateTime(((Number) value).longValue());
-			LocalDate ld = LocalDate.of(dt.getYear(), Month.of(dt.getMonth() + 1), dt.getDay());
-			return ld;
-		}
+        if (fromValue instanceof OADate) {
+            OADate d = (OADate) fromValue;
+            return LocalDate.of(d.getYear(), d.getMonth() + 1, d.getDay());
+        }
 
-		if (value instanceof Instant) {
-			LocalDateTime ldt = LocalDateTime.ofInstant((Instant) value, ZoneId.systemDefault());
-			LocalDate ld = LocalDate.of(ldt.getYear(), ldt.getMonth(), ldt.getDayOfMonth());
-			return ld;
-		}
+        if (fromValue instanceof OATime) {
+            return EPOCH_DATE;
+        }
 
-		if (value instanceof LocalTime) {
-			// LocalTime lt = (LocalTime) value;
-			LocalDate ld = LocalDate.of(0, Month.JANUARY, 1);
-			return ld;
-		}
+        if (fromValue instanceof String) {
+            try {
+                String s = ((String) fromValue).trim();
+                if (s.isEmpty()) return null;
+                OADate d = (OADate) OADate.valueOf(s, fmt);
+                return LocalDate.of(d.getYear(), d.getMonth() + 1, d.getDay());
+            }
+            catch (Throwable t) {
+                return null;
+            }
+        }
 
-		if (value instanceof ZonedDateTime) {
-			ZonedDateTime zdt = (ZonedDateTime) value;
-			return zdt.toLocalDate();
-		}
+        if (fromValue instanceof java.sql.Date) {
+            OADateTime dt = new OADateTime(new Date(((java.sql.Date) fromValue).getTime()));
+            return LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
+        }
 
-		return null;
-	}
+        if (fromValue instanceof java.sql.Time) {
+            return EPOCH_DATE;
+        }
 
-	protected Object convertFromLocalDate(Class toClass, LocalDate ld, String fmt) {
-		if (ld == null || toClass == null) {
-			return null;
-		}
-		if (toClass.equals(String.class)) {
-			OADate d = new OADate(ld.getYear(), ld.getMonth().getValue() - 1, ld.getDayOfMonth());
-			return d.toString(fmt);
-		}
-		if (Number.class.isAssignableFrom(toClass)) {
-			OADate d = new OADate(ld.getYear(), ld.getMonth().getValue() - 1, ld.getDayOfMonth());
-			long lx = d.getTime();
-			return lx;
-		}
-		return null;
-	}
+        if (fromValue instanceof byte[]) {
+            long tm = new java.math.BigInteger((byte[]) fromValue).longValue();
+            OADateTime dt = new OADateTime(tm);
+            return LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
+        }
 
+        if (fromValue instanceof Number) {
+            OADateTime dt = new OADateTime(((Number) fromValue).longValue());
+            return LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
+        }
+
+        if (fromValue instanceof Instant) {
+            LocalDateTime ldt =
+                    LocalDateTime.ofInstant((Instant) fromValue, ZoneId.systemDefault());
+            return ldt.toLocalDate();
+        }
+
+        if (fromValue instanceof LocalTime) {
+            return EPOCH_DATE;
+        }
+
+        if (fromValue instanceof ZonedDateTime) {
+            return ((ZonedDateTime) fromValue).toLocalDate();
+        }
+
+        return null;
+    }
+
+    @Override
+    public String convertToString(LocalDate fromValue, String fmt) {
+        if (fromValue == null) return "";
+        OADate d = new OADate(fromValue.getYear(),
+                              fromValue.getMonthValue() - 1,
+                              fromValue.getDayOfMonth());
+        return d.toString(fmt);
+    }
 }
