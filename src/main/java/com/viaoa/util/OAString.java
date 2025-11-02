@@ -13,16 +13,12 @@ package com.viaoa.util;
 import java.awt.Color;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-
-import com.viaoa.hub.Hub;
+import java.util.regex.Pattern;
 
 /**
  * String <i>helper/utility</i> Class.
@@ -33,6 +29,16 @@ public class OAString {
 	public static final String NL = System.getProperty("line.separator");
 	public static final String FS = File.separator;
 
+	// Cached regex patterns for format detection
+	private static final Pattern DATE_PATTERN = Pattern.compile(".*[yMdHhmsS].*");
+	private static final Pattern NUMBER_PATTERN = Pattern.compile(".*[0-9,$#].*");
+	
+	
+
+	@Deprecated(since="4.0.0")
+	public static String trim(String line) {
+		return trimSpaces(line);
+	}
 	/**
 	 * String trim method.<br>
 	 * 1: removes leading spaces<br>
@@ -44,26 +50,35 @@ public class OAString {
 	 Example:  "  this    is   a  test  "  will be: "this is a test"
 	 * </pre>
 	 */
-	public static String trim(String line) {
-		if (line == null) {
-			return line;
-		}
-		StringTokenizer st = new StringTokenizer(line, " ", false);
+	public static String trimSpaces(final String line) {
+		if (line == null) return line;
 		StringBuilder sb = null;
-		for (; st.hasMoreElements();) {
-			String word = st.nextToken();
-			if (sb == null) {
-				sb = new StringBuilder(line.length());
-			} else {
-				sb.append(' ');
+		int max = line.length();
+		if (max == 0) return line;
+		boolean bSpace = false;
+		
+		for (int i=0; i<max; i++) {
+			char ch = line.charAt(i);
+			
+			if (ch == ' ') {
+				bSpace = true;
 			}
-			sb.append(word);
+			else {
+				if (bSpace) {
+					bSpace = false;
+					if (sb != null) sb.append(' ');
+				}
+				if (sb == null) {
+					sb = new StringBuilder(line.length());
+				}
+				sb.append(ch);
+			}
 		}
 		if (sb == null) {
-		    if (line.length() > 0 && line.charAt(0) == ' ') return "";
-			return line;
+			if (line.charAt(0) != ' ') return line; // no spaces
+			return ""; // all spaces
 		}
-		return new String(sb);
+		return sb.toString();
 	}
 
 	/**
@@ -75,6 +90,7 @@ public class OAString {
 		if (text == null) {
 			return null;
 		}
+		if (len <= 0) return "";
 		int x = text.length();
 		if (x <= len) {
 			return text;
@@ -96,6 +112,7 @@ public class OAString {
 		if (text == null) {
 			return null;
 		}
+		if (len <= 0) return "";
 		int x = text.length();
 		if (x <= len) {
 			return text;
@@ -481,25 +498,23 @@ public class OAString {
 		return convert(line, search, replace, bIgnoreCase, false, 0, -1);
 	}
 
-	public static String convert(String line, String search, String replace, boolean bIgnoreCase, boolean bFirstOnly, int startPos,
-			int endPos) {
+	public static String convert(final String line, String search, String replace, final boolean bIgnoreCase, final boolean bFirstOnly, final int startPos, final int endPos) {
 		if (line == null || search == null || search.length() == 0) {
 			return line;
 		}
 		if (replace == null) {
 			replace = "";
 		}
+		
+		final int xs = search.length();
+		if (xs == 0) return line;
 
-		int xs = search.length();
-		if (xs == 0) {
-			return line;
-		}
 		if (bIgnoreCase) {
 			search = search.toLowerCase();
 		}
 
-		int xr = replace.length();
-		int xl = line.length();
+		final int xr = replace.length();
+		final int xl = line.length();
 
 		StringBuilder sb = null; // dont allocate until first match is found
 		char c = 0, origChar = 0;
@@ -533,10 +548,10 @@ public class OAString {
 				}
 			}
 			if (j > 0) {
-                // i needs to be set back to startpos+1 and search from there
-                i -= j;
+                // i needs to be set back to next char from prev start position
+                i -= (j - 1);
 				if (sb != null) {
-					sb.append(line.charAt(i));
+					sb.append(line.charAt(i-1));
 				}
                 j = 0;
                 continue;
@@ -1004,7 +1019,8 @@ public class OAString {
 			return s;
 		}
 		boolean b = true;
-		String newValue = "";
+		StringBuilder sb = new StringBuilder(s.length());
+		
 		for (int i = 0; i < x; i++) {
 			char ch = s.charAt(i);
 			if (Character.isLetter(ch)) {
@@ -1019,9 +1035,9 @@ public class OAString {
 			} else {
 				b = true;
 			}
-			newValue += ch;
+			sb.append(ch);
 		}
-		return newValue;
+		return sb.toString();
 	}
 
 	public static String mfcu(String s, String basedOn) {
@@ -1045,7 +1061,7 @@ public class OAString {
 			return s;
 		}
 		boolean bConvert = true;
-		String newValue = "";
+		StringBuilder sb = new StringBuilder(s.length());
 		int cnt = 0;
 		for (int i = 0; i < x; i++) {
 			char ch = s.charAt(i);
@@ -1073,9 +1089,9 @@ public class OAString {
 			} else {
 				bConvert = true;
 			}
-			newValue += ch;
+			sb.append(ch);
 		}
-		return newValue;
+		return sb.toString();
 	}
 
 	/**
@@ -1086,27 +1102,49 @@ public class OAString {
 	public static String field(String str, char sep, int beg) {
 		return field(str, sep + "", beg, 1);
 	}
+	public static String fieldAt(String str, char sep, int beg) {
+		return field(str, sep + "", beg+1, 1);
+	}
 
 	/**
 	 * Used to retrieve a portion of a String based on a separator value.
 	 *
 	 * @see #field(String,String,int,int)
 	 */
+	@Deprecated(since="4.0.0")
 	public static String field(String str, char sep, int beg, int amt) {
 		return field(str, sep + "", beg, amt);
 	}
+	public static String fieldAt(String str, char sep, int beg, int amt) {
+		return field(str, sep + "", beg+1, amt);
+	}
 
 	/**
 	 * Used to retrieve a portion of a String based on a separator value.
 	 *
 	 * @see #field(String,String,int,int)
 	 */
+	@Deprecated(since="4.0.0")
 	public static String field(String str, String sep, int beg) {
 		return field(str, sep, beg, 1);
 	}
+	public static String fieldAt(String str, String sep, int beg) {
+		return field(str, sep, beg+1);
+	}
+
 
 	/**
+	 * '0' based modernized version in 4.0
+	 */
+	public static String fieldAt(final String str, final String sep, final int beg, final int amt) {
+		return field(str, sep, beg+1, amt);
+	}
+	
+	
+	/**
 	 * Used to retrieve a portion of a String based on a separator value.
+	 * Note: this is '1' based, not '0' based.
+	 * Matches old PICK string method.
 	 *
 	 * @param str String to parse
 	 * @param sep seperator wihin str
@@ -1114,22 +1152,23 @@ public class OAString {
 	 * @param amt number of fields to return, -1 for all after the beg
 	 * @return string value of field if begin position exists, else null if not found
 	 */
-	public static String field(String str, String sep, int beg, int amt) {
+	@Deprecated(since="4.0.0")
+	public static String field(final String str, final String sep, final int beg, final int amt) {
 		if (str == null) {
 			return null;
 		}
-		if (sep == null || sep.length() == 0) {
-			if (beg == 1) {
-				return str;
-			}
+		
+		if (beg < 1 || amt == 0) {
 			return null;
 		}
-		if (beg < 1 || amt == 0) {
+		if (sep == null || sep.length() == 0) {
+			if (beg == 1) return str;
 			return null;
 		}
 
 		int pos = 0;
-		int beginPos = -1, endPos = str.length();
+		int beginPos = -1;
+		int endPos = str.length();
 		if (beg == 1) {
 			beginPos = 0;
 		}
@@ -1163,6 +1202,17 @@ public class OAString {
 		return str.substring(beginPos, endPos);
 	}
 
+	
+	// qqqqqqqqqqq ??? not sure about this one
+	public static int countMatches(String str, String sep) {
+		return dcount(str, sep);
+	}
+	// qqqqqqqqqqq ??? not sure about this one
+	public static int countMatches(String str, char sep) {
+		return dcount(str, sep);
+	}
+	
+	
 	/**
 	 * Used to get a count of the number of values between a separator/delimiter.
 	 * <p>
@@ -1178,20 +1228,14 @@ public class OAString {
 		return count(str, sep) + 1;
 	}
 
-	public static int countMatches(String str, String sep) {
-		return dcount(str, sep);
-	}
 
 	public static int dcount(String str, char sep) {
-		if (str == null || str.length() == 0) {
+		if (str == null || str.length() == 0 || sep == 0) {
 			return 0;
 		}
 		return count(str, sep + "") + 1;
 	}
 
-	public static int countMatches(String str, char sep) {
-		return dcount(str, sep);
-	}
 
 	/**
 	 * Returns the amount of particular String within a String.
@@ -1201,11 +1245,12 @@ public class OAString {
 	 * @return number of occurrences of sep.
 	 */
 	public static int count(String str, String sep) {
-		if (str == null || sep == null) {
-			return 0;
-		}
-		int cnt = 0;
+		if (str == null || str.length() == 0 || sep == null) return 0;
+
 		int x = sep.length();
+		if (x == 0) return 0;
+		
+		int cnt = 0;
 		int pos = 0;
 		for (;; cnt++) {
 			pos = str.indexOf(sep, pos);
@@ -1266,16 +1311,16 @@ public class OAString {
 			return value;
 		}
 
-		String s = "";
-		for (int i = 0; i < amount; i++) {
-			s += padCharacter;
+		StringBuilder sb = new StringBuilder(value.length() + amount);
+		if (!bAddToEnd) {
+			for (int i = 0; i < amount; i++) sb.append(padCharacter);
+			sb.append(value);
 		}
-		if (bAddToEnd) {
-			value += s;
-		} else {
-			value = s + value;
+		else {
+			sb.append(value);
+			for (int i = 0; i < amount; i++) sb.append(padCharacter);
 		}
-		return value;
+		return sb.toString();
 	}
 
 	/**
@@ -1446,35 +1491,40 @@ public class OAString {
 		return s;
 	}
 
-	private static String _fmt(String str, String format) {
+	
+	private static String _fmt(final String strOrig, final String format) {
 		if (format == null || format.length() == 0) {
-			return str;
+			return strOrig;
 		}
+		String str = strOrig;
 
 		// see if format is for a data/time
 		String s = format.toLowerCase();
 		int x = s.length();
-		boolean b = false;
+		boolean bAlignment = false;
 		boolean bLetters = false;
 		for (int i = 0; i < x; i++) {
 			char c = s.charAt(i);
-			if ("lrc".indexOf(c) >= 0) {
-				b = true;
+			if (c == 'l' || c == 'r' || c == 'c') {
+				bAlignment = true;
 				break;
 			}
 			if (Character.isLetter(c)) {
 				bLetters = true;
 			}
 		}
-		if (!b) {
+		
+		if (!bAlignment) {
 			if (bLetters) {
-				// try date
-				try {
-					OADateTime dt = new OADateTime(str);
-					return dt.toString(format);
-				} catch (Exception e) {
+				if (DATE_PATTERN.matcher(format).matches()) {
+					// try date
+					try {
+						OADateTime dt = new OADateTime(str);
+						return dt.toString(format);
+					} catch (Exception e) {
+					}
 				}
-			} else if (str != null && str.length() < 9 && OAStr.isNumber(str)) {
+			} else if (str != null && NUMBER_PATTERN.matcher(format).matches()) {
 				// try number
 				try {
 					Number num = OAConv.toDouble(str);
@@ -1485,7 +1535,6 @@ public class OAString {
 		}
 
 		// see if format is for a number
-
 		int i, j, k, l, blanks = 0, len = 0;
 		char lr = 0;
 		char testc, charPad = ' ';
@@ -1498,12 +1547,8 @@ public class OAString {
 		if (str == null) {
 			str = "";
 		}
-		if (format == null) {
-			return str;
-		}
 
 		x = format.length();
-		StringBuilder sb = new StringBuilder(str.length() + x);
 
 		// find L or R and format number
 		for (i = 0, len = 0; i < x && lr == 0; i++) {
@@ -1513,11 +1558,11 @@ public class OAString {
 			}
 
 			lr = testc;
-			test = field(format, format.charAt(i), 1);
+			test = fieldAt(format, format.charAt(i), 0);
 			if (test == null) {
 				test = "";
 			}
-			test1 = field(test, ' ', 1);
+			test1 = field(test, ' ', 0);
 			if (test1 == null) {
 				test1 = "";
 			}
@@ -1532,7 +1577,7 @@ public class OAString {
 
 		if (lr == 0) {
 			lr = 'L';
-			test1 = field(format, ' ', 1);
+			test1 = field(format, ' ', 0);
 			if (test1 == null) {
 				test1 = "";
 			}
@@ -1691,19 +1736,19 @@ public class OAString {
 	 * @param value is String to strip.
 	 * @return if value=null then null, else new String with digits removed. Note: does not remove "." between digits.
 	 */
-	public static String stripNumber(String value) {
+	public static String stripDigits(String value) {
 		if (value == null) {
 			return null;
 		}
-		String s = "";
+		StringBuilder sb = new StringBuilder(value.length());
 		int x = value.length();
 		for (int i = 0; i < x; i++) {
 			char c = value.charAt(i);
-			if (Character.isDigit(c)) {
-				s += c;
+			if (!Character.isDigit(c)) {
+				sb.append(c);
 			}
 		}
-		return s;
+		return sb.toString();
 	}
 
 	/**
@@ -1718,6 +1763,8 @@ public class OAString {
 		return mask(value, mask, false);
 	}
 
+	
+	
 	/**
 	 * Used to generate a String based on a mask.
 	 *
@@ -1734,7 +1781,6 @@ public class OAString {
 		if (value == null) {
 			value = "";
 		}
-		String s = "";
 
 		int i = 0;
 		int x = value.length();
@@ -1761,18 +1807,20 @@ public class OAString {
 			}
 		}
 
+		StringBuilder sb = new StringBuilder(value.length() + 4);
 		for (; i2 < x2; i2++) {
 			char c = mask.charAt(i2);
 			if (c == '#') {
 				if (i < x) {
-					s += value.charAt(i);
+					sb.append(value.charAt(i));
 					i++;
 				}
+				else sb.append(' ');
 			} else {
-				s += c;
+				sb.append(c);
 			}
 		}
-		return s;
+		return sb.toString();
 	}
 
 	/**
@@ -1795,33 +1843,49 @@ public class OAString {
 		return stripChars(value, chars, true);
 	}
 
+
 	/**
-	 * called by strip, accept
+	 * Removes or keeps characters based on bKeepChars:
+	 *
+	 * bKeepChars == false: remove any characters found in 'chars'
+	 * bKeepChars == true:  keep only characters found in 'chars'
+	 *
+	 * Does not trim whitespace unless included in 'chars'.
 	 */
 	protected static String stripChars(String value, String chars, boolean bKeepChars) {
-		if (value == null) {
-			return null;
-		}
-		if (chars == null) {
-			return value;
-		}
-		String s = "";
-		int x = value.length();
-		for (int i = 0; i < x; i++) {
-			char c = value.charAt(i);
-			if (bKeepChars) {
-				if (chars.indexOf(c) >= 0) {
-					s += c;
-				}
-			} else {
-				if (chars.indexOf(c) < 0) {
-					s += c;
-				}
-			}
-		}
-		return s;
-	}
+	    if (value == null) return null;
+	    if (chars == null || chars.length() == 0) return value;
 
+	    int len = value.length();
+	    int clen = chars.length();
+	    StringBuilder sb = new StringBuilder(len);
+
+	    // Optimization: ASCII lookup table + flag for unicode presence
+	    boolean[] mask = new boolean[128];
+	    boolean hasAscii = false;
+	    for (int i = 0; i < clen; i++) {
+	        char c = chars.charAt(i);
+	        if (c < 128) {
+	            mask[c] = true;
+	            hasAscii = true;
+	        }
+	    }
+
+	    for (int i = 0; i < len; i++) {
+	        char c = value.charAt(i);
+	        boolean inSet = (c < 128) ? mask[c] : chars.indexOf(c) >= 0;
+
+	        if (bKeepChars) {
+	            if (inSet) sb.append(c);
+	        } else {
+	            if (!inSet) sb.append(c);
+	        }
+	    }
+	    return sb.toString();
+	}
+	
+	
+	
 	/**
 	 * Converts fileName path to correct system file.separator characters.
 	 *
@@ -1857,56 +1921,25 @@ public class OAString {
 		if (color == null) {
 			return null;
 		}
-		String colorstr = new String("#");
-
-		// Red
-		String str = Integer.toHexString(color.getRed());
-		if (str.length() > 2) {
-			str = str.substring(0, 2);
-		} else if (str.length() < 2) {
-			colorstr += "0" + str;
-		} else {
-			colorstr += str;
-		}
-
-		// Green
-		str = Integer.toHexString(color.getGreen());
-		if (str.length() > 2) {
-			str = str.substring(0, 2);
-		} else if (str.length() < 2) {
-			colorstr += "0" + str;
-		} else {
-			colorstr += str;
-		}
-
-		// Blue
-		str = Integer.toHexString(color.getBlue());
-		if (str.length() > 2) {
-			str = str.substring(0, 2);
-		} else if (str.length() < 2) {
-			colorstr += "0" + str;
-		} else {
-			colorstr += str;
-		}
-
-		return colorstr;
+		String colorStr = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+		return colorStr;
 	}
 
+	
 	/**
-	 * Returns true if String has any digit characters in it.
+	 * Returns true if the String contains at least one digit [0-9].
+	 *
+	 * @param word String to test
+	 * @return true if any character in word is a digit, otherwise false.
 	 */
 	public static boolean hasDigits(String word) {
-		if (word == null) {
-			return false;
-		}
-		for (int k = 1; k < word.length(); k++) {
-			char ch = word.charAt(k);
-			if (Character.isDigit(ch)) {
-				return true;
-			}
-		}
-		return false;
-	}
+	    if (word == null) return false;
+	    for (char ch : word.toCharArray()) {
+	        if (Character.isDigit(ch)) return true;
+	    }
+	    return false;
+	}	
+	
 
 	/**
 	 * Soundex is used for creating a code that is used to find similar words.
@@ -1933,138 +1966,82 @@ public class OAString {
 	 * @param word String to create a soundex code for.
 	 * @return new String that is soundex code for word. If word is null,then "0000" is returned.
 	 */
-	public static String soundex(String word) {
-		if (word == null || word.trim().length() == 0) {
-			return "0000";
-		}
-		word = word.toLowerCase();
-		char[] result = new char[4];
-		result[0] = word.charAt(0);
-		result[1] = result[2] = result[3] = '0';
-		int index = 1;
-
-		char codeLast = _getSoundexChar(result[0]);
-		boolean bCheckNext = false;
-
-		for (int k = 1; k < word.length(); k++) {
-			char ch = word.charAt(k);
-			char code = _getSoundexChar(ch);
-
-			if (code == 0) {
-				bCheckNext = false;
-				codeLast = 0;
-				continue;
-			}
-
-			if (code == 1) {
-				if (bCheckNext) {
-					bCheckNext = false;
-				} else {
-					bCheckNext = true;
-				}
-				continue;
-			}
-
-			if (bCheckNext) {
-				bCheckNext = false;
-				if (code == codeLast) {
-					codeLast = 0;
-					continue;
-				}
-			}
-
-			if (code == codeLast) {
-				codeLast = 0;
-				continue;
-			}
-
-			result[index++] = code;
-			if (index > 3) {
-				break;
-			}
-
-			codeLast = code;
-		}
-		return new String(result);
-	}
-
 	/**
-	 * @param ch
-	 * @param chLast
-	 * @return 0 if ch should not be used, 1 if it is vowel, or 'h' or 'w'
-	 */
-	private static char _getSoundexChar(char ch) {
-		char code = ' ';
-		switch (ch) {
-		case 'b':
-		case 'f':
-		case 'p':
-		case 'v':
-			code = '1';
-			break;
-		case 'c':
-		case 'g':
-		case 'j':
-		case 'k':
-		case 'q':
-		case 's':
-		case 'x':
-		case 'z':
-			code = '2';
-			break;
-		case 'd':
-		case 't':
-			code = '3';
-			break;
-		case 'l':
-			code = '4';
-			break;
-		case 'm':
-		case 'n':
-			code = '5';
-			break;
-		case 'r':
-			code = '6';
-			break;
-		case 'a':
-		case 'e':
-		case 'i':
-		case 'o':
-		case 'u':
-		case 'y':
-		case 'h':
-		case 'w':
-			code = 1;
-			break;
-		default:
-			code = 0;
-			break;
-		}
-		return code;
-	}
-
-	/**
-	 * Returns true if String is a valid number. This will try to convert the String to a Double.
+	 * Generates a 4-character Soundex code (U.S. Census standard).
+	 * Non-letter characters are ignored.
 	 *
-	 * @param str String to check
-	 * @return true if String can be converted to a Double. If str is null then false is returned. see OAConverterNumber
+	 * If input is null/blank → "0000"
+	 */
+	public static String soundex(String word) {
+	    if (word == null) return "0000";
+	    word = word.trim();
+	    if (word.isEmpty()) return "0000";
+
+	    word = word.toUpperCase(Locale.ROOT);
+
+	    char[] result = { word.charAt(0), '0', '0', '0' };
+	    char lastCode = _getSoundexCode(result[0]);
+	    int idx = 1;
+
+	    for (int i = 1; i < word.length() && idx < 4; i++) {
+	        char code = _getSoundexCode(word.charAt(i));
+	        if (code <= 1) {  // 0: skip, 1: vowel/hw -> skip but reset duplicate blocker
+	            lastCode = 0;
+	            continue;
+	        }
+	        if (code != lastCode) {
+	            result[idx++] = code;
+	        }
+	        lastCode = code;
+	    }
+	    return new String(result);
+	}
+
+	private static char _getSoundexCode(char ch) {
+	    switch (ch) {
+	        case 'B': case 'F': case 'P': case 'V': return '1';
+	        case 'C': case 'G': case 'J': case 'K': case 'Q': case 'S': case 'X': case 'Z': return '2';
+	        case 'D': case 'T': return '3';
+	        case 'L': return '4';
+	        case 'M': case 'N': return '5';
+	        case 'R': return '6';
+	        case 'A': case 'E': case 'I': case 'O': case 'U': case 'Y': case 'H': case 'W': return 1;
+	        default: return 0;
+	    }
+	}
+
+	/**
+	 * Returns true if the String represents a valid decimal or integer number.
 	 */
 	public static boolean isNumber(String str) {
-		if (str == null || str.length() == 0) {
-			return false;
-		}
-		Double d = (Double) OAConverter.convert(Double.class, str);
-		return d != null;
-	}
+	    if (str == null || str.isBlank()) return false;
 
+	    str = str.trim();
+	    try {
+	        Double d = (Double) OAConverter.convert(Double.class, str);
+	        return d != null && !d.isNaN() && !d.isInfinite();
+	    } catch (Exception ex) {
+	        return false;
+	    }
+	}
+	
+
+	/**
+	 * Returns true if the String represents a whole integer (positive or negative).
+	 */
 	public static boolean isInteger(String str) {
-		if (str == null || str.length() == 0) {
-			return false;
-		}
-		Long d = (Long) OAConverter.convert(Long.class, str);
-		return d != null;
-	}
+	    if (str == null || str.isBlank()) return false;
 
+	    str = str.trim();
+	    try {
+	        Long l = (Long) OAConverter.convert(Long.class, str);
+	        return l != null;
+	    } catch (Exception ex) {
+	        return false;
+	    }
+	}
+	
+	
 	/**
 	 * Returns true if String is a valid Date. This will try to convert the String to a OADate.
 	 *
@@ -2072,12 +2049,14 @@ public class OAString {
 	 * @return true if String can be converted to a OADate. see OAConverterOADate
 	 */
 	public static boolean isDate(String s) {
-		if (s == null || s.length() == 0) {
-			return false;
-		}
-		OADate d = (OADate) OAConverter.convert(OADate.class, s);
-		return d != null;
+	    if (s == null || s.isBlank()) return false;
+	    try {
+	        return OAConverter.convert(OADate.class, s.trim()) != null;
+	    } catch (Exception ex) {
+	        return false;
+	    }
 	}
+
 
 	/**
 	 * Returns true if String is a valid Time. This will try to convert the String to a OATime.
@@ -2086,11 +2065,12 @@ public class OAString {
 	 * @return true if String can be converted to a OATime. see OAConverterOATime
 	 */
 	public static boolean isTime(String s) {
-		if (s == null || s.length() == 0) {
-			return false;
-		}
-		OATime d = (OATime) OAConverter.convert(OATime.class, s);
-		return d != null;
+	    if (s == null || s.isBlank()) return false;
+	    try {
+	        return OAConverter.convert(OATime.class, s.trim()) != null;
+	    } catch (Exception ex) {
+	        return false;
+	    }
 	}
 
 	/**
@@ -2100,12 +2080,13 @@ public class OAString {
 	 * @return true if String can be converted to a OADateTime. see OAConverterOADateTime
 	 */
 	public static boolean isDateTime(String s) {
-		if (s == null || s.length() == 0) {
-			return false;
-		}
-		OADateTime d = (OADateTime) OAConverter.convert(OADateTime.class, s);
-		return d != null;
-	}
+	    if (s == null || s.isBlank()) return false;
+	    try {
+	        return OAConverter.convert(OADateTime.class, s.trim()) != null;
+	    } catch (Exception ex) {
+	        return false;
+	    }
+	}	
 
 	
 	
@@ -2123,58 +2104,55 @@ public class OAString {
         return !equals(s1, s2, false);
     }
 
+	
 	/**
-	 * Compares two String to see if they are equal. This will automatically check for nulls.
+	 * Compares two Strings for equality, null-safe, optional case insensitivity.
 	 *
-	 * @param bIgnoreCase if true, performs a comparision that is case insensitive.
-	 * @return true if both Strings are equal, including if both are null.
-	 * @see equals(String,String,boolean)
+	 * @param bIgnoreCase true to compare case-insensitively
+	 * @return true if both are equal per mode
 	 */
 	public static boolean equals(String s1, String s2, boolean bIgnoreCase) {
-		if (s1 == s2) {
-			return true;
-		}
-		if (s1 == null || s2 == null) {
-			return false;
-		}
-		if (bIgnoreCase) {
-			return s1.equalsIgnoreCase(s2);
-		}
-		return s1.equals(s2);
-	}
+	    if (s1 == s2) return true;
+	    if (s1 == null || s2 == null) return false;
+	    return bIgnoreCase ? s1.equalsIgnoreCase(s2) : s1.equals(s2);
+	}	
+	
+	
     public static boolean notEquals(String s1, String s2, boolean bIgnoreCase) {
         return !equals(s1, s2, bIgnoreCase);
     }
 
 
+    /**
+     * Null-safe toString for OA objects.
+     * Converts null → "" (empty string).
+     * Delegates to OAConverter for formatting.
+     */
 	public static String toString(Object obj) {
 		if (obj == null) {
 			return "";
 		}
+		if (obj instanceof String) return (String) obj; 
 		return OAConverter.toString(obj);
 	}
 
+
 	/**
-	 * Convert a number to a string value. Example: 21 = "21st"
+	 * Returns an ordinal number string. Examples: 1st, 2nd, 3rd, 4th, ...
 	 */
 	public static String toNumberString(int x) {
-		String text;
-		if ((x % 10) == 0) {
-			text = x + "th";
-		} else if ((x % 100) > 9 && (x % 100) < 21) {
-			text = x + "th";
-		} else if ((x % 10) == 1) {
-			text = x + "st";
-		} else if ((x % 10) == 2) {
-			text = x + "nd";
-		} else if ((x % 10) == 3) {
-			text = x + "rd";
-		} else {
-			text = x + "th";
-		}
-		return text;
-	}
-
+	    int mod100 = x % 100;
+	    if (mod100 >= 11 && mod100 <= 13) {
+	        return x + "th";
+	    }
+	    switch (x % 10) {
+	        case 1: return x + "st";
+	        case 2: return x + "nd";
+	        case 3: return x + "rd";
+	        default: return x + "th";
+	    }
+	}	
+	
 	/**
 	 * Shorten line to width amount of characters. If longer then width, then "..." will be the end.
 	 */
@@ -2193,10 +2171,24 @@ public class OAString {
 		if (width == 0) {
 			return "";
 		}
+		
+/*qqqqqqqqvvvvvvvvvvvvvvvvvvvvv
+ 		
+		public static String trunc(String s, int max) {
+		    if (s == null) return null;
+		    if (max <= 0) return "";
+
+		    int end = s.offsetByCodePoints(0, Math.min(max, s.codePointCount(0, s.length())));
+		    return s.substring(0, end);
+		}		
+*/
+		
+		
 		if (orig.length() < width) {
 			return orig;
 		}
 
+		
 		if (width > 2) {
 			orig = orig.substring(0, width - 3) + "...";
 		} else {
@@ -2208,69 +2200,7 @@ public class OAString {
 		return orig;
 	}
 
-	/**
-	 * Shorten line to width amount of characters. If longer then width, then "..." will be the end.
-	 */
-	public static String lineBreak(String origLine, int width) {
-		return truncate(origLine, width);
-	}
 
-	/**
-	 * Split text into lines, and adding a line seperator between the breaks.
-	 *
-	 * @param width
-	 * @param       delim, string to insert at line break
-	 * @param       maxLines, the max amount of lines to create. If longer, then "..." will be added
-	 * @return
-	 */
-	public static String lineBreak_OLD(String origLine, int width, String delim, int maxLines) {
-		if (origLine == null) {
-			return null;
-		}
-
-		String newline = "";
-		for (int i = 1;; i++) {
-			String line = field(origLine, delim, i);
-			if (line == null) {
-				break;
-			}
-			if (i > 1) {
-				newline += delim;
-			}
-			for (int linecnt = 1;; linecnt++) {
-				int x = line.length();
-				if (x > width) {
-					int j = width;
-					if (linecnt == maxLines) {
-						j -= 4;
-					}
-					for (; j > 5; j--) {
-						char ch = line.charAt(j);
-						if (". -".indexOf(ch) >= 0) {
-							break;
-						}
-					}
-					if (linecnt != maxLines) {
-						j++;
-					}
-					if (linecnt != 1) {
-						newline += delim;
-					}
-					newline += line.substring(0, j);
-					line = line.substring(j);
-
-					if (linecnt == maxLines) {
-						newline += " ...";
-						break;
-					}
-				} else {
-					newline += line;
-					break;
-				}
-			}
-		}
-		return newline;
-	}
 
 	public static String createRandomString(int min, int max) {
 		return getRandomString(min, max, true, true, false);
@@ -2309,9 +2239,16 @@ public class OAString {
 		return getRandomString(0, min, max, bUseDigits, bUseAlpha, bCapFirstChar);
 	}
 
+	
 	public static String getRandomString(int normal, int min, int max, boolean bUseDigits, boolean bUseAlpha, boolean bCapFirstChar) {
-		String result = "";
-
+		if (min < 0) min = 0;
+		if (max < 0) max = 0;
+		else if (max < min) max = min;
+		if (normal > 0) {
+			if (normal < min) normal = min;
+			else if (normal > max) normal = max;
+		}
+		
 		// adjust min/max based on normal
 		if (normal > 0) {
 			if (normal > min) {
@@ -2333,13 +2270,19 @@ public class OAString {
 			} else {
 				max = normal;
 			}
-		}
-
+		
+			if (max < min) {
+			    int tmp = min;
+			    min = max;
+			    max = tmp;
+			}		}
+		
 		int x = min;
 		if (min < max) {
-			x += (int) (Math.random() * (max - min));
+			x += (int) (Math.random() * (max - min + 1));
 		}
 
+		final StringBuilder sb = new StringBuilder(x);
 		for (int i = 0; i < x; i++) {
 			char ch;
 
@@ -2369,20 +2312,20 @@ public class OAString {
 						ch = 'm';
 					}
 				}
-				result += ch;
+				sb.append(ch);
 			} else {
 				ch = (char) (Math.random() * 10);
 				ch += '0';
 				if (bUseAlpha && ch == '0') {
-					ch = '1';
-				}
-				if (bUseAlpha && ch == '1') {
 					ch = '2';
 				}
-				result += ch;
+				else if (bUseAlpha && ch == '1') {
+					ch = '3';
+				}
+				sb.append(ch);
 			}
 		}
-		return result;
+		return sb.toString();
 	}
 
 	public static final String LoremLipsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque nec eros pretium, dignissim est sit amet, malesuada augue. Sed pharetra ex ut nulla feugiat laoreet. Nunc finibus malesuada est, et fermentum lorem iaculis eget. Aenean pharetra augue ac elit gravida consectetur. Praesent dapibus sem quis tellus condimentum, eget finibus massa maximus. Quisque tempor a felis in consectetur. Donec a rutrum neque. Nam viverra eros ut arcu interdum facilisis.  "
@@ -2390,7 +2333,8 @@ public class OAString {
 			"Etiam ultricies nisl id lacus vulputate mattis. Nulla condimentum et metus vitae vestibulum. Aliquam ac risus eros. Vestibulum dignissim bibendum sapien, quis feugiat sapien lacinia nec. Mauris id justo pharetra, tincidunt est vel, varius libero. Ut efficitur nulla nec malesuada efficitur. Nulla luctus purus eu metus feugiat, eu semper metus viverra. Aliquam erat volutpat. Vivamus mollis turpis augue, eget maximus lorem convallis vel. Nam sed arcu vitae diam tempus malesuada id non nisl. Phasellus scelerisque nunc ut dapibus interdum.  "
 			+
 			"Donec ornare elementum laoreet. Sed diam mauris, eleifend quis lacinia at, egestas eu tellus. Sed neque augue, vestibulum ut arcu non, accumsan aliquet enim. Aliquam fringilla neque a enim pellentesque hendrerit. Sed ac semper arcu, vitae porta purus. Curabitur sit amet faucibus augue. Praesent accumsan elit ut sem dictum vulputate. Praesent sed tempus mauris, ut ultrices dolor. Nunc congue, tortor sed lacinia pulvinar, mauris mi molestie lorem, at rutrum lorem est euismod magna. Suspendisse sagittis mauris in interdum gravida. Phasellus a ante hendrerit, pulvinar urna eget, scelerisque massa.";
-    public static String getSampleText(int len) {
+
+	public static String getSampleText(int len) {
         return getDummyText(len, len, len);
     }
     public static String getSampleText(int normal, int min, int max) {
@@ -2426,12 +2370,12 @@ public class OAString {
 			sampleSize += (int) (Math.random() * (max - min));
 		}
 
-		String result = "";
+		StringBuilder sb = new StringBuilder(sampleSize);
 		final int maxLipsum = LoremLipsum.length();
 
 		for (; sampleSize > maxLipsum; sampleSize -= maxLipsum) {
-			result += LoremLipsum;
-			result += "  ";
+			sb.append(LoremLipsum);
+			sb.append("  ");
 		}
 
 		int beginPos = maxLipsum - sampleSize;
@@ -2443,8 +2387,8 @@ public class OAString {
 			beginPos++;
 		}
 
-		result += LoremLipsum.substring(beginPos, beginPos + sampleSize);
-		return result;
+		sb.append(LoremLipsum.substring(beginPos, beginPos + sampleSize));
+		return sb.toString();
 	}
 
 	/**
@@ -2472,22 +2416,26 @@ public class OAString {
 		if (args == null) {
 			return "";
 		}
-		String result = null;
+		
+		StringBuilder sb = new StringBuilder(48);
+
 		for (String s : args) {
 			if (s == null) {
 				continue;
 			}
-			if (result == null) {
-				result = s;
+			
+			if (sb.length() == 0) {
+				sb.append(s);
 			} else {
 				if (s.indexOf(':') == 0) {
-					result += s; // filter
+					sb.append(s); // filter
 				} else {
-					result += "." + s;
+					sb.append(".");
+					sb.append(s);
 				}
 			}
 		}
-		return result;
+		return sb.toString();
 	}
 
 	/**
@@ -2499,26 +2447,30 @@ public class OAString {
 		if (args == null) {
 			return "";
 		}
-		String result = null;
+		StringBuilder sb = new StringBuilder(48);
 		for (String s : args) {
 			if (s == null) {
 				continue;
 			}
-			if (result == null) {
+			if (sb.length() == 0) {
 				if (clazz != null) {
-					result = "(" + clazz.getName() + ")" + s;
+					sb.append("(");
+					sb.append(clazz.getName());
+					sb.append(")");
+					sb.append(s);
 				} else {
-					result = s;
+					sb.append(s);
 				}
 			} else {
 				if (s.indexOf(':') == 0) {
-					result += s; // filter
+					sb.append(s); // filter
 				} else {
-					result += "." + s;
+					sb.append(".");
+					sb.append(s);
 				}
 			}
 		}
-		return result;
+		return sb.toString();
 	}
 
 	public String toUTF8(String isoString) {
@@ -2550,6 +2502,10 @@ public class OAString {
 		return OAEncryption.getHash(input);
 	}
 
+	
+	
+	
+	
 	/**
 	 * Formats a string to have a max width per line separated by a delimiter. Lines are broken by whitespace, '-', '.'
 	 *
@@ -2558,72 +2514,62 @@ public class OAString {
 	 * @param maxLines maximum number of lines, if result is longer, then it will be truncated and append with " ..."
 	 */
 	public static String lineBreak(String origLine, int width, String delim, int maxLines) {
-		if (origLine == null) {
-			return "";
-		}
-		if (width < 1) {
-			return origLine;
-		}
-		if (maxLines < 0) {
-			maxLines = 0;
-		}
+	    if (origLine == null) return "";
+	    if (width < 1) return origLine;
+	    if (delim == null) delim = "\n";
+	    if (maxLines < 0) maxLines = 0;
 
-		String newLine = "";
+	    final String ellipsis = "...";
+	    final int ellipsisLen = ellipsis.length();
 
-		int len = origLine.length();
-		int lastBreakChar = 0; // position of last place that a break can be made
-		int startPos = 0; // start position of new line
-		int currentPos = 0; // current position
-		int currentLine = 0;
+	    int len = origLine.length();
+	    int startPos = 0;
+	    int lastBreakPos = -1;
+	    int currentLine = 0;
 
-		for (int i = 1;; i++, currentPos++) {
+	    StringBuilder sb = new StringBuilder(len + 16);
 
-			if (i >= len) {
-				// copy the rest
-				newLine += origLine.substring(startPos);
-				break; // done
-			}
+	    for (int i = 0; i < len; i++) {
+	        char ch = origLine.charAt(i);
 
-			if ((currentPos - startPos) > width) {
-				currentLine++;
-				if (maxLines > 0 && currentLine >= maxLines) {
-					// need room to append " ..."
-					if (lastBreakChar == 0) {
-						currentPos = startPos + 1;
-					} else if (lastBreakChar + 4 > currentPos) {
-						currentPos -= 4;
-						lastBreakChar = 0;
-						for (; currentPos - 1 > startPos; currentPos--) {
-							char ch = origLine.charAt(currentPos);
-							if (Character.isWhitespace(ch) || ch == '.' || ch == '-') {
-								break;
-							}
-						}
-					}
-				}
+	        // record breakable positions
+	        if (Character.isWhitespace(ch) || ch == '.' || ch == '-') {
+	            lastBreakPos = i;
+	        }
 
-				if (lastBreakChar > 0) {
-					currentPos = lastBreakChar + 1;
-				}
+	        // exceeded width?
+	        if ((i - startPos + 1) > width) {
+	            currentLine++;
 
-				newLine += origLine.substring(startPos, currentPos);
+	            boolean lastLine = (maxLines > 0 && currentLine >= maxLines);
 
-				if (maxLines > 0 && currentLine >= maxLines) {
-					newLine += " ...";
-					break; // done
-				}
-				newLine += delim;
+	            int breakPos = (lastBreakPos >= startPos)
+	                           ? lastBreakPos + 1 
+	                           : (startPos + width);
 
-				startPos = currentPos;
-				lastBreakChar = 0;
-				continue;
-			}
-			char ch = origLine.charAt(i);
-			if (Character.isWhitespace(ch) || ch == '.' || ch == '-') {
-				lastBreakChar = i;
-			}
-		}
-		return newLine;
+	            int segmentLen = breakPos - startPos;
+	            if (segmentLen < 0) segmentLen = 0;
+
+	            // strict width enforcement for last allowed line
+	            if (lastLine && width >= ellipsisLen) {
+	                int maxText = width - ellipsisLen;
+	                int cutEnd = Math.min(startPos + maxText, breakPos);
+	                sb.append(origLine, startPos, cutEnd);
+	                sb.append(ellipsis);
+	                return sb.toString();
+	            }
+
+	            sb.append(origLine, startPos, breakPos);
+	            sb.append(delim);
+
+	            startPos = breakPos;
+	            lastBreakPos = -1;
+	        }
+	    }
+
+	    // add final piece
+	    sb.append(origLine.substring(startPos));
+	    return sb.toString();
 	}
 
 
@@ -2796,15 +2742,17 @@ public class OAString {
 
 	// add leading spaces to each line in a string that is separated by '\n'
 	public static String indent(String text, int amt) {
-		String newText = "";
+		if (text == null) text = "";
+		StringBuilder sb = new StringBuilder(text.length() + amt);
 		String pad = pad("", amt, false, ' ');
 		for (String s : text.split("\n")) {
-			if (newText.length() > 0) {
-				newText += '\n';
+			if (sb.length() > 0) {
+				sb.append('\n');
 			}
-			newText += pad + s;
+			sb.append(pad);
+			sb.append(s);
 		}
-		return newText;
+		return sb.toString();
 	}
 
 	/**
@@ -2825,13 +2773,16 @@ public class OAString {
 		return unindent(text, true);
 	}
 
+	
+	
+	
+	
 	public static String unindent(String text, boolean bBasedOnFirstLine) {
-		String newText = "";
-
+		StringBuilder sb = new StringBuilder(text.length());
 		int max = -1;
 		for (String s : text.split("\n")) {
-			if (newText.length() > 0) {
-				newText += '\n';
+			if (sb.length() > 0) {
+				sb.append('\n');
 			}
 
 			int pos = 0;
@@ -2845,9 +2796,9 @@ public class OAString {
 			if (pos > 0) {
 				s = s.substring(pos);
 			}
-			newText += s;
+			sb.append(s);
 		}
-		return newText;
+		return sb.toString();
 	}
 
 	/**
@@ -2972,16 +2923,6 @@ public class OAString {
 		return ss;
 	}
 
-	public static void mainXXx(String[] args) {
-		String s = "a','b,'c\'     \'x      ,'d";
-		s = "'c\'     \'x      ,'d";
-		s = "\'\"\"";
-		String[] ss = parseLine(s, ',', true);
-		ss = parseLine(s, ',', false);
-
-		int x = 4;
-		x++;
-	}
 
 	/**
 	 * Removes any leading &amp; trailing whitespace chars, but will leave single space chars within text.
@@ -3395,65 +3336,6 @@ public class OAString {
 		return s.substring(pos1, pos2);
 	}
 
-	public static void main99(String[] args) {
-		String s = "123.456";
-		s = format(s, "#,##0.00");
-
-		s = "123.456";
-		s = format(s, "$#,##0.00");
-
-		OADate d = new OADate();
-		s = d.toString();
-		s = format(s, "MMMM, dd yyyy");
-		int x = 4;
-		x++;
-	}
-
-	public static void mainB(String[] args) {
-		String html = "<body>adfadfdsdxxx<div style='background-image:url(oaproperty://com.tmgsc.hifive.model.oa.ImageStore/bytes?232); width:88; height:99px' colspan=4 test xyz abc=Abcde123>adfa</div>";
-
-		int w = 0;
-		int h = 0;
-
-		String find = "background-image:url(oaproperty://com.tmgsc.hifive.model.oa.ImageStore/bytes?";
-
-		int pos = html.toLowerCase().indexOf(find.toLowerCase());
-
-		// need to find width:88, height:99
-		if (pos >= 0) {
-			int divPos = html.substring(0, pos).toLowerCase().lastIndexOf("<div ");
-			if (divPos >= 0) {
-				int divPos2 = html.indexOf(">", divPos);
-				if (divPos2 >= 0) {
-					String s = html.substring(divPos, divPos2 + 1);
-					String style = null;
-					Map<String, String> map = OAString.getHTMLAttributeMap(s);
-					for (Map.Entry<String, String> ex : map.entrySet()) {
-						String sx = ex.getKey();
-						if (sx.equalsIgnoreCase("style")) {
-							style = ex.getValue();
-							break;
-						}
-					}
-					if (style != null) {
-						map = OAString.getCSSMap(style);
-						for (Map.Entry<String, String> ex : map.entrySet()) {
-							String sx = ex.getKey();
-							if (sx.equalsIgnoreCase("width")) {
-								String val = ex.getValue();
-								w = OAString.parseInt(val);
-							} else if (sx.equalsIgnoreCase("height")) {
-								String val = ex.getValue();
-								h = OAString.parseInt(val);
-							}
-						}
-					}
-				}
-			}
-		}
-		int x = 4;
-		x++;
-	}
 
 	/**
 	 * Converts any non-Java indentifier characters to a '_'
@@ -3722,32 +3604,6 @@ public class OAString {
 		return new String(sb);
 	}
 
-	public static void main2(String[] args) {
-		String s = OAString.fmt("CustomerName", "8L.");
-
-		s = OAString.fmt("CustomerName", "28L.");
-
-		s = "abCDe_ 1.2-34.59:5";
-		String s2 = OAString.makeJavaIndentifier(s);
-		System.out.println(s + " ==> " + s2);
-	}
-
-	public static void mainAZ(String[] args) {
-
-		String sx = String.format("%.5s", "this is a test");
-		sx = String.format("%5.15s", "test");
-
-		int x = LoremLipsum.length();
-		String s;
-		for (int i = 0; i < 5000; i++) {
-			int x1 = (int) (Math.random() * (x * 3));
-			int x2 = (int) (Math.random() * x1);
-			int x3 = x1 + ((int) (Math.random() * x * 2));
-			s = getDummyText(x1, x2, x3);
-			System.out.printf("%d) %d,%d,%d=%d => %s %n", i, x1, x2, x3, s.length(), OAString.format(s, "120l."));
-
-		}
-	}
 
 	public static String escape(String raw) {
 		String escaped = raw;
@@ -4004,11 +3860,11 @@ public class OAString {
 	}
 
 	public static String createString(char repeatChar, int length) {
-		String s = "";
+		StringBuilder sb = new StringBuilder(length);
 		for (int i = 0; i < length; i++) {
-			s += repeatChar;
+			sb.append(repeatChar);
 		}
-		return s;
+		return sb.toString();
 	}
 
 	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
@@ -4292,69 +4148,17 @@ public class OAString {
         if (i == x) return "";
         return s.substring(i);
     }
-	
-//qqqqqqq MAIN MAIN MAIN testing
 
-
-    public static void mainXX(String[] args) {
-        String s = "Tymczak";
-        System.out.println(soundex(s));
-        System.out.println(soundex("Ashcraft"));
-    }
-
-    public static void mainX(String[] args) {
-        long xx = (long) (1234 * 1e5);
-        xx += 56789;
-        xx = (xx % 7777);
-        String codex = "" + xx;
-        String codexx = "V";
-        for (int ix = 0; ix < codex.length(); ix++) {
-            if ((Math.random() * 10) > 5) {
-                codexx += (char) ('a' + ((int) (Math.random() * 26.0)));
-            }
-            codexx += codex.charAt(ix);
-            if ((Math.random() * 10) > 5) {
-                codexx += (char) ('A' + ((int) (Math.random() * 26.0)));
-            }
-        }
-        System.out.println("Codexx=" + codexx);
-    }
-
-    public static void mainXx(String[] args) {
-        String s = String.format("%07d  %-10s", 12, "yyyyMMdd");
-        System.out.println("========> " + s);
-
-        s = "Item{Master";
-        String s2 = escapeJSON(s);
-        System.out.println(s + " => " + s2);
-    }
-
-    public static void main(String[] args) {
-        String s = "this is a test for the hex converter";
-        byte[] bs = s.getBytes();
-        String s21 = new String(bs);
-
-        String hex = bytesToHex(bs);
-
-        byte[] bs2 = hexToBytes(hex);
-
-        int x = OACompare.compare(bs, bs2);
-
-        String s2 = new String(bs2);
-
-        int xx = 4;
-        xx++;
-    }
+	public static void main(String[] args) {
+		
+		String s = lineBreak("Hi there", 20, "<BR>", -1);
+		s = truncate("Hi there", 20);
+		
+		String s2 = lineBreak("Supercalifragilisticexpialidocious", 10, "<BR>", -1);
+		s2 = truncate("Supercalifragilisticexpialidocious", 10);
+		
+		int xx = 4;
+		xx++;
+	}
     
-    public static void mainz(String[] argv) {
-        String s = OAString.fmt("1234.5678", "12R2,");
-        OAString oas = new OAString();
-        s = oas.fmt(argv[0], argv[1]);
-
-        System.out.println("-------->"+s+"<------");
-
-        // double x = OAConv.toDouble("-12345.5678");
-        int x = OAConv.toInt("-12345.5678");
-        System.out.println("-------->"+OAConv.toString(x, "#,###.####")+"<------");
-    }
 }
