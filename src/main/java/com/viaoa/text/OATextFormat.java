@@ -1,0 +1,734 @@
+package com.viaoa.text;
+
+import java.io.UnsupportedEncodingException;
+import java.util.regex.Pattern;
+
+import com.viaoa.util.OAConv;
+import com.viaoa.util.OAConverter;
+import com.viaoa.util.OADate;
+import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAString;
+import com.viaoa.util.OATime;
+
+/**
+ * fmt/format javadoc Used to format/mask Strings using a "Pick like" format/mask String.
+ * <p>
+ * Also supports formats for Date/Times (see OADateTime) and Numbers (see OAConverterNumber)
+ * <p>
+ * <b>Formatting Strings</b>
+ *
+ * <pre>
+
+ Example:  fmt(str,"12 L2.,$0(MASK)");
+
+ Format description for "12 L2,$0(MASK)":
+     12 = width - not required.
+          will pad with spaces if pad character is not defined.
+          if width is not included, then length of String is not restricted.
+ ' ' = trailing blanks that will be added to the end of formatted String.
+     L = L, R, or C justified
+     2 = decimal places - can only be ONE digit.  Rounding will be used.
+     . = if value has to be truncated, then "..." will be used.  Only used with "L" or "R" justified.
+     , = if you want commas to seperate numbers
+     $ = dollar sign, only if 'R' justified  puts it in first char
+     0 = any pad character - default space. Dont put this 1 after L/R, since
+         that position is used for the amount of decimal places.
+     Mask = must be in "()".  Use # character to have actual characters inserted,
+            all other characters in mask will be inserted.
+
+ Examples:
+
+ fmt("1234.5", "R4,")
+     "R4," = align right, 4 decimal places with comma seperators.
+     output: "1,234.5000"
+
+ fmt("123.5", "R00")
+     "R00" = align right, 0 decimal places (causes rounding), pad with '0' character
+     output: "123"
+
+ fmt("123.5", "8R00")
+     "8R00" = 8 width to fill,
+     output: "00000123"
+
+ fmt("123.5", "8 R00")
+     "8 R00" = 8 width, append one space, right justified, 0 decimal places, '0' fill
+     output: "00000123 "
+
+ fmt("1231231234","13  R((###)###-####)")
+     "13  R((###)###-####)" = 13 width, append 2 spaces, right justified, mask to use.
+          Note: the mask must be put into () and use # to denote where to insert the
+          characters within the supplied String.
+     output: "(123)123-1234  "
+ fmt("CustomerName", "8L.")
+      output: "Custo..."
+ fmt("CustomerName", "7R.")
+      output: "...omer"
+ * </pre>
+ */
+public class OATextFormat {
+
+	private static final Pattern DATE_PATTERN = Pattern.compile(".*[yMdHhmsS].*");
+	private static final Pattern NUMBER_PATTERN = Pattern.compile(".*[0-9,$#].*");
+	
+	public static String fmt(String str, String format) {
+		String s = _fmt(str, format);
+		return s;
+	}
+
+	
+	private static String _fmt(final String strOrig, final String format) {
+		if (format == null || format.length() == 0) {
+			return strOrig;
+		}
+		String str = strOrig;
+
+		// see if format is for a data/time
+		String s = format.toLowerCase();
+		int x = s.length();
+		boolean bAlignment = false;
+		boolean bLetters = false;
+		for (int i = 0; i < x; i++) {
+			char c = s.charAt(i);
+			if (c == 'l' || c == 'r' || c == 'c') {
+				bAlignment = true;
+				break;
+			}
+			if (Character.isLetter(c)) {
+				bLetters = true;
+			}
+		}
+		
+		if (!bAlignment) {
+			if (bLetters) {
+				if (DATE_PATTERN.matcher(format).matches()) {
+					// try date
+					try {
+						OADateTime dt = new OADateTime(str);
+						return dt.toString(format);
+					} catch (Exception e) {
+					}
+				}
+			} else if (str != null && NUMBER_PATTERN.matcher(format).matches()) {
+				// try number
+				try {
+					Number num = OAConv.toDouble(str);
+					return OAConv.toString(num, format);
+				} catch (Exception e) {
+				}
+			}
+		}
+
+		// see if format is for a number
+		int i, j, k, l, blanks = 0, len = 0;
+		char lr = 0;
+		char testc, charPad = ' ';
+		int deci = 0;
+		boolean comma = false, dollar = false;
+		boolean deci_flag = false;
+		boolean bDots = false;
+		String test, test1;
+
+		if (str == null) {
+			str = "";
+		}
+
+		x = format.length();
+
+		// find L or R and format number
+		for (i = 0, len = 0; i < x && lr == 0; i++) {
+			testc = Character.toUpperCase(format.charAt(i));
+			if ("RLC".indexOf(testc) < 0) {
+				continue;
+			}
+
+			lr = testc;
+			test = OAString.fieldAt(format, format.charAt(i), 0);
+			if (test == null) {
+				test = "";
+			}
+			test1 = OAString.field(test, ' ', 0);
+			if (test1 == null) {
+				test1 = "";
+			}
+			/* length plus spaces  ex: "10 L" */
+			blanks = test.length() - test1.length();
+			try {
+				len = Integer.parseInt(test1);
+			} catch (Exception e) {
+				len = 0;
+			}
+		}
+
+		if (lr == 0) {
+			lr = 'L';
+			test1 = OAString.field(format, ' ', 0);
+			if (test1 == null) {
+				test1 = "";
+			}
+			i = test1.length();
+			if (i > 0) {
+				try {
+					len = Integer.parseInt(test1);
+				} catch (Exception e) {
+					len = 0;
+				}
+			}
+			for (; i < x && format.charAt(i) == ' '; i++) {
+				blanks++;
+			}
+		}
+
+		// check for decimals
+		if (i < format.length()) {
+			if (Character.isDigit(format.charAt(i))) {
+				deci = (format.charAt(i++) - '0');
+				deci_flag = true;
+			}
+		}
+
+		for (; i < format.length() && format.charAt(i) != '('; i++) {
+			switch (format.charAt(i)) {
+			case ',':
+				comma = true;
+				break;
+			case '$':
+				dollar = true;
+				break;
+			case '.':
+				if ((lr == 'L' || lr == 'R') && !bDots) {
+					bDots = true;
+					break;
+				}
+			default:
+				charPad = format.charAt(i);
+			}
+		}
+
+		if (deci_flag || comma) {
+			double d = 0.0;
+			try {
+				d = OAConv.toDouble(str);
+				s = "";
+				if (deci_flag) {
+					s = "";
+					for (j = 0; j < deci; j++) {
+						if (j == 0) {
+							s += ".";
+						}
+						s += "0";
+					}
+				}
+				if (comma) {
+					s = "#,###" + s;
+				} else {
+					s = "#" + s;
+				}
+				str = OAConv.toString(Double.valueOf(d), s);
+			} catch (Exception e) {
+			}
+		}
+
+		// create mask
+		j = format.indexOf("(");
+		if (j >= 0) {
+			test = format.substring(j + 1);
+			j = test.length();
+
+			if (test.charAt(j - 1) == ')') {
+				test = test.substring(0, (--j));
+			}
+
+			if (lr == 'R') {
+				for (i = 0, k = 0; i < j; i++) {
+					testc = test.charAt(i);
+					if (testc == '#') {
+						k++;
+					}
+				}
+				k = (k - str.length());
+				if (k > 0) {
+					str = OAString.pad(str, k, false, ' ');
+				}
+			}
+
+			String newString = "";
+			for (i = k = l = 0; i < j; i++, k++) {
+				testc = test.charAt(i);
+
+				if (testc == '#') {
+					if (str.length() > l) {
+						newString += str.charAt(l++);
+					} else {
+						newString += ' ';
+					}
+				} else {
+					newString += testc;
+				}
+			}
+			str = newString;
+		}
+
+		if (dollar && lr == 'R') {
+			str = '$' + str;
+		}
+
+		/* format */
+		i = str.length();
+		x = (Math.abs(i - len)) / 2;
+
+		if (i > len) {
+			if (len != 0) {
+				if (lr == 'R') {
+                    if (bDots && len > 3) {
+                        str = "..." + str.substring( (i - len) + 3);
+                    } else {
+                        str = str.substring(i - len);
+                    }
+				} else {
+					if (lr == 'L') {
+						if (bDots && len > 3) {
+							str = str.substring(0, len - 3) + "...";
+						} else {
+							str = str.substring(0, len);
+						}
+					} else { // 'C'
+						str = str.substring(x, x + len);
+					}
+				}
+			}
+		} else {
+			for (j = 0; i < len; i++, j++) {
+				if (lr == 'R' || (lr == 'C' && j < x)) {
+					str = charPad + str;
+				} else {
+					if (!bDots) {
+						str += charPad;
+					}
+				}
+			}
+		}
+		for (i = 0; i < blanks; i++) {
+			str += " ";
+		}
+
+		return str;
+	}
+
+	
+	/**
+	 * Find the number of decimal places for a String decimal number.
+	 * Ignores trailing '0'.
+	 * <p>
+	 * Examples:  "123.25" = 2<br>
+	 * "123.2000" = true=1, false=4<br>
+	 * "123.2001" = 4<br>
+	 * "123.249" = 3<br.
+	 * "123.00" = true=0, false=2<br>
+	 * @param num
+	 * @param bIgnoreTrailingZeros dont count trailing '0' digits.
+	 * @return
+	 */
+	public static int getNumberOfDecimalPlaces(String num, boolean bIgnoreTrailingZeros) {
+		if (num == null) return 0;
+		int x = num.length();
+		if (x == 0) return 0;
+		boolean bSkipZeros = true;
+		int cnt = 0;
+		for (int i=x-1; i>=0; i--) {
+			char ch = num.charAt(i);
+			if (ch == '.') break;
+			if (!Character.isDigit(ch)) return 0;
+			if (bSkipZeros) { 
+				if (ch == '0' && bIgnoreTrailingZeros) continue;
+				bSkipZeros = false;
+			}
+			cnt++;
+		}
+		return cnt;
+	}
+
+	public static boolean isNumber(String str) {
+	    if (str == null || str.isBlank()) return false;
+
+	    str = str.trim();
+	    try {
+	        Double d = (Double) OAConverter.convert(Double.class, str);
+	        return d != null && !d.isNaN() && !d.isInfinite();
+	    } catch (Exception ex) {
+	        return false;
+	    }
+	}
+
+	
+	/**
+	 * Returns true if the String represents a whole integer (positive or negative).
+	 */
+	public static boolean isInteger(String str) {
+	    if (str == null || str.isBlank()) return false;
+
+	    str = str.trim();
+	    try {
+	        Long l = (Long) OAConverter.convert(Long.class, str);
+	        return l != null;
+	    } catch (Exception ex) {
+	        return false;
+	    }
+	}
+	
+	/**
+	 * Returns true if String is a valid Date. This will try to convert the String to a OADate.
+	 *
+	 * @param s String to check
+	 * @return true if String can be converted to a OADate. see OAConverterOADate
+	 */
+	public static boolean isDate(String s) {
+	    if (s == null || s.isBlank()) return false;
+	    try {
+	        return OAConverter.convert(OADate.class, s.trim()) != null;
+	    } catch (Exception ex) {
+	        return false;
+	    }
+	}
+
+	/**
+	 * Returns true if String is a valid Time. This will try to convert the String to a OATime.
+	 *
+	 * @param s String to check
+	 * @return true if String can be converted to a OATime. see OAConverterOATime
+	 */
+	public static boolean isTime(String s) {
+	    if (s == null || s.isBlank()) return false;
+	    try {
+	        return OAConverter.convert(OATime.class, s.trim()) != null;
+	    } catch (Exception ex) {
+	        return false;
+	    }
+	}
+	
+	/**
+	 * Returns true if String is a valid DateTime. This will try to convert the String to a OADateTime.
+	 *
+	 * @param s String to check
+	 * @return true if String can be converted to a OADateTime. see OAConverterOADateTime
+	 */
+	public static boolean isDateTime(String s) {
+	    if (s == null || s.isBlank()) return false;
+	    try {
+	        return OAConverter.convert(OADateTime.class, s.trim()) != null;
+	    } catch (Exception ex) {
+	        return false;
+	    }
+	}	
+	
+
+
+	/**
+	 * Used to generate a String based on a mask.
+	 *
+	 * @param value           is String to use with mask. If null, then value is set to a blank "" String.
+	 * @param mask            where all # characters will be replaced by data in value. All other characters (non #) in mask will be
+	 *                        outputted with new String.
+	 * @param bRightJustified if true, then mask will be generated from right to left, else left to right.
+	 * @return new String with mask applied. If mask == null, then value is returned.
+	 */
+	public static String mask(String value, String mask, boolean bRightJustified) {
+		if (mask == null) {
+			return value;
+		}
+		if (value == null) {
+			value = "";
+		}
+
+		int i = 0;
+		int x = value.length();
+
+		int i2 = 0;
+		int x2 = mask.length();
+
+		if (bRightJustified) {
+			int cnt = 0;
+			for (; i2 < x2; i2++) {
+				char c = mask.charAt(i2);
+				if (c == '#') {
+					cnt++;
+				}
+			}
+			i2 = 0;
+			if (cnt > x) {
+				value = OATextAlign.padStart(value, cnt - x, ' ');
+				x = value.length();
+			} else {
+				if (x > cnt) {
+					value = value.substring(x - cnt);
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder(value.length() + 4);
+		for (; i2 < x2; i2++) {
+			char c = mask.charAt(i2);
+			if (c == '#') {
+				if (i < x) {
+					sb.append(value.charAt(i));
+					i++;
+				}
+				else sb.append(' ');
+			} else {
+				sb.append(c);
+			}
+		}
+		return sb.toString();
+	}
+	
+	/**
+	 * Returns an ordinal number string. Examples: 1st, 2nd, 3rd, 4th, ...
+	 */
+	public static String toNumberString(int x) {
+	    int mod100 = x % 100;
+	    if (mod100 >= 11 && mod100 <= 13) {
+	        return x + "th";
+	    }
+	    switch (x % 10) {
+	        case 1: return x + "st";
+	        case 2: return x + "nd";
+	        case 3: return x + "rd";
+	        default: return x + "th";
+	    }
+	}	
+
+	/**
+	 * Only allows digits and ' ' characters. Will left pad with spaces to make 10 char long.
+	 */
+	public static String convertToValidPhoneNumber(String phone) {
+		if (phone == null) {
+			return null;
+		}
+		int x = phone.length();
+		if (x == 0) {
+			return phone;
+		}
+		StringBuilder sb = new StringBuilder(x);
+		boolean b = false;
+		for (int i = 0; i < x; i++) {
+			char ch = phone.charAt(i);
+			if (!Character.isDigit(ch)) {
+				if (ch != ' ') {
+					b = true;
+					continue;
+				}
+			}
+			sb.append(ch);
+
+		}
+		x = sb.length();
+		for (int i = x; i < 10; i++) {
+			b = true;
+			sb.insert(0, ' ');
+		}
+		if (b) {
+			phone = sb.toString();
+		}
+		return phone;
+	}
+
+	// add leading spaces to each line in a string that is separated by '\n'
+	public static String indent(String text, int amt) {
+		if (text == null) text = "";
+		StringBuilder sb = new StringBuilder(text.length() + amt);
+		String pad = OATextAlign.padStart("", amt, ' ');
+		for (String s : text.split("\n")) {
+			if (sb.length() > 0) {
+				sb.append('\n');
+			}
+			sb.append(pad);
+			sb.append(s);
+		}
+		return sb.toString();
+	}
+	
+	public static String unindent(String text) {
+		return unindent(text, false);
+	}
+
+	public static String unindentCode(String text) {
+		return unindent(text, true);
+	}
+	
+	
+	public static String unindent(String text, boolean bBasedOnFirstLine) {
+		StringBuilder sb = new StringBuilder(text.length());
+		int max = -1;
+		for (String s : text.split("\n")) {
+			if (sb.length() > 0) {
+				sb.append('\n');
+			}
+
+			int pos = 0;
+			for (; pos < s.length() && s.charAt(pos) == ' ' && (!bBasedOnFirstLine || max < 0 || pos < max); pos++) {
+				;
+			}
+			if (bBasedOnFirstLine && max < 0) {
+				max = pos;
+			}
+
+			if (pos > 0) {
+				s = s.substring(pos);
+			}
+			sb.append(s);
+		}
+		return sb.toString();
+	}
+	
+	/**
+	 * Remove ending whitespace from a string.
+	 */
+	public static String trimEndingWhitespace(String text) {
+		if (text == null) {
+			return null;
+		}
+		int x = text.length();
+		for (int i = 0; i < x; i++) {
+			char c = text.charAt(x - i - 1);
+			if (!Character.isWhitespace(c)) {
+				if (i == 0) {
+					return text;
+				}
+				return text.substring(0, x - i);
+			}
+		}
+		return "";
+	}
+
+
+	/**
+	 * Removes any leading &amp; trailing whitespace chars, but will leave single space chars within text.
+	 */
+	public static String trimWhitespace(String text) {
+		if (text == null) {
+			return null;
+		}
+		StringBuilder sb = null;
+		int x = text.length();
+
+		char chLast = ' ';
+		boolean bAddSpace = false;
+
+		for (int i = 0; i < x; i++) {
+			char ch = text.charAt(i);
+
+			if (Character.isWhitespace(ch)) {
+				if (ch == ' ') {
+					if (chLast != ' ') {
+						bAddSpace = true;
+					}
+					chLast = ch;
+				}
+				if (sb == null) {
+					sb = new StringBuilder(x);
+					if (i > 0) {
+						sb.append(text.substring(0, i));
+					}
+				}
+			} else {
+				if (sb != null) {
+					if (bAddSpace) {
+						sb.append(' ');
+						bAddSpace = false;
+					}
+					sb.append(ch);
+				}
+				chLast = ch;
+			}
+		}
+		if (sb == null) {
+			return text;
+		}
+		return sb.toString();
+	}
+
+
+	private final static String validToCamelCaseSep = " _,.:|\t-/";
+
+	/**
+	 * Example: "Your Name Test" converts to "YourNameTest" Example: "your name test" converts to "yourNameTest" Example: "Your_name_test"
+	 * converts to "YourNameTest" Example: "your.name.test" converts to "yourNameTest" first char upper/lower-case is not changed.
+	 */
+	public static String convertToCamelCase(String value) {
+		return convertToHungarian(value, null);
+	}
+
+	public static String convertToCamelCase(String value, String sepChars) {
+		return convertToHungarian(value, sepChars);
+	}
+
+	public static String convertToHungarian(String value) {
+		return convertToHungarian(value, null);
+	}
+
+	public static String convertToHungarian(String value, String sepChars) {
+		if (value == null) {
+			return null;
+		}
+		if (sepChars == null) {
+			sepChars = validToCamelCaseSep;
+		}
+		int x = value.length();
+		StringBuilder sb = new StringBuilder(x);
+
+		char chSep = 0;
+		char chLast = 0;
+		for (int i = 0; i < x; i++) {
+			char ch = value.charAt(i);
+			if (sepChars.indexOf(ch) >= 0) {
+				chSep = ch;
+				continue;
+			}
+			if (chSep > 0) {
+				if (Character.isDigit(ch)) {
+					if (chLast > 0 && Character.isDigit(chLast)) {
+						if (chSep == ' ') {
+							chSep = '_';
+						}
+						sb.append(chSep);
+					}
+				} else {
+					ch = Character.toUpperCase(ch);
+				}
+				chSep = 0;
+			}
+			sb.append(ch);
+			chLast = ch;
+		}
+		return sb.toString();
+	}
+	
+	public static String toUtf8(String isoString) {
+		return toUTF8(isoString);
+	}
+
+	public static String toUTF8(String isoString) {
+		String utf8String = null;
+		if (null != isoString && !isoString.equals("")) {
+			try {
+				byte[] stringBytesISO = isoString.getBytes("ISO-8859-1");
+				utf8String = new String(stringBytesISO, "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				// TODO: This should never happen. The UnsupportedEncodingException
+				// should be propagated instead of swallowed. This error would indicate
+				// a severe misconfiguration of the JVM.
+
+				// As we can't translate just send back the best guess.
+				System.out.println("UnsupportedEncodingException is: " + e.getMessage());
+				utf8String = isoString;
+			}
+		} else {
+			utf8String = isoString;
+		}
+		return utf8String;
+	}
+
+
+
+}
+
+

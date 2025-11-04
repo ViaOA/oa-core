@@ -1,4 +1,4 @@
-package com.viaoa.test;
+package com.viaoa.text;
 
 import static org.junit.Assert.*;
 import java.util.*;

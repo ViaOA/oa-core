@@ -558,7 +558,7 @@ public abstract class OAUIController extends HubListenerAdapter {
                     text = OAString.toTitleCase(text);
                 }
             } else if (conversion == 'J' || conversion == 'j') {
-                text = OAString.makeJavaIndentifier(text);
+                text = OAString.makeJavaIdentifier(text);
             } else if (conversion == 'S' || conversion == 's') {
                 if (maskPasswordValue.equals(text)) return; // no change
                 text = OAString.getSHAHash(text);

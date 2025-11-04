@@ -120,11 +120,11 @@ public abstract class OAUITypeAheadController extends OAUIController {
         for (TypeAheadValue tav : al) {
             if (json.length() > 0) json += ", ";
   
-            json += "{\"id\":\"" + OAString.escapeJSON(tav.id) + "\"" + 
-                    ",\"display\":\"" + OAString.escapeJSON(tav.display) + "\"";
+            json += "{\"id\":\"" + OAString.escapeJson(tav.id) + "\"" + 
+                    ",\"display\":\"" + OAString.escapeJson(tav.display) + "\"";
             
             if (OAStr.isNotEmpty(tav.dropDownDisplay)) {
-                json += ",\"dropDownDisplay\":\"" + OAString.escapeJSON(tav.dropDownDisplay) + "\""; 
+                json += ",\"dropDownDisplay\":\"" + OAString.escapeJson(tav.dropDownDisplay) + "\""; 
             }
             json += "}";
         }

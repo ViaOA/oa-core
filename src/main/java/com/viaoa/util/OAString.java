@@ -1,1377 +1,489 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.awt.Color;
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Pattern;
+
+import com.viaoa.text.OATextAlign;
+import com.viaoa.text.OATextChars;
+import com.viaoa.text.OATextCompare;
+import com.viaoa.text.OATextEscape;
+import com.viaoa.text.OATextFilter;
+import com.viaoa.text.OATextFormat;
+import com.viaoa.text.OATextGenerate;
+import com.viaoa.text.OATextGrammar;
+import com.viaoa.text.OATextLineWrap;
+import com.viaoa.text.OATextSanitize;
+import com.viaoa.text.OATextSoundex;
+import com.viaoa.text.OATextTokenizer;
+import com.viaoa.text.OATextUtil;
 
 /**
- * String <i>helper/utility</i> Class.
+ * Public OA text utility façade for all things String / Text.
+ * <p>
+ * OAString is a fully supported, stable entry point for text operations in OA.
+ * Implementations are organized in the {@code com.viaoa.text} package and
+ * OAString forwards to those modules to keep this surface consistent across
+ * versions.
+ * </p>
+ * <p>
+ * Primary modules:
+ * </p>
+ * <ul>
+ * <li>{@code OATextAlign} – padding, truncation, alignment</li>
+ * <li>{@code OATextChars} – Character category checks</li>
+ * <li>{@code OATextCompare} – Partial or full matching between text values</li>
+ * <li>{@code OATextFormat} – formatting for strings/dates/numbers</li>
+ * <li>{@code OATextGrammar} – singular/plural/title case/display/etc</li>
+ * <li>{@code OATextTokenizer} – parsing and field extraction</li>
+ * <li>{@code OATextFilter} – strip/retain/remove character sets</li>
+ * <li>{@code OATextEscape} – HTML/XML/JSON escaping and quoting</li>
+ * <li>{@code OATextSanitize} – null/empty safety helpers</li>
+ * <li>{@code OATextLineWrap} – wrapping, hyphenation, ellipsis</li>
+ * <li>{@code OATextUtil} – general-purpose helpers</li>
+ * <li>{@code OATextGenerate} – generate sample data</li>
+ * </ul>
+ * <p>
+ * New code may use {@code com.viaoa.text} classes directly when specialized
+ * control is desired; however, OAString remains the recommended convenience API
+ * for most usage.
+ * </p>
  *
- * @see OAConverter
+ * @apiNote OAString is maintained as the primary public API. The delegated
+ *          implementations in {@code com.viaoa.text} may evolve without
+ *          breaking this surface.
+ * @implNote This class delegates to the {@code com.viaoa.text} modules;
+ *           delegation targets may change internally without affecting the
+ *           public behavior of these methods.
  */
 public class OAString {
 	public static final String NL = System.getProperty("line.separator");
 	public static final String FS = File.separator;
 
-	// Cached regex patterns for format detection
-	private static final Pattern DATE_PATTERN = Pattern.compile(".*[yMdHhmsS].*");
-	private static final Pattern NUMBER_PATTERN = Pattern.compile(".*[0-9,$#].*");
-	
-	
-
-	@Deprecated(since="4.0.0")
-	public static String trim(String line) {
-		return trimSpaces(line);
-	}
-	/**
-	 * String trim method.<br>
-	 * 1: removes leading spaces<br>
-	 * 2: removes extra spaces within. (Note: even if enclosed in quotes)<br>
-	 * 3: removes trailing spaces <br>
-	 * <p>
-	 *
-	 * <pre>
-	 Example:  "  this    is   a  test  "  will be: "this is a test"
-	 * </pre>
-	 */
+	/** @see OATextFilter#trimSpaces(String) */
 	public static String trimSpaces(final String line) {
-		if (line == null) return line;
-		StringBuilder sb = null;
-		int max = line.length();
-		if (max == 0) return line;
-		boolean bSpace = false;
-		
-		for (int i=0; i<max; i++) {
-			char ch = line.charAt(i);
-			
-			if (ch == ' ') {
-				bSpace = true;
-			}
-			else {
-				if (bSpace) {
-					bSpace = false;
-					if (sb != null) sb.append(' ');
-				}
-				if (sb == null) {
-					sb = new StringBuilder(line.length());
-				}
-				sb.append(ch);
-			}
-		}
-		if (sb == null) {
-			if (line.charAt(0) != ' ') return line; // no spaces
-			return ""; // all spaces
-		}
-		return sb.toString();
+		return OATextFilter.trimSpaces(line);
 	}
 
-	/**
-	 * get last N chars from string.
-	 *
-	 * @param len number of chars to get
-	 */
+	/** @see OATextUtil#getEnd(String, int) */
 	public static String getEnd(String text, int len) {
-		if (text == null) {
-			return null;
-		}
-		if (len <= 0) return "";
-		int x = text.length();
-		if (x <= len) {
-			return text;
-		}
-		String s = text.substring(x - len);
-		return s;
+		return OATextUtil.getEnd(text, len);
 	}
 
+	/** @see OATextUtil#getLast(String, int) */
 	public static String getLast(String text, int len) {
-		return getEnd(text, len);
+		return OATextUtil.getLast(text, len);
 	}
 
-	/**
-	 * get first N chars from string.
-	 *
-	 * @param len number of chars to get
-	 */
+	/** @see OATextUtil#getBegin(String, int) */
 	public static String getBegin(String text, int len) {
-		if (text == null) {
-			return null;
-		}
-		if (len <= 0) return "";
-		int x = text.length();
-		if (x <= len) {
-			return text;
-		}
-		String s = text.substring(0, len);
-		return s;
+		return OATextUtil.getBegin(text, len);
 	}
 
+	/** @see OATextUtil#getFirst(String, int) */
 	public static String getFirst(String text, int len) {
-		return getBegin(text, len);
+		return OATextUtil.getFirst(text, len);
 	}
-
-	/**
-	 * converts null to "" and does other xml/html conversions for &lt;, &gt; &amp; &quot; &#39;
-	 *
-	 * @see #convertToXML(String,boolean)
-	 */
-	public static String convertToXml(String value) {
-		return convertToXML(value, false, true);
-	}
-
+	
+	/** @see OATextEscape#convertToHtml(String) */
 	public static String convertToHtml(String value) {
-		return convertToXML(value, false, true);
+		return OATextEscape.convertToHtml(value);
 	}
 
-	public static String convertTextToHTML(String value, boolean bAddHTMLTag) {
-		if (value == null) {
-			return "";
-		}
-		String s2 = value.toLowerCase();
-		if (s2.indexOf("<html") >= 0) {
-			return value;
-		}
-		if (s2.indexOf("<") >= 0 && s2.indexOf(">") >= 0) {
-			return value;
-		}
-		// if (s2.indexOf("<br>") >= 0) return value;
-		if (s2.indexOf("&amp;") >= 0) {
-			return value;
-		}
-
-		value = convertToXML(value, false, true, true);
-
-		if (bAddHTMLTag) {
-			value = "<html>" + value + "</html>";
-		}
-		return value;
+	/** @see OATextEscape#convertTextToHtml(String, boolean) */
+	public static String convertTextToHtml(String value, boolean bAddHTMLTag) {
+		return OATextEscape.convertTextToHtml(value, bAddHTMLTag);
+	}
+	/** @see OATextEscape#convertFromHtml(String) */
+	public static String convertFromHtml(String html) {
+		return OATextEscape.convertFromHtml(html);
+	}
+	
+	/** @see OATextEscape#getHtmlAttributeMap(String) */
+	public static Map<String, String> getHtmlAttributeMap(String htmlTag) {
+		return OATextEscape.getHtmlAttributeMap(htmlTag);
+	}
+	
+	/** @see OATextEscape#convertToXml(String) */
+	public static String convertToXml(String value) {
+		return OATextEscape.convertToXml(value);
 	}
 
+	/** @see OATextEscape#convertToXml(String, boolean) */
+	public static String convertToXml(String value, boolean bCData) {
+		return OATextEscape.convertToXml(value, bCData);
+	}
+
+	/** @see OATextEscape#convertToXml(String, boolean, boolean) */
+	public static String convertToXml(String value, boolean bCData, boolean bIsHtml) {
+		return OATextEscape.convertToXml(value, bCData, bIsHtml);
+	}
+
+	/** @see OATextEscape#convertToXml(String, boolean, boolean, boolean) */
+	public static String convertToXml(String value, boolean bCData, boolean bIsHtml, boolean bLeaveCRLF) {
+		return OATextEscape.convertToXml(value, bCData, bIsHtml, bLeaveCRLF);
+	}
+
+	/** @see OATextEscape#isLegalXml(String) */
+	public static boolean isLegalXml(String value) {
+		return OATextEscape.isLegalXml(value);
+	}
+
+	/** @see OATextEscape#decodeIllegalXml(String) */
+	public static String decodeIllegalXml(String value) {
+		return OATextEscape.decodeIllegalXml(value);
+	}
+
+	/** @see OATextEscape#encodeIllegalXml(String) */
+	public static String encodeIllegalXml(String value) {
+		return OATextEscape.encodeIllegalXml(value);
+	}
+	
 	/**
-	 * converts null to "" and does other xml/html conversions for &lt;, &gt; &amp; &quot; &#39;
-	 *
-	 * <pre>
-	   see: http://www.w3.org/TR/REC-xml#NT-Char
-
-	   Legal Chars ::=   #x9 | #xA | #xD | [#x20-#xD7FF] |
-	             [#xE000-#xFFFD] | [#x10000-#x10FFFF]
-
-	   9, 10, 13
-	   tab, lf, cr
-	 * </pre>
-	 *
-	 * @see #convertToXML(String,boolean)
-	 */
-	public static String convertToXML(String value) {
-		return convertToXML(value, false, false);
-	}
-
-	/**
-	 * Encode/Replace chars that are illegal for XML/HTML with &amp; codes.
-	 *
-	 * @see #convertToXML(String,boolean)
-	 */
-	public static String encodeIllegalXML(String value) {
-		return convertToXML(value, true, false);
-	}
-
-	/**
-	 * Encode illegal XML characters with &lt;OAXML#999/&gt; where 999 is character integer value.<br>
-	 * decodeIllegalXML() is used to convert back to character.
-	 * <p>
-	 * This is used internally by convertToXML
-	 *
-	 * @param ch           is character to encode
-	 * @param bConvertLTGT if true then convert &lt; to &amp;lt; and &gt; to &amp;gt;. This is needed when it is not going to be used in a
-	 *                     XML CDATA block.
-	 * @see #decodeIllegalXML
-	 * @see #convertToXML(String,boolean)
-	 */
-	protected static String encodeIllegalXML(char ch, boolean bConvertLTGT) {
-		if (bConvertLTGT) {
-			return "&lt;OAXML#" + ((int) ch) + "/&gt;";
-		}
-		return "<OAXML#" + ((int) ch) + "/>"; // used in [CDATA]
-	}
-
-	/**
-	 * Convert a String to a valid XML String, using special coding for illegal characters. <br>
-	 * Converts &amp; to &amp;amp;, &quot; to &amp;quot, &#39; to &amp;apos, &lt; to &amp;&lt;, &gt; to &amp;gt;<br>
-	 * For characters less then 32, it calls encodeIllegalXML().
-	 * <p>
-	 * Note: Some characters are illegal even within CDATA blocks.
-	 * <p>
-	 * NOTE: decodeIllegalXML() should be called to <i>reverse</i> this String, since encodeIllegalXML() uses a special tag.
-	 *
-	 * @param value  is XML String to convert.
-	 * @param bCData true if this String will be used in an XML CDATA block.
-	 * @return converted string. If value is null then a blank "" is returned.
-	 * @see #decodeIllegalXML
-	 * @see #encodeIllegalXML
-	 */
-	public static String convertToXML(String value, boolean bCData) {
-		return convertToXML(value, bCData, false);
-	}
-
-	public static String convertToXML(String value, boolean bCData, boolean bIsHtml) {
-		return convertToXML(value, bCData, bIsHtml, !bIsHtml);
-	}
-
-	public static String convertToXML(String value, boolean bCData, boolean bIsHtml, boolean bLeaveCRLF) {
-		if (value == null) {
-			return "";
-		}
-
-		int x = value.length();
-		StringBuilder sb = new StringBuilder(x);
-		for (int i = 0; i < x; i++) {
-			char ch = value.charAt(i);
-			char chNext = (i + 1 == x) ? 0 : value.charAt(i + 1);
-			char chPrev = (i == 0) ? 0 : value.charAt(i - 1);
-
-			if (!bCData) {
-				switch (ch) {
-				case '&':
-					sb.append("&amp;");
-					continue;
-				case '"':
-					sb.append("&quot;");
-					continue;
-				case '\'':
-					sb.append("&apos;");
-					continue;
-				case '<':
-					sb.append("&lt;");
-					continue;
-				case '>':
-					sb.append("&gt;");
-					continue;
-				case '\n':
-					if (bIsHtml) {
-						if (chPrev != '\r') {
-							sb.append("<br>");
-						}
-					}
-					if (!bLeaveCRLF) {
-						continue;
-					}
-					break;
-				case '\r': {
-					if (bIsHtml && chNext == '\n') {
-						sb.append("<br>");
-					}
-					if (!bLeaveCRLF) {
-						continue;
-					}
-					break;
-				}
-				}
-			}
-
-			switch (ch) {
-			case 9:
-			case 10:
-			case 13:
-				sb.append(ch);
-				continue;
-			}
-
-			if (ch < 32) { // illegal in XML, create special tag
-				sb.append(encodeIllegalXML(ch, !bCData));
-			} else {
-				sb.append(ch);
-			}
-		}
-		return new String(sb);
-	}
-
-	/**
-	 * Used to determine if a String has any illegal XML characters in it.
-	 *
-	 * @return false if any of the following characters are found: &amp; &quot; \ &lt; &gt; LF CR or char&lt;32. If value is null then false
-	 *         is returned.
-	 */
-	public static boolean isLegalXML(String value) {
-		if (value == null) {
-			return false;
-		}
-		int x = value.length();
-		for (int i = 0; i < x; i++) {
-			char ch = value.charAt(i);
-			switch (ch) {
-			case '&':
-			case '"':
-			case '\'':
-			case '<':
-			case '>':
-			case 10:
-			case 13:
-				return false;
-			case 9:
-				break;
-			default:
-				if (ch < 32) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Convert XML Strings converted with encodeIllegalXML() back to a String. Since encodeIllegalXML encodes illegal characters with a
-	 * &lt;OAXML#99/&gt; code, this method will convert those tags to the actual character.
-	 *
-	 * @return string that was decoded. If value is null then null is returned.
-	 * @see #encodeIllegalXML
-	 */
-	public static String decodeIllegalXML(String value) {
-		if (value == null) {
-			return null;
-		}
-		int pos = 0;
-		for (;;) {
-			int apos = value.indexOf("<OAXML#", pos);
-			if (apos < 0) {
-				break;
-			}
-			int bpos = value.indexOf("/>", apos + 7);
-			if (bpos > 0 && bpos > apos + 7) {
-				int ch = ' ';
-				try {
-					ch = Integer.parseInt(value.substring(apos + 7, bpos));
-				} catch (Exception e) {
-				}
-				value = value.substring(0, apos) + ((char) ch) + value.substring(bpos + 2);
-			}
-			pos = apos + 1;
-		}
-		return value;
-	}
-
-	/**
-	 * Used to replace one value with another within a String.
-	 *
-	 * @param replace the string or null that will replace every occurance of the the character "c"
-	 * @see #convert(String,String,String,boolean) convert()
+	 * @see OATextFilter#convert(String, String, String, boolean, boolean, int, int)
 	 */
 	public static String convert(String value, char c, String replace) {
-		return convert(value, c + "", replace, false);
+		return OATextFilter.convert(value, c, replace);
 	}
 
 	/**
-	 * Used to replace one value with another within a String, ignoring case.
-	 *
-	 * @param replace the string or null that will replace every occurance of the the search string
-	 * @see #convert(String,String,String,boolean) convert()
+	 * @see OATextFilter#convert(String, String, String, boolean, boolean, int, int)
 	 */
 	public static String convertIgnoreCase(String line, String search, String replace) {
-		return convert(line, search, replace, true);
+		return OATextFilter.convertIgnoreCase(line, search, replace);
 	}
 
 	/**
-	 * Used to replace one value with another within a String.
-	 *
-	 * @param replace the string or null that will replace every occurance of the the search string
-	 * @see #convert(String,String,String,boolean) convert()
+	 * @see OATextFilter#convert(String, String, String, boolean, boolean, int, int)
 	 */
 	public static String convert(String line, String search, String replace) {
-		return convert(line, search, replace, false);
+		return OATextFilter.convert(line, search, replace);
 	}
 
-	/**
-	 * Remove any and all search characters from a string.
-	 *
-	 * @param line   original data
-	 * @param search characters to remove
-	 * @return
-	 */
+	/** @see OATextFilter#removeCharacters(String, String) */
 	public static String removeCharacters(String line, String search) {
-		if (line == null || search == null) {
-			return line;
-		}
-		StringBuilder sb = new StringBuilder(line.length());
-		int x = line.length();
-		for (int i = 0; i < x; i++) {
-			char ch = line.charAt(i);
-			if (search.indexOf(ch) < 0) {
-				sb.append(ch);
-			}
-		}
-		return new String(sb);
+		return OATextFilter.removeCharacters(line, search);
 	}
 
-	/**
-	 * Remove any and all characters that are not in string
-	 *
-	 * @param line original data param search characters to keep
-	 */
+	/** @see OATextFilter#removeOtherCharacters(String, String) */
 	public static String removeOtherCharacters(String line, String keep) {
-		if (line == null || keep == null) {
-			return line;
-		}
-		StringBuilder sb = new StringBuilder(line.length());
-		int x = line.length();
-		for (int i = 0; i < x; i++) {
-			char ch = line.charAt(i);
-			if (keep.indexOf(ch) >= 0) {
-				sb.append(ch);
-			}
-		}
-		return new String(sb);
+		return OATextFilter.removeOtherCharacters(line, keep);
 	}
 
-	/**
-	 * Remove any and all characters that are not digits
-	 *
-	 * @param line original data
-	 */
+	/** @see OATextFilter#removeNonDigits(String, boolean) */
 	public static String removeNonDigits(String line) {
-		return removeNonDigits(line, false);
+		return OATextFilter.removeNonDigits(line);
 	}
 
+	/** @see OATextFilter#removeNonDigits(String, boolean) */
 	public static String removeNonDigits(String line, boolean bAllowDot) {
-		if (line == null) {
-			return line;
-		}
-		StringBuilder sb = new StringBuilder(line.length());
-		int x = line.length();
-		for (int i = 0; i < x; i++) {
-			char ch = line.charAt(i);
-			if (Character.isDigit(ch) || (bAllowDot && ch == '.')) {
-				sb.append(ch);
-			}
-		}
-		return new String(sb);
+		return OATextFilter.removeNonDigits(line, bAllowDot);
 	}
 
-	public static final String OtherFileNameChars = "_-. \\/";
-
-	/**
-	 * Remove any and all characters that are not valid in filename.
-	 */
+	/** @see OATextFilter#removeNonFileNameChars(String) */
 	public static String removeNonFileNameChars(String line) {
-		if (line == null) {
-			return line;
-		}
-		StringBuilder sb = new StringBuilder(line.length());
-		int x = line.length();
-		for (int i = 0; i < x; i++) {
-			char ch = line.charAt(i);
-			boolean b = (ch == ':' && i == 1);
-			if (!b) {
-				b = (Character.isDigit(ch) || Character.isLetter(ch) || OtherFileNameChars.indexOf(ch) >= 0);
-			}
-			if (b) {
-				sb.append(ch);
-			}
-		}
-		return new String(sb);
+		return OATextFilter.removeNonFileNameChars(line);
 	}
 
 	/**
-	 * Used to replace one value with another within a String.
-	 *
-	 * @param line        is String that is to be converted.
-	 * @param search      is String that is to be replaced.
-	 * @param replace     is replacement value to use. If null, then a blank String will be used.
-	 * @param bIgnoreCase if true, then search is not case sensitive.
-	 * @return new String where search String is replaced with replace String. If line is null then null is returned. If search is null then
-	 *         line is returned.
+	 * @see OATextFilter#convert(String, String, String, boolean, boolean, int, int)
 	 */
 	public static String convert(String line, String search, String replace, boolean bIgnoreCase) {
-		return convert(line, search, replace, bIgnoreCase, false, 0, -1);
+		return OATextFilter.convert(line, search, replace, bIgnoreCase);
 	}
 
+	/**
+	 * @see OATextFilter#convert(String, String, String, boolean, boolean, int, int)
+	 */
 	public static String convert(final String line, String search, String replace, final boolean bIgnoreCase, final boolean bFirstOnly, final int startPos, final int endPos) {
-		if (line == null || search == null || search.length() == 0) {
-			return line;
-		}
-		if (replace == null) {
-			replace = "";
-		}
-		
-		final int xs = search.length();
-		if (xs == 0) return line;
-
-		if (bIgnoreCase) {
-			search = search.toLowerCase();
-		}
-
-		final int xr = replace.length();
-		final int xl = line.length();
-
-		StringBuilder sb = null; // dont allocate until first match is found
-		char c = 0, origChar = 0;
-		for (int i = startPos, j = 0;; i++) {
-
-			if (i < xl && (endPos < 0 || i < endPos)) {
-				origChar = c = line.charAt(i);
-				if (bIgnoreCase) {
-					c = Character.toLowerCase(c);
-				}
-				if (c == search.charAt(j)) {
-					j++;
-					if (j == xs) {
-						if (sb == null) {
-							sb = new StringBuilder(xl + (xl / 10));
-							int e = (i - j) + 1;
-							if (e > 0) {
-								sb.append(line.substring(0, e));
-							}
-						}
-
-						if (xr > 0) {
-							sb.append(replace);
-							if (bFirstOnly) {
-								break;
-							}
-						}
-						j = 0;
-					}
-					continue;
-				}
-			}
-			if (j > 0) {
-                // i needs to be set back to next char from prev start position
-                i -= (j - 1);
-				if (sb != null) {
-					sb.append(line.charAt(i-1));
-				}
-                j = 0;
-                continue;
-			}
-			if (i >= xl || (endPos >= 0 && i >= endPos)) {
-				break;
-			}
-			if (sb != null) {
-				sb.append(origChar);
-			}
-		}
-		if (sb == null) {
-			return line;
-		}
-		return new String(sb);
+		return OATextFilter.convert(line, search, replace, bIgnoreCase, bFirstOnly, startPos, endPos);
 	}
 
-	/**
-	 * Removes the package name
-	 */
-	public static String getClassName(Class c) {
-		if (c == null) {
-			return null;
-		}
-		return c.getSimpleName();
-		/*
-		String s = c.getName();
-		int x = s.lastIndexOf('.');
-		if (x > 0) s = s.substring(x+1);
-		return s;
-		*/
-	}
-
-	/**
-	 * gets package name
-	 */
-	public static String getPackageName(Class c) {
-		if (c == null) {
-			return null;
-		}
-		String s = c.getName();
-		int x = s.lastIndexOf('.');
-		if (x > 0) {
-			s = s.substring(0, x);
-		}
-		return s;
-	}
-
-	/**
-	 * Used to convert a String that uses CamelCase notation to a titled, space separated String.
-	 * <p>
-	 * Example: "yourNameTest" converts to "Your Name Test"
-	 *
-	 * @param value String to convert
-	 * @return new String that is titled case, with spaces to seperate words. If value is null, then a blank "" is returned.
-	 */
-	public static String convertHungarian(String value) {
-		return getDisplayName(value);
-	}
-
-	private final static String validToCamelCaseSep = " _,.:|\t-/";
-
-	/**
-	 * Example: "Your Name Test" converts to "YourNameTest" Example: "your name test" converts to "yourNameTest" Example: "Your_name_test"
-	 * converts to "YourNameTest" Example: "your.name.test" converts to "yourNameTest" first char upper/lower-case is not changed.
-	 */
+	/** @see OATextFormat#convertToCamelCase(String, String) */
 	public static String convertToCamelCase(String value) {
-		return convertToHungarian(value, null);
+		return OATextFormat.convertToCamelCase(value);
 	}
 
+	/** @see OATextFormat#convertToCamelCase(String, String) */
 	public static String convertToCamelCase(String value, String sepChars) {
-		return convertToHungarian(value, sepChars);
+		return OATextFormat.convertToCamelCase(value, sepChars);
 	}
 
+	/** @see OATextFormat#convertToHungarian(String) */
 	public static String convertToHungarian(String value) {
-		return convertToHungarian(value, null);
+		return OATextFormat.convertToHungarian(value);
 	}
 
+	/** @see OATextFormat#convertToHungarian(String, String) */
 	public static String convertToHungarian(String value, String sepChars) {
-		if (value == null) {
-			return null;
-		}
-		if (sepChars == null) {
-			sepChars = validToCamelCaseSep;
-		}
-		int x = value.length();
-		StringBuilder sb = new StringBuilder(x);
-
-		char chSep = 0;
-		char chLast = 0;
-		for (int i = 0; i < x; i++) {
-			char ch = value.charAt(i);
-			if (sepChars.indexOf(ch) >= 0) {
-				chSep = ch;
-				continue;
-			}
-			if (chSep > 0) {
-				if (Character.isDigit(ch)) {
-					if (chLast > 0 && Character.isDigit(chLast)) {
-						if (chSep == ' ') {
-							chSep = '_';
-						}
-						sb.append(chSep);
-					}
-				} else {
-					ch = Character.toUpperCase(ch);
-				}
-				chSep = 0;
-			}
-			sb.append(ch);
-			chLast = ch;
-		}
-		return sb.toString();
+		return OATextFormat.convertToHungarian(value, sepChars);
 	}
 
-	/**
-	 * Used to convert a String that uses CamelCase notation to a titled, space separated String. The first char and all letter chars
-	 * following non-letter characters will be converted to uppercase. Words will be seperated using space character.
-	 * <p>
-	 * Example: "yourNameTest" converts to "Your Name Test" <br>
-	 * Example: "USAmerica" converts to "US America" <br>
-	 * Example: "v.via" converts to "V.Via"
-	 *
-	 * @param value String to convert
-	 * @return new String that is titled case, with spaces to seperate words. If value is null, then a blank "" is returned.
-	 */
+	/** Alias for {@link #getShortName(String, int)} with max=3 */	
+	public static String getAbbrev(String name) {
+		return getShortName(name);
+	}
+
+	/** Alias for {@link #getShortName(String, int)} with max=3 */	
+	public static String getShortName(String name) {
+		return getShortName(name, 3);
+	}
+
+	/** @see OATextGrammar#getShortName(String, int) */
+	public static String getShortName(final String name, final int max) {
+		return OATextGrammar.getShortName(name, max);
+	}
+	
+	/** @see OATextGrammar#getDisplayName(String) */
 	public static String getDisplayName(String value) {
-		if (value == null) {
-			return "";
-		}
-		int x = value.length();
-
-		StringBuilder sb = new StringBuilder(x + 3);
-
-		char c;
-		char cLast = 0;
-		char cNext = 0;
-
-		for (int i = 0; i < x; i++) {
-			c = (cNext > 0) ? cNext : value.charAt(i);
-			if (i + 1 < x) {
-				cNext = value.charAt(i + 1);
-			} else {
-				cNext = 0;
-			}
-
-			if (i == 0) {
-				if (Character.isLowerCase(c)) {
-					c = Character.toUpperCase(c);
-				}
-			} else if (c == '_') {
-				c = ' ';
-			} else if (cLast == '_') {
-				if (Character.isLowerCase(c)) {
-					c = Character.toUpperCase(c);
-				}
-			} else if (Character.isUpperCase(c)) {
-				if (!Character.isUpperCase(cLast)) {
-					sb.append(" ");
-				} else {
-					if (cNext > 0 && Character.isLowerCase(cNext)) {
-						sb.append(" ");
-					}
-				}
-			}
-			sb.append(c);
-			cLast = c;
-		}
-		return new String(sb);
+		return OATextGrammar.getDisplayName(value);
 	}
 
+	/** @see OATextGrammar#createDisplayName(String) */
 	public static String createDisplayName(String value) {
-		return getDisplayName(value);
+		return OATextGrammar.createDisplayName(value);
 	}
 
+	/** @see OATextGrammar#convertToDisplayName(String) */
 	public static String convertToDisplayName(String value) {
-		return getDisplayName(value);
+		return OATextGrammar.convertToDisplayName(value);
 	}
 
-	/**
-	 * Converts a String that is plural to singular.<br>
-	 * Converts end characters: "hes" to "h", "ses" to "s", "zzes" to "zz", "ies" to "y", "s" to "". This is the reverse method of
-	 * makePlural.
-	 *
-	 * @return new String. If s is null, then a blank "" is returned.
-	 * @see #makePlural
-	 */
+	/** @see OATextGrammar#makeSingular(String) */
+	public static String getSingular(String str) {
+		return OATextGrammar.makeSingular(str);
+	}
+	
+	/** @see OATextGrammar#makeSingular(String) */
 	public static String makeSingular(String str) {
-		if (str == null) {
-			return "";
-		}
-		int x = str.length();
-		if (x < 2) {
-			return str;
-		}
-		boolean bUpper = Character.isUpperCase(str.charAt(x - 1));
-
-		String test = str.toUpperCase();
-		if (test.charAt(x - 1) != 'S') {
-			return str;
-		}
-		char ch = test.charAt(x - 2);
-		if (ch == 'A' || ch == 'I' || ch == 'O' || ch == 'U' || ch == 'Y' || ch == 'S') {
-			return str;
-		}
-		if (test.endsWith("HES")) {
-			return str.substring(0, x - 2);
-		}
-		if (test.endsWith("SES")) {
-			return str.substring(0, x - 2);
-		}
-		if (test.endsWith("ZZES")) {
-			return str.substring(0, x - 2);
-		}
-		if (test.endsWith("IES")) {
-			return str.substring(0, x - 3) + (bUpper ? "Y" : "y");
-		}
-		if (test.endsWith("XES")) {
-			return str.substring(0, x - 2);
-		}
-		return str.substring(0, x - 1);
+		return OATextGrammar.makeSingular(str);
 	}
-
-	/**
-	 * Converts a String to plural.
-	 *
-	 * @see #makePlural
-	 */
+	
+	/** @see OATextGrammar#getPlural(String) */
 	public static String getPlural(String s) {
 		return makePlural(s);
 	}
 
-	public static String getAorAn(String s) {
-		if (s == null || s.length() == 0) {
-			return "a";
-		}
-		char ch = Character.toLowerCase(s.charAt(0));
-		if ("aeiou".indexOf(ch) < 0) {
-			return "a";
-		}
-		return "an";
-	}
-
-	/**
-	 * Converts a String to plural.
-	 * <ul>
-	 * <li>If str ends in "es" then no change is made.
-	 * <li>If str ends in "s" then add "es".
-	 * <li>If str ends in "zz" then add "s".
-	 * <li>If str ends is an "h", "z", "x" then add "es".
-	 * <li>If str ends in a vowel + "y", then add "s".
-	 * <li>If str ends in a nonvowel + "y", then convert "y" to "ies".
-	 * <li>All others have an "s" added.
-	 * </ul>
-	 * <p>
-	 * Note: case will be matched, whatever characters are appended will match the case of the String. This is the reverse method of
-	 * makeSingular.
-	 *
-	 * @return new plural String. If s is null, then a blank "" is returned.
-	 * @see #makeSingular
-	 */
+	/** @see OATextGrammar#getPlural(String) */
 	public static String makePlural(String str) {
-		if (str == null) {
-			return "";
-		}
-		int x = str.length();
-		if (x == 0) {
-			return str;
-		}
-		char ch = str.charAt(x - 1);
-		boolean bUpper = Character.isUpperCase(ch);
-		ch = Character.toUpperCase(ch);
-		char ch2 = 0;
-		if (x > 1) {
-			ch2 = Character.toUpperCase(str.charAt(x - 2));
-		}
-
-		if (ch == 'S') {
-			if (ch2 == 'E') {
-				return str;
-			}
-			return str + (bUpper ? "ES" : "es");
-		}
-
-		if (ch == 'Z' && ch2 == 'Z') {
-			return str + (bUpper ? "S" : "s");
-		}
-
-		if (ch2 == 'T' && ch == 'H') {
-			return str + 's';
-		}
-		if (ch == 'H' || ch == 'Z' || ch == 'X') {
-			return str + (bUpper ? "ES" : "es");
-		}
-
-		if (ch == 'Y') {
-			if (ch2 == 'A' || ch2 == 'E' || ch2 == 'I' || ch2 == 'O' || ch2 == 'U') {
-				return str + (bUpper ? "S" : "s");
-			}
-			return str.substring(0, x - 1) + (bUpper ? "IES" : "ies");
-		}
-		return str + (bUpper ? "S" : "s");
+		return OATextGrammar.makePlural(str);
+	}
+	
+	/** @see OATextGrammar#getAorAn(String) */
+	public static String getAorAn(String s) {
+		return OATextGrammar.getAorAn(s);
 	}
 
+	/** @see OATextGrammar#makePossessive(String) */
 	public static String makePossessive(String str) {
-		if (str == null) {
-			return "";
-		}
-		int x = str.length();
-		if (x == 0) {
-			return str;
-		}
-		char ch = str.charAt(x - 1);
-		boolean bUpper = Character.isUpperCase(ch);
-
-		if (ch == 'S' || ch == 's') {
-			return str + "'";
-		}
-
-		return str + "'" + (bUpper ? "S" : "s");
+		return OATextGrammar.makePossessive(str);
 	}
 
-	/**
-	 * Converts a String to possissive by adding "'s" or "'".
-	 */
+	/** @see OATextGrammar#getPossessive(String) */
 	public static String getPossessive(String str) {
-		if (str == null) {
-			return "";
-		}
-		int x = str.length();
-		if (x == 0) {
-			return str;
-		}
-		char ch = str.charAt(x - 1);
-
-		if (ch == 'S' || ch == 's') {
-			return str + "'";
-		}
-		return str + (Character.isUpperCase(ch) ? "'S" : "'s");
+		return OATextGrammar.getPossessive(str);
 	}
 
-	/**
-	 * Converts first letter in each word to uppercase.
-	 *
-	 * @return new String.
-	 */
+	/** @see OATextGrammar#getTitle(String) */
+	public static String getTitle(String s) {
+		return OATextGrammar.getTitle(s);
+	}
+	
+	/** @see OATextGrammar#getTitle(String) */
 	public static String getTitleCase(String s) {
 		return getTitle(s);
 	}
 
-	/**
-	 * Converts first letter in each word to uppercase.
-	 *
-	 * @return new String.
-	 */
+	/** @see OATextGrammar#getTitle(String) */
 	public static String toTitleCase(String s) {
 		return getTitle(s);
 	}
 
-	/**
-	 * Converts first letter in each word to uppercase.
-	 *
-	 * @return new String.
-	 */
+	/** @see OATextGrammar#getTitle(String) */
 	public static String titleCase(String s) {
 		return getTitle(s);
 	}
 
+	/** @see OATextChars#makeFirstCharLower(String) */
+	public static String makeFirstCharLower(String s) {
+		return OATextChars.makeFirstCharLower(s);
+	}
+	/** @see OATextChars#makeFirstCharLower(String) */
 	public static String mfcl(String s) {
 		return makeFirstCharLower(s);
 	}
 
-	public static String makeFirstCharLower(String s) {
-		if (s == null) {
-			return null;
-		}
-		int x = s.length();
-		if (x > 0) {
-			char ch = s.charAt(0);
-			char ch2 = Character.toLowerCase(ch);
-			if (ch != ch2) {
-				if (x == 1) {
-					s = "" + ch2;
-				} else {
-					s = ch2 + s.substring(1);
-				}
-			}
-		}
-		return s;
+	/** @see OATextChars#makeFirstUpperCharsLower(String) */
+	public static String makeFirstUpperCharsLower(String s) {
+		return OATextChars.makeFirstUpperCharsLower(s);
 	}
 
+	/** @see OATextChars#makeFirstUpperCharsLower(String) */
 	public static String mfucl(String s) {
 		return makeFirstUpperCharsLower(s);
 	}
 
-	/**
-	 * Example: GSMRServer -&gt; gsmrServer
-	 */
-	public static String makeFirstUpperCharsLower(String s) {
-		if (s == null) {
-			return null;
-		}
-		int x = s.length();
-		StringBuilder sb = null;
-		for (int i = 0; i < x; i++) {
-			char ch = s.charAt(i);
-			char ch2 = (i + 1 == x ? 0 : s.charAt(i + 1));
-
-			if (Character.isUpperCase(ch) && (i == 0 || (ch2 == 0 || Character.isUpperCase(ch2)))) {
-				if (sb == null) {
-					sb = new StringBuilder(x);
-				}
-				sb.append(Character.toLowerCase(ch));
-			} else {
-				if (sb != null) {
-					sb.append(s.substring(i));
-				}
-				break;
-			}
-		}
-		if (sb != null) {
-			return new String(sb);
-		}
-		return s;
+	/** @see OATextChars#makeFirstCharUpper(String) */
+	public static String makeFirstCharUpper(String s) {
+		return OATextChars.makeFirstCharUpper(s);
 	}
-
+	/** @see OATextChars#makeFirstCharUpper(String) */
 	public static String mfcu(String s) {
 		return makeFirstCharUpper(s);
 	}
-
-	public static String makeFirstCharUpper(String s) {
-		if (s == null) {
-			return null;
-		}
-		int x = s.length();
-		if (x > 0) {
-			char ch = s.charAt(0);
-			char ch2 = Character.toUpperCase(ch);
-			if (ch != ch2) {
-				if (x == 1) {
-					s = "" + ch2;
-				} else {
-					s = ch2 + s.substring(1);
-				}
-			}
-		}
-		return s;
-	}
-
-	/**
-	 * Converts first letter in each word to uppercase.
-	 *
-	 * @return new String.
-	 */
-	public static String getTitle(String s) {
-		if (s == null) {
-			return "";
-		}
-
-		String s2 = s.toUpperCase();
-		boolean bAllUpper = s2.equals(s);
-
-		int x = s.length();
-		if (x == 0) {
-			return s;
-		}
-		boolean b = true;
-		StringBuilder sb = new StringBuilder(s.length());
-		
-		for (int i = 0; i < x; i++) {
-			char ch = s.charAt(i);
-			if (Character.isLetter(ch)) {
-				if (b) {
-					ch = Character.toUpperCase(ch);
-					b = false;
-				} else {
-					if (bAllUpper) {
-						ch = Character.toLowerCase(ch);
-					}
-				}
-			} else {
-				b = true;
-			}
-			sb.append(ch);
-		}
-		return sb.toString();
-	}
-
-	public static String mfcu(String s, String basedOn) {
-		return getTitle(s, basedOn);
-	}
-
-	/**
-	 * @param basedOn is another name that this one should use to figure out which letters to capitalize. ex: gsmrServer, GSMRServer =&gt;
-	 *                GSMRServer
-	 */
-	public static String getTitle(String s, String basedOn) {
-		if (s == null) {
-			return "";
-		}
-
-		String s2 = s.toUpperCase();
-		boolean bAllUpper = s2.equals(s);
-
-		int x = s.length();
-		if (x == 0) {
-			return s;
-		}
-		boolean bConvert = true;
-		StringBuilder sb = new StringBuilder(s.length());
-		int cnt = 0;
-		for (int i = 0; i < x; i++) {
-			char ch = s.charAt(i);
-			if (Character.isLetter(ch)) {
-				if (bConvert) {
-					char chHold = ch;
-					ch = Character.toUpperCase(ch);
-					cnt++;
-					if (basedOn != null && i < basedOn.length()) {
-						char ch2 = basedOn.charAt(i);
-						if (ch != ch2) {
-							bConvert = false;
-							if (cnt > 1) {
-								ch = chHold;
-							}
-						}
-					} else {
-						bConvert = false;
-					}
-				} else {
-					if (bAllUpper) {
-						ch = Character.toLowerCase(ch);
-					}
-				}
-			} else {
-				bConvert = true;
-			}
-			sb.append(ch);
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Used to retrieve a portion of a String based on a separator value.
-	 *
-	 * @see #field(String,String,int,int)
-	 */
-	public static String field(String str, char sep, int beg) {
-		return field(str, sep + "", beg, 1);
-	}
-	public static String fieldAt(String str, char sep, int beg) {
-		return field(str, sep + "", beg+1, 1);
-	}
-
-	/**
-	 * Used to retrieve a portion of a String based on a separator value.
-	 *
-	 * @see #field(String,String,int,int)
-	 */
-	@Deprecated(since="4.0.0")
-	public static String field(String str, char sep, int beg, int amt) {
-		return field(str, sep + "", beg, amt);
-	}
-	public static String fieldAt(String str, char sep, int beg, int amt) {
-		return field(str, sep + "", beg+1, amt);
-	}
-
-	/**
-	 * Used to retrieve a portion of a String based on a separator value.
-	 *
-	 * @see #field(String,String,int,int)
-	 */
-	@Deprecated(since="4.0.0")
+	
+	/** @see OATextTokenizer#field(String, String, int) */
+	@Deprecated(since = "4.0.0")
 	public static String field(String str, String sep, int beg) {
-		return field(str, sep, beg, 1);
-	}
-	public static String fieldAt(String str, String sep, int beg) {
-		return field(str, sep, beg+1);
-	}
-
-
-	/**
-	 * '0' based modernized version in 4.0
-	 */
-	public static String fieldAt(final String str, final String sep, final int beg, final int amt) {
-		return field(str, sep, beg+1, amt);
+		return OATextTokenizer.field(str, sep, beg);
 	}
 	
-	
-	/**
-	 * Used to retrieve a portion of a String based on a separator value.
-	 * Note: this is '1' based, not '0' based.
-	 * Matches old PICK string method.
-	 *
-	 * @param str String to parse
-	 * @param sep seperator wihin str
-	 * @param beg field to find, where first field is <b>1</b>
-	 * @param amt number of fields to return, -1 for all after the beg
-	 * @return string value of field if begin position exists, else null if not found
-	 */
-	@Deprecated(since="4.0.0")
+	/** @see OATextTokenizer#fieldAt(String, String, int, int) */
+	@Deprecated(since = "4.0.0")
 	public static String field(final String str, final String sep, final int beg, final int amt) {
-		if (str == null) {
-			return null;
-		}
-		
-		if (beg < 1 || amt == 0) {
-			return null;
-		}
-		if (sep == null || sep.length() == 0) {
-			if (beg == 1) return str;
-			return null;
-		}
-
-		int pos = 0;
-		int beginPos = -1;
-		int endPos = str.length();
-		if (beg == 1) {
-			beginPos = 0;
-		}
-
-		for (int i = 2;; i++) {
-			pos = str.indexOf(sep, pos);
-			if (pos < 0) {
-				break;
-			}
-			if (i == beg) {
-				beginPos = pos + sep.length();
-				endPos = str.length();
-			}
-			if (beginPos >= 0) {
-				if (amt == -1) {
-					break;
-				}
-				if (i == beg + amt) {
-					endPos = pos;
-					break;
-				}
-			}
-			pos += sep.length();
-		}
-		if (beginPos < 0) {
-			return null;
-		}
-		if (beginPos >= endPos) {
-			return "";
-		}
-		return str.substring(beginPos, endPos);
-	}
-
-	
-	// qqqqqqqqqqq ??? not sure about this one
-	public static int countMatches(String str, String sep) {
-		return dcount(str, sep);
-	}
-	// qqqqqqqqqqq ??? not sure about this one
-	public static int countMatches(String str, char sep) {
-		return dcount(str, sep);
+		return OATextTokenizer.field(str, sep, beg, amt);
 	}
 	
+	/** @see OATextTokenizer#field(String, char, int) */
+	@Deprecated(since = "4.0.0")
+	public static String field(String str, char sep, int beg) {
+		return OATextTokenizer.field(str, sep, beg);
+	}
+
+	/** @see OATextTokenizer#field(String, char, int, int) */
+	@Deprecated(since = "4.0.0")
+	public static String field(String str, char sep, int beg, int amt) {
+		return OATextTokenizer.field(str, sep, beg, amt);
+	}
+
+	/** @see OATextTokenizer#fieldAt(String, String, int) */
+	public static String fieldAt(String str, String sep, int beg) {
+		return OATextTokenizer.fieldAt(str, sep, beg);
+	}
+
+	/** @see OATextTokenizer#fieldAt(String, String, int, int) */
+	public static String fieldAt(final String str, final String sep, final int beg, final int amt) {
+		return OATextTokenizer.fieldAt(str, sep, beg, amt);
+	}
 	
-	/**
-	 * Used to get a count of the number of values between a separator/delimiter.
-	 * <p>
-	 * Note: even if there is not a value between consective separators, it is still counted as another value - in this case a blank.
-	 *
-	 * @param str is String to search. If null or length = 0, then 0 is returned.
-	 * @param sep separator.
-	 */
-	public static int dcount(String str, String sep) {
-		if (str == null || str.length() == 0) {
-			return 0;
-		}
-		return count(str, sep) + 1;
+	/** @see OATextTokenizer#fieldAt(String, char, int) */
+	public static String fieldAt(String str, char sep, int beg) {
+		return OATextTokenizer.fieldAt(str, sep, beg);
+	}
+	
+	/** @see OATextTokenizer#fieldAt(String, char, int, int) */
+	public static String fieldAt(String str, char sep, int beg, int amt) {
+		return OATextTokenizer.fieldAt(str, sep, beg, amt);
 	}
 
-
-	public static int dcount(String str, char sep) {
-		if (str == null || str.length() == 0 || sep == 0) {
-			return 0;
-		}
-		return count(str, sep + "") + 1;
-	}
-
-
-	/**
-	 * Returns the amount of particular String within a String.
-	 *
-	 * @param str is String to search within.
-	 * @param sep is String to search for.
-	 * @return number of occurrences of sep.
-	 */
+	/** @see OATextTokenizer#count(String, String) */
 	public static int count(String str, String sep) {
-		if (str == null || str.length() == 0 || sep == null) return 0;
-
-		int x = sep.length();
-		if (x == 0) return 0;
-		
-		int cnt = 0;
-		int pos = 0;
-		for (;; cnt++) {
-			pos = str.indexOf(sep, pos);
-			if (pos < 0) {
-				break;
-			}
-			pos += x;
-		}
-		return cnt;
+		return OATextTokenizer.count(str, sep);
 	}
 
+	/** @see OATextTokenizer#countMatches(String, String) */
+	public static int countMatches(String str, String sep) {
+		return OATextTokenizer.countMatches(str, sep);
+	}
+
+	/** @see OATextTokenizer#countMatches(String, String) */
+	public static int countMatches(String str, char sep) {
+		return OATextTokenizer.countMatches(str, sep);
+	}
+
+	/** @see OATextTokenizer#dcount(String, String) */
+	public static int dcount(String str, String sep) {
+		return OATextTokenizer.dcount(str, sep);
+	}
+
+	/** @see OATextTokenizer#dcount(String, String) */
+	public static int dcount(String str, char sep) {
+		return OATextTokenizer.dcount(str, sep);
+	}
+
+	/** @see OATextAlign#padStart(String, int, char) */
 	public static String padStart(String value, int amount) {
 		return pad(value, amount, false, ' ');
 	}
 
+	/** @see OATextAlign#padStart(String, int, char) */
 	public static String leftPad(String value, int amount) {
 		return pad(value, amount, false, ' ');
 	}
 
+	/** @see OATextAlign#padStart(String, int, char) */
 	public static String padStart(String value, int amount, char padChar) {
 		return pad(value, amount, false, padChar);
 	}
 
+	/** @see OATextAlign#padStart(String, int, char) */
 	public static String leftPad(String value, int amount, char padChar) {
 		return pad(value, amount, false, padChar);
 	}
 
+	/** @see OATextAlign#padEnd(String, int, char) */
 	public static String padEnd(String value, int amount) {
 		return pad(value, amount, true, ' ');
 	}
 
+	/** @see OATextAlign#padEnd(String, int, char) */
 	public static String padRight(String value, int amount) {
 		return pad(value, amount, true, ' ');
 	}
 
-	public static String rightEnd(String value, int amount, char padChar) {
-		return pad(value, amount, true, padChar);
-	}
-
+	/** @see OATextAlign#padEnd(String, int, char) */
 	public static String padEnd(String value, int amount, char padChar) {
 		return pad(value, amount, true, padChar);
 	}
 
-	/**
-	 * Append characters to begin/end of a value.
-	 *
-	 * @param value        is String to append to. If null, then it will be initialized to an empty string.
-	 * @param amount       is number of characters to add.
-	 * @param bAddToEnd    if true, then charPad characters are appended to value, else charPad chars are prefixed to value.
-	 * @param padCharacter is the character to use for adding to value.
-	 * @see #align
-	 */
+	/** @see OATextAlign#align(String, int, OATextAlign.Align, char, boolean) */
 	public static String pad(String value, int amount, boolean bAddToEnd, char padCharacter) {
-		if (value == null) {
-			value = "";
-		}
-		if (amount < 1) {
-			return value;
-		}
-
-		StringBuilder sb = new StringBuilder(value.length() + amount);
-		if (!bAddToEnd) {
-			for (int i = 0; i < amount; i++) sb.append(padCharacter);
-			sb.append(value);
-		}
-		else {
-			sb.append(value);
-			for (int i = 0; i < amount; i++) sb.append(padCharacter);
-		}
-		return sb.toString();
+		if (bAddToEnd)
+			return OATextAlign.padEnd(value, amount, padCharacter);
+		return OATextAlign.padStart(value, amount, padCharacter);
+	}
+	
+	/** @see OATextAlign#alignLeft(String, int, char) */
+	public static String alignLeft(String value, int width, char charPad) {
+		return OATextAlign.alignLeft(value, width, charPad);
 	}
 
-	/**
-	 * Aligns a string either left or right to a certain width. If length of value is less then width, then characters are added to
-	 * begin/end of value to make it equal to the width. If length of value is greater then the width, then the beginning/ending width
-	 * amount of characters will be returned.
-	 *
-	 * @param value      is String to alter. If null, then it will be initialized to an empty string.
-	 * @param width      is number of characters for the converted string. If &lt;= 0, then a blank string is returned.
-	 * @param bAlignLeft if true then value is right aligned, else left aligned.
-	 * @param charPad    is the character to use to pad the value, if length of value is less then width. The value will then have this
-	 *                   character either at the beginning or ending, depending on value of bAlignLeft.
-	 * @return new String that is "width" characters in length.
-	 * @see #pad(String,int,boolean,char)
-	 */
+	/** @see OATextAlign#alignRight(String, int, char) */
+	public static String alignRight(String value, int width, char charPad) {
+		return OATextAlign.alignRight(value, width, charPad);
+	}
+
+	/** @see OATextAlign#alignCenter(String, int, char) */
+	public static String alignCenter(String value, int width, char charPad) {
+		return OATextAlign.alignCenter(value, width, charPad);
+	}
+	/** @see OATextAlign#align(String, int, boolean, char) */
 	public static String align(String value, int width, boolean bAlignLeft, char charPad) {
-		if (width < 1) {
-			return "";
-		}
-		if (value == null) {
-			value = "";
-		}
-		int w = value.length();
-		if (w == width) {
-			return value;
-		}
-
-		if (w < width) {
-			return pad(value, width - w, bAlignLeft, charPad);
-		}
-
-		if (bAlignLeft) {
-			return value.substring(0, width);
-		}
-		return value.substring(w - width);
+		return OATextAlign.align(value, width, bAlignLeft, charPad);
 	}
-
-	/**
-	 * Calls OAConverter to convert/format number. see OAConverterNumber
-	 */
+	
+	/** @see OATextFormat#format(String, String) */
 	public static String format(long value, String format) {
 		return OAConv.toString(value, format);
 	}
 
-	/**
-	 * Used to convert an integer to a formatted String, either using OAConverter or OAString.format() param vaule integer to format
-	 *
-	 * @param format if String has an "L", "R", or "C" in it, then OAString.format(String,String) will be used, else OAConverter.toString()
-	 *               will be called. see OAConverterNumber
-	 * @see #fmt(String,String)
-	 */
+	/** @see OATextFormat#format(String, String) */
 	public static String format(int value, String format) {
 		// see which format to use
 		String s = format.toUpperCase();
@@ -1381,13 +493,7 @@ public class OAString {
 		return OAConv.toString(value, format);
 	}
 
-	/**
-	 * Used to convert an double to a formatted String, either using OAConverter or OAString.format() param vaule integer to format
-	 *
-	 * @param format if String has an "L", "R", or "C" in it, then OAString.format(String,String) will be used, else OAConverter.toString()
-	 *               will be called, which uses Java formatting. see OAConverterNumber
-	 * @see #fmt(String,String)
-	 */
+	/** @see OATextFormat#format(String, String) */
 	public static String format(double value, String format) {
 		String s = format.toUpperCase();
 		if (s.indexOf('R') >= 0 || s.indexOf('L') >= 0 || s.indexOf('C') >= 0) {
@@ -1396,1102 +502,257 @@ public class OAString {
 		return OAConv.toString(value, format);
 	}
 
-	/**
-	 * Calls OAConverter to format boolean to a String. see OAConverterBoolean
-	 */
+	/** @see OATextFormat#format(String, String) */
 	public static String format(boolean value, String format) {
 		return OAConv.toString(value, format);
 	}
 
-	/**
-	 * Calls OAConverter to convert and format OADateTime. see OAConverterOADateTime
-	 */
+	/** @see OATextFormat#format(String, String) */
 	public static String format(OADateTime value, String format) {
 		return OAConv.toString(value, format);
 	}
 
-	/**
-	 * Calls OAConverter to convert and format OADate. see OAConverterOADate
-	 */
+	/** @see OATextFormat#format(String, String) */
 	public static String format(OADate value) {
 		return OAConv.toString(value, OADate.getGlobalOutputFormat());
 	}
 
-	// main format format main
-	/**
-	 * fmt/format javadoc Used to format/mask Strings using a "Pick like" format/mask String.
-	 * <p>
-	 * Also supports formats for Date/Times (see OADateTime) and Numbers (see OAConverterNumber)
-	 * <p>
-	 * <b>Formatting Strings</b>
-	 *
-	 * <pre>
-
-	 Example:  fmt(str,"12 L2.,$0(MASK)");
-
-	 Format description for "12 L2,$0(MASK)":
-	     12 = width - not required.
-	          will pad with spaces if pad character is not defined.
-	          if width is not included, then length of String is not restricted.
-	 ' ' = trailing blanks that will be added to the end of formatted String.
-	     L = L, R, or C justified
-	     2 = decimal places - can only be ONE digit.  Rounding will be used.
-	     . = if value has to be truncated, then "..." will be used.  Only used with "L" or "R" justified.
-	     , = if you want commas to seperate numbers
-	     $ = dollar sign, only if 'R' justified  puts it in first char
-	     0 = any pad character - default space. Dont put this 1 after L/R, since
-	         that position is used for the amount of decimal places.
-	     Mask = must be in "()".  Use # character to have actual characters inserted,
-	            all other characters in mask will be inserted.
-
-	 Examples:
-
-	 fmt("1234.5", "R4,")
-	     "R4," = align right, 4 decimal places with comma seperators.
-	     output: "1,234.5000"
-
-	 fmt("123.5", "R00")
-	     "R00" = align right, 0 decimal places (causes rounding), pad with '0' character
-	     output: "123"
-
-	 fmt("123.5", "8R00")
-	     "8R00" = 8 width to fill,
-	     output: "00000123"
-
-	 fmt("123.5", "8 R00")
-	     "8 R00" = 8 width, append one space, right justified, 0 decimal places, '0' fill
-	     output: "00000123 "
-
-	 fmt("1231231234","13  R((###)###-####)")
-	     "13  R((###)###-####)" = 13 width, append 2 spaces, right justified, mask to use.
-	          Note: the mask must be put into () and use # to denote where to insert the
-	          characters within the supplied String.
-	     output: "(123)123-1234  "
-	 fmt("CustomerName", "8L.")
-	      output: "Custo..."
-     fmt("CustomerName", "7R.")
-          output: "...omer"
-	 * </pre>
-	 */
+	/** @see OATextFormat#format(String, String) */
 	public static String format(String str, String format) {
 		return fmt(str, format);
 	}
 
+	/** @see OATextFormat#pickFormat(String, String) */
 	public static String pickFormat(String str, String format) {
 		return fmt(str, format);
 	}
 
-	/**
-	 * Used to format/mask Strings using a format/mask String.
-	 *
-	 * @see #format(String,String)
-	 */
+	/** @see OATextFormat#fmt(String, String) */
 	public static String fmt(String str, String format) {
-		String s = _fmt(str, format);
+		String s = OATextFormat.fmt(str, format);
 		return s;
 	}
 
-	
-	private static String _fmt(final String strOrig, final String format) {
-		if (format == null || format.length() == 0) {
-			return strOrig;
-		}
-		String str = strOrig;
-
-		// see if format is for a data/time
-		String s = format.toLowerCase();
-		int x = s.length();
-		boolean bAlignment = false;
-		boolean bLetters = false;
-		for (int i = 0; i < x; i++) {
-			char c = s.charAt(i);
-			if (c == 'l' || c == 'r' || c == 'c') {
-				bAlignment = true;
-				break;
-			}
-			if (Character.isLetter(c)) {
-				bLetters = true;
-			}
-		}
-		
-		if (!bAlignment) {
-			if (bLetters) {
-				if (DATE_PATTERN.matcher(format).matches()) {
-					// try date
-					try {
-						OADateTime dt = new OADateTime(str);
-						return dt.toString(format);
-					} catch (Exception e) {
-					}
-				}
-			} else if (str != null && NUMBER_PATTERN.matcher(format).matches()) {
-				// try number
-				try {
-					Number num = OAConv.toDouble(str);
-					return OAConv.toString(num, format);
-				} catch (Exception e) {
-				}
-			}
-		}
-
-		// see if format is for a number
-		int i, j, k, l, blanks = 0, len = 0;
-		char lr = 0;
-		char testc, charPad = ' ';
-		int deci = 0;
-		boolean comma = false, dollar = false;
-		boolean deci_flag = false;
-		boolean bDots = false;
-		String test, test1;
-
-		if (str == null) {
-			str = "";
-		}
-
-		x = format.length();
-
-		// find L or R and format number
-		for (i = 0, len = 0; i < x && lr == 0; i++) {
-			testc = Character.toUpperCase(format.charAt(i));
-			if ("RLC".indexOf(testc) < 0) {
-				continue;
-			}
-
-			lr = testc;
-			test = fieldAt(format, format.charAt(i), 0);
-			if (test == null) {
-				test = "";
-			}
-			test1 = field(test, ' ', 0);
-			if (test1 == null) {
-				test1 = "";
-			}
-			/* length plus spaces  ex: "10 L" */
-			blanks = test.length() - test1.length();
-			try {
-				len = Integer.parseInt(test1);
-			} catch (Exception e) {
-				len = 0;
-			}
-		}
-
-		if (lr == 0) {
-			lr = 'L';
-			test1 = field(format, ' ', 0);
-			if (test1 == null) {
-				test1 = "";
-			}
-			i = test1.length();
-			if (i > 0) {
-				try {
-					len = Integer.parseInt(test1);
-				} catch (Exception e) {
-					len = 0;
-				}
-			}
-			for (; i < x && format.charAt(i) == ' '; i++) {
-				blanks++;
-			}
-		}
-
-		// check for decimals
-		if (i < format.length()) {
-			if (Character.isDigit(format.charAt(i))) {
-				deci = (format.charAt(i++) - '0');
-				deci_flag = true;
-			}
-		}
-
-		for (; i < format.length() && format.charAt(i) != '('; i++) {
-			switch (format.charAt(i)) {
-			case ',':
-				comma = true;
-				break;
-			case '$':
-				dollar = true;
-				break;
-			case '.':
-				if ((lr == 'L' || lr == 'R') && !bDots) {
-					bDots = true;
-					break;
-				}
-			default:
-				charPad = format.charAt(i);
-			}
-		}
-
-		if (deci_flag || comma) {
-			double d = 0.0;
-			try {
-				d = OAConv.toDouble(str);
-				s = "";
-				if (deci_flag) {
-					s = "";
-					for (j = 0; j < deci; j++) {
-						if (j == 0) {
-							s += ".";
-						}
-						s += "0";
-					}
-				}
-				if (comma) {
-					s = "#,###" + s;
-				} else {
-					s = "#" + s;
-				}
-				str = OAConv.toString(Double.valueOf(d), s);
-			} catch (Exception e) {
-			}
-		}
-
-		// create mask
-		j = format.indexOf("(");
-		if (j >= 0) {
-			test = format.substring(j + 1);
-			j = test.length();
-
-			if (test.charAt(j - 1) == ')') {
-				test = test.substring(0, (--j));
-			}
-
-			if (lr == 'R') {
-				for (i = 0, k = 0; i < j; i++) {
-					testc = test.charAt(i);
-					if (testc == '#') {
-						k++;
-					}
-				}
-				k = (k - str.length());
-				if (k > 0) {
-					str = pad(str, k, false, ' ');
-				}
-			}
-
-			String newString = "";
-			for (i = k = l = 0; i < j; i++, k++) {
-				testc = test.charAt(i);
-
-				if (testc == '#') {
-					if (str.length() > l) {
-						newString += str.charAt(l++);
-					} else {
-						newString += ' ';
-					}
-				} else {
-					newString += testc;
-				}
-			}
-			str = newString;
-		}
-
-		if (dollar && lr == 'R') {
-			str = '$' + str;
-		}
-
-		/* format */
-		i = str.length();
-		x = (Math.abs(i - len)) / 2;
-
-		if (i > len) {
-			if (len != 0) {
-				if (lr == 'R') {
-                    if (bDots && len > 3) {
-                        str = "..." + str.substring( (i - len) + 3);
-                    } else {
-                        str = str.substring(i - len);
-                    }
-				} else {
-					if (lr == 'L') {
-						if (bDots && len > 3) {
-							str = str.substring(0, len - 3) + "...";
-						} else {
-							str = str.substring(0, len);
-						}
-					} else { // 'C'
-						str = str.substring(x, x + len);
-					}
-				}
-			}
-		} else {
-			for (j = 0; i < len; i++, j++) {
-				if (lr == 'R' || (lr == 'C' && j < x)) {
-					str = charPad + str;
-				} else {
-					if (!bDots) {
-						str += charPad;
-					}
-				}
-			}
-		}
-		for (i = 0; i < blanks; i++) {
-			str += " ";
-		}
-
+	/** @see OATextFormat#fmt(String, String) */
+	public static String fmt(String str) {
+		if (str == null) return "";
 		return str;
 	}
 
-	/**
-	 * Remove digit characters from String.
-	 *
-	 * @param value is String to strip.
-	 * @return if value=null then null, else new String with digits removed. Note: does not remove "." between digits.
-	 */
+	/** @see OATextFilter#stripDigits(String) */
 	public static String stripDigits(String value) {
-		if (value == null) {
-			return null;
-		}
-		StringBuilder sb = new StringBuilder(value.length());
-		int x = value.length();
-		for (int i = 0; i < x; i++) {
-			char c = value.charAt(i);
-			if (!Character.isDigit(c)) {
-				sb.append(c);
-			}
-		}
-		return sb.toString();
+		return OATextFilter.stripDigits(value);
 	}
 
-	/**
-	 * Used to generate a String based on a mask.
-	 *
-	 * @param value is String to use with mask.
-	 * @param mask  where all # characters will be replaced by data in value. All other characters (non #) in mask will be outputted with
-	 *              new String.
-	 * @return new String with mask applied.
-	 */
+	/** @see OATextFormat#mask(String, String, boolean) */
 	public static String mask(String value, String mask) {
 		return mask(value, mask, false);
 	}
 
-	
-	
-	/**
-	 * Used to generate a String based on a mask.
-	 *
-	 * @param value           is String to use with mask. If null, then value is set to a blank "" String.
-	 * @param mask            where all # characters will be replaced by data in value. All other characters (non #) in mask will be
-	 *                        outputted with new String.
-	 * @param bRightJustified if true, then mask will be generated from right to left, else left to right.
-	 * @return new String with mask applied. If mask == null, then value is returned.
-	 */
+	/** @see OATextFormat#mask(String, String, boolean) */
 	public static String mask(String value, String mask, boolean bRightJustified) {
-		if (mask == null) {
-			return value;
-		}
-		if (value == null) {
-			value = "";
-		}
-
-		int i = 0;
-		int x = value.length();
-
-		int i2 = 0;
-		int x2 = mask.length();
-
-		if (bRightJustified) {
-			int cnt = 0;
-			for (; i2 < x2; i2++) {
-				char c = mask.charAt(i2);
-				if (c == '#') {
-					cnt++;
-				}
-			}
-			i2 = 0;
-			if (cnt > x) {
-				value = pad(value, cnt - x, false, ' ');
-				x = value.length();
-			} else {
-				if (x > cnt) {
-					value = value.substring(x - cnt);
-				}
-			}
-		}
-
-		StringBuilder sb = new StringBuilder(value.length() + 4);
-		for (; i2 < x2; i2++) {
-			char c = mask.charAt(i2);
-			if (c == '#') {
-				if (i < x) {
-					sb.append(value.charAt(i));
-					i++;
-				}
-				else sb.append(' ');
-			} else {
-				sb.append(c);
-			}
-		}
-		return sb.toString();
+		return OATextFormat.mask(value, mask, bRightJustified);
 	}
 
-	/**
-	 * Removes characters from a String.
-	 *
-	 * @param value is String to strip from.
-	 * @param chars values to remove from value
-	 */
+	/** @see OATextFilter#strip(String, String) */
 	public static String strip(String value, String chars) {
-		return stripChars(value, chars, false);
+		return OATextFilter.strip(value, chars);
 	}
 
-	/**
-	 * Removes characters from a String that are not valid.
-	 *
-	 * @param value is String to strip from.
-	 * @param chars is the characters that are valid, other characters will be removed.
-	 */
+	/** @see OATextFilter#accept(String, String) */
 	public static String accept(String value, String chars) {
-		return stripChars(value, chars, true);
+		return OATextFilter.accept(value, chars);
 	}
 
-
-	/**
-	 * Removes or keeps characters based on bKeepChars:
-	 *
-	 * bKeepChars == false: remove any characters found in 'chars'
-	 * bKeepChars == true:  keep only characters found in 'chars'
-	 *
-	 * Does not trim whitespace unless included in 'chars'.
-	 */
-	protected static String stripChars(String value, String chars, boolean bKeepChars) {
-	    if (value == null) return null;
-	    if (chars == null || chars.length() == 0) return value;
-
-	    int len = value.length();
-	    int clen = chars.length();
-	    StringBuilder sb = new StringBuilder(len);
-
-	    // Optimization: ASCII lookup table + flag for unicode presence
-	    boolean[] mask = new boolean[128];
-	    boolean hasAscii = false;
-	    for (int i = 0; i < clen; i++) {
-	        char c = chars.charAt(i);
-	        if (c < 128) {
-	            mask[c] = true;
-	            hasAscii = true;
-	        }
-	    }
-
-	    for (int i = 0; i < len; i++) {
-	        char c = value.charAt(i);
-	        boolean inSet = (c < 128) ? mask[c] : chars.indexOf(c) >= 0;
-
-	        if (bKeepChars) {
-	            if (inSet) sb.append(c);
-	        } else {
-	            if (!inSet) sb.append(c);
-	        }
-	    }
-	    return sb.toString();
-	}
-	
-	
-	
-	/**
-	 * Converts fileName path to correct system file.separator characters.
-	 *
-	 * @return new String with corrected file path characters.
-	 */
+	/** @see OAFile#convertFileName(String) */
 	public static String convertFileName(String fileName) {
 		return OAFile.convertFileName(fileName);
 	}
 
-	/**
-	 * Converts fileName path to correct system file.separator characters.
-	 *
-	 * @return new String with corrected file path characters.
-	 */
+	/** @see OAFile#convertFileName(String, boolean) */
 	public static String convertFileName(String fileName, boolean bEndWithSlashChar) {
 		return OAFile.convertFileName(fileName, bEndWithSlashChar);
 	}
 
+	/** @see OAFile#getFileName(String) */
 	public static String getFileName(String filePath) {
 		return OAFile.getFileName(filePath);
 	}
 
+	/** @see OAFile#getDirectoryName(String) */
 	public static String getDirectoryName(String filePath) {
 		return OAFile.getDirectoryName(filePath);
 	}
 
-	/**
-	 * Converts a color to a String that represents the Hex value.
-	 *
-	 * @return null if color=null, else Hex String with leading "#", ex: "#00FFCC"
-	 */
+	/** @see OATextUtil#colorToHex(Color) */
 	public static String colorToHex(Color color) {
-		if (color == null) {
-			return null;
-		}
-		String colorStr = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
-		return colorStr;
+		return OATextUtil.colorToHex(color);
 	}
 
-	
-	/**
-	 * Returns true if the String contains at least one digit [0-9].
-	 *
-	 * @param word String to test
-	 * @return true if any character in word is a digit, otherwise false.
-	 */
+	/** @see OATextChars#hasDigits(String) */
 	public static boolean hasDigits(String word) {
-	    if (word == null) return false;
-	    for (char ch : word.toCharArray()) {
-	        if (Character.isDigit(ch)) return true;
-	    }
-	    return false;
-	}	
-	
+		return OATextChars.hasDigits(word);
+	}
 
-	/**
-	 * Soundex is used for creating a code that is used to find similar words.
-	 * <p>
-	 * 20100417 now using more advanced algorithm see: http://www.archives.gov/genealogy/census/soundex.html
-	 * <p>
-	 * This code is set to 4 char value - padded with char '0'.<br>
-	 * If word == NULL then sndx = "0000"
-	 *
-	 * <pre>
-	 use first letter
-	 exclude "AEHIOUWY" or any char that is not a letter
-	 exclude all duplicates
-	 '0' pad to 4 chars             Note: this will also use digits
-
-	 From: "BFPVCGJKQSZXDTLMNR"
-	 To  : "111122222222334556"
-
-	 EXAMPLE:
-	 soundex(sndx,"Vincent")  sndx = "V523"
-	 soundex(sndx,"Via")      sndx = "V000"
-	 * </pre>
-	 *
-	 * @param word String to create a soundex code for.
-	 * @return new String that is soundex code for word. If word is null,then "0000" is returned.
-	 */
-	/**
-	 * Generates a 4-character Soundex code (U.S. Census standard).
-	 * Non-letter characters are ignored.
-	 *
-	 * If input is null/blank → "0000"
-	 */
+	/** @see OATextSoundex#soundex(String) */
 	public static String soundex(String word) {
-	    if (word == null) return "0000";
-	    word = word.trim();
-	    if (word.isEmpty()) return "0000";
-
-	    word = word.toUpperCase(Locale.ROOT);
-
-	    char[] result = { word.charAt(0), '0', '0', '0' };
-	    char lastCode = _getSoundexCode(result[0]);
-	    int idx = 1;
-
-	    for (int i = 1; i < word.length() && idx < 4; i++) {
-	        char code = _getSoundexCode(word.charAt(i));
-	        if (code <= 1) {  // 0: skip, 1: vowel/hw -> skip but reset duplicate blocker
-	            lastCode = 0;
-	            continue;
-	        }
-	        if (code != lastCode) {
-	            result[idx++] = code;
-	        }
-	        lastCode = code;
-	    }
-	    return new String(result);
+		return OATextSoundex.soundex(word);
 	}
 
-	private static char _getSoundexCode(char ch) {
-	    switch (ch) {
-	        case 'B': case 'F': case 'P': case 'V': return '1';
-	        case 'C': case 'G': case 'J': case 'K': case 'Q': case 'S': case 'X': case 'Z': return '2';
-	        case 'D': case 'T': return '3';
-	        case 'L': return '4';
-	        case 'M': case 'N': return '5';
-	        case 'R': return '6';
-	        case 'A': case 'E': case 'I': case 'O': case 'U': case 'Y': case 'H': case 'W': return 1;
-	        default: return 0;
-	    }
-	}
-
-	/**
-	 * Returns true if the String represents a valid decimal or integer number.
-	 */
+	/** @see OATextFormat#isNumber(String) */
 	public static boolean isNumber(String str) {
-	    if (str == null || str.isBlank()) return false;
-
-	    str = str.trim();
-	    try {
-	        Double d = (Double) OAConverter.convert(Double.class, str);
-	        return d != null && !d.isNaN() && !d.isInfinite();
-	    } catch (Exception ex) {
-	        return false;
-	    }
+		return OATextFormat.isNumber(str);
 	}
-	
 
-	/**
-	 * Returns true if the String represents a whole integer (positive or negative).
-	 */
+	/** @see OATextFormat#isInteger(String) */
 	public static boolean isInteger(String str) {
-	    if (str == null || str.isBlank()) return false;
-
-	    str = str.trim();
-	    try {
-	        Long l = (Long) OAConverter.convert(Long.class, str);
-	        return l != null;
-	    } catch (Exception ex) {
-	        return false;
-	    }
+		return OATextFormat.isInteger(str);
 	}
-	
-	
-	/**
-	 * Returns true if String is a valid Date. This will try to convert the String to a OADate.
-	 *
-	 * @param s String to check
-	 * @return true if String can be converted to a OADate. see OAConverterOADate
-	 */
+
+	/** @see OATextFormat#isDate(String) */
 	public static boolean isDate(String s) {
-	    if (s == null || s.isBlank()) return false;
-	    try {
-	        return OAConverter.convert(OADate.class, s.trim()) != null;
-	    } catch (Exception ex) {
-	        return false;
-	    }
+		return OATextFormat.isDate(s);
 	}
 
-
-	/**
-	 * Returns true if String is a valid Time. This will try to convert the String to a OATime.
-	 *
-	 * @param s String to check
-	 * @return true if String can be converted to a OATime. see OAConverterOATime
-	 */
+	/** @see OATextFormat#isTime(String) */
 	public static boolean isTime(String s) {
-	    if (s == null || s.isBlank()) return false;
-	    try {
-	        return OAConverter.convert(OATime.class, s.trim()) != null;
-	    } catch (Exception ex) {
-	        return false;
-	    }
+		return OATextFormat.isTime(s);
 	}
 
-	/**
-	 * Returns true if String is a valid DateTime. This will try to convert the String to a OADateTime.
-	 *
-	 * @param s String to check
-	 * @return true if String can be converted to a OADateTime. see OAConverterOADateTime
-	 */
+	/** @see OATextFormat#isDateTime(String) */
 	public static boolean isDateTime(String s) {
-	    if (s == null || s.isBlank()) return false;
-	    try {
-	        return OAConverter.convert(OADateTime.class, s.trim()) != null;
-	    } catch (Exception ex) {
-	        return false;
-	    }
-	}	
-
-	
-	
-	
-	/**
-	 * Case sensitive, compares two String to see if they are equal. This will automatically check for nulls.
-	 *
-	 * @return true if both Strings are equal, including if both are null.
-	 * @see equals(String,String,boolean)
-	 */
-	public static boolean equals(String s1, String s2) {
-		return equals(s1, s2, false);
+		return OATextFormat.isDateTime(s);
 	}
-    public static boolean notEquals(String s1, String s2) {
-        return !equals(s1, s2, false);
-    }
 
-	
-	/**
-	 * Compares two Strings for equality, null-safe, optional case insensitivity.
-	 *
-	 * @param bIgnoreCase true to compare case-insensitively
-	 * @return true if both are equal per mode
-	 */
+	/** @see OATextCompare#equals(String, String, boolean) */
 	public static boolean equals(String s1, String s2, boolean bIgnoreCase) {
-	    if (s1 == s2) return true;
-	    if (s1 == null || s2 == null) return false;
-	    return bIgnoreCase ? s1.equalsIgnoreCase(s2) : s1.equals(s2);
-	}	
+		return OATextCompare.equals(s1, s2, bIgnoreCase);
+	}
 	
-	
-    public static boolean notEquals(String s1, String s2, boolean bIgnoreCase) {
-        return !equals(s1, s2, bIgnoreCase);
-    }
-
-
-    /**
-     * Null-safe toString for OA objects.
-     * Converts null → "" (empty string).
-     * Delegates to OAConverter for formatting.
-     */
-	public static String toString(Object obj) {
-		if (obj == null) {
-			return "";
-		}
-		if (obj instanceof String) return (String) obj; 
-		return OAConverter.toString(obj);
+	/** @see OATextCompare#equals(String, String) */
+	public static boolean equals(String s1, String s2) {
+		return OATextCompare.equals(s1, s2);
 	}
 
+	/** @see OATextCompare#notEquals(String, String) */
+	public static boolean notEquals(String s1, String s2) {
+		return OATextCompare.notEquals(s1, s2);
+	}
 
-	/**
-	 * Returns an ordinal number string. Examples: 1st, 2nd, 3rd, 4th, ...
-	 */
-	public static String toNumberString(int x) {
-	    int mod100 = x % 100;
-	    if (mod100 >= 11 && mod100 <= 13) {
-	        return x + "th";
-	    }
-	    switch (x % 10) {
-	        case 1: return x + "st";
-	        case 2: return x + "nd";
-	        case 3: return x + "rd";
-	        default: return x + "th";
-	    }
-	}	
+	/** @see OATextCompare#notEquals(String, String, boolean) */
+	public static boolean notEquals(String s1, String s2, boolean bIgnoreCase) {
+		return OATextCompare.notEquals(s1, s2, bIgnoreCase);
+	}
 	
-	/**
-	 * Shorten line to width amount of characters. If longer then width, then "..." will be the end.
-	 */
+	/** @see OATextSanitize#toString(Object) */
+	public static String toString(Object obj) {
+		return OATextSanitize.toString(obj);
+	}
+
+	/** @see OATextSanitize#toString(Object) */
+	public static String toString(String str) {
+		return OATextSanitize.toString(str);
+	}
+
+	/** @see OATextSanitize#toString(Object) */
+	public static String toString(String str, String strIfNull) {
+		return OATextSanitize.defaultString(str, strIfNull);
+	}
+
+	/** @see String(byte[]) */
+	public static String toString(byte[] bytes) {
+		return new String(bytes, Charset.defaultCharset());
+	}
+	
+	
+	
+	/** @see OATextFormat#toNumberString(int) */
+	public static String toNumberString(int x) {
+		return OATextFormat.toNumberString(x);
+	}
+
+	/** @see OATextLineWrap#wrapToString(String, int) */
+	public static String truncate(String text, int width) {
+		OATextLineWrap wrap = new OATextLineWrap(width, "|").withMaxRows(1);
+		String result = wrap.wrapToString(text);
+		return result;
+	}
+	
+	/** @see OATextLineWrap#wrapToString(String, int) */
 	public static String trunc(String orig, int width) {
 		return truncate(orig, width);
 	}
 
+	/** @see OATextLineWrap#wrapToString(String, int) */
 	public static String abbreviate(String orig, int width) {
 		return truncate(orig, width);
 	}
 
-	public static String truncate(String orig, int width) {
-		if (orig == null) {
-			return null;
-		}
-		if (width == 0) {
-			return "";
-		}
-		
-/*qqqqqqqqvvvvvvvvvvvvvvvvvvvvv
- 		
-		public static String trunc(String s, int max) {
-		    if (s == null) return null;
-		    if (max <= 0) return "";
 
-		    int end = s.offsetByCodePoints(0, Math.min(max, s.codePointCount(0, s.length())));
-		    return s.substring(0, end);
-		}		
-*/
-		
-		
-		if (orig.length() < width) {
-			return orig;
-		}
-
-		
-		if (width > 2) {
-			orig = orig.substring(0, width - 3) + "...";
-		} else {
-			orig = ".";
-			if (width > 1) {
-				orig += ".";
-			}
-		}
-		return orig;
-	}
-
-
-
-	public static String createRandomString(int min, int max) {
-		return getRandomString(min, max, true, true, false);
-	}
-
+	/** @see OATextGenerate#getRandomString(int, int, int, boolean, boolean, boolean) */
 	public static String getRandomString(int min, int max) {
-		return getRandomString(min, max, true, true, false);
+		return OATextGenerate.getRandomString(min, max);
 	}
 
+	/** @see OATextGenerate#getRandomString(int, int, int) */
 	public static String getRandomString(int normal, int min, int max) {
-		return getRandomString(normal, min, max, true, true, false);
+		return OATextGenerate.getRandomString(normal, min, max);
 	}
 
-	public static String createDigits(int min, int max) {
-		return getRandomString(min, max, true, false, false);
-	}
-
-	public static String getRandomDigits(int min, int max) {
-		return getRandomString(min, max, true, false, false);
-	}
-
-	/**
-	 * Returns a string that has random generated characters
-	 *
-	 * @param min           minimum amount of chars in the result.
-	 * @param max           maximum amount of chars in the result.
-	 * @param bUseDigits    if true will use chars 0-9
-	 * @param bUseAlpha     if true will use chars a-z
-	 * @param bCapFirstChar if true and bUseAlpha, then the first char will be capitalized, otherwise all chars will be lowercase.
-	 */
-	public static String createRandomString(int min, int max, boolean bUseDigits, boolean bUseAlpha, boolean bCapFirstChar) {
-		return getRandomString(min, max, bUseDigits, bUseAlpha, bCapFirstChar);
-	}
-
+	/** @see OATextGenerate#getRandomString(int, int, int, boolean, boolean, boolean) */
 	public static String getRandomString(int min, int max, boolean bUseDigits, boolean bUseAlpha, boolean bCapFirstChar) {
-		return getRandomString(0, min, max, bUseDigits, bUseAlpha, bCapFirstChar);
+		return OATextGenerate.getRandomString(min, max, bUseDigits, bUseAlpha, bCapFirstChar);
+	}
+
+	/** @see OATextGenerate#getRandomString(int, int, int, boolean, boolean, boolean) */
+	public static String getRandomString(int normal, int min, int max, boolean bUseDigits, boolean bUseAlpha, boolean bCapFirstChar) {
+		return OATextGenerate.getRandomString(normal, min, max, bUseDigits, bUseAlpha, bCapFirstChar);
+	}
+
+	/** @see OATextGenerate#getRandomDigits(int, int, int, boolean, boolean, boolean) */
+	public static String getRandomDigits(int min, int max) {
+		return OATextGenerate.createDigits(min, max);
 	}
 
 	
-	public static String getRandomString(int normal, int min, int max, boolean bUseDigits, boolean bUseAlpha, boolean bCapFirstChar) {
-		if (min < 0) min = 0;
-		if (max < 0) max = 0;
-		else if (max < min) max = min;
-		if (normal > 0) {
-			if (normal < min) normal = min;
-			else if (normal > max) normal = max;
-		}
-		
-		// adjust min/max based on normal
-		if (normal > 0) {
-			if (normal > min) {
-				int diff = (normal - min);
-				if (Math.random() < .75) {
-					diff = (int) (diff * .30);
-				}
-				min = (int) (normal - (Math.random() * diff));
-			} else {
-				min = normal;
-			}
-
-			if (normal < max) {
-				int diff = (max - normal);
-				if (Math.random() < .9) {
-					diff = (int) (diff * .20);
-				}
-				max = (int) (normal + (Math.random() * diff));
-			} else {
-				max = normal;
-			}
-		
-			if (max < min) {
-			    int tmp = min;
-			    min = max;
-			    max = tmp;
-			}		}
-		
-		int x = min;
-		if (min < max) {
-			x += (int) (Math.random() * (max - min + 1));
-		}
-
-		final StringBuilder sb = new StringBuilder(x);
-		for (int i = 0; i < x; i++) {
-			char ch;
-
-			boolean bAlpha;
-			if (bUseDigits) {
-				if (!bUseAlpha) {
-					bAlpha = false;
-				} else if (i == 0 && bUseAlpha) {
-					bAlpha = true;
-				} else {
-					bAlpha = Math.random() > .5;
-				}
-			} else {
-				bAlpha = true;
-			}
-
-			if (bAlpha) {
-				ch = (char) (Math.random() * 26);
-				if ((i == 0 && bCapFirstChar) || Math.random() > .70) {
-					ch += 'A';
-					if (ch == 'O') {
-						ch = 'P';
-					}
-				} else {
-					ch += 'a';
-					if (ch == 'l') {
-						ch = 'm';
-					}
-				}
-				sb.append(ch);
-			} else {
-				ch = (char) (Math.random() * 10);
-				ch += '0';
-				if (bUseAlpha && ch == '0') {
-					ch = '2';
-				}
-				else if (bUseAlpha && ch == '1') {
-					ch = '3';
-				}
-				sb.append(ch);
-			}
-		}
-		return sb.toString();
-	}
-
-	public static final String LoremLipsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque nec eros pretium, dignissim est sit amet, malesuada augue. Sed pharetra ex ut nulla feugiat laoreet. Nunc finibus malesuada est, et fermentum lorem iaculis eget. Aenean pharetra augue ac elit gravida consectetur. Praesent dapibus sem quis tellus condimentum, eget finibus massa maximus. Quisque tempor a felis in consectetur. Donec a rutrum neque. Nam viverra eros ut arcu interdum facilisis.  "
-			+
-			"Etiam ultricies nisl id lacus vulputate mattis. Nulla condimentum et metus vitae vestibulum. Aliquam ac risus eros. Vestibulum dignissim bibendum sapien, quis feugiat sapien lacinia nec. Mauris id justo pharetra, tincidunt est vel, varius libero. Ut efficitur nulla nec malesuada efficitur. Nulla luctus purus eu metus feugiat, eu semper metus viverra. Aliquam erat volutpat. Vivamus mollis turpis augue, eget maximus lorem convallis vel. Nam sed arcu vitae diam tempus malesuada id non nisl. Phasellus scelerisque nunc ut dapibus interdum.  "
-			+
-			"Donec ornare elementum laoreet. Sed diam mauris, eleifend quis lacinia at, egestas eu tellus. Sed neque augue, vestibulum ut arcu non, accumsan aliquet enim. Aliquam fringilla neque a enim pellentesque hendrerit. Sed ac semper arcu, vitae porta purus. Curabitur sit amet faucibus augue. Praesent accumsan elit ut sem dictum vulputate. Praesent sed tempus mauris, ut ultrices dolor. Nunc congue, tortor sed lacinia pulvinar, mauris mi molestie lorem, at rutrum lorem est euismod magna. Suspendisse sagittis mauris in interdum gravida. Phasellus a ante hendrerit, pulvinar urna eget, scelerisque massa.";
-
+	/** @see OATextGenerate#getDummyText(int, int, int) */
 	public static String getSampleText(int len) {
-        return getDummyText(len, len, len);
-    }
-    public static String getSampleText(int normal, int min, int max) {
-        return getDummyText(normal, min, max);
-    }
+		return getDummyText(len, len, len);
+	}
 
+	/** @see OATextGenerate#getDummyText(int, int, int) */
+	public static String getSampleText(int normal, int min, int max) {
+		return getDummyText(normal, min, max);
+	}
+
+	/** @see OATextGenerate#getDummyText(int, int, int) */
 	public static String getDummyText(int normal, int min, int max) {
-		// adjust min/max based on normal
-		if (normal > 0) {
-			if (normal > max) {
-				normal = max;
-			}
-			if (normal > min) {
-				int diff = (normal - min);
-				if (Math.random() < .75) {
-					diff = (int) (diff * .30);
-				}
-				min = (int) (normal - (Math.random() * diff));
-			} else {
-				min = normal;
-			}
-
-			if (normal < max) {
-				int diff = (max - normal);
-				if (Math.random() < .9) {
-					diff = (int) (diff * .20);
-				}
-				max = (int) (normal + (Math.random() * diff));
-			}
-		}
-		int sampleSize = min;
-		if (min < max) {
-			sampleSize += (int) (Math.random() * (max - min));
-		}
-
-		StringBuilder sb = new StringBuilder(sampleSize);
-		final int maxLipsum = LoremLipsum.length();
-
-		for (; sampleSize > maxLipsum; sampleSize -= maxLipsum) {
-			sb.append(LoremLipsum);
-			sb.append("  ");
-		}
-
-		int beginPos = maxLipsum - sampleSize;
-		beginPos = (int) (Math.random() * beginPos);
-		for (; beginPos > 0 && LoremLipsum.charAt(beginPos) != ' '; beginPos--) {
-			;
-		}
-		if (beginPos > 0) {
-			beginPos++;
-		}
-
-		sb.append(LoremLipsum.substring(beginPos, beginPos + sampleSize));
-		return sb.toString();
+		return OATextGenerate.getDummyText(normal, min, max);
+	}
+	
+	/** @see OATextUtil#createPropertyPath(String...) */
+	public static String createPropertyPath(String... args) {
+		return OATextUtil.createPropertyPath(args);
 	}
 
-	/**
-	 * Short name for createPropertyPath
-	 *
-	 * @see #createPropertyPath(String...)
-	 */
+	/** @see OATextUtil#createPropertyPath(String...) */
 	public static String cpp(String... args) {
-		return createPropertyPath(args);
+		return OATextUtil.createPropertyPath(args);
+	}
+	
+	/** @see OATextUtil#createPropertyPath(Class, String...) */
+	public static String createPropertyPath(Class clazz, String... args) {
+		return OATextUtil.createPropertyPath(clazz, args);
 	}
 
-	/**
-	 * @param clazz name of the first class, in case it is a generic type. (ex: OALeftJoin.A)
-	 * @param args
-	 * @return
-	 */
+	/** @see OATextUtil#createPropertyPath(Class, String...) */
 	public static String cpp(Class clazz, String... args) {
 		return createPropertyPath(clazz, args);
 	}
 
-	/**
-	 * Used to create a dot separated String, used for property paths.
-	 */
-	public static String createPropertyPath(String... args) {
-		if (args == null) {
-			return "";
-		}
-		
-		StringBuilder sb = new StringBuilder(48);
-
-		for (String s : args) {
-			if (s == null) {
-				continue;
-			}
-			
-			if (sb.length() == 0) {
-				sb.append(s);
-			} else {
-				if (s.indexOf(':') == 0) {
-					sb.append(s); // filter
-				} else {
-					sb.append(".");
-					sb.append(s);
-				}
-			}
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * @param clazz name of the first class, in case it is a generic type. (ex: OALeftJoin.A)
-	 * @param args  each property used in the property path.
-	 * @return a dot separated string that represents a valid property path.
-	 */
-	public static String createPropertyPath(Class clazz, String... args) {
-		if (args == null) {
-			return "";
-		}
-		StringBuilder sb = new StringBuilder(48);
-		for (String s : args) {
-			if (s == null) {
-				continue;
-			}
-			if (sb.length() == 0) {
-				if (clazz != null) {
-					sb.append("(");
-					sb.append(clazz.getName());
-					sb.append(")");
-					sb.append(s);
-				} else {
-					sb.append(s);
-				}
-			} else {
-				if (s.indexOf(':') == 0) {
-					sb.append(s); // filter
-				} else {
-					sb.append(".");
-					sb.append(s);
-				}
-			}
-		}
-		return sb.toString();
-	}
-
-	public String toUTF8(String isoString) {
-		String utf8String = null;
-		if (null != isoString && !isoString.equals("")) {
-			try {
-				byte[] stringBytesISO = isoString.getBytes("ISO-8859-1");
-				utf8String = new String(stringBytesISO, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				//  TODO: This should never happen. The UnsupportedEncodingException
-				// should be propagated instead of swallowed. This error would indicate
-				// a severe misconfiguration of the JVM.
-
-				// As we can't translate just send back the best guess.
-				System.out.println("UnsupportedEncodingException is: " + e.getMessage());
-				utf8String = isoString;
-			}
-		} else {
-			utf8String = isoString;
-		}
-		return utf8String;
+	/** @see OATextFormat#toUTF8(String) */
+	public static String toUtf8(String isoString) {
+		return OATextFormat.toUTF8(isoString);
 	}
 
 	public static String getSHAHash(String input) {
@@ -2502,795 +763,214 @@ public class OAString {
 		return OAEncryption.getHash(input);
 	}
 
-	
-	
-	
-	
-	/**
-	 * Formats a string to have a max width per line separated by a delimiter. Lines are broken by whitespace, '-', '.'
-	 *
-	 * @param width    max width per line.
-	 * @param delim    inserted into origLine to create line breaks
-	 * @param maxLines maximum number of lines, if result is longer, then it will be truncated and append with " ..."
-	 */
-	public static String lineBreak(String origLine, int width, String delim, int maxLines) {
-	    if (origLine == null) return "";
-	    if (width < 1) return origLine;
-	    if (delim == null) delim = "\n";
-	    if (maxLines < 0) maxLines = 0;
-
-	    final String ellipsis = "...";
-	    final int ellipsisLen = ellipsis.length();
-
-	    int len = origLine.length();
-	    int startPos = 0;
-	    int lastBreakPos = -1;
-	    int currentLine = 0;
-
-	    StringBuilder sb = new StringBuilder(len + 16);
-
-	    for (int i = 0; i < len; i++) {
-	        char ch = origLine.charAt(i);
-
-	        // record breakable positions
-	        if (Character.isWhitespace(ch) || ch == '.' || ch == '-') {
-	            lastBreakPos = i;
-	        }
-
-	        // exceeded width?
-	        if ((i - startPos + 1) > width) {
-	            currentLine++;
-
-	            boolean lastLine = (maxLines > 0 && currentLine >= maxLines);
-
-	            int breakPos = (lastBreakPos >= startPos)
-	                           ? lastBreakPos + 1 
-	                           : (startPos + width);
-
-	            int segmentLen = breakPos - startPos;
-	            if (segmentLen < 0) segmentLen = 0;
-
-	            // strict width enforcement for last allowed line
-	            if (lastLine && width >= ellipsisLen) {
-	                int maxText = width - ellipsisLen;
-	                int cutEnd = Math.min(startPos + maxText, breakPos);
-	                sb.append(origLine, startPos, cutEnd);
-	                sb.append(ellipsis);
-	                return sb.toString();
-	            }
-
-	            sb.append(origLine, startPos, breakPos);
-	            sb.append(delim);
-
-	            startPos = breakPos;
-	            lastBreakPos = -1;
-	        }
-	    }
-
-	    // add final piece
-	    sb.append(origLine.substring(startPos));
-	    return sb.toString();
+	/** @see OATextLineWrap#wrapToString(String) */
+	public static String lineBreak(String text, int columnWidth, String separator, int maxRows) {
+		OATextLineWrap wrap = new OATextLineWrap(columnWidth, separator).withMaxRows(maxRows);
+		return wrap.wrapToString(text);
 	}
-
-
+	
+	/** @see OATextSanitize#notEmpty(Object) */
 	public static boolean notEmpty(Object obj) {
-		return !isEmpty(obj, false);
+		return OATextSanitize.notEmpty(obj);
 	}
 
+	/** @see OATextSanitize#isNotEmpty(String) */
 	public static boolean isNotEmpty(Object obj) {
-		return !isEmpty(obj, false);
+		return OATextSanitize.isNotEmpty(obj);
 	}
 
+	/** @see OATextSanitize#isNotNullAndNotEmpty(Object) */
 	public static boolean isNotNullAndNotEmpty(Object obj) {
-		return !isEmpty(obj, false);
+		return OATextSanitize.isNotNullAndNotEmpty(obj);
 	}
 
-	/**
-	 * @return If null, then returns true; if String and length is 0, returns true; if array and length == 0, returns true. all others
-	 *         return false.
-	 * @see OACompare#isEmpty(Object)
-	 */
+	/** @see OATextSanitize#isEmpty(Object) */
 	public static boolean isEmpty(Object obj) {
-		return isEmpty(obj, false);
+		return OATextSanitize.isEmpty(obj);
 	}
 
-	public static boolean isNullOrEmpty(Object obj) {
-		return isEmpty(obj, false);
-	}
-
+	/** @see OATextSanitize#isEmpty(Object, boolean) */
 	public static boolean isEmpty(Object obj, boolean bTrim) {
-		if (obj == null) {
-			return true;
-		}
-		if (obj instanceof String) {
-			if (bTrim) {
-				if (((String) obj).trim().length() == 0) {
-					return true;
-				}
-			} else {
-				if (((String) obj).length() == 0) {
-					return true;
-				}
-			}
-		} 
-		else {
-			return OAConverter.isEmpty(obj, bTrim);
-		}
-		return false;
+		return OATextSanitize.isEmpty(obj, bTrim);
 	}
 
-	public static boolean isNotEqual(String s, String s2) {
-	    return !isEqual(s, s2);
+	/** @see OATextSanitize#isEmpty(Object) */
+	public static boolean isNullOrEmpty(Object obj) {
+		return OATextSanitize.isEmpty(obj, false);
 	}
-
+	
+	/** @see OATextCompare#isEqual(String, String) */
 	public static boolean isEqual(String s, String s2) {
-		return isEqual(s, s2, false);
+		return OATextCompare.isEqual(s, s2, false);
 	}
 
-    public static boolean isEqualIgnoreCase(String s, String s2) {
-        return isEqual(s, s2, true);
-    }
-	
-    public static boolean isNotEqual(String s, String s2, boolean bIgnoreCase) {
-        return !isEqual(s, s2, bIgnoreCase);
-    }
-
-    public static boolean isNotEqual(String s, String s2, boolean bIgnoreCase, boolean bNullEqualsBlank) {
-        return !isEqual(s, s2, bIgnoreCase, bNullEqualsBlank);
-    }
-    public static boolean isNotEqualNullEqualsBlank(String s, String s2) {
-        return !isEqual(s, s2, false, true);
-    }
-    
+	/** @see OATextCompare#isEqual(String, String, boolean) */
 	public static boolean isEqual(String s, String s2, boolean bIgnoreCase) {
-	    return isEqual(s, s2, bIgnoreCase, false);
-	}
-	
-    public static boolean isEqualNullEqualsBlank(String s, String s2) {
-        return isEqual(s, s2, false, true);
-    }
-	
-	
-    public static boolean isEqual(String s, String s2, boolean bIgnoreCase, boolean bNullEqualsBlank) {
-        if (s == s2) {
-            return true;
-        }
-        if (s == null || s2 == null) {
-
-            if (bNullEqualsBlank) {
-                if (isEmpty(s) && isEmpty(s2)) return true;
-            }
-            
-            return false;
-        }
-        
-        if (bIgnoreCase) {
-            return s.equalsIgnoreCase(s2);
-        }
-        return s.equals(s2);
-    }
-	
-	
-	/**
-	 * Returns a "non-null" value
-	 *
-	 * @param str
-	 * @return "" if str is null, else return str
-	 */
-	public static String fmt(String str) {
-		if (str == null) {
-			return "";
-		} else {
-			return str;
-		}
+		return OATextCompare.isEqual(s, s2, bIgnoreCase);
 	}
 
-	public static int compare(String s1, String s2) {
-		if (s1 == s2) {
-			return 0;
-		}
-		if (s1 == null) {
-			return -1;
-		}
-		return s1.compareTo(s2);
+	/** @see OATextCompare#isEqual(String, String, boolean, boolean) */
+	public static boolean isEqual(String s, String s2, boolean bIgnoreCase, boolean bNullEqualsBlank) {
+		return OATextCompare.isEqual(s, s2, bIgnoreCase, bNullEqualsBlank);
 	}
 
+	/** @see OATextCompare#isEqualIgnoreCase(String, String) */
+	public static boolean isEqualIgnoreCase(String s, String s2) {
+		return OATextCompare.isEqualIgnoreCase(s, s2);
+	}
+
+	/** @see OATextCompare#isEqualIgnoreCase(String, String) */
 	public static boolean equalsIgnoreCase(String s1, String s2) {
-		if (s1 == s2) {
-			return true;
-		}
-		if (s1 == null) {
-			return false;
-		}
-		return s1.equalsIgnoreCase(s2);
+		return OATextCompare.isEqualIgnoreCase(s1, s2);
 	}
 
-	/**
-	 * Only allows digits and ' ' characters. Will left pad with spaces to make 10 char long.
-	 */
+	/** @see OATextCompare#isEqualNullEqualsBlank(String, String) */
+	public static boolean isEqualNullEqualsBlank(String s, String s2) {
+		return OATextCompare.isEqualNullEqualsBlank(s, s2);
+	}
+
+	/** @see OATextCompare#isNotEqual(String, String) */
+	public static boolean isNotEqual(String s, String s2) {
+		return OATextCompare.isNotEqual(s, s2);
+	}
+
+	/** @see OATextCompare#isNotEqual(String, String, boolean) */
+	public static boolean isNotEqual(String s, String s2, boolean bIgnoreCase) {
+		return OATextCompare.isNotEqual(s, s2, bIgnoreCase);
+	}
+
+	/** @see OATextCompare#isNotEqual(String, String, boolean, boolean) */
+	public static boolean isNotEqual(String s, String s2, boolean bIgnoreCase, boolean bNullEqualsBlank) {
+		return OATextCompare.isNotEqual(s, s2, bIgnoreCase, bNullEqualsBlank);
+	}
+
+	/** @see OATextCompare#isNotEqualNullEqualsBlank(String, String) */
+	public static boolean isNotEqualNullEqualsBlank(String s, String s2) {
+		return OATextCompare.isNotEqualNullEqualsBlank(s, s2);
+	}
+	
+	/** @see OATextCompare#isLike(String, String) */
+	public static boolean isLike(String s, String s2) {
+		return OATextCompare.isLike(s, s2);
+	}
+	
+	/** @see OATextCompare#compare(String, String) */
+	public static int compare(String s1, String s2) {
+		return OATextCompare.compare(s1, s2);
+	}
+
+	/** @see OATextFormat#convertToValidPhoneNumber(String) */
 	public static String convertToValidPhoneNumber(String phone) {
-		if (phone == null) {
-			return null;
-		}
-		int x = phone.length();
-		if (x == 0) {
-			return phone;
-		}
-		StringBuilder sb = new StringBuilder(x);
-		boolean b = false;
-		for (int i = 0; i < x; i++) {
-			char ch = phone.charAt(i);
-			if (!Character.isDigit(ch)) {
-				if (ch != ' ') {
-					b = true;
-					continue;
-				}
-			}
-			sb.append(ch);
-
-		}
-		x = sb.length();
-		for (int i = x; i < 10; i++) {
-			b = true;
-			sb.insert(0, ' ');
-		}
-		if (b) {
-			phone = sb.toString();
-		}
-		return phone;
+		return OATextFormat.convertToValidPhoneNumber(phone);
 	}
 
-	// add leading spaces to each line in a string that is separated by '\n'
+	/** @see OATextFormat#indent(String, int) */
 	public static String indent(String text, int amt) {
-		if (text == null) text = "";
-		StringBuilder sb = new StringBuilder(text.length() + amt);
-		String pad = pad("", amt, false, ' ');
-		for (String s : text.split("\n")) {
-			if (sb.length() > 0) {
-				sb.append('\n');
-			}
-			sb.append(pad);
-			sb.append(s);
-		}
-		return sb.toString();
+		return OATextFormat.indent(text, amt);
 	}
 
-	/**
-	 * remove leading spaces from each line in a string that is separated by '\n'
-	 *
-	 * @param text
-	 * @param bBasedOnFirstLine if true, then each line will only remove the same leading spaces found in the first line. This is good for
-	 *                          code.
-	 */
+	/** @see OATextFormat#unindent(String) */
 	public static String unindent(String text) {
-		return unindent(text, false);
+		return OATextFormat.unindent(text);
 	}
 
-	/**
-	 * Used for removing the extra indent spacing for pasting code.
-	 */
+	/** @see OATextFormat#unindent(String) */
 	public static String unindentCode(String text) {
-		return unindent(text, true);
+		return OATextFormat.unindentCode(text);
 	}
 
-	
-	
-	
-	
+	/** @see OATextFormat#unindent(String, boolean) */
 	public static String unindent(String text, boolean bBasedOnFirstLine) {
-		StringBuilder sb = new StringBuilder(text.length());
-		int max = -1;
-		for (String s : text.split("\n")) {
-			if (sb.length() > 0) {
-				sb.append('\n');
-			}
-
-			int pos = 0;
-			for (; pos < s.length() && s.charAt(pos) == ' ' && (!bBasedOnFirstLine || max < 0 || pos < max); pos++) {
-				;
-			}
-			if (bBasedOnFirstLine && max < 0) {
-				max = pos;
-			}
-
-			if (pos > 0) {
-				s = s.substring(pos);
-			}
-			sb.append(s);
-		}
-		return sb.toString();
+		return OATextFormat.unindent(text, bBasedOnFirstLine);
 	}
 
-	/**
-	 * Remove ending whitspace from a string.
-	 */
+	    
+	/** @see OATextFormat#trimEndingWhitespace(String) */
 	public static String trimEndingWhitespace(String text) {
-		if (text == null) {
-			return null;
-		}
-		int x = text.length();
-		for (int i = 0; i < x; i++) {
-			char c = text.charAt(x - i - 1);
-			if (!Character.isWhitespace(c)) {
-				if (i == 0) {
-					return text;
-				}
-				return text.substring(0, x - i);
-			}
-		}
-		return "";
+		return OATextFormat.trimEndingWhitespace(text);
 	}
 
+	/** @see OATextTokenizer#parseLine(String, char, boolean) */
 	public static String[] parseLine(String line, char sep, boolean bCouldHaveQuotes) {
-		return parseLine(line, sep, bCouldHaveQuotes, 25);
+		return OATextTokenizer.parseLine(line, sep, bCouldHaveQuotes);
 	}
 
-	/**
-	 * Strips out leading and trailing whitespace for each column. if bCouldHaveQuotes is true, then begin and end quotes will be removed;
-	 * either single or double quote char.
-	 */
+	/** @see OATextTokenizer#parseLine(String, char, boolean) */
 	public static String[] parseLine(String line, char sep, boolean bCouldHaveQuotes, int sizeEstimate) {
-		if (line == null || sep == 0) {
-			return null;
-		}
-		if (line.length() == 0) {
-			return new String[0];
-		}
-		ArrayList<String> alString = new ArrayList<String>(Math.max(5, sizeEstimate));
-
-		int lineLength = line.length();
-		boolean bStarted = false;
-		int startPos = 0;
-		char qchar = 0;
-		int lastQpos = -1;
-		int firstWhitespace = -1;
-
-		for (int i = 0;; i++) {
-			char ch = 0;
-			if (i != lineLength) {
-				ch = line.charAt(i);
-				if (bCouldHaveQuotes && (ch == '\'' || ch == '\"') && ch != sep) {
-					if (!bStarted) {
-						qchar = ch;
-						bStarted = true;
-						startPos = i + 1;
-						continue;
-					} else {
-						if (ch == qchar) {
-							lastQpos = i; // might be ending pos
-							continue; // continue to sep char or eol
-						}
-					}
-				}
-			}
-
-			boolean bWhitespace;
-			if (i != lineLength) {
-				bWhitespace = Character.isWhitespace(ch); // (" \n\r\f\b\t".indexOf(ch) >= 0);
-			} else {
-				bWhitespace = false;
-			}
-
-			if (i == lineLength || ch == sep) {
-				if (qchar > 0 && lastQpos < 1) {
-				    if (i != lineLength) continue; // sep inside of quotes
-			        startPos--;
-				}
-				if (i == startPos) {
-					alString.add("");
-				} else {
-					int j;
-					if (lastQpos >= startPos) {
-						j = lastQpos;
-					} else if (firstWhitespace >= 0) {
-						j = firstWhitespace;
-					} else {
-						j = i;
-					}
-
-					String s = line.substring(startPos, j);
-					alString.add(s);
-				}
-				if (i == lineLength) {
-					break;
-				}
-				startPos = i + 1;
-				bStarted = false;
-				qchar = 0;
-				firstWhitespace = -1;
-				continue;
-			}
-			lastQpos = -1;
-			if (!bStarted) {
-				if (bWhitespace) { // skip
-					startPos = i + 1;
-					continue;
-				}
-				bStarted = true;
-			} else {
-				if (bWhitespace) {
-					if (firstWhitespace < 0) {
-						firstWhitespace = i;
-					}
-					continue;
-				}
-			}
-			firstWhitespace = -1;
-		}
-
-		String[] ss = new String[0];
-		ss = alString.toArray(ss);
-		return ss;
+		return OATextTokenizer.parseLine(line, sep, bCouldHaveQuotes, sizeEstimate);
 	}
 
-
-	/**
-	 * Removes any leading &amp; trailing whitespace chars, but will leave single space chars within text.
-	 */
+	/** @see OATextFormat#trimWhitespace(String) */
 	public static String trimWhitespace(String text) {
-		if (text == null) {
-			return null;
-		}
-		StringBuilder sb = null;
-		int x = text.length();
-
-		char chLast = ' ';
-		boolean bAddSpace = false;
-
-		for (int i = 0; i < x; i++) {
-			char ch = text.charAt(i);
-
-			if (Character.isWhitespace(ch)) {
-				if (ch == ' ') {
-					if (chLast != ' ') {
-						bAddSpace = true;
-					}
-					chLast = ch;
-				}
-				if (sb == null) {
-					sb = new StringBuilder(x);
-					if (i > 0) {
-						sb.append(text.substring(0, i));
-					}
-				}
-			} else {
-				if (sb != null) {
-					if (bAddSpace) {
-						sb.append(' ');
-						bAddSpace = false;
-					}
-					sb.append(ch);
-				}
-				chLast = ch;
-			}
-		}
-		if (sb == null) {
-			return text;
-		}
-		return sb.toString();
+		return OATextFormat.trimWhitespace(text);
 	}
 
-	/**
-	 * Convert '&amp;' prefixed html codes to character.
-	 */
-	public static String convertFromHtml(String html) {
-		if (html == null) {
-			return null;
-		}
 
-		if (html.indexOf('&') >= 0) {
-			html = convert(html, "&amp;", "&");
-			html = convert(html, "&quot;", "\"");
-			html = convert(html, "&apos;", "'");
-			html = convert(html, "&lt;", "<");
-			html = convert(html, "&gt;", ">");
-		}
-		return html;
-	}
-
-	/**
-	 * Make sure that all chars value is &lt;= 127, otherwise convert to a space char
-	 */
+	/** @see OATextFilter#convertToAscii(String) */
 	public static String convertToAscii(String text) {
-		if (text == null) {
-			return text;
-		}
-
-		int x = text.length();
-		StringBuilder sb = null;
-		for (int i = 0; i < x; i++) {
-			char c = text.charAt(i);
-			if (c > 127) {
-				if (sb == null) {
-					sb = new StringBuilder(text.length());
-					if (i > 0) {
-						sb.append(text.substring(0, i));
-					}
-				}
-				switch (c) {
-				case 8216:
-				case 8217:
-					c = '\'';
-					break;
-				case 8220:
-				case 8221:
-					c = '\"';
-					break;
-				case 8211:
-					c = '-';
-					break;
-				default:
-					c = ' ';
-					break;
-				}
-			}
-			if (sb != null) {
-				sb.append(c);
-			}
-		}
-		if (sb == null) {
-			return text;
-		} else {
-			return sb.toString();
-		}
+		return OATextFilter.convertToAscii(text);
 	}
 
-	/**
-	 * This will split a string based on a delimiter char, and will also take into account values that are in single or double quotes. Used
-	 * to parse attributes from html tag, or name/value pairs from CSS style
-	 *
-	 * @param text
-	 * @param delimChar     ex: '=', or ':'
-	 * @param bIncludeDelim if true then the delim will be included in the tokens
-	 * @param begChar       ex: '&lt;'
-	 * @param endChar       ex: '&gt;'
-	 * @param eovChar       end of value, ex: ';'
-	 * @return
-	 */
-	protected static String[] tokenize(String text, char delimChar, boolean spaceIsDelim, boolean bIncludeDelim, char begChar, char endChar,
-			char eovChar) {
-		if (text == null) {
-			return null;
-		}
-		int x = text.length();
-		char chQuote = 0;
-		ArrayList<String> al = new ArrayList<String>();
-		String next = "";
-		int lastPos = 0;
-		boolean bStarted = false;
-		boolean bParsingValue = false;
-		for (int i = 0;; i++) {
-			if (i == x) {
-				if (i == 0 || !bStarted) {
-					break;
-				}
-				char ch = text.charAt(i - 1);
-				if (ch == endChar) {
-					i--;
-				}
-				if (lastPos != i) {
-					al.add(text.substring(lastPos, i));
-				}
-				break;
-			}
-			char ch = text.charAt(i);
-			if (!bStarted) {
-				if (ch == ' ' || ch == '\t') {
-					lastPos++;
-					continue;
-				}
-				if (ch != delimChar) {
-					bStarted = true;
-				}
-			}
-			if (i == 0) {
-				if (ch == begChar) {
-					lastPos = 1;
-					continue;
-				}
-			}
-			if (chQuote > 0) {
-				if (ch == chQuote) {
-					al.add(text.substring(lastPos, i + 1)); // include quotes
-					chQuote = 0;
-					lastPos = i + 1;
-					bStarted = false;
-					bParsingValue = false;
-				}
-				continue;
-			}
-			if (ch == eovChar) {
-				al.add(text.substring(lastPos, i));
-				lastPos = i + 1;
-				bStarted = false;
-				bParsingValue = false;
-				continue;
-			}
-			if (bParsingValue && (ch == '\'' || ch == '\"')) {
-				if (i == lastPos) {
-					chQuote = ch;
-					continue;
-				}
-			}
-			if (ch == delimChar && (!bStarted || !bParsingValue)) {
-				al.add(text.substring(lastPos, i));
-				if (bIncludeDelim) {
-					al.add("" + ch);
-				}
-				lastPos = i + 1;
-				bStarted = false;
-				bParsingValue = true;
-			}
-			if (spaceIsDelim && ch == ' ') {
-				al.add(text.substring(lastPos, i));
-				lastPos = i + 1;
-				bStarted = false;
-				if (bParsingValue) {
-					bParsingValue = false;
-				}
-			}
-		}
-		String[] ss = new String[al.size()];
-		al.toArray(ss);
-		return ss;
-	}
 
-	/* ex:
-	 * <div style='background-image:url(oaproperty://com.tmgsc.hifive.model.oa.ImageStore/bytes?232); width:88; height:99' colspan=4 test xyz abc=Abcde123>adfa</div>
-	 */
-	public static Map<String, String> getHTMLAttributeMap(String htmlTag) {
-		HashMap<String, String> map = new HashMap<String, String>();
-		if (htmlTag == null) {
-			return map;
-		}
-		String[] ss = tokenize(htmlTag, '=', true, true, '<', '>', (char) 0);
-
-		for (int i = 1; i < ss.length; i++) { //skip first value, "tag name"
-			String s1 = ss[i];
-
-			if (i + 1 == ss.length) {
-				map.put(s1, "");
-				break;
-			}
-			String s2 = ss[++i];
-			if (s2.equals("=")) {
-				if (i + 1 == ss.length) {
-					map.put(s1, "");
-					break;
-				}
-				s2 = ss[++i];
-			} else {
-				map.put(s1, "");
-				i--;
-			}
-			map.put(s1, s2);
-		}
-		return map;
-	}
-
-	public static Map<String, String> getCSSMap(String style) {
-		HashMap<String, String> map = new HashMap<String, String>();
-		if (style == null || style.length() == 0) {
-			return map;
-		}
-
-		char ch = style.charAt(0);
-		if (ch != '\'' && ch != '\"') {
-			ch = 0;
-		}
-
-		String[] ss = tokenize(style, ':', false, false, ch, ch, ';');
-		for (int i = 0; i < ss.length; i += 2) {
-			String s = ss[i];
-			map.put(ss[i], i + 1 == ss.length ? "" : ss[i + 1]);
-		}
-		return map;
+	/** @see OATextTokenizer#getCssMap(String) */
+	public static Map<String, String> getCssMap(String style) {
+		return OATextTokenizer.getCssMap(style);
 	}
 
 	public static int parseInt(String val) {
-		int x = 0;
-		if (val == null) {
-			return x;
-		}
-		boolean bStarted = false;
-		boolean bNeg = false;
-		int len = val.length();
-		for (int i = 0; i < len; i++) {
-			char c = val.charAt(i);
-			if (Character.isDigit(c)) {
-				x *= 10;
-				x += c - '0';
-				bStarted = true;
-			} else {
-				if (bStarted) {
-					break;
-				}
-				if (c == '-') {
-					bNeg = true;
-					bStarted = true;
-				}
-			}
-		}
-		if (bNeg) {
-			x *= -1;
-		}
-		return x;
+		return OATextUtil.parseInt(val);
 	}
 
-	/**
-	 * Convert to a string, if null then it returns ""
-	 */
-	public static String toString(String str) {
-		return defaultString(str, "");
-	}
 
-	public static String nonNull(String str) {
-		return defaultString(str, "");
-	}
-
-	public static String nonNull(String str, String defaultValue) {
-		return defaultString(str, defaultValue);
-	}
-
+	/** @see OATextSanitize#toNonNull(String, String) */
 	public static String toNonNull(String str) {
-		return defaultString(str, "");
+		return OATextSanitize.toNonNull(str, "");
 	}
 
+	/** @see OATextSanitize#toNonNull(String, String) */
 	public static String toNonNull(String str, String defaultValue) {
-		return defaultString(str, defaultValue);
+		return OATextSanitize.toNonNull(str, defaultValue);
 	}
 
+	/** @see OATextSanitize#getNonNull(String, String) */
 	public static String getNonNull(String str) {
-		return defaultString(str, "");
+		return OATextSanitize.getNonNull(str);
 	}
 
+	/** @see OATextSanitize#getNonNull(String, String) */
 	public static String getNonNull(String str, String defaultValue) {
-		return defaultString(str, defaultValue);
+		return OATextSanitize.getNonNull(str, defaultValue);
 	}
 
 	public static String convertToNonNull(String str) {
-		return defaultString(str, "");
+		return OATextSanitize.convertToNonNull(str);
 	}
 
 	public static String convertToNonNull(String str, String defaultValue) {
-		return defaultString(str, defaultValue);
+		return OATextSanitize.convertToNonNull(str, defaultValue);
 	}
 
-	/**
-	 * Convert to a string, if null then it returns ""
-	 */
-	public static String toString(String str, String strIfNull) {
-		return defaultString(str, strIfNull);
-	}
-
-	/**
-	 * Convert to a string, if null then it returns ""
-	 */
+	/** @see OATextSanitize#defaultString(String, String) */
 	public static String defaultString(String str) {
-		return defaultString(str, "");
+		return OATextSanitize.defaultString(str);
 	}
 
-	/**
-	 * Convert to a string, if null then return strIfNull
-	 */
+	/** @see OATextSanitize#defaultString(String, String) */
 	public static String defaultString(String str, String strIfNull) {
-		if (str == null) {
-			return strIfNull;
-		}
-		return str;
+		return OATextSanitize.defaultString(str, strIfNull);
 	}
 
-	/**
-	 * Convert to a string, if null then it returns ""
-	 */
+	/** @see OATextSanitize#notNull(String) */
 	public static String notNull(String s) {
-		return defaultString(s, "");
+		return OATextSanitize.notNull(s);
 	}
 
+	/** @see OATextSanitize#notNull(String) */
 	public static String notNull(String str, String strIfNull) {
-		return defaultString(str, strIfNull);
+		return OATextSanitize.notNull(str, strIfNull);
 	}
 
+	/** @see OATextSanitize#notEmpty(String, String) */
 	public static String notEmpty(String str, String strIfEmpty) {
 		if (isEmpty(str)) {
 			return strIfEmpty;
@@ -3298,219 +978,106 @@ public class OAString {
 		return str;
 	}
 
+	/** @deprecated use substring */
 	public static String subString(String s, int pos) {
 		return substring(s, pos);
 	}
 
+	/** @see OATextFilter#substring(String, int) */
 	public static String substring(String s, int pos) {
-		if (s == null) {
-			return null;
-		}
-		if (s.length() <= pos) {
-			return "";
-		}
-		return s.substring(pos);
+		return OATextFilter.substring(s, pos);
 	}
 
-	public static String subString(String s, int pos1, int pos2) {
-		return substring(s, pos1, pos2);
-	}
-
-	/**
-	 * safe String substring function. Will not throw out of bounds exception.
-	 *
-	 * @param s
-	 * @param pos1 begin pos (0 based)
-	 * @param pos2 exclusive end pos (0 based)
-	 */
+	/** @see OATextFilter#substring(String, int, int) */
 	public static String substring(String s, int pos1, int pos2) {
-		if (s == null) {
-			return null;
-		}
-		if (s.length() <= pos1) {
-			return "";
-		}
-		if (pos2 >= s.length()) {
-			return s.substring(pos1);
-		}
-		return s.substring(pos1, pos2);
+		return OATextFilter.substring(s, pos1, pos2);
 	}
 
-
-	/**
-	 * Converts any non-Java indentifier characters to a '_'
-	 */
-	public static String makeJavaIndentifier(String txt) {
-		if (txt == null) {
-			return null;
-		}
-		int x = txt.length();
-		StringBuilder sb = null;
-		for (int i = 0; i < x; i++) {
-			char ch = txt.charAt(i);
-			if (!Character.isJavaIdentifierPart(ch)) {
-				if (sb == null) {
-					sb = new StringBuilder(x);
-					if (i > 0) {
-						sb.append(txt.substring(0, i));
-					}
-				}
-				ch = '_';
-			}
-			if (sb != null) {
-				sb.append(ch);
-			}
-		}
-		if (sb == null) {
-			return txt;
-		}
-		return new String(sb);
+	/** @see OATextUtil#makeJavaIdentifier(String) */
+	public static String makeJavaIdentifier(String txt) {
+		return OATextUtil.makeJavaIdentifier(txt);
 	}
 
-	public static String convertToJavaIndentifier(String txt) {
-		return makeJavaIndentifier(txt);
+	/** @see OATextUtil#makeJavaIdentifier(String) */
+	public static String convertToJavaIdentifier(String txt) {
+		return OATextUtil.makeJavaIdentifier(txt);
 	}
 
-	public static String getJavaIndentifier(String txt) {
-		return makeJavaIndentifier(txt);
+	/** @see OATextUtil#makeJavaIdentifier(String) */
+	public static String getJavaIdentifier(String txt) {
+		return OATextUtil.makeJavaIdentifier(txt);
 	}
 
+	/** @see OATextFilter#removeEndingChars(String, int) */
 	public static String removeEndingChars(String s, int amt) {
-		if (s == null) {
-			return null;
-		}
-		int x = s.length();
-		if (amt >= x) {
-			return "";
-		}
-		s = s.substring(0, x - amt);
-		return s;
+		return OATextFilter.removeEndingChars(s, amt);
 	}
 
+	/** @see OATextUtil#append(String, String, String) */
 	public static String append(String orig, String append) {
-		return concat(orig, append, " ");
+		return OATextUtil.append(orig, append);
 	}
 
+	/** @see OATextUtil#append(String, String, String) */
 	public static String append(String orig, String append, String sep) {
-		return concat(orig, append, sep, true);
+		return OATextUtil.append(orig, append, sep);
 	}
 
 	public static String prepend(String orig, String prepend, String sep) {
-		if (orig == null) {
-			orig = "";
-		}
-		else if (sep != null && orig.length() > 0) {
-			orig = sep + orig;
-		}
-		orig = prepend + orig;
-		return orig;
+		return OATextUtil.prepend(orig, prepend, sep);
 	}
 
-	/*  See:  OACompare
-	public static boolean isLike(String value, String matchValue) {
-	    return OACompare.isLike(value, matchValue);
-	}
-	*/
-
+	/** @see OATextTokenizer#csv(String, Object) */
 	public static String csv(String toText, Object value) {
-		if (value == null) {
-			value = "";
-		} else {
-			boolean bIsString = value instanceof String;
-			value = value.toString();
-
-			if (bIsString || ((String) value).indexOf(',') >= 0 || ((String) value).indexOf('\n') >= 0
-					|| ((String) value).indexOf('\"') >= 0) {
-				value = ((String) value).replace("\"", "\"\"");
-
-				if (!((String) value).startsWith("\"") && !((String) value).endsWith("\"")) {
-					value = "\"" + ((String) value) + "\"";
-				}
-			}
-
-			// value = ((String) value).replace(',', ' ');  // value should be in double quotes
-			value = ((String) value).trim();
-		}
-		String s = concat(toText, (String) value, ",", true);
-		return s;
+		return OATextTokenizer.csv(toText, value);
 	}
 
+	/** @see OATextUtil#concat(String, String, String, boolean) */
 	public static String concat(String toText, String value) {
 		return concat(toText, value, " ", true);
 	}
 
+	/** @see OATextUtil#concat(String, String, String, boolean) */
 	public static String concat(String toText, Object value, String sepChar) {
-		String strValue = value == null ? null : value.toString();
-		return concat(toText, strValue, sepChar, false);
+		return OATextUtil.concat(toText, value, sepChar);
 	}
 
+	/** @see OATextUtil#concat(String, String, String, boolean) */
 	public static String concat(String toText, String value, String sepChar) {
-		return concat(toText, value, sepChar, false);
+		return OATextUtil.concat(toText, value, sepChar);
 	}
 
+	/** @see OATextUtil#concat(String, String, String, boolean) */
 	public static String concat(String toText, String value, String sepChar, boolean bForce) {
-		if (!bForce && (value == null || value.length() == 0)) {
-			if (toText == null) return "";  // always return non-null, so a null check does not have be used.
-			return toText;
-		}
-		if (value == null) {
-			value = "";
-		}
-		if (toText == null || toText.length() == 0) {
-			toText = value;
-		} else {
-			toText += sepChar;
-			toText += value;
-		}
-		return toText;
-	}
-
-	public static String maskPassword(String name, String val) {
-		String s = maskPassword(name, val, "*****", false, "password", "pw", "pass");
-		return s;
-	}
-
-	public static String maskPassword(String name, String val, String passwordReturn, String... words) {
-		String s = maskPassword(name, val, passwordReturn, false, words);
-		return s;
-	}
-
-	public static String maskPassword(String name, String val, String... words) {
-		String s = maskPassword(name, val, "*****", false, words);
-		return s;
+		return OATextUtil.concat(toText, value, sepChar, bForce);
 	}
 
 	/**
-	 * Checks to see if name has any words in it that could make it the name of a password. If so then it will return a new value, else
-	 * value is returned.
-	 *
-	 * @param name           name for the value
-	 * @param value          the actual value for name
-	 * @param maskValue      return value to use if the name is for a password
-	 * @param bCaseSensitive if the check should be casesensitive
-	 * @param words          words that are used to check if name is a password. Note: uses indexOf>=0 and not equals
-	 * @return if name is a password, then passwordReturn else value.
+	 * @see OATextTokenizer#maskPassword(String, String)
+	 */
+	public static String maskPassword(String name, String val) {
+		return OATextTokenizer.maskPassword(name, val);
+	}
+
+	/**
+	 * @see OATextTokenizer#maskPassword(String, String, String, String...)
+	 */
+	public static String maskPassword(String name, String val, String passwordReturn, String... words) {
+		return OATextTokenizer.maskPassword(name, val, passwordReturn, words);
+	}
+
+	/**
+	 * @see OATextTokenizer#maskPassword(String, String, String...)
+	 */
+	public static String maskPassword(String name, String val, String... words) {
+		return OATextTokenizer.maskPassword(name, val, words);
+	}
+
+	/**
+	 * @see OATextTokenizer#maskPassword(String, String, String, boolean, String...)
 	 */
 	public static String maskPassword(String name, String value, String maskValue, boolean bCaseSensitive, String... words) {
-		if (name == null || words == null) {
-			return value;
-		}
-		if (bCaseSensitive) {
-			name = name.toLowerCase();
-		}
-		for (String word : words) {
-			if (word == null) {
-				continue;
-			}
-			if (bCaseSensitive) {
-				word = word.toLowerCase();
-			}
-			boolean b = name.indexOf(word) >= 0;
-			if (b) {
-				return maskValue;
-			}
-		}
-		return value;
+		return OATextTokenizer.maskPassword(name, value, maskValue, bCaseSensitive, words);
 	}
 
 	public static String hilite(String line, String search) {
@@ -3525,640 +1092,228 @@ public class OAString {
 		return hilite(line, search, beginTag, endTag, false);
 	}
 
+	/** @see OATextEscape#hilite(String, String, String, String, boolean) */
 	public static String hilite(String line, String search, String beginTag, String endTag, boolean bIgnoreCase) {
-		if (line == null || search == null) {
-			return line;
-		}
-
-		final int searchLength = search.length();
-		if (searchLength == 0) {
-			return line;
-		}
-		if (bIgnoreCase) {
-			search = search.toLowerCase();
-		}
-
-		final int lineLength = line.length();
-		StringBuilder sb = null; // dont allocate until first match is found
-		char c = 0, origChar = 0;
-
-		for (int i = 0, j = 0;; i++) {
-			if (i < lineLength) {
-				origChar = c = line.charAt(i);
-				if (bIgnoreCase) {
-					c = Character.toLowerCase(c);
-				}
-				if (c == search.charAt(j)) {
-					j++;
-					if (j == searchLength) {
-						if (sb == null) {
-							sb = new StringBuilder(lineLength + (lineLength / 10));
-							int e = (i - j) + 1;
-							if (e > 0) {
-								sb.append(line.substring(0, e));
-							}
-						}
-						sb.append(beginTag);
-						/*
-						Search="Vi"
-						i=6
-						i: 0123456789
-						   VinceViNce
-						j:      12
-						*/
-						int b = (i - j) + 1;
-						sb.append(line.substring(b, b + j));
-						sb.append(endTag);
-						j = 0;
-					}
-					continue;
-				}
-			}
-			if (j > 0) {
-				if (sb != null) {
-					// go back to previously matched chars
-					int b = i - j;
-					/*
-					Search="Vix"
-					i=7
-					i: 0123456789
-					   VinceViNce
-					j:      12
-					*/
-					sb.append(line.substring(b, b + 1));
-				}
-				i -= j; // start at last checking point, loop with inc i by +1
-				j = 0;
-			} else {
-				if (i >= lineLength) {
-					break;
-				}
-				if (sb != null) {
-					sb.append(origChar);
-				}
-			}
-		}
-		if (sb == null) {
-			return line;
-		}
-		return new String(sb);
+		return OATextEscape.hilite(line, search, beginTag, endTag, bIgnoreCase);
 	}
 
-
+	/** @see OATextEscape#escape(String) */
 	public static String escape(String raw) {
-		String escaped = raw;
-		escaped = escaped.replace("\\", "\\\\");
-		escaped = escaped.replace("\"", "\\\"");
-		escaped = escaped.replace("\b", "\\b");
-		escaped = escaped.replace("\f", "\\f");
-		escaped = escaped.replace("\n", "\\n");
-		escaped = escaped.replace("\r", "\\r");
-		escaped = escaped.replace("\t", "\\t");
-		// TODO: escape other non-printing characters using uXXXX notation
-		return escaped;
+		return OATextEscape.escape(raw);
 	}
 
-	public static String getAbbrev(String name) {
-		return getShortName(name);
+	/** @see OATextEscape#unescapeJson(String) */
+	public static String unescapeJson(String s) {
+		return OATextEscape.unescapeJson(s);
 	}
 
-	public static String getShortName(String name) {
-		return getShortName(name, 3);
-	}
-
-	public static String getShortName(final String name, final int max) {
-		if (OAString.isEmpty(name)) {
-			return "";
-		}
-
-		final int x = name.length();
-		String shortName = "";
-
-		int cnt = 0;
-		for (int i = 0; i < x; i++) {
-			char c = name.charAt(i);
-			if (Character.isUpperCase(c)) {
-				cnt++;
-			}
-		}
-
-		int cnt2 = 0;
-		for (int i = 0; i < x && shortName.length() < max; i++) {
-			char c = name.charAt(i);
-			if (i == 0 || Character.isUpperCase(c)) {
-				shortName += Character.toLowerCase(c);
-			} else if ("aeiou".indexOf(c) < 0 && cnt2++ < (max - cnt)) {
-				shortName += c;
-			}
-		}
-		return shortName;
-	}
-
-	public static String unescapeJSON(String s) {
-		s = OAString.convert(s, "\\\"", "\"");
-		s = OAString.convert(s, "\\\\", "\\");
-		s = OAString.convert(s, "\\b", "\b");
-		s = OAString.convert(s, "\\f", "\f");
-		s = OAString.convert(s, "\\n", "\n");
-		s = OAString.convert(s, "\\r", "\r");
-		s = OAString.convert(s, "\\t", "\t");
-		s = OAString.convert(s, "\\/", "/");
-
-		return s;
-	}
-
-	public static String escapeJS(final String text, final char jsQuoteChar) {
-	    return escapeJs(text, jsQuoteChar, false);
+	/** @see OATextEscape#escapeJs(String, char) */
+	public static String escapeJs(final String text, final char jsQuoteChar) {
+		return OATextEscape.escapeJs(text, jsQuoteChar);
 	}
 
 	protected static String escapeJs(final String text, final char jsQuoteChar, final boolean bIsJsCodeEmbeddedInHtml) {
-        if (text == null) return "";
-        final int x = text.length();
-        StringBuilder sb = null;
-
-        for (int i = 0; i < x; i++) {
-            char ch = text.charAt(i);
-
-            if (ch == '\r' || ch == '\n' || ch == '\\' || ch == jsQuoteChar || (bIsJsCodeEmbeddedInHtml && (ch == '\'' || ch == '\"'))) {
-                if (sb == null) {
-                    sb = new StringBuilder(x + 4);
-                    if (i > 0) sb.append(text.substring(0, i));
-                }
-
-                if (ch == '\'') {
-                    if (bIsJsCodeEmbeddedInHtml) sb.append("\\x27"); // x27 = "\'"
-                    //was if (bIsJsCodeEmbeddedInHtml) sb.append("\\x5Cx27");  //  x5C = "\"   x27 = "\'"
-                    else sb.append("\\" + jsQuoteChar);
-                }
-                else if (ch == '\"') {
-                    if (bIsJsCodeEmbeddedInHtml) sb.append("\\x22"); // x22 = "\""
-                    //was if (bIsJsCodeEmbeddedInHtml) sb.append("\\x5Cx22");  //  x5C = "\"   x22 = "\""
-                    else sb.append("\\" + jsQuoteChar);
-                }
-                else if (ch == '<') {
-                    sb.append("&lt;");
-                }
-                else if (ch == '>') {
-                    sb.append("&gt;");
-                }
-                else if (ch == '\n') {
-                    if (!bIsJsCodeEmbeddedInHtml) sb.append("\\n");
-                    else sb.append("\\n"); //  \n
-                    //was else sb.append("\\x5Cn"); //  \n
-                }
-                else if (ch == '\r') {
-                    // no-op
-                }
-                else if (ch == '\\') {
-                    if (!bIsJsCodeEmbeddedInHtml) sb.append("\\\\");
-                    else sb.append("\\");
-                    //was: else sb.append("\\x5C\\x5C"); // x5C = "\"
-                }
-            }
-            else {
-                if (sb != null) sb.append(ch);
-            }
-        }
-
-        if (sb == null) {
-            return text;
-        }
-        return sb.toString();
-    }
-	
-	
-	
-	public static String escapeJSON(String s) {
-		if (s == null) {
-			return null;
-		}
-		StringBuffer sb = new StringBuffer();
-		escapeJSON(s, sb);
-		return sb.toString();
+		return OATextEscape.escapeJs(text, jsQuoteChar, bIsJsCodeEmbeddedInHtml);
 	}
 
-	static void escapeJSON(String s, StringBuffer sb) {
-	    if (s == null) return;
-		final int len = s.length();
-		for (int i = 0; i < len; i++) {
-			char ch = s.charAt(i);
-			switch (ch) {
-			case '"':
-				sb.append("\\\"");
-				break;
-            case '\'':
-                sb.append("\\\'");
-                break;
-			case '\\':
-				sb.append("\\\\");
-				break;
-			case '\b':
-				sb.append("\\b");
-				break;
-			case '\f':
-				sb.append("\\f");
-				break;
-			case '\n':
-				sb.append("\\n");
-				break;
-			case '\r':
-				sb.append("\\r");
-				break;
-			case '\t':
-				sb.append("\\t");
-				break;
-			/*
-			case '/':
-				sb.append("\\/");
-				break;
-			*/
-			default:
-				// http://www.unicode.org/versions/Unicode5.1.0/
-				if ((ch >= '\u0000' && ch <= '\u001F') || (ch >= '\u007F' && ch <= '\u009F') || (ch >= '\u2000' && ch <= '\u20FF')) {
-					String ss = Integer.toHexString(ch);
-					sb.append("\\u");
-					for (int k = 0; k < 4 - ss.length(); k++) {
-						sb.append('0');
-					}
-					sb.append(ss.toUpperCase());
-				} else {
-					sb.append(ch);
-				}
-			}
-		}
+	/** @see OATextEscape#escapeJson(String) */
+	public static String escapeJson(String s) {
+		return OATextEscape.escapeJson(s);
 	}
 
-	/**
-	 * Update the string to be used for a Like operator search, by converting '*' to '%' and by adding a '%' at the end if there is not one
-	 * already.
-	 */
+	static void escapeJson(String s, StringBuffer sb) {
+		OATextEscape.escapeJson(s, sb);
+	}
+
 	public static String convertToLikeSearch(String s) {
-		if (s == null) {
-			return s;
-		}
-		s = s.replace("*", "%");
-		if (s.indexOf('%') < 0) {
-			s += "%";
-		}
-		return s;
+		return OATextUtil.convertToLikeSearch(s);
 	}
 
-	/**
-	 * Create a 3 row column heading.
-	 *
-	 * @param startPos first position (usually 0 or 1)
-	 * @param endPos
-	 * @return 2 rows of numbers, showing each digit vertically
-	 */
 	public static String getVerticalNumberLines(int startPos, int endPos) {
-		StringBuilder sb = new StringBuilder();
-		/*
-		for (int i = startPos; i <= endPos; i++) {
-			int x = (i / 100);
-			if (i == 100) {
-				sb.append('1');
-			} else {
-				sb.append(' ');
-			}
-		}
-		sb.append('\n');
-		*/
-
-		for (int i = startPos; i <= endPos; i++) {
-			if (i % 10 == 0) {
-				int x = (i / 10);
-				sb.append("" + (x % 10));
-			} else {
-				sb.append(' ');
-			}
-		}
-
-		sb.append('\n');
-
-		for (int i = startPos; i <= endPos; i++) {
-			sb.append("" + (i % 10));
-		}
-
-		return sb.toString();
+		return OATextUtil.getVerticalNumberLines(startPos, endPos);
 	}
 
 	public static String getVerticalHex(byte[] bs) {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < bs.length; i++) {
-			String hex = String.format("%02x", bs[i]).toUpperCase();
-			sb.append(hex, 0, 1);
-		}
-
-		sb.append('\n');
-
-		for (int i = 0; i < bs.length; i++) {
-			String hex = String.format("%02x", bs[i]).toUpperCase();
-			sb.append(hex, 1, 2);
-		}
-
-		return sb.toString();
+		return OATextUtil.getVerticalHex(bs);
 	}
 
+	/** @see OATextUtil#repeat(char, int) */
+	public static String repeat(char repeatChar, int length) {
+		return createString(repeatChar, length);
+	}
+
+	/** @see OATextUtil#createString(char, int) */
 	public static String createString(char repeatChar, int length) {
-		StringBuilder sb = new StringBuilder(length);
-		for (int i = 0; i < length; i++) {
-			sb.append(repeatChar);
-		}
-		return sb.toString();
+		return OATextUtil.createString(repeatChar, length);
 	}
-
-	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-	// https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
 
 	public static String bytesToHex(byte[] bytes) {
-		char[] hexChars = new char[bytes.length * 2];
-		for (int j = 0; j < bytes.length; j++) {
-			int v = bytes[j] & 0xFF;
-			hexChars[j * 2] = HEX_ARRAY[v >>> 4];
-			hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
-		}
-		return new String(hexChars);
+		return OATextUtil.bytesToHex(bytes);
 	}
 
 	public static byte[] hexToBytes(String hex) {
-		if (hex == null) {
-			return null;
-		}
-		int x = hex.length();
-		byte[] bs = new byte[x / 2];
-
-		for (int i = 0; i < x; i += 2) {
-			bs[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-					+ Character.digit(hex.charAt(i + 1), 16));
-		}
-		return bs;
+		return OATextUtil.hexToBytes(hex);
 	}
 
-
+	/** @see OATextCompare#indexOf(String, String) */
 	public static int indexOf(String value, String searchValue) {
-		if (value == null || searchValue == null) {
-			return -1;
-		}
-		return value.indexOf(searchValue);
+		return OATextCompare.indexOf(value, searchValue, 0, false);
 	}
 
+	/** @see OATextCompare#indexOf(String, String, int, boolean) */
 	public static int indexOf(String value, String searchValue, int startPos) {
-		return indexOf(value, searchValue, startPos, false);
+		return OATextCompare.indexOf(value, searchValue, startPos);
 	}
 
-    public static int indexOf(String value, String searchValue, boolean bIgnoreCase) {
-        return indexOf(value, searchValue, 0, bIgnoreCase);
-    }
-	
+	/** @see OATextCompare#indexOf(String, String, boolean) */
+	public static int indexOf(String value, String searchValue, boolean bIgnoreCase) {
+		return OATextCompare.indexOf(value, searchValue, bIgnoreCase);
+	}
+
+	/** @see OATextCompare#indexOf(String, String, int, boolean) */
 	public static int indexOf(String value, String searchValue, int startPos, boolean bIgnoreCase) {
-		if (value == null || searchValue == null) {
-			return -1;
-		}
-		if (startPos >= searchValue.length()) {
-			return -1;
-		}
-		if (startPos < 0) {
-			startPos = 0;
-		}
-		if (bIgnoreCase) {
-			return value.toLowerCase().indexOf(searchValue.toLowerCase(), startPos);
-		}
-		return value.indexOf(searchValue, startPos);
+		return OATextCompare.indexOf(value, searchValue, startPos, bIgnoreCase);
 	}
 
+	/** @see OATextCompare#indexOf(String, String) */
 	public static int lastIndexOf(String value, String searchValue) {
-		return lastIndexOf(value, searchValue, false);
+		return OATextCompare.lastIndexOf(value, searchValue);
 	}
 
+	/** @see OATextCompare#indexOf(String, String, boolean) */
 	public static int lastIndexOf(String value, String searchValue, boolean bIgnoreCase) {
-		if (value == null || searchValue == null) {
-			return -1;
-		}
-		if (bIgnoreCase) {
-			return value.toLowerCase().lastIndexOf(searchValue.toLowerCase());
-		}
-		return value.lastIndexOf(searchValue);
+		return OATextCompare.lastIndexOf(value, searchValue, bIgnoreCase);
 	}
 
-	public static boolean contains(String value, String searchValue, int startPos, boolean bIgnoreCase) {
-		return indexOf(value, searchValue, startPos, bIgnoreCase) >= 0;
-	}
-
-	public static boolean contains(String value, String searchValue, int startPos) {
-		return indexOf(value, searchValue, startPos, false) >= 0;
-	}
-
+	
+	/** @see OATextCompare#contains(String, String) */
 	public static boolean contains(String value, String searchValue) {
-		return indexOf(value, searchValue, 0, false) >= 0;
+		return OATextCompare.contains(value, searchValue);
+	}
+	
+	/** @see OATextCompare#contains(String, String, int) */
+	public static boolean contains(String value, String searchValue, int startPos) {
+		return OATextCompare.contains(value, searchValue, startPos);
+	}
+	
+	/** @see OATextCompare#contains(String, String, int, boolean) */
+	public static boolean contains(String value, String searchValue, int startPos, boolean bIgnoreCase) {
+		return OATextCompare.contains(value, searchValue, startPos, bIgnoreCase);
 	}
 
+	/** @see OATextAlign#left(String, int) */
 	public static String getLeft(String value, int amount) {
-		return substring(value, 0, amount);
+		return OATextAlign.left(value, amount);
 	}
 
+	/** @see OATextAlign#left(String, int) */
 	public static String left(String value, int amount) {
-		return substring(value, 0, amount);
+		return OATextAlign.left(value, amount);
 	}
 
+	/** @see OATextAlign#alignRight(String, int, char) */
 	public static String getRight(String value, int amount) {
-		return right(value, amount);
+		return OATextAlign.right(value, amount);
 	}
 
+	/** @see OATextAlign#alignRight(String, int, char) */
 	public static String right(String value, int amount) {
-		if (value == null) {
-			return null;
-		}
-		int len = value.length();
-		if (len <= amount) {
-			return value;
-		}
-		return substring(value, len - amount, amount);
+		return OATextAlign.right(value, amount);
 	}
 
-	public static String mid(String value, int amount) {
-		if (value == null) {
-			return null;
-		}
-		if (amount < 1) {
-			return "";
-		}
-		int len = value.length();
-		if (len <= amount) {
-			return value;
-		}
-
-		int midPos = len / 2;
-
-		String s = substring(value, midPos - (amount / 2), amount);
-		return s;
+	/** @see OATextAlign#center(String, int) */
+	public static String getCenter(String value, int amount) {
+		return OATextAlign.center(value, amount);
 	}
-
-	public static String getMid(String value, int amount) {
-		return mid(value, amount);
-	}
-
-	public static String getMiddle(String value, int amount) {
-		return mid(value, amount);
-	}
-
+	
+	/** @see OATextAlign#center(String, int) */
 	public static String center(String value, int amount) {
-		return mid(value, amount);
+		return OATextAlign.center(value, amount);
 	}
 
-	public static String getCnter(String value, int amount) {
-		return mid(value, amount);
-	}
-
+	/** @see OATextChars#upper(String) */
 	public static String upper(String value) {
-		if (value == null) {
-			return null;
-		}
-		return value.toUpperCase();
+		return OATextChars.upper(value);
 	}
 
+	/** @see OATextChars#upper(String) */
 	public static String toUpperCase(String value) {
 		return upper(value);
 	}
 
+	/** @see OATextChars#upper(String) */
 	public static String getUpperCase(String value) {
 		return upper(value);
 	}
 
+	/** @see OATextChars#lower(String) */
 	public static String lower(String value) {
-		if (value == null) {
-			return null;
-		}
-		return value.toLowerCase();
+		return OATextChars.lower(value);
 	}
 
+	/** @see OATextChars#lower(String) */
 	public static String toLowerCase(String value) {
 		return lower(value);
 	}
 
+	/** @see OATextChars#lower(String) */
 	public static String getLowerCase(String value) {
 		return lower(value);
 	}
 
+	/** @see OATextCompare#startsWith(String, String) */
 	public static boolean startsWith(String value, String searchValue) {
-		return startsWith(value, searchValue, false);
+		return OATextCompare.startsWith(value, searchValue);
 	}
 
+	/** @see OATextCompare#startsWith(String, String, boolean) */
 	public static boolean startsWith(String value, String searchValue, boolean bIgnoreCase) {
-		int x = indexOf(value, searchValue, 0, bIgnoreCase);
-		return x == 0;
+		return OATextCompare.startsWith(value, searchValue, bIgnoreCase);
 	}
 
+	/** @see OATextCompare#endsWith(String, String) */
 	public static boolean endsWith(String value, String searchValue) {
-		return endsWith(value, searchValue, false);
+		return OATextCompare.endsWith(value, searchValue);
 	}
 
+	/** @see OATextCompare#endsWith(String, String, boolean) */
 	public static boolean endsWith(String value, String searchValue, boolean bIgnoreCase) {
-		if (value == null) {
-			return false;
-		}
-		if (searchValue == null) {
-			return false;
-		}
-		return value.endsWith(searchValue);
+		return OATextCompare.endsWith(value, searchValue, bIgnoreCase);
 	}
 
-	public static String appendIfMissing(String value, String searchValue) {
-		return appendIfMissing(value, searchValue, false);
-	}
-
-	public static String appendIfMissing(String value, String searchValue, boolean bIgnoreCase) {
-		if (searchValue == null) {
-			return value;
-		}
-		if (!endsWith(value, searchValue, bIgnoreCase)) {
-			if (value == null) {
-				return searchValue;
-			}
-			return value + searchValue;
-		}
-		return value;
-	}
-
+	/** @see OATextCompare#prefixIfMissing(String, String) */
 	public static String prefixIfMissing(String value, String searchValue) {
-		if (searchValue == null) {
-			return value;
-		}
-		if (!startsWith(value, searchValue)) {
-			if (value == null) {
-				return searchValue;
-			}
-			return searchValue + value;
-		}
-		return value;
+		return OATextCompare.prefixIfMissing(value, searchValue);
 	}
 
-	public static String toString(byte[] bytes) {
-		return new String(bytes, Charset.defaultCharset());
+	/** @see OATextCompare#prefixIfMissing(String, String, boolean) */
+	public static String prefixIfMissing(String value, String searchValue, boolean bIgnoreCase) {
+		return OATextCompare.prefixIfMissing(value, searchValue, bIgnoreCase);
+	}
+	
+	/** @see OATextCompare#appendIfMissing(String, String) */
+	public static String appendIfMissing(String value, String searchValue) {
+		return OATextCompare.appendIfMissing(value, searchValue);
 	}
 
-	/**
-	 * Find the number of decimal places for a String decimal number.
-	 * Ignores trailing '0'.
-	 * <p>
-	 * Examples:  "123.25" = 2<br>
-	 * "123.2000" = true=1, false=4<br>
-	 * "123.2001" = 4<br>
-	 * "123.249" = 3<br.
-	 * "123.00" = true=0, false=2<br>
-	 * @param num
-	 * @param bIgnoreTrailingZeros dont count trailing '0' digits.
-	 * @return
-	 */
+	/** @see OATextCompare#appendIfMissing(String, String, boolean) */
+	public static String appendIfMissing(String value, String searchValue, boolean bIgnoreCase) {
+		return OATextCompare.appendIfMissing(value, searchValue, bIgnoreCase);
+	}
+
+	/** @see OATextFormat#getNumberOfDecimalPlaces(String, boolean) */
 	public static int getNumberOfDecimalPlaces(String num, boolean bIgnoreTrailingZeros) {
-		if (num == null) return 0;
-		int x = num.length();
-		if (x == 0) return 0;
-		boolean bSkipZeros = true;
-		int cnt = 0;
-		for (int i=x-1; i>=0; i--) {
-			char ch = num.charAt(i);
-			if (ch == '.') break;
-			if (!Character.isDigit(ch)) return 0;
-			if (bSkipZeros) { 
-				if (ch == '0' && bIgnoreTrailingZeros) continue;
-				bSkipZeros = false;
-			}
-			cnt++;
-		}
-		return cnt;
+		return OATextFormat.getNumberOfDecimalPlaces(num, bIgnoreTrailingZeros);
 	}
-	
-	public static String removeLeading(String s, char ch) {
-	    return removeLeading(s, ch, 0);
-	}
-	
-    public static String removeLeading(String s, char ch, int maxAmount) {
-        if (s == null) return s;
-        if (maxAmount <= 0) return s;
-        
-        int x = s.length();
-        int i = 0;
-        for ( ; i<x; i++) {
-            if (s.charAt(i) != ch) {
-                break;
-            }
-            if (maxAmount > 0 && i >= maxAmount) break;
-        }
-        if (i == 0) return s;
-        if (i == x) return "";
-        return s.substring(i);
-    }
 
-	public static void main(String[] args) {
-		
-		String s = lineBreak("Hi there", 20, "<BR>", -1);
-		s = truncate("Hi there", 20);
-		
-		String s2 = lineBreak("Supercalifragilisticexpialidocious", 10, "<BR>", -1);
-		s2 = truncate("Supercalifragilisticexpialidocious", 10);
-		
-		int xx = 4;
-		xx++;
+	/** @see OATextFilter#removeLeading(String, char) */
+	public static String removeLeading(String s, char ch) {
+		return OATextFilter.removeLeading(s, ch);
 	}
-    
+
+	/** @see OATextFilter#removeLeading(String, char, int) */
+	public static String removeLeading(String s, char ch, int maxAmount) {
+		return OATextFilter.removeLeading(s, ch, maxAmount);
+	}
 }
+

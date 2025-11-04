@@ -130,7 +130,7 @@ public class OAUIPropertyController extends OAUIBaseController {
                     text = OAString.toTitleCase(text);
                 }
             } else if (conversion == 'J' || conversion == 'j') {
-                text = OAString.makeJavaIndentifier(text);
+                text = OAString.makeJavaIdentifier(text);
             } else if (conversion == 'S' || conversion == 's') {
                 if (maskPasswordValue.equals(text)) return true;
                 text = OAString.getSHAHash(text);
