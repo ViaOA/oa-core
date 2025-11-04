@@ -91,7 +91,7 @@ public class ItemQuote extends OAObject {
         Item item = getItem();
         if (item == null) return 0.0d;
         double d = item.getPrice() * getQuantity();
-        d = OAConv.round(d, 2);
+        d = OAMath.round(d, 2);
         return d;
     }
     @OAObjCallback(contextVisibleProperty = AppUser.P_User+"."+User.P_CalcPricingReadAccess)
@@ -111,12 +111,12 @@ public class ItemQuote extends OAObject {
         rate += 100.0d;
         rate /= 100.0d;
         double bd = price * rate;
-        bd = OAConv.round(bd, 2);
+        bd = OAMath.round(bd, 2);
         
         ItemAddOn iao = getItemAddOn();
         if (iao != null) {
             bd += iao.getPrice();
-            bd = OAConv.round(bd, 2);
+            bd = OAMath.round(bd, 2);
         }
         return bd;
     }
@@ -124,7 +124,7 @@ public class ItemQuote extends OAObject {
     public double getTotalSellPrice() {
         double d = getItemSellPrice();
         d *= getQuantity();
-        d = OAConv.round(d, 2);
+        d = OAMath.round(d, 2);
         return d;
     }
     @OACalculatedProperty(displayName = "Total Weight", displayLength = 6, columnLength = 12, properties = {P_Item+"."+Item.P_Weight, P_Quantity})

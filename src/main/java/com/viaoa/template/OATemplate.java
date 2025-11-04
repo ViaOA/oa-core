@@ -1305,7 +1305,7 @@ public class OATemplate<F extends OAObject> {
 			result = "";
 		}
 		if (width > 0) {
-			result = OAString.lineBreak(result, width);
+			result = OAString.truncate(result, width);
 		}
 
 		if (bFmt && fmt != null && fmt.length() > 0) {

@@ -163,7 +163,7 @@ public class OrderItem extends OAObject {
     @OAProperty(lowerName = "notes", displayLength = 20, hasCustomCode = true, isHtml = true)
     @OAColumn(name = "Notes", sqlType = java.sql.Types.CLOB)
     public String getNotes() {
-        if (notes != null) notes = OAString.convertTextToHTML(notes, false);
+        if (notes != null) notes = OAString.convertTextToHtml(notes, false);
         return notes;
     }
     public void setNotes(String newValue) {
@@ -317,7 +317,7 @@ public class OrderItem extends OAObject {
         int qty = getQuantity();
         if (qty <= 0) return 0;
         double d = getExtendedAmount() / qty;
-        d = OAConv.round(d, 2);
+        d = OAMath.round(d, 2);
         int rqty = this.getUnshippedQuantity();
         if (rqty <= 0) return 0;
         return d *rqty;

@@ -1015,5 +1015,10 @@ public class OAConverter {
 	public static boolean isNotEmpty(Object obj, boolean bTrim) {
 		return !isEmpty(obj, bTrim);
 	}
+	
+	public static double round(double value, int decimalPlaces) {
+		return OAMath.round(value, decimalPlaces);
+	}
+	
 
 }

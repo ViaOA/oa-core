@@ -320,7 +320,7 @@ public class SalesCustomer extends OAObject {
     @OAProperty(lowerName = "note", displayLength = 20, hasCustomCode = true, isHtml = true)
     @OAColumn(name = "Note", sqlType = java.sql.Types.CLOB)
     public String getNote() {
-        if (note != null) note = OAString.convertTextToHTML(note, false);
+        if (note != null) note = OAString.convertTextToHtml(note, false);
         return note;
     }
     public void setNote(String newValue) {

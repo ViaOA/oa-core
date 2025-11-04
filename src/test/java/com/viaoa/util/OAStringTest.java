@@ -75,7 +75,7 @@ public class OAStringTest extends OAUnitTest {
     
     @Test
     public void trimTest() {
-        String s = OAString.trim(" a b    c  ");
+        String s = OAString.trimSpaces(" a b    c  ");
         assertEquals(s, "a b c");
     }
     

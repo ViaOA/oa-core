@@ -274,7 +274,7 @@ public class OAXMLWriter {
 		if (encodeMessage != null) {
 			line = encodeMessage + Base64.encode(line);
 		}
-		pw.print("<![CDATA[" + OAString.convertToXML(line, true) + "]]>");
+		pw.print("<![CDATA[" + OAString.convertToXml(line, true) + "]]>");
 	}
 
 	/** converts XML codes and encodes illegal XML characters */
@@ -285,7 +285,7 @@ public class OAXMLWriter {
 		if (!bInit) {
 			init();
 		}
-		pw.print(OAString.convertToXML(line, false));
+		pw.print(OAString.convertToXml(line, false));
 	}
 
 	public void print(String line) {

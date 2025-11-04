@@ -68,12 +68,12 @@ public class OAUndoableEdit implements UndoableEdit {
 		oe.prevValue = prevObject;
 		if (presentationName == null) {
 			Class c = hub.getObjectClass();
-			String s = OAString.convertHungarian(c.getSimpleName());
+			String s = OAString.convertToHungarian(c.getSimpleName());
 
 			Hub h2 = hub.getLinkHub(true);
 			if (h2 != null) {
 				c = h2.getObjectClass();
-				s = OAString.convertHungarian(c.getSimpleName());
+				s = OAString.convertToHungarian(c.getSimpleName());
 				String s2 = HubLinkDelegate.getLinkToProperty(hub);
 				presentationName = "change to " + s + " " + s2;
 			} else {
@@ -138,7 +138,7 @@ public class OAUndoableEdit implements UndoableEdit {
 		oe.newValue = newValue;
 		if (presentationName == null) {
 			String s = oe.getClassName();
-			s += " " + OAString.convertHungarian(prop);
+			s += " " + OAString.convertToHungarian(prop);
 			presentationName = "Change to " + s;
 		}
 		oe.presentationName = presentationName;
@@ -163,7 +163,7 @@ public class OAUndoableEdit implements UndoableEdit {
 		}
 		if (c != null) {
 			s = c.getSimpleName();
-			s = OAString.convertHungarian(s);
+			s = OAString.convertToHungarian(s);
 		}
 		return s;
 	}

@@ -194,7 +194,7 @@ public class RCPackageListDelegate {
                 }
                 if (i++ > 0) sb.append("\n");
 
-                String s = OAString.trim(line);
+                String s = OAString.trimSpaces(line);
                 String s2 = OAString.field(s, ':', 2);
                 if (s2 == null || s2.length() == 0) {
                     String s1 = OAString.field(s, ':', 1);

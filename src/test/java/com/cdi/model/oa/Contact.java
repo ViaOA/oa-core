@@ -119,7 +119,7 @@ public class Contact extends OAObject {
     @OAProperty(lowerName = "notes", displayLength = 20, hasCustomCode = true, isHtml = true)
     @OAColumn(name = "Notes", sqlType = java.sql.Types.CLOB)
     public String getNotes() {
-        if (notes != null) notes = OAString.convertTextToHTML(notes, false);
+        if (notes != null) notes = OAString.convertTextToHtml(notes, false);
         return notes;
     }
     public void setNotes(String newValue) {

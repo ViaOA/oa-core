@@ -81,6 +81,13 @@ public class OAString {
 		return OATextFilter.trimSpaces(line);
 	}
 
+	/** @see OATextFilter#trimSpaces(String) */
+	@Deprecated
+	public static String trim(final String line) {
+		return OATextFilter.trimSpaces(line);
+	}
+	
+	
 	/** @see OATextUtil#getEnd(String, int) */
 	public static String getEnd(String text, int len) {
 		return OATextUtil.getEnd(text, len);
@@ -106,10 +113,24 @@ public class OAString {
 		return OATextEscape.convertToHtml(value);
 	}
 
+	/** @see OATextEscape#convertToHtml(String) */
+	@Deprecated(since = "4.0.0")
+	public static String convertToHTML(String value) {
+		return OATextEscape.convertToHtml(value);
+	}
+	
 	/** @see OATextEscape#convertTextToHtml(String, boolean) */
 	public static String convertTextToHtml(String value, boolean bAddHTMLTag) {
 		return OATextEscape.convertTextToHtml(value, bAddHTMLTag);
 	}
+	
+	/** @see OATextEscape#convertTextToHtml(String, boolean) */
+	@Deprecated(since = "4.0.0")
+	public static String convertTextToHTML(String value, boolean bAddHTMLTag) {
+		return OATextEscape.convertTextToHtml(value, bAddHTMLTag);
+	}
+	
+	
 	/** @see OATextEscape#convertFromHtml(String) */
 	public static String convertFromHtml(String html) {
 		return OATextEscape.convertFromHtml(html);
@@ -691,6 +712,11 @@ public class OAString {
 
 	/** @see OATextGenerate#getRandomString(int, int, int, boolean, boolean, boolean) */
 	public static String getRandomString(int min, int max) {
+		return OATextGenerate.getRandomString(min, max);
+	}
+
+	/** @see OATextGenerate#getRandomString(int, int, int, boolean, boolean, boolean) */
+	public static String createRandomString(int min, int max) {
 		return OATextGenerate.getRandomString(min, max);
 	}
 
@@ -1315,5 +1341,10 @@ public class OAString {
 	public static String removeLeading(String s, char ch, int maxAmount) {
 		return OATextFilter.removeLeading(s, ch, maxAmount);
 	}
+
+	public static String getClassName(Class c) {
+		return OAClassUtil.getClassName(c);
+	}
+	
 }
 

@@ -128,7 +128,7 @@ public class SimpleXMLReader extends DefaultHandler {
     
     public void characters(char buf[], int offset, int len) throws SAXException {
         String s = new String(buf, offset, len);
-        if (node.alChildNode.size()==0) node.text = OAString.concat(node.text, OAString.decodeIllegalXML(s), "");
+        if (node.alChildNode.size()==0) node.text = OAString.concat(node.text, OAString.decodeIllegalXml(s), "");
         else node.text = "";
     }
 

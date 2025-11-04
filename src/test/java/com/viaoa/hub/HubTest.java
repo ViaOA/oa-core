@@ -70,10 +70,10 @@ public class HubTest extends OAUnitTest {
             protected void onFound(Employee emp) {
                 aiCount.incrementAndGet();
                 
-                String region = OAString.createRandomString(1, 8, true, false, false);
+                String region = OAString.getRandomString(1, 8, true, false, false);
                 
                 String jobName = OAString.createRandomString(6, 12);
-                String jobCode = OAString.createRandomString(4, 4, true, false, false);
+                String jobCode = OAString.getRandomString(4, 4, true, false, false);
                 String companyCode = OAString.createRandomString(3, 4); //emp.getCompanyCode();
                 String companyCodeName = OAString.createRandomString(2, 6); //emp.getCompanyCodeName();
                 String costCenter = OAString.createRandomString(2, 4); // emp.getCostCenter();

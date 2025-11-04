@@ -734,7 +734,7 @@ public class OAXMLReader {
 		}
 		if (bWithinTag && value != null) {
 			String s = new String(buf, offset, len);
-			value += OAString.decodeIllegalXML(s);
+			value += OAString.decodeIllegalXml(s);
 		}
 	}
 

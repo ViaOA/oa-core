@@ -133,7 +133,7 @@ public class OAObjectXMLDelegate {
 			}
 
 			if (value instanceof String) {
-				if (OAString.isLegalXML((String) value)) {
+				if (OAString.isLegalXml((String) value)) {
 					ow.printXML((String) value);
 				} else {
 					ow.printCDATA((String) value);
@@ -146,7 +146,7 @@ public class OAObjectXMLDelegate {
 				ow.print(((OADateTime) value).toString("yyyy-MM-dd HH:mm:ss"));
 			} else {
 				value = OAConv.toString(value);
-				if (OAString.isLegalXML((String) value)) {
+				if (OAString.isLegalXml((String) value)) {
 					ow.printXML((String) value);
 				} else {
 					ow.printCDATA((String) value);
@@ -238,7 +238,7 @@ public class OAObjectXMLDelegate {
 				} else {
 					ow.print("<" + key + " class=\"" + ow.getClassName(cval) + "\">");
 				}
-				if (OAString.isLegalXML((String) value)) {
+				if (OAString.isLegalXml((String) value)) {
 					ow.printXML((String) value);
 				} else {
 					ow.printCDATA((String) value);

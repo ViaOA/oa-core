@@ -952,7 +952,7 @@ public class OAXMLReader1 extends DefaultHandler {
 	public void characters(char buf[], int offset, int len) throws SAXException {
 		if (bWithinTag && value != null) {
 			String s = new String(buf, offset, len);
-			value += OAString.decodeIllegalXML(s);
+			value += OAString.decodeIllegalXml(s);
 		}
 	}
 

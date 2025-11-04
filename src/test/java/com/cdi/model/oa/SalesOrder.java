@@ -534,7 +534,7 @@ public class SalesOrder extends OAObject {
         double tot = 0.0d;
         for (SalesOrderItem soi : getSalesOrderItems()) {
             tot += soi.getTotalItemOurPrice();
-            tot = OAConv.round(tot, 2);
+            tot = OAMath.round(tot, 2);
         }
         return tot;
     }
@@ -549,7 +549,7 @@ public class SalesOrder extends OAObject {
         double tot = 0.0d;
         for (SalesOrderItem soi : getSalesOrderItems()) {
             tot += soi.getTotalItemSellPrice();
-            tot = OAConv.round(tot, 2);
+            tot = OAMath.round(tot, 2);
         }
         return tot;
     }
@@ -558,10 +558,10 @@ public class SalesOrder extends OAObject {
         double disc = this.getDiscountPercent();
         if (disc == 0) return 0;
         disc /= 100;
-        disc = OAConv.round(disc, 2);
+        disc = OAMath.round(disc, 2);
         double dSell = this.getTotalItemSellPrice();
         double d = (dSell * disc);
-        d = OAConv.round(d, 2);
+        d = OAMath.round(d, 2);
         return d;
     }
     @OAObjCallback(visibleProperty = SalesOrder.P_DiscountPercent)
@@ -575,7 +575,7 @@ public class SalesOrder extends OAObject {
         double d = 0.0d;
         for (SalesOrderItem soi : getSalesOrderItems()) {
             d += soi.getServicePrice();
-            d = OAConv.round(d, 2);
+            d = OAMath.round(d, 2);
         }
         return d;
     }

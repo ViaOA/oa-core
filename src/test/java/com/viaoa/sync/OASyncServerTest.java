@@ -362,10 +362,10 @@ public class OASyncServerTest {
 						mc.setHostInfo(hi);
 					}
 					for (int i = 0; i < 5; i++) {
-						mc.setStartScript(OAString.createRandomString(8, 24));
-						mc.setStopScript(OAString.createRandomString(8, 24));
-						hi.setJarDirectory(OAString.createRandomString(88, 824));
-						mc.setApplicationStatus(OAString.createRandomString(6, 24));
+						mc.setStartScript(OAString.getRandomString(8, 24));
+						mc.setStopScript(OAString.getRandomString(8, 24));
+						hi.setJarDirectory(OAString.getRandomString(88, 824));
+						mc.setApplicationStatus(OAString.getRandomString(6, 24));
 					}
 					Hub<ApplicationStatus> h = serverRoot.getApplicationStatuses();
 					ApplicationStatus as = h.getAt((int) (Math.random() * h.size()));
