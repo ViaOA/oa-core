@@ -1,4 +1,38 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.text;
+
+/**
+ * Utilities for generating sample text and random strings for demos, tests, and UI placeholders.
+ * <p>
+ * Responsibilities include:
+ * <ul>
+ *   <li>{@code getDummyText(..)} — variable-length Lorem ipsum paragraphs with natural word boundaries</li>
+ *   <li>{@code getRandomString(..)} — configurable alphanumeric strings with optional first-cap behavior</li>
+ *   <li>{@code createDigits(..)} — digit-only strings</li>
+ * </ul>
+ *
+ * <p>The generation routines are intentionally simple and fast (using {@link Math#random()}), and
+ * are suitable for non-cryptographic use such as UI scaffolding, test fixtures, and demo data.
+ * All methods are null-safe and avoid breaking words when slicing Lorem ipsum samples.</p>
+ *
+ * <p>Part of the {@code com.viaoa.text} family in OA&nbsp;4.0.</p>
+ *
+ * @since OA 4.0
+ */
 
 public class OATextGenerate {
 
@@ -68,7 +102,7 @@ public class OATextGenerate {
 	}
 	
 	public static String getRandomString(int min, int max, boolean bUseDigits, boolean bUseAlpha, boolean bCapFirstChar) {
-		return getRandomString(0, min, max, true, true, false);
+		return getRandomString(0, min, max, bUseDigits, bUseAlpha, bCapFirstChar);
 	}
 
 	public static String createDigits(int min, int max) {

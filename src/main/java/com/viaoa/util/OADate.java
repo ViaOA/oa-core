@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.sql.Time;
@@ -16,12 +21,33 @@ import java.time.LocalDate;
 import java.util.*;
 
 /**
- * Date class that combines Calendar, Date and SimpleDateFormat into a single class.
- * <p>
- * OADate is not affected by timezone. A date created on one system will be the same on another machine, even if the timezone is different.
- * See OADateTime for list or formatting symbols.
+ * Immutable date-only value that represents a calendar day independent from
+ * time-of-day. OADate is suitable for business rules where wall-clock time is
+ * irrelevant (e.g., birthdays, holidays, settlement dates).
+ *
+ * <p><b>Timezone behavior:</b><br>
+ * OADate stores an underlying instant via {@link OADateTime}, but the time
+ * fields are always normalized to midnight and ignored for comparisons,
+ * formatting, and field access. This ensures that a given date is interpreted
+ * consistently across JVM default timezones.
+ *
+ * <p><b>Key properties:</b>
+ * <ul>
+ *   <li>Thread-safe and immutable</li>
+ *   <li>Parsing supports multiple global formats</li>
+ *   <li>Formatting uses a global default when none is specified</li>
+ *   <li>Interoperates with {@link java.time.LocalDate}</li>
+ * </ul>
+ *
+ * <p>Default formats used include:
+ * <ul>
+ *   <li>{@code "MM/dd/yyyy"}</li>
+ *   <li>{@code "dd/MM/yyyy"}</li>
+ *   <li>{@code "yyyy-MM-dd"} (SQL)</li>
+ * </ul>
  *
  * @see OADateTime
+ * @see OATime
  */
 public class OADate extends OADateTime {
 	private static final long serialVersionUID = 1L;
@@ -74,7 +100,7 @@ public class OADate extends OADateTime {
 			dateOutputFormat = "MM/dd/yyyy";
 		} else if (bYearFirst) {
 			vecDateParseFormat.addElement("yy/MM/dd"); // must be before "MM/dd/yyyy" since "MM/dd/yyyy" will convert 5/4/65 -> 05/04/0065
-			vecDateParseFormat.addElement("yyyy/MM/ddy");
+			vecDateParseFormat.addElement("yyyy/MM/dd");
 			dateOutputFormat = "yyyy/MM/dd";
 		} else { // day first
 			vecDateParseFormat.addElement("dd/MM/yy");

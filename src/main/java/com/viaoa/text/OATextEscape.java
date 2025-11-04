@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.text;
 
 import java.util.HashMap;
@@ -5,6 +20,28 @@ import java.util.Map;
 
 import com.viaoa.util.OAString;
 
+/**
+ * Encoding and escaping utilities for HTML, XML, JavaScript, and JSON text.
+ * <p>
+ * Responsibilities include:
+ * <ul>
+ *   <li>Escaping markup characters for HTML and XML</li>
+ *   <li>Encoding illegal XML control characters</li>
+ *   <li>Basic unescape and reverse-transform operations</li>
+ *   <li>JavaScript and JSON-escape helpers for safe inline usage</li>
+ *   <li>Highlighting search matches within text using tag wrappers</li>
+ * </ul>
+ *
+ * <p>All methods in this class are null-safe and operate only on text content.
+ * Higher-level layout and formatting features should be delegated to
+ * {@link OATextFormat}, and structural parsing to
+ * {@link OATextTokenizer}.</p>
+ *
+ * <p>This class ensures that OA applications safely encode text for browser,
+ * markup, and serialization environments where characters such as '&', '&lt;',
+ * '&gt;', and quotes require escape sequences.</p>
+ *
+ */
 public class OATextEscape {
 
 	

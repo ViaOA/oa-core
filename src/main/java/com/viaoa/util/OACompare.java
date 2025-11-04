@@ -52,7 +52,6 @@ import com.viaoa.object.OAObjectKeyDelegate;
  *
  * @author Vince Via
  */
-
 public class OACompare {
 
 	/**

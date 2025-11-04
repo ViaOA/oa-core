@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.text;
 
 /**
@@ -193,8 +208,11 @@ public final class OATextAlign {
 		}
 
 		int midPos = len / 2;
-
-		String s = OATextFilter.substring(value, midPos - (amount / 2), amount);
-		return s;
+		int start = midPos - (amount / 2);
+		if (start < 0) start = 0;
+		return OATextFilter.substring(value, start, amount);
+	
 	}
+
+
 }

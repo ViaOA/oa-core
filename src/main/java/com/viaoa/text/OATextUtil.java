@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.text;
 
 import java.awt.Color;
@@ -5,6 +20,35 @@ import java.awt.Color;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OAString;
 
+/**
+ * Utility methods for text composition, lightweight formatting, and
+ * identifier/path construction used throughout OA-core.
+ *
+ * <p><b>Key responsibilities:</b>
+ * <ul>
+ *   <li>Safe concatenation helpers that avoid returning {@code null}</li>
+ *   <li>Simple substring helpers (first/last N characters)</li>
+ *   <li>Legacy ASCII integer parsing (first numeric run only)</li>
+ *   <li>Color and byte-array ↔ hex string conversion</li>
+ *   <li>Java identifier sanitization</li>
+ *   <li>Creation of OA property path strings (with Hub filter support)</li>
+ * </ul>
+ *
+ * <p><b>Design notes:</b>
+ * <ul>
+ *   <li>All string-returning methods avoid returning {@code null} unless explicitly documented</li>
+ *   <li>Backward-compatible with existing OA usage and expectations</li>
+ *   <li>Performance-first, with minimal allocations for common composition patterns</li>
+ * </ul>
+ *
+ * <p><b>Behavior references:</b>
+ * <ul>
+ *   <li>{@link #parseInt(String)} stops parsing on first non-digit after numeric run</li>
+ *   <li>{@link #convertToLikeSearch(String)} translates {@code * → %} and ensures a trailing {@code %}</li>
+ *   <li>{@link #createPropertyPath(String...)} preserves Hub filter syntax when segment starts with ':'</li>
+ * </ul>
+ *
+ */
 public class OATextUtil {
 
 	

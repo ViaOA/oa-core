@@ -12,17 +12,12 @@ package com.viaoa.util;
 
 import java.util.*;
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
-
 
 /*
-
     URL url = new URL("https://github.com/properties.values");
     URLConnection conn = url.openConnection();
 
     Properties props = new OAProperties(conn.getInputStream());
-
 */
 
 /**

@@ -70,7 +70,7 @@ public class OAStringTest extends OAUnitTest {
         assertEquals(s, "1,234.5600  ");
 
         s = OAString.format("1234.56", "4L");
-        assertEquals(s, "1234");
+        assertEquals("1234", s);
     }
     
     @Test
@@ -83,15 +83,15 @@ public class OAStringTest extends OAUnitTest {
     public void convertTest() {
         String s = "abAcdEfA";
         s = OAString.convert(s, "A", "X");
-        assertEquals(s, "abXcdEfX");
+        assertEquals("abXcdEfX", s);
         s = OAString.convert(s, "X", "bb");
-        assertEquals(s, "abbbcdEfbb");
+        assertEquals("abbbcdEfbb", s);
         s = OAString.convert(s, "X", "bb");
-        assertEquals(s, "abbbcdEfbb");
+        assertEquals("abbbcdEfbb", s);
         s = OAString.convert(s, "bb", "b");
-        assertEquals(s, "abbcdEfb");
+        assertEquals("abbcdEfb", s);
         s = OAString.convert(s, "b", "");
-        assertEquals(s, "acdEf");
+        assertEquals("acdEf", s);
     }
     
     @Test

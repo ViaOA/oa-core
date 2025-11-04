@@ -1,23 +1,43 @@
 package com.viaoa.text;
 
 /**
- * A focused API for word-level language transforms
+ * Grammar utilities for converting Java identifiers and simple English words into
+ * human-readable display names and forms. This includes:
+ *
+ * <ul>
+ *   <li>Converting camelCase / mixedCase to display names with spaces and title casing
+ *   <li>Converting plural ↔ singular forms using simple English suffix rules
+ *   <li>Creating possessive words ("car" → "car's", "class" → "class'")
+ *   <li>Title-casing of sentences and identifiers
+ *   <li>Producing short names based on uppercase characters and consonants
+ * </ul>
+ *
  * <p>
- * singular/plural/title case/display/etc
+ * This class operates on ASCII letter rules (A-Z/a-z) and includes simple fall-backs for
+ * ambiguous English grammar situations. Unicode grammar and language-specific rules
+ * will be handled in a future phase.
+ *
+ * <p><b>Design Notes</b>
+ * <ul>
+ *   <li>Null inputs return a non-null safe default (usually empty string)
+ *   <li>Case of appended suffixes is preserved (e.g., "Box" → "Boxes")
+ *   <li>Behavior is backwards-compatible with existing OA applications
+ * </ul>
+ *
  */
 public class OATextGrammar {
 
 
 	/**
 	 * Used to convert a String that uses CamelCase notation to a titled, space separated String. The first char and all letter chars
-	 * following non-letter characters will be converted to uppercase. Words will be seperated using space character.
+	 * following non-letter characters will be converted to uppercase. Words will be separated using space character.
 	 * <p>
 	 * Example: "yourNameTest" converts to "Your Name Test" <br>
 	 * Example: "USAmerica" converts to "US America" <br>
 	 * Example: "v.via" converts to "V.Via"
 	 *
 	 * @param value String to convert
-	 * @return new String that is titled case, with spaces to seperate words. If value is null, then a blank "" is returned.
+	 * @return new String that is titled case, with spaces to separate words. If value is null, then a blank "" is returned.
 	 */
 	public static String getDisplayName(String value) {
 		if (value == null) {

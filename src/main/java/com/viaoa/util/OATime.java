@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.time.LocalTime;
@@ -150,7 +155,7 @@ public class OATime extends OADateTime {
 	}
 
 	public OATime(LocalTime lt) {
-		OATime out = new OATime(lt.getHour(), lt.getMinute(), lt.getSecond(), (int) (lt.getNano() / Math.pow(10, 6)));
+		this(lt.getHour(), lt.getMinute(), lt.getSecond(), (int) (lt.getNano() / Math.pow(10, 6)));
 	}
 
 	/**
@@ -325,15 +330,4 @@ public class OATime extends OADateTime {
 		return lt;
 	}
 
-	public static void main(String[] args) {
-		// this is the start time - grep "Opened file" *error*.log
-		OATime dt = new OATime("19:08:28.024", "HH:mm:ss.SSS");
-
-		// this is the gc timestamp to find
-		dt = (OATime) dt.addSeconds(69099);
-		dt = (OATime) dt.addMilliSeconds(830);
-
-		System.out.print("==> " + dt.toString("hh:mm:ss.SSS aa"));
-		System.out.println(" ==> " + dt.toString("HH:mm:ss.SSS"));
-	}
 }

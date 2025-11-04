@@ -15,3 +15,24 @@ public class OAClassLoaderTest extends OAUnitTest {
     }
     
 }
+
+/*
+
+// test using Jar, or directory
+public static void main(String[] args) throws Exception {
+
+	String cname = "com.viaoa.util.Test";
+
+	OAClassLoader test = new OAClassLoader(cname);
+	Class c = test.loadClass(cname);
+	TestInterface t = (TestInterface) c.newInstance();
+	t.test();
+	System.out.println("Done");
+}
+
+
+*/
+
+
+
+

@@ -1,13 +1,56 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.text;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.viaoa.util.OAConverter;
+/**
+ * Tokenization and field-extraction utilities for delimited text.
+ * <p>
+ * Responsibilities include:
+ * <ul>
+ *   <li>Counting and extracting values separated by a delimiter</li>
+ *   <li>Backward-compatible PICK-style field parsing (1-based)</li>
+ *   <li>Modern zero-based field access helpers</li>
+ *   <li>CSV-style parsing including quote handling</li>
+ *   <li>CSS-style name/value tokenization</li>
+ *   <li>Password masking using name heuristics</li>
+ * </ul>
+ *
+ * <p>Methods in this class operate without modifying the input text and
+ * are designed to be null-safe. Variants exist for both single-character
+ * and multi-character delimiters. Certain {@code field()} overloads are
+ * deprecated in OA 4.0 in favor of {@code fieldAt()} which uses
+ * zero-based indexing.</p>
+ *
+ * <p>Higher-level filtering and sanitization rules are not handled here and
+ * should be delegated to {@link OATextFilter} or {@link OATextSanitize}.
+ * Formatting and display handling should be delegated to
+ * {@link OATextFormat}.</p>
+ *
+ * <p>This class is optimized for common business text parsing scenarios
+ * including CSV rows, HTML/CSS attribute value splitting, log processing,
+ * and structured protocol or messaging formats.</p>
+ *
+ * @since OA 4.0
+ */
 
 public class OATextTokenizer {
-
 	
 	/**
 	 * Returns the amount of particular String within a String.
@@ -481,7 +524,4 @@ public class OATextTokenizer {
 		String s = OATextUtil.concat(toText, (String) value, ",", true);
 		return s;
 	}
-
-	
-
 }

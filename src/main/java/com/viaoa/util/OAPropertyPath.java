@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.lang.reflect.Constructor;
@@ -28,15 +33,61 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
 
+
 /**
- * Utility used to parse a propertyPath, get methods, class information, and to be able to get the value by invoking on an object. A
- * PropertyPath String is separated by "." for each linkPropery, and each linkProperty can have a filter in the format ":filterName(a,b,n)"
- * Supports casting in property path, ex: from Emp, "dept.(manager)employee.name" ex: from OALeftJoin "(Location)A.name" Supports filters:
- * ex: "dept.employees:newHires(7).orders.orderItems:overDue(30)" Recursive: created 20120809
+ * Represents a parsed and navigable property path used for traversing OAObject
+ * graphs. A property path is a dotted sequence of property names that may span
+ * bi-directional link properties, Hubs, and filtered collections. Examples:
  *
- * @param <F> type of object that the property path is based on.
- * @see HubMerger which uses propertyPaths to create a Hub of all lastNode objects, and keeps it updated.
- * @see OAPropertyPathDelegate
+ * <pre>
+ *     "customer.address.city"
+ *     "orderItems:(OpenItems).product.name"
+ *     "((Manager)teamMember).email"
+ * </pre>
+ *
+ * <p><b>Core Responsibilities</b></p>
+ * <ul>
+ *   <li>Parse property path strings into addressable components</li>
+ *   <li>Support Hub navigation using {@code getActiveObject()}</li>
+ *   <li>Resolve link information and metadata from the OA model</li>
+ *   <li>Optionally apply {@link OAFilter} rules (via :Filter syntax)</li>
+ *   <li>Extract the final property value from an arbitrary root object</li>
+ * </ul>
+ *
+ * <p><b>Casting and Filtering</b></p>
+ * <ul>
+ *   <li>Supports casting segments using parentheses:
+ *       {@code (Manager).location.city}</li>
+ *   <li>Supports optional {@link OAFilter} insertion applied during traversal</li>
+ * </ul>
+ *
+ * <p><b>Behavior</b></p>
+ * <ul>
+ *   <li>Traversal stops early when encountering {@code null}</li>
+ *   <li>Property path resolution is safe for both OAObject and Hub instances</li>
+ *   <li>If a Hub is encountered, its active object is used for continuation</li>
+ * </ul>
+ *
+ * <p><b>Thread-safety</b></p>
+ * <ul>
+ *   <li>Instances are not shared; parsing state is encapsulated and immutable after construction</li>
+ * </ul>
+ *
+ * <p><b>Use Cases</b></p>
+ * <ul>
+ *   <li>UI binding and screen component expressions</li>
+ *   <li>{@code OASelect} and filtering expressions</li>
+ *   <li>Metadata inspection and reflection-based automation</li>
+ *   <li>Graph navigation for controllers and remote layers</li>
+ * </ul>
+ *
+ * <p>This class is central to the OA Object Graph pattern, enabling declarative
+ * references to related objects without requiring explicit navigation code.</p>
+ *
+ * @see com.viaoa.object.OAObject
+ * @see com.viaoa.hub.Hub
+ * @see com.viaoa.filter.OAFilter
+ * @see OAPropertyPathInfo
  */
 public class OAPropertyPath<F> {
 
@@ -847,8 +898,8 @@ public class OAPropertyPath<F> {
 		Class clazz;
 		if (obj instanceof Hub) {
 			clazz = _findLastClass((Hub) obj, pos);
-		} else if (obj instanceof Object) {
-			clazz = _findLastClass((Hub) obj, pos);
+		} else if (obj instanceof OAObject) {
+			clazz = _findLastClass((OAObject) obj, pos);
 		} else {
 			clazz = null;
 		}

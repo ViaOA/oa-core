@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.lang.reflect.Array;
@@ -19,15 +24,36 @@ import java.util.logging.Logger;
 
 import com.viaoa.object.OAPerformance;
 
+
 /**
- * Thread safe Circular Queue.
- * There is a single headPostion, and each consumer can have  a tailPosition.
- * Client access (getMessageXxx methods) will check overruns, and will throw an 
- * exception if a queue overrun occurs.
+ * High-performance, thread-safe Circular Queue supporting multi-consumer
+ * messaging with per-session delivery tracking. Designed for distributed
+ * synchronization (OASync) and durable message fan-out.
+ *
+ * <p>Each producer append increments a monotonically increasing head
+ * position. Each consumer tracks its own tail position. Overrun detection
+ * ensures that no consumer reads stale data; a queue overrun will trigger
+ * an exception so the session can recover.</p>
+ *
+ * <p>Queue entries are cleared once all registered sessions have advanced
+ * past them, enabling efficient memory use without GC pressure.</p>
+ *
+ * <p>The queue purposely uses the same array instance for its lifetime,
+ * reducing allocation and supporting extremely high-throughput write paths.</p>
+ *
+ * <b>Key Features</b>
+ * <ul>
+ *   <li>Multiple consumers with independent progress</li>
+ *   <li>Guaranteed ordering, no message loss without overrun signal</li>
+ *   <li>Efficient cleanup of delivered messages</li>
+ *   <li>Optional throttling if consumers lag behind</li>
+ *   <li>Thread-safe single-writer model</li>
+ *   <li>Wait/notify support for blocking reads</li>
+ * </ul>
+ *
+ * <p>Intended for use by OASync and other internal messaging layers where
+ * throughput, ordering, and fault detection are critical.</p>
  * 
- * A session id can be used so that entries can be removed from the queue once all sessions have received it.
- * 
- * @author vvia
  * Note: this is made abstract to be able to get the Generic class that is used.
  */
 public abstract class OACircularQueue<TYPE> {

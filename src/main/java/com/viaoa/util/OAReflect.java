@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.io.File;
@@ -17,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -32,11 +38,29 @@ import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 
 /**
- * Used for Reflection services.
+ * Central reflection utility for OA: resolves property paths, invokes methods,
+ * and adapts between primitive field semantics and OAObjectʼs null abstraction.
  *
- * @see OAObject#setProperty(String, Object) for storing "extra" properties and setting primitive properties to null.
- * @see OAObject#getProperty(String) for getting "extra" properties and getting primitive properties as null.
- * @author vincevia
+ * <p><b>Primary Responsibilities</b>
+ * <ul>
+ *   <li>Locate methods by name (case-insensitive) and argument types</li>
+ *   <li>Resolve dotted property paths including Hub link traversal</li>
+ *   <li>Null-handling: primitive fields may be stored as “null” in OAObject</li>
+ *   <li>Convert parameter Strings using {@link OAConverter}</li>
+ *   <li>Dynamic type inspection (numeric, integer, float, wrapper)</li>
+ *   <li>Classpath scanning for class loading and diagnostics</li>
+ * </ul>
+ *
+ * <p><b>Hub Navigation</b><br>
+ * Property path lookup supports Hub properties by automatically calling
+ * {@code getActiveObject()} when a Hub is encountered.
+ *
+ * <p><b>Thread-safety</b><br>
+ * All functionality is stateless and thread-safe.
+ *
+ * @see com.viaoa.object.OAObject
+ * @see OAConverter
+ * @see OAObjectReflectDelegate
  */
 public class OAReflect {
 
@@ -183,7 +207,7 @@ public class OAReflect {
 			propertyPath = "";
 		}
 
-		Vector vec = new Vector(5, 5);
+		List<Method> alMethod = new ArrayList();
 
 		Class classLast = clazz;
 		for (pos = prev = 0; pos >= 0; prev = pos + 1) {
@@ -247,7 +271,7 @@ public class OAReflect {
 					throw rex;
 				}
 			}
-			vec.addElement(method);
+			alMethod.add(method);
 
 			clazz = method.getReturnType();
 			if (clazz != null && clazz.equals(Hub.class)) {
@@ -256,7 +280,7 @@ public class OAReflect {
 				if (c != null) {
 					// this needs to then get the activeObject out of the Hub object
 					method = OAReflect.getMethod(clazz, "getActiveObject", 0);
-					vec.addElement(method);
+					alMethod.add(method);
 					clazz = c;
 				}
 			} else {
@@ -297,8 +321,8 @@ public class OAReflect {
 			}
 			classLast = clazz;
 		}
-		Method[] ms = new Method[vec.size()];
-		vec.copyInto(ms);
+		Method[] ms = new Method[alMethod.size()];
+		alMethod.toArray(ms);
 		return ms;
 	}
 
@@ -611,7 +635,7 @@ public class OAReflect {
 		}
 		clazz = getClassWrapper(clazz);
 		return (clazz.equals(Long.class) || clazz.equals(Integer.class) || clazz.equals(Short.class)
-				|| clazz.equals(Character.class) || clazz.equals(Byte.class) || clazz.equals(BigInteger.class));
+				|| clazz.equals(Byte.class) || clazz.equals(BigInteger.class));
 	}
 
 	/** Determines if a class is a Float. */
@@ -677,27 +701,40 @@ public class OAReflect {
 		return false;
 	}
 
+	
+	/**
+	 * Determines if two classes should be considered equivalent for comparison or
+	 * reflection purposes, including handling wrapper ↔ primitive mappings and
+	 * compatible numeric types.
+	 */
 	public static boolean isEqualEvenIfWrapper(Class c1, Class c2) {
-		if (c1 == c2) {
-			return true;
-		}
-		if (c1 == null || c2 == null) {
-			return false;
-		}
-		if (c1.equals(c2)) {
-			return true;
-		}
-		if (c1.isPrimitive()) {
-			Class c3 = getPrimitiveClassWrapper(c1);
-			return c2.equals(c3);
-		}
-		if (c2.isPrimitive()) {
-			Class c3 = getPrimitiveClassWrapper(c2);
-			return c1.equals(c3);
-		}
-		return false;
-	}
+	    if (c1 == c2) return true;
+	    if (c1 == null || c2 == null) return false;
+	    if (c1.equals(c2)) return true;
 
+	    if (c1.isPrimitive()) {
+	        Class c3 = getPrimitiveClassWrapper(c1);
+	        if (c3.equals(c2)) return true;
+	    }
+	    if (c2.isPrimitive()) {
+	        Class c3 = getPrimitiveClassWrapper(c2);
+	        if (c1.equals(c3)) return true;
+	    }
+
+	    // Numeric interoperability:
+	    // Treat both as compatible if they are assignable from Number
+	    if (Number.class.isAssignableFrom(getClassWrapper(c1)) &&
+	        Number.class.isAssignableFrom(getClassWrapper(c2)))
+	    {
+	        return true;
+	    }
+
+	    return false;
+	}
+	
+	
+	
+	
 	/**
 	 * Returns an Object that is of a wrapper class for a primitive type.
 	 */
@@ -764,40 +801,32 @@ public class OAReflect {
 	public static String[] getClasses(String packageName) throws ClassNotFoundException, IOException {
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		if (classLoader == null) {
-			throw new ClassNotFoundException("classloaded not found");
+			throw new ClassNotFoundException("classloader not found");
 		}
 		final String origPath = packageName.replace('.', '/');
 		Enumeration<URL> resources = classLoader.getResources(origPath);
 		List<String> list = new ArrayList<String>(50);
-		if (resources.hasMoreElements()) {
+		while (resources.hasMoreElements()) {
 			URL url = resources.nextElement();
-			String fileName = url.getFile();
 			String protocol = url.getProtocol();
-			File file = new File(fileName);
-			if (file.isDirectory()) {
+			
+			if ("file".equals(protocol)) {
+				File file = new File(URLDecoder.decode(url.getFile(), "UTF-8"));
 				String[] ss = file.list();
 				if (ss != null) {
 					for (String s : ss) {
-						int pos = s.indexOf(".class");
-						if (pos < 0) {
-							continue;
-						}
-						s = s.substring(0, pos);
-						list.add(s);
+						if (!s.endsWith(".class")) continue;
+						if (s.indexOf('$') >= 0) continue;
+						list.add(s.substring(0, s.length() - 6));
 					}
 				}
-			} else if (protocol == null || !protocol.equals("jar")) {
-			} else {
-				// get from jar
-				// file:/C:/projects/java/ViaOA/lib/trwlRouter.jar!/com/cpex/trade/comm/socket
-
-				url = new URL(protocol + ":" + fileName);
+			} else if ("jar".equals(protocol)) {
 				JarURLConnection jarConnection = (JarURLConnection) url.openConnection();
 				JarFile jar = jarConnection.getJarFile();
 
 				String path = origPath + "/";
 
-				Enumeration entries = jar.entries();
+				Enumeration<JarEntry> entries = jar.entries();
 				while (entries.hasMoreElements()) {
 					String name = ((JarEntry) entries.nextElement()).getName();
 					if (!name.startsWith(path)) {
@@ -873,17 +902,4 @@ public class OAReflect {
 		return s;
 	}
 
-	public static void main(String[] args) throws Exception {
-		/*
-		String[] cs = getClasses("com.cpex.trade.comm.socket");
-		String[] cs = getClasses("com.viaoa.scheduler.oa");
-		for (String c : cs) {
-		    System.out.println(" "+c);
-		}
-		*/
-		String s = getClassPath(OAReflect.class);
-		System.out.println("==> " + s);
-		s = getClassPath(String.class);
-		System.out.println("==> " + s);
-	}
 }

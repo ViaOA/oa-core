@@ -1,8 +1,43 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.text;
 
+/**
+ * Utility methods for filtering or transforming text by removing characters or
+ * substrings that are not desired for display, storage, or parsing.
+ * <p>
+ * Responsibilities include:
+ * <ul>
+ *   <li>Removing characters based on blacklist or whitelist rules</li>
+ *   <li>Condensing or stripping leading/trailing whitespace</li>
+ *   <li>Filtering characters to alphanumeric-only content</li>
+ *   <li>Ensuring file name safety by allowing only valid characters</li>
+ *   <li>Substring-safe indexing to prevent {@link IndexOutOfBoundsException}</li>
+ *   <li>Simple substring replacement utilities</li>
+ * </ul>
+ *
+ * <p>This class focuses on filtering and removal — without performing formatting,
+ * tokenization, casing rules, or grammar modifications. Each method is null-safe
+ * and optimized to minimize intermediate allocations when possible.</p>
+ *
+ * <p>Part of the {@code com.viaoa.text} family of classes providing clearer
+ * separation of string concerns in OA 4.0.</p>
+ *
+ */
 public class OATextFilter {
-
-	
 	
 	/**
 	 * Removes characters from a String.
@@ -254,9 +289,9 @@ public class OATextFilter {
 			}
 			if (j > 0) {
                 // i needs to be set back to next char from prev start position
-                i -= (j - 1);
-				if (sb != null) {
-					sb.append(line.charAt(i-1));
+                i -= j;
+				if (i >= 0 && sb != null) {
+					sb.append(line.charAt(i));
 				}
                 j = 0;
                 continue;
@@ -361,7 +396,6 @@ public class OATextFilter {
 	
     public static String removeLeading(String s, char ch, int maxAmount) {
         if (s == null) return s;
-        if (maxAmount <= 0) return s;
         
         int x = s.length();
         int i = 0;

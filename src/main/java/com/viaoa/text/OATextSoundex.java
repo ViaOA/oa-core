@@ -1,7 +1,45 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.text;
 
 import java.util.Locale;
 
+/**
+ * Utility for generating U.S. Census Soundex codes to support matching of
+ * phonetically similar names (e.g., "Vincent" → "V523").
+ *
+ * <p>Characteristics:
+ * <ul>
+ *   <li>Always returns a 4-character code using A–Z and digits</li>
+ *   <li>Padding with '0' if insufficient consonants found</li>
+ *   <li>Case-insensitive (normalized to uppercase)</li>
+ *   <li>Non-alphabetic characters ignored</li>
+ *   <li>Duplicate adjacent codes are collapsed</li>
+ * </ul>
+ *
+ * <p><b>Null/empty input returns "0000"</b>
+ *
+ * <p>Examples:
+ * <pre>{@code
+ * soundex("Vincent") → "V523"
+ * soundex("Via")     → "V000"
+ * soundex(null)      → "0000"
+ * }</pre>
+ *
+ */
 public class OATextSoundex {
 	/**
 	 * Soundex is used for creating a code that is used to find similar words.
@@ -27,7 +65,14 @@ public class OATextSoundex {
 	 *
 	 * @param word String to create a soundex code for.
 	 * @return new String that is soundex code for word. If word is null,then "0000" is returned.
+	 * 
+	 * <p>Standards reference:
+	 * <a href="http://www.archives.gov/genealogy/census/soundex.html">
+	 * U.S. National Archives Soundex Rules</a>
+	 * 
 	 */
+	
+	
 	/**
 	 * Generates a 4-character Soundex code (U.S. Census standard).
 	 * Non-letter characters are ignored.

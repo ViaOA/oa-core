@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.text;
 
 import java.io.UnsupportedEncodingException;
@@ -11,65 +26,89 @@ import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
 
 /**
- * fmt/format javadoc Used to format/mask Strings using a "Pick like" format/mask String.
+ * Flexible, string formatting and masking engine. Primarily used for
+ * business UI text layout, numeric conversion, and masked entry display.
  * <p>
- * Also supports formats for Date/Times (see OADateTime) and Numbers (see OAConverterNumber)
- * <p>
- * <b>Formatting Strings</b>
+ * Responsibilities include:
+ * <ul>
+ *   <li>Field justification: left, right, or center</li>
+ *   <li>Width sizing and custom pad characters</li>
+ *   <li>Decimal control and rounding for numeric values</li>
+ *   <li>Comma separators and currency decoration</li>
+ *   <li>Data masks using '#' insertion rules</li>
+ *   <li>Optional leading or trailing ellipsis when text exceeds space</li>
+ * </ul>
  *
- * <pre>
-
- Example:  fmt(str,"12 L2.,$0(MASK)");
-
- Format description for "12 L2,$0(MASK)":
-     12 = width - not required.
-          will pad with spaces if pad character is not defined.
-          if width is not included, then length of String is not restricted.
- ' ' = trailing blanks that will be added to the end of formatted String.
-     L = L, R, or C justified
-     2 = decimal places - can only be ONE digit.  Rounding will be used.
-     . = if value has to be truncated, then "..." will be used.  Only used with "L" or "R" justified.
-     , = if you want commas to seperate numbers
-     $ = dollar sign, only if 'R' justified  puts it in first char
-     0 = any pad character - default space. Dont put this 1 after L/R, since
-         that position is used for the amount of decimal places.
-     Mask = must be in "()".  Use # character to have actual characters inserted,
-            all other characters in mask will be inserted.
-
- Examples:
-
- fmt("1234.5", "R4,")
-     "R4," = align right, 4 decimal places with comma seperators.
-     output: "1,234.5000"
-
- fmt("123.5", "R00")
-     "R00" = align right, 0 decimal places (causes rounding), pad with '0' character
-     output: "123"
-
- fmt("123.5", "8R00")
-     "8R00" = 8 width to fill,
-     output: "00000123"
-
- fmt("123.5", "8 R00")
-     "8 R00" = 8 width, append one space, right justified, 0 decimal places, '0' fill
-     output: "00000123 "
-
- fmt("1231231234","13  R((###)###-####)")
-     "13  R((###)###-####)" = 13 width, append 2 spaces, right justified, mask to use.
-          Note: the mask must be put into () and use # to denote where to insert the
-          characters within the supplied String.
-     output: "(123)123-1234  "
- fmt("CustomerName", "8L.")
-      output: "Custo..."
- fmt("CustomerName", "7R.")
-      output: "...omer"
- * </pre>
+ * <p>If no alignment directive is found, this class can automatically detect
+ * number and date formats and delegate to:
+ * <ul>
+ *   <li>{@link OAConv} for numeric parsing and formatting</li>
+ *   <li>{@link OADateTime} for date/time conversion</li>
+ * </ul>
+ *
  */
 public class OATextFormat {
 
 	private static final Pattern DATE_PATTERN = Pattern.compile(".*[yMdHhmsS].*");
 	private static final Pattern NUMBER_PATTERN = Pattern.compile(".*[0-9,$#].*");
 	
+
+	
+	/**
+	 * Used to format/mask Strings using a "Pick like" format/mask String.
+	 * <p>
+	 * Also supports formats for Date/Times (see OADateTime) and Numbers (see OAConverterNumber)
+	 * <p>
+	 * <b>Formatting Strings</b>
+	 *
+	 * <pre>
+
+	 Example:  fmt(str,"12 L2.,$0(MASK)");
+
+	 Format description for "12 L2,$0(MASK)":
+	     12 = width - not required.
+	          will pad with spaces if pad character is not defined.
+	          if width is not included, then length of String is not restricted.
+	 ' ' = trailing blanks that will be added to the end of formatted String.
+	     L = L, R, or C justified
+	     2 = decimal places - can only be ONE digit.  Rounding will be used.
+	     . = if value has to be truncated, then "..." will be used.  Only used with "L" or "R" justified.
+	     , = if you want commas to seperate numbers
+	     $ = dollar sign, only if 'R' justified  puts it in first char
+	     0 = any pad character - default space. Dont put this 1 after L/R, since
+	         that position is used for the amount of decimal places.
+	     Mask = must be in "()".  Use # character to have actual characters inserted,
+	            all other characters in mask will be inserted.
+
+	 Examples:
+
+	 fmt("1234.5", "R4,")
+	     "R4," = align right, 4 decimal places with comma seperators.
+	     output: "1,234.5000"
+
+	 fmt("123.5", "R00")
+	     "R00" = align right, 0 decimal places (causes rounding), pad with '0' character
+	     output: "123"
+
+	 fmt("123.5", "8R00")
+	     "8R00" = 8 width to fill,
+	     output: "00000123"
+
+	 fmt("123.5", "8 R00")
+	     "8 R00" = 8 width, append one space, right justified, 0 decimal places, '0' fill
+	     output: "00000123 "
+
+	 fmt("1231231234","13  R((###)###-####)")
+	     "13  R((###)###-####)" = 13 width, append 2 spaces, right justified, mask to use.
+	          Note: the mask must be put into () and use # to denote where to insert the
+	          characters within the supplied String.
+	     output: "(123)123-1234  "
+	 fmt("CustomerName", "8L.")
+	      output: "Custo..."
+	 fmt("CustomerName", "7R.")
+	      output: "...omer"
+	 * </pre>
+	 */
 	public static String fmt(String str, String format) {
 		String s = _fmt(str, format);
 		return s;
@@ -146,14 +185,14 @@ public class OATextFormat {
 			if (test == null) {
 				test = "";
 			}
-			test1 = OAString.field(test, ' ', 0);
+			test1 = OAString.fieldAt(test, ' ', 0);
 			if (test1 == null) {
 				test1 = "";
 			}
 			/* length plus spaces  ex: "10 L" */
 			blanks = test.length() - test1.length();
 			try {
-				len = Integer.parseInt(test1);
+				len = (test1 == null || test1.length() == 0) ? 0 : Integer.parseInt(test1);
 			} catch (Exception e) {
 				len = 0;
 			}

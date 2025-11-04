@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.io.UnsupportedEncodingException;
@@ -11,16 +26,26 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
-/*
-    Sun:
-    http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html
-
-    Sample programs:
-    http://www.owasp.org/index.php/Digital_Signature_Implementation_in_Java
-    http://www.rgagnon.com/javadetails/java-0400.html
-
-*/
-
+/**
+ * Basic hashing and symmetric encryption utilities used by OA. This class
+ * provides SHA-256 hashing as well as DES-based encryption compatible with
+ * legacy storage formats.
+ *
+ * <p><b>Important:</b> The DES algorithms and key generation logic used here
+ * exist for backward compatibility and are not recommended for new secure
+ * applications. A more modern, secure implementation will be introduced in
+ * a future OA release.</p>
+ *
+ * <p>Primary Use Cases:</p>
+ * <ul>
+ *   <li>Hashing values for comparison without storing plaintext</li>
+ *   <li>Simple reversible encryption for legacy data (non-sensitive)</li>
+ *   <li>Compatibility with existing OA deployments</li>
+ * </ul>
+ *
+ * <p>Future releases will provide AES-based encryption and salted password
+ * hashing mechanisms while preserving backward compatibility.</p>
+ */
 public class OAEncryption {
 
 	/**
@@ -236,32 +261,6 @@ public class OAEncryption {
         return s;
     }
 	
-	public static void main(String[] args) throws Exception {
-		String s = "";
-
-		String pw = getHash("00001201");
-		String pw2 = getMD5Hash("00001201");
-		String pw3 = OAEncryption.encrypt("00001201");
-
-		String smd = getMD5Hash("emp3364");
-
-		smd = getMD5Hash("vince");
-
-		for (int i = 0; args != null && i < args.length; i++) {
-			s += args[i];
-		}
-
-		System.out.println("Original \"" + s + "\"");
-
-		String s2 = encrypt(s, "password");
-		System.out.println("Encrypted ==> \"" + s2 + "\"");
-
-		String s3 = decrypt(s2, "password");
-		System.out.println("Decrypted ==> \"" + s3 + "\"");
-
-		String s4 = getHash(s);
-		System.out.println("Hashed ==> \"" + s4 + "\"");
-	}
 
 
 }

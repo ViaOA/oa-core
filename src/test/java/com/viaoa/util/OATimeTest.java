@@ -29,3 +29,22 @@ public class OATimeTest extends OAUnitTest {
     }
     
 }
+
+
+/*
+
+
+	public static void main(String[] args) {
+		// this is the start time - grep "Opened file" *error*.log
+		OATime dt = new OATime("19:08:28.024", "HH:mm:ss.SSS");
+
+		// this is the gc timestamp to find
+		dt = (OATime) dt.addSeconds(69099);
+		dt = (OATime) dt.addMilliSeconds(830);
+
+		System.out.print("==> " + dt.toString("hh:mm:ss.SSS aa"));
+		System.out.println(" ==> " + dt.toString("HH:mm:ss.SSS"));
+	}
+
+
+*/

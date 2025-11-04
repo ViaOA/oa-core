@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.util.*;
@@ -17,10 +22,23 @@ import com.viaoa.hub.Hub;
 
 
 /**
-    OAComparator is used to sort objects.  Hub.sort uses this when creating a HubSorter.
-    @see Hub#sort
-    see HubSortListener
-*/
+ * Reflection-based Comparator supporting sorting by one or more
+ * property paths. Each segment of the path may refer to nested
+ * properties, including link traversal through OAObjects.
+ *
+ * <p>Sorting is driven by {@link OAReflect#getPropertyValue(Object, Method[])}
+ * and therefore supports Hub active-object resolution.
+ *
+ * <p>Multiple property paths are comma-separated and may specify ASC or DESC
+ * ordering per field.
+ *
+ * <pre>
+ *     new OAComparator(Employee.class, "lastName, firstName", true);
+ *     new OAComparator(Order.class, "customer.name DESC, created", true);
+ * </pre>
+ *
+ * @see com.viaoa.hub.Hub#sort(String, boolean)
+ */
 public class OAComparator implements Comparator {
     Class clazz;
     String propertyPaths;
@@ -203,24 +221,5 @@ public class OAComparator implements Comparator {
         if (x == 1) bAscending = bAscendings[0];
     }
 
-    public static void main(String[] args) {
-        Hub<Double> hub = new Hub<Double>(Double.class);
-        hub.add(1.3);
-        hub.add(1.1);
-        hub.add(1.0);
-        hub.add(1.2);
-        hub.add(1.02);
-        
-        hub.sort("", false);
-        
-        for (double d : hub) {
-            System.out.println(""+d);
-        }
-        
-        int x = 4;
-        x++;
-
-        
-    }
 }
 
