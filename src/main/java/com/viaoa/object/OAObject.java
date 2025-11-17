@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.io.IOException;
@@ -41,74 +46,131 @@ import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 
 /**
- * OAObject is the Base Class used for Application Data Objects. It is a central class for OA, where all other objects are designed to
- * automatically work with the OAObject class, along with the Hub collection class.
+ * Core root class for all OA entity/model objects.
  * <p>
- * OAObjects have built-in functionality to allow it to work with other Classes. This includes other OAObjects, Hub Collections, any
- * datasource/database, JFC component, JSP component, XML, other applications (distributed) and any other Class.
- * <p>
- * &nbsp;&nbsp;&nbsp;<img src="doc-files/ObjectAutomation1.gif" alt=""> <br>
- * Subclasses of OAObject can be created that add properties and methods for building customized software applications. OAObject then
- * supplies the capability for these subclasses to automatically work with any OA Enabled Class.
- * <p>
- * This is a summary of some of the features included in OAObject.
- * <ul>
- * <li>Object Key - property values that makes this object unique.
- * <li>Reference Information - how objects are related to other object. All references use the actual objects and not the key (or foreign
- * key value). References types include one-one, one-many, many-many, recursive self references, owned and un-owned references, and more.
- * <li>Manages reference objects when working with database/datasource.
- * <li>"Moves" objects when changes are made to a reference property.
- * <li>Methods to set and get properties and convert from and to Strings.
- * <li>Store miscellaneous data in name/value pairs, where name is case insensitive.
- * <li>Initialization during creation
- * <li>Null Values - to know if a primitive property value is null
- * <li>Knows which Hub Collections that an object is a member of.
- * <li>Handles events for object, including property changes and calculated properties.
- * <li>Knows if object is "new"
- * <li>Cascading rules. Cancel, Save, Delete can be cascaded to reference objects.
- * <li>Works directly with OADataSource for storing and retrieving objects.
- * <li>Save Method
- * <li>Delete Method
- * <li>Calculated Properties - properties that rely on other properties or objects for their value.
- * <li>Serialization Support - to file/stream, other applications using RMI
- * <li>XML support - reading and writing
- * <li>Locking
- * <li>Client/Server - changes to objects can be automatically updated on other computers.
- * </ul>
- * <p>
- * This is a listing of the types of relationships that an OAObject can have with another OAObject. This information is built into the
- * object information. Relationships between objects are "two-way", meaning that both objects are related to each other.<br>
- * <ul>
- * <li>One-One relationship
- * <li>One-Many relationship
- * <li>Many-Many relationship
- * <li>Recursive - this is where an object can have many children objects of the same class and each of these children can themselves have
- * children, recursively.
- * <li>An Owned relationship is one where the children can not exist without the parent (owner) and all are treated as a single unit.
- * <li>Cascading Rules for save, delete, cancel
- * </ul>
- * <p>
- * Managing Relationships<br>
- * OAObject manages the relationships between objects, and is responsible for retrieving and populating reference objects and for managing
- * changes. An OAObject subclass does not have to have any code to handle retrieving or storing reference objects, OAObject does it
- * completely. If a reference property is changed, then OAObject manages the change so that other objects are updated correctly. <br>
- * For example, if a Department has many Employees, and an Employee has one Department: if an Employee's Department is changed, then the
- * Employee object is removed from the original Department collection and added to the new assigned Department collection. This also works
- * when an Employee is added to a different Departments Employee collection - the Employee's Department property is changed to the newly
- * assigned Department.
- * <p>
- * Working with DataSources<br>
- * OAObjects work directly with OADataSource for initializing properties, saving, deleting. This is all done so that the OAObjects are
- * independent from datasource/database.
- * <p>
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
- * <p>
- * OAObjectCallback can be used to query the object and properties.<br>
+ * {@code OAObject} participates in the OA Object Graph, a strongly-typed,
+ * observable, and navigable structure that enables automation of persistence,
+ * distributed synchronization, REST publication, UI binding, and undo/redo —
+ * without embedding infrastructure logic inside the domain model.
  *
- * @see OAObjectCallback
- * @author Vince Via
- * @see Hub for observable collection class that has "linkage" features for automatically managing relationships. see OAHtmlSelect for
- *      datasource independent queries based on object and property paths.
+ * <h3>Object Graph Overview</h3>
+ * Application objects are linked through properties and {@link Hub} collections,
+ * forming a live in-memory graph. Changes made anywhere in the graph can be
+ * observed, validated, cascaded, persisted, and synchronized.
+ *
+ * <h3>Hub Collections & Automated Relationships</h3>
+ * A {@link Hub} is an observable collection of {@code OAObject}s used
+ * throughout the Object Graph to represent one-to-many and many-to-many
+ * relationships. Hubs automatically propagate selection, filtering, sorting,
+ * and change events to all linked components.
+ *
+ * Hubs can be <b>linked</b> to other hubs or objects to support:
+ * <ul>
+ *   <li><b>Master–Detail</b> navigation (detail hub follows master selection)</li>
+ *   <li><b>Join Relationships</b> including cross-graph references</li>
+ *   <li><b>Filtering & Sorting</b> with automatic update propagation</li>
+ *   <li><b>Grouping & Aggregation</b> on live collections</li>
+ *   <li><b>UI binding</b> where lists/tables update automatically</li>
+ * </ul>
+ * Linked hubs allow complex business structure modeling without manual
+ * synchronization — navigation drives lazy loading, reuse, and optimized queries.
+ *
+ * <h3>Primary Capabilities</h3>
+ * <ul>
+ *   <li><b>Observable</b> – every object, property, and relationship emits
+ *       change events across the graph, enabling distributed updates, UI binding,
+ *       undo/redo, and automation</li>
+ *   <li><b>Property Path Navigation</b> – fluent traversal across links and
+ *       hubs (e.g. "customer.orders.product.price") supports binding, filtering,
+ *       validation, and data queries</li>
+ *   <li><b>Calculated Properties</b> – metadata-defined dependencies ensure
+ *       derived values automatically update when inputs change</li>
+ *   <li><b>Identity Management</b> – global GUID + datastore ID resolution</li>
+ *   <li><b>Lifecycle Tracking</b> – new / deleted / changed state with strict
+ *       before/after event ordering</li>
+ *   <li><b>Lazy Loading</b> – transparent fetch of related data when required</li>
+ *   <li><b>Automatic UI Binding</b> – model ↔ UI synchronization</li>
+ *   <li><b>Optimistic Persistence</b> – dirty tracking and cascade evaluation</li>
+ *   <li><b>Distributed Sync + REST</b> – publish/subscribe via lightweight
+ *       serialization based on authority and membership</li>
+ *   <li><b>Undo / Redo</b> – reversible property mutations when enabled</li>
+ * </ul>
+ *
+ * <h3>Object Graph Caching & Lookup</h3>
+ * All OAObjects participate in a global runtime cache keyed by GUID with a
+ * secondary index for datastore IDs. This ensures:
+ * <ul>
+ *   <li><b>only one instance</b> per entity in memory</li>
+ *   <li>identity consistency across datasource + REST boundaries</li>
+ *   <li>no duplicate objects created during lazy load or sync</li>
+ * </ul>
+ *
+ * <h3>Lazy Loading & Sibling Optimization</h3>
+ * Related objects and Hub collections load on demand. OA uses context-aware
+ * <b>sibling fetch hints</b> to batch neighboring requests, dramatically
+ * reducing round-trips for scrolling and parent/child traversal.
+ *
+ * <h3>Dynamic / Interactive Serialization (REST & CS)</h3>
+ * Serialization is graph-aware and context-sensitive:
+ * <ul>
+ *   <li><b>REST publishing</b> includes only reachable and permitted paths</li>
+ *   <li><b>Authority enforcement</b> automatically filters sensitive properties</li>
+ *   <li><b>Bidirectional links</b> normalized to avoid recursion</li>
+ *   <li><b>Lazy references</b> represented by lightweight stubs until needed</li>
+ * </ul>
+ *
+ * <h3>Callback + Metadata Driven Behavior</h3>
+ * Rules and permissions dynamically govern what is allowed, visible, or
+ * confirmable through:
+ * <ul>
+ *   <li>Metadata from {@link OAObjectInfo}</li>
+ *   <li>Annotations and callback methods</li>
+ *   <li>{@link OAObjectCallbackDelegate} routing</li>
+ * </ul>
+ *
+ * <h3>Datasource / ORM Neutrality</h3>
+ * {@code OAObject} contains no JDBC/SQL/ORM APIs. Datasource delegates support:
+ * <ul>
+ *   <li>Relational databases</li>
+ *   <li>NoSQL / document stores</li>
+ *   <li>Local/embedded storage</li>
+ *   <li>Remote microservices</li>
+ * </ul>
+ * Object Graph-based queries (PropertyPaths, filters, links) are automatically
+ * transformed into optimized datasource operations.
+ *
+ * <h3>Design Principles</h3>
+ * <ul>
+ *   <li><b>Model purity</b>: domain classes contain no infrastructure code</li>
+ *   <li><b>Automation-first</b>: metadata drives code generation and behavior</li>
+ *   <li><b>Single-instance identity</b> per entity per runtime context</li>
+ *   <li><b>Transparent behavior</b>: all changes observable and validatable</li>
+ * </ul>
+ *
+ * <h3>Implementation Notes</h3>
+ * Behavior is delegated to specialized helpers:
+ * <ul>
+ *   <li>{@link OAObjectDelegate}</li>
+ *   <li>{@link OAObjectEventDelegate}</li>
+ *   <li>{@link OAObjectHubDelegate}</li>
+ *   <li>{@link OAObjectReflectDelegate}</li>
+ *   <li>{@link OAObjectCallbackDelegate}</li>
+ *   <li>{@link OAObjectCacheDelegate}</li>
+ * </ul>
+ *
+ * <h3>Usage</h3>
+ * Entities extend {@code OAObject} to join the Object Graph. UI and service
+ * layers interact using get/set methods — automation handles consistency,
+ * persistence, and synchronization.
+ *
+ * @see Hub
+ * @see OAObjectInfo
+ * @see OAObjectDelegate
+ * @see OAObjectEventDelegate
+ * @see OAObjectHubDelegate
+ * @see OAObjectCallbackDelegate
+ * @see OAObjectCacheDelegate
+ * @see com.viaoa.hub.Hub
  */
 @XmlTransient()
 public class OAObject implements java.io.Serializable, Comparable<Object> {
@@ -121,6 +183,12 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		return oaversion;
 	}
 
+	// system wide to track all changes to OAObject
+	public static final Logger OALOG = OALogger.getLogger("OAObject");
+
+	private static final Logger LOG = OALogger.getLogger(OAObject.class);
+	
+	
 	static {
 		// oaversion
 	    
@@ -156,13 +224,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		}
 		*/
 		oaversion = ver;
-		System.out.println("oa-core version=" + oaversion);
+		LOG.config("oa-core version=" + oaversion);
 	}
 
-	// system wide to track all changes to OAObject
-	public static final Logger OALOG = OALogger.getLogger("OAObject");
-
-	private static final Logger LOG = OALogger.getLogger(OAObject.class);
 
 	protected long guid; // global identifier for this object
 //	protected volatile OAObjectKey objectKey; // Object identifier

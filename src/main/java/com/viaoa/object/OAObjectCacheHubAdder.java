@@ -1,22 +1,40 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
+
 import java.lang.ref.WeakReference;
-
 import com.viaoa.hub.Hub;
-import com.viaoa.object.*;
 
-/** 
-    Filter that is used to listen to all objects added to OAObjectCacheDelegate and then add to a specific Hub.
-*/
+/**
+ * Helper class used by {@link OAObjectCacheDelegate} to populate
+ * a {@link com.viaoa.hub.Hub} from the global cache.
+ *
+ * <p>Scans the object cache for all instances of a specific class and
+ * adds those matching an optional {@link com.viaoa.util.OAFilter}.
+ * Optionally runs asynchronously for large caches.</p>
+ *
+ * <p><b>Features</b>:
+ * <ul>
+ *   <li>Supports background loading through {@code ThreadPoolExecutor}.</li>
+ *   <li>Integrates with Hub refresh semantics.</li>
+ *   <li>Thread-safe atomic counters track progress.</li>
+ * </ul>
+ *
+ * @param <T> OAObject subtype
+ */
 public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheListener<T> {
     static final long serialVersionUID = 1L;
 

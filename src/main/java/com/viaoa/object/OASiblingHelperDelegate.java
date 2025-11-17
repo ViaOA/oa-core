@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.ArrayList;
@@ -23,10 +28,25 @@ import com.viaoa.util.OAString;
 import com.viaoa.util.OAThrottle;
 
 /**
- * Find the closet siblings objects that need the same property loaded. Used by DS and CS to be able to get extra data per request to
- * server/datasource, and increase performance.
+ * Identifies sibling objects that are likely to require the same reference
+ * property to be loaded, based on the calling thread's active Hub navigation
+ * and recently accessed property-paths (tracked by {@link OASiblingHelper}).
  *
- * @author vvia
+ * <p>This enables efficient clustered lazy-loading: when a reference is
+ * requested on one object in a Hub, nearby objects that would require the
+ * same data can be prefetched in a single request to the server or datasource,
+ * improving responsiveness and reducing concurrency load.</p>
+ *
+ * <p>Search is bounded by several mechanisms to avoid over-fetching and to
+ * maintain UI performance: recursion guards, time budgets, sliding window
+ * hub scans, and path count limits. Only already-loaded data is examined, and
+ * returned results are {@link OAObjectKey} instances so that identity and
+ * lazy-loading semantics are preserved.</p>
+ *
+ * @see OASiblingHelper
+ * @see OAThreadLocalDelegate
+ * @see OALinkInfo
+ * @see Hub
  */
 public class OASiblingHelperDelegate {
 

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.file;
 
 import java.io.BufferedInputStream;
@@ -18,8 +23,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.logging.Logger;
@@ -27,9 +30,44 @@ import com.viaoa.sync.OASync;
 import com.viaoa.util.OAString;
 
 /**
- * Send/receive files from ServerFile using multiplexer socket.
- * Used by OASyncClient
- * @author vvia
+ * Client-side file transfer helper used by {@link com.viaoa.sync.OASyncClient}.
+ * <p>
+ * {@code ClientFile} communicates with {@link ServerFile} using a dedicated
+ * multiplexer socket for high-throughput binary transfer. It supports:
+ * <ul>
+ *   <li>downloading a file from the server into a local {@link File},</li>
+ *   <li>uploading a local file to a server directory,</li>
+ *   <li>length-prefixed block streaming to avoid partial read/write issues,</li>
+ *   <li>progress reporting through {@link #status(int)}.</li>
+ * </ul>
+ *
+ * <h2>Download Protocol</h2>
+ * <ol>
+ *   <li>Client sends the requested filename.</li>
+ *   <li>Server returns a status code:
+ *       <ul>
+ *         <li>0 – illegal directory,</li>
+ *         <li>1 – file not found,</li>
+ *         <li>2 – OK; data follows.</li>
+ *       </ul>
+ *   </li>
+ *   <li>If valid, client reads repeated:
+ *       <pre>{@code length → bytes}</pre>
+ *   </li>
+ *   <li>Client writes bytes into the destination file.</li>
+ * </ol>
+ *
+ * <h2>Upload Protocol</h2>
+ * <ol>
+ *   <li>Client sends the target filename.</li>
+ *   <li>Server replies with 1 (valid) or 0 (invalid).</li>
+ *   <li>If valid, client streams:
+ *       <pre>{@code length → bytes}</pre>
+ *       until EOF.</li>
+ * </ol>
+ *
+ * <p>
+ * {@link #status(int)} may be overridden to provide progress UI or logging.
  */
 public class ClientFile {
     

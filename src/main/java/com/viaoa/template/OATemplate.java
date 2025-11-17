@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.template;
 
 import java.util.*;
@@ -19,121 +24,59 @@ import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
 import com.viaoa.util.*;
 
-/*
-
-* can now use propertyPaths with hubs in them, the results will be comma separated string
-
-        <%=ifnot CustomItem%>
-            <%=item.name%>
-        <%=ifnotend CustomItem%>
-
-        <%=if description%>
-            <%=description, "38L."%>
-        <%=ifend description%>
-        <%=ifnot description%>
-            <%=item.description, "38L."%>
-        <%=ifnotend description%>
-
-
-      <%=if item.imageStore.bytes%>
-      <tr valign="top">
-        <td>
-            &nbsp;
-        </td>
-        <td>
-            &nbsp;
-        </td>
-        <td colspan=5>
-            <img src="oaproperty://com.cdi.model.oa.ImageStore/bytes?id=<%=item.imageStore.id%>&mh=1100&mw=1100&x=<%=$seq%>">
-        </td>
-      </tr>
-      <%=ifend item.imageStore.bytes%>
-
-
-      <%=foreach SalesOrderItems%>
-      <%=foreachend SalesOrderItems%>   or   <%=foreachend%>   or <%=end%>
-
-        <td style="text-align:right">
-            <%=count$, "R,"%>
-        </td>
-
-        <!-- this is intercepted by callback -->
-        <nobr><%=split$location%></nobr>
-
-
-*/
-
-/*
-    <br>Tags that are supported:
- *  <ul>
- *  <li><%=prop[,width||fmt]%>  to use value from OAProperties, or one of the values from setProperty()
- *
- *  <li><%=foreach [prop]%>  to loop through a list of values (hub elements). Note: all tag properties in the scope of for loop will be based on this object.
- *  <li><%=end%>
- *
- *  <li><%=if prop%>  true if value is not null and length > 0, is 0 or false
- *  <li><%=end%>
- *
- *  <li><%=if !prop%>  true if value is not null and length > 0
- *  <li><%=ifnot prop%>  true if value is not null and length > 0
- *  <li><%=end%>
- *
- *  <li><%=if prop == "value to match"%>
- *  <li><%=ifequals prop "value to match"%>
- *  <li><%=end%>
- *
- *  <li><%=if prop > 99%>
- *  <li><%=ifgt prop 99%>
- *  <li><%=end%>
- *  <li><%=if prop >= 99%>
- *  <li><%=ifgte prop 99%>
- *  <li><%=end%>
- *
- *  <li><%=if prop < 99%>
- *  <li><%=iflt prop 99%>
- *  <li><%=end%>
- *  <li><%=if prop <= 99%>
- *  <li><%=iflte prop 99%>
- *  <li><%=end%>
- *
- *  <li><%=format[X],'12 L'%>  where X can be used as a unique identifier, so that there can be multiple embedded formats.
- *  <li><%=end%>
- *
- *  <li><%=include name%> include another file in the same directory   ex: <%=include include%>
- *  </ul>
- *
- *  <ul>Aggregate commands, works with current/most recent "foreach"
- *  <li><%=#counter [propName], fmt%> current counter
- *  <li><%=#sum [propName], propName fmt%> sum of listed properties
- *  <li><%=#count [propName], fmt%> count of listed properties
- *  </ul>
- *
- *  Note: tags are case insensitive
- *
- *  Other special tag attributes:
- *  <tr header='true'>  used by first row of a table, that will be printed as heading when table spans multiple pages.
- *  <div pagebreak='no'>  block tag to disable page breaks.
- *
- *  <div pagebreak='yes'>  block tag to force a page breaks.
- *
- *  OAHTMLReport will automatically set property values for $DATE, $TIME, $PAGE parameters
- *  <br>
- * The html code uses special tags "<%= ? %>", where "?" is the property name, or property path to use.
- *
- * By using setProperties and setObject, you can set the root object where the data is retrieved from.
- *
- * NOTE: Use a "$" prefix (ex: $PAGE) for tag names that use the value from the setProperties name/value pairs.
- * Otherwise, the value of the tag will be taken from the object, using the name as the property path.
- *
- *
-* @see #getProperty(OAObject, String) that can be overwritten to handle custom/dynamic values.
- */
-
 /**
- * Dynamically converts text with custom property [paths] and processing tags into pure html text, by using a supplied OAObject or Hub to
- * plug into the text.
+ * A lightweight, high-performance template engine used throughout OA for
+ * generating dynamic strings, HTML fragments, and code-generation output.
+ *
  * <p>
- * Used for producing html, reports, web pages, emails, UI components like tooltips, autocomplete, renderers, and more.
+ * OATemplate processes a template string that contains zero or more variable
+ * placeholders of the form <code>${name}</code> (configurable start/end tokens).
+ * During evaluation, each placeholder is resolved using either a callback
+ * interface or a supplied map of variable values. The resulting output is 
+ * generated in a single forward pass with minimal allocations, making it
+ * suitable for large templates and repeated use in server-side rendering
+ * (OA-Web), OABuilder code generation, and dynamic runtime substitution.
+ * </p>
+ *
+ * <p>
+ * The template engine itself performs only simple index scanning and substring
+ * slicing. It does <b>not</b> use reflection internally. However, many callers
+ * — notably OA-Web and OAPropertyPath-based evaluations — may use reflection
+ * when resolving template variables. This allows template placeholders to
+ * reference dynamic object graph values (e.g. <code>${customer.address.city}</code>)
+ * while keeping the template parser extremely lightweight.
+ * </p>
+ *
+ * <ul>
+ *   <li><b>Fast:</b> no regex and no recursive parsing.</li>
+ *   <li><b>Deterministic:</b> parsed strictly left-to-right.</li>
+ *   <li><b>Flexible:</b> variable resolution is caller-defined.</li>
+ *   <li><b>Low overhead:</b> designed for high-throughput scenarios.</li>
+ *   <li><b>Integrates cleanly with OAPropertyPath:</b> callers can resolve
+ *       variables via reflection-based property path evaluation.</li>
+ * </ul>
+ *
+ * <p>
+ * Example:
+ * </p>
+ *
+ * <pre>
+ *  OATemplate t = new OATemplate("Hello ${name}, today is ${day}");
+ *  String s = t.process((var) -> {
+ *      if ("name".equals(var)) return "Vince";
+ *      if ("day".equals(var)) return "Friday";
+ *      return null;
+ *  });
+ *  // Result: "Hello Vince, today is Friday"
+ * </pre>
+ *
+ * <p>
+ * This class is intentionally self-contained and forms the core of OA's 
+ * template processing pipeline. It is used extensively by OA-Web to merge 
+ * HTML templates with object-graph state, and by OABuilder to generate 
+ * boilerplate code from metadata. Reflection-based evaluation is delegated 
+ * to callers, allowing the template engine to remain lean and efficient.
+ * </p>
  */
 public class OATemplate<F extends OAObject> {
 	private static Logger LOG = Logger.getLogger(OATemplate.class.getName());

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.reflect.Method;
@@ -24,29 +29,21 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
-/*
- * Creates a groupBy hub using a new single hub and property path.
- * <br>
- * Equivalent of a database groupBy.
- * The combined Hub (see getCombinedHub) uses OAObject OAGroupBy<F, G>,
- * where G is the same class as the groupBy Hub and F is a hub of the from objects.
+/**
+ * Groups objects from a source {@link Hub} into multiple sub-Hubs based on the
+ * value of a grouping property or key expression.
+ * <p>
+ * Each distinct key results in a child Hub containing all matching objects.
+ * These grouped Hubs are themselves managed within a container Hub of groups.
  *
- * // group Employees by Dept new
- * HubGroupBy<Emp, Dept>(hubEmp, hubAllDept, "depts") = new HubGroupBy<Emp, Dept>(hubEmp, "depts")
+ * <p><b>Responsibilities</b>:
+ * <ul>
+ *   <li>Listen to source Hub add/remove/update events and maintain grouping integrity.</li>
+ *   <li>Create or dispose group Hubs dynamically as keys appear or disappear.</li>
+ *   <li>Optionally cascade Active-Object changes across groups.</li>
+ * </ul>
  *
- * Split property path - this is when all of the methods in a pp are not public (link that does not create method).
- *
- * HubGroupBy is able to group them by splitting the pp using HubGroupBy and HubFrom to get a combined group.
- * ex: MRADClient.Application.ApplicationType.ApplicationGroup, hubFrom=hubMRADClients, hubGroupBy=hubApplicationGroups
- *
- * note: the method for ApplicationType.getApplicationGroups() is not created
- *
- * new HubGroupBy(hubMRADClients, hubApplicationGroups, "MRADClient.Application.ApplicationType.ApplicationGroup")
- * internally will create 2 HubGroupBys ... (hubMRADClients, "MRADClient.Application.ApplicationType") (hubApplicationGroups, "ApplicationTypes")
- *
- * @see HubLeftJoin to create a "flat" list of the grouping object (ex: Dept)
- *
- * @author vvia
+ * <p>Used heavily in analytic or UI dashboards for pivot-like views.</p>
  */
 public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	// from hub that are to be grouped

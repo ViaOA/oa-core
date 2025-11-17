@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.info;
 
 import java.lang.reflect.Method;
@@ -19,7 +24,52 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.util.OADateTime;
 
 /**
- * This is used to track and capture information for each sync request that is being processed.
+ * Tracks all runtime details for a single synchronous remote request within
+ * OA’s multiplexer remoting infrastructure. A new {@code RequestInfo} instance
+ * is created for every client-to-server or server-to-client remote method
+ * invocation.
+ *
+ * <h2>Captured Diagnostic Data</h2>
+ * <ul>
+ *   <li>High-resolution timestamps (ms and ns) for performance analysis.</li>
+ *   <li>The request {@link Type}, determining queue usage and response rules.</li>
+ *   <li>Bind information, socket identifiers, connection IDs, and message IDs.</li>
+ *   <li>The target object, Java method, generated method signature, and
+ *       associated {@link MethodInfo}.</li>
+ *   <li>All invocation arguments (captured and formatted for logs).</li>
+ *   <li>Return value, remote exception, or error message.</li>
+ *   <li>Whether the call originated from an OARemoteThread.</li>
+ *   <li>Flags showing whether the server queue processed the request.</li>
+ *   <li>Tracking for queued broadcasts, queued requests, and remote thread routing.</li>
+ * </ul>
+ *
+ * <h2>Type Model</h2>
+ * The {@link Type} enumeration encodes the full set of possible remote
+ * operations (queued, unqueued, broadcast, request/response pairs, etc.).
+ * Each value defines:
+ * <ul>
+ *   <li>whether the request uses a queue,</li>
+ *   <li>whether it expects a return value,</li>
+ *   <li>whether the response must be returned on the queue thread.</li>
+ * </ul>
+ *
+ * <h2>Logging Support</h2>
+ * <p>
+ * {@link #toLogString()} produces a compact log entry that includes timestamps,
+ * connection and bind information, method name, exception, and parameter
+ * previews. This supports high-volume, production-grade debugging of remote
+ * traffic.
+ * </p>
+ * <p>
+ * {@link #getLogHeader()} returns a header string matching the column order of
+ * the log output format.
+ * </p>
+ *
+ * <h2>Concurrency</h2>
+ * Most fields are written once during request assembly. A few flags
+ * ({@code methodInvoked}, {@code processedByServerQueue}) are marked
+ * {@code volatile} to reliably track lifecycle transitions across threads.
+ *
  * @author vvia
  */
 public class RequestInfo {

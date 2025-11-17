@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.comm.multiplexer;
 
 import java.io.IOException;
@@ -22,14 +27,37 @@ import com.viaoa.comm.multiplexer.io.VirtualSocket;
 import com.viaoa.comm.multiplexer.io.MultiplexerSocketController;
 
 /**
- * Creates multiplexed sockets over a single socket. This is used so that a client can have multiple
- * socket connections to multiple "virtual" server sockets through a single real socket.
+ * Client-side endpoint for the OA Multiplexer system.
  * <p>
- * An Client can then have a single connection to a server and then have multiple virtual socket
- * connections through this connection.
- * 
- * @see #start() to create the connection to the server.
- * @author vvia
+ * <b>Purpose:</b> Allows a single real TCP connection to host multiple
+ * independent {@link com.viaoa.comm.multiplexer.io.VirtualSocket} channels.
+ * Each virtual socket behaves like an independent client connection, but all
+ * traffic is multiplexed over one physical socket.
+ * <p>
+ * This enables:
+ * <ul>
+ *   <li>Many logical connections over a single firewall-friendly TCP socket</li>
+ *   <li>Reduced connection overhead and simplified routing/load-balancing</li>
+ *   <li>High-performance message delivery with optional throughput throttling</li>
+ *   <li>Automatic keep-alive and connection health monitoring</li>
+ * </ul>
+ * <p>
+ * <b>Lifecycle:</b>
+ * <ol>
+ *   <li>Construct using host/port or {@link java.net.URI}</li>
+ *   <li>Call {@link #start()} to open the real socket and initialize the controller</li>
+ *   <li>Create virtual sockets using {@link #createSocket(String)}</li>
+ *   <li>Optionally configure keep-alive and throughput throttling</li>
+ *   <li>Close using {@link #close()}</li>
+ * </ol>
+ * <p>
+ * Subclasses may override:
+ * <ul>
+ *   <li>{@link #onSocketException(Exception)} – notification of underlying socket failures</li>
+ *   <li>{@link #onClose(boolean)} – invoked when the controller closes the real socket</li>
+ * </ul>
+ * <p>
+ * Thread-safe and designed for long-lived connections in distributed OA applications.
  */
 public class OAMultiplexerClient {
     private static Logger LOG = Logger.getLogger(OAMultiplexerClient.class.getName());

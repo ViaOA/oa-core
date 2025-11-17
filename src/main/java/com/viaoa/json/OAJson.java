@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.json;
 
 import java.io.File;
@@ -41,26 +56,78 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
 
-/* NOTES:
- 
-    @JsonProperty("TaxableGroup")
-
-
-
-*/
-
 /**
- * JSON serialization for OA. Works dynamically with OAObject Graphs to allow property paths to be included.
+ * Provides JSON serialization and deserialization for OAObjects, Hubs, method
+ * arguments, and general Java types using Jackson as the underlying engine.
  * <p>
- * This is also able to work with POJO classes that dont always have pkey properties, but instead use importMatch properties or linkMany
- * unique. OAJson will find (or create) the correct OAObject that does have the matching value(s). <br>
- * ex: Customer.id, and Customer.custNumber, where OAObject Customer has an Id (pkey) and custNumber (int prop, but not key). The Pojo class
- * does not have to have the Id.<br>
- * also, a link could be an importMatch (ex: custNumber can be flagged as an importMatch).
+ * OAJson supports the full OAObjectGraph model: object identity, GUID-based
+ * resolution, ImportMatch logic, cascading rules, property-path inclusion,
+ * Hub relationships, and lazy-loading behavior. It is the primary mechanism
+ * for converting OA objects to/from external formats for REST, remote-method
+ * calls, distributed messaging, and persistence utilities.
+ * </p>
+ *
+ * <h2>Key Features</h2>
+ * <ul>
+ *   <li><b>Object identity resolution</b> – uses primary keys, OAObjectKey,
+ *       and GUIDs to reattach to existing instances or create new ones.</li>
+ *   <li><b>Property-path based filtering</b> – serialize specific paths using
+ *       OAPropertyPath expressions, supporting deep selection or selective
+ *       field inclusion.</li>
+ *   <li><b>Cascade-aware serialization</b> – respects OACascade settings to
+ *       include or omit references, owned objects, or dependent Hubs.</li>
+ *   <li><b>Hub serialization</b> – supports lists of objects, Hub metadata,
+ *       and Hub-to-object relationships.</li>
+ *   <li><b>ImportMatch support</b> – performs identity matching for POJO inputs
+ *       or external JSON where primary keys are not available.</li>
+ *   <li><b>Remote-method argument handling</b> – converts arbitrary argument
+ *       arrays into JSON, including polymorphic hints so the receiver can
+ *       reconstruct Java types.</li>
+ *   <li><b>POJO mode</b> – allows non-OA types to be used during import or
+ *       object creation workflows, such as REST endpoints or CSV/JSON loaders.</li>
+ *   <li><b>Pretty printing</b> – optional formatted JSON for debugging.</li>
+ * </ul>
+ *
+ * <h2>Deserializer Behavior</h2>
  * <p>
- * Internally uses (/depends on) Jackson's ObjectMapper.
+ * Deserialization first examines the incoming JSON node to determine whether
+ * an existing OAObject can be reused. Identity can be determined through:
+ * </p>
+ * <ul>
+ *   <li>primary key value (single or multipart),</li>
+ *   <li>a GUID value ("guid.xxx"),</li>
+ *   <li>ImportMatch logic when keys are missing or inconsistent.</li>
+ * </ul>
  * <p>
- * Note: this is not thread safe.
+ * Hubs deserialize arrays of objects or IDs and will reattach objects to the
+ * correct Hub instance, preserving identity and ordering.
+ * </p>
+ *
+ * <h2>Thread-Local Integration</h2>
+ * <ul>
+ *   <li>Marks OAThreadLocalDelegate state during load operations.</li>
+ *   <li>Temporarily installs a Jackson mapper into thread-local storage so
+ *       OAObjectSerializer/OAObjectDeserializer behave consistently.</li>
+ *   <li>All instance state is non-static; the class is not thread-safe but
+ *       safe to use concurrently when each thread owns its own OAJson instance.</li>
+ * </ul>
+ *
+ * <h2>Usage</h2>
+ * <pre>
+ *   OAJson json = new OAJson();
+ *   String s = json.write(myObject);
+ *   MyClass x = json.readObject(s, MyClass.class);
+ * </pre>
+ *
+ * <h2>Design Notes</h2>
+ * <ul>
+ *   <li>This class acts as a façade over Jackson, providing OA’s domain-
+ *       specific identity and reference rules.</li>
+ *   <li>The logic mirrors OAObjectGraph traversal rules to generate valid,
+ *       loadable JSON output.</li>
+ *   <li>No reflection is used to navigate OAObjects; all access occurs through
+ *       OAPropertyPath and OAObjectDelegates.</li>
+ * </ul>
  *
  * @author vvia
  */

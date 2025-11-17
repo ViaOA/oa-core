@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
@@ -31,22 +36,52 @@ import com.viaoa.util.OAString;
 import com.viaoa.util.OAUnknownObject;
 
 /**
- * Allows OA to be able to control permission to object/hub, and allow other code/components to interact with objects. 
- * Works with OAObject and Hub to determine what is allowed/permitted. 
- * 
- * Uses OAObject annotations, specific methods (onObjectCallback*, *Callback), and HubListeners.
- * 
- * This is used to query objects, and find out if certain functions are enabled/visible/allowed, along with other interactive
- * settings/data. 
- * 
- * Used by OAObject (beforePropChange), Hub (add/remove/removeAll) to check if method is permitted/enabled. 
- * 
- * Used by OAJfcController and Jfc to set UI components (enabled, visible, tooltip, rendering, etc)
+ * Rule and permission engine for {@link OAObject} interactions.
+ * <p>
+ * This delegate evaluates whether a user action on an object or hub is
+ * permitted, visible, enabled, confirmable, or requires further UI messaging.
+ * It unifies rule sources from annotations, object-level callback methods,
+ * Hub listeners, user context, and metadata from {@code OAObjectInfo}.
  *
- * @see OAObjectCallback for list of types that can be used.
- * @see OAObjCallback annotation that lists prop paths and values used for enabled/visible.
- * @see OAAnnotationDelegate to see how class and annotation information is stored in Info objects (class/prop/calc/link/method)
- * @author vvia
+ * <h3>Primary Responsibilities</h3>
+ * <ul>
+ *   <li>Resolve enable/visible rules for properties, links, and methods</li>
+ *   <li>Check add/remove/delete/save permissions for Hub operations</li>
+ *   <li>Provide UI data (tooltips, labels, formatting)</li>
+ *   <li>Execute annotation-driven and {@code callback*} methods on objects</li>
+ *   <li>Propagate errors, responses, or confirmation titles/messages</li>
+ *   <li>Traverse owner/master hierarchy to enforce inherited rules</li>
+ * </ul>
+ *
+ * <h3>Evaluation Sources</h3>
+ * <ul>
+ *   <li>Metadata from {@code @OAObjCallback} on class/props/links/methods</li>
+ *   <li>Domain logic in {@code callback*}(..) methods</li>
+ *   <li>Hub listeners associated with UI contexts</li>
+ *   <li>Context-driven {@link com.viaoa.context.OAUserAccess} constraints</li>
+ *   <li>Process/edit flags on objects and hubs</li>
+ * </ul>
+ *
+ * <h3>Correctness Guarantees</h3>
+ * <ul>
+ *   <li>No side effects on object identity, lifecycle, or loading</li>
+ *   <li>All rule failures optionally provide actionable UI feedback</li>
+ *   <li>User/role checks are always respected before UI updates</li>
+ * </ul>
+ *
+ * <h3>Usage</h3>
+ * Invoked automatically by:
+ * <ul>
+ *   <li>{@link OAObject} mutation (before-change routing)</li>
+ *   <li>{@link Hub} add/remove operations</li>
+ *   <li>UI controllers to dynamically update visual state</li>
+ * </ul>
+ *
+ * Application code should not call this directly except to query allowed actions.
+ *
+ * @see OAObjectCallback
+ * @see com.viaoa.annotation.OAObjCallback
+ * @since OA 1.0
  */
 public class OAObjectCallbackDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectCallbackDelegate.class.getName());

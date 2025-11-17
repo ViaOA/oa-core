@@ -1,22 +1,33 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.delegate;
 
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.util.OAString;
 
 /**
- * Used to get information about the specific type of database.
+ * Applies vendor-specific settings to {@link com.viaoa.datasource.jdbc.db.DBMetaData}
+ * after the database type is selected.
+ * <p>
+ * Configures identifier quoting, case sensitivity (and {@code ILIKE} support),
+ * auto-assign strategies, max VARCHAR lengths, {@code supportsFetchFirst/Limit},
+ * default drivers/URLs, and JSON casting tokens where applicable.
+ * </p>
  *
- * @author vvia
+ * @see com.viaoa.datasource.jdbc.db.DBMetaData
  */
 public class DBMetaDataDelegate {
 

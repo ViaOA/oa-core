@@ -409,6 +409,24 @@ public class HubDetailTest extends HifiveUnitTest {
 }
 
 
+/**
+This is used by Hub.getDetail() to create a (Detail) Hub that is automatically populated with the
+value from a property in the active object of the controlling (Master) Hub.  Whenever the Master
+Hub's active object is changed, the Detail Hub will automatically be updated.
+<p>
+If the value is a Hub, then the Detail Hub will share the same data.
+<p>
+Example:
+<pre>
+Hub hubDept = new Hub(Department.class);
+hubDept.select();  // select all existing dept objects.
+Hub hubEmp = hubDept.getDetail("Employees"); // Department has a method "Hub getEmployees()"
+// hubEmp will always have the Employee Objects for the active object in the hubDept.
+</pre>
+<p>
+Note: This does not get serialized with Hub.
+see Hub#getDetail
+*/
 
 
 

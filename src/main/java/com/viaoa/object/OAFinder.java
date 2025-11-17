@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.*;
@@ -17,35 +22,116 @@ import com.viaoa.filter.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
-// 20140124
 /**
- * This is used to find all values from one OAObject/Hub to another OAObject/Hub, using a propertyPath. Support is included for Filters.
+ * Utility for searching the OA Object Graph along a declarative
+ * {@link com.viaoa.util.OAPropertyPath}. OAFinder can operate purely
+ * in-memory or dynamically lazy-load graph segments with sibling
+ * optimization to minimize round-trips to a datasource.
  *
- * @param <F> type of hub or OAObject to use as the root (from)
- * @param <T> type of hub for the to class (to).
- *        <P>
- *        examples:<code>
-    // from Router, find all UserLogin for a userId
-    OAFinder<Router, UserLogin> f = new OAFinder<Router, UserLogin>(Router.P_UserLogins);
-    String cpp = UserLoginPP.user().userId().pp;
-    f.addLikeFilter(cpp, userId);
-    UserLogin userLogin = f.findFirst(router);
-
-    OAFinder<Program, Employee> f = new OAFinder<Program, Employee>(ProgramPP.locations().employees().pp) {
-        &#64;Override
-        protected boolean isUsed(Employee emp) {
-            return super.isUsed(emp);
-        }
-        &#64;Override
-        protected void onFound(Employee emp) {
-            //todo:
-        }
-    };
-    // f.setMaxFound(50);
-    f.addEqualFilter(EmployeePP.employeeAward().awardType().name(), "some name");
-    ArrayList<Employee> al = f.find(program);
-
-    </code>
+ * <h3>How It Works</h3>
+ * <ul>
+ *   <li>Start from a root {@link com.viaoa.object.OAObject} or {@link com.viaoa.hub.Hub}</li>
+ *   <li>Walk a {@code OAPropertyPath} (links + hubs) using metadata {@code OALinkInfo[]}</li>
+ *   <li>Apply programmatic filters or parsed SQL-like Object Queries</li>
+ *   <li>Return matching target objects with optional max-results cutoff</li>
+ * </ul>
+ *
+ * <h3>Integration with OAPropertyPath</h3>
+ * {@link com.viaoa.util.OAPropertyPath} parses dotted navigation such as:
+ * <pre>
+ *   "orders.items.product.vendor"
+ * </pre>
+ * including:
+ * <ul>
+ *   <li>link traversal</li>
+ *   <li>hub collection steps</li>
+ *   <li>casts (e.g. "(Manager)")</li>
+ *   <li>embedded filter directives</li>
+ * </ul>
+ * OAFinder uses this metadata to safely traverse the Graph without writing
+ * domain-specific traversal code.
+ *
+ * <h3>Filters</h3>
+ * Filters may be added via:
+ * <ul>
+ *   <li>Programmatic criteria: {@code addEqualFilter()}, {@code addBetweenFilter()}, ...</li>
+ *   <li>PropertyPath-embedded filters</li>
+ *   <li><b>Query Filters</b> parsed from SQL-style Object Query strings</li>
+ * </ul>
+ *
+ * <h4>SQL-style Object Queries</h4>
+ * Ad-hoc queries over the Object Graph using business-friendly syntax:
+ * <pre>
+ *   "user.lastName = 'Smith' AND loginCount >= 3"
+ * </pre>
+ * The expression is parsed and translated into a composition of
+ * {@link com.viaoa.filter.OAFilter} instances. Nested properties can
+ * reference full PropertyPaths. Queries are evaluated against in-memory
+ * values and may trigger lazy loads when enabled.
+ *
+ * <h3>Lazy Loading + Sibling Optimization</h3>
+ * When scanning from a {@link com.viaoa.hub.Hub} and in lazy-mode, OAFinder
+ * registers a sibling fetch helper to proactively prefetch adjacent rows
+ * along the current PropertyPath context. This:
+ * <ul>
+ *   <li>dramatically reduces round-trips for scrolling lists</li>
+ *   <li>optimizes parent/child expansion</li>
+ *   <li>preserves single-instance identity using OAObjectCache</li>
+ * </ul>
+ * Set {@code useOnlyLoadedData = true} to enforce strictly in-memory traversal.
+ *
+ * <h3>Execution Control</h3>
+ * <ul>
+ *   <li>{@code findFirst()}, {@code findNext()}, {@code findLast()}</li>
+ *   <li>{@code setMaxFound(n)} to stop once enough matches are found</li>
+ *   <li>{@code stop()} inside {@code onFound()} to early-abort</li>
+ *   <li>Optional traversal {@code stack} maintained for diagnostics</li>
+ * </ul>
+ *
+ * <h3>Cycle Prevention</h3>
+ * Object cycles are automatically prevented using {@link com.viaoa.object.OACascade}.
+ *
+ * <h3>Thread Safety</h3>
+ * Not thread-safe. Each {@code OAFinder} instance should be used for a single
+ * search operation on a single thread.
+ *
+ * <h3>Examples</h3>
+ *
+ * Find by PropertyPath and exact match:
+ * <pre>{@code
+ * OAFinder<Store, Customer> f =
+ *     new OAFinder<>(storeHub, StorePP.customers().pp);
+ * f.addEqualFilter(CustomerPP.status().pp, "Active");
+ * Customer c = f.findFirst();
+ * }</pre>
+ *
+ * With SQL-style Object Query:
+ * <pre>{@code
+ * OAFinder<Order, Order> f =
+ *     new OAFinder<>(ordersHub, OrderPP.self().pp);
+ * f.setQueryFilter("status = 'Open' AND totalAmount > 100");
+ * List<Order> result = f.find(ordersHub);
+ * }</pre>
+ *
+ * Find largest by numeric PropertyPath:
+ * <pre>{@code
+ * Order biggest =
+ *     OAFinder.findLargest(ordersHub, OrderPP.totalAmount().pp);
+ * }</pre>
+ *
+ * Detect duplicates:
+ * <pre>{@code
+ * List<Customer> dups =
+ *     OAFinder.findDuplicates(customerHub, CustomerPP.email().pp);
+ * }</pre>
+ *
+ * @param <F> From-type (root)
+ * @param <T> Target type returned by the search
+ *
+ * @see com.viaoa.util.OAPropertyPath
+ * @see com.viaoa.filter.*
+ * @see com.viaoa.object.OACascade
+ * @see com.viaoa.hub.Hub
  */
 public class OAFinder<F extends OAObject, T extends OAObject> {
 	private String strPropertyPath;

@@ -1,16 +1,20 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,13 +22,36 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.util.OAConv;
-import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAStr;
 
 /**
- * Makes sure that for each object in a master hub, there exists an object with a reference to it in a second hub.
+ * Maintains object synchronization between two {@link Hub}s by ensuring that each
+ * object in the master Hub has a matching object or reference in the target Hub.
  *
- * @see Hub#setAutoMatch
+ * <p>Used to automatically populate or prune objects to keep related collections
+ * consistent without manual synchronization logic.</p>
+ *
+ * <h3>Behavior</h3>
+ * <ul>
+ *   <li>Listens for add/remove/newList events on the master Hub.</li>
+ *   <li>Creates new target objects or adds existing references when necessary.</li>
+ *   <li>Removes objects not found in the master Hub (override {@link #okToRemove}).</li>
+ *   <li>Optional stop condition ({@link #objStop}/{@link #stopProperty}) halts updates dynamically.</li>
+ *   <li>Thread-safe with {@link java.util.concurrent.atomic.AtomicBoolean} reentrancy control.</li>
+ *   <li>Fully compatible with OA’s distributed and merger frameworks.</li>
+ * </ul>
+ *
+ * <h3>Example</h3>
+ * <pre>{@code
+ * Hub<ItemOption> hubItemOpts = new Hub<>(ItemOption.class);
+ * Hub<ItemOptionType> hubOptionTypes = new Hub<>(ItemOptionType.class);
+ *
+ * // Ensure each ItemOption has a corresponding ItemOptionType reference
+ * new HubAutoMatch<>(hubItemOpts, "itemOptionType", hubOptionTypes);
+ * }</pre>
+ *
+ * @param <TYPE>      The target Hub object type
+ * @param <PROPTYPE>  The master Hub object type
  */
 public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements java.io.Serializable {
 	static final long serialVersionUID = 1L;

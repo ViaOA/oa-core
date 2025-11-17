@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.connection;
 
 import java.sql.Connection;
@@ -28,7 +33,24 @@ import com.viaoa.transaction.OATransaction;
 import com.viaoa.transaction.OATransactionListener;
 
 /**
- * Maintains a dynamic pool of connections to database. These connections are then internally managed by OADataSource.
+ * Manages a dynamic pool of {@link java.sql.Connection} instances for OA's JDBC layer.
+ * <p>
+ * Each {@link OAConnection} wraps a JDBC connection and handles pooled statements.
+ * {@code ConnectionPool} maintains minimum and maximum pool sizes, and uses a
+ * low-priority background thread to periodically prune idle or invalid connections.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Automatic connection validation and cleanup every 10 minutes.</li>
+ *   <li>Integration with {@link com.viaoa.transaction.OATransaction} for commit/rollback.</li>
+ *   <li>Supports batch operations and per-thread transaction isolation.</li>
+ *   <li>Optional statement and prepared statement pooling via {@link OAConnection}.</li>
+ * </ul>
+ *
+ * Thread-safe for concurrent acquisition and release of connections.
+ * Typically used internally by {@link com.viaoa.datasource.jdbc.OADataSourceJDBC}.
+ *
+ * @since OA 4.0
  */
 public class ConnectionPool implements Runnable {
 	private static Logger LOG = Logger.getLogger(ConnectionPool.class.getName());

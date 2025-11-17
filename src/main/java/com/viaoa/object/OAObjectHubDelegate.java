@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.ref.WeakReference;
@@ -16,14 +21,36 @@ import java.util.logging.Logger;
 
 import com.viaoa.hub.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
-import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAArray;
 
 /**
- * Used by Hub to manage the list of Hubs that an OAObject is a member of.
- * 
- * @author vincevia
+ * Maintains the set of Hubs that an {@link OAObject} is a member of, using
+ * weak references so Hub membership does not prevent garbage collection.
+ * Provides add/remove/query operations and integrates with client/server
+ * cache behavior when objects enter or leave mastered Hubs.
+ *
+ * <p>Design highlights:</p>
+ * <ul>
+ *   <li>Membership stored as {@code WeakReference<Hub<?>>[]} with
+ *       compaction and occasional resizing.</li>
+ *   <li>Duplicate membership is prevented; GC’d hubs are pruned lazily.</li>
+ *   <li>Small-array reuse and shared-weakref reuse minimize memory footprint
+ *       for large lists.</li>
+ *   <li>Many-to-many links with private reverse methods can opt out of
+ *       tracking to avoid excessive references.</li>
+ *   <li>In client mode, removal from the last mastered Hub can notify the
+ *       server so the object is tracked in the server cache again.</li>
+ * </ul>
+ *
+ * <p>All mutations are synchronized on the OAObject instance. Methods never
+ * force lazy loading and never mutate relationship integrity; they only
+ * maintain membership bookkeeping used by Hub/Event delegates.</p>
+ *
+ * @see Hub
+ * @see OAObject
+ * @see HubDetailDelegate
+ * @see OAObjectEventDelegate
  */
 public class OAObjectHubDelegate {
 
@@ -68,14 +95,17 @@ public class OAObjectHubDelegate {
     
     public static boolean isInHubWithMaster(OAObject oaObj, Hub hubToIgnore) {
         if (oaObj == null) return false;
-        WeakReference<Hub<?>>[] refs = oaObj.weakhubs;
-        if (refs == null) return false;
-        for (WeakReference<Hub<?>> ref : refs) {
-            if (ref != null) {
-                Hub h = ref.get();
-                if (h == hubToIgnore) continue;
-                if (h != null && h.getMasterObject() != null) return true;
-            }
+        
+        synchronized (oaObj) {
+	        WeakReference<Hub<?>>[] refs = oaObj.weakhubs;
+	        if (refs == null) return false;
+	        for (WeakReference<Hub<?>> ref : refs) {
+	            if (ref != null) {
+	                Hub h = ref.get();
+	                if (h == hubToIgnore) continue;
+	                if (h != null && h.getMasterObject() != null) return true;
+	            }
+	        }
         }
         return false;
     }

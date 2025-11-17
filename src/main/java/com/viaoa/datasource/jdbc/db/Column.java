@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.db;
 
 import java.lang.reflect.Method;
@@ -16,7 +21,17 @@ import com.viaoa.object.*;
 import com.viaoa.util.OAReflect;
 
 /**
- * Used for mapping database Columns with OAObject properties. Column objects are stored in Table.columns[].
+ * Represents a single column in a database table, including mapping
+ * to an OAObject property and associated SQL metadata.
+ * <p>
+ * A {@code Column} maintains JDBC type, length, nullability,
+ * and optional foreign-key relationships. It also caches reflection
+ * accessors for property get/set methods to accelerate ORM binding.
+ * </p>
+ *
+ * @see Table
+ * @see Link
+ * @see com.viaoa.datasource.jdbc.OADataSourceJDBC
  */
 public class Column { // need to select all with properyName!=null
 

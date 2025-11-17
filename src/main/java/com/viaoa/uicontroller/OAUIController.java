@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.uicontroller;
 
 import java.lang.reflect.Method;
@@ -28,11 +33,32 @@ import com.viaoa.undo.OAUndoableEdit;
 import com.viaoa.util.*;
 
 /**
- * Base controller class for OA UI components. Implements the HubListeners and provides most 
- * of the methods required for creating controller Classes (Model/View/Controller) for UI components.
- * 
- * @see #updateComponent() abstract method of update UI component.
- * @see #updateLabel() abstract method of update label.
+ * Base controller for UI components that are bound to an OA {@link Hub} and
+ * an optional property path. This class listens to Hub and OAObject events
+ * and translates them into UI state updates for subclasses.
+ *
+ * <p>
+ * OAUIController encapsulates the standard logic for:
+ * </p>
+ *
+ * <ul>
+ *   <li>Tracking the current {@code Hub} and its active object (AO).</li>
+ *   <li>Resolving an optional {@code propertyPath} using {@link OAPropertyPath}.</li>
+ *   <li>Listening for changes in the Hub (size, AO, content) and on the
+ *       selected OAObject properties.</li>
+ *   <li>Computing display values, tooltips, error messages, and templates
+ *       for use by the concrete UI component.</li>
+ *   <li>Managing enabled/visible state based on callbacks and Hub state.</li>
+ *   <li>Integrating with undo/redo via {@link OAUndoableEdit}.</li>
+ * </ul>
+ *
+ * <p>
+ * Subclasses implement {@code updateComponent()} and related methods to
+ * update the concrete UI widget when the underlying Hub or property changes.
+ * This allows a consistent MVC pattern where Hubs/OAObjects are the model,
+ * OAUIController is the controller, and the actual UI toolkit (Swing, web,
+ * etc.) acts as the view.
+ * </p>
  */
 public abstract class OAUIController extends HubListenerAdapter {
     private static Logger LOG = Logger.getLogger(OAUIController.class.getName());

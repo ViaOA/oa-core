@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.ref.WeakReference;
@@ -40,27 +45,18 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
 
 /**
- * HubFilter is used to create a Hub that has objects that are filtered from another Hub.
+ * Base filter component used by a {@link Hub} to include or exclude objects
+ * dynamically. Can be subclassed or composed to implement domain-specific filters.
  * <p>
- * All that is needed is to subclass the HubFilter and implement the "isUsed()" method to know if an object is to be included in the
- * filtered Hub.
- * <p>
- * Example<br>
+ * <b>Responsibilities</b>:
+ * <ul>
+ *   <li>Maintain inclusion rules that evaluate on Hub events (add/remove/AO).</li>
+ *   <li>Expose {@link #isUsed(Object)} for real-time membership tests.</li>
+ *   <li>Support filter chaining and event-driven refresh via HubListener hooks.</li>
+ * </ul>
  *
- * <pre>
- Hub hubFiltered = new Hub(Employee.class)
- new HubFilter(hubAllEmployees, hubFiltered) {
-     public boolean isUsed(Object obj) {
-         // .... code to check if object should be added to hubFilter
-     }
- };
- * </pre>
- * <p>
- * Note: HubFilter will also monitor the linkHub to hub+property and will make sure that the link to property value is included in the filtered
- * hub. If it isUsed=false, then it will only be added temporarily, until the linkToHub.AO is changed. <br> 
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ * <p>Common derivatives: search filters, permission filters, or computed subsets.</p>
  */
-
 public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Serializable, OAFilter<T> {
 	private static Logger LOG = Logger.getLogger(HubFilter.class.getName());
 	private static final long serialVersionUID = 1L;

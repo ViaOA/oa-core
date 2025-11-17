@@ -966,4 +966,28 @@ public class HubGroupByTest extends OAUnitTest {
     }
 }
 
+/*
+ * Creates a groupBy hub using a new single hub and property path.
+ * <br>
+ * Equivalent of a database groupBy.
+ * The combined Hub (see getCombinedHub) uses OAObject OAGroupBy<F, G>,
+ * where G is the same class as the groupBy Hub and F is a hub of the from objects.
+ *
+ * // group Employees by Dept new
+ * HubGroupBy<Emp, Dept>(hubEmp, hubAllDept, "depts") = new HubGroupBy<Emp, Dept>(hubEmp, "depts")
+ *
+ * Split property path - this is when all of the methods in a pp are not public (link that does not create method).
+ *
+ * HubGroupBy is able to group them by splitting the pp using HubGroupBy and HubFrom to get a combined group.
+ * ex: MRADClient.Application.ApplicationType.ApplicationGroup, hubFrom=hubMRADClients, hubGroupBy=hubApplicationGroups
+ *
+ * note: the method for ApplicationType.getApplicationGroups() is not created
+ *
+ * new HubGroupBy(hubMRADClients, hubApplicationGroups, "MRADClient.Application.ApplicationType.ApplicationGroup")
+ * internally will create 2 HubGroupBys ... (hubMRADClients, "MRADClient.Application.ApplicationType") (hubApplicationGroups, "ApplicationTypes")
+ *
+ * @see HubLeftJoin to create a "flat" list of the grouping object (ex: Dept)
+ *
+ * @author vvia
+ */
 

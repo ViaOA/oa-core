@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.rest.annotation;
 
 import java.lang.annotation.Documented;
@@ -17,10 +22,34 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Information about remote method parameters.
- * <p>
- * Important: this annotation needs to be added to the Interface, not the Impl class.
+ * Describes how a method parameter is used by {@link com.viaoa.remote.rest.OARestClient}
+ * when constructing an HTTP request for a remoted interface method.
+ * This annotation must be applied to parameters of a remote interface, not the
+ * implementation class.
  *
+ * <h2>Usage</h2>
+ * <p>
+ * Each parameter is classified by a {@link ParamType}, which determines whether
+ * the value is used as a path variable, query parameter, form value, search
+ * clause input, OAObjectGraph identifier, JSON body fragment, byte-array body,
+ * HTTP header, cookie, or response include rule.
+ * </p>
+ *
+ * <h2>Include Rules</h2>
+ * <p>
+ * The {@code includePropertyPath(s)} and {@code includeReferenceLevelAmount}
+ * fields allow fine-grained control over how OAObjects are serialized on the
+ * server when this parameter is transmitted as part of the request.
+ * </p>
+ *
+ * <h2>Name Resolution</h2>
+ * <p>
+ * If the Java compiler does not preserve parameter names, the {@code name}
+ * attribute should be supplied explicitly for any parameter used in URL or
+ * query composition.
+ * </p>
+ *
+ * @see com.viaoa.remote.rest.annotation.OARestMethod
  * @author vvia
  */
 @Documented

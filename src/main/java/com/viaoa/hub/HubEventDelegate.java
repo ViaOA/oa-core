@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.ref.WeakReference;
@@ -28,7 +33,19 @@ import com.viaoa.sync.OASync;
 import com.viaoa.util.OAString;
 
 /**
- * Delegate used to register Hub listeners, get Listeners and to send Events to Hub listeners.
+ * Creates and dispatches {@link HubEvent}s for structural and selection
+ * operations, routing them through registered {@link HubListener}s.
+ *
+ * <p><b>Responsibilities</b>
+ * <ul>
+ *   <li>Construct and fire before/after events for add, remove, clear, and AO changes.</li>
+ *   <li>Coordinate verification callbacks using {@code OAObjectCallbackDelegate}.</li>
+ *   <li>Support queued dispatch for remote or asynchronous event contexts.</li>
+ *   <li>Trigger OAObject triggers and maintain referential updates for master/detail links.</li>
+ * </ul>
+ *
+ * <p>Ensures event ordering and prevents reentrancy issues by maintaining
+ * per-thread event stacks in {@code OAThreadLocalDelegate}.
  */
 public class HubEventDelegate {
 

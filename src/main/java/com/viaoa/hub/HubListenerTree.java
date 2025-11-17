@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.reflect.Method;
@@ -34,8 +39,21 @@ import com.viaoa.util.OACompare;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Used by Hub to manage listeners. Hub listeners are added to an array, and a tree is created for the dependent propertyPaths (if any are
- * used, ex: calc props). If one of the dependent propertyPath is changed, then a afterPropertyChange is sent for the listener propery.
+ * Manages Hub listeners and their dependent property paths as a routed tree.
+ * <p>
+ * Responsibilities:
+ * <ul>
+ *   <li>Maintain an ordered array of {@link HubListener}s with FIRST/NEXT/LAST placement.</li>
+ *   <li>Build a dependency tree for calc/link properties so that changes in nested
+ *       objects trigger the correct top-level listener property notifications.</li>
+ *   <li>Resolve dependent paths using {@link com.viaoa.util.OAPropertyPath}, {@link com.viaoa.object.OALinkInfo},
+ *       reverse links, and (when needed) {@link com.viaoa.object.OAFinder} fallbacks.</li>
+ *   <li>Merge child hubs via {@link HubMerger} to watch nested collections (supports AO-only vs use-all modes,
+ *       background thread option, and sibling scoping via {@link com.viaoa.object.OASiblingHelper}).</li>
+ * </ul>
+ * The tree node model caches reverse-link info and last remove context, and can
+ * compute root objects to notify for deep changes. This allows precise, minimal
+ * event routing for calc properties and deep link dependencies.
  */
 public class HubListenerTree {
 	private static Logger LOG = Logger.getLogger(HubListenerTree.class.getName());

@@ -1,27 +1,42 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.process;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.concurrent.OAExecutorService;
 import com.viaoa.hub.*;
 
 /**
- * Used to listen to one or more hubs + propertyPaths and run a process whenever a change is made. 
- * 
- * @author vvia
+ * Listens to one or more {@link com.viaoa.hub.Hub} instances and their
+ * property-path change events, and invokes a processing callback whenever
+ * a matching change occurs. <p>
+ *
+ * Callers register hubs and optional property paths using
+ * {@link #addListener(Hub, String...)}. When the Hub fires a property-change
+ * event associated with the generated listener key, this class calls the
+ * abstract {@link #process(com.viaoa.hub.HubEvent)} method. Processing may
+ * run either on the current thread or on a background thread using an
+ * {@link com.viaoa.concurrent.OAExecutorService}. <p>
+ *
+ * OAChangeProcessor provides a lightweight, event-driven mechanism for
+ * responding to changes in OAObject graphs and Hub collections, without
+ * requiring polling or explicit refresh logic.
  */
 public abstract class OAChangeProcessor {
     private static Logger LOG = Logger.getLogger(OAChangeProcessor.class.getName());

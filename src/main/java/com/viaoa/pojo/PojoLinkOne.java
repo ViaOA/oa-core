@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.pojo;
 
 import java.util.List;
@@ -5,6 +20,22 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+/**
+ * Describes the "one" side of a link property in the POJO metadata model.
+ * <p>
+ * A {@code PojoLinkOne} may carry:
+ * <ul>
+ *   <li>one or more {@link PojoLinkFkey} entries that represent scalar
+ *       foreign-key properties on the source type,</li>
+ *   <li>zero or more {@link PojoImportMatch} entries that describe
+ *       alternative import-match paths, and</li>
+ *   <li>an optional {@link PojoLinkUnique} definition describing a unique
+ *       property (possibly reachable via {@code equalPropertyPath})
+ *       that can be used for matching.</li>
+ * </ul>
+ * The {@link OAObjectPojoLoader} populates this structure based on
+ * {@link com.viaoa.object.OALinkInfo} metadata.
+ */
 public class PojoLinkOne implements java.io.Serializable {
 	private static final long serialVersionUID = 1L;
 

@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.reflect.Method;
@@ -7,22 +22,13 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Used for GroupBy Link Properties (OABuilder).<br>
- * Uses a HubMerger to get objects, and then adds the found objects to a (calc) LinkProperty.
+ * Companion utility for {@link HubGroupBy} that merges group changes and
+ * re-synchronizes when the master or detail Hubs are refreshed.
  * <p>
- * Example:<br>
- * mergerPP: [Orders]:open().orderItems.item <br>
- * groupByPP: [Orders].customer <br>
- * groupByProperty (in customer): Hub<Item> hubOpenOrderItems (groupBy calculated linkProperty)<br>
- * <p>
- * Example:<br>
- * mergerPP: [Orders]:open().orderItems <br>
- * groupByPP: [Orders].orderItems.item <br>
- * groupByProperty (in item): Hub<OrderItem> hubOpenOrderItems (groupBy calculated linkProperty)<br>
+ * Used when grouped views depend on multiple master Hubs or nested groupings,
+ * ensuring consistent propagation of object additions/removals.
  *
- * @author vvia
- * @param <F> from object for the hub merger
- * @param <T> to object for the hub merger
+ * <p>Supports deferred rebuilds to coalesce bursts of changes.</p>
  */
 public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 

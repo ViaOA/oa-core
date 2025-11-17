@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.concurrent.ExecutorService;
@@ -18,9 +23,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Creates and removes Triggers, by setting up in OAObjectInfo.
+ * Factory and manager for {@link OATrigger} instances.
+ * <p>
+ * Provides static methods to create, register, and remove triggers, as well as
+ * a thread-pooled execution environment for asynchronous trigger invocation.
+ * Each trigger is stored in the {@link OAObjectInfo} of its root class and
+ * automatically invoked when matching property paths change.
  *
- * @author vvia
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li>Registers triggers through {@link OAObjectInfoDelegate}.</li>
+ *   <li>Maintains a background thread pool for trigger execution.</li>
+ *   <li>Preserves {@link OAThreadLocalDelegate} context for async operations.</li>
+ * </ul>
+ *
+ * @see OATrigger
+ * @see OAObjectInfoDelegate
+ * @see OATriggerListener
  */
 public class OATriggerDelegate {
 

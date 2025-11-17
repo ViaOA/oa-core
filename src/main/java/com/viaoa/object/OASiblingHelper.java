@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.ArrayList;
@@ -18,9 +23,38 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Used in OAThreadLocal to be able to help findSiblings by tracking propertyPaths from calls to OAObject.getObject/Hub
+ * Learns and resolves property-paths from a root {@link Hub} so that
+ * "sibling" data can be located efficiently. As references are accessed
+ * (via {@code OAObject.getObject(...)} / {@code getHub(...)}), this helper
+ * records the traversed link steps as a small tree of nodes. Later, given
+ * an {@link OAObject} and a link/property name, it can reconstruct the
+ * property path back to the root hub.
  *
- * @author vvia
+ * <p>Paths are discovered in two ways:</p>
+ * <ul>
+ *   <li><b>Explicitly</b> via {@link #add(String)} using a property path
+ *       starting at the hub's object class.</li>
+ *   <li><b>Implicitly</b> via {@link #onGetReference(OAObject, String)} whenever
+ *       references are read at runtime. Missing steps are created using
+ *       {@link OALinkInfo} from the current node's {@link OAObjectInfo}.</li>
+ * </ul>
+ *
+ * <p>If the terminal segment is a calculated property (annotated with
+ * {@code @OACalculatedProperty}), any declared dependency properties are
+ * expanded into additional learned paths, keeping sibling discovery aligned
+ * with calculation inputs.</p>
+ *
+ * <p>This helper is intended for per-thread use (see {@code OAThreadLocal}).
+ * It stores only link metadata (no strong references to live objects) and
+ * never forces lazy loading.</p>
+ *
+ * @param <F> the OAObject type contained by the root Hub
+ *
+ * @see Hub
+ * @see OAObject
+ * @see OAPropertyPath
+ * @see OAObjectInfo
+ * @see OALinkInfo
  */
 public class OASiblingHelper<F extends OAObject> {
 

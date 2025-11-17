@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.info;
 
 import java.lang.annotation.Annotation;
@@ -22,8 +27,38 @@ import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 import com.viaoa.remote.multiplexer.annotation.OARemoteParameter;
 
 /**
- * Internal information about a remote Object. One side (Client/Server) will have the real object, and the other side will have a proxy. Any
- * reference that is passed between the C/S will use the name, and then replaced with the real/proxy instance by the receiving side.
+ * Holds runtime binding information for a remote object participating in OA’s
+ * multiplexer-based remoting system. One side (client or server) contains the
+ * actual implementation instance, while the other side holds a proxy. All
+ * remote references are passed using an internal bind-name, which is mapped
+ * back to the real or proxy object through this class.
+ *
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li>Maintain a {@link WeakReference} to the actual object so it can be
+ *       garbage-collected automatically.</li>
+ *   <li>Track whether the object supports broadcast, asynchronous queues, or
+ *       OA-sync behavior.</li>
+ *   <li>Scan the interface class and build {@link MethodInfo} metadata for each
+ *       remotely accessible method.</li>
+ *   <li>Resolve remote return types and remote parameters based on
+ *       {@code @OARemoteInterface}, {@code @OARemoteMethod}, and
+ *       {@code @OARemoteParameter} annotations.</li>
+ *   <li>Generate a stable “method signature” for overloaded methods.</li>
+ *   <li>Detect invalid remote return/parameter declarations (non-interfaces)
+ *       and log warnings.</li>
+ * </ul>
+ *
+ * <h2>Usage</h2>
+ * {@code BindInfo} objects are created internally by OA's multiplexer server
+ * and client runtime. They are never instantiated by application code.
+ * Remote calls obtain the {@link MethodInfo} for a method through this object,
+ * and weak-reference behavior ensures unused remote bindings do not leak memory.
+ *
+ * <h2>GC Awareness</h2>
+ * If the underlying object has been garbage-collected, the class logs a warning
+ * and returns {@code null}. This allows the remoting layer to gracefully handle
+ * stale bind references.
  *
  * @author vvia
  */

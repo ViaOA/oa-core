@@ -424,3 +424,91 @@ public class OAObjectTest extends OAUnitTest {
 	//qqqqqqq  OAThreadLocalDelegate tests
 
 }
+
+
+
+
+
+/**
+ * OAObject is the Base Class used for Application Data Objects. It is the central class for OA, where all other objects are designed to
+ * automatically work with the OAObject class, along with the Hub collection class.
+ * <p>
+ * OAObjects have built-in functionality to allow it to work with other Classes. This includes other OAObjects, Hub Collections, any
+ * datasource/database, JFC component, JSP component, XML, other applications (distributed) and any other Class.
+ * <p>
+ * &nbsp;&nbsp;&nbsp;<img src="doc-files/ObjectAutomation1.gif" alt=""> <br>
+ * Subclasses of OAObject can be created that add properties and methods for building customized software applications. OAObject then
+ * supplies the capability for these subclasses to automatically work with any OA Enabled Class.
+ * <p>
+ * This is a summary of some of the features included in OAObject.
+ * <ul>
+ * <li>Object Key - property values that makes this object unique.
+ * <li>Reference Information - how objects are related to other object. All references use the actual objects and not the key (or foreign
+ * key value). References types include one-one, one-many, many-many, recursive self references, owned and un-owned references, and more.
+ * <li>Manages reference objects when working with database/datasource.
+ * <li>"Moves" objects when changes are made to a reference property.
+ * <li>Methods to set and get properties and convert from and to Strings.
+ * <li>Store miscellaneous data in name/value pairs, where name is case insensitive.
+ * <li>Initialization during creation
+ * <li>Null Values - to know if a primitive property value is null
+ * <li>Knows which Hub Collections that an object is a member of.
+ * <li>Handles events for object, including property changes and calculated properties.
+ * <li>Knows if object is "new"
+ * <li>Cascading rules. Cancel, Save, Delete can be cascaded to reference objects.
+ * <li>Works directly with OADataSource for storing and retrieving objects.
+ * <li>Save Method
+ * <li>Delete Method
+ * <li>Calculated Properties - properties that rely on other properties or objects for their value.
+ * <li>Serialization Support - to file/stream, other applications using RMI
+ * <li>XML support - reading and writing
+ * <li>Locking
+ * <li>Client/Server - changes to objects can be automatically updated on other computers.
+ * </ul>
+ * <p>
+ * This is a listing of the types of relationships that an OAObject can have with another OAObject. This information is built into the
+ * object information. Relationships between objects are "two-way", meaning that both objects are related to each other.<br>
+ * <ul>
+ * <li>One-One relationship
+ * <li>One-Many relationship
+ * <li>Many-Many relationship
+ * <li>Recursive - this is where an object can have many children objects of the same class and each of these children can themselves have
+ * children, recursively.
+ * <li>An Owned relationship is one where the children can not exist without the parent (owner) and all are treated as a single unit.
+ * <li>Cascading Rules for save, delete, cancel
+ * </ul>
+ * <p>
+ * Managing Relationships<br>
+ * OAObject manages the relationships between objects, and is responsible for retrieving and populating reference objects and for managing
+ * changes. An OAObject subclass does not have to have any code to handle retrieving or storing reference objects, OAObject does it
+ * completely. If a reference property is changed, then OAObject manages the change so that other objects are updated correctly. <br>
+ * For example, if a Department has many Employees, and an Employee has one Department: if an Employee's Department is changed, then the
+ * Employee object is removed from the original Department collection and added to the new assigned Department collection. This also works
+ * when an Employee is added to a different Departments Employee collection - the Employee's Department property is changed to the newly
+ * assigned Department.
+ * <p>
+ * Working with DataSources<br>
+ * OAObjects work directly with OADataSource for initializing properties, saving, deleting. This is all done so that the OAObjects are
+ * independent from datasource/database.
+ * <p>
+ * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ * <p>
+ * OAObjectCallback can be used to query the object and properties.<br>
+ *
+ * @see OAObjectCallback
+ * @author Vince Via
+ * @see Hub for observable collection class that has "linkage" features for automatically managing relationships. see OAHtmlSelect for
+ *      datasource independent queries based on object and property paths.
+ */
+
+
+
+
+
+
+
+
+
+
+
+
+

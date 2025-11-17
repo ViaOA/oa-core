@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.db;
 
 import java.util.Enumeration;
@@ -17,7 +22,26 @@ import com.viaoa.object.OAObject;
 import com.viaoa.util.OAArray;
 
 /**
- * Used for defining a Database for OADataSourceJDBC.
+ * Defines the in-memory representation of a database within the OA JDBC subsystem.
+ * <p>
+ * A {@code Database} manages a collection of {@link Table} instances,
+ * mapping Java model classes to physical tables and caching the associations.
+ * It provides fast lookup by class or name and ensures bidirectional linkage
+ * across table hierarchies (including inheritance support).
+ * </p>
+ *
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li>Register and retrieve {@link Table} instances by class or name.</li>
+ *   <li>Preserve superclass/subclass mappings for inherited entities.</li>
+ *   <li>Provide consistent schema visibility to {@link com.viaoa.datasource.jdbc.OADataSourceJDBC}.</li>
+ * </ul>
+ *
+ * <h2>Thread-Safety</h2>
+ * Once initialized, this class is read-only and safe for concurrent access.
+ *
+ * @see Table
+ * @see com.viaoa.datasource.jdbc.OADataSourceJDBC
  */
 public class Database {
 

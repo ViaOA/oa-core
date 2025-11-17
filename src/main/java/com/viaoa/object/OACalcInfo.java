@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
@@ -16,40 +21,25 @@ import java.util.logging.Logger;
 import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.util.OAString;
 
-/** Used to define calculated properties for OAObject.  A Calculated property is a read only property that
-    depends on other properties for its value. 
-    <br>
-    When a calclualted property is being used, a listener is set up that will listen for changes to any
-    of the dependent properties.
-    <p>
-    Note: listeners for dependent properties are only created when there is a HubListener for the calculated
-    property itself.
- 
-    <pre>
-    Example:  
-        Class Emp
-            String firstName
-            String lastName
-            Dept dept;
-            public String fullName() {
-                return firstName + " " + lastName + " Dept " + dept.getName();   
-            }
-                
-        OACalcInfo = new OACalcInfo("fullName",String { "firstName", "lastName", "dept.name" } );            
-    </pre>
- 
- 
- 
-    OACalcInfo is created and then stored within an OAObjectInfo object and is used by an
-    OAObject.  OAObject will automatically listen for property changes on any of the depended
-    properties and will notify listeners whenever any change occurs that might affect the
-    calculated property.
-    <p>
-    For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
- 
-
-    @see OAObjectInfo    
-    @author Vince Via
+/**
+ * Metadata describing a calculated property of an OAObject. A calculated
+ * property does not store a value directly; instead it is derived on demand
+ * using a getter method. Calculated properties are fully integrated into the
+ * OA Object Graph and participate in UI binding and change notification.
+ *
+ * <p>Each calculated property may declare a list of dependent properties.
+ * When any dependency changes, the calculated property is automatically
+ * invalidated and refreshed, ensuring that the UI and distributed clients
+ * always see the correct value without requiring explicit update logic.</p>
+ *
+ * <p>Calculated properties are not persisted and do not affect dirty tracking,
+ * but they behave like normal properties for display and navigation purposes.
+ * This supports dynamic domain behavior without introducing additional storage
+ * fields or duplication of database state.</p>
+ *
+ * @see OAPropertyInfo
+ * @see OAObjectInfo
+ * @see OAObject
  */
 public class OACalcInfo implements java.io.Serializable {
     static final long serialVersionUID = 1L;

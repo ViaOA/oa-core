@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.remote;
 
 import java.util.*;
@@ -23,7 +28,42 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.sync.OASyncDelegate;
-
+/**
+ * Base server-side implementation of {@link RemoteClientInterface}. Each
+ * connected client has its own concrete instance, created by the server's
+ * {@code RemoteServerImpl}.
+ * <p>
+ * A {@code RemoteClientImpl} services requests originating from a client:
+ * <ul>
+ *   <li>detail loading via {@link ClientGetDetail},</li>
+ *   <li>datasource operations such as {@code insert}, {@code update},
+ *       {@code select}, and {@code count},</li>
+ *   <li>object caching and cache retention on the server,</li>
+ *   <li>copy operations and refresh operations.</li>
+ * </ul>
+ *
+ * <h2>Detail Loading</h2>
+ * Detail loading is delegated to a {@link ClientGetDetail} instance, which
+ * manages sibling logic, depth rules, and object-graph serialization.
+ *
+ * <h2>Datasource Access</h2>
+ * This class exposes a virtual {@link RemoteDataSource} to the client:
+ * <ul>
+ *   <li>All DS commands execute on the server's {@link OADataSource}.</li>
+ *   <li>Iterator state for selects is tracked per client.</li>
+ *   <li>Objects loaded from the datasource are optionally flagged in the
+ *       client's GUID registry so the sync layer knows they exist on the
+ *       client.</li>
+ * </ul>
+ *
+ * <h2>Cache Retention</h2>
+ * The abstract {@link #updateObjectCache(OAObject)} method allows the server
+ * to mark objects as “in use” by that client, preventing premature GC or
+ * eviction.
+ *
+ * <p>
+ * This class contains substantial shared logic for all remote client sessions.
+ */
 public abstract class RemoteClientImpl implements RemoteClientInterface {
 	private static Logger LOG = Logger.getLogger(RemoteClientImpl.class.getName());
 	// protected ConcurrentHashMap<Object, Object> hashCache = new ConcurrentHashMap<Object, Object>();

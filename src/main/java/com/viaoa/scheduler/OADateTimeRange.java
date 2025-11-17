@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.scheduler;
 
 import java.util.ArrayList;
@@ -6,14 +21,14 @@ import com.viaoa.util.OACompare;
 import com.viaoa.util.OADateTime;
 
 /**
- * Used to manage a datetime range for OASchedule.
- * This is used by OASchedule to collect a range of datetimes and organize them into a dt listing.
- * 
- * Overlapping ranges will result in a parent range being created, that adds the overlapped ranges as children to itself.
- * 
- * @author vvia
+ * Represents an immutable date–time range used by {@link OASchedule} to
+ * combine, merge, and order ranges. Each range can optionally maintain a list
+ * of child ranges representing segments that were absorbed or overlapped
+ * during schedule consolidation. <p>
  *
- * @param <R> type of object attached to this range.
+ * Instances are ordered by their begin date and two ranges are considered
+ * equal when both their begin and end values match. The range may also carry a
+ * reference object supplied by callers of {@link OASchedule#add}.
  */
 class OADateTimeRange<R> implements Comparable {
     private OADateTime dtBegin;

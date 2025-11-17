@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 
@@ -20,21 +35,27 @@ import com.viaoa.util.*;
 // empty rows
 // stack text 
 
-
 /**
- * Create a two dimensional (cols & rows) of data.
- * Each column is given a property path to a link property, which can be type one or many.
- * <br> 
- * Columns can be populated with:
+ * Framework component that constructs a two-dimensional grid of
+ * {@link OAObject} references derived from one or more linked
+ * {@link com.viaoa.hub.Hub}s.
+ *
+ * <p>Each {@code Column} represents a property path that can point to
+ * a link property, detail hub, or group-by relationship.  The grid then
+ * materializes a relational view (rows × columns) by traversing these
+ * property paths, effectively building a dynamic in-memory table.</p>
+ *
+ * <p><b>Capabilities</b>:
  * <ul>
- * <li>Hub
- * <li>single OAObject
- * <li>property path from another column (master/detail)
- * <li>Hub of Objects that can be grouped by another column.
+ *   <li>Add detail, group-by, or link columns programmatically.</li>
+ *   <li>Generate the full matrix of objects via {@link #createGrid()}.</li>
+ *   <li>Retrieve individual cell objects using {@link #getObject(int,int)}.</li>
+ *   <li>Support nested hierarchies with recursive traversal.</li>
  * </ul>
- * The rows are then created to form a data grid (/table).
- *  
- * @author vvia
+ *
+ * <p>Used by templating and reporting tools (e.g. OATemplate) to
+ * generate complex HTML tables or exportable datasets from live OA
+ * object graphs.</p>
  */
 public class OAObjectGrid {
     private final List<Column> alColumn = new ArrayList<>(); 

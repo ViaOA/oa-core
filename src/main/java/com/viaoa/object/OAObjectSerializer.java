@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.io.ByteArrayInputStream;
@@ -34,13 +39,33 @@ import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.util.Tuple;
 
 /**
- * OAObjectSerializer is used to control object serialization for an OAObject and its reference objects.
- * <p>
- * OAObject serialization will then call the serializer to determine which reference properties should be included in the serialization.
+ * Serializes and deserializes OAObject state for caching, messaging, and
+ * distributed synchronization. This serializer transfers identity and data
+ * in a form that preserves lazy loading and metadata-driven resolution on the
+ * destination side.
+ *
+ * <p>Object references are represented using OAObjectKey so that related
+ * objects do not need to be materialized during serialization. This enables
+ * efficient graph projection for remote clients and reduces network
+ * payload size.</p>
+ *
+ * <p>Hub properties and collections are handled through key lists so that
+ * reverse-link integrity is maintained when objects are rehydrated and
+ * combined with existing state in the object cache.</p>
+ *
+ * <p>No runtime metadata is mutated during serialization. All behavior is
+ * deterministic and based on OAObjectInfo, ensuring safe transmission across
+ * server/client boundaries and consistent object identity reconciliation.</p>
+ *
  * <p>
  * Note: this is final so that it can not be subclassed, which would cause serialization problems when it tries to recreate with the new
- * subclass instance - remember this is a wrapper that is serialized and transported, then unserialized (trust me, painful lessons here ha)
+ * subclass instance - this is a wrapper that is serialized and transported, then unserialized.
  * Use setCallback(..) to be able to control each object's setting as it is serialized.
+ * 
+ * @see OAObject
+ * @see OAObjectKey
+ * @see OAObjectCacheDelegate
+ * @see OAObjectInfo
  */
 public final class OAObjectSerializer<TYPE> implements Serializable {
 	static final long serialVersionUID = 1L;

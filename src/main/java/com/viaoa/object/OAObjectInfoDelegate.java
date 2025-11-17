@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
@@ -31,6 +36,28 @@ import com.viaoa.util.OAArray;
 import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 
+/**
+ * Internal delegate responsible for building and caching OAObjectInfo metadata
+ * for each OAObject type. Metadata is discovered using reflection and augmented
+ * by annotations and OABuilder model generation.
+ *
+ * <p>This delegate performs the one-time scan of a class to identify its
+ * persistent and calculated properties, link relationships, primary key
+ * properties, and lifecycle callback methods.</p>
+ *
+ * <p>The resulting OAObjectInfo instance is cached and reused for all objects
+ * of the same type, enabling fast metadata lookups during runtime operations
+ * such as lazy loading, change tracking, relationship updates, and UI binding.</p>
+ *
+ * <p>This metadata discovery is the foundation of OA's model-driven architecture.
+ * It allows domain behavior to be configured declaratively in the model and
+ * leveraged consistently throughout the Object Graph without requiring manual
+ * registration or configuration.</p>
+ *
+ * @see OAObjectInfo
+ * @see OALinkInfo
+ * @see OAObject
+ */
 public class OAObjectInfoDelegate {
 
 	private static final Object Lock = new Object();

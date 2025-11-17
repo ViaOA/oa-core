@@ -1,29 +1,29 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.delegate;
 
 import java.util.logging.Logger;
 
 /**
- * This can be used to log all DB activity using a Logger.
+ * Structured database activity logging helper.
  * <p>
- * Example:
- * 
- * <pre>
- * String s = "com.viaoa.datasource.jdbc.delegate.DBLogDelegate";
- * log = Logger.getLogger(s);
- * log.setLevel(Level.FINE);
- * fh = createFileHandler("DBChanges", Level.FINE);
- * log.addHandler(fh);
- * </pre>
+ * Emits normalized {@code INSERT}, {@code UPDATE}, {@code DELETE}, and {@code DDL}
+ * lines with bounded markers {@code [[BEGIN[... ]END]]} and per-parameter segments,
+ * suitable for later parsing and recovery.
+ * </p>
  */
 public class DBLogDelegate {
 	private static Logger LOG = Logger.getLogger(DBLogDelegate.class.getName());

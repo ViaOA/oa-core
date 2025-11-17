@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
@@ -19,9 +24,23 @@ import com.viaoa.hub.HubEvent;
 import com.viaoa.util.OAString;
 
 /**
- * used by OAAnnoationDelegate for OATriggerMethod annotation.
- * This will create the necessary triggers that will call the trigger method.
- * @author vvia
+ * Reflection-based {@link OATriggerListener} that invokes a trigger method on
+ * the root object. Used by the {@code @OATriggerMethod} annotation processor.
+ * <p>
+ * This listener locates all affected root objects (using {@link OAFinder} or
+ * {@link OASelect}) and calls the annotated method for each when a dependent
+ * property changes.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Automatically created by {@link OAAnnotationDelegate} for annotated methods.</li>
+ *   <li>Optionally limited to loaded objects only.</li>
+ *   <li>Falls back to DataSource queries when not fully loaded.</li>
+ * </ul>
+ *
+ * @see OATrigger
+ * @see OATriggerListener
+ * @see com.viaoa.datasource.OASelect
  */
 public class OATriggerMethodListener implements OATriggerListener {
     private final Class<?> clazz;

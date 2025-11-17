@@ -105,3 +105,46 @@ public class OASelectTest extends OAUnitTest {
     }
     
 }
+
+/**
+ * Helper Class used for submitting and managing queries for any OADataSource. This is used by Hub.select() methods. All queries are based
+ * on object names, property names, and property paths.
+ * <p>
+ * A <b>property path</b> is a dot (".") separated list of property names that are used to navigate from a root Class to a property value.
+ * To go from object to object, reference property names are used.
+ * <p>
+ * An OAFinder can be used to act as the datasource.
+ * <p>
+ * An OAFilter can be used to further filter the results.
+ * <p>
+ * Queries
+ * <ul>
+ * <li>All property names and connectors names are case insensitive.
+ * <li>Can use the following connectors "AND", "&amp;&amp;", "||", "OR", "(", ")"
+ * <li>Can use "=", "==", "!=", "&lt;", "&lt;=", "&gt;", "&gt;=", "LIKE", "%" (wildcard), "null" (any case)
+ * <li>use "PASS[" to begin a passthru part of the query, and "]THRU" to end it.
+ * <li>"ASC" ascending, "DESC" descending can be used with Order By properties.
+ * </ul>
+ *
+ * <pre>
+ * OASelect select = new OASelect();
+ * String query = OAConverter.toDataSourceString("dept", dept); // converts to dept.Id = 'MIS'
+ * String fname = "John";
+ * query += " &amp;&amp; (dept.manager.lastName like 'Jones%'";
+ * query += " || (dept.manager.firstName == " + OAConvert.toDataSourceString(fname) + ")";
+ * select.setWhere(query);
+ * select.setOrder("dept.name, Emp.LastName DESC, emp.firstName");
+ * select.setPassthru(false); // needs to be converted to native query language
+ * select.setCountFirst(false); // dont need count
+ * select.setMax(250); // only select first 250 objects.  (default=0 ALL)
+ * select.setFetchAmount(40); // amount of objects to read at a time (default=45)
+ *
+ * // or use params for where query
+ * query = "dept = ? &amp;&amp; dept.manager.lastName like ? || dept.manager.firstname = ?";
+ * Object[] params = new Object[] { dept, "Jones%", fname };
+ * select.setWhere(query);
+ * select.setParams(params);
+ * </pre>
+ * <p>
+ * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ */

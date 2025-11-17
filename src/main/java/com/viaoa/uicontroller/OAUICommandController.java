@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.uicontroller;
 
 import java.util.logging.Logger;
@@ -10,12 +25,31 @@ import com.viaoa.util.OAStr;
 
 //qqqqqqqqqqqqqqqqq 20250116 under construction
 
-
 /**
- * Controller used to have UI components commands interact with Hub and OAObjects.
+ * Controller used to bind UI command components (buttons, menu items, etc.)
+ * to operations on a {@link Hub} and its active {@link OAObject}. The
+ * {@link Command} enum describes the supported actions (navigation, create,
+ * delete, submit, save, remove, etc.) and the controller manages enable/
+ * visible state based on Hub and object conditions.
+ *
  * <p>
- * 
- * @author vince
+ * OAUICommandController centralizes the logic for:
+ * </p>
+ *
+ * <ul>
+ *   <li>Determining when a command should be enabled (e.g. AO present,
+ *       Hub not empty, object not submitted).</li>
+ *   <li>Reacting to HubChangeListener events to keep command state in sync.</li>
+ *   <li>Executing the configured command against the Hub and AO when the
+ *       UI component is invoked.</li>
+ * </ul>
+ *
+ * <p>
+ * Some command types and related configuration are still under construction,
+ * particularly the clipboard-related commands noted in the source. The core
+ * navigation and CRUD-oriented commands are fully implemented and provide a
+ * reusable controller for typical UI workflows.
+ * </p>
  */
 public class OAUICommandController extends OAUIController {
     private static final Logger LOG = OALogger.getLogger(OAUICommandController.class);

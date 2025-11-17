@@ -1,16 +1,20 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
-import java.util.Hashtable;
 import java.util.logging.*;
 
 //import sun.util.LocaleServiceProviderPool.LocalizedObjectGetter;
@@ -20,6 +24,28 @@ import com.viaoa.util.*;
 import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLWriter;
 
+/**
+ * Provides XML-based transaction logging for {@link OAObject} persistence
+ * operations.  When enabled, each {@code save()} or {@code delete()} is
+ * written as an {@link OALogRecord} to an XML file for later replay.
+ *
+ * <p>This mechanism supports auditing, replication, and offline synchronization
+ * by allowing a system to reproduce changes without requiring a direct
+ * connection to the data source.</p>
+ *
+ * <p><b>Key Behaviors</b>:
+ * <ul>
+ *   <li>{@link #createXMLLogFile(String)} — opens or switches the active log file.</li>
+ *   <li>{@link #logToXmlFile(OAObject, boolean)} — writes a SAVE or DELETE record.</li>
+ *   <li>{@link #restoreXMLLogFile(String)} — replays the log, invoking
+ *       {@code save()} or {@code delete()} on each restored object.</li>
+ *   <li>Special M2M handling to avoid premature creation of link objects.</li>
+ * </ul>
+ *
+ * <p>The delegate uses an embedded {@link OAXMLWriter} instance with custom
+ * property-writing rules to ensure that objects are written in key-only form
+ * when appropriate, avoiding duplication during replay.</p>
+ */
 public class OAObjectLogDelegate {
     private static Logger LOG = Logger.getLogger(OAObjectLogDelegate.class.getName());
     private static volatile OAXMLWriter writerXml;

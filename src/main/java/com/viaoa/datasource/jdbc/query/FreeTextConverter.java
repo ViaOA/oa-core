@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.query;
 
 import java.util.StringTokenizer;
@@ -15,12 +20,12 @@ import java.util.StringTokenizer;
 import com.viaoa.util.OAString;
 
 /**
- * Convert a query to freetext
- * 
- * example:
- *      CONTAINS(tableName.*,'" + convertForFreeText(phrase) + "')";
- * 
- * 20180322
+ * Utility for converting free-text search tokens into database-specific SQL fragments.
+ * <p>
+ * Supports common full-text syntaxes across multiple database engines (SQL Server, Oracle, MySQL, PostgreSQL),
+ * translating OA "contains" or "like" operators into the correct dialect (e.g. CONTAINS, MATCH AGAINST, etc.).
+ * <p>
+ * Used internally by {@link QueryConverter} during query translation when a {@code Column.fullTextIndex} is defined.
  */
 public class FreeTextConverter {
 

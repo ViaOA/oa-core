@@ -1,34 +1,61 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 /**
-    Used for sharing the same objects that are in another Hub, with or without using the same active object.
-    As changes are made to the objects, both/all Hubs will be notified.
-    <p>    
-    Shared Hubs are useful in GUI applications where the same collection of objects are needed for different purposes.
-    <p>
-    Example:<br>
-    A JTable that uses a Hub of Department objects to display and maintain all of the Departments.
-    A shared Hub could be created to use the same objects in a drop down list to select the Department for an 
-    Employee. Both Hubs would be using the same objects, but for different purposes.
-    <pre>
-    Hub hubDepartment = new Hub(Department.class);
-    hubDepartment.select();
-    SharedHub hubDepartment2 = new SharedHub(hubDepartment);
-    </pre>
-    
-    @since 2004/03/19 using methods built into Hub.  see {@link Hub#createSharedHub}
-    @see Hub
-*/
+ * Represents a {@link Hub} that shares the same data and object references
+ * as another Hub, optionally sharing its active object (AO).
+ *
+ * <p>{@code SharedHub} enables multiple Hub instances to reflect the same
+ * underlying object list, allowing independent navigation and selection
+ * logic. When any shared object changes, all participating Hubs receive
+ * the corresponding events.</p>
+ *
+ * <h3>Usage Example</h3>
+ * <pre>{@code
+ * Hub<Department> hubDepartments = new Hub<>(Department.class);
+ * hubDepartments.select();                 // populate list
+ *
+ * // Create a shared Hub that uses the same data
+ * SharedHub<Department> hubDeptDropdown = new SharedHub<>(hubDepartments);
+ *
+ * // Or share both data and active object
+ * SharedHub<Department> hubDeptMirror = new SharedHub<>(hubDepartments, true);
+ * }</pre>
+ *
+ * <h3>Responsibilities</h3>
+ * <ul>
+ *   <li>Use {@link HubShareDelegate#setSharedHub(Hub, Hub, boolean)} to
+ *       wire this Hub to the source Hub’s {@link HubData} structure.</li>
+ *   <li>Maintain synchronized object collections between all shared Hubs.</li>
+ *   <li>Optionally share the same active object (AO) for unified selection
+ *       behavior across views.</li>
+ *   <li>Forward change notifications so all shared Hubs stay consistent.</li>
+ * </ul>
+ *
+ * <h3>Design Notes</h3>
+ * <ul>
+ *   <li>Commonly used in UI contexts where the same objects appear in
+ *       multiple components (e.g., master list + dropdown selector).</li>
+ *   <li>Sharing avoids redundant {@code select()} calls and duplicate
+ *       object instances while preserving independent navigation states.</li>
+ *   <li>Created automatically via {@link Hub#createSharedHub(Hub)} when
+ *       invoking {@code hub.createSharedHub(...)}.</li>
+ * </ul>
+ */
 public class SharedHub<TYPE> extends Hub<TYPE> {
     
     /**

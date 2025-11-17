@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.ref.WeakReference;
@@ -43,6 +48,37 @@ import com.viaoa.hub.HubSortDelegate;
 import com.viaoa.sync.*;
 import com.viaoa.util.*;
 
+/**
+ * Reflection-based helper for OAObject that implements dynamic property access,
+ * reference resolution, and object creation driven by OA metadata.
+ * <p>
+ * Responsibilities:
+ * <ul>
+ *   <li>Create new domain instances via default constructors (with optional
+ *       remote/server creation when enabled).</li>
+ *   <li>Get and set properties by name or property path, including support for
+ *       primitive-null semantics and value conversion using {@code OAConverter}.</li>
+ *   <li>Resolve reference properties: promote stored {@code OAObjectKey} values
+ *       to real {@code OAObject} instances using the cache and/or datasource,
+ *       without forcing unnecessary hydration.</li>
+ *   <li>Enforce relationship integrity using {@code OALinkInfo}: reverse-link
+ *       updates, ONE↔MANY handling, and Hub (collection) delegation.</li>
+ *   <li>Support lazy-loading, sibling prefetch, and {@code autoCreateNew} for
+ *       one-to-one links when configured by metadata.</li>
+ *   <li>Fire before/after property change events in correct order so that dirty
+ *       tracking, triggers, and distributed sync receive accurate deltas.</li>
+ * </ul>
+ * <p>
+ * This delegate is part of OA's model-driven runtime: it interprets metadata
+ * from {@link OAObjectInfo}/{@link OALinkInfo} to provide dynamic, consistent
+ * behavior without hand-written reflection code in application classes.
+ *
+ * @see OAObject
+ * @see OAObjectPropertyDelegate
+ * @see OAObjectCacheDelegate
+ * @see OAObjectInfo
+ * @see OALinkInfo
+ */
 public class OAObjectReflectDelegate {
 
 	private static Logger LOG = Logger.getLogger(OAObjectReflectDelegate.class.getName());

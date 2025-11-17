@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.xml;
 
 import java.io.FileWriter;
@@ -30,12 +35,42 @@ import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
 /**
- * OAXMLWriter creates an XML file that can then be read using an OAXMLReader.<br>
- * If an object has already been stored in the file, then its key will be stored.
- * 
- * NOTE: 20230917 Use OAXml instead (based on OAJson that uses jackson)
- * 
- * @see OAXMLReader
+ * Generates XML output for OAObject graphs in a format consumable by
+ * {@link OAXMLReader}.  
+ * <p>
+ * {@code OAXMLWriter} supports:
+ * <ul>
+ *   <li>full object serialization with cascade control,</li>
+ *   <li>key-only serialization for already-emitted objects,</li>
+ *   <li>Hub serialization for MANY-valued links,</li>
+ *   <li>CDATA output with optional Base64 encryption,</li>
+ *   <li>import-match–only mode for migration scenarios,</li>
+ *   <li>pretty-print indentation.</li>
+ * </ul>
+ *
+ * <h2>Writing Modes</h2>
+ * <ul>
+ *   <li>{@link #WRITE_YES} – write full object,</li>
+ *   <li>{@link #WRITE_KEYONLY} – write only key/GUID,</li>
+ *   <li>{@link #WRITE_NO} – skip property entirely,</li>
+ *   <li>{@link #WRITE_NONEW_KEYONLY} – suppress new objects in Hub writes.</li>
+ * </ul>
+ *
+ * <h2>Encryption Support</h2>
+ * If {@link #setEncodeMessage(String)} is set, CDATA values are encoded
+ * as: {@code encodeMessage + Base64.encode(data)}.
+ *
+ * <h2>Customization Hooks</h2>
+ * Subclasses may override:
+ * <ul>
+ *   <li>{@link #convertToString(String, Object)}</li>
+ *   <li>{@link #shouldWriteProperty(Object, String, Object)}</li>
+ *   <li>{@link #writing(Object)}</li>
+ * </ul>
+ *
+ * <p>
+ * This class is retained for backward compatibility.  
+ * New code should use {@link OAXml} (Jackson-based).
  */
 public class OAXMLWriter {
 	protected PrintWriter pw;

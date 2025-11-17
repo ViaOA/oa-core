@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.process;
 
 import java.util.Arrays;
@@ -37,8 +42,29 @@ import com.viaoa.util.OAString;
  Field values can use a single number, "-" for a range, and commas to separate more then one.
 
  see OACronProcessor# to register cron to be processed
+ */
 
- @author vvia
+
+/**
+ * Represents a cron-style schedule definition and provides logic to determine
+ * the next date and time that satisfies the specification. <p>
+ *
+ * Each cron consists of five fields:
+ * <ul>
+ *   <li>minute (0–59)</li>
+ *   <li>hour (0–23)</li>
+ *   <li>day of month (1–31 or "last")</li>
+ *   <li>month (1–12)</li>
+ *   <li>day of week (0–6, Sunday=0)</li>
+ * </ul>
+ *
+ * Field values may be expressed as single numbers, comma-separated lists,
+ * ranges, or wildcards. Parsed values are stored in sorted form as cron
+ * integers. <p>
+ *
+ * The {@link #findNext(com.viaoa.util.OADateTime)} method walks forward from
+ * a given starting date and computes the earliest matching time. Subclasses
+ * implement {@link #process(boolean)} to perform work when the cron fires.
  */
 public abstract class OACron {
     // NOTE: all values are stored as cron values

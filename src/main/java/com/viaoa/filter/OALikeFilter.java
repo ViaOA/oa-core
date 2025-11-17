@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import java.util.logging.Level;
@@ -22,10 +27,22 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Creates a filter to see if the value from the propertyPath is like the filter value.
- * 
- * @author vvia
- * @see OACompare#isLike(Object, Object)
+ * Filter that evaluates whether the string representation of a property
+ * value matches a SQL-style LIKE pattern (using
+ * {@link com.viaoa.util.OACompare#isLike(Object, Object)}).  The value may
+ * be retrieved directly or through an {@link OAPropertyPath}.
+ *
+ * <p>
+ * If the property path navigates through a many-relationship, an
+ * {@link OAFinder} is created dynamically.  A nested {@code OALikeFilter}
+ * is added to the finder so that the LIKE pattern is applied to the
+ * located target object.
+ * </p>
+ *
+ * <p>
+ * Supports wildcard-based matching (e.g., {@code "abc*"}, {@code "*xyz"},
+ * {@code "*mid*"}), depending on the rules in {@code OACompare.isLike}.
+ * </p>
  */
 public class OALikeFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OALikeFilter.class.getName());

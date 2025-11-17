@@ -1,16 +1,20 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
-import java.util.HashSet;
 
 import com.viaoa.converter.OAConverterBoolean;
 import com.viaoa.filter.OAEmptyFilter;
@@ -19,20 +23,29 @@ import com.viaoa.filter.OANotNullFilter;
 import com.viaoa.util.*;
 
 /**
- * This is used to find the first value in an object hierarchy (including recursive) that 
- * has a matching value in the first object, or one of the objects in it's hierarchy,
- * as defined by propertyPaths.
+ * Utility class that traverses an OAObject hierarchy and returns the first
+ * property value satisfying a supplied filter.
  *
- * example:
- *  Employee.department.location.region.country;
- *  
- *  where location is recursive (has parent locations)
- *  and each object in the hierarchy has a property to know if it has "specialFlag" or not.
- *  
- *  OAHierFinder f = new OAHierFinder(EmployeePP.specialFlag, EmployeePP.location().region().country())
+ * <p>OAHierFinder supports recursive and linked hierarchies (for example, a
+ * Location with parent Locations) and can evaluate nested property paths such as:
+ * <pre>
+ *   Employee.department.location.region.country
+ * </pre>
+ * The search begins with a starting object and proceeds along the property path,
+ * optionally following recursive parent links, until a value passes the given
+ * {@link com.viaoa.filter.OAFilter}.
  *
- *  f.findFirstValue(employee, filter);
- *  
+ * <p><b>Capabilities</b>:
+ * <ul>
+ *   <li>Evaluates {@code OAPropertyPath} dynamically using metadata from
+ *       {@link OAObjectInfoDelegate}.</li>
+ *   <li>Supports predefined filters like {@code OANotEmptyFilter},
+ *       {@code OANotNullFilter}, and {@code OAEmptyFilter}.</li>
+ *   <li>Includes helper methods such as {@code findFirstTrue()} that
+ *       interpret boolean-convertible values.</li>
+ * </ul>
+ *
+ * @param <F> starting OAObject type for the traversal
  */
 public class OAHierFinder<F extends OAObject> {
     private final String property;

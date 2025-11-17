@@ -1,30 +1,64 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import javax.swing.JLabel;
 
-import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.hub.Hub;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 
 /**
- * Object used to pass data and allow interaction between OAObject callback methods and other (ex: UI) components. 
- * OAObject has a class level "callback(OAObjectCallback eq)" method and 
- * can have callbackXxx(OAObjectCallback cb)" methods defined for other props,calcs,links, and methods.
+ * Carrier object for interactive edit/query callbacks on {@link OAObject} instances.
+ * <p>
+ * An {@code OAObjectCallback} represents a request to determine whether an action
+ * is permitted, visible, or requires confirmation, or to supply additional UI data
+ * such as formatting or tooltips. It is used as a shared contract between:
+ * <ul>
+ *   <li>OAObject callback methods (model rules)</li>
+ *   <li>Hub listeners (contextual rules)</li>
+ *   <li>Controller/UI code (visual and interaction behavior)</li>
+ * </ul>
+ *
+ * <h3>Primary Responsibilities</h3>
+ * <ul>
+ *   <li>Report if an edit operation is <b>allowed</b> or must be <b>blocked</b></li>
+ *   <li>Provide <b>confirm messages</b> and <b>tooltips</b> for UI presentation</li>
+ *   <li>Propagate <b>context</b>: hub, owning object, property, new/old values</li>
+ *   <li>Provide <b>optional response</b> or <b>throwable</b> when rules fail</li>
+ *   <li>Support UI result control such as format or label customization</li>
+ * </ul>
+ *
+ * <h3>Callback Types</h3>
+ * Uses {@link Type} to describe the semantic request, including:
+ * <ul>
+ *   <li>Availability (AllowNew/Add/Delete/Visible/Enabled)</li>
+ *   <li>Verification (VerifyPropertyChange/Add/Delete/Save/...)</li>
+ *   <li>UI behavior (GetToolTip / RenderLabel / GetFormat)</li>
+ *   <li>Copy operations (GetCopy / AfterCopy)</li>
+ *   <li>Confirmation requests (SetConfirmFor*)</li>
+ * </ul>
+ *
+ * <h3>Usage</h3>
+ * Instances are created and processed by {@link OAObjectCallbackDelegate} and never
+ * directly by application code. Domain objects may implement {@code callback*}
+ * methods to participate in rule enforcement and UI interaction.
  *
  * @see OAObjectCallbackDelegate
- * @see OAObjCallback annotation for example
- * @author vvia
+ * @see com.viaoa.annotation.OAObjCallback
  */
 public class OAObjectCallback {
 	static final long serialVersionUID = 1L;

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import java.util.logging.Level;
@@ -22,9 +27,31 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Creates a filter to see if the value from the propertyPath is less or equal to the filter value.
- * @author vvia
- * @see OACompare#isLessOrEqual(Object, Object)
+ * Filter that evaluates whether a property's value is less than or equal to
+ * a specified comparison value.  The property value may be taken directly
+ * from the object or resolved through an {@link OAPropertyPath}.
+ *
+ * <p>
+ * If the property path traverses a many-relationship, an {@link OAFinder}
+ * is automatically created and a nested {@code OALessOrEqualFilter} is
+ * attached to that finder.  During evaluation the finder locates the target
+ * object and the comparison is applied to the resolved value.
+ * </p>
+ *
+ * <p>
+ * The final comparison uses
+ * {@link com.viaoa.util.OACompare#isLessOrEqual(Object, Object)}.
+ * </p>
+ *
+ * <p>
+ * Supports filtering of:
+ * <ul>
+ *   <li>OAObjects,</li>
+ *   <li>Hubs,</li>
+ *   <li>nested values via property paths,</li>
+ *   <li>multi-valued references via OAFinder.</li>
+ * </ul>
+ * </p>
  */
 public class OALessOrEqualFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OALessOrEqualFilter.class.getName());

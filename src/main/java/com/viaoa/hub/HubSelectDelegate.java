@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.ArrayList;
@@ -30,9 +35,19 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Delegate used for Hub selecting and lazy loading (fetching) from datasource.
+ * Implements data-source selection, lazy loading, and incremental fetch for a
+ * {@link Hub}.
  *
- * @author vvia
+ * <p><b>Responsibilities</b>
+ * <ul>
+ *   <li>Manage {@link OASelect} lifecycle and thread-safe fetchMore sequences.</li>
+ *   <li>Load objects incrementally while honoring Hub capacity and vector limits.</li>
+ *   <li>Handle cancellation, errors, and automatic synchronization with data sources.</li>
+ *   <li>Support full dataset retrieval when required for serialization.</li>
+ * </ul>
+ *
+ * <p>Forms the core of OA’s on-demand loading behavior for distributed and
+ * large-scale collections.
  */
 public class HubSelectDelegate {
 	private static Logger LOG = Logger.getLogger(HubSelectDelegate.class.getName());

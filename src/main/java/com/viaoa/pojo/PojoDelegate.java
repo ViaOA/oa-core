@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.pojo;
 
 import java.util.ArrayList;
@@ -7,9 +22,29 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.OAString;
 
-//qqqqqqqqqqq create unit tests for these ... make sure pojo PojoProperty with keyPos > 0 is correct
-// qqqqqqqq for pkey, importmatch, linkUnique
-
+/**
+ * Utility methods for querying {@link Pojo} metadata and interpreting which
+ * POJO properties participate in key-matching logic.
+ * <p>
+ * This delegate provides:
+ * <ul>
+ *   <li>simple lookups for {@link PojoProperty}, {@link PojoRegularProperty}
+ *       and {@link PojoLink} by name,</li>
+ *   <li>helpers to retrieve all {@link PojoProperty} instances or only those
+ *       that are marked as key parts (via {@code keyPos}), and</li>
+ *   <li>{@link com.viaoa.object.OAObjectInfo}-aware helpers to determine
+ *       whether a type has:
+ *       <ul>
+ *         <li>a primary-key based POJO key,</li>
+ *         <li>an import-match based POJO key, or</li>
+ *         <li>a "link unique" POJO key derived through associations.</li>
+ *       </ul>
+ *   </li>
+ * </ul>
+ * The key-marking is performed by {@link OAObjectPojoLoader} when the
+ * {@link Pojo} graph is created; this delegate only reads the resulting
+ * {@code keyPos} flags to answer higher-level questions.
+ */
 public class PojoDelegate {
 
 	public static PojoProperty getPojoProperty(Pojo pojo, String name) {
@@ -164,7 +199,7 @@ public class PojoDelegate {
 	public static boolean hasLinkUniqueKey(final OAObjectInfo oi) {
 		for (final PojoProperty pp : getPojoPropertyKeys(oi.getPojo())) {
 			OAPropertyInfo pi = oi.getPropertyInfo(pp.getName());
-			if (!pi.getId() && !pi.getImportMatch()) {
+			if (pi != null && !pi.getId() && !pi.getImportMatch()) {
 				return true;
 			}
 		}

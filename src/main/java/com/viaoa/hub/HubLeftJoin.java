@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,24 +21,21 @@ import com.viaoa.object.*;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAString;
 
-/*
- * Combines two hubs into a new single hub to create the equivalent of
- * a database left join, where all of the "left" side objects are in the list.
+/**
+ * Creates a live "left join" view between two {@link Hub}s, conceptually similar
+ * to a SQL LEFT JOIN.
  *
- * The combined Hub (see getCombinedHub) uses OAObject OALeftJoin&lt;A,B&gt;, where A is the
- * same class as the left Hub and B is the same as the right Hub.
+ * <p>Produces a combined Hub of {@link OALeftJoin}&lt;A,B&gt; where each row contains
+ * references to paired A (left) and B (right) objects.</p>
  *
- * A property path that uses A or B will need to use casting.
- * Example:  LeftHub=hubDepartments, RightHub=hubEmployees with last name "Jones"
- *    the combined Hub A=Dept ref, B=Employee ref, can use hubCombined with properties
- *    from A or B, with casting:
- *       hubCombined, "(com.xxx.Department)A.manager.fullName"
- *         or : OAString.cpp(Departement.class, OALeftJoin.P_A, Department.P_Manager, Employee.P_FullName)
+ * <p><b>Features</b>:
+ * <ul>
+ *   <li>Maintains full two-way synchronization via Hub listeners.</li>
+ *   <li>Propagates Active-Object changes between the joined and source Hubs.</li>
+ *   <li>Supports property-path joins and auto-updates on right-side property changes.</li>
+ * </ul>
  *
- * see HubLeftJoinDetail#
- * see HubGroupBy#
- *
- * @author vvia
+ * <p>Ideal for UI or analytical composite lists spanning related domains.</p>
  */
 public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 

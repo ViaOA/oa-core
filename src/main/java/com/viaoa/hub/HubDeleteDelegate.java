@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.reflect.Method;
@@ -20,10 +25,19 @@ import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.*;
 
 /**
- * Delegate that manages deleting an object from a Hub.
- * 
- * @author vvia
+ * Delegate that handles delete operations for {@link Hub} objects.
  *
+ * <p><b>Responsibilities</b>
+ * <ul>
+ *   <li>Perform full or selective deletions on Hub contents.</li>
+ *   <li>Route deletions to the server when running in distributed mode.</li>
+ *   <li>Maintain transactional cascade logic through {@link OACascade}.</li>
+ *   <li>Coordinate with {@link HubAddRemoveDelegate} and {@link HubDataDelegate}
+ *       to keep local and remote state synchronized.</li>
+ * </ul>
+ *
+ * <p>Implements both client-side and server-side delete strategies, ensuring
+ * correct removal from master/detail relationships and data sources.
  */
 public class HubDeleteDelegate {
 

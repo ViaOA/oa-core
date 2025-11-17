@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.scheduler;
 
 import java.util.ArrayList;
@@ -17,14 +32,18 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
 
-/*
- * Used to set date[time] property values for an Hub.activeObject that has calendar properties.
- * Includes an OAScheduler callback that can be used to assist in selecting a date[time].  
- * 
- * @param <F> from object
- * @param <T> scheduler object
- * 
- * @author vvia
+/**
+ * Controller used for selecting and assigning schedule date–time values to the
+ * active object of a {@link com.viaoa.hub.Hub}. The controller interprets the
+ * relationship between the object being scheduled and the schedule object
+ * referenced by a property path, determines the scheduling mode, and assists
+ * in locating, creating, or updating the associated schedule entry. <p>
+ *
+ * The controller supports models where schedule objects are shared, owned,
+ * or created through link objects. It can operate on either date–time
+ * properties or separate date and time properties, performs availability
+ * checks using {@link OAObjectSchedulerDelegate}, and updates the selected
+ * schedule object accordingly.
  */
 public class OASchedulerController<F extends OAObject, T extends OAObject> {
 
@@ -181,7 +200,7 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
                 if (ppDateTimeFrom != null) {
                     Object objx = obj.getProperty(ppDateTimeFrom);
                     if (objx == null || !objx.equals(dtFrom)) return false;
-                    Object bjx = obj.getProperty(ppDateTimeTo);
+                    objx = obj.getProperty(ppDateTimeTo);
                     if (objx == null || !objx.equals(dtTo)) return false;
                 }
                 else {

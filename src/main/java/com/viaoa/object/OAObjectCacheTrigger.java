@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.ArrayList;
@@ -19,9 +24,35 @@ import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 
 /**
- * This is used to listen to the OAObjectCache for objects that match filter criteria and then call the onTrigger method.
- * 
- * @author vvia
+ * Reactive trigger that monitors the global {@link OAObjectCacheDelegate}
+ * and invokes {@link #onTrigger(OAObject)} when an object of the target
+ * class satisfies specified filter and property-path conditions.
+ *
+ * <p>OAObjectCacheTrigger generalizes {@link OAObjectCacheFilter} by
+ * attaching {@link OATrigger}s to dependent property paths, allowing
+ * automatic response when any linked property changes, even across
+ * associations.</p>
+ *
+ * <p><b>Core Behavior</b>:
+ * <ul>
+ *   <li>Registers a class-level {@link OAObjectCacheListener}.</li>
+ *   <li>Evaluates one or more {@link com.viaoa.util.OAFilter}s.</li>
+ *   <li>Creates dynamic {@link OATrigger}s for dependent property paths.</li>
+ *   <li>Calls {@link #onTrigger(OAObject)} when criteria are met.</li>
+ * </ul>
+ *
+ * <p><b>Usage Example</b>:</p>
+ * <pre>
+ * new OAObjectCacheTrigger&lt;Invoice&gt;(Invoice.class, inv -&gt; inv.getTotal() &gt; 1000,
+ *                                    "customer.region")
+ * {
+ *     public void onTrigger(Invoice inv) {
+ *         alertHighValue(inv);
+ *     }
+ * };
+ * </pre>
+ *
+ * @param <T> OAObject subtype observed
  */
 public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilter<T> {
     // Note: this code very similar to OAObjectCacheFilter

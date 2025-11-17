@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.ref.WeakReference;
@@ -21,12 +26,36 @@ import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OANotExist;
 
-// 20140225 redone to simplify property locking using CAS
-
 /**
- * Manages OAObject.properties, which are used to store references (OAObjects, Hubs, OAObjectKey) and misc values. Stores as name/value in a
- * flat object array, where even positions are property names and odd positions are the value, which can be null. This uses a flat array to
- * make it as efficient as possible for the oaObject with as little overhead as possible.
+ * Internal delegate responsible for storing and managing property values on
+ * OAObject instances. This includes primitive and simple properties, object
+ * references, and Hub-based collection links.
+ *
+ * <p>Values are stored compactly as name/value pairs inside OAObject, allowing
+ * efficient memory usage and fast access without requiring a Map structure.
+ * Support for lazy loading is built in: when a reference property contains an
+ * OAObjectKey instead of a loaded OAObject, resolution occurs on demand and
+ * the real object is substituted transparently.</p>
+ *
+ * <p>Relationship integrity is automatically enforced through metadata from
+ * OALinkInfo. Setting a reference updates the reverse side of the relationship,
+ * ensuring the OA Object Graph always remains consistent without developer
+ * intervention. Foreign key assignment and identity reconciliation are also
+ * handled internally.</p>
+ *
+ * <p>Property changes propagate to the OAObjectEditDelegate for dirty tracking,
+ * trigger evaluation, and persistence synchronization. This ensures that all
+ * updates are recorded, distributed events reflect the correct state, and
+ * business rules execute in the proper sequence.</p>
+ *
+ * <p>This delegate is a core part of the OA runtime, providing automatic Graph
+ * behavior driven entirely by metadata, supporting offline, lazy, and highly
+ * dynamic application architectures.</p>
+ *
+ * @see OAObjectEditDelegate
+ * @see OAObjectInfo
+ * @see OALinkInfo
+ * @see OAObject
  */
 public class OAObjectPropertyDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectPropertyDelegate.class.getName());

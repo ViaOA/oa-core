@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.comm.multiplexer.io;
 
 import java.io.*;
@@ -19,11 +24,45 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
- * Manages multiplexed server socket connections. This will use a "real" ServerSocket to accept new
- * "real" client socket connections. The real connections are then managed by a
- * MultiplexerSocketController so that new sockets can be multiplexed inside the "real" socket.
- * 
- * @author vvia
+ * Manages server-side multiplexed connections. A single real
+ * {@link java.net.ServerSocket} is used to accept client connections,
+ * and each accepted socket is wrapped by a {@link MultiplexerSocketController}
+ * that can host many {@link VirtualSocket} channels.
+ *
+ * <p>
+ * Responsibilities:
+ * </p>
+ *
+ * <ul>
+ *   <li>Accepting new client connections on the real ServerSocket.</li>
+ *   <li>Creating a {@code MultiplexerSocketController} per client connection.</li>
+ *   <li>Tracking all live controllers and aggregating read/write statistics.</li>
+ *   <li>Managing named {@link VirtualServerSocket} instances and routing
+ *       new virtual connections to their {@link java.net.ServerSocket#accept()}
+ *       calls.</li>
+ *   <li>Timing out connections that fail to complete the multiplexer handshake
+ *       within a fixed period.</li>
+ *   <li>Propagating throttle limits to each connection's output controller.</li>
+ * </ul>
+ *
+ * <p>
+ * Server code typically:
+ * </p>
+ *
+ * <ol>
+ *   <li>Creates a real {@link java.net.ServerSocket}.</li>
+ *   <li>Calls {@link #start(ServerSocket)} to begin accepting connections.</li>
+ *   <li>Uses {@link #getServerSocket(String)} to obtain named
+ *       {@link VirtualServerSocket} instances.</li>
+ *   <li>Calls {@code accept()} on the VirtualServerSocket to obtain
+ *       {@link VirtualSocket} connections.</li>
+ * </ol>
+ *
+ * <p>
+ * Hook methods {@link #onClientConnect(Socket, int)} and
+ * {@link #onClientDisconnect(int)} can be overridden to integrate logging,
+ * session tracking, or custom connection policies.
+ * </p>
  */
 public class MultiplexerServerSocketController {
     private static Logger LOG = Logger.getLogger(MultiplexerServerSocketController.class.getName());

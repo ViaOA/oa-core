@@ -1,29 +1,44 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
 /**
- * Used to represent the unique guid and ID property value(s) of an OAObject. <br>
- * <p>
- * Note: to be "lighter" the guid can exist (!= 0) and the objectIds can be null, or viceversa.  
- * 
- *<p>   
- * Use {@link OAObjectKeyDelegate#isForSameOAObject(Class, OAObjectKey, OAObjectKey)} to determine if the OAObjectKey represents (and is equal) to another value.
- * example: an Employee with ID=8998, guid=123 ...  ok1 guid = 123,  ok2 objectIds[] = {8998} ... ok1 and ok2 will be equals if using Delegate.
- * <p>  
- * 
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ * Lightweight identity holder for OAObject instances. An OAObjectKey represents
+ * an entity using a globally unique GUID and optional persistent/business key
+ * values (primary key properties).
+ *
+ * <p>The GUID is assigned at OAObject creation time and never changes. It defines
+ * the universal runtime identity for an object across caching, graph navigation,
+ * distributed synchronization, and remote references.</p>
+ *
+ * <p>Business key values correspond to persistent identity and may be used when
+ * the GUID is not yet known (e.g., object referenced only by foreign key in a
+ * database). When both GUID and business key are provided, GUID takes precedence
+ * for equality and identity resolution.</p>
+ *
+ * <p>OAObjectKey enables references to objects that are not yet loaded or that
+ * exist in remote caches, supporting lazy loading, identity reconciliation,
+ * and efficient distributed messaging where only GUIDs are transmitted.</p>
+ *
+ * @see OAObjectKeyDelegate
+ * @see OAObject
+ * @see OAObjectCacheDelegate
  */
 public class OAObjectKey implements Serializable, Comparable<Object> {
 	static final long serialVersionUID = 1L;
@@ -105,7 +120,8 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	@Override
 	public int hashCode() {
 	    int hash = Long.hashCode(guid);
-	    hash = 31 * hash + Arrays.hashCode(objectIds);
+//qqqqqqqqqqq only cache on guid	    
+//	    hash = 31 * hash + Arrays.hashCode(objectIds);
 	    return hash;
 	}
 	

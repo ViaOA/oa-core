@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import com.viaoa.object.OAObject;
@@ -8,16 +23,48 @@ import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
 
 /**
- * This is used to allow for creating new object for a hub, but waiting until it is ready to be submitted before adding it to the Hub.
- * <p>
- * This is done by using a second hub to contain the new object. This second hub will be configured to act the same as the mainHub. For
- * example, if the mainHub has a masterObject/Hub.
- * <p>
- * This can be used by wizards that create new objects, or web pages, etc. to allow a new object to be created and then added to the mainHub
- * when it is ready to submit.
+ * Manages the creation and staging of new {@link OAObject OAObjects} before they
+ * are formally added to a main {@link Hub}.
  *
- * @author vvia
- * @param <F>
+ * <p>This helper is used when a UI workflow or wizard needs to prepare new
+ * objects without immediately committing them to the main Hub’s list.  A
+ * temporary "new object" Hub mirrors the configuration of the main Hub so that
+ * links, filters, and master relationships are preserved while allowing
+ * isolation until submission.</p>
+ *
+ * <h3>Usage</h3>
+ * <pre>{@code
+ * Hub<Customer> hubMain = new Hub<>(Customer.class);
+ * HubNewObject<Customer> hubNew = new HubNewObject<>(hubMain);
+ *
+ * Customer c = hubNew.createNewObject();
+ * hubNew.getNewObjectHub().add(c);
+ * ...
+ * hubNew.submit();  // moves new Customer to hubMain
+ * }</pre>
+ *
+ * <h3>Behavior</h3>
+ * <ul>
+ *   <li>Creates a secondary Hub configured with the same select-where
+ *       filters and master relationships as the main Hub.</li>
+ *   <li>Automatically disables {@code autoAdd} for staged objects so they
+ *       aren’t re-added by select-all Hubs.</li>
+ *   <li>Re-enables {@code autoAdd} when objects are removed or cancelled.</li>
+ *   <li>Handles ID assignment through {@link OAObjectDSDelegate#assignId}
+ *       when submitting newly created objects that require persistence keys.</li>
+ *   <li>Provides {@link #submit()} and {@link #cancel()} operations to
+ *       either move staged objects to the main Hub or discard them safely.</li>
+ * </ul>
+ *
+ * <h3>Design Notes</h3>
+ * <ul>
+ *   <li>Uses {@link HubCombined} and {@link HubFilter} to bind the temporary
+ *       Hub into the main Hub’s relationship graph without polluting its data.</li>
+ *   <li>Ensures {@link OAObjectDelegate#initializeAfterLoading} is called
+ *       after reflection-based construction for proper default initialization.</li>
+ *   <li>Thread-local safety handled via {@link OAThreadLocalDelegate#setLoading}
+ *       to suppress side-effects during object creation.</li>
+ * </ul>
  */
 public class HubNewObject<F extends OAObject> {
 

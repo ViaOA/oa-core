@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.rest;
 
 import java.io.BufferedReader;
@@ -56,6 +71,7 @@ import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAHttpUtil;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
+
 
 /* Demos
 
@@ -189,6 +205,73 @@ OARestClient CLI (Todo)
  * Includes an annotation checker that is useful for finding any configuration errors.
  *
  * @see OARestClass, OARestMethod, OARestParam annotations
+ * @author vvia
+ */
+
+
+/**
+ * REST-based remoting client for OA. This class allows a Java interface,
+ * annotated with {@code OARestClass}, {@code OARestMethod}, and
+ * {@code OARestParam}, to be invoked remotely over HTTP. At runtime
+ * the client creates a dynamic proxy for the interface and translates
+ * each method invocation into an HTTP request, returning the result as
+ * strongly typed Java objects, OAObjects, Hubs, lists, or primitive values.
+ *
+ * <p>
+ * The client also provides direct access to OA REST-style endpoints for
+ * retrieving and manipulating OAObjects on a remote server. Convenience
+ * methods (e.g., {@code callOAGet}, {@code callOASelect},
+ * {@code callOAInsert}, {@code callOAUpdate}, {@code callOADelete})
+ * handle the full object lifecycle using JSON representations and
+ * property-path based graph expansion.
+ * </p>
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li><b>Dynamic proxy invocation</b> – Annotated interfaces are bound at
+ *       runtime and executed as remote REST calls.</li>
+ *
+ *   <li><b>HTTP method binding</b> – Supports GET, POST, PUT, PATCH,
+ *       and DELETE using annotation metadata.</li>
+ *
+ *   <li><b>Typed return values</b> – Automatically converts JSON responses
+ *       into Java types, including OAObjects, Hubs, Lists, arrays, and
+ *       simple primitives.</li>
+ *
+ *   <li><b>Metadata-driven invocation</b> – Builds and caches reflection
+ *       metadata for interfaces, methods, and parameters, including URL
+ *       templates, query parameters, and JSON body rules.</li>
+ *
+ *   <li><b>Invocation diagnostics</b> – Every call produces an
+ *       {@link com.viaoa.remote.rest.info.OARestInvokeInfo} instance that
+ *       captures request/response details, HTTP headers, timing, errors, and
+ *       payloads.</li>
+ *
+ *   <li><b>OAObjectGraph integration</b> – Provides a REST-compatible
+ *       mechanism for selecting, retrieving, updating, inserting, and deleting
+ *       OAObjects without requiring the Multiplexer remoting layer.</li>
+ *
+ *   <li><b>Optional relaxed SSL</b> – Includes a permissive HTTPS configuration
+ *       for development environments using self-signed certificates.</li>
+ * </ul>
+ *
+ * <h2>Intended Usage</h2>
+ * <p>
+ * This client is ideal when applications require:
+ * </p>
+ * <ul>
+ *   <li>a lightweight alternative to OA's Multiplexer remoting,</li>
+ *   <li>Java-to-Java REST invocation using strongly typed interfaces,</li>
+ *   <li>integration with OAObjectGraph over a servlet-based HTTP layer,</li>
+ *   <li>simple synchronous remote calls for microservices or mobile clients.</li>
+ * </ul>
+ *
+ * <p>
+ * Although lightweight, {@code OARestClient} fully supports OAObject graph
+ * semantics, including cascading property paths and JSON-based serialization
+ * via {@link com.viaoa.json.OAJson}.
+ * </p>
+ *
  * @author vvia
  */
 public class OARestClient {

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.multiplexer;
 
 import java.io.*;
@@ -40,26 +45,49 @@ import com.viaoa.util.OACompressWrapper;
 import com.viaoa.util.OAReflect;
 
 /**
- * Server component used to allow remoting method calls with Clients. Uses a MultiplexerServer for
- * communication with clients.
- * <p>
- * Different ways to create a remote object:
+ * Server-side implementation of OA's remoting layer built on top of the
+ * Multiplexer messaging subsystem. This class receives remote method calls
+ * from connected clients, invokes the corresponding Java methods, and
+ * returns results back using either direct socket response or async queues.
+ *
+ * <p>This is the central coordinator for:
+ * <ul>
+ *   <li>Binding server objects for client lookup</li>
+ *   <li>Managing broadcast objects where one call fans out to all clients</li>
+ *   <li>Maintaining session state for each connected client</li>
+ *   <li>Performing distributed garbage collection (DGC) of remote objects</li>
+ *   <li>Invoking methods on client-side remote objects (StoC)</li>
+ *   <li>Handling queued async messaging through OACircularQueue</li>
+ * </ul>
+ *
+ * <p>Major features:
  * <ol>
- * <li>Server can bind an Object so that clients can then do a lookup to get the object, and all method
- * calls will be invoked on the server.
- * <li>A method that has a remote class parameter. This can be used by client or server - where a method
- * argument is a remote object.
- * <li>A method returns a remote class. This can be used by client or server - where a method returns a
- * remote object.
- * <li>The server can create a single remote object, that will then "broadcast" to all clients that have
- * it.
+ *   <li><b>Lookup bindings</b> – server publishes remote objects (interfaces)</li>
+ *   <li><b>Queue-based async message processing</b>
+ *       where high-volume calls avoid waiting on socket round-trips</li>
+ *   <li><b>Session tracking</b> – manages all sockets, virtual sockets, and
+ *       class-descriptor caches per client</li>
+ *   <li><b>Broadcast remoting</b> – a single method call triggers remote
+ *       invocations on all subscribed clients</li>
+ *   <li><b>Remote proxies for client objects</b> – server can invoke client-owned objects</li>
+ *   <li><b>Distributed GC</b> – removes stale remote objects via WeakReference polling</li>
  * </ol>
  *
- * Note:
- * OARemoteThread is used to process requests.
- * <p> 
- * DEBUG'ing - uses OAObject.getDebugMode(), if true then remote methods wont timeout.
- * 
+ * <p>Internally it uses:
+ * <ul>
+ *   <li>{@link com.viaoa.comm.multiplexer.OAMultiplexerServer}</li>
+ *   <li>{@link com.viaoa.comm.multiplexer.io.VirtualServerSocket}</li>
+ *   <li>{@link com.viaoa.remote.info.RequestInfo}</li>
+ *   <li>{@link com.viaoa.remote.info.BindInfo}</li>
+ * </ul>
+ *
+ * <p>This provides a lightweight, high-performance, Java-native RPC layer
+ * that avoids the complexity of ORMs, proxies, and heavyweight frameworks.
+ *
+ * <p>It is a foundational building block that enables OA applications to
+ * distribute object graphs, send messages, and call methods across
+ * multiple JVMs without requiring REST, gRPC, or WebSockets.
+ *
  * @author vvia
  */
 public class OARemoteMultiplexerServer {

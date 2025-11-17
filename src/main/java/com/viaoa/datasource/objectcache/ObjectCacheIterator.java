@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.objectcache;
 
 import java.util.ArrayList;
@@ -17,9 +22,22 @@ import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.util.OAFilter;
 
 /**
- * Used to find and filter objects in OAObjectCache.
- * 
- * @author vvia
+ * Iterator over objects stored in the OA object cache.
+ * <p>
+ * {@code ObjectCacheIterator} retrieves batches of objects from
+ * {@link com.viaoa.object.OAObjectCacheDelegate} that match a given
+ * {@link com.viaoa.util.OAFilter}. It is used by
+ * {@link OADataSourceObjectCache#select} to perform in-memory queries.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Fetches objects incrementally (default batch = 100).</li>
+ *   <li>Applies optional filter predicates during iteration.</li>
+ *   <li>Supports {@link #setMax(int)} to cap the number of returned objects.</li>
+ *   <li>Thread-safe for sequential iteration within a single thread.</li>
+ * </ul>
+ *
+ * @param <T> the OAObject type being iterated
  */
 public class ObjectCacheIterator<T> implements OADataSourceIterator {
 	protected Class<T> clazz;

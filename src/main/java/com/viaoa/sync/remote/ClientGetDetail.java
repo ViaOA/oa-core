@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.remote;
 
 import java.util.*;
@@ -29,11 +34,45 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OANotExist;
 
 /**
- * Used by ClientSession on Server, that creates an object graph for getDetail(..) remote requests. 
- * This class will return the objects and property paths, along with extra objects to include. 
- * This works directly with OASyncClient.getDetail(..), returning a custom serializer for it.
- * 
- * @author vvia
+ * Server-side helper used during {@code RemoteClient.getDetail(...)} operations.
+ * <p>
+ * {@code ClientGetDetail} is responsible for constructing the object graph that
+ * should be returned to a client when it requests the value of a reference
+ * property or hub (detail) from a master object. It determines:
+ * <ul>
+ *   <li>the master object and its siblings,</li>
+ *   <li>the requested property value,</li>
+ *   <li>which additional related objects must be sent so that the client
+ *       receives a consistent subset of the object graph,</li>
+ *   <li>how much reference depth should be loaded for master and detail
+ *       objects,</li>
+ *   <li>what extra data (e.g., sibling values) must accompany the response,</li>
+ *   <li>and which objects have already been fully sent to the client to avoid
+ *       redundant transmission.</li>
+ * </ul>
+ *
+ * <h2>Synchronization Support</h2>
+ * The class updates a per-client GUID registry that tracks which OAObjects
+ * exist on the client. This is used by {@code OASyncServer} to determine which
+ * sync messages should be routed or filtered for that client.
+ *
+ * <h2>Serialization</h2>
+ * {@code ClientGetDetail} produces an {@link OAObjectSerializer} with a
+ * custom serializer callback that:
+ * <ul>
+ *   <li>selectively includes or excludes reference properties,</li>
+ *   <li>avoids resending objects previously sent with all references,</li>
+ *   <li>includes only required properties for siblings,</li>
+ *   <li>limits object count and compressed size to prevent large payloads.</li>
+ * </ul>
+ *
+ * <h2>Performance</h2>
+ * Several operations are time-bound (typically 40–85 ms) to prevent blocking
+ * the main server thread. Objects that cannot be loaded within budget may be
+ * scheduled for background loading.
+ *
+ * <p>
+ * This class is central to OA's "detail on demand" remote-loading mechanism.
  */
 public class ClientGetDetail {
 	private static Logger LOG = Logger.getLogger(ClientGetDetail.class.getName());

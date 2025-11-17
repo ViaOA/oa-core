@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.comm.multiplexer.io;
 
 import java.io.BufferedInputStream;
@@ -26,11 +31,24 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Manages the "real" socket connection and the multiplexed MultiplexerSockets that use it. There will be an MultiplexerSocketController at both ends of a real socket: client and server. This class will manage the transport layer, encryption, compression and validation.
- * <p>
- * Each client will have one SC on the client, and a matching SC on the server. A server will have a SC for each "real" client connection, all managed by MultiplexerServerSocketController.
- * 
- * @author vvia
+ * Manages a single physical TCP connection and multiplexes multiple
+ * {@link VirtualSocket} instances across it. A MultiplexerSocketController
+ * exists on both the client and server sides and is responsible for:
+ *
+ * <ul>
+ *   <li>Performing the connection handshake and protocol validation.</li>
+ *   <li>Reading frames from the real socket and dispatching them to the
+ *       correct VirtualSocket.</li>
+ *   <li>Sending commands (create, close, ping, shutdown) over the shared
+ *       connection.</li>
+ *   <li>Creating and tracking VirtualSockets for this connection.</li>
+ *   <li>Managing socket lifecycle, including graceful and error-based closes.</li>
+ * </ul>
+ *
+ * A single real socket may support many VirtualSockets simultaneously.  
+ * This controller guarantees safe, serialized access to the underlying
+ * input/output streams, and ensures that both endpoints maintain a
+ * synchronized view of the active virtual channels.
  */
 public class MultiplexerSocketController {
     private static Logger LOG = Logger.getLogger(MultiplexerSocketController.class.getName());

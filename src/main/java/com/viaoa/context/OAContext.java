@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.context;
 
 import java.lang.ref.WeakReference;
@@ -21,12 +26,35 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 
 /**
- * Allows storing objects that are associated with a context
- * <p>
- * 1: OAObject as the login user. <br>
- * 2: OAUserAccess Used by ObjectCallback and other code to work with OAObject permissions.
+ * Provides the thread-scoped application context used by OA for permission
+ * evaluation, user identity, and context-specific Hub and OAUserAccess
+ * associations. <p>
  *
- * @author vvia
+ * OAContext ties together the OA thread-local context mechanism
+ * ({@link com.viaoa.object.OAThreadLocalDelegate}), the logged-in user
+ * (represented as an {@link com.viaoa.object.OAObject}), and any
+ * {@link com.viaoa.context.OAUserAccess} rules that determine visibility and
+ * enabled/disabled permissions throughout an OAObject graph. <p>
+ *
+ * The context API allows callers to:
+ * <ul>
+ *   <li>Associate an OAObject with a context as the “current user”.</li>
+ *   <li>Associate a Hub containing the user as the active object.</li>
+ *   <li>Associate OAUserAccess instances with a context.</li>
+ *   <li>Query for admin, super-admin, and “allow edit processed” permissions
+ *       using pluggable property paths.</li>
+ *   <li>Retrieve context-specific Hub, OAObject, or OAUserAccess values.</li>
+ * </ul>
+ *
+ * All context-based associations are stored in thread-safe maps using
+ * {@link WeakReference} so entries automatically expire when the context is no
+ * longer referenced. The special server thread (no context set) receives
+ * elevated default permissions when {@link com.viaoa.sync.OASync#isServer()}
+ * is true.
+ *
+ * OAContext acts as the bridge between the OA object graph, thread-local
+ * execution state, and permission-enforcement mechanisms such as
+ * {@link com.viaoa.object.OAObjectCallback}.
  */
 public class OAContext {
 	private static final ConcurrentHashMap<Object, WeakReference<Hub<? extends OAObject>>> hmContextHub = new ConcurrentHashMap<>();

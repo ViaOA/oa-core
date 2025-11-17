@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.HashSet;
@@ -23,11 +28,19 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAFilter;
 
 /**
- * Main delegate used for working with the Active Object for a Hub. All methods that have an "_" prefix should not be called directly, as
- * there is a calling method that should be used, that performs additional functionality. If a method does not have the "_" prefix and is
- * accessible, then it is ok to call it, but will most likely have a matching method name in the Hub class.
+ * Delegate for managing Active Object (AO) state within a {@link Hub}.
+ * <p>
+ * Responsible for setting, validating, and propagating AO changes through linked
+ * or shared Hubs while maintaining event integrity. Also prevents recursion
+ * and enforces synchronization between master and detail Hubs.
  *
- * @author vincevia
+ * <p><b>Responsibilities</b>
+ * <ul>
+ *   <li>Set and retrieve Active Object for the Hub and its dependents.</li>
+ *   <li>Propagate AO changes across shared, linked, or detail Hubs.</li>
+ *   <li>Prevent circular AO updates through thread-local flags.</li>
+ *   <li>Fire {@link HubEvent}s to listeners after AO updates.</li>
+ * </ul>
  */
 public class HubAODelegate {
 	private static Logger LOG = Logger.getLogger(HubAODelegate.class.getName());

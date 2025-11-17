@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.xml;
 
 import java.io.File;
@@ -47,13 +52,54 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
 
 /**
- * OAXMLReader using a SAXParser to parse and automatically create OAObjects from a XML file. This will do the following to find the
- * existing object: 1: if OAProperty.importMatch, then it will search to find a matching object 2: if objectId props, then it will search to
- * find a matching object 3: use guid if not found, then a new object will be created.
+ * Legacy XML reader for OA's original (v1.x) XML serialization format.
+ * <p>
+ * {@code OAXMLReader1} provides backward compatibility for older OA
+ * applications and tools that produced or consumed the first-generation
+ * OAXML structure. It is automatically used by {@link OAXMLReader} when an
+ * input stream contains a root element with {@code version="1.x"}.
  *
- * NOTE: 20230917 Use OAXml instead (based on OAJson that uses jackson)
- * 
- * @see OAXMLWriter
+ * <h2>Capabilities</h2>
+ * This reader supports the full v1 XML feature set:
+ * <ul>
+ *   <li>creation of OAObjects using metadata (no reflection-based access),</li>
+ *   <li>ID-, GUID-, and type-based object matching,</li>
+ *   <li>two-phase loading for resolving references and many-side links,</li>
+ *   <li>Hub population for many-valued relationships,</li>
+ *   <li>property assignment using {@code OAPropertyInfo} and conversion rules,</li>
+ *   <li>import matching for merging existing objects with XML data.</li>
+ * </ul>
+ *
+ * <h2>Format Differences vs. Modern OA XML</h2>
+ * The legacy format differs from the current OAXML in several ways:
+ * <ul>
+ *   <li>link and reference information is encoded using older attribute names,</li>
+ *   <li>Hub elements are represented with simpler tag conventions,</li>
+ *   <li>property type conversion is performed locally rather than via
+ *       {@link com.viaoa.converter.OAConverter} plugins,</li>
+ *   <li>CDATA and binary support is limited compared to modern readers.</li>
+ * </ul>
+ *
+ * <h2>Lifecycle</h2>
+ * Reading proceeds in two stages:
+ * <ol>
+ *   <li><b>Scan Phase</b> – creates objects, applies primitive properties,
+ *       records unresolved references.</li>
+ *   <li><b>Resolve Phase</b> – resolves all link-based relationships using the
+ *       temporary reference maps built during scanning.</li>
+ * </ol>
+ *
+ * <h2>Usage Notes</h2>
+ * <ul>
+ *   <li>This class is not intended for new development.</li>
+ *   <li>It remains necessary for legacy data import and migration tools.</li>
+ *   <li>Modern OA applications should rely on {@link OAXml} and
+ *       {@link OAXMLReader} instead.</li>
+ * </ul>
+ *
+ * <p>
+ * Although the parsing logic uses older conventions, it remains stable and
+ * fully compatible with OA's modern object graph and metadata system.
  */
 public class OAXMLReader1 extends DefaultHandler {
 	private String fileName;

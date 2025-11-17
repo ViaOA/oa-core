@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.query;
 
 import java.util.ArrayList;
@@ -38,15 +43,21 @@ import com.viaoa.util.OAArray;
 import com.viaoa.util.OAString;
 
 /**
- * Used internally for queries/selects to convert OA object queries into SQL.<br>
- * Uses JOINs or LEFT OUTER JOINS to connect super/sub classes and ONE type references.<br>
- * Uses EXISTS for MANY type references.<br>
- * Will work with any valid object path.<br>
- * Allows OR, ||, AND, &amp;&amp;, (), =, !=, NULL, &lt;, &lt;=, &gt;, &gt;=, LIKE, NOTLIKE
+ * Translates OA object queries into executable SQL statements.
  * <p>
- * Converts to SQL using OAQueryTokenizer to parse object query into tokens, along with Database to Object Mapping.
- *
- * @see #getUseDistinct to see if the query will require the use of the "DISTINCT" keyword.
+ * Handles property paths, inheritance joins, and link-table relationships. Supports both JOIN and EXISTS-based
+ * translation modes depending on database capabilities and query complexity.
+ * <p>
+ * Features:
+ * <ul>
+ *   <li>Parses OA query syntax using {@link com.viaoa.datasource.query.OAQueryTokenizer}.</li>
+ *   <li>Generates SELECT, FROM, WHERE, and ORDER BY clauses with proper aliasing and quoting.</li>
+ *   <li>Supports prepared statements and parameter substitution.</li>
+ *   <li>Automatically applies DISTINCT when many-side joins are detected.</li>
+ *   <li>Resolves super/subclass table hierarchies through {@link com.viaoa.datasource.jdbc.db.Database} metadata.</li>
+ * </ul>
+ * This class is used internally by {@link com.viaoa.datasource.jdbc.db.DataAccessObject}
+ * when creating or executing dynamic SQL queries.
  */
 public class QueryConverter {
 	private static Logger LOG = Logger.getLogger(QueryConverter.class.getName());

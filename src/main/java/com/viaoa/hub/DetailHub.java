@@ -1,49 +1,51 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 /**
-    A DetailHub is a Hub that automatically contains the object(s) of a property from the active object
-    of another Hub (master).  This is referred as a <i>Master/Detail</i> relationship.
-    <p>
-    Whenever the active object of the master Hub is changed, the Detail Hub will automatically be updated
-    to include the objects of a property in the active object.
-    <p>
-    Example:<br>
-    A Department Class has many Employees (using a Hub).  A DetailHub can be created using a Hub of Department objects
-    as the master Hub.  This DetailHub will automatically contain the Employee objects for whichever Department is
-    currenly the active object in the master Hub.
-    <br>
-    &nbsp;&nbsp;&nbsp;<img src="doc-files/Hub3.gif" alt="">
-    <br>
-    Using the diagram, the detail Hub is populated with the Employee objects from the Department that is the
-    active object in the master Hub. Actually, the detail Hub is not really populated, but rather it uses
-    the same Data that the Dept B Employee Hub is using. If an Employee object is added to the active Department's
-    Employee Hub, the Detail Hub would also contain this Employee. 
-    <p>
-    In this example, a UI Component (ex: JTable) could be setup to list the Department objects and another UI Component
-    (ex: JTable) could list the Employee objects from the Department that is selected. If another Department is
-    selected, then the JTable listing the Employees will show that Departments Employee objects.
-    <pre>
-    * Hub hubDept = new Hub(Department.class);   // create new Hub for Department objects
-    * hubDept.select();      // select all departments from datasource
-    * Hub hubEmp = new HubDetail(hubDept, "Employees"); // create Hub that will automatically
-    *                                                   //  contain the Employee objects
-    *                                                   //  for the active Department
-    * // Or
-    * Hub hubEmp = new HubDetail(hubDept,"Employees", "lastName, firstName"); // sets sort order
-    *
-    </pre>
-    @see Hub
-*/
+ * Represents a Hub that automatically mirrors a property collection from the
+ * active object of another (master) Hub, implementing OA’s master-detail pattern.
+ *
+ * <h3>Behavior</h3>
+ * <ul>
+ *   <li>Whenever the active object in the master Hub changes, this DetailHub
+ *       updates to point to the Hub (or list) corresponding to the target
+ *       property of that active object.</li>
+ *   <li>Shares the same underlying data as the property’s Hub—no duplication.</li>
+ *   <li>Optionally shares the same active object, preserving AO synchronization
+ *       across master and detail levels.</li>
+ * </ul>
+ *
+ * <h3>Example</h3>
+ * <pre>{@code
+ * Hub<Department> hubDept = new Hub<>(Department.class);
+ * hubDept.select();
+ * Hub<Employee> hubEmp = new DetailHub<>(hubDept, "employees");
+ * }</pre>
+ * When the active Department changes in {@code hubDept}, {@code hubEmp}
+ * automatically represents that Department’s employees.
+ *
+ * <h3>Design Notes</h3>
+ * <ul>
+ *   <li>All constructors delegate to {@link Hub#setMasterHub} with variations
+ *       for property path, class type, and AO sharing.</li>
+ *   <li>Lifetime is managed by a weak reference in the master; explicit cleanup
+ *       is unnecessary.</li>
+ * </ul>
+ */
 public class DetailHub<TYPE> extends Hub<TYPE> {
 
     /**

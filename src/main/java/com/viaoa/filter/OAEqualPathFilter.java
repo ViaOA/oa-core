@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import java.util.logging.Logger;
@@ -23,10 +28,22 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Creates a filter to see if the value of a Hub.AO propertyPath is the same as the propertyPath from a propertyPath of the objects being
- * selected.
+ * Filter that compares the values of two {@link OAPropertyPath} expressions
+ * on the same object (or located target object) for equality.  Both property
+ * paths are resolved and the resulting values are compared using standard
+ * OA equality rules.
  *
- * @author vvia
+ * <p>
+ * This filter supports deep property traversal: if either property path
+ * crosses a many-relationship, an {@link OAFinder} is automatically created
+ * to locate the referenced object before evaluating equality.
+ * </p>
+ *
+ * <p>
+ * Typical usage: verify that two properties on an object match each other,
+ * such as comparing foreign key fields, cross-object references, or
+ * synchronized values in a validation rule or filtered Hub.
+ * </p>
  */
 public class OAEqualPathFilter implements OAFilter {
 	private static Logger LOG = Logger.getLogger(OAEqualPathFilter.class.getName());

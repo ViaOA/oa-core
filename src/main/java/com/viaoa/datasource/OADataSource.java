@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource;
 
 import java.util.ArrayList;
@@ -24,23 +29,34 @@ import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAFilter;
 
 /**
- * Abstract class used for defining sources for Object storage. <br>
- * A dataSource can be anything, including Relational Databases, XML data, legacy database, persistent data storage, etc.
+ * Abstract base class for all OA persistence providers.
  * <p>
- * There are methods defined for updating, deleting, and using Queries to retrieve Objects. Queries are based on the structure of Objects
- * and not on the structure of the physical dataSource, and support property paths base on the object model.
- * <p>
- * The OAObject and Hub Collections have methods to automatically and naturally work with dataSources, without requiring any direct access
- * to dataSource methods.
- * <p>
- * OADataSource has static methods that are used to manage all created OADataSources. Subclasses of OADataSource register themselves with
- * the static OADataSource so that they can be <i>found</i> and used by Objects based on the Object Class, without requiring direct access
- * to the OADataSource object. <br>
- * <p>
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ * {@code OADataSource} defines the complete CRUD contract for OA's
+ * object–relational and object–remote mapping layer. Subclasses implement
+ * the physical persistence logic (e.g., JDBC, REST, memory, distributed).
  *
- * @see #getDataSource(Class)
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Automatic DataSource registration and lookup by model class.</li>
+ *   <li>Full CRUD abstraction: insert, update, delete, select, count, execute.</li>
+ *   <li>Supports property-path queries translated to native query language.</li>
+ *   <li>Transaction and batch-awareness via {@link com.viaoa.transaction.OATransaction}.</li>
+ *   <li>Supports chaining multiple DataSources (cache + remote, etc.).</li>
+ *   <li>Read-only and ignore-write safety controls.</li>
+ *   <li>Fully thread-safe registration and iteration.</li>
+ * </ul>
+ *
+ * <h2>Design Goals</h2>
+ * <ul>
+ *   <li>OAObjects remain persistence-agnostic.</li>
+ *   <li>Supports relational, document, REST, or custom storage providers.</li>
+ *   <li>Object queries automatically converted to native DS queries.</li>
+ * </ul>
+ *
  * @see OASelect
+ * @see OADataSourceIterator
+ * @see OADataSourceDelegate
+ * @see com.viaoa.datasource.jdbc.OADataSourceJDBC
  */
 public abstract class OADataSource implements OADataSourceInterface {
 	private static List<OADataSource> alDataSource = new ArrayList();

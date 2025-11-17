@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.rest.annotation;
 
 import java.lang.annotation.Documented;
@@ -17,10 +22,54 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Remoting information about remote methods using HTTP(S).
- * <p>
- * Important: this annotation needs to be added to the Java Interface, not the Impl class.
+ * Defines how a remote interface method is mapped to an HTTP(S) request when
+ * invoked through {@link com.viaoa.remote.rest.OARestClient}. The annotation
+ * configures the HTTP method, URL template, query parameters, OAObjectGraph
+ * behavior, paging, return type resolution, and server-side include rules.
  *
+ * <p>
+ * This annotation must be applied to methods on the <b>interface</b> that will
+ * be remoted. It is not used on implementation classes.
+ * </p>
+ *
+ * <h2>URL and Query Mapping</h2>
+ * <ul>
+ *   <li>{@code urlPath} supports named template tags (e.g. "/emp/{id}") or
+ *       positional tags ("/emp/?/?").</li>
+ *   <li>{@code urlQuery} defines static or template-based query parameters.</li>
+ *   <li>Parameters annotated with {@link OARestParam} fill in path and query
+ *       variables.</li>
+ * </ul>
+ *
+ * <h2>OAObjectGraph Support</h2>
+ * <p>
+ * For {@code MethodType} values such as {@code OAGet}, {@code OASearch},
+ * {@code OAInsert}, {@code OAUpdate}, and {@code OADelete}, the method
+ * dispatch is routed through {@code OARestServlet}. Additional metadata is
+ * available:
+ * </p>
+ * <ul>
+ *   <li>{@code includePropertyPath(s)}</li>
+ *   <li>{@code includeReferenceLevelAmount}</li>
+ *   <li>{@code returnClass}</li>
+ * </ul>
+ *
+ * <h2>Paging</h2>
+ * <p>
+ * {@code pageSize} controls server-side pagination for collection results.
+ * A {@code PageNumber} parameter may also be supplied using
+ * {@link OARestParam.ParamType#PageNumber}.
+ * </p>
+ *
+ * <h2>MethodType</h2>
+ * <p>
+ * The {@link MethodType} enum defines how the method maps to REST behavior.
+ * Some types derive URL paths automatically when OAObjectGraph operations are
+ * involved.
+ * </p>
+ *
+ * @see com.viaoa.remote.rest.OARestClient
+ * @see com.viaoa.remote.rest.annotation.OARestParam
  * @author vvia
  */
 @Documented

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.xml;
 
 import java.io.File;
@@ -43,17 +48,40 @@ import com.viaoa.util.OAConverter;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
 
-// 20150906 created to be correct xml, removing OA specific format and tags. old version renamed to OAXMLReader1
-
 /**
- * OAXMLReader using a SAXParser to parse and automatically create OAObjects from an XML file. This will do the following to find the
- * existing object: 1: if OAProperty.importMatch, then it will search to find a matching object 2: if objectId props, then it will search to
- * find a matching object 3: use guid if not found, then a new object will be created.
+ * SAX-based XML reader capable of reconstructing full OAObject graphs from the
+ * XML format produced by {@link OAXMLWriter}.  
+ * <p>
+ * {@code OAXMLReader} supports:
+ * <ul>
+ *   <li>GUID-based identity resolution,</li>
+ *   <li>ID-property reconstruction via {@link OAObjectKey},</li>
+ *   <li>import-match rules defined on the OA model,</li>
+ *   <li>Hub population for MANY-valued links,</li>
+ *   <li>encrypted CDATA blocks (via {@link #setDecodeMessage}),</li>
+ *   <li>polymorphic object creation based on XML class attributes.</li>
+ * </ul>
  *
- * NOTE: 20230917 Use OAXml instead (based on OAJson that uses jackson)
+ * <h2>Loading Process</h2>
+ * <ol>
+ *   <li><b>Parse Phase</b>: Builds nested HashMaps representing XML hierarchy.</li>
+ *   <li><b>Preload Pass</b>: Creates OAObjects, reads IDs, allocates GUIDs.</li>
+ *   <li><b>Load Pass</b>: Populates properties, links, and Hub memberships.</li>
+ * </ol>
  *
+ * <h2>Legacy Compatibility</h2>
+ * If the root element is {@code &lt;OAXML version="1.x"&gt;} the reader delegates
+ * to {@link OAXMLReader1}.
  *
- * @see OAXMLWriter
+ * <h2>Customization Hooks</h2>
+ * Subclasses may override:
+ * <ul>
+ *   <li>{@link #convertToObject(String, String, Class)}</li>
+ *   <li>{@link #getObject(Class, HashMap)}</li>
+ *   <li>{@link #beforeLoadObject(OAObject, HashMap)}</li>
+ *   <li>{@link #afterLoadObject(OAObject, HashMap)}</li>
+ *   <li>{@link #resolveClassName(String)}</li>
+ * </ul>
  */
 public class OAXMLReader {
 	private String fileName;

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.query;
 
 import java.sql.Clob;
@@ -46,6 +51,23 @@ import com.viaoa.util.OAString;
 import com.viaoa.util.OAThrottle;
 import com.viaoa.util.OATime;
 
+/**
+ * Streams database results into OAObjects using JDBC and OA metadata.
+ * <p>
+ * Executes SQL or prepared statements and lazily constructs objects from each row,
+ * populating primitive and reference properties as defined in the corresponding
+ * {@link com.viaoa.datasource.jdbc.db.Column} metadata.
+ * <p>
+ * Features:
+ * <ul>
+ *   <li>Supports both direct SELECT and two-phase queries (primary-key select + data fetch).</li>
+ *   <li>Handles prepared statement arguments and JDBC type conversion.</li>
+ *   <li>Integrates with {@link com.viaoa.object.OAObjectCacheDelegate} to prevent duplicates.</li>
+ *   <li>Supports streaming large result sets with internal throttling and read-ahead buffering.</li>
+ *   <li>Implements {@link com.viaoa.datasource.OADataSourceIterator} for OA query iteration.</li>
+ * </ul>
+ * Thread-safe for sequential iteration within a single JDBC context.
+ */
 public class ResultSetIterator implements OADataSourceIterator {
 	private static Logger LOG = Logger.getLogger(ResultSetIterator.class.getName());
 

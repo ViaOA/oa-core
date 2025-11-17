@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import java.lang.reflect.Constructor;
@@ -24,9 +29,30 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Creates a filter to see if an object is in a property path or Hub.
+ * Filter that evaluates whether the property's value appears within a target
+ * collection, array, or {@link Hub}.  This supports membership checks—
+ * “is this object's property one of these values?”.
  *
- * @author vvia
+ * <p>
+ * The comparison value may be:
+ * </p>
+ *
+ * <ul>
+ *   <li>a {@link Hub},</li>
+ *   <li>a Java array,</li>
+ *   <li>a {@link java.util.Collection}.</li>
+ * </ul>
+ *
+ * <p>
+ * When using a {@link Hub}, membership is tested using {@code hub.contains()}.
+ * When using arrays/collections, standard equality rules apply.
+ * </p>
+ *
+ * <p>
+ * Nested property paths are fully supported.  If the path crosses a
+ * many-relationship, an {@link OAFinder} locates the target object before
+ * performing the membership check.
+ * </p>
  */
 public class OAInFilter implements OAFilter {
 	private static Logger LOG = Logger.getLogger(OAInFilter.class.getName());

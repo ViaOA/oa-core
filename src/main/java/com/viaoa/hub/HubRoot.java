@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,13 +26,26 @@ import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.OALogger;
 
 /**
- * Used for recursive Hubs, so that the hub is always using the rootHub. The default behavior when using a recursive Hub is that the hub
- * will be shared to whatever hub the AO is set to. This will allow a hubRoot to always be the top level hub. example: // get the original
- * root this.hub = hubModel.getDetailHub(Model.P_Containers).createSharedHub(); // create empty hub that will then always contain the root
- * hub objects this.hubRoot = new Hub&lt;Container&gt;(Container.class); new HubRoot(hub, hubRoot); // hubRoot will always have top level
- * hub, initially using hub ... OATreeNode node = new OATreeNode(App.P_Label, hubRoot, hub) ...
+ * Used for recursive Hubs to ensure that a Hub always remains at the root of a recursive hierarchy.
  *
- * @author vvia 20120302
+ * <p>Some OAObjects (model objects) are recursive, meaning they contain a one-to-many relationship
+ * to themselves. For example, a {@code Category} object may have a Hub of child {@code Category}
+ * objects, which can in turn have their own children. In these cases, a Hub could otherwise become
+ * shared with one of its child Hubs when navigating the recursive link.
+ *
+ * <p><b>HubRoot</b> prevents this from happening by keeping the Hub anchored at the top level
+ * (the root) of the recursive structure. It ensures that a recursive Hub never changes its shared
+ * reference to a child Hub.
+ *
+ * <p><b>Main responsibilities:</b>
+ * <ul>
+ *   <li>Identify the root Hub in recursive one-to-many relationships.</li>
+ *   <li>Prevent a shared Hub from being reassigned to a child Hub.</li>
+ *   <li>Maintain consistent event propagation and data references across recursive structures.</li>
+ * </ul>
+ *
+ * <p>HubRoot objects are created automatically by OA when recursive Hubs are initialized.
+ * Applications typically do not create or modify them directly.
  */
 public class HubRoot {
 	private static final Logger LOG = OALogger.getLogger(HubRoot.class);

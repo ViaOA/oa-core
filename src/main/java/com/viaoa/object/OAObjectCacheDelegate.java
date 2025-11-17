@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.ref.WeakReference;
@@ -39,8 +44,30 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Cache for OAObjects.  
- * 
+ * Internal delegate responsible for managing the OAObject runtime cache,
+ * ensuring global identity consistency and fast lookup by either GUID or
+ * business keys. All stored references are weak so that objects may be
+ * reclaimed by the garbage collector when no longer referenced elsewhere.
+ *
+ * <p>Identity resolution is GUID-first: if both GUID and business keys are
+ * supplied, any conflict is resolved in favor of GUID. Business key lookups
+ * are used when the GUID is unknown (e.g., object created or referenced using
+ * only persistent identity), allowing lazy loading and identity reconciliation.</p>
+ *
+ * <p>The delegate also cooperates with client-session tracking for distributed
+ * UI operation. When a client receives objects over the network, the server
+ * maintains a strong reference set of objects currently visible to that client.
+ * When the client releases objects, the cache is updated so that objects are
+ * eligible for GC if no other strong references exist.</p>
+ *
+ * <p>This design allows the OA framework to maintain a consistent and correct
+ * object graph while efficiently supporting distributed, event-driven, and
+ * offline-first application behavior.</p>
+ *
+ * @see OAObjectCache
+ * @see OAObject
+ * @see OAObjectKey
+ * @see OAObjectKeyDelegate
  */
 public class OAObjectCacheDelegate {
 	private static final Logger LOG = Logger.getLogger(OAObjectCacheDelegate.class.getName());

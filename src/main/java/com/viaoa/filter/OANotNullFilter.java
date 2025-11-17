@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import java.lang.reflect.Method;
@@ -23,10 +28,18 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Creates a filter to see if the value from the propertyPath is not empty.
- * 
- * @author vvia
- * @see OACompare#isEmpty(Object)
+ * Filter that evaluates whether a property's value is <em>not null</em>.
+ * A property path may be provided to locate the value.
+ *
+ * <p>
+ * When a property path crosses a many-relationship, an {@link OAFinder}
+ * is automatically built and a nested {@code OANotNullFilter} is assigned
+ * to it, allowing the filter to operate on the resolved child object.
+ * </p>
+ *
+ * <p>
+ * Returns {@code true} only when the resolved value is non-null.
+ * </p>
  */
 public class OANotNullFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OANotNullFilter.class.getName());

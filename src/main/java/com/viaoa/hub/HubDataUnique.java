@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.ref.WeakReference;
@@ -19,9 +24,21 @@ import java.util.logging.Logger;
 import com.viaoa.object.*;
 
 /**
-	Internally used by Hub
-	for unique settings/data for this Hub, that are not shared with Shared Hubs.
-*/
+ * Encapsulates state and metadata that are unique to a specific Hub instance,
+ * even when its data list is shared with others.
+ *
+ * <p>Manages:</p>
+ * <ul>
+ *   <li>Active-object update flags</li>
+ *   <li>Listener trees and detail-hub collections</li>
+ *   <li>Link-to and link-from Hub relationships</li>
+ *   <li>Shared-hub registry and weak references</li>
+ *   <li>Auto-create behavior for link targets</li>
+ * </ul>
+ *
+ * <p>Each Hub has one {@link HubDataUnique}; shared Hubs maintain independent
+ * instances for AO, listener, and linkage tracking.</p>
+ */
 class HubDataUnique implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
 	private static Logger LOG = Logger.getLogger(HubDataUnique.class.getName());

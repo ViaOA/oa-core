@@ -1,24 +1,51 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.remote;
 
-import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 import com.viaoa.sync.model.ClientInfo;
 
-
 /**
- * Used to manage a Client session on the Server. 
+ * Remote interface representing a single client session on the server.
+ * <p>
+ * Each connected client receives its own server-side session object, which:
+ * <ul>
+ *   <li>tracks GUIDs known to exist on the client,</li>
+ *   <li>keeps objects alive server-side when the client still references them,</li>
+ *   <li>manages per-object locks,</li>
+ *   <li>captures and forwards exceptions,</li>
+ *   <li>receives periodic client-side update messages,</li>
+ *   <li>supports liveness (ping/ping2).</li>
+ * </ul>
+ *
+ * <h2>GUID Tracking</h2>
+ * {@link #objectCreated(long)} and {@link #objectsFinalized(long[])} allow the
+ * server to maintain an accurate record of which objects the client owns,
+ * enabling correct sync filtering and preventing premature GC.
+ *
+ * <h2>Locks</h2>
+ * Methods such as {@link #setLock(Class, OAObjectKey, boolean)} and
+ * {@link #isLockedByAnotherClient(Class, OAObjectKey)} support shared editing
+ * environments where multiple clients interact with the same model.
+ *
+ * <p>
+ * {@code RemoteSessionInterface} forms the server-side state container for a
+ * single client connection.
  */
 @OARemoteInterface()
 public interface RemoteSessionInterface {

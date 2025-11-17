@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import com.viaoa.hub.HubListener.InsertLocation;
@@ -16,7 +21,18 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 
 /**
- * Takes a recursive hub (hubRoot) and populates a Hub (hubFlat) with all of the children.
+ * Flattens a recursive {@link Hub} structure into a single non-recursive Hub containing
+ * all descendant objects from the root.
+ *
+ * <p>Typical for self-referential models (e.g., OrgUnits, Categories) where the
+ * recursive link is defined by {@link OALinkInfo#getRecursiveLinkInfo(int)}.</p>
+ *
+ * <p><b>Mechanics</b>:
+ * <ul>
+ *   <li>Uses a {@link HubMerger} on the recursive link’s reverse name.</li>
+ *   <li>Adds a listener so new objects created in the flattened Hub are attached back to the root chain.</li>
+ *   <li>Validates that the source Hub’s type is truly recursive.</li>
+ * </ul>
  */
 public class HubFlattened<TYPE extends OAObject> {
 	private Hub<TYPE> hubRoot;

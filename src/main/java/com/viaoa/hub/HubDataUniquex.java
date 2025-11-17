@@ -1,24 +1,38 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.*;
-import com.viaoa.object.*;
 
 /**
-	Internally used by Hub.dataUnique
-	for unique settings/data for this Hub, that are not shared with Shared Hubs.
-*/
+ * Extended unique-state container referenced by {@link HubDataUnique}.
+ * 
+ * <p>Holds granular linkage, listener, and auto-create options for this Hub:
+ * <ul>
+ *   <li>Master–detail linkage (linkToHub, linkFromPropertyName, etc.)</li>
+ *   <li>Listener tree and detail-hub vector</li>
+ *   <li>Weak shared-hub registry</li>
+ *   <li>Auto-creation flags for link targets</li>
+ * </ul>
+ *
+ * <p>Used internally by Hub wiring and event propagation logic; never accessed
+ * directly from public APIs.</p>
+ */
 class HubDataUniquex implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
 	

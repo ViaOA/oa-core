@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.undo;
 
 import java.util.HashMap;
@@ -25,12 +30,49 @@ import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASyncDelegate;
 
 /**
- * Undo Support for OA.gui components.
+ * OA-specific extension of {@link javax.swing.undo.UndoManager} providing
+ * undo/redo support for Hub and OAObject operations.
+ * <p>
+ * {@code OAUndoManager} centralizes undo logic for OA-based applications and
+ * supplies additional features on top of Swing's {@code UndoManager}:
+ * <ul>
+ *   <li>global, shared undo manager via {@link #createUndoManager()},</li>
+ *   <li>compound edits for grouping multiple operations,</li>
+ *   <li>integration with {@code OAThreadLocalDelegate} for automatic
+ *       property-change capture,</li>
+ *   <li>thread-local ignore counters to suppress recursive undo capture,</li>
+ *   <li>optional verbose logging,</li>
+ *   <li>ability to disable all undo tracking temporarily.</li>
+ * </ul>
  *
- * @see #createUndoManager see UndoableController
- * 
- * @see OAThreadLocalDelegate 
- * 
+ * <h2>Compound Edits</h2>
+ * {@link #startCompoundEdit(String)} and {@link #endCompoundEdit()} allow
+ * multiple related edits to be grouped into a single user-visible undo item.
+ * This is particularly useful for:
+ * <ul>
+ *   <li>bulk modifications,</li>
+ *   <li>multi-step UI operations,</li>
+ *   <li>property-change sequences initiated by controllers.</li>
+ * </ul>
+ *
+ * <h2>Property-Change Capture</h2>
+ * Methods {@link #startCompoundEditForPropertyChanges(String)} and
+ * {@link #endCompoundEditForPropertyChanges()} work with the OA thread-local
+ * undo delegate to capture OAObject property changes automatically.
+ *
+ * <h2>Ignore Logic</h2>
+ * {@code setIgnore()} and related methods maintain a per-thread counter that
+ * suppresses undo tracking for internal operations, ensuring that undo events
+ * are only generated for user actions.
+ *
+ * <h2>Integration with Sync and Remote Threads</h2>
+ * Remote sync threads are automatically ignored via
+ * {@link com.viaoa.sync.OASyncDelegate#isSingleUser()} and
+ * {@link com.viaoa.remote.OARemoteThreadDelegate#isRemoteThread()},
+ * preventing remote updates from being recorded as undoable user actions.
+ *
+ * <p>
+ * This class forms the backbone of all UI-level undo/redo in OA applications.
  */
 public class OAUndoManager extends UndoManager {
 

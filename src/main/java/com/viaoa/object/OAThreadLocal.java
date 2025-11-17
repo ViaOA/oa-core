@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.ArrayList;
@@ -20,9 +25,27 @@ import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.Tuple3;
 
 /**
- * Used/created by OAThreadInfoDelegate to manage "flags" for threads.
+ * Thread-scoped state container used internally by OA to manage execution context
+ * and operational flags on a per-thread basis.
+ *
+ * <p>This holds lightweight, mutable metadata including:
+ * <ul>
+ *   <li>Object graph loading and deletion state</li>
+ *   <li>Serialization modes</li>
+ *   <li>User/session context and admin privileges</li>
+ *   <li>Hub event traversal depth & suppression flags</li>
+ *   <li>Undo/calc change batching</li>
+ *   <li>Distributed sync and process tracking</li>
+ *   <li>Thread participation in object locking</li>
+ * </ul>
+ *
+ * <p>Instances are automatically created on-demand by
+ * {@link OAThreadLocalDelegate} and should never be accessed directly by
+ * application code. All external interaction must go through delegate APIs,
+ * ensuring proper reference counting and fast-path optimizations.
  *
  * @author vvia
+ * @see OAThreadLocalDelegate
  */
 public class OAThreadLocal {
 

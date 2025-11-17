@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.rest;
 
 import java.util.ArrayList;
@@ -13,6 +28,22 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectKey;
 
+/**
+ * Server-side implementation of {@link OADataSourceRestInterface}.
+ * <p>
+ * Delegates REST calls received by {@code OARestServlet} to the appropriate
+ * local {@link com.viaoa.datasource.OADataSource} instance. It maintains
+ * lightweight server-side iterators for active client queries.
+ *
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li>Delegate all CRUD and query operations to the local data source.</li>
+ *   <li>Maintain active iterators for paged result delivery.</li>
+ *   <li>Convert JSON identity strings to {@link com.viaoa.object.OAObjectKey}.</li>
+ * </ul>
+ *
+ * @since OA 4.0
+ */
 public class OADataSourceRestImpl implements OADataSourceRestInterface {
 	private OADataSource defaultDataSource;
 

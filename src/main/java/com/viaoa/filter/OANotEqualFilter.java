@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import java.lang.reflect.Method;
@@ -23,10 +28,27 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Creates a filter to see if the value from the propertyPath is not equal to the filter value.
- * 
- * @author vvia
- * @see OACompare#isEqual(Object, Object)
+ * Filter that evaluates whether a property value is <em>not equal</em> to
+ * a specified comparison value.  Supports optional case-insensitive string
+ * comparison, Hub membership checks, and nested property path traversal.
+ *
+ * <p>
+ * If the property path traverses a many-relationship, an {@link OAFinder}
+ * is created and a nested {@code OANotEqualFilter} is added to the finder
+ * for correct deep evaluation.
+ * </p>
+ *
+ * <p>
+ * Special handling applies when the resolved value is a {@link Hub}: the
+ * filter returns {@code true} if the Hub does <em>not</em> contain the
+ * comparison object.
+ * </p>
+ *
+ * <p>
+ * All other comparisons delegate to
+ * {@link com.viaoa.util.OACompare#isEqual(Object, Object, boolean)} and
+ * invert the result.
+ * </p>
  */
 public class OANotEqualFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OANotEqualFilter.class.getName());

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.List;
@@ -26,6 +31,86 @@ import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.*;
 
+/**
+ * Handles the full delete lifecycle for {@link OAObject} instances.
+ * <p>
+ * This delegate coordinates all aspects of deletion across the Object Graph:
+ * recursive cascade removal, reference nulling, Hub membership cleanup,
+ * event dispatch, DataSource notification, and distributed synchronization.
+ * It guarantees referential integrity and prevents orphaned objects, while
+ * maintaining the single-instance invariant throughout the runtime graph.
+ *
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li><b>Cascade Delete:</b> Recursively deletes all dependent child objects before
+ *       removing the parent. Honors {@code cascadeDelete=true} metadata in link definitions
+ *       and ensures proper ordering to avoid constraint violations.</li>
+ *
+ *   <li><b>Reference Cleanup:</b> Clears or nulls all foreign-key references pointing
+ *       to the deleted object (1→1, 1→M, M→1, and M→M). Removes the object from all Hubs,
+ *       including private and calculated collections.</li>
+ *
+ *   <li><b>Event Lifecycle:</b> Fires {@code beforeDelete} and {@code afterDelete} events
+ *       in proper sequence. Updates the internal "deleted" flag and suppresses unnecessary
+ *       change propagation after removal. All event sequencing respects the OAObject contract
+ *       for before/after ordering.</li>
+ *
+ *   <li><b>Thread and Reentrancy Safety:</b> Uses {@link com.viaoa.object.OAThreadLocalDelegate}
+ *       to mark delete operations in progress and avoid re-entrant or duplicate cascades.
+ *       Thread-local tracking also prevents concurrent cross-graph deletions from interfering
+ *       with one another.</li>
+ *
+ *   <li><b>DataSource Integration:</b> On the server, delegates to
+ *       {@link com.viaoa.datasource.OAObjectDSDelegate#delete(OAObject)} to perform
+ *       the physical removal in the underlying DataSource. On the client, deletes only
+ *       from the in-memory graph and relies on server synchronization for persistence.</li>
+ *
+ *   <li><b>Distributed Synchronization:</b> Coordinates with
+ *       {@link com.viaoa.comm.OAObjectCSDelegate} to broadcast deletes between
+ *       client and server. Ensures GUID-based object identity is honored across
+ *       distributed sessions.</li>
+ *
+ *   <li><b>Many-to-Many Handling:</b> Removes link table entries through
+ *       {@link com.viaoa.hub.HubDSDelegate#removeMany2ManyLinks(Hub, OAObject)}
+ *       and cleans up inverse relationships using {@code updateMany2ManyLinks()}.</li>
+ *
+ *   <li><b>Undo and Audit Hooks:</b> Integrates with {@code OAUndoDelegate} and
+ *       {@code OAObjectLogDelegate} to capture delete operations for undo and audit
+ *       trails, when enabled.</li>
+ * </ul>
+ *
+ * <h2>Delete Sequence</h2>
+ * <ol>
+ *   <li>Fire {@code beforeDelete} event.</li>
+ *   <li>Mark object as deleting (ThreadLocal guard).</li>
+ *   <li>Recursively delete children (cascade).</li>
+ *   <li>Clear all reverse references and Hub memberships.</li>
+ *   <li>Perform DataSource delete (server only).</li>
+ *   <li>Remove from cache and Hub indexes.</li>
+ *   <li>Fire {@code afterDelete} event and user callbacks.</li>
+ * </ol>
+ *
+ * <h2>Concurrency and Safety</h2>
+ * Deletions are transactional at the object-graph level: all related references
+ * and events are processed atomically within the same thread. Re-entrant
+ * or nested delete calls on the same object are ignored via {@link OACascade}.
+ *
+ * <h2>Design Notes</h2>
+ * <ul>
+ *   <li>Works for any {@link com.viaoa.datasource.OADataSource} implementation,
+ *       including SQL, REST, or in-memory stores.</li>
+ *   <li>Uses GUIDs and object identity to guarantee consistent resolution
+ *       across threads, caches, and distributed sessions.</li>
+ *   <li>All Hub and reverse-link cleanups are event-driven, ensuring that
+ *       downstream listeners (UI, sync clients, loggers) are notified in order.</li>
+ * </ul>
+ *
+ * @see OAObject
+ * @see OAObjectDelegate
+ * @see com.viaoa.datasource.OAObjectDSDelegate
+ * @see com.viaoa.comm.OAObjectCSDelegate
+ * @see com.viaoa.hub.Hub
+ */
 public class OAObjectDeleteDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectDeleteDelegate.class.getName());
 

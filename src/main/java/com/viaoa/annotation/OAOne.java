@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.annotation;
 
 import java.lang.annotation.Documented;
@@ -16,9 +21,28 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/*
- * Defines an OAObject relationship that is of type "One"
- * example: @OAOne  (reverse=Dept.P_Emps, required=false, cascadeSave=false, cascadeDelete=false)
+/**
+ * Defines a link of type ONE on an {@link OAObject}, describing a
+ * many-to-one or one-to-one relationship as interpreted by OA.
+ *
+ * <p>The annotation encodes ownership, cascade rules, reverse link name,
+ * creation rules, default values, calculation dependencies, and link
+ * constraints used by {@link OALinkInfo} at runtime.</p>
+ *
+ * <p><b>Key Behavioral Metadata</b>
+ * <ul>
+ *   <li><b>Ownership</b>: controls whether this side creates/updates the target.</li>
+ *   <li><b>Cascade rules</b>: cascadeSave, cascadeDelete.</li>
+ *   <li><b>Reverse link</b>: the name of the {@code @OAMany} or {@code @OAOne}
+ *       property in the target class.</li>
+ *   <li><b>Creation flow</b>: allowCreateNew, autoCreateNew, allowAddExisting.</li>
+ *   <li><b>Validation</b>: required, mustBeEmptyForDelete, defaultPropertyPath.</li>
+ *   <li><b>Calculated link</b>: isCalculated, calcDependentProperties.</li>
+ *   <li><b>Import/merge</b>: importMatch, equalPropertyPath.</li>
+ * </ul>
+ *
+ * <p>This metadata defines how OA wires Hubs for link relationships and
+ * how OAObjectGraph handles cascades and updates.</p>
  */
 @Documented
 @Target(ElementType.METHOD)

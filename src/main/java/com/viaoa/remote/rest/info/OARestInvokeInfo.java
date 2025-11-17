@@ -1,14 +1,51 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.rest.info;
 
 import java.util.HashMap;
 
 /**
- * Runtime information for the proxy method invoke, that uses HTTP+REST to complete the task.
+ * Runtime information for a single REST invocation. Instances of this class
+ * are created for every remote call and capture detailed diagnostics, timing
+ * information, and all request/response data.
+ *
+ * <h2>Captured Invocation Data</h2>
+ * <ul>
+ *   <li>Fully constructed URL and HTTP method</li>
+ *   <li>Request body (JSON or form) and outbound headers</li>
+ *   <li>Response status code, message, and response body</li>
+ *   <li>Timestamps for start, send, receive, and finish</li>
+ *   <li>Any exception thrown during the remote call</li>
+ *   <li>Deserialized return value (if successful)</li>
+ *   <li>Reference to the {@link OARestMethodInfo} that initiated the call</li>
+ * </ul>
+ *
+ * <h2>Dev & Diagnostic Usage</h2>
+ * {@code OARestInvokeInfo} may be:
+ * <ul>
+ *   <li>Returned to application code for debugging.</li>
+ *   <li>Logged or persisted for auditing.</li>
+ *   <li>Inspected inside an {@code OARestClientException}.</li>
+ * </ul>
+ *
  * <p>
- * This info has http and lower level details. <br>
- * For access this info when a method is called, a method can can include an OARestInvokeInfo for one of the method params, or for it's
- * return value.
- * <p>
+ * The object is intentionally verbose and designed for transparency: developers
+ * can see exactly how a REST call was formed, how long it took, and what was
+ * returned.
+ * </p>
  *
  * @author vvia
  */

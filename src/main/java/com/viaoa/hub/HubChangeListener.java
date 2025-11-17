@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.ArrayList;
@@ -30,16 +35,21 @@ import com.viaoa.util.OANullObject;
 import com.viaoa.util.OAString;
 
 /**
- * Allows listening for changes to 1 or more Hubs, property paths, rules, etc. 
- * Can include compare values, that can then be checked using getValue()
- * to see if all conditions are true. 
- * 
- * Use the add* methods to add as many checks and hubs as necessary. calling getValue will determine if all of
- * the conditions are true. 
- *
- * example: AO != null, objectCallbackEnabled=true, propValue==X, etc.
- *
- * @author vincevia
+ * Rule-based, multi-hub condition monitor that aggregates checks over one or
+ * more {@link Hub}s (and optional property paths) and evaluates them as a single
+ * boolean via {@link #getValue()}.
+ * <p>
+ * Use the {@code add*} methods to compose conditions (hub validity/emptiness,
+ * AO null/new, property null/empty/not-empty, object-callback enabled/visible,
+ * custom {@link com.viaoa.util.OAFilter}, etc.). The listener internals will
+ * attach a shared {@link HubListener} per (hub,propertyPath) and re-use it across
+ * rules to minimize overhead. On relevant {@link HubEvent}s, it recomputes and
+ * invokes {@code callOnChange()} in subclasses.
+ * <p>
+ * Comparisons are expressed via {@link Type} or by compare-value objects
+ * (including {@code OANullObject}, {@code OANotNullObject}, {@code OAEmptyObject},
+ * {@code OANotEmptyObject}, {@code OAAnyValueObject}). Tooltips/failure reasons
+ * are tracked to aid UI enablement/visibility logic.
  */
 public abstract class HubChangeListener {
 	protected HubProp[] hubProps = new HubProp[0];

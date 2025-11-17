@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.uicontroller;
 
 import com.viaoa.hub.*;
@@ -5,12 +20,26 @@ import com.viaoa.object.*;
 import com.viaoa.util.*;
 
 /**
- * Used by UI Components that use a Hub to present a list to choose from.
- * Once a value is selected then it will set the AO in the Hub.
- * If there is a Link Hub, then the new select Value will be verified before setting.
- * For multi-select, it uses a hubSelect.
- * 
- * @author vince
+ * Abstract controller used by UI components that present a selectable list
+ * of OAObjects from a {@link Hub}. Once a value is chosen, the controller
+ * updates either the active object in the main Hub or a linked reference,
+ * depending on configuration.
+ *
+ * <p>
+ * OAUISelectController coordinates several Hubs:
+ * </p>
+ *
+ * <ul>
+ *   <li>The main Hub whose active object will be affected by the selection.</li>
+ *   <li>An optional link Hub representing a reference property.</li>
+ *   <li>An optional select Hub that provides the list of choices.</li>
+ * </ul>
+ *
+ * <p>
+ * It supports both single-select and multi-select scenarios and uses a
+ * Hub listener to keep the UI and the underlying Hubs synchronized. Concrete
+ * subclasses integrate with specific UI toolkits (Swing, web controls, etc.).
+ * </p>
  */
 public abstract class OAUISelectController  {
 

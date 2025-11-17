@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.process;
 
 import java.util.ArrayList;
@@ -19,15 +24,18 @@ import com.viaoa.hub.*;
 import com.viaoa.util.OAString;
 
 /**
- * Used to listen to one or more hubs + propertyPaths and run a process whenever a change is made. Uses
- * a single thread to rerun a process whenever refresh is called.  
- * 
- * Note: since process is ran in another thread, it can find out if any more changes have happened since it has started.
- * 
- * @see #start() to start the thread
- * @see #refresh() to manually run process
- * @see #stop() to stop the thread.
- * @author vvia
+ * Event-driven refresher that listens to one or more {@link com.viaoa.hub.Hub}
+ * instances and triggers periodic processing when changes occur. <p>
+ *
+ * OAChangeRefresher maintains a dedicated background thread that waits for
+ * signals from Hub listeners or manual calls to {@link #refresh()}. When a
+ * refresh is detected, the abstract {@link #process()} method is invoked.
+ * Multiple refresh events are coalesced so that processing is not repeated
+ * unnecessarily. <p>
+ *
+ * This class is useful for tasks that must react to changes across an OA
+ * object graph but where work must be serialized or batched rather than
+ * executed directly inside Hub event callbacks.
  */
 public abstract class OAChangeRefresher {
     private static Logger LOG = Logger.getLogger(OAChangeRefresher.class.getName());
@@ -189,7 +197,7 @@ public abstract class OAChangeRefresher {
     }
     public boolean isChanged() {
         int x = aiChange.get();
-        return (x == lastChange);
+        return (x != lastChange);
     }
 
     public void start() {

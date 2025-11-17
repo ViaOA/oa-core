@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc;
 
 import java.sql.Connection;
@@ -39,7 +44,6 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectDSDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.util.OAArray;
@@ -48,11 +52,34 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * OADataSource object that uses JDBC and connection pools to communicate with Relational Databases. Uses settings to know what type of
- * database that is being used so that SQL statements can be customized to fit the particular database.
+ * JDBC-based implementation of {@link com.viaoa.datasource.OADataSource}.
  * <p>
- * OADataSourceJDBC has a lot of settings that can be used to set up how the JDBC Driver and SQL needs to work. By setting the type of
- * Database, these values will automatically be set.
+ * {@code OADataSourceJDBC} provides full CRUD and query support for relational
+ * databases using standard JDBC. It converts OA object and filter operations
+ * into prepared SQL statements, manages connections, and maintains
+ * schema-awareness for primary and foreign keys.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Full CRUD operations mapped to JDBC prepared statements.</li>
+ *   <li>Automatic translation of object queries into SQL WHERE clauses.</li>
+ *   <li>Lightweight connection pool with transaction support.</li>
+ *   <li>Automatic detection of primary/foreign keys via database metadata.</li>
+ *   <li>Configurable SQL dialects and column quoting strategies.</li>
+ *   <li>Supports batch operations, auto-generated keys, and GUID/PK mapping.</li>
+ * </ul>
+ *
+ * <h2>Design Notes</h2>
+ * <ul>
+ *   <li>Extends {@link com.viaoa.datasource.OADataSource} and implements
+ *       {@link com.viaoa.datasource.OADataSourceInterface}.</li>
+ *   <li>Delegates query building to {@link com.viaoa.datasource.jdbc.OASelectJDBC}.</li>
+ *   <li>Uses {@link com.viaoa.datasource.jdbc.OAConnectionPool} for efficient reuse.</li>
+ * </ul>
+ *
+ * @see com.viaoa.datasource.OADataSource
+ * @see com.viaoa.datasource.jdbc.OASelectJDBC
+ * @see com.viaoa.datasource.jdbc.OAConnectionPool
  */
 public class OADataSourceJDBC extends OADataSource {
 

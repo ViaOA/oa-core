@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.remote;
 
 import java.util.Map;
@@ -17,9 +22,48 @@ import java.util.logging.Logger;
 import com.viaoa.object.*;
 import com.viaoa.sync.model.ClientInfo;
 
-
 /**
- * Server side client session.
+ * Base server-side implementation of {@link RemoteSessionInterface} representing
+ * a single connected client session.
+ * <p>
+ * A {@code RemoteSessionImpl} maintains all per-client state required by the
+ * synchronization layer, including:
+ * <ul>
+ *   <li>the GUID registry tracking which objects exist on the client,</li>
+ *   <li>the set of objects that must be retained server-side even if they are
+ *       no longer reachable through hubs,</li>
+ *   <li>per-object locks held by this client,</li>
+ *   <li>session liveness (ping) and diagnostic reporting,</li>
+ *   <li>support for saving cached objects and releasing locks at disconnect.</li>
+ * </ul>
+ *
+ * <h2>GUID and Cache Management</h2>
+ * <ul>
+ *   <li>{@link #objectCreated(long)} – records new objects appearing on client.</li>
+ *   <li>{@link #objectsFinalized(long[])} – removes client-side objects from
+ *       cache and lock structures.</li>
+ *   <li>{@link #updateObjectsWithoutHubs(Class, OAObjectKey, boolean)} – keeps
+ *       objects from being GC’d server-side when the client still references
+ *       them but they are no longer reachable through any hub.</li>
+ * </ul>
+ *
+ * <h2>Lock State</h2>
+ * Per-object locks are tracked in {@link #hashLock}. These support collaborative
+ * editing and remote conflict detection. All locks are cleared on disconnect.
+ *
+ * <h2>Session Shutdown</h2>
+ * {@link #saveCache(OACascade, int)} persists all cached objects prior to
+ * session termination. {@link #clearCaches()} removes GUID and cache
+ * references to allow GC of server-side objects once the client disconnects.
+ *
+ * <p>
+ * Subclasses implement:
+ * <ul>
+ *   <li>{@link #isLocked(Class, OAObjectKey)}</li>
+ *   <li>{@link #isLockedByAnotherClient(Class, OAObjectKey)}</li>
+ *   <li>{@link #sendException(String, Throwable)}</li>
+ * </ul>
+ * giving the server full control over session behavior.
  */
 public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	private static Logger LOG = Logger.getLogger(RemoteSessionImpl.class.getName());

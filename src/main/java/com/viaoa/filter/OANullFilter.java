@@ -1,17 +1,20 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
-import java.lang.reflect.Method;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
@@ -23,10 +26,18 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Creates a filter to see if the value from the propertyPath is empty.
- * 
- * @author vvia
- * @see OACompare#isEmpty(Object)
+ * Filter that evaluates whether a property's value is {@code null}.  The
+ * value may be accessed directly or through an {@link OAPropertyPath}.
+ *
+ * <p>
+ * If the property path traverses a many-relationship, an {@link OAFinder}
+ * is created and a nested {@code OANullFilter} is added, allowing the null
+ * check to apply to the resolved target object.
+ * </p>
+ *
+ * <p>
+ * The filter returns {@code true} only when the resolved value is null.
+ * </p>
  */
 public class OANullFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OANullFilter.class.getName());

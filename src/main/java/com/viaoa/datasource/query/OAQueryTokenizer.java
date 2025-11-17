@@ -1,22 +1,56 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.query;
 
 import java.util.Vector;
 
 /**
- * Descendant parser internally used to parse object queries into a Vector of OAQueryToken Objects. Uses a OAQueryTokenManager to parse into
- * tokens.
+ * Parses OA object queries into a list of {@link OAQueryToken} elements.
  * <p>
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ * {@code OAQueryTokenizer} performs recursive-descent parsing of textual
+ * query expressions (e.g., {@code "id in (1,2,3) and status = 'A'"}) into
+ * structured token sequences that can be later transformed into a
+ * DataSource-specific native query (such as SQL, REST filter, or distributed call).
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Supports nested parentheses, AND/OR precedence, and comparison operators.</li>
+ *   <li>Handles quoted string literals, escaped characters, and passthrough blocks.</li>
+ *   <li>Recognizes modern SQL constructs such as {@code IN (...)} and function calls
+ *       like {@code lower(name)}.</li>
+ *   <li>Produces deterministic parse output for reliable translation.</li>
+ * </ul>
+ *
+ * <h2>Design Notes</h2>
+ * <ul>
+ *   <li>Implements a lightweight recursive descent parser.</li>
+ *   <li>Uses {@link OAQueryTokenManager} for lexical scanning.</li>
+ *   <li>Returns token streams as {@link java.util.Vector} for backward compatibility.</li>
+ *   <li>Throws {@link RuntimeException} on invalid query syntax.</li>
+ * </ul>
+ *
+ * <h2>Example</h2>
+ * <pre>{@code
+ * OAQueryTokenizer qt = new OAQueryTokenizer();
+ * Vector<OAQueryToken> tokens = qt.convertToTokens("lastName = 'Smith' and id in (1,2,3)");
+ * }</pre>
+ *
+ * @see OAQueryToken
+ * @see OAQueryTokenManager
+ * @see OAQueryTokenType
  */
 public class OAQueryTokenizer implements OAQueryTokenType {
 	OAQueryTokenManager tokenManager;

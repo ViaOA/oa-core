@@ -1,22 +1,54 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import com.viaoa.object.*;
 
-/** 
- 	Used/created by HubLinkDelegate to "track" the Linked "To" Hub, so that the AO for the Linked "From" hub can
-    changed to match the AO in the Link "To" Hub.
-	see Hub#setLink(Hub,String) Full Description of Linking Hubs
-*/
+/**
+ * Internal listener created by {@link HubLinkDelegate} to keep two linked {@link Hub}s
+ * synchronized when their active objects (AOs) or link properties change.
+ *
+ * <p>This class listens to events on the "linked-to" Hub (the Hub that a "from"
+ * Hub is linked to via {@link Hub#setLink(Hub, String)}). Whenever the active
+ * object or the linked property changes on the "to" Hub, this listener updates
+ * the "from" Hub’s active object to stay consistent.</p>
+ *
+ * <h3>Responsibilities</h3>
+ * <ul>
+ *   <li>Listen for {@code afterChangeActiveObject} events on the linked-to Hub
+ *       and call {@link HubLinkDelegate#updateLinkedToHub} to realign the
+ *       linking Hub’s AO.</li>
+ *   <li>Listen for {@code afterPropertyChange} on the target object’s link
+ *       property and update the "from" Hub if the relationship property was
+ *       changed directly.</li>
+ *   <li>Handle many-to-many/private link cases where weak Hub references are not
+ *       automatically tracked, adding missing Hub references as needed.</li>
+ *   <li>On {@code onNewList}, re-establish link relationships after the
+ *       "to" Hub’s list is replaced or refreshed.</li>
+ * </ul>
+ *
+ * <h3>Design Notes</h3>
+ * <ul>
+ *   <li>Used only by {@link HubLinkDelegate}; never instantiated directly by user code.</li>
+ *   <li>Ensures that cross-Hub AO synchronization and link-to-property
+ *       propagation remain consistent even in many-to-many link configurations.</li>
+ *   <li>Implements {@link java.io.Serializable} so that Hub link topology can be
+ *       serialized with its parent Hub graph.</li>
+ * </ul>
+ */
 class HubLinkEventListener extends HubListenerAdapter implements java.io.Serializable {
 	Hub linkToHub;
 	Hub fromHub;

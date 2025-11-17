@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.objectcache;
 
 import java.io.*;
@@ -31,10 +36,33 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.util.*;
 
-// 20140124
 /**
- * OADataSource for storing objects in serialized file.
+ * In-memory implementation of {@link com.viaoa.datasource.OADataSource}
+ * backed by the OA object cache.
  * <p>
+ * {@code OADataSourceObjectCache} allows all OAObjects of each class to be
+ * stored, queried, and serialized directly in memory without a database.
+ * It is primarily used for testing, client-side caching, or fully in-memory
+ * applications.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Thread-safe storage using {@link java.util.concurrent.ConcurrentHashMap}
+ *       and {@link java.util.concurrent.locks.ReentrantReadWriteLock}.</li>
+ *   <li>Supports {@link com.viaoa.filter.OAQueryFilter}, {@link com.viaoa.filter.OAAndFilter},
+ *       and hub/property-path based selection.</li>
+ *   <li>Automatic ID assignment via {@link com.viaoa.datasource.autonumber.OADataSourceAuto}.</li>
+ *   <li>Persistent save/load using compressed serialization streams.</li>
+ *   <li>Full CRUD operations with integration to {@link com.viaoa.object.OAObjectCacheDelegate}.</li>
+ * </ul>
+ *
+ * Typical usage:
+ * <pre>{@code
+ * OADataSourceObjectCache ds = new OADataSourceObjectCache();
+ * ds.insert(myObject);
+ * ds.saveToStorageFile(new File("backup.oacache"), null);
+ * ds.loadFromStorageFile(new File("backup.oacache"));
+ * }</pre>
  *
  */
 public class OADataSourceObjectCache extends OADataSourceAuto {

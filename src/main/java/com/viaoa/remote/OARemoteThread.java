@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote;
 
 import java.util.logging.Logger;
@@ -16,11 +21,33 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
 
 /**
- * 
- * Thread that is used to process broadcast remote method calls.
- * By default, any "ripple effect" messages caused by this thread are not sent since each client will do the same thing.
- * 
- * @author vvia
+ * A specialized thread used by OA's remote messaging framework to process
+ * incoming remote method calls, broadcasts, and ripple-effect events.
+ * <p>
+ * Each {@code OARemoteThread} represents the execution context for a single
+ * remote request. It tracks internal state so the remote subsystem can
+ * determine when:
+ * </p>
+ * <ul>
+ *   <li>the thread has reached its primary “mark” and another thread may begin
+ *       processing the next remote message,</li>
+ *   <li>synchronous or asynchronous events generated inside the thread should
+ *       be broadcast to other clients,</li>
+ *   <li>the thread is blocked on an {@code OAThreadLocalDelegate} lock,</li>
+ *   <li>queued runnables are allowed to run inside this thread.</li>
+ * </ul>
+ *
+ * <p>
+ * Most applications do not interact with {@code OARemoteThread} directly.
+ * Runtime checks and coordination are done through
+ * {@link OARemoteThreadDelegate}.
+ * </p>
+ *
+ * <p>
+ * Before a remote thread begins processing the next message,
+ * {@link #reset()} is called to clear internal state and reset the
+ * {@code OAThreadLocalDelegate} context.
+ * </p>
  */
 public class OARemoteThread extends Thread {
 	private static Logger LOG = Logger.getLogger(OARemoteThread.class.getName());

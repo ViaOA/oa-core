@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.ref.WeakReference;
@@ -24,9 +29,26 @@ import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 
 /**
- * Listen to the OAObjectCache for objects that match filter criteria, and add to a Hub.
- * 
- * @author vvia
+ * Utility filter applied to the global {@link OAObjectCacheDelegate}
+ * to automatically add or remove objects from a target {@link com.viaoa.hub.Hub}
+ * as they appear, are loaded, or change state.
+ *
+ * <p>OAObjectCacheFilter monitors all objects of a specified type that
+ * match supplied {@link com.viaoa.util.OAFilter} conditions.  Whenever
+ * an object enters or leaves the matching set, the filter updates the
+ * bound Hub automatically.</p>
+ *
+ * <p><b>Responsibilities</b>:
+ * <ul>
+ *   <li>Registers an {@link OAObjectCacheListener} for the class type.</li>
+ *   <li>Evaluates one or more filters through {@link #isUsed(OAObject)}.</li>
+ *   <li>Adds or removes objects from the Hub in real-time.</li>
+ * </ul>
+ *
+ * Typical usage: a background view Hub that always reflects objects
+ * matching live filter criteria, without performing manual selects.
+ *
+ * @param <T> OAObject subtype managed by this filter
  */
 public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     private static final long serialVersionUID = 1L;

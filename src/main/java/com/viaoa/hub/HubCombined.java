@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.ArrayList;
@@ -18,7 +23,19 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAString;
 
 /**
- * Combines multiple hubs into one.
+ * Maintains a combined {@link Hub} whose content is the union of multiple source
+ * Hubs. Acts as a light wrapper around one or more {@link HubMerger} instances,
+ * exposing a single merged Hub that tracks all changes bidirectionally.
+ *
+ * <p>Designed for UI or service layers needing a unified view of several
+ * collections that share the same object type.</p>
+ *
+ * <p><b>Behavior</b>:
+ * <ul>
+ *   <li>Adds listeners to each source Hub to relay add/remove/update events.</li>
+ *   <li>Automatically prevents duplicates based on object identity.</li>
+ *   <li>Supports optional active-object propagation to keep selection consistent.</li>
+ * </ul>
  */
 public class HubCombined<T> {
 	private static Logger LOG = Logger.getLogger(HubCombined.class.getName());

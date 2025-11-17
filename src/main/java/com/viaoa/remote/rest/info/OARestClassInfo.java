@@ -1,17 +1,44 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.rest.info;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Used by OARestClient to manage remote Java interfaces that can have their methods automatically invoke methods using HTTP(S) on another
- * server, either as a webserver, webservice, REST API, or as a Java2Java remote method call to the Implementation class on the server.
+ * Holds metadata for a remote REST interface annotated with {@code @OARestClass}.
  * <p>
- * <p>
- * The OARestClassInfo is the metadata about a Java interface that has been annotated to allow OARestClient to create an instance of the
- * interface. <br>
- * OARestClient will then manage each method call to use HTTP(S) to invoke and get the return value from another server.
- * <p>
+ * {@code OARestClassInfo} is populated during annotation scanning and
+ * represents the structural definition of a remote REST API. It contains the
+ * interface name, context path, base URL or routing prefix, and the full set
+ * of discovered {@link OARestMethodInfo} objects for all annotated methods.
+ * </p>
+ *
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li>Record the interface-level REST context (class name, URL root, tags).</li>
+ *   <li>Maintain a list of all REST-accessible methods.</li>
+ *   <li>Support lookup of methods by Java reflection method object.</li>
+ *   <li>Provide a structure that the OARestClient uses when building invocation metadata.</li>
+ * </ul>
+ *
+ * <h2>Usage</h2>
+ * The OA REST client automatically builds one {@code OARestClassInfo} instance
+ * per remote interface. Application code does not construct or modify instances
+ * directly.
  *
  * @author vvia
  */

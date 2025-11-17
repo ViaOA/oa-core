@@ -1,21 +1,36 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
-/** 
-    A filter object that is used to populate a hub with all the objects from a master hub, minus
-    the objects from another hub.
-    <p>
-    For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
-*/
+/**
+ * Produces a live {@link Hub} that contains all objects from one source Hub
+ * minus the objects present in another Hub.
+ *
+ * <p>Essentially computes {@code hubResult = hubMaster − hubMinus}, updating in
+ * real time as either source changes.</p>
+ *
+ * <p><b>Implementation</b>:
+ * <ul>
+ *   <li>Registers listeners on both {@code hubMaster} and {@code hubMinus}.</li>
+ *   <li>On add/remove events, adjusts the result Hub accordingly.</li>
+ *   <li>Automatically re-populates on {@code onNewList} events.</li>
+ * </ul>
+ *
+ * <p>Useful for UI pick-lists and difference views between related collections.</p>
+ */
 public class HubMinusHubFilter {
     protected Hub hubMaster, hubMinus, hub;
 

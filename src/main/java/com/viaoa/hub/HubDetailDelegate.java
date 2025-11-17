@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.ref.WeakReference;
@@ -29,9 +34,41 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Delegate that manages master/detail functionality for Hubs.
+ * Internal delegate for Master/Detail wiring in {@link Hub}: creates, maintains,
+ * and re-syncs detail Hubs from a master Hub’s active object and link metadata.
  *
- * @author vvia
+ * <h3>Responsibilities</h3>
+ * <ul>
+ *   <li>Establish master→detail relationships using property paths or link info
+ *       (see {@link #getDetailHub(Hub, String)} and overloads).</li>
+ *   <li>Keep detail hubs “pointed” at the correct collection/object whenever the
+ *       master Hub’s active object (AO) changes ({@link #updateAllDetail}).</li>
+ *   <li>Rebind detail hubs to shared or merged hubs, including reconnect logic
+ *       for recursive/self-referential models ({@link #updateDetail}).</li>
+ *   <li>Keep reference properties in sync when adds/removes happen in the detail
+ *       hub ({@link #setPropertyToMasterHub}).</li>
+ *   <li>Compute and expose relationship metadata (master hub/object, link info,
+ *       property names, “owned” semantics, recursion checks).</li>
+ * </ul>
+ *
+ * <h3>Key APIs</h3>
+ * <ul>
+ *   <li>{@link #setMasterHub(Hub, Hub, String, boolean, String)} — define/replace the master of a hub.</li>
+ *   <li>{@link #getDetailHub(Hub, String)} — resolve or build a detail hub via property path,
+ *       routing through {@code HubMerger} when the path requires fan-out.</li>
+ *   <li>{@link #updateDetail(Hub, HubDetail, Hub, boolean)} — (re)targets the detail hub’s data
+ *       and AO after master AO or link changes.</li>
+ *   <li>{@link #getLinkInfoFromMasterToDetail(Hub)} / {@link #getPropertyFromMasterToDetail(Hub)} — metadata helpers.</li>
+ * </ul>
+ *
+ * <h3>Design Notes</h3>
+ * <ul>
+ *   <li>Supports many-to-many, one-to-many, and recursive graphs (uses reverse link info and
+ *       {@code OAPropertyPath} decomposition).</li>
+ *   <li>Shares underlying {@code HubData} when detail is a Hub reference; otherwise populates
+ *       from arrays/objects with duplicate-allow toggling and newList events.</li>
+ *   <li>Integrates with linking/sharing delegates and selection/order settings.</li>
+ * </ul>
  */
 public class HubDetailDelegate {
 	private static Logger LOG = Logger.getLogger(HubDetailDelegate.class.getName());

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.Map;
@@ -16,6 +21,45 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 
+/**
+ * Low-level delegate that connects {@link OAObject} lifecycle operations
+ * (save, delete, assign ID, refresh) to the configured {@link com.viaoa.datasource.OADataSource}.
+ * <p>
+ * This class provides the internal persistence bridge for the OA framework,
+ * enabling {@link OAObjectSaveDelegate}, {@link OAObjectDeleteDelegate}, and
+ * other components to interact with the DataSource layer without introducing
+ * dependencies or reflection overhead.
+ *
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li><b>ID Assignment:</b> Coordinates creation of unique primary keys by
+ *       calling {@link OADataSource#assignId(OAObject)} and tracking assignment
+ *       state through {@code hmAssigningId} to prevent redundant change events.</li>
+ *   <li><b>Persistence Operations:</b> Routes insert, update, and delete
+ *       requests to the correct {@link OADataSource} for the object's class.</li>
+ *   <li><b>Object Retrieval:</b> Provides DataSource lookups by key or
+ *       {@link OAObjectKey}, including refresh and blob value access.</li>
+ *   <li><b>Reference Updates:</b> Supports targeted link updates via
+ *       {@link #removeReference(OAObject, OALinkInfo)} without performing
+ *       full object saves.</li>
+ *   <li><b>Thread Safety:</b> Uses a {@link ConcurrentHashMap} to record ID
+ *       assignment activity across threads.</li>
+ * </ul>
+ *
+ * <h2>Design Notes</h2>
+ * <ul>
+ *   <li>All methods safely no-op when no {@link OADataSource} is registered
+ *       for a class.</li>
+ *   <li>No reflection is used; all operations occur through the DataSource API.</li>
+ *   <li>Supports any OA-compatible persistence provider (JDBC, REST, memory, etc.).</li>
+ * </ul>
+ *
+ * @see OAObject
+ * @see OAObjectSaveDelegate
+ * @see OAObjectDeleteDelegate
+ * @see com.viaoa.datasource.OADataSource
+ * @see OAObjectKeyDelegate
+ */
 public class OAObjectDSDelegate {
 	private static final Logger LOG = Logger.getLogger(OAObjectDSDelegate.class.getName());
 

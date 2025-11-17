@@ -1,20 +1,65 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
+
 import java.util.*;
 import java.lang.ref.*; 
 
-/** 
-    Used by OA components to create temporary hubs when using Object without a Hub.
-*/
+/**
+ * Provides lightweight temporary {@link Hub} instances for single
+ * {@link OAObject} references that are not currently contained in
+ * any Hub.
+ *
+ * <p>OA components and delegates occasionally require a Hub context
+ * to perform operations—such as binding, event firing, or property
+ * path resolution—even when an object has not yet been added to a Hub.
+ * {@code HubTemp} creates and caches such temporary Hubs as needed.</p>
+ *
+ * <h3>Behavior</h3>
+ * <ul>
+ *   <li>Each distinct object instance is associated with a temporary
+ *       Hub stored in a weakly referenced cache keyed by its class
+ *       and object identity.</li>
+ *   <li>Subsequent calls to {@link #createHub(Object)} for the same
+ *       object return the same temporary Hub while incrementing an
+ *       internal reference counter.</li>
+ *   <li>When {@link #deleteHub(Object)} is called enough times to
+ *       reduce the count to zero, the entry is removed and eligible
+ *       for garbage collection.</li>
+ *   <li>All mappings use {@link WeakReference} so that both the Hub
+ *       and object can be reclaimed when no longer used.</li>
+ * </ul>
+ *
+ * <h3>Usage Example</h3>
+ * <pre>{@code
+ * Customer c = new Customer();
+ * Hub<Customer> hub = HubTemp.createHub(c);
+ * // hub contains only c and has c as its active object
+ * ...
+ * HubTemp.deleteHub(c); // release when done
+ * }</pre>
+ *
+ * <h3>Design Notes</h3>
+ * <ul>
+ *   <li>Intended only for internal OA use; not for general application logic.</li>
+ *   <li>Provides thread-safe creation and removal of cached temporary Hubs.</li>
+ *   <li>Ensures that object–Hub identity integrity is maintained for
+ *       operations requiring a Hub context.</li>
+ * </ul>
+ */
 public class HubTemp {
     Hub hub;
     Object object;

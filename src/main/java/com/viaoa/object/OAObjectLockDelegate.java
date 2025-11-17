@@ -1,38 +1,48 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
-
 import java.util.*;
-import java.lang.ref.*;  // java1.2
-
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 
-
-/** 
-	OALock is used for setting and sharing locks on Objects.  
-	<p>
-	Note: setting a lock does not restrict access to an Object, it only serves as 
-	a flag.  It is currently the applications responsiblity to enforce rules based on 
-	a lock being set.
-	<p>
-	Note: this also works with OASync (Clients/Server) to create distributed locks.
-	<p>
-	For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
-*/
+/**
+ * Provides distributed locking services for {@link OAObject} instances,
+ * ensuring that concurrent clients or threads can coordinate access to
+ * shared entities.
+ *
+ * <p>Locks are advisory: they act as flags rather than hard enforcement,
+ * allowing applications to define business-level rules for locked objects.</p>
+ *
+ * <p><b>Features</b>:
+ * <ul>
+ *   <li>Local in-JVM lock map for standalone use.</li>
+ *   <li>Delegation to {@link com.viaoa.sync.OASync} for remote,
+ *       multi-client lock propagation.</li>
+ *   <li>Non-blocking {@link #isLocked(OAObject)} checks.</li>
+ *   <li>Automatic wake-up of waiting threads when a lock releases.</li>
+ * </ul>
+ *
+ * <p>Used primarily in OA-Sync deployments to coordinate record-level edits
+ * between users or clustered servers.</p>
+ */
 public class OAObjectLockDelegate {
     
-    private static final Map<Object, Object> hmLock = new HashMap(11, 0.75F);
+    private static final Map<Object, Object> hmLock = new HashMap<>(11, 0.75F);
 	
 	
     /** 

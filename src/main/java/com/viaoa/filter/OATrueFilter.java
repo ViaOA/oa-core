@@ -1,17 +1,41 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import com.viaoa.util.OAPropertyPath;
 
+/**
+ * Convenience filter that always evaluates the supplied property (or
+ * entire object if no property path is supplied) as {@code Boolean.TRUE}.
+ *
+ * <p>
+ * This class extends {@link OAEqualFilter} and hard-codes the comparison
+ * value to {@code Boolean.TRUE}, allowing it to be used wherever a
+ * property-based true/false condition needs to be enforced.
+ * </p>
+ *
+ * <p>
+ * Examples:
+ * <ul>
+ *   <li>Filtering objects where a boolean flag is true</li>
+ *   <li>Restricting a Hub to enabled/active elements</li>
+ *   <li>Selecting objects that meet a “valid” or “confirmed” rule</li>
+ * </ul>
+ * </p>
+ */
 public class OATrueFilter extends OAEqualFilter {
 
 	public OATrueFilter() {

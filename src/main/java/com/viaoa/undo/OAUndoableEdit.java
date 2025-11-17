@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.undo;
 
 import javax.swing.undo.CannotRedoException;
@@ -20,7 +25,58 @@ import com.viaoa.object.OAObject;
 import com.viaoa.util.OAString;
 
 /**
- * Undoable for OA changes.
+ * Implementation of {@link javax.swing.undo.UndoableEdit} that captures a
+ * reversible change to an OA Hub or OAObject.
+ * <p>
+ * An {@code OAUndoableEdit} instance records all data needed to undo or redo
+ * a specific operation. Supported edit types include:
+ * <ul>
+ *   <li>{@link #ADD} – add object to Hub,</li>
+ *   <li>{@link #REMOVE} – remove object from Hub,</li>
+ *   <li>{@link #MOVE} – reorder an object within a Hub,</li>
+ *   <li>{@link #INSERT} – insert object at specific position,</li>
+ *   <li>{@link #CHANGEAO} – change active object of a Hub,</li>
+ *   <li>{@link #PROPCHANGE} – change an OAObject property,</li>
+ *   <li>{@link #HOLDER} – placeholder for custom logic.</li>
+ * </ul>
+ *
+ * <h2>Undo / Redo Semantics</h2>
+ * Undo and redo operations perform symmetric Hub or OAObject changes, ensuring
+ * full reversibility:
+ * <ul>
+ *   <li>Add → Remove</li>
+ *   <li>Remove → Insert</li>
+ *   <li>Move → Move (reverse positions)</li>
+ *   <li>Insert → Remove</li>
+ *   <li>Active Object change → restore previous AO</li>
+ *   <li>Property change → restore previous value</li>
+ * </ul>
+ *
+ * <h2>Presentation Names</h2>
+ * Presentation names are used for menus and UI components:
+ * <ul>
+ *   <li>{@link #getPresentationName()}</li>
+ *   <li>{@link #getUndoPresentationName()}</li>
+ *   <li>{@link #getRedoPresentationName()}</li>
+ * </ul>
+ * Names can be automatically generated when not provided.
+ *
+ * <h2>Replacement Logic</h2>
+ * Edits can optionally replace previous edits of the same type, object, and
+ * property. This is controlled by {@link #setAllowReplace(boolean)} and is
+ * tested using {@link #equals(Object)}.
+ *
+ * <h2>Usage</h2>
+ * Edit instances are created through static factory methods such as:
+ * <ul>
+ *   <li>{@link #createUndoableAdd(String, Hub, Object)}</li>
+ *   <li>{@link #createUndoableRemove(String, Hub, Object, int)}</li>
+ *   <li>{@link #createUndoablePropertyChange(String, Object, String, Object, Object)}</li>
+ * </ul>
+ *
+ * <p>
+ * This class is used extensively by OA GUI controllers and
+ * {@link com.viaoa.undo.OAUndoManager} to provide application-level undo/redo.
  */
 public class OAUndoableEdit implements UndoableEdit {
 

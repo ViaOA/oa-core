@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.db;
 
 import com.viaoa.annotation.OAClass;
@@ -19,9 +24,26 @@ import com.viaoa.object.OAObjectInfo;
 // SqlServer: http://msdn.microsoft.com/en-us/library/ms191530.aspx
 
 /**
- * Database MetaData for various JDBC databases.
+ * Holds database-specific configuration, keywords, and behavior flags for JDBC connections.
+ * <p>
+ * {@code DBMetaData} encapsulates differences across major SQL vendors
+ * (Oracle, SQL Server, MySQL, PostgreSQL, DB2, etc.) and provides a
+ * centralized configuration object used by {@link com.viaoa.datasource.jdbc.OADataSourceJDBC}.
+ * </p>
  *
- * @author vvia see for data types: http://docs.oracle.com/javase/1.5.0/docs/guide/jdbc/getstart/mapping.html#table1
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li>Track driver, URL, and credential information.</li>
+ *   <li>Define dialect flags such as quoting style, boolean syntax, and join behavior.</li>
+ *   <li>Notify delegates on database type changes for re-initialization.</li>
+ * </ul>
+ *
+ * <h2>Design Notes</h2>
+ * Each OA JDBC DataSource uses a single {@code DBMetaData} instance
+ * to standardize query generation and type conversion across sessions.
+ *
+ * @see com.viaoa.datasource.jdbc.delegate.DBMetaDataDelegate
+ * @see com.viaoa.datasource.jdbc.OADataSourceJDBC
  */
 @OAClass(useDataSource = false, localOnly = false)
 public class DBMetaData extends OAObject {

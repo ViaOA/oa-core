@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.json.jackson;
 
 import java.util.ArrayList;
@@ -52,6 +67,21 @@ import com.viaoa.util.OATime;
 //qqqqqqqqqqqqqqqqqqqqq
 //qqqqqqqqqqqqqqqqqqqqq
 
+/**
+ * Legacy JSON-to-{@link OAObject} loader previously used by {@link OAJson}.
+ * <p>
+ * This implementation has been superseded by {@link OAJacksonDeserializerLoader}
+ * but is retained for reference and potential compatibility troubleshooting.
+ * It contains an earlier algorithm for:
+ * <ul>
+ *   <li>Finding existing objects via GUIDs, primary keys, import-match
+ *       properties, and unique link properties.</li>
+ *   <li>Creating and populating new {@link OAObject} instances from JSON.</li>
+ *   <li>Handling complex match scenarios such as link-equal-with-unique
+ *       relationships.</li>
+ * </ul>
+ * New code should not depend on this class; prefer {@link OAJacksonDeserializerLoader}.
+ */
 public class OAJacksonDeserializerLoaderOld {
 
 	private final OAJson oajson;

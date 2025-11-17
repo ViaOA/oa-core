@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.remote;
 
 import com.viaoa.hub.Hub;
@@ -17,6 +22,39 @@ import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 import com.viaoa.remote.multiplexer.annotation.OARemoteParameter;
 import com.viaoa.sync.model.ClientInfo;
+
+/**
+ * Remote interface representing the authoritative server-side object model.
+ * <p>
+ * A concrete {@code RemoteServerImpl} instance is created by the
+ * {@code OASyncServer} and bound to the multiplexer so that each
+ * {@code OASyncClient} can:
+ * <ul>
+ *   <li>load individual objects from the server cache or datasource,</li>
+ *   <li>save objects with server-side cascade rules,</li>
+ *   <li>open remote sessions and obtain {@link RemoteSessionInterface},</li>
+ *   <li>obtain per-client {@link RemoteClientInterface} for detail loading
+ *       and datasource access,</li>
+ *   <li>invoke remote methods on OAObjects and Hubs,</li>
+ *   <li>retrieve GUID sequences,</li>
+ *   <li>refresh server caches,</li>
+ *   <li>locate unique OAObjects using key-based resolution.</li>
+ * </ul>
+ *
+ * <h2>Queueing Semantics</h2>
+ * Some methods bypass the sync queue to avoid reordering:
+ * <ul>
+ *   <li>{@code ping}, {@code ping2}, {@code getDisplayMessage},</li>
+ *   <li>{@code getNextFiftyObjectGuids},</li>
+ *   <li>methods using {@code @OARemoteParameter(dontUseQueue = true)},</li>
+ *   <li>methods using {@code returnOnQueueSocket = true} for low-latency
+ *       return values.</li>
+ * </ul>
+ *
+ * <p>
+ * This interface defines the top-level RPC surface between the client and the
+ * authoritative server OA model.
+ */
 
 @OARemoteInterface
 public interface RemoteServerInterface {

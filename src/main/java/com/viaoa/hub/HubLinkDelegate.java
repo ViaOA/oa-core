@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.reflect.Constructor;
@@ -26,9 +31,21 @@ import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 
 /**
- * Delegate used for linking Hubs.
+ * Provides link-based synchronization between two {@link Hub} instances.
  *
- * @author vvia
+ * <p><b>Purpose</b> – to wire one Hub's objects to another via reference
+ * properties, maintaining automatic synchronization between Active Objects.
+ *
+ * <p><b>Responsibilities</b>
+ * <ul>
+ *   <li>Resolve link metadata via {@link OALinkInfo} and reflection.</li>
+ *   <li>Set up bidirectional or positional link behavior.</li>
+ *   <li>Attach and detach listeners to propagate reference changes.</li>
+ *   <li>Validate link integrity (class compatibility, existing links, recursion).</li>
+ * </ul>
+ *
+ * <p>Used by {@code Hub.setLinkHub()} to create the reactive connection between
+ * Hubs for reference synchronization.
  */
 public class HubLinkDelegate {
 	/**

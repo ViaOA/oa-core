@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.Arrays;
@@ -17,7 +22,30 @@ import com.viaoa.hub.Hub;
 import com.viaoa.util.OAConverter;
 
 /**
- * Helper for using OAObjectKey. 
+ * Internal delegate responsible for resolving, merging, and maintaining identity
+ * semantics for OAObjects and their OAObjectKeys. All identity lookups and
+ * reconciliations route through this delegate.
+ *
+ * <p>The resolution strategy is GUID-first: if a GUID match is found in the
+ * cache it is always considered the authoritative identity. If only business
+ * keys are provided, a secondary lookup is performed. When both refer to
+ * different cached objects, the identities are reconciled to maintain a single
+ * instance of each real-world entity in the object graph.</p>
+ *
+ * <p>This delegate also performs conversion from OAObject references to
+ * OAObjectKeys (and back), enabling lazy loading and safe reference storage
+ * without forcing object materialization. It ensures identity consistency when
+ * objects move between states such as new, loaded, remote, or partially
+ * referenced.</p>
+ *
+ * <p>These mechanisms enable OA's distributed and offline-first behavior:
+ * references may be communicated using only GUIDs, caches may contain only keys
+ * until objects are needed, and identity never drifts even when primary key
+ * properties change or are not yet assigned.</p>
+ *
+ * @see OAObjectKey
+ * @see OAObjectCacheDelegate
+ * @see OAObject
  */
 public class OAObjectKeyDelegate {
 

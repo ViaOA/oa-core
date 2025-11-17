@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.*;
@@ -17,22 +22,39 @@ import java.util.logging.Logger;
 import com.viaoa.object.*;
 import com.viaoa.util.*;
 
-
-//NOte:  this was called HubSorter.java qqqqqqqqqqq changed it to be a listener for Hub.data.sorter
-// 20101219 was using detailHubs to listen for changes.  It now uses just a hub property listener, which
-//          has been changed to use HubMerger to listen to any dependent propertyPaths
 /**
-    HubSortListener is used to keep a Hub sorted by the Hubs sort/select order.  Used internally by
-    Hub.sort method.
-    
-    Note:
-    For oa.cs, each client will maintain their own sorting.  If a sort property is changed, then each client will resort,
-    without any messages going to/from server.   
-    <p>
-    For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
-    @see Hub#sort(String,boolean) Hub.sort
-    @see OAComparator that is created based on propertyPaths 
-*/
+ * Listens for property and list changes on a {@link Hub} to keep it
+ * sorted according to its current sort configuration.
+ *
+ * <p>This class is created internally by {@link Hub#sort(String, boolean)}
+ * and maintains the Hub’s ordering when relevant properties change.
+ * It detects both direct property changes on contained objects and
+ * indirect updates through nested property paths.</p>
+ *
+ * <h3>Responsibilities</h3>
+ * <ul>
+ *   <li>Parse the property path string passed to {@link Hub#sort} and
+ *       register listeners for all dependent properties.</li>
+ *   <li>When a sort-related property changes, invoke
+ *       {@link HubAddRemoveDelegate#sortMove(Hub, OAObject)} to reposition
+ *       the object within the Hub.</li>
+ *   <li>When the Hub’s entire list changes ({@code onNewList}), call
+ *       {@link HubSortDelegate#resort(Hub)} to re-evaluate order.</li>
+ *   <li>Support explicit {@link Comparator} sorting as well as automatic
+ *       {@link OAComparator} based on property paths.</li>
+ * </ul>
+ *
+ * <h3>Design Notes</h3>
+ * <ul>
+ *   <li>Used exclusively by {@link Hub} and not intended for direct use.</li>
+ *   <li>Each client maintains its own sort order; server synchronization
+ *       of sorting is intentionally suppressed.</li>
+ *   <li>Implements {@link java.io.Serializable} for Hub graph persistence.</li>
+ *   <li>Thread-safe under OA’s single-threaded event model; employs
+ *       {@link OAThreadLocalDelegate#setSuppressCSMessages(boolean)} to
+ *       prevent cross-client event storms.</li>
+ * </ul>
+ */
 public class HubSortListener extends HubListenerAdapter implements java.io.Serializable {
     static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(HubSortListener.class.getName()); 

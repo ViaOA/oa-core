@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.multiplexer.io;
 
 import java.io.IOException;
@@ -23,7 +28,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.viaoa.comm.multiplexer.io.VirtualSocket;
 
 /**
- * Used internally for remoting objects between clients and servers.
+ * Customized {@link ObjectOutputStream} used by OA's remoting system.
+ * Implements a compact class-descriptor protocol that sends full class
+ * metadata only once and assigns small integer IDs for subsequent writes.
+ *
+ * <p>Features:</p>
+ * <ul>
+ *   <li>Eliminates the standard Java stream header.</li>
+ *   <li>Uses {@link RemoteBufferedOutputStream} for high-performance writes.</li>
+ *   <li>Shares class-descriptor caches across nested remote streams.</li>
+ *   <li>Writes new class descriptors lazily and moves them into the global
+ *       cache only after the entire object has been flushed, avoiding race
+ *       conditions.</li>
+ *   <li>Provides a fast ASCII string writer specialized for protocol data.</li>
+ * </ul>
+ *
+ * <p>
+ * Combined with {@link RemoteObjectInputStream}, this forms OA’s
+ * high-performance serialization format used for all Multiplexer-based
+ * remoting.
+ * </p>
+ *
  * @author vvia
  */
 public class RemoteObjectOutputStream extends ObjectOutputStream {

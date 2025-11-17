@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.clientserver;
 
 import java.util.HashMap;
@@ -30,9 +35,43 @@ import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.util.OAFilter;
 
 /**
- * Uses OAClient to have all methods invoked on the OADataSource on OAServer.
+ * Client-side {@link com.viaoa.datasource.OADataSource} implementation that forwards
+ * all data access requests to a remote OA Server through {@link com.viaoa.sync.remote.RemoteClientInterface}.
  * <p>
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ * {@code OADataSourceClient} enables distributed OA applications where client objects
+ * transparently interact with a remote server-side {@code OADataSource}. All CRUD
+ * and query operations are marshaled via the OA synchronization layer.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Transparent remote delegation for all {@code OADataSource} operations.</li>
+ *   <li>Supports insert, update, delete, count, and select with server iteration.</li>
+ *   <li>Automatic connection acquisition via {@link com.viaoa.sync.OASyncDelegate}.</li>
+ *   <li>Caches per-class metadata (max length, class support flags).</li>
+ *   <li>Fallback to local {@link com.viaoa.datasource.objectcache.ObjectCacheIterator}
+ *       when the class is locally cached.</li>
+ * </ul>
+ *
+ * <h2>Remote Execution</h2>
+ * Each method uses an operation code constant (e.g., {@code INSERT}, {@code DELETE})
+ * to call {@link RemoteClientInterface#datasource(int, Object[])} or
+ * {@link RemoteClientInterface#datasourceReturnOnQueue(int, Object[])}.
+ *
+ * <h2>Iterator Behavior</h2>
+ * Remote queries return lightweight iterator proxies that fetch results from
+ * the server in batches, automatically updating local caches through
+ * {@link com.viaoa.object.OAObjectCSDelegate}.
+ *
+ * <h2>Example</h2>
+ * <pre>{@code
+ * OADataSourceClient dsClient = new OADataSourceClient();
+ * dsClient.insert(myOrder);
+ * OADataSourceIterator it = dsClient.select(Order.class, "status='Open'", null, null, null, null, null, 100, null, false);
+ * }</pre>
+ *
+ * @see com.viaoa.datasource.OADataSource
+ * @see com.viaoa.sync.remote.RemoteClientInterface
+ * @see com.viaoa.sync.OASyncDelegate
  */
 public class OADataSourceClient extends OADataSource {
 	private Hashtable hashClass = new Hashtable();

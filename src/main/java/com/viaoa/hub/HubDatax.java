@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.reflect.Method;
@@ -18,8 +23,24 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.object.OAObjectInfo;
 
 /**
- * Internally used by Hub to store objects. Shared Hubs will use this same object.<br>
- * A Vector and Hashtable are used to store the objects.
+ * Optional extended state for a {@link HubData} instance.
+ * 
+ * <p>Contains auxiliary members that are only allocated when needed, to keep
+ * base HubData lightweight.</p>
+ *
+ * <p>Includes:</p>
+ * <ul>
+ *   <li>Sorting (property, direction, listener)</li>
+ *   <li>{@link OASelect} query linkage and refresh flags</li>
+ *   <li>Unique-property and duplication control</li>
+ *   <li>Change tracking vectors (add/remove)</li>
+ *   <li>Metadata cache ({@link OAObjectInfo}) and custom properties</li>
+ *   <li>Auto-sequence and auto-match delegates</li>
+ *   <li>Where-Hub linkage for select filtering</li>
+ * </ul>
+ *
+ * <p>Provides {@code isNeeded()} and {@code shouldSerialize()} predicates to
+ * prune serialization footprint.</p>
  */
 public class HubDatax implements java.io.Serializable {
 	static final long serialVersionUID = 1L; // used for object serialization

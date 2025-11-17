@@ -240,3 +240,67 @@ public class HubTest extends OAUnitTest {
         
     }
 }
+
+/**
+ * Observable Collection Class that has similar methods as both ArrayList and HashMap. When used with OAObject, the Hub sends all events for
+ * the objects that it contains.
+ * <p>
+ * Observable means that will notify listeners whenever an event happens. Hub has methods to register listeners and for sending Events.
+ * <p>
+ * <i>Searching</i><br>
+ * Hub has methods to find any object based on a property path and search value.
+ * <p>
+ * <i>Sorting</i><br>
+ * Hub has methods for sorting/ordering of objects within the collection. The collection is kept sorted as objects are added, inserted, or
+ * changed. A property path can be used or a customized comparator can be used.
+ * <p>
+ * <i>Manages OAObjects</i><br>
+ * Hub is used by OAObject for sending events and for managing event listeners.
+ * <p>
+ * <i>Works directly with {@link OADataSource}</i><br>
+ * The Hub Class has methods to directly select objects from a DataSource/database using an {@link OASelect}. Hubs are also set up to only
+ * pre-fetch a certain number of objects at a time, so that response is faster. Methods to get a total count of objects and to load all
+ * objects are also included.
+ * <p>
+ * <i>Recursive Hubs</i><br>
+ * A Hub that is recursive is where each object has children objects of the same class. Each object has a method to get its "parent". A
+ * "Root Hub" is the top Hub where all of the objects in it do not have a parent (value is null). Hub and OAObject will automatically put
+ * objects in the correct Hub based on the value of the parent. If another Object owns the Hub, then all children under it will have a
+ * reference to the owner object.
+ * <p>
+ * <i>Hub Filtering</i><br>
+ * A Hub can be created that filters objects from another Hub. see {@link HubFilter} for more information.
+ * <p>
+ * <i>XML Support</i><br>
+ * Hub has methods to work directly with OAXMLReader/Writer to read/write XML.
+ * <p>
+ * <i>Serialization</i><br>
+ * Works with OAObject to handle serialization of objects to/from a stream.
+ * <p>
+ * Inside the Hub are the following objects:
+ * <ul>
+ * <li>Data - a Vector and Hashtable that are used to store the objects. This can be shared/used by other Hubs.
+ * <li>Unique - information that is unique to a single Hub. ie: the registered event listeners.
+ * <li>Active - keeps track of the object within the Hub that has the current focus. This can be shared/used by other Hubs.
+ * <li>Master - Hub/Object that this Hub belongs with. Example: a Hub of Employee objects that belongs to a Department object.
+ * </ul>
+ * <p>
+ * <b>Navigational features</b><br>
+ * The Hub Collection has methods that allow it to be <i>navigated</i>. This is primarily used when using Hubs with GUI components, where
+ * the Hub acts as the Model in MVC (Model/View/Controller) that is commonly used for building GUI applications.
+ * <p>
+ * Hubs have an <i>Active Object</i>, which is a reference to the object in the Hub that currently has the <i>focus</i>. Navigational
+ * methods in the Hub can be used to change the active object. <br>
+ * &nbsp;&nbsp;&nbsp;<img src="doc-files/Hub2.gif" alt="hub">
+ * <p>
+ * <b>Configuring Hubs to work together (the <i>Wiring</i>)</b><br>
+ * Hubs can be configured to form relationships and automatically work together. <br>
+ * This includes:
+ * <ul>
+ * <li>Creating Master/Detail relationships. see {@link DetailHub}
+ * <li>Hubs that Share the same data. see {@link SharedHub}
+ * <li>Linking/Connecting Hubs together. see {@link HubLink}
+ * </ul>
+ * &nbsp;&nbsp;&nbsp;<img src="doc-files/Hub1.gif" alt="">
+ */
+

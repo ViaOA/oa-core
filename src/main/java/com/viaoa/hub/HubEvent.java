@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.logging.Logger;
@@ -21,7 +26,19 @@ import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.util.OALogger;
 
 /**
- * This is the single event used by OAObject and Hub that is sent to HubListeners.
+ * Single event type used by {@link Hub} and {@link com.viaoa.object.OAObject} to
+ * represent structural and property-change activity throughout the OA graph.
+ * <p>
+ * Extends {@link java.beans.PropertyChangeEvent} and adds Hub-specific context:
+ * current object, positional info (pos/from/to), cancel/response flags, and
+ * multiple constructors for add/insert/remove/move/replace/property-change cases.
+ * <p>
+ * For link properties persisted as {@link com.viaoa.object.OAObjectKey}, {@link #getOldValue()}
+ * resolves the prior reference to its real {@code OAObject} using link metadata, so
+ * listeners always see object instances (not keys) for reverse-link scenarios.
+ * <p>
+ * Typical producers: Hub add/remove/move/AO changes, OAObject property updates.
+ * Typical consumers: {@link HubListener} implementations across UI, caching, and sync.
  */
 public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	private static final Logger LOG = OALogger.getLogger(HubEvent.class);

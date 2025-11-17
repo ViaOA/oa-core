@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.remote;
 
 
@@ -16,6 +21,37 @@ import java.util.Comparator;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.remote.multiplexer.annotation.*;
+
+/**
+ * Remote interface defining broadcast-style synchronization messages exchanged
+ * between server and clients.
+ * <p>
+ * Methods on this interface represent live updates to the distributed object
+ * graph, including:
+ * <ul>
+ *   <li>property changes,</li>
+ *   <li>hub insert/remove/move operations,</li>
+ *   <li>detail and sibling refreshes,</li>
+ *   <li>server-side and client-side deletes,</li>
+ *   <li>hub sorting and collection resets.</li>
+ * </ul>
+ *
+ * <h2>Execution Context</h2>
+ * Many methods are invoked by the server to broadcast changes to all clients
+ * that have the relevant objects. Others are invoked client → server (e.g.,
+ * data entry from UI clients).
+ *
+ * <h2>Routing and Ordering</h2>
+ * Some methods specify special queueing via:
+ * <ul>
+ *   <li>{@code @OARemoteMethod(runInRemoteThread = true)}</li>
+ *   <li>{@code isOASync = true} on the interface</li>
+ * </ul>
+ * ensuring propagation ordering that preserves hub and object graph integrity.
+ *
+ * <p>
+ * {@code RemoteSyncInterface} is the heart of OA’s distributed sync protocol.
+ */
 
 @OARemoteInterface(isOASync=true)
 public interface RemoteSyncInterface {

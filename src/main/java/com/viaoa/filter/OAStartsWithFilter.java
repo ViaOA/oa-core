@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import java.util.logging.Level;
@@ -23,10 +28,32 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Creates a filter to see if the value from the propertyPath is startsWith (string) the filter value.
- * 
- * @author vvia
- * @see OACompare#isEqual(Object, Object)
+ * Filter that evaluates whether a property's string value begins with a
+ * specified prefix.  The property may be obtained directly from the object
+ * or through an {@link OAPropertyPath}.
+ *
+ * <p><b>Deep property support:</b><br>
+ * If the property path crosses a many-relationship, an {@link OAFinder} is
+ * created using {@link OAFilterDelegate#createFinder(Class, OAPropertyPath)}.
+ * A nested {@code OAStartsWithFilter} is attached to the finder so that the
+ * match is executed on the resolved target object.
+ * </p>
+ *
+ * <p><b>Case sensitivity:</b><br>
+ * Matching may be performed with or without case sensitivity based on the
+ * {@code bIgnoreCase} flag.
+ * </p>
+ *
+ * <p><b>Matching rules:</b><br>
+ * Both the object’s property value and the filter’s comparison value are
+ * converted to strings via {@link OAString#toString(Object)} before
+ * performing the {@code startsWith()} test.
+ * </p>
+ *
+ * <p>
+ * This filter is useful for prefix-based text search, auto-complete lists,
+ * name/code lookups, and property-driven UI filtering.
+ * </p>
  */
 public class OAStartsWithFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OAStartsWithFilter.class.getName());

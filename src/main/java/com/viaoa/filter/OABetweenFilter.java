@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import java.util.logging.Logger;
@@ -21,10 +26,17 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Creates a filter to see if the value from the propertyPath is between (but not equal) two values.
+ * Filter that evaluates whether a property value lies strictly between two
+ * comparison values (exclusive).  The comparison may operate directly on
+ * the object or on a value obtained through an {@link OAPropertyPath}.
  *
- * @author vvia
- * @see OACompare#isBetween(Object, Object, Object)
+ * <p>
+ * If the property path resolves through a many-relationship, a nested
+ * {@link OAFinder} is automatically constructed so that filtering can be
+ * applied to the referenced object graph.
+ * </p>
+ *
+ * @see com.viaoa.util.OACompare#isBetween(Object, Object, Object)
  */
 public class OABetweenFilter<T> implements OAFilter {
 	private static Logger LOG = Logger.getLogger(OABetweenFilter.class.getName());

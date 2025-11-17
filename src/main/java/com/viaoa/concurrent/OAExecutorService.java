@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.concurrent;
 
 import java.util.concurrent.Callable;
@@ -25,9 +30,26 @@ import java.util.logging.Logger;
 import com.viaoa.util.OAString;
 
 /**
- * creates an ExecutorService to await commands to run.
- * @author vvia
+ * Wrapper around {@link java.util.concurrent.ThreadPoolExecutor} that creates a
+ * named, daemon-thread executor for background processing within OA-based
+ * applications. <p>
  *
+ * OAExecutorService supports two modes:
+ * <ul>
+ *   <li><b>size == 0</b>: creates an unbounded cached thread pool using a
+ *       {@link java.util.concurrent.SynchronousQueue}.</li>
+ *   <li><b>size > 0</b>: creates a fixed number of worker threads backed by a
+ *       very large {@link java.util.concurrent.LinkedBlockingQueue}.</li>
+ * </ul>
+ *
+ * Each submitted task increments an internal counter, and tasks may be
+ * submitted as {@link Runnable} or {@link Callable}, optionally using timed
+ * waits. All threads created are daemon threads and therefore do not block JVM
+ * exit. <p>
+ *
+ * This class does not automatically propagate OA thread context from the
+ * submitting thread; callers must handle OAThreadLocalDelegate propagation if
+ * required. The executor is lazily created when first needed.
  */
 public class OAExecutorService {
     private static Logger LOG = Logger.getLogger(OAExecutorService.class.getName());

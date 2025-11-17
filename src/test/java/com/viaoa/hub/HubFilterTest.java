@@ -572,3 +572,24 @@ public class HubFilterTest extends OAUnitTest {
 		assertEquals(0, aiRemove2.get());
 	}
 }
+/**
+ * HubFilter is used to create a Hub that has objects that are filtered from another Hub.
+ * <p>
+ * All that is needed is to subclass the HubFilter and implement the "isUsed()" method to know if an object is to be included in the
+ * filtered Hub.
+ * <p>
+ * Example<br>
+ *
+ * <pre>
+ Hub hubFiltered = new Hub(Employee.class)
+ new HubFilter(hubAllEmployees, hubFiltered) {
+     public boolean isUsed(Object obj) {
+         // .... code to check if object should be added to hubFilter
+     }
+ };
+ * </pre>
+ * <p>
+ * Note: HubFilter will also monitor the linkHub to hub+property and will make sure that the link to property value is included in the filtered
+ * hub. If it isUsed=false, then it will only be added temporarily, until the linkToHub.AO is changed. <br> 
+ * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ */

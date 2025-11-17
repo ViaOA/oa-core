@@ -1,17 +1,37 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
-import com.viaoa.hub.*;
-
+/**
+ * Lightweight internal log record representing a single persistence command
+ * executed against an {@link OAObject}.
+ *
+ * <p>Used internally by OA to record "save" and "delete" operations, mainly
+ * for transaction logs or replication queues.  Each record carries the
+ * command verb and a transient reference to the affected object.</p>
+ *
+ * <p><b>Highlights</b>:
+ * <ul>
+ *   <li>Defines static command constants ({@code save}, {@code delete}).</li>
+ *   <li>Property-change notification for both {@code object} and
+ *       {@code command} fields.</li>
+ *   <li>{@link OAObjectInfo} configured as local-only, non-persistent,
+ *       and excluded from caches.</li>
+ * </ul>
+ */
 public class OALogRecord extends OAObject {
     private static final long serialVersionUID = 1L;
    

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.ArrayList;
@@ -28,11 +33,46 @@ import com.viaoa.util.OACompare;
 import com.viaoa.util.OAString;
 
 /**
- * This is the central Delegate class that performs services for OAObjects. The other Delegate classes are specialized for specific tasks.
- * This Delegate is used for multi-specific and misc functionality. The Delegates are designed so that the OAObject class can be light
- * weight and have various functionalities built in.
+ * Internal lifecycle controller for {@link OAObject} instances.
+ * <p>
+ * This delegate centralizes mutation and identity operations so that every
+ * state transition maintains consistency across the object graph, cache, 
+ * hub membership, and distributed sync.
  *
- * @author vincevia
+ * <h3>Primary Responsibilities</h3>
+ * <ul>
+ *   <li><b>Creation & Initialization:</b>
+ *       GUID assignment, ID propagation, datasource and client/server bootstrap</li>
+ *   <li><b>State & Lifecycle Flags:</b>
+ *       new/deleted/submitted/loading markers with strict event ordering</li>
+ *   <li><b>Identity Stability:</b>
+ *       ensures a single runtime instance per entity via GUID-first lookup</li>
+ *   <li><b>Dirty & Cascade Evaluation:</b>
+ *       determines persistence requirements without forcing loads</li>
+ *   <li><b>AutoAdd / Reverse Linking:</b>
+ *       safely inserts objects into owning hubs when lifecycle transitions occur</li>
+ *   <li><b>Distributed Sync Coordination:</b>
+ *       suppresses or forwards changes based on execution context</li>
+ * </ul>
+ *
+ * Every mutation that could require event delivery, cache update, or hub changes
+ * flows through this delegate, guaranteeing:
+ * <ul>
+ *   <li>before-change → mutation → after-change sequencing</li>
+ *   <li>no identity drift during bootstrap or cloning</li>
+ *   <li>lazy-load safety when evaluating cascades</li>
+ *   <li>thread-safe graph mutation boundaries</li>
+ * </ul>
+ *
+ * <h3>Usage</h3>
+ * Always invoked via {@link OAObject} API or metadata-driven automation.
+ * Application code does not call this class directly.
+ *
+ * @since OA 1.0
+ * @see OAObject
+ * @see OAObjectEventDelegate
+ * @see OAObjectHubDelegate
+ * @see OAObjectCacheDelegate
  */
 public class OAObjectDelegate {
 
@@ -224,16 +264,10 @@ public class OAObjectDelegate {
 			return;
 		}
 		boolean old = oaObj.newFlag;
-		oaObj.newFlag = b;
 		OAObjectEventDelegate.fireBeforePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
+
+		oaObj.newFlag = b;
 		
-/*qqqqqqq		
-		try {
-			OAObjectKeyDelegate.updateKey(oaObj, false);
-		} catch (Exception e) {
-			LOG.log(Level.WARNING, "oaObj=" + oaObj.getClass() + ", key=" + OAObjectKeyDelegate.getKey(oaObj), e);
-		}
-*/		
 		OAObjectEventDelegate.firePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
 		if (!b) {
 			setAutoAdd(oaObj, true);
@@ -261,7 +295,7 @@ public class OAObjectDelegate {
 		}
 	}
 
-	// 20151029 remove the Id props, set new=true, reassign guid
+	// remove the Id props, set new=true, reassign guid
 	public static void setAsNewObject(final OAObject oaObj) {
 		if (oaObj == null) {
 			return;
@@ -360,6 +394,8 @@ public class OAObjectDelegate {
 	/**
 	 * Removes object from HubController and calls super.finalize().
 	 */
+	
+/*qqqqqqqqqqq 20251105 can be removed	
 	public static void finalizeObject(OAObject oaObj) {
 		//System.out.println((++qq)+" finalizeObject: "+oaObj);
 		if (oaObj.guid == 0) {
@@ -392,6 +428,7 @@ public class OAObjectDelegate {
 		hmAutoAdd.remove(oaObj.guid);
 		oaObj.weakhubs = null;
 	}
+*/	
 
 	/**
 	 * Returns true if this object is new or any changes have been made to this object or any objects in Links that are TYPE=MANY and

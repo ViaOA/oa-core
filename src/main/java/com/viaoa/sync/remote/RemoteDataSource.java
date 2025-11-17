@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.remote;
 
 import java.util.ArrayList;
@@ -26,7 +31,49 @@ import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.util.OAFilter;
 
 /**
- * Used by OADataSourceClient to have a client DS methods to be executed on server.
+ * Server-side datasource proxy used by {@link RemoteClientImpl} to execute
+ * {@link OADataSource} operations initiated by a remote client.
+ * <p>
+ * {@code RemoteDataSource} translates high-level DS operations into direct
+ * calls against the appropriate server-side datasource. It supports:
+ * <ul>
+ *   <li>assigning IDs,</li>
+ *   <li>insert/update/save/delete,</li>
+ *   <li>many-to-many link updates,</li>
+ *   <li>query execution and iteration management,</li>
+ *   <li>count and passthrough count operations,</li>
+ *   <li>SELECT iterator creation and paging,</li>
+ *   <li>blob/property retrieval,</li>
+ *   <li>storage capability checks.</li>
+ * </ul>
+ *
+ * <h2>Iterator Management</h2>
+ * SELECT operations return an opaque string ID. The server stores a live
+ * iterator in {@code hashIterator}, and subsequent calls to:
+ * <ul>
+ *   <li>{@code IT_HASNEXT},</li>
+ *   <li>{@code IT_NEXT},</li>
+ *   <li>{@code IT_REMOVE}</li>
+ * </ul>
+ * operate against that server-side iterator.
+ *
+ * <h2>Object Resolution</h2>
+ * When queries or updates reference keys instead of objects, the datasource
+ * will:
+ * <ul>
+ *   <li>look up objects in the cache,</li>
+ *   <li>load from datasource if needed,</li>
+ *   <li>reassign GUIDs for newly loaded objects if required.</li>
+ * </ul>
+ *
+ * <h2>Cache Retention</h2>
+ * The abstract {@link #setCached(OAObject)} method allows implementations to
+ * mark that a client now holds a reference to the object, preventing the
+ * server from garbage-collecting it prematurely.
+ *
+ * <p>
+ * This class is the remote execution engine for OA's datasource layer during
+ * client–server synchronization.
  */
 public abstract class RemoteDataSource {
 	private static Logger LOG = Logger.getLogger(RemoteDataSource.class.getName());

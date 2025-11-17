@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.remote;
 
 import java.lang.reflect.Method;
@@ -26,7 +31,39 @@ import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.model.ClientInfo;
 
 /**
- * Server side remote object for clients to use.
+ * Base class for server-side implementations of {@link RemoteServerInterface}.
+ * <p>
+ * Each {@code OASyncServer} hosts one instance of a concrete subclass of
+ * {@code RemoteServerImpl}. It exposes operations that clients perform on the
+ * authoritative server-side model, including:
+ * <ul>
+ *   <li>retrieving objects from cache or datasource,</li>
+ *   <li>saving objects with specific cascade rules,</li>
+ *   <li>executing remote methods on OAObjects or Hubs,</li>
+ *   <li>issuing GUID sequences,</li>
+ *   <li>constructing {@code RemoteClientInterface} and
+ *       {@code RemoteSessionInterface} implementations for each client.</li>
+ * </ul>
+ *
+ * <h2>Remote Method Invocation</h2>
+ * The {@code runRemoteMethod(...)} variants:
+ * <ul>
+ *   <li>locate the target object or static hub method,</li>
+ *   <li>resolve matching methods using {@link OAObjectInfo},</li>
+ *   <li>invoke via reflection,</li>
+ *   <li>wrap and propagate exceptions back to clients.</li>
+ * </ul>
+ *
+ * <h2>Thread-Local Behavior</h2>
+ * Saves and restores the "send messages" state so that remote changes produce
+ * appropriate sync events without interfering with normal server behavior.
+ *
+ * <h2>Diagnostics</h2>
+ * {@link #performThreadDump(String)} captures and logs full JVM stack traces
+ * to help diagnose hung or misbehaving client calls.
+ *
+ * <p>
+ * This class sits at the top of the client–server RPC bridge for OA.
  */
 public abstract class RemoteServerImpl implements RemoteServerInterface {
 	private static Logger LOG = Logger.getLogger(RemoteServerImpl.class.getName());

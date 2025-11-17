@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.scheduler;
 
 import java.util.Iterator;
@@ -5,10 +20,15 @@ import java.util.TreeSet;
 import com.viaoa.util.OADateTime;
 
 /**
- * Used to combine DateTime ranges that could overlap, and then iterate through them 
- * in datetime order.
- * 
- * @author vvia
+ * Maintains a set of merged and ordered date–time ranges. Ranges that overlap
+ * are combined into parent ranges, and clearing or adding ranges adjusts the
+ * underlying structure by splitting or merging entries as required. <p>
+ *
+ * The schedule behaves like a simplified interval tree: a {@link TreeSet} is
+ * used for chronological ordering, and {@link OADateTimeRange} nodes contain a
+ * list of absorbed child ranges when overlaps occur. Clients can iterate over
+ * ranges in chronological order, locate “empty” spaces between them, and test
+ * whether a specific {@link com.viaoa.util.OADateTime} falls within any range.
  */
 public class OASchedule<R> implements Iterable<OADateTimeRange<R>> {
     private TreeSet<OADateTimeRange<R>> tree = new TreeSet<>();

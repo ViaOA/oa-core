@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
@@ -38,9 +43,30 @@ import com.viaoa.hub.Hub;
 import com.viaoa.util.OAArray;
 
 /**
- * Verifies OA annotations.
+ * Validates that OA model annotations match the runtime metadata generated
+ * by {@link OAObjectInfo} and, optionally, the physical JDBC database schema.
  *
- * @author vvia
+ * <p>This verifier performs deep structural validation of an OA model class by
+ * comparing all annotations—{@link OAClass}, {@link OAProperty},
+ * {@link OACalculatedProperty}, {@link OAId}, {@link OAOne}, {@link OAMany},
+ * {@link OATable}, {@link OAColumn}, {@link OAIndex}, and {@link OAIndexColumn}—
+ * against the computed {@link OAObjectInfo} and/or the database metadata from
+ * {@link com.viaoa.datasource.jdbc.db.Database}.</p>
+ *
+ * <p><b>Validation Coverage</b>:
+ * <ul>
+ *   <li>Class-level settings (useDataSource, localOnly, cache, initialization).</li>
+ *   <li>ID properties and their ordering.</li>
+ *   <li>All properties including maxLength, required, id-flag, and SQL types.</li>
+ *   <li>Calculated properties and dependent property lists.</li>
+ *   <li>All link definitions (one-to-one, one-to-many, many-to-many).</li>
+ *   <li>Database table, columns, foreign keys, and index structures.</li>
+ * </ul>
+ *
+ * <p>This tool is mainly used during development or model generation to ensure
+ * that annotations, OAObjectInfo metadata, and the relational schema are mutually
+ * consistent. A mismatch indicates either a model definition issue or a schema
+ * drift.</p>
  */
 public class OAAnnotationVerifier {
 

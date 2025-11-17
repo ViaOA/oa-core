@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.ArrayList;
@@ -19,11 +24,22 @@ import java.util.logging.Logger;
 import com.viaoa.hub.Hub;
 
 /**
- * Used for cascading methods, to be able to know if an object has already been visited. Since this is used for recursive visitors, it could
- * cause stack overflows. To handle this, there is a depth that can be used. When/if the max depth is reached, then objects can be added to
- * an array and then restarted once the stack unwinding is done.
+ * Tracks OAObjects and Hubs that have already been processed during a
+ * cascading graph traversal, preventing infinite recursion and redundant
+ * visitation. Used by recursive cascade logic (e.g. save/delete propagation)
+ * to protect against circular references in the Object Graph.
  *
- * @author vvia
+ * <p>This helper maintains separate sets for objects (by GUID) and Hubs,
+ * and can operate in a thread-safe mode when requested. Depth counters
+ * and an optional overflow list allow deep traversals to unwind safely
+ * without causing stack overflow.</p>
+ *
+ * <p>No side effects are applied to the Object Graph itself. This class
+ * provides lightweight runtime tracking only and does not force lazy
+ * loading or modify relationship integrity.</p>
+ *
+ * @see OAObject
+ * @see Hub
  */
 public class OACascade {
 	private static Logger LOG = Logger.getLogger(OACascade.class.getName());

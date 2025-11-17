@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.io.File;
@@ -15,24 +20,30 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.hub.Hub;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OADateTime;
-import com.viaoa.util.OANullObject;
-
 
 /**
- * This is used to store a reference to all empty hubs, so that a restart can 
- * create as an empty Hub, and not go to DS.
- * 
- * see: OAObjectReflectDelegate.getReferenceHub(), which will create an empty hub without
- * accessing the db.
- * 
- * @author vvia
+ * Persists and restores information about "empty" reference hubs for
+ * {@link OAObject}s so that application restarts can reconstruct those
+ * hubs without re-querying a data source.
+ *
+ * <p>At shutdown, {@link #save(File)} scans all cached objects and
+ * records which reference hubs are loaded and empty.  On startup,
+ * {@link #load(File)} reads that metadata so that subsequent calls to
+ * {@link OAObjectReflectDelegate#getReferenceHub(OAObject,String)}
+ * can create empty hubs without triggering database access.</p>
+ *
+ * <p><b>Key Responsibilities</b>:
+ * <ul>
+ *   <li>Serialize/deserialize hub-emptiness metadata to disk.</li>
+ *   <li>Integrate with {@link OAObjectCacheDelegate#callback} to iterate
+ *       over all cached objects.</li>
+ *   <li>Initialize empty hubs during {@link OAObject#afterLoad()}.</li>
+ * </ul>
  */
 public class OAObjectEmptyHubDelegate {
     private static Logger LOG = Logger.getLogger(OAObjectEmptyHubDelegate.class.getName());

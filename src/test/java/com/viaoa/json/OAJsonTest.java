@@ -109,3 +109,30 @@ public class OAJsonTest {
 	}
 
 }
+
+/* NOTES:
+
+@JsonProperty("TaxableGroup")
+
+
+
+*/
+
+/**
+* JSON serialization for OA. Works dynamically with OAObject Graphs to allow property paths to be included.
+* <p>
+* This is also able to work with POJO classes that dont always have pkey properties, but instead use importMatch properties or linkMany
+* unique. OAJson will find (or create) the correct OAObject that does have the matching value(s). <br>
+* ex: Customer.id, and Customer.custNumber, where OAObject Customer has an Id (pkey) and custNumber (int prop, but not key). The Pojo class
+* does not have to have the Id.<br>
+* also, a link could be an importMatch (ex: custNumber can be flagged as an importMatch).
+* <p>
+* Internally uses (/depends on) Jackson's ObjectMapper.
+* <p>
+* Note: this is not thread safe.
+*
+* @author vvia
+*/
+
+
+

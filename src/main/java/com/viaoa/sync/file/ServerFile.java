@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.file;
 
 import java.io.BufferedInputStream;
@@ -27,9 +32,45 @@ import com.viaoa.sync.OASync;
 import com.viaoa.util.OAFile;
 
 /**
- * Allows client apps to upload or download files to server, under a specific directory only.
- * Used by OASyncServer to allow clients to use.
- * @author vvia
+ * Server-side file transfer service used by {@link com.viaoa.sync.OASyncServer}.
+ * <p>
+ * {@code ServerFile} allows clients to upload or download files from a single
+ * server-controlled directory. It runs two dedicated daemon threads:
+ * <ul>
+ *   <li>an upload listener (for files sent from clients),</li>
+ *   <li>a download listener (for files requested by clients).</li>
+ * </ul>
+ * Each accepted socket is processed on its own worker thread.
+ *
+ * <h2>Directory Safety</h2>
+ * All filenames are normalized using {@link com.viaoa.util.OAFile} and checked
+ * for disallowed patterns (such as {@code ".."}) to prevent directory traversal
+ * or access to files outside the configured server directory.
+ *
+ * <h2>Download Handling</h2>
+ * When a client requests a file:
+ * <ul>
+ *   <li>the filename is validated and normalized,</li>
+ *   <li>a status code is returned,</li>
+ *   <li>binary data is streamed in length-prefixed blocks.</li>
+ * </ul>
+ *
+ * <h2>Upload Handling</h2>
+ * During upload:
+ * <ul>
+ *   <li>the server validates and normalizes the filename,</li>
+ *   <li>ensures the directory structure exists,</li>
+ *   <li>creates or overwrites the destination file,</li>
+ *   <li>streams blocks of binary data from the client.</li>
+ * </ul>
+ *
+ * <h2>Lifecycle</h2>
+ * {@link #start()} launches both upload and download listener threads.
+ * {@link #stop()} closes the associated server sockets.
+ *
+ * <p>
+ * This class provides a lightweight, efficient file-transfer protocol that
+ * operates independently of remote-method queue ordering.
  */
 public class ServerFile {
     private static Logger LOG = Logger.getLogger(ServerFile.class.getName());

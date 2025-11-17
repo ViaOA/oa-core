@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.remote;
 
 import java.util.Comparator;
@@ -23,8 +28,52 @@ import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAThrottle;
 
 /**
- * Remote broadcast methods used to keep OAObjects, Hubs in sync with all computers. Note: there is an instance on the server and on each
- * client. The server needs to always try to update, even if the object is no longer in memory, then it will need to get from datasource.
+ * Concrete implementation of {@link RemoteSyncInterface} used by both server
+ * and clients to propagate live changes to OAObjects and Hubs.
+ * <p>
+ * A {@code RemoteSyncImpl} instance exists:
+ * <ul>
+ *   <li>on the server – to broadcast updates to all connected clients,</li>
+ *   <li>on each client – to apply updates originating from the server.</li>
+ * </ul>
+ *
+ * <h2>Property Changes</h2>
+ * {@link #propertyChange(Class, OAObjectKey, String, Object, boolean)} resolves
+ * objects by key, applies property updates, and (for blob properties) clears
+ * cached values so the next getter retrieves the blob from the server.
+ *
+ * <h2>Hub Operations</h2>
+ * Methods such as:
+ * <ul>
+ *   <li>{@link #addToHub(Class, OAObjectKey, String, Object)}</li>
+ *   <li>{@link #removeFromHub(Class, OAObjectKey, String, Class, OAObjectKey)}</li>
+ *   <li>{@link #moveObjectInHub(Class, OAObjectKey, String, int, int)}</li>
+ *   <li>{@link #sort(Class, OAObjectKey, String, String, boolean, Comparator)}</li>
+ * </ul>
+ * modify the client’s or server’s local hub in real time.
+ *
+ * <h2>Object Resolution</h2>
+ * {@code getObject()} loads objects from cache or from the datasource if
+ * required (server-side). When an object is refetched after GC, the original
+ * GUID is reassigned to preserve identity across the distributed graph.
+ *
+ * <h2>Hub Refresh and Cleanup</h2>
+ * <ul>
+ *   <li>{@code clearHubChanges} resets hub edit state.</li>
+ *   <li>{@code refresh} performs full hub replacement (for server-side
+ *       {@code Hub.sendRefresh}).</li>
+ * </ul>
+ *
+ * <h2>Delete Propagation</h2>
+ * <ul>
+ *   <li>{@code serverDelete} – server-driven delete with cascading rules.</li>
+ *   <li>{@code clientDelete} – client-driven delete which must be applied
+ *       locally on the client.</li>
+ * </ul>
+ *
+ * <p>
+ * {@code RemoteSyncImpl} is the concrete engine that applies distributed
+ * changes in OA’s executable object-graph model.
  */
 public class RemoteSyncImpl implements RemoteSyncInterface {
 	private static Logger LOG = Logger.getLogger(RemoteSyncImpl.class.getName());

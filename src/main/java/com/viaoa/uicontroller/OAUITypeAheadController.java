@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.uicontroller;
 
 import java.util.*;
@@ -8,10 +23,29 @@ import com.viaoa.object.*;
 import com.viaoa.util.*;
 
 /**
- * 
- * Used to manage TypeAhead inputs.
- * 
- * @author vince
+ * Controller for type-ahead / autocomplete UI components. The controller
+ * uses a backing {@link Hub} of candidate objects and exposes a thin
+ * {@link TypeAheadValue} representation (id, display text, dropdown text)
+ * for the UI to render and select from.
+ *
+ * <p>
+ * OAUITypeAheadController:
+ * </p>
+ *
+ * <ul>
+ *   <li>Tracks the active object and property via {@link OAUIController}.</li>
+ *   <li>Maintains a Hub of matching candidates as the user types.</li>
+ *   <li>Provides conversion between the selected candidate and the
+ *       underlying OAObject or property value.</li>
+ *   <li>Uses Hub listeners to keep suggestions and selection aligned
+ *       with the object graph.</li>
+ * </ul>
+ *
+ * <p>
+ * Subclasses integrate this controller with a specific type-ahead widget,
+ * handling key events and dropdown behavior, while OAUITypeAheadController
+ * manages the model and selection logic.
+ * </p>
  */
 public abstract class OAUITypeAheadController extends OAUIController {
 

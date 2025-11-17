@@ -1,29 +1,40 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.ref.*;  // java1.2
 
-
-/** 
-    OALock is used for setting and sharing locks on Objects.  
-    <p>
-    Note: setting a lock does not restrict access to an Object, it only serves as 
-    a flag.  It is currently the applications responsiblity to enforce rules based on 
-    a lock being set.
-    <p>
-    Note: this also works with OASync (Clients/Server) to create distributed locks.
-    <p>
-    For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
-*/
+/**
+ * Represents a distributed or local logical lock flag on an arbitrary object.
+ *
+ * <p>OALock does not enforce synchronization—it serves as a shared metadata
+ * record indicating that an object is considered "locked" within the OA
+ * runtime or synchronization context.  Enforcement of locking semantics
+ * remains the responsibility of higher-level code.</p>
+ *
+ * <p><b>Design Details</b>:
+ * <ul>
+ *   <li>Associates a primary {@code object} with an optional
+ *       {@link WeakReference} to a {@code refObject}; the lock expires
+ *       automatically when the reference is GC’d.</li>
+ *   <li>Includes an optional {@code miscObject} for custom metadata
+ *       (e.g., user, timestamp, reason).</li>
+ *   <li>Serializable for propagation through distributed OA-Sync channels.</li>
+ * </ul>
+ */
 public class OALock implements java.io.Serializable {
     static final long serialVersionUID = 1L;
     protected Object object;

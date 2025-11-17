@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.reflect.Method;
@@ -22,8 +27,23 @@ import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.OANullObject;
 
 /**
-	Internally used by Hub to store objects.  Shared Hubs will use this same object.<br>
-*/
+ * Core internal data holder shared by each Hub instance.
+ * 
+ * <p>Encapsulates the Hub’s collection (Vector), identity class, and change
+ * tracking counters, and delegates extended state to {@link HubDatax}.
+ *
+ * <p>Responsibilities include:
+ * <ul>
+ *   <li>Maintaining ordered membership and modification counters</li>
+ *   <li>Lazy creation and reuse of a shared {@code HubDatax}</li>
+ *   <li>Managing load and select states during {@link OASelect} operations</li>
+ *   <li>Serializing Hub contents for persistence or client transfer</li>
+ *   <li>Providing lookup for metadata, sort order, and tracking options</li>
+ * </ul>
+ *
+ * Thread-safe for concurrent read/update of extended state; most mutators
+ * short-circuit when no value is needed to avoid unnecessary object creation.
+ */
 public class HubData implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
     private static Logger LOG = Logger.getLogger(HubData.class.getName());

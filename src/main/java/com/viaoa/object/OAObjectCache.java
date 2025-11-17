@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.ref.ReferenceQueue;
@@ -6,12 +21,31 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.model.oa.VBoolean;
-
 /**
- * Caches OAObjects by guid, and uses the OAObjectIndex to index using OAObject pkey/ID propery values.
- */
-public class OAObjectCache {
+ * Weak reference object cache used to maintain a single instance of each
+ * OAObject within the current JVM. This provides identity consistency across
+ * the object graph while allowing unused objects to be reclaimed by the garbage
+ * collector when no longer referenced by the application.
+ *
+ * <p>The cache is keyed by GUID (Globally Unique Identifier), ensuring that each
+ * real-world domain entity is represented by exactly one OAObject instance at
+ * runtime. Secondary lookup by business (primary) keys is supported through
+ * OAObjectIndexKey to align with persistence identity.</p>
+ *
+ * <p>Active or UI-visible objects are retained through strong references in
+ * the application or by explicit server-side session tracking, preventing
+ * premature garbage collection. Distributed notifications reference only GUIDs,
+ * enabling fast and efficient lookup through this cache.</p>
+ *
+ * <p>This class does not enforce any storage lifetime; it simply provides
+ * object identity resolution for the OA Object Graph framework while
+ * cooperating with Java GC for scalable memory usage.</p>
+ *
+ * @see OAObjectCacheDelegate
+ * @see OAObject
+ * @see OAObjectKey
+ * @see OAObjectIndexKey
+ */public class OAObjectCache {
 	private static Logger LOG = Logger.getLogger(OAObjectCache.class.getName());
 
 	private final ConcurrentHashMap<

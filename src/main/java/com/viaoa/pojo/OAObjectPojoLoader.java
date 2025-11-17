@@ -1,21 +1,19 @@
 package com.viaoa.pojo;
 /*
-This software and documentation is the confidential and proprietary
-information of ViaOA, Inc. ("Confidential Information").
-You shall not disclose such Confidential Information and shall use
-it only in accordance with the terms of the license agreement you
-entered into with ViaOA, Inc..
-
-ViaOA, Inc. MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF THE
-SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE, OR NON-INFRINGEMENT. ViaOA, Inc. SHALL NOT BE LIABLE FOR ANY DAMAGES
-SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING OR DISTRIBUTING
-THIS SOFTWARE OR ITS DERIVATIVES.
-
-Copyright (c) 2001 ViaOA, Inc.
-All rights reserved.
-*/
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import java.io.Serializable;
 
@@ -28,23 +26,30 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Load oaobject classes into pojo structure that will allow pojo (json) to be loaded automatically into OAObjects. <br>
- * This is then used by json.OAJacksonDeserializerLoader to load POJOs to JSON to OAObjects.
+ * Builds a {@link Pojo} metadata tree from an {@link OAObjectInfo} so that
+ * JSON POJOs can be mapped back into live {@code OAObject} instances.
  * <p>
- * Note: the pojo generator for oamodels might not have pkey properties for pojo objects, so this is a way to use importMatches and link
- * unique values that are defined in the model to find exact matches.
- * <p>
+ * This loader is used by the JSON / Jackson integration (see
+ * {@code json.OAJacksonDeserializerLoader}) to describe, for a single
+ * OAObject type, which POJO fields:
  * <ul>
- * there are three ways to match/find (ex: when deserializing) a json object with it's matching OAObject
- * <li>Class has one or more defined pkey properties that are included in the pojo class.
- * <li>Class has one or more properties or linkOnes that are importMatches.
- * <li>A one2many link has a unique property, and a equals propertyPath for them to share a common root that make it unique.
+ *   <li>represent regular scalar properties,</li>
+ *   <li>represent {@code TYPE_ONE} links and their foreign keys,</li>
+ *   <li>represent import-match properties, and</li>
+ *   <li>represent "unique via equalPropertyPath" link patterns.</li>
  * </ul>
+ * The resulting {@link Pojo} graph (links, import matches, unique keys) is
+ * later used to locate the correct target {@code OAObject} instance when
+ * deserializing JSON:
+ * <ol>
+ *   <li>by primary-key properties,</li>
+ *   <li>by import-match properties / link-ones, or</li>
+ *   <li>by unique properties reachable through an {@code equalPropertyPath}
+ *       on a one-to-many association.</li>
+ * </ol>
  * <p>
- * See OABuilder model OABuilderPojo.obx<br>
- * See PojoLoader in OABuilder for version used for code generator.
- *
- * @author vvia
+ * See the OABuilder model {@code OABuilderPojo.obx} and the OABuilder
+ * {@code PojoLoader} for the generator-side implementation.
  */
 public class OAObjectPojoLoader implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -205,7 +210,7 @@ public class OAObjectPojoLoader implements Serializable {
 		}
 
 		for (OALinkInfo lpx : oix.getLinkInfos()) {
-			if (lp.getType() != OALinkInfo.TYPE_ONE) {
+			if (lpx.getType() != OALinkInfo.TYPE_ONE) {
 				continue;
 			}
 
@@ -232,7 +237,7 @@ public class OAObjectPojoLoader implements Serializable {
 			if (OAString.isEmpty(prefixPropertyPath)) {
 				s = lp.getLowerName();
 			} else {
-				s = prefixPropertyPath + "." + lp.getName();
+				s = prefixPropertyPath + "." + lp.getLowerName();
 			}
 			processPojoLinkOne(oi, s, pojo, plox, lpx);
 

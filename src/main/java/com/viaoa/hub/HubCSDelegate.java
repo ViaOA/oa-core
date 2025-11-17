@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.Comparator;
@@ -20,18 +25,55 @@ import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
 
 /**
- * Delegate that manages client/server functionality, so that the same hub in 
- * other systems is in-sync.
- * @author vvia
+ * Handles all Client/Server synchronization logic for {@link Hub} operations.
+ * <p>
+ * The HubCSDelegate is invoked by Hub internals whenever objects are added,
+ * removed, inserted, moved, sorted, or otherwise modified so that the same
+ * change can be propagated to all connected systems.
+ * </p>
  *
+ * <h3>Responsibilities</h3>
+ * <ul>
+ *   <li>Translate Hub events into remote synchronization commands.</li>
+ *   <li>Route commands through {@link RemoteSyncInterface} (server → clients)
+ *       or {@link RemoteClientInterface} (client → server).</li>
+ *   <li>Respect suppression flags and skip calculated or local-only objects.</li>
+ *   <li>Ensure that distributed Hubs remain state-identical without causing
+ *       feedback loops or redundant updates.</li>
+ * </ul>
+ *
+ * <h3>Supported Remote Actions</h3>
+ * <ul>
+ *   <li>{@link #addToHub(Hub, OAObject)} — replicate an add event.</li>
+ *   <li>{@link #insertInHub(Hub, OAObject, int)} — replicate insert at index.</li>
+ *   <li>{@link #removeFromHub(Hub, OAObject, int)} and {@link #removeAllFromHub(Hub)}.</li>
+ *   <li>{@link #moveObjectInHub(Hub, int, int)} — reorder synchronization.</li>
+ *   <li>{@link #sort(Hub, String, boolean, Comparator)} — remote sort propagation.</li>
+ *   <li>{@link #deleteAll(Hub)} — instructs remote delete on server.</li>
+ *   <li>{@link #clearHubChanges(Hub)} — resets change tracking on clients.</li>
+ *   <li>{@link #sendRefresh(Hub)} — triggers remote refresh request.</li>
+ * </ul>
+ *
+ * <h3>Behavioral Safeguards</h3>
+ * <ul>
+ *   <li>All methods no-op in single-user mode or when
+ *       {@code OAThreadLocalDelegate.isSuppressCSMessages()} is true.</li>
+ *   <li>Skips propagation for calculated or local-only relationships.</li>
+ *   <li>Uses {@link OARemoteThreadDelegate#shouldSendMessages()} to avoid
+ *       feedback loops during replication.</li>
+ * </ul>
+ *
+ * <h3>Example</h3>
+ * <pre>{@code
+ * Hub<Order> hubOrders = new Hub<>(Order.class);
+ * hubOrders.add(order);  // transparently propagated to all clients
+ * }</pre>
+ *
+ * <p>This delegate underpins OA’s distributed object graph consistency.</p>
  */
 public class HubCSDelegate {
     private static Logger LOG = Logger.getLogger(HubCSDelegate.class.getName());
 
-    /**
-     * 20140422
-     * @param thisHub
-     */
     public static void removeAllFromHub(Hub thisHub) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
         if (thisHub.datam.getMasterObject() == null) return;

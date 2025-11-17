@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
@@ -37,6 +42,50 @@ import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OAThrottle;
 
+/**
+ * Centralized event router for property changes on {@link OAObject}.
+ * <p>
+ * All mutation flows that affect object state, relationships, dirty flags,
+ * hub membership, undo history, or distributed synchronization go through this
+ * delegate to preserve global consistency and strict ordering rules.
+ *
+ * <h3>Primary Responsibilities</h3>
+ * <ul>
+ *   <li><b>Before / After Change Sequencing</b> — guarantees listener contract:
+ *       before-change → mutation → after-change</li>
+ *   <li><b>Loading-aware Mutations</b> — suppresses unnecessary events during
+ *       lazy-load or server-side initialization without losing correctness</li>
+ *   <li><b>Reference & Reverse Link Updates</b> — adjusts owning Hubs and
+ *       reverse 1-1 or 1-many relationships without re-entrant storms</li>
+ *   <li><b>Identity Impact Tracking</b> — routes ID changes to cache/index
+ *       ensuring no drift or duplicate instances</li>
+ *   <li><b>Distributed Sync Integration</b> — only propagates to server/clients
+ *       when the object is authoritative and eligible for transmission</li>
+ *   <li><b>Undo Support</b> — builds Undoable property edits when enabled</li>
+ *   <li><b>Trigger Execution</b> — invokes model-level onChange callbacks safely</li>
+ * </ul>
+ *
+ * <h3>Correctness Guarantees</h3>
+ * <ul>
+ *   <li>Events only fire for real state changes (except primitive wrappers where
+ *       UI correctness requires notifications)</li>
+ *   <li>No property change is allowed if violated by callbacks or metadata 
+ *       constraints (unique, id, recursive-parent rules)</li>
+ *   <li>Hub + reverse link changes occur <em>after</em> mutation but <em>before</em>
+ *       triggers and distributed sync to ensure graph stability</li>
+ *   <li>Thread-local context prevents recursive storms and misplaced sync</li>
+ * </ul>
+ *
+ * <h3>Usage</h3>
+ * Application code does not call this class directly. Event emission is driven
+ * automatically by {@link OAObject} and metadata-aware automation.
+ *
+ * @since OA 1.0
+ * @see OAObject
+ * @see OAObjectDelegate
+ * @see OAObjectHubDelegate
+ * @see OAObjectCacheDelegate
+ */
 public class OAObjectEventDelegate {
 
 	private static Logger LOG = Logger.getLogger(OAObjectEventDelegate.class.getName());

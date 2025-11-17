@@ -1,19 +1,40 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.HashSet;
 
 import com.viaoa.hub.Hub;
 
+/**
+ * Diagnostic utility that traverses all cached {@link OAObject}s and
+ * analyzes their {@link com.viaoa.hub.Hub} memberships.
+ *
+ * <p>Primarily used for debugging or memory-analysis scenarios to identify
+ * objects participating in excessive Hub references or cyclic graphs.</p>
+ *
+ * <p><b>Functions</b>:
+ * <ul>
+ *   <li>Iterates over all registered classes in
+ *       {@link OAObjectCacheDelegate#getClasses()}.</li>
+ *   <li>For each object, collects the set of all Hubs referencing it using
+ *       {@link OAObjectHubDelegate#getHubReferences(OAObject)}.</li>
+ *   <li>Prints summary output for objects associated with many Hubs.</li>
+ * </ul>
+ */
 public class OAObjectAnalyzer {
 
     

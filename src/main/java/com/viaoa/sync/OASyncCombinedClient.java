@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync;
 
 import java.util.Comparator;
@@ -16,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OADataSource;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -26,40 +30,38 @@ import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.multiplexer.*;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
-
-// 20151103 not completed, on hold
 /**
- * This is used to have multiple servers all combined into a single combined instance.
- * This needs to run as a separate java instance, that has a oasyncclient connection for each of
- * individual server instances, and a oasyncclient connection to the combined server.
- *  
- * It's assumed that each has the same object model, but that they each have their 
- * own instances.  The object keys are only unique to each server, so the combined server
- * will have a new unique key, and this class will handle the mapping between the two.
- * 
- * How this works is by using the oasyncclients to redirect requests/messages to the server at the "other" side.
- *  
- * Note: all of the OASyncClients need to be created from this object, so that it can redirect. 
+ * Experimental client capable of combining multiple independent
+ * {@link OASyncServer} instances into a single logical synchronization space.
+ * <p>
+ * Each source server maintains its own OA model instance and object key space.
+ * {@code OASyncCombinedClient} creates:
+ * <ul>
+ *   <li>one {@link OASyncClient} connected to a designated combined server, and</li>
+ *   <li>one {@link OASyncClient} for each source server being merged.</li>
+ * </ul>
  *
- * Overview:
- * This will combine objects from many servers into one.  The objects will have a different objectId
- * on the source then what is created on the combined server - example:  each server could have an Employee#1
- * and the combined server will have Employee 1,2,3,4...
- * This class will map between the source and the combined.  
- * It will then act as a client between them all and send messages from one to the other.  When it does this,
- * it will need to use the map to get the correct objectId to use.
- * OAObjects readResolve from the source servers will change the objId for the combined server and then store
- * in a map.  Any changes that affect the objId will then update the map.
- * Example: Emp objects from a source server will be be sent to the combined server, and have new objectId assigned
- * on the combined server.
- * Any changes to these objects on the combined server will then be sent (through this class) to the source server.
- * Any changes on the source will be sent to the combined server.  If the id is changed, then the map will be updated.
- *  
- * @author vvia
+ * <h2>Key Mapping</h2>
+ * Because each server uses its own {@link com.viaoa.object.OAObjectKey}
+ * sequence and namespace, this class maintains per-class bidirectional mapping
+ * tables so that sync messages can be forwarded:
+ * <ul>
+ *   <li>from a source server to the combined server, and</li>
+ *   <li>from the combined server back to the appropriate source server.</li>
+ * </ul>
+ *
+ * <h2>Routing Sync Events</h2>
+ * Custom {@code RemoteSyncInterface} implementations translate object keys
+ * using the maintained mappings and then forward the change events to the
+ * appropriate target server.
+ *
+ * <h3>Status</h3>
+ * This class is not fully implemented, and several operations (such as delete
+ * propagation and hub-move semantics) remain incomplete. It should be treated
+ * as experimental and not used in production.
  */
 public class OASyncCombinedClient {
     private static Logger LOG = Logger.getLogger(OASyncCombinedClient.class.getName());

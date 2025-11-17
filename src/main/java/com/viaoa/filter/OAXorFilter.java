@@ -1,21 +1,40 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import com.viaoa.util.OAFilter;
 
 /**
- * Joins two filters together to create an OR filter between them.
+ * Filter that performs an exclusive-OR (XOR) between two {@link OAFilter}
+ * instances.
  *
- * @author vvia
+ * <p>
+ * Evaluation rules:
+ * <ul>
+ *   <li>If exactly one filter returns {@code true}, the result is {@code true}.</li>
+ *   <li>If both filters return the same result (both true or both false),
+ *       the result is {@code false}.</li>
+ *   <li>If both filters are {@code null}, the filter defaults to {@code true}.</li>
+ * </ul>
+ * </p>
+ *
+ * <p>
+ * Useful when two conditions must not both be satisfied at once, such as
+ * “object matches criterion A but not B” or “matches B but not A”.
+ * </p>
  */
 public class OAXorFilter implements OAFilter {
 

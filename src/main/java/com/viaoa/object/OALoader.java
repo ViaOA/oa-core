@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
@@ -21,27 +26,36 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
-// 20170611
-/*
- * This is used to load a property path in parallel using multiple threads.
+/**
+ * Multi-threaded loader used to prefetch or traverse a property path
+ * from a root {@link OAObject} or {@link com.viaoa.hub.Hub}.
  *
- * @param <F>
- *            type of hub or OAObject to use as the root (from)
- * @param <T>
- *            type of hub for the to class (to).
- * 
- *  example:<code>
- * 
-    OALoader<Company, Employee> l = new OALoader<Company, Employee>(CompanyPP.locations.employees);
-    l.load(company);
-    
-
-    // recursive
-    OALoader<ItemCategory, Product> loader = new OALoader(5, ItemCategoryPP.itemCategories().items().products().pp);
-    loader.load(ModelDelegate.getItemCategories());
-    
-    </code>
- * 
+ * <p>OALoader enables high-performance recursive loading of related objects
+ * across complex property paths (e.g. {@code company.locations.employees})
+ * using a configurable number of worker threads.  It is typically used to
+ * warm caches, pre-load data before analysis, or recursively traverse
+ * a graph of {@link OAObject}s.</p>
+ *
+ * <p><b>Core Features</b>:
+ * <ul>
+ *   <li>Parallel traversal via {@link com.viaoa.concurrent.OAExecutorService}.</li>
+ *   <li>Thread-safe atomic counters for visited and not-yet-loaded objects.</li>
+ *   <li>Automatic integration with {@link com.viaoa.hub.Hub} and
+ *       {@link OASelect} sources.</li>
+ *   <li>Support for recursive link handling and sibling-helper context
+ *       propagation.</li>
+ *   <li>Graceful shutdown through {@link #stop()} and {@link #waitUntilDone()}.</li>
+ * </ul>
+ *
+ * <p>Example:</p>
+ * <pre>
+ *   OALoader&lt;Company, Employee&gt; loader =
+ *       new OALoader&lt;&gt;(5, CompanyPP.locations.employees);
+ *   loader.load(companyHub);
+ * </pre>
+ *
+ * @param <F> type of the starting OAObject
+ * @param <T> type of the target OAObject
  */
 public class OALoader<F extends OAObject, T extends OAObject> {
     private static Logger LOG = Logger.getLogger(OALoader.class.getName());

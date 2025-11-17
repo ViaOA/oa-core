@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.rest;
 
 import java.util.HashMap;
@@ -30,14 +35,21 @@ import com.viaoa.util.OAConv;
 import com.viaoa.util.OAFilter;
 
 /**
- * OADataSource for client apps that uses OARestClient to use the OADataSource located on the webserver. The webserver uses OARestServlet
- * remoting.
+ * REST-based {@link com.viaoa.datasource.OADataSource} implementation for OA clients.
  * <p>
- * OADataSourceRestClient - OADataSourceRestInterface - OARestClient [...http...] OAJetty - OARestServlet - OADataSourceRestImpl -
- * OADataSource ...
- * <p>
- * all data is serialized using JSON
- * <p>
+ * {@code OADataSourceRestClient} enables any OA application to access a remote
+ * OADataSource through JSON/HTTP using an {@link OADataSourceRestInterface}.
+ * It fully supports CRUD operations, queries, and iterative result streaming.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Transparent remote CRUD and query operations over REST.</li>
+ *   <li>JSON serialization via {@link com.viaoa.json.OAJson}.</li>
+ *   <li>Fallback to local {@link com.viaoa.datasource.objectcache.ObjectCacheIterator}
+ *       when applicable.</li>
+ *   <li>Supports {@link com.viaoa.filter.OAFilter} for client-side filtering.</li>
+ * </ul>
+ *
  */
 public class OADataSourceRestClient extends OADataSource {
 	private Hashtable hashClass = new Hashtable();

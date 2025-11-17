@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.reflect.Method;
@@ -36,11 +41,33 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OANullObject;
 
 /**
- * Main delegate used for working with the Active Object for a Hub. All methods that have an "_" prefix should not be called directly, as
- * there is a calling method that should be used, that performs additional functionality. If a method does not have the "_" prefix and is
- * accessible, then it is ok to call it, but will most likely have a matching method name in the Hub class.
+ * Primary internal delegate that implements the operational logic of {@link Hub}.
+ * <p>
+ * The HubDelegate encapsulates all shared algorithms required by Hubs—object
+ * identity resolution, uniqueness validation, master/detail synchronization,
+ * and cascade-based change detection—so that the {@code Hub} class itself
+ * remains a thin facade.
  *
- * @author vincevia
+ * <h3>Responsibilities</h3>
+ * <ul>
+ *   <li>Evaluate Hub-level and object-level “changed” state using {@link com.viaoa.object.OACascade}.</li>
+ *   <li>Enforce per-Hub uniqueness constraints via reflection-based property evaluation.</li>
+ *   <li>Resolve canonical object identities through {@link com.viaoa.object.OAObjectCacheDelegate}.</li>
+ *   <li>Maintain class and master-relationship metadata used by Hub detail wiring.</li>
+ *   <li>Compute Hub validity and synchronization state across shared, linked, and merged graphs.</li>
+ *   <li>Support safe re-linking and refresh detection through {@code HubCurrentStateEnum} logic.</li>
+ * </ul>
+ *
+ * <h3>Design Notes</h3>
+ * All methods are static and stateless; the delegate acts as a functional
+ * utility layer shared by every Hub instance.  Internal helpers such as
+ * {@code _getCurrentState} and {@code getControllingHub} are recursive graph
+ * evaluators used by detail, merger, and filter Hubs to maintain coherence.
+ *
+ * <h3>Threading and Reentrancy</h3>
+ * No mutable static state is maintained; all Hub instance data is passed in via
+ * parameters.  Cascades, recursion guards, and {@link java.util.HashSet}
+ * tracking prevent infinite traversal through cyclic Hub graphs.
  */
 public class HubDelegate {
 	private static Logger LOG = Logger.getLogger(HubDelegate.class.getName());

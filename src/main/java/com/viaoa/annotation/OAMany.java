@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.annotation;
 
 import java.lang.annotation.Documented;
@@ -16,9 +21,28 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/*
- * Defines an OAObject relationship that is of type "Many"
- * example: @OAMany (clazz=Emp.class, owner=false, reverse=Emp.P_Dept, cascadeSave=false, cascadeDelete=false)
+/**
+ * Defines a link of type MANY on an {@link OAObject}. This represents a
+ * one-to-many or many-to-many relationship as managed by OA Hubs.
+ *
+ * <p>The annotation specifies the target class, ownership, cascade rules,
+ * ordering, match automation, calculated Hubs, server-side calculation, 
+ * and dependency paths.</p>
+ *
+ * <p><b>Key Areas</b>
+ * <ul>
+ *   <li><b>Relationship structure</b>: {@code toClass}, {@code reverseName},
+ *       ownership, recursion.</li>
+ *   <li><b>Cascade behavior</b>: cascadeSave, cascadeDelete.</li>
+ *   <li><b>Hub behavior</b>: seqProperty, cacheSize, sortProperty, sortAsc.</li>
+ *   <li><b>Auto-matching</b>: matchHub, matchProperty, autoCreateProperty.</li>
+ *   <li><b>Calculated Hubs</b>: isCalculated, isServerSideCalc, dependent properties.</li>
+ *   <li><b>Merge logic</b>: mergerPropertyPath.</li>
+ *   <li><b>Delete rules</b>: mustBeEmptyForDelete.</li>
+ * </ul>
+ *
+ * <p>This annotation drives how OA creates detail Hubs, wiring, linking,
+ * and merge/sync behavior across the object graph.</p>
  */
 @Documented
 @Target(ElementType.METHOD)

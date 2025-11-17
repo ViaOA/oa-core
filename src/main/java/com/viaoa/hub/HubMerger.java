@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.lang.reflect.Constructor;
@@ -38,22 +43,30 @@ import com.viaoa.sync.OASync;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Used to combine objects from a property path of a root Hub into a single Hub. As any changes are made to any objects included in the
- * property path, the Hub will automatically be updated. Property path can include either type of reference: One or Many.
+ * Dynamically merges one or more {@link Hub}s into a combined, live-synchronized
+ * projection based on a {@link com.viaoa.util.OAPropertyPath}.
  * <p>
- * Examples:
+ * Each root object in the {@code hubRoot} is traversed along the property path to
+ * produce a flattened set of destination objects in {@code hubCombined}. Changes in
+ * any source Hub (add/remove/AO/refresh) are reflected in the combined Hub.
  *
- * <pre>
- * new HubMerger(hubSalesmen, hubOrders, &quot;customers.orders&quot;);
+ * <p><b>Use Cases</b>:
+ * <ul>
+ *   <li>Aggregate all detail objects across a collection of master objects.</li>
+ *   <li>Build derived Hubs for recursive or nested one-to-many structures.</li>
+ *   <li>Share active-object state across related Hubs when {@code bShareActiveObject} is true.</li>
+ * </ul>
  *
- * new HubMerger(hubItem, hubForm, &quot;formItem.formSection.formRow.form&quot;);
+ * <p><b>Implementation Details</b>:
+ * <ul>
+ *   <li>Parses and validates {@link OAPropertyPath} to build a linked chain of {@code Node} objects.</li>
+ *   <li>Maintains membership through {@code Data} trees that react to Hub events.</li>
+ *   <li>Uses {@link java.util.concurrent.locks.ReentrantReadWriteLock} for atomic membership updates.</li>
+ *   <li>Supports background initialization and sibling tracking via {@link com.viaoa.object.OASiblingHelper}.</li>
+ * </ul>
  *
- * new HubMerger(hubForm, hubItem, &quot;formRows.formSections.formItems.item&quot;);
- * </pre>
- *
- * created 2004/08/20, rewritten 20080804, added recursive links 20120527
- *
- * @see OAPropertyPath for more information about property paths
+ * <p>Subclasses may override {@code beforeRemoveRealHub}, {@code afterAddRealHub}, etc.,
+ * to intercept events prior to or following updates to the combined Hub.
  */
 public class HubMerger<F extends OAObject, T extends OAObject> {
     private static Logger LOG = Logger.getLogger(HubMerger.class.getName());

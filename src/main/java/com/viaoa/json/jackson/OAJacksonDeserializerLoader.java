@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.json.jackson;
 
 import java.util.ArrayList;
@@ -48,18 +63,24 @@ import com.viaoa.util.OATime;
 // todo: unit test with CorpToStore model ... to check multipart keys
 
 /**
- * Used by OAJson to convert JSON to OAObject(s). <br>
- * This will find the existing OAObjects and Hubs and add/update/delete.
+ * Core loader used by {@link OAJson} and {@link OAJacksonDeserializer} to
+ * convert a Jackson {@link JsonNode} tree into an {@link OAObject} graph.
  * <p>
- * This supports object graphs, json from POJOs that might not have matching pkey properties. <br>
- * For POJOs without direct pkey & fkey properties, it uses the following to find and update matching OAObjects
+ * The loader is responsible for:
  * <ul>
- * <li>Match using unique pkey property(s)
- * <li>Guid match
- * <li>ImportMatch properties
- * <li>Links that have a unique property match.
- * <li>Links that have an equals property path with a unique property match.
+ *   <li>Finding existing {@link OAObject} instances using GUIDs, primary keys,
+ *       import-match properties, and unique link properties.</li>
+ *   <li>Creating new {@link OAObject} instances when no match is found and
+ *       applying ID/auto-assign semantics.</li>
+ *   <li>Populating scalar properties from JSON, including callback hooks and
+ *       name-mapping via {@link OAJson} configuration.</li>
+ *   <li>Recursively loading one-to-one and one-to-many links and wiring them
+ *       into the object graph.</li>
+ *   <li>Handling POJO-based JSON where keys do not directly map to OAObject
+ *       primary key properties.</li>
  * </ul>
+ * This class is intentionally low-level and is normally used only via
+ * {@link OAJson} and {@link OAJacksonDeserializer}.
  */
 public class OAJacksonDeserializerLoader {
 

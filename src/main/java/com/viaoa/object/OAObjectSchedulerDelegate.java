@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
@@ -8,8 +23,23 @@ import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 /**
- * Used to call Scheduler methods on OAObject link properties.
- * @author vvia
+ * Provides callback support for invoking {@link OAScheduler} methods
+ * on linked {@link OAObject} relationships.
+ *
+ * <p>This delegate discovers scheduler callback methods defined on
+ * {@link OALinkInfo} metadata and dynamically invokes them to populate
+ * or refresh scheduler data.</p>
+ *
+ * <p><b>Responsibilities</b>:
+ * <ul>
+ *   <li>Locate the scheduler method via {@link OALinkInfo#getSchedulerMethod()}.</li>
+ *   <li>Instantiate and pass an {@link OAScheduler} object covering the
+ *       requested date range.</li>
+ *   <li>Allow both direct property names and dot-notation property paths.</li>
+ * </ul>
+ *
+ * <p>Used by OA scheduling and calendar integrations to retrieve events
+ * or availability linked to an object graph.</p>
  */
 public class OAObjectSchedulerDelegate {
 

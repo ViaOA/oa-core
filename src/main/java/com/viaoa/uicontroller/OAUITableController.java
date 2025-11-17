@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.uicontroller;
 
 import java.util.*;
@@ -14,11 +29,30 @@ todo: if table is not enabled, then dont allow changing active row
 */
 
 /**
- * Used by UI Components that use a Hub to present a listing to populate an HTML Table.
- * 
- * For multi-select, it uses a hubSelect.
- * 
- * @author vince
+ * Abstract controller for grid or table UI components that display the
+ * contents of a {@link Hub}. OAUITableController keeps the table rows,
+ * active row selection, and optional link/select Hubs synchronized with
+ * the underlying object graph.
+ *
+ * <p>
+ * Responsibilities include:
+ * </p>
+ *
+ * <ul>
+ *   <li>Mapping table rows to objects in the main Hub.</li>
+ *   <li>Updating the Hub's active object when the user changes the
+ *       selected row.</li>
+ *   <li>Coordinating with an optional link Hub and select Hub.</li>
+ *   <li>Listening for changes to table column definitions through a
+ *       dedicated Hub.</li>
+ * </ul>
+ *
+ * <p>
+ * Concrete subclasses integrate the controller logic with a specific table
+ * widget (Swing JTable, web grid, etc.). Some behaviors, such as disallowing
+ * row selection when the table is disabled, are noted as TODOs in the source
+ * and can be refined in later phases.
+ * </p>
  */
 public abstract class OAUITableController  {
 

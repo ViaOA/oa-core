@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.connection;
 
 import java.sql.Connection;
@@ -26,8 +31,24 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.transaction.OATransaction;
 
 /**
- * Used to <i>wrap</i> functionality around a java.sql.Connection to offer Statement and PreparedStatement Pooling. Mostly used internally
- * by ConnectionPool.
+ * Wraps a JDBC {@link java.sql.Connection} to provide internal pooling for
+ * {@link java.sql.Statement} and {@link java.sql.PreparedStatement} objects.
+ * <p>
+ * Each {@code OAConnection} is managed by a {@link ConnectionPool} and used
+ * to efficiently create, reuse, and batch SQL statements across the OA JDBC layer.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Statement and PreparedStatement pooling with per-SQL reuse.</li>
+ *   <li>Batch update support integrated with {@link com.viaoa.transaction.OATransaction}.</li>
+ *   <li>Automatic execution or clearing of pending batches on transaction commit/rollback.</li>
+ *   <li>Thread-safe tracking and diagnostics via internal counters.</li>
+ * </ul>
+ *
+ * Instances are created and released exclusively by {@link ConnectionPool}.
+ * Not intended for direct application use.
+ *
+ * @since OA 4.0
  */
 public class OAConnection {
 	private static Logger LOG = Logger.getLogger(OAConnection.class.getName());

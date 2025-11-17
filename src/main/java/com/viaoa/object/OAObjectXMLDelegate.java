@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Modifier;
@@ -26,9 +31,25 @@ import com.viaoa.util.OATime;
 import com.viaoa.xml.OAXMLWriter;
 
 /**
- * Used to perform XML read/write for OAObjects.
- * 
- * @author vincevia 2007/10/03
+ * Core serializer responsible for converting {@link OAObject}s and their
+ * linked {@link com.viaoa.hub.Hub}s into XML via {@link OAXMLWriter}.
+ *
+ * <p>Handles both key-only and full cascaded serialization, including
+ * nested links and many-to-many relationships.  Also supports XML output
+ * for primitive, date/time, and custom-converted properties.</p>
+ *
+ * <p><b>Key Features</b>:
+ * <ul>
+ *   <li>Write full object graph or key-only references depending on
+ *       cascade and inclusion flags.</li>
+ *   <li>Honor {@code OALinkInfo} metadata (transient, calculated, private).</li>
+ *   <li>Convert OA temporal types to canonical string formats.</li>
+ *   <li>Safely handle recursion and prevent infinite loops via
+ *       {@link OACascade#wasCascaded(OAObject, boolean)} checks.</li>
+ * </ul>
+ *
+ * <p>This delegate is invoked by {@link OAXMLWriter} and by higher-level
+ * import/export tools to persist or transmit OAObject graphs as XML.</p>
  */
 public class OAObjectXMLDelegate {
 

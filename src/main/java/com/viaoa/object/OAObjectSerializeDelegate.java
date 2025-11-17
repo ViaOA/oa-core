@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.io.IOException;
@@ -25,6 +30,30 @@ import com.viaoa.sync.*;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
 
+/**
+ * Delegate supporting binary serialization and deserialization of OAObject
+ * instances for caching, messaging, and distributed synchronization.
+ *
+ * <p>This class transmits minimal identity and current state only, without
+ * forcing graph materialization. Relationships are represented using
+ * OAObjectKey or empty hubs as appropriate, and full Objects are only
+ * sent when required based on the client/server role.</p>
+ *
+ * <p>Upon deserialization, identity is reconciled with the runtime cache so
+ * that only a single authoritative OAObject exists for any given GUID. For
+ * duplicates, references are merged and reverse relationships are rewritten
+ * to preserve Object Graph consistency.</p>
+ *
+ * <p>No metadata or Graph structure is changed during serialization;
+ * correctness is driven entirely by OAObjectInfo, OALinkInfo, and the
+ * distributed identity model.</p>
+ *
+ * @see OAObject
+ * @see OAObjectKey
+ * @see OAObjectSerializerCallback
+ * @see OAObjectCacheDelegate
+ * @see OAObjectInfo
+ */
 public class OAObjectSerializeDelegate {
 	private static final Logger LOG = Logger.getLogger(OAObjectSerializeDelegate.class.getName());
 

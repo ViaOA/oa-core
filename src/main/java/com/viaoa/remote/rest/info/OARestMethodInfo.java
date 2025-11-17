@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.rest.info;
 
 import java.lang.reflect.Array;
@@ -29,7 +44,34 @@ import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 
 /**
- * Manages information and metadata about Java remote methods that use REST API endpoints.
+ * Metadata for a single REST-accessible method declared in an interface
+ * annotated with {@code @OARestClass}. This object is created during annotation
+ * scanning and provides all information required to turn a Java method
+ * invocation into an HTTP request.
+ *
+ * <h2>Captures</h2>
+ * <ul>
+ *   <li>HTTP method (GET, POST, PUT, PATCH, DELETE)</li>
+ *   <li>URL path template and query construction rules</li>
+ *   <li>Return type and any wrapper or container information</li>
+ *   <li>List of {@link OARestParamInfo} describing annotated parameters</li>
+ *   <li>Serialization mode (JSON body, query params, form params, etc.)</li>
+ *   <li>Flags controlling OAObject streaming and property-path expansion</li>
+ *   <li>Optional path rewrite or custom URL composition instructions</li>
+ * </ul>
+ *
+ * <h2>Role in Invocation</h2>
+ * {@code OARestMethodInfo} acts as the complete definition of how a method
+ * should be executed remotely. During the invocation:
+ * <ul>
+ *   <li>URL components are assembled from annotation metadata.</li>
+ *   <li>Parameters are bound to the path, query string, or request body.</li>
+ *   <li>The return type is used to deserialize the response JSON.</li>
+ * </ul>
+ *
+ * <h2>Thread Safety</h2>
+ * Instances are immutable after construction and safe for concurrent access
+ * by multiple remote invocations.
  *
  * @author vvia
  */

@@ -163,3 +163,21 @@ public class HubMergerTest extends OAUnitTest {
 	}
 
 }
+/**
+ * Used to combine objects from a property path of a root Hub into a single Hub. As any changes are made to any objects included in the
+ * property path, the Hub will automatically be updated. Property path can include either type of reference: One or Many.
+ * <p>
+ * Examples:
+ *
+ * <pre>
+ * new HubMerger(hubSalesmen, hubOrders, &quot;customers.orders&quot;);
+ *
+ * new HubMerger(hubItem, hubForm, &quot;formItem.formSection.formRow.form&quot;);
+ *
+ * new HubMerger(hubForm, hubItem, &quot;formRows.formSections.formItems.item&quot;);
+ * </pre>
+ *
+ * created 2004/08/20, rewritten 20080804, added recursive links 20120527
+ *
+ * @see OAPropertyPath for more information about property paths
+ */

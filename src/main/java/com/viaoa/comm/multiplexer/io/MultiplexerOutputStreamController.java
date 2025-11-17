@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.comm.multiplexer.io;
 
 import java.io.DataOutputStream;
@@ -16,9 +21,43 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
- * Internally created by MultiplexerSocketController to manage the OutputStream for the "real" socket.
+ * Manages the shared {@link java.io.DataOutputStream} for a single physical
+ * TCP connection used by the multiplexer. All outbound data from every
+ * {@link VirtualSocket} is serialized, framed, and written by this controller.
  *
- * @author vvia
+ * <p>
+ * Responsibilities:
+ * </p>
+ *
+ * <ul>
+ *   <li>Serializing virtual socket frames: write header (socket id, length)
+ *       followed by the payload bytes.</li>
+ *   <li>Providing exclusive, fair access to the underlying output stream so
+ *       that multiple threads can write safely.</li>
+ *   <li>Chunking large writes so that a single writer cannot monopolize the
+ *       real socket.</li>
+ *   <li>Optionally throttling throughput to a configured MB/second limit.</li>
+ *   <li>Sending control commands (create/close virtual sockets, ping, close
+ *       real socket) to the remote side.</li>
+ * </ul>
+ *
+ * <p>
+ * Virtual sockets call {@link #write(VirtualSocket, byte[], int, int)} to
+ * send data. The controller enforces a cooperative fairness policy using
+ * an internal wait queue and chunk-size adaptation based on the number of
+ * waiting writers.
+ * </p>
+ *
+ * <p>
+ * Command frames are sent using {@link #sendCommand(int, int, String)} and
+ * are consumed by the peer's {@link MultiplexerInputStreamController}
+ * implementation.
+ * </p>
+ *
+ * <p>
+ * Write statistics (count and total size) are tracked for monitoring and
+ * performance diagnostics.
+ * </p>
  */
 public class MultiplexerOutputStreamController {
 	private static Logger LOG = Logger.getLogger(MultiplexerOutputStreamController.class.getName());

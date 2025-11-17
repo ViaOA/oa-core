@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.*;
@@ -21,10 +26,52 @@ import com.viaoa.template.OATemplate;
 import com.viaoa.util.*;
 
 /**
- * OATypeAhead support, used by TextField to do searches.
- * 
- * For styling, see oa-web.css
- * 
+ * Provides dynamic type-ahead (auto-complete) search and display support for
+ * {@link OAObject} collections and Hubs.
+ * <p>
+ * {@code OATypeAhead} performs real-time filtering and sorting of objects
+ * based on text input, typically for use in interactive UI fields. It can
+ * search in-memory lists or full Hub graphs, using property paths, templates,
+ * or custom filters to determine matches and display values.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Supports both direct list and {@link com.viaoa.hub.Hub}-based searches.</li>
+ *   <li>Uses {@link OAPropertyPath} to traverse object graphs for flexible matching.</li>
+ *   <li>Integrates with {@link OATemplate} for formatted display and dropdown rendering.</li>
+ *   <li>Thread-safe: concurrent searches are automatically canceled when superseded.</li>
+ *   <li>Supports {@link OAFilter} for custom inclusion/exclusion logic.</li>
+ *   <li>Prevents duplicate results using GUID tracking.</li>
+ *   <li>Configurable match, display, sort, and dropdown formats.</li>
+ * </ul>
+ *
+ * <h2>Usage</h2>
+ * <pre>{@code
+ * OATypeAhead<Address, Country> ta =
+ *     new OATypeAhead<>(hubAddress, new OATypeAheadParams<>() {{
+ *         finderPropertyPath = AddressPP.country();
+ *         matchPropertyPath = CountryPP.name();
+ *         sortValuePropertyPath = CountryPP.name();
+ *         maxResults = 10;
+ *     }});
+ * List<Country> results = ta.search("uni");
+ * }</pre>
+ *
+ * <h2>Design Notes</h2>
+ * <ul>
+ *   <li>Thread-safe implementation using {@link ReentrantReadWriteLock}.</li>
+ *   <li>Concurrent search cancellation via {@link AtomicInteger} version tracking.</li>
+ *   <li>Templates ({@link OATemplate}) enable advanced display formatting.</li>
+ *   <li>Does not require a DataSource; operates entirely in memory.</li>
+ * </ul>
+ *
+ * @param <F> the root {@link OAObject} type providing search context
+ * @param <T> the {@link OAObject} type being searched
+ *
+ * @see OAFilter
+ * @see OAPropertyPath
+ * @see OATemplate
+ * @see com.viaoa.hub.Hub
  */
 public class OATypeAhead<F extends OAObject,T extends OAObject> {
     private static final long serialVersionUID = 1L;

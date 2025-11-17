@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,14 +31,41 @@ import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
 /**
- * OASync is a group of classes that use OAObject/Hub (observable) and RemoteMultiplexer classes (distributed) to perform remote updating.
- * Used for the OA distributed, synchronization that keeps OAObject/Models/Hubs/etc in sync across multiple servers. This is used to:
- * determine if an app is a client or server, to know it's connection information, used by OAObject for prop changes, etc, used by Hub for
- * add/remove/etc changes, to know if the current thread is an OARemoteThread that is processing a sync message, to get the current
- * RequestInfo, which is the currently executing remote method call This is internally used by OA to keep application models synchronized
- * between the server and 0 or more clients.
+ * Central registry and routing utility for OA's synchronization subsystem.
+ * <p>
+ * {@code OASyncDelegate} maintains all static state needed by OA's distributed
+ * model, including:
+ * <ul>
+ *   <li>the active {@link OASyncServer} and {@link OASyncClient} instances,
+ *       mapped per {@link Package},</li>
+ *   <li>the remote interfaces used for distributed object graph operations,
+ *       including {@code RemoteSyncInterface},
+ *       {@code RemoteServerInterface}, {@code RemoteSessionInterface}, and
+ *       {@code RemoteClientInterface},</li>
+ *   <li>thread-local request metadata used while a remote method is executing,
+ *       and</li>
+ *   <li>helper methods to determine whether the current JVM is functioning as
+ *       a client or as a server for a given model package.</li>
+ * </ul>
  *
- * @author vvia
+ * <h3>Singleton-or-Map Strategy</h3>
+ * For each type of sync component (server, client, remote interfaces),
+ * {@code OASyncDelegate} maintains:
+ * <ul>
+ *   <li>a single-instance reference when only one exists in the JVM, and</li>
+ *   <li>a per-package map when multiple models or sync contexts are present.</li>
+ * </ul>
+ * This enables fast lookups in the common case while fully supporting multiple
+ * independently synchronized OA models in the same process.
+ *
+ * <h3>Execution Role Detection</h3>
+ * Methods such as {@link #isServer(Class)} and {@link #isClient(Class)} use
+ * the presence or absence of registered clients and servers to infer whether
+ * the current code path represents a server-side or client-side execution
+ * context.
+ *
+ * <p>
+ * All synchronization features in OA ultimately funnel through this delegate.
  */
 public class OASyncDelegate {
 	private static Logger LOG = Logger.getLogger(OASyncDelegate.class.getName());

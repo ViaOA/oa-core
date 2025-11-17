@@ -1,19 +1,47 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.query;
 
-
 /**
- * Used to parse a query into tokens.
- * @author vincevia
+ * Lexical scanner used by {@link OAQueryTokenizer} to read and categorize
+ * individual query symbols and literals.
+ * <p>
+ * {@code OAQueryTokenManager} performs low-level tokenization of an input
+ * query string, classifying identifiers, operators, numbers, and quoted
+ * strings into the appropriate {@link OAQueryTokenType}.
+ *
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li>Iterate through query text character by character.</li>
+ *   <li>Detect and classify SQL-like keywords (AND, OR, LIKE, IN, NULL, etc.).</li>
+ *   <li>Handle escape sequences and nested quotes correctly.</li>
+ *   <li>Return tokens sequentially to the parser for syntactic evaluation.</li>
+ * </ul>
+ *
+ * <h2>Design Characteristics</h2>
+ * <ul>
+ *   <li>Stateless between queries (reset via {@link #setQuery(String)}).</li>
+ *   <li>Supports both single and double quoted string literals.</li>
+ *   <li>Uses constants from {@link OAQueryTokenType} for classification.</li>
+ *   <li>Lightweight, no external dependencies.</li>
+ * </ul>
+ *
+ * @see OAQueryTokenizer
+ * @see OAQueryToken
+ * @see OAQueryTokenType
  */
 public class OAQueryTokenManager {
     String query;

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.transaction;
 
 import java.util.ArrayList;
@@ -16,22 +21,45 @@ import java.util.HashMap;
 import com.viaoa.object.OAThreadLocalDelegate;
 
 /**
- * Creates a transaction for a Thread. <br>
- * example:
+ * Thread-local transaction mechanism used by OA datasources and other
+ * subsystems that require coordinated commit/rollback sequencing.
  * <p>
- * <code>
-
-    OATransaction trans = new OATransaction();
-    trans.setUseBatch(true);
-    trans.start();
-    ..
-    trans.commit();
-    ||
-    trans.rollback();
-
- </code>
+ * An {@code OATransaction} is explicitly started and then becomes associated
+ * with the current thread via
+ * {@link com.viaoa.object.OAThreadLocalDelegate#setTransaction}. Code running
+ * in that thread can retrieve the active transaction and register listeners
+ * that should be notified at commit or rollback time.
  *
- * @author vincevia
+ * <h2>Key Responsibilities</h2>
+ * <ul>
+ *   <li>define a JDBC-style isolation level for the transaction,</li>
+ *   <li>coordinate batch-mode operations across datasources,</li>
+ *   <li>optionally allow writes even when datasources are marked read-only,</li>
+ *   <li>notify registered {@link OATransactionListener} instances,</li>
+ *   <li>provide a simple key/value map for listeners to store temporary data.</li>
+ * </ul>
+ *
+ * <h2>Lifecycle</h2>
+ * <ol>
+ *   <li>{@link #start()} — associates this transaction with the current thread,</li>
+ *   <li>application performs work (e.g., datasource operations),</li>
+ *   <li>{@link #commit()} or {@link #rollback()} — notifies all listeners and
+ *       clears thread-local state.</li>
+ * </ol>
+ *
+ * <h2>Listeners</h2>
+ * Registered listeners (datasources, batching subsystems, etc.) receive:
+ * <ul>
+ *   <li>{@code commit(this)}</li>
+ *   <li>{@code rollback(this)}</li>
+ *   <li>{@code executeOpenBatches(this)}</li>
+ * </ul>
+ * providing a consistent transaction boundary.
+ *
+ * <h2>Thread Association</h2>
+ * Transactions never span threads. Each thread must start and end its own
+ * transaction using {@link #start()}, and {@link #isStarted()} determines
+ * whether this transaction is the one currently bound to the thread.
  */
 public class OATransaction {
 	private final int transactionLevel;

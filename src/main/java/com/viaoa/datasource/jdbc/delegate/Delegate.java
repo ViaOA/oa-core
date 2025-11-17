@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.delegate;
 
 import java.lang.reflect.Method;
@@ -21,9 +26,13 @@ import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.datasource.jdbc.query.QueryConverter;
 
 /**
- * Used to get additional information about a JDBC DataSource.
- * 
- * @author vvia
+ * JDBC helper utilities for OA, including property-length discovery and
+ * database adjustments for case sensitivity.
+ * <p>
+ * Computes effective max length for a property from the active SELECT
+ * column set, and normalizes case-insensitive columns (optionally maintaining
+ * a lowercase mirror column) to align with database and index rules.
+ * </p>
  */
 public class Delegate {
 

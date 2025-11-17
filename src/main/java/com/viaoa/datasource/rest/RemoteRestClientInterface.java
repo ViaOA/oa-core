@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.rest;
 
 import com.viaoa.object.OAObject;
@@ -18,10 +23,14 @@ import com.viaoa.remote.rest.annotation.OARestMethod.MethodType;
 import com.viaoa.sync.remote.RemoteClientInterface;
 
 /**
- * REST Client remote methods that will use the same named msg queue as RemoteSync, when set up (bind) on the server. This is so that
- * changes can be ordered and instances (clients/server) will stay in sync.
+ * REST-enabled version of {@link com.viaoa.sync.remote.RemoteClientInterface}
+ * that maintains message ordering and synchronization consistency between
+ * OA clients and servers.
  *
- * @author vvia
+ * <h2>Usage</h2>
+ * Implementations of this interface are automatically bound to the
+ * {@code OARestServlet} and share the same message queue namespace as
+ * the primary RemoteSync channel.
  */
 @OARestClass()
 public interface RemoteRestClientInterface extends RemoteClientInterface {

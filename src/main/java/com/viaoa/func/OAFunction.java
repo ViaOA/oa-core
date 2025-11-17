@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.func;
 
 import com.viaoa.hub.Hub;
@@ -21,9 +26,29 @@ import com.viaoa.util.OAInteger;
 import com.viaoa.util.OAString;
 
 /**
- * OA functions that work from OAObject, Hub and use property paths.
+ * Utility functions that evaluate values across an OAObject graph using
+ * property-path traversal. These functions use {@link com.viaoa.object.OAFinder}
+ * to walk relationships from a root {@link com.viaoa.object.OAObject} or
+ * {@link com.viaoa.hub.Hub}, applying aggregation logic to the objects
+ * encountered along the path. <p>
  *
- * @author vvia
+ * Supported operations include:
+ * <ul>
+ *   <li>Counting objects reachable through a property path.</li>
+ *   <li>Summing numeric property values.</li>
+ *   <li>Computing minimum and maximum property values.</li>
+ *   <li>Evaluating text templates using {@link com.viaoa.template.OATemplate}.</li>
+ *   <li>Computing string lengths from an object's property value.</li>
+ * </ul>
+ *
+ * Each function splits property paths into navigation and terminal-property
+ * segments when needed, and converts or compares values using OA utility
+ * classes such as {@link com.viaoa.util.OAConv} and
+ * {@link com.viaoa.util.OACompare}. Traversal always processes the full set of
+ * reachable objects and does not short-circuit. <p>
+ *
+ * OAFunction forms the foundation for high-level expressions used in
+ * templates, reports, and dynamically computed UI or domain values.
  */
 public class OAFunction {
 

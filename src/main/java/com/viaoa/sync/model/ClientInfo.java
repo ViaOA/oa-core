@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync.model;
 
 import java.io.Serializable;
@@ -15,7 +20,32 @@ import java.io.Serializable;
 import com.viaoa.util.OADateTime;
 
 /**
- * Information about a single instance of a Client.
+ * Describes a single client connected to an {@code OASyncServer}.
+ * <p>
+ * A {@code ClientInfo} instance is created when a client connects and is
+ * updated throughout the lifetime of the connection. It provides:
+ * <ul>
+ *   <li>connection identity ({@code connectionId}),</li>
+ *   <li>lifecycle timestamps ({@code created}, {@code disconnected}),</li>
+ *   <li>client host and IP address,</li>
+ *   <li>server host/port the client connected to,</li>
+ *   <li>user identity fields ({@code userId}, {@code userName}, {@code location}),</li>
+ *   <li>runtime statistics (request count and total request time),</li>
+ *   <li>client memory usage, version, and remote thread count.</li>
+ * </ul>
+ *
+ * <h2>Runtime Usage</h2>
+ * {@code ClientInfo} objects are:
+ * <ul>
+ *   <li>created by the server during handshake,</li>
+ *   <li>updated periodically by the client (via heartbeat/update messages),</li>
+ *   <li>read by administrative tools or monitoring dashboards,</li>
+ *   <li>finalized when the client disconnects.</li>
+ * </ul>
+ *
+ * <p>
+ * This class contains no behavior beyond storage; it is intentionally kept
+ * lightweight and serializable for transmission across the remoting layer.
  */
 public class ClientInfo implements Serializable{
     private static final long serialVersionUID = 1L;

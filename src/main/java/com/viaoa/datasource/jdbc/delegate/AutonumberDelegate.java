@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.delegate;
 
 import java.sql.ResultSet;
@@ -26,12 +31,23 @@ import com.viaoa.object.OAObjectDSDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 
 /**
- * Used to get seq numbers to assign for new object ids. Logging: all are set to "finer"
+ * Assigns and tracks auto-numbered primary key values for JDBC-backed entities.
+ * <p>
+ * Seeds per-table counters from the database using a MAX(...) query, then
+ * dispenses IDs atomically from an in-memory cache. When a GUID prefix is
+ * configured, values are emitted as {@code "<guid>-<seq>"}; otherwise an
+ * {@link Integer} is assigned directly. ID assignment is performed while
+ * {@code OAObjectDSDelegate.setAssigningId(...)} is true to preserve lifecycle semantics.
+ * </p>
+ *
+ * @see com.viaoa.datasource.jdbc.db.DBMetaData
+ * @see com.viaoa.datasource.jdbc.db.Table
+ * @see com.viaoa.datasource.jdbc.db.Column
  */
 public class AutonumberDelegate {
 	private static Logger LOG = Logger.getLogger(AutonumberDelegate.class.getName());
 
-	private static final Map<String, AtomicInteger> hmTabeNextSeq = new ConcurrentHashMap<String, AtomicInteger>(39, .75f); // Table.name.upper, Integer
+	private static final Map<String, AtomicInteger> hmTabelNextSeq = new ConcurrentHashMap<String, AtomicInteger>(39, .75f); // Table.name.upper, Integer
 
 	/**
 	 * Assigns autonumber properties. If guid is being used, then it will prefix the autonumber.
@@ -70,7 +86,7 @@ public class AutonumberDelegate {
 			if (id < idNext) {
 				break;
 			}
-			AtomicInteger ai = hmTabeNextSeq.get(table.name.toUpperCase());
+			AtomicInteger ai = hmTabelNextSeq.get(table.name.toUpperCase());
 			if (ai == null || ai.compareAndSet(idNext, id + 1)) {
 				break; // else need to try again
 			}
@@ -106,7 +122,7 @@ public class AutonumberDelegate {
 		}
 
 		final String hashId = table.name.toUpperCase();
-		AtomicInteger ai = hmTabeNextSeq.computeIfAbsent(hashId, k -> {
+		AtomicInteger ai = hmTabelNextSeq.computeIfAbsent(hashId, k -> {
 			int max = 0;
 			if (ds == null) {
 				max = 1;
@@ -128,7 +144,7 @@ public class AutonumberDelegate {
 					}
 					rs.close();
 					LOG.fine("table=" + table.name + ", column=" + pkColumn.columnName + ", max=" + max + ", query=" + query
-							+ ", hash=" + hmTabeNextSeq);
+							+ ", hash=" + hmTabelNextSeq);
 				} catch (Exception e) {
 					throw new RuntimeException("OADataSource.getNextNumber() failed for " + table.name + " Query:" + query, e);
 				} finally {

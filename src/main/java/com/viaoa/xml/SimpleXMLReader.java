@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.xml;
 
 import java.io.File;
@@ -28,12 +33,35 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.SAXParser;
 
 /**
-    XMLReader using a SAXParser to parse and load into a hierarchy of name/value, where value is a hashmap 
-    or an ArrayList of values or hashmaps.
-    
-    NOTE: all name/values are put in uppercase
-    see: SimpleXMLReaderTest
-*/
+ * Lightweight SAX-based XML reader that produces a simple hierarchical tree of
+ * {@link Node} instances, each containing:
+ * <ul>
+ *   <li>tag name,</li>
+ *   <li>text content,</li>
+ *   <li>attributes,</li>
+ *   <li>child nodes.</li>
+ * </ul>
+ *
+ * <h2>Purpose</h2>
+ * Unlike {@link OAXMLReader}, this class does not create OAObjects. It is used
+ * for:
+ * <ul>
+ *   <li>reading config files,</li>
+ *   <li>schemas,</li>
+ *   <li>metadata,</li>
+ *   <li>simple name/value XML structures.</li>
+ * </ul>
+ *
+ * <h2>Usage</h2>
+ * <pre>{@code
+ * SimpleXMLReader r = new SimpleXMLReader();
+ * Node root = r.parse(xmlString);
+ * }</pre>
+ *
+ * <p>
+ * The output tree is minimal and does not enforce schema or perform any type
+ * conversion; callers can traverse the tree manually.
+ */
 public class SimpleXMLReader extends DefaultHandler {
     private Stack<Node> stack = new Stack<>();
     private Node node;

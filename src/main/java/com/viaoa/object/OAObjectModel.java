@@ -1,15 +1,41 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
+/**
+ * Configuration container describing UI and behavioral permissions for
+ * a model class of {@link OAObject}.
+ *
+ * <p>OAObjectModel is not persistent; it defines the user-interface and
+ * workflow flags used by generated or runtime components (e.g. OA-Web,
+ * OA-JFC) to determine what actions are available for a given object
+ * type—add, edit, delete, search, etc.</p>
+ *
+ * <p><b>Primary Roles</b>:
+ * <ul>
+ *   <li>Maintain per-feature boolean flags (e.g. {@code allowAdd},
+ *       {@code allowDelete}, {@code allowSearch}).</li>
+ *   <li>Provide {@link #defaultAll(boolean)} to enable/disable everything
+ *       in bulk.</li>
+ *   <li>Hold display-name metadata used in UI captions.</li>
+ *   <li>Support JFC-specific behaviors via {@code forJfc} flag.</li>
+ * </ul>
+ *
+ * <p>It effectively acts as a “policy object” guiding OA’s generated UI layers.</p>
+ */
 //@OAClass (addToCache=false, localOnly=true, useDataSource=false)
 public class OAObjectModel {
 	//was: public class OAObjectModel extends OAObject {

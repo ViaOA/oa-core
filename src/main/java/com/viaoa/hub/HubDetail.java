@@ -1,35 +1,70 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import com.viaoa.object.*;
 
 /**
-    This is used by Hub.getDetail() to create a (Detail) Hub that is automatically populated with the
-    value from a property in the active object of the controlling (Master) Hub.  Whenever the Master
-    Hub's active object is changed, the Detail Hub will automatically be updated.
-    <p>
-    If the value is a Hub, then the Detail Hub will share the same data.
-    <p>
-    Example:
-    <pre>
-    Hub hubDept = new Hub(Department.class);
-    hubDept.select();  // select all existing dept objects.
-    Hub hubEmp = hubDept.getDetail("Employees"); // Department has a method "Hub getEmployees()"
-    // hubEmp will always have the Employee Objects for the active object in the hubDept.
-    </pre>
-    <p>
-    Note: This does not get serialized with Hub.
-    see Hub#getDetail
-*/
+ * Internal class that defines the link between a master {@link Hub}
+ * and its corresponding detail {@link Hub}.
+ *
+ * <p>{@code HubDetail} is created by {@link Hub#getDetail(String)} or
+ * indirectly by a {@link HubMerger}.  It holds the metadata and linkage
+ * information that connects two Hubs in a master–detail relationship,
+ * ensuring that the detail Hub always reflects the contents of the
+ * master Hub’s active object.</p>
+ *
+ * <h3>Responsibilities</h3>
+ * <ul>
+ *   <li>Record the relationship metadata:
+ *       <ul>
+ *         <li>The {@link OALinkInfo} describing the property from master
+ *             to detail.</li>
+ *         <li>The {@link Hub} references for both master and detail.</li>
+ *         <li>The relationship type (Hub, array, OAObject, etc.).</li>
+ *         <li>Reference-count tracking for reuse by other detail Hubs.</li>
+ *       </ul>
+ *   </li>
+ *   <li>Handle special cases for recursive one-to-many links where the
+ *       detail Hub can become disconnected from its master Hub.  
+ *       The {@link #setup()} method installs a listener that reconnects
+ *       the master Hub’s active object to the correct parent when
+ *       necessary.</li>
+ *   <li>Support {@link HubMerger} usage for hierarchical or flattened
+ *       Hub compositions.</li>
+ * </ul>
+ *
+ * <h3>Usage Example</h3>
+ * <pre>{@code
+ * Hub<Department> hubDept = new Hub<>(Department.class);
+ * hubDept.select();
+ * Hub<Employee> hubEmp = hubDept.getDetail("employees");
+ * // hubEmp automatically follows the active Department
+ * }</pre>
+ *
+ * <h3>Design Notes</h3>
+ * <ul>
+ *   <li>Not serialized with its parent Hub; it is reconstructed when the
+ *       Hub graph is re-initialized.</li>
+ *   <li>Manages recursive Hub wiring via {@link OAObjectInfoDelegate}
+ *       and property-path introspection.</li>
+ *   <li>Intended solely for internal OA use; application code should
+ *       call {@link Hub#getDetail(String)} instead.</li>
+ * </ul>
+ */
 class HubDetail implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
 

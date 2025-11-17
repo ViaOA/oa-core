@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import java.util.ArrayList;
@@ -27,12 +32,68 @@ import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 
 /**
- * Convert an Object query to an OAFilter. This can be used for Hub selects, etc. It is used by OADataSourceObjectCache.selects created
- * 20140127, expanded 201511125
+ * Compiles an object-query expression into an {@link OAFilter} tree that can be
+ * evaluated against OAObjects or used by a Hub for in-memory filtering.  
  *
- * @author vvia
+ * <p>
+ * OAQueryFilter provides a lightweight OQL/SQL-style query language that
+ * supports property paths, nested expressions, relational operators,
+ * logical operators, LIKE matching, and both single-column and multi-column
+ * IN conditions.  The resulting filter behaves exactly like any other
+ * OAFilter and can be reused across Hubs or selection operations.
+ * </p>
+ *
+ * <h3>Supported expression features</h3>
+ * <ul>
+ *   <li>Property names and nested {@link OAPropertyPath} expressions</li>
+ *   <li>Comparison operators: 
+ *       =, !=, &lt;, &lt;=, &gt;, &gt;=</li>
+ *   <li>LIKE and NOTLIKE (wildcard matching)</li>
+ *   <li>Logical AND and OR with correct precedence</li>
+ *   <li>Parentheses for grouping</li>
+ *   <li>Single-value IN lists</li>
+ *   <li>Composite IN conditions such as:
+ *       <pre>(a,b) IN (('x',1),('y',2))</pre></li>
+ *   <li>IN (?) where the parameter is a List of values or List of OAObjectKey</li>
+ *   <li>NULL and parameter substitution via {@code ?}</li>
+ * </ul>
+ *
+ * <h3>How it works</h3>
+ * The query string is tokenized by {@link OAQueryTokenizer} and parsed using
+ * a recursive-descent grammar.  Each operator is translated into the
+ * corresponding {@link OAFilter} implementation (e.g., {@link OAEqualFilter},
+ * {@link OAGreaterFilter}, {@link OALikeFilter}, etc.).  The resulting filter
+ * tree is stored internally and invoked through {@link #isUsed(Object)}.
+ *
+ * <p>
+ * When a property path traverses a many-relationship, the parser automatically
+ * constructs an {@link com.viaoa.util.OAFinder} so that the filter applies to
+ * the located target object, matching the standard behavior of OAFilter
+ * property-path evaluation.
+ * </p>
+ *
+ * <h3>Usage</h3>
+ * <pre>
+ * OAQueryFilter&lt;Customer&gt; f =
+ *     new OAQueryFilter<>(Customer.class, "lastName LIKE 'S*' AND age >= 18");
+ *
+ * hubCustomers.setFilter(f);
+ * </pre>
+ *
+ * <h3>Error handling</h3>
+ * Syntax errors, unmatched parentheses, missing operands, or invalid
+ * parameter types produce a {@link RuntimeException} with diagnostic
+ * information.  This ensures that query problems are caught at construction
+ * time rather than during evaluation.
+ *
+ * <p>
+ * This class is used extensively by OADataSourceObjectCache and other
+ * components that convert query expressions into reusable filters.
+ * </p>
  */
-public class OAQueryFilter<T> implements OAFilter {
+public class OAQueryFilter<T> implements OAFilter<T> {
+    private static final long serialVersionUID = 1L;
+
 	private Class<T> clazz;
 	private String query;
 	private Object[] args;

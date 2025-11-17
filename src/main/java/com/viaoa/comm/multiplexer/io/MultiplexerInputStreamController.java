@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.comm.multiplexer.io;
 
 import java.io.DataInputStream;
@@ -22,8 +27,46 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAThreadLocalDelegate;
 
 /**
- * Internally created by MultiplexerSocketController to manage the InputStream for the 
- * "real" socket.
+ * Manages the shared {@link java.io.DataInputStream} for a single physical
+ * TCP connection used by the multiplexer. All incoming data for every
+ * {@link VirtualSocket} channel is read by this controller and then
+ * coordinated so that the correct virtual socket can consume its payload.
+ *
+ * <p>
+ * The controller runs a dedicated read loop that:
+ * </p>
+ *
+ * <ul>
+ *   <li>Reads a header containing the virtual socket id and payload length.</li>
+ *   <li>Dispatches command frames to {@link #processCommand(int, int)}.</li>
+ *   <li>Assigns data frames to the appropriate {@link VirtualSocket} by
+ *       setting {@code _nextReadId} and waking the waiting thread.</li>
+ *   <li>Enforces per-socket timeouts and connection-level error detection.</li>
+ * </ul>
+ *
+ * <p>
+ * Individual virtual sockets call {@link #read(VirtualSocket, byte[], int, int)}
+ * to consume their assigned payload. The controller guarantees that only the
+ * virtual socket identified by the current header can read from the underlying
+ * stream, and that the full frame length is honored before the next header is
+ * processed.
+ * </p>
+ *
+ * <p>
+ * Subclasses (typically {@code MultiplexerSocketController}) implement the
+ * abstract methods to:
+ * </p>
+ *
+ * <ul>
+ *   <li>Create and close virtual sockets.</li>
+ *   <li>Close the real socket when commanded.</li>
+ *   <li>Resolve virtual socket ids and validate maximum ids.</li>
+ * </ul>
+ *
+ * <p>
+ * Read statistics (count and total size) are tracked for monitoring and
+ * performance diagnostics.
+ * </p>
  */
 public abstract class MultiplexerInputStreamController {
     private static Logger LOG = Logger.getLogger(MultiplexerInputStreamController.class.getName());

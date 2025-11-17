@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.*;
@@ -27,11 +32,31 @@ import com.viaoa.undo.OAUndoManager;
 import com.viaoa.util.*;
 
 /**
- * Delegate class used to store information about the local thread. This is used internally throughout OA to set specific features for a
- * thread. Note: it is important to make sure to call the corresponding reverse value, so that the flags and counters will be unset and the
- * Thread will be removed from internal map.
+ * Central controller for OA thread-local execution state.
+ * 
+ * <p>This delegate wraps a thread-local {@link OAThreadLocal} instance and
+ * coordinates access to:
+ *
+ * <ul>
+ *   <li>Object graph loading and refresh mode indicators</li>
+ *   <li>Distributed sync and remote invocation state</li>
+ *   <li>Cache add mode, serialization mode and message suppression</li>
+ *   <li>Object delete state tracking</li>
+ *   <li>Undoable property change capture</li>
+ *   <li>Hub event traversal, dependency resolution & batching</li>
+ *   <li>Deadlock-aware fine-grained locking coordination</li>
+ *   <li>OAContext propagation</li>
+ * </ul>
+ *
+ * <p>Provides high-performance fast paths (zero atomic ops) when counters
+ * indicate that a feature is inactive. Many operations use reference-counting
+ * and scoped toggling to ensure state is always restored.
+ *
+ * <p>All thread-affecting logic in OA must route through this class rather than
+ * manipulating {@link OAThreadLocal} directly.
  *
  * @author vvia
+ * @see OAThreadLocal
  */
 public class OAThreadLocalDelegate {
 

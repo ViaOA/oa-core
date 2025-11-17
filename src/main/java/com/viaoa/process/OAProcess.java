@@ -1,18 +1,30 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.process;
 
 /**
- * Similar to a future or promise to track and manage a running process.
- * @author vvia
+ * Tracks the lifecycle of a long-running or asynchronous process and provides
+ * state for cancellation, completion, progress steps, timing constraints, and
+ * error reporting. <p>
+ *
+ * OAProcess instances are typically managed by higher-level components that
+ * execute tasks in background threads. The class exposes flags and timestamps
+ * for cancellation requests, cancellation confirmation, process completion,
+ * pause state, and progress-step tracking. Subclasses or callers may override
+ * {@link #run()} to execute the actual work associated with the process.
  */
 public class OAProcess implements Runnable {
 

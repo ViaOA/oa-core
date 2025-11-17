@@ -1,22 +1,33 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.filter;
 
 import com.viaoa.datasource.OASelect;
 import com.viaoa.util.OAFilter;
 
 /**
- * Joins two filters together to create an AND filter between them.
+ * Combines two {@link OAFilter} instances using logical AND.  Both filters
+ * must evaluate to {@code true} for the object to be included.
  *
- * @author vvia
+ * <p>
+ * This filter supports datasource optimization: each contained filter is
+ * given the opportunity to update the associated {@link OASelect}.  If
+ * either filter contributes query-level constraints, the combined filter
+ * returns {@code true} from {@link #updateSelect(OASelect)}.
+ * </p>
  */
 public class OAAndFilter implements OAFilter {
 

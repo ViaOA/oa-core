@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.lang.reflect.Array;
@@ -43,9 +48,24 @@ import com.viaoa.hub.HubEvent;
 import com.viaoa.util.*;
 
 /**
- * Delegate used load OAObject annotations into OAObjectInfo, Database, etc
+ * Internal delegate responsible for processing OA-specific annotations on
+ * OAObject classes, properties, and links. These annotations supplement the
+ * metadata defined by OABuilder, allowing code-level refinement of edit rules,
+ * display attributes, and other runtime behaviors.
  *
- * @author vvia
+ * <p>Annotation processing occurs during metadata initialization and prior to
+ * any OAObject instances being created. This ensures that decorated metadata is
+ * stable, thread-safe, and consistently applied throughout the OA Object Graph.</p>
+ *
+ * <p>This delegate enables a hybrid model-driven architecture: the application
+ * model defines the core business schema while annotations provide convenient
+ * inline overrides and refinements without requiring regeneration or extensive
+ * configuration.</p>
+ *
+ * @see OAObjectInfo
+ * @see OAPropertyInfo
+ * @see OALinkInfo
+ * @see OAMethodInfo
  */
 public class OAAnnotationDelegate {
 	private static Logger LOG = Logger.getLogger(OAAnnotationDelegate.class.getName());

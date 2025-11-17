@@ -1,31 +1,64 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
-import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.lang.reflect.*;
 
-import com.viaoa.sync.*;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
-import com.viaoa.util.*;
 
-/** 
-    Used to store the position of an object within a hub in property within the object.
-    This can then be used when retrieving the objects from a datasource.
-    @see Hub#setAutoSequence
-*/
+/**
+ * Automatically maintains a numeric sequence property on every object in a {@link Hub},
+ * keeping the property value equal to the object’s position in that Hub.
+ *
+ * <p>Used for ordered collections where the visual or logical order matters but
+ * is not defined by a data sort (e.g., form line numbers, menu order, display rank).</p>
+ *
+ * <h3>Behavior</h3>
+ * <ul>
+ *   <li>Listens for structural Hub events (add, insert, remove, move, sort, newList).</li>
+ *   <li>Recomputes and updates the sequence property using reflection on the specified setter method.</li>
+ *   <li>Supports a configurable start number (default 0) and optional “keep sequence” mode
+ *       to decide whether to close gaps after removals.</li>
+ *   <li>In distributed configurations, can suppress per-object change messages and send
+ *       a single consolidated update from the server.</li>
+ * </ul>
+ *
+ * <h3>Constructor Parameters</h3>
+ * <ul>
+ *   <li><b>hub</b> – the Hub whose objects are to be sequenced.</li>
+ *   <li><b>propertyName</b> – the numeric OAObject property to update.</li>
+ *   <li><b>startNumber</b> – starting index (typically 0 or 1).</li>
+ *   <li><b>bKeepSeq</b> – if true, numbers stay contiguous after removals.</li>
+ *   <li><b>bServerSideOnly</b> – if true, sequence updates are performed on the server
+ *       and pushed to clients through Hub messaging.</li>
+ * </ul>
+ *
+ * <h3>Example</h3>
+ * <pre>{@code
+ * Hub<InvoiceLine> hubLines = new Hub<>(InvoiceLine.class);
+ * new HubAutoSequence(hubLines, "lineNumber", 1, false, true);
+ * }</pre>
+ *
+ * This ensures each {@code InvoiceLine} has its {@code lineNumber} property set to
+ * match its position in the Hub, starting at 1.
+ */
 public class HubAutoSequence extends HubListenerAdapter implements java.io.Serializable {
     static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(HubAutoSequence.class.getName());

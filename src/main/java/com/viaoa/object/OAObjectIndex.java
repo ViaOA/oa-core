@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -5,15 +20,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.util.OAArray;
 
 /**
- * Used by OAObjectCache, that Indexes OAObjects by pkey Property values (using OAObjectIndexKey) to it's OAObject.guid value.
- * <br>
- * This is managed by OAObjectCache, including updates when an indexed property is changed.
- * <br>
- * Note: only OAObjectKey that have all non-null objectIds[] are added.
- *  
- * Also called by OAObjectCache weakref queue when an OAObject weakref is GC'd, removing from this index. 
- * 
- * @see OAObjectInfoDelegate.getPropertyIdValues(..) and OAObjectKey.
+ * Maintains a runtime index of OAObject instances by their primary/business key
+ * property values, enabling fast lookup of an object GUID when only its
+ * identifier fields are known. This supports identity reconciliation during
+ * lazy loading and distributed synchronization.
+ *
+ * <p>The index is maintained by {@code OAObjectCache}, including updates when
+ * primary key values change. Only keys with all non-null identifier values are
+ * indexed to ensure correct and deterministic lookup behavior.</p>
+ *
+ * <p>Map entries are removed automatically when their referenced OAObject is
+ * garbage collected, preserving memory and avoiding stale identity entries.</p>
+ *
+ * @see OAObjectKey
+ * @see OAObjectKeyDelegate#getKey
+ * @see OAObjectCache
  */
 public class OAObjectIndex {
 	private final ConcurrentHashMap<Class<? extends OAObject>, ConcurrentHashMap<OAObjectIndexKey, Long>> hmGuidByIndexKey = new ConcurrentHashMap<>(151, 0.75F);

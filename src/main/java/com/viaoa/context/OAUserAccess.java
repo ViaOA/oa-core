@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.context;
 
 import java.util.ArrayList;
@@ -19,13 +34,10 @@ import com.viaoa.util.OAString;
  * Has methods to add multiple obj/hub and propertyPaths, so that all are searched to see if an Object is included in any of the root +
  * paths. Allows for adding child[ren] OAUserAccess 
  *
-
 Used by OAContext<p> 
 
 <pre>
 <code>
-
-
     OAUserAccess ua = new OAUserAccess();
     ua.addVisible(buyer, BuyerPP.location().company().clients().products().campaigns().pp);
 
@@ -44,6 +56,33 @@ Used by OAContext<p>
 </pre>
  *
  * @author vvia
+ */
+
+/**
+ * Defines the visibility and enabled/disabled access rules for OAObjects and
+ * their properties based on class membership, named properties, or membership
+ * in specific property-path relationships. <p>
+ *
+ * OAUserAccess allows an application to specify:
+ * <ul>
+ *   <li>Which classes are visible or enabled.</li>
+ *   <li>Which properties of those classes are visible or enabled.</li>
+ *   <li>Which objects are reachable from one or more root objects or hubs via
+ *       configured {@link com.viaoa.util.OAPropertyPath} instances.</li>
+ *   <li>Negative rules (“not visible”, “not enabled”) that override positive
+ *       rules.</li>
+ *   <li>Chained access evaluation across multiple OAUserAccess instances.</li>
+ * </ul>
+ *
+ * Permission checks are performed using a deterministic evaluation order:
+ * class rules, class+property rules, path-based rules, and then chained
+ * OAUserAccess instances. Path-based evaluation uses both forward and reverse
+ * traversal of the property path so that objects sharing a common ancestor
+ * with the defined root are treated as included. <p>
+ *
+ * OAUserAccess is used by {@link com.viaoa.context.OAContext} to implement
+ * application-level permission enforcement, determining which OAObjects and
+ * properties are visible or enabled for a given user or thread context.
  */
 public class OAUserAccess {
 

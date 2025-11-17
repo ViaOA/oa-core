@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.pojo;
 
 import java.util.ArrayList;
@@ -5,6 +20,22 @@ import java.util.List;
 
 import com.viaoa.util.OAString;
 
+/**
+ * Helper methods for working with {@link PojoLinkOne} instances and
+ * extracting the {@link PojoProperty} set that participates in link
+ * matching.
+ * <p>
+ * The delegate exposes three views over a link-one definition:
+ * <ul>
+ *   <li>foreign-key properties ({@link #getLinkFkeyPojoProperties}),</li>
+ *   <li>import-match properties ({@link #getImportMatchPojoProperties}), and</li>
+ *   <li>unique properties ({@link #getLinkUniquePojoProperties}).</li>
+ * </ul>
+ * The combined view returned by {@link #getLinkOnePojoProperties} applies
+ * the same precedence rules that the JSON import logic uses:
+ * foreign keys &gt; import matches &gt; unique properties, recursively
+ * following nested {@link PojoLinkOneReference} definitions where needed.
+ */
 public class PojoLinkOneDelegate {
 
 	public static PojoLinkOne getPojoLinkOne(Pojo pojo, String linkName) {
@@ -15,7 +46,6 @@ public class PojoLinkOneDelegate {
 			return null;
 		}
 
-		List<PojoProperty> alPjp = new ArrayList<>();
 		for (PojoLink pl : pojo.getPojoLinks()) {
 			if (linkName.equalsIgnoreCase(pl.getName())) {
 				return pl.getPojoLinkOne();

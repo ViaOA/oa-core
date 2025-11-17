@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource;
 
 import java.io.Closeable;
@@ -30,48 +35,48 @@ import com.viaoa.util.OAArray;
 import com.viaoa.util.OAComparator;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
-
 /**
- * Helper Class used for submitting and managing queries for any OADataSource. This is used by Hub.select() methods. All queries are based
- * on object names, property names, and property paths.
+ * Executes object-based queries across any {@link OADataSource}.
  * <p>
- * A <b>property path</b> is a dot (".") separated list of property names that are used to navigate from a root Class to a property value.
- * To go from object to object, reference property names are used.
- * <p>
- * An OAFinder can be used to act as the datasource.
- * <p>
- * An OAFilter can be used to further filter the results.
- * <p>
- * Queries
+ * {@code OASelect} represents OA's unified query mechanism that supports
+ * relational, in-memory, distributed, and REST data sources. It translates
+ * property-path queries into the native language of the active DataSource
+ * while preserving full object identity and graph relationships.
+ *
+ * <h2>Features</h2>
  * <ul>
- * <li>All property names and connectors names are case insensitive.
- * <li>Can use the following connectors "AND", "&amp;&amp;", "||", "OR", "(", ")"
- * <li>Can use "=", "==", "!=", "&lt;", "&lt;=", "&gt;", "&gt;=", "LIKE", "%" (wildcard), "null" (any case)
- * <li>use "PASS[" to begin a passthru part of the query, and "]THRU" to end it.
- * <li>"ASC" ascending, "DESC" descending can be used with Order By properties.
+ *   <li>Supports property-path and parameterized queries (e.g., "customer.name == ?").</li>
+ *   <li>Integrates with {@link OADataSource} to perform full CRUD selects.</li>
+ *   <li>Returns results lazily via {@link OADataSourceIterator}.</li>
+ *   <li>Automatically reuses cached {@link OAObject} instances (no duplicates).</li>
+ *   <li>Supports filters ({@link OAFilter}) for in-memory post-processing.</li>
+ *   <li>Optional pre-count and cancellation support via {@link OASelectManager}.</li>
+ *   <li>Fully thread-safe and transaction-aware.</li>
  * </ul>
  *
- * <pre>
- * OASelect select = new OASelect();
- * String query = OAConverter.toDataSourceString("dept", dept); // converts to dept.Id = 'MIS'
- * String fname = "John";
- * query += " &amp;&amp; (dept.manager.lastName like 'Jones%'";
- * query += " || (dept.manager.firstName == " + OAConvert.toDataSourceString(fname) + ")";
- * select.setWhere(query);
- * select.setOrder("dept.name, Emp.LastName DESC, emp.firstName");
- * select.setPassthru(false); // needs to be converted to native query language
- * select.setCountFirst(false); // dont need count
- * select.setMax(250); // only select first 250 objects.  (default=0 ALL)
- * select.setFetchAmount(40); // amount of objects to read at a time (default=45)
+ * <h2>Usage Example</h2>
+ * <pre>{@code
+ * OASelect<Customer> sel =
+ *     new OASelect<>(Customer.class, "name like ?", new Object[]{"J%"}, "name", 100);
+ * while (sel.hasNext()) {
+ *     Customer c = sel.next();
+ *     System.out.println(c.getName());
+ * }
+ * sel.close();
+ * }</pre>
  *
- * // or use params for where query
- * query = "dept = ? &amp;&amp; dept.manager.lastName like ? || dept.manager.firstname = ?";
- * Object[] params = new Object[] { dept, "Jones%", fname };
- * select.setWhere(query);
- * select.setParams(params);
- * </pre>
- * <p>
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ * <h2>Design Notes</h2>
+ * <ul>
+ *   <li>Graph-based query abstraction decoupled from physical storage.</li>
+ *   <li>Supports distributed and REST-backed data sources without code changes.</li>
+ *   <li>Integrates seamlessly with {@link com.viaoa.hub.Hub} for live data binding.</li>
+ * </ul>
+ *
+ * @param <T> the {@link OAObject} type returned by the query
+ * @see OADataSource
+ * @see OADataSourceIterator
+ * @see OASelectManager
+ * @see OAFilter
  */
 public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoCloseable, Closeable {
 	static final long serialVersionUID = 1L;

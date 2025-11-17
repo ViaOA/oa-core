@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.object;
 
 import java.util.ArrayList;
@@ -22,21 +27,23 @@ import com.viaoa.hub.Hub;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
-/* This is used to preload objects.
+/**
+ * Supports asynchronous background preloading of {@link OAObject} data for
+ * Hubs or object graphs.
  *
- * Compared to OALoader, which loads objects by following a root object or Hub, and then goes through calling all of the methods in the property path.
- * ex:  Customers.Orders.Items.products
- * This can lead to a lot of calls to DS.
+ * <p>Used by OA to warm up caches and avoid latency during first access.
+ * Typically invoked through {@link OASelect} or {@link OALoader} to populate
+ * references, calculated fields, or dependent collections.</p>
  *
- * OAPreLoader is used when loading all objects, so that it can first preload the objects in the property path, and then use the cached objects to set
- * the property values.
+ * <p><b>Key Features</b>:
+ * <ul>
+ *   <li>Spawns background threads to fetch and cache related data.</li>
+ *   <li>Supports prioritized preloading of properties and linked objects.</li>
+ *   <li>Integrates with Hub listeners to defer UI updates until data ready.</li>
+ * </ul>
  *
- * This will load and set recursive properties, M2M properties.
- *
- * Ex: from class: ItemCategory, pp: items.products
- *  where itemCategory is recursive and itemCategory.items is M2M
- *
- * */
+ * <p>This class helps OA achieve smooth UX for large object graphs.</p>
+ */
 public class OAPreLoader {
 	private static Logger LOG = Logger.getLogger(OAPreLoader.class.getName());
 

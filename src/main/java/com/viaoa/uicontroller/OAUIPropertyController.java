@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.uicontroller;
 
 import com.viaoa.hub.Hub;
@@ -16,6 +31,31 @@ import com.viaoa.util.OAString;
  *  *************** NOTE ***********************
  *  This is replaced by OAUIController
  *  *************** NOTE ***********************
+ */
+
+/**
+ * Legacy controller for binding a single OAObject property to a UI
+ * component. This class has been superseded by {@link OAUIController},
+ * which provides a more general propertyPath-based controller model.
+ *
+ * <p>
+ * OAUIPropertyController manages:
+ * </p>
+ *
+ * <ul>
+ *   <li>A single property name on the active object in a {@link Hub}.</li>
+ *   <li>Formatting and type conversion of the property value.</li>
+ *   <li>Optional masking/encryption handling for password fields.</li>
+ *   <li>Enabled/visible state via {@link OAObjectCallbackDelegate}.</li>
+ * </ul>
+ *
+ * <p>
+ * New code should generally prefer {@link OAUIController} with a property
+ * path over using this class directly. It remains for backward compatibility
+ * with existing UI components.
+ * </p>
+ * 
+ * @deprecated replaced by OAUIController
  */
 public class OAUIPropertyController extends OAUIBaseController {
 

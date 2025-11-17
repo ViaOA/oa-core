@@ -1,28 +1,39 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
+
 import java.io.*;
-import java.lang.ref.WeakReference;
-import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.object.*;
 import com.viaoa.sync.OASyncDelegate;
 
-
 /**
- * Delegate used for serializing Hub.
- * @author vvia
+ * Delegate for serializing and deserializing {@link Hub} instances.
  *
+ * <p><b>Responsibilities</b>
+ * <ul>
+ *   <li>Serialize Hub state safely, forcing completion of pending selects.</li>
+ *   <li>Restore Hub membership references after deserialization.</li>
+ *   <li>Replace master or contained objects while maintaining referential integrity.</li>
+ * </ul>
+ *
+ * <p>Used heavily in client/server synchronization via {@link OASyncDelegate}
+ * and {@link OAObjectSerializeDelegate}.
  */
 public class HubSerializeDelegate {
     private static Logger LOG = Logger.getLogger(HubSerializeDelegate.class.getName());

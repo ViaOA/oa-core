@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.scheduler;
 
 import java.util.ArrayList;
@@ -6,9 +21,15 @@ import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 
 /**
- * Used to combine a complete datetime ranges for scheduling.
- *  
- * @author vvia
+ * Represents a complete scheduling plan for a resource. The plan defines
+ * multiple categories of date–time ranges such as open, preferred, blocked,
+ * and already scheduled ranges. Each category is stored as an
+ * {@link OASchedule}, allowing the plan to express both hard and soft
+ * availability rules. <p>
+ *
+ * The {@link #isAvailable(com.viaoa.util.OADateTime)} method applies these
+ * rules to determine whether the resource is available at a particular
+ * date–time.
  */
 public class OASchedulerPlan<R> {
     private OADateTime dtBegin, dtEnd;

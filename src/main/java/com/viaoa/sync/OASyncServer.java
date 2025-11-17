@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync;
 
 import java.io.BufferedOutputStream;
@@ -44,11 +49,51 @@ import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 
 /**
- * Server used to work with 1+ OASyncClients so that all OAObjects stay in sync. This allows OASyncClients to connect and lookup remote
- * objects and have a server side session.
- * 
- * @author vvia
- * @see OASync
+ * Server-side synchronization endpoint for an OA model.
+ * <p>
+ * An {@code OASyncServer} hosts the authoritative {@code OAObject} graph and
+ * manages connections from one or more {@link OASyncClient} instances. It
+ * routes remote method calls, broadcast sync messages, and manages per-client
+ * session state.
+ *
+ * <h2>Key Responsibilities</h2>
+ * <ul>
+ *   <li>Start and manage the underlying {@code OAMultiplexerServer} and
+ *       {@code OARemoteMultiplexerServer},</li>
+ *   <li>create and maintain {@code ClientInfo} and session objects for each
+ *       connected client,</li>
+ *   <li>provide {@code RemoteServer}, {@code RemoteSession},
+ *       {@code RemoteClient}, and {@code RemoteSync} implementations to
+ *       clients,</li>
+ *   <li>control lock ownership and conflict resolution for remote sessions,</li>
+ *   <li>route sync messages to only those clients that have the relevant
+ *       objects or hubs loaded,</li>
+ *   <li>perform file transfer duties via {@code ServerFile},</li>
+ *   <li>log remote requests to rotating daily log files,</li>
+ *   <li>asynchronously load sibling properties for detail links that require
+ *       background loading.</li>
+ * </ul>
+ *
+ * <h2>Client Session Management</h2>
+ * For each connection, the server creates a {@code ClientInfoExt} that stores:
+ * <ul>
+ *   <li>address and hostname,</li>
+ *   <li>per-connection remote session and client implementations,</li>
+ *   <li>lock state and pending updates,</li>
+ *   <li>disconnect markers for cleanup and cache saving.</li>
+ * </ul>
+ *
+ * <h2>Background Workers</h2>
+ * Several daemon threads are used:
+ * <ul>
+ *   <li>request logging thread writing to timestamped files,</li>
+ *   <li>sibling-property loader for detail link resolution,</li>
+ *   <li>optional server-side update thread.</li>
+ * </ul>
+ *
+ * <p>
+ * {@code OASyncServer} is designed to be long-lived and to coordinate the
+ * object graph state for all connected clients.
  */
 public class OASyncServer {
 	private static Logger LOG = Logger.getLogger(OASyncServer.class.getName());

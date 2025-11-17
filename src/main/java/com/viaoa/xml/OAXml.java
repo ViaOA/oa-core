@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.xml;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -19,10 +34,31 @@ import com.viaoa.json.jackson.OAJacksonModule;
 */
 
 /**
- * XML version of OAJson.
- * 
- * @author vvia
- * @since 20230917
+ * XML-based serialization implementation for OAObject graphs using Jackson's
+ * {@link com.fasterxml.jackson.dataformat.xml.XmlMapper}.  
+ * <p>
+ * {@code OAXml} extends {@link com.viaoa.json.OAJson} but replaces the normal
+ * JSON ObjectMapper with an XML ObjectMapper configured with:
+ * <ul>
+ *   <li>{@link com.fasterxml.jackson.datatype.jsr310.JavaTimeModule} for OA temporal types,</li>
+ *   <li>{@link com.viaoa.json.jackson.OAJacksonModule} for OAObject identity and link handling,</li>
+ *   <li>human-readable INDENT_OUTPUT,</li>
+ *   <li>property inclusion rules compatible with OAJson.</li>
+ * </ul>
+ *
+ * <h2>Thread Safety</h2>
+ * The shared XML {@link ObjectMapper} instance is created lazily and guarded by
+ * the lock inherited from {@link OAJson}, ensuring safe concurrent use.
+ *
+ * <h2>Usage</h2>
+ * <pre>{@code
+ * OAXml xml = new OAXml();
+ * String s = xml.toXml(myObject);
+ * }</pre>
+ *
+ * <p>
+ * For one-off operations requiring a fresh mapper instance, callers may use
+ * {@link #getUnsharedObjectMapper()}.
  */
 public class OAXml extends OAJson {
 	

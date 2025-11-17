@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.sync;
 
 import static com.viaoa.sync.OASyncServer.ServerLookupName;
@@ -44,10 +49,51 @@ import com.viaoa.util.OADateTime;
 import com.viaoa.util.OALogUtil;
 
 /**
- * Used to connect to OASyncServer and setup OASync.
+ * Client-side synchronization endpoint for an OA model.
+ * <p>
+ * An {@code OASyncClient} establishes a multiplexer connection to an
+ * {@link OASyncServer}, obtains remote interfaces for server, session,
+ * client, and sync operations, and participates in distributed object graph
+ * synchronization.
  *
- * @author vvia
- * @see OASync
+ * <h2>Startup Responsibilities</h2>
+ * When {@link #start()} is invoked, the client:
+ * <ul>
+ *   <li>starts the underlying {@code OAMultiplexerClient},</li>
+ *   <li>creates a {@code OARemoteMultiplexerClient} for remote method
+ *       invocation,</li>
+ *   <li>retrieves remote proxies for server, session, client, and sync
+ *       interfaces,</li>
+ *   <li>(optionally) registers itself with {@link OASyncDelegate} so the
+ *       model can be located globally,</li>
+ *   <li>spawns background threads for:
+ *       <ul>
+ *         <li>distributed garbage collection (tracking objects not referenced
+ *             by any hub),</li>
+ *         <li>tracking objects that require retention while in use on the
+ *             client, and</li>
+ *         <li>(optionally) periodic update calls to the remote session.</li>
+ *       </ul>
+ *   </li>
+ * </ul>
+ *
+ * <h2>Synchronization Behavior</h2>
+ * The client receives and applies change events coming from the server:
+ * <ul>
+ *   <li>object property changes,</li>
+ *   <li>hub insert/remove/replace events,</li>
+ *   <li>link changes and detail loading,</li>
+ *   <li>cache invalidation and remote lock notifications.</li>
+ * </ul>
+ *
+ * <p>
+ * The client also sends outbound changes initiated locally, ensuring that the
+ * server maintains the authoritative model.
+ *
+ * <h2>Lifespan</h2>
+ * An {@code OASyncClient} is intended to be long-lived. Its background threads
+ * are daemon threads and will remain active until the JVM exits unless a
+ * shutdown protocol is added externally.
  */
 public class OASyncClient {
 	protected static final Logger LOG = Logger.getLogger(OASyncClient.class.getName());

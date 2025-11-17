@@ -396,3 +396,37 @@ public class OAFinderTest extends OAUnitTest {
 		test.test2();
 	}
 }
+
+
+/**
+ * This is used to find all values from one OAObject/Hub to another OAObject/Hub, using a propertyPath. Support is included for Filters.
+ *
+ * @param <F> type of hub or OAObject to use as the root (from)
+ * @param <T> type of hub for the to class (to).
+ *        <P>
+ *        examples:<code>
+    // from Router, find all UserLogin for a userId
+    OAFinder<Router, UserLogin> f = new OAFinder<Router, UserLogin>(Router.P_UserLogins);
+    String cpp = UserLoginPP.user().userId().pp;
+    f.addLikeFilter(cpp, userId);
+    UserLogin userLogin = f.findFirst(router);
+
+    OAFinder<Program, Employee> f = new OAFinder<Program, Employee>(ProgramPP.locations().employees().pp) {
+        &#64;Override
+        protected boolean isUsed(Employee emp) {
+            return super.isUsed(emp);
+        }
+        &#64;Override
+        protected void onFound(Employee emp) {
+            //todo:
+        }
+    };
+    // f.setMaxFound(50);
+    f.addEqualFilter(EmployeePP.employeeAward().awardType().name(), "some name");
+    ArrayList<Employee> al = f.find(program);
+
+    </code>
+ */
+
+
+

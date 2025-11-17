@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.db;
 
 import java.lang.reflect.Constructor;
@@ -18,7 +23,30 @@ import com.viaoa.util.ClassModifier;
 import com.viaoa.util.OAArray;
 
 /**
- * Used for mapping database Tables with OAObjects.
+ * Represents a relational database table and its associated metadata.
+ * <p>
+ * Each {@code Table} defines its columns, relationships ({@link Link}),
+ * and indexes. The table also references its corresponding Java class
+ * used to materialize OAObjects.
+ * </p>
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li>Tracks {@link Column} definitions and primary/foreign keys.</li>
+ *   <li>Defines {@link Link} relationships for joins and navigation.</li>
+ *   <li>Resolves constructor references for object instantiation.</li>
+ *   <li>Provides helper methods to compute select and key columns.</li>
+ * </ul>
+ *
+ * <h2>Usage</h2>
+ * {@code Table} instances are created and registered by {@link Database}
+ * and consumed by {@link com.viaoa.datasource.jdbc.OADataSourceJDBC}
+ * when generating SQL for persistence operations.
+ *
+ * @see Column
+ * @see Link
+ * @see Index
+ * @see Database
  */
 public class Table {
 	public String name;

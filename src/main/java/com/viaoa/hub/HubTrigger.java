@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import com.viaoa.object.OAObject;
@@ -15,8 +20,43 @@ import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.util.OAFilter;
 
 /**
- * This is used to listen to Hub for objects that match filter criteria and then call the onTrigger method.
- * @author vvia
+ * Watches a {@link Hub} and invokes a trigger callback whenever an
+ * object enters the filtered view defined by this {@code HubFilter}.
+ *
+ * <p>{@code HubTrigger} extends {@link HubFilter} and behaves like a
+ * transient rule or alert mechanism: when an object becomes visible in
+ * the filtered list (i.e., satisfies the {@link OAFilter} criteria),
+ * {@link #onTrigger(OAObject)} is called immediately.</p>
+ *
+ * <h3>Usage Example</h3>
+ * <pre>{@code
+ * Hub<Order> hubAll = new Hub<>(Order.class);
+ *
+ * new HubTrigger<>(hubAll, order -> order.getTotal() > 1000) {
+ *     @Override
+ *     public void onTrigger(Order order) {
+ *         System.out.println("High-value order: " + order.getId());
+ *     }
+ * };
+ * }</pre>
+ *
+ * <h3>Responsibilities</h3>
+ * <ul>
+ *   <li>Monitor its master Hub and maintain a filtered view using
+ *       {@link HubFilter} semantics.</li>
+ *   <li>Invoke {@link #onTrigger(OAObject)} when a new object appears
+ *       in the filter result after Hub updates.</li>
+ *   <li>Ignore notifications during initialization to prevent duplicate
+ *       triggers when rebuilding the list.</li>
+ * </ul>
+ *
+ * <h3>Design Notes</h3>
+ * <ul>
+ *   <li>Lightweight, stateless utility for rule-based Hub monitoring.</li>
+ *   <li>Supports property-path dependencies so triggers fire when any
+ *       dependent property changes.</li>
+ *   <li>Safe under OA’s single-threaded event model.</li>
+ * </ul>
  */
 public abstract class HubTrigger<T extends OAObject> extends HubFilter<T> {
     private static final long serialVersionUID = 1L;

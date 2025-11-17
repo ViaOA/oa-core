@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.remote.multiplexer;
 
 import java.io.ObjectStreamClass;
@@ -45,18 +50,43 @@ import com.viaoa.util.Tuple;
 
 
 /**
- * Remoting client, that allows a client to access Objects on a server, and call methods on those objects.
- * <p>
- * It allows for any method to have args that are remote objects, which would allow the server to call the client. 
- * <p> A method can also return a remote object. Broadcasting is supported, where calling a method on a remote object will be invoked on all
- * other clients and server. This is similar to RMI, except that it allows for many objects (on either server or client) to be remote, with
- * less overhead. <br>
- * Example: get a remote object "A" from server call method "a.test(argX)", where arg is a RemoteClass - the server will then be able to
- * call methods on argX.
- * <p>
- * Note: OARemoteThread is used to process requests, so the current Thread can be check to 'know' if it's running a remote call.
- * <p>
- * DEBUG'ing - uses OAObject.getDebugMode(), if true then remote methods wont timeout.
+ * Client-side implementation for OA's remote-method invocation (RMI) layer
+ * when running over the Multiplexer communication system.
+ *
+ * <p>This class manages:
+ * <ul>
+ *   <li>Establishing virtual socket connections to the server
+ *   <li>Looking up remote objects exposed by the server
+ *   <li>Creating client-side proxy instances for remote objects
+ *   <li>Sending method calls to the server using either
+ *       synchronous socket requests or asynchronous queue-based delivery
+ *   <li>Receiving callbacks from server-to-client remote objects
+ * </ul>
+ *
+ * <p>The client integrates with:
+ * <ul>
+ *   <li>{@link com.viaoa.comm.multiplexer.OAMultiplexerClient}</li>
+ *   <li>{@link com.viaoa.remote.multiplexer.io.RemoteObjectInputStream}</li>
+ *   <li>{@link com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream}</li>
+ *   <li>{@link com.viaoa.remote.info.RequestInfo} message formats</li>
+ * </ul>
+ *
+ * <p>Key responsibilities:
+ * <ol>
+ *   <li>Maintain sessions and virtual sockets for Client→Server and Server→Client communication</li>
+ *   <li>Manage BindInfo lookups and remote-interface metadata</li>
+ *   <li>Create client-side remote proxies using Java dynamic proxies</li>
+ *   <li>Handle asynchronous invoke-return patterns using circular queues</li>
+ *   <li>Support broadcast remoting where a single call fans out to all servers</li>
+ * </ol>
+ *
+ * <p>Debugging:
+ * Remote calls respect OAObject.getDebugMode(), disabling timeouts so deep
+ * debugging does not interrupt or kill remote method calls.
+ *
+ * <p>This is the core class that allows OA applications to
+ * transparently call server-side services using standard Java interfaces
+ * without requiring a heavyweight RPC framework.
  *
  * @author vvia
  */

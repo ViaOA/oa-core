@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.process;
 
 import java.lang.management.ManagementFactory;
@@ -20,10 +25,13 @@ import com.sun.management.OperatingSystemMXBean;
 import com.viaoa.util.OAString;
 
 /**
- * used to monitor running threads and look for any alerts.
- * 20180410 under dev
- * @author vvia
+ * Diagnostic utility for inspecting thread activity and detecting potential
+ * long-running or blocked threads. The monitor captures thread dumps using
+ * {@link Thread#getAllStackTraces()} and compares them against previously
+ * recorded states to identify threads of interest. <p>
  *
+ * This class is intended for development and troubleshooting rather than
+ * production use.
  */
 public class OAThreadMonitor {
     protected final HashMap<Thread, OAThreadMonitor.ThreadInfo> hmThreadInfo = new HashMap<>();
@@ -55,8 +63,8 @@ public class OAThreadMonitor {
             }
 
             for (StackTraceElement ste : stes) {
-                int xx = 4;
-                xx++;
+                // int xx = 4;
+                // xx++;
             }
         }
     }
