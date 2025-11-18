@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.awt.*;
@@ -16,16 +21,21 @@ import java.io.*;
 
 import javax.imageio.ImageIO;
 
-/*was:
-import com.sun.image.codec.jpeg.JPEGCodec;
-import com.sun.image.codec.jpeg.JPEGImageEncoder;
-*/
-
 /**
- * Resizes image and saves as a scaled jpeg image files on your file system.
- * Uses the com.sun.image.codec.jpeg package shipped
- * by Sun with Java 2 Standard Edition.
+ * Utility for resizing an image file and writing the scaled result as a JPEG.
+ * The class loads an image using AWT, blocks until it is fully loaded,
+ * generates a proportionally scaled instance using
+ * {@link Image#getScaledInstance(int, int, int)}, renders it into a
+ * {@link BufferedImage}, and writes the result using {@link ImageIO}. <p>
  *
+ * Scaling is controlled by a resize factor: the original width is multiplied
+ * by the supplied factor and the height is adjusted automatically to preserve
+ * the aspect ratio. <p>
+ *
+ * Image loading is performed using a {@link MediaTracker} to ensure the image
+ * and its scaled instance are fully realized before drawing. This class is
+ * intended for standalone use through {@link #doResize(String, String, double)}
+ * or the command-line interface provided by {@link #main(String[])}.
  */
 public class ImageResizer extends Panel {
 
@@ -87,19 +97,8 @@ public class ImageResizer extends Panel {
         }
     }
 
-    public static void main(String args[]) {
-        if (args.length != 3) {usage();}
-        double factor = Double.parseDouble(args[2]);
-        ImageResizer resizer = new ImageResizer();
-        resizer.doResize(args[0], args[1], factor);
-        System.exit(0);
-    }
-
     public static void usage(){
         System.out.println("usage: java Resize original_file new_filename resize_factor");
         System.exit(1);
     }
-
-
 }
-

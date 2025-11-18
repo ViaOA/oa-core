@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.lang.reflect.*;
@@ -16,7 +21,23 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
- * Compare two objects, finding which fields do not match.
+ * Utility for performing a deep comparison of two arbitrary object graphs.
+ * Supports recursive descent, identity-based cycle detection, field-by-field
+ * reflection, and unordered array comparison. Mismatches are reported through
+ * {@link #foundOne(String, Object, Object)}, which may be overridden to collect
+ * or format results. <p>
+ *
+ * Primitive and {@code java.*} types are compared using {@link Object#equals}.
+ * Arrays are treated as unordered collections: elements are matched using
+ * {@link #getKey(Object)} to locate corresponding values in the opposite
+ * array, and nested contents are compared recursively. For non-array,
+ * non-primitive types, all non-static, non-transient declared fields of the
+ * class are compared via reflection; superclass fields are not traversed. <p>
+ *
+ * A visitor map based on {@link IdentityHashMap} prevents infinite recursion
+ * when cycles are encountered. The class maintains per-instance comparison
+ * state and is not thread-safe. Callers should create a new instance for each
+ * independent comparison.
  */
 public class OAObjectCompare {
     // hashmap used to add a Visitor pattern
@@ -41,7 +62,7 @@ public class OAObjectCompare {
 
     public void setObjectNames(String leftName, String rightName) {
         setLeftObjectName(leftName);
-        setRightObjectName(leftName);
+        setRightObjectName(rightName);
     }
     public String getLeftObjectName() {
         return leftName;

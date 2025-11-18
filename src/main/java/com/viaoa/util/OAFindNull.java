@@ -1,21 +1,38 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.lang.reflect.*;
 import java.util.IdentityHashMap;
 
 /**
- * Search object and it's fields/references for a null value.
- * @author vvia
+ * Utility for recursively searching an arbitrary object graph for null values.
+ * The search inspects all non-static, non-transient fields (including private
+ * fields) and follows references using reflection. Arrays are traversed by
+ * element index. <p>
+ *
+ * A property-path string is constructed as the traversal descends into fields
+ * and array elements. When a null reference is encountered, the method
+ * {@link #foundOne(String)} is invoked with the full property path. Circular
+ * references are detected and skipped using an {@link IdentityHashMap}. <p>
+ *
+ * This class does not use OA metadata and treats all objects as plain Java
+ * objects. Subclasses may override {@code foundOne} to record or report the
+ * results. The return value of {@code foundOne} is currently not used to
+ * terminate the search.
  */
 public class OAFindNull {
     private IdentityHashMap<Object, Object> hm = new IdentityHashMap<Object, Object>();
@@ -84,22 +101,4 @@ public class OAFindNull {
         return true;
     }
     
-    public static void main(String[] args) throws Exception {
-        //Object obj1 = "test";
-        //Object obj2 = null;
-        /*
-        TRIOrder obj1 = new TRIOrder();
-        TRIOrder obj2 = new TRIOrder();
-        obj1.additionalQuantities = new double[0];
-        obj2.additionalQuantities = new double[1];
-        
-        IFindNull oc = new IFindNull() {
-            @Override
-            public boolean foundOne(String propertyPath) {
-                return super.foundOne(propertyPath);
-            }
-        };
-        oc.findNull(obj1);
-        */
-    }
 }

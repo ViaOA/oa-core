@@ -1,16 +1,19 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
-
-import java.util.ArrayList;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -18,9 +21,17 @@ import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectCacheListener;
 
 /**
- * Helper to find thread+stacktrace when a class.property is changed.
- * @author vvia
+ * Utility for monitoring property changes on all {@link OAObject} instances of
+ * a specific class. When the specified property is modified and the change is
+ * reported through the {@link OAObjectCacheDelegate}, this class captures the
+ * current thread and stack trace and forwards the information to
+ * {@link #onEvent(OAObject, String, Object, Object, String)}. <p>
  *
+ * This is intended as a debugging or diagnostic aid for identifying which
+ * thread or code path modified a particular property. The listener is
+ * installed when the instance is created and can be removed using
+ * {@link #close()}. Subclasses override {@code onEvent} to handle or log the
+ * captured stack trace information.
  */
 public class OACacheListenerUtil {
 

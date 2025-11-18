@@ -1,20 +1,38 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
-import javax.swing.*;
 import java.net.*;
 import java.io.*;
 import java.util.*;
 
 /**
-    connect()
-    login(user, pw)
-    setBinary()
-    setAscii()
-    
-    get
-    put
-    append
-*/
+ * Minimal FTP client that communicates directly with an FTP server using
+ * sockets and plain-text FTP commands. Supports connection, login, switching
+ * between ASCII and binary modes, directory listing, downloading, uploading
+ * and appending to files. Data transfers are performed in passive (PASV)
+ * mode and parsed according to the FTP protocol's multi-line response rules. <p>
+ *
+ * This client is intended for simple, low-volume transfers and predates modern
+ * FTP libraries. It does not implement FTPS or TLS security, does not handle
+ * IPv6 PASV formats, and performs limited error checking. Methods that return
+ * text assume ASCII transfer; callers must ensure that TYPE A is selected for
+ * textual downloads. Sockets and streams are not automatically closed on error
+ * and the class is not thread-safe.
+ */
 public class OAFtpClient {
 
     private Socket csock = null; // controll socket

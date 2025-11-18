@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util.guid;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -8,15 +23,34 @@ import com.viaoa.util.OANetwork;
 import com.viaoa.util.OAString;
 
 /**
- * GUID based on using last octet of IP as high order bits. <br>
- * Find the first number to use for a UUID integer that is based on the following:<br>
- * high bit = 0 (keep negatives out) <br>
- * next byte = IP address's lower (4th) octet<br>
- * next extra bit(s) from boolean[]. Example: this could be used as false for all servers on same subnet, and true if outside server.
+ * Generates a 64-bit GUID whose high-order bits encode information about the
+ * machine and environment, and whose low-order bits form a sequential counter.
  * <p>
- * The amount of bits needed is then used to right shift any bits not needed (which keeps the number smaller)
  *
- * @author vvia
+ * The GUID structure is:
+ * <ul>
+ *   <li><b>1 bit</b>: sign bit, always 0 to ensure a non-negative value</li>
+ *   <li><b>8 bits</b>: the fourth octet of the machine's IPv4 address</li>
+ *   <li><b>N bits</b>: optional extra feature bits based on the supplied
+ *       boolean array</li>
+ *   <li><b>remaining bits</b>: available for a monotonically increasing
+ *       counter</li>
+ * </ul>
+ *
+ * The number of bits required for the counter is specified by the
+ * <code>bitsNeeded</code> constructor argument. During initialization the class
+ * computes the maximum usable counter range, constructs a starting identifier,
+ * and creates an {@link java.util.concurrent.atomic.AtomicLong} for generating
+ * the sequence. <p>
+ *
+ * GUID generation is thread-safe. The {@link #getNextId()} method lazily
+ * initializes the bit layout on first use, then returns successive values
+ * within the allocated bit range. The high-order bits remain constant for the
+ * lifetime of the instance. <p>
+ *
+ * This class is useful for distributed systems where independent servers must
+ * generate unique, non-colliding identifiers without coordination while still
+ * embedding node information in the identifier.
  */
 public class OAGuidIp4 {
 	private final boolean[] bAddExtraBits;
@@ -110,31 +144,4 @@ public class OAGuidIp4 {
 		return maxValue;
 	}
 
-	public static void main(String[] args) {
-		OAGuidIp4 g = new OAGuidIp4(24);
-		long x = g.getMaxValue();
-		String sx = Long.toBinaryString(x);
-		// System.out.println(sx);
-		String s = OAInteger.getAsBinary(x);
-		// System.out.println(s + "  " + x);
-
-		s = OAInteger.getAsBinary(Long.MAX_VALUE);
-		// System.out.println(s);
-
-		g = new OAGuidIp4(4, true, true, true, true);
-		long id = g.getNextId();
-		s = OAInteger.getAsBinary(id);
-		System.out.println(s + "  " + id);
-
-		/*
-		x = g.getMaxValue();
-		s = OAInteger.getAsBinary(x);
-		System.out.println(s + "  " + x);
-		int i = s.length();
-		
-		long l = g.getNextId();
-		*/
-		int xx = 4;
-		xx++;
-	}
 }

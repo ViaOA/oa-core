@@ -1,15 +1,19 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
-
 
 import java.util.Properties;
 
@@ -19,6 +23,24 @@ import javax.mail.*;
 import javax.mail.internet.*;
 import javax.mail.util.ByteArrayDataSource;
 
+/**
+ * Utility for sending email through an SMTP or SMTPS server using the JavaMail
+ * API. Supports HTML or plain-text message bodies, file attachments, and
+ * in-memory attachments supplied as byte arrays. The class maintains basic SMTP
+ * connection information (host, port, user ID, password) and provides optional
+ * debug and SSL flags. <p>
+ *
+ * Message construction uses {@link MimeMessage} with a {@link MimeMultipart}
+ * body to support attachments. Recipients are supplied as arrays of addresses,
+ * and empty or null entries are ignored. The {@code sendSmtp} methods ultimately
+ * authenticate and transmit the message using {@link Transport}. <p>
+ *
+ * The class does not configure advanced JavaMail properties such as timeouts,
+ * TLS, or authentication handlers, and callers that need fine-grained control
+ * should supply the appropriate JavaMail properties. The class is
+ * per-instance-stateful but thread-safe as long as each instance is confined to
+ * a single thread.
+ */
 public class OAMail implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
     
@@ -262,96 +284,6 @@ public class OAMail implements java.io.Serializable {
         }
         catch (Exception ex) {
             return false;
-        }
-    }
-    
-
-    public static void mainAaa(String[] args) throws Exception {
-        String msg = "";
-        String contentType = "text/html; charset=UTF-8";
-        
-        OAMail m = new OAMail("smtp-auth.test.com", 3325, "test.com@test-smtp", "testPW");
-        m.setDebug(true);
-        // m.sendSmtp(new String[]{"test@test.com"}, null, "test@test.com", "subject", "text", null, new String[] {"c:\\temp\\cem.jpg"});
-        
-        
-        m = new OAMail("mail.test.com", 2525, "notifications@test.com","testpw" );
-        // "mail.test.com", "notifications","test3"
-        m.setDebug(true);
-
-        
-        m.sendSmtp(new String[]{"test.x@xice.com"}, 
-                new String[]{"jmaddx@test.com", "x123@test.com"}, "tes@testf.com", 
-                "Email from test", 
-                "<html><body>This is <i>another</i> email from the <h3>test</h3>, with an attachment</body></html>", null, 
-                new String[] {"c:\\temp\\test.jpg"});
-    }
-    public static void mainB(String[] args) throws Exception {
-        // mail.send("titan.test.net", "t@vtest.com", "auto@tests.com", "HTTP Post Response", s);
-        // OAMail m = new OAMail("mail.test.com", 2525, "notifications@test.com","tpw" );
-
-        String pw = "pw";
-        OAMail m = new OAMail("secure.emailsrvr.com", 465, "smtp@test.com", pw);
-        m.setUseSSL(true);
-        m.setDebug(true);
-
-        m.sendSmtp(
-            new String[]{"test@testoa.com"}, 
-            new String[]{}, 
-            "info@test.com",
-            "Test Email from info vj",
-            "<html><body>This is a test</body></html>", "text/html; charset=UTF-8", 
-            new String[] {}
-        );
-    }
-
-    
-    public static void main(String[] args) throws Exception {
-
-        String fromEmail = "info@test.com";
-        fromEmail = "test@test.com";        
-        String subject = "test subject";
-        String msg = "test message";
-        String toEmail = "test@test.com";
-        
-        fromEmail = "testX@test.com";        
-        subject = "test subject";
-        msg = "test message";
-        toEmail = "test@testoa.com";
-        
-        try {
-          Properties props = System.getProperties();
-          props.put("mail.smtp.auth", "true"); // required
-    
-          Session session = Session.getInstance(props);
-          session.setDebug(true);
-    
-          MimeMessage message = new MimeMessage(session);
-          message.setFrom(new InternetAddress(fromEmail));
-          message.addRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
-          
-          message.setSubject(""+subject);
-          
-          MimeBodyPart mbp1 = new MimeBodyPart();
-          mbp1.setContent( msg, "text/html; charset=UTF-8");
-          
-          Multipart mp = new MimeMultipart();
-          mp.addBodyPart(mbp1);
-          
-          message.setContent(mp);
-          message.setSentDate(new java.util.Date());
-          message.saveChanges();
-          
-          Transport transport = session.getTransport("smtps");
-    
-          transport.connect("secure.emailsrvr.com", 465, "smtp@test.com", "test");
-          transport.sendMessage(message, message.getAllRecipients());
-          transport.close();
-
-        }
-        catch (Exception e) {
-            System.out.println("Error sending email");
-            e.printStackTrace();
         }
     }
 }

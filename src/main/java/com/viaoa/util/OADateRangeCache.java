@@ -1,21 +1,47 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Creates a list of cached objects based on date ranges (begin and end dates).
- * <p>
- * Usage:
- * <ol>
- * <li>Get input dateRange (begin and end date).
- * <li>call findMissingGaps(dateRange), to get any dateRange(s) that are not already in the cache.
- * <li>for each missing gap (maybe 0), get data and then call add()
- * <li>call getCachesItems() with the same dateRange.
- * <ol>
+ * Helper for caching data that is naturally grouped by date ranges. The cache
+ * tracks a collection of {@link DateRange} entries, each with a begin and end
+ * {@link OADate} and an optional list of objects of type {@code T}. <p>
  *
- * @author vvia
- * @param <T> class type being cached.
+ * A typical usage pattern:
+ * <ol>
+ *   <li>Call {@link #findMissingGaps(OADate, OADate)} to determine which
+ *       portions of a requested date range are not yet present in the cache.</li>
+ *   <li>For each missing gap, load data from the underlying datasource and
+ *       call {@link #add(OADate, OADate, java.util.List)}.</li>
+ *   <li>Call {@link #getCacheItems(OADate, OADate)} to retrieve all cached
+ *       objects whose dates fall within the requested range.</li>
+ * </ol>
+ *
+ * The cache operates on {@link OADate} ranges, but selection of individual
+ * objects is driven by the abstract {@link #getDate(Object)} method, which
+ * subclasses implement to expose the date associated with each cached object.
+ * <p>
+ *
+ * This class is not synchronized; callers must provide external concurrency
+ * control if it is shared across threads.
+ *
+ * @param <T> the type of object stored in each cached range.
  */
 public abstract class OADateRangeCache<T> {
 

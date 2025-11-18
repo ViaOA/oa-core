@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.io.BufferedReader;
@@ -21,6 +26,20 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 
+/**
+ * Simple diagnostic utility used to experiment with reading ZIP files and
+ * detecting whether their contents contain XML. This class is not used by the
+ * OA framework and is provided only as a standalone test harness. The
+ * implementation opens a ZIP file, reads the first entry if present, examines
+ * its initial characters for XML indicators, and prints the results. <p>
+ *
+ * The class is not intended for production use: it employs a hard-coded file
+ * path, does not close all resources, and performs only minimal content
+ * inspection. It remains in the codebase for backward compatibility and
+ * developer experimentation.
+ * 
+ * NOTE:  Not completed 
+ */
 public class OAZip {
 
     public void test() throws Exception {

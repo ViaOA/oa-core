@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.io.BufferedInputStream;
@@ -24,11 +29,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Subclass of java.io.File that includes extra functionality.
- * <p>
- * Note: All file names separators will automatically be converted to match the Operating System.
+ * Extension of {@link java.io.File} that adds common utility methods used
+ * throughout OA for path normalization, directory creation, copying, and basic
+ * text-file handling. All paths passed to this class are automatically
+ * normalized to the platform's file separator conventions. <p>
  *
- * @see OAString#convertFileName
+ * The class provides helpers for obtaining file names, directory names, and
+ * extensions, as well as static methods for recursively creating or deleting
+ * directory trees. Additional methods support copying files, copying resources
+ * from the classpath to the filesystem, and reading or writing text files. <p>
+ *
+ * This class performs only basic error handling and does not use
+ * try-with-resources; callers that require stronger guarantees around partial
+ * writes or error reporting should wrap the I/O operations as needed.
  */
 public class OAFile extends java.io.File {
 	static final long serialVersionUID = 1L;

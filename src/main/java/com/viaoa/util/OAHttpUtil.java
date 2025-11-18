@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.lang.reflect.Array;
@@ -5,6 +20,20 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Utility methods for constructing URL-encoded name/value pairs and for
+ * normalizing leading and trailing slashes in URL path fragments. The encoding
+ * helpers support single values, arrays, and {@link List} instances, expanding
+ * multi-valued inputs into repeated {@code name=value} segments joined with
+ * ampersands. Values are converted to strings using {@link OAConv#toString}
+ * and encoded using UTF-8 via {@link URLEncoder}. <p>
+ *
+ * The {@link #updateSlashes(String, boolean, boolean)} method adjusts leading
+ * and trailing slashes according to the supplied flags and is useful when
+ * constructing relative or absolute URL paths. All methods are static and the
+ * class is thread-safe. Exceptions during URL encoding are silently ignored,
+ * and callers should ensure that input names are non-empty.
+ */
 public class OAHttpUtil {
 
 	public static String getUrlEncodedNameValues(Map<String, Object> mapNameValue) {

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.lang.reflect.ParameterizedType;
@@ -16,11 +21,22 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
- * Maintains a pool of objects, with a minimum and max limits, and
- * will shrink/release if not needed or time.
- * @author vvia
+ * Generic thread-safe object pool that maintains a configurable minimum and
+ * maximum number of pooled instances. The pool grows on demand, blocks callers
+ * when all objects are in use and the maximum size has been reached, and
+ * gradually shrinks when usage decreases. Instances are created and released
+ * using the {@link #create()} and {@link #removed(Object)} callback methods. <p>
  *
- * @param <TYPE> type of objects to be pooled.
+ * The pool tracks active usage counts, high-water marks, and decay thresholds
+ * to determine when idle resources may be released. Allocation and release
+ * operations synchronize on the internal resource list, while object creation
+ * is performed outside the synchronized block to avoid blocking other threads.
+ * The class is thread-safe and suitable for concurrent use. <p>
+ *
+ * Subclasses should implement {@link #create()} to construct pooled objects
+ * and {@link #removed(Object)} to dispose of objects that are no longer needed.
+ * Each instance of the pool manages its own state and should not be shared
+ * across class loaders.
  */
 public abstract class OAPool<TYPE> {
     private static Logger LOG = Logger.getLogger(OAPool.class.getName());
@@ -254,6 +270,7 @@ public abstract class OAPool<TYPE> {
         synchronized (alResource) {
             Pool p = new Pool();
             p.used = false;
+            p.resource = obj;
             alResource.add(p);
             if (waitCnt > 0) alResource.notifyAll();
         }

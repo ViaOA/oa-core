@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.io.*;
@@ -18,8 +23,22 @@ import javax.swing.text.Position;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
-//import com.viaoa.html.OAHtmlComponent;
-
+/**
+ * Utility wrapper around Swing's {@link HTMLEditorKit} and
+ * {@link HTMLDocument} that parses a fragment of HTML text and provides simple
+ * inspection and manipulation helpers. The class supports obtaining the length
+ * of the rendered text (excluding markup), inserting plain text at a document
+ * position, and extracting a substring of the underlying HTML including the
+ * associated markup. <p>
+ *
+ * The HTML is parsed lazily on first access using a default
+ * {@link HTMLEditorKit}. All parsing errors are silently ignored and the
+ * document is left uninitialized if parsing fails. Operations such as
+ * {@link #insert(String, int)} and {@link #substring(int, int)} operate on the
+ * internal {@link HTMLDocument} rather than the original raw HTML string, and
+ * the class is not thread-safe. It is intended as a lightweight helper for
+ * simple HTML manipulation tasks.
+ */
 public class OAHtml {
     private String htmlText;
     private boolean bInit;
@@ -115,15 +134,5 @@ public class OAHtml {
         }
         return w.toString();
     }
-
-    
-    
-    public static void main(String[] args) throws Exception {
-        String s = "<html><body><p><i>A</i><div class='joe'>12345<b><i>6789<br>ABCD</b> XYZ</div></body></html>";
-        OAHtml h = new OAHtml(s);
-        s = h.substring(0, 5);
-        System.out.println("==> " + s);
-    }
-    
     
 }

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.io.BufferedReader;
@@ -17,11 +22,22 @@ import com.viaoa.object.OAObject;
 import com.viaoa.xml.OAXMLReader;
 
 /**
- * OAJsonReader that converts to XML, and then uses OAXMLReader to convert to OAObjects and Hubs.
- * 
- * @see OAJsonWriter
- * @author vvia
- * @since 20150129 NOT complete, only converts simple yaml format. See Unit test for example
+ * Lightweight YAML-to-OAObject reader that supports a very small subset of
+ * YAML and converts it into OA's XML format before delegating to
+ * {@link OAXMLReader}. This class is intended for simple configuration-style
+ * YAML files where each top-level entry corresponds to an instance of a root
+ * object type. <p>
+ *
+ * The converter reads line-oriented key/value pairs, performs minimal
+ * indentation detection, and generates an {@code <OAXML>} document containing
+ * one or more elements named after the configured {@code rootObjectName}. The
+ * resulting XML is parsed by a customized {@link OAXMLReader} that supports
+ * overridable hooks for class-name resolution, property-name mapping, value
+ * transformation, and end-of-object notification. <p>
+ *
+ * Only a limited YAML subset is supported and no general YAML parsing is
+ * performed. The class is not thread-safe; a new instance should be used for
+ * each parse operation.
  */
 public class OAYamlReader {
 	private int len;

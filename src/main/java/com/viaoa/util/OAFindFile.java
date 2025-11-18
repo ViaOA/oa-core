@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 import java.io.*;
@@ -16,10 +21,17 @@ import java.util.zip.*;
 
 
 /**
- * This is used to search for a file from a specific directory and all files below it.
- * If the file is an archive file (zip|jar|war|ear), then it will search within the archive file.
- *  
- * @author vvia
+ * Utility for recursively searching a directory tree for files with a specific
+ * name. The search descends into all subdirectories and also inspects archive
+ * files ({@code .zip}, {@code .jar}, {@code .war}, {@code .ear}) by scanning
+ * their entries with a {@link ZipInputStream}. <p>
+ *
+ * When a match is found inside an archive, the returned path is composed of the
+ * archive's absolute path followed by '!' and the entry name. The search is
+ * case-insensitive with respect to the target filename. <p>
+ *
+ * This class performs a best-effort search; ZIP errors are caught and ignored.
+ * Instances are not thread-safe and should not be shared across threads.
  */
 public class OAFindFile {
 	static final String[] ZIP_EXTENSIONS = { ".zip", ".jar", ".war", ".ear" };
@@ -44,7 +56,7 @@ public class OAFindFile {
 	
 	protected void findFile(File file) throws IOException {
 		if (file.isDirectory()) {
-	        System.out.println("checking "+file);         
+	        // System.out.println("checking "+file);         
 			File[] files = file.listFiles();
 			if (files != null) {
     			for (int i = 0; i < files.length; i++) {
@@ -77,7 +89,7 @@ public class OAFindFile {
 	}
 
 	protected void findZip(File file) throws IOException {
-        System.out.println("checking zip "+file);         
+        //System.out.println("checking zip "+file);         
 		InputStream in = new FileInputStream(file);
 		ZipInputStream zin = new ZipInputStream(in);
 
@@ -93,33 +105,6 @@ public class OAFindFile {
 				list.add(s);
 				// System.out.println("Found #"+(list.size()) + " = " + file + "!" + en);		
 			}
-		}
-	}
-	
-	
-	public static void main(String[] args) throws Exception {
-		if (args == null || args.length == 0) {
-			System.out.println("Usage: FindFile [fromDirectory|File] SearchFileName");
-		}
-		else {
-			String s1;
-			String s2;
-			if (args.length == 1) {
-				s1 = ".";
-				s2 = args[0];
-			}
-			else {
-				s1 = args[0];
-				s2 = args[1];
-			}
-			
-			OAFindFile ff = new OAFindFile();
-			String[] fileNames = ff.findAll(s1, s2);
-			
-			for (int i=0; fileNames != null && i < fileNames.length; i++) {
-				System.out.println((i+1)+") " + fileNames[i]);
-			}
-			System.out.println("FindFile done for " + s2+", " + (fileNames.length) + " found");
 		}
 	}
 	

@@ -1,7 +1,35 @@
+/*
+ * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.util;
 
 /**
- * Provides encoding of raw bytes to base64-encoded characters, and decoding of base64 characters to raw bytes.
+ * Provides Base64 encoding and decoding utilities for raw bytes and Strings.
+ * <p>
+ * Encoding converts groups of three bytes into four Base64 characters using a
+ * fixed 64-character alphabet. Decoding reverses the process and restores the
+ * original byte array. Padding is handled using the '=' character. <p>
+ *
+ * This implementation is self-contained and does not rely on
+ * {@link java.util.Base64}. The methods are stateless and thread-safe. When
+ * encoding a String, the platform's default character encoding is used for
+ * converting the String to bytes. <p>
+ *
+ * Decoding tolerates non-Base64 characters by skipping them and reconstructs
+ * bytes using a bit accumulator. The output length is verified to ensure the
+ * encoded data is well-formed.
  */
 public class Base64 {
 
@@ -116,7 +144,7 @@ public class Base64 {
 	//
 	// code characters for values 0..63
 	//
-	static private char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+	static private char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 			.toCharArray();
 
 	//
@@ -140,26 +168,5 @@ public class Base64 {
 		codes['/'] = 63;
 	}
 
-	public static void main(String[] args) throws Exception {
-
-		String test = "f9nIAAAw";
-
-		byte[] bs = Base64.decode(test.toCharArray());
-
-		int xx = 4;
-		xx++;
-
-	}
-
-	public static void mainX(String[] args) {
-		String[] ss = { "Vince", "Anthony", "Via" };
-		for (int i = 0; i < ss.length; i++) {
-			String s = ss[i];
-			String s2 = com.viaoa.util.Base64.encode(s);
-			String s3 = com.viaoa.util.Base64.decode(s2);
-			System.out.println(s + " -> " + s2 + " -> " + s3);
-		}
-
-	}
 
 }
