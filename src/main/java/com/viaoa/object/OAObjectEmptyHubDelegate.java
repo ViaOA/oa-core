@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,12 @@ public class OAObjectEmptyHubDelegate {
     private static boolean bEnabled;
     
     /**
-     * Called by OAObject.afterLoad() to initialize any Hubs that are empty, so that
-     * they will not need to go to the database.
-     * @param obj
+     * Initializes any reference hubs on the specified object that were
+     * previously recorded as empty. This prevents database access by
+     * restoring empty-hub metadata loaded during startup.
+     *
+     * @param obj the object whose empty reference hubs should be initialized;
+     *            ignored if {@code null} or no metadata exists
      */
     public static void initialize(OAObject obj) {
         if (map == null) return;
@@ -84,8 +87,12 @@ public class OAObjectEmptyHubDelegate {
     }
  
     /**
-     * Load the file that contains info for all empty hubs.
-     * Note: the file should then be deleted, and not reused.
+     * Loads previously saved metadata describing empty reference hubs from
+     * the specified file. The file contains a timestamp followed by the
+     * serialized hub-emptiness map.
+     *
+     * @param file the file containing the serialized metadata
+     * @throws Exception if the file cannot be read or deserialized
      */
     public static void load(File file) throws Exception {
         if (file == null || !file.exists()) {
@@ -104,10 +111,13 @@ public class OAObjectEmptyHubDelegate {
         fis.close();
     }
     
-    
     /**
-     * This can be called at program close, to create a list of all objects
-     * with empty hubs - to be used by load.
+     * Scans all cached {@link OAObject} instances and records the reference
+     * hubs that are loaded and empty. The resulting metadata is serialized
+     * to the specified file for later restoration via {@link #load(File)}.
+     *
+     * @param file the file to which the metadata is written
+     * @throws Exception if writing or serialization fails
      */
     public static void save(File file) throws Exception {
         LOG.fine("saving all null properties");

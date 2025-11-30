@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,14 @@ import com.viaoa.util.OAArray;
 public class OAObjectIndex {
 	private final ConcurrentHashMap<Class<? extends OAObject>, ConcurrentHashMap<OAObjectIndexKey, Long>> hmGuidByIndexKey = new ConcurrentHashMap<>(151, 0.75F);
 
-//qqqqq change to add(..)	
+	/**
+	 * Adds the object's primary/business key to the index. Retrieves
+	 * its identifier values via {@link OAObjectKeyDelegate#getKey}
+	 * and stores the mapping of index key → GUID.
+	 *
+	 * @param obj the object to index.
+	 * @return true if successfully added; false otherwise.
+	 */
 	public boolean addToIndex(final OAObject obj) {
 		if (obj == null) return false;
 		OAObjectKey ok = OAObjectKeyDelegate.getKey(obj);
@@ -48,6 +55,15 @@ public class OAObjectIndex {
 		return addToIndex(c, ik, obj.getGuid());
 	}
 
+	/**
+	 * Adds the supplied object and key to the index. Constructs an
+	 * {@link OAObjectIndexKey} from the object's ID values and
+	 * delegates to the class-based add operation.
+	 *
+	 * @param obj the object being indexed.
+	 * @param ok  the resolved object key.
+	 * @return true if the index entry was stored.
+	 */
 	protected boolean addToIndex(final OAObject obj, OAObjectKey ok) {
 		if (obj == null) return false;
 		if (ok == null) return false;
@@ -55,6 +71,15 @@ public class OAObjectIndex {
 		return addToIndex(obj.getClass(), ik, obj.getGuid());
 	}
 	
+	/**
+	 * Core add operation. Ensures the class, index key, and GUID are
+	 * valid, then inserts the mapping into the internal concurrent map.
+	 *
+	 * @param c     the OAObject class.
+	 * @param ik    index key built from ID values.
+	 * @param guid  GUID of the object.
+	 * @return true if the entry was successfully added.
+	 */
 	protected boolean addToIndex(final Class<? extends OAObject> c, OAObjectIndexKey ik, long guid) {
 		if (c == null || ik == null || guid == 0 || !ik.hasValidIds()) return false;
 		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.computeIfAbsent(c, k -> new ConcurrentHashMap<>());
@@ -63,13 +88,30 @@ public class OAObjectIndex {
 	}
 	
 	
-//qqqqqqq change to getGuid(..)	
+	/**
+	 * Looks up an object's GUID using a raw array of identifier
+	 * values. Constructs an {@link OAObjectIndexKey} and delegates
+	 * to the key-based lookup.
+	 *
+	 * @param c   the class of the object.
+	 * @param ids the identifier values.
+	 * @return the resolved GUID, or 0 if not found.
+	 */
 	public long lookupGuid(Class<? extends OAObject> c, Object[] ids) {
 		if (c == null) return 0L;
 		OAObjectIndexKey ik = new OAObjectIndexKey(ids);
 		return lookupGuid(c, ik);
 	}
 
+	/**
+	 * Looks up an object's GUID using an {@link OAObjectKey}.
+	 * Converts the key to an {@link OAObjectIndexKey} and delegates
+	 * to the core lookup method.
+	 *
+	 * @param c  the object's class.
+	 * @param ok the object key.
+	 * @return the resolved GUID, or 0 if missing.
+	 */
 	public long lookupGuid(final Class<? extends OAObject> c, final OAObjectKey ok) {
 		if (c == null) return 0L;
 		if (ok == null) return 0L;
@@ -77,6 +119,15 @@ public class OAObjectIndex {
 		return lookupGuid(c, ik);
 	}
 
+	/**
+	 * Core GUID lookup operation. Validates the class and index key,
+	 * retrieves the map for the class, and returns the GUID mapped
+	 * to the index key if present.
+	 *
+	 * @param c  the object's class.
+	 * @param ik the index key.
+	 * @return the matching GUID, or 0 if not found.
+	 */
 	protected long lookupGuid(final Class<? extends OAObject> c, final OAObjectIndexKey ik) {
 		if (c == null || ik == null || !ik.hasValidIds()) return 0L;
 		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.get(c);
@@ -86,8 +137,14 @@ public class OAObjectIndex {
 		return lx.longValue();
 	}
 	
-	
-	
+	/**
+	 * Removes the given object's index entry. Builds an object key
+	 * via {@link OAObjectKeyDelegate#createObjectKey} and delegates
+	 * to the class/key-based remove method.
+	 *
+	 * @param obj the object to remove.
+	 * @return true if the entry was removed.
+	 */
 	public boolean removeFromIndex(OAObject obj) {
 		if (obj == null) return false;
 		Class<? extends OAObject> c = obj.getClass();
@@ -96,12 +153,30 @@ public class OAObjectIndex {
 		return removeFromIndex(c, ik);
 	}
 	
+	/**
+	 * Removes the entry identified by the supplied class and object
+	 * key. Converts the key to an {@link OAObjectIndexKey} and
+	 * delegates to the internal remove method.
+	 *
+	 * @param c  the object's class.
+	 * @param ok the object key.
+	 * @return true if the entry was deleted.
+	 */
 	public boolean removeFromIndex(Class<? extends OAObject> c, OAObjectKey ok) {
 		if (c == null || ok == null) return false;
 		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
 		return removeFromIndex(c, ik);
 	}
 
+	/**
+	 * Core remove operation. Ensures the class and key are valid,
+	 * retrieves or creates the map for the class, and removes the
+	 * entry for the given index key.
+	 *
+	 * @param c  the object's class.
+	 * @param ik the index key.
+	 * @return true if an entry was removed.
+	 */
 	protected boolean removeFromIndex(final Class<? extends OAObject> c, OAObjectIndexKey ik) {
 		if (c == null || ik == null || !ik.hasValidIds()) return false;
 		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.computeIfAbsent(c, k -> new ConcurrentHashMap<>());
@@ -109,8 +184,15 @@ public class OAObjectIndex {
 		return (hm.remove(ik) != null);
 	}
 	
-	
-	
+	/**
+	 * Updates an index entry when an object's key values change.
+	 * If the new key differs from the old key, adds the new entry
+	 * and removes the old one.
+	 *
+	 * @param obj   the object being updated.
+	 * @param okNew the new object key.
+	 * @param okOld the previous object key.
+	 */
 	public void updateIndex(final OAObject obj, OAObjectKey okNew, OAObjectKey okOld) {
 		if (obj == null) return;
 
@@ -125,6 +207,10 @@ public class OAObjectIndex {
 		}
 	}
 	
+	/**
+	 * Removes all indexed entries for all OAObject classes,
+	 * clearing the internal maps entirely.
+	 */
 	public void clear() {
 		hmGuidByIndexKey.clear();
 	}

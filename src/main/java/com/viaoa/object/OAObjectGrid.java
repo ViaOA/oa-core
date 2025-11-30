@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,15 +70,39 @@ public class OAObjectGrid {
         boolean bGroupBy;
         String matchPropName;
         
+        /**
+         * Returns the property path assigned to this column. This path is
+         * used to traverse from the root object to the referenced link when
+         * populating the grid.
+         *
+         * @return the property path for this column, or {@code null} if unset
+         */
         public String getPropertyPath() {
             return pp;
         }
+        
+        /**
+         * Returns the parent column from which this column originates.
+         * Parent columns represent earlier traversal steps when building
+         * nested or hierarchical grid structures.
+         *
+         * @return the parent column, or {@code null} if this column is a root
+         */
         public Column getFromColumn() {
             return colFrom;
         }
     }
     
     
+    /**
+     * Adds a new root column to the grid using the supplied hub as the
+     * data source. Each object in the hub contributes one or more rows
+     * when the grid is materialized.
+     *
+     * @param hub the hub providing objects for this column
+     * @return the newly created column
+     * @throws IllegalArgumentException if {@code hub} is {@code null}
+     */
     public Column addColumn(Hub hub) {
         if (hub == null) {
             throw new IllegalArgumentException("hub can not be null");
@@ -91,6 +115,18 @@ public class OAObjectGrid {
         return col;
     }
 
+    /**
+     * Adds a detail column originating from another column. The supplied
+     * property path must point to a link property beneath the originating
+     * column's object or hub type. Each detail object discovered through
+     * the property path expands the grid vertically.
+     *
+     * @param colFrom the column representing the parent object
+     * @param pp      the link property path used to locate detail objects
+     * @return the newly created detail column, or {@code null} if inputs
+     *         are invalid
+     * @throws RuntimeException if the property path is not a valid link
+     */
     public Column addDetailColumn(OAObjectGrid.Column colFrom, String pp) {
         if (colFrom == null) return null;
         if (OAStr.isEmpty(pp)) return null;
@@ -109,10 +145,17 @@ public class OAObjectGrid {
     }
 
     /**
-     * Create a LeftJoin relationship with another column (the "left").
-     * @param colLeft that is the linkLeft for hub to match to.
-     * @param pp propertyPath to link hub/object.
-     * @param matchPropName property in hub that links to colLeft.hub
+     * Adds a group-by column that performs a left-join style match
+     * between the parent column and a supplied hub. Objects from the
+     * hub whose {@code matchPropName} value matches the parent object
+     * are included in the grid under this column.
+     *
+     * @param colLeft       the parent column for group-by alignment
+     * @param hub           the hub supplying objects to join
+     * @param pp            the link property path for traversal
+     * @param matchPropName property used to match the parent object
+     * @return the created group-by column, or {@code null} if invalid
+     * @throws RuntimeException if the property path is not a valid link
      */
     public Column addGroupByColumn(OAObjectGrid.Column colLeft, Hub hub, String pp, String matchPropName) {
         if (colLeft == null) return null;
@@ -160,12 +203,29 @@ public class OAObjectGrid {
     */
     
     
+    /**
+     * Returns the top-level root column for the supplied column by
+     * following its {@code colFrom} chain. Root columns are the
+     * starting points for grid row expansion.
+     *
+     * @param col the column whose root is requested
+     * @return the root column, or {@code null} if {@code col} is null
+     */
     public Column getRootColumn(Column col) {
         if (col == null) return null;
         if (col.colFrom == null) return col;
         return getRootColumn(col.colFrom);
     }
 
+    /**
+     * Computes the full property path from the root column to the
+     * supplied path by recursively prepending parent column paths
+     * when present.
+     *
+     * @param colParent the parent column
+     * @param pp        the property path to extend
+     * @return the full property path relative to the root column
+     */
     public String getPropertyPathFromRoot(Column colParent, String pp) {
         if (colParent == null) return pp;
         if (OAStr.isNotEmpty(colParent.pp)) {
@@ -174,26 +234,60 @@ public class OAObjectGrid {
         if (colParent.colFrom == null) return pp;
         return getPropertyPathFromRoot(colParent.colFrom, pp);
     }
-    /** all column propertyPaths need to be for a link */
+
+    /**
+     * Verifies that the supplied property path resolves to a link
+     * property for the given class. This is required for detail and
+     * group-by columns, which must traverse link relationships.
+     *
+     * @param classFrom the starting class for the property path
+     * @param pp        the property path to validate
+     * @return {@code true} if the path resolves to a link, otherwise false
+     */
     public static boolean verifyLinkProperty(Class classFrom, String pp) {
         OAPropertyPath oapp = new OAPropertyPath(classFrom, pp);
         OALinkInfo li = oapp.getEndLinkInfo();
         return (li != null);
     }
     
-    
-    
+    /**
+     * Returns the column at the specified index.
+     *
+     * @param pos zero-based column position
+     * @return the column at the given position, or {@code null} if out of range
+     */
     public Column getColumn(int pos) {
         if (pos < 0 || pos >= alColumn.size()) return null;
         return alColumn.get(pos);
     }
+    
+    /**
+     * Returns the total number of columns currently defined in the grid.
+     *
+     * @return the number of columns
+     */
     public int getColumnCount() {
         return alColumn.size();
     }
+
+    /**
+     * Returns the list of all {@link Column} definitions that make up
+     * this grid. Each column corresponds to a property path or linked
+     * relationship used when building the two-dimensional structure.
+     *
+     * @return the internal list of column definitions.
+     */
     public List<Column> getColumns() {
         return alColumn;
     }
 
+    /**
+     * Lazily initializes and returns the materialized grid.
+     * If the grid has not yet been created, {@link #createGrid()}
+     * is invoked to populate all rows and columns.
+     *
+     * @return the list of row arrays representing the grid.
+     */
     public List<Object[]> getGrid() {
         if (alGrid == null) {
             alGrid = createGrid();
@@ -201,10 +295,24 @@ public class OAObjectGrid {
         return alGrid;
     }
     
+    /**
+     * Clears the cached grid so that it will be rebuilt the
+     * next time {@link #getGrid()} is invoked. This is called
+     * when column definitions change.
+     */
     public void clearGrid() {
         alGrid = null;
     }
  
+    /**
+     * Retrieves the object at the specified row and column.
+     * Performs bounds checking and delegates to the protected
+     * {@link #getObject(int, Column, List, boolean)} helper.
+     *
+     * @param row index of the row.
+     * @param col index of the column.
+     * @return the object for the cell, or {@code null} if out of bounds.
+     */
     public Object getObject(int row, int col) {
         final List<Object[]> al = getGrid();
         if (row < 0 || al == null || row >= al.size() || col >= alColumn.size()) return null;
@@ -214,8 +322,14 @@ public class OAObjectGrid {
     }
 
     /**
-     * Find the object for a row,col.  Since a row,col can be null when a cell is repeating (/expanded) to 
-     * multiple rows.
+     * Returns the “real” object for a cell, resolving cases where
+     * repeated/expanded rows result in null entries. If a cell is
+     * propagated downward due to child-column expansion, this method
+     * walks upward to find the originating non-null value.
+     *
+     * @param row index of the row.
+     * @param col index of the column.
+     * @return the resolved non-null object, or {@code null}.
      */
     public Object getRealObject(int row, int col) {
         final List<Object[]> al = getGrid();
@@ -225,6 +339,19 @@ public class OAObjectGrid {
         return obj;
     }
     
+    /**
+     * Core handler for retrieving an object from the grid.
+     * Performs bounds checks, looks up the stored cell value,
+     * and when {@code bGetRealObject} is true, resolves null
+     * entries caused by child-row expansion by scanning upward
+     * in the same column.
+     *
+     * @param rowPos       row index.
+     * @param column       column definition.
+     * @param al           grid rows.
+     * @param bGetRealObject true to resolve propagated nulls.
+     * @return the cell object or a resolved ancestor value.
+     */
     protected Object getObject(final int rowPos, final Column column, final List<Object[]> al, final boolean bGetRealObject) {
         if (column == null || al == null) return null;
         if (rowPos >= al.size()) return null;
@@ -245,6 +372,16 @@ public class OAObjectGrid {
         return obj;
     }
     
+    /**
+     * Determines whether the specified column has a child column
+     * value occupying the same row. Used for resolving repeated
+     * rows and identifying when null propagation occurs.
+     *
+     * @param column column to evaluate.
+     * @param row    row index.
+     * @param al     grid rows.
+     * @return true if a descendant column occupies this row.
+     */
     protected boolean hasChildRow(Column column, int row, final List<Object[]> al) {
         if (al == null) return false;
         if (row >= al.size()) return false;
@@ -261,11 +398,26 @@ public class OAObjectGrid {
     }
     
     
+    /**
+     * Returns the number of rows in the current grid.
+     * If the grid has not been built yet, returns zero.
+     *
+     * @return the number of populated grid rows.
+     */
     public int getRowCount() {
         if (alGrid != null) return alGrid.size();
         return 0;
     }
     
+    /**
+     * Computes the total number of rows produced for the
+     * specified root column by recursively counting all
+     * descendant rows. Iterates the underlying hub or
+     * object chain to accumulate counts.
+     *
+     * @param col the root column.
+     * @return number of rows the column contributes.
+     */
     public int getRowCount(Column col) {
         int cnt = 0;
        
@@ -282,6 +434,13 @@ public class OAObjectGrid {
     }
 
     
+    /**
+     * Constructs the full grid by iterating over all
+     * top-level (root) columns and recursively populating
+     * row entries using {@link #_populateGridRows(Column,int,OAObject,List)}.
+     *
+     * @return the newly created list of grid rows.
+     */
     public List<Object[]> createGrid() {
         alGrid = new ArrayList();
         int max = 0;
@@ -301,6 +460,19 @@ public class OAObjectGrid {
         return alGrid;
     }
     
+    /**
+     * Recursively populates the grid for the specified column and object.
+     * Ensures that a row exists for the given position, assigns the object
+     * to its column cell, then processes all child columns. Each child column
+     * expands downward, increasing row usage as nested relationships are
+     * traversed.
+     *
+     * @param column  the column being populated.
+     * @param rowPos  the starting row position.
+     * @param object  the object assigned to the current cell.
+     * @param alGrid  the accumulating grid.
+     * @return the next available row index after population.
+     */
     protected int _populateGridRows(final Column column, int rowPos, final OAObject object, final List<Object[]> alGrid) {
         int colPos = alColumn.indexOf(column);
         for (int row=alGrid.size(); row <= rowPos; row++) {
@@ -349,6 +521,16 @@ public class OAObjectGrid {
         return rowNext;
     }
     
+    /**
+     * Calculates the number of rows contributed by the given object
+     * for the specified column. Traverses child columns and recursively
+     * aggregates their row counts. Ensures a minimum count of one when
+     * no children produce rows.
+     *
+     * @param column the column whose row count is calculated.
+     * @param object the object to evaluate.
+     * @return number of rows allocated for the object.
+     */
     public int getRowCount(final Column column, final OAObject object) {
         int max = 0;
         for (final Column col : alColumn) {

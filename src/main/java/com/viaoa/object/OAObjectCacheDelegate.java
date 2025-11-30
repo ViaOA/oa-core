@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,8 +111,12 @@ public class OAObjectCacheDelegate {
 	static protected final int MODE_MAX = 4;
 
 	/**
-	 * Automatically set by Hub.select() when a select is done without a where clause. A WeakReference is used for storage. When a new
-	 * OAObject is created, it will be added to a SelectAllHub.
+	 * Returns all Hubs registered as “select all” Hubs for the specified class.
+	 * These Hubs are maintained as weak references and automatically cleaned up
+	 * when they are no longer strongly referenced elsewhere.
+	 *
+	 * @param clazz the class whose select-all Hubs are requested
+	 * @return an array of matching Hubs, or {@code null} if none exist
 	 */
 	public static Hub[] getSelectAllHubs(Class clazz) {
 		
@@ -139,7 +143,13 @@ public class OAObjectCacheDelegate {
 		}
 	}
 
-	/** returns first hub from getSelectAllHubs() */
+	/**
+	 * Returns the first Hub registered as a “select all” Hub for the
+	 * specified class. If no such Hubs exist, this method returns {@code null}.
+	 *
+	 * @param clazz the class whose first select-all Hub is requested
+	 * @return the first matching Hub, or {@code null} if none exist
+	 */
 	public static Hub getSelectAllHub(Class clazz) {
 		Hub[] hs = getSelectAllHubs(clazz);
 		if (hs != null && hs.length > 0) {
@@ -148,6 +158,14 @@ public class OAObjectCacheDelegate {
 		return null;
 	}
 
+	/**
+	 * Removes the specified weak reference from the array of select-all Hub
+	 * references. If the reference is not found, the original array is returned.
+	 *
+	 * @param refs      the array of existing weak Hub references
+	 * @param refRemove the specific weak reference to remove
+	 * @return a new array with the reference removed, or the original array if not found
+	 */
 	private static WeakReference[] removeSelectAllHubs(WeakReference[] refs, WeakReference refRemove) {
 		WeakReference[] refs2 = new WeakReference[refs.length - 1];
 		boolean bFound = false;
@@ -166,9 +184,12 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Used by Hub.select() to register a Hub that has all data selected.
+	 * Registers the specified Hub as a “select all” Hub for its object class.
+	 * A weak reference is stored so the Hub can be automatically cleared when
+	 * no longer strongly referenced. If the Hub is already registered, the call
+	 * is ignored.
 	 *
-	 * @since 2007/08/16
+	 * @param hub the Hub to register as a select-all Hub
 	 */
 	public static void setSelectAllHub(Hub hub) {
 		if (hub == null) {
@@ -199,9 +220,11 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Used by Hub to unregister a Hub that had all data selected.
+	 * Unregisters the specified Hub from the list of “select all” Hubs for
+	 * its object class. If the Hub is the only entry, the class is removed
+	 * entirely from the registry.
 	 *
-	 * @since 2007/08/16
+	 * @param hub the Hub to remove from the select-all list
 	 */
 	public static void removeSelectAllHub(Hub hub) {
 		if (hub == null) {
@@ -232,6 +255,10 @@ public class OAObjectCacheDelegate {
 		}
 	}
 
+	/**
+	 * Removes all registered “select all” Hubs across all classes. The
+	 * underlying map is cleared, removing all weak references to Hubs.
+	 */
 	public static void removeAllSelectAllHubs() {
 		synchronized (OAObjectCacheDelegate.hmCacheSelectAllHub) {
 			OAObjectCacheDelegate.hmCacheSelectAllHub.clear();
@@ -239,9 +266,12 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Used to store a global hub by name, using a WeakReference.
+	 * Stores the specified Hub under a global name using a weak reference.
+	 * The name is treated case-insensitively. If either argument is null,
+	 * the call is ignored.
 	 *
-	 * @param name reference name to use, not case-sensitive
+	 * @param name the reference name (case-insensitive)
+	 * @param hub  the Hub to associate with the name
 	 */
 	static public void setNamedHub(String name, Hub<? extends OAObject> hub) {
 		LOG.fine("Hub=" + hub + ", name=" + name);
@@ -255,10 +285,12 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Gets a hub that is stored by name.
+	 * Retrieves a Hub previously stored under the given name. The lookup
+	 * is case-insensitive. If the weak reference has been cleared, the
+	 * entry is removed and {@code null} is returned.
 	 *
-	 * @param name reference name to use, not case-sensitive
-	 * @return if found then Hub, else null.
+	 * @param name the name of the Hub to retrieve (case-insensitive)
+	 * @return the Hub associated with the name, or {@code null} if not found
 	 */
 	public static Hub getNamedHub(String name) {
 		//LOG.finer("Name="+name);
@@ -281,11 +313,12 @@ public class OAObjectCacheDelegate {
 
 
 	/**
-	 * Listeners support for HubEvents.
-	 * <p>
-	 * The following events are sent:<br>
-	 * Events from Hubs: afterAdd, afterRemove<br>
-	 * Events from OAObjects: afterPropertyChange
+	 * Registers a cache listener for the specified class. The listener will
+	 * receive events such as afterAdd, afterRemove, and afterPropertyChange
+	 * for objects of that class. Duplicate registrations are ignored.
+	 *
+	 * @param clazz the class whose events the listener should receive
+	 * @param l     the listener to register
 	 */
 	public static <T extends OAObject> void addListener(final Class<T> clazz, final OAObjectCacheListener<T> l) {
 		LOG.fine("class=" + clazz);
@@ -303,20 +336,22 @@ public class OAObjectCacheDelegate {
 	private static boolean UnitTestMode;
 
 	/**
-	 * Flag to allow system to be running in test mode This is used by {@link #resetCache()}
+	 * Enables or disables unit test mode. When enabled, certain operations
+	 * such as {@link #resetCache()} are permitted; otherwise they will throw
+	 * an exception. This flag is intended for internal testing only.
+	 *
+	 * @param b {@code true} to enable unit test mode, {@code false} to disable it
 	 */
 	public static void setUnitTestMode(boolean b) {
 		UnitTestMode = b;
 	}
 
 	/**
-	 * Clear out object cache, remove all listeners, remove all selectAllHubs, remove all named hubs.
-	 * <p>
-	 * NOTE: this can only be used if UnitTestMode=true
+	 * Clears all cache data, listeners, select-all Hubs, and named Hubs.
+	 * This operation is permitted only when unit test mode is enabled;
+	 * otherwise, a {@link RuntimeException} is thrown.
 	 *
-	 * @see #setUnitTestMode must be true, else an Exception is thrown
-	 * @see #removeAllObjects()
-	 * @see #clearCache(Class)
+	 * @throws RuntimeException if unit test mode is not enabled
 	 */
 	public static void resetCache() {
 		LOG.warning("call to reset cache, UnitTestMode=" + UnitTestMode);
@@ -335,7 +370,13 @@ public class OAObjectCacheDelegate {
 		}
 	}
 
-	/* see addListener(Class, HubListener) */
+	/**
+	 * Unregisters the specified listener for the given class. If the listener
+	 * is found and removed, the global listener count is decremented.
+	 *
+	 * @param clazz the class whose listener list should be modified
+	 * @param l     the listener to remove
+	 */
 	public static void removeListener(Class clazz, OAObjectCacheListener l) {
 		LOG.fine("class=" + clazz);
 		
@@ -351,7 +392,13 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Returns array of HubListeners for a given class. see addListener(Class, HubListener)
+	 * Returns all registered cache listeners for the specified class.
+	 * If no listeners are registered globally or for the class, this
+	 * method returns {@code null}. The returned array is a snapshot of
+	 * the current listeners.
+	 *
+	 * @param c the class whose listeners should be retrieved
+	 * @return an array of listeners for the class, or {@code null} if none exist
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T extends OAObject> OAObjectCacheListener<T>[] getListeners(final Class<T> c) {
@@ -376,8 +423,20 @@ public class OAObjectCacheDelegate {
 		return listeners;
 	}
 	
-	
-	/** called by OAObject to send a HubEvent. */
+	/**
+	 * Notifies all registered cache listeners for the object's class that a
+	 * property value has changed. The event is sent only if listener count is
+	 * nonzero and {@code bSendEvent} is {@code true}. The original and new
+	 * values are forwarded for listener handling.
+	 *
+	 * @param obj          the object whose property changed
+	 * @param origKey      the original object key (may include old primary key values)
+	 * @param propertyName the name of the changed property
+	 * @param oldValue     the prior value of the property
+	 * @param newValue     the new value of the property
+	 * @param bLocalOnly   unused indicator for local-only routing
+	 * @param bSendEvent   whether to dispatch the event to listeners
+	 */
 	protected static void fireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue,
 			boolean bLocalOnly, boolean bSendEvent) {
 		// Note: oldValue could be OAObjectKey, but will be resolved when HubEvent.getOldValue() is called
@@ -398,6 +457,13 @@ public class OAObjectCacheDelegate {
 		}
 	}
 
+	/**
+	 * Sends an after-load event to all registered listeners for the object's class.
+	 * The event is triggered only if listeners exist. Each listener's
+	 * {@code afterLoad} method is invoked.
+	 *
+	 * @param obj the object that has just been loaded
+	 */
 	protected static <T extends OAObject> void fireAfterLoadEvent(T obj) {
 		if (obj == null) return;
 		if (aiListenerCount.get() == 0) return;
@@ -412,6 +478,14 @@ public class OAObjectCacheDelegate {
 		}
 	}
 
+	/**
+	 * Sends an after-add event to all registered listeners for the object's class.
+	 * The event is dispatched only if listeners exist and both the Hub and object
+	 * are non-null. Each listener's {@code afterAdd(Hub, T)} method is invoked.
+	 *
+	 * @param hub the Hub to which the object was added
+	 * @param obj the object that was added
+	 */
 	public static <T extends OAObject> void fireAfterAddEvent(Hub<T> hub, T obj) {
 		if (hub == null || obj == null) return;
 		if (aiListenerCount.get() == 0) return;
@@ -427,8 +501,14 @@ public class OAObjectCacheDelegate {
 		}
 	}
 
-	
-	
+	/**
+	 * Sends an after-remove event to all registered listeners for the object's class.
+	 * The event is dispatched only if listeners exist and both the Hub and object
+	 * are non-null. Each listener's {@code afterRemove(Hub, T)} method is invoked.
+	 *
+	 * @param hub the Hub from which the object was removed
+	 * @param obj the object that was removed
+	 */
 	public static <T extends OAObject> void fireAfterRemoveEvent(Hub<T> hub, T obj) {
 		if (hub == null || obj == null) return;
 		if (aiListenerCount.get() == 0) return;
@@ -445,7 +525,11 @@ public class OAObjectCacheDelegate {
 	}
 
 	
-	
+	/**
+	 * Removes all objects from the object cache across all OAObject classes.
+	 * Each class registered in the cache is cleared in turn. This does not
+	 * affect listeners or select-all/named Hub registrations.
+	 */
 	public static void removeAllObjects() {
 		LOG.warning("removing all Objects was called (fyi only)");
 		for (Class c : getOAObjectCache().getClasses()) {
@@ -453,61 +537,136 @@ public class OAObjectCacheDelegate {
 		}
 	}
 
+	/**
+	 * Removes all cached objects for the specified class. This clears only
+	 * the cache entries for the class and does not affect listeners or other
+	 * cache metadata.
+	 *
+	 * @param c the class whose cached objects should be removed
+	 */
 	public static void removeAllObjects(Class c) {
 		LOG.warning(String.format("removing all Objects for class=%s was called (fyi only)", c.getSimpleName()));
 		getOAObjectCache().clearCache(c);
 	}
 
 	/**
-	 * Used to <i>visit</i> every object in the Cache.
+	 * Visits all cached objects across all classes by invoking the specified
+	 * {@link OACallback}. This is a convenience method that delegates to
+	 * {@link #visit(OACallback)}.
+	 *
+	 * @param callback the callback to be invoked for each cached object
 	 */
 	public static void callback(OACallback callback) {
 		visit(callback);
 	}
 
+	/**
+	 * Visits every cached object across all OAObject classes by delegating
+	 * to the underlying {@link OAObjectCache}. Each object is passed to the
+	 * supplied {@link OACallback}.
+	 *
+	 * @param callback the callback invoked for each cached object
+	 */
 	public static void visit(OACallback callback) {
 		LOG.fine("visit");
 		getOAObjectCache().visit(callback);
 	}
 
+	/**
+	 * Invokes the specified {@link OACallback} for every cached object of
+	 * the given class. This is a convenience wrapper that delegates to
+	 * {@link #visit(Class, OACallback)}.
+	 *
+	 * @param clazz    the OAObject class whose cached instances should be processed
+	 * @param callback the callback to invoke for each object
+	 */
 	public static void callback(Class<? extends OAObject> clazz, OACallback callback) {
 		getOAObjectCache().visit(clazz, callback);
 	}
 
+	/**
+	 * Visits all cached objects of the specified class by delegating to the
+	 * underlying {@link OAObjectCache}. Objects are passed to the supplied
+	 * {@link OACallback}.
+	 *
+	 * @param clazz    the OAObject class to visit
+	 * @param callback the callback invoked for each object
+	 */
 	public static void visit(Class clazz, OACallback callback) {
 		getOAObjectCache().visit(clazz, callback);
 	}
 
 	/**
-	 * Used to <i>visit</i> every object in the Cache for a Class.
+	 * Convenience wrapper that invokes the specified {@link OACallback} for
+	 * every cached object of the given class. This delegates directly to
+	 * {@link #callback(Class, OACallback)}.
+	 *
+	 * @param callback the callback to invoke for each cached object
+	 * @param clazz    the OAObject class whose objects should be visited
 	 */
 	public static void callback(OACallback callback, Class clazz) {
 		getOAObjectCache().visit(clazz, callback);
 	}
 
+	
+	/**
+	 * Convenience wrapper that visits all cached objects of the specified
+	 * class by delegating to {@link #visit(Class, OACallback)}. Each object
+	 * is passed to the supplied {@link OACallback}.
+	 *
+	 * @param callback the callback invoked for each cached object
+	 * @param clazz    the OAObject class whose cached instances should be visited
+	 */
 	public static void visit(OACallback callback, Class clazz) {
 		getOAObjectCache().visit(clazz, callback);
 	}
 
 	/**
-	 * Populates a List of Strings that describe the Classes and amount of objects that are loaded.
+	 * Populates the supplied list with cache summary information. The method
+	 * adds a series of entries describing cache statistics, including:
+	 * <ul>
+	 *   <li>whether unit test mode is enabled</li>
+	 *   <li>the total number of registered listeners</li>
+	 *   <li>the count of select-all Hubs</li>
+	 *   <li>the count of named Hubs</li>
+	 * </ul>
+	 *
+	 * @param al the list to which cache information entries are added
 	 */
 	public static void getInfo(List al) {
 		List alx = getInfo();
 		al.add(alx);
 	}
 
+	/**
+	 * Returns all classes currently registered in the object cache. This is
+	 * a convenience wrapper around the underlying {@link OAObjectCache}
+	 * implementation.
+	 *
+	 * @return an array of OAObject classes known to the cache
+	 */
 	public static Class[] getClasses() {
 		return getOAObjectCache().getClasses();
 	}
 
+	/**
+	 * Returns the number of cached objects for the specified class. This is a
+	 * convenience wrapper that delegates to the underlying {@link OAObjectCache}.
+	 *
+	 * @param clazz the class whose cached object count is requested
+	 * @return the number of cached objects for the class
+	 */
 	public static int getTotal(Class clazz) {
 		return getOAObjectCache().getTotal(clazz);
 	}
 
 
 	/**
-	 * Returns a List of Strings that describe the Classes and amount of objects that are loaded.
+	 * Returns a newly created list containing cache summary information.
+	 * This method constructs the list, populates it using
+	 * {@link #getInfo(List)}, and returns the populated result.
+	 *
+	 * @return a list containing cache summary information
 	 */
 	public static List getInfo() {
 		// LOG.finer("called");
@@ -540,10 +699,16 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * The DefaultAddMode determines how HubController.addObject() will handle an object if it already exists. This method sets the Default
-	 * mode for all unassigned threads.
+	 * Sets the default add mode used by HubController operations for all threads
+	 * that do not already have an assigned add mode. The mode controls how
+	 * duplicate objects are handled when added to the cache.
 	 *
-	 * @param mode AddModes are NO_DUPS (default), IGNORE_DUPS, OVERWRITE_DUPS. see HubController#setAddMode
+	 * <p>If the supplied mode is outside the valid range {@code 0–4}, an
+	 * {@link IllegalArgumentException} is thrown. Valid modes include
+	 * {@link #NO_DUPS}, {@link #IGNORE_DUPS}, and {@link #IGNORE_ALL}.</p>
+	 *
+	 * @param mode the default add mode to assign
+	 * @throws IllegalArgumentException if the mode is not between 0 and 4
 	 */
 	static public void setDefaultAddMode(int mode) {
 		LOG.config("default add mode=" + mode);
@@ -554,29 +719,69 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * @see #setDefaultAddMode(int)
+	 * Returns the current default add mode used for threads that do not have a
+	 * thread-local add mode assigned. This setting determines how duplicate
+	 * objects are handled when added to the cache.
+	 *
+	 * @return the default add mode value
 	 */
 	static public int getDefaultAddMode() {
 		return DefaultAddMode;
 	}
 
 
+	/**
+	 * Clears all cached objects for the specified class by delegating to the
+	 * underlying {@link OAObjectCache}. Only the cache entries for the given
+	 * class are removed; listeners and other cache metadata are unaffected.
+	 *
+	 * @param clazz the class whose cached objects should be cleared
+	 */
 	public static void clearCache(Class clazz) {
 		getOAObjectCache().clearCache(clazz);
 	}
 
 
 	/**
-	 * Used to cache new objects using a weakReference.
-	 * @return if another object matches, else this obj. 
+	 * Adds the specified object to the cache using default behavior. This is a
+	 * convenience wrapper that delegates to
+	 * {@link #add(OAObject, boolean, boolean)} with duplicate-error checking
+	 * disabled and automatic addition to select-all Hubs enabled.
+	 *
+	 * @param obj the object to add to the cache
+	 * @return the existing cached object if one matches, otherwise the supplied object
 	 */
 	public static OAObject add(OAObject obj) {
 		return add(obj, false, true);
 	}
+
+	/**
+	 * Adds the specified object to the cache with explicit control over duplicate
+	 * handling and select-all Hub population. This method delegates to
+	 * {@link #add(OAObject, boolean, boolean, boolean)} with event dispatching
+	 * performed in the current thread.
+	 *
+	 * @param obj               the object to add to the cache
+	 * @param bErrorIfExists    whether to throw an exception if a duplicate exists
+	 * @param bAddToSelectAll   whether the object should be added to all select-all Hubs
+	 * @return the existing cached object if one matches, otherwise the supplied object
+	 */
 	public static OAObject add(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll) {
 		return add(obj, bErrorIfExists, bAddToSelectAll, false);
 	}
 
+	/**
+	 * Adds the specified object to the cache with full control over duplicate
+	 * handling, select-all Hub population, and whether after-add events are
+	 * dispatched asynchronously in another thread. If caching is disabled,
+	 * the supplied object is returned unchanged.
+	 *
+	 * @param obj                             the object to add to the cache
+	 * @param bErrorIfExists                  whether to throw an exception if a duplicate exists
+	 * @param bAddToSelectAll                 whether the object should be added to all select-all Hubs
+	 * @param bSendAddEventInAnotherThread    whether after-add events should be queued for asynchronous dispatch
+	 * @return the existing cached object if one matches, otherwise the supplied object
+	 */
 	public static OAObject add(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread) {
 		if (bDisableCache) {
 			return obj;
@@ -585,8 +790,18 @@ public class OAObjectCacheDelegate {
 		return objx;
 	}
 
-
-
+	/**
+	 * Internal helper that creates the object's key and delegates to
+	 * {@link #_add2(OAObject, OAObjectKey, boolean, boolean, boolean)} to
+	 * perform the actual cache insertion logic. This method does not perform
+	 * any additional validation beyond key creation.
+	 *
+	 * @param obj                             the object to add
+	 * @param bErrorIfExists                  whether to throw an exception if a duplicate exists
+	 * @param bAddToSelectAll                 whether to add the object to all select-all Hubs
+	 * @param bSendAddEventInAnotherThread    whether after-add events should be dispatched asynchronously
+	 * @return the existing cached object if found, otherwise the supplied object
+	 */
 	private static OAObject _add(final OAObject obj, final boolean bErrorIfExists, boolean bAddToSelectAll,
 			final boolean bSendAddEventInAnotherThread) {
 		final OAObjectKey key = OAObjectKeyDelegate.createObjectKey(obj);
@@ -596,7 +811,21 @@ public class OAObjectCacheDelegate {
 		return objResult;
 	}
 
-	
+	/**
+	 * Core internal method that inserts the object into the cache using the
+	 * provided {@link OAObjectKey}. Handles duplicate checking based on the
+	 * current add mode, updates the cache entry if necessary, optionally adds
+	 * the object to select-all Hubs, and dispatches after-add events either
+	 * synchronously or asynchronously.
+	 *
+	 * @param obj                             the object to add
+	 * @param key                             the key representing the object's identity
+	 * @param bErrorIfExists                  whether to throw an exception if a duplicate exists
+	 * @param bAddToSelectAll                 whether to add the object to all select-all Hubs
+	 * @param bSendAddEventInAnotherThread    whether after-add events should be dispatched asynchronously
+	 * @return the existing cached object if found, otherwise the supplied object
+	 * @throws RuntimeException if the object or key is null or if the key has an invalid GUID
+	 */
 	private static OAObject _add2(final OAObject obj, final OAObjectKey key, final boolean bErrorIfExists, boolean bAddToSelectAll,
 			final boolean bSendAddEventInAnotherThread) {
 
@@ -648,8 +877,16 @@ public class OAObjectCacheDelegate {
 	}	
 	
 	
-	
-
+	/**
+	 * Dispatches the after-add event to all registered cache listeners for the
+	 * object's class. If {@code bSendAddEventInAnotherThread} is {@code true},
+	 * the events are queued and processed asynchronously; otherwise, they are
+	 * invoked immediately in the current thread. No action is taken if the
+	 * listener count is zero or the object is null.
+	 *
+	 * @param obj                             the object that was added to the cache
+	 * @param bSendAddEventInAnotherThread    whether to dispatch events asynchronously
+	 */
 	protected static <T extends OAObject> void fireAfterAddEvent(T obj, boolean bSendAddEventInAnotherThread) {
 		if (obj == null) return;
 		if (aiListenerCount.get() == 0) return;
@@ -672,6 +909,11 @@ public class OAObjectCacheDelegate {
 	}
 
 	
+	/**
+	 * Internal helper class used to store information about an after-add
+	 * event that needs to be dispatched asynchronously. Contains the array of
+	 * listeners to notify and the object that was added.
+	 */
 	private static class SendAddEventInfo {
 		OAObjectCacheListener[] hls;
 		Object obj;
@@ -683,6 +925,13 @@ public class OAObjectCacheDelegate {
 	}
 
 
+	/**
+	 * Starts the background thread responsible for processing queued after-add
+	 * events. If the thread is already running, this method returns immediately.
+	 * The thread continuously takes events from the queue and invokes the
+	 * {@code afterAdd} method on each listener. The thread is a daemon and
+	 * runs indefinitely.
+	 */
 	protected static synchronized void startCacheSendAddEventThread() {
 		if (threadCacheSendAddEvent != null) {
 			return;
@@ -707,6 +956,13 @@ public class OAObjectCacheDelegate {
 		threadCacheSendAddEvent.start();
 	}
 
+	/**
+	 * Adds the specified object to all registered select-all Hubs for its class.
+	 * If a Hub already contains the object, it is skipped. This ensures that
+	 * objects are automatically included in global views without creating duplicates.
+	 *
+	 * @param obj the object to add to all select-all Hubs
+	 */
 	public static void addToSelectAllHubs(OAObject obj) {
 		Hub[] hs = getSelectAllHubs(obj.getClass());
 		for (int i = 0; hs != null && i < hs.length; i++) {
@@ -717,13 +973,26 @@ public class OAObjectCacheDelegate {
 		}
 	}
 
-	
+	/**
+	 * Notifies the cache that a key property value of the specified object has
+	 * changed. The object cache is updated to reflect the new key value, ensuring
+	 * that future lookups using the updated key will succeed. No action is taken
+	 * if caching is disabled.
+	 *
+	 * @param obj the object whose key property has changed
+	 */
 	protected static void propertyKeyValueChanged(OAObject obj) {
 		if (bDisableCache) return;
 		getOAObjectCache().updateObject(obj);
 	}
 
-	
+	/**
+	 * Removes the specified object from the cache. This operation delegates
+	 * directly to the underlying {@link OAObjectCache} and does not affect
+	 * listeners or select-all Hub registrations.
+	 *
+	 * @param obj the object to remove from the cache
+	 */
 	static public void removeObject(final OAObject obj) {
 		getOAObjectCache().removeObject(obj);
 	}
@@ -731,10 +1000,12 @@ public class OAObjectCacheDelegate {
 
 
 	/**
-	 * Used to retrieve any object based on its Object Id property value.
+	 * Retrieves an object from the cache based on its object ID property value.
+	 * This is a convenience wrapper around {@link #get(Class, Object)}.
 	 *
-	 * @param key object to compare to, object or objects[] to compare this object's objectId(s) with or OAObjectKey to compare with this
-	 *            object's objectId
+	 * @param clazz the class of the object to retrieve
+	 * @param key   the object ID, an array of IDs, or an {@link OAObjectKey} representing the object
+	 * @return the cached object matching the key, or {@code null} if not found
 	 * @see OAObjectKey#OAObjectKey
 	 * @see OAObject#equals
 	 */
@@ -743,15 +1014,27 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Used to retrieve any object based on its Object Id property value.
+	 * Retrieves an object from the cache using an integer ID. This method
+	 * delegates to {@link #get(Class, Object)} by wrapping the integer in
+	 * an {@link Integer} object.
 	 *
-	 * @see getObject(Class, Object)
+	 * @param clazz the class of the object to retrieve
+	 * @param id    the integer ID of the object
+	 * @return the cached object matching the ID, or {@code null} if not found
 	 */
 	public static <T extends OAObject> T get(Class<T> clazz, int id) {
 		return get(clazz, Integer.valueOf(id));
 	}
 
-	
+	/**
+	 * Retrieves an object from the cache based on the provided key. If the key
+	 * is not an {@link OAObjectKey}, it is converted appropriately. Delegates
+	 * to {@link #get(Class, OAObjectKey)} for the final retrieval.
+	 *
+	 * @param clazz the class of the object to retrieve
+	 * @param key   the object, key value, array of key values, or {@link OAObjectKey}
+	 * @return the cached object matching the key, or {@code null} if not found
+	 */
 	public static <T extends OAObject> T get(Class<T> clazz, Object key) {
 		if (!(key instanceof OAObjectKey)) {
 			if (key instanceof OAObject) {
@@ -765,27 +1048,55 @@ public class OAObjectCacheDelegate {
 		return get(clazz, ok);
 	}
 	
+	/**
+	 * Retrieves an object from the cache using its {@link OAObjectKey}. If either
+	 * the class or key is null, {@code null} is returned. Delegates directly
+	 * to the underlying {@link OAObjectCache} to fetch the object.
+	 *
+	 * @param clazz the class of the object to retrieve
+	 * @param ok    the {@link OAObjectKey} representing the object's identity
+	 * @return the cached object matching the key, or {@code null} if not found
+	 */
 	public static <T extends OAObject> T get(Class<T> clazz, OAObjectKey ok) {
 		if (clazz == null || ok == null) return null;
 		OAObject obj = getOAObjectCache().getObject(clazz, ok); 
 		return (T) obj;
 	}
 
-//qqqqqq remove this method ??	
+//qqqqqq remove this method ??
+	/**
+	 * Retrieves an object from the cache by its GUID. This method returns the
+	 * object if it exists in the cache; it does not create a new instance.
+	 *
+	 * @param clazz the class of the object to retrieve
+	 * @param guid  the globally unique identifier of the object
+	 * @return the cached object matching the GUID, or {@code null} if not found
+	 */
 	public static <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, long guid) {
 		Object obj = getOAObjectCache().getObject((Class<OAObject>) clazz, guid); 
 		return (T) obj;
 	}
 
+	/**
+	 * Retrieves an object from the cache based on its GUID. Delegates directly
+	 * to the underlying {@link OAObjectCache} for the lookup.
+	 *
+	 * @param clazz the class of the object to retrieve
+	 * @param guid  the globally unique identifier of the object
+	 * @return the cached object matching the GUID, or {@code null} if not found
+	 */
 	public static <T extends OAObject> T getUsingGuid(Class<T> clazz, long guid) {
 		Object obj = getOAObjectCache().getObject(clazz, guid); 
 		return (T) obj;
 	}
 	
 	/**
-	 * Used to retrieve any object.
+	 * Retrieves the cached instance of the specified object based on its
+	 * current key values. If caching is disabled or the object is null,
+	 * {@code null} is returned.
 	 *
-	 * @param currentIndexKey object to find.
+	 * @param obj the object whose cached instance is requested
+	 * @return the cached object matching the key, or {@code null} if not found or caching is disabled
 	 */
 	public static Object get(OAObject obj) {
 		if (bDisableCache) {
@@ -797,6 +1108,14 @@ public class OAObjectCacheDelegate {
 		return get(obj.getClass(), OAObjectKeyDelegate.getKey((OAObject) obj));
 	}
 
+	/**
+	 * Finds the next object in the cache following the specified object.
+	 * Delegates to the internal {@link #_find(Object, Class, String, Object, boolean, boolean)}
+	 * method with default parameters.
+	 *
+	 * @param fromObject the object from which to start the search; if null, search starts at the beginning
+	 * @return the next object in the cache, or {@code null} if none found
+	 */
 	public static Object findNext(Object fromObject) {
 		if (fromObject == null) {
 			return null;
@@ -804,6 +1123,17 @@ public class OAObjectCacheDelegate {
 		return _find(fromObject, fromObject.getClass(), null, null, false, true);
 	}
 
+	/**
+	 * Finds the next object in the cache after {@code fromObject} that matches
+	 * the specified property path and value. Delegates to the internal
+	 * {@link #_find(Object, Class, String, Object, boolean, boolean)} method
+	 * with default skip-new and exception behavior.
+	 *
+	 * @param fromObject   the object from which to start the search; if null, search starts at the beginning
+	 * @param propertyPath the property path to match
+	 * @param findObject   the value to compare against
+	 * @return the next matching object in the cache, or {@code null} if none found
+	 */
 	public static Object findNext(Object fromObject, String propertyPath, Object findObject) {
 		if (fromObject == null) {
 			return null;
@@ -811,6 +1141,19 @@ public class OAObjectCacheDelegate {
 		return _find(fromObject, fromObject.getClass(), propertyPath, findObject, false, true);
 	}
 
+	/**
+	 * Finds the next object in the cache after {@code fromObject} that matches
+	 * the specified property path and value. Allows control over whether new
+	 * objects should be skipped and whether exceptions should be thrown if
+	 * no match is found. Delegates to the internal {@link #_find(Object, Class, String, Object, boolean, boolean)}.
+	 *
+	 * @param fromObject     the object from which to start the search; if null, search starts at the beginning
+	 * @param propertyPath   the property path to match
+	 * @param findObject     the value to compare against
+	 * @param bSkipNew       whether newly added (unsaved) objects should be skipped
+	 * @param bThrowException whether to throw an exception if no matching object is found
+	 * @return the next matching object in the cache, or {@code null} if none found
+	 */
 	public static Object findNext(Object fromObject, String propertyPath, Object findObject, boolean bSkipNew, boolean bThrowException) {
 		if (fromObject == null) {
 			return null;
@@ -818,6 +1161,18 @@ public class OAObjectCacheDelegate {
 		return _find(fromObject, fromObject.getClass(), propertyPath, findObject, bSkipNew, bThrowException);
 	}
 
+	/**
+	 * Finds the next object in the cache of the specified class after
+	 * {@code fromObject} that matches the given property path and value.
+	 * If {@code fromClass} is null, the class of {@code fromObject} is used.
+	 * Delegates to the internal {@link #_find(Object, Class, String, Object, boolean, boolean)}.
+	 *
+	 * @param fromObject   the object from which to start the search; if null, search starts at the beginning
+	 * @param fromClass    the class of objects to search; if null, the class of {@code fromObject} is used
+	 * @param propertyPath the property path to match
+	 * @param findObject   the value to compare against
+	 * @return the next matching object in the cache, or {@code null} if none found
+	 */
 	public static Object findNext(Object fromObject, Class fromClass, String propertyPath, Object findObject) {
 		if (fromObject == null && fromClass == null) {
 			return null;
@@ -829,33 +1184,113 @@ public class OAObjectCacheDelegate {
 	}
 
 	/**
-	 * Searches all objects in Class clazz for an object with property equalTo findObject.
+	 * Searches the cache for any object of the specified class. Delegates to
+	 * the internal {@link #_find(Object, Class, String, Object, boolean, boolean)}
+	 * method with default parameters.
+	 *
+	 * @param clazz the class of objects to search
+	 * @return the first matching object in the cache, or {@code null} if none found
 	 */
 	public static Object find(Class clazz) {
 		return _find(null, clazz, null, null, false, true);
 	}
 
+	/**
+	 * Searches the cache for an object of the specified class that satisfies
+	 * the given {@link OAFinder}. Delegates to the internal
+	 * {@link #_find(Object, Class, OAFinder, boolean, boolean)} method with
+	 * default skip-new and exception behavior.
+	 *
+	 * @param clazz  the class of objects to search
+	 * @param finder the finder specifying the search criteria
+	 * @return the first matching object in the cache, or {@code null} if none found
+	 */
 	public static Object find(Class clazz, OAFinder finder) {
 		return _find(null, clazz, finder, false, true);
 	}
 
+	/**
+	 * Searches the cache for an object of the specified class where the
+	 * property at {@code propertyPath} equals {@code findObject}. Delegates
+	 * to the internal {@link #_find(Object, Class, String, Object, boolean, boolean)}
+	 * with default skip-new and exception behavior.
+	 *
+	 * @param clazz        the class of objects to search
+	 * @param propertyPath the property path to match
+	 * @param findObject   the value to compare against
+	 * @return the first matching object in the cache, or {@code null} if none found
+	 */
 	public static Object find(Class clazz, String propertyPath, Object findObject) {
 		return _find(null, clazz, propertyPath, findObject, false, true);
 	}
 
+	/**
+	 * Searches the cache for an object of the specified class where the
+	 * property at {@code propertyPath} equals {@code findObject}, with
+	 * control over skipping new objects and throwing exceptions if no match
+	 * is found. Delegates to the internal
+	 * {@link #_find(Object, Class, String, Object, boolean, boolean)} method.
+	 *
+	 * @param clazz         the class of objects to search
+	 * @param propertyPath  the property path to match
+	 * @param findObject    the value to compare against
+	 * @param bSkipNew      whether to skip newly added (unsaved) objects
+	 * @param bThrowException whether to throw an exception if no match is found
+	 * @return the first matching object in the cache, or {@code null} if none found
+	 */
 	public static Object find(Class clazz, String propertyPath, Object findObject, boolean bSkipNew, boolean bThrowException) {
 		return _find(null, clazz, propertyPath, findObject, bSkipNew, bThrowException);
 	}
 
+	/**
+	 * Searches the cache for an object of the specified class that satisfies
+	 * the given {@link OAFinder}, with control over skipping new objects and
+	 * throwing exceptions if no match is found. Delegates to the internal
+	 * {@link #_find(Object, Class, OAFinder, boolean, boolean)} method.
+	 *
+	 * @param clazz          the class of objects to search
+	 * @param finder         the finder specifying the search criteria
+	 * @param bSkipNew       whether to skip newly added (unsaved) objects
+	 * @param bThrowException whether to throw an exception if no match is found
+	 * @return the first matching object in the cache, or {@code null} if none found
+	 */
 	public static Object find(Class clazz, OAFinder finder, boolean bSkipNew, boolean bThrowException) {
 		return _find(null, clazz, finder, false, true);
 	}
 
+	
+	/**
+	 * Internal helper that searches the cache for an object of the specified class
+	 * matching the given property path and value. Delegates to the more detailed
+	 * {@link #_find(Object, Class, String, Object, boolean, boolean, int, List)}
+	 * method with default fetch amount and result list.
+	 *
+	 * @param fromObject      the object from which to start the search; may be null
+	 * @param clazz           the class of objects to search
+	 * @param propertyPath    the property path to match; may be null
+	 * @param findObject      the value to compare against
+	 * @param bSkipNew        whether to skip newly added (unsaved) objects
+	 * @param bThrowException whether to throw an exception if no match is found
+	 * @return the next matching object in the cache, or {@code null} if none found
+	 */
 	protected static Object _find(Object fromObject, Class clazz, String propertyPath, Object findObject, boolean bSkipNew,
 			boolean bThrowException) {
 		return _find(fromObject, clazz, propertyPath, findObject, bSkipNew, bThrowException, 1, null);
 	}
 
+	/**
+	 * Internal helper that searches the cache for an object of the specified class
+	 * using the provided {@link OAFinder}. Delegates to the more detailed
+	 * {@link #_find(Object, Class, OAFinder, boolean, boolean, int, List)} method
+	 * with default fetch amount and result list.
+	 *
+	 * @param fromObject      the object from which to start the search; may be null
+	 * @param clazz           the class of objects to search
+	 * @param finder          the finder specifying search criteria
+	 * @param bSkipNew        whether to skip newly added (unsaved) objects
+	 * @param bThrowException whether to throw an exception if no match is found
+	 * @return the next matching object in the cache, or {@code null} if none found
+	 */
 	protected static Object _find(Object fromObject, Class clazz, OAFinder finder, boolean bSkipNew, boolean bThrowException) {
 		return _find(fromObject, clazz, finder, bSkipNew, bThrowException, 1, null);
 	}
@@ -865,6 +1300,20 @@ public class OAObjectCacheDelegate {
 		return _find(fromObject, clazz, finder, bSkipNew, bThrowException, fetchAmount, alResults);
 	}
 
+	/**
+	 * Searches the cache for objects of the specified class that satisfy the given
+	 * {@link OAFilter}. Converts the filter into an {@link OAFinder} internally
+	 * and delegates to the core {@link #_find(Object, Class, OAFinder, boolean, boolean, int, List)} method.
+	 *
+	 * @param fromObject      the object from which to start the search; may be null
+	 * @param clazz           the class of objects to search
+	 * @param filter          the filter specifying search criteria; may be null
+	 * @param bSkipNew        whether to skip newly added (unsaved) objects
+	 * @param bThrowException whether to throw an exception if no match is found
+	 * @param fetchAmount     maximum number of objects to return
+	 * @param alResults       list to accumulate found objects; may be null
+	 * @return the last matching object found, or {@code null} if none
+	 */
 	public static Object find(Object fromObject, Class clazz, OAFilter filter, boolean bSkipNew, boolean bThrowException, int fetchAmount,
 			List<OAObject> alResults) {
 		OAFinder finder = new OAFinder();
@@ -874,19 +1323,39 @@ public class OAObjectCacheDelegate {
 		return _find(fromObject, clazz, finder, bSkipNew, bThrowException, fetchAmount, alResults);
 	}
 
+	/**
+	 * Searches the cache for objects of the specified class starting from
+	 * {@code fromObject}, returning up to {@code fetchAmount} results.
+	 * Delegates to the internal {@link #_find(Object, Class, String, Object, boolean, boolean, int, List)}
+	 * method with default search parameters.
+	 *
+	 * @param fromObject  the object from which to start the search; may be null
+	 * @param clazz       the class of objects to search
+	 * @param fetchAmount maximum number of objects to return
+	 * @param alResults   list to accumulate found objects; may be null
+	 * @return the last object found, or {@code null} if none
+	 */
 	public static Object find(Object fromObject, Class clazz, int fetchAmount, List<OAObject> alResults) {
 		return _find(fromObject, clazz, null, false, false, fetchAmount, alResults);
 	}
 
-	// 20140125 get objects from cache
 	/**
-	 * Returns objects from the objectCache.
+	 * Internal method that searches the cache for objects of the specified class
+	 * matching the given property path and value. Supports skipping new objects,
+	 * throwing exceptions if no match is found, limiting the number of results,
+	 * and accumulating results into a provided list. Converts property paths
+	 * into an appropriate {@link OAFinder} internally when necessary.
 	 *
-	 * @param clazz       type of objects
-	 * @param fromObject  null to start from the beginning, else use the last object previously returned.
-	 * @param fetchAmount max number to add to the alResults
-	 * @param alResults   list of objects, after the fromObject
-	 * @return last object in alResults, that can be used as the fromObject on the next call to fetch
+	 * @param fromObject      the object from which to start the search; may be null
+	 * @param clazz           the class of objects to search; must not be null
+	 * @param propertyPath    the property path to match; may be null
+	 * @param findValue       the value to compare against
+	 * @param bSkipNew        whether to skip newly added (unsaved) objects
+	 * @param bThrowException whether to throw an exception if no matching object is found
+	 * @param fetchAmount     maximum number of objects to retrieve
+	 * @param alResults       list to accumulate found objects; may be null
+	 * @return the last object found in the cache, or {@code null} if none
+	 * @throws IllegalArgumentException if clazz is null or findValue is invalid
 	 */
 	protected static Object _find(Object fromObject, Class clazz, String propertyPath, Object findValue, boolean bSkipNew,
 			boolean bThrowException, int fetchAmount, List<OAObject> alResults) {
@@ -941,6 +1410,22 @@ public class OAObjectCacheDelegate {
 		return _find(fromObject, clazz, finder, bSkipNew, bThrowException, fetchAmount, alResults);
 	}
 
+	/**
+	 * Internal method that searches the cache for objects of the specified class
+	 * using the provided {@link OAFinder}. Supports skipping new objects,
+	 * exception handling, limiting the number of results, and accumulating
+	 * matches into a provided list. Delegates directly to the underlying
+	 * {@link OAObjectCache} for execution.
+	 *
+	 * @param fromObject      the object from which to start the search; may be null
+	 * @param clazz           the class of objects to search
+	 * @param finder          the finder specifying search criteria
+	 * @param bSkipNew        whether to skip newly added (unsaved) objects
+	 * @param bThrowException whether to throw an exception if no match is found
+	 * @param fetchAmount     maximum number of objects to retrieve
+	 * @param alResults       list to accumulate found objects; may be null
+	 * @return the last object found, or {@code null} if none
+	 */
 	protected static Object _find(final Object fromObject, final Class<? extends OAObject> clazz, final OAFinder finder, final boolean bSkipNew,
 			final boolean bThrowException, int fetchAmount, final List<OAObject> alResults) {
 		if (bDisableCache) {
@@ -951,9 +1436,13 @@ public class OAObjectCacheDelegate {
 	
 
 	/**
-	 * Refresh all objects from the datasource. This will be ran on the server, if called by client then it will async to run on server.
+	 * Refreshes all objects of the specified class from the underlying
+	 * {@link OADataSource}. If called on a client, the refresh is performed
+	 * asynchronously on the server. Updates all relevant Hubs for the class.
+	 * Objects already present in select-all or detail Hubs are checked to
+	 * determine if they require refresh.
 	 *
-	 * @param clazz Class of objects to update, will also requery all hubs for this class.
+	 * @param clazz the class of objects to refresh; if null, no action is taken
 	 */
 	public static void refresh(Class clazz) {
 		if (clazz == null) {
@@ -1041,10 +1530,23 @@ public class OAObjectCacheDelegate {
 	}
 	*/
 	
+	/**
+	 * Enables or disables the object cache globally. When caching is disabled,
+	 * methods that would normally retrieve or store objects in the cache will
+	 * bypass it, effectively returning objects directly without caching.
+	 *
+	 * @param b {@code true} to disable caching, {@code false} to enable it
+	 */
 	public static void setDisableCache(boolean b) {
 		bDisableCache = b;
 	}
 
+	/**
+	 * Returns the underlying {@link OAObjectCache} instance used by this delegate.
+	 * This provides direct access to low-level cache operations for advanced use cases.
+	 *
+	 * @return the global {@link OAObjectCache} instance
+	 */
 	public static OAObjectCache getOAObjectCache() {
 		return objectCache;
 	}

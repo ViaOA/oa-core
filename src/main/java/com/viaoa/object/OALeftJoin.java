@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,17 +45,42 @@ public class OALeftJoin<A extends OAObject, B extends OAObject> extends OAObject
     private A a;
     private B b;
     
+    /**
+     * Creates an empty left-join pair with no left or right objects assigned.
+     */
     public OALeftJoin() {
     }
     
+    /**
+     * Creates a left-join pair initialized with the specified left and
+     * right objects.
+     *
+     * @param a the left-side object
+     * @param b the right-side object
+     */
     public OALeftJoin(A a, B b) {
         setA(a);
         setB(b);
     }
     
+    /**
+     * Returns the left-side object associated with this join pair.
+     *
+     * @return the left-side object, or {@code null} if none assigned
+     */
     public A getA() {
         return a;
     }
+    
+    /**
+     * Sets the left-side object for this join pair.
+     * <p>
+     * This method fires before- and after-property-change events for
+     * property {@code "A"}.
+     * </p>
+     *
+     * @param obj the new left-side object
+     */
     public void setA(A obj) {
         OAObject hold = this.a;
         fireBeforePropertyChange("A", hold, obj);
@@ -63,9 +88,24 @@ public class OALeftJoin<A extends OAObject, B extends OAObject> extends OAObject
         firePropertyChange("A", hold, obj);
     }
 
+    /**
+     * Returns the right-side object associated with this join pair.
+     *
+     * @return the right-side object, or {@code null} if none assigned
+     */
     public B getB() {
         return b;
     }
+
+    /**
+     * Sets the right-side object for this join pair.
+     * <p>
+     * This method fires before- and after-property-change events for
+     * property {@code "B"}.
+     * </p>
+     *
+     * @param obj the new right-side object
+     */
     public void setB(B obj) {
         OAObject hold = this.b;
         fireBeforePropertyChange("B", hold, obj);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,22 +129,81 @@ public class OALinkInfo { //implements java.io.Serializable {
 	// foreign key
 	private List<OAFkeyInfo> alFkeyInfo;
 
+	/**
+	 * Constructs a new link metadata definition for a relationship between two
+	 * OAObject types.
+	 * <p>
+	 * This form initializes the link with no cascading rules, no reverse-link
+	 * name, and no ownership flag. Additional behavioral attributes may be set
+	 * through the corresponding setter methods.
+	 * </p>
+	 *
+	 * @param name    the property name representing this link on the source object
+	 * @param toClass the target OAObject class of the link
+	 * @param type    the link cardinality ({@link #TYPE_ONE} or {@link #TYPE_MANY})
+	 */
 	public OALinkInfo(String name, Class toClass, int type) {
 		this(name, toClass, type, false, false, null, false);
 	}
 
+	/**
+	 * Constructs a new link metadata definition with identical cascade rules
+	 * for save and delete operations, and an optional reverse-link name.
+	 *
+	 * @param name         the property name representing this link on the source object
+	 * @param toClass      the target OAObject class of the link
+	 * @param type         the link cardinality ({@link #TYPE_ONE} or {@link #TYPE_MANY})
+	 * @param cascade      if {@code true}, both save and delete operations will cascade
+	 * @param reverseName  the property name on the target object that represents the reverse link,
+	 *                     or {@code null} if none
+	 */
 	public OALinkInfo(String name, Class toClass, int type, boolean cascade, String reverseName) {
 		this(name, toClass, type, cascade, cascade, reverseName, false);
 	}
 
+	/**
+	 * Constructs a new link metadata definition with identical cascade rules
+	 * for save and delete operations, an optional reverse-link name, and an
+	 * ownership flag.
+	 *
+	 * @param name         the property name representing this link on the source object
+	 * @param toClass      the target OAObject class of the link
+	 * @param type         the link cardinality ({@link #TYPE_ONE} or {@link #TYPE_MANY})
+	 * @param cascade      if {@code true}, both save and delete operations cascade
+	 * @param reverseName  the reverse-link property name on the target object, or {@code null}
+	 * @param bOwner       whether the source object is the owner of the linked object(s)
+	 */
 	public OALinkInfo(String name, Class toClass, int type, boolean cascade, String reverseName, boolean bOwner) {
 		this(name, toClass, type, cascade, cascade, reverseName, bOwner);
 	}
 
+	/**
+	 * Constructs a new link metadata definition with independent cascade
+	 * settings for save and delete operations, and an optional reverse-link name.
+	 *
+	 * @param name         the property name representing this link on the source object
+	 * @param toClass      the target OAObject class of the link
+	 * @param type         the link cardinality ({@link #TYPE_ONE} or {@link #TYPE_MANY})
+	 * @param cascadeSave  whether save operations should cascade to the linked object(s)
+	 * @param cascadeDelete whether delete operations should cascade to the linked object(s)
+	 * @param reverseName  the reverse-link property name on the target object, or {@code null}
+	 */
 	public OALinkInfo(String name, Class toClass, int type, boolean cascadeSave, boolean cascadeDelete, String reverseName) {
 		this(name, toClass, type, cascadeSave, cascadeDelete, reverseName, false);
 	}
 
+	/**
+	 * Constructs a new link metadata definition with full control over
+	 * cascade behavior, reverse-link naming, and ownership.
+	 *
+	 * @param name          the property name representing this link on the source object
+	 * @param toClass       the target OAObject class of the link
+	 * @param type          the link cardinality ({@link #TYPE_ONE} or {@link #TYPE_MANY})
+	 * @param cascadeSave   whether save operations should cascade to linked object(s)
+	 * @param cascadeDelete whether delete operations should cascade to linked object(s)
+	 * @param reverseName   the reverse-link property name on the target object, or {@code null}
+	 * @param bOwner        whether the source object owns the linked object(s)
+	 */
 	public OALinkInfo(String name, Class toClass, int type, boolean cascadeSave, boolean cascadeDelete, String reverseName,
 			boolean bOwner) {
 		this.name = name;
@@ -156,6 +215,19 @@ public class OALinkInfo { //implements java.io.Serializable {
 		this.bOwner = bOwner;
 	}
 
+	/**
+	 * Determines whether the specified object represents the same link
+	 * definition as this instance.
+	 * <p>
+	 * Two {@code OALinkInfo} objects are considered equal when both their
+	 * target classes and their link names match (case-insensitive). A
+	 * {@code null} name is treated as equal only to another {@code null}
+	 * name.
+	 * </p>
+	 *
+	 * @param obj the object to compare with this link definition
+	 * @return {@code true} if the link definitions match, otherwise {@code false}
+	 */
 	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;
@@ -187,48 +259,126 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return true;
 	}
 
+	/**
+	 * Returns a constant hash code.
+	 * <p>
+	 * This implementation purposely returns a fixed value to ensure that
+	 * {@link #equals(Object)} fully determines equality. Instances are not
+	 * intended for use in hash-based collections where key distribution is
+	 * important.
+	 * </p>
+	 *
+	 * @return the constant value {@code 1}
+	 */
 	@Override
 	public int hashCode() {
 		return 1;
 	}
 
+	/**
+	 * Returns whether this link represents ownership of the target object(s).
+	 *
+	 * @return {@code true} if the source object owns the linked object(s),
+	 *         otherwise {@code false}
+	 */
 	public boolean isOwner() {
 		return bOwner;
 	}
 
-	/* note: a recursive link cant be owned by itself */
+	/**
+	 * Returns whether this link is marked as owning its target object(s).
+	 * <p>
+	 * This is equivalent to {@link #isOwner()} and exists for naming
+	 * consistency with other boolean getters in this class.
+	 * </p>
+	 *
+	 * @return {@code true} if ownership is enabled
+	 */
 	public boolean getOwner() {
 		return bOwner;
 	}
 
+	/**
+	 * Sets whether this link represents ownership of the target object(s).
+	 *
+	 * @param b {@code true} to mark this link as owning its target object(s),
+	 *          otherwise {@code false}
+	 */
 	public void setOwner(boolean b) {
 		bOwner = b;
 	}
 
+	/**
+	 * Returns whether this link is marked as recursive.
+	 * <p>
+	 * A recursive link represents a hierarchy where objects of the same type
+	 * are connected (e.g., parent–child relationships within the same class).
+	 * </p>
+	 *
+	 * @return {@code true} if the link is recursive, otherwise {@code false}
+	 */
 	public boolean getRecursive() {
 		return bRecursive;
 	}
 
+	/**
+	 * Sets whether this link represents a recursive relationship, where
+	 * objects of the same type reference one another (e.g., parent/child).
+	 *
+	 * @param b {@code true} to mark the link as recursive, otherwise {@code false}
+	 */
 	public void setRecursive(boolean b) {
 		bRecursive = b;
 	}
 
+	/**
+	 * Returns the target class for this link.
+	 *
+	 * @return the class to which this link points
+	 */
 	public Class getToClass() {
 		return toClass;
 	}
 
+	/**
+	 * Sets the target class for this link.
+	 *
+	 * @param c the class to which this link should point
+	 */
 	public void setToClass(Class c) {
 		this.toClass = c;
 	}
 
+	/**
+	 * Returns the cardinality type of this link.
+	 * <p>
+	 * The returned value is either {@link #TYPE_ONE} or {@link #TYPE_MANY}.
+	 * </p>
+	 *
+	 * @return the link cardinality
+	 */
 	public int getType() {
 		return type;
 	}
 
+	/**
+	 * Returns the property name representing this link on the source object.
+	 *
+	 * @return the link property name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Returns the lowercase-mapped form of the link name.
+	 * <p>
+	 * If an explicit lowercase value has been assigned, it is returned.
+	 * Otherwise, the value is generated using {@link OAString#mfcl(String)}.
+	 * </p>
+	 *
+	 * @return the lowercase version of the link name
+	 */
 	public String getLowerName() {
 		if (OAString.isNotEmpty(lowerName)) {
 			return lowerName;
@@ -236,118 +386,266 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return OAString.mfcl(name);
 	}
 
+	/**
+	 * Sets the lowercase-mapped name for this link. This value overrides
+	 * automatic lowercase generation.
+	 *
+	 * @param s the lowercase form of the link name
+	 */
 	public void setLowerName(String s) {
 		this.lowerName = s;
 	}
 
+	/**
+	 * Returns the display name associated with this link.
+	 *
+	 * @return the display name, or {@code null} if none has been assigned
+	 */
 	public String getDisplayName() {
 		return displayName;
 	}
 
+	/**
+	 * Sets the display name for this link.
+	 *
+	 * @param dn the display name to assign
+	 */
 	public void setDisplayName(String dn) {
 		this.displayName = dn;
 	}
 
+	/**
+	 * Returns the name of the reverse link, if defined.
+	 *
+	 * @return the reverse link name, or {@code null} if none is assigned
+	 */
 	public String getReverseName() {
 		return reverseName;
 	}
 
+	/**
+	 * Sets the name of the reverse link.
+	 *
+	 * @param name the reverse link name to assign
+	 */
 	public void setReverseName(String name) {
 		this.reverseName = name;
 	}
 
+	/**
+	 * Sets whether this link is transient.
+	 *
+	 * @param b {@code true} to mark the link as transient, {@code false} otherwise
+	 */
 	public void setTransient(boolean b) {
 		this.bTransient = b;
 	}
 
+	/**
+	 * Returns whether this link is marked as transient.
+	 *
+	 * @return {@code true} if the link is transient, otherwise {@code false}
+	 */
 	public boolean getTransient() {
 		return bTransient;
 	}
 
+	/**
+	 * Sets whether this link is marked as calculated.
+	 *
+	 * @param b {@code true} to mark the link as calculated, {@code false} otherwise
+	 */
 	public void setCalculated(boolean b) {
 		this.bCalculated = b;
 	}
 
+	/**
+	 * Returns whether this link is marked as calculated.
+	 *
+	 * @return {@code true} if the link is calculated, otherwise {@code false}
+	 */
 	public boolean getCalculated() {
 		return bCalculated;
 	}
 
+	/**
+	 * Sets whether this link is marked as processed.
+	 *
+	 * @param b {@code true} to mark the link as processed, {@code false} otherwise
+	 */
 	public void setProcessed(boolean b) {
 		this.bProcessed = b;
 	}
 
+	/**
+	 * Returns whether this link has been marked as processed.
+	 *
+	 * @return {@code true} if the link is processed, otherwise {@code false}
+	 */
 	public boolean getProcessed() {
 		return bProcessed;
 	}
 
+	/**
+	 * Indicates whether this link is marked as used.
+	 *
+	 * @return {@code true} if the link is used, otherwise {@code false}
+	 */
 	public boolean getUsed() {
 		return !bNotUsed;
 	}
 
+	/**
+	 * Sets whether this link is calculated on the server side.
+	 *
+	 * @param b {@code true} to enable server-side calculation, {@code false} otherwise
+	 */
 	public void setServerSideCalc(boolean b) {
 		this.bServerSideCalc = b;
 	}
 
+	/**
+	 * Returns whether this link is configured for server-side calculation.
+	 *
+	 * @return {@code true} if server-side calculation is enabled, otherwise {@code false}
+	 */
 	public boolean getServerSideCalc() {
 		return bServerSideCalc;
 	}
 
+	/**
+	 * Sets whether the accessor method for this link is private or not generated.
+	 *
+	 * @param b {@code true} to mark the method as private or not generated,
+	 *          {@code false} otherwise
+	 */
 	public void setPrivateMethod(boolean b) {
 		this.bPrivateMethod = b;
 	}
 
+	/**
+	 * Returns whether the accessor method for this link is private or not generated.
+	 *
+	 * @return {@code true} if the method is private or not generated,
+	 *         otherwise {@code false}
+	 */
 	public boolean getPrivateMethod() {
 		return this.bPrivateMethod;
 	}
 
+	/**
+	 * Returns whether save operations should cascade through this link.
+	 *
+	 * @return {@code true} if save cascading is enabled, otherwise {@code false}
+	 */
 	public boolean getCascadeSave() {
 		return cascadeSave;
 	}
 
+	/**
+	 * Sets whether save operations should cascade through this link.
+	 *
+	 * @param b {@code true} to enable save cascading, {@code false} to disable it
+	 */
 	public void setCascadeSave(boolean b) {
 		this.cascadeSave = b;
 	}
 
+	/**
+	 * Returns whether delete operations should cascade through this link.
+	 *
+	 * @return {@code true} if delete cascading is enabled, otherwise {@code false}
+	 */
 	public boolean getCascadeDelete() {
 		return cascadeDelete;
 	}
 
+	/**
+	 * Sets whether delete operations should cascade through this link.
+	 *
+	 * @param b {@code true} to enable delete cascading, {@code false} to disable it
+	 */
 	public void setCascadeDelete(boolean b) {
 		this.cascadeDelete = b;
 	}
 
+	/**
+	 * Returns whether a new linked object should be automatically created when needed.
+	 *
+	 * @return {@code true} if automatic creation is enabled, otherwise {@code false}
+	 */
 	public boolean getAutoCreateNew() {
 		return bAutoCreateNew;
 	}
 
+	/**
+	 * Sets whether a new linked object should be automatically created when needed.
+	 *
+	 * @param bAutoCreateNew {@code true} to enable automatic creation, {@code false} otherwise
+	 */
 	public void setAutoCreateNew(boolean bAutoCreateNew) {
 		this.bAutoCreateNew = bAutoCreateNew;
 	}
 
+	/**
+	 * Returns whether this link must be empty before the linked object can be deleted.
+	 *
+	 * @return {@code true} if the link must be empty for delete operations,
+	 *         otherwise {@code false}
+	 */
 	public boolean getMustBeEmptyForDelete() {
 		return mustBeEmptyForDelete;
 	}
 
+	/**
+	 * Sets whether this link must be empty before the linked object can be deleted.
+	 *
+	 * @param b {@code true} to require the link to be empty for delete operations,
+	 *          {@code false} otherwise
+	 */
 	public void setMustBeEmptyForDelete(boolean b) {
 		this.mustBeEmptyForDelete = b;
 	}
 
 	/**
-	 * Set the number of hubs that will be cached.
+	 * Sets the number of hubs that will be cached for this link.
+	 *
+	 * @param x the desired cache size; values less than zero are treated as zero
 	 */
 	public void setCacheSize(int x) {
 		this.cacheSize = Math.max(0, x);
 	}
 
+	/**
+	 * Returns the number of hubs cached for this link.
+	 *
+	 * @return the configured cache size
+	 */
 	public int getCacheSize() {
 		return this.cacheSize;
 	}
 
-	// 2008/01/02 all of these were created to support the old oa.html package
+	/**
+	 * Returns the value of this link for the given object.
+	 *
+	 * <p>This uses {@code OAObjectReflectDelegate.getProperty} to retrieve
+	 * the associated value.</p>
+	 *
+	 * @param obj the source object
+	 * @return the linked value for the object
+	 */
 	public Object getValue(Object obj) {
 		return OAObjectReflectDelegate.getProperty((OAObject) obj, name);
 	}
 
+	/**
+	 * Determines whether the value of this link is loaded for the given object.
+	 *
+	 * <p>If the object is not an {@code OAObject}, the link is treated as loaded.</p>
+	 *
+	 * @param obj the object to test
+	 * @return {@code true} if the link value is loaded, otherwise {@code false}
+	 */
 	public boolean isLoaded(Object obj) {
 		if (!(obj instanceof OAObject)) {
 			return true;
@@ -356,6 +654,14 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return OAObjectPropertyDelegate.isPropertyLoaded(oaObj, name);
 	}
 
+	/**
+	 * Determines whether this link is locked for the given object.
+	 *
+	 * <p>If the object is not an {@code OAObject}, the link is treated as unlocked.</p>
+	 *
+	 * @param obj the object to test
+	 * @return {@code true} if the link is locked, otherwise {@code false}
+	 */
 	public boolean isLocked(Object obj) {
 		if (!(obj instanceof OAObject)) {
 			return true;
@@ -364,54 +670,123 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return OAObjectPropertyDelegate.isPropertyLocked(oaObj, name);
 	}
 
+	/**
+	 * Sets the property path used to determine match criteria for this link.
+	 *
+	 * @param prop the property path to use for matching
+	 */
 	public void setMatchProperty(String prop) {
 		this.matchProperty = prop;
 	}
 
+	/**
+	 * Returns the property path used to determine match criteria for this link.
+	 *
+	 * @return the match property path, or {@code null} if none is set
+	 */
 	public String getMatchProperty() {
 		return this.matchProperty;
 	}
 
+	/**
+	 * Sets the property path that indicates when matching should stop.
+	 *
+	 * @param prop the stop-match property path
+	 */
 	public void setMatchStopProperty(String prop) {
 		this.matchStopProperty = prop;
 	}
 
+	/**
+	 * Returns the property path that indicates when matching should stop.
+	 *
+	 * @return the stop-match property path, or {@code null} if none is set
+	 */
 	public String getMatchStopProperty() {
 		return this.matchStopProperty;
 	}
 	
+	/**
+	 * Sets the property path used to determine uniqueness for this link.
+	 *
+	 * @param prop the unique property path
+	 */
 	public void setUniqueProperty(String prop) {
 		this.uniqueProperty = prop;
 	}
 
+	/**
+	 * Returns the property path used to determine uniqueness for this link.
+	 *
+	 * @return the unique property path, or {@code null} if none is set
+	 */
 	public String getUniqueProperty() {
 		return this.uniqueProperty;
 	}
 
+	/**
+	 * Sets the property path used to determine sort order for linked objects.
+	 *
+	 * @param prop the sort property path
+	 */
 	public void setSortProperty(String prop) {
 		this.sortProperty = prop;
 	}
 
+	/**
+	 * Returns the property path used to determine sort order for linked objects.
+	 *
+	 * @return the sort property path, or {@code null} if none is set
+	 */
 	public String getSortProperty() {
 		return this.sortProperty;
 	}
 
+	/**
+	 * Sets whether linked objects should be sorted in ascending order.
+	 *
+	 * @param b {@code true} for ascending order, {@code false} for descending
+	 */
 	public void setSortAsc(boolean b) {
 		this.sortAsc = b;
 	}
 
+	/**
+	 * Returns whether linked objects are sorted in ascending order.
+	 *
+	 * @return {@code true} if ascending sort is enabled, otherwise {@code false}
+	 */
 	public boolean isSortAsc() {
 		return this.sortAsc;
 	}
 
+	/**
+	 * Sets the property path used for sequencing linked objects.
+	 *
+	 * @param prop the sequence property path
+	 */
 	public void setSeqProperty(String prop) {
 		this.seqProperty = prop;
 	}
 
+	/**
+	 * Returns the property path used for sequencing linked objects.
+	 *
+	 * @return the sequence property path, or {@code null} if none is set
+	 */
 	public String getSeqProperty() {
 		return this.seqProperty;
 	}
 
+	/**
+	 * Returns the getter method for the unique property defined for this link.
+	 *
+	 * <p>If the method has not yet been resolved, it is obtained using
+	 * {@code OAObjectInfoDelegate.getMethod} based on the configured
+	 * unique property name.</p>
+	 *
+	 * @return the getter {@link Method}, or {@code null} if no unique property is defined
+	 */
 	public Method getUniquePropertyGetMethod() {
 		if (uniquePropertyGetMethod != null) {
 			return uniquePropertyGetMethod;
@@ -423,15 +798,33 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return uniquePropertyGetMethod;
 	}
 
-	// pp = propertyPath to matchingHub
+	/**
+	 * Sets the property path used to locate a matching hub for this link.
+	 *
+	 * @param pp the property path to the matching hub
+	 */
 	public void setMatchHub(String pp) {
 		this.matchHub = pp;
 	}
 
+	/**
+	 * Returns the property path used to locate a matching hub for this link.
+	 *
+	 * @return the matching hub property path, or {@code null} if none is set
+	 */
 	public String getMatchHub() {
 		return this.matchHub;
 	}
 
+	/**
+	 * Returns the reverse link information for this link, if one exists.
+	 *
+	 * <p>The reverse link is resolved by searching the target object's
+	 * link metadata for a link whose name matches the configured
+	 * reverse name.</p>
+	 *
+	 * @return the reverse {@code OALinkInfo}, or {@code null} if none is defined
+	 */
 	public OALinkInfo getReverseLinkInfo() {
 		if (revLinkInfo != null) {
 			return revLinkInfo;
@@ -451,6 +844,16 @@ public class OALinkInfo { //implements java.io.Serializable {
 
 	private transient OAObjectInfo oi;
 
+	/**
+	 * Returns the {@link OAObjectInfo} metadata for the target class
+	 * referenced by this link.
+	 *
+	 * <p>The metadata is lazily loaded using
+	 * {@code OAObjectInfoDelegate.getOAObjectInfo(Class)} and cached
+	 * for subsequent calls.</p>
+	 *
+	 * @return the {@code OAObjectInfo} for the link's target class
+	 */
 	public OAObjectInfo getToObjectInfo() {
 		if (oi == null) {
 			oi = OAObjectInfoDelegate.getOAObjectInfo(toClass);
@@ -458,51 +861,110 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return oi;
 	}
 
+	/**
+	 * Returns whether the linked collection may contain a large number of objects.
+	 *
+	 * @return {@code true} if the link could be large, otherwise {@code false}
+	 */
 	public boolean getCouldBeLarge() {
 		return couldBeLarge;
 	}
 
+	/**
+	 * Sets whether the linked collection may contain a large number of objects.
+	 *
+	 * @param b {@code true} if the link could be large, otherwise {@code false}
+	 */
 	public void setCouldBeLarge(boolean b) {
 		this.couldBeLarge = b;
 	}
 
+	/**
+	 * Assigns the {@link OAOne} annotation metadata associated with this link.
+	 *
+	 * @param o the {@code OAOne} annotation instance
+	 */
 	public void setOAOne(OAOne o) {
 		this.oaOne = o;
 	}
 
+	/**
+	 * Returns the {@link OAOne} annotation metadata associated with this link.
+	 *
+	 * @return the {@code OAOne} annotation instance, or {@code null} if none is set
+	 */
 	public OAOne getOAOne() {
 		return this.oaOne;
 	}
 
+	/**
+	 * Assigns the {@link OAMany} annotation metadata associated with this link.
+	 *
+	 * @param m the {@code OAMany} annotation instance
+	 */
 	public void setOAMany(OAMany m) {
 		this.oaMany = m;
 	}
 
+	/**
+	 * Returns the {@link OAMany} annotation metadata associated with this link.
+	 *
+	 * @return the {@code OAMany} annotation instance, or {@code null} if none is set
+	 */
 	public OAMany getOAMany() {
 		return this.oaMany;
 	}
 
-	/** for calc links */
+	/**
+	 * Returns the list of property names that this calculated link depends on.
+	 *
+	 * @return an array of dependent property names, or {@code null} if none are defined
+	 */
 	public String[] getCalcDependentProperties() {
 		return calcDependentProperties;
 	}
 
+	/**
+	 * Sets the list of property names that this calculated link depends on.
+	 *
+	 * @param props an array of dependent property names
+	 */
 	public void setCalcDependentProperties(String[] props) {
 		calcDependentProperties = props;
 	}
 
+	/**
+	 * Returns the list of property names that this link's view depends on.
+	 *
+	 * @return an array of view-dependent property names, or {@code null} if none are defined
+	 */
 	public String[] getViewDependentProperties() {
 		return viewDependentProperties;
 	}
 
+	/**
+	 * Sets the list of property names that this link's view depends on.
+	 *
+	 * @param props an array of view-dependent property names
+	 */
 	public void setViewDependentProperties(String[] props) {
 		viewDependentProperties = props;
 	}
 
+	/**
+	 * Returns the list of property names that this link's context depends on.
+	 *
+	 * @return an array of context-dependent property names, or {@code null} if none are defined
+	 */
 	public String[] getContextDependentProperties() {
 		return contextDependentProperties;
 	}
 
+	/**
+	 * Sets the list of property names that this link's context depends on.
+	 *
+	 * @param props an array of context-dependent property names
+	 */
 	public void setContextDependentProperties(String[] props) {
 		contextDependentProperties = props;
 	}
@@ -516,14 +978,33 @@ public class OALinkInfo { //implements java.io.Serializable {
 			pojoNames = names;
 		}
 	*/
+
+	/**
+	 * Returns the property path used for merge processing on this link.
+	 *
+	 * @return the merger property path, or {@code null} if none is set
+	 */
 	public String getMergerPropertyPath() {
 		return mergerPropertyPath;
 	}
 
+	/**
+	 * Sets the property path used for merge processing on this link.
+	 *
+	 * @param pp the merger property path
+	 */
 	public void setMergerPropertyPath(String pp) {
 		this.mergerPropertyPath = pp;
 	}
 
+	/**
+	 * Determines whether this link represents a one-to-one relationship.
+	 *
+	 * <p>A link is considered one-to-one when both this link and its
+	 * reverse link (if present) are of type {@code TYPE_ONE}.</p>
+	 *
+	 * @return {@code true} if this is a one-to-one link, otherwise {@code false}
+	 */
 	public boolean isOne2One() {
 		if (getType() != TYPE_ONE) {
 			return false;
@@ -538,14 +1019,32 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return true;
 	}
 
+	/**
+	 * Returns whether this link has cardinality ONE.
+	 *
+	 * @return {@code true} if the link type is {@code TYPE_ONE}, otherwise {@code false}
+	 */
 	public boolean isOne() {
 		return getType() == TYPE_ONE;
 	}
 
+	/**
+	 * Returns whether this link has cardinality MANY.
+	 *
+	 * @return {@code true} if the link type is {@code TYPE_MANY}, otherwise {@code false}
+	 */
 	public boolean isMany() {
 		return getType() == TYPE_MANY;
 	}
 
+	/**
+	 * Determines whether this link represents a many-to-many relationship.
+	 *
+	 * <p>A link is considered many-to-many when both this link and its
+	 * reverse link (if present) are of type {@code TYPE_MANY}.</p>
+	 *
+	 * @return {@code true} if this is a many-to-many link, otherwise {@code false}
+	 */
 	public boolean isMany2Many() {
 		if (getType() != TYPE_MANY) {
 			return false;
@@ -560,6 +1059,15 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return true;
 	}
 
+	/**
+	 * Determines whether this link represents a one-to-many relationship.
+	 *
+	 * <p>A link is considered one-to-many when this link is of type
+	 * {@code TYPE_ONE} and its reverse link (if present) is of type
+	 * {@code TYPE_MANY}.</p>
+	 *
+	 * @return {@code true} if this is a one-to-many link, otherwise {@code false}
+	 */
 	public boolean isOne2Many() {
 		if (getType() != TYPE_ONE) {
 			return false;
@@ -574,6 +1082,15 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return true;
 	}
 
+	/**
+	 * Determines whether this link represents a many-to-one relationship.
+	 *
+	 * <p>A link is considered many-to-one when this link is of type
+	 * {@code TYPE_MANY} and its reverse link (if present) is of type
+	 * {@code TYPE_ONE}.</p>
+	 *
+	 * @return {@code true} if this is a many-to-one link, otherwise {@code false}
+	 */
 	public boolean isMany2One() {
 		if (getType() != TYPE_MANY) {
 			return false;
@@ -593,34 +1110,74 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private String visibleProperty;
 	private boolean visibleValue;
 
+	/**
+	 * Returns the property name used to determine whether this link is enabled.
+	 *
+	 * @return the enabled property name, or {@code null} if none is set
+	 */
 	public String getEnabledProperty() {
 		return enabledProperty;
 	}
 
+	/**
+	 * Sets the property name used to determine whether this link is enabled.
+	 *
+	 * @param s the enabled property name
+	 */
 	public void setEnabledProperty(String s) {
 		enabledProperty = s;
 	}
 
+	/**
+	 * Returns the value indicating whether this link is enabled.
+	 *
+	 * @return {@code true} if the link is enabled, otherwise {@code false}
+	 */
 	public boolean getEnabledValue() {
 		return enabledValue;
 	}
 
+	/**
+	 * Sets the value indicating whether this link is enabled.
+	 *
+	 * @param b {@code true} to enable the link, {@code false} to disable it
+	 */
 	public void setEnabledValue(boolean b) {
 		enabledValue = b;
 	}
 
+	/**
+	 * Returns the property name used to determine the visibility of this link.
+	 *
+	 * @return the visible property name, or {@code null} if none is set
+	 */
 	public String getVisibleProperty() {
 		return visibleProperty;
 	}
 
+	/**
+	 * Sets the property name used to determine the visibility of this link.
+	 *
+	 * @param s the visible property name
+	 */
 	public void setVisibleProperty(String s) {
 		visibleProperty = s;
 	}
 
+	/**
+	 * Returns the value indicating whether this link is visible.
+	 *
+	 * @return {@code true} if the link is visible, otherwise {@code false}
+	 */
 	public boolean getVisibleValue() {
 		return visibleValue;
 	}
 
+	/**
+	 * Sets the value indicating whether this link is visible.
+	 *
+	 * @param b {@code true} to make the link visible, {@code false} to hide it
+	 */
 	public void setVisibleValue(boolean b) {
 		visibleValue = b;
 	}
@@ -630,140 +1187,319 @@ public class OALinkInfo { //implements java.io.Serializable {
 	private String contextVisibleProperty;
 	private boolean contextVisibleValue;
 
+	/**
+	 * Returns the property name used to determine whether this link is enabled
+	 * based on the current context.
+	 *
+	 * @return the context-enabled property name, or {@code null} if none is set
+	 */
 	public String getContextEnabledProperty() {
 		return contextEnabledProperty;
 	}
 
+	/**
+	 * Sets the property name used to determine whether this link is enabled
+	 * based on the current context.
+	 *
+	 * @param s the context-enabled property name
+	 */
 	public void setContextEnabledProperty(String s) {
 		contextEnabledProperty = s;
 	}
 
+	/**
+	 * Returns the value indicating whether this link is enabled based on context.
+	 *
+	 * @return {@code true} if the link is context-enabled, otherwise {@code false}
+	 */
 	public boolean getContextEnabledValue() {
 		return contextEnabledValue;
 	}
 
+	/**
+	 * Sets the value indicating whether this link is enabled based on context.
+	 *
+	 * @param b {@code true} to enable the link in context, {@code false} otherwise
+	 */
 	public void setContextEnabledValue(boolean b) {
 		contextEnabledValue = b;
 	}
 
+	/**
+	 * Returns the property name used to determine the visibility of this link
+	 * based on the current context.
+	 *
+	 * @return the context-visible property name, or {@code null} if none is set
+	 */
 	public String getContextVisibleProperty() {
 		return contextVisibleProperty;
 	}
 
+	/**
+	 * Sets the property name used to determine the visibility of this link
+	 * based on the current context.
+	 *
+	 * @param s the context-visible property name
+	 */
 	public void setContextVisibleProperty(String s) {
 		contextVisibleProperty = s;
 	}
 
+	/**
+	 * Returns the value indicating whether this link is visible based on context.
+	 *
+	 * @return {@code true} if the link is context-visible, otherwise {@code false}
+	 */
 	public boolean getContextVisibleValue() {
 		return contextVisibleValue;
 	}
 
+	/**
+	 * Sets the value indicating whether this link is visible based on context.
+	 *
+	 * @param b {@code true} to make the link context-visible, {@code false} otherwise
+	 */
 	public void setContextVisibleValue(boolean b) {
 		contextVisibleValue = b;
 	}
 
+	/**
+	 * Sets the callback method to be invoked for this link.
+	 *
+	 * @param m the callback {@link Method}
+	 */
 	public void setObjectCallbackMethod(Method m) {
 		this.objectCallbackMethod = m;
 	}
 
+	/**
+	 * Returns the callback method assigned to this link.
+	 *
+	 * @return the callback {@link Method}, or {@code null} if none is set
+	 */
 	public Method getObjectCallbackMethod() {
 		return objectCallbackMethod;
 	}
 
+	/**
+	 * Sets the scheduler method associated with this link.
+	 *
+	 * @param m the scheduler {@link Method}
+	 */
 	public void setSchedulerMethod(Method m) {
 		this.schedulerMethod = m;
 	}
 
+	/**
+	 * Returns the scheduler method associated with this link.
+	 *
+	 * @return the scheduler {@link Method}, or {@code null} if none is set
+	 */
 	public Method getSchedulerMethod() {
 		return schedulerMethod;
 	}
 
+	/**
+	 * Returns the default property path used for this link.
+	 *
+	 * @return the default property path, or {@code null} if none is set
+	 */
 	public String getDefaultPropertyPath() {
 		return defaultPropertyPath;
 	}
 
+	/**
+	 * Sets the default property path used for this link.
+	 *
+	 * @param pp the default property path
+	 */
 	public void setDefaultPropertyPath(String pp) {
 		this.defaultPropertyPath = pp;
 	}
 
+	/**
+	 * Returns whether the default property path represents a hierarchy.
+	 *
+	 * @return {@code true} if the default property path is hierarchical,
+	 *         otherwise {@code false}
+	 */
 	public boolean getDefaultPropertyPathIsHierarchy() {
 		return defaultPropertyPathIsHierarchy;
 	}
 
+	/**
+	 * Sets whether the default property path represents a hierarchy.
+	 *
+	 * @param b {@code true} if the default property path is hierarchical,
+	 *          otherwise {@code false}
+	 */
 	public void setDefaultPropertyPathIsHierarchy(boolean b) {
 		defaultPropertyPathIsHierarchy = b;
-		;
 	}
 
+	/**
+	 * Returns whether the default property path can be changed.
+	 *
+	 * @return {@code true} if the default property path is changeable,
+	 *         otherwise {@code false}
+	 */
 	public boolean getDefaultPropertyPathCanBeChanged() {
 		return defaultPropertyPathCanBeChanged;
 	}
 
+	/**
+	 * Sets whether the default property path can be changed.
+	 *
+	 * @param b {@code true} to allow the property path to be changed,
+	 *          {@code false} to make it fixed
+	 */
 	public void setDefaultPropertyPathCanBeChanged(boolean b) {
 		defaultPropertyPathCanBeChanged = b;
 		;
 	}
 
+	/**
+	 * Returns the default context property path used for this link.
+	 *
+	 * @return the default context property path, or {@code null} if none is set
+	 */
 	public String getDefaultContextPropertyPath() {
 		return defaultContextPropertyPath;
 	}
 
+	/**
+	 * Sets the default context property path used for this link.
+	 *
+	 * @param pp the default context property path
+	 */
 	public void setDefaultContextPropertyPath(String pp) {
 		this.defaultContextPropertyPath = pp;
 	}
 
+	/**
+	 * Returns whether this link enforces a "one and only one" constraint.
+	 *
+	 * @return {@code true} if exactly one linked object is required,
+	 *         otherwise {@code false}
+	 */
 	public boolean getOneAndOnlyOne() {
 		return oneAndOnlyOne;
 	}
 
+	/**
+	 * Sets whether this link enforces a "one and only one" constraint.
+	 *
+	 * @param b {@code true} to require exactly one linked object,
+	 *          otherwise {@code false}
+	 */
 	public void setOneAndOnlyOne(boolean b) {
 		oneAndOnlyOne = b;
 	}
 
+	/**
+	 * Returns whether this link is required.
+	 *
+	 * @return {@code true} if the link is required, otherwise {@code false}
+	 */
 	public boolean getRequired() {
 		return this.required;
 	}
 
+	/**
+	 * Sets whether this link is required.
+	 *
+	 * @param b {@code true} to mark the link as required, {@code false} otherwise
+	 */
 	public void setRequired(boolean b) {
 		this.required = b;
 	}
 
+	/**
+	 * Returns whether this link is used for import matching.
+	 *
+	 * @return {@code true} if import matching is enabled, otherwise {@code false}
+	 */
 	public boolean isImportMatch() {
 		return importMatch;
 	}
 
+	/**
+	 * Returns whether this link is used for import matching.
+	 *
+	 * @return {@code true} if import matching is enabled, otherwise {@code false}
+	 */
 	public boolean getImportMatch() {
 		return importMatch;
 	}
 
+	/**
+	 * Sets whether this link is used for import matching.
+	 *
+	 * @param b {@code true} to enable import matching, {@code false} otherwise
+	 */
 	public void setImportMatch(boolean b) {
 		this.importMatch = b;
 	}
 
+	/**
+	 * Returns the property path used to determine equality for this link.
+	 *
+	 * @return the equality property path, or {@code null} if none is set
+	 */
 	public String getEqualPropertyPath() {
 		return equalPropertyPath;
 	}
 
+	/**
+	 * Sets the property path used to determine equality for this link.
+	 *
+	 * @param s the equality property path
+	 */
 	public void setEqualPropertyPath(String s) {
 		equalPropertyPath = s;
 	}
 
+	/**
+	 * Returns the property path used to select from the linked objects.
+	 *
+	 * @return the select-from property path, or {@code null} if none is set
+	 */
 	public String getSelectFromPropertyPath() {
 		return selectFromPropertyPath;
 	}
 
+	/**
+	 * Sets the property path used to select from the linked objects.
+	 *
+	 * @param s the select-from property path
+	 */
 	public void setSelectFromPropertyPath(String s) {
 		selectFromPropertyPath = s;
 	}
 
+	/**
+	 * Returns the property used when automatically creating linked objects.
+	 *
+	 * @return the auto-create property name, or {@code null} if none is set
+	 */
 	public String getAutoCreateProperty() {
 		return this.autoCreateProperty;
 	}
 
+	/**
+	 * Sets the property used when automatically creating linked objects.
+	 *
+	 * @param prop the auto-create property name
+	 */
 	public void setAutoCreateProperty(String prop) {
 		this.autoCreateProperty = prop;
 	}
 
+	/**
+	 * Returns the list of foreign key definitions for this link.
+	 *
+	 * @return the list of {@link OAFkeyInfo} instances
+	 */
 	public List<OAFkeyInfo> getFkeyInfos() {
 		if (alFkeyInfo == null) {
 			alFkeyInfo = new ArrayList<OAFkeyInfo>();

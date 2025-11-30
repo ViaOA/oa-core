@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,26 +59,61 @@ import java.util.logging.Logger;
 	private int cntGetObject;
 	private int cntGCd;
 	
+	/**
+	 * Returns the list of OAObject classes currently represented in the
+	 * cache. Each class corresponds to a distinct top-level entry in the
+	 * object-by-guid map.
+	 *
+	 * @return an array of OAObject classes known to the cache
+	 */
 	public Class<?>[] getClasses() {
 		return hmOAObjectByGuid.keySet().toArray(new Class[0]);
 	}
+
+	/**
+	 * Returns the number of cached objects for the specified OAObject class.
+	 * If the class has no cache entry, this method returns {@code 0}.
+	 *
+	 * @param clazz the OAObject class whose cache size is requested
+	 * @return the number of cached objects for the class, or {@code 0} if none exist
+	 */
 	public int getTotal(Class<? extends OAObject> clazz) {
 		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return 0;
 		return hm.size();
 	}
+
+	/**
+	 * Clears all cached objects for the specified OAObject class. If the
+	 * class is not present in the cache, no action is taken.
+	 *
+	 * @param clazz the OAObject class whose cache entry should be cleared
+	 */
 	public void clearCache(Class<? extends OAObject> clazz) {
 		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return;
 		hm.clear();
 	}
 	
+	/**
+	 * Clears all cached objects across all classes and resets the
+	 * associated object index.
+	 */
 	public void clearCache() {
 		hmOAObjectByGuid.clear();
 		objectIndex.clear();
 	}
 	
-
+	/**
+	 * Looks up an object in the cache by its class and GUID. Returns the
+	 * cached object instance if present; otherwise returns {@code null}.
+	 * Periodically checks the reference queue to purge entries whose referents
+	 * have been garbage-collected.
+	 *
+	 * @param c     the class of the object to retrieve
+	 * @param guid  the GUID of the desired object
+	 * @return the cached object instance, or {@code null} if not found or reclaimed
+	 */
 	@SuppressWarnings("unchecked")
 	public <T extends OAObject> T getObject(Class<T> c, long guid) {
 		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(c);
@@ -89,13 +124,31 @@ import java.util.logging.Logger;
 		return (T) wr.get();
 	}
 	
-	
+	/**
+	 * Retrieves an object from the cache using its primary key values.
+	 * Constructs an {@link OAObjectKey} from the supplied ID array and
+	 * delegates to {@link #getObject(Class, OAObjectKey)}.
+	 *
+	 * @param clazz the class of the object to retrieve
+	 * @param ids   the primary key values used to identify the object
+	 * @return the matching cached object, or {@code null} if not found
+	 */
 	public <T extends OAObject> T getObject(Class<T> clazz, Object[] ids) {
 		if (clazz == null || ids == null) return null;
 		OAObjectKey ok = new OAObjectKey(ids);
 		return getObject(clazz, ok);
 	}
 
+	/**
+	 * Retrieves an object from the cache using an {@link OAObjectKey}.
+	 * If the key does not contain a GUID, the GUID is resolved through
+	 * the internal {@code objectIndex}. If a valid GUID is found, the
+	 * lookup delegates to {@link #getObject(Class, long)}.
+	 *
+	 * @param clazz the class of the object to retrieve
+	 * @param ok    the object key containing primary key values and/or GUID
+	 * @return the cached object instance, or {@code null} if not found
+	 */
 	public <T extends OAObject> T getObject(Class<T> clazz, OAObjectKey ok) {
 		if (clazz == null || ok == null) return null;
 		long guid = ok.getGuid();
@@ -107,11 +160,14 @@ import java.util.logging.Logger;
 	}
 	
 	
-	
 	/**
-	 * Called when loading an Object, or when a OAObject pkey Property is changed.
-	 * 
-	 * @return true if object already existed in cache.
+	 * Updates the cache entry for the given object. A new
+	 * {@link OAObjectKey} is created for the object, and the update
+	 * is delegated to {@link #updateObject(OAObject, OAObjectKey, Class)}.
+	 *
+	 * @param obj the object being loaded or whose primary key has changed
+	 * @return {@code true} if the object already existed in the cache,
+	 *         otherwise {@code false}
 	 */
 	public <T extends OAObject> boolean updateObject(final T obj) {
 		if (obj == null) return false;
@@ -120,6 +176,18 @@ import java.util.logging.Logger;
 		return updateObject(obj, ok, clazz);
 	}	
 	
+	/**
+	 * Updates or inserts the specified object into the cache using the
+	 * provided {@link OAObjectKey}. If the object already exists in the
+	 * cache, its key is updated and the index is adjusted accordingly.
+	 * Otherwise, the object is added as a new entry.
+	 *
+	 * @param obj   the object to update or insert
+	 * @param ok    the object key identifying the object
+	 * @param clazz the class of the object
+	 * @return {@code true} if the object already existed in the cache,
+	 *         otherwise {@code false}
+	 */
 	protected <T extends OAObject> boolean updateObject(final T obj, final OAObjectKey ok, final Class<T> clazz) {
 		if (obj == null || ok == null) return false;
 		final ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
@@ -143,7 +211,16 @@ import java.util.logging.Logger;
 		return bsWasFound[0];
 	}
 
-	
+	/**
+	 * Removes the specified object from the cache. The object's
+	 * {@link OAObjectKey} is created and used to locate and remove its
+	 * weak-reference entry. If found, the corresponding index entry is
+	 * also removed.
+	 *
+	 * @param obj the object to remove from the cache
+	 * @return {@code true} if the object was present and removed,
+	 *         otherwise {@code false}
+	 */
 	public <T extends OAObject> boolean removeObject(final T obj) {
 		if (obj == null) return false;
 		final OAObjectKey ok = OAObjectKeyDelegate.createObjectKey((OAObject) obj);
@@ -159,8 +236,12 @@ import java.util.logging.Logger;
 		return true;
 	}	
 	
-
-
+	/**
+	 * Processes the reference queue to remove cache entries whose objects
+	 * have been garbage-collected. Up to 5000 queued references are handled
+	 * per invocation, removing each corresponding GUID entry from the cache
+	 * and clearing its index entry.
+	 */
 	protected void checkReferenceQueue() {
 		for (int i=0; i<5000; i++) {
 			@SuppressWarnings("unchecked")
@@ -173,13 +254,27 @@ import java.util.logging.Logger;
 		}
 	}
 	
-	
+	/**
+	 * Visits all cached objects across all classes by invoking the supplied
+	 * {@link OACallback}. Each object currently referenced in the cache is
+	 * passed to the callback.
+	 *
+	 * @param callback the callback invoked for each cached object
+	 */
 	public void visit(OACallback callback) {
 		for (Class<? extends OAObject> c : hmOAObjectByGuid.keySet()) {
 			visit(c, callback);
 		}
 	}
 
+	/**
+	 * Visits all cached objects of the specified class by invoking the
+	 * supplied {@link OACallback}. Only objects that have not been
+	 * garbage-collected are passed to the callback.
+	 *
+	 * @param clazz    the OAObject class whose cached instances will be visited
+	 * @param callback the callback invoked for each object
+	 */
 	public void visit(Class<? extends OAObject> clazz, OACallback callback) {
 		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return;
@@ -189,6 +284,26 @@ import java.util.logging.Logger;
 		}
 	}
 	
+	/**
+	 * Searches the cache for objects of the specified class that match the
+	 * criteria defined by the provided {@link OAFinder}. Iteration begins
+	 * after the specified {@code fromObject}, if provided. Matching objects
+	 * may be added to {@code alResults}, or the first match may be returned
+	 * directly when {@code alResults} is {@code null}.
+	 *
+	 * <p>New objects may optionally be skipped. Iteration stops once the
+	 * number of collected results reaches {@code fetchAmount}.</p>
+	 *
+	 * @param fromObject the object after which iteration should begin,
+	 *                   or {@code null} to start from the beginning
+	 * @param clazz      the class of objects to search
+	 * @param finder     the finder used to evaluate each object
+	 * @param bSkipNew   whether to skip objects marked as new
+	 * @param fetchAmount the maximum number of results to retrieve
+	 * @param alResults   the list to accumulate matching results, or {@code null}
+	 * @return the first matching object if {@code alResults} is {@code null},
+	 *         otherwise {@code null} after result collection completes
+	 */
 	public Object find(final Object fromObject, final Class<? extends OAObject> clazz, final OAFinder finder,
 		boolean bSkipNew, int fetchAmount, final List<OAObject> alResults) 
 	{

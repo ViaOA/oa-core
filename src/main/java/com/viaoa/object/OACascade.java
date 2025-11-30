@@ -54,7 +54,13 @@ public class OACascade {
 	private ArrayList<Object> alOverflow;
 
 	/**
-	 * @param bUseLocks true if this will be used by multiple threads
+	 * Creates a new cascade-tracking instance used during recursive graph
+	 * traversal operations. When {@code bUseLocks} is {@code true}, the
+	 * instance initializes read/write locks to support thread-safe use
+	 * across multiple threads.
+	 *
+	 * @param bUseLocks {@code true} to enable locking for thread-safe access,
+	 *                  {@code false} for non-synchronized operation
 	 */
 	public OACascade(boolean bUseLocks) {
 		LOG.finer("new OACascade");
@@ -64,22 +70,48 @@ public class OACascade {
 		}
 	}
 
+	/**
+	 * Increments the current cascade depth counter. This is used to track
+	 * how deep a recursive cascade operation has progressed.
+	 */
 	public void depthAdd() {
 		depth++;
 	}
 
+	/**
+	 * Decrements the current cascade depth counter. This is used when
+	 * unwinding recursive cascade operations.
+	 */
 	public void depthSubtract() {
 		depth--;
 	}
 
+	/**
+	 * Returns the current depth value for the cascade operation. The depth
+	 * increases as recursive traversal proceeds and decreases as it unwinds.
+	 *
+	 * @return the current cascade depth
+	 */
 	public int getDepth() {
 		return depth;
 	}
 
+	/**
+	 * Sets the current cascade depth counter to the specified value.
+	 *
+	 * @param d the depth value to assign
+	 */
 	public void setDepth(int d) {
 		this.depth = d;
 	}
 
+	/**
+	 * Adds an object to the overflow list. The overflow list is used to
+	 * track objects encountered when traversal depth becomes large or when
+	 * additional bookkeeping is required during cascading.
+	 *
+	 * @param obj the object to add to the overflow list
+	 */
 	public void addToOverflow(Object obj) {
 		if (alOverflow == null) {
 			alOverflow = new ArrayList<Object>();
@@ -87,14 +119,29 @@ public class OACascade {
 		alOverflow.add(obj);
 	}
 
+	/**
+	 * Returns the list of objects that were added to the overflow list
+	 * during cascade traversal.
+	 *
+	 * @return the overflow list, or {@code null} if no objects were added
+	 */
 	public ArrayList<Object> getOverflowList() {
 		return alOverflow;
 	}
 
+	/**
+	 * Clears the overflow list, removing all objects previously added.
+	 * After this call, the overflow list will be {@code null}.
+	 */
 	public void clearOverflowList() {
 		alOverflow = null;
 	}
 
+	/**
+	 * Creates a new cascade-tracking instance without enabling thread-safe
+	 * locking. This constructor is intended for single-threaded traversal
+	 * scenarios.
+	 */
 	public OACascade() {
 		// LOG.finer("new OACascade");
 	}
@@ -106,6 +153,13 @@ public class OACascade {
 
 	private HashSet<Class> hsIgnore;
 
+	/**
+	 * Marks the specified class so that objects of that type are ignored
+	 * during cascade tracking. Once a class is added, instances of that
+	 * class are treated as already cascaded.
+	 *
+	 * @param clazz the class to ignore during cascading
+	 */
 	public void ignore(Class clazz) {
 		if (hsIgnore == null) {
 			hsIgnore = new HashSet<Class>();
@@ -113,6 +167,21 @@ public class OACascade {
 		hsIgnore.add(clazz);
 	}
 
+	/**
+	 * Determines whether the specified object has already been processed
+	 * during a cascade traversal. If {@code bAdd} is {@code true} and the
+	 * object has not yet been encountered, it is added to the internal
+	 * tracking set.
+	 *
+	 * <p>If the object's class has been marked as ignored, this method
+	 * returns {@code true} without checking or modifying the tracking set.</p>
+	 *
+	 * @param oaObj the object to check
+	 * @param bAdd  {@code true} to add the object to the tracking set if it
+	 *              has not been seen before, otherwise {@code false}
+	 * @return {@code true} if the object was previously cascaded or is
+	 *         ignored, otherwise {@code false}
+	 */
 	public boolean wasCascaded(OAObject oaObj, boolean bAdd) {
 		if (oaObj == null) {
 			return false;
@@ -166,6 +235,18 @@ public class OACascade {
 	}
 	//final OAThrottle throttle = new OAThrottle(5000);
 
+	/**
+	 * Determines whether the specified Hub has already been processed
+	 * during a cascade traversal. If {@code bAdd} is {@code true} and the
+	 * Hub has not yet been encountered, it is added to the internal
+	 * tracking set.
+	 *
+	 * @param hub  the Hub to check
+	 * @param bAdd {@code true} to add the Hub to the tracking set if it has
+	 *             not been seen before, otherwise {@code false}
+	 * @return {@code true} if the Hub was previously cascaded, otherwise
+	 *         {@code false}
+	 */
 	public boolean wasCascaded(Hub hub, boolean bAdd) {
 		if (hub == null) {
 			return false;
@@ -211,6 +292,13 @@ public class OACascade {
 		return false;
 	}
 
+	/**
+	 * Returns the number of unique objects and Hubs that have been visited
+	 * during the cascade traversal. This includes all entries in both the
+	 * object and Hub tracking sets.
+	 *
+	 * @return the total count of visited objects and Hubs
+	 */
 	public int getVisitCount() {
 		int cnt = 0;
 		if (treeObject != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,25 @@ public class OAObjectLogDelegate {
     private static Logger LOG = Logger.getLogger(OAObjectLogDelegate.class.getName());
     private static volatile OAXMLWriter writerXml;
 
-    // methods to handle writing save/delete to log file.
+    /**
+     * Opens a new XML log file for recording {@link OALogRecord} entries.
+     * <p>
+     * If an existing log is active, it is first closed and cleared. When a
+     * non-null filename is supplied, a new {@link OAXMLWriter} instance is
+     * created with custom property-handling rules:
+     * </p>
+     * <ul>
+     *   <li>{@link OALogRecord} instances are always written.</li>
+     *   <li>{@link OAObject} values are written in key-only form.</li>
+     *   <li>Non-{@link Hub} values are written normally.</li>
+     *   <li>For many-to-many links, the writer suppresses new object creation
+     *       and writes key-only entries to avoid premature M2M construction
+     *       during restore.</li>
+     * </ul>
+     *
+     * @param fname the file name of the XML log to create, or {@code null}
+     *              to close the current log
+     */
     public static void createXMLLogFile(String fname) {
         if (writerXml != null) {
             writerXml.close();
@@ -82,13 +100,29 @@ public class OAObjectLogDelegate {
             };
         }
     }
+    
+    /**
+     * Closes the current XML log file, if any. This is equivalent to
+     * invoking {@link #createXMLLogFile(String)} with a {@code null}
+     * argument.
+     */
     public static void closeXMLLogFile() {
         createXMLLogFile(null);
     }
     
     /**
-     * creates a XML log file for all save/deletes done on OAObjects.
-     * @param bSave if true then save, else delete
+     * Writes a SAVE or DELETE {@link OALogRecord} for the specified object
+     * to the active XML log file. If no log file is open, the call is
+     * ignored.
+     * <p>
+     * A new {@link OALogRecord} is created and populated with the object
+     * reference and command type. The record is written to the underlying
+     * {@link OAXMLWriter} within a synchronized block to ensure thread-safe
+     * output, followed by a flush.
+     * </p>
+     *
+     * @param oaObj the object being logged
+     * @param bSave true to log a SAVE command, false to log a DELETE
      */
     protected static void logToXmlFile(OAObject oaObj, boolean bSave) {
         if (writerXml == null) return;
@@ -101,6 +135,25 @@ public class OAObjectLogDelegate {
         }
     }
     
+    /**
+     * Restores and replays all {@link OALogRecord} entries from the
+     * specified XML log file.
+     * <p>
+     * A customized {@link OAXMLReader} is used to intercept completed
+     * {@link OALogRecord} objects during parsing. For each record:
+     * </p>
+     * <ul>
+     *   <li>If the command is SAVE, {@code save(OAObject.CASCADE_NONE)} is
+     *       invoked on the underlying object.</li>
+     *   <li>If the command is DELETE, {@code delete()} is invoked.</li>
+     * </ul>
+     * <p>
+     * If {@code fname} is {@code null}, the operation is ignored.
+     * </p>
+     *
+     * @param fname the filename of the XML log to restore
+     * @throws Exception if an error occurs during XML reading
+     */
     public static void restoreXMLLogFile(String fname) throws Exception {
         if(fname == null) return;
         fname = OAString.convertFileName(fname);

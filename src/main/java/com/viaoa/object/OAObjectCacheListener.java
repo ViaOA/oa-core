@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,20 +38,45 @@ import com.viaoa.hub.Hub;
  */
 public interface OAObjectCacheListener<T extends OAObject> {
     
-    /**
-     * Called when there is a change to an object.
-     */
+	/**
+	 * Invoked when a property value on the specified object has changed.
+	 *
+	 * @param obj the object whose property changed
+	 * @param propertyName the name of the property that changed
+	 * @param oldValue the previous value of the property
+	 * @param newValue the new value of the property
+	 */
     public void afterPropertyChange(T obj, String propertyName, Object oldValue, Object newValue);
 
-    /** 
-     * called when a new object is added to OAObjectCache, during the object construction. 
+    /**
+     * Invoked when a new object is added to the global object cache,
+     * typically during its construction.
+     *
+     * @param obj the newly added object
      */
     public void afterAdd(T obj);
     
+    /**
+     * Invoked when an object is added to the specified Hub.
+     *
+     * @param hub the Hub the object was added to
+     * @param obj the object that was added
+     */
     public void afterAdd(Hub<T> hub, T obj);
     
+    /**
+     * Invoked when an object is removed from the specified Hub.
+     *
+     * @param hub the Hub the object was removed from
+     * @param obj the object that was removed
+     */
     public void afterRemove(Hub<T> hub, T obj);
     
+    /**
+     * Invoked when an object has finished loading its state.
+     *
+     * @param obj the object that completed loading
+     */
     public void afterLoad(T obj);
     
 }

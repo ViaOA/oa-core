@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,12 +66,16 @@ public class OAObjectImportMatchDelegate {
 	}
 
 	/**
-	 * Used when importing (pojo Json) that only uses ImportMatches (does not have pkey property). This will find the correct object, or
-	 * create and populate it.
+	 * Resolves or creates the target object defined by the supplied
+	 * {@link ImportMatch}. Performs validation, evaluates match
+	 * properties, builds a query, and searches for an existing object
+	 * via {@link OASelect}, {@link OAFinder}, or
+	 * {@link OAObjectCacheDelegate}. If no match is found, constructs
+	 * a new object and initializes required hierarchy and owner links.
 	 *
-	 * @param oaObjFrom    object that has references based on importMatch value (not f/pkey)
-	 * @param liTo         object to find using import match.
-	 * @param mapNameValue name(s)/value(s) for importMatch properties
+	 * @param importMatch definition of the source object, link info,
+	 *        and match property values used to locate or create the
+	 *        target object.
 	 */
 	public static void process(final ImportMatch importMatch) {
 		if (importMatch == null) {
@@ -204,6 +208,19 @@ public class OAObjectImportMatchDelegate {
 		importMatch.fromObject.setProperty(importMatch.liTo.getName(), obj);
 	}
 
+	/**
+	 * Recursively ensures that all objects required by a property path
+	 * exist. Navigates each segment of the path, searching for an
+	 * existing object via {@link OASelect} or
+	 * {@link OAObjectCacheDelegate}. If none is found, creates a new
+	 * object using reflection. Finally assigns the provided value to
+	 * the terminal property of the hierarchy.
+	 *
+	 * @param objThis       the current object in the traversal.
+	 * @param oiThis        metadata describing objThis.
+	 * @param propertyPath  full path leading to the property to set.
+	 * @param value         value to assign at the end of the path.
+	 */
 	protected static void createHierObjects(final OAObject objThis, final OAObjectInfo oiThis, final String propertyPath,
 			final Object value) {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,13 +49,30 @@ public class OAGroupBy<F extends OAObject, G extends OAObject> extends OAObject 
     private G groupBy;
     private Hub<F> hub;
     
+    /**
+     * Creates an empty grouping link object with no group-by value and no Hub.
+     */
     public OAGroupBy() {
     }
     
+    /**
+     * Creates a grouping link object initialized with the specified group-by value.
+     *
+     * @param groupBy the group-by object to associate with this instance
+     */
     public OAGroupBy(G groupBy) {
         setGroupBy(groupBy);
     }
     
+    /**
+     * Returns the group-by object associated with this instance.
+     * <p>
+     * If the value has not yet been resolved, it is retrieved using
+     * {@link #getObject(String)} with {@link #PROPERTY_GroupBy}.
+     * </p>
+     *
+     * @return the associated group-by object, or {@code null} if none assigned
+     */
     @OAOne
     public G getGroupBy() {
         if (groupBy == null) {
@@ -63,6 +80,16 @@ public class OAGroupBy<F extends OAObject, G extends OAObject> extends OAObject 
         }
         return this.groupBy;
     }
+    
+    /**
+     * Sets the group-by object for this instance.
+     * <p>
+     * This method fires both before- and after-property-change events for
+     * {@link #P_GroupBy}.
+     * </p>
+     *
+     * @param obj the new group-by object
+     */
     public void setGroupBy(G obj) {
         OAObject hold = this.groupBy;
         fireBeforePropertyChange(P_GroupBy, hold, obj);
@@ -70,6 +97,15 @@ public class OAGroupBy<F extends OAObject, G extends OAObject> extends OAObject 
         firePropertyChange(P_GroupBy, hold, obj);
     }
     
+    /**
+     * Returns the Hub of detail objects associated with this group.
+     * <p>
+     * If the Hub has not yet been resolved, it is retrieved using
+     * {@link #getHub(String)} with {@link #PROPERTY_Hub}.
+     * </p>
+     *
+     * @return the Hub containing member/detail objects
+     */
     @OAMany
     public Hub<F> getHub() {
         if (hub == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,18 +71,38 @@ public class OAObjectInfoDelegate {
     private static final Map<Class, OAObjectInfo> hmObjectInfo = new ConcurrentHashMap<Class, OAObjectInfo>(147, 0.75F);
 	
 	
-	/**
-	 * Return the OAObjectInfo for this object Class.
-	 */
+    /**
+     * Returns the OAObjectInfo associated with the class of the supplied
+     * OAObject. Delegates to {@link #getOAObjectInfo(Class)} using the
+     * object's runtime class, or null if the object is null.
+     *
+     * @param obj the OAObject whose metadata is requested.
+     * @return the OAObjectInfo for the object's class.
+     */
 	public static OAObjectInfo getOAObjectInfo(OAObject obj) {
 		OAObjectInfo oi = getOAObjectInfo(obj == null ? null : obj.getClass());
 		return oi;
 	}
 
+	/**
+	 * Convenience wrapper around {@link #getOAObjectInfo(OAObject)}.
+	 *
+	 * @param obj the OAObject whose metadata is requested.
+	 * @return the OAObjectInfo for the object's class.
+	 */
 	public static OAObjectInfo getObjectInfo(OAObject obj) {
 		return getOAObjectInfo(obj);
 	}
 
+	/**
+	 * Returns the OAObjectInfo associated with the supplied class.
+	 * If the class is null, not an OAObject subclass, or OAObject itself,
+	 * returns a placeholder OAObjectInfo based on String.class. Otherwise,
+	 * checks the cache and delegates to the recursive builder when needed.
+	 *
+	 * @param clazz the class to retrieve metadata for.
+	 * @return the corresponding OAObjectInfo instance.
+	 */
 	public static OAObjectInfo getOAObjectInfo(Class clazz) {
 		OAObjectInfo oi;
 		if (clazz != null) {
@@ -102,6 +122,16 @@ public class OAObjectInfoDelegate {
 		return oi;
 	}
 
+	/**
+	 * Internal recursive helper used to build OAObjectInfo instances while
+	 * preventing cycles via a per-call hash map. Handles non-OA classes,
+	 * cache lookup, creation, annotation processing, reverse link creation,
+	 * and final metadata augmentation.
+	 *
+	 * @param clazz the class being processed.
+	 * @param hash  map used to prevent recursive reprocessing.
+	 * @return the OAObjectInfo for the class.
+	 */
 	private static OAObjectInfo getOAObjectInfo(Class clazz, HashMap<Class, OAObjectInfo> hash) {
 		OAObjectInfo oi;
 		boolean bNotOa = false;
@@ -166,7 +196,14 @@ public class OAObjectInfoDelegate {
 	}
 
 	/**
-	 * Used to cache OAObjectInfo based on Class. This will always return a valid OAObjectInfo object.
+	 * Creates or returns the cached OAObjectInfo for the supplied class.
+	 * Handles special cases for non-OA classes, invokes class-level
+	 * getOAObjectInfo() when present, initializes metadata, merges with
+	 * superclass metadata, applies annotations, and finalizes primitive
+	 * and link settings.
+	 *
+	 * @param clazz the class to create metadata for.
+	 * @return the constructed OAObjectInfo instance.
 	 */
 	private static OAObjectInfo _getOAObjectInfo(Class clazz) {
 		boolean bSkip = false;
@@ -249,11 +286,27 @@ public class OAObjectInfoDelegate {
 		return oi;
 	}
 
+	/**
+	 * Convenience wrapper around {@link #getOAObjectInfo(Class)}.
+	 *
+	 * @param clazz the class whose metadata is requested.
+	 * @return the OAObjectInfo for the class.
+	 */
 	public static OAObjectInfo getObjectInfo(Class clazz) {
 		return getOAObjectInfo(clazz);
 	}
 
 	// only "grabs" info from this clazz. If there is a superclass, then it will be combined by getOAObjectInfo (above)
+	/**
+	 * Populates the supplied OAObjectInfo with metadata discovered from
+	 * the class. Scans declared getters/setters, identifies property,
+	 * link, and hub relationships, constructs OAPropertyInfo entries,
+	 * computes primitive and hub property lists, and finalizes internal
+	 * caches.
+	 *
+	 * @param thisOI the OAObjectInfo being initialized.
+	 * @param clazz  the class whose metadata is extracted.
+	 */
 	private static void initialize(OAObjectInfo thisOI, Class clazz) {
 		if (thisOI.thisClass != null) {
 			return;
@@ -332,6 +385,15 @@ public class OAObjectInfoDelegate {
 		alHub.toArray(thisOI.hubProps);
 	}
 
+	/**
+	 * Adds a link definition to the OAObjectInfo for the supplied property
+	 * name, unless a link with the same name already exists.
+	 *
+	 * @param thisOI the OAObjectInfo to modify.
+	 * @param name   the link-property name.
+	 * @param clazz  the target class for ONE links; null for MANY links.
+	 * @param type   link type constant from OALinkInfo.
+	 */
 	private static void createLink(OAObjectInfo thisOI, String name, Class clazz, int type) {
 		for (OALinkInfo li : thisOI.getLinkInfos()) {
 			if (name.equalsIgnoreCase(li.getName())) {
@@ -345,6 +407,16 @@ public class OAObjectInfoDelegate {
 	// Used by initialize properties.
 	// get Properties, LinkOne, LinkMany (hub)
 	//     note: does not get calcProps
+	/**
+	 * Discovers property names for the supplied class by examining public
+	 * getters and setters while filtering out helper, JAXB, and synthetic
+	 * method patterns. Returns property names that have both getter and
+	 * setter (or hub getter), normalized for later metadata creation.
+	 *
+	 * @param clazzOrig             the class to inspect.
+	 * @param bIncludeSuperClasses  true to scan superclasses.
+	 * @return array of discovered property names.
+	 */
 	private static String[] getPropertyNames(Class clazzOrig, boolean bIncludeSuperClasses) {
 		ArrayList<String> alFound = new ArrayList<>();
 
@@ -462,6 +534,16 @@ public class OAObjectInfoDelegate {
 	}
 
 	// used by getOAObjectInfo to combine 2 OAObjectInfo's into one.
+	/**
+	 * Merges metadata from a child OAObjectInfo and its parent
+	 * OAObjectInfo into a new OAObjectInfo instance. Combines properties,
+	 * primitive lists, link infos, calc infos, and hub properties while
+	 * retaining model-level annotation settings from the child or parent.
+	 *
+	 * @param child  metadata derived from the subclass.
+	 * @param parent metadata derived from the superclass.
+	 * @return a new combined OAObjectInfo instance.
+	 */
 	private static OAObjectInfo createCombinedObjectInfo(OAObjectInfo child, OAObjectInfo parent) {
 		OAObjectInfo thisOI = new OAObjectInfo();
 
@@ -575,6 +657,13 @@ public class OAObjectInfoDelegate {
 		return thisOI;
 	}
 
+	/**
+	 * Adds the supplied link definition to the OAObjectInfo. If a link with
+	 * the same name already exists, it is removed before adding the new one.
+	 *
+	 * @param thisOI the OAObjectInfo to update.
+	 * @param li     the link info to add.
+	 */
 	public static void addLinkInfo(OAObjectInfo thisOI, OALinkInfo li) {
 		if (li == null) {
 			return;
@@ -592,12 +681,27 @@ public class OAObjectInfoDelegate {
 		thisOI.addLinkInfo(li);
 	}
 
+	/**
+	 * Adds the supplied calculated-property metadata to the OAObjectInfo
+	 * if it is not null.
+	 *
+	 * @param thisOI the OAObjectInfo to update.
+	 * @param ci     the calculated-property info to add.
+	 */
 	protected static void addCalcInfo(OAObjectInfo thisOI, OACalcInfo ci) {
 		if (ci != null) {
 			thisOI.getCalcInfos().add(ci);
 		}
 	}
 
+	/**
+	 * Looks up the calculated-property metadata by name within the
+	 * OAObjectInfo. The comparison is case-insensitive.
+	 *
+	 * @param thisOI the OAObjectInfo to search.
+	 * @param name   the calculated property name.
+	 * @return the matching OACalcInfo, or null if not found.
+	 */
 	public static OACalcInfo getOACalcInfo(OAObjectInfo thisOI, String name) {
 		if (thisOI == null || name == null) {
 			return null;
@@ -611,7 +715,13 @@ public class OAObjectInfoDelegate {
 	}
 
 	/**
-	 * @return OALinkInfo for recursive link for this class, or null if not recursive
+	 * Returns the recursive link info for the specified type (ONE or MANY).
+	 * Ensures recursive-link initialization occurs only once and then caches
+	 * the result in the OAObjectInfo.
+	 *
+	 * @param thisOI the OAObjectInfo whose recursive link is requested.
+	 * @param type   link type constant from OALinkInfo.
+	 * @return the recursive link info, or null if none exists.
 	 */
 	public static OALinkInfo getRecursiveLinkInfo(OAObjectInfo thisOI, int type) {
 		boolean b = thisOI.bSetRecursive;
@@ -624,6 +734,16 @@ public class OAObjectInfoDelegate {
 		}
 	}
 
+	/**
+	 * Internal implementation for determining recursive link information.
+	 * Scans link definitions for those marked as recursive whose target
+	 * class equals the source class. Sets cached ONE and MANY recursive
+	 * links accordingly.
+	 *
+	 * @param thisOI the OAObjectInfo being examined.
+	 * @param type   requested link type (ONE or MANY).
+	 * @return the matching recursive link info, or null.
+	 */
 	private static OALinkInfo _getRecursiveLinkInfo(OAObjectInfo thisOI, int type) {
 		if (thisOI == null) {
 			return null;
@@ -669,6 +789,15 @@ public class OAObjectInfoDelegate {
 		return thisOI.liRecursiveMany;
 	}
 
+	/**
+	 * Returns the link that identifies this object’s owner, if any.
+	 * A link qualifies when its reverse link exists, is used, is marked
+	 * as owner, and is not a recursive self-link. Caches the result in
+	 * the OAObjectInfo.
+	 *
+	 * @param thisOI the OAObjectInfo to examine.
+	 * @return the owner link info, or null if none.
+	 */
 	public static OALinkInfo getLinkToOwner(OAObjectInfo thisOI) {
 		if (thisOI == null) {
 			return null;
@@ -697,8 +826,12 @@ public class OAObjectInfoDelegate {
 	}
 
 	/**
-	 * if this is a recursive object that does not have an owner, then the root hub can be set for all hubs of this class. Throws and
-	 * exception if this class has an owner.
+	 * Sets the root Hub for all objects of this OAObjectInfo when
+	 * the type is recursive and does not have an owner. Stores or
+	 * removes the Hub from the root-hub cache.
+	 *
+	 * @param thisOI the OAObjectInfo to update.
+	 * @param h      the root Hub to assign, or null to remove.
 	 */
 	public static void setRootHub(OAObjectInfo thisOI, Hub h) {
 		if (thisOI == null) {
@@ -711,6 +844,13 @@ public class OAObjectInfoDelegate {
 		}
 	}
 
+	/**
+	 * Returns the root Hub previously assigned to this OAObjectInfo,
+	 * or null if none has been set.
+	 *
+	 * @param thisOI the OAObjectInfo whose root Hub is requested.
+	 * @return the root Hub or null.
+	 */
 	public static Hub getRootHub(OAObjectInfo thisOI) {
 		if (thisOI == null) {
 			return null;
@@ -719,7 +859,14 @@ public class OAObjectInfoDelegate {
 	}
 
 	/**
-	 * Used by OAObject.getHub() to cache hubs for links that have a weakreference only.
+	 * Attempts to cache the supplied Hub instance for the given link info.
+	 * Validates cache rules, acquires the per-link write lock, and delegates
+	 * to the internal cache method. Returns true if the Hub was accepted
+	 * into the cache.
+	 *
+	 * @param li  the link info whose cache is used.
+	 * @param hub the Hub instance to cache.
+	 * @return true if the Hub was cached; false otherwise.
 	 */
 	public static boolean cacheHub(OALinkInfo li, final Hub hub) {
 		if (li == null || hub == null || li.cacheSize < 1) {
@@ -738,6 +885,18 @@ public class OAObjectInfoDelegate {
 		}
 	}
 
+	/**
+	 * Internal implementation for adding a Hub to the link’s cache.
+	 * Prevents duplicates, enforces server-side constraints, adds the
+	 * Hub to both list and set structures, and trims the cache to the
+	 * link’s configured maximum size.
+	 *
+	 * @param li      the link info owning the cache.
+	 * @param hub     the Hub instance to store.
+	 * @param alCache the ordered cache list.
+	 * @param hsCache the membership check set.
+	 * @return true if the Hub was added or already cached.
+	 */
 	private static boolean _cacheHub(OALinkInfo li, Hub hub, List alCache, Set hsCache) {
 		if (hsCache.contains(hub)) {
 			return true;
@@ -763,6 +922,15 @@ public class OAObjectInfoDelegate {
 	}
 
 	// for testing
+	/**
+	 * Returns true if the supplied Hub is currently present in the cache
+	 * associated with the given link info. Acquires the per-link read lock
+	 * and checks the cached set for membership.
+	 *
+	 * @param li  the link info whose cache is examined.
+	 * @param hub the Hub instance to check.
+	 * @return true if cached; false otherwise.
+	 */
 	public static boolean isCached(OALinkInfo li, Hub hub) {
 		if (li == null || hub == null) {
 			return false;
@@ -782,6 +950,13 @@ public class OAObjectInfoDelegate {
 		}
 	}
 
+	/**
+	 * Returns the reverse link information for the supplied link info,
+	 * or null if the link has no reverse relationship.
+	 *
+	 * @param thisLi the link info.
+	 * @return the reverse link info, or null.
+	 */
 	public static OALinkInfo getReverseLinkInfo(OALinkInfo thisLi) {
 		if (thisLi == null) {
 			return null;
@@ -789,21 +964,52 @@ public class OAObjectInfoDelegate {
 		return thisLi.getReverseLinkInfo();
 	}
 
+	/**
+	 * Returns true if the supplied link and its reverse link both have
+	 * type MANY, indicating a many-to-many relationship.
+	 *
+	 * @param thisLi the link info to evaluate.
+	 * @return true if many-to-many.
+	 */
 	public static boolean isMany2Many(OALinkInfo thisLi) {
 		OALinkInfo rli = getReverseLinkInfo(thisLi);
 		return (rli != null && thisLi.type == OALinkInfo.MANY && rli.type == OALinkInfo.MANY);
 	}
 
+	/**
+	 * Returns true if the supplied link and its reverse link both have
+	 * type ONE, indicating a one-to-one relationship.
+	 *
+	 * @param thisLi the link info to evaluate.
+	 * @return true if one-to-one.
+	 */
 	public static boolean isOne2One(OALinkInfo thisLi) {
 		OALinkInfo rli = getReverseLinkInfo(thisLi);
 		return (rli != null && thisLi.type == OALinkInfo.ONE && rli.type == OALinkInfo.ONE);
 	}
 
+	/**
+	 * Retrieves a method by name from the supplied class. Ensures that
+	 * OAObjectInfo is initialized so that the method cache is populated,
+	 * then performs a cached lookup.
+	 *
+	 * @param clazz      the class to search.
+	 * @param methodName the method name.
+	 * @return the matching Method, or null if not found.
+	 */
 	public static Method getMethod(Class clazz, String methodName) {
 		OAObjectInfo oi = getOAObjectInfo(clazz); // this will load up the methods
 		return getMethod(oi, methodName);
 	}
 
+	/**
+	 * Returns the getter Method associated with the supplied link info.
+	 * Looks up the reverse link, obtains the target class, and retrieves
+	 * the corresponding getter method for the link name.
+	 *
+	 * @param li the link info.
+	 * @return the getter Method, or null.
+	 */
 	public static Method getMethod(OALinkInfo li) {
 		if (li == null) {
 			return null;
@@ -817,10 +1023,29 @@ public class OAObjectInfoDelegate {
 		return getMethod(oi, "get" + li.name, 0);
 	}
 
+	/**
+	 * Convenience wrapper around {@link #getMethod(OAObjectInfo, String, int)}
+	 * using an argument count of -1 to indicate that any parameter count
+	 * is acceptable.
+	 *
+	 * @param oi         the OAObjectInfo whose class is examined.
+	 * @param methodName the method name to resolve.
+	 * @return the matching Method, or null.
+	 */
 	public static Method getMethod(OAObjectInfo oi, String methodName) {
 		return getMethod(oi, methodName, -1);
 	}
 
+	/**
+	 * Retrieves a method from the OAObjectInfo’s class by name and
+	 * argument count. Uses cached lookup when possible, otherwise performs
+	 * reflective resolution and updates the method cache.
+	 *
+	 * @param oi            the OAObjectInfo providing the class context.
+	 * @param methodName    the method name (case-insensitive).
+	 * @param argumentCount expected number of parameters, or -1 for any.
+	 * @return the matching Method, or null.
+	 */
 	public static Method getMethod(OAObjectInfo oi, String methodName, int argumentCount) {
 		if (methodName == null || oi == null) {
 			return null;
@@ -861,6 +1086,16 @@ public class OAObjectInfoDelegate {
 		return method;
 	}
 
+	/**
+	 * Retrieves a method from the OAObjectInfo’s class by name and a
+	 * single parameter type. Checks cached entries first, then resolves
+	 * reflectively and updates the cache.
+	 *
+	 * @param oi         the OAObjectInfo providing the class context.
+	 * @param methodName the method name (case-insensitive).
+	 * @param classParam the expected parameter type.
+	 * @return the matching Method, or null.
+	 */
 	public static Method getMethod(OAObjectInfo oi, String methodName, final Class classParam) {
 		if (methodName == null || oi == null) {
 			return null;
@@ -882,12 +1117,27 @@ public class OAObjectInfoDelegate {
 		return method;
 	}
 
+	/**
+	 * Stores the supplied method in the per-class method cache, ensuring
+	 * accessibility is enabled for reflective invocation.
+	 *
+	 * @param clazz  the class whose cache is updated.
+	 * @param method the method to store.
+	 */
 	protected static void storeMethod(Class clazz, Method method) {
 		Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
 		method.setAccessible(true); // 20130131
 		map.put(method.getName().toUpperCase(), method);
 	}
 
+	/**
+	 * Returns all cached methods associated with the OAObjectInfo’s class.
+	 * Extracts the values from the per-class method map and returns them
+	 * as an array.
+	 *
+	 * @param oi the OAObjectInfo whose methods are requested.
+	 * @return array of all cached methods.
+	 */
 	public static Method[] getAllMethods(OAObjectInfo oi) {
 		Class clazz = oi.thisClass;
 		Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
@@ -899,6 +1149,15 @@ public class OAObjectInfoDelegate {
 		return ms;
 	}
 
+	/**
+	 * Returns the return type of the getter method for the named property
+	 * within the supplied OAObjectInfo. Returns null if the getter is not
+	 * found.
+	 *
+	 * @param oi           the OAObjectInfo containing metadata.
+	 * @param propertyName the property name.
+	 * @return the property’s class type, or null.
+	 */
 	public static Class getPropertyClass(OAObjectInfo oi, String propertyName) {
 		Method m = getMethod(oi, "get" + propertyName, 0);
 		if (m == null) {
@@ -907,6 +1166,14 @@ public class OAObjectInfoDelegate {
 		return m.getReturnType();
 	}
 
+	/**
+	 * Returns the return type of the getter method for the named property
+	 * on the supplied class. Returns null if the getter is not found.
+	 *
+	 * @param clazz        the class to inspect.
+	 * @param propertyName the property name.
+	 * @return the property’s class type, or null.
+	 */
 	public static Class getPropertyClass(Class clazz, String propertyName) {
 		Method m = getMethod(clazz, "get" + propertyName);
 		if (m == null) {
@@ -915,6 +1182,14 @@ public class OAObjectInfoDelegate {
 		return m.getReturnType();
 	}
 
+	/**
+	 * Returns the target-class type of a hub property by locating the
+	 * corresponding link info. Returns null if the link is not defined.
+	 *
+	 * @param clazz        the class to inspect.
+	 * @param propertyName the hub-property name.
+	 * @return the target class for the hub, or null.
+	 */
 	public static Class getHubPropertyClass(Class clazz, String propertyName) {
 		OALinkInfo li = getLinkInfo(clazz, propertyName);
 		if (li != null) {
@@ -923,32 +1198,66 @@ public class OAObjectInfoDelegate {
 		return null;
 	}
 
+	/**
+	 * Returns the link info defined for the supplied property name on the
+	 * given class by retrieving the class’s OAObjectInfo and delegating to
+	 * the link-info lookup.
+	 *
+	 * @param clazz        the class to inspect.
+	 * @param propertyName the link-property name.
+	 * @return the matching OALinkInfo, or null.
+	 */
 	public static OALinkInfo getLinkInfo(Class clazz, String propertyName) {
 		OAObjectInfo oi = getOAObjectInfo(clazz);
 		return getLinkInfo(oi, propertyName);
 	}
 
+	/**
+	 * Returns the link info defined for the supplied property name within
+	 * the given OAObjectInfo, using the OAObjectInfo’s internal lookup.
+	 *
+	 * @param oi           the OAObjectInfo to inspect.
+	 * @param propertyName the link-property name.
+	 * @return the matching OALinkInfo, or null.
+	 */
 	public static OALinkInfo getLinkInfo(OAObjectInfo oi, String propertyName) {
 		OALinkInfo li = oi.getLinkInfo(propertyName);
 		return li;
 	}
 
+	/**
+	 * Returns all link infos that are marked as owned within the supplied
+	 * OAObjectInfo.
+	 *
+	 * @param oi the OAObjectInfo to inspect.
+	 * @return array of owned-link infos.
+	 */
 	public static OALinkInfo[] getOwndedLinkInfos(OAObjectInfo oi) {
 		return oi.getOwnedLinkInfos();
 	}
 
 	// linkinfo that this object owns
+	/**
+	 * Returns all link infos that are marked as owned for the class of the
+	 * supplied OAObject. Delegates to {@link #getOwndedLinkInfos(OAObjectInfo)}.
+	 *
+	 * @param obj the OAObject whose owned links are requested.
+	 * @return array of owned-link infos.
+	 */
 	public static OALinkInfo[] getOwndedLinkInfos(OAObject obj) {
 		OAObjectInfo oi = getOAObjectInfo(obj);
 		return oi.getOwnedLinkInfos();
 	}
 
 	/**
-	 * Find the linkInfo for a refererenc.
+	 * Finds the link info whose reference on the supplied object matches
+	 * the provided Hub instance. Scans all used link infos and compares
+	 * raw references retrieved from the object.
 	 *
-	 * @param fromObject object to use to find the reference in.
-	 * @param hub        reference object to find linkInfo for.
-	 * @return
+	 * @param oi         the OAObjectInfo describing the object.
+	 * @param fromObject the object whose links are examined.
+	 * @param hub        the Hub instance to match.
+	 * @return the associated link info, or null.
 	 */
 	public static OALinkInfo getLinkInfo(OAObjectInfo oi, OAObject fromObject, Hub hub) {
 		for (OALinkInfo li : oi.getLinkInfos()) {
@@ -965,11 +1274,28 @@ public class OAObjectInfoDelegate {
 		return null;
 	}
 
+	/**
+	 * Returns the link info that points from the source class to the
+	 * target class by retrieving the source class’s OAObjectInfo and
+	 * delegating to the class-level lookup.
+	 *
+	 * @param fromClass the source class.
+	 * @param toClass   the target class.
+	 * @return the matching link info, or null.
+	 */
 	public static OALinkInfo getLinkInfo(Class fromClass, Class toClass) {
 		OAObjectInfo oi = getOAObjectInfo(fromClass);
 		return getLinkInfo(oi, toClass);
 	}
 
+	/**
+	 * Returns the link info within the supplied OAObjectInfo whose target
+	 * class matches the provided class. Only used link infos are examined.
+	 *
+	 * @param oi      the OAObjectInfo to inspect.
+	 * @param toClass the target class.
+	 * @return the matching link info, or null.
+	 */
 	public static OALinkInfo getLinkInfo(OAObjectInfo oi, Class toClass) {
 		if (oi == null || toClass == null) return null;
 		for (OALinkInfo li : oi.getLinkInfos()) {
@@ -983,11 +1309,27 @@ public class OAObjectInfoDelegate {
 		return null;
 	}
 
+	/**
+	 * Returns the OAPropertyInfo for the named property from the supplied
+	 * OAObjectInfo, using its internal lookup method.
+	 *
+	 * @param oi           the OAObjectInfo containing metadata.
+	 * @param propertyName the property name.
+	 * @return the property info, or null.
+	 */
 	public static OAPropertyInfo getPropertyInfo(OAObjectInfo oi, String propertyName) {
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
 		return pi;
 	}
 
+	/**
+	 * Returns true if the supplied property name is listed among the
+	 * OAObjectInfo's ID properties. Comparison is case-insensitive.
+	 *
+	 * @param oi           the OAObjectInfo to inspect.
+	 * @param propertyName the property name.
+	 * @return true if the property is an ID property.
+	 */
 	public static boolean isIdProperty(OAObjectInfo oi, String propertyName) {
 		for (int i = 0; oi.idProperties != null && i < oi.idProperties.length; i++) {
 			if (oi.idProperties[i] != null && oi.idProperties[i].equalsIgnoreCase(propertyName)) {
@@ -997,10 +1339,25 @@ public class OAObjectInfoDelegate {
 		return false;
 	}
 
+	/**
+	 * Returns true if the supplied property info represents a primitive
+	 * Java type. Validates that its class type is non-null and primitive.
+	 *
+	 * @param pi the property info.
+	 * @return true if the property is primitive.
+	 */
 	public static boolean isPrimitive(OAPropertyInfo pi) {
 		return (pi != null && pi.getClassType() != null && pi.getClassType().isPrimitive());
 	}
 
+	/**
+	 * Returns true if the named property is a primitive type. Looks up the
+	 * OAPropertyInfo and checks the underlying Java class for primitiveness.
+	 *
+	 * @param oi           the OAObjectInfo containing metadata.
+	 * @param propertyName the property name.
+	 * @return true if the property is primitive.
+	 */
 	public static boolean isPrimitiveProperty(OAObjectInfo oi, String propertyName) {
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
 		if (pi != null) {
@@ -1010,6 +1367,14 @@ public class OAObjectInfoDelegate {
 		return false;
 	}
 
+	/**
+	 * Returns true if the named property is a Hub property. Resolves the
+	 * getter method and verifies that its return type is Hub.
+	 *
+	 * @param oi           the OAObjectInfo containing metadata.
+	 * @param propertyName the property name.
+	 * @return true if the property is a Hub property.
+	 */
 	public static boolean isHubProperty(OAObjectInfo oi, String propertyName) {
 		Method m = getMethod(oi.thisClass, "get" + propertyName);
 		if (m == null) return false;
@@ -1019,6 +1384,14 @@ public class OAObjectInfoDelegate {
 		return (c.equals(Hub.class));
 	}
 
+	/**
+	 * Returns an array of ID property values for the supplied OAObject.
+	 * Retrieves the ID-property list from the OAObjectInfo and extracts
+	 * each value using raw property reflection.
+	 *
+	 * @param oaObj the OAObject whose ID values are requested.
+	 * @return array of ID values; empty array if none; null if object is null.
+	 */
 	public static Object[] getPropertyIdValues(OAObject oaObj) {
 		if (oaObj == null) {
 			return null;
@@ -1033,6 +1406,14 @@ public class OAObjectInfoDelegate {
 		return objs;
 	}
 
+	/**
+	 * Returns the null-bitmask array from the supplied OAObject, or null
+	 * if the object is null. The bitmask indicates which primitive
+	 * properties are currently null.
+	 *
+	 * @param oaObj the OAObject to inspect.
+	 * @return the object's null-bitmask array, or null.
+	 */
 	public static byte[] getNullBitMask(OAObject oaObj) {
 		if (oaObj == null) {
 			return null;
@@ -1040,6 +1421,14 @@ public class OAObjectInfoDelegate {
 		return oaObj.nulls;
 	}
 
+	/**
+	 * Returns a list of primitive property names for the supplied OAObject
+	 * class that support null tracking. Delegates to the OAObjectInfo to
+	 * retrieve the primitive-property list.
+	 *
+	 * @param clazz the OAObject class to inspect.
+	 * @return list of primitive property names, or null if class is null.
+	 */
 	public static List<String> getPrimitiveNullPropertyNames(Class<? extends OAObject> clazz) {
 		if (clazz == null) {
 			return null;
@@ -1050,6 +1439,14 @@ public class OAObjectInfoDelegate {
 		return Arrays.asList(ss);
 	}
 
+	/**
+	 * Returns a list of primitive property names whose null bit is set on
+	 * the supplied OAObject. Determines bit positions using the OAObjectInfo’s
+	 * primitive property list and inspects the object's null-bitmask.
+	 *
+	 * @param oaObj the OAObject to inspect.
+	 * @return list of primitive property names marked as null, or null.
+	 */
 	public static List<String> getPrimitiveNullProperties(OAObject oaObj) {
 		if (oaObj == null) {
 			return null;
@@ -1080,10 +1477,27 @@ public class OAObjectInfoDelegate {
 		return al;
 	}
 
+	/**
+	 * Convenience wrapper around {@link #isPrimitiveNull(OAObject, String)}
+	 * that returns whether the specified primitive property is null.
+	 *
+	 * @param oaObj        the OAObject to inspect.
+	 * @param propertyName the property name.
+	 * @return true if the primitive property is null.
+	 */
 	public static boolean getPrimitiveNull(OAObject oaObj, String propertyName) {
 		return isPrimitiveNull(oaObj, propertyName);
 	}
 
+	/**
+	 * Returns true if the specified primitive property on the supplied
+	 * object is marked as null in the object's null-bitmask. Validates that
+	 * the property supports null-tracking and checks its assigned bit.
+	 *
+	 * @param oaObj        the OAObject to inspect.
+	 * @param propertyName the property name (case-insensitive).
+	 * @return true if the primitive property is null; false otherwise.
+	 */
 	public static boolean isPrimitiveNull(OAObject oaObj, String propertyName) {
 		if (oaObj == null || propertyName == null) {
 			return false;
@@ -1121,6 +1535,16 @@ public class OAObjectInfoDelegate {
 		return false;
 	}
 
+	/**
+	 * Sets or clears the null-bit for the specified primitive property on
+	 * the supplied object. Computes the bit position based on the
+	 * OAObjectInfo’s primitive-property list and updates the object's
+	 * null-bitmask accordingly.
+	 *
+	 * @param oaObj        the OAObject whose bitmask is modified.
+	 * @param propertyName the property name (case-insensitive).
+	 * @param bSetToNull   true to mark the property as null; false to clear.
+	 */
 	public static void setPrimitiveNull(OAObject oaObj, String propertyName, boolean bSetToNull) {
 		if (oaObj == null || propertyName == null) {
 			return;
@@ -1159,15 +1583,23 @@ public class OAObjectInfoDelegate {
 	}
 
 	/*
-	 * 20100930 I started this to use for reversing from TreeNode to get path to top/root
+	 * NOTE: 20100930 I started this to use for reversing from TreeNode to get path to top/root
 	 * this wont work, unless the parent nodes are also used
 	 * Take a property path that is "to" a class, and reverse it.
 	 * Example: from a X class, the propPath "dept.manager.address.zipCode"
 	 * where address.class would be the clazz; would return "manager.dept", used to get from an address to the dept.
+	 */
+
+	/**
+	 * Reverses a property path by attempting to follow reverse link
+	 * definitions from the supplied class. Tokenizes the path, builds a
+	 * reversed version, then resolves each component through link
+	 * relationships. Returns null if the reverse path cannot be
+	 * determined.
 	 *
-	 * @param clazz
-	 * @param propertyPath
-	 * @return
+	 * @param clazz        the starting class.
+	 * @param propertyPath the forward property path.
+	 * @return the reversed property path, or null.
 	 */
 	public static String reversePath(Class clazz, String propertyPath) {
 		String revPropertyPath = "";
@@ -1221,10 +1653,12 @@ public class OAObjectInfoDelegate {
 		return revPropertyPath;
 	}
 
-	// 20141130 weakReferenceable
-
 	/**
-	 * Returns true if any of the parent links has type=Many and cacheSize &amp; 0, which means that this object can be GCd.
+	 * Returns true if the supplied object is weak-referenceable based on
+	 * its OAObjectInfo. Delegates to the OAObjectInfo-level evaluation.
+	 *
+	 * @param oaObj the OAObject to check.
+	 * @return true if weak-referenceable.
 	 */
 	public static boolean isWeakReferenceable(OAObject oaObj) {
 		if (oaObj == null) {
@@ -1234,6 +1668,14 @@ public class OAObjectInfoDelegate {
 		return isWeakReferenceable(oi, null);
 	}
 
+	/**
+	 * Returns true if any parent link configuration indicates that objects
+	 * of this type may be weak-referenceable. Delegates to the internal
+	 * recursive evaluation.
+	 *
+	 * @param oi the OAObjectInfo to check.
+	 * @return true if weak-referenceable.
+	 */
 	public static boolean isWeakReferenceable(OAObjectInfo oi) {
 		if (oi == null) {
 			return false;
@@ -1241,6 +1683,16 @@ public class OAObjectInfoDelegate {
 		return isWeakReferenceable(oi, null);
 	}
 
+	/**
+	 * Recursive implementation used to determine whether a type is
+	 * weak-referenceable. Examines reverse links for MANY relationships
+	 * with positive cache sizes and checks parent references while
+	 * preventing cycles using a visited-set.
+	 *
+	 * @param oi         the OAObjectInfo being evaluated.
+	 * @param hsVisited  set of already-visited OAObjectInfos.
+	 * @return true if weak-referenceable.
+	 */
 	private static boolean isWeakReferenceable(OAObjectInfo oi, HashSet<OAObjectInfo> hsVisited) {
 		if (oi == null) {
 			return false;
@@ -1292,6 +1744,13 @@ public class OAObjectInfoDelegate {
 		return b;
 	}
 
+	/**
+	 * Returns true if the supplied OAObjectInfo is configured to use a
+	 * singleton Pojo, either directly or via owner-link traversal.
+	 *
+	 * @param oi the OAObjectInfo to inspect.
+	 * @return true if the type uses a singleton Pojo.
+	 */
 	public static boolean isPojoSingleton(final OAObjectInfo oi) {
 		if (oi == null) {
 			return false;
@@ -1304,12 +1763,14 @@ public class OAObjectInfoDelegate {
 		return isPojoSingleton2(oi);
 	}
 
-	// recursive
+	/**
+	 * Recursive implementation that walks the owner-link chain to
+	 * determine whether any owner type is configured as a singleton Pojo.
+	 *
+	 * @param oi the OAObjectInfo being evaluated.
+	 * @return true if a singleton Pojo is found in the chain.
+	 */
 	private static boolean isPojoSingleton2(final OAObjectInfo oi) {
-
-		int xx = 5;
-		xx++;
-
 		if (oi == null) {
 			return false;
 		}
@@ -1330,18 +1791,39 @@ public class OAObjectInfoDelegate {
 		return isPojoSingleton2(oiOwner);
 	}
 
+	/**
+	 * Returns the method-cache map for the supplied class, creating it if
+	 * necessary. The cache stores methods keyed by their uppercase names.
+	 *
+	 * @param clazz the class whose method cache is requested.
+	 * @return the method cache map.
+	 */
 	protected static Map<String, Method> getClassMethodMap(Class clazz) {
 		Map<String, Method> map = hmClassMethod.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
     	return map;
 	}
 
+	/**
+	 * Returns the per-class set used to record method names that were
+	 * previously searched for but not found. Creates the set if it does
+	 * not already exist.
+	 *
+	 * @param clazz the class whose not-found map is requested.
+	 * @return the not-found method-name set.
+	 */
     protected static Set<String> getClassMethodNotFoundMap(Class clazz) {
         Set<String> map = hmClassMethodNotFound.computeIfAbsent(clazz, k -> new HashSet<String>(3, .75f));
         return map;
     }
 
+    /**
+     * Returns the global map that associates each Class with its
+     * OAObjectInfo instance. This is the shared cache used for all
+     * metadata lookups.
+     *
+     * @return the Class-to-OAObjectInfo map.
+     */
     public static Map<Class, OAObjectInfo> getObjectInfoMap() {
     	return hmObjectInfo;
     }
-	
 }

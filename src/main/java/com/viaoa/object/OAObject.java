@@ -323,12 +323,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * </ul>
 	 * No application code should call this method directly.
 	 */
-	
-	/**
-	 * Read OAObject data. Note: This method must stay "private" or it will never be called. It does not need to be subclassed because any
-	 * object that is a subclass should have its own readObject() method. ObjectInputStream.readObject() calls the readObject() for each
-	 * class, superClass, and subClass individually.
-	 */
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
 		OAObjectSerializeDelegate._readObject(this, in);
 	}

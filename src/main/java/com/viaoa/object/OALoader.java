@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,14 @@ public class OALoader<F extends OAObject, T extends OAObject> {
     
     private OACascade[] cascades;
 
+    /**
+     * Creates a new multi-threaded loader configured to traverse the
+     * specified property path using up to the given number of worker threads.
+     *
+     * @param threadCount the maximum number of worker threads to use;
+     *                    values greater than 50 are capped at 50
+     * @param propPath    the property path to traverse during loading
+     */
     public OALoader(int threadCount, String propPath) {
         this.threadCount = Math.min(threadCount, 50);
         this.strPropertyPath = propPath;
@@ -89,21 +97,42 @@ public class OALoader<F extends OAObject, T extends OAObject> {
 
     
     /**
-     * This is used to stop the current find that is in process. This can be used when overwriting the
-     * onFound().
+     * Requests that the current load operation stop as soon as possible.
+     *
+     * <p>This can be used by subclasses overriding {@code onFound()} or
+     * other custom logic to interrupt a long-running traversal.</p>
      */
     public void stop() {
         bStop = true;
     }
 
+    /**
+     * Returns the number of objects that have been visited during the load operation.
+     *
+     * @return the count of visited objects
+     */
     public int getVisitCount() {
         return aiVisitCnt.get();
     }
+
+    /**
+     * Returns the number of objects encountered whose linked values were not loaded.
+     *
+     * @return the count of not-yet-loaded objects
+     */
     public int getNotLoadedCount() {
         return aiNotLoadedCnt.get();
     }
 
     /**
+     * Loads objects by traversing the configured property path starting from
+     * the specified root hub.
+     *
+     * <p>Initializes traversal state, sets up thread execution when applicable,
+     * registers a sibling-helper context, and processes each object in the hub
+     * until completion or until {@link #stop()} is invoked.</p>
+     *
+     * @param hubRoot the root hub from which traversal begins
      */
     public void load(Hub<F> hubRoot) {
         if (hubRoot == null) return;
@@ -129,6 +158,17 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         }
     }
     
+    /**
+     * Loads objects by traversing the configured property path using an
+     * {@link OASelect} as the source of objects.
+     *
+     * <p>Objects are incrementally pulled from the select into an internal hub,
+     * allowing traversal to continue while additional objects become available.
+     * Traversal continues until the select is exhausted, all queued objects are
+     * processed, or {@link #stop()} is invoked.</p>
+     *
+     * @param sel the {@code OASelect} providing objects to traverse
+     */
     public void load(OASelect<F> sel) {
         if (sel == null) return;
 
@@ -157,6 +197,16 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         }
     }
     
+    /**
+     * Loads objects by traversing the configured property path starting from
+     * the specified root object.
+     *
+     * <p>An internal hub is created to manage traversal, thread execution is
+     * initialized when applicable, and a sibling-helper context is registered
+     * for recursive and linked navigation.</p>
+     *
+     * @param objectRoot the starting object for traversal
+     */
     public void load(F objectRoot) {
         if (objectRoot == null) return;
 
@@ -179,7 +229,8 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         }
     }
     
-    private final AtomicBoolean abMainThreadRunning = new AtomicBoolean(true); 
+    private final AtomicBoolean abMainThreadRunning = new AtomicBoolean(true);
+    
     private void onThreadDone(boolean bMainThread) {
         if (bMainThread) abMainThreadRunning.set(false);
         else if (abMainThreadRunning.get()) return;
@@ -194,6 +245,13 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         }
     }
     
+    /**
+     * Blocks the calling thread until all worker threads have completed and
+     * the loader has fully shut down.
+     *
+     * <p>The method periodically checks whether the executor service has
+     * terminated and whether the main traversal thread has finished.</p>
+     */
     public void waitUntilDone() {
         for (;;) {
             if (executorService == null) {
@@ -206,13 +264,30 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         }
     }
     
-    
+    /**
+     * Begins loading for the specified object at the root position in
+     * the property-path traversal.
+     *
+     * @param object the object to load
+     */
     protected void _load(F object) {
         if (object == null) return;
 
         _load(object, 0);
     }
 
+    /**
+     * Recursively traverses the configured property path beginning at the
+     * specified object and path position.
+     *
+     * <p>Handles hub iteration, cascade checks, recursive-link traversal,
+     * thread-dispatch logic for unloaded properties, and sequential loading
+     * when threading is not applicable.</p>
+     *
+     * @param obj the current object or hub being processed
+     * @param pos the zero-based index of the current position within the
+     *            property-path link sequence
+     */
     private void _load(final Object obj, final int pos) {
         if (obj == null) return;
         aiVisitCnt.incrementAndGet();
@@ -323,6 +398,15 @@ public class OALoader<F extends OAObject, T extends OAObject> {
     }
 
 
+    /**
+     * Initializes the loader for traversal using the given root class.
+     *
+     * <p>This method constructs the {@link OAPropertyPath}, resets counters,
+     * resolves link information, identifies recursive links, initializes
+     * cascade handlers, and prepares method references used during traversal.</p>
+     *
+     * @param c the root class for the property-path traversal
+     */
     protected void setup(Class c) {
         if (bSetup) return;
         bSetup = true;

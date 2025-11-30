@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,13 @@ package com.viaoa.object;
 public interface OACallback<TYPE> {
 
 	/**
-	 * Callback method used for methods that "visit" an object graph.
-	 * 
-	 * @return true to continue, else false to exit visiting
+	 * Invoked while visiting objects in an object graph. Implementations
+	 * can perform processing on the supplied object and control whether
+	 * the visitation should continue.
+	 *
+	 * @param obj the current object being visited
+	 * @return {@code true} to continue visiting additional objects,
+	 *         {@code false} to stop the visitation
 	 */
 	public boolean updateObject(TYPE obj);
 }

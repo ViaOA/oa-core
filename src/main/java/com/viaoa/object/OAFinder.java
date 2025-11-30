@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,45 +170,98 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 */
 	private boolean bUseOnlyLoadedData;
 
+	/**
+	 * Creates an empty finder with no root and no property path defined.
+	 * <p>
+	 * A root object or Hub and a property path must be supplied before
+	 * performing any search operations.
+	 * </p>
+	 */
 	public OAFinder() {
 	}
 
+	/**
+	 * Creates a finder configured with the specified property path.
+	 * <p>
+	 * A root object or Hub must still be provided before performing a search.
+	 * </p>
+	 *
+	 * @param propPath the property path to navigate during the search
+	 */
 	public OAFinder(String propPath) {
 		this.strPropertyPath = propPath;
 	}
 
+	/**
+	 * Creates a finder configured with a root object and a property path.
+	 *
+	 * @param fromObject the starting root object for the search
+	 * @param propPath the property path to navigate during the search
+	 */
 	public OAFinder(F fromObject, String propPath) {
 		this.fromObject = fromObject;
 		this.strPropertyPath = propPath;
 	}
 
+	/**
+	 * Creates a finder using the specified Hub as the root and the given
+	 * property path. All objects in the Hub may be used as search roots.
+	 *
+	 * @param fromHub the Hub supplying root objects
+	 * @param propPath the property path to navigate during the search
+	 */
 	public OAFinder(Hub<F> fromHub, String propPath) {
 		this(fromHub, propPath, true);
 	}
 
+	/**
+	 * Creates a finder using the specified Hub as the root and the given
+	 * property path, with control over whether all Hub objects are used as
+	 * search roots.
+	 *
+	 * @param fromHub the Hub supplying root objects
+	 * @param propPath the property path to navigate during the search
+	 * @param bUseAll {@code true} to evaluate all Hub elements as roots;
+	 *                 {@code false} to evaluate only the active object
+	 */
 	public OAFinder(Hub<F> fromHub, String propPath, boolean bUseAll) {
 		this.fromHub = fromHub;
 		this.strPropertyPath = propPath;
 		this.bUseAll = bUseAll;
 	}
 
+	/**
+	 * Enables or disables recursive traversal starting from the root object
+	 * or root Hub during a search.
+	 *
+	 * @param b {@code true} to allow recursive navigation from the root,
+	 *          {@code false} to disable it
+	 */
 	public void setAllowRecursiveRoot(boolean b) {
 		this.bEnableRecursiveRoot = b;
 		this.bEnableRecursiveRootWasCalled = true;
 	}
 
 	/**
-	 * Flag to know if the root object/hub should allow for recursive duing the find. Default is determined by the following. Default is
-	 * false, unless hub is the root and it has a masterObject.
+	 * Returns whether recursive traversal from the root object or root Hub
+	 * is enabled.
+	 *
+	 * @return {@code true} if recursive root traversal is allowed,
+	 *         otherwise {@code false}
 	 */
 	public boolean getAllowRecursiveRoot() {
 		return this.bEnableRecursiveRoot;
 	}
 
 	/**
-	 * Add the found object to the list that is returned by find. This can be overwritten to get all of the objects as they are found.
+	 * Called when a matching object is found during a search.
+	 * <p>
+	 * The default implementation adds the object to the result list. If a
+	 * maximum result count has been set, this method will stop the search
+	 * once the limit is reached.
+	 * </p>
 	 *
-	 * @see stop to be able to have the find stop searching.
+	 * @param obj the object that was found
 	 */
 	protected void onFound(T obj) {
 		alFound.add(obj);
@@ -218,42 +271,95 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	}
 
 	/**
-	 * Called during a find when data was not found. Use stop() to have the find aborted.
+	 * Called when a required object or link is not found during traversal.
+	 * <p>
+	 * The default implementation performs no action. Subclasses may override
+	 * to handle missing data or abort the search using {@link #stop()}.
+	 * </p>
 	 */
 	protected void onDataNotFound() {
 	}
 
 	/**
-	 * This is used to stop the current find that is in process. This can be used when overwriting the onFound().
+	 * Requests that the active search operation be stopped.
+	 * <p>
+	 * This flag is checked during traversal and allows subclasses or filters
+	 * to abort a search early, typically from within {@link #onFound(Object)}
+	 * or {@link #onDataNotFound()}.
+	 * </p>
 	 */
 	public void stop() {
 		bStop = true;
 	}
 
+	/**
+	 * Returns whether the current search has been flagged to stop.
+	 *
+	 * @return {@code true} if a stop has been requested, otherwise {@code false}
+	 */
 	public boolean getStop() {
 		return bStop;
 	}
 
+	/**
+	 * Specifies whether the search should operate only on data that is
+	 * already loaded in memory.
+	 * <p>
+	 * When enabled, traversal will not trigger any lazy loading and will
+	 * abort paths where required data is not yet loaded.
+	 * </p>
+	 *
+	 * @param b {@code true} to restrict traversal to loaded data only,
+	 *          {@code false} to allow lazy loading
+	 */
 	public void setUseOnlyLoadedData(boolean b) {
 		this.bUseOnlyLoadedData = b;
 	}
 
-	// 20160306
 	/**
-	 * Flag (default=false) to only use data that is already in memory and not to load from server or datasource.
+	 * Returns whether the search is restricted to data already loaded
+	 * in memory.
+	 *
+	 * @return {@code true} if traversal avoids lazy loading,
+	 *         otherwise {@code false}
 	 */
 	public boolean getUseOnlyLoadedData() {
 		return bUseOnlyLoadedData;
 	}
 
+	/**
+	 * Sets the maximum number of objects to return during a search.
+	 * <p>
+	 * A value of {@code 0} indicates no limit. Once the limit is reached,
+	 * the search will stop automatically.
+	 * </p>
+	 *
+	 * @param x the maximum number of results to return
+	 */
 	public void setMaxFound(int x) {
 		this.maxFound = x;
 	}
 
+	/**
+	 * Returns the maximum number of objects the search is allowed to return.
+	 *
+	 * @return the maximum result count, or {@code 0} if unlimited
+	 */
 	public int getMaxFound() {
 		return this.maxFound;
 	}
 
+	/**
+	 * Initiates a search using the currently configured root object or Hub.
+	 * <p>
+	 * If a root object is defined, the search begins there. If a root Hub is
+	 * defined, the search uses either all Hub elements or only the active
+	 * object depending on configuration. If no root is defined, {@code null}
+	 * is returned.
+	 * </p>
+	 *
+	 * @return the list of matching objects, or {@code null} if no root is available
+	 */
 	public ArrayList<T> find() {
 		if (fromObject != null) {
 			return find(fromObject);
@@ -270,26 +376,56 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return null;
 	}
 
+	/**
+	 * Sets the root object from which searches will begin.
+	 *
+	 * @param obj the new root object
+	 */
 	public void setRoot(F obj) {
 		this.fromObject = obj;
 	}
 
+	/**
+	 * Sets the root Hub from which searches will begin.
+	 *
+	 * @param hub the Hub to use as the search root
+	 */
 	public void setRoot(Hub<F> hub) {
 		this.fromHub = hub;
 	}
 
 	/**
-	 * Given the propertyPath, find all of the objects from a Hub.
+	 * Performs a search beginning at the specified Hub using the configured
+	 * property path.
+	 *
+	 * @param hubRoot the Hub supplying root objects for the search
+	 * @return the list of matching objects
 	 */
 	public ArrayList<T> find(Hub<F> hubRoot) {
 		ArrayList<T> al = find(hubRoot, null);
 		return al;
 	}
 
+	/**
+	 * Performs a search beginning from each object in the supplied list
+	 * using the configured property path.
+	 *
+	 * @param alRoot the list of root objects to evaluate
+	 * @return the list of matching objects
+	 */
 	public ArrayList<T> find(ArrayList<F> alRoot) {
 		return find(alRoot, null);
 	}
 
+	/**
+	 * Performs a search beginning from the objects in the supplied list,
+	 * starting immediately after the specified last-used root object.
+	 *
+	 * @param alRoot the list of potential root objects
+	 * @param objectLastUsed the root object after which searching should begin;
+	 *                       may be {@code null} to start at the beginning
+	 * @return the list of matching objects
+	 */
 	public ArrayList<T> find(ArrayList<F> alRoot, F objectLastUsed) {
 		if (!bEnableRecursiveRootWasCalled) {
 			bEnableRecursiveRoot = false;
@@ -339,7 +475,19 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return al;
 	}
 
-	// 20171224 update threadloc.getDetail
+	/**
+	 * Performs a search beginning from a Hub, starting immediately after
+	 * the specified last-used root object.
+	 * <p>
+	 * When lazy loading is enabled, a sibling helper is temporarily
+	 * installed to optimize adjacent data loading during traversal.
+	 * </p>
+	 *
+	 * @param hubRoot the Hub supplying root objects for the search
+	 * @param objectLastUsed the object after which searching should begin;
+	 *                       may be {@code null} to start at the beginning
+	 * @return the list of matching objects
+	 */
 	public ArrayList<T> find(Hub<F> hubRoot, F objectLastUsed) {
 		if (!bEnableRecursiveRootWasCalled) {
 			if (hubRoot != null) {

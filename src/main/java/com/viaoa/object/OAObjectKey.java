@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,27 +46,68 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	private final Object[] objectIds; 
 	private final long guid; 
 
-
+	/**
+	 * Creates a new {@link OAObjectKey} using the provided ID values and GUID.
+	 * <p>
+	 * The ID values are normalized so that any {@link OAObject} instances are
+	 * converted to their corresponding {@link OAObjectKey} values.
+	 *
+	 * @param ids  the ID values to include in the key (may contain {@link OAObject})
+	 * @param guid the GUID assigned to this key
+	 */
     public OAObjectKey(Object[] ids, long guid) {
         this.guid = guid;
         this.objectIds = normalize(ids);
     }
 
+    /**
+     * Creates a new {@link OAObjectKey} using the given ID values and a GUID of {@code 0}.
+     *
+     * @param ids the ID values to include in the key
+     */
     public OAObjectKey(Object[] ids) {
         this(ids, 0);
     }
 
+    /**
+     * Creates a new {@link OAObjectKey} containing a single integer ID value.
+     * The GUID is initialized to {@code 0}.
+     *
+     * @param id the integer ID value
+     */
     public OAObjectKey(int id) {
     	this( new Object[] {id}, 0L);
     }
+
+    /**
+     * Creates a new {@link OAObjectKey} containing a single long ID value.
+     * The GUID is initialized to {@code 0}.
+     *
+     * @param id the long ID value
+     */
     public OAObjectKey(long id) {
     	this( new Object[] {id}, 0L);
     }
+    
+    /**
+     * Creates a new {@link OAObjectKey} containing a single ID value.
+     * The GUID is initialized to {@code 0}.
+     *
+     * @param id the ID value to include in the key
+     */
     public OAObjectKey(Object id) {
     	this( new Object[] {id}, 0L);
     }
     
     
+    /**
+     * Normalizes the provided ID values by converting any {@link OAObject}
+     * instances into their corresponding {@link OAObjectKey}. All other
+     * values are copied as-is.
+     *
+     * @param ids the raw ID values
+     * @return a normalized array of ID components, or {@code null} if the input is {@code null}
+     */
     private Object[] normalize(Object[] ids) {
         if (ids == null) return null;
         Object[] result = new Object[ids.length];
@@ -81,15 +122,31 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
         return result;
     }
 
-
+    /**
+     * Returns the array of ID values associated with this key.
+     *
+     * @return the ID value array, or {@code null} if none were provided
+     */
 	public Object[] getObjectIds() {
 		return this.objectIds;
 	}
 	
+	/**
+	 * Returns the GUID assigned to this key.
+	 *
+	 * @return the GUID value
+	 */
 	public long getGuid() {
 		return guid;
 	}
 	
+	/**
+	 * Determines whether this key contains a non-empty set of ID values,
+	 * and that none of the values are {@code null}.
+	 *
+	 * @return {@code true} if all ID components are present and non-null;
+	 *         otherwise {@code false}
+	 */
 	public boolean hasValidObjectIds() {
 		if (this.objectIds == null || this.objectIds.length == 0) return false;
 		for (int i=0; i<this.objectIds.length; i++) {
@@ -100,8 +157,14 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	
 
 	/**
-	 * Checks to see if obj is an OAObjectKey, has matching guid and objectIds.
-	 * @see OAObjectDelegate.isForSameOAObject(..) Note: call this to check if keys represent the same OAObject.
+	 * Compares this key with another object for equality.
+	 * <p>
+	 * Two {@link OAObjectKey} instances are considered equal when both their
+	 * GUID values match and their ID arrays are equal (including both being
+	 * {@code null} or the same reference).
+	 *
+	 * @param obj the object to compare with this key
+	 * @return {@code true} if the keys are equal; otherwise {@code false}
 	 */
 	@Override
 	public boolean equals(final Object obj) {
@@ -117,6 +180,11 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
         return Arrays.equals(this.objectIds, other.objectIds);	    
 	}	
 	
+	/**
+	 * Computes a hash code for this key using only the GUID value.
+	 *
+	 * @return the hash code based on the GUID
+	 */
 	@Override
 	public int hashCode() {
 	    int hash = Long.hashCode(guid);
@@ -125,6 +193,21 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	    return hash;
 	}
 	
+	/**
+	 * Compares this key to another for ordering.
+	 * <p>
+	 * Comparison rules:
+	 * <ul>
+	 *   <li>If both keys have non-zero GUIDs, they are compared by GUID.</li>
+	 *   <li>If ID arrays exist, each ID element is compared in sequence.</li>
+	 *   <li>If ID elements implement {@link Comparable}, they are compared directly;
+	 *       otherwise comparison falls back to class name or string value.</li>
+	 *   <li>If all comparable elements match, the GUID values are compared last.</li>
+	 * </ul>
+	 *
+	 * @param obj the object to compare with this key
+	 * @return a negative, zero, or positive value based on ordering
+	 */
 	@Override
 	public int compareTo(Object obj) {
 	    if (obj == this) return 0;
@@ -170,6 +253,11 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
     	return Long.compare(this.guid, other.guid);
 	}	
 	
+	/**
+	 * Returns a string representation of this key, including the GUID and ID values.
+	 *
+	 * @return a string describing the key contents
+	 */
 	@Override
 	public String toString() {
 		return "guid=" + guid + ", ids=" + Arrays.toString(objectIds);		

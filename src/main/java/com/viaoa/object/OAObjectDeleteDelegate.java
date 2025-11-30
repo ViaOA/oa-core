@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,15 @@ import com.viaoa.util.*;
 public class OAObjectDeleteDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectDeleteDelegate.class.getName());
 
+	/**
+	 * Deletes the specified object using full delete lifecycle processing.
+	 * <p>
+	 * If client/server routing allows the delete to run locally, an
+	 * {@link OACascade} instance is created and the internal delete
+	 * method is invoked.
+	 *
+	 * @param oaObj the object to delete; ignored if {@code null}
+	 */
 	public static void delete(OAObject oaObj) {
 		if (oaObj == null) {
 			return;
@@ -126,19 +135,40 @@ public class OAObjectDeleteDelegate {
 		delete(oaObj, cascade);
 	}
 
+	/**
+	 * Performs a server-side delete for the specified object. A new
+	 * {@link OACascade} instance is created and passed to the internal
+	 * delete method.
+	 *
+	 * @param oaObj the object to delete
+	 */
     public static void syncServerDelete(OAObject oaObj) {
         OACascade cascade = new OACascade();
         delete(oaObj, cascade);
     }
 	
-    // called by OASyncClient to only delete objects that are in client's cache
+    /**
+     * Performs a client-side delete for objects that exist only within
+     * the client's cache. A new {@link OACascade} instance is created
+     * and passed to the internal delete method.
+     *
+     * @param oaObj the object to delete
+     */
 	public static void syncClientDelete(OAObject oaObj) {
         OACascade cascade = new OACascade();
         delete(oaObj, cascade);
 	}
 	
 	/**
-	 * Used to know if an object has been deleted, by calling OAObject.delete().
+	 * Updates the deleted flag on the specified object and fires the
+	 * appropriate before/after property-change events. If the object
+	 * is being restored (deleted flag set to {@code false}), its key
+	 * integrity is reverified and it is re-added to the cache.
+	 *
+	 * @param oaObj the object whose deleted flag is updated
+	 * @param tf the new deleted flag value
+	 * @throws RuntimeException if key verification fails when
+	 *                          clearing the deleted flag
 	 */
 	public static void setDeleted(OAObject oaObj, boolean tf) {
 		if (oaObj.deletedFlag != tf) {
@@ -165,6 +195,15 @@ public class OAObjectDeleteDelegate {
 		}
 	}
 
+	/**
+	 * Performs the full internal delete lifecycle, including event
+	 * dispatch, cascade delete processing, reference cleanup, DataSource
+	 * delete, hub removal, and distributed client notification.
+	 *
+	 * @param oaObj the object to delete
+	 * @param cascade the cascade-tracking object used to prevent
+	 *                re-entrant deletions
+	 */
 	public static void delete(final OAObject oaObj, OACascade cascade) {
 		if (oaObj == null) {
 			return;
@@ -429,8 +468,12 @@ public class OAObjectDeleteDelegate {
 	}
 
 	/**
-	 * Checks to see if an Object can be deleted. Checks that all child links that have mustBeEmpty are empty. NOTE: this is not called/used
-	 * when deleteing an OAObject
+	 * Determines whether the specified object can be deleted by checking
+	 * all link definitions that require the related collection or reference
+	 * to be empty prior to deletion.
+	 *
+	 * @param oaObj the object being evaluated
+	 * @return {@code true} if all required links are empty; otherwise {@code false}
 	 */
 	public static boolean canDelete(OAObject oaObj) {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
@@ -468,6 +511,15 @@ public class OAObjectDeleteDelegate {
 		return true;
 	}
 
+	/**
+	 * Returns an array of link definitions that must be empty before the
+	 * specified object can be deleted. Only links marked as requiring empty
+	 * state and containing non-empty values are included.
+	 *
+	 * @param oaObj the object being evaluated
+	 * @return an array of required-empty link definitions, or {@code null}
+	 *         if none exist
+	 */
 	public static OALinkInfo[] getMustBeEmptyBeforeDelete(OAObject oaObj) {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
 		List al = oi.getLinkInfos();
@@ -502,18 +554,12 @@ public class OAObjectDeleteDelegate {
 	}
 
 	/**
-	 * Internal method used by delete(oaObj) when deleting an objects cascade delete references.
-	 * <p>
-	 * Checks to see if all Links with TYPE=MANY and CASCADE can be deleted.<br>
-	 * If reference object is not set up to be deleted (cascade delete is false), then it will have the reference to this object set to
-	 * null.
-	 * <p>
-	 * Steps:
-	 * <ol>
-	 * <li>delete any link objects
-	 * <li>if !cascade then remove and save all elements from detailHub. This will take out the reference to this object.
-	 * <li>if cascade then call Hub.deleteAll
-	 * </ol>
+	 * Performs cascade-delete processing for all child link relationships
+	 * of the specified object. Handles one-to-one, one-to-many, and
+	 * many-to-many relationships according to cascade and ownership rules.
+	 *
+	 * @param oaObj the parent object whose children may be deleted
+	 * @param cascade the cascade tracker used to prevent reprocessing
 	 */
 	private static void deleteChildren(OAObject oaObj, OACascade cascade) {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
@@ -670,8 +716,12 @@ public class OAObjectDeleteDelegate {
 	}
 
 	/**
-	 * called after beforeDelete() and after all listeners have been called. If this is the server, then it will find the OADataSource to
-	 * use and call its "delete(this)"
+	 * Performs the final delete operations for the specified object. If
+	 * running on the server, the object's delete action is passed to the
+	 * DataSource and logged. The object's {@code afterDelete()} callback
+	 * is then invoked.
+	 *
+	 * @param oaObj the object being deleted
 	 */
 	private static void onDelete(OAObject oaObj) {
 		if (oaObj == null) {

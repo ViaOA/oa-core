@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,15 @@ public class OAObjectLocal extends OAObject {
 
 	// Object Info 
 	protected static OAObjectInfo oaObjectInfo;
+	
+	/**
+	 * Returns the {@link OAObjectInfo} instance used to configure this
+	 * local-only object type. The returned metadata disables persistence,
+	 * caching, and automatic initialization so that instances operate only
+	 * within memory.
+	 *
+	 * @return the metadata definition for this transient object class.
+	 */
 	public static OAObjectInfo getOAObjectInfo() {
 	    return oaObjectInfo;
 	}

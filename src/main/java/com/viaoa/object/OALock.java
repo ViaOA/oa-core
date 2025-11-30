@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,13 +42,19 @@ public class OALock implements java.io.Serializable {
     protected Object miscObject;
     protected int waitCnt;
 
-    /** 
-        Used for creating a lock on an object.
-        @param object to lock
-        @param refObject reference object used with a WeakReference.  
-            If it is garbage collected, then the lock is removed. 
-        @param miscObject object to store with locked object
-    */
+    /**
+     * Creates a new logical lock for the specified object.
+     *
+     * <p>If a {@code refObject} is supplied, a {@link WeakReference} is created
+     * so that the lock will automatically expire once the reference object
+     * becomes eligible for garbage collection.</p>
+     *
+     * @param object     the object being locked; must not be {@code null}
+     * @param refObject  the reference object used to control lock lifetime,
+     *                   or {@code null} if not used
+     * @param miscObject an optional metadata object stored with the lock
+     * @throws IllegalArgumentException if {@code object} is {@code null}
+     */
     protected OALock(Object object, Object refObject, Object miscObject) {
         if (object == null) throw new IllegalArgumentException("object can not be null");
         this.object = object;
@@ -56,15 +62,33 @@ public class OALock implements java.io.Serializable {
         this.miscObject = miscObject;
     }
     
+    /**
+     * Returns the object associated with this lock.
+     *
+     * @return the locked object
+     */
     public Object getObject() {
         return object;
     }
     
+    /**
+     * Returns the reference object associated with this lock.
+     *
+     * <p>The reference is stored as a {@link WeakReference}; if it has been
+     * garbage collected, this method returns {@code null}.</p>
+     *
+     * @return the reference object, or {@code null} if none exists or it has expired
+     */
     public Object getReferenceObject() {
         if (ref == null) return null;
         return ref.get();
     }
     
+    /**
+     * Returns the miscellaneous metadata object associated with this lock.
+     *
+     * @return the metadata object, or {@code null} if none was provided
+     */
     public Object getMiscObject() {
         return miscObject;
     }

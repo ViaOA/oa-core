@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,96 +55,267 @@ public class OAMethodInfo implements java.io.Serializable {
     
     private transient Method objectCallbackMethod;
     private OAMethod oaMethod;
+    private String[] viewDependentProperties;
+    private String[] contextDependentProperties;
     
     
+    /**
+     * Creates a new, empty method-metadata descriptor.
+     */
 	public OAMethodInfo() {
 	}
 
+	/**
+	 * Returns the name of the method represented by this metadata.
+	 *
+	 * @return the method name, or {@code null} if not set
+	 */
     public String getName() {
 		return name;
 	}
-	public void setName(String name) {
+
+    /**
+     * Sets the name of the method represented by this metadata.
+     *
+     * @param name the method name
+     */
+    public void setName(String name) {
 		this.name = name;
 	}
     
-    private String[] viewDependentProperties;
+    /**
+     * Sets the list of property names that this method's visibility depends on.
+     *
+     * @param ss an array of dependent property names
+     */
     public void setViewDependentProperties(String[] ss) {
         this.viewDependentProperties = ss;
     }
+
+    /**
+     * Returns the list of property names that this method's visibility depends on.
+     *
+     * @return an array of dependent property names, or {@code null} if none are set
+     */
     public String[] getViewDependentProperties() {
         return this.viewDependentProperties;
     }	
 
-    private String[] contextDependentProperties;
+    /**
+     * Sets the list of property names that this method's context-dependent
+     * behavior relies on.
+     *
+     * @param ss an array of context-dependent property names
+     */
     public void setContextDependentProperties(String[] ss) {
         this.contextDependentProperties = ss;
     }
+    
+    /**
+     * Returns the list of property names that this method's context-dependent
+     * behavior relies on.
+     *
+     * @return an array of context-dependent property names, or {@code null} if none are set
+     */
     public String[] getContextDependentProperties() {
         return this.contextDependentProperties;
     }   
     
+    /**
+     * Returns the property name used to determine whether this method is enabled.
+     *
+     * @return the enabled-property name, or {@code null} if none is set
+     */
     public String getEnabledProperty() {
         return enabledProperty;
     }
+
+    /**
+     * Sets the property name used to determine whether this method is enabled.
+     *
+     * @param s the enabled-property name
+     */
     public void setEnabledProperty(String s) {
         enabledProperty = s;
     }
+    
+    /**
+     * Returns the value that determines whether this method is enabled.
+     *
+     * @return {@code true} if the method is enabled when the property matches,
+     *         otherwise {@code false}
+     */
     public boolean getEnabledValue() {
         return enabledValue;
     }
+    
+    /**
+     * Sets the value that determines whether this method is enabled.
+     *
+     * @param b {@code true} to enable the method when the property matches,
+     *          otherwise {@code false}
+     */
     public void setEnabledValue(boolean b) {
         enabledValue = b;
     }
 
+    /**
+     * Returns the property name used to determine whether this method is visible.
+     *
+     * @return the visible-property name, or {@code null} if none is set
+     */
     public String getVisibleProperty() {
         return visibleProperty;
     }
+
+    /**
+     * Sets the property name used to determine whether this method is visible.
+     *
+     * @param s the visible-property name
+     */
     public void setVisibleProperty(String s) {
         visibleProperty = s;
     }
+    
+    /**
+     * Returns the value that determines whether this method is visible.
+     *
+     * @return {@code true} if the method is visible when the property matches,
+     *         otherwise {@code false}
+     */
     public boolean getVisibleValue() {
         return visibleValue;
     }
+    
+    /**
+     * Sets the value that determines whether this method is visible.
+     *
+     * @param b {@code true} to make the method visible when the property matches,
+     *          otherwise {@code false}
+     */
     public void setVisibleValue(boolean b) {
         visibleValue = b;
     }
 
+    /**
+     * Returns the property name used to determine whether this method is enabled
+     * based on the current context.
+     *
+     * @return the context-enabled property name, or {@code null} if none is set
+     */
     public String getContextEnabledProperty() {
         return contextEnabledProperty;
     }
+    
+    /**
+     * Sets the property name used to determine whether this method is enabled
+     * based on the current context.
+     *
+     * @param s the context-enabled property name
+     */
     public void setContextEnabledProperty(String s) {
         contextEnabledProperty = s;
     }
+
+    /**
+     * Returns the value that determines whether this method is enabled
+     * based on the current context.
+     *
+     * @return {@code true} if the method is enabled when the context property matches,
+     *         otherwise {@code false}
+     */
     public boolean getContextEnabledValue() {
         return contextEnabledValue;
     }
+    
+    /**
+     * Sets the value that determines whether this method is enabled
+     * based on the current context.
+     *
+     * @param b {@code true} to enable the method when the context property matches,
+     *          otherwise {@code false}
+     */
     public void setContextEnabledValue(boolean b) {
         contextEnabledValue = b;
     }
+    
+    /**
+     * Sets the value that determines whether this method is enabled
+     * based on the current context.
+     *
+     * @param b {@code true} to enable the method when the context property matches,
+     *          otherwise {@code false}
+     */
     public String getContextVisibleProperty() {
         return contextVisibleProperty;
     }
+    
+    /**
+     * Sets the property name used to determine whether this method is visible
+     * based on the current context.
+     *
+     * @param s the context-visible property name
+     */
     public void setContextVisibleProperty(String s) {
         contextVisibleProperty = s;
     }
+    
+    /**
+     * Returns the value that determines whether this method is visible
+     * based on the current context.
+     *
+     * @return {@code true} if the method is visible when the context property matches,
+     *         otherwise {@code false}
+     */
     public boolean getContextVisibleValue() {
         return contextVisibleValue;
     }
+    
+    /**
+     * Sets the value that determines whether this method is visible
+     * based on the current context.
+     *
+     * @param b {@code true} to make the method visible when the context property matches,
+     *          otherwise {@code false}
+     */
     public void setContextVisibleValue(boolean b) {
         contextVisibleValue = b;
     }
     
-    
+    /**
+     * Sets the value that determines whether this method is visible
+     * based on the current context.
+     *
+     * @param b {@code true} to make the method visible when the context property matches,
+     *          otherwise {@code false}
+     */
     public void setObjectCallbackMethod(Method m) {
         this.objectCallbackMethod = m;
     }
+
+    /**
+     * Returns the callback method associated with this metadata entry.
+     *
+     * @return the callback {@link Method}, or {@code null} if none is set
+     */
     public Method getObjectCallbackMethod() {
         return objectCallbackMethod;
     }
     
+    /**
+     * Sets the {@link OAMethod} annotation metadata for this method.
+     *
+     * @param m the {@code OAMethod} annotation instance
+     */
     public void setOAMethod(OAMethod m) {
         this.oaMethod = m;
     }
+    
+    /**
+     * Returns the {@link OAMethod} annotation metadata for this method.
+     *
+     * @return the {@code OAMethod} annotation instance, or {@code null} if none is set
+     */
     public OAMethod getOAMethod() {
         return oaMethod;
     }

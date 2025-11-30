@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,28 +145,57 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private Pojo pojo;
 	private boolean bJsonUsesCapital; // JSON properties are titled (begin with capital letter)
 	
-	
-
+	/**
+	 * Default constructor that initializes the metadata instance with
+	 * an empty identifier property list.
+	 */
 	public OAObjectInfo() {
 		this(new String[] {});
 	}
 
+	/**
+	 * Returns the Java class associated with this metadata definition.
+	 *
+	 * @return the OAObject class represented by this info.
+	 */
 	public Class getForClass() {
 		return thisClass;
 	}
 
+	/**
+	 * Initializes the metadata with a single identifier property.
+	 *
+	 * @param objectIdProperty the name of the ID property.
+	 */
 	public OAObjectInfo(String objectIdProperty) {
 		this(new String[] { objectIdProperty });
 	}
 
+	/**
+	 * Initializes the metadata with the supplied array of identifier
+	 * property names.
+	 *
+	 * @param idProperties list of ID property names.
+	 */
 	public OAObjectInfo(String[] idProperties) {
 		this.idProperties = idProperties;
 	}
 
+	/**
+	 * Internal setter used to replace the identifier property list.
+	 *
+	 * @param ss the new identifier property names.
+	 */
 	void setPropertyIds(String[] ss) {
 		this.idProperties = ss;
 	}
 
+	/**
+	 * Returns the list of identifier property names. Ensures that a
+	 * non-null array is always returned.
+	 *
+	 * @return array of ID property names.
+	 */
 	public String[] getIdProperties() {
 		if (this.idProperties == null) {
 			this.idProperties = new String[0];
@@ -174,14 +203,34 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return this.idProperties;
 	}
 
+	/**
+	 * Returns the properties that form the object’s business key.
+	 * This implementation is equivalent to {@link #getIdProperties()}.
+	 *
+	 * @return array of key property names.
+	 */
 	public String[] getKeyProperties() {
 		return getIdProperties();
 	}
 
+	/**
+	 * Determines whether the supplied property name is part of the
+	 * business key. Delegates to {@link #isIdProperty(String)}.
+	 *
+	 * @param prop the property name to check.
+	 * @return true if it is an ID property.
+	 */
 	public boolean isKeyProperty(String prop) {
 		return isIdProperty(prop);
 	}
 
+	/**
+	 * Checks whether the given property name matches one of the
+	 * configured identifier properties, ignoring case.
+	 *
+	 * @param prop the property name to check.
+	 * @return true if it is an identifier property.
+	 */
 	public boolean isIdProperty(String prop) {
 		if (prop == null) {
 			return false;
@@ -194,18 +243,45 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return false;
 	}
 
+	/**
+	 * Returns true if this object type declares at least one
+	 * import-match property used for object-matching during import.
+	 *
+	 * @return true if import match properties are defined.
+	 */
 	public boolean hasImportMatchProperties() {
 		return getImportMatchPropertyNames().length > 0;
 	}
 
+	/**
+	 * Returns the list of simple property names used for import-match
+	 * processing. These identify fields used to match objects during
+	 * JSON/POJO import.
+	 *
+	 * @return array of import-match property names, or null if none.
+	 */
 	public String[] getImportMatchPropertyNames() {
 		return this.importMatchPropertyNames;
 	}
 
+	/**
+	 * Returns the list of property paths (which may traverse links)
+	 * used for import-match processing.
+	 *
+	 * @return array of import-match property paths, or null if none.
+	 */
 	public String[] getImportMatchPropertyPaths() {
 		return this.importMatchPropertyPaths;
 	}
 
+	/**
+	 * Returns the list of defined link relationships for this object
+	 * type. The list is lazily initialized as a thread-safe
+	 * CopyOnWriteArrayList that automatically resets cached lookup
+	 * tables whenever modified.
+	 *
+	 * @return list of link metadata entries.
+	 */
 	public List<OALinkInfo> getLinkInfos() {
 		if (alLinkInfo == null) {
 			alLinkInfo = new CopyOnWriteArrayList<OALinkInfo>() {
@@ -243,16 +319,37 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return alLinkInfo;
 	}
 
+	/**
+	 * Adds a link definition to this object type. Delegates to
+	 * {@link #addLinkInfo(OALinkInfo)}.
+	 *
+	 * @param li the link metadata to add.
+	 */
 	public void addLink(OALinkInfo li) {
 		addLinkInfo(li);
 	}
 
+	/**
+	 * Adds a link definition to this object type by inserting it into
+	 * the link-info list. This also resets internal caches so that
+	 * reverse-lookup tables are refreshed.
+	 *
+	 * @param li the link metadata to add.
+	 */
 	public void addLinkInfo(OALinkInfo li) {
 		getLinkInfos().add(li);
 	}
 
 	private HashMap<String, OALinkInfo> hmLinkInfo;
 
+	/**
+	 * Retrieves link metadata associated with the supplied property
+	 * name. Performs a case-insensitive lookup using an internal
+	 * cache, building the cache on first access.
+	 *
+	 * @param propertyName the link property name.
+	 * @return the matching link info, or null if none exists.
+	 */
 	public OALinkInfo getLinkInfo(String propertyName) {
 		if (propertyName == null) {
 			return null;
@@ -274,6 +371,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 	private OALinkInfo[] ownedLinkInfos;
 
+	/**
+	 * Returns an array of link definitions where this object is the
+	 * owner side of the relationship. The result is cached after the
+	 * initial scan of link metadata.
+	 *
+	 * @return array of owned link metadata.
+	 */
 	public OALinkInfo[] getOwnedLinkInfos() {
 		if (ownedLinkInfos == null) {
 			int x = 0;
@@ -306,6 +410,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private boolean bOwnedAndNoMany;
 	private boolean bOwnedAndNoManyCheck;
 
+	/**
+	 * Determines whether this type is owned by another object and has
+	 * no reverse MANY-side link. Scans link definitions only on the
+	 * first call and caches the result.
+	 *
+	 * @return true if owned and no reverse MANY links exist.
+	 */
 	public boolean isOwnedAndNoReverseMany() {
 		if (bOwnedAndNoManyCheck) {
 			return bOwnedAndNoMany;
@@ -339,6 +450,12 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private boolean bOwnedByOne;
 	private OALinkInfo liOwnedByOne;
 
+	/**
+	 * Returns the ONE-side link info that indicates this type is
+	 * owned by another object. Evaluated once and cached thereafter.
+	 *
+	 * @return the owning ONE link info, or null if none found.
+	 */
 	public OALinkInfo getOwnedByOne() {
 		if (bOwnedByOne) {
 			return liOwnedByOne;
@@ -363,6 +480,12 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return liOwnedByOne;
 	}
 
+	/**
+	 * Returns the list of calculated-property metadata entries,
+	 * creating the list on first access.
+	 *
+	 * @return list of calculation info objects.
+	 */
 	public ArrayList<OACalcInfo> getCalcInfos() {
 		if (alCalcInfo == null) {
 			alCalcInfo = new ArrayList<OACalcInfo>(5);
@@ -370,6 +493,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return alCalcInfo;
 	}
 
+	/**
+	 * Retrieves a calculated-property definition by name using
+	 * case-insensitive comparison.
+	 *
+	 * @param s the calculated property name.
+	 * @return the matching OACalcInfo, or null if not found.
+	 */
 	public OACalcInfo getCalcInfo(String s) {
 		if (alCalcInfo == null) {
 			return null;
@@ -382,6 +512,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return null;
 	}
 
+	/**
+	 * Adds a calculated-property metadata entry and updates the
+	 * internal hub-calculation name set when the calculation is
+	 * hub-based.
+	 *
+	 * @param ci the calculation metadata to add.
+	 */
 	public void addCalcInfo(OACalcInfo ci) {
 		getCalcInfos().add(ci);
 		if (ci.bIsForHub) {
@@ -392,6 +529,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Determines whether the supplied name corresponds to a hub-based
+	 * calculated property. Case-insensitive.
+	 *
+	 * @param name the property name.
+	 * @return true if it represents a hub calculation.
+	 */
 	public boolean isHubCalcInfo(String name) {
 		if (name == null) {
 			return false;
@@ -400,9 +544,10 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	}
 
 	/**
-	 * This is for regular properties, and does not include reference properties.
+	 * Returns the list of primitive (non-reference) property metadata,
+	 * initializing the list on first access.
 	 *
-	 * @see #getLinkInfos() to get list of reference properties.
+	 * @return list of OAPropertyInfo entries.
 	 */
 	public ArrayList<OAPropertyInfo> getPropertyInfos() {
 		if (alPropertyInfo == null) {
@@ -411,6 +556,12 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return alPropertyInfo;
 	}
 
+	/**
+	 * Adds a primitive property metadata entry and resets cached
+	 * lookup state so that dependent computations are refreshed.
+	 *
+	 * @param pi the property metadata to add.
+	 */
 	public void addPropertyInfo(OAPropertyInfo pi) {
 		if (pi == null) {
 			return;
@@ -419,6 +570,10 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		resetPropertyInfo();
 	}
 
+	/**
+	 * Clears cached property-lookup values so they will be recalculated
+	 * when next requested. Used after property metadata is modified.
+	 */
 	protected void resetPropertyInfo() {
 		hmPropertyInfo = null;
 		bCheckTimestamp = false;
@@ -432,6 +587,12 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private volatile boolean bHasBlobProperty;
 	private volatile boolean bCheckHasBlobProperty;
 
+	/**
+	 * Returns true if this type defines at least one blob property.
+	 * Scans once and caches the result for subsequent calls.
+	 *
+	 * @return true if the type has a blob property.
+	 */
 	public boolean getHasBlobProperty() {
 		if (bCheckHasBlobProperty) {
 			return bHasBlobProperty;
@@ -445,12 +606,26 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 		return bHasBlobProperty;
 	}
+
+	/**
+	 * Deprecated spelling-compatible wrapper that returns the same
+	 * value as {@link #getHasBlobProperty()}.
+	 *
+	 * @return true if the type has a blob property.
+	 */
 	public boolean getHasBlobPropery() {
 		return getHasBlobProperty();
 	}
 
 	private HashMap<String, OAPropertyInfo> hmPropertyInfo;
 
+	/**
+	 * Retrieves primitive property metadata by name. Performs a
+	 * case-insensitive lookup and builds an internal cache on demand.
+	 *
+	 * @param propertyName the property name.
+	 * @return the matching OAPropertyInfo, or null if not found.
+	 */
 	public OAPropertyInfo getPropertyInfo(String propertyName) {
 		if (propertyName == null) {
 			return null;
@@ -470,6 +645,12 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return hm.get(propertyName.toUpperCase());
 	}
 
+	/**
+	 * Returns the list of method metadata entries, creating the list
+	 * on first access.
+	 *
+	 * @return list of OAMethodInfo entries.
+	 */
 	public ArrayList<OAMethodInfo> getMethodInfos() {
 		if (alMethodInfo == null) {
 			alMethodInfo = new ArrayList(5);
@@ -477,11 +658,24 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return alMethodInfo;
 	}
 
+	/**
+	 * Adds a method metadata entry to this type and clears the cached
+	 * method-lookup map so that it will be rebuilt on next access.
+	 *
+	 * @param mi the method metadata to add.
+	 */
 	public void addMethod(OAMethodInfo mi) {
 		getMethodInfos().add(mi);
 		hmMethodInfo = null;
 	}
 
+	/**
+	 * Adds a method metadata entry. Functionally identical to
+	 * {@link #addMethod(OAMethodInfo)}, and also clears the cached
+	 * method-lookup map.
+	 *
+	 * @param mi the method metadata to add.
+	 */
 	public void addMethodInfo(OAMethodInfo mi) {
 		getMethodInfos().add(mi);
 		hmMethodInfo = null;
@@ -489,6 +683,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 	private HashMap<String, OAMethodInfo> hmMethodInfo;
 
+	/**
+	 * Retrieves method metadata by method name. Uses a case-insensitive
+	 * lookup and lazily initializes an internal name → metadata map.
+	 *
+	 * @param name the method name.
+	 * @return matching OAMethodInfo, or null if not found.
+	 */
 	public OAMethodInfo getMethodInfo(String name) {
 		if (name == null) {
 			return null;
@@ -510,6 +711,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 	private HashMap<String, Method> hmObjectCallbackMethod;
 
+	/**
+	 * Looks up an object-callback method by name. Returns null if no
+	 * callback map exists or if the name is null.
+	 *
+	 * @param name the callback method name.
+	 * @return the reflected Method, or null.
+	 */
 	public Method getObjectCallbackMethod(String name) {
 		if (hmObjectCallbackMethod == null) {
 			return null;
@@ -520,6 +728,14 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return hmObjectCallbackMethod.get(name.toUpperCase());
 	}
 
+	/**
+	 * Registers a reflected method as an object-callback method
+	 * associated with the supplied name. Initializes the internal
+	 * map on first use.
+	 *
+	 * @param name the lookup name.
+	 * @param m    the callback method.
+	 */
 	public void addObjectCallbackMethod(String name, Method m) {
 		if (name == null || m == null) {
 			return;
@@ -530,8 +746,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		hmObjectCallbackMethod.put(name.toUpperCase(), m);
 	}
 
-	// set by OAObjectInfoDelegate.initialize().  All primitive properties, in uppercase, sorted -
-	//   used for the bit position for OAObject.nulls
+	/**
+	 * Returns the list of primitive property names used for the
+	 * OAObject null-bitmask mechanism. The list is assigned during
+	 * OAObjectInfoDelegate initialization.
+	 *
+	 * @return array of primitive property names.
+	 */
 	public String[] getPrimitiveProperties() {
 		return primitiveProps;
 	}
@@ -548,51 +769,119 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *         1) << posBit; primitiveMask[posByte] ^= b; } return primitiveMask; }
 	 */
 
-	// 20120827
+	/**
+	 * Returns the list of hub-based property names defined for this
+	 * type. These represent hub references with size zero defaults.
+	 *
+	 * @return array of hub property names.
+	 */
 	public String[] getHubProperties() {
 		return hubProps;
 	}
 
+	/**
+	 * Sets whether this type supports backing by a datasource.
+	 *
+	 * @param b true to enable datasource usage.
+	 */
 	public void setUseDataSource(boolean b) {
 		bUseDataSource = b;
 	}
 
+	/**
+	 * Returns whether this type supports loading from or saving to a
+	 * datasource.
+	 *
+	 * @return true if datasource usage is enabled.
+	 */
 	public boolean getUseDataSource() {
 		return bUseDataSource;
 	}
 
+	/**
+	 * Specifies whether objects of this type should be restricted to
+	 * local use, preventing transmission to remote servers.
+	 *
+	 * @param b true to restrict to local-only behavior.
+	 */
 	public void setLocalOnly(boolean b) {
 		bLocalOnly = b;
 	}
 
+	/**
+	 * Indicates whether this type is marked as local-only and should
+	 * not be transmitted to remote servers.
+	 *
+	 * @return true if local-only is enabled.
+	 */
 	public boolean getLocalOnly() {
 		return bLocalOnly;
 	}
 
+	/**
+	 * Specifies whether instances of this type should be added to the
+	 * global OAObjectCache during creation or loading.
+	 *
+	 * @param b true to enable caching behavior.
+	 */
 	public void setAddToCache(boolean b) {
 		bAddToCache = b;
 	}
 
+	/**
+	 * Returns whether instances of this type are automatically added
+	 * to the object cache.
+	 *
+	 * @return true if caching is enabled.
+	 */
 	public boolean getAddToCache() {
 		return bAddToCache;
 	}
 
+	/**
+	 * Enables or disables automatic initialization of primitive
+	 * properties for new instances of this type.
+	 *
+	 * @param b true to initialize new objects.
+	 */
 	public void setInitializeNewObjects(boolean b) {
 		bInitializeNewObjects = b;
 	}
 
+	/**
+	 * Returns whether new objects should have primitive property
+	 * defaults initialized automatically.
+	 *
+	 * @return true if initialization is enabled.
+	 */
 	public boolean getInitializeNewObjects() {
 		return bInitializeNewObjects;
 	}
 
+	/**
+	 * Returns the model-defined name for this object type.
+	 *
+	 * @return the object name.
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Sets the model-defined name for this object type.
+	 *
+	 * @param s the name to assign.
+	 */
 	public void setName(String s) {
 		this.name = s;
 	}
 
+	/**
+	 * Returns the display name for this object type. If not explicitly
+	 * set, defaults to the simple class name.
+	 *
+	 * @return display-friendly name.
+	 */
 	public String getDisplayName() {
 		if (displayName == null && thisClass != null) {
 			displayName = thisClass.getSimpleName();
@@ -600,10 +889,21 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return displayName;
 	}
 
+	/**
+	 * Sets the display name for this object type.
+	 *
+	 * @param s the name to display.
+	 */
 	public void setDisplayName(String s) {
 		this.displayName = s;
 	}
 
+	/**
+	 * Returns the pluralized form of the display name. If not already
+	 * set, it is computed from the class name.
+	 *
+	 * @return plural name.
+	 */
 	public String getPluralName() {
 		if (pluralName == null && thisClass != null) {
 			pluralName = OAString.getPlural(thisClass.getName());
@@ -611,10 +911,21 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return pluralName;
 	}
 
+	/**
+	 * Assigns the plural display name for this object type.
+	 *
+	 * @param s the plural name to set.
+	 */
 	public void setPluralName(String s) {
 		this.pluralName = s;
 	}
 
+	/**
+	 * Returns a lowercase-first version of the class name. Generated
+	 * lazily if not explicitly set.
+	 *
+	 * @return lowercased name.
+	 */
 	public String getLowerName() {
 		if (lowerName == null && thisClass != null) {
 			lowerName = OAString.makeFirstCharLower(thisClass.getName());
@@ -622,18 +933,41 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return lowerName;
 	}
 
+	/**
+	 * Sets the lowercase name for this type.
+	 *
+	 * @param s the name to assign.
+	 */
 	public void setLowerName(String s) {
 		this.lowerName = s;
 	}
 
+	/**
+	 * Returns the list of root-tree property paths used to construct
+	 * hierarchical tree views for this type.
+	 *
+	 * @return array of root tree property paths.
+	 */
 	public String[] getRootTreePropertyPaths() {
 		return rootTreePropertyPaths;
 	}
 
+	/**
+	 * Assigns the list of root-tree property paths that define how
+	 * instances of this type participate in hierarchical trees.
+	 *
+	 * @param paths property paths to assign.
+	 */
 	public void setRootTreePropertyPaths(String[] paths) {
 		this.rootTreePropertyPaths = paths;
 	}
 
+	/**
+	 * Marks the specified property as required by updating the
+	 * corresponding OAPropertyInfo entry.
+	 *
+	 * @param prop the property name to mark required.
+	 */
 	public void addRequired(String prop) {
 		ArrayList al = getPropertyInfos();
 		for (int i = 0; i < al.size(); i++) {
@@ -644,12 +978,25 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Retrieves the recursively-defined link info for the given type.
+	 * Delegates to OAObjectInfoDelegate for evaluation.
+	 *
+	 * @param type link type constant.
+	 * @return recursive link definition, or null.
+	 */
 	public OALinkInfo getRecursiveLinkInfo(int type) {
 		return OAObjectInfoDelegate.getRecursiveLinkInfo(this, type);
 	}
 
 	private int lastDataSourceChangeCnter;
 
+	/**
+	 * Determines whether objects of this type support persistent
+	 * storage. Evaluates only when needed and caches the result.
+	 *
+	 * @return true if storage is supported.
+	 */
 	public boolean getSupportsStorage() {
 		if (supportsStorage == -1 || lastDataSourceChangeCnter != OADataSource.getChangeCounter()) {
 			supportsStorage = -1;
@@ -682,12 +1029,21 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private final static AtomicInteger aiAllTrigger = new AtomicInteger();
 
 	/**
-	 * total triggers created.
+	 * Returns the total number of triggers registered across all
+	 * object types. Uses a shared global counter.
+	 *
+	 * @return number of triggers created.
 	 */
 	public static int getTotalTriggers() {
 		return aiAllTrigger.get();
 	}
 
+	/**
+	 * Returns the list of property names for which triggers have been
+	 * registered on this object type.
+	 *
+	 * @return list of trigger property names.
+	 */
 	public ArrayList<String> getTriggerPropertNames() {
 		ArrayList<String> al = new ArrayList<String>();
 		for (String s : hmTriggerInfo.keySet()) {
@@ -697,11 +1053,14 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	}
 
 	/**
-	 * Not called directly, but used by OATriggerDelegate.createTrigger(..) to create, register and call a trigger.
+	 * Creates and registers trigger metadata for each property path
+	 * defined on the supplied trigger. Walks the property path,
+	 * determines forward and reverse link traversal rules, and adds
+	 * TriggerInfo entries accordingly.
 	 *
-	 * @param trigger
-	 * @param bSkipFirstNonManyProperty if true then the first property of type prop/calc/one will not be listened to. This is used when a
-	 *                                  hubListener takes care of these changes.
+	 * @param trigger the trigger definition to register.
+	 * @param bSkipFirstNonManyProperty whether to skip listening on
+	 *        the first non-many property in the path.
 	 */
 	protected void createTrigger(final OATrigger trigger, final boolean bSkipFirstNonManyProperty) {
 		if (trigger == null) {
@@ -778,7 +1137,18 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 	}
 
-	// add the trigger to the correct OI for a propertyPath
+	/**
+	 * Internal helper that registers a trigger listener for a specific
+	 * property. Ensures duplicate trigger entries are not created,
+	 * logs trigger registration, and handles creation of dependent
+	 * triggers for calculated properties.
+	 *
+	 * @param trigger        the trigger to register.
+	 * @param propPath       forward property path from root.
+	 * @param revPropPath    reverse property path back to root.
+	 * @param listenProperty the property to listen on.
+	 * @return the TriggerInfo that was created or matched.
+	 */
 	private TriggerInfo _addTrigger(final OATrigger trigger, final String propPath, final String revPropPath, final String listenProperty) {
 		if (trigger == null || listenProperty == null) {
 			throw new IllegalArgumentException("args can not be null");
@@ -847,6 +1217,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return ti;
 	}
 
+	/**
+	 * Removes a previously registered trigger from this object type,
+	 * including any recursive or dependent triggers. Also logs the
+	 * removal for debugging and performance tracking.
+	 *
+	 * @param trigger the trigger to remove.
+	 */
 	public void removeTrigger(OATrigger trigger) {
 		if (trigger == null) {
 			return;
@@ -894,6 +1271,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Internal helper used to remove trigger listeners from this
+	 * object's TriggerInfo map. Handles decrementing counters and
+	 * cleaning up empty lists.
+	 *
+	 * @param trigger the trigger instance being removed.
+	 */
 	protected void _removeTrigger(OATrigger trigger) {
 		if (trigger == null) {
 			return;
@@ -928,10 +1312,23 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Returns true if at least one trigger has been registered for
+	 * this type.
+	 *
+	 * @return true if triggers exist.
+	 */
 	public boolean getHasTriggers() {
 		return hmTriggerInfo.size() > 0;
 	}
 
+	/**
+	 * Returns all triggers listening to the given property name.
+	 * Performs a case-insensitive lookup.
+	 *
+	 * @param propertyName the property to check.
+	 * @return list of triggers, or null if none registered.
+	 */
 	public ArrayList<OATrigger> getTriggers(String propertyName) {
 		if (propertyName == null) {
 			return null;
@@ -948,8 +1345,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	}
 
 	/**
-	 * called by OAObject.propChange, Hub.add/remove/removeAll/insert, and OAObjectCacheDelegate when a change is made. This will then check
-	 * to see if there is trigger method to send the change to.
+	 * Dispatches a change event to all triggers registered for the
+	 * specified property. Ensures recursion depth is controlled and
+	 * delegates to the internal processing routine.
+	 *
+	 * @param fromObject the source object of the change.
+	 * @param prop       the changed property name.
+	 * @param hubEvent   hub event context.
 	 */
 	public void onChange(final OAObject fromObject, final String prop, final HubEvent hubEvent) {
 		if (prop == null || hubEvent == null) {
@@ -977,6 +1379,16 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Internal trigger-processing driver that evaluates server-side
+	 * conditions, logging, and response timing before delegating to
+	 * deeper change-handling logic.
+	 *
+	 * @param fromObject source object of the change.
+	 * @param prop       changed property name.
+	 * @param ti         trigger info to evaluate.
+	 * @param hubEvent   hub event context.
+	 */
 	private void _onChange(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
 		boolean b = false;
 		boolean b2 = false;
@@ -1026,6 +1438,16 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Second-stage trigger processing that determines whether the
+	 * trigger should run immediately or within a background thread,
+	 * depending on reverse-path rules and thread constraints.
+	 *
+	 * @param fromObject source object.
+	 * @param prop       property name.
+	 * @param ti         trigger metadata entry.
+	 * @param hubEvent   event context.
+	 */
 	private void _onChange2(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
 		if (ti.trigger.bServerSideOnly) {
 			if (!OASync.isServer()) {
@@ -1061,6 +1483,17 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Core trigger execution routine. Performs reverse-path lookups
+	 * when applicable and invokes the trigger's listener with each
+	 * resolved root object. Handles detection of missing data and
+	 * fallback to non-reverse processing when necessary.
+	 *
+	 * @param fromObject source of the change.
+	 * @param prop       changed property.
+	 * @param ti         trigger metadata.
+	 * @param hubEvent   event information.
+	 */
 	private void _runOnChange2(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
 		if (ti.ppToRootClass == null || ti.ppToRootClass.length() == 0) {
 			try {
@@ -1166,123 +1599,288 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Sets the lookup flag, which controls whether this type may be
+	 * used as a lookup/reference type in UI components or loaders.
+	 *
+	 * @param b true to enable lookup behavior.
+	 */
 	public void setLookup(boolean b) {
 		this.bLookup = b;
 	}
 
+	/**
+	 * Returns whether this type is marked as a lookup type.
+	 *
+	 * @return true if lookup mode is enabled.
+	 */
 	public boolean getLookup() {
 		return bLookup;
 	}
 
+	/**
+	 * Indicates whether JSON field names for this type begin with a
+	 * capital letter.
+	 *
+	 * @return true if capitalized JSON field names are used.
+	 */
 	public boolean getJsonUsesCapital() {
 		return bJsonUsesCapital;
 	}
+	
+	/**
+	 * Specifies whether JSON field names for this type should begin
+	 * with a capital letter.
+	 *
+	 * @param b true to use capitalized names.
+	 */
 	public void setJsonUsesCapital(boolean b) {
 		this.bJsonUsesCapital = b;
 	}
 
 	protected boolean bPreSelect;
 
+	/**
+	 * Enables or disables pre-select behavior used during object
+	 * loading or filtering.
+	 *
+	 * @param b true to enable pre-selection.
+	 */
 	public void setPreSelect(boolean b) {
 		this.bPreSelect = b;
 	}
 
+	/**
+	 * Returns whether pre-select behavior is enabled.
+	 *
+	 * @return true if pre-selection is enabled.
+	 */
 	public boolean getPreSelect() {
 		return this.bPreSelect;
 	}
 
+	/**
+	 * Marks this metadata instance as processed by the initialization
+	 * logic.
+	 *
+	 * @param b true to mark processed.
+	 */
 	public void setProcessed(boolean b) {
 		this.bProcessed = b;
 	}
 
+	/**
+	 * Returns whether this metadata instance has been processed by
+	 * OAObjectInfoDelegate initialization.
+	 *
+	 * @return true if processed.
+	 */
 	public boolean getProcessed() {
 		return bProcessed;
 	}
 
+	/**
+	 * Assigns the set of properties whose display or enabled state
+	 * depends on the current view context.
+	 *
+	 * @param ss array of dependent property names.
+	 */
 	public void setViewDependentProperties(String[] ss) {
 		this.viewDependentProperties = ss;
 	}
 
+	/**
+	 * Returns the set of view-dependent property names assigned to
+	 * this type.
+	 *
+	 * @return array of property names, or null if none defined.
+	 */
 	public String[] getViewDependentProperties() {
 		return this.viewDependentProperties;
 	}
 
+	/**
+	 * Assigns the set of properties whose behavior depends on the current
+	 * context. Stores the supplied array as-is without modification.
+	 *
+	 * @param ss array of context-dependent property names.
+	 */
 	public void setContextDependentProperties(String[] ss) {
 		this.contextDependentProperties = ss;
 	}
 
+	/**
+	 * Returns the list of properties whose behavior depends on the current
+	 * context. May return null if none have been assigned.
+	 *
+	 * @return array of context-dependent property names.
+	 */
 	public String[] getContextDependentProperties() {
 		return this.contextDependentProperties;
 	}
 
+	/**
+	 * Returns the static enabled value associated with this type.
+	 *
+	 * @return true if enabled, otherwise false.
+	 */
 	public String getEnabledProperty() {
 		return enabledProperty;
 	}
 
+	/**
+	 * Sets the enabled value associated with this type.
+	 *
+	 * @param b the enabled value to assign.
+	 */
 	public void setEnabledProperty(String s) {
 		enabledProperty = s;
 	}
 
+	/**
+	 * Returns the enabled value associated with this type.
+	 *
+	 * @return true if enabled, otherwise false.
+	 */
 	public boolean getEnabledValue() {
 		return enabledValue;
 	}
 
+	/**
+	 * Sets the enabled value associated with this type.
+	 *
+	 * @param b the enabled value to assign.
+	 */
 	public void setEnabledValue(boolean b) {
 		enabledValue = b;
 	}
 
+	/**
+	 * Returns the property name used to determine visibility.
+	 *
+	 * @return visible-property name.
+	 */
 	public String getVisibleProperty() {
 		return visibleProperty;
 	}
 
+	/**
+	 * Assigns the property name used to determine visibility.
+	 *
+	 * @param s name of the visible-property.
+	 */
 	public void setVisibleProperty(String s) {
 		visibleProperty = s;
 	}
 
+	/**
+	 * Returns the static visible value associated with this type.
+	 *
+	 * @return true if visible, otherwise false.
+	 */
 	public boolean getVisibleValue() {
 		return visibleValue;
 	}
 
+	/**
+	 * Sets the static visible value associated with this type.
+	 *
+	 * @param b the visible value to assign.
+	 */
 	public void setVisibleValue(boolean b) {
 		visibleValue = b;
 	}
 
+	/**
+	 * Returns the name of the property used to determine context-specific
+	 * enabled state.
+	 *
+	 * @return context-enabled property name.
+	 */
 	public String getContextEnabledProperty() {
 		return contextEnabledProperty;
 	}
 
+	/**
+	 * Assigns the property name used to determine context-specific enabled
+	 * state.
+	 *
+	 * @param s the context-enabled property name.
+	 */
 	public void setContextEnabledProperty(String s) {
 		contextEnabledProperty = s;
 	}
 
+	/**
+	 * Returns the static context-enabled value associated with this type.
+	 *
+	 * @return true if context-enabled, otherwise false.
+	 */
 	public boolean getContextEnabledValue() {
 		return contextEnabledValue;
 	}
 
+	/**
+	 * Sets the static context-enabled value for this type.
+	 *
+	 * @param b the context-enabled value to assign.
+	 */
 	public void setContextEnabledValue(boolean b) {
 		contextEnabledValue = b;
 	}
 
+	/**
+	 * Returns the property name used to determine context-specific
+	 * visibility.
+	 *
+	 * @return context-visible property name.
+	 */
 	public String getContextVisibleProperty() {
 		return contextVisibleProperty;
 	}
 
+	/**
+	 * Assigns the property name used to determine context-specific
+	 * visibility.
+	 *
+	 * @param s the context-visible property name.
+	 */
 	public void setContextVisibleProperty(String s) {
 		contextVisibleProperty = s;
 	}
 
+	/**
+	 * Returns the static context-visible value associated with this type.
+	 *
+	 * @return true if context-visible, otherwise false.
+	 */
 	public boolean getContextVisibleValue() {
 		return contextVisibleValue;
 	}
 
+	/**
+	 * Sets the static context-visible value for this type.
+	 *
+	 * @param b the context-visible value to assign.
+	 */
 	public void setContextVisibleValue(boolean b) {
 		contextVisibleValue = b;
 	}
 
+	/**
+	 * Assigns the reflected callback method associated with this type.
+	 *
+	 * @param m the callback method to store.
+	 */
 	public void setObjectCallbackMethod(Method m) {
 		this.objectCallbackMethod = m;
 	}
 
+	/**
+	 * Returns the reflected callback method assigned to this type.
+	 *
+	 * @return the callback Method, or null if none assigned.
+	 */
 	public Method getObjectCallbackMethod() {
 		return objectCallbackMethod;
 	}
@@ -1290,6 +1888,12 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private volatile OAPropertyInfo piTimestamp;
 	private volatile boolean bCheckTimestamp;
 
+	/**
+	 * Returns the timestamp property for this type by scanning the
+	 * property list on first access and caching the result.
+	 *
+	 * @return the timestamp property info, or null if none defined.
+	 */
 	public OAPropertyInfo getTimestampProperty() {
 		if (bCheckTimestamp) {
 			return piTimestamp;
@@ -1307,6 +1911,12 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private volatile OAPropertyInfo piSubmit;
 	private volatile boolean bCheckSubmit;
 
+	/**
+	 * Returns the submit property for this type by scanning the property
+	 * list on first access and caching the result.
+	 *
+	 * @return the submit property info, or null if none defined.
+	 */
 	public OAPropertyInfo getSubmitProperty() {
 		if (bCheckSubmit) {
 			return piSubmit;
@@ -1321,67 +1931,143 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return piSubmit;
 	}
 
+	/**
+	 * Returns whether this type is marked as having exactly one
+	 * link property.
+	 *
+	 * @return true if one-and-only-one link is defined.
+	 */
 	public boolean getHasOneAndOnlyOneLink() {
 		return bHasOneAndOnlyOneLink;
 	}
 
+	/**
+	 * Sets whether this type has exactly one link property.
+	 *
+	 * @param b true to mark as one-and-only-one.
+	 */
 	public void setHasOneAndOnlyOneLink(boolean b) {
 		this.bHasOneAndOnlyOneLink = b;
 	}
 
+	/**
+	 * Returns the property name used to indicate soft-deleted state.
+	 *
+	 * @return soft-delete property name.
+	 */
 	public String getSoftDeleteProperty() {
 		return softDeleteProperty;
 	}
 
+	/**
+	 * Assigns the property name used to indicate soft-deleted state.
+	 *
+	 * @param s the soft-delete property name.
+	 */
 	public void setSoftDeleteProperty(String s) {
 		softDeleteProperty = s;
 	}
 
+	/**
+	 * Returns the property name holding the soft-delete reason.
+	 *
+	 * @return soft-delete reason property name.
+	 */
 	public String getSoftDeleteReasonProperty() {
 		return softDeleteReasonProperty;
 	}
 
+	/**
+	 * Assigns the property name that stores the soft-delete reason.
+	 *
+	 * @param s the soft-delete reason property name.
+	 */
 	public void setSoftDeleteReasonProperty(String s) {
 		softDeleteReasonProperty = s;
 	}
 
+	/**
+	 * Assigns the property name used to store the version value.
+	 *
+	 * @param s the version property name.
+	 */
 	public String getVersionProperty() {
 		return versionProperty;
 	}
 
+	/**
+	 * Assigns the property name used to store the version value.
+	 *
+	 * @param s the version property name.
+	 */
 	public void setVersionProperty(String s) {
 		versionProperty = s;
 	}
 
+	/**
+	 * Returns the link-property name that associates this type with its
+	 * version object.
+	 *
+	 * @return version link-property name.
+	 */
 	public String getVersionLinkProperty() {
 		return versionLinkProperty;
 	}
 
+	/**
+	 * Assigns the link-property name used to associate this type with its
+	 * version object.
+	 *
+	 * @param s the version link-property name.
+	 */
 	public void setVersionLinkProperty(String s) {
 		versionLinkProperty = s;
 	}
 
+	/**
+	 * Returns the property name used to identify the time-series value
+	 * for this type.
+	 *
+	 * @return time-series property name.
+	 */
 	public String getTimeSeriesProperty() {
 		return timeSeriesProperty;
 	}
 
+	/**
+	 * Assigns the property name used to identify the time-series value
+	 * for this type.
+	 *
+	 * @param s the time-series property name.
+	 */
 	public void setTimeSeriesProperty(String s) {
 		timeSeriesProperty = s;
 	}
 
+	/**
+	 * Returns the property name used to represent a freeze-state flag.
+	 *
+	 * @return freeze-state property name.
+	 */
     public String getFreezeProperty() {
         return freezeProperty;
     }
 
+    /**
+     * Assigns the property name used to indicate a freeze-state flag.
+     *
+     * @param s the freeze-state property name.
+     */
     public void setFreezeProperty(String s) {
         freezeProperty = s;
     }
 	
-	/**
-	 * Maps a Java pojo (json) so that it can be used to parse into an OAObject.
-	 * <p>
-	 * see OABuilder model OABuilderPojo
-	 */
+    /**
+     * Returns the mapped Pojo definition for this type. Loads the Pojo
+     * lazily using OAObjectPojoLoader on first access.
+     *
+     * @return the Pojo instance.
+     */
 	public Pojo getPojo() {
 		if (pojo == null) {
 			OAObjectPojoLoader loader = new OAObjectPojoLoader();
@@ -1390,26 +2076,56 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return pojo;
 	}
 
+	/**
+	 * Returns whether this type is configured as a singleton.
+	 *
+	 * @return true if singleton-enabled.
+	 */
 	public boolean getSingleton() {
 		return singleton;
 	}
 
+	/**
+	 * Sets whether this type should be treated as a singleton.
+	 *
+	 * @param b true to enable singleton mode.
+	 */
 	public void setSingleton(boolean b) {
 		this.singleton = b;
 	}
 
+	/**
+	 * Returns whether this type is configured to use a singleton Pojo.
+	 *
+	 * @return true if Pojo singleton mode is enabled.
+	 */
 	public boolean getPojoSingleton() {
 		return pojoSingleton;
 	}
 
+	/**
+	 * Sets whether this type should use a singleton Pojo instance.
+	 *
+	 * @param b true to enable Pojo singleton mode.
+	 */
 	public void setPojoSingleton(boolean b) {
 		this.pojoSingleton = b;
 	}
 
+	/**
+	 * Returns whether this type is configured to not use a Pojo.
+	 *
+	 * @return true if Pojo usage is disabled.
+	 */
 	public boolean getNoPojo() {
 		return noPojo;
 	}
 
+	/**
+	 * Sets whether this type should disable Pojo usage.
+	 *
+	 * @param b true to disable Pojo usage.
+	 */
 	public void setNoPojo(boolean b) {
 		this.noPojo = b;
 	}

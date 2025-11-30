@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,10 +45,25 @@ public class OAObjectLockDelegate {
     private static final Map<Object, Object> hmLock = new HashMap<>(11, 0.75F);
 	
 	
-    /** 
-	    Used to set a lock on an Object.
-	    see #lock(Object,Object,Object) lock
-	*/
+    /**
+     * Attempts to acquire a lock for the specified {@link OAObject}.  
+     * <p>
+     * If the object’s class is associated with a remote sync session, the
+     * lock request is delegated to the {@link RemoteSessionInterface} so
+     * that distributed clients are notified. In this case, the method
+     * returns immediately after the remote lock is set.
+     * </p>
+     * <p>
+     * For local (non-sync) environments, a new {@code OALock} instance is
+     * created and stored in the shared lock map. If another lock already
+     * exists for the object, the calling thread waits until the lock is
+     * released. The wait counter on the existing lock is incremented before
+     * the thread enters the wait state.
+     * </p>
+     *
+     * @param object the object to lock; must not be {@code null}
+     * @throws IllegalArgumentException if {@code object} is {@code null}
+     */
 	public static void lock(OAObject object) {
 	    if (object == null) throw new IllegalArgumentException("object can not be null");
 	
@@ -74,10 +89,23 @@ public class OAObjectLockDelegate {
 	    }
 	}
 	
-	/** 
-	    Removes lock from table.
-	    @param object to release
-	*/
+	/**
+	 * Releases the lock held for the specified {@link OAObject}.  
+	 * <p>
+	 * If the object’s class participates in a remote sync session, the
+	 * unlock operation is delegated to the corresponding
+	 * {@link RemoteSessionInterface} so that distributed clients are
+	 * updated. In such cases, the method returns immediately.
+	 * </p>
+	 * <p>
+	 * For local operation, the lock entry is removed from the shared lock
+	 * map and all waiting threads are notified so that one of them may
+	 * acquire the lock.
+	 * </p>
+	 *
+	 * @param object the object whose lock is to be released; ignored if
+	 *               {@code null}
+	 */
 	public static void unlock(OAObject object) {
 	    if (object == null) return;
 
@@ -93,9 +121,20 @@ public class OAObjectLockDelegate {
 	    }
 	}
 	
-	/** 
-	    Used to check to see if an object is locked. This is nonblocking. 
-	*/
+	/**
+	 * Determines whether the specified {@link OAObject} is currently locked.
+	 * <p>
+	 * If the object’s class is associated with a remote sync session, the
+	 * query is delegated to the corresponding {@link RemoteSessionInterface}
+	 * for distributed lock status. Otherwise, the method checks the local
+	 * lock map. This method is non-blocking.
+	 * </p>
+	 *
+	 * @param object the object to check; if {@code null} this method returns
+	 *               {@code false}
+	 * @return {@code true} if the object is locked either remotely or
+	 *         locally; otherwise {@code false}
+	 */
 	public static boolean isLocked(OAObject object) {
 	    if (object == null) return false;
 
@@ -108,8 +147,4 @@ public class OAObjectLockDelegate {
         }
         
 	}
-	
-    
 }
-
-

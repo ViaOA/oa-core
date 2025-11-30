@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,15 +55,40 @@ public class OAHierFinder<F extends OAObject> {
     private boolean bIncludeFromObject;
 
     
+    /**
+     * Creates a new hierarchy finder using the specified property name and
+     * property path. The starting object will be included in evaluation.
+     *
+     * @param propertyName the property whose value is evaluated
+     * @param propertyPath the hierarchical path used for traversal
+     */
     public OAHierFinder(String propertyName, String propertyPath) {
         this(propertyName, propertyPath, true);
     }
+    
+    /**
+     * Creates a new hierarchy finder with control over whether the starting
+     * object should be evaluated.
+     *
+     * @param propertyName the property whose value is evaluated
+     * @param propertyPath the hierarchical path used for traversal
+     * @param bIncludeFromObject {@code true} to include the starting object
+     *                           in evaluation, otherwise {@code false}
+     */
     public OAHierFinder(String propertyName, String propertyPath, boolean bIncludeFromObject) {
         this.property = propertyName;
         this.strPropertyPath = propertyPath;
         this.bIncludeFromObject = bIncludeFromObject;
     }
     
+    /**
+     * Begins a hierarchical search starting from the supplied object and
+     * returns the first property value that satisfies the given filter.
+     *
+     * @param fromObject the starting object
+     * @param filter the filter used to test values
+     * @return the first matching value found, or {@code null} if none
+     */
     public Object findFirst(F fromObject, OAFilter filter) {
         if (fromObject == null) return null;
 
@@ -76,21 +101,56 @@ public class OAHierFinder<F extends OAObject> {
     }
 
     
+    /**
+     * Convenience method that searches for the first non-empty property
+     * value using an {@link OANotEmptyFilter}.
+     *
+     * @param fromObject the starting object
+     * @return the first non-empty value, or {@code null} if none
+     */
     public Object findFirst(F fromObject) {
         return findFirst(fromObject, new OANotEmptyFilter());
     }
+    
+    /**
+     * Convenience method that searches for the first non-empty property
+     * value using an {@link OANotEmptyFilter}.
+     *
+     * @param fromObject the starting object
+     * @return the first non-empty value, or {@code null} if none
+     */
     public Object findFirstNotEmpty(F fromObject) {
         return findFirst(fromObject, new OANotEmptyFilter());
     }
+    
+    /**
+     * Searches for the first empty property value using an
+     * {@link OAEmptyFilter}.
+     *
+     * @param fromObject the starting object
+     * @return the first empty value, or {@code null} if none
+     */
     public Object findFirstEmpty(F fromObject) {
         return findFirst(fromObject, new OAEmptyFilter());
     }
+    
+    /**
+     * Searches for the first non-null property value using an
+     * {@link OANotNullFilter}.
+     *
+     * @param fromObject the starting object
+     * @return the first non-null value, or {@code null} if none
+     */
     public Object findFirstNotNull(F fromObject) {
         return findFirst(fromObject, new OANotNullFilter());
     }
 
     /**
-     * Find first that is converts to True.
+     * Searches for the first property value that converts to a boolean
+     * {@code true} using {@link OAConverterBoolean}.
+     *
+     * @param fromObject the starting object
+     * @return the first truthy value, or {@code null} if none
      */
     public Object findFirstTrue(F fromObject) {
         Object objx = findFirst(fromObject, new OAFilter() {
@@ -104,14 +164,57 @@ public class OAHierFinder<F extends OAObject> {
         return objx;
     }
     
+    /**
+     * Evaluates the value at the current hierarchy position. This delegates
+     * to the extended form of this method with recursive-check disabled.
+     *
+     * @param obj the current object
+     * @param filter the filter used to test values
+     * @param pos the current property-path index
+     * @return {@code true} if a matching value was found
+     */
     protected boolean findFirstValue(final OAObject obj, OAFilter filter, final int pos) {
         return findFirstValue(obj, filter, pos, false);
     }
 
+    /**
+     * Evaluates the value at the current hierarchy position with optional
+     * recursive-check-only behavior. Delegates to the full internal variant.
+     *
+     * @param obj the current object
+     * @param filter the filter used to test values
+     * @param pos the current property-path index
+     * @param bRecursiveCheckOnly whether only recursive-parent evaluation
+     *                            should be performed
+     * @return {@code true} if a matching value was found
+     */
     protected boolean findFirstValue(final OAObject obj, OAFilter filter, final int pos, final boolean bRecursiveCheckOnly) {
         return findFirstValue(obj, filter, pos, bRecursiveCheckOnly, 0);
     }
     
+    /**
+     * Internal recursive evaluator that traverses the object hierarchy
+     * following both the specified property path and recursive parent links.
+     * <p>
+     * The method checks:
+     * <ol>
+     *   <li>Whether the starting object should be evaluated.</li>
+     *   <li>The value of the configured property on the current object.</li>
+     *   <li>Recursive parent links as defined by {@link OALinkInfo}.</li>
+     *   <li>Child links defined by the property path.</li>
+     *   <li>Additional upward recursion when allowed.</li>
+     * </ol>
+     * When a value satisfies the supplied filter, it is stored and the
+     * search stops.
+     *
+     * @param obj the current object being evaluated
+     * @param filter the filter used to determine match criteria
+     * @param pos the current property-path index
+     * @param bRecursiveCheckOnly whether only recursive-parent paths
+     *                            should be checked at this stage
+     * @param cntRecursive the current recursive-depth counter
+     * @return {@code true} if a matching value has been found
+     */
     private boolean findFirstValue(final OAObject obj, OAFilter filter, final int pos, final boolean bRecursiveCheckOnly, final int cntRecursive) {
         if (obj == null) return false;
         

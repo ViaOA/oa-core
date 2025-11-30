@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,14 @@ import com.viaoa.hub.Hub;
 public class OAObjectEnumDelegate {
 
 	/**
-	 * Get name/value pairs (enum) for a property.
+	 * Retrieves the enumeration name/value pairs defined for the specified
+	 * property of the given class. The enumeration metadata is obtained
+	 * from the corresponding {@link OAPropertyInfo}.
+	 *
+	 * @param clazz the class containing the property
+	 * @param propertyName the property whose enumeration values are requested
+	 * @return a hub containing the name/value entries, or {@code null}
+	 *         if the property does not define enumeration metadata
 	 */
 	public static Hub<String> getNameValues(Class clazz, String propertyName) {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
@@ -40,7 +47,15 @@ public class OAObjectEnumDelegate {
 	}
 
 	/**
-	 * Get the display name for name/value pairs (enum) for a property.
+	 * Retrieves the display-form enumeration name/value pairs defined for
+	 * the specified property of the given class. This returns the set of
+	 * display labels associated with the underlying enumeration values.
+	 *
+	 * @param clazz the class containing the property
+	 * @param propertyName the property whose display enumeration values
+	 *                     are requested
+	 * @return a hub containing display-name entries, or {@code null}
+	 *         if the property does not define enumeration metadata
 	 */
 	public static Hub<String> getDisplayNameValues(Class clazz, String propertyName) {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);

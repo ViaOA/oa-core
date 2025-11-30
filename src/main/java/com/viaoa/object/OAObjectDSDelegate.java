@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,9 +65,15 @@ public class OAObjectDSDelegate {
 
     static private final ConcurrentHashMap<Long, Long> hmAssigningId = new ConcurrentHashMap<Long, Long>(17, 0.75F);
 	
-	/**
-	 * Initialize a newly created OAObject.
-	 */
+    /**
+     * Assigns a primary key value to the specified object using the
+     * configured {@link OADataSource}. While the DataSource is assigning
+     * the ID, the assigning-id flag is set to suppress verification
+     * during property-change events.
+     *
+     * @param oaObj the object to initialize with an assigned ID;
+     *              ignored if {@code null}
+     */
 	public static void assignId(OAObject oaObj) {
 		if (oaObj == null) {
 			return;
@@ -84,13 +90,25 @@ public class OAObjectDSDelegate {
 		}
 	}
 
+	/**
+	 * Returns the internal map tracking GUIDs of objects currently
+	 * undergoing ID assignment.
+	 *
+	 * @return the assigning-ID tracking map
+	 */
     public static Map<Long, Long> getAssigningIdMap() {
         return hmAssigningId;
     }
 	
-	/**
-	 * Flag to know that the DS is assigning the Id, and that the value does not need to be verified by the propertyChange event
-	 */
+    /**
+     * Sets or clears the assigning-ID flag for the specified object.
+     * When enabled, verification of ID changes during property-change
+     * events is suppressed.
+     *
+     * @param obj the object whose flag is being updated; ignored if null
+     * @param b {@code true} to mark ID assignment in progress,
+     *          {@code false} to clear the flag
+     */
 	public static void setAssigningId(OAObject obj, boolean b) {
 		if (obj == null) {
 			return;
@@ -103,12 +121,28 @@ public class OAObjectDSDelegate {
 		}
 	}
 
+	/**
+	 * Determines whether the specified object is currently flagged as
+	 * undergoing ID assignment.
+	 *
+	 * @param obj the object to check
+	 * @return {@code true} if the object’s GUID is present in the
+	 *         assigning-ID map; otherwise {@code false}
+	 */
 	public static boolean isAssigningId(OAObject obj) {
 		if (obj == null) return false;
 		long g = OAObjectDelegate.getGuid(obj);
 		return OAObjectDSDelegate.getAssigningIdMap().containsKey(g);
 	}
 
+	/**
+	 * Determines whether the DataSource for the object's class has been
+	 * configured to assign IDs automatically when objects are created.
+	 *
+	 * @param oaObj the object whose DataSource is queried
+	 * @return {@code true} if ID assignment on creation is enabled,
+	 *         otherwise {@code false}
+	 */
 	public static boolean getAssignIdOnCreate(OAObject oaObj) {
 		if (oaObj == null) {
 			return false;
@@ -122,30 +156,59 @@ public class OAObjectDSDelegate {
 	}
 
 	/**
-	 * Returns the OADataSource that works with this objects Class.
+	 * Returns the {@link OADataSource} associated with the class of the
+	 * specified object.
+	 *
+	 * @param obj the object whose DataSource is requested
+	 * @return the DataSource for the object’s class, or {@code null}
 	 */
 	protected static OADataSource getDataSource(Object obj) {
 		return OADataSource.getDataSource(obj.getClass());
 	}
 
+	/**
+	 * Indicates whether a DataSource exists for the specified object's
+	 * class.
+	 *
+	 * @param oaObj the object to evaluate
+	 * @return {@code true} if a DataSource is registered; otherwise {@code false}
+	 */
 	protected static boolean hasDataSource(OAObject oaObj) {
 		return OADataSource.getDataSource(oaObj.getClass()) != null;
 	}
 
+	/**
+	 * Indicates whether a DataSource exists for the specified class.
+	 *
+	 * @param c the class to evaluate
+	 * @return {@code true} if a DataSource is registered; otherwise {@code false}
+	 */
 	protected static boolean hasDataSource(Class c) {
 		return OADataSource.getDataSource(c) != null;
 	}
 
+	/**
+	 * Determines whether the DataSource for the specified class supports
+	 * persistent storage.
+	 *
+	 * @param clazz the class whose DataSource capabilities are checked
+	 * @return {@code true} if the DataSource exists and supports storage,
+	 *         otherwise {@code false}
+	 */
 	protected static boolean supportsStorage(Class clazz) {
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		return (ds != null && ds.supportsStorage());
 	}
 
 	/**
-	 * Find the OAObject given a key value. This will look in the Cache and the DataSource.
+	 * Retrieves an object from the DataSource using the specified class
+	 * and key. The key may be a raw value or an {@link OAObjectKey}; if it
+	 * is not already a key, one is created automatically.
 	 *
-	 * @param clazz class of reference of to find.
-	 * @param key   can be the value of the key or an OAObjectKey
+	 * @param clazz the class of the object to retrieve
+	 * @param key the key value or an {@code OAObjectKey}
+	 * @return the retrieved object, or {@code null} if not found or no
+	 *         DataSource is available
 	 */
 	public static OAObject getObject(Class clazz, Object key) {
 		if (clazz == null || key == null) {
@@ -162,6 +225,13 @@ public class OAObjectDSDelegate {
 		return oaObj;
 	}
 
+	/**
+	 * Refreshes all properties of the specified object by requesting a
+	 * reloaded version from the DataSource. The object's full property set
+	 * is reloaded using its primary key.
+	 *
+	 * @param obj the object to refresh; ignored if {@code null}
+	 */
 	public static void refreshObject(OAObject obj) {
 		if (obj == null) {
 			return;
@@ -175,10 +245,27 @@ public class OAObjectDSDelegate {
 		}
 	}
 
+	/**
+	 * Retrieves an object from the DataSource using the specified class
+	 * and {@link OAObjectKey}.
+	 *
+	 * @param clazz the object's class
+	 * @param key the object key
+	 * @return the retrieved object, or {@code null} if none exists
+	 */
 	protected static Object getObject(Class clazz, OAObjectKey key) {
 		return OADataSource.getObject(clazz, key);
 	}
 
+	/**
+	 * Retrieves an object from the DataSource using the supplied metadata,
+	 * class, and key. Does not force property reload.
+	 *
+	 * @param oi the metadata describing the object's class
+	 * @param clazz the class of the object to retrieve
+	 * @param key the object's key
+	 * @return the retrieved object, or {@code null} if no DataSource exists
+	 */
 	protected static Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key) {
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		if (ds == null) {
@@ -187,6 +274,14 @@ public class OAObjectDSDelegate {
 		return ds.getObject(oi, clazz, key, false);
 	}
 
+	/**
+	 * Retrieves a blob property value for the specified object from the
+	 * DataSource.
+	 *
+	 * @param obj the object containing the blob property
+	 * @param propName the name of the blob property
+	 * @return the blob's value, or {@code null} if unavailable
+	 */
 	protected static Object getBlob(OAObject obj, String propName) {
 		if (obj == null || propName == null) {
 			return null;
@@ -197,9 +292,12 @@ public class OAObjectDSDelegate {
 		return ds.getPropertyBlobValue(obj, propName);
 	}
 
-	/* param bFullSave false=dont flag as unchanged, used when object needs to be saved twice. First to create
-	    object in datasource so that reference objects can refer to it
-	*/
+	/**
+	 * Saves the specified object to the DataSource. If the object is new,
+	 * an insert is performed; otherwise, an update is issued.
+	 *
+	 * @param oaObj the object to save
+	 */
 	protected static void save(OAObject oaObj) {
 		OADataSource dataSource = getDataSource(oaObj);
 		if (dataSource != null) {
@@ -211,6 +309,13 @@ public class OAObjectDSDelegate {
 		}
 	}
 
+	/**
+	 * Saves a new object to the DataSource without persisting any of its
+	 * reference properties. Intended only for new objects requiring a
+	 * pre-save prior to establishing relationships.
+	 *
+	 * @param oaObj the object to save without references
+	 */
 	protected static void saveWithoutReferences(OAObject oaObj) {
 		OADataSource dataSource = getDataSource(oaObj);
 		if (dataSource != null) {
@@ -222,6 +327,14 @@ public class OAObjectDSDelegate {
 		}
 	}
 
+	/**
+	 * Removes a single reference property from the specified object by
+	 * issuing a targeted update to the DataSource. Only the link property
+	 * defined by the supplied {@link OALinkInfo} is updated.
+	 *
+	 * @param oaObj the object whose reference is being removed
+	 * @param li the link information describing the reference property
+	 */
 	public static void removeReference(OAObject oaObj, OALinkInfo li) {
 		if (li == null) {
 			return;
@@ -234,6 +347,13 @@ public class OAObjectDSDelegate {
 		}
 	}
 
+	/**
+	 * Saves the specified object using the provided insert/update flag.
+	 *
+	 * @param obj the object to save
+	 * @param bInsert {@code true} to perform an insert,
+	 *                {@code false} to perform an update
+	 */
 	public static void save(OAObject obj, boolean bInsert) {
 		OADataSource dataSource = getDataSource(obj);
 		if (dataSource != null) {
@@ -246,7 +366,10 @@ public class OAObjectDSDelegate {
 	}
 
 	/**
-	 * called after all listeners have been called. It will find the OADataSource to use and call its "delete(this)"
+	 * Deletes the specified object using the DataSource associated with
+	 * its class. Performs no operation if no DataSource exists.
+	 *
+	 * @param obj the object to delete; ignored if {@code null}
 	 */
 	public static void delete(OAObject obj) {
 		if (obj == null) {
@@ -258,11 +381,27 @@ public class OAObjectDSDelegate {
 		}
 	}
 
+	/**
+	 * Determines whether the DataSource for the specified class allows
+	 * primary key changes.
+	 *
+	 * @param c the class whose DataSource is queried
+	 * @return {@code true} if ID changes are permitted, or if no
+	 *         DataSource exists; otherwise {@code false}
+	 */
 	public static boolean allowIdChange(Class c) {
 		OADataSource ds = OADataSource.getDataSource(c);
 		return (ds == null || ds.getAllowIdChange());
 	}
 
+	/**
+	 * Retrieves the DataSource-managed instance of the specified object
+	 * using its primary key. Returns {@code null} if no DataSource is
+	 * available.
+	 *
+	 * @param oaObj the object whose persistent instance is requested
+	 * @return the object retrieved from the DataSource, or {@code null}
+	 */
 	public static Object getObject(OAObject oaObj) {
 		OADataSource ds = OADataSource.getDataSource(oaObj.getClass());
 		// todo: check this out: if (ds == null || ds.isAssigningId(oaObj)) return null;  // datasource could be assigning the Id to a unique value

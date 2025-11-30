@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,17 +75,36 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     private ArrayList<OAFilter<T>> alFilter;
 
     
-    /**
-     * create an object cache filter, and have hub updated with all objects that match filter(s) and isUsed methods return true.
-     */
+	/**
+	 * Constructs a new OAObjectCacheFilter that monitors the specified Hub
+	 * and automatically updates it with objects from the cache. All cached
+	 * objects that satisfy {@link #isUsed(OAObject)} will be added to the Hub.
+	 * Delegates to {@link #OAObjectCacheFilter(Hub, OAFilter)} with a null filter.
+	 *
+	 * @param hub the Hub to be automatically updated; must not be null
+	 * @throws RuntimeException if the hub is null
+	 */
     public OAObjectCacheFilter(Hub<T> hub) {
         this(hub, null);
     }
     
     /**
-     * Create new cache filter.  Cached objects that are true for isUsedFromObjectCache &amp; isUsed will be added to hub.
-     * @param hub if size is equal to 0, then refresh will be called.  Otherwise refresh will not be called, since it's
-     * assumed that the objects were preselected.
+     * Constructs a new cache filter bound to the supplied Hub and optional filter.
+     * <p>
+     * The Hub is updated automatically as objects in the global object cache
+     * are added, loaded, or otherwise encountered. Objects are included only
+     * when both {@code isUsedFromObjectCache()} (implicit through cache events)
+     * and {@link #isUsed(Object)} evaluate to {@code true}.
+     * </p>
+     *
+     * <p>If the Hub is initially empty, a full {@link #reselectAndRefresh()}
+     * is performed. Otherwise the Hub is assumed to contain a preselected set
+     * and no initial refresh occurs.</p>
+     *
+     * @param hub the target Hub receiving matching cached objects; must not be {@code null}
+     * @param filter optional filter applied to determine whether an object
+     *               should be added to the Hub; may be {@code null}
+     * @throws RuntimeException if {@code hub} is {@code null}
      */
     public OAObjectCacheFilter(Hub<T> hub, OAFilter<T> filter) {
         if (hub == null) throw new RuntimeException("hub can not be null");
@@ -135,6 +154,27 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     }
 
     
+    /**
+     * Constructs a new cache filter bound to the supplied Hub, applying the
+     * optional filter and any number of dependent property paths.
+     * <p>
+     * Each dependent property path is registered so that when the property
+     * (or path) changes on any cached object, its eligibility for inclusion
+     * in the Hub is re-evaluated. Matching objects are added to the Hub and
+     * non-matching ones removed.
+     * </p>
+     *
+     * <p>If the Hub is initially empty, a full {@link #reselectAndRefresh()}
+     * is performed. Otherwise the Hub is assumed to be preselected.</p>
+     *
+     * @param hub the target Hub that will receive matching cached objects;
+     *            must not be {@code null}
+     * @param filter optional filter used to determine object inclusion;
+     *               may be {@code null}
+     * @param dependentPropPaths optional property paths that, when changed,
+     *                           trigger re-evaluation of affected objects
+     * @throws RuntimeException if {@code hub} is {@code null}
+     */
     public OAObjectCacheFilter(Hub<T> hub, OAFilter<T> filter, String ... dependentPropPaths) {
         if (hub == null) throw new RuntimeException("hub can not be null");
         clazz = hub.getObjectClass();
@@ -155,7 +195,15 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     }
     
     /**
-     * This is so that changes on the hub will be published to the clients, even if initiated on OAClientThread. 
+     * Specifies whether Hub update operations triggered by this cache filter
+     * should be treated as server-side only.
+     * <p>
+     * When enabled, outbound remote messages are temporarily suspended and
+     * resumed around Hub modifications so that client updates are still
+     * published even when initiated on an {@code OAClientThread}.
+     * </p>
+     *
+     * @param b {@code true} to enable server-side-only behavior, {@code false} otherwise
      */
     public void setServerSideOnly(boolean b) {
         bServerSideOnly = b;
@@ -163,15 +211,37 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     
     
     /**
-     * Add a filter that is used to determine if an object from the cache will be added to hub.
-     * This will clear and refresh hub.  
-     * @param f filter to add.  By default isUsed() will return false if any of the filters.isUsed() returns false.
-     * @see #addFilter(OAFilter, boolean) that has an option for refreshing.
+     * Adds a filter used to determine whether cached objects should be
+     * included in the Hub, and then performs a refresh.
+     * <p>
+     * This method appends the filter to the internal filter list. An object
+     * must satisfy all added filters for {@link #isUsed(Object)} to return
+     * {@code true}.
+     * </p>
+     *
+     * <p>A full {@link #refresh()} is automatically performed since the
+     * selected set may change when a new filter is added.</p>
+     *
+     * @param f the filter to add; ignored if {@code null}
      */
     public void addFilter(OAFilter<T> f) {
         addFilter(f, true); // filter changes what objs are selected, need to refresh
     }
 
+    /**
+     * Adds a filter used to determine whether cached objects should be
+     * included in the Hub, and registers additional dependent property paths.
+     * <p>
+     * This method appends the filter to the internal list and immediately
+     * calls {@link #refresh()} to update the Hub. Any supplied dependent
+     * property paths are also registered so that changes to those properties
+     * trigger re-evaluation of affected objects.
+     * </p>
+     *
+     * @param f the filter to add; ignored if {@code null}
+     * @param dependentPropPaths optional property paths that, when changed,
+     *                           should cause matching objects to be rechecked
+     */
     public void addFilter(OAFilter<T> f, String ... dependentPropPaths) {
         addFilter(f, true);
         if (dependentPropPaths == null) return;
@@ -181,9 +251,20 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     }
     
     /**
-     * Add a filter that is used to determine if an object from the cache will be added to hub.
-     * @param f filter to add.  By default isUsed() will return false if any of the filters.isUsed() returns false.
-     * @param bCallRefresh if true, then call refresh.
+     * Adds a filter used to determine whether cached objects should be
+     * included in the Hub.
+     * <p>
+     * The filter is appended to the internal filter list. An object must
+     * satisfy all added filters for {@link #isUsed(Object)} to return
+     * {@code true}.
+     * </p>
+     *
+     * <p>If {@code bCallRefresh} is {@code true}, a {@link #refresh()}
+     * is performed to update the Hub based on the expanded filter set.</p>
+     *
+     * @param f the filter to add; ignored if {@code null}
+     * @param bCallRefresh {@code true} to immediately refresh the Hub after
+     *                     adding the filter, {@code false} otherwise
      */
     public void addFilter(OAFilter<T> f, boolean bCallRefresh) {
         if (f == null) return;
@@ -192,7 +273,22 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         if (bCallRefresh) refresh();
     }
 
-
+    /**
+     * Reselects data and refreshes the Hub based on current filter settings.
+     * <p>
+     * If the target Hub is no longer available, this method calls {@link #close()}
+     * and returns. Otherwise, the Hub is temporarily placed in a loading state
+     * while data is reselected and refreshed.
+     * </p>
+     *
+     * <p>The operation:
+     * <ol>
+     *   <li>Marks the Hub as loading all data.</li>
+     *   <li>Invokes {@link #reselect()} to allow subclasses to repopulate from a data source.</li>
+     *   <li>Invokes {@link #refresh()} to apply all filters to cached objects.</li>
+     * </ol>
+     * </p>
+     */
     public void reselectAndRefresh() {
         final Hub<T> hub = wrHub.get();
         if (hub == null) {
@@ -218,18 +314,44 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     }
     
     /**
-     * called internally so that data can be reselected from datasource.
+     * Placeholder method invoked during {@link #reselectAndRefresh()} to
+     * allow subclasses to reselect data from an external data source.
+     * <p>
+     * The base implementation performs no work.
+     * </p>
      */
     protected void reselect() {
     }
     
     /**
-     * Clear hub and check all cached objects to see if they should be added to hub.
-     * To be added, isUsedFromObjectCache() and isUsed() must return true.
+     * Refreshes the Hub by removing objects that no longer satisfy
+     * {@link #isUsed(Object)} and by checking cached objects for inclusion.
+     * <p>
+     * This is a convenience method equivalent to calling
+     * {@link #refresh(boolean)} with {@code true}.
+     * </p>
      */
     public void refresh() {
         refresh(true);
     }
+
+    /**
+     * Refreshes the Hub by synchronizing its contents with the cached objects
+     * that satisfy {@link #isUsed(Object)}.
+     * <p>
+     * The method first removes any objects already in the Hub that no longer
+     * meet the filter criteria. It then iterates over all cached objects and
+     * adds those that qualify.
+     * </p>
+     *
+     * <p>If {@code bSetLoading} is {@code true}, the Hub is temporarily placed
+     * in a loading state for the duration of the refresh. The method also
+     * manages the Hub's “load all data” flag and fires a
+     * {@link com.viaoa.hub.HubEventDelegate#fireOnNewListEvent} upon
+     * completion.</p>
+     *
+     * @param bSetLoading whether to set the Hub in a loading state during refresh
+     */
     public void refresh(final boolean bSetLoading) {
         final Hub<T> hub = wrHub.get();
         if (hub == null) {
@@ -276,14 +398,33 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     
     
     /**
-     * add a property to listen to.  If the property changes, then it will be recalculated to determine if it should be 
-     * added to hub, or removed from it.
-     * This will recheck the object cache to see if any of the existing objects isUsed() is true and should be added to hub.
-     * It will not call refresh.
+     * Registers a dependent property path and triggers an immediate
+     * re-evaluation of cached objects.
+     * <p>
+     * This is a convenience method equivalent to calling
+     * {@link #addDependentProperty(String, boolean)} with {@code true}.
+     * </p>
+     *
+     * @param prop the property path to register; ignored if {@code null} or empty
      */
     public void addDependentProperty(final String prop) {
         addDependentProperty(prop, true);
     }
+    
+    /**
+     * Registers a dependent property path that should trigger re-evaluation
+     * of cached objects when the property (or path) changes.
+     * <p>
+     * The property path is added to the list of dependent paths, a trigger is
+     * set up via {@link #setupTrigger()}, and—if {@code bRefresh} is
+     * {@code true}—all cached objects are checked to determine whether they
+     * should be added to or removed from the Hub.
+     * </p>
+     *
+     * @param prop the property path to register; ignored if {@code null} or empty
+     * @param bRefresh {@code true} to immediately recheck cached objects for
+     *                 inclusion or removal, {@code false} to skip rechecking
+     */
     public void addDependentProperty(final String prop, final boolean bRefresh) {
         if (prop == null || prop.length() == 0) return;
         
@@ -318,6 +459,25 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
 
     private volatile OAChangeRefresher changeRefresher;
 
+    /**
+     * Configures or replaces the internal trigger used to listen for changes
+     * on registered dependent property paths.
+     * <p>
+     * A new {@link OATrigger} is created with a listener that determines
+     * whether objects should be added to or removed from the Hub whenever a
+     * dependent property (or path) changes. If a previous trigger exists, it
+     * is removed before the new one is installed.
+     * </p>
+     *
+     * <p>The listener handles two cases:
+     * <ul>
+     *   <li>When a root object cannot be determined from the event, a full
+     *       {@link #reselectAndRefresh()} or background refresh is performed.</li>
+     *   <li>When the root object is available, its inclusion is re-evaluated
+     *       using {@link #isUsed(Object)}.</li>
+     * </ul>
+     * </p>
+     */
     protected void setupTrigger() {
         OATriggerListener<T> triggerListener = new OATriggerListener<T>() {
             
@@ -424,6 +584,18 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     }
     
     
+    /**
+     * Closes this cache filter by removing its trigger and cache listener.
+     * <p>
+     * If the trigger exists, it is removed from {@link OATriggerDelegate}.
+     * If the cache listener exists, it is removed from
+     * {@link OAObjectCacheDelegate}. After removal, references are cleared.
+     * </p>
+     * <p>
+     * Once closed, the filter will no longer update the Hub in response to
+     * cache or property change events.
+     * </p>
+     */
     public void close() {
         if (trigger == null) {
             OATriggerDelegate.removeTrigger(trigger);
@@ -435,6 +607,12 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         }
     }
     
+    /**
+     * Ensures that this filter is closed before garbage collection.
+     * <p>
+     * Invokes {@link #close()} and then delegates to {@code super.finalize()}.
+     * </p>
+     */
     @Override
     protected void finalize() throws Throwable {
         close();
@@ -442,8 +620,16 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     }
     
     /**
-     * Called to see if an object should be included in hub.
-     * By default, this will return false if no filters have been added, or the result of the filters. 
+     * Determines whether the specified object satisfies all registered
+     * filters and should therefore be included in the Hub.
+     * <p>
+     * If no filters have been added, this method returns {@code false}.
+     * Otherwise, each filter in the internal list is evaluated, and the
+     * object is considered usable only if every filter returns {@code true}.
+     * </p>
+     *
+     * @param obj the object to evaluate
+     * @return {@code true} if all filters accept the object, otherwise {@code false}
      */
     @Override
     public boolean isUsed(T obj) {

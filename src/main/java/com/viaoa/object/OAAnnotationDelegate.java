@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,15 @@ public class OAAnnotationDelegate {
 	private static Logger LOG = Logger.getLogger(OAAnnotationDelegate.class.getName());
 
 	/**
-	 * Load/update ObjectInfo using annotations
+	 * Updates the specified {@link OAObjectInfo} by processing all OA-related
+	 * annotations declared on the given class and its superclasses (excluding
+	 * {@link OAObject} itself).
+	 * <p>
+	 * Each annotation type is applied once per class hierarchy level, using an
+	 * internal tracking set to prevent duplicate processing.
+	 *
+	 * @param oi    the metadata object to update
+	 * @param clazz the class whose annotations will be processed
 	 */
 	public static void update(OAObjectInfo oi, Class clazz) {
 		HashSet<String> hs = new HashSet<String>();
@@ -85,7 +93,12 @@ public class OAAnnotationDelegate {
 	}
 
 	/**
-	 * needs to be called after OAObjectInfo has been created.
+	 * Performs a second-phase annotation update on the specified {@link OAObjectInfo},
+	 * processing {@link OATriggerMethod} annotations declared on the class and its
+	 * superclasses (excluding {@link OAObject}).
+	 *
+	 * @param oi    the metadata object to update
+	 * @param clazz the class whose trigger annotations will be processed
 	 */
 	public static void update2(OAObjectInfo oi, Class clazz) {
 		for (; clazz != null;) {
@@ -97,6 +110,19 @@ public class OAAnnotationDelegate {
 		}
 	}
 
+	/**
+	 * Internal helper that processes all annotation types declared on the given class
+	 * and applies their metadata to the specified {@link OAObjectInfo}.
+	 * <p>
+	 * This method updates class-level settings, ID properties, regular properties,
+	 * foreign-key properties, calculated properties, link definitions, Many/One
+	 * relationships, annotated methods, and callback registrations. A tracking set
+	 * prevents duplicate processing within the class hierarchy.
+	 *
+	 * @param oi    the metadata object being updated
+	 * @param clazz the class whose annotations are processed
+	 * @param hs    a set used to track processed annotation categories
+	 */
 	private static void _update(final OAObjectInfo oi, final Class clazz, HashSet<String> hs) {
 		String s;
 
@@ -1000,7 +1026,14 @@ public class OAAnnotationDelegate {
 		}
 	}
 
-	// 20160305 OACallback annotations
+	/**
+	 * Internal helper that processes {@link OATriggerMethod} annotations declared
+	 * on the given class. Each trigger method is validated for correct signature
+	 * and then registered with the trigger system.
+	 *
+	 * @param oi    the metadata object being updated
+	 * @param clazz the class whose trigger methods are processed
+	 */
 	private static void _update2(final OAObjectInfo oi, final Class clazz) {
 		Method[] methods = clazz.getDeclaredMethods();
 		if (methods == null) {
@@ -1042,11 +1075,15 @@ public class OAAnnotationDelegate {
 		}
 	}
 
-	// 20111027
 	/**
-	 * Find the OAObject class that use contained by the Hub.
+	 * Determines the OAObject class contained within a {@link Hub} return type.
+	 * <p>
+	 * The hub's element type is first resolved using reflection; if unavailable,
+	 * the {@link OAMany#toClass()} annotation value is used when defined.
 	 *
-	 * @see OAObjectReflectDelegate#getHubObjectClass(Method)
+	 * @param annotation the {@link OAMany} annotation on the method, or {@code null}
+	 * @param method     the accessor method returning a {@link Hub}
+	 * @return the class of objects stored in the hub, or {@code null} if unresolved
 	 */
 	public static Class getHubObjectClass(OAMany annotation, Method method) {
 		Class cx = OAObjectReflectDelegate.getHubObjectClass(method);
@@ -1059,6 +1096,15 @@ public class OAAnnotationDelegate {
 		return cx;
 	}
 
+	/**
+	 * Updates the database metadata using annotations declared on the supplied
+	 * classes. Column definitions are created first, followed by table-level
+	 * updates such as foreign keys, link tables, and indexes.
+	 *
+	 * @param database the database metadata container to update
+	 * @param classes  the classes whose annotations define table and column structure
+	 * @throws Exception if required annotations are missing or inconsistent
+	 */
 	public static void update(Database database, Class[] classes) throws Exception {
 		if (classes == null) {
 			return;
@@ -1072,7 +1118,16 @@ public class OAAnnotationDelegate {
 	}
 
 	/**
-	 * Load/update Database using annotations
+	 * Creates or updates column definitions for the table associated with the
+	 * specified class, based on its {@link OAProperty} and {@link OAColumn}
+	 * annotations.
+	 * <p>
+	 * Only primary-key and regular property columns are created in this phase.
+	 * Foreign-key and link-column processing occurs later during table update.
+	 *
+	 * @param database the database metadata container
+	 * @param clazz    the class whose annotated properties define table columns
+	 * @throws Exception if required table annotations are missing
 	 */
 	private static void _createColumns(Database database, Class clazz) throws Exception {
 		Method[] methods = clazz.getDeclaredMethods(); // need to get all access types, since some could be private.  does not get superclass methods
@@ -1136,6 +1191,18 @@ public class OAAnnotationDelegate {
 		}
 	}
 
+	/**
+	 * Updates an existing database table definition using annotations declared on
+	 * the specified class.
+	 * <p>
+	 * This includes creating foreign-key columns, link-table mappings, link
+	 * relationships, and table-level indexes based on {@link OAOne}, {@link OAMany},
+	 * {@link OALinkTable}, {@link OAColumn}, and {@link OAIndex} annotations.
+	 *
+	 * @param database the database metadata container
+	 * @param clazz    the class whose annotations define table-level metadata
+	 * @throws Exception if required table or column annotations are missing or inconsistent
+	 */
 	private static void _updateTable(Database database, Class clazz) throws Exception {
 
 		Method[] methods = clazz.getDeclaredMethods(); // need to get all access types, since some could be private. does not get superclass methods
@@ -1322,7 +1389,15 @@ public class OAAnnotationDelegate {
 		}
 	}
 
-	// 20220503
+	/**
+	 * Builds import-match property mappings for the specified {@link OAObjectInfo}.
+	 * <p>
+	 * All properties and links marked as import-match are collected, and recursive
+	 * property paths are generated so that import operations can match incoming
+	 * data to the correct object fields.
+	 *
+	 * @param oi the metadata object whose import-match mappings will be populated
+	 */
 	public static void updateImportMatches(OAObjectInfo oi) {
 		// get all ImportMatches and create propertyPaths for each
 		final ArrayList<Object> al = new ArrayList<>();
@@ -1373,6 +1448,22 @@ public class OAAnnotationDelegate {
 		oi.importMatchPropertyPaths = alPropertyPath.toArray(new String[alPropertyPath.size()]);
 	}
 
+	/**
+	 * Recursively generates import-match property names and paths for a link
+	 * hierarchy.  
+	 * <p>
+	 * For each link marked as import-match, dependent properties and child links
+	 * are traversed, producing flattened property-name and property-path entries
+	 * used during import processing.
+	 *
+	 * @param level          recursion depth
+	 * @param prefixName     accumulated name prefix
+	 * @param prefixPath     accumulated property-path prefix
+	 * @param li             the link being processed
+	 * @param alPropertyName list collecting generated property names
+	 * @param alPropertyPath list collecting generated property paths
+	 * @param hsLi           tracks visited links to prevent recursion cycles
+	 */
 	private static void recurseUpdateImportMatches(final int level, final String prefixName, final String prefixPath, final OALinkInfo li,
 			final ArrayList<String> alPropertyName,
 			final ArrayList<String> alPropertyPath, final HashSet<OALinkInfo> hsLi) {
@@ -1441,39 +1532,29 @@ public class OAAnnotationDelegate {
 		}
 	}
 
-	public static void main(String[] args) throws Exception {
-		/*
-		 * OAAnnotationDelegate del = new OAAnnotationDelegate(); DataSource ds = new DataSource("server", "database", "user", "pw");
-		 * Database database = ((OADataSourceJOAC)ds.getOADataSource()).getDatabase(); OAMetaData dbmd =
-		 * ((OADataSourceJOAC)ds.getOADataSource()).getOAMetaData(); String[] fnames = OAReflect.getClasses("com.viaoa.scheduler.oa"); for
-		 * (String fn : fnames) { System.out.println("oi&ds ==>"+fn); Class c = Class.forName("com.viaoa.scheduler.oa." + fn); if
-		 * (c.getAnnotation(OATable.class) == null) continue; OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(c); del.verify(oi);
-		 * del.verify(c, database); } // Create database database = new Database(); Table table = new
-		 * Table("NextNumber",com.viaoa.datasource.autonumber.NextNumber.class); // ** Used by all OADataSource Database // NextNumber
-		 * COLUMNS Column[] columns = new Column[2]; columns[0] = new Column("nextNumberId","nextNumberId", Types.VARCHAR, 75);
-		 * columns[0].primaryKey = true; columns[1] = new Column("nextNumber","nextNumber", Types.INTEGER); table.setColumns(columns);
-		 * database.addTable(table); for (String fn : fnames) { System.out.println("create columns ==>"+fn); Class c =
-		 * Class.forName("com.viaoa.scheduler.oa." + fn); if (c.getAnnotation(OATable.class) == null) continue; del.createColumns(database,
-		 * c); } for (String fn : fnames) { System.out.println("update table ==>"+fn); Class c = Class.forName("com.viaoa.scheduler.oa." +
-		 * fn); if (c.getAnnotation(OATable.class) == null) continue; del.updateTable(database, c); // fkeys, links, linktables } // Verify
-		 * for (String fn : fnames) { System.out.println("verify OA ==>"+fn); Class c = Class.forName("com.viaoa.scheduler.oa." + fn); if
-		 * (c.getAnnotation(OATable.class) == null) continue; del.verify(c, database); } System.out.println("verify database Links ==>");
-		 * del.verifyLinks(database);
-		 */
-
-		/* must have database access to run this
-		System.out.println("datasource VerifyDelegate.verify database ==>");
-		OADataSourceJOAC dsx = new OADataSourceJDBC(database, dbmd);
-		VerifyDelegate.verify(dsx);
-		*/
-
-		System.out.println("done");
-	}
-
+	/**
+	 * Extracts a property name from a getter/setter-style method name.
+	 * <p>
+	 * Recognizes prefixes {@code get}, {@code is}, {@code has}, and {@code set},
+	 * removing the prefix and converting the first character to lowercase.
+	 *
+	 * @param s the method name
+	 * @return the derived property name
+	 */
 	public static String getPropertyName(String s) {
 		return getPropertyName(s, true);
 	}
 
+	/**
+	 * Extracts a property name from a method name using JavaBean-style prefix rules.
+	 * <p>
+	 * Recognizes prefixes {@code get}, {@code is}, {@code has}, and {@code set}.
+	 * If {@code bToLower} is true, the resulting name begins with a lowercase letter.
+	 *
+	 * @param s        the method name
+	 * @param bToLower whether to lowercase the first character of the extracted name
+	 * @return the derived property name
+	 */
 	public static String getPropertyName(String s, boolean bToLower) {
 		boolean b = true;
 		if (s.startsWith("get")) {
@@ -1494,7 +1575,14 @@ public class OAAnnotationDelegate {
 	}
 
 	/**
-	 * needs to be ran after OAObjectInfos are loaded
+	 * Resolves and updates foreign-key metadata for all ONE-type links in the
+	 * specified {@link OAObjectInfo}.
+	 * <p>
+	 * For each link, the corresponding target-property metadata is assigned to
+	 * its {@link OAFkeyInfo} entries. This must be called after all object infos
+	 * have been initialized.
+	 *
+	 * @param oi the metadata object whose link foreign-key information will be updated
 	 */
 	public static void updateLinkFkeys(final OAObjectInfo oi) {
 		for (OALinkInfo li : oi.getLinkInfos()) {

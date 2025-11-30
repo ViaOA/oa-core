@@ -114,7 +114,7 @@ public class OAString {
 	}
 
 	/** @see OATextEscape#convertToHtml(String) */
-	@Deprecated(since = "4.0.0")
+	@Deprecated()
 	public static String convertToHTML(String value) {
 		return OATextEscape.convertToHtml(value);
 	}
@@ -125,7 +125,7 @@ public class OAString {
 	}
 	
 	/** @see OATextEscape#convertTextToHtml(String, boolean) */
-	@Deprecated(since = "4.0.0")
+	@Deprecated()
 	public static String convertTextToHTML(String value, boolean bAddHTMLTag) {
 		return OATextEscape.convertTextToHtml(value, bAddHTMLTag);
 	}
@@ -370,25 +370,25 @@ public class OAString {
 	}
 	
 	/** @see OATextTokenizer#field(String, String, int) */
-	@Deprecated(since = "4.0.0")
+	@Deprecated()
 	public static String field(String str, String sep, int beg) {
 		return OATextTokenizer.field(str, sep, beg);
 	}
 	
 	/** @see OATextTokenizer#fieldAt(String, String, int, int) */
-	@Deprecated(since = "4.0.0")
+	@Deprecated()
 	public static String field(final String str, final String sep, final int beg, final int amt) {
 		return OATextTokenizer.field(str, sep, beg, amt);
 	}
 	
 	/** @see OATextTokenizer#field(String, char, int) */
-	@Deprecated(since = "4.0.0")
+	@Deprecated()
 	public static String field(String str, char sep, int beg) {
 		return OATextTokenizer.field(str, sep, beg);
 	}
 
 	/** @see OATextTokenizer#field(String, char, int, int) */
-	@Deprecated(since = "4.0.0")
+	@Deprecated()
 	public static String field(String str, char sep, int beg, int amt) {
 		return OATextTokenizer.field(str, sep, beg, amt);
 	}

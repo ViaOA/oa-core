@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (vvia@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,28 +38,71 @@ public class OAEditException extends RuntimeException {
     private String property;
     private Object newValue;
 
+    /**
+     * Creates a new exception indicating that an invalid value was supplied
+     * for the specified property. The message is generated using the
+     * property name. The invalid value is stored for later retrieval.
+     *
+     * @param obj       the object whose property was being edited
+     * @param property  the name of the property being set
+     * @param newValue  the invalid value that triggered the exception
+     */
     public OAEditException(OAObject obj, String property, Object newValue) {
         super("Invalid entry for "+property);
         this.property = property;
         this.newValue = newValue;
     }
 
+    /**
+     * Convenience constructor for invalid long values. Wraps the primitive
+     * value in a {@link Long} and delegates to the main constructor.
+     *
+     * @param obj       the object whose property was being edited
+     * @param property  the name of the property being set
+     * @param newValue  the invalid long value
+     */
     public OAEditException(OAObject obj, String property, long newValue) {
         this(obj, property, Long.valueOf(newValue));
     }
 
+    /**
+     * Convenience constructor for invalid double values. Wraps the primitive
+     * value in a {@link Double} and delegates to the main constructor.
+     *
+     * @param obj       the object whose property was being edited
+     * @param property  the name of the property being set
+     * @param newValue  the invalid double value
+     */
     public OAEditException(OAObject obj, String property, double newValue) {
         this(obj, property, Double.valueOf(newValue));
     }
     
+    /**
+     * Convenience constructor for invalid boolean values. Wraps the primitive
+     * value in a {@link Boolean} and delegates to the main constructor.
+     *
+     * @param obj       the object whose property was being edited
+     * @param property  the name of the property being set
+     * @param newValue  the invalid boolean value
+     */
     public OAEditException(OAObject obj, String property, boolean newValue) {
         this(obj, property, Boolean.valueOf(newValue));
     }
     
+    /**
+     * Returns the invalid value that triggered this exception.
+     *
+     * @return the rejected value supplied during the edit
+     */
     public Object getNewValue() {
         return newValue;
     }
     
+    /**
+     * Returns the name of the property for which the invalid edit occurred.
+     *
+     * @return the property name associated with this exception
+     */
     public String getProperty() {
         return property;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,23 @@ public class OAAnnotationVerifier {
 	private static Logger LOG = Logger.getLogger(OAAnnotationVerifier.class.getName());
 
 	/**
-	 * Verify class annotations with an ObjectInfo. Call this to verify that an ObjectInfo that was created using annotations is correct.
+	 * Verifies that the annotations declared on the class associated with the
+	 * given {@link OAObjectInfo} match the metadata computed in the
+	 * {@link OAObjectInfo} instance.
+	 * <p>
+	 * This includes validating:
+	 * <ul>
+	 *   <li>Class-level settings such as data-source usage, caching, and initialization.</li>
+	 *   <li>ID property count, ordering, and annotation placement.</li>
+	 *   <li>All regular properties including required flag, maxLength, and type consistency.</li>
+	 *   <li>Calculated properties and their dependent property definitions.</li>
+	 *   <li>ONE and MANY link definitions and link-metadata alignment.</li>
+	 * </ul>
+	 * Any mismatch prints a diagnostic message and sets the result to {@code false}.
+	 *
+	 * @param oi the metadata object to verify
+	 * @return {@code true} if all annotations match the metadata; otherwise {@code false}
+	 * @throws Exception if reflection access errors occur during verification
 	 */
 	public boolean verify(OAObjectInfo oi) throws Exception {
 		Class clazz = oi.getForClass();
@@ -351,7 +367,21 @@ public class OAAnnotationVerifier {
 	}
 
 	/**
-	 * Verify class annotations with Database
+	 * Verifies that the class annotations for the specified class match the
+	 * corresponding JDBC database schema.
+	 * <p>
+	 * Validation includes:
+	 * <ul>
+	 *   <li>Table existence and column definitions.</li>
+	 *   <li>Column SQL types, lengths, decimal places, GUID and primary-key flags.</li>
+	 *   <li>Foreign-key structure and index definitions.</li>
+	 * </ul>
+	 * Any mismatch prints a diagnostic message and marks the result as invalid.
+	 *
+	 * @param clazz    the model class whose table definition is validated
+	 * @param database the database metadata used for comparison
+	 * @return {@code true} if annotations and schema match; otherwise {@code false}
+	 * @throws Exception if reflection access errors occur
 	 */
 	public boolean verify(Class clazz, Database database) throws Exception {
 		boolean[] bs = null;
@@ -515,10 +545,18 @@ public class OAAnnotationVerifier {
 		return bResult;
 	}
 
-	/**
-	 * Make sure that the links in the Tables are also in the class annotations.
-	 */
 	// this is not used
+	/**
+	 * Verifies that all link definitions declared in the database metadata
+	 * correspond to valid {@link OAOne} or {@link OAMany} annotations on the
+	 * associated model class methods.
+	 * <p>
+	 * Ensures each link has an appropriate getter method and that its annotation
+	 * type matches the expected return type (OAObject for ONE, Hub for MANY).
+	 *
+	 * @param database the database metadata containing table and link information
+	 * @throws Exception if a link method is missing or incorrectly annotated
+	 */
 	public void verifyLinks(Database database) throws Exception {
 		for (Table table : database.getTables()) {
 			Class clazz = table.clazz;
@@ -549,6 +587,18 @@ public class OAAnnotationVerifier {
 		}
 	}
 
+	/**
+	 * Compares two {@link Database} metadata instances to determine whether
+	 * they describe equivalent schemas.
+	 * <p>
+	 * Validation includes table counts, table names, column structures,
+	 * foreign-key links, and index definitions. Any mismatch prints a
+	 * diagnostic message and marks the comparison as unsuccessful.
+	 *
+	 * @param db1 the first database metadata instance
+	 * @param db2 the second database metadata instance
+	 * @return {@code true} if both schemas match; otherwise {@code false}
+	 */
 	public boolean compare(Database db1, Database db2) {
 		int x1 = db1.getTables().length;
 		int x2 = db2.getTables().length;
@@ -571,6 +621,17 @@ public class OAAnnotationVerifier {
 		return bResult;
 	}
 
+	/**
+	 * Compares two {@link Table} metadata objects for structural equivalence.
+	 * <p>
+	 * Validates table names, associated classes, column definitions, foreign-key
+	 * links, and index structures. Any mismatch results in a diagnostic message
+	 * and a {@code false} return value.
+	 *
+	 * @param t1 the first table to compare
+	 * @param t2 the second table to compare
+	 * @return {@code true} if the tables match; otherwise {@code false}
+	 */
 	boolean compare(Table t1, Table t2) {
 		if (!t1.name.equalsIgnoreCase(t2.name)) {
 			p("mismatch in names");
@@ -671,6 +732,17 @@ public class OAAnnotationVerifier {
 		return true;
 	}
 
+	/**
+	 * Compares two {@link Column} definitions for equality.
+	 * <p>
+	 * Compares column name, property name, key flags, Java type, SQL type,
+	 * length, decimal places, next-number assignment, and GUID settings.
+	 * Any mismatch prints a diagnostic message and returns {@code false}.
+	 *
+	 * @param c1 the first column
+	 * @param c2 the second column
+	 * @return {@code true} if the column definitions match; otherwise {@code false}
+	 */
 	boolean compare(Column c1, Column c2) {
 		if (!c1.columnName.equalsIgnoreCase(c2.columnName)) {
 			p("mismatch in columnName: " + c1.columnName + ", " + c2.columnName);
@@ -722,6 +794,17 @@ public class OAAnnotationVerifier {
 		return true;
 	}
 
+	/**
+	 * Compares two {@link Index} definitions for structural equivalence.
+	 * <p>
+	 * Index names are compared case-insensitively, and column lists must match
+	 * exactly (ignoring order). Any mismatch results in a diagnostic message
+	 * and a {@code false} return value.
+	 *
+	 * @param ind1 the first index definition
+	 * @param ind2 the second index definition
+	 * @return {@code true} if both index definitions match; otherwise {@code false}
+	 */
 	boolean compare(Index ind1, Index ind2) {
 		if (!ind1.name.equalsIgnoreCase(ind2.name)) {
 			//            p("mismatch in index name");
@@ -742,6 +825,17 @@ public class OAAnnotationVerifier {
 		return true;
 	}
 
+	/**
+	 * Compares two {@link Link} definitions for equality.
+	 * <p>
+	 * Validates property name, reverse-property name, target table, and all
+	 * foreign-key column mappings. Any mismatch prints a diagnostic message
+	 * and returns {@code false}.
+	 *
+	 * @param link1 the first link definition
+	 * @param link2 the second link definition
+	 * @return {@code true} if both links match; otherwise {@code false}
+	 */
 	boolean compare(Link link1, Link link2) {
 		if (!link1.propertyName.equalsIgnoreCase(link2.propertyName)) {
 			p("propertyName mismatch for link");
@@ -775,6 +869,23 @@ public class OAAnnotationVerifier {
 		return true;
 	}
 
+	/**
+	 * Compares two {@link OAObjectInfo} metadata objects for structural
+	 * equivalence.
+	 * <p>
+	 * Validation includes:
+	 * <ul>
+	 *   <li>Class identity and class-level flags.</li>
+	 *   <li>ID property arrays and primitive property lists.</li>
+	 *   <li>Link definitions and their structure.</li>
+	 *   <li>Calculated property definitions and dependencies.</li>
+	 * </ul>
+	 * Any mismatch prints a diagnostic message and returns {@code false}.
+	 *
+	 * @param oi1 the first metadata object
+	 * @param oi2 the second metadata object
+	 * @return {@code true} if the metadata matches; otherwise {@code false}
+	 */
 	public boolean compare(OAObjectInfo oi1, OAObjectInfo oi2) {
 		if (oi1.thisClass != oi2.thisClass) {
 			p("class mismatch");
@@ -909,6 +1020,17 @@ public class OAAnnotationVerifier {
 		return true;
 	}
 
+	/**
+	 * Compares two {@link OALinkInfo} instances for equality.
+	 * <p>
+	 * Validates link name, target class, link type, cascade settings,
+	 * reverse-name, owner flag, and auto-create-new settings.  
+	 * Any mismatch prints a diagnostic message and returns {@code false}.
+	 *
+	 * @param li   the first link metadata
+	 * @param li2  the second link metadata
+	 * @return {@code true} if both link definitions match; otherwise {@code false}
+	 */
 	boolean compare(OALinkInfo li, OALinkInfo li2) {
 		if (li == null || li2 == null) {
 			return false;
@@ -951,6 +1073,18 @@ public class OAAnnotationVerifier {
 		return true;
 	}
 
+	/**
+	 * Compares two {@link OACalcInfo} instances for equality.
+	 * <p>
+	 * Validates the calculated-property name and the full set of dependent
+	 * property names, ensuring that both lists contain the same values
+	 * (case-insensitive and order-independent).  
+	 * Any mismatch prints a diagnostic message and returns {@code false}.
+	 *
+	 * @param ci   the first calculated-property metadata
+	 * @param ci2  the second calculated-property metadata
+	 * @return {@code true} if both definitions match; otherwise {@code false}
+	 */
 	boolean compare(OACalcInfo ci, OACalcInfo ci2) {
 		if (ci == null || ci2 == null) {
 			return false;

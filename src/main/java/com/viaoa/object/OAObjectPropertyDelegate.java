@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,22 @@ public class OAObjectPropertyDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectPropertyDelegate.class.getName());
 
 	/**
-	 * @return true if prop is loaded, and does not need to be loaded from datasource, or from server (if this is client)
+	 * Returns whether the specified property has already been loaded for the
+	 * given object. A property is considered loaded when its stored value is
+	 * present and does not require resolution from a data source or remote
+	 * server.  
+	 *
+	 * <p>The method checks for:</p>
+	 * <ul>
+	 *   <li>A direct stored value</li>
+	 *   <li>A WeakReference whose referent is still available</li>
+	 *   <li>An OAObjectKey that can be resolved in the cache to a real object</li>
+	 * </ul>
+	 *
+	 * @param oaObj the object whose property is being checked
+	 * @param name  the property name, case-insensitive
+	 * @return true if the property value is fully loaded and available;
+	 *         false if it is missing, unresolved, or not yet loaded
 	 */
 	public static boolean isPropertyLoaded(OAObject oaObj, String name) {
 		if (oaObj == null || name == null) {
@@ -97,9 +112,14 @@ public class OAObjectPropertyDelegate {
 	}
 
 	/**
-	 * check to see if property does or will exist (if it is oaObjKey).
+	 * Determines whether the specified property reference is effectively null.
+	 * A reference is considered null when no entry for the given property name
+	 * exists in the object's internal property array.
 	 *
-	 * @return
+	 * @param oaObj the object whose property reference is being checked
+	 * @param name  the property name, case-insensitive
+	 * @return true if the property name is not present in the stored properties;
+	 *         false if the property exists (regardless of its value)
 	 */
 	public static boolean isReferenceNull(OAObject oaObj, String name) {
 		if (oaObj == null || name == null) {
@@ -119,6 +139,14 @@ public class OAObjectPropertyDelegate {
 		return true;
 	}
 
+	/**
+	 * Returns all property names currently stored on the given object. Only
+	 * property slots with a non-null name are included in the result.
+	 *
+	 * @param oaObj the object whose property names are requested
+	 * @return an array of property names, or null if the object has no
+	 *         properties defined
+	 */
 	public static String[] getPropertyNames(OAObject oaObj) {
 		Object[] props = oaObj.properties;
 		if (props == null) {
@@ -142,18 +170,60 @@ public class OAObjectPropertyDelegate {
 		return ss;
 	}
 
+	/**
+	 * Internal helper that stores a property without performing any existence
+	 * checks or firing events. This directly inserts or overwrites the value in
+	 * the object's property array.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name
+	 * @param value the value to store
+	 */
 	static void unsafeAddProperty(OAObject oaObj, String name, Object value) {
 		unsafeSetProperty(oaObj, name, value, false, false);
 	}
 
+	/**
+	 * Convenience wrapper around the internal unsafeSetProperty method.  
+	 * Stores the given property value without firing events and replaces the
+	 * value if the property already exists.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name
+	 * @param value the value to assign
+	 */
 	public static void unsafeSetProperty(OAObject oaObj, String name, Object value) {
 		unsafeSetProperty(oaObj, name, value, true, false);
 	}
 
+	/**
+	 * Stores the property value only if no existing entry for the property
+	 * name is present. No events are fired and no validation is performed.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name
+	 * @param value the value to assign if the property is not already defined
+	 */
 	static void unsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value) {
 		unsafeSetProperty(oaObj, name, value, true, true);
 	}
 
+	/**
+	 * Core implementation for setting a property without firing change events
+	 * or performing validation. Depending on the supplied flags, this method
+	 * can either overwrite existing entries or only insert a new value when
+	 * no matching property name is found.
+	 *
+	 * <p>When a Hub value is assigned, its master object is automatically
+	 * initialized if necessary.</p>
+	 *
+	 * @param oaObj           the target object
+	 * @param name            the property name
+	 * @param value           the value to store
+	 * @param bCheckFirst     if true, existing entries are checked for reuse
+	 * @param bOnlyIfNotFound if true, the value is stored only when the
+	 *                        property does not already exist
+	 */
 	private static void unsafeSetProperty(OAObject oaObj, String name, Object value, boolean bCheckFirst, boolean bOnlyIfNotFound) {
 		int pos;
 		if (oaObj.properties == null) {
@@ -195,6 +265,16 @@ public class OAObjectPropertyDelegate {
 		}
 	}
 
+	/**
+	 * Removes the specified property from the object. The internal property
+	 * array is compacted if empty slots are detected. Optionally fires a
+	 * property change event after removal.
+	 *
+	 * @param oaObj               the target object
+	 * @param name                the property name to remove
+	 * @param bFirePropertyChange true to fire a property change event after
+	 *                            removal, false to suppress event generation
+	 */
 	public static void removeProperty(OAObject oaObj, String name, boolean bFirePropertyChange) {
 		if (oaObj.properties == null || name == null) {
 			return;
@@ -221,6 +301,19 @@ public class OAObjectPropertyDelegate {
 		}
 	}
 
+	/**
+	 * Removes the specified property only if its current value is null.  
+	 * The internal property array is compacted if empty slots are detected.
+	 * Optionally fires a property change event when removal occurs.
+	 *
+	 * @param oaObj               the target object
+	 * @param name                the property name to check and remove
+	 * @param bFirePropertyChange true to fire a property change event when the
+	 *                            property is removed
+	 * @return true if the property existed and was removed because its value
+	 *         was null; false if the property did not exist or its value was
+	 *         non-null
+	 */
 	public static boolean removePropertyIfNull(OAObject oaObj, String name, boolean bFirePropertyChange) {
 		if (oaObj == null || oaObj.properties == null || name == null) {
 			return false;
@@ -252,6 +345,12 @@ public class OAObjectPropertyDelegate {
 		return true;
 	}
 
+	/**
+	 * Compacts the internal property array by removing null entries and
+	 * resizing the array to contain only active name/value pairs.
+	 *
+	 * @param oaObj the object whose property array should be resized
+	 */
 	private static void resizeProperties(OAObject oaObj) {
 		int newSize = 0;
 		for (int i = 0; i < oaObj.properties.length; i += 2) {
@@ -269,6 +368,15 @@ public class OAObjectPropertyDelegate {
 		oaObj.properties = objs;
 	}
 
+	/**
+	 * Sets or updates the specified property on the object. The internal
+	 * property array is expanded as needed and the value is stored.  
+	 * If the value is a Hub, its master object is initialized when required.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name, case-insensitive
+	 * @param value the value to assign
+	 */
 	public static void setProperty(OAObject oaObj, String name, Object value) {
 		if (oaObj == null || name == null) {
 			return;
@@ -311,7 +419,19 @@ public class OAObjectPropertyDelegate {
 		}
 	}
 
-	// used by Hub when reading serialized object
+	/**
+	 * Sets the value for a Hub-based property only if no existing non-null
+	 * value is already stored. WeakReference values are treated as empty when
+	 * their referent has been garbage collected.  
+	 * The property array is expanded as needed.
+	 *
+	 * <p>If the assigned value is a Hub, its master object is initialized
+	 * when required.</p>
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name, case-insensitive
+	 * @param value the value to assign if the property is not already set
+	 */
 	public static void setPropertyHubIfNotSet(OAObject oaObj, String name, Object value) {
 		if (oaObj == null || name == null) {
 			return;
@@ -373,20 +493,40 @@ public class OAObjectPropertyDelegate {
 		}
 	}
 
+	/**
+	 * Convenience wrapper around the full compare-and-swap implementation.  
+	 * Attempts to update the property only when its current value matches
+	 * the supplied match value.
+	 *
+	 * @param oaObj     the target object
+	 * @param name      the property name, case-insensitive
+	 * @param newValue  the value to assign if the current value matches
+	 * @param matchValue the expected current value
+	 * @return the resulting stored value
+	 */
 	public static Object setPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue) {
 		return setPropertyCAS(oaObj, name, newValue, matchValue, false, false);
 	}
 
 	/**
-	 * Compare and swap a property.
+	 * Performs an atomic compare-and-swap update on the specified property.
+	 * The update occurs only when the property's current value satisfies the
+	 * provided match conditions, including optional requirements regarding
+	 * existence or non-existence.
 	 *
-	 * @param name            property name, not case sensitive
-	 * @param newValue        new value to set, if matchValue matches current setting
-	 * @param matchValue      value that it must currently be set to
-	 * @param bMustNotExist   only update if there is not a current value
-	 * @param bReturnNotExist if true, then return OANotExist.instance if value does not match and the current value does not exist.
-	 * @return value that is stored. If the matchValue is not the same as current, then the current value will be returned, else the
-	 *         newValue will be returned.
+	 * <p>WeakReference values are resolved for comparison when needed.
+	 * If a Hub value already exists, it is not overwritten with null.</p>
+	 *
+	 * @param oaObj            the target object
+	 * @param name             the property name, case-insensitive
+	 * @param newValue         the value to assign when the match succeeds
+	 * @param matchValue       the expected current value
+	 * @param bMustNotExist    if true, the update occurs only when the
+	 *                         property does not already exist
+	 * @param bReturnNotExist  if true, returns {@code OANotExist.instance}
+	 *                         when the match fails and the property does not exist
+	 * @return the value stored after the operation, or the existing value
+	 *         when the match fails
 	 */
 	public static Object setPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist,
 			boolean bReturnNotExist) {
@@ -490,15 +630,36 @@ public class OAObjectPropertyDelegate {
 		return newValue;
 	}
 
+	/**
+	 * Convenience wrapper that retrieves the value of the specified property
+	 * without converting WeakReference values and without returning
+	 * {@code OANotExist} for missing entries.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name, case-insensitive
+	 * @return the stored value, or null if the property is not found
+	 */
 	public static Object getProperty(OAObject oaObj, String name) {
 		return getProperty(oaObj, name, false, false);
 	}
 
 	/**
-	 * @param oaObj
-	 * @param name            name to find, not case sensitive
-	 * @param bReturnNotExist if true and the property name does not exist or it's value has not been loaded, then OANotExist.instance
-	 * @param bConvertWeakRef if true and the value is a WeakReference, then it's value will be checked and returned. is returned.
+	 * Retrieves the value of the specified property with optional handling
+	 * for missing entries and WeakReference values.
+	 *
+	 * <p>If {@code bConvertWeakRef} is true and the stored value is a
+	 * WeakReference, its referent is returned when available. If the referent
+	 * has been garbage collected, the method returns either null or
+	 * {@code OANotExist.instance}, depending on {@code bReturnNotExist}.</p>
+	 *
+	 * @param oaObj           the target object
+	 * @param name            the property name, case-insensitive
+	 * @param bReturnNotExist true to return {@code OANotExist.instance} when
+	 *                        the property does not exist or is unresolved
+	 * @param bConvertWeakRef true to resolve and return values stored as
+	 *                        WeakReferences
+	 * @return the stored value, a resolved referent, {@code OANotExist.instance},
+	 *         or null depending on the parameters and property state
 	 */
 	public static Object getProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
 		if (oaObj == null || name == null) {
@@ -549,14 +710,46 @@ public class OAObjectPropertyDelegate {
 
 	}
 
+	/**
+	 * Attempts to acquire an exclusive lock for the specified property.  
+	 * This call will wait if necessary until the lock becomes available.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name to lock
+	 * @return true if the lock is successfully acquired; false otherwise
+	 */
 	public static boolean setPropertyLock(OAObject oaObj, String name) {
 		return _setPropertyLock(oaObj, name, true, false);
 	}
 
+	/**
+	 * Attempts to acquire an exclusive lock for the specified property
+	 * without waiting.  
+	 * If the lock is already held by another thread, this method returns
+	 * immediately with {@code false}.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name to lock
+	 * @return true if the lock is acquired; false if it is already held
+	 */
 	public static boolean attemptPropertyLock(OAObject oaObj, String name) {
 		return _setPropertyLock(oaObj, name, false, true);
 	}
 
+	/**
+	 * Core implementation for acquiring a property-level lock.  
+	 * Creates or reuses a lock entry and manages waiting behavior, deadlock
+	 * detection, and re-entry checks depending on the supplied flags.
+	 *
+	 * @param oaObj              the target object
+	 * @param name               the property name to lock
+	 * @param bWaitIfNeeded      true to wait until the lock becomes available;
+	 *                           false to return immediately if locked
+	 * @param bCheckIfThisThread true to return true only when the current
+	 *                           thread already owns the lock
+	 * @return true if the lock is acquired according to the requested rules;
+	 *         false otherwise
+	 */
 	private static boolean _setPropertyLock(final OAObject oaObj, final String name, final boolean bWaitIfNeeded,
 			final boolean bCheckIfThisThread) {
 		if (oaObj == null || name == null) {
@@ -636,6 +829,14 @@ public class OAObjectPropertyDelegate {
 		return _setPropertyLock(oaObj, name, bWaitIfNeeded, bCheckIfThisThread); // create a new one
 	}
 
+	/**
+	 * Releases the lock associated with the specified property, if one exists.
+	 * Any threads waiting on the lock are notified so they may attempt to
+	 * acquire it.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name whose lock should be released
+	 */
 	public static void releasePropertyLock(OAObject oaObj, String name) {
 		if (oaObj == null || name == null) {
 			return;
@@ -655,6 +856,13 @@ public class OAObjectPropertyDelegate {
 		}
 	}
 
+	/**
+	 * Checks whether a lock exists for the specified property.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name to check
+	 * @return true if the property is currently locked; false otherwise
+	 */
 	public static boolean isPropertyLocked(OAObject oaObj, String name) {
 		if (oaObj == null || name == null) {
 			return false;
@@ -663,7 +871,23 @@ public class OAObjectPropertyDelegate {
 		return (hmLock.get(key) != null);
 	}
 
-	// 20141108 "flip" a hub property to/from a weakRef.  Used by HubDelegate.setReferenceable
+	/**
+	 * Converts the stored value for the specified property to or from a
+	 * {@link WeakReference}.  
+	 *
+	 * <p>If converting to a WeakReference, the current value is wrapped unless
+	 * it is already weak.  
+	 * If converting from a WeakReference, the referent is restored when
+	 * available; otherwise the property is removed if appropriate.</p>
+	 *
+	 * @param oaObj      the target object
+	 * @param name       the property name, case-insensitive
+	 * @param bToWeakRef true to convert the value to a WeakReference;
+	 *                   false to restore a strong reference
+	 * @param value      fallback value used when restoring from a collected
+	 *                   WeakReference
+	 * @return true if the stored value was changed; false otherwise
+	 */
 	public static boolean setPropertyWeakRef(OAObject oaObj, String name, boolean bToWeakRef, Object value) {
 		if (name == null || oaObj == null || oaObj.properties == null) {
 			return false;
@@ -704,18 +928,37 @@ public class OAObjectPropertyDelegate {
 		return b;
 	}
 
-	// 20141030
 	/**
-	 * Used on server, this will make sure that a Hub does not get GCd on the Server. This is needed when a hub has a masterObject that has
-	 * a cacheSize set, which means that it can be GCd. This will recursively set any parent/master objects. This is called by Hub.add,
-	 * Hub.remove, Hub.firepropchange(), Hub.saveAll.
+	 * Ensures that the specified object and its parent objects maintain either
+	 * strong or weak references depending on the supplied flag.  
 	 *
-	 * @param bReferenceable true to make sure that it has a hard ref, otherwise a weakRef will be used
+	 * <p>This is used on the server to prevent Hub values from being garbage
+	 * collected when their parent objects have a cache size that allows
+	 * eviction. The operation is applied recursively through one-to-many
+	 * relationships.</p>
+	 *
+	 * @param obj            the object to process
+	 * @param bReferenceable true to enforce strong references; false to allow
+	 *                       weak references
 	 */
 	public static void setReferenceable(OAObject obj, boolean bReferenceable) {
 		setReferenceable(obj, bReferenceable, null);
 	}
 
+	/**
+	 * Internal recursive implementation used to apply strong or weak reference
+	 * rules to an object and its parent objects.  
+	 *
+	 * <p>The method walks one-to-many reverse links, ensuring that referenced
+	 * Hubs are converted to strong or weak references as needed, and prevents
+	 * repeated processing through the supplied cascade tracker.</p>
+	 *
+	 * @param obj            the object to process
+	 * @param bReferenceable true to enforce strong references; false to allow
+	 *                       weak references
+	 * @param cascade        tracker used to avoid repeated processing of the
+	 *                       same objects during recursion
+	 */
 	private static void setReferenceable(final OAObject obj, boolean bReferenceable, OACascade cascade) {
 		if (obj == null) {
 			return;
@@ -794,6 +1037,12 @@ public class OAObjectPropertyDelegate {
 		}
 	}
 
+	/**
+	 * Clears all stored properties on the given object by removing its internal
+	 * property array.
+	 *
+	 * @param oaObj the object whose properties should be cleared
+	 */
 	public static void clearProperties(OAObject oaObj) {
 		if (oaObj != null) {
 			oaObj.properties = null;

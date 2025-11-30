@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,16 @@ public class OAObjectAnalyzer {
     HashSet<Hub> hsHub = new HashSet<Hub>();
 
     
+    /**
+     * Scans all cached {@link OAObject} instances and reports their
+     * {@link com.viaoa.hub.Hub} memberships for diagnostic analysis.
+     *
+     * <p>The method iterates through all classes registered in the object
+     * cache, invoking a callback for each object to count and record the
+     * hubs referencing it. Objects associated with more than ten hubs are
+     * printed to standard output. A running set of all discovered hubs is
+     * maintained for summary inspection.</p>
+     */
     public void load() {
 
         for (Class cs : OAObjectCacheDelegate.getClasses()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,13 +95,37 @@ public class OAObjectEventDelegate {
 	private static int cntError;
 
 	/**
-	 * Used to manage property changes. Sends a "hubPropertyChange()" to all listeners of the Hubs that this object is a member of. <br>
+	 * Entry point for emitting a before-change notification for a property.
+	 * Performs initial null checks and equality checks, then delegates to the
+	 * internal method that performs full validation and event routing.
+	 *
+	 * @param oaObj        object whose property is changing
+	 * @param propertyName name of the property
+	 * @param oldObj       previous value
+	 * @param newObj       new value
+	 * @param bLocalOnly   if true, suppresses cross-computer sync
+	 * @param bSetChanged  if true, allows downstream logic to mark the object as changed
 	 */
 	protected static void fireBeforePropertyChange(final OAObject oaObj, final String propertyName,
 			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged) {
 		_fireBeforePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged, false);
 	}
 
+	/**
+	 * Internal implementation for property pre-change handling.
+	 * Validates that the transition is allowed, enforces metadata rules,
+	 * prevents illegal recursive relationships, performs unique and ID checks,
+	 * and sends hub-level before-change events. Also determines whether
+	 * distributed sync should be notified if the object is server-authoritative.
+	 *
+	 * @param oaObj           object whose property is changing
+	 * @param propertyName    name of the property
+	 * @param oldObj          previous value
+	 * @param newObj          new value
+	 * @param bLocalOnly      if true, suppresses cross-computer sync
+	 * @param bSetChanged     if true, allows downstream code to mark object as changed
+	 * @param bIsCheckingRef  internal flag used when recursively validating reference changes
+	 */
 	private static void _fireBeforePropertyChange(final OAObject oaObj, final String propertyName,
 			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged, final boolean bIsCheckingRef) {
 
@@ -390,22 +414,56 @@ public class OAObjectEventDelegate {
 	private static int cntSetOwnerNull;
 
 	/**
-	 * Used to manage property changes. This will: 1: update null property information for primitive property types 2: update the objectKey,
-	 * which would then update the ObjectCache 3: update object hubs if this is a reference property change 4: Send "hubPropertyChange()" to
-	 * all listeners of the Hubs that this object is a member of. 5: Send event to Server. see
-	 * OAThreadLocalDelegate#setSuppressFirePropertyChange(boolean) to suppress this method from running by the current thread.
+	 * Public entry point for emitting an after-change property event.
+	 * Delegates to the full implementation with unknown-values disabled
+	 * and reference-checking disabled.
+	 *
+	 * @param oaObj        object whose property changed
+	 * @param propertyName name of the modified property
+	 * @param oldObj       previous value
+	 * @param newObj       new value
+	 * @param bLocalOnly   if true, suppresses cross-computer sync
+	 * @param bSetChanged  if true, allows flagging the object as changed
 	 */
 	protected static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged) {
 		firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged, false, false);
 	}
 
+	/**
+	 * Convenience wrapper for emitting a property-change event with an optional
+	 * unknown-values flag, delegating to the full implementation.
+	 *
+	 * @param oaObj          object whose property changed
+	 * @param propertyName   name of the property
+	 * @param oldObj         previous value
+	 * @param newObj         new value
+	 * @param bLocalOnly     if true, suppresses cross-computer sync
+	 * @param bSetChanged    if true, allows flagging the object as changed
+	 * @param bUnknownValues if true, skips some equality and load-state checks
+	 */
 	protected static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged, boolean bUnknownValues) {
 		firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged, bUnknownValues, false);
 
 	}
 
+	/**
+	 * Full implementation of property-change propagation. Applies metadata and
+	 * reference rules, updates primitive-null markers, performs ID and unique
+	 * validation, updates inverse references, records undo edits, sends hub
+	 * before/after events, updates link membership, applies triggers, manages
+	 * distributed-sync routing, and sets the object's changed flag when needed.
+	 *
+	 * @param oaObj           object whose property changed
+	 * @param propertyName    name of the property
+	 * @param oldObj          previous value
+	 * @param newObj          new value
+	 * @param bLocalOnly      if true, suppresses cross-computer sync
+	 * @param bSetChanged     if true, allows setting the changed flag
+	 * @param bUnknownValues  if true, skips some old-value validation
+	 * @param bIsCheckingRef  internal flag used during recursive reference updates
+	 */
 	protected static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			final boolean bLocalOnly, final boolean bSetChanged, final boolean bUnknownValues, final boolean bIsCheckingRef) {
 		if (oaObj == null || propertyName == null) {
@@ -689,6 +747,15 @@ public class OAObjectEventDelegate {
 
 	}
 
+	/**
+	 * Notifies all hubs referencing the object that a property is about to change,
+	 * allowing listeners to process before-change semantics.
+	 *
+	 * @param oaObj        object whose property will change
+	 * @param propertyName property name
+	 * @param oldObj       previous value
+	 * @param newObj       new value
+	 */
 	protected static void sendHubBeforePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj) {
 		Hub[] hubs = OAObjectHubDelegate.getHubReferences(oaObj);
 		if (hubs == null) {
@@ -701,6 +768,18 @@ public class OAObjectEventDelegate {
 		}
 	}
 
+	/**
+	 * Handles reference-property updates by adjusting membership in reverse-link
+	 * hubs, managing ownership relationships, and maintaining recursive link
+	 * consistency. Ensures that the object is removed from old hubs and added to
+	 * new hubs when required, and updates master/active objects where appropriate.
+	 *
+	 * @param oaObj     object whose link reference changed
+	 * @param oi        metadata for the object's class
+	 * @param linkInfo  metadata describing the modified link
+	 * @param oldObj    prior reference value (may be OAObjectKey)
+	 * @param newObj    new reference value
+	 */
 	public static void sendHubPropertyChange(final OAObject oaObj, final String propertyName, final Object oldObj, final Object newObj,
 			final OALinkInfo linkInfo) {
 		// Note: don't add this, HubEventDelegate will do it after it updates detail hubs:
@@ -747,12 +826,16 @@ public class OAObjectEventDelegate {
 	}
 
 	/**
-	 * Called by firePropertyChange when a reference object is changed.<br>
-	 * This will move this object out of one Hub and into another when a property is changed.<br>
-	 * This will also manage changes that involve recursive relationships.
-	 * <p>
-	 * Example: if the dept for an emp is changed, then the emp will be taken out of the orig dept.hubEmp hub and put into the new dept
-	 * hubEmp
+	 * Handles reference-property updates by adjusting membership in reverse-link
+	 * hubs, managing ownership relationships, and maintaining recursive link
+	 * consistency. Ensures that the object is removed from old hubs and added to
+	 * new hubs when required, and updates master/active objects where appropriate.
+	 *
+	 * @param oaObj     object whose link reference changed
+	 * @param oi        metadata for the object's class
+	 * @param linkInfo  metadata describing the modified link
+	 * @param oldObj    prior reference value (may be OAObjectKey)
+	 * @param newObj    new reference value
 	 */
 	private static void updateLink(final OAObject oaObj, OAObjectInfo oi, OALinkInfo linkInfo, Object oldObj, Object newObj) {
 		// NOTE: oldObj could be OAObjectKey
@@ -1102,6 +1185,12 @@ public class OAObjectEventDelegate {
 		}
 	}
 
+	/**
+	 * Sends an after-load event to all hubs referencing the object, allowing
+	 * listeners to perform initialization once the object has been fully loaded.
+	 *
+	 * @param oaObj object that has just completed loading
+	 */
 	protected static void fireAfterLoadEvent(OAObject oaObj) {
 		Hub[] hubs = OAObjectHubDelegate.getHubReferences(oaObj);
 		if (hubs == null) {

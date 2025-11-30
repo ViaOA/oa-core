@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,19 +81,42 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     
     
     /**
-     * Create new cache trigger.  Cached objects that are true for isUsedFromObjectCache &amp; isUsed will then call onTrigger.
+     * Creates a new cache trigger that monitors all objects of the specified
+     * class and triggers {@link #onTrigger(Object)} when matching objects
+     * appear in the cache.
+     *
+     * @param clazz the class to monitor; must not be {@code null}
+     * @throws RuntimeException if {@code clazz} is {@code null}
      */
     public OAObjectCacheTrigger(Class clazz) {
         this(clazz, null);
     }
     
     /**
-     * Create new cache trigger.  Cached objects that are true for isUsedFromObjectCache &amp; isUsed will then call onTrigger.
+     * Creates a new cache trigger with an initial filter applied. Objects
+     * that satisfy the filter and cache-level rules will invoke
+     * {@link #onTrigger(Object)}.
+     *
+     * @param clazz the class to monitor; must not be {@code null}
+     * @param filter optional filter applied to determine whether cached
+     *               objects should trigger; may be {@code null}
+     * @throws RuntimeException if {@code clazz} is {@code null}
      */
     public OAObjectCacheTrigger(Class clazz, OAFilter<T> filter) {
         this(clazz, filter, null);
     }
     
+    /**
+     * Creates a new cache trigger with an optional filter and dependent
+     * property paths. When an object satisfies the filter and a monitored
+     * property path changes, {@link #onTrigger(Object)} is invoked.
+     *
+     * @param clazz the class to monitor; must not be {@code null}
+     * @param filter optional filter applied to determine trigger eligibility
+     * @param dependentPropPaths property paths whose changes should trigger
+     *                           re-evaluation; may be {@code null}
+     * @throws RuntimeException if {@code clazz} is {@code null}
+     */
     public OAObjectCacheTrigger(Class clazz, OAFilter<T> filter, String ... dependentPropPaths) {
         if (clazz == null) throw new RuntimeException("class can not be null");
         this.clazz = clazz;
@@ -136,6 +159,17 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         refresh();
     }
 
+    /**
+     * Creates a cache trigger based on the class of the supplied Hub's
+     * object type. When objects in the cache satisfy the filter and property
+     * path conditions, {@link #onTrigger(Object)} is invoked.
+     *
+     * @param hub the Hub providing the target class; must not be {@code null}
+     * @param filter optional filter applied to determine trigger eligibility
+     * @param dependentPropPaths property paths whose changes should trigger
+     *                           re-evaluation; may be {@code null}
+     * @throws RuntimeException if {@code hub} is {@code null}
+     */
     public OAObjectCacheTrigger(Hub<T> hub, OAFilter<T> filter, String ... dependentPropPaths) {
         if (hub == null) throw new RuntimeException("hub can not be null");
         clazz = hub.getObjectClass();
@@ -154,23 +188,37 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
 
     
     /**
-     * This needs to be set to true if it is only created on the server.
-     * This is so that changes will be published to the clients, even if initiated on OAClientThread. 
+     * Enables or disables server-side-only behavior for trigger execution.
+     * <p>
+     * When enabled, outbound remote messages are temporarily suspended
+     * during {@link #onTrigger(Object)} execution so that updates initiated
+     * from an {@code OAClientThread} propagate correctly.
+     * </p>
+     *
+     * @param b {@code true} to enable server-side-only behavior
      */
     public void setServerSideOnly(boolean b) {
         bServerSideOnly = b;
     }
     
     /**
-     * Add a filter that is used to determine if an object from the cache will be added to hub.
-     * This will clear and refresh hub.  
-     * @param f filter to add.  By default isUsed() will return false if any of the filters.isUsed() returns false.
-     * @see #addFilter(OAFilter, boolean) that has an option for refreshing.
+     * Adds a filter used to determine whether cached objects qualify for
+     * triggering and then invokes {@link #refresh()}.
+     *
+     * @param f the filter to add; ignored if {@code null}
      */
     public void addFilter(OAFilter<T> f) {
         addFilter(f, true); // filter changes what objs are selected, need to refresh
     }
 
+    /**
+     * Adds a filter and registers additional dependent property paths. After
+     * the filter is added, {@link #refresh()} is invoked to evaluate all
+     * cached objects.
+     *
+     * @param f the filter to add; ignored if {@code null}
+     * @param dependentPropPaths additional property paths to monitor
+     */
     public void addFilter(OAFilter<T> f, String ... dependentPropPaths) {
         addFilter(f, true);
         if (dependentPropPaths == null) return;
@@ -180,9 +228,14 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     }
     
     /**
-     * Add a filter that is used to determine if an object from the cache will be added to hub.
-     * @param f filter to add.  By default isUsed() will return false if any of the filters.isUsed() returns false.
-     * @param bCallRefresh if true, then call refresh.
+     * Adds a filter used to determine trigger eligibility.
+     * <p>
+     * If {@code bCallRefresh} is {@code true}, {@link #refresh()} is invoked
+     * after adding the filter.
+     * </p>
+     *
+     * @param f the filter to add; ignored if {@code null}
+     * @param bCallRefresh whether to perform an immediate refresh
      */
     public void addFilter(OAFilter<T> f, boolean bCallRefresh) {
         if (f == null) return;
@@ -193,8 +246,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
 
     
     /**
-     * Clear hub and check all cached objects to see if they should be added to hub.
-     * To be added, isUsedFromObjectCache() and isUsed() must return true.
+     * Iterates through all cached objects of the monitored class and invokes
+     * {@link #onTrigger(Object)} for each object satisfying {@link #isUsed(Object)}.
      */
     public void refresh() {
         // need to check loaded objects 
@@ -212,10 +265,11 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     
     
     /**
-     * add a property to listen to.  If the property changes, then it will be recalculated to determine if it should be 
-     * added to hub, or removed from it.
-     * This will recheck the object cache to see if any of the existing objects isUsed() is true and should be added to hub.
-     * It will not call refresh.
+     * Registers a dependent property path whose changes should cause objects
+     * to be re-evaluated for triggering. This method updates internal state
+     * and installs or reconfigures the underlying trigger.
+     *
+     * @param prop the dependent property path; ignored if {@code null} or empty
      */
     public void addDependentProperty(final String prop) {
         if (prop == null || prop.length() == 0) return;
@@ -226,6 +280,12 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         setupTrigger();
     }
     
+    /**
+     * Creates or replaces the underlying {@link OATrigger} used to monitor
+     * the configured dependent property paths. When a relevant property
+     * change occurs, affected objects are evaluated and may trigger
+     * {@link #onTrigger(Object)}.
+     */
     protected void setupTrigger() {
         if (trigger != null) {
             OATriggerDelegate.removeTrigger(trigger);
@@ -279,6 +339,10 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     }
     
     
+    /**
+     * Removes this trigger's listeners and releases associated resources.
+     * After closing, no further trigger notifications will occur.
+     */
     public void close() {
         if (trigger == null) {
             OATriggerDelegate.removeTrigger(trigger);
@@ -290,6 +354,10 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         }
     }
     
+    /**
+     * Ensures that listeners are removed before garbage collection by calling
+     * {@link #close()} and then delegating to {@code super.finalize()}.
+     */
     @Override
     protected void finalize() throws Throwable {
         close();
@@ -297,8 +365,11 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     }
     
     /**
-     * Called to see if an object should be included in hub.
-     * By default, this will return false if no filters have been added, or the result of the filters. 
+     * Evaluates whether the specified object satisfies all registered
+     * filters. If no filters exist, this method returns {@code true}.
+     *
+     * @param obj the object to evaluate
+     * @return {@code true} if all filters accept the object
      */
     @Override
     public boolean isUsed(T obj) {
@@ -311,7 +382,12 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     }
     
     
-    
+    /**
+     * Invokes {@link #onTrigger(Object)} for the specified object while
+     * applying server-side-only messaging rules if enabled.
+     *
+     * @param obj the object to trigger on
+     */
     private void callOnTrigger(T obj) {
         try {
             if (bServerSideOnly) { 
@@ -328,8 +404,10 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     }
     
     /**
-     * Method that will be called when isUsed() returns true, and isUsedFromObjectCache() returns true.
-     * @param obj
+     * Invoked when an object satisfies all trigger conditions, including
+     * cache-level and filter-level rules.
+     *
+     * @param obj the object that triggered the event
      */
     public abstract void onTrigger(T obj);
 }

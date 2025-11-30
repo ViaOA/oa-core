@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,28 +42,61 @@ public class OAFkeyInfo implements java.io.Serializable {
 
 	private OAFkey oaFkey;
 
+	/**
+	 * Returns the source (foreign-key) property participating in the
+	 * foreign-key mapping.
+	 *
+	 * @return the foreign-key property metadata
+	 */
 	public OAPropertyInfo getFromPropertyInfo() {
 		return fromPropertyInfo;
 	}
 
+	/**
+	 * Sets the source (foreign-key) property for this mapping.
+	 *
+	 * @param pi the foreign-key property metadata
+	 */
 	public void setFromPropertyInfo(OAPropertyInfo pi) {
 		this.fromPropertyInfo = pi;
 	}
 
+	/**
+	 * Returns the target (primary-key or unique-key) property referenced by
+	 * this foreign-key mapping.
+	 *
+	 * @return the target property metadata
+	 */
 	public OAPropertyInfo getToPropertyInfo() {
 		return toPropertyInfo;
 	}
 
+	/**
+	 * Sets the target (primary-key or unique-key) property for this mapping.
+	 *
+	 * @param pi the target property metadata
+	 */
 	public void setToPropertyInfo(OAPropertyInfo pi) {
 		this.toPropertyInfo = pi;
 	}
 
+	/**
+	 * Assigns the {@link OAFkey} annotation instance that defines this
+	 * foreign-key relationship.
+	 *
+	 * @param f the associated {@code OAFkey} annotation
+	 */
 	public void setOAFkey(OAFkey f) {
 		oaFkey = f;
 	}
 
+	/**
+	 * Returns the {@link OAFkey} annotation associated with this foreign-key
+	 * mapping.
+	 *
+	 * @return the {@code OAFkey} annotation, or {@code null} if none assigned
+	 */
 	public OAFkey getOAFkey() {
 		return oaFkey;
 	}
-
 }

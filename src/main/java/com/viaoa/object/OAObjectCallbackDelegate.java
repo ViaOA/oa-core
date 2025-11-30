@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,14 +86,44 @@ import com.viaoa.util.OAUnknownObject;
 public class OAObjectCallbackDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectCallbackDelegate.class.getName());
 
+	
+	/**
+	 * Returns whether the specified property or link is visible by evaluating
+	 * the associated {@link OAObjectCallback}. The visibility decision is
+	 * determined by {@code getAllowVisibleObjectCallback(...)}.
+	 *
+	 * @param hub  the hub providing contextual visibility rules, or {@code null}
+	 * @param obj  the target object, or {@code null}
+	 * @param name the property or link name, or {@code null}
+	 * @return {@code true} if visibility is allowed; otherwise {@code false}
+	 */
 	public static boolean getAllowVisible(Hub hub, OAObject obj, String name) {
 		return getAllowVisibleObjectCallback(hub, obj, name).getAllowed();
 	}
 
+	/**
+	 * Returns whether the specified property, link, or command is enabled
+	 * by evaluating the associated {@link OAObjectCallback}. The enabled
+	 * state is determined by {@code getAllowEnabledObjectCallback(...)}.
+	 *
+	 * @param checkType the bitmask of checking options
+	 * @param hub       the hub providing contextual rules, or {@code null}
+	 * @param obj       the target object, or {@code null}
+	 * @param name      the property, link, or method name, or {@code null}
+	 * @return {@code true} if the action is enabled; otherwise {@code false}
+	 */
 	public static boolean getAllowEnabled(int checkType, Hub hub, OAObject obj, String name) {
 		return getAllowEnabledObjectCallback(checkType, hub, obj, name).getAllowed();
 	}
 
+	/**
+	 * Returns whether the specified object can be copied by evaluating the
+	 * associated {@link OAObjectCallback}. If the object is {@code null},
+	 * copying is not allowed.
+	 *
+	 * @param oaObj the object to evaluate
+	 * @return {@code true} if copying is allowed; otherwise {@code false}
+	 */
 	public static boolean getAllowCopy(OAObject oaObj) {
 		if (oaObj == null) {
 			return false;
@@ -101,6 +131,14 @@ public class OAObjectCallbackDelegate {
 		return getAllowCopyObjectCallback(oaObj).getAllowed();
 	}
 
+	/**
+	 * Returns a copy of the specified object using the {@link OAObjectCallback}
+	 * associated with copy behavior. If the callback does not provide a copy
+	 * value and copying is allowed, {@code createCopy()} is invoked.
+	 *
+	 * @param oaObj the source object to copy
+	 * @return the copied object, or {@code null} if copying is not allowed
+	 */
 	public static OAObject getCopy(OAObject oaObj) {
 		if (oaObj == null) {
 			return null;
@@ -125,56 +163,154 @@ public class OAObjectCallbackDelegate {
 	}
 	*/
 
-	// OAObjectCallback.CHECK_*
+	/**
+	 * Returns whether the specified property change is permitted by evaluating
+	 * the associated {@link OAObjectCallback} for verification.
+	 *
+	 * @param checkType    the bitmask of checking options
+	 * @param obj          the target object
+	 * @param propertyName the property being changed
+	 * @param oldValue     the previous value
+	 * @param newValue     the proposed new value
+	 * @return {@code true} if the property change is allowed; otherwise {@code false}
+	 */
 	public static boolean getVerifyPropertyChange(int checkType, OAObject obj, String propertyName, Object oldValue, Object newValue) {
 		return getVerifyPropertyChangeObjectCallback(checkType, obj, propertyName, oldValue, newValue).getAllowed();
 	}
 
+	/**
+	 * Returns whether the specified object can be added to the given hub by
+	 * evaluating the associated {@link OAObjectCallback}.
+	 *
+	 * @param hub       the hub receiving the object
+	 * @param obj       the object being added
+	 * @param checkType the bitmask of checking options
+	 * @return {@code true} if the add operation is allowed; otherwise {@code false}
+	 */
 	public static boolean getAllowAdd(Hub hub, OAObject obj, int checkType) {
 		return getAllowAddObjectCallback(hub, obj, checkType).getAllowed();
 	}
 
+	/**
+	 * Returns whether adding the specified object to the given hub passes
+	 * verification by evaluating the associated {@link OAObjectCallback}.
+	 *
+	 * @param hub       the hub receiving the object
+	 * @param obj       the object being added
+	 * @param checkType the bitmask of checking options
+	 * @return {@code true} if verification succeeds; otherwise {@code false}
+	 */
 	public static boolean getVerifyAdd(Hub hub, OAObject obj, int checkType) {
 		return getVerifyAddObjectCallback(hub, obj, checkType).getAllowed();
 	}
 
+	/**
+	 * Returns whether the specified object can be removed from the given hub by
+	 * evaluating the associated {@link OAObjectCallback}.
+	 *
+	 * @param hub       the hub from which the object may be removed
+	 * @param obj       the object being removed
+	 * @param checkType the bitmask of checking options
+	 * @return {@code true} if the remove operation is allowed; otherwise {@code false}
+	 */
 	public static boolean getAllowRemove(Hub hub, OAObject obj, int checkType) {
 		return getAllowRemoveObjectCallback(hub, obj, checkType).getAllowed();
 	}
 
+	/**
+	 * Returns whether removing the specified object from the given hub passes
+	 * verification by evaluating the associated {@link OAObjectCallback}.
+	 *
+	 * @param hub       the hub from which the object is being removed
+	 * @param obj       the object being removed
+	 * @param checkType the bitmask of checking options
+	 * @return {@code true} if verification succeeds; otherwise {@code false}
+	 */
 	public static boolean getVerifyRemove(Hub hub, OAObject obj, int checkType) {
 		return getVerifyRemoveObjectCallback(hub, obj, checkType).getAllowed();
 	}
 
+	/**
+	 * Returns whether all objects may be removed from the given hub by
+	 * evaluating the associated {@link OAObjectCallback}.
+	 *
+	 * @param hub       the hub whose contents may be removed
+	 * @param checkType the bitmask of checking options
+	 * @return {@code true} if removing all objects is allowed; otherwise {@code false}
+	 */
 	public static boolean getAllowRemoveAll(Hub hub, int checkType) {
 		return getAllowRemoveAllObjectCallback(hub, checkType).getAllowed();
 	}
 
+	/**
+	 * Returns whether removing all objects from the given hub passes
+	 * verification by evaluating the associated {@link OAObjectCallback}.
+	 *
+	 * @param hub       the hub whose objects may be removed
+	 * @param checkType the bitmask of checking options
+	 * @return {@code true} if verification succeeds; otherwise {@code false}
+	 */
 	public static boolean getVerifyRemoveAll(Hub hub, int checkType) {
 		return getVerifyRemoveAllObjectCallback(hub, checkType).getAllowed();
 	}
 
+	/**
+	 * Returns whether the specified object may be deleted within the context
+	 * of the given hub by evaluating the associated {@link OAObjectCallback}.
+	 *
+	 * @param hub the hub providing contextual rules
+	 * @param obj the object to delete
+	 * @return {@code true} if deletion is allowed; otherwise {@code false}
+	 */
 	public static boolean getAllowDelete(Hub hub, OAObject obj) {
 		return getAllowDeleteObjectCallback(hub, obj).getAllowed();
 	}
 
+	/**
+	 * Returns whether deleting the specified object passes verification by
+	 * evaluating the associated {@link OAObjectCallback}.
+	 *
+	 * @param hub       the hub providing contextual rules
+	 * @param obj       the object to delete
+	 * @param checkType the bitmask of checking options
+	 * @return {@code true} if verification succeeds; otherwise {@code false}
+	 */
 	public static boolean getVerifyDelete(Hub hub, OAObject obj, int checkType) {
 		return getVerifyDeleteObjectCallback(hub, obj, checkType).getAllowed();
 	}
 
+	/**
+	 * Returns whether the specified object may be saved by evaluating
+	 * the associated {@link OAObjectCallback}.
+	 *
+	 * @param obj       the object to save
+	 * @param checkType the bitmask of checking options
+	 * @return {@code true} if saving is allowed; otherwise {@code false}
+	 */
 	public static boolean getAllowSave(OAObject obj, int checkType) {
 		return getAllowSaveObjectCallback(obj, checkType).getAllowed();
 	}
 
+	/**
+	 * Returns whether saving the specified object passes verification by
+	 * evaluating the associated {@link OAObjectCallback}.
+	 *
+	 * @param obj       the object to save
+	 * @param checkType the bitmask of checking options
+	 * @return {@code true} if verification succeeds; otherwise {@code false}
+	 */
 	public static boolean getVerifySave(OAObject obj, int checkType) {
 		return getVerifySaveObjectCallback(obj, checkType).getAllowed();
 	}
 
 	/**
-	 * Call oaobject class callback with type=AllowSubmit, and then calls each prop, owned links
+	 * Creates an {@link OAObjectCallback} used to determine whether the
+	 * specified object satisfies all required submit-time rules. The callback
+	 * is initialized with {@code Type.AllowSubmit} and evaluated across the
+	 * object's properties and owned links.
 	 *
-	 * @param obj
-	 * @return
+	 * @param obj the object to evaluate
+	 * @return the resulting callback, or {@code null} if the object is {@code null}
 	 */
 	public static OAObjectCallback getAllowSubmitObjectCallback(OAObject obj) {
 		if (obj == null) {
@@ -187,6 +323,16 @@ public class OAObjectCallbackDelegate {
 		return em;
 	}
 
+	/**
+	 * Performs recursive submit-rule validation for the specified object,
+	 * evaluating properties and owned links and updating the supplied
+	 * {@link OAObjectCallback} accordingly. Processing stops if the callback
+	 * becomes disallowed or a throwable is set.
+	 *
+	 * @param em      the callback being updated
+	 * @param obj     the object to evaluate
+	 * @param cascade the cascade tracker used to prevent repeated evaluation
+	 */
 	private static void _getAllowSubmit(final OAObjectCallback em, final OAObject obj, final OACascade cascade) {
 		if (em == null || obj == null) {
 			return;
@@ -263,6 +409,17 @@ public class OAObjectCallbackDelegate {
 		}
 	}
 
+	/**
+	 * Returns the formatting string for the specified object and property by
+	 * evaluating a {@link OAObjectCallback} of type {@code GetFormat}. The
+	 * default format is set first, then evaluated again after assigning the
+	 * property name.
+	 *
+	 * @param obj           the target object
+	 * @param propertyName  the property whose format is requested
+	 * @param defaultFormat the initial format value
+	 * @return the resulting format string
+	 */
 	public static String getFormat(OAObject obj, String propertyName, String defaultFormat) {
 		OAObjectCallback em = new OAObjectCallback(Type.GetFormat);
 		em.setObject(obj);
@@ -273,6 +430,17 @@ public class OAObjectCallbackDelegate {
 		return em.getFormat();
 	}
 
+	/**
+	 * Returns the tooltip text for the specified object and property by
+	 * evaluating a {@link OAObjectCallback} of type {@code GetToolTip}. The
+	 * default tooltip is assigned first, then evaluated again after assigning
+	 * the property name.
+	 *
+	 * @param obj           the target object
+	 * @param propertyName  the property whose tooltip is requested
+	 * @param defaultToolTip the initial tooltip value
+	 * @return the resulting tooltip text
+	 */
 	public static String getToolTip(OAObject obj, String propertyName, String defaultToolTip) {
 		OAObjectCallback em = new OAObjectCallback(Type.GetToolTip);
 		em.setObject(obj);
@@ -283,6 +451,15 @@ public class OAObjectCallbackDelegate {
 		return em.getToolTip();
 	}
 
+	/**
+	 * Evaluates a {@link OAObjectCallback} of type {@code RenderLabel} to allow
+	 * callback logic to update the given label used for rendering a component.
+	 * Evaluation occurs once before and once after assigning the property name.
+	 *
+	 * @param obj          the target object
+	 * @param propertyName the property associated with the label
+	 * @param label        the label to be updated
+	 */
 	public static void renderLabel(OAObject obj, String propertyName, JLabel label) {
 		OAObjectCallback em = new OAObjectCallback(Type.RenderLabel);
 		em.setObject(obj);
@@ -292,6 +469,14 @@ public class OAObjectCallbackDelegate {
 		callObjectCallbackMethod(em);
 	}
 
+	/**
+	 * Evaluates a {@link OAObjectCallback} of type {@code UpdateLabel} to allow
+	 * callback logic to modify the label associated with a component.
+	 *
+	 * @param obj          the target object
+	 * @param propertyName the property associated with the label
+	 * @param label        the label to update
+	 */
 	public static void updateLabel(OAObject obj, String propertyName, JLabel label) {
 		OAObjectCallback em = new OAObjectCallback(Type.UpdateLabel);
 		em.setObject(obj);
@@ -300,10 +485,29 @@ public class OAObjectCallbackDelegate {
 		callObjectCallbackMethod(em);
 	}
 
+	/**
+	 * Creates and returns an {@link OAObjectCallback} of type
+	 * {@code AllowVisible} for the given hub by delegating to the overloaded
+	 * method with {@code null} object and property name.
+	 *
+	 * @param hub the hub providing visibility context
+	 * @return the resulting callback
+	 */
     public static OAObjectCallback getAllowVisibleObjectCallback(Hub hub) {
         return getAllowVisibleObjectCallback(hub, null, null);
     }
 	
+    /**
+     * Creates and evaluates an {@link OAObjectCallback} of type
+     * {@code AllowVisible} for the specified hub, object, and property or link
+     * name. When the object is {@code null}, the appropriate master object is
+     * resolved from the hub.
+     *
+     * @param hub   the hub providing contextual rules
+     * @param oaObj the target object, or {@code null}
+     * @param name  the property or link name, or {@code null}
+     * @return the resulting callback, or {@code null} if hub and object are both null
+     */
 	public static OAObjectCallback getAllowVisibleObjectCallback(Hub hub, OAObject oaObj, String name) {
 		if (hub == null && oaObj == null) {
 			return null;
@@ -321,6 +525,18 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code AllowEnabled} using the specified hub, object, property name,
+	 * and check-type mask. When the object is {@code null}, the appropriate
+	 * master object is resolved from the hub.
+	 *
+	 * @param checkType the bitmask of checking options
+	 * @param hub       the hub providing contextual rules
+	 * @param oaObj     the target object, or {@code null}
+	 * @param name      the property, link, or method name, or {@code null}
+	 * @return the resulting callback, or {@code null} if hub and object are both null
+	 */
 	public static OAObjectCallback getAllowEnabledObjectCallback(final int checkType, final Hub hub, OAObject oaObj, String name) {
 		if (hub == null && oaObj == null) {
 			return null;
@@ -338,6 +554,15 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code AllowEnabled} for the given hub. If the hub has a master
+	 * object, the callback is evaluated against that object; otherwise,
+	 * only hub listeners are processed.
+	 *
+	 * @param hub the hub providing contextual rules
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getAllowEnabledObjectCallback(Hub hub) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowEnabled);
 
@@ -353,6 +578,13 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code AllowCopy} for the specified object.
+	 *
+	 * @param oaObj the object being copied
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getAllowCopyObjectCallback(final OAObject oaObj) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowCopy, OAObjectCallback.CHECK_ALL, null, null, oaObj, null,
 				null);
@@ -360,6 +592,14 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type {@code GetCopy}
+	 * to obtain a copy of the specified object or to allow callback logic to
+	 * supply an alternate value.
+	 *
+	 * @param oaObj the object to copy
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getCopyObjectCallback(final OAObject oaObj) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.GetCopy, OAObjectCallback.CHECK_ALL, null, null, oaObj, null,
 				null);
@@ -367,6 +607,14 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type {@code AfterCopy}
+	 * for the specified source object and its copy.
+	 *
+	 * @param oaObj     the original object
+	 * @param oaObjCopy the copied object
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getAfterCopyObjectCallback(final OAObject oaObj, final OAObject oaObjCopy) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AfterCopy, OAObjectCallback.CHECK_ALL, null, null, oaObj, null,
 				oaObjCopy);
@@ -374,6 +622,18 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code VerifyPropertyChange} to validate a property update.
+	 * The old value is assigned before processing.
+	 *
+	 * @param checkType    the bitmask of checking options
+	 * @param oaObj        the target object
+	 * @param propertyName the property being changed
+	 * @param oldValue     the previous value
+	 * @param newValue     the proposed new value
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getVerifyPropertyChangeObjectCallback(final int checkType, final OAObject oaObj,
 			final String propertyName,
 			final Object oldValue, final Object newValue) {
@@ -384,12 +644,27 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code VerifyCommand} to validate invocation of the specified method.
+	 *
+	 * @param oaObj      the target object
+	 * @param methodName the method to verify
+	 * @param checkType  the bitmask of checking options
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getVerifyCommandObjectCallback(final OAObject oaObj, final String methodName, int checkType) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.VerifyCommand, checkType, null, null, oaObj, methodName, null);
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
 
+	/**
+	 * Updates the callback to disallow editing when context rules
+	 * indicate that processed-state editing is not permitted.
+	 *
+	 * @param objectCallback the callback to update
+	 */
 	public static void updateEditProcessed(OAObjectCallback objectCallback) {
 		if (objectCallback == null) {
 			return;
@@ -401,6 +676,17 @@ public class OAObjectCallbackDelegate {
 		}
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type {@code AllowAdd}
+	 * to determine whether the specified object may be added to the given hub.
+	 * Hub listener rules or reverse-link rules may be applied depending on the
+	 * hub's metadata.
+	 *
+	 * @param hub       the hub receiving the object
+	 * @param objAdd    the object being added
+	 * @param checkType the bitmask of checking options
+	 * @return the resulting callback, or {@code null} if the hub is {@code null}
+	 */
 	public static OAObjectCallback getAllowAddObjectCallback(final Hub hub, OAObject objAdd, final int checkType) {
 		if (hub == null) {
 			return null;
@@ -431,6 +717,17 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type {@code VerifyAdd}
+	 * to verify whether the specified object may be added to the given hub.
+	 * Hub listener rules or reverse-link rules may be applied depending on
+	 * the hub's metadata.
+	 *
+	 * @param hub       the hub receiving the object
+	 * @param oaObj     the object being added
+	 * @param checkType the bitmask of checking options
+	 * @return the resulting callback, or {@code null} if the hub is {@code null}
+	 */
 	public static OAObjectCallback getVerifyAddObjectCallback(final Hub hub, final OAObject oaObj, final int checkType) {
 		if (hub == null) {
 			return null;
@@ -457,6 +754,14 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates an {@link OAObjectCallback} of type {@code AllowNew} to determine
+	 * whether a new instance of the specified class may be created. Context and
+	 * processed-state rules are evaluated before returning.
+	 *
+	 * @param clazz the class to evaluate
+	 * @return the resulting callback, or {@code null} if the class is {@code null}
+	 */
 	public static OAObjectCallback getAllowNewObjectCallback(final Class clazz) {
 		if (clazz == null) {
 			return null;
@@ -488,6 +793,14 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type {@code AllowNew}
+	 * to determine whether a new object may be created for the given hub. When
+	 * applicable, reverse-link rules or hub listeners are evaluated.
+	 *
+	 * @param hub the hub providing contextual rules
+	 * @return the resulting callback, or {@code null} if the hub is {@code null}
+	 */
 	public static OAObjectCallback getAllowNewObjectCallback(final Hub hub) {
 		if (hub == null) {
 			return null;
@@ -514,6 +827,17 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type {@code AllowRemove}
+	 * to determine whether the specified object may be removed from the hub.
+	 * Hub listener rules or reverse-link rules may be applied depending on
+	 * metadata.
+	 *
+	 * @param hub       the hub from which the object may be removed
+	 * @param objRemove the object being removed
+	 * @param checkType the bitmask of checking options
+	 * @return the resulting callback, or {@code null} if the hub is {@code null}
+	 */
 	public static OAObjectCallback getAllowRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType) {
 		if (hub == null) {
 			return null;
@@ -545,6 +869,16 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type {@code VerifyRemove}
+	 * to verify whether the specified object may be removed from the hub. Hub
+	 * listener rules or reverse-link rules may be applied depending on metadata.
+	 *
+	 * @param hub       the hub from which the object is being removed
+	 * @param objRemove the object being removed
+	 * @param checkType the bitmask of checking options
+	 * @return the resulting callback, or {@code null} if the hub is {@code null}
+	 */
 	public static OAObjectCallback getVerifyRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType) {
 		if (hub == null) {
 			return null;
@@ -576,6 +910,16 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code AllowRemoveAll} to determine whether all objects may be
+	 * removed from the specified hub. Hub listener rules or reverse-link
+	 * rules may be applied depending on metadata.
+	 *
+	 * @param hub       the hub whose objects may be removed
+	 * @param checkType the bitmask of checking options
+	 * @return the resulting callback, or {@code null} if the hub is {@code null}
+	 */
 	public static OAObjectCallback getAllowRemoveAllObjectCallback(final Hub hub, final int checkType) {
 		if (hub == null) {
 			return null;
@@ -607,6 +951,16 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code VerifyRemoveAll} to verify whether all objects may be removed
+	 * from the specified hub. Hub listener rules or reverse-link rules
+	 * may be applied depending on metadata.
+	 *
+	 * @param hub       the hub whose objects may be removed
+	 * @param checkType the bitmask of checking options
+	 * @return the resulting callback, or {@code null} if the hub is {@code null}
+	 */
 	public static OAObjectCallback getVerifyRemoveAllObjectCallback(final Hub hub, final int checkType) {
 		if (hub == null) {
 			return null;
@@ -638,18 +992,44 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code AllowSave} to determine whether the specified object may
+	 * be saved.
+	 *
+	 * @param oaObj     the object to save
+	 * @param checkType the bitmask of checking options
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getAllowSaveObjectCallback(final OAObject oaObj, final int checkType) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowSave, checkType, null, null, oaObj, null, null);
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code VerifySave} to verify whether the specified object may
+	 * be saved.
+	 *
+	 * @param oaObj     the object to save
+	 * @param checkType the bitmask of checking options
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getVerifySaveObjectCallback(final OAObject oaObj, final int checkType) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.VerifySave, checkType, null, null, oaObj, null, null);
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
 
+	/**
+	 * Creates an {@link OAObjectCallback} of type {@code AllowDelete}
+	 * to determine whether the specified object may be deleted. Context
+	 * and processed-state rules are evaluated before returning.
+	 *
+	 * @param objDelete the object to delete
+	 * @return the resulting callback, or {@code null} if the object or its class is null
+	 */
 	public static OAObjectCallback getAllowDeleteObjectCallback(final OAObject objDelete) {
 		if (objDelete == null) {
 			return null;
@@ -686,6 +1066,16 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code AllowDelete} to determine whether the specified object
+	 * may be deleted within the context of the given hub. Hub listener
+	 * rules or reverse-link rules may be applied depending on metadata.
+	 *
+	 * @param hub       the hub providing contextual rules
+	 * @param objDelete the object to delete
+	 * @return the resulting callback, or {@code null} if the hub or object is {@code null}
+	 */
 	public static OAObjectCallback getAllowDeleteObjectCallback(final Hub hub, final OAObject objDelete) {
 		if (hub == null || objDelete == null) {
 			return null;
@@ -713,6 +1103,17 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code VerifyDelete} to verify whether the specified object may
+	 * be deleted from the given hub. Hub listener rules or reverse-link
+	 * rules may be applied depending on metadata.
+	 *
+	 * @param hub       the hub providing contextual rules
+	 * @param objDelete the object to delete
+	 * @param checkType the bitmask of checking options
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getVerifyDeleteObjectCallback(final Hub hub, final OAObject objDelete, final int checkType) {
 		OAObjectCallback objectCallback = null;
 		if (hub != null) {
@@ -743,14 +1144,35 @@ public class OAObjectCallbackDelegate {
 	}
 
 	/**
-	 * Used to get confirm message in advance, before the new value is known.
-	 * Calls getConfirmPropertyChangeObjectCallback, with newValue = OAUnknownObject.instance
+	 * Creates a confirmation {@link OAObjectCallback} for a property change
+	 * using an unknown future value. This delegates to
+	 * {@code getConfirmPropertyChangeObjectCallback} with the value set to
+	 * {@code OAUnknownObject.instance}.
+	 *
+	 * @param oaObj          the target object
+	 * @param property       the property being changed
+	 * @param confirmMessage the message to present for confirmation
+	 * @param confirmTitle   the title to present for confirmation
+	 * @return the resulting callback
 	 */
     public static OAObjectCallback getPreConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, 
             String confirmMessage, String confirmTitle) {
         return getConfirmPropertyChangeObjectCallback(oaObj, property, OAUnknownObject.instance, confirmMessage, confirmTitle);
     }
-	public static OAObjectCallback getConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, Object newValue,
+
+    /**
+     * Creates a confirmation {@link OAObjectCallback} for a property change
+     * using an unknown future value. This delegates to
+     * {@code getConfirmPropertyChangeObjectCallback} with the value set to
+     * {@code OAUnknownObject.instance}.
+     *
+     * @param oaObj          the target object
+     * @param property       the property being changed
+     * @param confirmMessage the message to present for confirmation
+     * @param confirmTitle   the title to present for confirmation
+     * @return the resulting callback
+     */
+    public static OAObjectCallback getConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, Object newValue,
 			String confirmMessage, String confirmTitle) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForPropertyChange, OAObjectCallback.CHECK_ALL, null,
 				null,
@@ -764,6 +1186,17 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+    /**
+     * Creates and evaluates an {@link OAObjectCallback} of type
+     * {@code SetConfirmForCommand} to supply confirmation text for
+     * invoking the specified method.
+     *
+     * @param oaObj          the target object
+     * @param methodName     the method requiring confirmation
+     * @param confirmMessage the confirmation message
+     * @param confirmTitle   the confirmation title
+     * @return the resulting callback
+     */
 	public static OAObjectCallback getConfirmCommandObjectCallback(final OAObject oaObj, String methodName, String confirmMessage,
 			String confirmTitle) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForCommand, OAObjectCallback.CHECK_ALL, null, null,
@@ -776,6 +1209,17 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code SetConfirmForSave} to supply confirmation text for saving
+	 * the specified object. The confirmation message and title are assigned
+	 * to the callback before it is processed.
+	 *
+	 * @param oaObj          the object being saved
+	 * @param confirmMessage the confirmation message to assign
+	 * @param confirmTitle   the confirmation title to assign
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getConfirmSaveObjectCallback(final OAObject oaObj, String confirmMessage, String confirmTitle) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForSave, OAObjectCallback.CHECK_ALL, null, null, oaObj,
 				null, null);
@@ -786,6 +1230,17 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and evaluates an {@link OAObjectCallback} of type
+	 * {@code SetConfirmForDelete} to supply confirmation text for deleting
+	 * the specified object. The confirmation message and title are assigned
+	 * to the callback before processing.
+	 *
+	 * @param oaObj          the object to delete
+	 * @param confirmMessage the confirmation message to assign
+	 * @param confirmTitle   the confirmation title to assign
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getConfirmDeleteObjectCallback(final OAObject oaObj, String confirmMessage, String confirmTitle) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForDelete, OAObjectCallback.CHECK_ALL, null, null,
 				oaObj,
@@ -796,6 +1251,18 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates an {@link OAObjectCallback} of type {@code SetConfirmForRemove}
+	 * to supply confirmation text for removing the specified object from the
+	 * given hub. When a master object exists, the property name for the
+	 * master-to-detail link is assigned before processing.
+	 *
+	 * @param hub            the hub providing contextual rules
+	 * @param oaObj          the object being removed
+	 * @param confirmMessage the confirmation message to assign
+	 * @param confirmTitle   the confirmation title to assign
+	 * @return the resulting callback
+	 */
 	public static OAObjectCallback getConfirmRemoveObjectCallback(final Hub hub, final OAObject oaObj, String confirmMessage,
 			String confirmTitle) {
 		OAObjectCallback objectCallback;
@@ -815,6 +1282,17 @@ public class OAObjectCallbackDelegate {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates an {@link OAObjectCallback} of type {@code SetConfirmForRemoveAll}
+	 * to supply confirmation text for removing all objects from the given hub.
+	 * When a master object exists, the master-to-detail property name is
+	 * assigned before processing.
+	 *
+	 * @param hub            the hub whose objects may be removed
+	 * @param confirmMessage the confirmation message to assign
+	 * @param confirmTitle   the confirmation title to assign
+	 * @return the resulting callback
+	 */
     public static OAObjectCallback getConfirmRemoveAllObjectCallback(final Hub hub, String confirmMessage,
             String confirmTitle) {
         OAObjectCallback objectCallback;
@@ -835,7 +1313,18 @@ public class OAObjectCallbackDelegate {
     }
 	
 	
-	
+    /**
+     * Creates an {@link OAObjectCallback} of type {@code SetConfirmForAdd}
+     * to supply confirmation text for adding the specified object to the
+     * given hub. When a master object exists, the master-to-detail property
+     * name is assigned before processing.
+     *
+     * @param hub            the hub receiving the object
+     * @param oaObj          the object being added
+     * @param confirmMessage the confirmation message to assign
+     * @param confirmTitle   the confirmation title to assign
+     * @return the resulting callback
+     */
 	public static OAObjectCallback getConfirmAddObjectCallback(final Hub hub, final OAObject oaObj, String confirmMessage,
 			String confirmTitle) {
 		OAObjectCallback objectCallback;
@@ -862,6 +1351,16 @@ public class OAObjectCallbackDelegate {
 	    processObjectCallback(objectCallback, null, clazz, null, propertyName, oldValue, newValue, false);
 	}
 	*/
+
+	
+	/**
+	 * Processes the supplied callback by delegating to the internal
+	 * {@code _processObjectCallback} method. After processing, the
+	 * callback is updated to allow all operations when the demo flag
+	 * is enabled, or when the current user is a super-admin.
+	 *
+	 * @param objectCallback the callback to process
+	 */
 	protected static void processObjectCallback(OAObjectCallback objectCallback) {
 		_processObjectCallback(objectCallback);
 		if (DEMO_AllowAllToPass) {
@@ -878,6 +1377,13 @@ public class OAObjectCallbackDelegate {
 
 	private static boolean DEMO_AllowAllToPass;
 
+	/**
+	 * Enables or disables demo mode for allowing all callbacks to pass.
+	 * When enabled, warning messages are logged and printed to standard
+	 * output. This flag affects subsequent callback processing.
+	 *
+	 * @param b {@code true} to allow all callbacks to pass; otherwise {@code false}
+	 */
 	public static void demoAllowAllToPass(boolean b) {
 		String msg = "WARNING: OAObjectCallbackDelegate.demoAllowAllToPass=" + b;
 		if (b) {
@@ -894,9 +1400,13 @@ public class OAObjectCallbackDelegate {
 	}
 
 	/**
-	 * This will process an Edit Query, calling objectCallback methods on OAObject, properties, links, methods (depending on type of edit
-	 * query) used by: OAJfcController to see if an UI component should be enabled OAObjetEventDelegate.fireBeforePropertyChange Hub
-	 * add/remove/removeAll
+	 * Processes the supplied callback by evaluating rules based on hub context,
+	 * class metadata, object state, property-level definitions, user-access
+	 * settings, and any callback methods defined on the object. This method
+	 * updates the callback’s allowed state and response message as needed
+	 * and invokes hub listeners when applicable.
+	 *
+	 * @param objectCallback the callback being evaluated
 	 */
 	protected static void _processObjectCallback(final OAObjectCallback objectCallback) {
 		final Hub hubThis = objectCallback.getHub();
@@ -1223,12 +1733,31 @@ public class OAObjectCallbackDelegate {
 	}
 
 	/**
-	 * Calls visible|enabled for this object and all of it's owner/parents
+	 * Evaluates visibility or enabled-state rules for the specified object
+	 * and all of its owners by delegating to the recursive
+	 * {@code _ownerHierProcess} method starting at depth {@code 0}.
+	 *
+	 * @param objectCallback the callback being updated
+	 * @param oaObj          the target object
+	 * @param propertyName   the property or link name associated with the callback
 	 */
 	protected static void ownerHierProcess(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName) {
 		_ownerHierProcess(objectCallback, oaObj, propertyName, null, 0);
 	}
 
+	/**
+	 * Recursively evaluates visibility rules for the specified object and its
+	 * owner hierarchy. Starting from the topmost owner, class-level and
+	 * context-level visibility settings are applied, followed by invocation
+	 * of any object-level callback method. The callback’s allowed state and
+	 * response message may be updated based on these evaluations.
+	 *
+	 * @param objectCallback the callback being updated
+	 * @param oaObj          the current object being evaluated
+	 * @param propertyName   the property or link name associated with the callback
+	 * @param li             the link used when navigating the owner hierarchy
+	 * @param cnter          the recursion depth counter
+	 */
 	protected static void _ownerHierProcess(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName,
 			final OALinkInfo li, final int cnter) {
 		if (oaObj == null) {
@@ -1448,7 +1977,21 @@ public class OAObjectCallbackDelegate {
 		}
 	}
 
-	// called directly if hub.masterObject=null
+
+	/**
+	 * Notifies hub-level listeners of a callback event by creating or updating
+	 * a {@link HubEvent} and invoking the appropriate listener method based
+	 * on the callback type. The callback’s allowed state and response message
+	 * may be updated according to listener results. Any thrown exception marks
+	 * the callback as not allowed.
+	 *
+	 * @param objectCallback the callback being evaluated
+	 * @param hub            the hub providing listeners
+	 * @param oaObj          the target object
+	 * @param propertyName   the property or link associated with the callback
+	 * @param oldValue       the previous value for property-change callbacks
+	 * @param newValue       the new value for property-change callbacks
+	 */
 	protected static void processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
 		if (objectCallback.getType().isCheckEnabledFirst()) {
@@ -1461,6 +2004,20 @@ public class OAObjectCallbackDelegate {
 		_processObjectCallbackForHubListeners(objectCallback, hub, oaObj, propertyName, oldValue, newValue);
 	}
 
+	/**
+	 * Internal helper used to notify hub listeners of a callback event. A
+	 * {@link HubEvent} is created if needed, and each listener is invoked
+	 * according to the callback type. Listener results update the callback’s
+	 * allowed state and response message. Exceptions mark the callback as not
+	 * allowed.
+	 *
+	 * @param objectCallback the callback being evaluated
+	 * @param hub            the hub providing listeners
+	 * @param oaObj          the target object
+	 * @param propertyName   the property or link associated with the callback
+	 * @param oldValue       the previous property value
+	 * @param newValue       the new property value
+	 */
 	protected static void _processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
 		HubListener[] hl = HubEventDelegate.getAllListeners(hub);
@@ -1573,10 +2130,28 @@ public class OAObjectCallbackDelegate {
 		}
 	}
 
+	/**
+	 * Invokes the callback method on the object referenced by the supplied
+	 * {@link OAObjectCallback}. The method is resolved using the object's
+	 * metadata and executed with the callback instance. If no method exists,
+	 * the call is ignored.
+	 *
+	 * @param em the callback whose associated object method is invoked
+	 */
 	protected static void callObjectCallbackMethod(final OAObjectCallback em) {
 		callObjectCallbackMethod(em.getObject(), em.getPropertyName(), em);
 	}
 
+	/**
+	 * Resolves and invokes the object-level callback method associated with
+	 * the given property. If the resolved method exists, it is executed with
+	 * the supplied callback instance. Any exception marks the callback as not
+	 * allowed and stores the throwable.
+	 *
+	 * @param object        the target object on which the method may be invoked
+	 * @param propertyName  the property whose callback method is requested
+	 * @param em            the callback instance passed to the invoked method
+	 */
 	protected static void callObjectCallbackMethod(final Object object, String propertyName, final OAObjectCallback em) {
 		if (object == null) {
 			return;
@@ -1603,11 +2178,14 @@ public class OAObjectCallbackDelegate {
 	}
 
 	/**
-	 * Used by OAObjectModel objects to allow model object to be updated after it is created by calling ObjectCallback method.
+	 * Invokes a model-level callback method for the specified class and
+	 * property. The method is resolved from the class metadata and must
+	 * accept an {@link OAObjectModel} parameter. If found, the method is
+	 * invoked statically with the supplied model instance.
 	 *
-	 * @param          clazz, ex: from SalesOrderModel, SalesOrder.class
-	 * @param property ex: "SalesOrderItems"
-	 * @param model    ex: SalesOrderItemModel
+	 * @param clazz    the class defining the callback
+	 * @param property the property name used to locate the callback method
+	 * @param model    the model instance passed to the callback
 	 */
 	public static void onObjectCallbackModel(Class clazz, String property, OAObjectModel model) {
 		if (clazz == null || OAString.isEmpty(property) || model == null) {
@@ -1632,7 +2210,17 @@ public class OAObjectCallbackDelegate {
 	}
 
 	/**
-	 * Used by HubChangeListener.addXxx to listen to dependencies found for an ObjectCallback.
+	 * Registers change listeners on properties that influence the visibility
+	 * or enabled state evaluated by an {@link OAObjectCallback}. Class-level
+	 * and dependent properties are added to the supplied listener using the
+	 * provided prefix.
+	 *
+	 * @param hub            the hub whose objects are monitored
+	 * @param cz             the class whose metadata defines dependent properties
+	 * @param prop           the property associated with the callback
+	 * @param ppPrefix       an optional prefix for dependent property paths
+	 * @param changeListener the listener to register dependencies with
+	 * @param bEnabled       true to use enabled dependencies; false for visible
 	 */
 	public static void addObjectCallbackChangeListeners(final Hub hub, final Class cz, final String prop, String ppPrefix,
 			final HubChangeListener changeListener, final boolean bEnabled) {
@@ -1765,6 +2353,18 @@ public class OAObjectCallbackDelegate {
 		}
 	}
 
+	/**
+	 * Adds dependent property paths to the supplied {@link HubChangeListener}.
+	 * View-level, context-level, and processed-dependent properties are added
+	 * using the provided prefix. Null or empty property arrays are ignored.
+	 *
+	 * @param hub                       the hub whose objects are monitored
+	 * @param prefix                    optional property-path prefix
+	 * @param viewDependentProperties   properties affecting visibility
+	 * @param contextDependentProperties properties affecting context visibility or enabled state
+	 * @param bProcessed                true to include processed-dependent properties
+	 * @param changeListener            the listener that receives dependent paths
+	 */
 	protected static void addDependentProps(Hub hub, String prefix, String[] viewDependentProperties, String[] contextDependentProperties,
 			boolean bProcessed, HubChangeListener changeListener) {
 		if (viewDependentProperties != null) {
