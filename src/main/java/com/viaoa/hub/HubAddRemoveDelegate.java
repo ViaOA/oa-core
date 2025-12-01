@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,41 @@ public class HubAddRemoveDelegate {
 
 	private static Logger LOG = Logger.getLogger(HubAddRemoveDelegate.class.getName());
 
+	/**
+	 * Removes the specified object from the hub using default options for force,
+	 * event sending, deletion mode, active-object updates, master-reference updates,
+	 * and remove-all behavior. Delegates to the full remove implementation.
+	 *
+	 * @param thisHub the hub from which the object will be removed
+	 * @param obj     the object to remove
+	 * @return {@code true} if the object was removed, otherwise {@code false}
+	 */
 	public static boolean remove(final Hub thisHub, final Object obj) {
 		return remove(thisHub, obj, false, true, false, true, true, false);
 	}
 
+	/**
+	 * Removes the object at the specified position using default force behavior.
+	 * Delegates to the internal positional remove method.
+	 *
+	 * @param thisHub the hub containing the object
+	 * @param pos     the position of the object to remove
+	 * @return the removed object, or {@code null} if removal failed
+	 */
 	public static Object remove(final Hub thisHub, final int pos) {
 		return remove(thisHub, pos, false);
 	}
 
+	/**
+	 * Removes the object at the specified position. Retrieves the object and
+	 * delegates to the main remove implementation. Returns {@code null} if the
+	 * object could not be removed.
+	 *
+	 * @param thisHub the hub containing the object
+	 * @param pos     the position of the object
+	 * @param bForce  whether to force removal
+	 * @return the removed object, or {@code null} if removal failed
+	 */
 	protected static Object remove(final Hub thisHub, final int pos, final boolean bForce) {
 		Object obj = HubDataDelegate.getObjectAt(thisHub, pos);
 		if (!remove(thisHub, obj, bForce, true, false, true, true, false)) {
@@ -56,6 +83,21 @@ public class HubAddRemoveDelegate {
 		return obj;
 	}
 
+	/**
+	 * Removes an object from the hub with full control over removal behavior.
+	 * Performs validation, event notifications, server messaging, vector updates,
+	 * reference cleanup, and master/detail property adjustments.
+	 *
+	 * @param thisHub         the hub from which the object will be removed
+	 * @param obj             the object to remove
+	 * @param bForce          whether to force removal
+	 * @param bSendEvent      whether to send before/after remove events
+	 * @param bDeleting       whether the removal is part of a delete operation
+	 * @param bSetAO          whether to update active-object references
+	 * @param bSetPropToMaster whether to clear master/detail references
+	 * @param bIsRemovingAll  whether this is part of a bulk remove/all operation
+	 * @return {@code true} if the object was removed, otherwise {@code false}
+	 */
 	public static boolean remove(final Hub thisHub, Object obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll) {
@@ -171,11 +213,13 @@ public class HubAddRemoveDelegate {
 	}
 
 	/**
-	 * Checks to see if there is a reason why an object can not be removed.
+	 * Determines whether the specified object can be removed from the hub and
+	 * returns a descriptive message if removal is not allowed.
 	 *
-	 * @param obj       object to be removed, if null then it checks if the hub allows removals.
-	 * @param checkType from OAObjectEdit
-	 * @return reason/message why the object can not be removed, else returns null if the obj can be removed
+	 * @param thisHub   the hub being evaluated
+	 * @param obj       the object to check, or {@code null} to evaluate hub state
+	 * @param checkType the callback check type
+	 * @return a message describing why removal is not allowed, or {@code null} if allowed
 	 */
 	public static String getCantRemoveMessage(final Hub thisHub, final Object obj, final int checkType) {
 		if (thisHub == null) {
@@ -228,6 +272,14 @@ public class HubAddRemoveDelegate {
 		return null;
 	}
 
+	/**
+	 * Determines whether all objects can be removed from the hub and returns a
+	 * descriptive message if removal is not permitted.
+	 *
+	 * @param thisHub   the hub being evaluated
+	 * @param checkType the callback check type
+	 * @return a message describing why remove-all is not allowed, or {@code null} if allowed
+	 */
 	public static String getCantRemoveAllMessage(final Hub thisHub, final int checkType) {
 		if (thisHub == null) {
 			return "hub is null";
@@ -266,10 +318,24 @@ public class HubAddRemoveDelegate {
 		return null;
 	}
 
+	/**
+	 * Clears all objects from the hub using default options for resetting the
+	 * active object and sending a new-list event. Delegates to the full clear method.
+	 *
+	 * @param thisHub the hub to clear
+	 */
 	public static void clear(final Hub thisHub) {
 		clear(thisHub, true, true);
 	}
 
+	/**
+	 * Clears all objects from the hub. Performs callback checks, locking, event
+	 * notifications, removal operations, and active-object updates.
+	 *
+	 * @param thisHub       the hub to clear
+	 * @param bSetAOtoNull  whether to set the active object to {@code null}
+	 * @param bSendNewList  whether to fire a new-list event
+	 */
 	public static void clear(final Hub thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
 		if (!OARemoteThreadDelegate.isRemoteThread() && bSendNewList) {
 			OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
@@ -297,6 +363,16 @@ public class HubAddRemoveDelegate {
 		}
 	}
 
+	/**
+	 * Internal implementation for clearing all objects from the hub. Removes
+	 * objects without direct event notifications, updates change tracking,
+	 * manages remote-thread behavior, and resets references.
+	 *
+	 * @param thisHub      the hub to clear
+	 * @param bSetAOtoNull whether to set the active object to {@code null}
+	 * @param bSendNewList whether to send a new-list event
+	 * @return {@code true} if the hub was cleared, otherwise {@code false}
+	 */
 	private static boolean _clear(final Hub thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
 		if (thisHub.datau.getSharedHub() != null) {
 			return _clear(thisHub.datau.getSharedHub(), bSetAOtoNull, bSendNewList);
@@ -393,6 +469,14 @@ public class HubAddRemoveDelegate {
 		return true;
 	}
 
+	/**
+	 * Performs tasks after clearing the hub, including notifying shared hubs,
+	 * firing new-list and after-remove-all events.
+	 *
+	 * @param thisHub      the hub that was cleared
+	 * @param bSetAOtoNull whether the active object was reset
+	 * @param bSendNewList whether a new-list event should be fired
+	 */
 	private static void _afterClear(final Hub thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
 		// 20140501
 		if (bSetAOtoNull) {
@@ -406,25 +490,50 @@ public class HubAddRemoveDelegate {
 	}
 
 	/**
-	 * Used to find out if an object can be added/inserted to this Hub. Makes sure that object that being added is for the correct class.
-	 * Calls all HubListeners.hubBeforeAdd() where HubEvent.object and pos are both set. Calls editQuer If objects are OAObjets, then canAdd
-	 * is called for each object. If it is a recursive Hub, then it will verify that it can have the parent set.
+	 * Determines whether the specified object can be added to the hub.
+	 * Delegates to {@link #canAddMsg(Hub, Object)}.
+	 *
+	 * @param thisHub the hub to evaluate
+	 * @param obj     the object to test
+	 * @return {@code true} if the object can be added, otherwise {@code false}
 	 */
 	public static boolean canAdd(final Hub thisHub, final Object obj) {
 		String s = canAddMsg(thisHub, obj);
 		return s == null;
 	}
 
+	/**
+	 * Determines whether an object can be added to the hub. Delegates to
+	 * {@link #canAddMsg(Hub, Object)} using {@code null}.
+	 *
+	 * @param thisHub the hub to evaluate
+	 * @return {@code true} if adding is allowed, otherwise {@code false}
+	 */
 	public static boolean canAdd(final Hub thisHub) {
 		String s = canAddMsg(thisHub, null);
 		return s == null;
 	}
 
+	/**
+	 * Returns a message describing why an object cannot be added to the hub.
+	 * Delegates to {@link #canAddMsg(Hub, Object)} using {@code null}.
+	 *
+	 * @param thisHub the hub to evaluate
+	 * @return a message describing the restriction, or {@code null} if allowed
+	 */
 	public static String canAddMsg(final Hub thisHub) {
 		return canAddMsg(thisHub, null);
 	}
 
 	// returns null if obj can be added; otherwise an error msg is returned.
+	/**
+	 * Determines whether an object can be added to the hub. Performs enabled,
+	 * class, master/detail, uniqueness, callback, and recursion checks.
+	 *
+	 * @param thisHub the hub to evaluate
+	 * @param obj     the object to test
+	 * @return {@code null} if adding is allowed, otherwise an error message
+	 */
 	public static String canAddMsg(final Hub thisHub, final Object obj) {
 		if (thisHub == null) {
 			return "hub is null";
@@ -504,10 +613,29 @@ public class HubAddRemoveDelegate {
 		}
 		return null;
 	}
+	
+	/**
+	 * Adds an object to the hub using default contains-check behavior.
+	 * Delegates to {@link #add(Hub, Object, boolean)}.
+	 *
+	 * @param thisHub the hub receiving the object
+	 * @param obj     the object to add
+	 * @return {@code true} if the object was added, otherwise {@code false}
+	 */
     public static boolean add(final Hub thisHub, final Object obj) {
         return add(thisHub, obj, false);
     }
-	public static boolean add(final Hub thisHub, final Object obj, final boolean bAlreadyCalledContains) {
+
+    /**
+     * Adds an object to the hub after performing validation, event dispatch,
+     * locking, and link updates. Delegates to the internal add method.
+     *
+     * @param thisHub                the hub receiving the object
+     * @param obj                    the object to add
+     * @param bAlreadyCalledContains whether the caller has already checked contains()
+     * @return {@code true} if the object was added
+     */
+    public static boolean add(final Hub thisHub, final Object obj, final boolean bAlreadyCalledContains) {
 		if (thisHub == null || obj == null) {
 			return false;
 		}
@@ -550,6 +678,17 @@ public class HubAddRemoveDelegate {
 		return b;
 	}
 
+    /**
+     * Internal implementation that performs the actual add logic, including
+     * validation, event notifications, vector modifications, master/detail link
+     * adjustments, and server messaging.
+     *
+     * @param thisHub                the hub receiving the object
+     * @param obj                    the object to add
+     * @param bIsLoading             whether the hub is in loading mode
+     * @param bAlreadyCalledContains whether contains() has already been checked
+     * @return {@code true} if the object was successfully added
+     */
 	private static boolean _add(final Hub thisHub, final Object obj, final boolean bIsLoading, final boolean bAlreadyCalledContains) {
 		if (obj instanceof OAObjectKey) {
 			// store OAObjectKey.  Real object will be retrieved when it is accessed
@@ -635,6 +774,13 @@ public class HubAddRemoveDelegate {
 		return true;
 	}
 
+	/**
+	 * Fires the after-add event and updates the hub's referenceable state unless
+	 * operating in loading mode.
+	 *
+	 * @param thisHub the hub to update
+	 * @param obj     the object that was added
+	 */
 	private static void _afterAdd(final Hub thisHub, final Object obj) {
 		HubEventDelegate.fireAfterAddEvent(thisHub, obj, thisHub.getCurrentSize() - 1);
 		if (!OAThreadLocalDelegate.isLoading()) {
@@ -647,7 +793,14 @@ public class HubAddRemoveDelegate {
 	}
 
 	/**
-	 * internal method to add to vector and hashtable
+	 * Adds the object to the hub's internal vector and registers hub membership
+	 * for OAObjects. Does not perform validation or event notifications.
+	 *
+	 * @param thisHub       the hub receiving the object
+	 * @param obj           the object to add
+	 * @param bHasLock      whether the caller holds the lock
+	 * @param bCheckContains whether to check for existing membership
+	 * @return {@code true} if the object was added
 	 */
 	protected static boolean internalAdd(final Hub thisHub, final Object obj, final boolean bHasLock, final boolean bCheckContains) {
 		if (obj == null) {
@@ -666,6 +819,13 @@ public class HubAddRemoveDelegate {
 		return true;
 	}
 
+	/**
+	 * Attempts to reposition an object within a sorted hub up to five times by
+	 * retrieving its position and delegating to the move operation.
+	 *
+	 * @param thisHub the hub containing the object
+	 * @param obj     the object to reposition
+	 */
 	protected static void sortMove(final Hub thisHub, final Object obj) {
 		for (int i = 0; i < 5; i++) {
 			try {
@@ -678,10 +838,13 @@ public class HubAddRemoveDelegate {
 	}
 
 	/**
-	 * Swap the position of two different objects within the hub. This will call the move method. Sends a hubMove event to all HubListeners.
+	 * Moves an object from one position to another within the hub. Adjusts the
+	 * target position for sorted hubs, fires before/after move events, and
+	 * updates the internal data structure. Sends server notifications when needed.
 	 *
-	 * @param posFrom position of object to move
-	 * @param posTo   position where object should be "after the move" is completed.
+	 * @param thisHub the hub containing the object
+	 * @param posFrom the original position of the object
+	 * @param posTo   the target position for the object
 	 */
 	protected static void move(final Hub thisHub, final int posFrom, int posTo) {
 		if (posFrom == posTo) {
@@ -749,13 +912,14 @@ public class HubAddRemoveDelegate {
 	}
 
 	/**
-	 * Insert an Object at a position. Hub Listeners will be notified with an insert event.
-	 * <p>
-	 * If Hub is sorted, then object will be inserted at correct/sorted position.
+	 * Inserts an object into the hub at the specified position. If the hub is
+	 * sorted, the object is inserted at the correct sorted position. Performs
+	 * validation, locking, internal insertion, and event dispatch.
 	 *
-	 * @param obj Object to insert, must be from the same class that was used when creating the Hub
-	 * @param pos position to insert the object into the Hub. If greater then size of Hub, then it will be added to the end.
-	 * @return true if object was added else false (event hubBeforeAdd() threw an exception)
+	 * @param thisHub the hub receiving the object
+	 * @param obj     the object to insert
+	 * @param pos     the requested insert position
+	 * @return {@code true} if insertion succeeded, otherwise {@code false}
 	 */
 	public static boolean insert(final Hub thisHub, final Object obj, final int pos) {
 		if (obj == null) {
@@ -788,7 +952,16 @@ public class HubAddRemoveDelegate {
 		return bResult;
 	}
 
-	// returns new Pos
+	/**
+	 * Internal implementation of the insert operation. Handles sorted and
+	 * unsorted hubs, duplicate checks, server notifications, vector insertion,
+	 * and master/detail link adjustments.
+	 *
+	 * @param thisHub the hub receiving the object
+	 * @param obj     the object to insert
+	 * @param pos     the requested insert position
+	 * @return the final insert position, or {@code -1} if insertion failed
+	 */
 	private static int _insert(final Hub thisHub, final Object obj, int pos) {
 		if (obj instanceof OAObjectKey) {
 			// store OAObjectKey.  Real object will be retrieved when it is accessed
@@ -961,6 +1134,14 @@ public class HubAddRemoveDelegate {
 		return pos;
 	}
 
+	/**
+	 * Fires the after-insert event and marks the hub as referenceable when not
+	 * in loading mode.
+	 *
+	 * @param thisHub the hub where the object was inserted
+	 * @param obj     the inserted object
+	 * @param pos     the position of the inserted object
+	 */
 	private static void _afterInsert(final Hub thisHub, final Object obj, final int pos) {
 		HubEventDelegate.fireAfterInsertEvent(thisHub, obj, pos);
 		if (!OAThreadLocalDelegate.isLoading()) {
@@ -969,11 +1150,13 @@ public class HubAddRemoveDelegate {
 	}
 
 	/**
-	 * Swap the position of two different objects within the hub. This will call the move method.
+	 * Swaps the positions of two objects within the hub. Uses the move operation
+	 * to reposition each object. No operation is performed if either index is
+	 * invalid or no object exists at the given positions.
 	 *
-	 * @param pos1 position of object to move from, if there is not an object at this position, then no move is performed.
-	 * @param pos2 position of object to move to, if there is not an object at this position, then no move is performed.
-	 * @see #move
+	 * @param thisHub the hub containing the objects
+	 * @param pos1    the position of the first object
+	 * @param pos2    the position of the second object
 	 */
 	public static void swap(final Hub thisHub, int pos1, int pos2) {
 		if (thisHub.datau.getSharedHub() != null) {
@@ -999,14 +1182,33 @@ public class HubAddRemoveDelegate {
 		move(thisHub, pos1 + 1, pos2);
 	}
 
+	/**
+	 * Retrieves the list of objects tracked as added to the hub.
+	 *
+	 * @param thisHub the hub to inspect
+	 * @return an array of added {@link OAObject} instances
+	 */
 	public static OAObject[] getAddedObjects(Hub thisHub) {
 		return HubDataDelegate.getAddedObjects(thisHub);
 	}
 
+	/**
+	 * Retrieves the list of objects tracked as removed from the hub.
+	 *
+	 * @param thisHub the hub to inspect
+	 * @return an array of removed {@link OAObject} instances
+	 */
 	public static OAObject[] getRemovedObjects(Hub thisHub) {
 		return HubDataDelegate.getRemovedObjects(thisHub);
 	}
 
+	/**
+	 * Determines whether the hub permits duplicate add/remove operations based on
+	 * its configuration.
+	 *
+	 * @param thisHub the hub to check
+	 * @return {@code true} if duplicate add/remove operations are allowed
+	 */
 	public static boolean isAllowAddRemove(Hub thisHub) {
 		if (thisHub == null) {
 			return false;
@@ -1014,7 +1216,14 @@ public class HubAddRemoveDelegate {
 		return thisHub.data.isDupAllowAddRemove();
 	}
 
-	// 20211211
+	/**
+	 * Determines whether objects can be removed from the hub. Considers duplicate
+	 * add/remove configuration flags and foreign-key/primary-key constraints
+	 * related to master/detail ONE-type links.
+	 *
+	 * @param thisHub the hub to evaluate
+	 * @return {@code true} if removal is permitted
+	 */
 	public static boolean isAllowRemove(Hub thisHub) {
 		if (thisHub == null) {
 			return false;
@@ -1039,12 +1248,25 @@ public class HubAddRemoveDelegate {
 	}
 
 	/**
-	 * This will load all of the objects into the hub without checking or sending events.
+	 * Adds all objects from the specified list to the hub without performing
+	 * validation, event dispatch, or link updates. Directly modifies the hub's
+	 * internal vector.
+	 *
+	 * @param hub  the hub to modify
+	 * @param list the objects to add
 	 */
 	public static void unsafeAddAll(Hub hub, List list) {
 		hub.data.vector.addAll(list);
 	}
 
+	/**
+	 * Replaces all objects in the hub with those contained in another hub.
+	 * Clears internal structures, removes old hub references, adds new objects,
+	 * and fires a new-list event.
+	 *
+	 * @param hub    the hub being updated
+	 * @param hubNew the hub providing the new objects
+	 */
 	public static void refresh(Hub hub, Hub hubNew) {
 		for (OAObject objx : (Hub<OAObject>) hub) {
 			OAObjectHubDelegate.removeHub(objx, hub, false);

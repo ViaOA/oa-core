@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,14 @@ import com.viaoa.util.OAFilter;
  * }</pre>
  */
 public interface CustomHubFilter<TYPE> extends OAFilter<TYPE> {
+	
+	/**
+	 * Returns the {@link HubFilter} associated with this filter, allowing access
+	 * to the owning or delegating Hub-level filter logic.
+	 *
+	 * @return the HubFilter instance used for filtering, or {@code null} if none
+	 *         is assigned.
+	 */
     HubFilter<TYPE> getHubFilter();
 }
 

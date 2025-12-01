@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,78 +48,132 @@ package com.viaoa.hub;
  */
 public class DetailHub<TYPE> extends Hub<TYPE> {
 
-    /**
-        Create a new DetailHub based on a property path from a master Hub.
-    */
+	/**
+	 * Constructs a DetailHub that mirrors the collection identified by the
+	 * specified property path on the active object of the given master Hub.
+	 * Delegates initialization to {@link Hub#setMasterHub}.
+	 *
+	 * @param hubMaster     the master Hub whose active object supplies the detail
+	 *                      collection.
+	 * @param propertyPath  the property path identifying the detail collection to
+	 *                      mirror.
+	 */
     public DetailHub(Hub hubMaster, String propertyPath) {
         setMasterHub(hubMaster, null, propertyPath, false, null);
     }
 
     /**
-        Create a new DetailHub based on a property path from a master Hub.
-        @param bShareActiveObject if true, then detail Hub uses same active object as
-        the property (if it is a Hub) that it is using.
-    */
+     * Constructs a DetailHub that mirrors the collection identified by the
+     * specified property path on the active object of the given master Hub, with
+     * optional sharing of the active object.
+     * Delegates initialization to {@link Hub#setMasterHub}.
+     *
+     * @param hubMaster           the master Hub whose active object supplies the
+     *                            detail collection.
+     * @param propertyPath        the property path identifying the detail
+     *                            collection to mirror.
+     * @param bShareActiveObject  if true, the DetailHub shares the same active
+     *                            object as the property’s Hub (when applicable).
+     */
     public DetailHub(Hub hubMaster, String propertyPath, boolean bShareActiveObject) {
         setMasterHub(hubMaster, null, propertyPath, bShareActiveObject, null);
     }
 
     /**
-        Create a new DetailHub based on a property path from a master Hub.
-        @param selectOrder if value from property path has not been created/selected, then this
-        will be the sort order used when it is selected.
-    */
+     * Constructs a DetailHub that mirrors the collection identified by the
+     * specified property path on the active object of the given master Hub,
+     * applying the provided select order when the underlying Hub is created or
+     * selected.
+     * Delegates initialization to {@link Hub#setMasterHub}.
+     *
+     * @param hubMaster     the master Hub whose active object supplies the detail
+     *                      collection.
+     * @param propertyPath  the property path identifying the detail collection to
+     *                      mirror.
+     * @param selectOrder   the sort order to apply when the detail Hub is created
+     *                      or selected.
+     */
     public DetailHub(Hub hubMaster, String propertyPath, String selectOrder) {
         setMasterHub(hubMaster, null, propertyPath, false, selectOrder);
     }
 
     /**
-        Create a new DetailHub based on a property path from a master Hub.
-        @param bShareActiveObject if true, then detail Hub uses same active object as
-        @param selectOrder if value from property path has not been created/selected, then this
-        will be the sort order used when it is selected.
-    */
+     * Constructs a DetailHub that mirrors the collection identified by the
+     * specified property path on the active object of the given master Hub,
+     * supporting both active-object sharing and custom select order.
+     * Delegates initialization to {@link Hub#setMasterHub}.
+     *
+     * @param hubMaster           the master Hub whose active object supplies the
+     *                            detail collection.
+     * @param propertyPath        the property path identifying the detail
+     *                            collection to mirror.
+     * @param bShareActiveObject  if true, the DetailHub shares the same active
+     *                            object as the property’s Hub (when applicable).
+     * @param selectOrder         the sort order to apply when the detail Hub is
+     *                            created or selected.
+     */
     public DetailHub(Hub hubMaster, String propertyPath, boolean bShareActiveObject, String selectOrder) {
         setMasterHub(hubMaster, null, propertyPath, bShareActiveObject, selectOrder);
     }
 
     /**
-        Create a new DetailHub based on a reference Class from a master Hub.
-        will be the sort order used when it is selected.
-    */
+     * Constructs a DetailHub based on a reference class rather than a property
+     * path, using the active object of the master Hub as the source.
+     * Delegates initialization to {@link Hub#setMasterHub}.
+     *
+     * @param hubMaster  the master Hub providing the active object.
+     * @param clazz      the class type used to identify the detail collection.
+     */
     public DetailHub(Hub hubMaster, Class<TYPE> clazz) {
         setMasterHub(hubMaster, clazz, null, false, null);
     }
 
     /**
-        Create a new DetailHub based on a reference Class from a master Hub.
-        @param bShareActiveObject if true, then detail Hub uses same active object as
-        will be the sort order used when it is selected.
-    */
+     * Constructs a DetailHub based on a reference class rather than a property
+     * path, with optional sharing of the active object between master and detail.
+     * Delegates initialization to {@link Hub#setMasterHub}.
+     *
+     * @param hubMaster           the master Hub providing the active object.
+     * @param clazz               the class type used to identify the detail
+     *                            collection.
+     * @param bShareActiveObject  if true, the DetailHub shares the same active
+     *                            object as the referenced Hub (when applicable).
+     */
     public DetailHub(Hub hubMaster, Class<TYPE> clazz, boolean bShareActiveObject) {
         setMasterHub(hubMaster, clazz, null, bShareActiveObject, null);
     }
 
     /**
-        Create a new DetailHub based on a reference Class from a master Hub.
-        @param selectOrder if value from property path has not been created/selected, then this
-        will be the sort order used when it is selected.
-    */
+     * Constructs a DetailHub based on a reference class rather than a property
+     * path, applying the provided select order when the underlying Hub is created
+     * or selected.
+     * Delegates initialization to {@link Hub#setMasterHub}.
+     *
+     * @param hubMaster   the master Hub providing the active object.
+     * @param clazz       the class type used to identify the detail collection.
+     * @param selectOrder the sort order to apply when the detail Hub is created
+     *                    or selected.
+     */
     public DetailHub(Hub hubMaster, Class<TYPE> clazz, String selectOrder) {
         setMasterHub(hubMaster, clazz, null, false, selectOrder);
     }
 
     /**
-        Create a new DetailHub based on a reference Class from a master Hub.
-        @param bShareActiveObject if true, then detail Hub uses same active object as
-        @param selectOrder if value from property path has not been created/selected, then this
-        will be the sort order used when it is selected.
-    */
+     * Constructs a DetailHub based on a reference class rather than a property
+     * path, supporting both active-object sharing and custom select order.
+     * Delegates initialization to {@link Hub#setMasterHub}.
+     *
+     * @param hubMaster           the master Hub providing the active object.
+     * @param clazz               the class type used to identify the detail
+     *                            collection.
+     * @param bShareActiveObject  if true, the DetailHub shares the active object
+     *                            with the referenced Hub (when applicable).
+     * @param selectOrder         the sort order to apply when the detail Hub is
+     *                            created or selected.
+     */
     public DetailHub(Hub hubMaster, Class<TYPE> clazz, boolean bShareActiveObject, String selectOrder) {
         setMasterHub(hubMaster, clazz, null, bShareActiveObject, selectOrder);
     }
-
-
 
     /*  Note:Dont need to finalize
         masterHub has a DetailHub that has a weak reference to this Hub, that will be removed when this object "goes away"
