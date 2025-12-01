@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,14 +84,30 @@ public class OAObjectReflectDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectReflectDelegate.class.getName());
 
 	/**
-	 * Create a new instance of an object. If OAClient.client exists, this will create the object on the server, where the server datasource
-	 * can initialize object.
+	 * Creates a new instance of the specified class by delegating to
+	 * the internal {@code _createNewObject} method. This method will
+	 * attempt construction using the default no-arg constructor and
+	 * return the resulting object instance.
+	 *
+	 * @param clazz the class to instantiate
+	 * @return a new instance of the class, or a primitive wrapper/empty
+	 *         primitive placeholder when applicable
 	 */
 	public static Object createNewObject(Class clazz) {
 		Object obj = _createNewObject(clazz);
 		return obj;
 	}
 
+	/**
+	 * Attempts to construct a new instance of the given class using its
+	 * no-argument constructor. If the constructor is missing, the method
+	 * falls back to primitive/primitive-wrapper helpers when applicable.
+	 * Runtime exceptions are thrown when construction fails.
+	 *
+	 * @param clazz the class to instantiate
+	 * @return the newly created instance or a primitive wrapper/default
+	 * @throws RuntimeException if construction fails for any reason
+	 */
 	private static Object _createNewObject(Class clazz) {
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
 		Object obj = null;
@@ -122,17 +138,44 @@ public class OAObjectReflectDelegate {
 		return obj;
 	}
 
+	/**
+	 * Retrieves a property value from the active object of the given
+	 * {@link Hub} using the supplied property path. Delegates to the
+	 * more general {@code getProperty(hub, null, propPath)}.
+	 *
+	 * @param hub      the Hub whose active object is used
+	 * @param propPath the property name or path to evaluate
+	 * @return the resolved property value or {@code null}
+	 */
 	public static Object getProperty(Hub hub, String propPath) {
 		return getProperty(hub, null, propPath);
 	}
 
 	/**
-	 * @see OAObject#getProperty(String)
+	 * Resolves the value of the specified property path starting from the
+	 * given {@link OAObject}. This delegates to the combined hub/object
+	 * path evaluator {@code getProperty(null, oaObj, propPath)}.
+	 *
+	 * @param oaObj    the starting object
+	 * @param propPath the property name or dotted path
+	 * @return the value resolved from the path, or {@code null}
 	 */
 	public static Object getProperty(OAObject oaObj, String propPath) {
 		return getProperty(null, oaObj, propPath);
 	}
 
+	/**
+	 * Resolves the value of a property or nested property path using
+	 * reflection, Hub navigation, and OAObject metadata. Supports path
+	 * tokens, optional class-cast segments, and transitions between
+	 * Hubs and OAObjects while walking the path.
+	 *
+	 * @param hubLast  a Hub that may supply context when evaluating
+	 *                 calculated Hub-based getters
+	 * @param oaObj    the current OAObject in the traversal
+	 * @param propPath the property or dotted path to evaluate
+	 * @return the final resolved value or {@code null} if unavailable
+	 */
 	public static Object getProperty(Hub hubLast, OAObject oaObj, String propPath) {
 		if (propPath == null || propPath.trim().length() == 0) {
 			return null;
@@ -192,6 +235,17 @@ public class OAObjectReflectDelegate {
 		return null;
 	}
 
+	/**
+	 * Retrieves a single property value (no path traversal) via metadata
+	 * lookup. Supports calculated Hub-based getters, regular getters, use
+	 * of primitive-null flags, and fallback to the OAObject property store
+	 * when no getter method exists.
+	 *
+	 * @param hubLast   context Hub for calculated properties
+	 * @param oaObj     the OAObject whose property is accessed
+	 * @param propName  the simple property name
+	 * @return the resolved value, possibly {@code null}
+	 */
 	private static Object _getProperty(Hub hubLast, OAObject oaObj, String propName) {
 		OAObjectInfo oi;
 		if (hubLast != null) {
@@ -258,8 +312,15 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * @see OAObject#setProperty(String, Object, String) This can also be used to add Objects (or ObjectKeys) to a Hub. When the Hub is then
-	 *      retrieved, the value will be converted to OAObject subclasses.
+	 * Sets a property value on an {@link OAObject}, handling property-path
+	 * navigation, primitive-null semantics, link updates, Hub assignment,
+	 * type conversion, event firing, and reference resolution. When the
+	 * value targets a MANY relationship, Hub-based logic is applied.
+	 *
+	 * @param oaObj    the target object
+	 * @param propName the property name or path
+	 * @param value    the new value (may be OAObject, OAObjectKey, or raw)
+	 * @param fmt      optional formatter used for type conversion
 	 */
 	public static void setProperty(final OAObject oaObj, String propName, Object value, final String fmt) {
 		if (oaObj == null || propName == null || propName.length() == 0) {
@@ -424,7 +485,14 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * used for "quick" storing/loading objects
+	 * Stores a raw link value directly into an object's property store,
+	 * converting non-OAObject values to {@link OAObjectKey} when the link
+	 * is a ONE relationship. No events or reverse-link handling are
+	 * performed.
+	 *
+	 * @param oaObj        the object whose link is updated
+	 * @param propertyName the name of the link property
+	 * @param value        the raw value or key to store
 	 */
 	public static void storeLinkValue(OAObject oaObj, String propertyName, Object value) {
 		if (!(value instanceof OAObject) && !(value instanceof OAObjectKey)) {
@@ -437,7 +505,16 @@ public class OAObjectReflectDelegate {
 		OAObjectPropertyDelegate.setProperty(oaObj, propertyName, value);
 	}
 
-	/* Used to flag primitive property as having a null value. */
+	/**
+	 * Determines whether a primitive property has its null flag set.
+	 * This checks the object's internal null-tracking byte array and
+	 * delegates to metadata to verify whether the given property is
+	 * currently marked as representing a null primitive.
+	 *
+	 * @param oaObj        the object containing the property
+	 * @param propertyName the property name
+	 * @return {@code true} if the property represents a null primitive
+	 */
 	public static boolean getPrimitiveNull(OAObject oaObj, String propertyName) {
 		if (oaObj == null || propertyName == null) {
 			return false;
@@ -465,9 +542,13 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Set a primitive property null flag.
-	 * <p>
-	 * Note: this is meant to be called only by firePropertyChange, it will not send any event or make any other adjustments.
+	 * Sets or clears the null flag for a primitive property. This method
+	 * delegates to the appropriate internal setter to mark the primitive
+	 * as null or not without firing any property-change events.
+	 *
+	 * @param oaObj        the object whose property flag is updated
+	 * @param propertyName the primitive property name
+	 * @param bNull        {@code true} to set null, {@code false} to clear
 	 */
 	public static void setPrimitiveNull(OAObject oaObj, String propertyName, boolean bNull) {
 		if (bNull) {
@@ -477,6 +558,14 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
+	/**
+	 * Marks the specified primitive property as null by updating the
+	 * primitive-null metadata on the object. No events are fired and
+	 * no additional adjustments are made.
+	 *
+	 * @param oaObj        the object whose property flag is set
+	 * @param propertyName the property being marked as null
+	 */
 	private static void setPrimitiveNull(OAObject oaObj, String propertyName) {
 		if (propertyName == null) {
 			return;
@@ -486,6 +575,14 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
+	/**
+	 * Clears the null flag for the specified primitive property. This
+	 * updates the internal primitive-null metadata without firing any
+	 * property-change events or performing other adjustments.
+	 *
+	 * @param oaObj        the object whose flag is cleared
+	 * @param propertyName the primitive property name
+	 */
 	private static void removePrimitiveNull(OAObject oaObj, String propertyName) {
 		if (oaObj.nulls == null || oaObj.nulls.length == 0) {
 			return;
@@ -498,7 +595,19 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
-	// called by setProperty() when property is a Hub.
+	/**
+	 * Handles assignment of MANY relationship values to a Hub property.
+	 * Converts raw identifiers into {@link OAObjectKey} instances when
+	 * necessary, resolves keys to objects when appropriate, and adds
+	 * values into the Hub if not already present.
+	 *
+	 * @param oaObj     the object whose Hub property is being updated
+	 * @param propName  the original property name
+	 * @param propNameU the uppercase property name
+	 * @param value     the Hub-compatible value or key
+	 * @param oi        metadata for the object
+	 * @param fmt       optional formatter used during conversion
+	 */
 	private static void setHubProperty(OAObject oaObj, String propName, String propNameU, Object value, OAObjectInfo oi, String fmt) {
 		// this is for a Hub.  OAXMLReader uses setProperty to set MANY references using Object Id value for objects
 		if (value == null) {
@@ -555,11 +664,13 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * DataSource independent method to retrieve an object. Find the OAObject given a key value. This will look in the Cache, Server (if
-	 * running as workstation) and the DataSource (if not running as workstation).
+	 * Retrieves an {@link OAObject} instance given a key or raw identifier.
+	 * The lookup searches the cache first, then the server (when running
+	 * as a client), and finally the datasource when needed.
 	 *
-	 * @param clazz class of reference of to find.
-	 * @param key   can be the value of the key or an OAObjectKey
+	 * @param clazz the object's class type
+	 * @param key   a key value or {@link OAObjectKey}
+	 * @return the resolved object or {@code null} if not found
 	 */
 	public static OAObject getObject(Class clazz, Object key) {
 		if (clazz == null || key == null) {
@@ -569,6 +680,16 @@ public class OAObjectReflectDelegate {
 		return getObject(clazz, key, oi);
 	}
 
+	/**
+	 * Variant of {@link #getObject(Class, Object)} that uses a supplied
+	 * {@link OAObjectInfo}. Ensures the key is an {@link OAObjectKey}
+	 * before performing cache, server, or datasource retrieval.
+	 *
+	 * @param clazz the object's class type
+	 * @param key   a raw identifier or {@link OAObjectKey}
+	 * @param oi    metadata associated with the class
+	 * @return the located {@link OAObject} or {@code null}
+	 */
 	public static OAObject getObject(Class clazz, Object key, OAObjectInfo oi) {
 		if (clazz == null || key == null) {
 			return null;
@@ -590,11 +711,17 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * DataSource independent method to retrieve a reference property that is a Hub Collection.
+	 * Retrieves a MANY relationship as a Hub of referenced objects,
+	 * optionally applying sort order, sequencing, autoMatch assignment,
+	 * and server/client-specific behaviors. Loads data as needed and
+	 * caches or wraps the Hub based on metadata rules.
 	 *
-	 * @param linkPropertyName name of property to retrieve. (case insensitive)
-	 * @param sortOrder
-	 * @param bSequence        if true, then create a hub sequencer to manage the order of the objects in the hub.
+	 * @param oaObj            the master object
+	 * @param linkPropertyName link property name (case insensitive)
+	 * @param sortOrder        sort expression or {@code null}
+	 * @param bSequence        true to enable sequencing support
+	 * @param hubMatch         optional Hub for autoMatch
+	 * @return the reference Hub, possibly empty but never {@code null}
 	 */
 	public static Hub getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence,
 			Hub hubMatch) {
@@ -753,6 +880,21 @@ public class OAObjectReflectDelegate {
 	// keeps track of siblings that are "in flight"
 	private static final ConcurrentHashMap<Long, Boolean> hmIgnoreSibling = new ConcurrentHashMap<>();
 
+	/**
+	 * Internal implementation for retrieving the Hub associated with a
+	 * MANY relationship. Handles server-side select logic, sibling
+	 * loading, autoMatch, sequencing, sorting, cache management,
+	 * Hub construction, and reference resolution.
+	 *
+	 * @param oaObj            the master object
+	 * @param linkPropertyName property name for the relationship
+	 * @param sortOrder        optional sort expression
+	 * @param bSequence        true to apply sequencing rules
+	 * @param hubMatch         Hub used for autoMatch
+	 * @param oi               metadata for the master class
+	 * @param linkInfo         link metadata for the relationship
+	 * @return the initialized Hub
+	 */
 	private static Hub _getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder,
 			boolean bSequence, Hub hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo) {
 
@@ -1192,19 +1334,28 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * This method is used to get the value of a relationship. Calling it will not load objects. To load objects, call getReferenceHub(name)
-	 * or getReferenceObject(name)
+	 * Returns the raw stored reference value for the specified link
+	 * property without triggering loading. The result can be
+	 * {@code null}, an {@link OAObjectKey}, an {@link OAObject},
+	 * or a Hub containing either keys or objects.
 	 *
-	 * @return one of the following: null, OAObjectKey, OAObject, Hub of OAObjects, Hub of OAObjectKeys
-	 * @see #getReferenceObject to have the OAObject returned.
-	 * @see #getReferenceHub to have a Hub of OAObjects returned.
+	 * @param oaObj the object whose link is accessed
+	 * @param name  the link property name
+	 * @return the raw stored value
 	 */
 	public static Object getRawReference(OAObject oaObj, String name) {
 		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, name, false, true);
 		return obj;
 	}
 
-	// 20120616 check to see if an object has a reference holding it from being GCd.
+	/**
+	 * Determines whether the given object is referenced by any of its
+	 * relationships. Scans all used link properties and checks for
+	 * non-null references, Hubs, resolved objects, or reverse links.
+	 *
+	 * @param oaObj the object to inspect
+	 * @return {@code true} if it is referenced, otherwise {@code false}
+	 */
 	public static boolean hasReference(OAObject oaObj) {
 		if (oaObj == null) {
 			return false;
@@ -1239,14 +1390,42 @@ public class OAObjectReflectDelegate {
 		return false;
 	}
 
+	/**
+	 * Returns the names of link properties whose referenced values have
+	 * not yet been loaded. Includes or excludes calculated links based
+	 * on the flag.
+	 *
+	 * @param obj          the target object
+	 * @param bIncludeCalc true to include calculated links
+	 * @return array of unloaded link property names, or {@code null}
+	 */
 	public static String[] getUnloadedReferences(OAObject obj, boolean bIncludeCalc) {
 		return getUnloadedReferences(obj, bIncludeCalc, null, true);
 	}
 
+	/**
+	 * Variant of {@link #getUnloadedReferences(OAObject, boolean)} that
+	 * excludes a specific property from consideration.
+	 *
+	 * @param obj                the object inspected
+	 * @param bIncludeCalc       include calculated links if true
+	 * @param exceptPropertyName property name to exclude
+	 * @return array of unloaded link names, or {@code null}
+	 */
 	public static String[] getUnloadedReferences(OAObject obj, boolean bIncludeCalc, String exceptPropertyName) {
 		return getUnloadedReferences(obj, bIncludeCalc, exceptPropertyName, true);
 	}
 
+	/**
+	 * Returns unloaded reference-property names, optionally filtering out
+	 * calculated links, a named exception, and links marked as large.
+	 *
+	 * @param obj                the object inspected
+	 * @param bIncludeCalc       include calculated links if true
+	 * @param exceptPropertyName property name to exclude
+	 * @param bIncludeLarge      include large links if true
+	 * @return array of unloaded reference names, or {@code null}
+	 */
 	public static String[] getUnloadedReferences(OAObject obj, boolean bIncludeCalc, String exceptPropertyName, boolean bIncludeLarge) {
 		if (obj == null) {
 			return null;
@@ -1300,16 +1479,33 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Used to load all references to an object.
+	 * Loads all reference properties for the given object, excluding
+	 * calculated links. Delegates to {@code loadAllReferences(obj,false)}.
+	 *
+	 * @param obj the object whose references will be loaded
 	 */
 	public static void loadAllReferences(OAObject obj) {
 		loadAllReferences(obj, false);
 	}
 
+	/**
+	 * Loads all reference properties for each object contained in the
+	 * Hub, excluding calculated links. Delegates to
+	 * {@code loadAllReferences(hub,false)}.
+	 *
+	 * @param hub the Hub whose objects will have references loaded
+	 */
 	public static void loadAllReferences(Hub hub) {
 		loadAllReferences(hub, false);
 	}
 
+	/**
+	 * Loads all reference properties for each object in the Hub, optionally
+	 * including calculated links. Creates a sibling helper while loading.
+	 *
+	 * @param hub          Hub containing objects to load
+	 * @param bIncludeCalc true to include calculated links
+	 */
 	public static void loadAllReferences(Hub hub, boolean bIncludeCalc) {
 		OASiblingHelper siblingHelper = new OASiblingHelper(hub);
 		OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
@@ -1324,10 +1520,26 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
+	/**
+	 * Loads all reference properties for the given object, optionally
+	 * including calculated links. Equivalent to a single-level load.
+	 *
+	 * @param obj          the object to load
+	 * @param bIncludeCalc include calculated links if true
+	 */
 	public static void loadAllReferences(OAObject obj, boolean bIncludeCalc) {
 		loadReferences(obj, bIncludeCalc, 0);
 	}
 
+	/**
+	 * Loads reference properties for the given object up to a maximum
+	 * count. Respects calculated-link inclusion rules and uses metadata
+	 * to determine whether a link is already loaded.
+	 *
+	 * @param obj          the object whose references are loaded
+	 * @param bIncludeCalc include calculated links if true
+	 * @param max          maximum number of references to load
+	 */
 	public static void loadReferences(OAObject obj, boolean bIncludeCalc, int max) {
 		OAObjectInfo io = OAObjectInfoDelegate.getObjectInfo(obj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
@@ -1363,6 +1575,15 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
+	/**
+	 * Determines whether all reference properties for the given object
+	 * are fully loaded. Checks raw stored values, keys, Hub configurations,
+	 * and server-side autoMatch requirements.
+	 *
+	 * @param obj          the object to check
+	 * @param bIncludeCalc include calculated links if true
+	 * @return {@code true} if all references are loaded
+	 */
 	public static boolean areAllReferencesLoaded(OAObject obj, boolean bIncludeCalc) {
 		if (obj == null) {
 			return false;
@@ -1406,6 +1627,16 @@ public class OAObjectReflectDelegate {
 		return true;
 	}
 
+	/**
+	 * Loads reference properties of selected link types (ONE and/or MANY)
+	 * for the given object. Increments and returns a count of loaded links.
+	 *
+	 * @param obj          the object whose references are loaded
+	 * @param bOne         include ONE links if true
+	 * @param bMany        include MANY links if true
+	 * @param bIncludeCalc include calculated links if true
+	 * @return number of loaded references
+	 */
 	public static int loadAllReferences(OAObject obj, boolean bOne, boolean bMany, boolean bIncludeCalc) {
 		OAObjectInfo io = OAObjectInfoDelegate.getObjectInfo(obj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
@@ -1432,74 +1663,260 @@ public class OAObjectReflectDelegate {
 		return cnt;
 	}
 
+	/**
+	 * Recursively loads reference properties up to a maximum depth.
+	 *
+	 * @param obj              the starting object
+	 * @param maxLevelsToLoad  maximum recursive depth
+	 * @return count of loaded references
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad) {
 		return _loadAllReferences(0, obj, 0, maxLevelsToLoad, 0, true, null, null, 0);
 	}
 
+	/**
+	 * Loads all reference properties for each object contained in the
+	 * supplied Hub up to the specified maximum recursion depth. Uses
+	 * the internal recursive reference loader with default settings
+	 * for owned-reference levels, calculated-link inclusion, callback,
+	 * cascade, and maximum reference count.
+	 *
+	 * @param hub              the Hub whose objects will have references loaded
+	 * @param maxLevelsToLoad  the maximum depth of recursive loading
+	 * @return the total number of references loaded
+	 */
 	public static int loadAllReferences(Hub hub, int maxLevelsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, 0, true, null, null, 0);
 	}
 
+	/**
+	 * Loads reference properties for the given object up to the specified
+	 * maximum recursion depth, including additional levels of owned links.
+	 * Uses the internal recursive loader with defaults for calculated-link
+	 * inclusion, callback, cascade, and maximum reference count.
+	 *
+	 * @param obj                        the starting object
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-reference depth
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad) {
 		return _loadAllReferences(0, obj, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, true, null, null, 0);
 	}
 
+	/**
+	 * Loads reference properties for the given object up to a specified
+	 * recursion depth and includes additional owned-reference levels.
+	 * Limits the total number of references loaded to the supplied maximum.
+	 *
+	 * @param obj                        starting object
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-reference depth
+	 * @param maxRefsToLoad              maximum references to load
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, int maxRefsToLoad) {
 		return _loadAllReferences(0, obj, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, true, null, null, maxRefsToLoad);
 	}
 
+	/**
+	 * Loads reference properties for each object in the Hub up to the
+	 * given recursion depth, including extra owned-reference levels.
+	 * Uses default settings for calculated-link inclusion, callback,
+	 * cascade, and maximum reference count.
+	 *
+	 * @param hub                        Hub containing objects
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-reference depth
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, true, null, null, 0);
 	}
 
+	/**
+	 * Loads reference properties for all objects in the Hub, respecting
+	 * recursion depth and additional owned-reference levels while limiting
+	 * the total number of references loaded.
+	 *
+	 * @param hub                        Hub to load
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-reference depth
+	 * @param maxRefsToLoad              maximum references to load
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, int maxRefsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, true, null, null, maxRefsToLoad);
 	}
 
+	/**
+	 * Loads reference properties for the given object, optionally including
+	 * calculated links, and using the supplied recursion and owned-link depth.
+	 *
+	 * @param obj                        the object to load
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc) {
 		return _loadAllReferences(0, obj, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, null, 0);
 	}
 
+	/**
+	 * Loads reference properties for the given object with control over
+	 * recursion depth, owned-link depth, calculated-link inclusion, and
+	 * maximum references to load.
+	 *
+	 * @param obj                        starting object
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param maxRefsToLoad              maximum references to load
+	 * @return number of loaded references
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			int maxRefsToLoad) {
 		return _loadAllReferences(0, obj, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, null, maxRefsToLoad);
 	}
 
+	/**
+	 * Loads references for the given object with full control settings,
+	 * including recursion depth, owned-link depth, calculated-link
+	 * inclusion, maximum reference count, and a time limit for the load.
+	 *
+	 * @param obj                        the object to load
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param maxRefsToLoad              maximum references to load
+	 * @param maxEndTime                 time limit in milliseconds
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			int maxRefsToLoad, long maxEndTime) {
 		return _loadAllReferences(	0, obj, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, null, maxRefsToLoad,
 									maxEndTime);
 	}
 
+	/**
+	 * Loads references for each object in the Hub with the specified
+	 * recursion depth, owned-link depth, and optional calculated-link
+	 * inclusion.
+	 *
+	 * @param hub                        Hub to load
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, null, 0);
 	}
 
+	/**
+	 * Loads references for all objects in the Hub using recursion and
+	 * owned-link-depth rules while limiting the maximum number of
+	 * references loaded.
+	 *
+	 * @param hub                        Hub containing objects
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param maxRefsToLoad              maximum references to load
+	 * @return number of loaded references
+	 */
 	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			int maxRefsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, null, maxRefsToLoad);
 	}
 
+	/**
+	 * Loads references for the given object using recursion depth, owned
+	 * levels, and optional calculated-link inclusion, calling the supplied
+	 * callback before loading each object's references.
+	 *
+	 * @param obj                        starting object
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading references
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback) {
 		return _loadAllReferences(0, obj, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, null, 0);
 	}
 
+	/**
+	 * Loads reference properties for the supplied object using the specified
+	 * recursion depth, owned-link depth, calculated-link inclusion, and
+	 * callback. Limits the total number of references loaded to the
+	 * maximum supplied.
+	 *
+	 * @param obj                        starting object
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading each object
+	 * @param maxRefsToLoad              maximum number of references to load
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback, int maxRefsToLoad) {
 		return _loadAllReferences(0, obj, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, null, maxRefsToLoad);
 	}
 
+	/**
+	 * Loads reference properties for all objects in the supplied Hub using
+	 * the specified recursion depth, owned-link depth, calculated-link
+	 * inclusion, and callback.
+	 *
+	 * @param hub                        Hub containing objects to load
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading each object
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, null, 0);
 	}
 
+	/**
+	 * Loads references for all objects in the Hub using recursion depth,
+	 * owned-link depth, calculated-link inclusion, and callback rules,
+	 * while enforcing a maximum number of references to load.
+	 *
+	 * @param hub                        Hub to process
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading each object
+	 * @param maxRefsToLoad              maximum references to load
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback, int maxRefsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, null, maxRefsToLoad);
 	}
 
+	/**
+	 * Loads reference properties for the Hub beginning at a specified
+	 * starting depth, applying recursion depth, owned-link depth,
+	 * calculated-link inclusion, callback processing, and cascade rules.
+	 * Creates and manages a sibling helper for the duration of the load.
+	 *
+	 * @param hub                        starting Hub
+	 * @param levelsLoaded               initial number of levels already loaded
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading each object
+	 * @param cascade                    cascade manager used during loading
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(final Hub hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade) {
 		int cnt = 0;
@@ -1515,6 +1932,22 @@ public class OAObjectReflectDelegate {
 		return cnt;
 	}
 
+	/**
+	 * Loads reference properties for the Hub starting at a defined depth,
+	 * applying recursion limits, owned-link depth, calculated-link rules,
+	 * callback behavior, and cascade management, while enforcing a maximum
+	 * number of references to load.
+	 *
+	 * @param hub                        the Hub being processed
+	 * @param levelsLoaded               initial depth already loaded
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading each object
+	 * @param cascade                    cascade handler
+	 * @param maxRefsToLoad              maximum references to load
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(final Hub hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade, int maxRefsToLoad) {
 		int cnt = 0;
@@ -1530,26 +1963,87 @@ public class OAObjectReflectDelegate {
 		return cnt;
 	}
 
+	/**
+	 * Loads reference properties for all objects in the Hub according to
+	 * recursion depth, owned-link depth, and calculated-link rules, using
+	 * the supplied cascade for traversal.
+	 *
+	 * @param hub                        Hub being loaded
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param cascade                    cascade handler
+	 * @return number of loaded references
+	 */
 	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, cascade, 0);
 	}
 
+	/**
+	 * Loads references for all objects in the Hub using recursion depth,
+	 * owned-link depth, calculated-link inclusion, and cascade management,
+	 * while enforcing a maximum number of references to load.
+	 *
+	 * @param hub                        target Hub
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param cascade                    cascade handler
+	 * @param maxRefsToLoad              maximum references to load
+	 * @return number of loaded references
+	 */
 	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade, int maxRefsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, cascade, maxRefsToLoad);
 	}
 
+	/**
+	 * Loads reference properties for the given object using recursion
+	 * depth, owned-link depth, calculated-link inclusion, and callback
+	 * behavior. Uses defaults for cascade and maximum reference count.
+	 *
+	 * @param obj                        starting object
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading each object
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade) {
 		return loadAllReferences(obj, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, cascade);
 	}
 
+	/**
+	 * Loads reference properties for the given object using recursion,
+	 * owned-link depth, calculated-link inclusion, a callback, and a
+	 * maximum reference count.
+	 *
+	 * @param obj                        starting object
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading
+	 * @param maxRefsToLoad              maximum references to load
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade, int maxRefsToLoad) {
 		return loadAllReferences(obj, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, cascade, maxRefsToLoad);
 	}
 
+	/**
+	 * Loads reference properties for the Hub with the specified recursion
+	 * depth, owned-link depth, calculated-link inclusion, and callback.
+	 *
+	 * @param hub                        Hub to load
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading
+	 * @return number of references loaded
+	 */
 	public static int loadAllReferences(OAObject obj, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade) {
 		return loadAllReferences(obj, levelsLoaded, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, cascade, 0);
@@ -1557,14 +2051,20 @@ public class OAObjectReflectDelegate {
 
 	// ** MAIN reference loader here **
 	/**
-	 * @param levelsLoaded                number of levels of references that have been loaded.
-	 * @param maxLevelsToLoad             max levels of references to recursively load.
-	 * @param additionalOwnedLevelsToLoad additional levels of owned references to load
-	 * @param bIncludeCalc                include calculated links
-	 * @param callback                    will be called before loading references. If the callback.updateObject returns false, then the
-	 *                                    current object references will not be loaded
-	 * @param cascade                     used to impl visitor pattern
-	 * @param maxRefsToLoad               maximum recursive objects to call loadAllRefereces on.
+	 * Loads reference properties for the given object using recursion depth,
+	 * owned-link depth, calculated-link inclusion, callback behavior, and cascade
+	 * management. Limits the total number of references loaded to the specified
+	 * maximum.
+	 *
+	 * @param obj                        the starting object
+	 * @param levelsLoaded               number of previously loaded levels
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-reference depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   invoked before loading references
+	 * @param cascade                    cascade handler for traversal
+	 * @param maxRefsToLoad              total max references allowed
+	 * @return number of references loaded
 	 */
 	public static int loadAllReferences(OAObject obj, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade, final int maxRefsToLoad) {
@@ -1572,6 +2072,23 @@ public class OAObjectReflectDelegate {
 									maxRefsToLoad);
 	}
 
+	/**
+	 * Internal recursive loader for reference properties of an OAObject.
+	 * Applies recursion depth, owned-link depth, calculated-link rules,
+	 * callback behavior, cascade traversal, and maximum-reference limits.
+	 * Tracks visited objects to prevent cycles.
+	 *
+	 * @param idStart                    internal identifier seed
+	 * @param obj                        the object being processed
+	 * @param levelsLoaded               number of loaded levels so far
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-reference depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   callback invoked before loading
+	 * @param cascade                    cascade handler
+	 * @param maxRefsToLoad              maximum references allowed
+	 * @return number of references loaded
+	 */
 	private static int _loadAllReferences(int currentRefsLoaded, final Hub hub, final int levelsLoaded, final int maxLevelsToLoad,
 			final int additionalOwnedLevelsToLoad,
 			final boolean bIncludeCalc, final OACallback callback, OACascade cascade, final int maxRefsToLoad) {
@@ -1592,6 +2109,23 @@ public class OAObjectReflectDelegate {
 
 	}
 
+	/**
+	 * Internal recursive loader for reference properties of all objects in a Hub.
+	 * Applies recursion limits, owned-link depth, calculated-link behavior,
+	 * callback invocation, cascade traversal, and maximum-reference boundaries.
+	 * Manages sibling-helper context during traversal.
+	 *
+	 * @param idStart                    internal identifier seed
+	 * @param hub                        Hub whose objects are processed
+	 * @param levelsLoaded               number of loaded levels so far
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   callback invoked before loading
+	 * @param cascade                    cascade handler
+	 * @param maxRefsToLoad              maximum references allowed
+	 * @return number of references loaded
+	 */
 	private static int _loadAllReferences(int currentRefsLoaded, final OAObject obj, final int levelsLoaded, final int maxLevelsToLoad,
 			final int additionalOwnedLevelsToLoad,
 			final boolean bIncludeCalc, final OACallback callback, OACascade cascade, final int maxRefsToLoad) {
@@ -1600,6 +2134,24 @@ public class OAObjectReflectDelegate {
 									callback, cascade, maxRefsToLoad, 0);
 	}
 
+	/**
+	 * Internal recursive loader for reference properties of all objects in a Hub.
+	 * Applies recursion limits, owned-link depth, calculated-link behavior,
+	 * callback invocation, cascade traversal, and maximum-reference boundaries.
+	 * Manages sibling-helper context during traversal.
+	 *
+	 * @param idStart                    internal identifier seed
+	 * @param hub                        Hub whose objects are processed
+	 * @param levelsLoaded               number of loaded levels so far
+	 * @param maxLevelsToLoad            maximum recursion depth
+	 * @param additionalOwnedLevelsToLoad additional owned-link depth
+	 * @param bIncludeCalc               include calculated links if true
+	 * @param callback                   callback invoked before loading
+	 * @param cascade                    cascade handler
+	 * @param maxRefsToLoad              maximum references allowed
+	 * @param maxEndTime                 time limit in milliseconds
+	 * @return number of references loaded
+	 */
 	private static int _loadAllReferences(int currentRefsLoaded, final OAObject obj, final int levelsLoaded, final int maxLevelsToLoad,
 			final int additionalOwnedLevelsToLoad,
 			final boolean bIncludeCalc, final OACallback callback, OACascade cascade, final int maxRefsToLoad, final long maxEndTime) {
@@ -1696,7 +2248,17 @@ public class OAObjectReflectDelegate {
 		return currentRefsLoaded;
 	}
 
-	// 20121001
+	/**
+	 * Retrieves the blob value for a reference property. Attempts to return a
+	 * previously loaded byte array when available. If the property has not been
+	 * loaded, this method acquires a property lock and retrieves the blob either
+	 * from the server (in client mode) or from the datasource (in server mode),
+	 * then stores the result using CAS assignment.
+	 *
+	 * @param oaObj        the object whose reference blob is requested
+	 * @param propertyName the name of the reference property
+	 * @return the blob as a byte array, or null if unavailable
+	 */
 	public static byte[] getReferenceBlob(OAObject oaObj, String propertyName) {
 		if (oaObj == null) {
 			return null;
@@ -1737,9 +2299,15 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * DataSource independent method to retrieve a reference property.
-	 * <p>
-	 * If reference object is not already loaded, then OADataSource will be used to retrieve object.
+	 * Retrieves the referenced object for the specified link property. If the
+	 * reference is already loaded and not an OAObjectKey, the existing value is
+	 * returned. Otherwise this method acquires a property lock and delegates to
+	 * the internal reference resolver. If a loaded result replaces a stored key,
+	 * the property value is updated using CAS assignment.
+	 *
+	 * @param oaObj            the source object
+	 * @param linkPropertyName the link property name
+	 * @return the referenced OAObject or null
 	 */
 	public static Object getReferenceObject(final OAObject oaObj, final String linkPropertyName) {
 		OASiblingHelperDelegate.onGetObjectReference(oaObj, linkPropertyName);
@@ -1780,9 +2348,21 @@ public class OAObjectReflectDelegate {
 		return result;
 	}
 
-	// note: this acquired a lock before calling
+	/**
+	 * Internal reference resolver. Uses metadata and stored property state to
+	 * retrieve the referenced object. If the value is an OAObjectKey, the method
+	 * attempts cache lookup or uses the appropriate datasource or server call to
+	 * retrieve the object. Supports calculated links and server/client behaviors.
+	 *
+	 * @param oaObj            the source object
+	 * @param linkPropertyName property name being resolved
+	 * @param oi               object metadata
+	 * @param li               link metadata
+	 * @return the resolved referenced object or null
+	 */
 	private static Object _getReferenceObject(final OAObject oaObj, final String linkPropertyName, final OAObjectInfo oi,
 			final OALinkInfo li) {
+		// note: this acquired a lock before calling
 		if (linkPropertyName == null) {
 			return null;
 		}
@@ -2026,15 +2606,14 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Used to retrieve a reference key without actually loading the object. Datasourcs stores the key value for references, that are then
-	 * used to retrieve the object when requested using getObject(property). This method is a way to get the key, without loading the
-	 * object.<br>
-	 * <br>
+	 * Retrieves the OAObjectKey for a reference property without loading the
+	 * referenced object. Uses the internally stored value, which may be an
+	 * OAObjectKey, an OAObject (from which a key is derived), or null when no
+	 * key is available. This method never triggers object loading.
 	 *
-	 * @return the OAObjectKey of a ONE reference. Does not call getMethod, but internally stored value. see isLoaded to see if object has
-	 *         been loaded and exists in memory. isLoaded will return false if the property has never been set, or loaded, or if the
-	 *         objectKey has been set and the object for the key is not in memory. This method will always return the objectKey for the
-	 *         reference. see getObject, which will loaded the object from memory or datasource.
+	 * @param oaObj    the source object
+	 * @param property the reference property name
+	 * @return the stored OAObjectKey, a derived key from an OAObject, or null
 	 */
 	public static OAObjectKey getPropertyObjectKey(OAObject oaObj, String property) {
 		if (property == null) {
@@ -2054,8 +2633,15 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Checks to see if the actual value for a property has been loaded. This will also check to see if a reference ObjectKey was loaded and
-	 * the "real" object is in memory.
+	 * Determines whether the reference value for the given property has been
+	 * loaded. This includes detecting stored nulls, OANotExist markers, loaded
+	 * OAObjects, non-key Hubs, and OAObjectKeys that can be resolved from the
+	 * cache. When a cached match is found for a key, the property value is
+	 * updated using CAS assignment.
+	 *
+	 * @param oaObj        the object inspected
+	 * @param propertyName the reference property name
+	 * @return true if the reference is loaded or resolved, false otherwise
 	 */
 	public static boolean hasReferenceObjectBeenLoaded(OAObject oaObj, String propertyName) {
 		if (propertyName == null) {
@@ -2095,6 +2681,15 @@ public class OAObjectReflectDelegate {
 		return false;
 	}
 
+	/**
+	 * Determines whether the reference property is null or explicitly marked as
+	 * not existing. A stored null or OANotExist marker indicates that the reference
+	 * is empty without requiring object loading.
+	 *
+	 * @param oaObj        the object inspected
+	 * @param propertyName the reference property name
+	 * @return true if the property is null or OANotExist, false otherwise
+	 */
 	public static boolean isReferenceObjectNullOrEmpty(OAObject oaObj, String propertyName) {
 		if (oaObj == null || propertyName == null) {
 			return false;
@@ -2109,6 +2704,16 @@ public class OAObjectReflectDelegate {
 		return false;
 	}
 
+	/**
+	 * Determines whether the reference property is loaded and represents
+	 * a non-empty value. Loaded OAObjects, non-key Hubs, and OAObjectKeys
+	 * resolved from cache qualify as loaded and not empty. Null and
+	 * OANotExist indicate empty or not loaded.
+	 *
+	 * @param oaObj        the object inspected
+	 * @param propertyName the reference property name
+	 * @return true if loaded and non-empty
+	 */
 	public static boolean isReferenceObjectLoadedAndNotEmpty(OAObject oaObj, String propertyName) {
 		if (propertyName == null) {
 			return false;
@@ -2140,6 +2745,15 @@ public class OAObjectReflectDelegate {
 		return false;
 	}
 
+	/**
+	 * Determines whether a reference property is either null or not yet loaded.
+	 * Null, OANotExist, or unresolved OAObjectKeys are treated as null or not
+	 * loaded. Loaded OAObjects or Hubs return false.
+	 *
+	 * @param oaObj        the object inspected
+	 * @param propertyName the reference property
+	 * @return true if null or not loaded
+	 */
 	public static boolean isReferenceNullOrNotLoaded(OAObject oaObj, String propertyName) {
 		if (propertyName == null) {
 			return false;
@@ -2166,6 +2780,16 @@ public class OAObjectReflectDelegate {
 		return false;
 	}
 
+	/**
+	 * Determines whether the reference property is null, not loaded, or
+	 * represented by an empty Hub. A stored null or OANotExist marker,
+	 * an unresolved OAObjectKey, or a Hub with zero elements will return
+	 * true. Loaded OAObjects and non-empty Hubs return false.
+	 *
+	 * @param oaObj        the object inspected
+	 * @param propertyName the reference property name
+	 * @return true if the reference is null, not loaded, or an empty Hub
+	 */
 	public static boolean isReferenceNullOrNotLoadedOrEmptyHub(OAObject oaObj, String propertyName) {
 		if (propertyName == null) {
 			return false;
@@ -2192,6 +2816,16 @@ public class OAObjectReflectDelegate {
 		return false;
 	}
 
+	/**
+	 * Determines whether the MANY-relationship Hub for the specified
+	 * property has been loaded. Evaluates the stored raw value and
+	 * returns true only when the value is a Hub whose data has been
+	 * fully loaded according to its internal load state.
+	 *
+	 * @param oaObj        the object inspected
+	 * @param propertyName the MANY link property name
+	 * @return true if the Hub exists and is fully loaded
+	 */
 	public static boolean isReferenceHubLoaded(OAObject oaObj, String propertyName) {
 		if (propertyName == null) {
 			return false;
@@ -2216,7 +2850,16 @@ public class OAObjectReflectDelegate {
 		return true;
 	}
 
-	// used to check for a known empty hub (already loaded, with size=0)
+	/**
+	 * Determines whether the MANY-relationship Hub for the given property
+	 * is both loaded and contains zero elements. A Hub qualifies only if
+	 * it is fully loaded and its size is zero. Null, OANotExist, unresolved
+	 * keys, and non-Hub values do not qualify.
+	 *
+	 * @param oaObj        the object inspected
+	 * @param propertyName the MANY link property name
+	 * @return true if the Hub is loaded and empty
+	 */
 	public static boolean isReferenceHubLoadedAndEmpty(OAObject oaObj, String propertyName) {
 		if (propertyName == null) {
 			return false;
@@ -2240,6 +2883,16 @@ public class OAObjectReflectDelegate {
 		return true;
 	}
 
+	/**
+	 * Determines whether the MANY-relationship Hub for the given property
+	 * is both fully loaded and contains one or more elements. A Hub must
+	 * be loaded and have a size greater than zero to qualify. Null,
+	 * OANotExist, unresolved keys, and unloaded Hubs do not qualify.
+	 *
+	 * @param oaObj        the object inspected
+	 * @param propertyName the MANY link property name
+	 * @return true if the Hub is loaded and contains data
+	 */
 	public static boolean isReferenceHubLoadedAndNotEmpty(OAObject oaObj, String propertyName) {
 		if (propertyName == null) {
 			return false;
@@ -2255,10 +2908,13 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Used to preload data, this will recursively load all references in the given Property Paths.
+	 * Loads the properties specified by the given property paths. Each path
+	 * can reference a simple property or a dotted nested path. For each path,
+	 * the method retrieves the corresponding value to ensure that it is
+	 * loaded. No property-change events are fired by this method.
 	 *
-	 * @param oaObj         root object to use.
-	 * @param propertyPaths one or more propertyPaths, that can be loaded using a single visit to each property.
+	 * @param oaObj         the object whose properties are to be loaded
+	 * @param propertyPaths one or more property names or dotted paths
 	 */
 	public static void loadProperties(OAObject oaObj, String... propertyPaths) {
 		if (propertyPaths == null) {
@@ -2274,10 +2930,14 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Used to preload data, this will recursively load all references in the given Property Paths.
+	 * Loads the properties specified by the given property paths for every
+	 * object in the supplied Hub. Each path can refer to a simple property
+	 * or a dotted nested path. For each object and each path, the property
+	 * value is accessed to ensure it is loaded. No property-change events
+	 * are fired by this method.
 	 *
-	 * @param hub           root objects to use.
-	 * @param propertyPaths one or more propertyPaths, that can be loaded using a single visit to each property.
+	 * @param hub           the Hub whose objects will have properties loaded
+	 * @param propertyPaths one or more property names or dotted paths
 	 */
 	public static void loadProperties(Hub hub, String... propertyPaths) {
 		if (propertyPaths == null) {
@@ -2293,10 +2953,13 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Used by loadProperties, to take multiple property paths, and create a tree of unique property paths.
+	 * Builds a tree of LoadPropertyNode instances representing the supplied
+	 * property paths. Each path is split into its dot-separated segments and
+	 * inserted into the tree so that shared prefixes are merged. The resulting
+	 * structure is used to efficiently load nested properties.
 	 *
-	 * @param propertyPaths example: "orders.orderItems.item.vendor"
-	 * @return root node of tree, that has it's children as the starting point for the property paths.
+	 * @param propertyPaths one or more property names or dotted paths
+	 * @return the root of the constructed property-path tree
 	 */
 	private static LoadPropertyNode createPropertyTree(String... propertyPaths) {
 		int x = 0;
@@ -2327,7 +2990,16 @@ public class OAObjectReflectDelegate {
 		return rootNode;
 	}
 
-	// recursively load path
+	/**
+	 * Recursively loads the properties defined by the supplied property-tree
+	 * node for the given object. Each node represents a single property, and
+	 * its child nodes represent nested properties. For each node, the method
+	 * retrieves the corresponding property value, and if the value is an
+	 * OAObject or Hub, continues loading using the child nodes.
+	 *
+	 * @param object the current object or Hub being processed
+	 * @param node   the tree node representing the property to load
+	 */
 	private static void _loadProperties(Object object, LoadPropertyNode node) {
 		if (object instanceof OAObject) {
 			OAObject oaObj = (OAObject) object;
@@ -2357,20 +3029,52 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Create a copy of an object, excluding selected properties.
+	 * Creates a shallow copy of the supplied OAObject, excluding any
+	 * properties listed in the excludeProperties array. A new instance
+	 * of the same class is created, and each property not excluded is
+	 * assigned using the source object's current values. Link properties
+	 * are copied by reference without loading additional data.
 	 *
-	 * @return new copy of the object
+	 * @param oaObj            the source object to copy
+	 * @param excludeProperties property names to exclude from copying
+	 * @return the newly created copied object
 	 */
 	public static OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
 		return createCopy(oaObj, excludeProperties, null);
 	}
 
+	/**
+	 * Creates a shallow copy of the supplied OAObject, excluding any
+	 * properties listed in the excludeProperties array and allowing a
+	 * callback to customize property-copy behavior. A new instance of
+	 * the same class is created, and each non-excluded property is
+	 * assigned from the source object's current value unless the
+	 * callback overrides the assignment.
+	 *
+	 * @param oaObj            the source object to copy
+	 * @param excludeProperties property names to exclude from copying
+	 * @param copyCallback     optional callback to customize copying
+	 * @return the newly created copied object
+	 */
 	public static OAObject createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback) {
 		HashMap<Long, Object> hmNew = new HashMap<Long, Object>();
 		OAObject obj = _createCopy(oaObj, excludeProperties, copyCallback, hmNew);
 		return obj;
 	}
 
+	/**
+	 * Internal implementation used to create a shallow copy of the supplied
+	 * OAObject. A new instance is created, and each non-excluded property is
+	 * copied from the source object unless overridden by the callback. The
+	 * hmNew map is used to track objects that have already been copied to
+	 * prevent duplication when copying graphs of related objects.
+	 *
+	 * @param oaObj            the source object to copy
+	 * @param excludeProperties property names to exclude from copying
+	 * @param copyCallback     optional callback invoked during copying
+	 * @param hmNew            map used to track created copies
+	 * @return the newly created copied object
+	 */
 	public static OAObject _createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
 			Map<Long, Object> hmNew) {
 		if (oaObj == null) {
@@ -2410,15 +3114,38 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Copies the properties and some of the links from a source object (this) to a new object. For links of type One, all of the links are
-	 * used, the same ref object from the source object is used. For links of type Many, only the owned links are used, and clones of the
-	 * objects are created in the Hub of the new object. OACopyCallback can be used to control what is copied.
+	 * Copies the properties of the source OAObject into the supplied
+	 * destination object. Properties listed in excludeProperties are
+	 * skipped. For each non-excluded property, the current value from
+	 * the source object is assigned to the destination unless the
+	 * callback overrides or blocks the assignment. Link properties
+	 * are copied by reference without triggering additional loading.
+	 *
+	 * @param oaObj            the source object whose values are copied
+	 * @param newObject        the destination object
+	 * @param excludeProperties property names to exclude from copying
+	 * @param copyCallback     optional callback to customize copy behavior
 	 */
 	public static void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback) {
 		HashMap<Long, Object> hmNew = new HashMap<Long, Object>();
 		copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 	}
 
+	/**
+	 * Internal implementation used to copy property values from the source
+	 * OAObject into the destination object. Properties listed in
+	 * excludeProperties are skipped. For each non-excluded property, the
+	 * current value from the source object is assigned to the destination
+	 * unless the callback overrides the assignment. The hmNew map tracks
+	 * objects already processed to prevent duplicate copying when copying
+	 * object graphs.
+	 *
+	 * @param oaObj            the source object
+	 * @param newObject        the destination object
+	 * @param excludeProperties properties to exclude from copying
+	 * @param copyCallback     optional callback invoked during copying
+	 * @param hmNew            map tracking objects already copied
+	 */
 	public static void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
 			HashMap<Long, Object> hmNew) {
 		try {
@@ -2432,9 +3159,20 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
-	/*
-	 * note: OAThreadLocalDelegate.setLoadingObject(true/false) is not set in this method.
-	 *      it is set by copyInto
+	/**
+	 * Internal recursive implementation for copying property values from the
+	 * source OAObject into the destination object. Excluded properties are
+	 * skipped. For each non-excluded property, the current value from the
+	 * source object is assigned to the destination unless the callback
+	 * overrides or blocks the assignment. The hmNew map tracks objects that
+	 * have already been processed to prevent duplicating work when copying
+	 * object graphs.
+	 *
+	 * @param oaObj            the source object
+	 * @param newObject        the destination object
+	 * @param excludeProperties property names to exclude
+	 * @param copyCallback     optional callback invoked during copying
+	 * @param hmNew            map tracking already-copied objects
 	 */
 	public static void _copyInto(final OAObject oaObj, final OAObject newObject, final String[] excludeProperties,
 			final OACopyCallback copyCallback, final Map<Long, Object> hmNew) {
@@ -2621,7 +3359,21 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
-	// recursively checks 3 levels for replaced objects
+	/**
+	 * Determines whether a new copy should be created for the supplied
+	 * OAObject during a copy operation. Uses the excludeProperties list,
+	 * the callback, the map of already-created copies, and the visitor
+	 * set to prevent cycles and repeated work. The counter tracks the
+	 * recursion depth or number of processed items.
+	 *
+	 * @param oaObj            the object being evaluated
+	 * @param excludeProperties property names excluded from copying
+	 * @param copyCallback     optional callback invoked during copying
+	 * @param hmNew            map of already-created copies
+	 * @param cnt              counter used to track depth or iteration
+	 * @param hsVisitor        set of visited object identifiers
+	 * @return true if a new copy should be created, false otherwise
+	 */
 	private static boolean shouldMakeACopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
 			Map<Long, Object> hmNew, int cnt, Set<Long> hsVisitor) {
 		if (oaObj == null) {
@@ -2717,14 +3469,33 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * Find the common Hub that two objects are descendants of. param currentLevel current level of parents that have been checked
+	 * Searches upward through the parent hierarchy of the two supplied
+	 * OAObjects to find a common Hub. Each object’s parent chain is
+	 * traversed up to the specified maximum number of levels, and the
+	 * first Hub encountered in both hierarchies is returned.
 	 *
-	 * @param maxLevelsToCheck total number of parents to check
+	 * @param obj1             the first object
+	 * @param obj2             the second object
+	 * @param maxLevelsToCheck maximum number of parent levels to traverse
+	 * @return the first common Hub found, or null if none exists
 	 */
 	public static Hub findCommonHierarchyHub(OAObject obj1, OAObject obj2, int maxLevelsToCheck) {
 		return findCommonHierarchyHub(obj1, obj2, 0, maxLevelsToCheck);
 	}
 
+	/**
+	 * Recursive helper used to search for a common Hub in the parent
+	 * hierarchies of the two supplied OAObjects. The search proceeds
+	 * upward through each object's hierarchy while tracking the
+	 * current recursion depth, stopping when the maximum number of
+	 * levels has been reached or a common Hub is found.
+	 *
+	 * @param obj1             the first object
+	 * @param obj2             the second object
+	 * @param currentLevel     the current recursion level
+	 * @param maxLevelsToCheck maximum allowed recursion depth
+	 * @return the common Hub if found, otherwise null
+	 */
 	protected static Hub findCommonHierarchyHub(OAObject obj1, OAObject obj2, int currentLevel, int maxLevelsToCheck) {
 		if (obj1 == null || obj2 == null) {
 			return null;
@@ -2753,10 +3524,34 @@ public class OAObjectReflectDelegate {
 		return null;
 	}
 
+	/**
+	 * Determines how many parent-hierarchy levels separate the supplied
+	 * OAObject from the specified Hub. The method walks upward through
+	 * the object's parent chain up to the maximum number of levels and
+	 * returns the number of levels required to reach the target Hub.
+	 * Returns -1 if the Hub is not found within the allowed depth.
+	 *
+	 * @param findHub          the Hub being searched for
+	 * @param fromObj          the starting object
+	 * @param maxLevelsToCheck the maximum number of parent levels to traverse
+	 * @return the number of levels to reach the Hub, or -1 if not found
+	 */
 	public static int getHierarchyLevelsToHub(Hub findHub, OAObject fromObj, int maxLevelsToCheck) {
 		return getHierarchyLevelsToHub(findHub, fromObj, 0, maxLevelsToCheck);
 	}
 
+	/**
+	 * Recursive helper that determines how many hierarchy levels separate
+	 * the supplied OAObject from the target Hub. The search walks upward
+	 * through the object's parent chain, incrementing the current recursion
+	 * level until the Hub is found or the maximum depth is reached.
+	 *
+	 * @param findHub          the Hub being searched for
+	 * @param fromObj          the starting object
+	 * @param currentLevel     the current recursion depth
+	 * @param maxLevelsToCheck the maximum number of levels allowed
+	 * @return the number of levels to reach the Hub, or -1 if not found
+	 */
 	protected static int getHierarchyLevelsToHub(Hub findHub, OAObject fromObj, int currentLevel, int maxLevelsToCheck) {
 		if (findHub == null || fromObj == null) {
 			return -1;
@@ -2785,11 +3580,14 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * get the property path from a Parent hub to a child hub.
+	 * Determines the property path from the master object of the parent Hub
+	 * to the master object of the child Hub. Traverses the relationship
+	 * between the two Hubs and returns the property name used to navigate
+	 * from the parent to the child. Returns null when no direct path exists.
 	 *
-	 * @param hubParent parent hub that needs to have the path expanded from.
-	 * @param hubChild  child Hub that has a path
-	 * @return
+	 * @param hubParent the parent Hub
+	 * @param hubChild  the child Hub
+	 * @return the property path from parent to child, or null if none exists
 	 */
 	private static String getPropertyPathFromMaster(final Hub hubParent, final Hub hubChild) {
 		if (hubParent == null) {
@@ -2868,6 +3666,16 @@ public class OAObjectReflectDelegate {
 		}
 	}
 
+	/**
+	 * Determines the property path from the supplied parent OAObject to the
+	 * master object of the given child Hub. Traverses the links from the
+	 * parent object to identify which property leads to the Hub. Returns
+	 * null if no direct relationship path exists.
+	 *
+	 * @param objParent the parent OAObject
+	 * @param hubChild  the child Hub
+	 * @return the property path from the parent to the Hub, or null if none exists
+	 */
 	public static String getPropertyPathFromMaster(final OAObject objParent, final Hub hubChild) {
 		if (objParent == null) {
 			return null;
@@ -2931,13 +3739,15 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * get the "real" object that needs to be displayed, based on a parent/from Hub, and a from object (ex: row in table), and the hub that
-	 * it originates from.
+	 * Determines the object that should be displayed in the child Hub when
+	 * navigating from the supplied parent Hub. Uses the given source object
+	 * and the relationship between the two Hubs to locate the appropriate
+	 * referenced object. Returns null when no matching object can be found.
 	 *
-	 * @param hubFrom    ex: hubDept
-	 * @param fromObject ex: dept
-	 * @param hubChild   ex: hubEmplyeeType, (enum of strings) and is linked to hubEmp
-	 * @return hubEmployeeType.getAt(pos), where pos is dept.manager.employeeType
+	 * @param hubFrom    the parent Hub
+	 * @param fromObject the object from which navigation begins
+	 * @param hubChild   the child Hub whose display object is needed
+	 * @return the object to display in the child Hub, or null if none applies
 	 */
 	public static Object getObjectToDisplay(final Hub hubFrom, Object fromObject, final Hub hubChild) {
 		if (hubFrom == null) {
@@ -3011,15 +3821,32 @@ public class OAObjectReflectDelegate {
 	}
 
 	/**
-	 * get the property path from a Parent hub to a child hub, that is all of type=One.
+	 * Determines the full property path that links the parent Hub to the
+	 * child Hub. Examines the relationship between the master objects of
+	 * the two Hubs and returns the property name or dotted path that
+	 * connects them. Returns null if no direct relationship path exists.
 	 *
-	 * @param hubParent parent hub that needs to have the path expanded from.
-	 * @param hubChild  child Hub that has a path
+	 * @param hubParent the parent Hub
+	 * @param hubChild  the child Hub
+	 * @return the property path between the two Hubs, or null if none exists
 	 */
 	public static String getPropertyPathBetweenHubs(final Hub hubParent, final Hub hubChild) {
 		return getPropertyPathBetweenHubs(null, hubParent, hubChild, true);
 	}
 
+	/**
+	 * Recursive helper that builds the property path connecting the parent
+	 * Hub to the child Hub. Traverses link relationships beginning at the
+	 * supplied property path prefix. When bCheckLink is true, direct link
+	 * matches are evaluated before continuing deeper through related Hubs.
+	 * Returns null if no connecting path can be found.
+	 *
+	 * @param propPath   the current property path prefix
+	 * @param hubParent  the parent Hub
+	 * @param hubChild   the child Hub
+	 * @param bCheckLink true to check direct link relationships first
+	 * @return the completed property path, or null if none exists
+	 */
 	private static String getPropertyPathBetweenHubs(final String propPath, final Hub hubParent, final Hub hubChild, boolean bCheckLink) {
 		if (hubChild == hubParent) {
 			return null;
