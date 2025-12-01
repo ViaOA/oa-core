@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,41 @@ import com.viaoa.util.OANullObject;
 public class OAObjectSerializeDelegate {
 	private static final Logger LOG = Logger.getLogger(OAObjectSerializeDelegate.class.getName());
 
+	/**
+	 * Reads serialized data into the supplied {@link OAObject}. This method handles
+	 * both standard Java deserialization and OA-specific transport formats used by
+	 * {@link RemoteObjectInputStream}.
+	 *
+	 * <p>If the input stream is a {@code RemoteObjectInputStream}, the method first
+	 * reads a control byte:</p>
+	 * <ul>
+	 *   <li>{@code 1}: only an {@link OAObjectKey} is transmitted; the object's GUID
+	 *       is updated and no additional data is read.</li>
+	 *   <li>{@code 2}: reserved value; fall through to default handling.</li>
+	 * </ul>
+	 *
+	 * <p>For non-key-only transfers, {@code defaultReadObject()} is invoked to load
+	 * non-transient state. The method then iteratively reads property name/value
+	 * pairs until a non-String flag is encountered.</p>
+	 *
+	 * <p>Special handling includes:</p>
+	 * <ul>
+	 *   <li>Converting {@link OANullObject} to {@code null}.</li>
+	 *   <li>On servers, skipping calculated properties and stripping dummy or
+	 *       unresolved hub values.</li>
+	 *   <li>Blob properties are assigned directly using {@link OAObject#setProperty}.</li>
+	 *   <li>All other values are assigned via
+	 *       {@link OAObjectPropertyDelegate#unsafeSetPropertyIfEmpty}.</li>
+	 * </ul>
+	 *
+	 * <p>Finally, the object's GUID is registered using
+	 * {@link OAObjectDelegate#updateGuid(long)}.</p>
+	 *
+	 * @param oaObj the target object receiving deserialized state
+	 * @param in the stream providing serialized data
+	 * @throws IOException if the stream cannot be read
+	 * @throws ClassNotFoundException if a property value refers to an unknown type
+	 */
 	protected static void _readObject(OAObject oaObj, java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
 		// client only needs to send the key to the server
 		if (in instanceof RemoteObjectInputStream) {
@@ -121,6 +156,33 @@ public class OAObjectSerializeDelegate {
 		OAObjectDelegate.updateGuid(oaObj.guid);
 	}
 
+	/**
+	 * Resolves the deserialized {@link OAObject} to the authoritative instance in
+	 * the runtime cache. This prevents duplicate object instances after
+	 * deserialization.
+	 *
+	 * <p>The method determines whether the object should be added to the cache based
+	 * on {@link OAObjectInfo#bAddToCache}. If a matching instance already exists,
+	 * property and relationship references are merged to preserve graph consistency.</p>
+	 *
+	 * <p>Key behaviors:</p>
+	 * <ul>
+	 *   <li>Reassigns missing GUIDs (value {@code 0}).</li>
+	 *   <li>Adds the object to {@link OAObjectCacheDelegate}; detects duplicates.</li>
+	 *   <li>For duplicates, iterates through stored properties and merges references
+	 *       using {@link #replaceReferences} and conditional CAS updates.</li>
+	 *   <li>Adjusts hubs and cached hub references, wrapping them in
+	 *       {@link WeakReference} when required.</li>
+	 *   <li>Prevents finalization of the discarded instance via
+	 *       {@link OAObjectDelegate#dontFinalize}.</li>
+	 * </ul>
+	 *
+	 * <p>Updates global counters {@code cntNew} and {@code cntDup} accordingly.</p>
+	 *
+	 * @param oaObjRead the deserialized object instance
+	 * @return the resolved object to use within the application
+	 * @throws ObjectStreamException if resolution fails
+	 */
 	protected static Object _readResolve(final OAObject oaObjRead) throws ObjectStreamException {
 		OAObject oaObjUse;
 
@@ -221,6 +283,28 @@ public class OAObjectSerializeDelegate {
 	public static volatile int cntNew;
 	public static volatile int cntSkip;
 
+	/**
+	 * Rewrites reverse relationships so that references pointing to {@code oaObjFrom}
+	 * now reference {@code oaObjTo}. This is used when merging a deserialized
+	 * duplicate object into an existing cached instance.
+	 *
+	 * <p>Behavior depends on the type of {@code value}:</p>
+	 * <ul>
+	 *   <li>{@link Hub}: replaces master-object references, iterates through elements,
+	 *       and updates reverse properties or nested hubs accordingly.</li>
+	 *   <li>{@link OAObject}: updates single-object reverse relationships based on the
+	 *       link's reverse name.</li>
+	 *   <li>{@link WeakReference}: dereferenced before processing.</li>
+	 * </ul>
+	 *
+	 * <p>If {@code linkInfo} is {@code null}, no action is taken.</p>
+	 *
+	 * @param oaObjFrom the obsolete object instance being replaced
+	 * @param oaObjTo the authoritative instance to redirect references to
+	 * @param linkInfo metadata describing the relationship being updated
+	 * @param value the relationship value being inspected or rewritten
+	 * @return {@code true} if reference replacement should continue; {@code false} otherwise
+	 */
 	private static boolean replaceReferences(final OAObject oaObjFrom, final OAObject oaObjTo, final OALinkInfo linkInfo, Object value) {
 		if (linkInfo == null) {
 			return false;
@@ -286,21 +370,30 @@ public class OAObjectSerializeDelegate {
 		return true;
 	}
 
-	//TEST 
-	/*	
-	static volatile int cntx;
-	static volatile int indentx;
-	protected static void _writeObject(OAObject oaObj, java.io.ObjectOutputStream stream) throws IOException {
-	    String s = "";
-	    for (int i=0; i<indentx; i++) s += "   ";
-	    indentx++;
-	    int cx = ++cntx;
-	    System.out.println(s+":"+(cx)+" "+oaObj);
-	    _writeObjectx(oaObj, stream);
-	    if (cx != cntx) System.out.println(s+":"+(cx)+" END   "+oaObj);
-	    indentx--;
-	}
-	*/
+	/**
+	 * Serializes the supplied {@link OAObject} into the given output stream. Handles
+	 * both standard Java serialization and OA's optimized remote-transfer formats.
+	 *
+	 * <p>Processing steps:</p>
+	 * <ul>
+	 *   <li>Invokes {@link OAObjectSerializer#beforeSerialize} if an object serializer is active.</li>
+	 *   <li>Determines server/client role to decide whether to send full object data
+	 *       or only an {@link OAObjectKey}.</li>
+	 *   <li>For {@link RemoteObjectOutputStream}, writes a control byte indicating
+	 *       whether a key-only transmission is used.</li>
+	 *   <li>Performs {@code defaultWriteObject()}, then serializes transient
+	 *       properties via {@link #_writeProperties}.</li>
+	 *   <li>Optionally writes blob properties if the serializer is configured to
+	 *       include them.</li>
+	 *   <li>Marks end-of-properties using {@link OAObjectDelegate#FALSE}.</li>
+	 *   <li>Notifies the sync client when an object is sent to the server.</li>
+	 *   <li>Invokes {@link OAObjectSerializer#afterSerialize} if available.</li>
+	 * </ul>
+	 *
+	 * @param oaObj the object to serialize
+	 * @param stream the output stream receiving serialized data
+	 * @throws IOException if the object cannot be written
+	 */
 	protected static void _writeObject(final OAObject oaObj, java.io.ObjectOutputStream stream) throws IOException {
 		//if (xxx % 1000 == 0) System.out.println((xxx)+") writeObject "+oaObj);
 		if (oaObj == null) {
@@ -363,6 +456,37 @@ public class OAObjectSerializeDelegate {
 		}
 	}
 
+	/**
+	 * Writes all serializable properties of the given {@link OAObject} to the output
+	 * stream. This includes primitive values, object keys, hubs, and reference
+	 * objects, depending on the sync role and serializer settings.
+	 *
+	 * <p>Key behaviors:</p>
+	 * <ul>
+	 *   <li>Iterates through the internal {@code oaObj.properties} array in key/value pairs.</li>
+	 *   <li>Skips calculated link properties unless the server requires them.</li>
+	 *   <li>Ignores {@link IODummy} values and unresolved hubs.</li>
+	 *   <li>Dereferences {@link WeakReference} wrappers when present.</li>
+	 *   <li>Determines whether to send full objects, keys, empty hubs, or no value at
+	 *       all based on:</li>
+	 *       <ul>
+	 *         <li>server/client role</li>
+	 *         <li>whether the object has already been sent</li>
+	 *         <li>{@link OAObjectSerializer#shouldSerializeReference}</li>
+	 *         <li>hub size, match-property rules, and autoMatch state</li>
+	 *       </ul>
+	 *   <li>Writes property name followed by value, substituting
+	 *       {@link OANullObject#instance} for {@code null}.</li>
+	 * </ul>
+	 *
+	 * @param oi metadata describing the object's properties
+	 * @param bIsServer whether the current runtime is operating as the server
+	 * @param oaObj the object whose properties are being serialized
+	 * @param stream the target output stream
+	 * @param serializer optional callback controlling reference serialization
+	 * @param bIsObjectSentOnServer whether the object was already sent by the server
+	 * @throws IOException if any property fails to serialize
+	 */
 	protected static void _writeProperties(final OAObjectInfo oi, final boolean bIsServer, final OAObject oaObj,
 			final java.io.ObjectOutputStream stream, final OAObjectSerializer serializer, final boolean bIsObjectSentOnServer)
 			throws IOException {

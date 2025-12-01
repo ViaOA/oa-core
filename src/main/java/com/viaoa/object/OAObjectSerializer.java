@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,18 +114,38 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		transient Stack stack;
 	}
 
+	/**
+	 * Sets the serializer wrapper identifier.
+	 *
+	 * @param id the identifier assigned to this serializer instance
+	 */
 	public void setId(int id) {
 		this.id = id;
 	}
 
+	/**
+	 * Returns the identifier assigned to this serializer instance.
+	 *
+	 * @return the current wrapper identifier
+	 */
 	public int getId() {
 		return this.id;
 	}
 
+	/**
+	 * Sets the client identifier associated with this serializer.
+	 *
+	 * @param id the client identifier to assign
+	 */
 	public void setClientId(int id) {
 		this.clientId = id;
 	}
 
+	/**
+	 * Returns the client identifier associated with this serializer.
+	 *
+	 * @return the current client identifier
+	 */
 	public int getClientId() {
 		return this.clientId;
 	}
@@ -140,9 +160,17 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	private transient HashMap<OALinkInfo, Integer> hmLinkInfoCount;
 
 	/**
-	 * @param object   root object to serialize
-	 * @param callback object that will be called (setupProperties(obj)) for each object that will be serialized, used to determine which
-	 *                 reference properties to include.
+	 * Creates a serializer for the specified root object. Compression can be
+	 * enabled and an optional callback can be provided to control which
+	 * reference properties are included during serialization.
+	 *
+	 * <p>If the root object is a {@link Hub}, the expected minimum number
+	 * of serialized objects is set to the hub size. The callback is assigned
+	 * using {@code setCallback}.</p>
+	 *
+	 * @param object   the root object to serialize
+	 * @param bCompress whether compression should be used
+	 * @param callback  the callback used to configure serialized properties
 	 */
 	public OAObjectSerializer(TYPE object, boolean bCompress, OAObjectSerializerCallback callback) {
 		this.object = object;
@@ -153,6 +181,16 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		setCallback(callback);
 	}
 
+	/**
+	 * Creates a serializer for the specified root object, with an option to
+	 * enable compression. No callback is defined for property-level control.
+	 *
+	 * <p>If the root object is a {@link Hub}, the expected minimum number
+	 * of serialized objects is set to the hub size.</p>
+	 *
+	 * @param object    the root object to serialize
+	 * @param bCompress whether compression should be used
+	 */
 	public OAObjectSerializer(TYPE object, boolean bCompress) {
 		this.object = object;
 		this.bCompress = bCompress;
@@ -161,6 +199,20 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		}
 	}
 
+	/**
+	 * Creates a serializer that wraps a primary object and an additional
+	 * secondary object. Compression may be enabled, and an optional
+	 * callback can configure which reference properties to serialize.
+	 *
+	 * <p>If the primary object is a {@link Hub}, the expected minimum number
+	 * of serialized objects is set to the hub size. The callback is assigned
+	 * using {@code setCallback}.</p>
+	 *
+	 * @param object       the primary root object to serialize
+	 * @param extraObject  an additional object to serialize
+	 * @param bCompress    whether compression should be used
+	 * @param callback     the callback used to configure serialized properties
+	 */
 	public OAObjectSerializer(TYPE object, Object extraObject, boolean bCompress, OAObjectSerializerCallback callback) {
 		this.object = object;
 		this.extraObject = extraObject;
@@ -172,12 +224,17 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	/**
-	 * Used to serialize an object.
-	 * 
-	 * @param object         root object to serialize.
-	 * @param bCompress      use compression (not needed if the stream is compressed)
-	 * @param bAllReferences flag to know if all references or no references should be serialized with object. see
-	 *                       #setExcludedClasses(Class[]) to include reference classes should not be serialized.
+	 * Creates a serializer for the specified root object with compression
+	 * support and a flag controlling serialization of reference properties.
+	 *
+	 * <p>If {@code bAllReferences} is true, all reference properties are
+	 * included using {@code includeAllProperties}. Otherwise, all reference
+	 * properties are excluded using {@code excludeAllProperties}.</p>
+	 *
+	 * @param object         the root object to serialize
+	 * @param bCompress      whether compression should be used
+	 * @param bAllReferences whether all or none of the reference properties
+	 *                       should be serialized
 	 */
 	public OAObjectSerializer(TYPE object, boolean bCompress, boolean bAllReferences) {
 		this.object = object;
@@ -193,31 +250,51 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	private boolean bIncludeBlobs;
 
 	/**
-	 * OAObject blob properties default to transient. Setting this to true will have them included.
+	 * Indicates whether blob properties should be included during serialization.
+	 *
+	 * @return {@code true} if blob properties are included, otherwise {@code false}
 	 */
 	public boolean getIncludeBlobs() {
 		return bIncludeBlobs;
 	}
 
+	/**
+	 * Enables or disables inclusion of blob properties during serialization.
+	 *
+	 * @param b {@code true} to include blob properties, otherwise {@code false}
+	 */
 	public void setIncludeBlobs(boolean b) {
 		bIncludeBlobs = b;
 	}
 
 	/**
-	 * Classes that should not be serialized.
+	 * Defines classes for which reference properties should not be serialized.
+	 *
+	 * @param classes one or more classes to exclude from reference serialization
 	 */
 	public void setExcludedReferences(Class... classes) {
 		//LOG.finer("excludedReferences="+classes);
 		this.excludedReferences = classes;
 	}
 
+	/**
+	 * Sets the list of classes for which reference properties should be excluded
+	 * from serialization. This is an alias for {@link #setExcludedReferences(Class...)}.
+	 *
+	 * @param classes classes to exclude from reference serialization
+	 */
 	public void excludedClasses(Class... classes) {
 		//LOG.finer("excludedReferences="+classes);
 		this.excludedReferences = classes;
 	}
 
 	/**
-	 *    
+	 * Returns the reference value to serialize for the given object. If a
+	 * callback is defined, its {@code getReferenceValueToSend} method is used
+	 * to determine the appropriate value.
+	 *
+	 * @param obj the reference object being evaluated
+	 * @return the object value to send during serialization
 	 */
 	public Object getReferenceValueToSend(Object obj) {
 		if (callback != null) {
@@ -227,24 +304,48 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	/**
-	 * Max number of objects to serialize.
+	 * Sets the maximum number of objects that may be serialized by this wrapper.
+	 *
+	 * @param max the maximum number of objects allowed
 	 */
 	public void setMax(int max) {
 		this.maxObjects = max;
 	}
 
+	/**
+	 * Returns the maximum number of objects permitted for serialization.
+	 *
+	 * @return the configured maximum object count
+	 */
 	public int getMax() {
 		return this.maxObjects;
 	}
 
+	/**
+	 * Returns the total number of objects written during serialization.
+	 *
+	 * @return the number of objects serialized so far
+	 */
 	public int getTotalObjectsWritten() {
 		return totalObjectsWritten;
 	}
 
+	/**
+	 * Sets the maximum allowed size, in bytes, of the serialized output. When the
+	 * compressed output exceeds this size, serialization of additional objects
+	 * will stop.
+	 *
+	 * @param maxSize the maximum compressed output size
+	 */
 	public void setMaxSize(int maxSize) {
 		this.maxSize = maxSize;
 	}
 
+	/**
+	 * Returns the maximum compressed output size allowed for serialization.
+	 *
+	 * @return the configured maximum output size
+	 */
 	public int getMaxSize() {
 		return this.maxSize;
 	}
@@ -252,10 +353,16 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	// private int indent;
 
 	/**
-	 * Called by OAObjectSerializeDelegate.writeObject(), before an object is serialized. If a Callback object is used, then it's
-	 * setupSerializedProperties() method will be called so that it can configure the reference properties to include.
-	 * 
-	 * @see OAObjectSerializeCallback#setupSerializedProperties(Object, Stack)
+	 * Performs setup before serializing an {@link OAObject}. Increments the total
+	 * object count, delegates to any active wrapper serializer, and invokes the
+	 * callback's {@code beforeSerialize} method when present.
+	 *
+	 * <p>The method also preserves the current include/exclude property settings
+	 * on an internal stack and tracks the object in a stack used to determine
+	 * reference context during serialization. The serialization depth counter
+	 * is incremented.</p>
+	 *
+	 * @param oaObj the object about to be serialized
 	 */
 	void beforeSerialize(OAObject oaObj) {
 		/* test        
@@ -282,7 +389,15 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	/**
-	 * Called by OAObjectSerializeDelegate.writeObject(), after an object has been serialized.
+	 * Performs cleanup after an {@link OAObject} has been serialized. Delegates to
+	 * any active wrapper serializer, invokes the callback's {@code afterSerialize}
+	 * method when present, and restores include/exclude property settings from
+	 * the internal stack.
+	 *
+	 * <p>The serialization depth counter is decremented and the object is removed
+	 * from the internal stack.</p>
+	 *
+	 * @param obj the object that has just been serialized
 	 */
 	void afterSerialize(OAObject obj) {
 		// indent--;
@@ -301,39 +416,73 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		levelsDeep--;
 	}
 
+	/**
+	 * Specifies the set of property names to include during serialization. When
+	 * used, all other properties are excluded.
+	 *
+	 * @param props the property names to include
+	 */
 	protected void includeProperties(String[] props) {
 		this.includeProps = props;
 		this.excludeProps = null;
 	}
 
+	/**
+	 * Specifies the set of property names to exclude during serialization. When
+	 * used, all other properties are included.
+	 *
+	 * @param props the property names to exclude
+	 */
 	protected void excludeProperties(String[] props) {
 		this.excludeProps = props;
 		this.includeProps = null;
 	}
 
+	/**
+	 * Configures serialization to include all properties. This is achieved by
+	 * clearing any include list and setting the exclude list to an empty array.
+	 */
 	protected void includeAllProperties() {
 		this.excludeProps = EmptyProperties;
 		this.includeProps = null;
 	}
 
+	/**
+	 * Configures serialization to exclude all properties. This is achieved by
+	 * clearing any exclude list and setting the include list to an empty array.
+	 */
 	protected void excludeAllProperties() {
 		this.includeProps = EmptyProperties;
 		this.excludeProps = null;
 	}
 
+	/**
+	 * Returns the number of objects currently stored in the internal serialization
+	 * stack. This represents how many objects are in the active serialization path.
+	 *
+	 * @return the number of stacked objects
+	 */
 	protected int getStackSize() {
 		return stackObject.size();
 	}
 
 	/**
-	 * @return previous object on the stack.
+	 * Returns the previously serialized object from the internal stack. This is
+	 * equivalent to requesting the stack object at position zero.
+	 *
+	 * @return the previous object on the serialization stack, or {@code null} if none
 	 */
 	protected Object getPreviousObject() {
 		return getStackObject(0);
 	}
 
-	/*
-	 * Last object put on stack is 0, followed by 1,2,3,...
+	/**
+	 * Returns an object from the serialization stack based on its relative position.
+	 * Position {@code 0} corresponds to the most recently pushed object, with larger
+	 * values referencing deeper stack entries.
+	 *
+	 * @param pos the relative stack index
+	 * @return the object at the requested stack position, or {@code null} if out of range
 	 */
 	protected Object getStackObject(int pos) {
 		int x = stackObject.size();
@@ -346,24 +495,48 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	/**
-	 * Number of objects currently being serialized. first object is level 0 This is incremented by beforeSerialize() and decremented by
-	 * afterSerialize()
-	 * 
-	 * @return
+	 * Returns the current serialization depth. The first serialized object is at
+	 * level 0. This value is incremented in {@code beforeSerialize} and decremented
+	 * in {@code afterSerialize}.
+	 *
+	 * @return the current serialization depth
 	 */
 	public int getLevelsDeep() {
 		return levelsDeep;
 	}
 
 	/**
-	 * Called by OAObjectSerializeDelegate._writeObject() to determine if an object reference property should be included for serialization.
-	 * If the levelsDeep is &gt; overflowLimit, then the reference will be added to a list to serialize once the wrapper object is
-	 * serialized.
+	 * Determines whether a reference property should be serialized. This overload
+	 * delegates to the full version of {@code shouldSerializeReference} without
+	 * providing link metadata.
+	 *
+	 * @param oaObj the owning object
+	 * @param propertyName the name of the reference property
+	 * @param obj the reference value
+	 * @return {@code true} if the reference should be serialized, otherwise {@code false}
 	 */
 	protected boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object obj) {
 		return shouldSerializeReference(oaObj, propertyName, obj, null);
 	}
 
+	/**
+	 * Determines whether a reference should be serialized based on maximum limits,
+	 * cache size rules, callback behavior, and overflow detection.
+	 *
+	 * <p>The method:</p>
+	 * <ul>
+	 *   <li>Checks cache-size constraints for MANY links.</li>
+	 *   <li>Invokes callback rules when present.</li>
+	 *   <li>Prevents serialization when the depth exceeds {@code overflowLimit},
+	 *       instead adding the reference to an overflow list.</li>
+	 * </ul>
+	 *
+	 * @param oaObj the object that owns the reference
+	 * @param propertyName the property name being evaluated
+	 * @param obj the reference value
+	 * @param linkInfo optional link metadata for relationship evaluation
+	 * @return {@code true} if the reference should be serialized, otherwise {@code false}
+	 */
 	protected boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object obj, OALinkInfo linkInfo) {
 		boolean b = _shouldSerializeReference(oaObj, propertyName, obj);
 
@@ -410,7 +583,13 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 
 	private boolean bReachedMax;
 
-	// 20160502
+	/**
+	 * Indicates whether the serializer has reached its configured maximum limits.
+	 * A limit is reached when either the compressed size exceeds {@code maxSize}
+	 * or the expected number of serialized objects would exceed {@code maxObjects}.
+	 *
+	 * @return {@code true} if a maximum limit has been reached
+	 */
 	public boolean hasReachedMax() {
 		if (bReachedMax) {
 			return true;
@@ -424,8 +603,14 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	/**
-	 * Used to determine if an object reference property should be include for serialization. This will used the excludedClasses, callback,
-	 * or allReferences flag.
+	 * Core evaluator used to determine whether a reference should be serialized.
+	 * This method applies size limits, object-count limits, excluded classes,
+	 * and include/exclude property lists.
+	 *
+	 * @param oaObj the object owning the reference
+	 * @param propertyName the reference property name
+	 * @param reference the reference value being evaluated
+	 * @return {@code true} if the reference should be serialized, otherwise {@code false}
 	 */
 	private boolean _shouldSerializeReference(OAObject oaObj, String propertyName, Object reference) {
 		if (maxSize > 0) {
@@ -482,8 +667,12 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	/**
-	 * Called by objectStream to serialize wrapper. This will register this wrapper with OAThreadInfo so that OAObject will then use it for
-	 * serializing.
+	 * Writes this serializer wrapper to the output stream. Temporarily registers
+	 * this instance as the active serializer in thread-local storage so that
+	 * nested serialization uses the correct wrapper.
+	 *
+	 * @param stream the output stream used for serialization
+	 * @throws IOException if the wrapper cannot be written
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
 	    
@@ -503,6 +692,11 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
         }
 	}
 
+	/**
+	 * Returns the number of compressed bytes written by the active {@link Deflater}.
+	 *
+	 * @return the number of compressed bytes written, or {@code -1} if no deflater is active
+	 */
 	public long getCompressedWritten() {
 		if (deflater == null) {
 			return -1;
@@ -514,8 +708,16 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	private transient Deflater deflater;
 
 	/**
-	 * Note: if compression is true, then this will use a new ObjectOutputStream to save the wrapped object. Remember: each ObjectStream
-	 * keeps track of the objects that it has serialized and will not duplicated them, instead it will use an internal reference.
+	 * Writes the wrapped object and optional extra object to the output stream.
+	 * Handles both compressed and uncompressed transmission modes, creating a
+	 * secondary {@link RemoteObjectOutputStream} when compression is enabled.
+	 *
+	 * <p>The method writes wrapper metadata, serializes the main object and extra
+	 * object when present, and delegates finalization to {@code finishWrite}. It
+	 * records compression statistics and logs debug information when enabled.</p>
+	 *
+	 * @param stream the output stream receiving the serialized data
+	 * @throws IOException if serialization fails
 	 */
 	private void _writeObject(ObjectOutputStream stream) throws IOException {
 		long ts = System.currentTimeMillis();
@@ -607,7 +809,16 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	/**
-	 * Called once the _writeObject has serialized the object, so that any overFlow objects can be serialized within the same wrapper.
+	 * Writes any overflow entries accumulated during serialization. Overflow
+	 * objects are serialized using new {@link OAObjectSerializer} wrappers that
+	 * inherit stack and depth information from the recorded overflow data.
+	 *
+	 * <p>If no overflow objects exist, a {@code false} flag is written. Otherwise,
+	 * the list of overflow descriptors is written followed by individual wrapper
+	 * instances for each overflow object.</p>
+	 *
+	 * @param stream the current output stream
+	 * @throws IOException if an overflow wrapper cannot be serialized
 	 */
 	private void finishWrite(ObjectOutputStream stream) throws IOException {
 		if (listOverflow == null) {
@@ -633,6 +844,16 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 
 	public static boolean bReadId = true; // 20171218, set to false to read older data  (ex: unit test binary file) 
 
+	/**
+	 * Reads this wrapper from the input stream, capturing the number of new and
+	 * duplicate objects created during deserialization. Delegates object reading
+	 * to {@code _readObject}, then updates counters based on global values in
+	 * {@link OAObjectSerializeDelegate}.
+	 *
+	 * @param stream the input stream from which to read the wrapper
+	 * @throws IOException if deserialization fails
+	 * @throws ClassNotFoundException if an embedded object type is unknown
+	 */
 	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
 		int xDup = OAObjectSerializeDelegate.cntDup;
 		int xNew = OAObjectSerializeDelegate.cntNew;
@@ -648,7 +869,16 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	public transient int dupCount;
 
 	/**
-	 * Called by objectStream to deserialize a wrapper.
+	 * Reads the wrapped object and optional extra object from the stream. Handles
+	 * both compressed and uncompressed modes and reconstructs objects using a
+	 * corresponding {@link RemoteObjectInputStream} when necessary.
+	 *
+	 * <p>The method then calls {@code finishRead} to process any overflow entries
+	 * and reads the final object count. Debug information is logged when enabled.</p>
+	 *
+	 * @param stream the stream supplying the serialized wrapper data
+	 * @throws IOException if the wrapper cannot be read
+	 * @throws ClassNotFoundException if a referenced class cannot be resolved
 	 */
 	private void _readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
 		long ts = System.currentTimeMillis();
@@ -727,7 +957,14 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	/**
-	 * Called once readObject has loaded the wrapped object, so that any overflow objects can be included.
+	 * Processes overflow entries that were written as part of the wrapper. After
+	 * reading the overflow list, each overflow wrapper is deserialized and its
+	 * resolved object is assigned to the corresponding property of the parent
+	 * object recorded in the overflow descriptor.
+	 *
+	 * @param stream the input stream providing overflow data
+	 * @throws IOException if the overflow list or wrapper cannot be read
+	 * @throws ClassNotFoundException if an overflow object type is unknown
 	 */
 	private void finishRead(java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException {
 		if (!stream.readBoolean()) {
@@ -744,7 +981,14 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	/**
-	 * The object that is being wrapped.
+	 * Returns the wrapped primary object. If this serializer is part of an overflow
+	 * chain, the request is delegated to the parent wrapper to obtain the root
+	 * object.
+	 *
+	 * <p>If the resolved object is an {@link IODummy}, a runtime exception is
+	 * thrown to indicate that the underlying type could not be reconstructed.</p>
+	 *
+	 * @return the wrapped primary object
 	 */
 	public TYPE getObject() {
 		Object objx;
@@ -761,6 +1005,12 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		return (TYPE) objx;
 	}
 
+	/**
+	 * Returns the extra wrapped object, or delegates to the parent wrapper if this
+	 * serializer is part of an overflow chain.
+	 *
+	 * @return the extra object associated with this wrapper, or the parent's value
+	 */
 	public Object getExtraObject() {
 		if (parentWrapper != null) {
 			return parentWrapper.getExtraObject();
@@ -768,55 +1018,33 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		return extraObject;
 	}
 
-	// send an extra object
+	/**
+	 * Sets the additional object to be serialized along with the primary object.
+	 *
+	 * @param extraObject the secondary object to serialize
+	 */
 	public void setExtraObject(Object extraObject) {
 		this.extraObject = extraObject;
 	}
 
 	/**
-	 * Used to dynamically determine which objects are serialized.
-	 * 
-	 * @param callback
+	 * Assigns the callback used to control serialization behavior. The callback is
+	 * also given a reference to this serializer instance.
+	 *
+	 * @param callback the callback to use for serialization decisions
 	 */
 	public void setCallback(OAObjectSerializerCallback callback) {
 		this.callback = callback;
 		callback.setOAObjectSerializer(this);
 	}
 	
+	/**
+	 * Returns the callback assigned to this serializer.
+	 *
+	 * @return the active serializer callback, or {@code null} if none is set
+	 */
 	public OAObjectSerializerCallback getCallback() {
 	    return this.callback;
 	}
 
-	public static void main(String[] args) throws Exception {
-		String s = "com.viaoa.object.OAObjectSerializer";
-		Logger log = Logger.getLogger(s);
-		log.setLevel(Level.FINER);
-		ConsoleHandler ch = new ConsoleHandler();
-		ch.setLevel(Level.FINER);
-		log.addHandler(ch);
-
-		Object obj = new String("abcedef");
-		com.viaoa.object.OAObjectSerializer wrap = new OAObjectSerializer(obj, true, false);
-
-		ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
-		ObjectOutputStream oos = new ObjectOutputStream(bos);
-		oos.writeObject(wrap);
-		oos.flush();
-		oos.close();
-
-		bos.flush();
-		byte[] bs = bos.toByteArray();
-
-		ByteArrayInputStream bis = new ByteArrayInputStream(bs);
-		ObjectInputStream ois = new ObjectInputStream(bis);
-		Object objx = ois.readObject();
-		int xx = 4;
-		System.out.println("DONE");
-
-		/*
-		Object objz = IncludeProperties.values()[0].ordinal();
-		for (IncludeProperties ip : IncludeProperties.values()) {
-		}
-		*/
-	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,14 +56,42 @@ public class OAObjectXMLDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectXMLDelegate.class.getName());
 
 	/**
-	 * Called by OAXMLWriter to save object as xml. All ONE, MANY2MANY, and MANY w/o reverse getMethod References will store reference Ids,
-	 * using the name of reference property as the tag.<br>
-	 * Note: if a property's value is null, then it will not be included. see #read
+	 * Writes the specified {@link OAObject} to XML using the supplied
+	 * {@link OAXMLWriter}. This is a convenience method that delegates
+	 * to the overloaded {@code write(..., boolean bWriteClassName)} version
+	 * with {@code bWriteClassName} set to {@code false}.
+	 *
+	 * @param oaObj the object to serialize
+	 * @param ow the XML writer receiving output
+	 * @param tagName the tag name to wrap the serialized object
+	 * @param bKeyOnly whether to write key-only references
+	 * @param cascade the cascade controller used for recursion checks
 	 */
 	public static void write(final OAObject oaObj, final OAXMLWriter ow, final String tagName, boolean bKeyOnly, final OACascade cascade) {
 		write(oaObj, ow, tagName, bKeyOnly, cascade, false);
 	}
 
+	/**
+	 * Serializes an {@link OAObject} to XML using the provided
+	 * {@link OAXMLWriter}. Wraps the output in the specified tag and
+	 * delegates full object serialization to the internal {@link #_write}
+	 * implementation.
+	 * <p>
+	 * Behavior visible in this method:
+	 * <ul>
+	 *   <li>Returns immediately if the object or writer is {@code null}.</li>
+	 *   <li>Pushes and later pops the tag name around the generated XML.</li>
+	 *   <li>Calls the private {@code _write(...)} method to perform
+	 *       attribute creation, property output, and recursive link writing.</li>
+	 * </ul>
+	 *
+	 * @param oaObj the object to serialize
+	 * @param ow the XML writer receiving output
+	 * @param tagName the XML tag name to write
+	 * @param bKeyOnly whether to write only object identifiers
+	 * @param cascade cascade controller for recursion and key-only decisions
+	 * @param bWriteClassName whether to include the class attribute
+	 */
 	public static void write(final OAObject oaObj, final OAXMLWriter ow, String tagName, boolean bKeyOnly, final OACascade cascade,
 			final boolean bWriteClassName) {
 		if (oaObj == null || ow == null) {
@@ -81,6 +109,35 @@ public class OAObjectXMLDelegate {
 		}
 	}
 
+	/**
+	 * Internal implementation method that performs full XML serialization of
+	 * the specified {@link OAObject}. This method writes object identifiers,
+	 * property values, link references, nested objects, and hub contents.
+	 * <p>
+	 * Behavior visible in this method:
+	 * <ul>
+	 *   <li>Determines whether the object should be output key-only based on
+	 *       cascade rules and {@link OAXMLWriter#willBeIncludedLater}.</li>
+	 *   <li>Constructs XML attributes including {@code id} or {@code idref},
+	 *       and optionally {@code class}.</li>
+	 *   <li>Outputs regular properties from {@link OAObjectInfo} using
+	 *       {@link OAObjectReflectDelegate#getProperty} and formats values
+	 *       using {@link OAXMLWriter} and OA temporal classes.</li>
+	 *   <li>Writes link properties according to metadata flags and
+	 *       {@link OAXMLWriter#shouldWriteProperty} rules.</li>
+	 *   <li>Writes additional dynamic properties via
+	 *       {@link OAObjectPropertyDelegate#getProperty} when permitted.</li>
+	 *   <li>Handles nested objects and hubs through recursive calls and
+	 *       {@link HubXMLDelegate}.</li>
+	 * </ul>
+	 *
+	 * @param oaObj the object being serialized
+	 * @param ow the XML writer receiving output
+	 * @param tagName name of the XML element to create
+	 * @param bKeyOnly whether the output should contain only identifiers
+	 * @param cascade cascade state controller
+	 * @param bWriteClassName whether to include the class attribute
+	 */
 	private static void _write(final OAObject oaObj, final OAXMLWriter ow, String tagName, boolean bKeyOnly, final OACascade cascade,
 			final boolean bWriteClassName) {
 		Class c = oaObj.getClass();
@@ -273,6 +330,15 @@ public class OAObjectXMLDelegate {
 		ow.println("</" + tagName + ">");
 	}
 
+	/**
+	 * Determines whether the specified property name matches one of the
+	 * object's identifier properties.
+	 *
+	 * @param propertyName the name to test
+	 * @param propIds the list of identifier property names
+	 * @return {@code true} if the name matches an identifier property,
+	 *         otherwise {@code false}
+	 */
 	private static boolean isObjectKey(String propertyName, String[] propIds) {
 		if (propertyName == null || propIds == null) {
 			return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,33 @@ public class OAObjectUniqueDelegate {
     private static final Object Lock = new Object();
 
     /**
-     * Find and/or create unique OAObject.
+     * Finds or creates an {@link OAObject} instance with the specified unique
+     * property value. The method performs the lookup using several layers of
+     * resolution and optionally creates a new instance when no match exists.
+     * <p>
+     * Behavior visible in this implementation:
+     * <ul>
+     *   <li>Immediately returns {@code null} if {@code clazz}, {@code uniqueKey},
+     *       or {@code propertyName} are invalid.</li>
+     *   <li>Searches the {@link OAObjectCacheDelegate} for an existing object
+     *       matching the class, property name, and unique value.</li>
+     *   <li>If running as a client, attempts to delegate the request to the
+     *       remote server using {@link OASyncClient} and
+     *       {@link RemoteServerInterface#getUnique(Class, String, Object, boolean)}.</li>
+     *   <li>Performs a data source query using {@link OASelect} if not already
+     *       found.</li>
+     *   <li>If still not found and {@code bAutoCreate} is {@code true}, enters a
+     *       synchronized block to safely create and initialize a new instance.</li>
+     *   <li>Uses {@link OAThreadLocalDelegate#setLoading(boolean)} to suppress
+     *       change events during initialization of the new instance.</li>
+     * </ul>
+     *
+     * @param clazz the class of object to search or create
+     * @param propertyName the name of the unique property
+     * @param uniqueKey the unique value to match
+     * @param bAutoCreate whether to create a new instance if none exists
+     * @return the matching or newly created {@link OAObject}, or {@code null} if
+     *         not found and auto-creation is disabled
      */
     public static OAObject getUnique(final Class<? extends OAObject> clazz, final String propertyName, final Object uniqueKey, final boolean bAutoCreate) {
         
@@ -122,7 +148,4 @@ public class OAObjectUniqueDelegate {
         
         return oaObj;
     }
-    
-    
-    
 }
