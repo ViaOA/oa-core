@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,16 @@ import com.viaoa.hub.HubEvent;
  */
 public interface OATriggerListener<T extends OAObject> {
     
-    /**
-     * Called when a change is made to a dependent property. 
-     * @param objRoot root object that is affected by the event
-     * @param hubEvent info about the event
-     * @param propertyPathFromRoot path from root class to the object that has the event
-     */
+	/**
+	 * Invoked when a change occurs along one of the trigger's dependent property
+	 * paths. The method receives the root object, the associated hub event, and
+	 * the property path from the root to the object where the event occurred.
+	 *
+	 * @param objRoot              the root object affected by the change
+	 * @param hubEvent             details about the triggering event
+	 * @param propertyPathFromRoot the path from the root object to the event source
+	 * @throws Exception if the listener encounters an error during processing
+	 */
     public void onTrigger(T objRoot, HubEvent hubEvent, String propertyPathFromRoot) throws Exception;
 }
 

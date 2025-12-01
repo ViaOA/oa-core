@@ -154,12 +154,24 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     protected OATemplate templateDropDownDisplay;
 
     
+    /**
+     * Creates a type-ahead instance using the supplied list as the source for
+     * matching operations.
+     *
+     * @param arrayToUse the list of objects used for type-ahead lookup
+     */
     public OATypeAhead(List<T> arrayToUse) {
         alTo = arrayToUse;
     }
 
     /**
-     * @param hub root hub used for searches
+     * Creates a type-ahead instance using the specified root hub and
+     * initialization parameters. The hub provides context for finding related
+     * objects, and the parameters control matching, display, and filtering
+     * behavior.
+     *
+     * @param hub    the root hub used for searches
+     * @param params the configuration parameters
      */
     public OATypeAhead(Hub<F> hub, OATypeAheadParams params) {
         if (hub == null) throw new IllegalArgumentException("hub can not be null");
@@ -170,16 +182,13 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     
     
     /**
-     * Create a new TA using an array of strings, and update a String property.
-     * Example:  to update an address.country from a list of countries.
-     * String[] countries = ...
-     * OATypeAhead ta = OATypeAhead.createTypeAhead(countries, hubAddress, AddressPP.country());
-     * 
-     * Note: this is treated as a freeform, where user can enter a value that is not in the list.
-     * 
-     * @param values array of values to choose from
-     * param hubTo hub where AO.propertyName will be updated with selected value from values.
-     * param propertyName name of property that is to be updated.
+     * Creates a type-ahead instance backed by a hub of {@link VString}
+     * objects, using each string in the supplied array as an available
+     * value. This supports freeform input where entries may not be
+     * restricted to the predefined list.
+     *
+     * @param values the array of string values
+     * @return the constructed type-ahead instance
      */
     public static OATypeAhead createTypeAhead(String[] values) {
         if (values == null) values = new String[0];
@@ -232,6 +241,11 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         
         public boolean useAOOnly=false;
         
+        /**
+         * Initializes display-related parameters, selecting a default display
+         * property when none is provided. This method is called during setup of
+         * an {@link OATypeAheadParams} instance.
+         */
         void setup() {
             if (OAString.isEmpty(displayPropertyPath)) {
                 displayPropertyPath = dropDownDisplayPropertyPath;
@@ -246,6 +260,13 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     
 
     
+    /**
+     * Initializes the type-ahead instance using the supplied parameters.
+     * Sets up property paths, templates, filters, and finder definitions
+     * used for searching, matching, sorting, and formatting.
+     *
+     * @param params the configuration parameters to apply
+     */
     protected void setup(OATypeAheadParams params) {
         if (params == null) return;
         params.setup();
@@ -324,11 +345,24 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
 		}
     }
 
+    /**
+     * Returns the current search text used for the most recent lookup.
+     *
+     * @return the current search text, or null if none
+     */
     public String getSearchText() {
         return this.searchText;
     }
 
     
+    /**
+     * Executes a search using the supplied text and returns all matching
+     * objects. Previous search state is cleared, and concurrent searches are
+     * canceled using version tracking.
+     *
+     * @param searchText the text to match against
+     * @return the list of matching objects, or null if superseded
+     */
     public List<T> search(String searchText) {
         this.searchText = searchText;
         try {
@@ -344,6 +378,13 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         }
     }
 
+    /**
+     * Attempts to locate an object of type T using its identifier. Searches
+     * the hub, list, or a finder depending on configuration.
+     *
+     * @param id the string identifier
+     * @return the matching object, or null if not found
+     */
     public T findObjectUsingId(String id) {
         final OAObjectKey ok = OAObjectKeyDelegate.createObjectKey(classTo, id);
         
@@ -377,7 +418,15 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         return null;
     }
     
-    
+    /**
+     * Internal search implementation that performs the actual filtering and
+     * optional sorting of results. Abort occurs when superseded by a newer
+     * search.
+     *
+     * @param searchText the text to match against
+     * @param cntSearch  the version stamp of this search
+     * @return the matching objects, or null if canceled
+     */
     protected List<T> _search(String searchText, final int cntSearch) {
         if (cntSearch != aiSearch.get()) return null;
         if (searchText == null) {
@@ -440,36 +489,69 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     }
 
     /**
-     * minimum numbers of input chars before doing a search.
-     * 0 allows to show all.  -1 is default.
+     * Returns the minimum number of characters required before a search is
+     * performed.
+     *
+     * @return the minimum input length
      */
     public int getMinimumInputLength() {
         return minInputLength;
     }
+
+    /**
+     * Sets the minimum number of characters required before performing a
+     * search.
+     *
+     * @param x the minimum length
+     */
     public void setMinimumInputLength(int x) {
         this.minInputLength = x;
     }
 
     /**
-     * Maximum amount of results that will be returned at one time.
+     * Returns the maximum number of results returned by a search.
+     *
+     * @return the result limit
      */
     public int getMaxResults() {
         return maxResults;
     }
+
+    /**
+     * Sets the maximum number of results that will be returned by a search.
+     *
+     * @param x the maximum number of results
+     */
     public void setMaxResults(int x) {
         this.maxResults = x;
     }
     
+    /**
+     * Enables display of the full value as a hint in the associated
+     * text field.
+     *
+     * @param b ignored; enabling is unconditional
+     */
     public void setShowHint(boolean b) {
         this.showHint = true;
     }
+
+    /**
+     * Returns whether the hint display is enabled.
+     *
+     * @return true if the hint should be shown
+     */
     public boolean getShowHint() {
         return this.showHint;
     }
-    
 
-   
-    /** callback during search */
+    /**
+     * Determines whether the supplied object should be included in search
+     * results, applying duplicate suppression based on GUID.
+     *
+     * @param obj the object to evaluate
+     * @return true if the object is accepted
+     */
     protected boolean isUsed(T obj) {
         boolean b = _isUsed(obj);
         if (b) {
@@ -479,7 +561,14 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         return b;
     }
 
-    /** callback during search to get the value to use for matching */
+    /**
+     * Retrieves the value used for matching the search text against the
+     * supplied object. Uses templates, property paths, or conversion to
+     * construct the comparison value.
+     *
+     * @param obj the object to evaluate
+     * @return the value used for matching
+     */
     protected String getMatchValue(T obj) {
         Object objCompare;
         
@@ -497,12 +586,29 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         return str;
     }
         
+    /**
+     * Evaluates whether the object is a match based on its derived match
+     * value and the current search text.
+     *
+     * @param obj the object to test
+     * @return true if the object matches
+     */
     protected boolean _isUsed(T obj) {
         String str = getMatchValue(obj); 
         boolean b = isUsed(obj, str, getSearchText(), searchTextSplit);
         return b;
     }
     
+    /**
+     * Determines whether the supplied object matches all components of the
+     * search text. Comparison is case-insensitive.
+     *
+     * @param obj              the object being tested
+     * @param objSearchValue   the comparison value for the object
+     * @param searchText       the raw search text
+     * @param searchTextSplit  the tokenized search text
+     * @return true if the object matches
+     */
     protected boolean isUsed(T obj, String objSearchValue, String searchText, String[] searchTextSplit) {
         // searchText is included in case this method is overwritten
         if (objSearchValue != null) objSearchValue = objSearchValue.toUpperCase();
@@ -519,7 +625,13 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     }
     
     
-    /** callback during search to get the display value of a selected &lt;T&gt; object. */
+    /**
+     * Returns the formatted display value for the supplied object using
+     * templates, property paths, or converters.
+     *
+     * @param obj the object to format
+     * @return the display value
+     */
     public String getDisplayValue(T obj) {
         String s;
 
@@ -538,7 +650,13 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     }
     
     
-    /** callback during search to get the dropdown display value of matching T objects.*/
+    /**
+     * Returns the dropdown display value for the supplied object using
+     * templates, property paths, or converters.
+     *
+     * @param obj the object to format
+     * @return the dropdown display value
+     */
     public String getDropDownDisplayValue(T obj) {
         String s;
     
@@ -557,7 +675,14 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         return s;
     }
     
-    /** callback during search to get the sort value of matching T objects. */
+    /**
+     * Returns the value used for sorting the supplied object in search
+     * results. Uses templates, property paths, or converters, and
+     * returns the value in uppercase when available.
+     *
+     * @param obj the object to evaluate
+     * @return the sort value for the object
+     */
     public String getSortValue(T obj) {
         String s;
         if (ppSortValue != null) {
@@ -570,10 +695,21 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
         return s;
     }
 
+    /**
+     * Returns the target class associated with the type-ahead lookup.
+     *
+     * @return the target class for objects being searched
+     */
     public Class getToClass() {
         return classTo;
     }
 
+    /**
+     * Returns the hub used as the root search context, or null if the
+     * type-ahead instance is list-based.
+     *
+     * @return the associated hub, or null
+     */
     public Hub getHub() {
         return hub;
     }

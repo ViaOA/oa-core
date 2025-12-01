@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,16 @@ public class OATriggerMethodListener implements OATriggerListener {
     private final boolean bOnlyUseLoadedData;
     private final OAObjectInfo oi;
     
+    /**
+     * Creates a trigger listener that uses reflection to invoke the specified
+     * method on all affected root objects when a dependent property changes.
+     * The listener resolves all matching objects using either loaded data or
+     * data source queries based on the supplied flag.
+     *
+     * @param clazz               the class containing the trigger method
+     * @param method              the method to invoke when the trigger fires
+     * @param bOnlyUseLoadedData  true to restrict processing to loaded objects
+     */
     public OATriggerMethodListener(Class clazz, Method method, boolean bOnlyUseLoadedData) {
         this.clazz = clazz;
         this.method = method;
@@ -56,8 +66,16 @@ public class OATriggerMethodListener implements OATriggerListener {
     }
     
     /**
-     * called by OAObjectInfo.onChange(..)
-     * 
+     * Handles a trigger event by invoking the configured method on all root
+     * objects affected by the change. If a root object is supplied, the method
+     * is invoked directly. Otherwise, matching objects are located using an
+     * {@link OAFinder}, cached hubs, or data source queries depending on
+     * loading constraints.
+     *
+     * @param objRoot               the root object to invoke the method on, or null to search
+     * @param hubEvent              the event that caused the trigger
+     * @param propertyPathFromRoot  the path from the root object to the event source
+     * @throws Exception if the reflective invocation fails
      */
     @Override
     public void onTrigger(OAObject objRoot, final HubEvent hubEvent, String propertyPathFromRoot) throws Exception {

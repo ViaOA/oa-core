@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,19 @@ public class OATrigger {
     protected final boolean bUseBackgroundThreadIfNeeded;
     protected OATrigger[] dependentTriggers;
     
+    /**
+     * Creates a trigger that monitors one or more property paths relative to a
+     * given root class and invokes the supplied listener when events occur.
+     *
+     * @param name                         the trigger name
+     * @param rootClass                    the root class from which property paths are evaluated
+     * @param triggerListener              the listener to invoke when the trigger fires
+     * @param propertyPaths                the property paths that this trigger depends on
+     * @param bOnlyUseLoadedData           true to restrict evaluation to already-loaded data
+     * @param bServerSideOnly              true to limit execution to the server
+     * @param bUseBackgroundThread         true to execute the trigger in a background thread
+     * @param bUseBackgroundThreadIfNeeded true to run in a background thread only when required
+     */
     public OATrigger(
         String name,
         Class rootClass,
@@ -67,6 +80,19 @@ public class OATrigger {
         this.bUseBackgroundThreadIfNeeded = bUseBackgroundThreadIfNeeded;
     }
     
+    /**
+     * Creates a trigger that monitors a single property path relative to a root
+     * class and invokes the supplied listener when events occur.
+     *
+     * @param name                         the trigger name
+     * @param rootClass                    the root class from which the property path is evaluated
+     * @param triggerListener              the listener to invoke when the trigger fires
+     * @param propertyPath                 the dependent property path
+     * @param bOnlyUseLoadedData           true to restrict evaluation to already-loaded data
+     * @param bServerSideOnly              true to limit execution to the server
+     * @param bUseBackgroundThread         true to execute the trigger in a background thread
+     * @param bUseBackgroundThreadIfNeeded true to run in a background thread only when required
+     */
     public OATrigger(
         String name,
         Class rootClass,
@@ -87,9 +113,20 @@ public class OATrigger {
         this.bUseBackgroundThreadIfNeeded = bUseBackgroundThreadIfNeeded;
     }
 
+    /**
+     * Returns the triggers that depend on this trigger.
+     *
+     * @return an array of dependent triggers, or null if none are defined
+     */
     public OATrigger[] getDependentTriggers() {
         return dependentTriggers;        
     }
+
+    /**
+     * Returns the listener associated with this trigger.
+     *
+     * @return the trigger listener
+     */
     public OATriggerListener getTriggerListener() {
         return triggerListener;
     }

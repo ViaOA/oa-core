@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class OATriggerDelegate {
 
+	/**
+	 * Creates and registers a new trigger using the supplied parameters and
+	 * returns the resulting {@link OATrigger}. The trigger is constructed with
+	 * the given property paths and behavioral flags, then registered through
+	 * {@link #createTrigger(OATrigger)}.
+	 *
+	 * @param name                    the trigger name
+	 * @param rootClass               the root class the trigger applies to
+	 * @param triggerListener         the listener invoked when the trigger fires
+	 * @param dependentPropertyPaths  the property paths this trigger monitors
+	 * @param bOnlyUseLoadedData      true to restrict evaluation to loaded data
+	 * @param bServerSideOnly         true to run only on the server
+	 * @param bBackgroundThread       true to use a background thread for execution
+	 * @param bBackgroundThreadIfNeeded true to use a background thread only when required
+	 * @return the newly created trigger
+	 */
 	public static OATrigger createTrigger(
 			String name,
 			Class rootClass,
@@ -59,13 +75,23 @@ public class OATriggerDelegate {
 		return t;
 	}
 
+	/**
+	 * Registers the given trigger without skipping any initial non-many
+	 * property. This delegates to {@link #createTrigger(OATrigger, boolean)}.
+	 *
+	 * @param trigger the trigger to register
+	 */
 	public static void createTrigger(OATrigger trigger) {
 		createTrigger(trigger, false);
 	}
 
 	/**
-	 * @param bSkipFirstNonManyProperty if true, then if the first prop of the propertyPath is not Type=many, then it will not be used. This
-	 *                                  is used when there is a HubListener already listening to the objects.
+	 * Registers the supplied trigger with the {@link OAObjectInfo} associated
+	 * with its root class. Optionally skips the first property in the trigger's
+	 * path if it is not a many-relationship.
+	 *
+	 * @param trigger                       the trigger to register
+	 * @param bSkipFirstNonManyProperty     true to skip a non-many first property in the path
 	 */
 	public static void createTrigger(OATrigger trigger, boolean bSkipFirstNonManyProperty) {
 		if (trigger == null) {
@@ -75,6 +101,13 @@ public class OATriggerDelegate {
 		oi.createTrigger(trigger, bSkipFirstNonManyProperty);
 	}
 
+	/**
+	 * Removes the specified trigger from the {@link OAObjectInfo} of its root
+	 * class.
+	 *
+	 * @param trigger the trigger to remove
+	 * @return true if removed, false if the trigger was null
+	 */
 	public static boolean removeTrigger(OATrigger trigger) {
 		if (trigger == null) {
 			return false;
@@ -91,12 +124,22 @@ public class OATriggerDelegate {
 		boolean bIsLoading;
 		public Object context;
 
+		/**
+		 * Captures the current thread-local loading state and context
+		 * so they can be restored when executed asynchronously.
+		 *
+		 * @param runnable the runnable to wrap
+		 */
 		public TriggerRunnable(Runnable runnable) {
 			this.runnable = runnable;
 			this.bIsLoading = OAThreadLocalDelegate.isLoading();
 			this.context = OAThreadLocalDelegate.getContext();
 		}
 
+		/**
+		 * Restores the captured thread-local context and loading state, executes
+		 * the wrapped runnable, and then resets the loading state if necessary.
+		 */
 		@Override
 		public void run() {
 			try {
@@ -113,6 +156,13 @@ public class OATriggerDelegate {
 		}
 	}
 
+	/**
+	 * Executes the supplied runnable using the trigger executor service,
+	 * preserving the caller's thread-local context through a
+	 * {@link TriggerRunnable} wrapper.
+	 *
+	 * @param r the runnable to execute
+	 */
 	public static void runTrigger(Runnable r) {
 		Runnable rx = new TriggerRunnable(r);
 		getExecutorService().submit(rx);
@@ -120,6 +170,12 @@ public class OATriggerDelegate {
 
 	private static volatile ThreadPoolExecutor executorService;
 	
+	/**
+	 * Returns the shared executor service used for asynchronous trigger
+	 * execution.
+	 *
+	 * @return the executor service
+	 */
 	protected static ExecutorService getExecutorService() {
 	    return Holder.INSTANCE;
 	}
