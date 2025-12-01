@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,13 @@ public class OAThreadLocalDelegate {
 	private static final AtomicInteger TotalJackson = new AtomicInteger();
 	private static final AtomicInteger TotalIsRefreshing = new AtomicInteger();
 
+	/**
+	 * Returns the thread-local OAThreadLocal instance for the current thread.
+	 * Creates a new instance when none exists and creation is allowed.
+	 *
+	 * @param bCreateIfNull true to create a new thread-local instance if missing
+	 * @return the thread-local instance, or null if none exists and creation is disabled
+	 */
 	protected static OAThreadLocal getThreadLocal(boolean bCreateIfNull) {
 		OAThreadLocal ti = threadLocal.get();
 		if (ti == null && bCreateIfNull) {
@@ -101,8 +108,10 @@ public class OAThreadLocalDelegate {
 	private static long msTransaction;
 
 	/**
-	 * Called by OATransaction.start() Used internally by classes that work with the transaction. Use OATransaction instead of calling
-	 * directly.
+	 * Sets the current thread's transaction reference and updates the global
+	 * transaction counter. Called internally by transaction-related classes.
+	 *
+	 * @param t the transaction to assign, or null to clear it
 	 */
 	public static void setTransaction(OATransaction t) {
 		OAThreadLocal ti = getThreadLocal(true);
@@ -118,6 +127,12 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Returns the current thread's active transaction, or null if no
+	 * transaction is registered.
+	 *
+	 * @return the current transaction or null
+	 */
 	public static OATransaction getTransaction() {
 		if (TotalTransaction.get() == 0) {
 			return null;
@@ -130,7 +145,10 @@ public class OAThreadLocalDelegate {
 	}
 
 	/**
-	 * @see OAThreadLocal#loading
+	 * Returns whether the specified thread-local instance is in a loading state.
+	 *
+	 * @param ti the thread-local instance
+	 * @return true if loading is greater than zero
 	 */
 	public static boolean isLoading() {
 		boolean b;
@@ -144,6 +162,12 @@ public class OAThreadLocalDelegate {
 		return b;
 	}
 
+	/**
+	 * Returns whether the specified thread-local instance is in a loading state.
+	 *
+	 * @param ti the thread-local instance
+	 * @return true if loading is greater than zero
+	 */
 	protected static boolean isLoading(OAThreadLocal ti) {
 		if (ti == null) {
 			return false;
@@ -151,6 +175,13 @@ public class OAThreadLocalDelegate {
 		return ti.loading > 0;
 	}
 
+	/**
+	 * Updates the loading flag for the current thread and returns the previous
+	 * loading state.
+	 *
+	 * @param b true to increase the loading count, false to decrease it
+	 * @return previous loading flag before the update
+	 */
 	public static boolean setLoading(boolean b) {
 		// LOG.finer(""+b);
 		return setLoading(OAThreadLocalDelegate.getThreadLocal(b), b);
@@ -158,6 +189,14 @@ public class OAThreadLocalDelegate {
 
 	private static long msLoadingObject;
 
+	/**
+	 * Updates the loading count for the specified thread-local instance and the
+	 * global loading counter. Logs throttled warnings when limits are exceeded.
+	 *
+	 * @param ti the thread-local instance
+	 * @param b  true to increment loading, false to decrement it
+	 * @return previous loading state
+	 */
 	protected static boolean setLoading(OAThreadLocal ti, boolean b) {
 		if (ti == null) {
 			return false;
@@ -180,6 +219,12 @@ public class OAThreadLocalDelegate {
 	}
 
 	// CacheAddMode ----------------------
+	/**
+	 * Returns the current thread's object-cache add mode, or the default mode
+	 * when no add mode is active.
+	 *
+	 * @return the current add mode
+	 */
 	public static int getObjectCacheAddMode() {
 		int mode;
 		if (OAThreadLocalDelegate.TotalObjectCacheAddMode.get() == 0) {
@@ -194,6 +239,12 @@ public class OAThreadLocalDelegate {
 
 	private static long msObjectCacheAddMode;
 
+	/**
+	 * Sets the object-cache add mode for the current thread and updates the
+	 * global counter when transitioning between active and default modes.
+	 *
+	 * @param mode the add mode to assign
+	 */
 	public static void setObjectCacheAddMode(int mode) {
 		// LOG.finer("mode="+mode);
 		if (mode == OAObjectCacheDelegate.DefaultAddMode) {
@@ -227,6 +278,13 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Returns the object-cache add mode for the specified thread-local
+	 * instance, or the default if none is set.
+	 *
+	 * @param ti the thread-local instance
+	 * @return the add mode
+	 */
 	protected static int getObjectCacheAddMode(OAThreadLocal ti) {
 		if (ti == null) {
 			return OAObjectCacheDelegate.DefaultAddMode;
@@ -238,9 +296,15 @@ public class OAThreadLocalDelegate {
 	}
 
 	// OAObjectSerializeInterface ---------------
-	/**
+	/*
 	 * used by Serialization for the current thread. OAObjectSerializeInterface is called to return the type of serialization to perform.
 	 * SERIALIZE_STRIP_NONE or SERIALIZE_STRIP_REFERENCES
+	 */
+	/**
+	 * Returns the current thread's object serializer, or null if serialization
+	 * stripping is not active.
+	 *
+	 * @return the serializer or null
 	 */
 	public static OAObjectSerializer getObjectSerializer() {
 		OAObjectSerializer si;
@@ -254,6 +318,13 @@ public class OAThreadLocalDelegate {
 		return si;
 	}
 
+	/**
+	 * Returns the object serializer assigned to the specified thread-local
+	 * instance.
+	 *
+	 * @param ti the thread-local instance
+	 * @return the serializer or null
+	 */
 	protected static OAObjectSerializer getObjectSerializer(OAThreadLocal ti) {
 		if (ti == null) {
 			return null;
@@ -261,6 +332,12 @@ public class OAThreadLocalDelegate {
 		return ti.objectSerializer;
 	}
 
+	/**
+	 * Sets the object serializer for the current thread and updates global
+	 * serializer counters.
+	 *
+	 * @param si the serializer to assign, or null to clear it
+	 */
 	public static void setObjectSerializer(OAObjectSerializer si) {
 		// LOG.finer("OAObjectSerializer="+(si != null));
 		setObjectSerializer(OAThreadLocalDelegate.getThreadLocal(si != null), si);
@@ -268,6 +345,13 @@ public class OAThreadLocalDelegate {
 
 	private static long msObjectSerializer;
 
+	/**
+	 * Assigns the serializer to the specified thread-local instance and updates
+	 * the global serializer counter when transitioning to or from a null state.
+	 *
+	 * @param ti the thread-local instance
+	 * @param si the serializer to assign
+	 */
 	protected static void setObjectSerializer(OAThreadLocal ti, OAObjectSerializer si) {
 		if (ti == null) {
 			return;
@@ -295,6 +379,13 @@ public class OAThreadLocalDelegate {
 	}
 
 	// SuppressCSMessages -----------------------
+	/**
+	 * Returns whether the specified thread-local instance has message
+	 * suppression enabled.
+	 *
+	 * @param ti the thread-local instance
+	 * @return true if suppressed, otherwise false
+	 */
 	public static boolean isSuppressCSMessages() {
 		boolean b;
 		if (OAThreadLocalDelegate.TotalSuppressCSMessages.get() == 0) {
@@ -307,6 +398,13 @@ public class OAThreadLocalDelegate {
 		return b;
 	}
 
+	/**
+	 * Returns whether the specified thread-local instance has message
+	 * suppression enabled.
+	 *
+	 * @param ti the thread-local instance
+	 * @return true if suppressed, otherwise false
+	 */
 	public static boolean isSuppressCSMessages(OAThreadLocal ti) {
 		if (ti == null) {
 			return false;
@@ -314,6 +412,12 @@ public class OAThreadLocalDelegate {
 		return ti.suppressCSMessages > 0;
 	}
 
+	/**
+	 * Enables or disables suppression of client/server messages for the
+	 * current thread.
+	 *
+	 * @param b true to enable suppression, false to disable
+	 */
 	public static void setSuppressCSMessages(boolean b) {
 		// LOG.finest(""+b);
 		setSuppressCSMessages(OAThreadLocalDelegate.getThreadLocal(b), b);
@@ -321,6 +425,14 @@ public class OAThreadLocalDelegate {
 
 	private static long msSuppressCSMessages;
 
+	/**
+	 * Updates suppression counts for the specified thread-local instance and
+	 * the global suppression counter. Logs throttled warnings when thresholds
+	 * are exceeded.
+	 *
+	 * @param ti the thread-local instance
+	 * @param b  true to increment suppression, false to decrement
+	 */
 	public static void setSuppressCSMessages(OAThreadLocal ti, boolean b) {
 		if (ti == null) {
 			return;
@@ -343,7 +455,9 @@ public class OAThreadLocalDelegate {
 	private final static ConcurrentHashMap hmDeleting = new ConcurrentHashMap<>();
 
 	/**
-	 * Is this thread currently deleting.
+	 * Returns whether the current thread is in a deleting state.
+	 *
+	 * @return true if deleting is active for this thread
 	 */
 	public static boolean isDeleting() {
 		if (OAThreadLocalDelegate.TotalDelete.get() == 0) {
@@ -357,7 +471,10 @@ public class OAThreadLocalDelegate {
 	}
 
 	/**
-	 * Is any thread currently deleting an object.
+	 * Returns whether the current thread is deleting the specified object.
+	 *
+	 * @param obj the object to check
+	 * @return true if this thread is deleting the object
 	 */
 	public static boolean isDeleting(Object obj) {
 		if (obj == null) {
@@ -367,7 +484,12 @@ public class OAThreadLocalDelegate {
 	}
 
 	/**
-	 * Is this thread currently deleting an object/hub.
+	 * Returns whether the given thread-local instance is deleting the specified
+	 * object.
+	 *
+	 * @param ti  the thread-local instance
+	 * @param obj the object to check
+	 * @return true if the instance is deleting the object
 	 */
 	public static boolean isThreadDeleting(Object obj) {
 		if (obj == null) {
@@ -388,6 +510,14 @@ public class OAThreadLocalDelegate {
 		return b;
 	}
 
+	/**
+	 * Returns whether the given thread-local instance is deleting the specified
+	 * object.
+	 *
+	 * @param ti  the thread-local instance
+	 * @param obj the object to check
+	 * @return true if the instance is deleting the object
+	 */
 	protected static boolean isDeleting(OAThreadLocal ti, Object obj) {
 		if (obj == null) {
 			return false;
@@ -409,6 +539,13 @@ public class OAThreadLocalDelegate {
 
 	private static long msDeleting;
 
+	/**
+	 * Adds or removes the specified object from the global deleting map and
+	 * updates the deleting state for the current thread.
+	 *
+	 * @param obj the object to update
+	 * @param b   true to mark as deleting, false to unmark
+	 */
 	public static void setDeleting(Object obj, boolean b) {
 		// LOG.finer(""+b);
 		if (obj == null) {
@@ -427,6 +564,14 @@ public class OAThreadLocalDelegate {
 		setDeleting(OAThreadLocalDelegate.getThreadLocal(b), obj, b);
 	}
 
+	/**
+	 * Updates the deleting state for the specified thread-local instance and
+	 * adjusts the global delete counter.
+	 *
+	 * @param ti  the thread-local instance
+	 * @param obj the object being updated
+	 * @param b   true to add, false to remove
+	 */
 	protected static void setDeleting(OAThreadLocal ti, Object obj, boolean b) {
 		if (ti == null) {
 			return;
@@ -485,13 +630,28 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/*
+	 * Flag used for generic/misc purposes
+	 */
 	/**
-	 * getFlag ----------------------- Flag used for generic/misc purposes
+	 * Returns whether the specified flag object exists in the current
+	 * thread-local flag list.
+	 *
+	 * @param obj the flag object
+	 * @return true if present
 	 */
 	public static boolean isFlag(Object obj) {
 		return isFlag(OAThreadLocalDelegate.getThreadLocal(false), obj);
 	}
 
+	/**
+	 * Returns whether the specified flag object exists in the given
+	 * thread-local instance.
+	 *
+	 * @param ti  the thread-local instance
+	 * @param obj the flag object
+	 * @return true if present
+	 */
 	protected static boolean isFlag(OAThreadLocal ti, Object obj) {
 		if (ti == null) {
 			return false;
@@ -501,10 +661,22 @@ public class OAThreadLocalDelegate {
 
 	private static long msFlag;
 
+	/**
+	 * Adds the specified flag object to the current thread-local flag list.
+	 *
+	 * @param obj the flag object to add
+	 */
 	public static void setFlag(Object obj) {
 		setFlag(OAThreadLocalDelegate.getThreadLocal(true), obj);
 	}
 
+	/**
+	 * Adds the specified flag to the thread-local instance and logs warnings
+	 * when the flag list grows beyond safe thresholds.
+	 *
+	 * @param ti  the thread-local instance
+	 * @param obj the flag object
+	 */
 	protected static void setFlag(OAThreadLocal ti, Object obj) {
 		if (ti == null) {
 			return;
@@ -515,10 +687,22 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Removes the specified flag object from the current thread-local flag list.
+	 *
+	 * @param obj the flag to remove
+	 */
 	public static void removeFlag(Object obj) {
 		setFlag(OAThreadLocalDelegate.getThreadLocal(false), obj);
 	}
 
+	/**
+	 * Acquires a lock on the specified object with a maximum number of wait
+	 * attempts before force-acquiring the lock.
+	 *
+	 * @param object        the object to lock
+	 * @param maxWaitTries  maximum wait attempts before taking the lock
+	 */
 	protected static void removeFlag(OAThreadLocal ti, Object obj) {
 		if (ti == null) {
 			return;
@@ -528,7 +712,7 @@ public class OAThreadLocalDelegate {
 
 	// 20110104
 	// Locking -----------------------
-	/**
+	/*
 	 * This locking was created to prevent deadlocks. If a thread is waiting on an object, and the thread already has a lock, then it can be
 	 * allowed to also have the lock - after waiting a set amount of time. Each Object that is locked keeps track of the threadLocals that
 	 * are using it. The first threadLocal in the array is the owner. Once it is done (unlocked), it will notify the next threadLocal, etc.
@@ -539,20 +723,44 @@ public class OAThreadLocalDelegate {
 	 * @param maxWaitTries (default=10) max number of waits (each 50 ms) to wait before taking the lock - 0 to wait until notified. This
 	 *                     will only be used if the current threadLocal has 1+ locks already and object is locked by another threadLocal.
 	 */
+	/**
+	 * Acquires a lock on the specified object with a maximum number of wait
+	 * attempts before force-acquiring the lock.
+	 *
+	 * @param object        the object to lock
+	 * @param maxWaitTries  maximum wait attempts before taking the lock
+	 */
 	public static void lock(Object object, int maxWaitTries) {
 		lock(OAThreadLocalDelegate.getThreadLocal(true), object, maxWaitTries);
 	}
 
+	/**
+	 * Acquires a lock on the specified object using a default maximum wait
+	 * threshold.
+	 *
+	 * @param object the object to lock
+	 */
 	public static void lock(Object object) {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
 		lock(ti, object, 2);
 	}
 
+	/**
+	 * Returns whether the current thread holds any locks.
+	 *
+	 * @return true if one or more locks are held
+	 */
 	public static boolean hasLock() {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
 		return (ti != null && ti.locks != null && ti.locks.length > 0);
 	}
 
+	/**
+	 * Returns whether the current thread holds a lock on the specified object.
+	 *
+	 * @param obj the object to check
+	 * @return true if the lock is held
+	 */
 	public static boolean hasLock(Object obj) {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
 		if (ti == null) {
@@ -570,6 +778,11 @@ public class OAThreadLocalDelegate {
 		return false;
 	}
 
+	/**
+	 * Returns all lock objects currently held by the thread.
+	 *
+	 * @return an array of locked objects, or null if none
+	 */
 	public static Object[] getLocks() {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
 		if (ti == null) {
@@ -578,6 +791,12 @@ public class OAThreadLocalDelegate {
 		return ti.locks;
 	}
 
+	/**
+	 * Returns whether any thread currently holds a lock on the specified object.
+	 *
+	 * @param object the object to check
+	 * @return true if locked by any thread
+	 */
 	public static boolean isLocked(Object object) {
 		synchronized (hmLock) {
 			OAThreadLocal[] tis = hmLock.get(object); // threadLocals that are using object (locked or waiting)
@@ -585,6 +804,13 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Returns whether the current thread is the owner of the lock for the
+	 * specified object.
+	 *
+	 * @param object the object to check
+	 * @return true if the current thread owns the lock
+	 */
 	public static boolean isLockOwner(Object object) {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
 		if (ti == null) {
@@ -596,6 +822,12 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Returns the thread-local OAThreadLocal instance for the current thread,
+	 * creating one if necessary.
+	 *
+	 * @return the thread-local instance
+	 */
 	public static OAThreadLocal getOAThreadLocal() {
 		return OAThreadLocalDelegate.getThreadLocal(true);
 	}
@@ -610,6 +842,15 @@ public class OAThreadLocalDelegate {
 	static volatile int lockCnt;
 	static volatile int unlockCnt;
 
+	/**
+	 * Internal implementation for acquiring a lock using the provided
+	 * thread-local instance. Handles waiting, deadlock detection, and
+	 * thread notification logic.
+	 *
+	 * @param tiThis         the thread-local instance
+	 * @param thisLockObject the object to lock
+	 * @param maxWaitTries   maximum wait attempts before force-acquiring
+	 */
 	protected static void lock(OAThreadLocal tiThis, Object thisLockObject, int maxWaitTries) {
 		//System.out.println((++lockCnt)+") ****** OAThreadLocalDelegate.lock obj="+thisLockObject+", activeLocks="+(++openLockCnt));
 		if (thisLockObject == null || tiThis == null) {
@@ -671,7 +912,16 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
-	// returns true if it's ok to continue, and not if wait on lock to be released
+	/**
+	 * Attempts to acquire the lock for the specified object. Returns true if the
+	 * lock can proceed immediately, or false if the caller must wait.
+	 *
+	 * @param tlThis         the thread-local instance
+	 * @param thisLockObject the object to lock
+	 * @param maxWaitTries   maximum wait attempts
+	 * @param tries          current attempt count
+	 * @return true if the lock is acquired or can proceed
+	 */
 	private static boolean _lock(OAThreadLocal tlThis, Object thisLockObject, int maxWaitTries, int tries) {
 		OAThreadLocal[] tls = hmLock.get(thisLockObject); // threadLocals that are using object (locked or waiting)
 
@@ -735,11 +985,24 @@ public class OAThreadLocalDelegate {
 
 	public static int cntDeadlock;
 
+	/**
+	 * Returns the number of detected deadlocks encountered during lock
+	 * acquisition.
+	 *
+	 * @return the deadlock count
+	 */
 	public static int getDeadlockCount() {
 		return cntDeadlock;
 	}
 
 	// this should be called with rwLock.write locked
+	/**
+	 * Attempts to resolve a detected deadlock by reordering lock ownership for
+	 * the thread-local instances associated with the specified lock object.
+	 *
+	 * @param tiThis     the thread-local instance requesting the lock
+	 * @param lockObject the object involved in the deadlock
+	 */
 	private static void releaseDeadlock(OAThreadLocal tiThis, Object lockObject) {
 		OAThreadLocal[] tls = hmLock.get(lockObject);
 		if (tls == null) {
@@ -784,6 +1047,10 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Releases all locks currently held by the thread-local instance for the
+	 * current thread.
+	 */
 	public static void releaseAllLocks() {
 		OAThreadLocal tl = OAThreadLocalDelegate.getThreadLocal(false);
 		if (tl == null) {
@@ -798,10 +1065,22 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Releases the lock held by the current thread on the specified object.
+	 *
+	 * @param object the object to unlock
+	 */
 	public static void unlock(Object object) {
 		unlock(OAThreadLocalDelegate.getThreadLocal(true), object);
 	}
 
+	/**
+	 * Internal implementation for releasing a lock using the specified
+	 * thread-local instance.
+	 *
+	 * @param ti     the thread-local instance
+	 * @param object the object to unlock
+	 */
 	protected static void unlock(OAThreadLocal ti, Object object) {
 		//System.out.println((++unlockCnt)+") ****** OAThreadLocalDelegate.unlock obj="+object+", activeLocks="+(--openLockCnt));
 		try {
@@ -812,6 +1091,13 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Removes the specified lock from the thread-local instance and updates the
+	 * global lock-tracking structure.
+	 *
+	 * @param tl     the thread-local instance
+	 * @param object the object being unlocked
+	 */
 	private static void _unlock(OAThreadLocal tl, Object object) {
 		final int pos = OAArray.indexOf(tl.locks, object);
 		if (pos < 0) {
@@ -847,6 +1133,11 @@ public class OAThreadLocalDelegate {
 	}
 
 	// HubListenerTree uses this to ignore dependent property changes caused by add/remove objects from hubMerger.hubMaster
+	/**
+	 * Returns whether any thread is currently modifying hub-merger state.
+	 *
+	 * @return true if hub-merger updates are active
+	 */
 	public static boolean isHubMergerChanging() {
 		boolean b;
 		if (OAThreadLocalDelegate.TotalHubMergerChanging.get() == 0) {
@@ -858,6 +1149,13 @@ public class OAThreadLocalDelegate {
 		return b;
 	}
 
+	/**
+	 * Returns whether the specified thread-local instance is modifying
+	 * hub-merger state.
+	 *
+	 * @param ti the thread-local instance
+	 * @return true if active
+	 */
 	protected static boolean isHubMergerChanging(OAThreadLocal ti) {
 		if (ti == null) {
 			return false;
@@ -865,6 +1163,11 @@ public class OAThreadLocalDelegate {
 		return ti.hubMergerChangingCount > 0;
 	}
 
+	/**
+	 * Enables or disables hub-merger change tracking for the current thread.
+	 *
+	 * @param b true to enable, false to disable
+	 */
 	public static void setHubMergerChanging(boolean b) {
 		// LOG.finer(""+b);
 		setHubMergerChanging(OAThreadLocalDelegate.getThreadLocal(b), b);
@@ -872,6 +1175,13 @@ public class OAThreadLocalDelegate {
 
 	private static long msHubMergerChanging;
 
+	/**
+	 * Updates hub-merger change counts for the specified thread-local instance
+	 * and executes any pending callbacks when the change count reaches zero.
+	 *
+	 * @param ti the thread-local instance
+	 * @param b  true to increment, false to decrement
+	 */
 	protected static void setHubMergerChanging(OAThreadLocal ti, boolean b) {
 		if (ti == null) {
 			return;
@@ -899,11 +1209,24 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Registers a callback to be executed once hub-merger changes finish for
+	 * the current thread.
+	 *
+	 * @param cb the callback to register
+	 */
     public static void addHubMergerCallback(OAThreadLocalHubMergerCallback cb) {
         if (cb == null) return;
         addHubMergerCallback(OAThreadLocalDelegate.getThreadLocal(true), cb);
     }
 	
+    /**
+     * Adds a hub-merger callback to the specified thread-local instance, or
+     * executes it immediately if no hub-merger changes are pending.
+     *
+     * @param ti the thread-local instance
+     * @param cb the callback to register
+     */
     protected static void addHubMergerCallback(OAThreadLocal ti, OAThreadLocalHubMergerCallback cb) {
         if (ti == null) return;
         if (cb == null) return;
@@ -919,11 +1242,12 @@ public class OAThreadLocalDelegate {
 	
 	// UndoablePropertyChanges -----------------------
 
-	/**
-	 * Flag to know if property changes should be adding undoable events. <br>
-	 *
-	 * @see OAUndoManager
-	 */
+    /**
+     * Enables or disables recording of undoable property changes for the
+     * current thread.
+     *
+     * @param b true to enable, false to disable
+     */
 	public static void setCreateUndoablePropertyChanges(boolean b) {
 		// LOG.finer(""+b);
 		setCreateUndoablePropertyChanges(OAThreadLocalDelegate.getThreadLocal(b), b);
@@ -931,6 +1255,13 @@ public class OAThreadLocalDelegate {
 
 	private static long msCreateUndoablePropertyChanges;
 
+	/**
+	 * Updates undoable-change tracking for the specified thread-local instance
+	 * and updates the global counter.
+	 *
+	 * @param ti the thread-local instance
+	 * @param b  true to enable, false to disable
+	 */
 	protected static void setCreateUndoablePropertyChanges(OAThreadLocal ti, boolean b) {
 		if (ti == null) {
 			return;
@@ -951,6 +1282,12 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Returns whether undoable property change recording is enabled for the
+	 * current thread.
+	 *
+	 * @return true if active
+	 */
 	public static boolean getCreateUndoablePropertyChanges() {
 		boolean b;
 		if (OAThreadLocalDelegate.TotalCaptureUndoablePropertyChanges.get() == 0) {
@@ -963,6 +1300,13 @@ public class OAThreadLocalDelegate {
 		return b;
 	}
 
+	/**
+	 * Returns whether undoable property change recording is enabled for the
+	 * specified thread-local instance.
+	 *
+	 * @param ti the thread-local instance
+	 * @return true if enabled
+	 */
 	protected static boolean getCreateUndoablePropertyChanges(OAThreadLocal ti) {
 		if (ti == null) {
 			return false;
@@ -971,12 +1315,21 @@ public class OAThreadLocalDelegate {
 	}
 
 	/**
-	 * Start a compound undoable.
+	 * Begins a compound undoable sequence with the specified name for the
+	 * current thread.
+	 *
+	 * @param compoundName the descriptive name for the compound edit
 	 */
 	public static void startUndoable(String compoundName) {
 		startUndoable(OAThreadLocalDelegate.getThreadLocal(true), compoundName);
 	}
 
+	/**
+	 * Convenience wrapper for starting a compound undoable sequence using the
+	 * specified name.
+	 *
+	 * @param compoundName the compound edit name
+	 */
 	public static void startCompoundUndoable(String compoundName) {
 		startUndoable(OAThreadLocalDelegate.getThreadLocal(true), compoundName);
 	}
@@ -991,6 +1344,13 @@ public class OAThreadLocalDelegate {
 		return tl.createUndoablePropertyChanges;
 	}
 
+	/**
+	 * Internal implementation to start tracking a compound undoable change
+	 * using the specified thread-local instance.
+	 *
+	 * @param ti           the thread-local instance
+	 * @param compoundName the compound edit name
+	 */
 	protected static void startUndoable(OAThreadLocal ti, String compoundName) {
 		if (ti == null) {
 			return;
@@ -1009,14 +1369,28 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Completes the current compound undoable sequence for the thread.
+	 */
 	public static void endUndoable() {
 		endUndoable(OAThreadLocalDelegate.getThreadLocal(true));
 	}
 
+	/**
+	 * Convenience wrapper that ends the current compound undoable sequence
+	 * for the thread.
+	 */
 	public static void endCompoundUndoable() {
 		endUndoable(OAThreadLocalDelegate.getThreadLocal(true));
 	}
 
+	/**
+	 * Internal implementation for completing a compound undoable sequence for
+	 * the specified thread-local instance. Resets undoable flags and updates
+	 * global counters.
+	 *
+	 * @param ti the thread-local instance
+	 */
 	protected static void endUndoable(OAThreadLocal ti) {
 		if (ti == null) {
 			return;
@@ -1028,7 +1402,12 @@ public class OAThreadLocalDelegate {
 		OAThreadLocalDelegate.TotalCaptureUndoablePropertyChanges.decrementAndGet();
 	}
 
-	// 20180704
+	/**
+	 * Registers the specified sibling helper for the current thread.
+	 *
+	 * @param sh the sibling helper
+	 * @return true if added, false if already present
+	 */
 	public static boolean addSiblingHelper(OASiblingHelper sh) {
 		if (sh == null) {
 			return false;
@@ -1036,6 +1415,11 @@ public class OAThreadLocalDelegate {
 		return addSiblingHelper(OAThreadLocalDelegate.getThreadLocal(true), sh);
 	}
 
+	/**
+	 * Removes the specified sibling helper from the current thread's list.
+	 *
+	 * @param sh the sibling helper to remove
+	 */
 	public static void removeSiblingHelper(OASiblingHelper sh) {
 		if (sh == null) {
 			return;
@@ -1046,6 +1430,12 @@ public class OAThreadLocalDelegate {
 		removeSiblingHelper(OAThreadLocalDelegate.getThreadLocal(true), sh);
 	}
 
+	/**
+	 * Returns the list of sibling helpers associated with the current thread,
+	 * or null if none exist.
+	 *
+	 * @return the list of sibling helpers, or null
+	 */
 	public static ArrayList<OASiblingHelper> getSiblingHelpers() {
 		if (TotalSiblingHelper.get() == 0) {
 			return null;
@@ -1053,6 +1443,12 @@ public class OAThreadLocalDelegate {
 		return getSiblingHelpers(OAThreadLocalDelegate.getThreadLocal(true));
 	}
 
+	/**
+	 * Returns the sibling helpers stored in the specified thread-local instance.
+	 *
+	 * @param ti the thread-local instance
+	 * @return the list of sibling helpers, or null
+	 */
 	public static ArrayList<OASiblingHelper> getSiblingHelpers(OAThreadLocal ti) {
 		if (ti == null) {
 			return null;
@@ -1060,6 +1456,11 @@ public class OAThreadLocalDelegate {
 		return ti.alSiblingHelper;
 	}
 
+	/**
+	 * Returns whether the current thread has any registered sibling helpers.
+	 *
+	 * @return true if one or more sibling helpers exist
+	 */
 	public static boolean hasSiblingHelpers() {
 		if (TotalSiblingHelper.get() == 0) {
 			return false;
@@ -1068,6 +1469,9 @@ public class OAThreadLocalDelegate {
 		return (al != null && al.size() > 0);
 	}
 
+	/**
+	 * Removes all sibling helpers from the current thread.
+	 */
 	public static void clearSiblingHelpers() {
 		if (TotalSiblingHelper.get() == 0) {
 			return;
@@ -1080,6 +1484,14 @@ public class OAThreadLocalDelegate {
 
 	private static long msSiblingHelper;
 
+	/**
+	 * Internal implementation to register a sibling helper for the specified
+	 * thread-local instance and update global counters.
+	 *
+	 * @param ti the thread-local instance
+	 * @param sh the sibling helper to add
+	 * @return true if the helper was added
+	 */
 	protected static boolean addSiblingHelper(OAThreadLocal ti, OASiblingHelper sh) {
 		if (ti == null || sh == null) {
 			return false;
@@ -1099,6 +1511,13 @@ public class OAThreadLocalDelegate {
 		return true;
 	}
 
+	/**
+	 * Internal implementation that removes the specified sibling helper from
+	 * the thread-local instance and updates global counters.
+	 *
+	 * @param ti the thread-local instance
+	 * @param sh the sibling helper to remove
+	 */
 	protected static void removeSiblingHelper(OAThreadLocal ti, OASiblingHelper sh) {
 		if (ti == null || sh == null) {
 			return;
@@ -1118,6 +1537,14 @@ public class OAThreadLocalDelegate {
 
 	private static long msThrottleStackTrace;
 
+	/**
+	 * Logs a throttled warning message when sufficient time has passed since
+	 * the previous log for the same category.
+	 *
+	 * @param msg    the message to log
+	 * @param msLast the timestamp of the previous logged message
+	 * @return the updated timestamp
+	 */
 	public static long throttleLOG(String msg, long msLast) {
 		long ms = System.currentTimeMillis();
 		if (ms > msLast + 5000) {
@@ -1134,6 +1561,11 @@ public class OAThreadLocalDelegate {
 		return ms;
 	}
 
+	/**
+	 * Returns a formatted dump of all stack traces for all threads.
+	 *
+	 * @return the formatted stack trace dump
+	 */
 	public static String getAllStackTraces() {
 		String result = "";
 		String s = "DumpAllStackTraces " + (new OADateTime());
@@ -1159,6 +1591,11 @@ public class OAThreadLocalDelegate {
 		return result;
 	}
 
+	/**
+	 * Returns the current thread’s stack trace formatted as a string.
+	 *
+	 * @return the stack trace for the current thread
+	 */
 	public static String getThreadDump() {
 		StringBuilder sb = new StringBuilder(1024 * 4);
 		Thread t = Thread.currentThread();
@@ -1174,21 +1611,38 @@ public class OAThreadLocalDelegate {
 		return new String(sb);
 	}
 
+	/**
+	 * Sets the status message for the current thread-local instance.
+	 *
+	 * @param msg the status message
+	 */
 	public static void setStatus(String msg) {
 		getOAThreadLocal().status = msg;
 	}
 
-	// 20140121
+	/**
+	 * Assigns the remote request information for the current thread.
+	 *
+	 * @param ri the request information
+	 */
 	public static void setRemoteRequestInfo(RequestInfo ri) {
 		getOAThreadLocal().requestInfo = ri;
 	}
 
+	/**
+	 * Returns the remote request information for the current thread.
+	 *
+	 * @return the RequestInfo instance, or null if none exists
+	 */
 	public static RequestInfo getRemoteRequestInfo() {
 		return getOAThreadLocal().requestInfo;
 	}
 
 	/**
-	 * Flag that can be set to allow messages from OARemoteThread to be sent to other clients/server.
+	 * Enables or disables sending of messages from OARemoteThread instances.
+	 *
+	 * @param b true to enable sending, false to disable
+	 * @return the previous send-messages state
 	 */
 	public static boolean setSendMessages(boolean b) {
 		return OARemoteThreadDelegate.sendMessages(b);
@@ -1225,7 +1679,12 @@ public class OAThreadLocalDelegate {
 	}
 	*/
 
-	// allows an object to wait to be notified by OARemoteThreadDelegate.startNextThread()
+	/**
+	 * Assigns or clears an object used to notify the current thread when
+	 * remote-thread operations need to resume.
+	 *
+	 * @param obj the object to assign, or null to clear
+	 */
 	public static void setNotifyObject(Object obj) {
 		if (obj == null) {
 			if (OAThreadLocalDelegate.TotalNotifyWaitingObject.get() == 0) {
@@ -1245,6 +1704,10 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Notifies the thread waiting on the thread-local notify object, if one
+	 * exists, and clears the notify reference.
+	 */
 	public static void notifyWaitingThread() {
 		if (OAThreadLocalDelegate.TotalNotifyWaitingObject.get() == 0) {
 			return;
@@ -1263,12 +1726,23 @@ public class OAThreadLocalDelegate {
 		setNotifyObject(null);
 	}
 
-	// recursiveTriggerCount -----------------------
+	/**
+	 * Returns the recursive trigger count for the current thread.
+	 *
+	 * @return the trigger count
+	 */
 	public static int getRecursiveTriggerCount() {
 		int x = getRecursiveTriggerCount(getThreadLocal(false));
 		return x;
 	}
 
+	/**
+	 * Returns the recursive trigger count stored in the supplied thread-local
+	 * instance. When the instance is null, zero is returned.
+	 *
+	 * @param ti the thread-local instance to query
+	 * @return the recursive trigger count or zero if the instance is null
+	 */
 	protected static int getRecursiveTriggerCount(OAThreadLocal ti) {
 		if (ti == null) {
 			return 0;
@@ -1276,10 +1750,21 @@ public class OAThreadLocalDelegate {
 		return ti.recursiveTriggerCount;
 	}
 
+	/**
+	 * Sets the recursive trigger count for the current thread-local instance.
+	 *
+	 * @param x the trigger count to assign
+	 */
 	public static void setRecursiveTriggerCount(int x) {
 		setRecursiveTriggerCount(OAThreadLocalDelegate.getThreadLocal(true), x);
 	}
 
+	/**
+	 * Updates the recursive trigger count on the supplied thread-local instance.
+	 *
+	 * @param ti the thread-local instance
+	 * @param x  the trigger count to assign
+	 */
 	protected static void setRecursiveTriggerCount(OAThreadLocal ti, int x) {
 		if (ti == null) {
 			return;
@@ -1287,7 +1772,12 @@ public class OAThreadLocalDelegate {
 		ti.recursiveTriggerCount = x;
 	}
 
-	// HubListenerTree used to determine how deep tree is, caused by listening to dependent props (like calcs, etc)
+	/**
+	 * Returns the hub-listener tree depth for the current thread. Returns zero
+	 * when no depth has been recorded.
+	 *
+	 * @return the hub-listener tree count
+	 */
 	public static int getHubListenerTreeCount() {
 		int x;
 		if (OAThreadLocalDelegate.TotalHubListenerTreeCount.get() == 0) {
@@ -1298,6 +1788,12 @@ public class OAThreadLocalDelegate {
 		return x;
 	}
 
+	/**
+	 * Returns the hub-listener tree depth for the current thread. Returns zero
+	 * when no depth has been recorded.
+	 *
+	 * @return the hub-listener tree count
+	 */
 	protected static int getHubListenerTreeCount(OAThreadLocal ti) {
 		if (ti == null) {
 			return 0;
@@ -1305,12 +1801,24 @@ public class OAThreadLocalDelegate {
 		return ti.hubListenerTreeCount;
 	}
 
+	/**
+	 * Increments or decrements the hub-listener tree depth for the current thread.
+	 *
+	 * @param b true to increment, false to decrement
+	 */
 	public static void setHubListenerTree(boolean b) {
 		setHubListenerTree(OAThreadLocalDelegate.getThreadLocal(b), b);
 	}
 
 	private static long msHubListenerTree;
 
+	/**
+	 * Adjusts the hub-listener tree depth on the supplied thread-local instance
+	 * and updates global counters.
+	 *
+	 * @param ti the thread-local instance
+	 * @param b  true to increment, false to decrement
+	 */
 	protected static void setHubListenerTree(OAThreadLocal ti, boolean b) {
 		if (ti == null) {
 			return;
@@ -1329,19 +1837,38 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Sets the property name to ignore during tree-listener processing for the
+	 * current thread.
+	 *
+	 * @param prop the property name to ignore
+	 */
 	public static void setIgnoreTreeListenerProperty(String prop) {
 		getThreadLocal(true).ignoreTreeListenerProperty = prop;
 	}
 
+	/**
+	 * Returns the property name currently ignored by tree listeners for the
+	 * thread.
+	 *
+	 * @return the ignored property name
+	 */
 	public static String getIgnoreTreeListenerProperty() {
 		return getThreadLocal(true).ignoreTreeListenerProperty;
 	}
 
-	// 20180223
+	/**
+	 * Returns the number of OA sync events recorded for the current thread.
+	 *
+	 * @return the sync event count
+	 */
 	public static int getOASyncEventCount() {
 		return getThreadLocal(true).oaSyncEventCount;
 	}
 
+	/**
+	 * Increments the OA sync event count for the current thread.
+	 */
 	public static void incrOASyncEventCount() {
 		getThreadLocal(true).oaSyncEventCount++;
 	}
@@ -1349,6 +1876,12 @@ public class OAThreadLocalDelegate {
 	// HubEvent  ---------------
 	private static long msHubEvent;
 
+	/**
+	 * Returns the most recent HubEvent for the current thread, or null when none
+	 * exist.
+	 *
+	 * @return the latest HubEvent or null
+	 */
 	public static HubEvent getCurrentHubEvent() {
 		if (OAThreadLocalDelegate.TotalHubEvent.get() == 0) {
 			return null;
@@ -1367,6 +1900,12 @@ public class OAThreadLocalDelegate {
 		return tl.alHubEvent.get(x - 1);
 	}
 
+	/**
+	 * Returns whether the supplied HubEvent is currently active for the thread.
+	 *
+	 * @param he the HubEvent to check
+	 * @return true if the event is active
+	 */
 	public static boolean isOpenHubEvent(HubEvent he) {
 		if (he == null) {
 			return false;
@@ -1382,6 +1921,12 @@ public class OAThreadLocalDelegate {
 		return b;
 	}
 
+	/**
+	 * Returns the oldest HubEvent for the current thread, or null when none
+	 * exist.
+	 *
+	 * @return the earliest HubEvent or null
+	 */
 	public static HubEvent getOldestHubEvent() {
 		if (OAThreadLocalDelegate.TotalHubEvent.get() == 0) {
 			return null;
@@ -1400,6 +1945,11 @@ public class OAThreadLocalDelegate {
 		return tl.alHubEvent.get(0);
 	}
 
+	/**
+	 * Adds the supplied HubEvent to the current thread’s active-event list.
+	 *
+	 * @param he the HubEvent to add
+	 */
 	public static void addHubEvent(HubEvent he) {
 		if (he == null) {
 			return;
@@ -1419,6 +1969,12 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Removes the supplied HubEvent from the current thread’s active-event list
+	 * and updates global counters.
+	 *
+	 * @param he the HubEvent to remove
+	 */
 	public static void removeHubEvent(HubEvent he) {
 		if (OAThreadLocalDelegate.TotalHubEvent.get() == 0) {
 			return;
@@ -1444,6 +2000,12 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Returns whether the current thread is in the process of sending one or more
+	 * HubEvents.
+	 *
+	 * @return true if event sending is active
+	 */
 	public static boolean isSendingEvent() {
 		boolean b;
 		if (OAThreadLocalDelegate.TotalHubEvent.get() == 0) {
@@ -1454,6 +2016,13 @@ public class OAThreadLocalDelegate {
 		return b;
 	}
 
+	/**
+	 * Returns whether the supplied thread-local instance is currently sending
+	 * HubEvents.
+	 *
+	 * @param ti the thread-local instance
+	 * @return true if sending events
+	 */
 	protected static boolean isSendingEvent(OAThreadLocal ti) {
 		if (ti == null) {
 			return false;
@@ -1461,6 +2030,15 @@ public class OAThreadLocalDelegate {
 		return ti.alHubEvent != null && ti.alHubEvent.size() > 0;
 	}
 
+	/**
+	 * Returns whether a calc-property change for the supplied hub, object, and
+	 * property name has already been recorded during the current event cycle.
+	 *
+	 * @param thisHub      the hub involved
+	 * @param thisObj      the object involved
+	 * @param propertyName the property name
+	 * @return true if the event has been previously recorded
+	 */
 	public static boolean hasSentCalcPropertyChange(Hub thisHub, OAObject thisObj, String propertyName) {
 		if (thisHub == null || propertyName == null || thisObj == null) {
 			return false;
@@ -1503,7 +2081,9 @@ public class OAThreadLocalDelegate {
 	}
 
 	/**
-	 * Get the context that can be used to call OAContext.getContext
+	 * Returns the context object associated with the current thread.
+	 *
+	 * @return the context object
 	 */
 	public static Object getContext() {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
@@ -1511,25 +2091,45 @@ public class OAThreadLocalDelegate {
 	}
 
 	/**
-	 * Sets the context that is being used for this Thread.
+	 * Assigns the context object for the current thread.
 	 *
-	 * @see OAContext#getContextObject()
+	 * @param context the context to assign
 	 */
 	public static void setContext(Object context) {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
 		ti.context = context;
 	}
 
+	/**
+	 * Sets the admin flag for the current thread-local instance.
+	 *
+	 * @param b true to enable admin mode, false to disable
+	 * @return the previous admin flag value
+	 */
 	public static boolean setAdmin(boolean b) {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
 		return setIsAdmin(ti, b);
 	}
 
+	/**
+	 * Convenience wrapper that sets the admin flag for the current thread-local
+	 * instance.
+	 *
+	 * @param b true to enable admin mode
+	 * @return the previous admin flag value
+	 */
 	public static boolean setIsAdmin(boolean b) {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
 		return setIsAdmin(ti, b);
 	}
 
+	/**
+	 * Updates the admin flag on the supplied thread-local instance.
+	 *
+	 * @param ti the thread-local instance
+	 * @param b  the new admin flag value
+	 * @return the previous admin flag value
+	 */
 	public static boolean setIsAdmin(OAThreadLocal ti, boolean b) {
 		if (ti == null) {
 			return false;
@@ -1539,15 +2139,31 @@ public class OAThreadLocalDelegate {
 		return b2;
 	}
 
+	/**
+	 * Returns whether the current thread-local instance is in admin mode.
+	 *
+	 * @return true if admin mode is enabled
+	 */
 	public static boolean isAdmin() {
 		return getIsAdmin();
 	}
 
+	/**
+	 * Returns whether the current thread-local instance is in admin mode.
+	 *
+	 * @return true if admin mode is enabled
+	 */
 	public static boolean getIsAdmin() {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(true);
 		return getIsAdmin(ti);
 	}
 
+	/**
+	 * Returns whether the supplied thread-local instance has admin mode enabled.
+	 *
+	 * @param ti the thread-local instance
+	 * @return true if admin mode is enabled
+	 */
 	public static boolean getIsAdmin(OAThreadLocal ti) {
 		if (ti == null) {
 			return false;
@@ -1555,6 +2171,12 @@ public class OAThreadLocalDelegate {
 		return ti.isAdmin;
 	}
 
+	/**
+	 * Copies selected state fields from the supplied thread-local instance into
+	 * the current thread-local instance.
+	 *
+	 * @param tl the thread-local instance to copy from
+	 */
 	public static void initialize(OAThreadLocal tl) {
 		if (tl == null) {
 			return;
@@ -1564,6 +2186,13 @@ public class OAThreadLocalDelegate {
 		tlx.context = tl.context;
 	}
 
+	/**
+	 * Assigns the supplied OAJson instance to the current thread-local instance
+	 * and returns the previous value.
+	 *
+	 * @param jackson the new OAJson instance or null
+	 * @return the previous OAJson instance
+	 */
 	public static OAJson getOAJackson() {
 		if (TotalJackson.get() == 0) {
 			return null;
@@ -1575,6 +2204,13 @@ public class OAThreadLocalDelegate {
 		return ti.oajackson;
 	}
 
+	/**
+	 * Assigns the supplied OAJson instance to the current thread-local instance
+	 * and returns the previous value.
+	 *
+	 * @param jackson the new OAJson instance or null
+	 * @return the previous OAJson instance
+	 */
 	public static OAJson setOAJackson(OAJson jackson) {
 		if (jackson == null && TotalJackson.get() == 0) {
 			return null;
@@ -1592,9 +2228,12 @@ public class OAThreadLocalDelegate {
 		return hold;
 	}
 
-	// 20200121
+
 	/**
-	 * Hubs that should not be adjusted when trying to set activeObject and adjusting masterHub.AO
+	 * Registers the supplied hub as one that should not be auto-adjusted for the
+	 * current thread.
+	 *
+	 * @param hub the hub to register
 	 */
 	public static void addDontAdjustHub(Hub hub) {
 		if (hub == null) {
@@ -1610,6 +2249,11 @@ public class OAThreadLocalDelegate {
 		}
 	}
 
+	/**
+	 * Removes the supplied hub from the current thread-local do-not-adjust list.
+	 *
+	 * @param hub the hub to remove
+	 */
 	public static void removeDontAdjustHub(Hub hub) {
 		if (hub == null) {
 			return;
@@ -1626,6 +2270,13 @@ public class OAThreadLocalDelegate {
 		TotalDontAdjustHub.decrementAndGet();
 	}
 
+	/**
+	 * Returns whether the supplied hub is eligible for auto-adjustment based on
+	 * the current thread-local do-not-adjust list.
+	 *
+	 * @param hub the hub to check
+	 * @return true if auto-adjustment is allowed
+	 */
 	public static boolean getCanAdjustHub(Hub hub) {
 		if (hub == null) {
 			return false;
@@ -1656,11 +2307,24 @@ public class OAThreadLocalDelegate {
 		return true;
 	}
 
+	/**
+	 * Returns whether the current thread-local instance is marked as a sync
+	 * thread.
+	 *
+	 * @return true if sync-thread mode is enabled
+	 */
 	public static boolean isSyncThread() {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(false);
 		return (ti != null && ti.bIsSyncThread);
 	}
 
+	/**
+	 * Enables or disables sync-thread mode for the current thread-local
+	 * instance.
+	 *
+	 * @param b true to enable, false to disable
+	 * @return the previous sync-thread flag value
+	 */
 	public static boolean setSyncThread(boolean b) {
 		OAThreadLocal ti = OAThreadLocalDelegate.getThreadLocal(b);
 
@@ -1672,6 +2336,12 @@ public class OAThreadLocalDelegate {
 		return b2;
 	}
 
+	/**
+	 * Returns whether the current thread is actively performing a refresh
+	 * operation.
+	 *
+	 * @return true if refreshing
+	 */
 	public static boolean isRefreshing() {
 		boolean b;
 		if (OAThreadLocalDelegate.TotalIsRefreshing.get() == 0) {
@@ -1682,6 +2352,13 @@ public class OAThreadLocalDelegate {
 		return b;
 	}
 
+	/**
+	 * Returns whether the supplied thread-local instance is actively performing a
+	 * refresh operation.
+	 *
+	 * @param ti the thread-local instance
+	 * @return true if refreshing
+	 */
 	protected static boolean isRefreshing(OAThreadLocal ti) {
 		if (ti == null) {
 			return false;
@@ -1689,6 +2366,11 @@ public class OAThreadLocalDelegate {
 		return ti.refreshing > 0;
 	}
 
+	/**
+	 * Enables or disables refresh mode for the current thread-local instance.
+	 *
+	 * @param b true to increment, false to decrement
+	 */
 	public static void setRefreshing(boolean b) {
 		// LOG.finer(""+b);
 		setRefreshing(OAThreadLocalDelegate.getThreadLocal(b), b);
@@ -1696,6 +2378,13 @@ public class OAThreadLocalDelegate {
 
 	private static long msRefreshingObject;
 
+	/**
+	 * Adjusts the refresh counter on the supplied thread-local instance and
+	 * updates the global refresh counter.
+	 *
+	 * @param ti the thread-local instance
+	 * @param b  true to increment, false to decrement
+	 */
 	protected static boolean setRefreshing(OAThreadLocal ti, boolean b) {
 		if (ti == null) {
 			return false;
@@ -1718,12 +2407,22 @@ public class OAThreadLocalDelegate {
 	}
 
 	/**
-	 * @see OAThreadLocal#fastLoading
+	 * Returns the hub used for fast-loading operations for the current thread,
+	 * or null if none is assigned.
+	 *
+	 * @return the fast-loading hub or null
 	 */
 	public static Hub getFastLoadingHub() {
 		return getFastLoadingHub(OAThreadLocalDelegate.getThreadLocal(false));
 	}
 
+	/**
+	 * Returns the fast-loading hub stored in the supplied thread-local instance,
+	 * or null if none is set.
+	 *
+	 * @param ti the thread-local instance
+	 * @return the fast-loading hub or null
+	 */
 	protected static Hub getFastLoadingHub(OAThreadLocal ti) {
 		if (ti == null) {
 			return null;
@@ -1732,6 +2431,14 @@ public class OAThreadLocalDelegate {
 	}
 
 	
+	/**
+	 * Convenience check that returns true when the hub has fast-loading enabled.
+	 * This is determined by consulting {@link Hub#getFastLoading()} on the
+	 * supplied hub instance.
+	 *
+	 * @param h the hub to inspect
+	 * @return true if the hub reports fast-loading enabled, otherwise false
+	 */
 	public static boolean isFastLoadingHub(Hub h) {
 		if (h == null) return false;
 		Hub hx = getFastLoadingHub();
@@ -1740,10 +2447,23 @@ public class OAThreadLocalDelegate {
 		return HubShareDelegate.isUsingSameSharedHub(h, hx);
 	}
 	
+	/**
+	 * Assigns or clears the fast-loading hub for the current thread.
+	 *
+	 * @param hub the hub to assign or null to clear
+	 */
 	public static void setFastLoadingHub(Hub hub) {
 		setFastLoadingHub(OAThreadLocalDelegate.getThreadLocal(true), hub);
 	}
 
+	/**
+	 * Assigns the specified hub as the fast-loading hub for the given thread-local
+	 * instance. If a previous fast-loading hub exists, its list-refresh event is
+	 * triggered before replacing it.
+	 *
+	 * @param ti  the thread-local instance to update
+	 * @param hub the hub to mark as fast-loading
+	 */
 	protected static void setFastLoadingHub(OAThreadLocal ti, Hub hub) {
 		if (ti == null) {
 			return ;
@@ -1756,12 +2476,20 @@ public class OAThreadLocalDelegate {
 
 
 	/**
-	 * @see OAThreadLocal#process
+	 * Returns the process assigned to the current thread-local instance.
+	 *
+	 * @return the process for the current thread, or null if none is set
 	 */
 	public static OAProcess getProcess() {
 		return getProcess(OAThreadLocalDelegate.getThreadLocal(false));
 	}
 
+	/**
+	 * Returns the process assigned to the specified thread-local instance.
+	 *
+	 * @param ti the thread-local instance
+	 * @return the associated process, or null if none is set
+	 */
 	protected static OAProcess getProcess(OAThreadLocal ti) {
 		if (ti == null) {
 			return null;
@@ -1769,11 +2497,21 @@ public class OAThreadLocalDelegate {
 		return ti.process;
 	}
 
-	
+	/**
+	 * Assigns the specified process to the current thread-local instance.
+	 *
+	 * @param process the process to assign
+	 */
 	public static void setProcess(OAProcess process) {
 		setProcess(OAThreadLocalDelegate.getThreadLocal(true), process);
 	}
 
+	/**
+	 * Sets the process for the given thread-local instance.
+	 *
+	 * @param ti      the thread-local instance
+	 * @param process the process to assign
+	 */
 	protected static void setProcess(OAThreadLocal ti, OAProcess process) {
 		if (ti == null) {
 			return ;

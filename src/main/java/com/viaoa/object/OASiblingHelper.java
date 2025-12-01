@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,12 @@ public class OASiblingHelper<F extends OAObject> {
 	private final Node nodeRoot; // known paths from the root (hub)
 	private boolean bUseSameThread;
 
+	/**
+	 * Creates a new helper for the given root Hub and initializes the root
+	 * node using the Hub's OAObjectInfo.
+	 *
+	 * @param hub the root Hub used for sibling resolution
+	 */
 	public OASiblingHelper(Hub<F> hub) {
 		this.hub = hub;
 		nodeRoot = new Node(null);
@@ -80,20 +86,34 @@ public class OASiblingHelper<F extends OAObject> {
 		ArrayList<Node> alChildren;
 	}
 
+	/**
+	 * Returns the root Hub used by this helper.
+	 */
 	public Hub<F> getHub() {
 		return hub;
 	}
 
+	/**
+	 * Sets whether this helper should use the same thread when resolving
+	 * property paths.
+	 */
 	public void setUseSameThread(boolean b) {
 		this.bUseSameThread = b;
 	}
 
+	/**
+	 * Returns whether this helper is configured to use the same thread when
+	 * resolving property paths.
+	 */
 	public boolean getUseSameThread() {
 		return this.bUseSameThread;
 	}
 
-	/*
-	 * add a known pp to the list.
+	/**
+	 * Adds a property path starting from the root Hub. If the supplied
+	 * property path is empty, no action is taken.
+	 *
+	 * @param ppFromHub the property path from the Hub's object class
 	 */
 	public void add(String ppFromHub) {
 		if (OAString.isEmpty(ppFromHub)) {
@@ -102,6 +122,13 @@ public class OASiblingHelper<F extends OAObject> {
 		add(ppFromHub, 0);
 	}
 
+	/**
+	 * Adds the property path at the specified recursion depth. Creates nodes
+	 * for each link segment and expands calculated-property dependencies.
+	 *
+	 * @param ppFromHub the property path from the Hub's object class
+	 * @param cnt       recursion depth for dependency expansion
+	 */
 	private void add(final String ppFromHub, final int cnt) {
 		OAPropertyPath<F> pp = new OAPropertyPath<F>(hub.getObjectClass(), ppFromHub);
 		OALinkInfo[] lis = pp.getLinkInfos();
@@ -157,6 +184,14 @@ public class OASiblingHelper<F extends OAObject> {
 		}
 	}
 
+	/**
+	 * Adds or returns an existing child node for the given property name,
+	 * creating a new node if the link metadata is valid.
+	 *
+	 * @param node the starting node
+	 * @param prop the property name to add
+	 * @return the matching or newly created child node, or null if none
+	 */
 	private Node _add(Node node, String prop) {
 		// returns the node node that has this prop
 		Node nodeFound = null;
@@ -183,7 +218,11 @@ public class OASiblingHelper<F extends OAObject> {
 	}
 
 	/**
-	 * Called by oaobj.getObject/Hub so that this helper can build internal pp/Nodes for getting sibling data.
+	 * Records reference access so that link steps can be learned when an
+	 * object's property is retrieved.
+	 *
+	 * @param obj  the object whose reference was accessed
+	 * @param prop the name of the accessed property
 	 */
 	public void onGetReference(final OAObject obj, final String prop) {
 		if (obj == null || prop == null) {
@@ -192,6 +231,15 @@ public class OASiblingHelper<F extends OAObject> {
 		_onGetReference(nodeRoot, obj, prop);
 	}
 
+	/**
+	 * Recursively searches the node tree to locate or add the node associated
+	 * with the given object's class and property access.
+	 *
+	 * @param node the current node
+	 * @param obj  the object whose reference was accessed
+	 * @param prop the property name
+	 * @return the discovered or created node, or null if not found
+	 */
 	private Node _onGetReference(final Node node, final OAObject obj, final String prop) {
 		final Class cz = obj.getClass();
 		if (node.oi.getForClass().equals(cz)) {
@@ -221,16 +269,27 @@ public class OASiblingHelper<F extends OAObject> {
 	}
 
 	/**
-	 * Called by getSilbing to find root hub and pp.
+	 * Returns the property path from the root Hub to the specified object's
+	 * property by delegating to the overloaded method with default parameters.
 	 *
-	 * @param obj  object that is being used
-	 * @param prop property/reference that is getting
-	 * @return a hub and propertyPath that can be used to find siblings.
+	 * @param obj  the object used as the target
+	 * @param prop the property name
+	 * @return the property path, or null if none found
 	 */
 	public String getPropertyPath(OAObject obj, String prop) {
 		return getPropertyPath(obj, prop, false);
 	}
 
+	/**
+	 * Returns the property path from the root Hub to the specified object's
+	 * property. Searches the node tree and reconstructs the path by walking
+	 * up the node hierarchy.
+	 *
+	 * @param obj            the object used as the target
+	 * @param prop           the property name
+	 * @param bFromLastNode  whether to prioritize the last-found node
+	 * @return the property path, or null if none found
+	 */
 	public String getPropertyPath(OAObject obj, String prop, boolean bFromLastNode) {
 		Node node = _findNode(nodeRoot, obj, prop, false, bFromLastNode);
 		if (node == null && !bFromLastNode) {
@@ -251,6 +310,17 @@ public class OASiblingHelper<F extends OAObject> {
 
 	private Node nodeLastFound;
 
+	/**
+	 * Searches the node tree for a node matching the object's class and
+	 * property. Optionally retries using link-based traversal.
+	 *
+	 * @param node          the current node
+	 * @param obj           the target object
+	 * @param prop          the property name to locate
+	 * @param bRetry        whether to retry using link matching
+	 * @param bFromLastNode whether to prioritize the last-found node
+	 * @return the matching node, or null if none is found
+	 */
 	private Node _findNode(final Node node, final OAObject obj, final String prop, final boolean bRetry, final boolean bFromLastNode) {
 		final Class cz = obj.getClass();
 

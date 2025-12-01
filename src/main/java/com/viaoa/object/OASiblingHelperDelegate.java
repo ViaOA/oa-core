@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,12 @@ public class OASiblingHelperDelegate {
 	private static final OAThrottle throttle = new OAThrottle(2500);
 
 	/**
-	 * used by OAObject.getReference so taht siblingHelpers can update their pp
+	 * Notifies all thread-local OASiblingHelper instances that a reference
+	 * property was accessed on the given object so they can record the link
+	 * step for sibling detection.
+	 *
+	 * @param obj               the object whose reference was accessed
+	 * @param linkPropertyName  the accessed link-property name
 	 */
 	public static void onGetObjectReference(final OAObject obj, final String linkPropertyName) {
 		ArrayList<OASiblingHelper> al = OAThreadLocalDelegate.getSiblingHelpers();
@@ -70,18 +75,28 @@ public class OASiblingHelperDelegate {
 	}
 
 	/**
-	 * Used to find any siblings that also need the same property loaded.
+	 * Convenience wrapper that delegates to the overloaded getSiblings method
+	 * without an ignore map.
+	 *
+	 * @param mainObject the object requesting siblings
+	 * @param property   the property name being accessed
+	 * @param maxAmount  maximum number of siblings to return
+	 * @return an array of sibling object keys
 	 */
 	public static OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount) {
 		return getSiblings(mainObject, property, maxAmount, null);
 	}
 
 	/**
-	 * @param mainObject
-	 * @param property
-	 * @param maxAmount
-	 * @param hmIgnore   ignore list, because they are "inflight" with other concurrent requests
-	 * @return list of keys that are siblings
+	 * Returns sibling objects that are likely to require the same property
+	 * to be loaded. Enforces per-thread call limits, measures runtime, and
+	 * delegates to the internal _getSiblings method.
+	 *
+	 * @param mainObject the object requesting sibling evaluation
+	 * @param property   the property name being accessed
+	 * @param maxAmount  maximum number of sibling keys to return
+	 * @param hmIgnore   keys already being processed by concurrent requests
+	 * @return an array of sibling object keys
 	 */
 	public static OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount,
 			ConcurrentHashMap<Long, Boolean> hmIgnore) {
@@ -133,6 +148,18 @@ public class OASiblingHelperDelegate {
 		}
 	}
 
+	/**
+	 * Internal implementation for locating sibling objects. Examines learned
+	 * property paths, evaluates hub relationships, scans nearby hub objects,
+	 * and applies time and recursion limits.
+	 *
+	 * @param mainObject the object requesting siblings
+	 * @param property   the property being accessed
+	 * @param maxAmount  maximum number of siblings to return
+	 * @param hmIgnore   map of objects to skip during evaluation
+	 * @param msStarted  start time for timeout budgeting
+	 * @return an array of sibling object keys, or null if invalid input
+	 */
 	private static OAObjectKey[] _getSiblings(final OAObject mainObject, final String property, final int maxAmount,
 			ConcurrentHashMap<Long, Boolean> hmIgnore, final long msStarted) {
 		if (mainObject == null || OAString.isEmpty(property) || maxAmount < 1) {
@@ -431,6 +458,24 @@ public class OASiblingHelperDelegate {
 		return keys;
 	}
 
+	/**
+	 * Scans the given hub for objects that require the same property to be
+	 * loaded. Uses an OAFinder with loaded-data constraints and adds each
+	 * qualifying object's key to the results.
+	 *
+	 * @param alFoundObjectKey list collecting found sibling keys
+	 * @param hubRoot          the hub to scan
+	 * @param startPosHubRoot  starting hub index for scanning
+	 * @param finderPropertyPath the property path used for scanning
+	 * @param origProperty     the original property being accessed
+	 * @param linkInfo         metadata describing the property link
+	 * @param mainObject       the object requesting siblings
+	 * @param hmTypeOneObjKey  per-thread one-to-one key tracking
+	 * @param hmIgnore         map of objects to skip
+	 * @param maxAmount        maximum number of siblings to find
+	 * @param msStarted        start time for enforcing time limits
+	 * @param runCount         recursion/iteration counter
+	 */
 	protected static void findSiblings(
 			final ArrayList<OAObjectKey> alFoundObjectKey,
 			final Hub hubRoot, final int startPosHubRoot, final String finderPropertyPath, final String origProperty,
@@ -519,7 +564,15 @@ public class OASiblingHelperDelegate {
 		f.find(hubRoot, objx);
 	}
 
-	// find the Hub that has the best set of siblings
+	/**
+	 * Returns the hub that provides the best candidate set of sibling objects
+	 * for the given master object, using link alignment and hub hierarchy
+	 * scoring.
+	 *
+	 * @param masterObject the object whose hubs are being evaluated
+	 * @param liToMaster   optional link-restriction for selecting the hub
+	 * @return the hub best suited for sibling evaluation, or null if none match
+	 */
 	public static Hub findBestSiblingHub(OAObject masterObject, OALinkInfo liToMaster) {
 		Hub[] hubs = OAObjectHubDelegate.getHubReferences(masterObject);
 

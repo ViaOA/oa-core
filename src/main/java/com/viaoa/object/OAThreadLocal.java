@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,6 +109,10 @@ public class OAThreadLocal {
 	protected String compoundUndoableName;
 	protected Tuple3<Hub, OAObject, String>[] calcPropertyEvents;
 
+	/**
+	 * Creates a new thread-local context instance and initializes the
+	 * threadName field using the current thread's name.
+	 */
 	public OAThreadLocal() {
 		this.threadName = Thread.currentThread().getName();
 	}

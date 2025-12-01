@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,25 @@ package com.viaoa.object;
  * <p>These hooks are used by auditing, synchronization, and UI refresh logic.</p>
  */
 public interface OASaveDeleteListener {
+	
+	/**
+	 * Called after the specified OAObject has been inserted and persisted.
+	 *
+	 * @param obj the object that was newly inserted
+	 */
 	public void onInsert(OAObject obj);
+	
+	/**
+	 * Called after the specified OAObject has been updated in persistence.
+	 *
+	 * @param obj the object that was updated
+	 */
 	public void onUpdate(OAObject obj);
+	
+	/**
+	 * Called after the specified OAObject has been deleted from persistence.
+	 *
+	 * @param obj the object that was deleted
+	 */
 	public void onDelete(OAObject obj);
 }

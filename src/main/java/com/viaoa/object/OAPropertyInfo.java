@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,118 +120,207 @@ public class OAPropertyInfo implements java.io.Serializable {
 	private boolean noPojo;
 	private int pojoKeyPos;
 
+	
+	
 	public OAPropertyInfo() {
 	}
 
+	/**
+	 * Returns the Java type assigned to this property.
+	 */
 	public Class getClassType() {
 		return classType;
 	}
 
+	/**
+	 * Sets the Java type for this property and updates the primitive flag by
+	 * checking whether the assigned class represents a primitive type.
+	 */
 	public void setClassType(Class classType) {
 		this.classType = classType;
 		bIsPrimitive = classType == null ? false : classType.isPrimitive();
 	}
 
+	/**
+	 * Returns whether the assigned class type represents a primitive value.
+	 */
 	public boolean getIsPrimitive() {
 		return bIsPrimitive;
 	}
 
+	/**
+	 * Returns whether the assigned class type represents a primitive value.
+	 */
 	public boolean getPrimitive() {
 		return bIsPrimitive;
 	}
 
+	/**
+	 * Returns whether this property is marked as an identifier.
+	 */
 	public boolean getId() {
 		return id;
 	}
 
+	/**
+	 * Returns whether this property is marked as an identifier.
+	 */
 	public boolean isId() {
 		return id;
 	}
 
+	/**
+	 * Sets whether this property is marked as an identifier.
+	 */
 	public void setId(boolean id) {
 		this.id = id;
 	}
 
+	/**
+	 * Returns whether this property is marked as an identifier key.
+	 */
 	public boolean getKey() {
 		return id;
 	}
 
+	/**
+	 * Returns whether this property is marked as an identifier key.
+	 */
 	public boolean isKey() {
 		return id;
 	}
 
+	/**
+	 * Returns whether this property is marked as unique.
+	 */
 	public boolean getUnique() {
 		return unique;
 	}
 
+	/**
+	 * Sets whether this property must have a unique value.
+	 */
 	public void setUnique(boolean bUnique) {
 		this.unique = bUnique;
 	}
 
+	/**
+	 * Returns whether the value of this property is automatically assigned.
+	 */
 	public boolean getAutoAssign() {
 		return autoAssign;
 	}
 
+	/**
+	 * Sets whether the value of this property is automatically assigned.
+	 */
 	public void setAutoAssign(boolean b) {
 		this.autoAssign = b;
 	}
 
+	/**
+	 * Returns whether this property has been processed.
+	 */
 	public boolean getProcessed() {
 		return isProcessed;
 	}
 
+	/**
+	 * Sets whether this property has been processed.
+	 */
 	public void setProcessed(boolean b) {
 		this.isProcessed = b;
 	}
 
+	/**
+	 * Returns the display length assigned to this property.
+	 */
 	public int getDisplayLength() {
 		return displayLength;
 	}
 
+	/**
+	 * Sets the display length for this property.
+	 */
 	public void setDisplayLength(int length) {
 		this.displayLength = length;
 	}
 
+	/**
+	 * Returns the minimum length allowed for this property.
+	 */
     public int getMinLength() {
         return minLength;
     }
 
+    /**
+     * Sets the minimum length allowed for this property.
+     */
     public void setMinLength(int minLength) {
         this.minLength = minLength;
     }
 
+    /**
+     * Returns the maximum length allowed for this property.
+     */
     public int getMaxLength() {
         return maxLength;
     }
 
+    /**
+     * Sets the maximum length allowed for this property.
+     */
     public void setMaxLength(int maxLength) {
         this.maxLength = maxLength;
     }
     
+    /**
+     * Returns the UI column length assigned to this property.
+     */
 	public int getUIColumnLength() {
 		return uiColumnLength;
 	}
 
+	/**
+	 * Sets the UI column length for this property.
+	 */
 	public void setUIColumnLength(int length) {
 		this.uiColumnLength = length;
 	}
 
+	/**
+	 * Returns the UI column name used when displaying this property.
+	 */
 	public String getUIColumnName() {
 		return uiColumnName;
 	}
 
+	/**
+	 * Sets the UI column name used when displaying this property.
+	 */
 	public void setUIColumnName(String colName) {
 		this.uiColumnName = colName;
 	}
 
+	/**
+	 * Returns the name of this property.
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Sets the name of this property.
+	 */
 	public void setName(String name) {
 		this.name = name;
 	}
 
+	/**
+	 * Returns the lowercase version of the property name. If the
+	 * lowerName field is empty, the formatted version of the original
+	 * name is returned.
+	 */
 	public String getLowerName() {
 		if (OAString.isNotEmpty(lowerName)) {
 			return lowerName;
@@ -239,82 +328,142 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return OAString.mfcl(name);
 	}
 
+	/**
+	 * Sets the lowercase version of the property name.
+	 */
 	public void setLowerName(String name) {
 		this.lowerName = name;
 	}
 
+	/**
+	 * Returns the display name for this property.
+	 */
 	public String getDisplayName() {
 		return displayName;
 	}
 
+	/**
+	 * Sets the display name for this property.
+	 */
 	public void setDisplayName(String name) {
 		this.displayName = name;
 	}
 
+	/**
+	 * Returns whether this property is marked as required.
+	 */
 	public boolean getRequired() {
 		return required;
 	}
 
+	/**
+	 * Sets whether this property is required.
+	 */
 	public void setRequired(boolean required) {
 		this.required = required;
 	}
 
+	/**
+	 * Sets the number of decimal places used for this property.
+	 */
 	public void setDecimalPlaces(int x) {
 		this.decimalPlaces = x;
 	}
 
+	/**
+	 * Returns the number of decimal places defined for this property.
+	 */
 	public int getDecimalPlaces() {
 		return this.decimalPlaces;
 	}
 
+	/**
+	 * Returns whether this property represents a BLOB value.
+	 */
 	public boolean isBlob() {
 		return isBlob;
 	}
 
+	/**
+	 * Sets whether this property represents a BLOB value.
+	 */
 	public void setBlob(boolean b) {
 		this.isBlob = b;
 	}
 
+	/**
+	 * Returns whether this property is a name-value type property.
+	 */
 	public boolean isNameValue() {
 		return isNameValue;
 	}
 
+	/**
+	 * Sets whether this property is a name-value type property.
+	 */
 	public void setNameValue(boolean b) {
 		this.isNameValue = b;
 	}
 
+	/**
+	 * Returns whether this property stores Unicode values.
+	 */
 	public boolean isUnicode() {
 		return isUnicode;
 	}
 
+	/**
+	 * Sets whether this property stores Unicode values.
+	 */
 	public void setUnicode(boolean b) {
 		this.isUnicode = b;
 	}
 
+	/**
+	 * Returns whether this property is encrypted.
+	 */
 	public boolean isEncrypted() {
 		return isEncrypted;
 	}
 
+	/**
+	 * Sets whether this property is encrypted.
+	 */
 	public void setEncrypted(boolean b) {
 		this.isEncrypted = b;
 	}
 
+	/**
+	 * Returns whether this property is stored as a SHA hash.
+	 */
 	public boolean isSHAHash() {
 		return isSHAHash;
 	}
 
+	/**
+	 * Sets whether this property is stored as a SHA hash.
+	 */
 	public void setSHAHash(boolean b) {
 		this.isSHAHash = b;
 	}
 
+	/**
+	 * Assigns the OAProperty annotation metadata for this property.
+	 */
 	public void setOAProperty(OAProperty p) {
 		oaProperty = p;
 	}
 
+	/**
+	 * Returns the OAProperty annotation metadata assigned to this property.
+	 */
 	public OAProperty getOAProperty() {
 		return oaProperty;
 	}
 
+	/**
+	 * Returns the hub of name values for this property, creating it if needed.
+	 */
 	public Hub<String> getNameValues() {
 		if (hubNameValue == null) {
 			hubNameValue = new Hub<String>(String.class);
@@ -322,6 +471,9 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return hubNameValue;
 	}
 
+	/**
+	 * Returns the hub of display name values for this property, creating it if needed.
+	 */
 	public Hub<String> getDisplayNameValues() {
 		if (hubDisplayNameValue == null) {
 			hubDisplayNameValue = new Hub<String>(String.class);
@@ -329,301 +481,528 @@ public class OAPropertyInfo implements java.io.Serializable {
 		return hubDisplayNameValue;
 	}
 
+	/**
+	 * Returns whether this property represents a currency value.
+	 */
 	public boolean isCurrency() {
 		return isCurrency;
 	}
 
+	/**
+	 * Returns whether this property represents a currency value.
+	 */
 	public boolean getIsCurrency() {
 		return isCurrency;
 	}
 
+	/**
+	 * Sets whether this property represents a currency value.
+	 */
 	public void setCurrency(boolean b) {
 		this.isCurrency = b;
 	}
 
+	/**
+	 * Returns whether this property stores HTML content.
+	 */
 	public boolean isHtml() {
 		return isHtml;
 	}
 
+	/**
+	 * Returns whether this property stores HTML content.
+	 */
 	public boolean getIsHtml() {
 		return isHtml;
 	}
 
+	/**
+	 * Sets whether this property stores HTML content.
+	 */
 	public void setHtml(boolean b) {
 		this.isHtml = b;
 	}
 
+	/**
+	 * Returns whether this property stores JSON content.
+	 */
 	public boolean isJson() {
 		return isJson;
 	}
 
+	/**
+	 * Returns whether this property stores JSON content.
+	 */
 	public boolean getIsJson() {
 		return isJson;
 	}
 
+	/**
+	 * Sets whether this property stores JSON content.
+	 */
 	public void setJson(boolean b) {
 		this.isJson = b;
 	}
 
+	/**
+	 * Returns whether this property stores a timestamp value.
+	 */
 	public boolean isTimestamp() {
 		return isTimestamp;
 	}
 
+	/**
+	 * Sets whether this property stores a timestamp value.
+	 */
 	public void setTimestamp(boolean b) {
 		this.isTimestamp = b;
 	}
 
+	/**
+	 * Sets the list of view-dependent property names.
+	 */
 	public void setViewDependentProperties(String[] ss) {
 		this.viewDependentProperties = ss;
 	}
 
+	/**
+	 * Returns the list of view-dependent property names.
+	 */
 	public String[] getViewDependentProperties() {
 		return this.viewDependentProperties;
 	}
 
+	/**
+	 * Sets the list of context-dependent property names.
+	 */
 	public void setContextDependentProperties(String[] ss) {
 		this.contextDependentProperties = ss;
 	}
 
+	/**
+	 * Returns the list of context-dependent property names.
+	 */
 	public String[] getContextDependentProperties() {
 		return this.contextDependentProperties;
 	}
 
+	/**
+	 * Returns the property name used to determine whether this property is enabled.
+	 */
 	public String getEnabledProperty() {
 		return enabledProperty;
 	}
 
+	/**
+	 * Sets the property name used to determine whether this property is enabled.
+	 */
 	public void setEnabledProperty(String s) {
 		enabledProperty = s;
 	}
 
+	/**
+	 * Returns the enabled value for this property.
+	 */
 	public boolean getEnabledValue() {
 		return enabledValue;
 	}
 
+	/**
+	 * Sets the enabled value for this property.
+	 */
 	public void setEnabledValue(boolean b) {
 		enabledValue = b;
 	}
 
+	/**
+	 * Returns the property name used to determine visibility.
+	 */
 	public String getVisibleProperty() {
 		return visibleProperty;
 	}
 
+	/**
+	 * Sets the property name used to determine visibility.
+	 */
 	public void setVisibleProperty(String s) {
 		visibleProperty = s;
 	}
 
+	/**
+	 * Returns the visibility value for this property.
+	 */
 	public boolean getVisibleValue() {
 		return visibleValue;
 	}
 
+	/**
+	 * Sets the visibility value for this property.
+	 */
 	public void setVisibleValue(boolean b) {
 		visibleValue = b;
 	}
 
+	/**
+	 * Returns the context property name used to determine whether this property is enabled.
+	 */
 	public String getContextEnabledProperty() {
 		return contextEnabledProperty;
 	}
 
+	/**
+	 * Sets the context property name used to determine whether this property is enabled.
+	 */
 	public void setContextEnabledProperty(String s) {
 		contextEnabledProperty = s;
 	}
 
+	/**
+	 * Returns the context-enabled value for this property.
+	 */
 	public boolean getContextEnabledValue() {
 		return contextEnabledValue;
 	}
 
+	/**
+	 * Sets the context-enabled value for this property.
+	 */
 	public void setContextEnabledValue(boolean b) {
 		contextEnabledValue = b;
 	}
 
+	/**
+	 * Returns the context property name used to determine visibility.
+	 */
 	public String getContextVisibleProperty() {
 		return contextVisibleProperty;
 	}
 
+	/**
+	 * Sets the context property name used to determine visibility.
+	 */
 	public void setContextVisibleProperty(String s) {
 		contextVisibleProperty = s;
 	}
 
+	/**
+	 * Returns the context visibility value for this property.
+	 */
 	public boolean getContextVisibleValue() {
 		return contextVisibleValue;
 	}
 
+	/**
+	 * Sets the context visibility value for this property.
+	 */
 	public void setContextVisibleValue(boolean b) {
 		contextVisibleValue = b;
 	}
 
+	/**
+	 * Sets the callback method associated with this property.
+	 */
 	public void setObjectCallbackMethod(Method m) {
 		this.objectCallbackMethod = m;
 	}
 
+	/**
+	 * Returns the callback method associated with this property.
+	 */
 	public Method getObjectCallbackMethod() {
 		return objectCallbackMethod;
 	}
 
+	/**
+	 * Returns whether null tracking is enabled for primitive values.
+	 */
 	public boolean getTrackPrimitiveNull() {
 		return trackPrimitiveNull;
 	}
 
+	/**
+	 * Sets whether null tracking is enabled for primitive values.
+	 */
 	public void setTrackPrimitiveNull(boolean b) {
 		trackPrimitiveNull = b;
 	}
 
+	/**
+	 * Sets whether this property represents a submit field.
+	 */
 	public void setIsSubmit(boolean b) {
 		this.isSubmit = b;
 	}
 
+	/**
+	 * Sets whether this property represents a submit field.
+	 */
 	public void setSubmit(boolean b) {
 		this.isSubmit = b;
 	}
 
+	/**
+	 * Returns whether this property represents a submit field.
+	 */
 	public boolean getIsSubmit() {
 		return this.isSubmit;
 	}
 
+	/**
+	 * Returns whether this property represents a submit field.
+	 */
 	public boolean getSubmit() {
 		return this.isSubmit;
 	}
 
+	/**
+	 * Returns whether this property represents a submit field.
+	 */
 	public boolean isSubmit() {
 		return this.isSubmit;
 	}
 
+	/**
+	 * Sets whether this property represents an object status field.
+	 */
 	public void setObjectStatus(boolean b) {
 		this.isObjectStatus = b;
 	}
+
+	/**
+	 * Returns whether this property represents an object status field.
+	 */
 	public boolean getObjectStatus() {
 		return this.isObjectStatus;
 	}
 
+	/**
+	 * Returns whether this property represents an object status field.
+	 */
 	public boolean isObjectStatus() {
 		return this.isObjectStatus;
 	}
 	
+	/**
+	 * Returns whether timezone adjustments are ignored for this property.
+	 */
 	public boolean getIgnoreTimeZone() {
 		return ignoreTimeZone;
 	}
 
+	/**
+	 * Sets whether timezone adjustments are ignored for this property.
+	 */
 	public void setIgnoreTimeZone(boolean b) {
 		this.ignoreTimeZone = b;
 	}
 
+	/**
+	 * Returns the property path used to determine timezone information.
+	 */
 	public String getTimeZonePropertyPath() {
 		return timeZonePropertyPath;
 	}
 
+	/**
+	 * Sets the property path used to determine timezone information.
+	 */
 	public void setTimeZonePropertyPath(String s) {
 		this.timeZonePropertyPath = s;
 	}
 
+	/**
+	 * Sets whether this property value should be converted to uppercase.
+	 */
 	public void setUpper(boolean b) {
 		this.isUpper = b;
 	}
 
+	/**
+	 * Returns whether this property value should be converted to uppercase.
+	 */
 	public boolean getIsUpper() {
 		return this.isUpper;
 	}
 
+	/**
+	 * Returns whether this property value should be converted to uppercase.
+	 */
 	public boolean getUpper() {
 		return this.isUpper;
 	}
 
+	/**
+	 * Returns whether this property value should be converted to uppercase.
+	 */
 	public boolean isUpper() {
 		return this.isUpper;
 	}
 
+	/**
+	 * Sets whether this property value should be converted to lowercase.
+	 */
 	public void setLower(boolean b) {
 		this.isLower = b;
 	}
 
+	/**
+	 * Returns whether this property value should be converted to lowercase.
+	 */
 	public boolean getIsLower() {
 		return this.isLower;
 	}
 
+	/**
+	 * Returns whether this property value should be converted to lowercase.
+	 */
 	public boolean getLower() {
 		return this.isLower;
 	}
 
+	/**
+	 * Returns whether this property value should be converted to lowercase.
+	 */
 	public boolean isLower() {
 		return this.isLower;
 	}
 
+	/**
+	 * Returns the value of this property for the given object by delegating
+	 * to OAObjectReflectDelegate.getProperty using the stored property name.
+	 */
 	public Object getValue(Object obj) {
 		return OAObjectReflectDelegate.getProperty((OAObject) obj, name);
 	}
 
+	/**
+	 * Sets whether this property contains sensitive data.
+	 */
 	public void setSensitiveData(boolean b) {
 		this.sensitiveData = b;
 	}
 
+	/**
+	 * Returns whether this property contains sensitive data.
+	 */
 	public boolean getSensitiveData() {
 		return sensitiveData;
 	}
 
+	/**
+	 * Returns whether this property is used for import matching.
+	 */
 	public boolean isImportMatch() {
 		return importMatch;
 	}
 
+	/**
+	 * Sets whether this property is used for import matching.
+	 */
 	public void setImportMatch(boolean b) {
 		this.importMatch = b;
 	}
 
+	/**
+	 * Returns whether this property is used for import matching.
+	 */
 	public boolean getImportMatch() {
 		return importMatch;
 	}
 
+	/**
+	 * Sets the name of the enum property associated with this property.
+	 */
 	public void setEnumPropertyName(String s) {
 		this.enumPropertyName = s;
 	}
 
+	/**
+	 * Returns the name of the enum property associated with this property.
+	 */
 	public String getEnumPropertyName() {
 		return this.enumPropertyName;
 	}
 
+	/**
+	 * Returns the OAColumn annotation metadata for this property.
+	 */
 	public OAColumn getOAColumn() {
 		return oaColumn;
 	}
 
+	/**
+	 * Sets the OAColumn annotation metadata for this property.
+	 */
 	public void setOAColumn(OAColumn c) {
 		this.oaColumn = c;
 	}
 
+	/**
+	 * Returns the format string for this property.
+	 */
 	public String getFormat() {
 		return format;
 	}
 
+	/**
+	 * Sets the format string for this property.
+	 */
 	public void setFormat(String format) {
 		this.format = format;
 	}
 
+	/**
+	 * Returns whether this property is foreign-key only.
+	 */
 	public boolean isFkeyOnly() {
 		return isFkeyOnly;
 	}
 
+	/**
+	 * Returns whether this property is foreign-key only.
+	 */
 	public boolean getIsFkeyOnly() {
 		return isFkeyOnly;
 	}
 
+	/**
+	 * Sets whether this property is foreign-key only.
+	 */
 	public void setFkeyOnly(boolean b) {
 		this.isFkeyOnly = b;
 	}
 
+	/**
+	 * Sets whether this property is foreign-key only.
+	 */
 	public void setIsFkeyOnly(boolean b) {
 		this.isFkeyOnly = b;
 	}
 
+	/**
+	 * Sets whether this property should be excluded from POJO generation.
+	 */
 	public void setNoPojo(boolean b) {
 		this.noPojo = b;
 	}
 
+	/**
+	 * Returns whether this property is excluded from POJO generation.
+	 */
 	public boolean getNoPojo() {
 		return noPojo;
 	}
 
+	/**
+	 * Returns the key position used for POJO generation.
+	 */
 	public int getPojoKeyPos() {
 		return pojoKeyPos;
 	}
 
+	/**
+	 * Sets the key position used for POJO generation.
+	 */
 	public void setPojoKeyPos(int pojoKeyPos) {
 		this.pojoKeyPos = pojoKeyPos;
 	}
