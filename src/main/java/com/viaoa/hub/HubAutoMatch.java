@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,38 +71,68 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	protected transient Method getMethod, setMethod;
 
 	/**
-	 * Create new HubAutoMatch that will automatically create objects in a Hub with references that match the objects in a master hub. ex:
-	 * new HubAutoMatch(hubItem, "itemOptionTypes", itemMain.getItemOptionTypes())
+	 * Constructs a HubAutoMatch that synchronizes the target hub with the master hub
+	 * based on the specified property. The update behavior can be configured to run
+	 * automatically or only when manually triggered.
 	 *
-	 * @param hubMaster       hub that has all objects to use
-	 * @param property        property in hub that has same type as objects in hubMaster.
-	 * @param bManuallyCalled set to true if the update method will be manually called. This is used in cases where the hubMaster could be
-	 *                        generating events that should not affect the matching. For example, if the hubMaster is controlled by a
-	 *                        HubMerger and objects are added/removed.
+	 * @param hub             the target hub whose objects will be synchronized
+	 * @param property        the property in the target hub used to match objects
+	 * @param hubMaster       the master hub providing source objects for matching
+	 * @param bManuallyCalled whether updates must be invoked manually
 	 */
 	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, boolean bManuallyCalled) {
 		this.bManuallyCalled = bManuallyCalled;
 		init(hub, property, hubMaster, null, null);
 	}
 
+	/**
+	 * Constructs a HubAutoMatch using automatic update mode. Synchronizes the
+	 * target hub with the master hub based on the specified property.
+	 *
+	 * @param hub       the target hub whose objects will be synchronized
+	 * @param property  the property in the target hub used to match objects
+	 * @param hubMaster the master hub providing source objects for matching
+	 */
 	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster) {
 		this(hub, property, hubMaster, false);
 	}
 
 	/**
-	 * @param stopProperty propertyPath from hubMaster that is used to stop if true
+	 * Constructs a HubAutoMatch with an optional stop condition. Synchronization
+	 * will halt when the stop object's stop property evaluates to true.
+	 *
+	 * @param hub          the target hub whose objects will be synchronized
+	 * @param property     the property in the target hub used to match objects
+	 * @param hubMaster    the master hub providing source objects
+	 * @param objStop      the object whose property controls stopping behavior
+	 * @param stopProperty the property name evaluated for stopping synchronization
 	 */
 	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, OAObject objStop, String stopProperty) {
 		init(hub, property, hubMaster, objStop, stopProperty);
 	}
 	
 	
+	/**
+	 * Default constructor. The {@link #init(Hub, String, Hub, OAObject, String)}
+	 * method must be called before use.
+	 */
 	public HubAutoMatch() {
 	}
 
 	private boolean bInit;
 
 	// required to call if using the second empty constructor
+	/**
+	 * Initializes the HubAutoMatch configuration when using the default constructor.
+	 * Registers listeners, sets matching behavior, assigns stop conditions, and
+	 * initializes getter/setter methods for the matching property.
+	 *
+	 * @param hub          the target hub to synchronize
+	 * @param property     the property in the target hub used for matching
+	 * @param hubMaster    the master hub providing source objects
+	 * @param objStop      the object controlling stop behavior
+	 * @param stopProperty the property used to evaluate stopping
+	 */
 	public void init(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, OAObject objStop, String stopProperty) {
 		if (bInit) {
 			return;
@@ -130,18 +160,23 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		setProperty(property);
 	}
 
-	
-	
-	/**
+	/*
 	 * This needs to be set to true if it is only created on the server, but client applications will be using the same Hub that is
 	 * filtered. This is so that changes on the hub will be published to the clients, even if initiated on an OAClientThread.
+	 */
+	/**
+	 * Enables or disables server-side-only update mode. When enabled, updates
+	 * triggered on server threads will be published to clients.
+	 *
+	 * @param b whether the HubAutoMatch runs in server-side-only mode
 	 */
 	public void setServerSideOnly(boolean b) {
 		bServerSideOnly = b;
 	}
 
 	/**
-	 * Closes HubAutoMatch.
+	 * Closes this HubAutoMatch instance by removing its listener from the master hub.
+	 * This stops future automatic updates.
 	 */
 	public void close() {
 		if (hubMaster != null) {
@@ -149,11 +184,24 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 	}
 
+	/**
+	 * Ensures cleanup during garbage collection by calling {@link #close()} before
+	 * finalization.
+	 *
+	 * @throws Throwable if superclass finalization throws an exception
+	 */
 	protected void finalize() throws Throwable {
 		close();
 		super.finalize();
 	}
 
+	/**
+	 * Configures the property used for object matching. Determines getter and setter
+	 * methods dynamically based on the hub's object class. If no property is
+	 * specified, attempts to infer it by scanning link information.
+	 *
+	 * @param property the property name used for matching, or {@code null} to infer
+	 */
 	protected void setProperty(String property) {
 		this.property = property;
 		Class c = null;
@@ -197,10 +245,21 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
 	private AtomicBoolean abUpdating = new AtomicBoolean(false);
 
+	/**
+	 * Performs synchronization between the target hub and the master hub. Delegates
+	 * to the internal update method with full in-sync checking.
+	 */
     public void update() {
         _update(true);
     }
 	
+    /**
+     * Internal update routine that synchronizes the target hub with the master hub.
+     * Performs stop-condition evaluation, thread-safety checks, state verification,
+     * and delegates to master-based or enum-based update routines.
+     *
+     * @param bCheckInSync whether to verify HubCurrentState is InSync before updating
+     */
 	protected void _update(final boolean bCheckInSync) {
 		if (!getEnabled()) return;
 		
@@ -247,6 +306,11 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 	}
 
+	/**
+	 * Synchronizes the target hub using a master hub. Adds missing objects based on
+	 * the matching property and removes objects that no longer exist in the master
+	 * hub when permitted.
+	 */
 	private void _update1() {
 		if (hub != null) {
 			if (OAThreadLocalDelegate.isDeleting(hub.getMasterObject())) {
@@ -341,6 +405,10 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	private boolean bMaxEnumValueChecked;
 	*/
 
+	/**
+	 * Synchronizes the target hub based on enum values. Ensures the target hub
+	 * contains one object per enum display name value for the configured property.
+	 */
 	private void _update2() {
 		/*
 		if (!bMaxEnumValueChecked) {
@@ -388,12 +456,24 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	*/
 
 	/**
-	 * Called before removing an object that does not have a matching value.
+	 * Determines whether an object should be removed when it does not exist in the
+	 * master hub. Default implementation allows removal.
+	 *
+	 * @param obj           the object considered for removal
+	 * @param propertyValue the matched property value for the object
+	 * @return {@code true} if removal is allowed
 	 */
 	public boolean okToRemove(Object obj, Object propertyValue) {
 		return true;
 	}
 
+	/**
+	 * Creates a new instance of the hub object type, sets its matching property
+	 * value, and adds it to the target hub.
+	 *
+	 * @param obj the property value used to initialize the new object
+	 * @return the created object added to the hub
+	 */
 	protected TYPE createNewObject(Object obj) {
 		TYPE object;
 		try {
@@ -408,7 +488,12 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		return (TYPE) object;
 	}
 
-	/** HubListener interface method, used to listen to changes to master Hub. */
+	/**
+	 * HubListener callback triggered after an insert event on the master hub.
+	 * Initiates an update unless loading or hub-merger processing is active.
+	 *
+	 * @param e the hub event associated with the insert
+	 */
 	public @Override void afterInsert(HubEvent e) {
 		if (!OAThreadLocalDelegate.isLoading()) {
 			if (!OAThreadLocalDelegate.isHubMergerChanging()) { // else wait for newList
@@ -417,7 +502,12 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 	}
 
-	/** HubListener interface method, used to listen to changes to master Hub. */
+	/**
+	 * HubListener callback triggered after an add event on the master hub.
+	 * Initiates an update unless loading or hub-merger processing is active.
+	 *
+	 * @param e the hub event associated with the add
+	 */
 	public @Override void afterAdd(HubEvent e) {
 		if (!OAThreadLocalDelegate.isLoading()) {
 			if (!OAThreadLocalDelegate.isHubMergerChanging()) { // else wait for newList
@@ -426,7 +516,12 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 	}
 
-	/** HubListener interface method, used to listen to changes to master Hub. */
+	/**
+	 * HubListener callback triggered after a remove event on the master hub.
+	 * Updates the target hub unless hub-merger processing is active.
+	 *
+	 * @param e the hub event associated with the removal
+	 */
 	public @Override void afterRemove(HubEvent e) {
 		if (OAThreadLocalDelegate.isHubMergerChanging()) {
 			return; // else wait for newList
@@ -435,7 +530,12 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		update();
 	}
 
-	/** HubListener interface method, used to listen to changes to master Hub. */
+	/**
+	 * HubListener callback triggered when the master hub fires a newList event.
+	 * Initiates an update unless hub-merger processing is active.
+	 *
+	 * @param e the hub event associated with the new list
+	 */
 	public @Override void onNewList(HubEvent e) {
 		if (OAThreadLocalDelegate.isHubMergerChanging()) { // else wait for newList after merger is done
 			return;
@@ -443,10 +543,20 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		update();
 	}
 
+	/**
+	 * Enables or disables synchronization updates.
+	 *
+	 * @param b {@code true} to enable updates, {@code false} to disable
+	 */
 	public void setEnabled(boolean b) {
 		this.bEnabled = b;
 	}
 
+	/**
+	 * Returns whether synchronization updates are enabled.
+	 *
+	 * @return {@code true} if updates are enabled
+	 */
 	public boolean getEnabled() {
 		return this.bEnabled;
 	}

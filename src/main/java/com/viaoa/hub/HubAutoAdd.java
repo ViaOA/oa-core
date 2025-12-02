@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,42 @@ package com.viaoa.hub;
  */
 public class HubAutoAdd<TYPE, PROPTYPE> extends HubAutoMatch<TYPE, PROPTYPE> {
 
+	/**
+	 * Creates a HubAutoAdd instance that synchronizes additions from the master hub
+	 * based on the specified property. Matching objects are added automatically, but
+	 * never removed. Delegates construction to the superclass.
+	 *
+	 * @param hub             the target hub that will receive matching objects
+	 * @param property        the property name used for matching
+	 * @param hubMaster       the master hub providing source objects
+	 * @param bManuallyCalled whether synchronization is triggered manually
+	 */
 	public HubAutoAdd(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, boolean bManuallyCalled) {
 		super(hub, property, hubMaster, bManuallyCalled);
 	}
 
+	/**
+	 * Creates a HubAutoAdd instance with automatic synchronization behavior.
+	 * Matching objects are added from the master hub but never removed.
+	 * Delegates construction to the superclass, using {@code false} for
+	 * manual-trigger mode.
+	 *
+	 * @param hub       the target hub that will receive matching objects
+	 * @param property  the property name used for matching
+	 * @param hubMaster the master hub providing source objects
+	 */
 	public HubAutoAdd(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster) {
 		super(hub, property, hubMaster, false);
 	}
 
+	/**
+	 * Always returns {@code false}, indicating that matching objects should never
+	 * be removed from the target hub when using HubAutoAdd.
+	 *
+	 * @param obj           the object considered for removal
+	 * @param propertyValue the evaluated property value
+	 * @return {@code false} always
+	 */
 	@Override
 	public boolean okToRemove(Object obj, Object propertyValue) {
 		return false;

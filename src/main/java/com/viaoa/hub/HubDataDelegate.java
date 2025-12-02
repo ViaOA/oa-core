@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,15 @@ public class HubDataDelegate {
 	
     private static Logger LOG = Logger.getLogger(HubDataDelegate.class.getName());
     
-	// used by HubSelectDelegate.select()
+    /**
+     * Clears all internal Hub data structures and resets tracking state.
+     * Removes all elements from the Hub’s vector and clears add/remove
+     * tracking lists. Drops the {@code hubDatax} extension if it is no
+     * longer needed, resets the changed flag, and increments the change
+     * counter.
+     *
+     * @param thisHub the hub whose internal state is being reset
+     */
 	protected static void clearAllAndReset(Hub thisHub) {
     	synchronized (thisHub.data) {
             if (thisHub.data.getVecAdd() != null) thisHub.data.getVecAdd().removeAllElements();
@@ -62,14 +70,37 @@ public class HubDataDelegate {
 		thisHub.data.changeCount++;
 	}
 	
+	/**
+	 * Ensures that the Hub’s underlying vector has capacity for at least
+	 * the specified number of elements.
+	 *
+	 * @param thisHub the hub whose vector capacity is being checked
+	 * @param size    the minimum capacity required
+	 */
 	protected static void ensureCapacity(Hub thisHub, int size) {
 		thisHub.data.vector.ensureCapacity(size);
 	}
+	
+	/**
+	 * Trims the Hub’s underlying vector to its current size. No-op when
+	 * serialization is in progress and the vector is null.
+	 *
+	 * @param thisHub the hub whose vector should be trimmed
+	 */
 	public static void resizeToFit(Hub thisHub) {
 		if (thisHub.data.vector == null) return; // could be called during serialization
 		thisHub.data.vector.trimToSize();
 	}
 
+	/**
+	 * Updates the Hub’s changed flag and increments its change counter
+	 * when the value transitions. Clearing the changed flag also clears
+	 * tracked add/remove lists. When marking as changed, the master
+	 * object may also be marked changed based on link metadata.
+	 *
+	 * @param thisHub   the hub whose changed state is being updated
+	 * @param bChanged  the new changed value
+	 */
 	protected static void setChanged(Hub thisHub, boolean bChanged) {
 	    if (thisHub == null) return;
         boolean old = thisHub.data.changed;
@@ -95,7 +126,14 @@ public class HubDataDelegate {
         }
     }
 	
-    // 20150420
+	/**
+	 * Clears the Hub’s add/remove tracking lists and resets the changed
+	 * flag when those lists become empty. Drops {@code hubDatax} if it is
+	 * no longer required. Sends a remote clear-changes event when any
+	 * tracked changes existed.
+	 *
+	 * @param thisHub the hub whose change tracking is being cleared
+	 */
 	public static void clearHubChanges(Hub thisHub) {
 	    if (thisHub == null) return;
         boolean bSendEvent = false;
@@ -133,12 +171,27 @@ public class HubDataDelegate {
         }
 	}
 	
+	/**
+	 * Copies all elements from the Hub’s vector into the supplied array.
+	 * The copy is performed under synchronization for thread safety.
+	 *
+	 * @param thisHub the hub whose elements are being copied
+	 * @param anArray the destination array
+	 */
     protected static void copyInto(Hub thisHub, Object anArray[]) {
         synchronized (thisHub.data) {
             thisHub.data.vector.copyInto(anArray);
         }
     }
 
+    /**
+     * Returns an array containing all elements in the Hub. Retries the
+     * copy operation if the Hub’s contents change during the attempt.
+     * Ensures that the Hub’s size is known before copying.
+     *
+     * @param thisHub the hub whose elements are being converted to an array
+     * @return an array containing the Hub’s elements
+     */
 	public static Object[] toArray(Hub thisHub) {
 	    thisHub.getSize(); // call before sync, in case it needs to load
         Object[] objs;
@@ -157,16 +210,39 @@ public class HubDataDelegate {
 	    return objs;
 	}
 
+	/**
+	 * Returns the current number of elements in the Hub.
+	 *
+	 * @param thisHub the hub whose size is being retrieved
+	 * @return the number of elements in the Hub
+	 */
     public static int getCurrentSize(Hub thisHub) {
         return thisHub.data.vector.size();
     }
 	
-    /** called by Hub.clone(); */
+
+    /**
+     * Copies the underlying vector from one Hub to another as part of
+     * cloning operations.
+     *
+     * @param thisHub the source hub
+     * @param newHub  the destination hub
+     */
     public static void _clone(Hub thisHub, Hub newHub) {
     	newHub.data.vector = (Vector) thisHub.data.vector.clone();
     }
     
-	// called by HubAddRemoveDelegate
+    /**
+     * Removes an object from the Hub while managing locking and remote
+     * thread coordination. Delegates to the internal removal method and
+     * returns the removed position unless removing all elements.
+     *
+     * @param thisHub        the hub from which the object is removed
+     * @param obj            the object being removed
+     * @param bDeleting      whether the object is being permanently deleted
+     * @param bIsRemovingAll whether the entire Hub is being cleared
+     * @return the position from which the object was removed, or -1
+     */
     protected static int _remove(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
         int pos = 0;
         try {
@@ -182,6 +258,19 @@ public class HubDataDelegate {
         return pos;
     }
     
+    /**
+     * Performs the core remove operation without acquiring locks.
+     * Removes the object from the Hub's vector when applicable and
+     * updates add/remove tracking lists based on deletion rules,
+     * tracking mode, and server state. Updates the Hub’s changed flag
+     * and change counter as needed.
+     *
+     * @param thisHub        the hub from which the object is being removed
+     * @param obj            the object being removed
+     * @param bDeleting      whether the object is being permanently deleted
+     * @param bIsRemovingAll whether the entire Hub is being cleared
+     * @return the position from which the object was removed, or -1
+     */
     private static int _remove2(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
         int pos;
         if (bIsRemovingAll) {
@@ -235,7 +324,18 @@ public class HubDataDelegate {
 	}
 
 	
-	// called by HubAddRemoveDelegate.internalAdd
+    /**
+     * Adds an object to the Hub's vector, optionally acquiring a lock
+     * unless already held. Delegates to the internal add method and
+     * triggers remote thread processing. Returns whether the object
+     * was added.
+     *
+     * @param thisHub        the hub receiving the object
+     * @param obj            the object to add
+     * @param bHasLock       whether the calling thread already holds the lock
+     * @param bCheckContains whether to skip the add if the object is already present
+     * @return {@code true} if the object was added; otherwise {@code false}
+     */
     protected static boolean _add(Hub thisHub, Object obj, boolean bHasLock, boolean bCheckContains) {
         boolean b = false;
         try {
@@ -248,6 +348,19 @@ public class HubDataDelegate {
         OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
         return b;
     }
+    
+    /**
+     * Performs the core add operation without acquiring locks.
+     * Adds the object to the Hub's vector, updates tracking lists
+     * when required, sets the Hub’s changed flag, and increments
+     * the change counter. Skips addition when instructed and
+     * the object is already present.
+     *
+     * @param thisHub        the hub receiving the object
+     * @param obj            the object to add
+     * @param bCheckContains whether to skip if the object already exists
+     * @return {@code true} if the object was added; otherwise {@code false}
+     */
     private static boolean _add2(Hub thisHub, Object obj, final boolean bCheckContains) {
         if (bCheckContains && thisHub.contains(obj)) return false;
     	thisHub.data.vector.addElement(obj);
@@ -279,6 +392,17 @@ public class HubDataDelegate {
 	}
 
 
+    /**
+     * Inserts an object at the specified position in the Hub's vector,
+     * optionally acquiring a lock when not already held. Delegates to
+     * the internal insert method and triggers remote thread processing.
+     *
+     * @param thisHub   the hub receiving the insertion
+     * @param obj       the object to insert
+     * @param pos       the index at which to insert the object
+     * @param bIsLocked whether the calling thread already holds the lock
+     * @return {@code true} if the object was inserted
+     */
     protected static boolean _insert(Hub thisHub, Object obj, int pos, boolean bIsLocked) {
         boolean b = false;
         try {
@@ -293,7 +417,18 @@ public class HubDataDelegate {
         OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
         return b;
     }
-    //was: private static boolean _insert2(Hub thisHub, OAObjectKey key, Object obj, int pos, boolean bLock) {
+   
+    /**
+     * Performs the core insert operation without acquiring locks.
+     * Inserts the object into the Hub’s vector at the specified
+     * position, updates tracking lists when enabled, sets the
+     * changed flag, and increments the change counter.
+     *
+     * @param thisHub the hub receiving the object
+     * @param obj     the object to insert
+     * @param pos     the position at which to insert the object
+     * @return {@code true} if the insert completed
+     */
 	private static boolean _insert2(Hub thisHub, Object obj, int pos) {
         boolean b = OAThreadLocalDelegate.isLoading();
 
@@ -316,7 +451,16 @@ public class HubDataDelegate {
 	    return true;
 	}
 
-	// called by HubAddRemoveDelegate.move
+	/**
+	 * Moves an object within the Hub from one index to another.
+	 * Performs the vector operations under lock, increments the
+	 * change counter, and triggers remote thread processing.
+	 *
+	 * @param thisHub the hub containing the object
+	 * @param obj     the object to move
+	 * @param posFrom the original index
+	 * @param posTo   the destination index
+	 */
 	protected static void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
         try {
             OAThreadLocalDelegate.lock(thisHub);
@@ -330,6 +474,12 @@ public class HubDataDelegate {
         OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
 	}
 	
+	/**
+	 * Adds all objects currently in the Hub to the add-tracking vector,
+	 * creating the vector when necessary. No-op when the hub is null.
+	 *
+	 * @param thisHub the hub whose contents are being tracked as added
+	 */
 	public static void addAllToAddVector(Hub thisHub) {
 	    if (thisHub == null) return;
         createVecAdd(thisHub);
@@ -338,6 +488,13 @@ public class HubDataDelegate {
 	    }
 	}
 	
+	/**
+	 * Creates the Hub’s add-tracking vector if it does not already exist.
+	 * Ensures thread-safe initialization using synchronization.
+	 *
+	 * @param thisHub the hub whose add-tracking vector is being created
+	 * @return the add-tracking vector
+	 */
 	protected static Vector createVecAdd(Hub thisHub) {
         if (thisHub.data.getVecAdd() == null) {
 	        synchronized (thisHub.data) {
@@ -346,6 +503,14 @@ public class HubDataDelegate {
         }
         return thisHub.data.getVecAdd();
 	}
+	
+	/**
+	 * Creates the Hub’s remove-tracking vector if it does not already exist.
+	 * Ensures thread-safe initialization using synchronization.
+	 *
+	 * @param thisHub the hub whose remove-tracking vector is being created
+	 * @return the remove-tracking vector
+	 */
 	protected static Vector createVecRemove(Hub thisHub) {
 		if (thisHub.data.getVecRemove() == null) {
 	        synchronized (thisHub.data) {
@@ -355,7 +520,17 @@ public class HubDataDelegate {
         return thisHub.data.getVecRemove();
 	}
 	
-	// used to "know" which objects have been added to the Hub.
+	/**
+	 * Returns an array of objects that have been added to the Hub but not yet cleared
+	 * from the Hub’s change-tracking “added” list.
+	 *
+	 * <p>The method checks the Hub’s internal {@code vecAdd} list and, if it contains
+	 * entries, copies them into a new {@code OAObject[]} array under synchronization.</p>
+	 *
+	 * @param thisHub the Hub whose added-object list is being queried
+	 * @return an array of added {@link OAObject} instances, or {@code null} if none
+	 *         have been recorded
+	 */
 	public static OAObject[] getAddedObjects(Hub thisHub) {
         Vector v = thisHub.data.getVecAdd();
         if (v == null || v.size() == 0) return null;
@@ -367,7 +542,19 @@ public class HubDataDelegate {
 			return objs;
         }
 	}
-	// used to "know" which objects have been removed to the Hub.
+
+	/**
+	 * Returns an array of objects that have been removed from the Hub but not yet
+	 * cleared from the Hub’s change-tracking “removed” list.
+	 *
+	 * <p>The method checks the Hub’s internal {@code vecRemove} list and, if it
+	 * contains entries, copies them into a new {@code OAObject[]} array under
+	 * synchronization.</p>
+	 *
+	 * @param thisHub the Hub whose removed-object list is being queried
+	 * @return an array of removed {@link OAObject} instances, or {@code null} if
+	 *         none have been recorded
+	 */
 	public static OAObject[] getRemovedObjects(Hub thisHub) {
         Vector v = thisHub.data.getVecRemove();
         if (v == null || v.size() == 0) return null;
@@ -380,10 +567,27 @@ public class HubDataDelegate {
         }
 	}
 
+	/**
+	 * Returns whether the Hub is marked as changed.
+	 *
+	 * @param thisHub the Hub to check
+	 * @return {@code true} if the Hub is marked as changed, otherwise {@code false}
+	 */
 	public static boolean getChanged(Hub thisHub) {
 	    return (thisHub.data.changed);
 	}
 	
+	/**
+	 * Returns the object in the Hub matching the supplied key.
+	 *
+	 * <p>The key is converted to an {@link OAObjectKey} if needed, and the Hub is
+	 * searched sequentially. If the Hub supports loading additional data, more
+	 * records are fetched until a match is found or no more records are available.</p>
+	 *
+	 * @param thisHub the Hub to search
+	 * @param key the key or object used to identify the desired element
+	 * @return the matching object, or {@code null} if not found
+	 */
 	public static Object getObject(final Hub thisHub, Object key) {
 		if (thisHub == null || key == null) return null;
 	    if (!(key instanceof OAObjectKey)) {
@@ -403,6 +607,17 @@ public class HubDataDelegate {
 		return null;
 	}
 	
+	/**
+	 * Retrieves the object at the specified position within the Hub.
+	 *
+	 * <p>If the object is an {@link OAObjectKey}, it is resolved to its underlying
+	 * {@link OAObject}. If the Hub supports incremental loading, additional data
+	 * may be fetched to satisfy the request.</p>
+	 *
+	 * @param thisHub the Hub containing the data
+	 * @param pos the index to retrieve
+	 * @return the object at the position, or {@code null} if not available
+	 */
 	protected static Object getObjectAt(Hub thisHub, int pos) {
 	    Object ho;
 	    if (pos < 0) return null;
@@ -442,14 +657,18 @@ public class HubDataDelegate {
 	    return ho;
 	}
 	
-	/*
-	    Find the position for an object within the Hub.  If the object is not in the Hub and there
-	    is a Master Hub from getDetailHub(), then the Master Hub will updated to the master object.
-	    This will also check and adjust for recursive hubs.
-	    <p>
-	    Note: if masterHub (or one of its shared) has a linkHub, it will still be updated.
-	*/
-	
+	/**
+	 * Finds the position of the given object within the Hub.
+	 *
+	 * <p>If not present, optional master adjustment and recursive-hub logic may be
+	 * applied to locate and reposition the Hub within a recursive hierarchy.</p>
+	 *
+	 * @param thisHub the Hub to search
+	 * @param object the object to locate
+	 * @param adjustMaster whether to adjust the master Hub relationship if needed
+	 * @param bUpdateLink whether to update link relationships during the search
+	 * @return the position of the object, or {@code -1} if not found
+	 */
 	public static int getPos(final Hub thisHub, Object object, final boolean adjustMaster, final boolean bUpdateLink) {
 	    int pos;
 	    if (object == null || thisHub == null) return -1;
@@ -563,13 +782,21 @@ public class HubDataDelegate {
         }
 	    return pos;
 	}
+	
     /**
      * Used by HubDataDelegate.getPos(..) when finding the object for recursive links
      */
     static private final Map<Hub, OALinkInfo> hashRecursiveHubDetail = new ConcurrentHashMap<Hub, OALinkInfo>(11, 0.75F);
     
-	
-	
+    /**
+     * Removes the given object from the Hub’s change-tracking “added” list.
+     *
+     * <p>Also updates the Hub’s change flag if the removal results in no remaining
+     * tracked additions or removals.</p>
+     *
+     * @param thisHub the Hub whose added list is modified
+     * @param obj the object to remove from the added list
+     */
 	protected static void removeFromAddedList(Hub thisHub, Object obj) {
 	    synchronized (thisHub.data) {
             if (thisHub.data.hubDatax == null) return;
@@ -593,6 +820,16 @@ public class HubDataDelegate {
             }
 	    }
 	}
+	
+	/**
+	 * Removes the given object from the Hub’s change-tracking “removed” list.
+	 *
+	 * <p>Also updates the Hub’s change flag if the removal results in no remaining
+	 * tracked additions or removals.</p>
+	 *
+	 * @param thisHub the Hub whose removed list is modified
+	 * @param obj the object to remove from the removed list
+	 */
 	public static void removeFromRemovedList(Hub thisHub, Object obj) {
         if (thisHub.data.hubDatax == null) return;
 	    synchronized (thisHub.data) {
@@ -617,35 +854,51 @@ public class HubDataDelegate {
 	    }
 	}
 
-	
-    /**
-		Counter that is incremented on: add(), insert(), remove(), setting shared hub,
-	    remove(), move(), sort(), select()
-	    This is used by html/jsp components so that they "know" when/if Hub has changed,
-	    which will cause them to be refreshed.
-	*/
+	/**
+	 * Returns the Hub’s change counter value.
+	 *
+	 * @param thisHub the Hub whose change count is requested
+	 * @return the current change count
+	 */
 	public static int getChangeCount(Hub thisHub) {
 	    return thisHub.data.changeCount;
 	}
 	
+	/**
+	 * Increments the Hub’s change counter.
+	 *
+	 * @param thisHub the Hub whose counter is incremented
+	 */
 	protected static void incChangeCount(Hub thisHub) {
 		thisHub.data.changeCount++;
 	}
 
-    /**
-	    Counter that is incremented when a new list of objects is loaded: select, setSharedHub, and when
-	    detail hubs list is changed to match the master hub's activeObject
-	    This is used by html/jsp components so that they "know" when/if Hub has changed,
-	    which will cause them to be refreshed.
-	*/
-/*	
-	public static int getNewListCount(Hub thisHub) {
-	    return thisHub.data.getNewListCount();
-	}
-*/
+	/**
+	 * Determines whether the Hub contains the specified object.
+	 *
+	 * <p>Equivalent to calling {@link #contains(Hub, Object, boolean)} with
+	 * {@code false} for the {@code bJustAdded} flag.</p>
+	 *
+	 * @param hub the Hub to search
+	 * @param obj the object to look for
+	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
+	 */
 	public static boolean contains(Hub hub, Object obj) {
 		return contains(hub, obj, false);
 	}
+	
+	/**
+	 * Determines whether the Hub contains the specified object, with an option to
+	 * restrict the check to recently added objects.
+	 *
+	 * <p>This method uses direct lookup, key resolution, or Hub-level OAObject
+	 * presence checks depending on the Hub configuration and object type.</p>
+	 *
+	 * @param hub the Hub to search
+	 * @param obj the object to check for
+	 * @param bJustAdded if {@code true}, only checks the most recently added items
+	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
+	 */
 	public static boolean contains(Hub hub, Object obj, final boolean bJustAdded) {
         if (hub == null || obj == null) return false;
         
@@ -684,7 +937,15 @@ public class HubDataDelegate {
         return b;
     }
 	
-	
+	/**
+	 * Performs a direct lookup to determine whether the Hub contains the object.
+	 *
+	 * <p>For large Hubs with a sort listener, a quicksort-based search may be used.</p>
+	 *
+	 * @param hub the Hub to search
+	 * @param obj the object to check for
+	 * @return {@code true} if the object is present, otherwise {@code false}
+	 */
     public static boolean containsDirect(Hub hub, Object obj) {
         if (hub == null || obj == null) return false;
         int x = hub.data.vector.size();
@@ -702,13 +963,11 @@ public class HubDataDelegate {
     }
     
     /**
-     * performs a quicksort search if the hub is loaded.
-     * @return
-     *    -1 obj=null, 
-     *    -2 if not sorted (and did not check)
-     *    -3 object is not same class as hub
-     *    1 found
-     *    2 not found
+     * Performs a binary search on a sorted Hub to determine whether it contains the object.
+     *
+     * @param thisHub the Hub to search
+     * @param obj the object to check
+     * @return status code indicating match, mismatch, or invalid conditions
      */
     private static int findUsingQuickSort(final Hub thisHub, final Object obj) {
         if (thisHub == null || obj == null) return -1;
@@ -762,6 +1021,12 @@ public class HubDataDelegate {
         return 2;
     }
 
+    /**
+     * Determines whether the Hub participates in a recursive link structure.
+     *
+     * @param thisHub the Hub to check
+     * @return {@code true} if this Hub is used recursively, otherwise {@code false}
+     */
     public static boolean isHubBeingUsedAsRecursive(Hub thisHub) {
         if (thisHub == null) return false;
 
@@ -772,13 +1037,32 @@ public class HubDataDelegate {
         return li.getReverseLinkInfo().getRecursive();
     }
     
+    /**
+     * Sets the Hub’s track-changes flag.
+     *
+     * @param thisHub the Hub to update
+     * @param b the new track-changes state
+     */
     public static void setTrackChanges(Hub thisHub, boolean b) {
         thisHub.data.setTrackChanges(b);        
     }
+
+    /**
+     * Returns the Hub’s track-changes flag.
+     *
+     * @param thisHub the Hub to query
+     * @return {@code true} if track changes is enabled, otherwise {@code false}
+     */
     public static boolean getTrackChanges(Hub thisHub) {
         return thisHub != null && thisHub.data.getTrackChanges();        
     }
     
+    /**
+     * Returns whether the Hub is in a load-all-data state.
+     *
+     * @param thisHub the Hub to check
+     * @return {@code true} if loading all data, otherwise {@code false}
+     */
     public static boolean isLoadingAllData(Hub thisHub) {
         if (thisHub == null) return false;
         boolean b;
@@ -787,6 +1071,14 @@ public class HubDataDelegate {
         }
         return b;
     }
+    
+    /**
+     * Sets the Hub’s load-all-data flag.
+     *
+     * @param thisHub the Hub to update
+     * @param b the new load-all-data state
+     * @return the previous state
+     */
     public static boolean setLoadingAllData(Hub thisHub, boolean b) {
         boolean bx = false;
         if (thisHub != null) {
@@ -796,6 +1088,15 @@ public class HubDataDelegate {
         }
         return bx;
     }
+    
+    /**
+     * Sets the Hub’s load-all-data flag and associates it with a thread.
+     *
+     * @param thisHub the Hub to update
+     * @param b the new state
+     * @param thread the thread to associate with the load-all flag
+     * @return the previous state
+     */
     public static boolean setLoadingAllData(Hub thisHub, boolean b, Thread thread) {
         boolean bx = false;
         if (thisHub != null) {

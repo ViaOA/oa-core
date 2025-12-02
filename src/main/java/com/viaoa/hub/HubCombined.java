@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,14 @@ public class HubCombined<T> {
 	protected Hub<T> hubFirst;
 	protected volatile boolean bUpdatingMasterHub;
 
+	/**
+	 * Creates a HubCombined instance using the specified master hub and an optional
+	 * list of source hubs. Each provided hub is added and tracked, and a master
+	 * listener is created to keep the master hub synchronized with all sources.
+	 *
+	 * @param hubMaster the master hub receiving the combined contents
+	 * @param hubs      optional list of source hubs whose objects form the union
+	 */
 	public HubCombined(final Hub<T> hubMaster, final Hub<T>... hubs) {
 		this.hubMaster = hubMaster;
 
@@ -112,10 +120,19 @@ public class HubCombined<T> {
 		hubMaster.addHubListener(hlMaster);
 	}
 
+	/**
+	 * Returns the master hub that contains the combined contents of all added hubs.
+	 *
+	 * @return the master hub
+	 */
 	public Hub<T> getMasterHub() {
 		return hubMaster;
 	}
 
+	/**
+	 * Removes all hub listeners from the tracked hubs and the master hub, clears
+	 * internal lists, and stops all synchronization behavior.
+	 */
 	public void close() {
 		int i = 0;
 		if (alHubListener != null) {
@@ -130,10 +147,23 @@ public class HubCombined<T> {
 		}
 	}
 
+	/**
+	 * Returns the list of source hubs whose contents are merged into the master hub.
+	 *
+	 * @return list of tracked hubs
+	 */
 	public ArrayList<Hub<T>> getHubs() {
 		return alHub;
 	}
 
+	/**
+	 * Creates a temporary hub that monitors the specified object's property and
+	 * adds the property's value to this combined hub. A listener is added so that
+	 * property changes update the combined content dynamically.
+	 *
+	 * @param object   the object whose property should be tracked
+	 * @param property the property name whose value is added to the combined hub
+	 */
 	public void add(final OAObject object, final String property) {
 		if (object == null) {
 			return;
@@ -173,6 +203,13 @@ public class HubCombined<T> {
 		hub.addHubListener(hl, property);
 	}
 
+	/**
+	 * Adds a source hub to the combined set, establishes a listener to synchronize
+	 * adds, removes, and list resets, and merges all existing objects from the
+	 * source hub into the master hub.
+	 *
+	 * @param hub the hub to add to the combined collection
+	 */
 	public void add(Hub<T> hub) {
 		if (alHub.size() == 0) {
 			hubFirst = hub;
@@ -258,6 +295,11 @@ public class HubCombined<T> {
 		}
 	}
 
+	/**
+	 * Synchronizes the master hub with all tracked source hubs by removing objects
+	 * no longer present in any source hub and adding all objects currently found in
+	 * the sources.
+	 */
 	public void refresh() {
 		for (Object obj : hubMaster) {
 			boolean bUsed = false;

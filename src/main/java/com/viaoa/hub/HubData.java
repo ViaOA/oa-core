@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,9 +68,13 @@ public class HubData implements java.io.Serializable {
     
     protected transient volatile HubDatax hubDatax; // extension
     
-	/**
-	    Constructor that supplies params for sizing Vector.
-	*/
+    /**
+     * Constructs a HubData instance using the specified object class and an
+     * initial vector sized according to the provided size parameter.
+     *
+     * @param objClass the class of objects stored in the hub
+     * @param size     the initial capacity of the underlying vector
+     */
 	public HubData(Class objClass, int size) {
 	    int x = size * 2;
 	    x = Math.max(5, x);
@@ -78,16 +82,37 @@ public class HubData implements java.io.Serializable {
 	    vector = new Vector(size, x);
 	    this.objClass = objClass;
 	}
+
+	/**
+	 * Constructs a HubData instance with a default initial vector size of 5.
+	 *
+	 * @param objClass the class of objects stored in the hub
+	 */
 	public HubData(Class objClass) {
 		this(objClass, 5);
 	}
-    public HubData(Class objClass, int size, int incrementSize) {
+    
+	/**
+	 * Constructs a HubData instance with explicit initial size and increment
+	 * size for the underlying vector.
+	 *
+	 * @param objClass      the class of objects stored in the hub
+	 * @param size          the initial capacity of the vector
+	 * @param incrementSize the growth increment for the vector
+	 */
+	public HubData(Class objClass, int size, int incrementSize) {
         int x = Math.max(1, incrementSize);
         x = Math.min(100, x);
         vector = new Vector(size, x);
         this.objClass = objClass;
     }
 	
+	/**
+	 * Lazily creates and returns the extended HubDatax instance.
+	 * Thread-safe double-checked initialization.
+	 *
+	 * @return the HubDatax extension object
+	 */
     private HubDatax getHubDatax() {
         if (hubDatax == null) {
             synchronized (this) {
@@ -99,65 +124,146 @@ public class HubData implements java.io.Serializable {
         return hubDatax;
     }
     
+    /**
+     * Returns the vector that tracks added objects, or {@code null} if
+     * extended data has not been initialized.
+     *
+     * @return the add-tracking vector, or {@code null}
+     */
     public Vector getVecAdd() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.vecAdd;
     }
+
+    /**
+     * Sets the vector used to track added objects. Initializes HubDatax
+     * if necessary when a non-null value is supplied.
+     *
+     * @param vecAdd the vector of added objects
+     */
     public void setVecAdd(Vector vecAdd) {
         if (hubDatax != null || vecAdd != null) {
             getHubDatax().vecAdd = vecAdd;
         }
     }
+    
+    /**
+     * Returns the vector that tracks removed objects, or {@code null} if
+     * extended data has not been initialized.
+     *
+     * @return the remove-tracking vector, or {@code null}
+     */
     public Vector getVecRemove() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.vecRemove;
     }
+    
+    /**
+     * Sets the vector used to track removed objects. Initializes HubDatax
+     * if necessary when a non-null value is supplied.
+     *
+     * @param vecRemove the vector of removed objects
+     */
     public void setVecRemove(Vector vecRemove) {
         if (hubDatax != null || vecRemove != null) {
             getHubDatax().vecRemove = vecRemove;
         }
     }
     
-    // see also: HubDataMaster.getSortProperty(), which uses linkinfo.sortProperty
+    /**
+     * Returns the property name used for sorting, or {@code null} if no
+     * sort is defined.
+     *
+     * @return the sort property name, or {@code null}
+     */
     public String getSortProperty() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.sortProperty;
     }
+
+    /**
+     * Sets the property name used for sorting. Initializes HubDatax if
+     * necessary when a non-null value is supplied.
+     *
+     * @param sortProperty the sort property name
+     */
     public void setSortProperty(String sortProperty) {
         if (hubDatax != null || sortProperty != null) {
             getHubDatax().sortProperty = sortProperty;
         }
     }
+
+    /**
+     * Returns whether sorting is in ascending order. Defaults to
+     * {@code true} if no sort information exists.
+     *
+     * @return {@code true} if ascending, otherwise {@code false}
+     */
     public boolean isSortAsc() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return true;
         return hdx.sortAsc;
     }
+
+    /**
+     * Sets whether sorting is ascending. Initializes HubDatax if
+     * necessary when a {@code false} value is supplied.
+     *
+     * @param sortAsc whether sorting should be ascending
+     */
     public void setSortAsc(boolean sortAsc) {
         if (hubDatax != null || !sortAsc) {
             getHubDatax().sortAsc = sortAsc;
         }
     }
+    
+    /**
+     * Returns the listener used for sort operations, or {@code null}
+     * if none has been assigned.
+     *
+     * @return the sort listener, or {@code null}
+     */
     public HubSortListener getSortListener() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.sortListener;
     }
+
+    /**
+     * Sets the listener used for sort operations. Initializes HubDatax
+     * if necessary when a non-null value is provided.
+     *
+     * @param sortListener the sort listener to assign
+     */
     public void setSortListener(HubSortListener sortListener) {
         if (hubDatax != null || sortListener != null) {
             getHubDatax().sortListener = sortListener;
         }
     }
     
-    
+    /**
+     * Returns the current OASelect instance associated with this hub,
+     * or {@code null} if none exists.
+     *
+     * @return the OASelect instance, or {@code null}
+     */
     public OASelect getSelect() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.select;
     }
+
+    /**
+     * Assigns an OASelect instance to this hub. Initializes HubDatax
+     * if needed. When clearing the select (passing {@code null}),
+     * extended state may be released if no longer required, and
+     * change tracking may be updated.
+     *
+     * @param select the OASelect instance to assign, or {@code null}
+     */
     public void setSelect(OASelect select) {
         if (hubDatax != null || select != null) {
             getHubDatax().select = select;
@@ -179,11 +285,24 @@ public class HubData implements java.io.Serializable {
             }
         }
     }
+
+    /**
+     * Returns whether the hub is marked as being in a refresh state.
+     *
+     * @return {@code true} if refresh is active, otherwise {@code false}
+     */
     public boolean isRefresh() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return false;
         return hdx.refresh;
     }
+    
+    /**
+     * Sets the refresh state. Initializes HubDatax if needed when
+     * enabling refresh.
+     *
+     * @param refresh whether refresh mode is active
+     */
     public void setRefresh(boolean refresh) {
         if (hubDatax != null || refresh) {
             getHubDatax().refresh = refresh;
@@ -192,17 +311,38 @@ public class HubData implements java.io.Serializable {
 
     private static ConcurrentHashMap<HubData, Thread> hmLoadingAllData = new ConcurrentHashMap<HubData, Thread>(23, .85f);
 
+    /**
+     * Returns whether the hub is currently in a “loading all data”
+     * state on any thread other than the current one.
+     *
+     * @return {@code true} if loading-all-data is active, otherwise {@code false}
+     */
     public boolean isLoadingAllData() {
         Thread t = hmLoadingAllData.get(this);
         if (t == null) return false;
         return (t != Thread.currentThread());
     }
     
+    /**
+     * Marks this hub as loading all data on the current thread,
+     * or clears the state when disabled.
+     *
+     * @param loadingAllData whether the state is being enabled
+     * @return {@code true} if a previous value was replaced, otherwise {@code false}
+     */
     public boolean setLoadingAllData(boolean loadingAllData) {
         Thread t = null;
         if (loadingAllData) t = Thread.currentThread();
         return setLoadingAllData(loadingAllData, t); 
     }
+
+    /**
+     * Sets or clears the “loading all data” state using the specified thread.
+     *
+     * @param loadingAllData whether the state is being enabled
+     * @param thread         the thread associated with the state
+     * @return {@code true} if a previous value was replaced, otherwise {@code false}
+     */
     public boolean setLoadingAllData(boolean loadingAllData, Thread thread) {
         if (loadingAllData) {
             if (thread == null) thread = Thread.currentThread();
@@ -212,56 +352,128 @@ public class HubData implements java.io.Serializable {
     }
 
     private static ConcurrentHashMap<HubData, HubData> hmSelectAllHub = new ConcurrentHashMap<HubData, HubData>(11, .85f);
+
+    /**
+     * Returns whether this hub is flagged to select all items,
+     * based on membership in the shared lookup table.
+     *
+     * @return {@code true} if flagged for select-all, otherwise {@code false}
+     */
     public boolean isSelectAllHub() {
         return hmSelectAllHub.containsKey(this);
     }
+
+    /**
+     * Sets or clears the select-all flag for this hub.
+     *
+     * @param bSelectAllHub whether to enable select-all mode
+     */
     public void setSelectAllHub(boolean bSelectAllHub) {
         if (bSelectAllHub) hmSelectAllHub.put(this, this);
         else hmSelectAllHub.remove(this);
     }
 
-    // note: could also be in HubDataMaster.
+    /**
+     * Returns the unique property name used for lookup, or {@code null}
+     * if none is defined.
+     *
+     * @return the unique property name, or {@code null}
+     */
     public String getUniqueProperty() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.uniqueProperty;
     }
+
+    /**
+     * Sets the name of the unique property used for lookup. Initializes
+     * HubDatax if necessary when a non-null value is assigned.
+     *
+     * @param uniqueProperty the unique property name
+     */
     public void setUniqueProperty(String uniqueProperty) {
         if (hubDatax != null || uniqueProperty != null) {
             getHubDatax().uniqueProperty = uniqueProperty;
         }
     }
+
+    /**
+     * Sets the getter method used for retrieving the unique property.
+     * Initializes HubDatax if necessary when a non-null method is supplied.
+     *
+     * @param uniquePropertyGetMethod the getter Method for the unique property
+     */
     public Method getUniquePropertyGetMethod() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.uniquePropertyGetMethod;
     }
+
+    /**
+     * Sets the getter method used for retrieving the unique property.
+     * Initializes HubDatax if necessary when a non-null method is supplied.
+     *
+     * @param uniquePropertyGetMethod the getter Method for the unique property
+     */
     public void setUniquePropertyGetMethod(Method uniquePropertyGetMethod) {
         if (hubDatax != null || uniquePropertyGetMethod != null) {
             getHubDatax().uniquePropertyGetMethod = uniquePropertyGetMethod;
         }
     }
+    
+    /**
+     * Returns whether the hub is marked as disabled.
+     *
+     * @return {@code true} if the hub is disabled, otherwise {@code false}
+     */
     public boolean isDisabled() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return false;
         return hdx.disabled;
     }
+    
+    /**
+     * Sets the disabled flag for the hub. Initializes HubDatax if
+     * necessary when enabling the disabled state.
+     *
+     * @param disabled whether the hub should be disabled
+     */
     public void setDisabled(boolean disabled) {
         if (hubDatax != null || disabled) {
             getHubDatax().disabled = disabled;
         }
     }
 
+    /**
+     * Returns the hashtable of property values used for tracking or
+     * lookup, or {@code null} if none exists.
+     *
+     * @return the hash property table, or {@code null}
+     */
     public Hashtable getHashProperty() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.hashProperty;
     }
+
+    /**
+     * Assigns the hashtable used for property tracking or lookup.
+     * Initializes HubDatax if necessary when a non-null value is supplied.
+     *
+     * @param hashProperty the hashtable to assign
+     */
     public void setHashProperty(Hashtable hashProperty) {
         if (hubDatax != null || hashProperty != null) {
             getHubDatax().hashProperty = hashProperty;
         }
     }
+
+    /**
+     * Returns the OAObjectInfo metadata for the objects in this hub.
+     * Cached in HubDatax when available.
+     *
+     * @return the OAObjectInfo instance for the hub’s object class
+     */
     public OAObjectInfo getObjectInfo() {
         OAObjectInfo oi;
         HubDatax hdx = hubDatax;
@@ -273,6 +485,13 @@ public class HubData implements java.io.Serializable {
         if (objClass != null && hubDatax != null) hubDatax.objectInfo = oi;
         return oi;
     }
+
+    /**
+     * Assigns the OAObjectInfo metadata for this hub. Updates the
+     * object class when necessary.
+     *
+     * @param objectInfo the OAObjectInfo metadata to assign
+     */
     public void setObjectInfo(OAObjectInfo objectInfo) {
         if (hubDatax != null) hubDatax.objectInfo = objectInfo;
         if (objectInfo != null && objClass == null) {
@@ -280,28 +499,60 @@ public class HubData implements java.io.Serializable {
         }
     }
 
+    /**
+     * Returns the HubAutoSequence used for automatically assigning
+     * sequence values, or {@code null} if none is defined.
+     *
+     * @return the HubAutoSequence instance, or {@code null}
+     */
     public HubAutoSequence getAutoSequence() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.autoSequence;
     }
+
+    /**
+     * Sets the HubAutoSequence used for automatically assigning
+     * sequence values. Initializes HubDatax if needed.
+     *
+     * @param autoSequence the auto-sequence object to assign
+     */
     public void setAutoSequence(HubAutoSequence autoSequence) {
         if (hubDatax != null || autoSequence != null) {
             getHubDatax().autoSequence = autoSequence;
         }
     }
     
+    /**
+     * Returns the HubAutoMatch used for automatic matching behavior,
+     * or {@code null} if none is defined.
+     *
+     * @return the HubAutoMatch instance, or {@code null}
+     */
     public HubAutoMatch getAutoMatch() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.autoMatch;
     }
+
+    /**
+     * Sets the HubAutoMatch used for automatic matching behavior.
+     * Initializes HubDatax if needed.
+     *
+     * @param autoMatch the auto-match object to assign
+     */
     public void setAutoMatch(HubAutoMatch autoMatch) {
         if (hubDatax != null || autoMatch != null) {
             getHubDatax().autoMatch = autoMatch;
         }
     }
 
+    /**
+     * Returns whether the hub's object type is an OAObject. Cached
+     * in HubDatax when available.
+     *
+     * @return {@code true} if the hub contains OAObject instances
+     */
     public boolean isOAObjectFlag() {
         HubDatax hdx = hubDatax;
         if (hdx != null) {
@@ -312,40 +563,71 @@ public class HubData implements java.io.Serializable {
         }
         return objClass != null && OAObject.class.isAssignableFrom(objClass);
     }
+
+    /**
+     * Sets the cached flag indicating whether the hub contains OAObject
+     * instances. Has no effect unless HubDatax exists.
+     *
+     * @param oaObjectFlag the value to assign
+     */
     public void setOAObjectFlag(boolean oaObjectFlag) {
         if (hubDatax != null) hubDatax.oaObjectFlag = oaObjectFlag; 
     }
 
-
+    /**
+     * Returns whether duplicate add/remove operations are allowed.
+     * Defaults to {@code true} when extended state has not been created.
+     *
+     * @return {@code true} if duplicate add/remove is allowed, otherwise {@code false}
+     */
     public boolean isDupAllowAddRemove() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return true; // default
         return hdx.dupAllowAddRemove;
     }
+
+    /**
+     * Sets whether duplicate add/remove operations are allowed.
+     * Initializes HubDatax if necessary when disabling the default behavior.
+     *
+     * @param dupAllowAddRemove whether duplicates are permitted
+     */
     public void setDupAllowAddRemove(boolean dupAllowAddRemove) {
         if (hubDatax != null || !dupAllowAddRemove) {
             getHubDatax().dupAllowAddRemove = dupAllowAddRemove;
         }
     }
 
-
     /**
-     * Used to have Hub add/removes tracked.  By default, this is false.
-     * @see HubDataMaster#getTrackChanges()
-     * @return
+     * Returns whether Hub add/remove changes are being tracked.
+     *
+     * @return {@code true} if change tracking is enabled, otherwise {@code false}
      */
     public boolean getTrackChanges() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return false;
         return hdx.bTrackChanges;
     }
+
+    /**
+     * Enables or disables Hub add/remove change tracking.
+     * Initializes HubDatax if needed when enabling tracking.
+     *
+     * @param bTrackChanges whether change tracking should be enabled
+     */
     public void setTrackChanges(boolean bTrackChanges) {
         if (hubDatax != null || bTrackChanges) {
             getHubDatax().bTrackChanges = bTrackChanges;
         }
     }
 
-
+    /**
+     * Custom serialization routine that writes HubData’s fields, the
+     * HubDatax extension (if serializable), and internal vectors.
+     *
+     * @param s the output stream used for serialization
+     * @throws java.io.IOException if an I/O error occurs
+     */
     private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException{
         s.defaultWriteObject();
         
@@ -363,6 +645,14 @@ public class HubData implements java.io.Serializable {
         writeVector(s, vec);
     }
     
+    /**
+     * Custom deserialization routine that restores HubData’s fields,
+     * optional HubDatax extension, and internal vectors for add/remove tracking.
+     *
+     * @param s the input stream used for deserialization
+     * @throws java.io.IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a class cannot be resolved
+     */
     private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();
         hubDatax = (HubDatax) s.readObject();
@@ -375,7 +665,14 @@ public class HubData implements java.io.Serializable {
         if (vec != null && vec.size() > 0) setVecRemove(vec);
     }
 
-    
+    /**
+     * Serializes a vector by writing its capacity, size, and each element
+     * in order, substituting {@link OANullObject} for missing entries.
+     *
+     * @param s   the output stream used for serialization
+     * @param vec the vector to serialize, or {@code null}
+     * @throws java.io.IOException if an I/O error occurs
+     */
     private void writeVector(java.io.ObjectOutputStream s, Vector vec) throws java.io.IOException{
         if (vec == null) {
             s.writeInt(-1);
@@ -404,6 +701,16 @@ public class HubData implements java.io.Serializable {
             s.writeObject(OANullObject.instance);
         }        
     }
+    
+    /**
+     * Deserializes a vector previously written by {@link #writeVector}.
+     * Reconstructs elements in order, skipping {@link OANullObject} markers.
+     *
+     * @param s the input stream used for deserialization
+     * @return the reconstructed vector, or {@code null}
+     * @throws java.io.IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a class cannot be resolved
+     */
     private Vector readVector(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
         int capacity = s.readInt();
         if (capacity < 0) return null;
@@ -419,27 +726,51 @@ public class HubData implements java.io.Serializable {
         return vec;
     }
 
+    /**
+     * Returns the hub used for select-where filtering, or {@code null}
+     * if none has been assigned.
+     *
+     * @return the hub used for select-where filtering, or {@code null}
+     */
     public Hub getSelectWhereHub() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.selectWhereHub;
     }
+    
+    /**
+     * Sets the hub to be used for select-where filtering. Initializes
+     * HubDatax if required.
+     *
+     * @param hub the hub used for select-where filtering
+     */
     public void setSelectWhereHub(Hub hub) {
         if (hubDatax != null || hub != null) {
             getHubDatax().selectWhereHub = hub;
         }
     }
 
+    /**
+     * Returns the property path used with the select-where hub, or
+     * {@code null} if none has been set.
+     *
+     * @return the select-where property path, or {@code null}
+     */
     public String getSelectWhereHubPropertyPath() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.selectWhereHubPropertyPath;
     }
+    
+    /**
+     * Sets the property path used for select-where filtering. Initializes
+     * HubDatax as needed.
+     *
+     * @param pp the property path to assign
+     */
     public void setSelectWhereHubPropertyPath(String pp) {
         if (hubDatax != null || pp != null) {
             getHubDatax().selectWhereHubPropertyPath = pp;
         }
     }
-    
 }
-

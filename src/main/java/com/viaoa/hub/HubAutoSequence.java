@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,43 +72,67 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     protected boolean bKeepSeq;
     protected boolean bServerSideOnly;
     
+    /**
+     * Default constructor. The hub and property name must be set before this
+     * instance becomes active for sequencing.
+     */
     public HubAutoSequence() {
     }
 
+    /**
+     * Ensures cleanup by calling {@link #close()} before finalization.
+     *
+     * @throws Throwable if superclass finalization throws an exception
+     */
     protected void finalize() throws Throwable {
     	close();
         super.finalize();
     }
 
+    /**
+     * Closes this HubAutoSequence by detaching it from the current hub.  
+     * Removes its HubListener and clears internal references.
+     */
     public void close() {
         if (hub != null) setHub(null);
     }
     
     /**
-        Create a new HubAutoSequence.
-        @param propertyName is int property for storing number.
-    */
+     * Constructs a HubAutoSequence using the given Hub, property name, and start
+     * number. Sequence numbers are recomputed when objects are added, inserted, or
+     * removed.
+     *
+     * @param hub          the hub whose objects will be sequenced
+     * @param propertyName the numeric property to update
+     * @param startNumber  the starting sequence number applied to the first object
+     */
     public HubAutoSequence(Hub hub, String propertyName, int startNumber) {
         this(hub,propertyName,startNumber, false, false);
     }
     
     /**
-        Create a new HubAutoSequence.
-        @param propertyName is int property for storing number.
-        @param bKeepSeq, if false then seq numbers are not updated when an object is removed        
-    */
+     * Constructs a HubAutoSequence with control over whether sequence values are
+     * kept contiguous after removals.
+     *
+     * @param hub          the hub whose objects will be sequenced
+     * @param propertyName the numeric property to update
+     * @param startNumber  the starting sequence number
+     * @param bKeepSeq     whether sequence numbers should remain contiguous after removals
+     */
     public HubAutoSequence(Hub hub, String propertyName, int startNumber, boolean bKeepSeq) {
         this(hub,propertyName,startNumber, bKeepSeq, false);
     }
 
     /**
-     * 
-     * @param hub
-     * @param propertyName
-     * @param startNumber
-     * @param bKeepSeq
-     * @param bServerSideOnly this is used by Hub.setAutoSequence(...) so that the server will control the seq property and
-     * send CS messages to clients.  If true, then the property changes (for seq prop) will need to be sent to clients.
+     * Constructs a HubAutoSequence with full configuration options, including
+     * server-side-only sequencing. When server-side-only is enabled, sequence
+     * updates are performed on the server and pushed to clients.
+     *
+     * @param hub             the hub whose objects will be sequenced
+     * @param propertyName    the numeric property to update
+     * @param startNumber      the starting sequence number
+     * @param bKeepSeq        whether sequence numbers remain contiguous after removals
+     * @param bServerSideOnly whether sequence updates are controlled exclusively by the server
      */
     public HubAutoSequence(Hub hub, String propertyName, int startNumber, boolean bKeepSeq, boolean bServerSideOnly) {
         if (bServerSideOnly && !HubCSDelegate.isServer(hub)) {
@@ -123,31 +147,54 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     
 
     /**
-        Create a new HubAutoSequence.
-        @param propertyName is int property for storing number.
-    */
+     * Constructs a HubAutoSequence using default start number (0) and default
+     * sequence behavior.
+     *
+     * @param hub          the hub whose objects will be sequenced
+     * @param propertyName the numeric property to update
+     */
     public HubAutoSequence(Hub hub, String propertyName) {
         setHub(hub);
         setPropertyName(propertyName);
     }
-
     
-    
-    /** Set the starting number to be used for first object. default is "0". */
+    /**
+     * Returns the starting sequence number assigned to the first object in the hub.
+     *
+     * @return the starting sequence number
+     */
     public int getStartNumber() {
         return startNumber;
     }
-    /** Set the starting number to be used for first object. default is "0". */
+
+    /**
+     * Sets the starting sequence number and recalculates the sequence values.
+     *
+     * @param i the new starting sequence number
+     */
     public void setStartNumber(int i) {
         startNumber = i;
         setup();
     }
     
+    /**
+     * Sets the hub to be sequenced. Removes any existing listener and attaches
+     * this instance as a HubListener to the new hub. Triggers setup of the
+     * sequence property.
+     *
+     * @param hub the hub to attach to
+     */
     public Hub getHub() {
         return hub;
     }
     
-    
+    /**
+     * Sets the hub to be sequenced. Removes any existing listener and attaches
+     * this instance as a HubListener to the new hub. Triggers setup of the
+     * sequence property.
+     *
+     * @param hub the hub to attach to
+     */
     public void setHub(Hub hub) {
         if (this.hub != null) {
             this.hub.removeHubListener(this);
@@ -162,22 +209,32 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         setup();
     }
 
-    /** 
-        Number property in object that is used to keep track of the order of the object within the hub.
-        The hub will set the value based on the objects position within the Hub.  
-        <p>
-        Note: the object is not automatically saved. 
-    */
+    /**
+     * Returns the name of the property used to store sequence numbers.
+     *
+     * @return the sequence property name
+     */
     public String getPropertyName() {
         return propertyName;
     }
-    /** @see getPropertyName */
+
+    /**
+     * Sets the property used to store sequence numbers and triggers setup to
+     * locate the corresponding setter method.
+     *
+     * @param propertyName the name of the numeric property to update
+     */
     public void setPropertyName(String propertyName) {
         this.propertyName = propertyName;
         this.propertySetMethod = null;
         setup();
     }
     
+    /**
+     * Initializes the setter method for the sequence property and triggers
+     * resequencing. Validates that the property exists and accepts a numeric
+     * parameter.
+     */
     protected void setup() {    
         if (propertyName == null || hub == null) return;
 
@@ -204,12 +261,23 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         
     private final AtomicInteger aiResequenceCnt = new AtomicInteger();  // used instead of synchronization
     
+    /**
+     * Recomputes sequence values for all objects in the hub, beginning at the
+     * default starting position.
+     */
     public void resequence() {
         resequence(0);
     }
 
     private final static ConcurrentHashMap<Object, Object> hmUpdateSeq = new ConcurrentHashMap<>();
     
+    /**
+     * Recomputes sequence values beginning at the specified starting position.
+     * Uses a shared lock to avoid concurrent resequence operations and optionally
+     * aggregates updates when running server-side-only.
+     *
+     * @param startPos the position from which to begin resequencing
+     */
     protected void resequence(int startPos) {
         if (hub.isDeletingAll()) return;
         synchronized (hmUpdateSeq) {
@@ -243,6 +311,13 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         }
     }
     
+    /**
+     * Internal implementation of the resequence operation. Assigns sequence
+     * numbers to each loaded object using the configured start number. Uses an
+     * atomic counter to avoid interleaving operations.
+     *
+     * @param startPos the position from which to begin resequencing
+     */
     private void _resequence(int startPos) {
         startPos = 0; // since deletes dont reseq and can leave gaps
         int cnt = aiResequenceCnt.incrementAndGet();
@@ -262,32 +337,66 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         }
     }
     
-    /** HubListener interface method, used to listen to changes to Hub and update sequence numbers. */
+    /**
+     * HubListener callback invoked after an insert event. Resequences objects
+     * beginning at the inserted position.
+     *
+     * @param e the HubEvent describing the insert
+     */
     public @Override void afterInsert(HubEvent e) {
         int pos = e.getPos();
         resequence(pos);
     }
-    /** HubListener interface method, used to listen to changes to Hub and update sequence numbers. */
+    
+    /**
+     * HubListener callback invoked after an add event. Resequences objects
+     * beginning at the added position.
+     *
+     * @param e the HubEvent describing the add
+     */
     public @Override void afterAdd(HubEvent e) {
         int pos = e.getPos();
         resequence(pos);
     }
-    /** HubListener interface method, used to listen to changes to Hub and update sequence numbers. */
+
+    /**
+     * HubListener callback invoked after a remove event. If keep-sequence mode
+     * is enabled, resequences objects beginning at the removed position.
+     *
+     * @param e the HubEvent describing the removal
+     */
     public @Override void afterRemove(HubEvent e) {
         if (bKeepSeq) {
             int pos = e.getPos();
             resequence(pos);
         }
     }
-    /** HubListener interface method, used to listen to changes to Hub and update sequence numbers. */
+
+    /**
+     * HubListener callback invoked after a move event. Resequences the entire hub.
+     *
+     * @param e the HubEvent describing the move
+     */
     public @Override void afterMove(HubEvent e) {
         resequence(0);
     }
-    /** HubListener interface method, used to listen to changes to Hub and update sequence numbers. */
+
+    /**
+     * HubListener callback invoked when the hub receives a new list event.
+     * Resequences all objects from the beginning.
+     *
+     * @param e the HubEvent associated with the new list
+     */
     public @Override void onNewList(HubEvent e) {
         resequence(0);
     }
-    /** HubListener interface method, used to listen to changes to Hub and update sequence numbers. */
+
+    /**
+     * HubListener callback invoked after the hub is sorted.  
+     * Resequences all objects to ensure sequence numbers match the new order.
+     *
+     * @param e the HubEvent describing the sort
+     */
     public @Override void afterSort(HubEvent e) {
         resequence(0);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,20 +26,24 @@ class HubDataActive implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
 	
 	/**
-	    Current object in Hub that the active object.
-	    @see Hub#setActiveObject
-	    @see Hub#getActiveObject
+	    Current object in Hub that is the active object.
 	*/
 	protected transient volatile Object activeObject;
 	
 	/**
-	    Used by Hub.updateDetail() when calling setSharedHub, for Hubs that
-	    do not shared same active object, so that active object is set to null.
-	*/
+	 * Clears the current active object by setting it to {@code null}.
+	 * The {@code eof} parameter is ignored.
+	 *
+	 * @param eof unused flag
+	 */
 	public void clear(boolean eof) {
 	    activeObject = null;
 	}
-    public void clear() {
+	
+	/**
+	 * Clears the current active object by setting it to {@code null}.
+	 */
+	public void clear() {
         activeObject = null;
     }
 }

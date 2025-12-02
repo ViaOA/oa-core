@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,14 @@ import com.viaoa.remote.OARemoteThreadDelegate;
 public class HubCSDelegate {
     private static Logger LOG = Logger.getLogger(HubCSDelegate.class.getName());
 
+    /**
+     * Removes all objects from the same hub on connected systems by sending
+     * a remote "remove all" command, if synchronization is enabled and the
+     * hub has a master object. No-op when in single-user mode or when
+     * client/server message suppression flags are active.
+     *
+     * @param thisHub the hub whose remote counterparts should remove all items
+     */
     public static void removeAllFromHub(Hub thisHub) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
         if (thisHub.datam.getMasterObject() == null) return;
@@ -82,7 +90,6 @@ public class HubCSDelegate {
             return;
         }
 
-        // 20140708 
         OALinkInfo li = thisHub.datam.liDetailToMaster;
         if (li != null) {
             OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
@@ -105,8 +112,14 @@ public class HubCSDelegate {
     }
     
     /**
-	 * Have object removed from same Hub on other workstations.
-	 */
+     * Removes the specified object from the same hub on connected systems.
+     * Skips calculated or local-only objects, and does not execute when
+     * synchronization is suppressed or when the master object is absent.
+     *
+     * @param thisHub the hub originating the removal
+     * @param obj     the object being removed
+     * @param pos     the position from which the object was removed
+     */
 	public static void removeFromHub(Hub thisHub, OAObject obj, int pos) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
         if (thisHub.datam.getMasterObject() == null) return;
@@ -143,7 +156,12 @@ public class HubCSDelegate {
 	}
 
 	/**
-	 * Have object added to same Hub on other workstations.
+	 * Adds an object to the same hub on connected systems. Sends the object
+	 * itself if necessary so remote clients can instantiate it. No-op for
+	 * local-only or calculated objects, or when synchronization is suppressed.
+	 *
+	 * @param thisHub the hub originating the add operation
+	 * @param thisObj the object being added
 	 */
 	public static void addToHub(final Hub thisHub, final OAObject thisObj) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
@@ -239,7 +257,15 @@ public class HubCSDelegate {
 	}	
 
 	/**
-	 * Have object inserted in same Hub on other workstations.
+	 * Inserts an object at the specified position in the same hub on
+	 * connected systems. Returns {@code false} when synchronization is
+	 * suppressed, when local-only or calculated rules block propagation,
+	 * or when no master object exists.
+	 *
+	 * @param thisHub the hub originating the insert
+	 * @param obj     the object being inserted
+	 * @param pos     the target index
+	 * @return {@code true} if a remote insert command was sent; otherwise {@code false}
 	 */
 	public static boolean insertInHub(Hub thisHub, OAObject obj, int pos) {
         if (OASyncDelegate.isSingleUser(thisHub)) return false;
@@ -278,7 +304,13 @@ public class HubCSDelegate {
 	}	
 	
 	/**
-	 * Have object added to same Hub on other workstations.
+	 * Moves an object from one index to another in the same hub on
+	 * connected systems. Skips propagation when synchronization is
+	 * suppressed or when operating on local-only or calculated links.
+	 *
+	 * @param thisHub the hub originating the move request
+	 * @param posFrom the starting index
+	 * @param posTo   the destination index
 	 */
 	public static void moveObjectInHub(Hub thisHub, int posFrom, int posTo) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
@@ -311,15 +343,35 @@ public class HubCSDelegate {
         }
 	}
 
+	/**
+	 * Determines whether the specified hub is operating on the server.
+	 *
+	 * @param h the hub to check
+	 * @return {@code true} if this is the server; otherwise {@code false}
+	 */
 	public static boolean isServer(Hub h) {
         return OASyncDelegate.isServer(h);
 	}		
+
+	/**
+	 * Returns whether the current thread is executing as a remote
+	 * synchronization thread.
+	 *
+	 * @return {@code true} if the thread is a remote thread; otherwise {@code false}
+	 */
 	public static boolean isRemoteThread() {
 		return (OARemoteThreadDelegate.isRemoteThread());
 	}		
 	
 	/**
-	 * Sort objects in hub
+	 * Sorts objects in the hub on connected systems by sending a remote
+	 * sort command. Skips propagation if synchronization is suppressed,
+	 * the master object is missing or local-only, or the link is calculated.
+	 *
+	 * @param thisHub       the hub being sorted
+	 * @param propertyPaths the property paths to sort by
+	 * @param bAscending    whether sorting is ascending
+	 * @param comp          optional comparator used for sorting
 	 */
 	public static void sort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
@@ -344,9 +396,15 @@ public class HubCSDelegate {
         }
 	}
 	
-    /**
-     * 20150206 returns true if this should be deleted on this computer, false if it is done on the server. 
-    */
+	/**
+	 * Deletes all objects in the hub, either locally or by sending a
+	 * remote delete-all request, depending on whether this system is the
+	 * server. Returns {@code true} if the deletion should occur locally,
+	 * or {@code false} if it was delegated to a remote server.
+	 *
+	 * @param thisHub the hub whose contents should be deleted
+	 * @return {@code true} if deletion is local; otherwise {@code false}
+	 */
     protected static boolean deleteAll(Hub thisHub) {
         if (OASyncDelegate.isServer(thisHub)) return true;  // invoke on the server
         LOG.fine("hub="+thisHub);
@@ -376,9 +434,14 @@ public class HubCSDelegate {
         return false;
     }
     
-    // 20150420
     /**
-     * Hub hubData.vecAdd/Remove cleared on clients
+     * Clears hub change tracking on connected clients by sending a
+     * "clear changes" event, when synchronization is enabled. Returns
+     * {@code false} when propagation cannot occur due to suppression,
+     * missing master object, or local-only/calculated relationships.
+     *
+     * @param thisHub the hub whose change state should be cleared remotely
+     * @return {@code true} if a clear request was sent; otherwise {@code false}
      */
     public static boolean clearHubChanges(Hub thisHub) {
         if (thisHub == null) return false;
@@ -409,6 +472,12 @@ public class HubCSDelegate {
         return true;
     }   
 
+    /**
+     * Sends a remote refresh request for the specified hub’s master object,
+     * if synchronization is available and the link information can be obtained.
+     *
+     * @param thisHub the hub requesting refresh
+     */
     public static void sendRefresh(Hub thisHub) {
         if (thisHub == null) return;
         RemoteSyncInterface rsi = OASyncDelegate.getRemoteSync();
@@ -419,6 +488,4 @@ public class HubCSDelegate {
         if (li == null) return;
         rsi.refresh(obj.getClass(), obj.getObjectKey(), li.getName());
     }
-
 }
-

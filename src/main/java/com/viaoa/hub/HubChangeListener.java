@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,38 +91,73 @@ public abstract class HubChangeListener {
 		}
 	}
 
+	/**
+	 * Default constructor that creates an empty listener with no initial hub or property rules.
+	 */
 	public HubChangeListener() {
 	}
 
+	/**
+	 * Creates a listener and immediately adds a rule for the specified hub
+	 * using default comparison settings.
+	 *
+	 * @param hub the hub to associate with the initial rule
+	 */
 	public HubChangeListener(Hub hub) {
 		add(hub);
 	}
 
+	/**
+	 * Creates a listener and immediately adds a rule for the given hub and
+	 * property path using default comparison behavior.
+	 *
+	 * @param hub          the hub to monitor
+	 * @param propertyName the property path to evaluate
+	 */
 	public HubChangeListener(Hub hub, String propertyName) {
 		add(hub, propertyName);
 	}
 
+	/**
+	 * Creates a listener and immediately adds a rule for the given hub and
+	 * property path using the supplied comparison value.
+	 *
+	 * @param hub          the hub to monitor
+	 * @param propertyName the property path to evaluate
+	 * @param compareValue the value or comparison rule to use
+	 */
 	public HubChangeListener(Hub hub, String propertyName, Object compareValue) {
 		add(hub, propertyName, compareValue);
 	}
 
+	/**
+	 * Creates a listener and immediately adds a rule for the given hub using
+	 * the specified comparison type.
+	 *
+	 * @param hub  the hub to monitor
+	 * @param type the comparison type to apply
+	 */
 	public HubChangeListener(Hub hub, HubChangeListener.Type type) {
 		add(hub, type);
 	}
 
 	/**
-	 * Add an additional hub to base the check on.
+	 * Adds a rule for the specified hub using default comparison settings.
+	 *
+	 * @param hub the hub to add to this listener
+	 * @return the created HubProp instance
 	 */
 	public HubProp add(Hub hub) {
 		return add(hub, null, true, Type.HubValid, null, false, null);
 	}
 
 	/**
-	 * adds property without any check. This is good for adding dependendent properties
+	 * Adds a rule for the given hub and property path. If the property path
+	 * is null, this behaves like {@link #add(Hub)}.
 	 *
-	 * @see #addPropertyNotNull(Hub, String)
-	 * @see #addPropertyNull(Hub, String)
-	 * @see #add(Hub, String, Object)
+	 * @param hub          the hub to add
+	 * @param propertyPath the property path to listen to
+	 * @return the created HubProp instance
 	 */
 	public HubProp add(Hub hub, String propertyPath) {
 		if (propertyPath == null) {
@@ -132,90 +167,228 @@ public abstract class HubChangeListener {
 		}
 	}
 
-	/** Checks to see if hub.isValid */
+	/**
+	 * Adds a rule that checks whether the hub is valid.
+	 *
+	 * @param hub the hub to test
+	 * @return the created HubProp instance
+	 */
 	public HubProp addHubValid(Hub hub) {
 		return add(hub, null, true, Type.HubValid);
 	}
 
+	/**
+	 * Adds a rule that checks whether the hub is valid, tied to a specific
+	 * property path.
+	 *
+	 * @param hub          the hub to test
+	 * @param propertyPath the property path to listen to
+	 * @return the created HubProp instance
+	 */
 	public HubProp addHubValid(Hub hub, String propertyPath) {
 		return add(hub, propertyPath, true, Type.HubValid);
 	}
 
+	/**
+	 * Adds a rule that checks whether the hub is not valid.
+	 *
+	 * @param hub the hub to test
+	 * @return the created HubProp instance
+	 */
 	public HubProp addHubNotValid(Hub hub) {
 		return add(hub, null, true, Type.HubNotValid);
 	}
 
-	/** Checks to see if hub.size = 0 */
+	/**
+	 * Adds a rule that checks whether the hub is valid and has zero size.
+	 *
+	 * @param hub the hub to test
+	 * @return the created HubProp instance
+	 */
 	public HubProp addHubEmpty(Hub hub) {
 		return add(hub, null, true, Type.HubEmpty);
 	}
 
+	/**
+	 * Adds a rule that checks whether the hub is valid and contains one or
+	 * more objects.
+	 *
+	 * @param hub the hub to test
+	 * @return the created HubProp instance
+	 */
 	public HubProp addHubNotEmpty(Hub hub) {
 		return add(hub, null, true, Type.HubNotEmpty);
 	}
 
-	/** Checks to see if hub.AO = null */
+	/**
+	 * Adds a rule that checks whether the hub's active object exists and is
+	 * marked as new.
+	 *
+	 * @param hub the hub to test
+	 * @return the created HubProp instance
+	 */
 	public HubProp addAoNew(Hub hub) {
 		return add(hub, null, true, Type.AoNew);
 	}
 
+	/**
+	 * Adds a rule that checks whether the hub's active object exists and is
+	 * not marked as new.
+	 *
+	 * @param hub the hub to test
+	 * @return the created HubProp instance
+	 */
 	public HubProp addAoNotNew(Hub hub) {
 		return add(hub, null, true, Type.AoNotNew);
 	}
 
-	/** Checks to see if hub.AO = null */
+	/**
+	 * Adds a rule that checks whether the hub's active object is null.
+	 *
+	 * @param hub the hub to test
+	 * @return the created HubProp instance
+	 */
 	public HubProp addAoNull(Hub hub) {
 		return add(hub, null, true, Type.AoNull);
 	}
 
+	/**
+	 * Adds a rule that checks whether the hub's active object is not null.
+	 *
+	 * @param hub the hub to test
+	 * @return the created HubProp instance
+	 */
 	public HubProp addAoNotNull(Hub hub) {
 		return add(hub, null, true, Type.AoNotNull);
 	}
 
+	/**
+	 * Adds a rule that always evaluates to true for the given hub.
+	 *
+	 * @param hub the hub to associate with this rule
+	 * @return the created HubProp instance
+	 */
 	public HubProp addAlwaysTrue(Hub hub) {
 		return add(hub, null, true, Type.AlwaysTrue);
 	}
 
+	/**
+	 * Adds a rule that always evaluates to true without requiring a hub.
+	 *
+	 * @return the created HubProp instance
+	 */
 	public HubProp addAlwaysTrue() {
 		return add(null, null, true, Type.AlwaysTrue);
 	}
 
+	/**
+	 * Adds a rule that always evaluates to false for the given hub.
+	 *
+	 * @param hub the hub to associate with this rule
+	 * @return the created HubProp instance
+	 */
 	public HubProp addAlwaysFalse(Hub hub) {
 		return add(hub, null, true, Type.AlwaysFalse);
 	}
 
+	/**
+	 * Adds a rule that always evaluates to false without requiring a hub.
+	 *
+	 * @return the created HubProp instance
+	 */
 	public HubProp addAlwaysFalse() {
 		return add(null, null, true, Type.AlwaysFalse);
 	}
 
+	/**
+	 * Adds a rule that evaluates to true only when the global context
+	 * indicates a super-admin user.
+	 *
+	 * @param hub the hub to associate with this rule
+	 * @return the created HubProp instance
+	 */
 	public HubProp addOnlySuperAdmin(Hub hub) {
 		return add(hub, null, true, Type.OnlySuperAdmin);
 	}
 
+	/**
+	 * Adds a rule that evaluates to true only when the global context
+	 * indicates a super-admin user, without requiring a hub.
+	 *
+	 * @return the created HubProp instance
+	 */
 	public HubProp addOnlySuperAdmin() {
 		return add(null, null, true, Type.OnlySuperAdmin);
 	}
 
+	/**
+	 * Adds a rule that checks whether the specified property of the hub's
+	 * active object is null.
+	 *
+	 * @param hub  the hub to test
+	 * @param prop the property to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addPropertyNull(Hub hub, String prop) {
 		return add(hub, prop, true, Type.PropertyNull);
 	}
 
+	/**
+	 * Adds a rule that checks whether the specified property of the hub's
+	 * active object is not null.
+	 *
+	 * @param hub  the hub to test
+	 * @param prop the property to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addPropertyNotNull(Hub hub, String prop) {
 		return add(hub, prop, true, Type.PropertyNotNull);
 	}
 
+	/**
+	 * Adds a rule that checks whether the specified property of the hub's
+	 * active object is empty.
+	 *
+	 * @param hub  the hub to test
+	 * @param prop the property to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addPropertyEmpty(Hub hub, String prop) {
 		return add(hub, prop, true, Type.PropertyEmpty);
 	}
 
+	/**
+	 * Adds a rule that checks whether the specified property of the hub's
+	 * active object is not empty.
+	 *
+	 * @param hub  the hub to test
+	 * @param prop the property to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addPropertyNotEmpty(Hub hub, String prop) {
 		return add(hub, prop, true, Type.PropertyNotEmpty);
 	}
 
+	/**
+	 * Adds a rule that monitors changes to the specified property without
+	 * performing a comparison. Used for dependency tracking.
+	 *
+	 * @param hub  the hub to monitor
+	 * @param prop the property whose changes trigger evaluation
+	 * @return the created HubProp instance
+	 */
 	public HubProp addPropertyChange(Hub hub, String prop) {
 		return add(hub, prop);
 	}
 
+	/**
+	 * Adds a rule that uses an {@link OAFilter} to determine whether adding
+	 * an object to the hub is allowed, updating the failure reason from the
+	 * object callback result.
+	 *
+	 * @param hub the hub to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addAddEnabled(final Hub hub) {
 		if (hub == null) {
 			return null;
@@ -245,6 +418,13 @@ public abstract class HubChangeListener {
 		return hp;
 	}
 
+	/**
+	 * Adds a rule that determines whether creation of a new object is
+	 * allowed for the hub, based on an {@link OAFilter} and callback checks.
+	 *
+	 * @param hub the hub to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addNewEnabled(final Hub hub) {
 		if (hub == null) {
 			return null;
@@ -274,6 +454,14 @@ public abstract class HubChangeListener {
 		return hp;
 	}
 
+	/**
+	 * Adds a rule that checks whether deletion of the specified object is
+	 * allowed for the hub. The rule can be limited to the active object.
+	 *
+	 * @param hub     the hub to evaluate
+	 * @param bAoOnly true to limit checks to the active object
+	 * @return the created HubProp instance
+	 */
 	public HubProp addDeleteEnabled(final Hub hub, boolean bAoOnly) {
 		if (hub == null) {
 			return null;
@@ -310,6 +498,13 @@ public abstract class HubChangeListener {
 		return hp;
 	}
 
+	/**
+	 * Adds a rule that checks whether removal of the specified object is
+	 * allowed for the hub, based on an {@link OAFilter}.
+	 *
+	 * @param hub the hub to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addRemoveEnabled(final Hub hub) {
 		if (hub == null) {
 			return null;
@@ -340,6 +535,13 @@ public abstract class HubChangeListener {
 		return hp;
 	}
 
+	/**
+	 * Adds a rule that checks whether the active object of the hub has
+	 * changes and is therefore eligible for saving.
+	 *
+	 * @param hub the hub to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addSaveEnabled(final Hub hub) {
 		if (hub == null) {
 			return null;
@@ -349,6 +551,13 @@ public abstract class HubChangeListener {
 		return hp;
 	}
 
+	/**
+	 * Adds a rule that determines whether copying of the hub's active
+	 * object is allowed, using an {@link OAFilter}.
+	 *
+	 * @param hub the hub to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addCopyEnabled(final Hub hub) {
 		if (hub == null) {
 			return null;
@@ -370,6 +579,13 @@ public abstract class HubChangeListener {
 		return hp;
 	}
 
+	/**
+	 * Adds a rule that determines whether pasting is allowed for the hub,
+	 * based on an {@link OAFilter} and callback checks.
+	 *
+	 * @param hub the hub to evaluate
+	 * @return the created HubProp instance
+	 */
 	public HubProp addPasteEnabled(final Hub hub) {
 		if (hub == null) {
 			return null;
@@ -391,12 +607,27 @@ public abstract class HubChangeListener {
 	}
 
 	/**
-	 * add a rule to check the return value for an ObjectCallback isEnabled
+	 * Adds a rule that checks whether the object callback for the specified
+	 * property indicates the object is enabled.
+	 *
+	 * @param hub  the hub to evaluate
+	 * @param prop the property to check
+	 * @return the created HubProp instance
 	 */
 	public HubProp addObjectCallbackEnabled(Hub hub, String prop) {
 		return addObjectCallbackEnabled(hub, prop, true);
 	}
 
+	/**
+	 * Adds a rule that checks object callback enabled status for the
+	 * specified property, with an option to limit evaluation to the active
+	 * object.
+	 *
+	 * @param hub     the hub to evaluate
+	 * @param prop    the property to check
+	 * @param bAoOnly true to evaluate only the active object
+	 * @return the created HubProp instance
+	 */
 	public HubProp addObjectCallbackEnabled(Hub hub, String prop, boolean bAoOnly) {
 		OAObjectCallbackDelegate.addObjectCallbackChangeListeners(hub, hub.getObjectClass(), prop, null, this, true);
 		// include master
@@ -414,18 +645,45 @@ public abstract class HubChangeListener {
 		return hp;
 	}
 
+	/**
+	 * Adds a rule that checks object callback enabled status using a
+	 * specific class and property path prefix.
+	 *
+	 * @param hub      the hub to evaluate
+	 * @param cz       the class used for callback lookup
+	 * @param prop     the property to check
+	 * @param ppPrefix the property path prefix
+	 * @return the created HubProp instance
+	 */
 	public HubProp addObjectCallbackEnabled(Hub hub, Class cz, String prop, String ppPrefix) {
 		// ?? not used
 		OAObjectCallbackDelegate.addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, this, true);
 		return add(hub, prop, true, Type.ObjectCallbackEnabled);
 	}
 
-	/** add a rule to check the return value for an ObjectCallback isVisible */
+	/**
+	 * Adds a rule that checks whether the specified property is visible
+	 * based on object callback rules.
+	 *
+	 * @param hub  the hub to evaluate
+	 * @param prop the property to check
+	 * @return the created HubProp instance
+	 */
 	public HubProp addObjectCallbackVisible(Hub hub, String prop) {
 		OAObjectCallbackDelegate.addObjectCallbackChangeListeners(hub, hub.getObjectClass(), prop, null, this, false);
 		return add(hub, prop, true, Type.ObjectCallbackVisible);
 	}
 
+	/**
+	 * Adds a rule that checks property visibility using the specified class
+	 * and property path prefix.
+	 *
+	 * @param hub      the hub to evaluate
+	 * @param cz       the class used for callback lookup
+	 * @param prop     the property to check
+	 * @param ppPrefix the property path prefix
+	 * @return the created HubProp instance
+	 */
 	public HubProp addObjectCallbackVisible(Hub hub, Class cz, String prop, String ppPrefix) {
 		OAObjectCallbackDelegate.addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, this, false);
 
@@ -442,32 +700,75 @@ public abstract class HubChangeListener {
 		return add(hub, prop, true, Type.ObjectCallbackVisible);
 	}
 
+	/**
+	 * Adds a rule using the specified comparison type for the given hub.
+	 *
+	 * @param hub  the hub to evaluate
+	 * @param type the comparison type
+	 * @return the created HubProp instance
+	 */
 	public HubProp add(Hub hub, HubChangeListener.Type type) {
 		return add(hub, null, (type == null ? false : true), type, null, (type == null ? true : type.bUseAoOnly), null);
 	}
 
+	/**
+	 * Adds a rule for the specified hub and property using the provided
+	 * comparison type.
+	 *
+	 * @param hub      the hub to evaluate
+	 * @param property the property to monitor
+	 * @param type     the comparison type
+	 * @return the created HubProp instance
+	 */
 	public HubProp add(Hub hub, String property, HubChangeListener.Type type) {
 		return add(hub, property, type == null ? false : true, type, null, (type == null ? true : type.bUseAoOnly), null);
 	}
 
 	/**
-	 * Add an addition hub/property to base the check on.
+	 * Adds a rule for the specified hub and property path, using the given
+	 * comparison value.
 	 *
-	 * @param compareValue can be null, OANullObject.instance, OANotNullObject.instance, OAAnyValueObject.instance, Type.PropertyNull,
-	 *                     Type.PropertyNotNull or any other value.
+	 * @param hub          the hub to evaluate
+	 * @param propertyPath the property to monitor
+	 * @param compareValue the comparison value to apply
+	 * @return the created HubProp instance
 	 */
 	public HubProp add(Hub hub, final String propertyPath, Object compareValue) {
 		return add(hub, propertyPath, true, compareValue, null, true, null);
 	}
 
+	/**
+	 * Adds a rule for the given hub using a custom filter to determine
+	 * whether the rule evaluates to true.
+	 *
+	 * @param hub    the hub to evaluate
+	 * @param filter the filter used for evaluation
+	 * @return the created HubProp instance
+	 */
 	public HubProp add(Hub hub, OAFilter filter) {
 		return add(hub, null, true, null, filter, true, "filter");
 	}
 
+	/**
+	 * Adds a rule that uses a custom filter without requiring a hub.
+	 *
+	 * @param filter the filter used for evaluation
+	 * @return the created HubProp instance
+	 */
 	public HubProp add(OAFilter filter) {
 		return add(null, null, true, null, filter, true, "filter");
 	}
 
+	/**
+	 * Adds a rule for the specified hub and property path with options for
+	 * enabling comparison logic and providing a comparison value.
+	 *
+	 * @param hub              the hub to evaluate
+	 * @param propertyPath     the property path to monitor
+	 * @param bUseCompareValue true to use the comparison value
+	 * @param compareValue     the value or rule used for comparison
+	 * @return the created HubProp instance
+	 */
 	public HubProp add(Hub hub, final String propertyPath, boolean bUseCompareValue, Object compareValue) {
 		Type type = null;
 		if (bUseCompareValue && compareValue instanceof Type) {
@@ -476,6 +777,20 @@ public abstract class HubChangeListener {
 		return this.add(hub, propertyPath, bUseCompareValue, compareValue, null, (type == null ? true : type.bUseAoOnly), null);
 	}
 
+	/**
+	 * Adds a rule with full configuration for the hub, property path,
+	 * comparison logic, optional filter, active-object-only behavior, and a
+	 * description.
+	 *
+	 * @param hub              the hub to evaluate
+	 * @param propertyPath     the property path to monitor
+	 * @param bUseCompareValue true to use the comparison value
+	 * @param compareValue     the comparison value or rule
+	 * @param filter           an optional filter for evaluation
+	 * @param bAoOnly          true to evaluate only the active object
+	 * @param description      a description for the rule
+	 * @return the created HubProp instance
+	 */
 	public HubProp add(Hub hub, final String propertyPath, boolean bUseCompareValue, Object compareValue, OAFilter filter,
 			final boolean bAoOnly, String description) {
 		String newPropertyPath;
@@ -566,6 +881,15 @@ public abstract class HubChangeListener {
 		return newHubProp;
 	}
 
+	/**
+	 * Determines whether this listener is configured to listen to the given
+	 * hub, object instance, and property.
+	 *
+	 * @param hub      the hub to check
+	 * @param object   the object associated with the event
+	 * @param property the property name being evaluated
+	 * @return true if this listener monitors the specified inputs
+	 */
 	public boolean isListeningTo(Hub hub, Object object, String property) {
 		if (hub == null || object == null || property == null) {
 			return false;
@@ -592,6 +916,12 @@ public abstract class HubChangeListener {
 		return false;
 	}
 
+	/**
+	 * Assigns or reuses a hub listener for the given rule, ensuring
+	 * appropriate event monitoring for the specified hub and property path.
+	 *
+	 * @param newHubProp the rule requiring a listener assignment
+	 */
 	protected void assignHubListener(final HubProp newHubProp) {
 		// see if a new hubListener is needed
 		for (HubProp hp : hubProps) {
@@ -719,11 +1049,19 @@ public abstract class HubChangeListener {
 		}
 	}
 
+	/**
+	 * Clears all rules, closes all listeners, and resets the internal list
+	 * of HubProp instances.
+	 */
 	public void clear() {
 		close();
 		hubProps = new HubProp[0];
 	}
 
+	/**
+	 * Removes all assigned hub listeners from their associated hubs and
+	 * clears references to those listeners.
+	 */
 	public void close() {
 		for (HubProp hp : hubProps) {
 			if (hp.hub != null && hp.hubListener != null) {
@@ -737,10 +1075,21 @@ public abstract class HubChangeListener {
 		}
 	}
 
+	/**
+	 * Removes all rules associated with the specified hub.
+	 *
+	 * @param hub the hub whose rules should be removed
+	 */
 	public void remove(Hub hub) {
 		remove(hub, null);
 	}
 
+	/**
+	 * Removes the rule associated with the specified hub and property path.
+	 *
+	 * @param hub  the hub to modify
+	 * @param prop the property path for the rule to remove
+	 */
 	public void remove(Hub hub, String prop) {
 		if (hub == null) {
 			return;
@@ -774,6 +1123,11 @@ public abstract class HubChangeListener {
 		}
 	}
 
+	/**
+	 * Removes the specified rule and detaches its listener if needed.
+	 *
+	 * @param hp the HubProp rule to remove
+	 */
 	public void remove(HubProp hp) {
 		if (hp == null) {
 			return;
@@ -783,7 +1137,10 @@ public abstract class HubChangeListener {
 	}
 
 	/**
-	 * Checks all of the compare values that are being listened to. All must be true to return true, else returns false.
+	 * Evaluates all rules in sequence and returns true only if all rules
+	 * evaluate to true. Populates the failure reason when a rule fails.
+	 *
+	 * @return true if all rules evaluate successfully; false otherwise
 	 */
 	public boolean getValue() {
 		failureReason = null;
@@ -811,6 +1168,12 @@ public abstract class HubChangeListener {
 		return b;
 	}
 
+	/**
+	 * Builds a tooltip string containing the descriptions or comparison
+	 * values for all active rules, and the failure reason if applicable.
+	 *
+	 * @return the tooltip text representing rule statuses
+	 */
 	public String getToolTipText() {
 		String tt = "";
 		for (HubProp hp : hubProps) {
@@ -829,10 +1192,21 @@ public abstract class HubChangeListener {
 		return tt;
 	}
 
+	/**
+	 * Returns the most recent failure reason set during rule evaluation.
+	 *
+	 * @return the failure reason, or null if none exists
+	 */
 	public String getFailureReason() {
 		return failureReason;
 	}
 
+	/**
+	 * Returns the first HubProp rule that evaluates to false during
+	 * validation, or null if all rules succeed.
+	 *
+	 * @return the first failing HubProp, or null
+	 */
 	public HubProp getFalseValue() {
 		boolean b = true;
 		for (HubProp hp : hubProps) {
@@ -855,6 +1229,14 @@ public abstract class HubChangeListener {
 		return null;
 	}
 
+	/**
+	 * Represents a single rule used by {@link HubChangeListener} to evaluate
+	 * hub state, property values, filters, or object-callback conditions.
+	 * Each instance defines how a specific hub or property should be monitored,
+	 * including comparison logic, filters, listener configuration, and tooltip
+	 * metadata. Instances are also responsible for tracking failure reasons and
+	 * determining when a rule should be ignored due to overrides.
+	 */
 	public static class HubProp {
 		public Hub<?> hub;
 		public String propertyPath; // original propertyPath
@@ -869,6 +1251,22 @@ public abstract class HubChangeListener {
 		public String failureReason;
 		public String description;
 
+		/**
+		 * Constructs a HubProp instance that defines a single rule for evaluating
+		 * hub state or property values. Initializes fields including the hub,
+		 * property path, listener name, comparison settings, filter, and descriptive
+		 * text.
+		 *
+		 * @param h                 the hub associated with this rule
+		 * @param propertyPath      the original property path to evaluate
+		 * @param listenPropertyName the property name used by hub listeners
+		 * @param props             array of property paths when expanded from a dotted path
+		 * @param bUseCompareValue  true to use the compareValue during evaluation
+		 * @param compareValue      the comparison rule or value
+		 * @param filter            optional filter used for evaluating the rule
+		 * @param bAoOnly           true to evaluate only the active object
+		 * @param description       descriptive label for this rule
+		 */
 		public HubProp(Hub<?> h, String propertyPath, String listenPropertyName, String[] props, boolean bUseCompareValue,
 				Object compareValue, OAFilter filter, boolean bAoOnly, String description) {
 			this.hub = h;
@@ -882,6 +1280,14 @@ public abstract class HubChangeListener {
 			this.description = description;
 		}
 
+		/**
+		 * Evaluates this rule against the associated hub and property. Depending
+		 * on the configured comparison value, filter, and flags, the method checks
+		 * hub validity, active object state, property values, or object-callback
+		 * results. Updates the failureReason field when evaluation fails.
+		 *
+		 * @return true if the rule evaluates successfully; false otherwise
+		 */
 		public boolean getValue() {
 			failureReason = null;
 			boolean bValid = hub != null && hub.isValid();
@@ -1060,6 +1466,13 @@ public abstract class HubChangeListener {
 			return b;
 		}
 
+		/**
+		 * Returns a tooltip string describing this rule, including comparison
+		 * information when a non-default comparison value is used. Returns null
+		 * when the rule is ignored.
+		 *
+		 * @return formatted tooltip text, or null if ignored
+		 */
 		public String getToolTipText() {
 			if (bIgnore) {
 				return null;
@@ -1083,6 +1496,14 @@ public abstract class HubChangeListener {
 			return tt;
 		}
 
+		/**
+		 * Compares this rule with another for equality. Two rules are equal when
+		 * they reference the same hub, use the same comparison settings, and have
+		 * matching property paths and compare values.
+		 *
+		 * @param obj the object to compare with
+		 * @return true if both objects represent the same rule; false otherwise
+		 */
 		@Override
 		public boolean equals(Object obj) {
 			if (!(obj instanceof HubProp)) {
@@ -1128,6 +1549,11 @@ public abstract class HubChangeListener {
 			return true;
 		}
 
+		/**
+		 * Returns a hash code based on the associated hub when available.
+		 *
+		 * @return the hash code for this rule
+		 */
 		@Override
 		public int hashCode() {
 			if (hub == null) {
@@ -1140,7 +1566,10 @@ public abstract class HubChangeListener {
 	protected ArrayList<HubChangeListener> alHubChangeListener;
 
 	/**
-	 * Allows for chaining this HCL with other HCLs.
+	 * Adds a chained HubChangeListener that will be invoked after this
+	 * listener detects a change.
+	 *
+	 * @param hcl the listener to add
 	 */
 	public void addHubChangeListener(HubChangeListener hcl) {
 		if (hcl == null) {
@@ -1154,6 +1583,10 @@ public abstract class HubChangeListener {
 		hcl.onChange();
 	}
 
+	/**
+	 * Invokes this listener's onChange method and then cascades the
+	 * notification to any chained listeners.
+	 */
 	protected void callOnChange() {
 		onChange();
 		if (alHubChangeListener == null) {
@@ -1164,5 +1597,9 @@ public abstract class HubChangeListener {
 		}
 	}
 
+	/**
+	 * Callback invoked whenever monitored hub or property changes trigger a
+	 * reevaluation. Subclasses must implement this method.
+	 */
 	protected abstract void onChange();
 }
