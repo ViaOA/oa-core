@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,15 @@ import com.viaoa.object.OAObjectInfo;
 public class HubDatax implements java.io.Serializable {
 	static final long serialVersionUID = 1L; // used for object serialization
 
+	/**
+	 * Determines whether extended HubData state is required.  
+	 * Returns true if any optional fields—such as sorting configuration, unique-property
+	 * settings, change-tracking vectors, listeners, selection state, refresh flag,
+	 * cached properties, select order, auto-sequence/match delegates, or a where-hub
+	 * reference—have been set or contain data.
+	 *
+	 * @return true if extended state is in use; otherwise false
+	 */
 	public boolean isNeeded() {
 		if (sortProperty != null) {
 			return true;
@@ -89,6 +98,13 @@ public class HubDatax implements java.io.Serializable {
 		return false;
 	}
 
+	/**
+	 * Indicates whether this extended HubData state should be serialized.  
+	 * Serialization is required when sorting configuration, sorting direction,
+	 * unique-property settings, or change-tracking are enabled.
+	 *
+	 * @return true if this state should be serialized; otherwise false
+	 */
 	public boolean shouldSerialize() {
 		if (sortProperty != null) {
 			return true;

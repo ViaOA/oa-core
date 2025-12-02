@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,18 +39,38 @@ class HubDataMaster implements java.io.Serializable {
 	/** The object that Hub "belongs" to. */
 	private transient volatile OAObject masterObject;
 
+	/**
+	 * Returns the master Hub for this detail Hub.
+	 *
+	 * @return the master Hub, or {@code null} if none is assigned
+	 */
 	public Hub getMasterHub() {
 		return this.masterHub;
 	}
 
+	/**
+	 * Sets the master Hub for this detail Hub.
+	 *
+	 * @param h the Hub to assign as master
+	 */
 	public void setMasterHub(Hub h) {
 		this.masterHub = h;
 	}
 
+	/**
+	 * Sets the master object associated with this Hub.
+	 *
+	 * @param obj the object that owns this Hub
+	 */
 	public void setMasterObject(OAObject obj) {
 		this.masterObject = obj;
 	}
 
+	/**
+	 * Returns the master object associated with this Hub.
+	 *
+	 * @return the master object, or {@code null} if none is assigned
+	 */
 	public OAObject getMasterObject() {
 		return this.masterObject;
 	}
@@ -58,10 +78,21 @@ class HubDataMaster implements java.io.Serializable {
 	/** LinkInfo from Detail (MANY) to Master (ONE). */
 	protected transient volatile OALinkInfo liDetailToMaster;
 
+	/**
+	 * Returns the link information describing the detail-to-master relationship.
+	 *
+	 * @return the {@link OALinkInfo} for the detail-to-master link, or {@code null} if not set
+	 */
 	public OALinkInfo getDetailToMasterLinkInfo() {
 		return liDetailToMaster;
 	}
 
+	/**
+	 * Returns the unique property name associated with the reverse link of the
+	 * detail-to-master relationship.
+	 *
+	 * @return the unique property name, or {@code null} if unavailable
+	 */
 	public String getUniqueProperty() {
 		if (liDetailToMaster == null) {
 			return null;
@@ -73,6 +104,12 @@ class HubDataMaster implements java.io.Serializable {
 		return rli.getUniqueProperty();
 	}
 
+	/**
+	 * Returns the getter method for the unique property associated with the
+	 * reverse link of the detail-to-master relationship.
+	 *
+	 * @return the getter {@link Method}, or {@code null} if unavailable
+	 */
 	public Method getUniquePropertyGetMethod() {
 		if (liDetailToMaster == null) {
 			return null;
@@ -85,7 +122,13 @@ class HubDataMaster implements java.io.Serializable {
 	}
 
 	/**
-	 * True if there is a masterObject and it is not a calculated Hub.
+	 * Determines whether change tracking is enabled for this Hub.
+	 *
+	 * <p>Tracking is enabled only when a master object exists and the
+	 * detail-to-master link is non-calculated, and when the target object
+	 * is associated with a data source.</p>
+	 *
+	 * @return {@code true} if this Hub should track changes, otherwise {@code false}
 	 */
 	public boolean getTrackChanges() {
 		if (masterObject == null) {
@@ -116,6 +159,12 @@ class HubDataMaster implements java.io.Serializable {
 		return true;
 	}
 
+	/**
+	 * Returns the sort property associated with the reverse link of the
+	 * detail-to-master relationship.
+	 *
+	 * @return the sort property name, or {@code null} if unavailable
+	 */
 	public String getSortProperty() {
 		if (liDetailToMaster == null) {
 			return null;
@@ -127,6 +176,11 @@ class HubDataMaster implements java.io.Serializable {
 		return rli.getSortProperty();
 	}
 
+	/**
+	 * Indicates whether the sort direction for this Hub is ascending.
+	 *
+	 * @return {@code true} if ascending, otherwise {@code false}
+	 */
 	public boolean isSortAsc() {
 		if (liDetailToMaster == null) {
 			return false;
@@ -138,6 +192,12 @@ class HubDataMaster implements java.io.Serializable {
 		return rli.isSortAsc();
 	}
 
+	/**
+	 * Returns the sequential property name associated with the reverse link of
+	 * the detail-to-master relationship.
+	 *
+	 * @return the sequential property name, or {@code null} if unavailable
+	 */
 	public String getSeqProperty() {
 		if (liDetailToMaster == null) {
 			return null;
@@ -149,14 +209,26 @@ class HubDataMaster implements java.io.Serializable {
 		return rli.getSeqProperty();
 	}
 
-	// 20141125 custom writer so that linkInfo is not written, and so masterObject can use key instead
-	// 201607 dont need to write masterobject or linkinfo
-	//    OAObjectPropertyDelegate.setProperty will do this
+	/**
+	 * Custom serialization method that writes default fields and suppresses
+	 * serialization of link information and master object references.
+	 *
+	 * @param s the output stream used for serialization
+	 * @throws java.io.IOException if an I/O error occurs
+	 */
 	private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException {
 		s.defaultWriteObject();
 		s.writeByte(0);
 	}
 
+	/**
+	 * Custom deserialization method that restores default fields and reads
+	 * a placeholder byte written during serialization.
+	 *
+	 * @param s the input stream used for deserialization
+	 * @throws java.io.IOException if an I/O error occurs
+	 * @throws ClassNotFoundException if a referenced class cannot be found
+	 */
 	private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
 		s.defaultReadObject();
 		byte bx = s.readByte();
