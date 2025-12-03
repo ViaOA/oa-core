@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,21 @@ public class HubRootDelegate {
 	private static Logger LOG = Logger.getLogger(HubRootDelegate.class.getName());
 
 	/**
-	 * If this is a recursive hub with an owner, then the root hub will be returned, else null.
+	 * Determines and returns the root Hub for a recursive Hub hierarchy.
+	 *
+	 * <p>Behavior includes:</p>
+	 * <ul>
+	 *   <li>Checks whether the Hub’s object type has a recursive link.</li>
+	 *   <li>If a root Hub is already registered via {@link OAObjectInfoDelegate}, returns it.</li>
+	 *   <li>Examines shared Hubs, master/detail links, and ownership flags to
+	 *       determine the correct root for the recursion chain.</li>
+	 *   <li>Handles complex cases such as owner-based recursion, multiple master hubs,
+	 *       or when the parent link is not part of the recursive relationship.</li>
+	 *   <li>Returns {@code null} if no root Hub can be determined.</li>
+	 * </ul>
+	 *
+	 * @param thisHub the Hub whose recursive root is being requested
+	 * @return the root Hub for this recursive Hub, or {@code null} if not recursive
 	 */
 	public static Hub getRootHub(final Hub thisHub) {
 		if (thisHub == null) {
@@ -198,21 +212,18 @@ public class HubRootDelegate {
 	}
 
 	/**
-	 * Used for recursive object relationships, to set the root Hub. A recursive relationship is where an object has a reference to many
-	 * children (Hub) of objects that are the same class.
-	 * <p>
-	 * The root is the Hub that where the reference to a parent object is null. OAObject and Hub will automatically keep/put objects in the
-	 * correct Hub based on the parent reference.
-	 * <p>
-	 * Note: the root Hub is automatically set when a master object owns a Hub.<br>
-	 * Example:<br>
-	 * If a Class "Test" is recursive and a Class Employee has many "Tests", then each Employee object will own a recursive list of "Test"
-	 * Hubs. Each "Test" object under the Employee object will have a reference to the Employee object.
-	 * <p>
-	 * Calls OAObjectInfo to set this hub as the root hub for other recursive hubs in same object class. If this is not a recursive hub then
-	 * an exception will be thrown.
+	 * Explicitly assigns or removes the root Hub designation for a recursive
+	 * Hub class.
 	 *
-	 * @param b if true then set thisHub as the root, else remove as the rootHub.
+	 * <p>If {@code b} is {@code true}, the supplied Hub becomes the root Hub
+	 * for all recursive Hubs of its object class. If {@code false}, any
+	 * previously registered root is cleared.</p>
+	 *
+	 * <p>Used when recursive relationships do not have an owner object to
+	 * automatically determine the root Hub.</p>
+	 *
+	 * @param thisHub the Hub to set or clear as the root
+	 * @param b       {@code true} to set thisHub as root, {@code false} to remove it
 	 */
 	public static void setRootHub(Hub thisHub, boolean b) {
 		OAObjectInfoDelegate.setRootHub(thisHub.data.getObjectInfo(), b ? thisHub : null);

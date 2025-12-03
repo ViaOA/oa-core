@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,17 +50,51 @@ import com.viaoa.util.OALogger;
 public class HubRoot {
 	private static final Logger LOG = OALogger.getLogger(HubRoot.class);
 
+	/**
+	 * The root Hub that must remain anchored at the top of a recursive hierarchy.
+	 * All shared or copied Hubs created by this class feed into this root.
+	 */
 	private final Hub hubRoot;
+
+	/**
+	 * The master Hub associated with the root Hub. Used as the source whose
+	 * Active Object changes determine when the recursive structure must update.
+	 */
 	private Hub hubMaster;
+	
+	/**
+	 * A copy of the current child Hub associated with the master Hub’s Active Object.
+	 * Updated as recursion changes, ensuring the root Hub reflects the correct branch.
+	 */
 	private volatile HubCopy hubCopy;
+	
+	/**
+	 * The property name representing the recursive one-to-many link from a master object
+	 * to its child Hub. Used to retrieve the correct detail Hub when updating.
+	 */
 	private String propertyFromMaster;
+	
+	/**
+	 * Listener registered on {@code hubMaster} to detect Active Object changes.
+	 * Triggers updates to maintain the correct recursive root structure.
+	 */
 	private HubListener hubListener;
 
 	/**
-	 * This is used for recursive hubs, so that a Hub will stay at the root. By default, a shared hub that is recursive could change to be
-	 * shared with a child hub. This class is used to make sure that the hub does not change to share a child hub.
+	 * Creates a HubRoot to ensure that a recursive Hub stays positioned at the root
+	 * of its hierarchy and never becomes shared with a child Hub.
 	 *
-	 * @param hubRoot Hub to use as the root, it will auto populated to always be the root hub.
+	 * <p>Behavior:</p>
+	 * <ul>
+	 *   <li>Identifies whether the Hub’s object type uses a recursive link.</li>
+	 *   <li>If not recursive, sets the root Hub to share the provided Hub directly.</li>
+	 *   <li>If recursive, determines the master Hub and establishes update logic.</li>
+	 *   <li>Registers a listener to detect Active Object changes on the master Hub.</li>
+	 *   <li>Initializes the root Hub by calling {@link #update()}.</li>
+	 * </ul>
+	 *
+	 * @param hub     the original Hub in the recursive hierarchy
+	 * @param hubRoot the Hub designated to remain the fixed root
 	 */
 	public HubRoot(Hub hub, Hub hubRoot) {
 		this.hubRoot = hubRoot;
@@ -120,10 +154,25 @@ public class HubRoot {
 		update();
 	}
 
+	/**
+	 * Tracks the last Active Object processed during recursive updates, allowing
+	 * the class to avoid unnecessary refreshes when the AO has not changed.
+	 */
 	private Object lastAO;
 
+	/**
+	 * Guards the update process against concurrent execution. Ensures that only one
+	 * update runs at a time and logs a warning if contention occurs.
+	 */
 	private final AtomicBoolean abUpdate = new AtomicBoolean();
 
+	/**
+	 * Ensures serialized execution of recursive updates.
+	 *
+	 * <p>Attempts to acquire the update lock; if another update is running,
+	 * logs a warning and briefly waits before retrying. Delegates to
+	 * {@link #_update()} once it gains exclusive access.</p>
+	 */
 	private void update() {
 		try {
 			for (int i = 0; i < 3; i++) {
@@ -144,6 +193,20 @@ public class HubRoot {
 		}
 	}
 
+	/**
+	 * Rebuilds the recursive root Hub to reflect the current Active Object on
+	 * the master Hub.
+	 *
+	 * <p>Behavior:</p>
+	 * <ul>
+	 *   <li>Closes and clears any previous HubCopy.</li>
+	 *   <li>Clears the root Hub.</li>
+	 *   <li>Retrieves the Active Object from the master Hub.</li>
+	 *   <li>If null, stops processing.</li>
+	 *   <li>Retrieves the child Hub from the Active Object using the recursive link.</li>
+	 *   <li>Creates a new HubCopy to mirror that child Hub into the root Hub.</li>
+	 * </ul>
+	 */
 	private void _update() {
 		if (hubCopy != null) {
 			hubCopy.close();
@@ -162,6 +225,10 @@ public class HubRoot {
 		hubCopy = new HubCopy(h, hubRoot, false);
 	}
 
+	/**
+	 * Cleans up the HubRoot by unregistering the Active Object listener
+	 * from the master Hub (if present). Prevents further recursive updates.
+	 */
 	public void close() {
 		if (hubListener != null && hubMaster != null) {
 			hubMaster.removeHubListener(hubListener);

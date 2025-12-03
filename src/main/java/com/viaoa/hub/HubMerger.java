@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,15 @@ import com.viaoa.util.OAPropertyPath;
  */
 public class HubMerger<F extends OAObject, T extends OAObject> {
     private static Logger LOG = Logger.getLogger(HubMerger.class.getName());
+    
+    /**
+     * Debug flag that can be enabled to assist with tracing internal behavior.
+     */
     public boolean DEBUG;
 
+    /**
+     * Global flag controlling whether extensive verification logic is executed.
+     */
     public static final boolean bVERIFY = false;
 
     /* Programming notes: Node: defines the straight path of nodes. Each node has a child node. Data:
@@ -80,75 +87,227 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      * of children Data. A new Data is created for each object in the parent Data, until the child.node
      * is null. 20120522 add support for recursive objects in the path */
 
+    /**
+     * Root node of the property-path traversal model. Represents the first link
+     * in the chain used to expand objects from the root Hub.
+     */
     private Node nodeRoot; // first node from propertyPath
+
+    /**
+     * Root Data object representing the starting point of merged membership
+     * used to populate the combined Hub.
+     */
     private Data dataRoot; // node used for the root Hub
 
+    /**
+     * The property path used to traverse from objects in the root Hub to
+     * destination objects in the combined Hub.
+     */
     String propertyPath; // property path
+
+    /**
+     * Destination Hub that receives merged objects as defined by the property path.
+     */
     Hub hubCombined; // Hub that stores the results
+
+    /**
+     * The root Hub whose objects serve as the starting points for property-path expansion.
+     */
     Hub hubRoot; // main hub used as the first hub.
+
+    /**
+     * Indicates whether the final-level Hub in the property path should be shared
+     * with the combinedHub instead of copying members into it.
+     */
     boolean bShareEndHub; // if true, then hubCombined can be shared with the currently found "single"
                             // Hub
+    /**
+     * When sharing is enabled, indicates whether the Active Object should also be shared
+     * from the terminal Hub.
+     */
     boolean bShareActiveObject; // if bShareEndHub, then this will set the sharedHub as sharing the AO
+
+    /**
+     * Controls whether all objects in hubRoot are used (true) or only its active object (false).
+     */
     boolean bUseAll; // if false, then only use AO in the rootHub, otherwise all objects will be used.
+
+    /**
+     * Flag indicating whether a refresh should occur whenever the rootHub's AO changes.
+     */
     boolean bRefreshOnActiveObjectChange;
+
+    /**
+     * Internal override used during events to suppress isUsed() logic temporarily.
+     */
     boolean bIgnoreIsUsedFlag; // flag to have isUsed() return false;
+
+    /**
+     * Indicates whether the HubMerger is active. When disabled, no updates are processed.
+     */
     private boolean bEnabled = true;
+
+    /**
+     * Flag to track whether the property path includes a recursive link.
+     */
     private boolean bIsRecusive;
+
+    /**
+     * When true, objects from the rootHub itself are included in the merged results.
+     */
     private boolean bIncludeRootHub;
+
+    /**
+     * Controls whether HubMerger uses a background thread for onNewList processing.
+     */
     private boolean bUseBackgroundThread;
+
+    /**
+     * Read/write lock used to synchronize access to mutable Data tree structures.
+     */
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+    /**
+     * Running count of HubListener instances created internally for this merger.
+     * Intended for diagnostics and testing only.
+     */
     public int TotalHubListeners; // for testing only
 
+    /**
+     * Global counter tracking the total number of HubListeners created across
+     * all HubMerger instances.
+     */
     public static final AtomicInteger aiHubListenerCount = new AtomicInteger(); // number of HubListeners used by all HubMerger
 
+    /**
+     * Indicates whether the HubMerger is running exclusively on the server side.
+     * <p>
+     * When set to {@code true}, HubMerger operations that modify Hubs will publish
+     * events to connected clients even if the change originates from an OAClientThread.
+     * This ensures that client applications receive updates despite the merger being
+     * created and managed only on the server.
+     */
     private boolean bServerSideOnly;
 
     // used to run onNewList in another thread that can be cancelled
+    /**
+     * Counter used to track the number of onNewList operations initiated by this
+     * HubMerger, allowing background threads to detect when a newer list load
+     * request supersedes a previous one.
+     */
     private final AtomicInteger aiNewList = new AtomicInteger();
+
+    /**
+     * Counter indicating when the combined Hub is in a loading state. Used to
+     * temporarily suppress or adjust behavior during list-loading operations.
+     */
     private final AtomicInteger aiLoadingCombinedHub = new AtomicInteger();
 
+    /**
+     * Lazily-initialized helper used to track sibling relationships while navigating
+     * recursive property paths. Ensures correct traversal when dealing with repeating
+     * or cyclic structures.
+     */
     private OASiblingHelper siblingHelper;
 
+    /**
+     * Unique identifier for this HubMerger instance, assigned at construction using a
+     * global counter. Used for diagnostics and logging.
+     */
     private final int id;
+
+    /**
+     * Global incremental counter used to assign unique IDs to all HubMerger
+     * instances upon construction.
+     */
     private static final AtomicInteger aiId = new AtomicInteger();
 
+    /**
+     * Creates a HubMerger for a root Hub and property path using default settings:
+     * no sharing of the active object and using only the active object of the root.
+     *
+     * @param hubRoot the root Hub used to traverse objects
+     * @param hubCombinedObjects the destination Hub that receives merged objects
+     * @param propertyPath the property path for traversal
+     */
     public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath) {
         this(hubRoot, hubCombinedObjects, propertyPath, false, null, true, false, false);
     }
 
+    /**
+     * Creates a HubMerger specifying whether all objects in the root Hub should be
+     * used instead of only the active object.
+     *
+     * @param hubRoot the root Hub
+     * @param hubCombinedObjects the destination Hub
+     * @param propertyPath the property path for traversal
+     * @param bUseAll true to use all objects in the root Hub; false to use only its AO
+     */
     public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath, boolean bUseAll) {
         this(hubRoot, hubCombinedObjects, propertyPath, false, null, bUseAll, false, false);
     }
 
+    /**
+     * Creates a HubMerger specifying whether to share the active object from the
+     * discovered terminal Hub and whether to use all objects from the root Hub.
+     *
+     * @param hubRoot the root Hub
+     * @param hubCombinedObjects the destination Hub
+     * @param propertyPath the property path for traversal
+     * @param bShareActiveObject true to share the AO of the last Hub
+     * @param bUseAll true to use all objects in the root Hub
+     */
     public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath, boolean bShareActiveObject, boolean bUseAll) {
         this(hubRoot, hubCombinedObjects, propertyPath, bShareActiveObject, null, bUseAll, false, false);
     }
 
+    /**
+     * Creates a HubMerger specifying sharing behavior, select-order filtering, and
+     * whether to process all objects in the root Hub.
+     *
+     * @param hubRoot the root Hub
+     * @param hubCombinedObjects the destination Hub
+     * @param propertyPath the path used to traverse from root to target objects
+     * @param bShareActiveObject true if the AO from the final Hub is shared
+     * @param selectOrder optional ordering for filtering operations
+     * @param bUseAll true to include all root Hub objects
+     */
     public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath, boolean bShareActiveObject, String selectOrder,
             boolean bUseAll) {
         this(hubRoot, hubCombinedObjects, propertyPath, bShareActiveObject, selectOrder, bUseAll, false, false);
     }
 
+    /**
+     * Enables or disables the background-thread mode for handling onNewList events.
+     *
+     * @param b true to process list loading in a background thread; false otherwise
+     */
     public void setUseBackgroundThread(boolean b) {
         bUseBackgroundThread = b;
     }
 
+    /**
+     * Returns whether this HubMerger processes onNewList events using a background
+     * thread.
+     *
+     * @return true if background processing is enabled; false otherwise
+     */
     public boolean getUseBackgroundThread() {
         return bUseBackgroundThread;
     }
 
     /**
-     * Main constructor that includes all of the config params Used to create an new hubMerger that will automatically update a Hub with all
-     * of the objects from a property path from a root Hub.
+     * Full constructor allowing configuration of sharing, ordering, inclusion of
+     * root objects, and background thread usage.
      *
-     * @param hubRoot            root Hub. The active object of this Hub will be used to get all objects in the propertyPath.
-     * @param hubCombinedObjects will have all of the objects from the active object of the hubRoot, using propertyPath. If
-     *                           hubCombinedObjects.getObjectClass() is null, then it will be assigned the correct class.
-     * @param propertyPath       property path from the class of rootHub to the class of combinedHub.
-     * @param bShareActiveObject if true then the Active Object from found hub will be shared.
-     * @param bUseAll            if true, then each object in hubRoot will be used. If false, then only the Active Object is used.
-     * @param bIncludeRootHub    if the objects in the rootHub should also be included.
+     * @param hubRoot the root Hub
+     * @param hubCombinedObjects the destination Hub
+     * @param propertyPath the traversal path
+     * @param bShareActiveObject true if the AO is shared from the terminal Hub
+     * @param selectOrder optional ordering expression for filtering
+     * @param bUseAll true to use all objects in the root Hub
+     * @param bIncludeRootHub true to include root Hub objects in the result
+     * @param bUseBackgroundThread true to enable background updates
      */
     public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects,
             String propertyPath, boolean bShareActiveObject, String selectOrder,
@@ -167,13 +326,36 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         init(hubRoot, hubCombinedObjects, propertyPath, bShareActiveObject, selectOrder, bUseAll, bIncludeRootHub);
     }
 
+    /**
+     * Constructor providing configuration for active-object sharing, using all root
+     * Hub objects, and including the root Hub in the merged results.
+     *
+     * @param hubRoot the root Hub
+     * @param hubCombinedObjects the destination Hub
+     * @param propertyPath the traversal path
+     * @param bShareActiveObject true to share the AO of the terminal Hub
+     * @param bUseAll true to use all root Hub objects
+     * @param bIncludeRootHub true to include root Hub objects
+     */
     public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath, boolean bShareActiveObject, boolean bUseAll,
             boolean bIncludeRootHub) {
         this(hubRoot, hubCombinedObjects, propertyPath, bShareActiveObject, null, bUseAll, bIncludeRootHub, false);
     }
 
+    /**
+     * Flag indicating whether this HubMerger was created using the constructor that
+     * accepts a single object instead of a Hub. Used to modify initialization logic.
+     */
     private boolean bCreatedFromOneObject;
 
+    /**
+     * Creates a HubMerger initialized from a single source object rather than a
+     * root Hub. A temporary Hub is created to wrap the object.
+     *
+     * @param obj the starting object for traversal
+     * @param hubCombinedObjects the destination Hub
+     * @param propertyPath the traversal path
+     */
     public HubMerger(F obj, Hub<T> hubCombinedObjects, String propertyPath) {
         id = aiId.getAndIncrement();
         bCreatedFromOneObject = true;
@@ -184,7 +366,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
     }
 
     /**
-     * Number of objects that are used in this merger.
+     * Returns the number of objects included in the merged result according to the
+     * Data tree.
+     *
+     * @return total object count, or 0 if uninitialized
      */
     public int getObjectCount() {
         if (dataRoot == null) {
@@ -194,15 +379,34 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
     }
 
     /**
-     * This needs to be set to true if it is only created on the server, but client applications will be using the same Hub that is
-     * filtered. This is so that changes on the hub will be published to the clients, even if initiated on an OAClientThread.
+     * Sets whether this merger is server-side only. When true, events generated by
+     * this merger will be published to clients even when triggered by an OAClientThread.
+     *
+     * @param b true to operate in server-side-only mode
      */
     public void setServerSideOnly(boolean b) {
         bServerSideOnly = b;
     }
 
+    /**
+     * A no-operation HubListener attached to the combined Hub solely to mark that a
+     * HubMerger is associated with it. Used internally for bookkeeping.
+     */
     private HubListener hlCombinedNoOp;
 
+    /**
+     * Internal initializer invoked by constructors. Creates listeners, configures
+     * flags, prepares the sibling helper, performs initial loading, and builds the
+     * node/data model used for the merger.
+     *
+     * @param hubRoot the root Hub
+     * @param hubCombinedObjects the destination Hub
+     * @param propertyPath the traversal path
+     * @param bShareActiveObject whether the terminal Hub AO is shared
+     * @param selectOrder optional ordering expression
+     * @param bUseAll whether to include all root Hub objects
+     * @param bIncludeRootHub whether to include root Hub members in results
+     */
     private void init(Hub hubRoot, Hub hubCombinedObjects, String propertyPath, boolean bShareActiveObject, String selectOrder,
             boolean bUseAll, boolean bIncludeRootHub) {
 
@@ -273,12 +477,22 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         LOG.fine(s);
     }
 
+    /**
+     * Performs low-level initialization by creating the Node chain for the property
+     * path and establishing the root Data node used to drive the merge process.
+     */
     private void _init() {
         createNodes(); // this will create nodeRoot
         this.dataRoot = new Data(null, nodeRoot, null, hubRoot);
         nodeRoot.data = dataRoot;
     }
 
+    /**
+     * Lazily creates and returns the OASiblingHelper used for tracking sibling
+     * relationships during recursive traversal of property paths.
+     *
+     * @return the associated OASiblingHelper instance
+     */
     public OASiblingHelper getSiblingHelper() {
         if (siblingHelper == null) {
             siblingHelper = new OASiblingHelper<>(this.hubRoot);
@@ -287,14 +501,31 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         return siblingHelper;
     }
 
+    /**
+     * Returns the root Hub whose objects serve as the starting point for traversal.
+     *
+     * @return the root Hub
+     */
     public Hub getRootHub() {
         return this.hubRoot;
     }
 
+    /**
+     * Returns the Hub that receives merged/combined objects produced by this
+     * HubMerger.
+     *
+     * @return the combined Hub
+     */
     public Hub getCombinedHub() {
         return this.hubCombined;
     }
 
+    /**
+     * Enables or disables the HubMerger. When re-enabled, the combined Hub is rebuilt
+     * and appropriate events are fired to synchronize its state.
+     *
+     * @param b true to enable; false to disable
+     */
     public void setEnabled(boolean b) {
         if (this.bEnabled == b) {
             return;
@@ -318,26 +549,55 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
     }
 
+    /**
+     * Returns whether the HubMerger is currently active.
+     *
+     * @return true if enabled; false otherwise
+     */
     public boolean getEnabled() {
         return this.bEnabled;
     }
 
+    /**
+     * Returns the property path used by this HubMerger.
+     *
+     * @return the property path
+     */
     public String getPath() {
         return this.propertyPath;
     }
 
+    /**
+     * Optional textual description of the HubMerger, supplied by callers for logging
+     * or informational purposes.
+     */
     private String description;
 
+    /**
+     * Assigns a descriptive label for this HubMerger.
+     *
+     * @param desc the description text
+     */
     public void setDescription(String desc) {
         description = desc;
     }
 
+    /**
+     * Returns the description assigned to this HubMerger.
+     *
+     * @return the description, or null if not set
+     */
     public String getDescription() {
         return description;
     }
 
-    /**
+    /*
      * Note: if multiple threads are making changes that affect the node data, then errors could show up.
+     */
+    /**
+     * Performs internal consistency checks on the Node/Data model when the global
+     * verification flag is enabled. Logs warnings for structural mismatches or
+     * unexpected relationships.
      */
     public void verify() {
         // qqqqq todo: needs to verify recursive data
@@ -396,6 +656,13 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         // XOG.finest("verify complete");
     }
 
+    /**
+     * Determines whether the given object is part of the merged result. Delegates to
+     * the internal isUsed method using the root Data node.
+     *
+     * @param objFind the object to check
+     * @return true if the object is included; false otherwise
+     */
     private boolean isUsed(Object objFind) {
         if (bIgnoreIsUsedFlag) {
             return false;
@@ -407,6 +674,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         return b;
     }
 
+    /**
+     * Internal method that checks whether the given object is included in the merged
+     * structure relative to a specific Node in the traversal chain.
+     *
+     * @param objFind the object to locate
+     * @param nodeFind optional Node restricting the search
+     * @return true if the object is used; false otherwise
+     */
     private boolean isUsed(Object objFind, Node nodeFind) {
         if (bIgnoreIsUsedFlag) {
             return false;
@@ -428,58 +703,87 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         return b;
     }
 
-    // These are all called when the event happens on the "real" Hub that the combinedHub is "fed" from.
-
     /**
-     * This can be overwritten to get the remove event from the parent, instead of getting the remove event from the combinedHub.<br>
-     * Since remove will also set the masterObject property to null, this can be used before it is set to null.
+     * Hook method invoked before an object is removed from the real (source) Hub
+     * rather than from the combined Hub. Subclasses may override to intercept events.
      *
-     * @param e
+     * @param e the HubEvent describing the removal
      */
     protected void beforeRemoveRealHub(HubEvent<T> e) {
     }
 
+    /**
+     * Hook method invoked after an object is removed from the real (source) Hub.
+     * Subclasses may override to implement custom behavior.
+     *
+     * @param e the HubEvent for the removal
+     */
     protected void afterRemoveRealHub(HubEvent<T> e) {
     }
 
+    /**
+     * Hook invoked before all objects are removed from the real (source) Hub.
+     * Subclasses may override to intercept the event.
+     *
+     * @param e the HubEvent for the remove-all operation
+     */
     protected void beforeRemoveAllRealHub(HubEvent<T> e) {
     }
 
+    /**
+     * Hook invoked after all objects have been removed from the real (source) Hub.
+     *
+     * @param e the HubEvent for the remove-all operation
+     */
     protected void afterRemoveAllRealHub(HubEvent<T> e) {
     }
 
     /**
-     * This can be overwritten to get the move event from the parent, instead of getting the move event from the combinedHub.
+     * Hook invoked after an object is moved within the real Hub. Subclasses may
+     * override to process reordering events.
+     *
+     * @param e the HubEvent describing the move
      */
     protected void afterMoveRealHub(HubEvent<T> e) {
     }
 
     /**
-     * This can be overwritten to get the insert event from the parent, instead of getting the insert event from the combinedHub.
+     * Hook invoked before an object is inserted into the real (source) Hub.
+     *
+     * @param e the HubEvent describing the insertion
      */
     protected void beforeInsertRealHub(HubEvent<T> e) {
     }
 
     /**
-     * This can be overwritten to get the insert event from the parent, instead of getting the insert event from the combinedHub.
+     * Hook invoked after an object is inserted into the real (source) Hub.
+     *
+     * @param e the HubEvent describing the insertion
      */
     protected void afterInsertRealHub(HubEvent<T> e) {
     }
 
     /**
-     * This can be overwritten to get the add event from the parent, instead of getting the add event from the combinedHub.
+     * Hook invoked before an object is added to the real (source) Hub.
+     *
+     * @param e the HubEvent describing the add
      */
     protected void beforeAddRealHub(HubEvent<T> e) {
     }
 
     /**
-     * This can be overwritten to get the add event from the parent, instead of getting the add event from the combinedHub.
+     * Hook invoked after an object is added to the real (source) Hub.
+     *
+     * @param e the HubEvent describing the add
      */
     protected void afterAddRealHub(HubEvent<T> e) {
     }
 
     /**
-     * This can be overwritten to get the add event from the parent, instead of getting the add event from the combinedHub.
+     * Hook invoked when the real (source) Hub generates an onNewList event. This
+     * occurs when its underlying list is replaced. Subclasses may override.
+     *
+     * @param e the HubEvent describing the list replacement
      */
     protected void onNewListRealHub(HubEvent<T> e) {
     }
@@ -490,6 +794,13 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      * Node node = nodeRoot; for ( ; node != null; node = node.child) { if (node.data != null) cnt +=
      * node.data.getChildrenCount(); } // this needs to consider what to do if recursive is included cnt
      * += dataRoot.getChildrenCount(); return cnt; } */
+    
+    
+    /**
+     * Builds the linked chain of Node objects defining the traversal model for the
+     * property path. Validates link types, detects recursive structures, assigns
+     * filter constructors, and ensures class compatibility with the combined Hub.
+     */
     protected void createNodes() {
         bShareEndHub = !bUseAll;
         Class clazz = hubRoot.getObjectClass();
@@ -618,6 +929,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
     }
 
+    /**
+     * Releases all Data and Node structures, removes listeners, and clears shared-
+     * hub references. After calling this, the HubMerger becomes inactive.
+     */
     public void close() {
         // LOG.finer("closing");
         if (nodeRoot == null) {
@@ -642,11 +957,20 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
     }
 
+    /**
+     * Ensures cleanup during garbage collection by delegating to close(). Exists for
+     * legacy compatibility; explicit close() is preferred.
+     */
     protected void finalize() throws Throwable {
         super.finalize();
         close();
     }
 
+    /**
+     * Represents a single step in the property-path traversal chain. Each Node
+     * corresponds to one link (ONE or MANY) and may have a child Node or a recursive
+     * child when encountering self-referential structures.
+     */
     class Node {
         Class clazz;
         String property;
@@ -659,10 +983,19 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         OACascade cascade;
         Node parent;
 
+        /**
+         * Creates a Node linked to the specified parent Node.
+         *
+         * @param parent the parent Node in the traversal chain
+         */
         public Node(Node parent) {
             this.parent = parent;
         }
 
+        /**
+         * Closes this Node by closing its associated Data object (if any) and clearing
+         * references for cleanup.
+         */
         void close() {
             if (data != null) {
                 data.close();
@@ -670,6 +1003,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             data = null;
         }
 
+        /**
+         * Returns a human-readable description of this Node, including its class,
+         * property name, and link type (ONE or MANY).
+         *
+         * @return descriptive string representation
+         */
         public @Override String toString() {
             String s = liFromParentToChild == null ? "root" : liFromParentToChild.getType() == OALinkInfo.MANY ? "Many" : "One";
             s = "class: " + clazz + ", property: " + property + ", type:" + s;
@@ -677,6 +1016,11 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
     }
 
+    /**
+     * Represents a node-instance within the Data tree. Each Data object corresponds
+     * to a Node and an actual Hub instance, and manages event handling, child Data
+     * creation, recursive traversal, and Hub synchronization logic.
+     */
     final class Data extends HubListenerAdapter {
         final Node node;
         final Data parent;
@@ -687,6 +1031,15 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         volatile ArrayList<Data> alChildren;
         volatile boolean bHubListener;
 
+        /**
+         * Creates a Data node tied to a Node definition, a parent Data node, an optional
+         * parent object, and the Hub instance supplying its members.
+         *
+         * @param parent the parent Data node
+         * @param node the Node defining traversal rules
+         * @param parentObject the owning object (null for type=One Data roots)
+         * @param hubNew the Hub supplying objects for this Data node
+         */
         Data(Data parent, Node node, OAObject parentObject, Hub hubNew) {
             if (hubNew == null) {
                 throw new RuntimeException("hub can not be null");
@@ -742,6 +1095,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             createChildren();
         }
 
+        /**
+         * Returns the total count of objects represented by this Data node, including its
+         * own Hub's contents and all descendant Data nodes.
+         *
+         * @return total object count
+         */
         public int getObjectCount() {
             if (hub == null) {
                 return 0;
@@ -762,6 +1121,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             return cnt;
         }
 
+        /**
+         * Returns the number of child Data nodes beneath this Data node, accounting for
+         * recursive structures when present.
+         *
+         * @return count of child Data nodes
+         */
         public int getChildrenCount() {
             if (!bEnabled) {
                 return 0;
@@ -784,6 +1149,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             return cnt;
         }
 
+        /**
+         * Performs internal consistency validation for this Data node and its children
+         * when verification is enabled. Logs structural mismatches and unexpected states.
+         */
         void verify() {
             // todo: test when data is recursive
             if (!bVERIFY) {
@@ -1001,6 +1370,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Determines whether the current background thread should stop processing due to
+         * a newer onNewList operation superseding its workload.
+         *
+         * @return true if the thread should stop processing; false otherwise
+         */
         private boolean shouldQuit() {
             Thread t = Thread.currentThread();
             if (t instanceof MyThread) {
@@ -1013,6 +1388,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
         }
 
+        /**
+         * Builds or rebuilds the child Data nodes based on this Data node’s Hub contents
+         * and the traversal rules of its associated Node.
+         */
         void createChildren() {
             if (!bEnabled) {
                 return;
@@ -1123,6 +1502,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         // "order.customer.contacts" for a
         // hub to link and autocreate the orderContact objects
 
+        /**
+         * Attempts to create child Data nodes using the master object of the Hub when
+         * the Hub is empty—used for detail-Hub traversal cases.
+         */
         void createChildUsingMaster() {
             try {
                 if (bServerSideOnly) {
@@ -1136,6 +1519,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Internal implementation of createChildUsingMaster(). Performs link resolution
+         * and constructs necessary Data nodes when navigating through master references.
+         */
         void _createChildUsingMaster() {
             if (!bEnabled) {
                 return;
@@ -1200,11 +1587,23 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Creates child Data nodes for the given parent object, including recursive
+         * children if defined for the traversal Node.
+         *
+         * @param parent the parent OAObject
+         */
         void createChild(OAObject parent) {
             _createChild(parent);
             _createRecursiveChild(parent);
         }
 
+        /**
+         * Internal wrapper for child creation that applies server-side messaging rules
+         * before invoking the main implementation.
+         *
+         * @param parent the parent object to process
+         */
         void _createChild(OAObject parent) {
             if (shouldQuit()) {
                 return;
@@ -1221,6 +1620,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Core child-creation routine that resolves ONE/MANY links, updates the combined
+         * Hub when needed, and populates Data nodes for subsequent traversal.
+         *
+         * @param parent the parent object used for link navigation
+         */
         void _createChild2(OAObject parent) {
             if (!bEnabled) {
                 return;
@@ -1300,6 +1705,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Creates a Data child for recursive property links. Uses an OACascade tracker
+         * to prevent infinite loops when navigating self-referential relationships.
+         *
+         * @param parent the object whose recursive children are being created
+         */
         void _createRecursiveChild(OAObject parent) {
             if (!bEnabled) {
                 return;
@@ -1338,6 +1749,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Internal recursive check to determine whether the given object is part of this
+         * Data tree. Traverses child Data nodes when appropriate.
+         *
+         * @param objFind the object to check
+         * @param nodeFind optional Node restricting the search scope
+         * @return true if the object is included; false otherwise
+         */
         private boolean _isUsed(Object objFind, Node nodeFind) {
             if (bIgnoreIsUsedFlag) {
                 return false;
@@ -1406,6 +1825,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             return false;
         }
 
+        /**
+         * Returns a descriptive representation of this Data node, including its property
+         * name, parent object, and Hub details.
+         *
+         * @return a descriptive String
+         */
         public @Override String toString() {
             String s = "";
             if (hub != null) {
@@ -1414,6 +1839,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             return node.property + ", parent:" + parentObject + s;
         }
 
+        /**
+         * Removes the given object from this Data node and its descendants, applying
+         * server-side messaging rules before delegating to the core removal logic.
+         *
+         * @param obj object being removed
+         */
         void remove(Object obj) {
             try {
                 if (bServerSideOnly) {
@@ -1427,6 +1858,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Core removal implementation. Updates the combined Hub, handles recursive-node
+         * semantics, and detaches descendant Data nodes as needed.
+         *
+         * @param obj the object to remove
+         */
         void _remove(final Object obj) {
             if (!bEnabled) {
                 return;
@@ -1530,6 +1967,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Closes this Data node, removes listeners, detaches children, and optionally
+         * clears the combined Hub when operating at terminal nodes.
+         */
         void close() {
             // XOG.finer("close");
             if (hub != null && bHubListener) {
@@ -1601,6 +2042,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
 
         // ============ HubListener for Hub used for child
+        /**
+         * Invoked before the associated Hub removes all its objects. Delegates HubMerger
+         * notifications and clears Data-node structures as needed.
+         *
+         * @param e the HubEvent for the remove-all operation
+         */
         public @Override void beforeRemoveAll(HubEvent e) {
             final boolean b = (hub == hubRoot);
             try {
@@ -1615,6 +2062,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Internal remove-all logic. Removes all child objects from this Data node while
+         * respecting recursive cases and is-used semantics.
+         *
+         * @param e the HubEvent being processed
+         */
         private void _beforeRemoveAll(HubEvent e) {
             //20150622
             if ((node == nodeRoot && bIncludeRootHub) || (node.child == null)) {
@@ -1652,6 +2105,11 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Notifies HubMerger after a remove-all operation from the real Hub.
+         *
+         * @param e the HubEvent describing the removal
+         */
         @Override
         public void afterRemoveAll(HubEvent e) {
             //20150622
@@ -1669,6 +2127,13 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         final Object LockNewList = new Object();
         final HashSet<Thread> hsNewList = new HashSet<>();
 
+        /**
+         * Handles onNewList events issued by the Hub. Supports background-thread
+         * processing and ensures that list rebuilds are serialized when multiple updates
+         * overlap.
+         *
+         * @param hubEvent the list-reset event
+         */
         @Override
         public void onNewList(final HubEvent hubEvent) {
             // only needed if this is root hub, and using all objects in hub (not just AO).  Otherwise the hub.setAO(null, force) event will load the nodes
@@ -1732,6 +2197,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             });
         }
 
+        /**
+         * Performs the main onNewList processing inside the correct thread context,
+         * measuring execution time and logging performance characteristics.
+         */
         private void _onNewList() {
             long ts = System.currentTimeMillis();
             final boolean b = bServerSideOnly;
@@ -1782,6 +2251,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Clears and reloads the combined Hub as part of a list-replacement sequence,
+         * then fires the corresponding onNewList event.
+         */
         public void _onNewList2() {
             if (!bShareEndHub) {
                 if (hubCombined != null) {
@@ -1799,6 +2272,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Wraps list processing in sibling-helper and messaging-suppression management,
+         * ensuring that child traversal occurs under correct OAThreadLocal conditions.
+         */
         private void _onNewList3() {
             final OASiblingHelper sh = getSiblingHelper();
             boolean bx = OAThreadLocalDelegate.addSiblingHelper(sh);
@@ -1821,6 +2298,11 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Drives the top-level list processing, enabling and disabling the ignore-used
+         * flag, then triggering either full or partial child creation depending on
+         * bUseAll and active-object state.
+         */
         private void _onNewList4() {
             if (!bEnabled) {
                 return;
@@ -1845,6 +2327,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Clears child Data nodes in preparation for rebuilding them when the Hub's list
+         * is replaced. Handles both ONE and MANY link types appropriately.
+         */
         private void _onNewList5() {
             if (node.child != null && node.child.liFromParentToChild.getType() == OALinkInfo.ONE) {
 
@@ -1883,8 +2369,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
-        /**
+        /*
          * If rootHub, then wait for background thread to finish loading
+         */
+        /**
+         * Runs after onNewList event propagation. For UI-thread execution paths, this
+         * method may pause until background list processing finishes.
+         *
+         * @param hubEvent the list event
          */
         @Override
         public void afterNewList(HubEvent hubEvent) {
@@ -1916,6 +2408,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
         }
 
+        /**
+         * Intercepts remove events before the underlying Hub processes them. This method
+         * notifies HubMerger when appropriate and prepares removal state.
+         *
+         * @param e the HubEvent for the removal
+         */
         @Override
         public void beforeRemove(HubEvent e) {
             Object obj = e.getObject();
@@ -1943,6 +2441,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Handles post-remove logic, including notifying HubMerger hooks and performing
+         * Data-node removal when enabled.
+         *
+         * @param e the HubEvent after removal
+         */
         @Override
         public void afterRemove(HubEvent e) {
             Object obj = e.getObject();
@@ -1976,6 +2480,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Intercepts add events before the Hub processes them. Notifies HubMerger when
+         * applicable and sets HubMerger state flags.
+         *
+         * @param e the HubEvent for the add
+         */
         @Override
         public void beforeAdd(HubEvent e) {
             final boolean b = (hub == hubRoot);
@@ -2003,6 +2513,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Handles post-add logic for Hub events. Notifies HubMerger hooks, updates state,
+         * and delegates to afterAdd2 for child creation when appropriate.
+         *
+         * @param e the HubEvent describing the add
+         */
         public @Override void afterAdd(HubEvent e) {
             final boolean b = (hub == hubRoot);
             try {
@@ -2034,6 +2550,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Internal helper invoked after an add or insert event. If the added object is
+         * still present, creates child Data nodes to extend the traversal structure.
+         *
+         * @param e the HubEvent received
+         */
         private void afterAdd2(HubEvent e) {
             if (!bEnabled) {
                 return;
@@ -2050,6 +2572,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Intercepts insert events before they occur in the real Hub. Notifies relevant
+         * HubMerger hooks and applies state flags for controlled processing.
+         *
+         * @param e the HubEvent for the insertion
+         */
         @Override
         public void beforeInsert(HubEvent e) {
             final boolean b = (hub == hubRoot);
@@ -2077,7 +2605,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
-        public @Override void afterInsert(HubEvent e) {
+        /**
+         * Handles post-insert logic, including notifying HubMerger hooks and delegating
+         * to afterAdd2 to create new child Data nodes.
+         *
+         * @param e the HubEvent describing the insertion
+         */
+        @Override 
+        public void afterInsert(HubEvent e) {
             final boolean b = (hub == hubRoot);
             try {
                 if (b) {
@@ -2104,6 +2639,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+        /**
+         * Handles move events originating from the underlying Hub. Notifies HubMerger
+         * hooks when the movement involves objects that appear in the combined Hub.
+         *
+         * @param e the HubEvent describing the move
+         */
         @Override
         public void afterMove(HubEvent e) {
             //20150622
@@ -2118,6 +2659,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             */
         }
 
+        /**
+         * Intercepts property-change events, applying server-side messaging rules before
+         * delegating to the internal handler for traversal updates.
+         *
+         * @param e the HubEvent representing the property change
+         */
         public @Override void afterPropertyChange(HubEvent e) {
             try {
                 if (bServerSideOnly) {
@@ -2131,7 +2678,13 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
-        void _afterPropertyChange(HubEvent e) {
+        /**
+         * Core property-change handler. Evaluates whether the change affects the current
+         * Data node, updates child links accordingly, and propagates structure updates.
+         *
+         * @param e the HubEvent describing the property update
+         */
+       void _afterPropertyChange(HubEvent e) {
             if (!bEnabled) {
                 return;
             }
@@ -2198,6 +2751,23 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
         }
 
+       /**
+        * Handles changes to the active object (AO) of the root Hub when the HubMerger
+        * is configured to refresh based on AO changes. Only executes when this Data
+        * node represents the root of the traversal chain.
+        *
+        * <p>If bUseAll is false, the method ensures that updates only occur when the
+        * AO itself changes. When bUseAll is true, refreshes occur only if the flag
+        * bRefreshOnActiveObjectChange is enabled.</p>
+        *
+        * <p>If the new AO is the same as the currently loaded child object's parent,
+        * the refresh step is skipped unless the AO is null (which forces a rebuild).</p>
+        *
+        * <p>When a refresh is required, the method triggers a list rebuild by invoking
+        * the internal _onNewList() routine.</p>
+        *
+        * @param evt the HubEvent describing the active-object change
+        */
         public @Override void afterChangeActiveObject(HubEvent evt) {
             // only need for hubRoot when bUseAll=false, so that it can load the AO nodes
             if (!bEnabled) {
@@ -2225,6 +2795,20 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             _onNewList();
         }
 
+        /**
+         * Handles load events from the underlying Hub. When enabled, this method updates
+         * the Data tree to reflect newly loaded objects.
+         *
+         * <p>If this Data node represents the root of the traversal and bUseAll is false,
+         * the load event is ignored unless the loaded object matches the root Hub’s
+         * active object.</p>
+         *
+         * <p>The method temporarily marks the thread as performing HubMerger-related
+         * changes, removes the previously loaded object from the Data tree, and then
+         * recreates child Data nodes for the newly loaded object.</p>
+         *
+         * @param e the HubEvent representing the load of a new object
+         */
         @Override
         public void afterLoad(HubEvent e) {
             if (!bEnabled) {
@@ -2252,29 +2836,77 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
     }
 
+    /**
+     * Callback invoked when an object is added to the combined Hub as a result of
+     * traversal expansion. The default implementation performs no action but exists
+     * for subclasses to override when custom behavior is needed.
+     *
+     * @param data the Data node responsible for adding the object
+     * @param obj  the object added to the combined Hub
+     */
     protected void onAddToCombined(Data data, OAObject obj) {
-
     }
 
+    /**
+     * Callback invoked when an object is removed from the combined Hub during
+     * traversal contraction or restructuring. The default implementation performs
+     * no action but can be overridden by subclasses to provide custom behavior.
+     *
+     * @param data the Data node responsible for the removal
+     * @param obj  the object removed from the combined Hub
+     */
     protected void onRemoveFromCombined(Data data, OAObject obj) {
-
     }
 
+    /**
+     * Returns whether the HubMerger processes all objects in the root Hub instead
+     * of only its active object.
+     *
+     * @return true if all root Hub objects are used; false otherwise
+     */
     public boolean getUseAll() {
         return bUseAll;
     }
 
+    /**
+     * Indicates whether the HubMerger should refresh its structure when the active
+     * object of the root Hub changes.
+     *
+     * @return true if a refresh should occur on AO change; false otherwise
+     */
     public boolean getRefreshOnActiveObjectChange() {
         return bRefreshOnActiveObjectChange;
     }
 
+    /**
+     * Enables or disables refresh behavior when the root Hub’s active object
+     * changes.
+     *
+     * @param b true to refresh when the active object changes; false to disable
+     */
     public void setRefreshOnActiveObjectChange(boolean b) {
         this.bRefreshOnActiveObjectChange = b;
     }
 
+    /**
+     * Shared executor service used by HubMerger to execute background tasks such as
+     * asynchronous onNewList processing. Lazily initialized by getExecutorService().
+     */
     private static volatile ExecutorService executorService;
+
+    /**
+     * Counter used to generate unique names for background worker threads created by
+     * the HubMerger's executor service.
+     */
     private static final AtomicInteger aiThreadCnt = new AtomicInteger();
 
+    /**
+     * Lazily initializes and returns the shared ExecutorService used for background
+     * operations such as onNewList processing. Creates a cached thread pool using a
+     * custom ThreadFactory that produces MyThread instances.
+     *
+     * @return the ExecutorService used by HubMerger for asynchronous processing
+     */
     protected static ExecutorService getExecutorService() {
         if (executorService == null) {
             executorService = Executors.newCachedThreadPool(new ThreadFactory() {
@@ -2290,13 +2922,37 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         return executorService;
     }
 
+    /**
+     * Indicates whether the combined Hub is currently being populated or refreshed.
+     * Uses an internal counter to determine whether a load operation is active.
+     *
+     * @return true if the combined Hub is in a loading state; false otherwise
+     */
     public boolean isLoadingCombinedHub() {
         return aiLoadingCombinedHub.get() > 0;
     }
 
+    /**
+     * Custom thread implementation used for HubMerger background tasks. Tracks the
+     * most recent onNewList counter to detect whether the thread's work has become
+     * outdated.
+     */
     private static class MyThread extends Thread {
+    	/**
+    	 * Stores the onNewList counter value assigned to this thread when it begins
+    	 * processing. Used to determine whether newer list operations supersede this
+    	 * thread’s work.
+    	 */
         int cntNewList;
 
+        /**
+         * Constructs a new MyThread instance configured for HubMerger background
+         * processing. Assigns the runnable task and thread name, and delegates to
+         * the superclass Thread constructor.
+         *
+         * @param r    the runnable task to execute
+         * @param name the name assigned to this worker thread
+         */
         public MyThread(Runnable r, String name) {
             super(r, name);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,15 +32,27 @@ package com.viaoa.hub;
  * <p>Useful for UI pick-lists and difference views between related collections.</p>
  */
 public class HubMinusHubFilter {
+	/**
+	 * References to the three Hubs used by this filter:
+	 * <ul>
+	 *   <li>{@code hubMaster} – the source Hub containing all possible objects.</li>
+	 *   <li>{@code hubMinus} – the Hub containing objects to exclude.</li>
+	 *   <li>{@code hub} – the resulting Hub, containing all objects in {@code hubMaster} except those in {@code hubMinus}.</li>
+	 * </ul>
+	 */
     protected Hub hubMaster, hubMinus, hub;
 
-    
-    /** 
-        Create a new HubMinusHubFilter using 3 Hubs.
-        @param hubMaster hub of all objects
-        @param hubMinus hub of object to exclude
-        @param hub objects from master hub minus the objects in minus hub
-    */
+    /**
+     * Creates a new filter that maintains {@code hub} as the live difference
+     * between {@code hubMaster} and {@code hubMinus}.
+     *
+     * <p>Initializes internal references, registers listeners, and populates
+     * the resulting Hub.</p>
+     *
+     * @param hubMaster the Hub containing all objects
+     * @param hubMinus the Hub of objects to exclude
+     * @param hub the result Hub that will contain objects present in {@code hubMaster} but not in {@code hubMinus}
+     */
     public HubMinusHubFilter(Hub hubMaster, Hub hubMinus, Hub hub) {
         if (hubMaster == null || hub == null || hubMinus == null) throw new IllegalArgumentException("hubMaster and hub can not be null");
         this.hubMaster = hubMaster;
@@ -50,6 +62,13 @@ public class HubMinusHubFilter {
         populate();
     }
 
+    /**
+     * Rebuilds the result Hub by clearing it and then adding all objects
+     * from {@code hubMaster} that are not present in {@code hubMinus}.
+     *
+     * <p>Iterates sequentially through {@code hubMaster} using
+     * {@code elementAt(i)} until a {@code null} is returned.</p>
+     */
     protected void populate() {
         hub.clear();
         for (int i=0; ;i++) {
@@ -59,6 +78,20 @@ public class HubMinusHubFilter {
         }
     }
     
+    /**
+     * Registers listeners on {@code hubMaster} and {@code hubMinus} to maintain
+     * the live difference Hub.
+     *
+     * <ul>
+     *   <li>On add/insert to {@code hubMaster}, adds the object to {@code hub}
+     *       if it is not present in {@code hubMinus}.</li>
+     *   <li>On remove from {@code hubMaster}, removes the object from {@code hub}.</li>
+     *   <li>On new list event for either Hub, repopulates {@code hub}.</li>
+     *   <li>Listeners on {@code hubMinus} remove objects from {@code hub} when
+     *       they appear in {@code hubMinus}, and re-add them when removed from
+     *       {@code hubMinus} if they still exist in {@code hubMaster}.</li>
+     * </ul>
+     */
     protected void init() {
         hubMaster.addHubListener( new HubListenerAdapter() {
             public @Override void afterAdd(HubEvent e) {
@@ -93,7 +126,4 @@ public class HubMinusHubFilter {
             }
         });
     }
-   
 }
-
-

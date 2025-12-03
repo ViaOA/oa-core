@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,17 +53,39 @@ package com.viaoa.hub;
  * </ul>
  */
 public class HubSample<T> {
-    protected final Hub<T> hubMaster;
-    protected final Hub<T> hubSample;
-    protected final int amtSample;
-    protected HubListener<T> hubListener;
+    
+	/**
+	 * The source Hub whose first N elements will be mirrored into the sample Hub.
+	 * All sampling logic uses this Hub as the authoritative ordering and content.
+	 */
+	protected final Hub<T> hubMaster;
 
-    /**
-     * Create a hubSample instance.
-     * @param hubMaster
-     * @param hubSample will always be populated with hubMaster<0> .. <n-1>
-     * @param sampleAmount number of objects in hubMaster to have in hubSample
-     */
+	/**
+	 * The target Hub that maintains the live sample of the first N elements
+	 * from {@code hubMaster}. Updated automatically as the master Hub changes.
+	 */
+	protected final Hub<T> hubSample;
+    
+	/**
+	 * The maximum number of elements to mirror from {@code hubMaster}
+	 * into {@code hubSample}. Determines the size of the live subset.
+	 */
+	protected final int amtSample;
+    
+	/**
+	 * Listener registered on {@code hubMaster} to detect list mutations
+	 * (add, remove, insert, sort, new list) and trigger sample refreshes.
+	 */
+	protected HubListener<T> hubListener;
+
+	/**
+	 * Constructs a HubSample that mirrors the top portion of {@code hubMaster}
+	 * into {@code hubSample}.
+	 *
+	 * @param hubMaster    the source Hub whose first elements are sampled
+	 * @param hubSample    the destination Hub containing the live sample subset
+	 * @param sampleAmount the number of top elements to maintain in the sample
+	 */
     public HubSample(Hub<T> hubMaster, Hub<T> hubSample, int sampleAmount) {
         this.hubMaster = hubMaster;
         this.hubSample = hubSample;
@@ -71,6 +93,19 @@ public class HubSample<T> {
         setup();
     }
     
+    /**
+     * Initializes the sampling mechanism by registering a HubListener on
+     * {@code hubMaster} and triggering the first sample refresh.
+     *
+     * <p>The listener reacts to:</p>
+     * <ul>
+     *   <li>add and insert events affecting indices within the sample range</li>
+     *   <li>new list events</li>
+     *   <li>remove and remove-all events</li>
+     *   <li>sorting events</li>
+     * </ul>
+     * All relevant events lead to a call to {@link #refresh()}.
+     */
     protected void setup() {
         if (hubMaster == null && hubSample == null) return;
         hubListener = new HubListenerAdapter<T>() {
@@ -104,6 +139,19 @@ public class HubSample<T> {
         refresh();
     }
     
+    /**
+     * Synchronizes {@code hubSample} with the first {@code amtSample} objects
+     * in {@code hubMaster}.
+     *
+     * <p>Behavior:</p>
+     * <ul>
+     *   <li>Iterates through the first {@code amtSample} positions of the master Hub.</li>
+     *   <li>Ensures each position in the sample matches the corresponding object
+     *       in the master.</li>
+     *   <li>Removes sample entries when the master lacks objects at those positions.</li>
+     *   <li>Trims excess sample entries when the sample Hub is larger than the limit.</li>
+     * </ul>
+     */
     protected void refresh() {
         for (int i=0; i<amtSample; i++) {
             T obj = hubMaster.getAt(i);
@@ -122,6 +170,10 @@ public class HubSample<T> {
         }
     }
     
+    /**
+     * Detaches the HubListener from {@code hubMaster} to stop further
+     * sample updates and prevent resource leaks.
+     */
     public void close() {
         if (hubListener != null) {
             hubMaster.removeListener(hubListener);
@@ -129,6 +181,12 @@ public class HubSample<T> {
         }
     }
     
+    /**
+     * Ensures cleanup during garbage collection by calling {@link #close()}
+     * before finalization. Invokes superclass finalization afterward.
+     *
+     * @throws Throwable if the superclass finalizer throws an exception
+     */
     @Override
     protected void finalize() throws Throwable {
         close();

@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.hub;
 
 import java.util.ArrayList;
@@ -37,37 +42,118 @@ import com.viaoa.util.OAPropertyPath;
 public class HubListenerTrigger<T> {
 	private static Logger LOG = Logger.getLogger(HubListenerTrigger.class.getName());
 
+	/**
+	 * The Hub instance associated with this listener trigger manager. All
+	 * listeners and triggers created by this class apply to this hub.
+	 */
 	private final Hub hub;
+	
+	/**
+	 * Ordered array of HubListener instances registered on this Hub. Declared
+	 * volatile to guarantee visibility of modifications across threads.
+	 */
 	private volatile HubListener[] listeners;
+	
+	/**
+	 * Synchronization lock used to ensure thread-safe modifications to listener
+	 * collections and internal structures.
+	 */
 	private final Object lock = new Object();
+	
+	/**
+	 * Count of listeners that are flagged with InsertLocation.LAST so that new
+	 * listeners are inserted in the correct relative order.
+	 */
 	private volatile int cntLast; // listeners that are flagged to be last
 
+	/**
+	 * Holds metadata for a HubListener that has dependent property listeners or
+	 * triggers created on its behalf.
+	 */
 	private static class ListenerInfo {
+		/**
+		 * The originating HubListener associated with the dependent triggers and
+		 * extra listening properties.
+		 */
 		HubListener hl;
+
+		/**
+		 * List of property names for which extra property-change listening has been
+		 * established for this HubListener.
+		 */
 		ArrayList<String> alExtraListenerProperties;
+
+		/**
+		 * List of OATrigger instances created for dependent property paths for
+		 * this HubListener.
+		 */
 		ArrayList<OATrigger> alTrigger;
 	}
 
-	// list of HubListeners that have dependent prop listeners or triggers created.
+	/**
+	 * Collection of ListenerInfo objects describing HubListeners that required
+	 * dependent listener or trigger creation.
+	 */
 	private ArrayList<ListenerInfo> alListenerInfo;
 
+	/**
+	 * Structure for associating a property path with a created OATrigger.
+	 */
 	private static class TriggerInfo {
+		/**
+		 * The dependent property path represented by this trigger.
+		 */
 		String propertyPath;
+
+		/**
+		 * The trigger used to detect changes along the associated property path.
+		 */
 		OATrigger trigger;
 	}
 
+	/**
+	 * Maps a property name (uppercase) to a list of calc-property names that
+	 * depend on it, used for efficient property-change routing.
+	 */
 	private ConcurrentHashMap<String, ArrayList<String>> hsExtraProperties = new ConcurrentHashMap<String, ArrayList<String>>(); // prop.upper
+
+	/**
+	 * Extra HubListener that listens for simple property changes or direct
+	 * one-link references when no triggers are required.
+	 */
 	private HubListener hlExtra; // extra hublistener that will listen to any of the local propertys or one links (not many)
+	
+	/**
+	 * Maps uppercase property paths to their corresponding OATrigger instances,
+	 * allowing reuse and cleanup when listeners are removed.
+	 */
 	private HashMap<String, OATrigger> hsTrigger; // propertyPath.upper
 
+	/**
+	 * Maps uppercase property paths to their corresponding OATrigger instances,
+	 * allowing reuse and cleanup when listeners are removed.
+	 */
 	public HubListenerTrigger(Hub<T> hub) {
 		this.hub = hub;
 	}
+	/**
+	 * Returns the ordered list of HubListeners currently registered on this
+	 * HubListenerTrigger.
+	 *
+	 * @return array of HubListener instances or null if none exist
+	 */
 
 	public HubListener<T>[] getHubListeners() {
 		return this.listeners;
 	}
 
+	/**
+	 * Adds a HubListener to this trigger manager, positioning it according to
+	 * its InsertLocation and updating the last-listener count.
+	 *
+	 * @param hl the listener to add
+	 * @return true if the listener was added; false if already registered
+	 */
 	public boolean addListener(HubListener<T> hl) {
 		if (hl == null) {
 			return false;
@@ -107,6 +193,15 @@ public class HubListenerTrigger<T> {
 		return true;
 	}
 
+	/**
+	 * Adds a HubListener and associates it with the specified property. If the
+	 * property has dependent paths or calculated dependencies, additional setup
+	 * will occur.
+	 *
+	 * @param hl the listener to add
+	 * @param property the property name to monitor
+	 * @return true if the listener or its dependent behavior was added
+	 */
 	public boolean addListener(HubListener hl, String property) {
 		if (hl == null) {
 			return false;
@@ -114,6 +209,16 @@ public class HubListenerTrigger<T> {
 		return addListener(hl, property, null);
 	}
 
+	/**
+	 * Adds a HubListener associated with a primary property along with any
+	 * dependent property paths that should trigger calc-property updates.
+	 * Creates a shared OATriggerListener used for routing events.
+	 *
+	 * @param hl the listener to add
+	 * @param propertyName the main property monitored by the listener
+	 * @param dependentPropertyPaths additional dependent property paths
+	 * @return true if the listener or dependent behavior was added
+	 */
 	public boolean addListener(HubListener hl, final String propertyName, String[] dependentPropertyPaths) {
 		if (hl == null) {
 			return false;
@@ -216,6 +321,16 @@ public class HubListenerTrigger<T> {
 		return bWasAdded;
 	}
 
+	/**
+	 * Synchronized wrapper to create dependent listeners or triggers for the
+	 * given HubListener across all property paths in dependentPropertyPaths.
+	 *
+	 * @param triggerListener shared listener used by created triggers
+	 * @param hl the originating HubListener
+	 * @param propertyName the root property monitored
+	 * @param dependentPropertyPaths dependent paths requiring listeners/triggers
+	 * @return true if any dependent listeners or triggers were created
+	 */
 	private boolean addDependentListeners(OATriggerListener triggerListener, final HubListener<T> hl, final String propertyName,
 			final String[] dependentPropertyPaths) {
 		if (dependentPropertyPaths == null || dependentPropertyPaths.length == 0) {
@@ -226,6 +341,17 @@ public class HubListenerTrigger<T> {
 		}
 	}
 
+	/**
+	 * Internal implementation for establishing dependent listeners/triggers.
+	 * Creates or retrieves ListenerInfo entries and associates properties
+	 * and triggers as needed.
+	 *
+	 * @param triggerListener the trigger listener used for notifications
+	 * @param hl the originating HubListener
+	 * @param propertyName the primary property being monitored
+	 * @param dependentPropertyPaths property paths for dependency tracking
+	 * @return true if new listeners/triggers were added
+	 */
 	private boolean _addDependentListeners(final OATriggerListener triggerListener, final HubListener<T> hl, final String propertyName,
 			final String[] dependentPropertyPaths) {
 		ListenerInfo li = null;
@@ -293,6 +419,18 @@ public class HubListenerTrigger<T> {
 		return bWasAdded;
 	}
 
+	/**
+	 * Creates dependent listeners or triggers for a single property path.
+	 * Handles recursion through calc-property dependencies, determines when
+	 * a trigger is required, and updates ListenerInfo structures.
+	 *
+	 * @param triggerListener listener used for trigger callbacks
+	 * @param cnter recursion depth to prevent infinite loops
+	 * @param listenerInfo metadata for the originating HubListener
+	 * @param propertyName name of the monitored property
+	 * @param dependentPropertyPath the dependent property path to register
+	 * @return true if a listener or trigger was added
+	 */
 	private boolean _addDependentListener(final OATriggerListener triggerListener, final int cnter, final ListenerInfo listenerInfo,
 			final String propertyName, final String dependentPropertyPath) {
 		if (cnter > 15) {
@@ -386,6 +524,12 @@ public class HubListenerTrigger<T> {
 		return true;
 	}
 
+	/**
+	 * Removes a HubListener and cleans up dependent listeners and triggers.
+	 *
+	 * @param hl the listener being removed
+	 * @return true if the listener was removed; false otherwise
+	 */
 	public boolean removeListener(HubListener hl) {
 		if (hl == null) {
 			return false;
@@ -395,6 +539,14 @@ public class HubListenerTrigger<T> {
 		}
 	}
 
+	/**
+	 * Internal implementation for listener removal. Removes the listener from
+	 * the ordered list, updates LAST-listener count, removes dependent ListenerInfo,
+	 * cleans up extra-property listeners, and deletes unused triggers.
+	 *
+	 * @param hl the listener being fully removed
+	 * @return true if removal succeeded
+	 */
 	private boolean _removeListener(HubListener hl) {
 		HubListener[] hold = listeners;
 		listeners = (HubListener[]) OAArray.removeValue(HubListener.class, listeners, hl);
@@ -489,6 +641,13 @@ public class HubListenerTrigger<T> {
 		return true;
 	}
 
+	/**
+	 * Ensures that all triggers created by this HubListenerTrigger are removed
+	 * before garbage collection. Invokes OATriggerDelegate.removeTrigger for
+	 * each stored trigger.
+	 *
+	 * @throws Throwable if finalization fails
+	 */
 	@Override
 	protected void finalize() throws Throwable {
 		if (hsTrigger != null) {

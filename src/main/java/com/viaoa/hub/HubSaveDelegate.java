@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,51 @@ import com.viaoa.object.*;
  */
 public class HubSaveDelegate {
 
-	// verified: not called by code that already has a OACascade
+	/**
+	 * Saves all objects in the specified Hub using the given cascade rule.
+	 *
+	 * <p>Creates a new {@link OACascade} instance and delegates to
+	 * {@link #saveAll(Hub, int, OACascade)}.</p>
+	 *
+	 * @param thisHub      the Hub whose contents are to be saved
+	 * @param cascadeRule  the cascade behavior to apply during persistence
+	 */
     public static void saveAll(Hub thisHub, int cascadeRule) {
         OACascade cascade = new OACascade(); 
         HubSaveDelegate.saveAll(thisHub, cascadeRule, cascade);
     }
 	
-    /**
+    /*
      * Note: setting iCascadeRule to OAObject.CASCADE_NONE will not save the objects, but will update the M2M links.
+     */
+    /**
+     * Saves all objects in the specified Hub according to the supplied cascade rule
+     * and cascade-tracking context.
+     *
+     * <p>Behavior:</p>
+     * <ul>
+     *   <li>Returns immediately if the Hub is {@code null}.</li>
+     *   <li>Uses {@link OACascade#wasCascaded} to prevent duplicate processing.</li>
+     *   <li>If cascading is enabled (rule not {@code CASCADE_NONE}):
+     *     <ul>
+     *       <li>Iterates through loaded objects and delegates persistence to
+     *           {@link OAObjectSaveDelegate} for OAObjects.</li>
+     *     </ul>
+     *   </li>
+     *   <li>If cascading is disabled ({@code CASCADE_NONE}):
+     *     <ul>
+     *       <li>Detects Many-to-Many relationships.</li>
+     *       <li>Saves newly added objects to ensure they have valid DB records
+     *           before link updates occur.</li>
+     *     </ul>
+     *   </li>
+     *   <li>Calls {@link HubDelegate#_updateHubAddsAndRemoves} to update links.</li>
+     *   <li>Clears change tracking and referenceable state afterward.</li>
+     * </ul>
+     *
+     * @param thisHub      the Hub to save
+     * @param iCascadeRule the cascade rule controlling persistence behavior
+     * @param cascade      the cascade tracker preventing repeat processing
      */
     public static void saveAll(Hub thisHub, int iCascadeRule, OACascade cascade) {
         if (thisHub == null) return; //qq need to log this

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,14 +46,30 @@ import com.viaoa.object.OAObject;
  */
 public class HubMakeCopy<T extends OAObject> {
 
+	/**
+	 * References to the master Hub and the copy Hub.
+	 * The copy Hub is kept synchronized with the master Hub’s contents.
+	 */
 	private Hub<T> hubMaster, hubCopy;
 
+	/**
+	 * Constructs a HubMakeCopy that keeps the specified copy Hub synchronized
+	 * with the provided master Hub.
+	 *
+	 * @param hubMaster the source Hub whose list is mirrored
+	 * @param hubCopy the Hub that receives and maintains the copied list
+	 */
 	public HubMakeCopy(Hub<T> hubMaster, Hub<T> hubCopy) {
 		this.hubMaster = hubMaster;
 		this.hubCopy = hubCopy;
 		setup();
 	}
 
+	/**
+	 * Initializes synchronization behavior between the master and copy Hubs.
+	 * Registers an onNewList listener on the master Hub and performs the
+	 * initial synchronization by calling {@link #update()}.
+	 */
 	protected void setup() {
 		if (hubCopy == null || hubMaster == null) {
 			return;
@@ -65,6 +81,10 @@ public class HubMakeCopy<T extends OAObject> {
 		update();
 	}
 
+	/**
+	 * Clears the copy Hub and repopulates it with all objects from the
+	 * master Hub. This provides lightweight list mirroring without deep cloning.
+	 */
 	protected void update() {
 		hubCopy.clear();
 		hubCopy.add(hubMaster);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,16 @@ import com.viaoa.object.OAObject;
  */
 public class HubMru<T extends OAObject> extends HubCopy<T> {
 
+	/**
+	 * Constructs an MRU-enabled HubCopy.
+	 *
+	 * <p>Initializes the superclass with the given master and copy Hubs
+	 * and registers a listener that updates the MRU ordering whenever
+	 * the Active Object on the master Hub changes.</p>
+	 *
+	 * @param hubMaster the source Hub whose Active Object determines MRU ordering
+	 * @param hubCopy   the target Hub that maintains a reordered MRU list
+	 */
 	public HubMru(Hub<T> hubMaster, Hub<T> hubCopy) {
 		super(hubMaster, hubCopy, false);
 
@@ -40,6 +50,15 @@ public class HubMru<T extends OAObject> extends HubCopy<T> {
 		updateMru();
 	}
 
+	/**
+	 * Updates the MRU (Most Recently Used) ordering in the copied Hub.
+	 *
+	 * <p>Moves the current Active Object of the master Hub to the first
+	 * position of the copy Hub if it is present but not already first.</p>
+	 *
+	 * <p>Does nothing if the master Active Object is null or if the
+	 * copy Hub is null.</p>
+	 */
 	protected void updateMru() {
 		Object obj = hubMaster.getAO();
 		if (obj == null) {
