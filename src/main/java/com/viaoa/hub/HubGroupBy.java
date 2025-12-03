@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,10 +74,12 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	private final static AtomicInteger aiCnt = new AtomicInteger();
 
 	/**
-	 * Create a hub of objects that are based on hubB.
+	 * Constructs a {@code HubGroupBy} that groups objects from the specified source
+	 * Hub based on the given property path.
 	 *
-	 * @param hubB         from hub
-	 * @param propertyPath to groupBy link property
+	 * @param hubB the source Hub containing objects to be grouped
+	 * @param propertyPath the property path used to determine grouping
+	 * @param bCreateNullList whether to create a group for {@code null} grouping values
 	 */
 	public HubGroupBy(Hub<F> hubB, String propertyPath, boolean bCreateNullList) {
 		this.hubGroupBy = null;
@@ -90,14 +92,24 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		setup();
 	}
 
+	/**
+	 * Constructs a {@code HubGroupBy} that groups objects from the specified Hub
+	 * using the given property path and enables creation of a null-group list.
+	 *
+	 * @param hubB the source Hub containing objects to be grouped
+	 * @param propertyPath the property path used to determine grouping
+	 */
 	public HubGroupBy(Hub<F> hubB, String propertyPath) {
 		this(hubB, propertyPath, true);
 	}
 
 	/**
-	 * @param hubB            from hub to use as the root.
-	 * @param propertyPath    to the groupBy property
-	 * @param hubPropertyName hub method for linkMany w/ type=groupBy
+	 * Constructs a {@code HubGroupBy} that groups objects from the given Hub using
+	 * a property path, and associates each group with a link-many Hub property.
+	 *
+	 * @param hubB the source Hub containing objects to be grouped
+	 * @param propertyPath the property path used for grouping
+	 * @param hubPropertyName optional name of a Hub property within the groupBy object
 	 */
 	public HubGroupBy(Hub<F> hubB, String propertyPath, String hubPropertyName) {
 		this.hubGroupBy = null;
@@ -112,10 +124,13 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	}
 
 	/**
-	 * Create a hub on objects that are based on fromHub, and are grouped by hubGrpBy. This allows the combined hub to have a full list like
-	 * a left-join.
+	 * Constructs a {@code HubGroupBy} that groups objects from a source Hub while
+	 * synchronizing with an external Hub of groupBy keys.
 	 *
-	 * @param propertyPath pp of the property from hubFrom to hubB.
+	 * @param hubFrom the source Hub providing objects to be grouped
+	 * @param hubGrpBy the Hub providing groupBy key objects
+	 * @param propertyPath the property path from source to groupBy
+	 * @param bCreateNullList whether to create a group for {@code null} grouping values
 	 */
 	public HubGroupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath, boolean bCreateNullList) {
 		this.hubFrom = hubFrom;
@@ -127,12 +142,25 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		setup();
 	}
 
+	/**
+	 * Constructs a {@code HubGroupBy} that groups objects from the source Hub using
+	 * the given groupBy Hub and property path, with a null-group list enabled.
+	 *
+	 * @param hubFrom the source Hub providing objects to be grouped
+	 * @param hubGrpBy the Hub providing groupBy key objects
+	 * @param propertyPath the property path from source to groupBy
+	 */
 	public HubGroupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath) {
 		this(hubFrom, hubGrpBy, propertyPath, true);
 	}
 
 	/**
-	 * Combine two hgbs.
+	 * Combines two existing {@code HubGroupBy} instances into a single merged
+	 * grouping structure.
+	 *
+	 * @param hgb1 the first HubGroupBy instance
+	 * @param hgb2 the second HubGroupBy instance
+	 * @param bCreateNullList whether to create a group for {@code null} grouping values
 	 */
 	public HubGroupBy(HubGroupBy<F, G> hgb1, HubGroupBy<F, G> hgb2, boolean bCreateNullList) {
 		if (hgb1 == null || hgb2 == null) {
@@ -144,12 +172,24 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		setupCombined(hgb1, hgb2);
 	}
 
+	/**
+	 * Combines two existing {@code HubGroupBy} instances into a merged grouping
+	 * using a null-group list.
+	 *
+	 * @param hgb1 the first HubGroupBy instance
+	 * @param hgb2 the second HubGroupBy instance
+	 */
 	public HubGroupBy(HubGroupBy<F, G> hgb1, HubGroupBy<F, G> hgb2) {
 		this(hgb1, hgb2, true);
 	}
 
 	/**
-	 * create a new hgb that creates a combined groupBy with another.
+	 * Constructs a new {@code HubGroupBy} derived from an existing one while adding
+	 * an additional property path to group by.
+	 *
+	 * @param hgb the base HubGroupBy instance
+	 * @param pp the additional property path
+	 * @param bCreateNullList whether to create a group for {@code null} grouping values
 	 */
 	public HubGroupBy(HubGroupBy<F, G> hgb, String pp, boolean bCreateNullList) {
 		if (hgb == null) {
@@ -162,12 +202,22 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		setupCombined(hgb, hgb2);
 	}
 
+	/**
+	 * Constructs a new {@code HubGroupBy} derived from an existing one using the
+	 * specified property path and enabling null-group creation.
+	 *
+	 * @param hgb the base HubGroupBy instance
+	 * @param pp the additional property path
+	 */
 	public HubGroupBy(HubGroupBy<F, G> hgb, String pp) {
 		this(hgb, pp, true);
 	}
 
 	/**
-	 * @return Hub of combined objects using OAGroupBy
+	 * Returns the Hub containing {@code OAGroupBy} entries combining groupBy keys
+	 * and their associated grouped objects.
+	 *
+	 * @return the combined Hub of grouped results
 	 */
 	public Hub<OAGroupBy<F, G>> getCombinedHub() {
 		if (hubCombined != null) {
@@ -178,7 +228,9 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	}
 
 	/**
-	 * @return Hub of groupBy objects that are in sync (share AO) with combined Hub.
+	 * Returns the Hub of groupBy objects kept in sync with the combined grouping.
+	 *
+	 * @return the master Hub of groupBy keys
 	 */
 	public Hub<G> getMasterHub() {
 		if (hubMaster == null) {
@@ -235,7 +287,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	}
 
 	/**
-	 * @return detail hub from compoundHub.hub
+	 * Returns the detail Hub representing objects belonging to the active group
+	 * within the combined Hub.
+	 *
+	 * @return the detail Hub of grouped objects
 	 */
 	public Hub<F> getDetailHub() {
 		if (hubDetail == null) {
@@ -261,6 +316,11 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		return hubDetail;
 	}
 
+	/**
+	 * Initializes the grouping logic by analyzing the property path and determining
+	 * whether grouping requires a split configuration or can proceed through the main
+	 * setup path.
+	 */
 	void setup() {
 		OAPropertyPath opp = new OAPropertyPath(propertyPath);
 
@@ -332,8 +392,15 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 * for the leftmost HubB, and must also have the source HubA for the rightmost, two separate hgb can be used to update a 3rd
 	 * hgb. This will set up the listeners for hgb1 & hgb2 to update this.hubCombined.
 	 */
+	
+	/**
+	 * Configures grouping when the property path contains a non-contiguous or
+	 * non-navigable segment requiring a two-way split.  
+	 * <p>
+	 * Establishes listeners on both split HubGroupBy instances so changes propagate
+	 * into this combined grouping.
+	 */
 	private void setupSplit() {
-
 		// A: hubGroup1 (hgb1) left part of pp, using hubB as the root
 		// A.1: listen to hgb1 add/removes and update this.hubCombined
 		hubGB1.addHubListener(new HubListenerAdapter() {
@@ -1120,6 +1187,12 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	}
 
 	// main setup, if not needing a split
+	/**
+	 * Performs standard grouping setup when no property-path split is required.
+	 * <p>
+	 * Installs listeners on source and groupBy Hubs and maintains the combined grouping
+	 * Hub in response to add, remove, update, AO changes, and new lists.
+	 */
 	void setupMain() {
 		getCombinedHub().addHubListener(new HubListenerAdapter() {
 			@Override
@@ -1370,6 +1443,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		addAll();
 	}
 
+	/**
+	 * Adds all objects from the source Hub into the grouping structure, using a
+	 * sibling helper to ensure correct detail resolution during property path access.
+	 */
 	private void addAll() {
 		// this will tell the OASyncClient.getDetail which hub objects are being used
 		final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(this.hubFrom);
@@ -1386,10 +1463,23 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		}
 	}
 
+	/**
+	 * Adds the specified object to its appropriate group(s) using the grouping property.
+	 *
+	 * @param b the object being added
+	 * @return the list of {@code OAGroupBy} groups the object belongs to, or {@code null}
+	 */
 	private ArrayList<OAGroupBy> add(F b) {
 		return add(b, false);
 	}
 
+	/**
+	 * Internal add method with optional return of the groups the object is assigned to.
+	 *
+	 * @param b the object being added
+	 * @param bReturnList whether to return the list of groups the object is added to
+	 * @return the list of groups the object was added to, or {@code null}
+	 */
 	private ArrayList<OAGroupBy> add(F b, boolean bReturnList) {
 		if (b == null) {
 			return null;
@@ -1493,6 +1583,12 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		return al;
 	}
 
+	/**
+	 * Removes the specified object from the group associated with the given groupBy key.
+	 *
+	 * @param a the groupBy key
+	 * @param b the object to remove
+	 */
 	private void remove(G a, F b) {
 		for (OAGroupBy gb : HubGroupBy.this.getCombinedHub()) {
 			G ax = (G) gb.getGroupBy();
@@ -1507,6 +1603,12 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		}
 	}
 
+	/**
+	 * Removes the specified object from all groups in which it appears and removes
+	 * empty groups when appropriate.
+	 *
+	 * @param b the object to remove
+	 */
 	private void remove(F b) {
 		for (OAGroupBy gb : getCombinedHub()) {
 			Hub<F> h = gb.getHub();
@@ -1521,6 +1623,12 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		}
 	}
 
+	/**
+	 * Re-evaluates the group membership of the specified object when the grouping
+	 * property changes, adding it to new groups and removing it from old ones.
+	 *
+	 * @param b the object being updated
+	 */
 	private void update(F b) {
 		ArrayList<OAGroupBy> al = add(b, true);
 		for (OAGroupBy gb : getCombinedHub()) {
@@ -1536,6 +1644,15 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		}
 	}
 
+	/**
+	 * Combines two HubGroupBy instances into a single grouped result set.
+	 * <p>
+	 * Installs listeners and merge logic so that changes in either source grouping
+	 * propagate into the combined Hub.
+	 *
+	 * @param hgb1 the first HubGroupBy
+	 * @param hgb2 the second HubGroupBy
+	 */
 	void setupCombined(HubGroupBy<F, G> hgb1, HubGroupBy<F, G> hgb2) {
 		final Hub<OAGroupBy<F, G>> hub1 = hgb1.getCombinedHub();
 		final Hub<OAGroupBy<F, G>> hub2 = hgb2.getCombinedHub();
@@ -1890,6 +2007,13 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		}
 	}
 
+	/**
+	 * Creates a new {@code OAGroupBy} instance for the specified groupBy key and
+	 * initializes its internal Hub.
+	 *
+	 * @param grpBy the groupBy key, or {@code null} for a null-group list
+	 * @return a newly created {@code OAGroupBy}
+	 */
 	private OAGroupBy<F, G> createGroupBy(G grpBy) {
 		OAGroupBy<F, G> gb = new OAGroupBy<F, G>();
 		if (grpBy != null) {
@@ -1904,6 +2028,12 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		return gb;
 	}
 
+	/**
+	 * Returns the property-path expression for the groupBy object class, or {@code null}
+	 * if no explicit groupBy class has been determined.
+	 *
+	 * @return the property-path string or {@code null}
+	 */
 	public String getGroupByPP() {
 		if (classGroupBy == null) {
 			return null;
@@ -1912,6 +2042,11 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		return s;
 	}
 
+	/**
+	 * Returns the property-path expression for accessing grouped Hub contents.
+	 *
+	 * @return the property-path string for the Hub
+	 */
 	public String getHubByPP() {
 		return "(" + classFrom.toString() + ")hub";
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,9 +74,18 @@ public class HubDetailDelegate {
 	private static Logger LOG = Logger.getLogger(HubDetailDelegate.class.getName());
 
 	/**
-	 * Used to create Master/Detail relationships. Set the controlling/master hub for this hub
+	 * Sets the master hub for this hub using the provided property path.
+	 * <p>
+	 * If this hub already has a master hub defined, the existing master/detail
+	 * configuration is removed. If {@code masterHub} is non-null, this method
+	 * resolves or creates the corresponding detail hub using the supplied
+	 * property path and sharing options.
 	 *
-	 * @param path is the property path from masterHub to get to this hub
+	 * @param thisHub     the hub whose master relationship is being set
+	 * @param masterHub   the new master hub
+	 * @param path        the property path from the master hub to this hub
+	 * @param bShared     whether the detail hub should share underlying data
+	 * @param selectOrder the select order to assign to the detail hub
 	 */
 	public static void setMasterHub(Hub thisHub, Hub masterHub, String path, boolean bShared, String selectOrder) {
 		if (thisHub.datau.getSharedHub() != null) {
@@ -96,7 +105,12 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Is this a master/detail, and is the detail "hub" recursive.
+	 * Returns whether this hub participates in a recursive master/detail
+	 * relationship. The method checks link metadata from the hub's detail-to-master
+	 * link and evaluates the reverse link for recursion.
+	 *
+	 * @param thisHub the hub to test
+	 * @return true if the relationship is recursive, otherwise false
 	 */
 	public static boolean isRecursiveMasterDetail(Hub thisHub) {
 		if (thisHub == null) {
@@ -122,11 +136,16 @@ public class HubDetailDelegate {
 		return li.getRecursive();
 	}
 
-	// if getPos(object) is not found and a masterHub exists, then the
-	// masterHub needs to be searched and then this Hub will be able to find the object
-	// in the updated list
-	// called when object is not found and there is a master hub
-	// added 4/11: checkLink option, if masterHub has a linkHub, then it will not be adjusted
+	/**
+	 * Attempts to align the master hub's active object with the specified
+	 * detail object's reference back to the master. Handles MANY–MANY links,
+	 * reverse-link resolution, and active-object adjustment.
+	 *
+	 * @param thisHub     the detail hub
+	 * @param detailObject the detail object whose master reference is checked
+	 * @param bUpdateLink  whether linked hubs should update link properties
+	 * @return true if the master hub's active object was adjusted, otherwise false
+	 */
 	protected static boolean setMasterHubActiveObject(Hub thisHub, Object detailObject, boolean bUpdateLink) {
 		// make sure none of these have a linkHub
 		// and find the sharedHub that has a masterHub
@@ -163,7 +182,13 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Called by add(), insert(), remove to update an object's reference property to that of the master object.
+	 * Updates the reference property on a detail object to reflect the
+	 * current master object. Handles ONE and MANY link types, reverse-link
+	 * processing, Hub-based references, and array-based membership updates.
+	 *
+	 * @param thisHub      the detail hub
+	 * @param detailObject the detail object to update
+	 * @param objMaster    the master object used for reference assignment
 	 */
 	protected static void setPropertyToMasterHub(Hub thisHub, Object detailObject, Object objMaster) {
 		if (thisHub == null || detailObject == null) {
@@ -277,7 +302,12 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Called by setActiveObject to automatically adjust Detail Hubs.
+	 * Updates all detail hubs under the specified hub. Each registered
+	 * {@code HubDetail} is processed to ensure its underlying data and
+	 * active object align with the current master's active object.
+	 *
+	 * @param thisHub     the hub whose detail hubs should be updated
+	 * @param bUpdateLink whether link-based updates should be propagated
 	 */
 	protected static void updateAllDetail(Hub thisHub, boolean bUpdateLink) {
 		int x = thisHub.datau.getVecHubDetail() == null ? 0 : thisHub.datau.getVecHubDetail().size();
@@ -295,6 +325,14 @@ public class HubDetailDelegate {
 		}
 	}
 
+	/**
+	 * Preloads detail data for the object at the specified position in the
+	 * master hub. Touches each detail hub’s property getter to ensure data
+	 * is loaded or initialized.
+	 *
+	 * @param thisHub the master hub
+	 * @param pos     the index of the master object whose detail data is preloaded
+	 */
 	public static void preloadDetailData(final Hub thisHub, final int pos) {
 		if (thisHub == null || pos < 0) {
 			return;
@@ -321,8 +359,15 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Internal method to update any detail hubs. This is called whenever activeObject is changed, or the property value that is used for
-	 * the link gets modified
+	 * Internal method used to refresh the contents and active object of a
+	 * detail hub after changes to the master hub’s active object or link
+	 * property. Handles Hub, OAObject, Object, and array-based detail types,
+	 * as well as shared-hub state.
+	 *
+	 * @param thisHub     the master hub
+	 * @param detail      the hub-detail metadata
+	 * @param detailHub   the hub being updated
+	 * @param bUpdateLink whether link-based updates should be propagated
 	 */
 	protected static void updateDetail(final Hub thisHub, final HubDetail detail, final Hub detailHub, final boolean bUpdateLink) {
 		/* get Hub, Object, OAObject or Array value from property
@@ -507,7 +552,15 @@ public class HubDetailDelegate {
 		}
 	}
 
-	/** initialize activeObject in detail hub. */
+	/**
+	 * Initializes or adjusts the active object for a detail hub based on
+	 * master hub state, link-hub constraints, or shared active-object rules.
+	 *
+	 * @param thisHub           the hub whose active object drives updates
+	 * @param hubDetailHub      the detail hub being updated
+	 * @param bUpdateLink       whether linked hubs should update link properties
+	 * @param bShareActiveObject whether the hubs share active-object state
+	 */
 	protected static void updateDetailActiveObject(final Hub thisHub, final Hub hubDetailHub, final boolean bUpdateLink,
 			final boolean bShareActiveObject) {
 		boolean bUseCurrent = (bShareActiveObject && thisHub.dataa == hubDetailHub.dataa); // if hubs are sharing active object then dont change it.
@@ -600,16 +653,38 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * returns DataMaster from any shared hub that has a MasterHub set. If none is found, then the DataMaster for thisHub is returned.
+	 * Returns the {@code HubDataMaster} associated with the hub or one of
+	 * its shared hubs. If no shared hub contains master information, the
+	 * hub's own {@code datam} is returned.
+	 *
+	 * @param thisHub the hub whose master data is resolved
+	 * @return the master-data descriptor
 	 */
 	protected static HubDataMaster getDataMaster(final Hub thisHub) {
 		return getDataMaster(thisHub, null, false);
 	}
 
+	/**
+	 * Returns the hub's master-data descriptor, optionally searching filtered
+	 * shared hubs. Delegates to the internal {@code getDataMaster} variant.
+	 *
+	 * @param thisHub               the hub whose master data is resolved
+	 * @param bIncludedFilteredHub  whether filtered shared hubs should be considered
+	 * @return the resolved {@code HubDataMaster}
+	 */
 	protected static HubDataMaster getDataMaster(final Hub thisHub, boolean bIncludedFilteredHub) {
 		return getDataMaster(thisHub, null, bIncludedFilteredHub);
 	}
 
+	/**
+	 * Internal implementation for resolving the {@code HubDataMaster} from
+	 * this hub or its shared hubs that match the optional master class.
+	 *
+	 * @param thisHub              the hub to evaluate
+	 * @param masterClass          optional class constraint for the master hub
+	 * @param bIncludedFilteredHub whether filtered hubs are eligible
+	 * @return the resolved {@code HubDataMaster}, or null if not found
+	 */
 	private static HubDataMaster getDataMaster(final Hub thisHub, final Class masterClass, boolean bIncludedFilteredHub) {
 		if (thisHub == null) {
 			return null;
@@ -637,7 +712,13 @@ public class HubDetailDelegate {
 		return thisHub.datam;
 	}
 
-	/** returns any shared hub with a MasterHub set. */
+	/**
+	 * Returns this hub or a shared hub that has a master hub defined. Searches
+	 * the hub and its shared hubs until one with a non-null master hub is found.
+	 *
+	 * @param thisHub the hub to inspect
+	 * @return a hub with a master hub, or null if none exists
+	 */
 	public static Hub getHubWithMasterHub(final Hub thisHub) {
 		if (thisHub == null) {
 			return null;
@@ -662,6 +743,13 @@ public class HubDetailDelegate {
 		return hubx;
 	}
 
+	/**
+	 * Returns this hub or a shared hub that has a master object defined. Searches
+	 * the hub and its shared hubs until one with a non-null master object is found.
+	 *
+	 * @param thisHub the hub to inspect
+	 * @return a hub with a master object, or null if none exists
+	 */
 	public static Hub getHubWithMasterObject(final Hub thisHub) {
 		if (thisHub.datam == null) {
 			return null; // could be deserializing and not fully loaded
@@ -688,7 +776,13 @@ public class HubDetailDelegate {
 		return hubx;
 	}
 
-	/** returns the MasterHuib of any shared hub. */
+	/**
+	 * Returns the master hub for this hub or any shared hub that carries
+	 * master-hub metadata.
+	 *
+	 * @param thisHub the hub whose master hub is requested
+	 * @return the master hub, or null if none exists
+	 */
 	public static Hub getMasterHub(Hub thisHub) {
 		Hub h = getHubWithMasterHub(thisHub);
 		if (h != null) {
@@ -698,7 +792,10 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Returns the OAObject that owns this Hub
+	 * Returns the master object associated with this hub or a shared hub.
+	 *
+	 * @param thisHub the hub whose master object is requested
+	 * @return the master object, or null if not defined
 	 */
 	public static OAObject getMasterObject(Hub thisHub) {
 		thisHub = getHubWithMasterObject(thisHub);
@@ -708,6 +805,13 @@ public class HubDetailDelegate {
 		return thisHub.datam.getMasterObject();
 	}
 
+	/**
+	 * Returns the class of the master object or master hub associated with
+	 * this hub. If none is found, returns null.
+	 *
+	 * @param thisHub the hub whose master class is requested
+	 * @return the master class, or null if unavailable
+	 */
 	public static Class getMasterClass(Hub thisHub) {
 		if (thisHub.datam.getMasterObject() != null) {
 			return thisHub.datam.getMasterObject().getClass();
@@ -727,38 +831,112 @@ public class HubDetailDelegate {
 		return null;
 	}
 
+	/**
+	 * Delegates to the full {@code getDetailHub} implementation to create
+	 * or resolve a detail hub using the specified class array.
+	 *
+	 * @param thisHub the master hub
+	 * @param clazz   the class path used to derive the property path
+	 * @return the resolved or newly created detail hub
+	 */
 	public static Hub getDetailHub(Hub thisHub, Class[] clazz) {
 		return getDetailHub(thisHub, null, clazz, null, null, false, null);
 	}
 
+	/**
+	 * Delegates to the full {@code getDetailHub} implementation using a
+	 * single class, with optional shared active-object and select-order settings.
+	 *
+	 * @param thisHub      the master hub
+	 * @param clazz        the target class for the detail relationship
+	 * @param bShareActive whether the detail hub shares active-object state
+	 * @param selectOrder  optional select-order string
+	 * @return the resolved or created detail hub
+	 */
 	public static Hub getDetailHub(Hub thisHub, Class clazz, boolean bShareActive, String selectOrder) {
 		return getDetailHub(thisHub, null, new Class[] { clazz }, null, null, bShareActive, selectOrder);
 	}
 
+	/**
+	 * Delegates to the full {@code getDetailHub} implementation using the
+	 * supplied property path and optional object class.
+	 *
+	 * @param thisHub      the master hub
+	 * @param path         the property path to the detail hub
+	 * @param objectClass  the class of the detail objects
+	 * @param bShareActive whether the detail hub shares active-object state
+	 * @return the resolved or created detail hub
+	 */
 	public static Hub getDetailHub(Hub thisHub, String path, Class objectClass, boolean bShareActive) {
 		return getDetailHub(thisHub, path, null, objectClass, null, bShareActive, null);
 	}
 
+	/**
+	 * Delegates to the full {@code getDetailHub} implementation using the
+	 * specified property path.
+	 *
+	 * @param thisHub the master hub
+	 * @param path    the property path
+	 * @return the resolved or created detail hub
+	 */
 	public static Hub getDetailHub(Hub thisHub, String path) {
 		return getDetailHub(thisHub, path, null, null, null, false, null);
 	}
 
+	/**
+	 * Delegates to the full {@code getDetailHub} implementation using the
+	 * specified property path and select-order setting.
+	 *
+	 * @param thisHub     the master hub
+	 * @param path        the property path
+	 * @param selectOrder optional select-order for the detail hub
+	 * @return the resolved or created detail hub
+	 */
 	public static Hub getDetailHub(Hub thisHub, String path, String selectOrder) {
 		return getDetailHub(thisHub, path, null, null, null, false, selectOrder);
 	}
 
+	/**
+	 * Delegates to the full {@code getDetailHub} implementation using the
+	 * provided property path and active-object sharing flag.
+	 *
+	 * @param thisHub      the master hub
+	 * @param path         the property path
+	 * @param bShareActive whether the detail hub shares active-object state
+	 * @return the resolved or created detail hub
+	 */
 	public static Hub getDetailHub(Hub thisHub, String path, boolean bShareActive) {
 		return getDetailHub(thisHub, path, null, null, null, bShareActive, null);
 	}
 
+	/**
+	 * Delegates to the full {@code getDetailHub} implementation using the
+	 * specified property path, active-object sharing flag, and select-order.
+	 *
+	 * @param thisHub      the master hub
+	 * @param path         the property path
+	 * @param bShareActive whether active-object state is shared
+	 * @param selectOrder  optional select-order for the detail hub
+	 * @return the resolved or created detail hub
+	 */
 	public static Hub getDetailHub(Hub thisHub, String path, boolean bShareActive, String selectOrder) {
 		return getDetailHub(thisHub, path, null, null, null, bShareActive, selectOrder);
 	}
 
 	/**
-	 * Main method for setting Master/Detail relationship.
+	 * Core implementation for resolving or creating a detail hub based on a
+	 * property path or class sequence. Handles HubMerger creation, discovery
+	 * of existing HubDetail entries, link resolution, and recursion through
+	 * multi-segment property paths.
 	 *
-	 * @see Hub#getDetailHub(String,boolean,String) Full Description on Master/Detail Hubs
+	 * @param thisHub      the master hub
+	 * @param path         the property path (may be null for class-based lookup)
+	 * @param classes      optional class array to derive a property path
+	 * @param lastClass    optional class constraint for the final segment
+	 * @param detailHub    optionally supplied hub to populate
+	 * @param bShareActive whether the detail hub shares active-object state
+	 * @param selectOrder  optional select-order for the detail hub
+	 * @return the resolved or newly created detail hub
 	 */
 	protected static Hub getDetailHub(final Hub thisHub, String path, Class[] classes, Class lastClass, Hub detailHub, boolean bShareActive,
 			String selectOrder) {
@@ -961,13 +1139,13 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Set the object that "owns" this hub. This is set by OAObject.getHub() and by updateDetail(), when a detail Hub is updated. All
-	 * changes (adds/removes/replaces) will automatically be tracked.
-	 * <p>
-	 * Example: if a dept object has an emp hub, then it will be the masterObject of the hubEmp. All additions and removes will be tracked
-	 * for a OADataSource that uses links.
+	 * Sets the master object for this hub and assigns the associated
+	 * detail-to-master link information. Updates the hub’s master object
+	 * reference when changed.
 	 *
-	 * @param liDetailToMaster is from the detail object to the master.
+	 * @param thisHub          the hub whose master is being set
+	 * @param masterObject     the new master object
+	 * @param liDetailToMaster the link information from detail to master
 	 */
 	public static void setMasterObject(Hub thisHub, OAObject masterObject, OALinkInfo liDetailToMaster) {
 		// OAObject needs to know which hubs are under it
@@ -981,12 +1159,23 @@ public class HubDetailDelegate {
 		thisHub.datam.setMasterObject(masterObject);
 	}
 
+	/**
+	 * Convenience wrapper that sets the master object using the hub’s
+	 * existing detail-to-master link information.
+	 *
+	 * @param thisHub      the hub whose master object is assigned
+	 * @param masterObject the master object to set
+	 */
 	public static void setMasterObject(Hub thisHub, OAObject masterObject) {
 		setMasterObject(thisHub, masterObject, thisHub.datam.liDetailToMaster);
 	}
 
 	/**
-	 * Returns the OALinkInfo from detail (MANY) to master (ONE).
+	 * Returns the {@code OALinkInfo} that links a detail hub to its master.
+	 * Searches this hub and any shared hubs that carry master metadata.
+	 *
+	 * @param hub the detail hub
+	 * @return the detail-to-master link information, or null if not found
 	 */
 	public static OALinkInfo getLinkInfoFromDetailToMaster(Hub hub) {
 		if (hub == null) {
@@ -1003,7 +1192,12 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Returns true if any of the master hubs above this hub have an active object that is new.
+	 * Returns true if any master hub in the hierarchy above this hub has an
+	 * active object marked as new. Walks upward through master hubs or master
+	 * objects until the chain terminates.
+	 *
+	 * @param thisHub the hub to evaluate
+	 * @return true if a master active object is new, otherwise false
 	 */
 	public static boolean isMasterNew(Hub thisHub) {
 		thisHub = getHubWithMasterObject(thisHub);
@@ -1040,7 +1234,13 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Used to remove Master/Detail relationships.
+	 * Removes or decrements the reference count for a registered detail hub.
+	 * If no more references remain and the detail hub has no children, its
+	 * data and master information are reset.
+	 *
+	 * @param thisHub   the master hub
+	 * @param hubDetail the detail hub to remove
+	 * @return true if the hub was removed entirely, otherwise false
 	 */
 	public static boolean removeDetailHub(Hub thisHub, Hub hubDetail) {
 		// remove HubDetail if it does not have any more listeners or links
@@ -1081,10 +1281,12 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Used for master/detail Hubs, returns the name of the property from the master Hub to detail Hub.
-	 * <p>
-	 * Example:<br>
-	 * If master is Department and Detail is Employee then "Employees", which is from Department.getEmployees()
+	 * Returns the name of the property on the master object or hub that leads
+	 * to this detail hub. Attempts resolution via link metadata, OAObjectInfo,
+	 * and HubDetail entries.
+	 *
+	 * @param thisHub the detail hub
+	 * @return the master-to-detail property name, or null if unavailable
 	 */
 	public static String getPropertyFromMasterToDetail(Hub thisHub) {
 		Hub h = HubDetailDelegate.getHubWithMasterHub(thisHub);
@@ -1128,16 +1330,23 @@ public class HubDetailDelegate {
 		return null;
 	}
 
-	// 20180204 reworked to check for cases where a Hub is a masterHub for a detail Hub, and it is using a shared Hub.
-	//    ex: hub that uses a HierarchyFinder,  ex: Employee.getHierAwardTypes()
-	//        Employee.hubHierAwardTypes.datam.masterObject could be Program (not thisEmployee)
-	//        Employee.hubHierAwardTypes.datam.liDetailToMaster could be Program.awardTypes
+	/**
+	 * Returns the link information from a master hub to this detail hub.
+	 * Delegates to {@link #getLinkInfoFromMasterToDetail(Hub)}.
+	 *
+	 * @param thisDetailHub the detail hub
+	 * @return the link info from master to detail, or null if not found
+	 */
 	public static OALinkInfo getLinkInfoFromMasterHubToDetail(Hub thisDetailHub) {
 		return getLinkInfoFromMasterToDetail(thisDetailHub);
 	}
 
 	/**
-	 * O2M master-details of same class and are not recursive "can only be one deep".<br>
+	 * Determines whether a recursive one-to-many relationship is valid for
+	 * this hub based on link metadata and object-class comparisons.
+	 *
+	 * @param hub the hub to evaluate
+	 * @return true if the recursive structure is valid, otherwise false
 	 */
 	public static boolean getIsValidRecursive(final Hub hub) {
 		if (hub == null) {
@@ -1203,6 +1412,14 @@ public class HubDetailDelegate {
 		return true;
 	}
 
+	/**
+	 * Returns whether both hubs originate from the same master hub based on
+	 * link-info equality from their respective master hubs.
+	 *
+	 * @param hub1 the first hub
+	 * @param hub2 the second hub
+	 * @return true if both hubs share the same master link info, otherwise false
+	 */
 	public static boolean getIsFromSameMasterHub(Hub hub1, Hub hub2) {
 		// if (HubDetailDelegate.getLinkInfoFromMasterToDetail(getOriginalHub().getMasterHub()) == HubDetailDelegate.getLinkInfoFromMasterToDetail(getPlatformCampaigns())) {
 		if (hub1 == null || hub2 == null) {
@@ -1226,6 +1443,14 @@ public class HubDetailDelegate {
 		return li1 == li2;
 	}
 
+	/**
+	 * Resolves the link information from the master hub or master object
+	 * to this detail hub. Searches shared hubs, link metadata, and registered
+	 * HubDetail entries.
+	 *
+	 * @param thisDetailHub the detail hub
+	 * @return the master-to-detail link information, or null if not found
+	 */
 	public static OALinkInfo getLinkInfoFromMasterToDetail(Hub thisDetailHub) {
 		if (thisDetailHub == null) {
 			return null;
@@ -1283,6 +1508,14 @@ public class HubDetailDelegate {
 		return null;
 	}
 
+	/**
+	 * Returns the link information from the master object to this detail hub.
+	 * Searches master hubs, shared hubs, and HubDetail records to locate the
+	 * appropriate link metadata.
+	 *
+	 * @param thisDetailHub the detail hub
+	 * @return the link info from master object to detail, or null if not found
+	 */
 	public static OALinkInfo getLinkInfoFromMasterObjectToDetail(Hub thisDetailHub) {
 
 		// 20181231 needs to also check copied hubs
@@ -1336,6 +1569,14 @@ public class HubDetailDelegate {
 		return null;
 	}
 
+	/**
+	 * Builds a dot-separated property path representing the sequence of
+	 * detail-to-master relationships from this hub upward through its
+	 * master hierarchy.
+	 *
+	 * @param thisHub the starting hub
+	 * @return the property path to all masters, or an empty string if none
+	 */
 	public static String getPropertyPathToMasters(Hub thisHub) {
 		if (thisHub == null) {
 			return null;
@@ -1359,10 +1600,11 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Used for master/detail Hubs, returns the name of the property from the detail Hub to master Hub.
-	 * <p>
-	 * Example:<br>
-	 * If master is Department and Detail is Employee then "Department", which is from Employee.getDepartment()
+	 * Returns the property name on the detail object that refers to the
+	 * master object, based on the hub’s detail-to-master link information.
+	 *
+	 * @param thisHub the detail hub
+	 * @return the detail-to-master property name, or null if unavailable
 	 */
 	public static String getPropertyFromDetailToMaster(Hub thisHub) {
 		Hub h = getHubWithMasterHub(thisHub);
@@ -1380,7 +1622,11 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Returns true if this hub of objects is owned by a master object.
+	 * Returns whether this hub represents an owned relationship, determined
+	 * by evaluating the reverse link info of its detail-to-master link.
+	 *
+	 * @param thisHub the hub to evaluate
+	 * @return true if the detail objects are owned by the master, otherwise false
 	 */
 	public static boolean isOwned(Hub thisHub) {
 		Hub h = getHubWithMasterHub(thisHub);
@@ -1402,8 +1648,12 @@ public class HubDetailDelegate {
 	}
 
 	/**
-	 * Get the real hub that this hub should be using. This could be based on the fact that this hub has not yet been updated (new list)
-	 * after a masterHub.AO
+	 * Returns the actual hub instance that should be used based on the
+	 * current master object’s property value. If the master object’s
+	 * detail property points to a different hub, that hub is returned.
+	 *
+	 * @param thisHub the hub to resolve
+	 * @return the appropriate hub instance
 	 */
 	public static Hub getRealHub(Hub thisHub) {
 		Hub hubMaster = HubDetailDelegate.getMasterHub(thisHub);
@@ -1449,6 +1699,12 @@ public class HubDetailDelegate {
 	}
 	*/
 
+	/**
+	 * Returns whether this hub has any registered detail hubs.
+	 *
+	 * @param thisHub the hub to inspect
+	 * @return true if detail hubs are present, otherwise false
+	 */
 	public static boolean hasDetailHubs(Hub thisHub) {
 		if (thisHub == null || thisHub.datau == null) {
 			return false;

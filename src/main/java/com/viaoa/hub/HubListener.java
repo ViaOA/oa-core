@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,183 +32,310 @@ import java.util.EventListener;
 public interface HubListener<T> extends EventListener {
 
 	/**
-	 * Event sent whenever a property is changed. This includes OAObject or Hub properties.<br>
-	 * OAObject: any object property, changed, editable, new<br>
-	 * Hub: allowDelete, allowNew, allowEdit, eof, bof<br>
-	 * <p>
-	 * Note: propertyChanges are sent for any changed object, not just the ActiveObject
+	 * Called before a property is changed on a Hub or OAObject.
+	 *
+	 * @param e the event describing the pending property change
 	 */
 	public void beforePropertyChange(HubEvent<T> e);
 
+	/**
+	 * Called after a property has changed on a Hub or OAObject.
+	 *
+	 * @param e the event describing the completed property change
+	 */
 	public void afterPropertyChange(HubEvent<T> e);
 
+	/**
+	 * Called before an object is inserted into the Hub.
+	 *
+	 * @param e the event describing the pending insert
+	 */
 	public void beforeInsert(HubEvent<T> e);
 
+	/**
+	 * Called after an object has been inserted into the Hub.
+	 *
+	 * @param e the event describing the completed insert
+	 */
 	public void afterInsert(HubEvent<T> e);
 
 	/**
-	 * Event sent before object is added to Hub,
+	 * Called before an object is added to the Hub.
 	 *
-	 * @see Hub#add Hub.add
+	 * @param e the event describing the pending add
 	 */
 	public void beforeAdd(HubEvent<T> e);
 
+	/**
+	 * Determines whether enabled state is allowed for the current event.
+	 *
+	 * @param e             the event being evaluated
+	 * @param bCurrentValue current enabled state
+	 * @return the enabled state to use
+	 */
 	public default boolean getAllowEnabled(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Determines whether visible state is allowed for the current event.
+	 *
+	 * @param e             the event being evaluated
+	 * @param bCurrentValue current visibility state
+	 * @return the visibility state to use
+	 */
 	public default boolean getAllowVisible(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Determines whether add operations are allowed for the current event.
+	 *
+	 * @param e             the event being evaluated
+	 * @param bCurrentValue current add-allowed state
+	 * @return the add-allowed state to use
+	 */
 	public default boolean getAllowAdd(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Determines whether remove operations are permitted.
+	 *
+	 * @param e             the event being evaluated
+	 * @param bCurrentValue current remove-allowed state
+	 * @return the remove-allowed state to use
+	 */
 	public default boolean getAllowRemove(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Determines whether remove-all operations are permitted.
+	 *
+	 * @param e             the event being evaluated
+	 * @param bCurrentValue current remove-all allowed state
+	 * @return the remove-all allowed state
+	 */
 	public default boolean getAllowRemoveAll(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Determines whether delete operations are permitted.
+	 *
+	 * @param e             the event being evaluated
+	 * @param bCurrentValue current delete-allowed state
+	 * @return the delete-allowed state to use
+	 */
 	public default boolean getAllowDelete(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Validates whether a pending property change is acceptable.
+	 *
+	 * @param e             the event describing the change
+	 * @param bCurrentValue current validation state
+	 * @return true if the property change is valid; otherwise false
+	 */
 	public default boolean isValidPropertyChange(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Validates whether an add operation is acceptable.
+	 *
+	 * @param e             the event describing the add
+	 * @param bCurrentValue current validation state
+	 * @return true if the add is valid; otherwise false
+	 */
 	public default boolean isValidAdd(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Validates whether a remove operation is acceptable.
+	 *
+	 * @param e             the event describing the removal
+	 * @param bCurrentValue current validation state
+	 * @return true if the removal is valid; otherwise false
+	 */
 	public default boolean isValidRemove(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Validates whether removing all objects is acceptable.
+	 *
+	 * @param e             the event describing the remove-all action
+	 * @param bCurrentValue current validation state
+	 * @return true if the action is valid; otherwise false
+	 */
 	public default boolean isValidRemoveAll(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
+	/**
+	 * Determines whether a delete operation is valid.
+	 *
+	 * @param e             the event describing the delete
+	 * @param bCurrentValue current validation state
+	 * @return true if deletion is valid; otherwise false
+	 */
 	public default boolean isValidDelete(HubEvent<T> e, boolean bCurrentValue) {
 		return bCurrentValue;
 	}
 
 	/**
-	 * Event sent after object is added to Hub, before cache size is checked and before property to master is set.
+	 * Called after an object is added to the Hub.
 	 *
-	 * @see Hub#add Hub.add
+	 * @param e the event describing the completed add
 	 */
 	public void afterAdd(HubEvent<T> e);
 
 	/**
-	 * Event sent before an object is removed from a Hub. This is needed for cases where the remove will be doing other work. For example:
-	 * to create an Undo.
+	 * Called before an object is removed from the Hub.
+	 *
+	 * @param e the event describing the pending removal
 	 */
 	public void beforeRemove(HubEvent<T> e);
 
 	/**
-	 * Event sent after an object is removed from a Hub.
+	 * Called after an object has been removed from the Hub.
+	 *
+	 * @param e the event describing the completed removal
 	 */
 	public void afterRemove(HubEvent<T> e);
 
 	/**
-	 * Sent before all objects are removed/cleared from the Hub.
+	 * Called before all objects are removed from the Hub.
+	 *
+	 * @param e the event describing the pending remove-all operation
 	 */
 	public void beforeRemoveAll(HubEvent<T> e);
 
 	/**
-	 * Sent after all objects are removed/cleared from the Hub.
+	 * Called after all objects have been removed or cleared from the Hub.
+	 *
+	 * @param e the event describing completion of the remove-all action
 	 */
 	public void afterRemoveAll(HubEvent<T> e);
 
 	/**
-	 * Event sent before a Hub move().
+	 * Called before an object is moved within the Hub.
 	 *
-	 * @see Hub#move Hub.move
+	 * @param e the event describing the pending move
 	 */
 	public void beforeMove(HubEvent<T> e);
 
 	/**
-	 * Event sent at the end of a Hub move().
+	 * Called after an object has been moved within the Hub.
+	 *
+	 * @param e the event describing the completed move
 	 */
 	public void afterMove(HubEvent<T> e);
 
 	/**
-	 * Event sent after ActiveObject has been set.
+	 * Called after the active object of the Hub has been changed.
+	 *
+	 * @param e the event describing the active-object change
 	 */
 	public void afterChangeActiveObject(HubEvent<T> e);
 
 	/**
-	 * Event sent when a new list of objects is available for a Hub.
+	 * Called when the Hub receives a completely new list of objects,
+	 * such as after a refresh or load operation.
+	 *
+	 * @param e the event describing the new list
 	 */
 	public void onNewList(HubEvent<T> e);
 
 	/**
-	 * Called after onNewList is called
+	 * Called after the onNewList event has been processed.
+	 *
+	 * @param e the event describing the post-new-list state
 	 */
 	public void afterNewList(HubEvent<T> e);
 
 	/**
-	 * Event sent from OAObject when save() is being performed.
+	 * Called before an OAObject save() operation occurs.
+	 *
+	 * @param e the event signaling a pending save
 	 */
 	public void beforeSave(HubEvent<T> e);
 
 	/**
-	 * Event sent from OAObject when save() is being performed.
+	 * Called after an OAObject save() operation has completed.
+	 *
+	 * @param e the event describing the completed save
 	 */
 	public void afterSave(HubEvent<T> e);
 
 	/**
-	 * Event sent from OAObject during delete().
+	 * Called before an OAObject delete() operation occurs.
+	 *
+	 * @param e the event describing the pending delete
 	 */
 	public void beforeDelete(HubEvent<T> e);
 
+	/**
+	 * Called after an OAObject delete() operation has completed.
+	 *
+	 * @param e the event describing the completed delete
+	 */
 	public void afterDelete(HubEvent<T> e);
 
 	/**
-	 * Event sent from Hub when a select is performed.
+	 * Called before a select() operation is performed on the Hub.
 	 *
-	 * @see Hub#select Hub.select
+	 * @param e the event describing the pending select
 	 */
 	public void beforeSelect(HubEvent<T> e);
 
 	/**
-	 * Event sent from Hub after select is performed.
+	 * Called after a sort() operation is completed on the Hub.
 	 *
-	 * @see Hub#select Hub.select
-	 */
-
-	/**
-	 * Event sent from Hub when sort is performed.
-	 *
-	 * @see Hub#sort Hub.sort
+	 * @param e the event describing the completed sort
 	 */
 	public void afterSort(HubEvent<T> e);
 
 	/**
-	 * Location that this listener should be added to a listener list.
+	 * Defines where a listener should be inserted within the Hub's listener list.
 	 *
-	 * @author vvia
+	 * FIRST – listener is placed at the beginning  
+	 * NEXT  – listener is placed after the current position  
+	 * LAST  – listener is placed at the end
 	 */
 	public enum InsertLocation {
 		FIRST, NEXT, LAST;
 	}
 
+	/**
+	 * Sets the position where this listener should be inserted in the listener list.
+	 *
+	 * @param pos the insertion location
+	 */
 	public void setLocation(InsertLocation pos);
 
+	/**
+	 * Returns the configured insertion location for this listener.
+	 *
+	 * @return the listener's insertion position
+	 */
 	public InsertLocation getLocation();
 
+	/**
+	 * Called after an object or list has been loaded into the Hub.
+	 *
+	 * @param e the event describing the load completion
+	 */
 	public void afterLoad(HubEvent<T> e);
 
 	/**
-	 * Event sent from Hub when a refresh is called.
+	 * Called before a refresh() operation begins on the Hub.
 	 *
-	 * @see Hub#select Hub.select
+	 * @param e the event describing the pending refresh
 	 */
 	public void beforeRefresh(HubEvent<T> e);
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,13 +99,19 @@ class HubDetail implements java.io.Serializable {
     protected Hub hubMaster;
 	protected Hub hubDetail;
     
-    
-    /**
-        Used by Hub.getDetail() to create new Hub Detail.
-        @param hub is master hub.
-        @param linkInfo is from master object to detail property
-        @param type of value in property.
-    */
+	/**
+	 * Constructs a new HubDetail instance linking a master hub to its
+	 * corresponding detail hub. Initializes relationship metadata including
+	 * link information, type classification, and the property path used
+	 * for HubMerger scenarios. The detail wiring is completed by invoking
+	 * {@link #setup()}.
+	 *
+	 * @param hubMaster        the master hub in the relationship
+	 * @param hubDetail        the detail hub that follows the master hub
+	 * @param liMasterToDetail the link information from master object to detail
+	 * @param type             the detail value type (Hub, array, OAObject, etc.)
+	 * @param path             optional property path used when employed by a HubMerger
+	 */
     public HubDetail(Hub hubMaster, Hub hubDetail, OALinkInfo liMasterToDetail, int type, String path) {
         this.hubMaster = hubMaster;
         this.hubDetail = hubDetail;
@@ -117,8 +123,13 @@ class HubDetail implements java.io.Serializable {
     }
 
     /**
-	    Used by HubMerger
-	*/
+     * Constructs a HubDetail used specifically by a HubMerger. Associates a
+     * detail hub with a property path and classifies its type as
+     * {@code HUBMERGER}. No master hub or link information is assigned.
+     *
+     * @param path      the property path used by the merger
+     * @param hubDetail the detail hub produced by the merger
+     */
     HubDetail(String path, Hub hubDetail) {
         this.hubDetail = hubDetail;
         this.path = path;
@@ -128,10 +139,24 @@ class HubDetail implements java.io.Serializable {
     
     boolean bIgnoreUpdate;
 
-    /** 20150119, 20160204
-     *  this is for master.detail that are recursive, in cases where the detail hub could be
-     *  pointing (shared) to a child hub, which leaves it disconnected from the masterHub.
-     *  This is used by HubDetailDelegate.updateDetail(..), where it will be reconnected to the masterHub.
+    /**
+     * Installs recursive master/detail correction logic when the relationship
+     * involves recursive one-to-many links. A hub listener is added to the
+     * detail hub that detects when the detail hub’s active object becomes
+     * disconnected from its master hub. When this occurs, the master hub’s
+     * active object is reset to the correct parent object, unless updates
+     * are being ignored.
+     *
+     * <p>Only applies when:
+     * <ul>
+     *   <li>A master hub exists.</li>
+     *   <li>A detail hub exists.</li>
+     *   <li>A master-to-detail link is defined.</li>
+     *   <li>A recursive link is present on the detail class.</li>
+     *   <li>The reverse link is a ONE-type reference.</li>
+     * </ul>
+     *
+     * @return none
      */
     protected void setup() {
         if (hubMaster == null) return;

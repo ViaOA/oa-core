@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,10 +50,26 @@ import com.viaoa.util.OAString;
 public class HubEventDelegate {
 
 	// 20120827 might be used later, if we need to have hub changes notify masterobject
+	/**
+	 * Placeholder for future support to notify that a Hub's master object
+	 * has changed. Currently unused and contains no implementation.
+	 *
+	 * @param thisHub       the Hub whose master object would be reported
+	 * @param bRefreshFlag  whether the change is associated with a refresh
+	 */
 	protected static void fireMasterObjectChangeEvent(Hub thisHub, boolean bRefreshFlag) {
 		// OAObjectHubDelegate.fireMasterObjectHubChangeEvent(thisHub, bRefreshFlag);
 	}
 
+	/**
+	 * Fires a before-remove event for the specified object and position.
+	 * Verifies removal through {@code OAObjectCallbackDelegate} and then
+	 * notifies all registered listeners via their {@code beforeRemove} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the object being removed
+	 * @param pos     the position of the object within the Hub
+	 */
 	public static void fireBeforeRemoveEvent(Hub thisHub, Object obj, int pos) {
 		// verify with objectCallback
 		if (!OARemoteThreadDelegate.isRemoteThread()) {
@@ -86,6 +102,15 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires an after-remove event for the specified object and position.
+	 * Supports queued delivery for remote threads and triggers referential
+	 * updates and OAObject triggers when appropriate.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the removed object
+	 * @param pos     the position the object occupied
+	 */
 	public static <T> void fireAfterRemoveEvent(Hub<T> thisHub, final T obj, int pos) {
 		if (OAThreadLocalDelegate.isLoading()) {
 			return;
@@ -147,6 +172,13 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires a before-remove-all event for the Hub. Verifies permission via
+	 * {@code OAObjectCallbackDelegate} and notifies listeners through their
+	 * {@code beforeRemoveAll} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 */
 	public static void fireBeforeRemoveAllEvent(Hub thisHub) {
 		// verify with objectCallback
 		if (!OARemoteThreadDelegate.isRemoteThread()) {
@@ -175,6 +207,13 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires an after-remove-all event for the Hub. Supports queued delivery,
+	 * notifies listeners through {@code afterRemoveAll}, and triggers master
+	 * object onChange processing when applicable.
+	 *
+	 * @param thisHub the Hub generating the event
+	 */
 	public static void fireAfterRemoveAllEvent(Hub thisHub) {
 		final HubListener[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
@@ -229,6 +268,15 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires a before-add event for an object being added to the Hub. Verifies
+	 * the addition through {@code OAObjectCallbackDelegate} and notifies all
+	 * listeners via {@code beforeAdd}.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the object being added
+	 * @param pos     the position at which the object will be added
+	 */
 	public static void fireBeforeAddEvent(Hub thisHub, Object obj, int pos) {
 		// verify with objectCallback
 		if (!OARemoteThreadDelegate.isRemoteThread()) {
@@ -260,6 +308,15 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires an after-add event for an object added to the Hub. Supports queued
+	 * event dispatch, triggers OAObject cache notifications, and processes
+	 * master-object triggers when applicable.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the added object
+	 * @param pos     the position of the added object
+	 */
 	public static <T> void fireAfterAddEvent(Hub<T> thisHub, final T obj, int pos) {
 		if (OAThreadLocalDelegate.isLoading()) {
 			return;
@@ -322,6 +379,15 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires a before-insert event for an object being inserted into the Hub.
+	 * Performs callback verification and notifies listeners via
+	 * {@code beforeInsert}.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the object being inserted
+	 * @param pos     the target insertion position
+	 */
 	public static void fireBeforeInsertEvent(Hub thisHub, Object obj, int pos) {
 		// verify with objectCallback
 		if (!OARemoteThreadDelegate.isRemoteThread()) {
@@ -353,6 +419,15 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires an after-insert event for an object inserted into the Hub.
+	 * Supports queued event dispatch, updates OAObject caches, and triggers
+	 * master-object change processing when appropriate.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the inserted object
+	 * @param pos     the position of the inserted object
+	 */
 	public static <T> void fireAfterInsertEvent(Hub<T> thisHub, final T obj, int pos) {
 		if (OAThreadLocalDelegate.isLoading()) {
 			return;
@@ -415,6 +490,15 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires an after-change-active-object event for the Hub. Notifies all
+	 * applicable listeners and propagates any exceptions encountered.
+	 *
+	 * @param thisHub    the Hub generating the event
+	 * @param obj        the new active object
+	 * @param pos        the position associated with the change
+	 * @param bAllShared whether shared Hubs should also receive the event
+	 */
 	public static void fireAfterChangeActiveObjectEvent(Hub thisHub, Object obj, int pos, boolean bAllShared) {
 		HubListener[] hl = getAllListeners(thisHub, bAllShared ? 1 : 3);
 		int x = hl.length;
@@ -438,6 +522,12 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires a before-refresh event for the Hub. Notifies all registered
+	 * listeners via their {@code beforeRefresh} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 */
 	public static void fireBeforeRefreshEvent(Hub thisHub) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
@@ -454,6 +544,12 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires a before-select event for the Hub. Notifies all registered
+	 * listeners via their {@code beforeSelect} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 */
 	public static void fireBeforeSelectEvent(Hub thisHub) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
@@ -470,6 +566,12 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires an after-sort event for the Hub. Notifies all registered listeners
+	 * via their {@code afterSort} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 */
 	public static void fireAfterSortEvent(Hub thisHub) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
@@ -487,8 +589,14 @@ public class HubEventDelegate {
 		//fireMasterObjectChangeEvent(thisHub, false);
 	}
 
+	/**
+	 * Fires a before-delete event for the specified object. Notifies listeners
+	 * via their {@code beforeDelete} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the object being deleted
+	 */
 	public static void fireBeforeDeleteEvent(Hub thisHub, Object obj) {
-
 		HubListener[] hls = getAllListeners(thisHub);
 		int x = hls.length;
 		if (x > 0) {
@@ -504,6 +612,14 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires an after-delete event for the specified object. Supports queued
+	 * dispatch when remote threading is active and notifies listeners via
+	 * their {@code afterDelete} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the deleted object
+	 */
 	public static void fireAfterDeleteEvent(Hub thisHub, Object obj) {
 		final HubListener[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
@@ -539,6 +655,13 @@ public class HubEventDelegate {
 		//fireMasterObjectChangeEvent(thisHub, false);
 	}
 
+	/**
+	 * Fires a before-save event for the specified object. Notifies listeners
+	 * via their {@code beforeSave} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the object being saved
+	 */
 	public static void fireBeforeSaveEvent(Hub thisHub, OAObject obj) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
@@ -555,6 +678,13 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires an after-save event for the specified object. Notifies all
+	 * registered listeners via their {@code afterSave} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param obj     the object that was saved
+	 */
 	public static void fireAfterSaveEvent(Hub thisHub, OAObject obj) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
@@ -571,6 +701,13 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires a before-move event for an object being repositioned within the Hub.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param fromPos the original position
+	 * @param toPos   the destination position
+	 */
 	public static void fireBeforeMoveEvent(Hub thisHub, int fromPos, int toPos) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
@@ -587,6 +724,14 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Fires an after-move event for an object repositioned within the Hub.
+	 * Notifies listeners via their {@code afterMove} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param fromPos the original position
+	 * @param toPos   the new position
+	 */
 	public static void fireAfterMoveEvent(Hub thisHub, int fromPos, int toPos) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
@@ -605,17 +750,13 @@ public class HubEventDelegate {
 	}
 
 	/**
-	 * Used by OAObjects to notify all listeners of a property change. If the property involves a reference to another object, then other
-	 * objects and Hubs will automaticially be updated.
-	 * <p>
-	 * Example:<br>
-	 * If the Department is changed for an Employee, then the Employee will be removed from the previous Department's Hub of Employees and
-	 * moved to the new Department's Hub of Employees.
-	 * <p>
-	 * If this Hub is linked to a property in another Hub and that property is changed, this Hub will changed it's active object to match
-	 * the same value as the new property value.
+	 * Fires a calculated-property-change event for the given object and
+	 * property. Updates affected detail Hubs when the property corresponds
+	 * to a link and notifies all listeners via {@code afterPropertyChange}.
 	 *
-	 * @param propertyName name of property that changed. This is case insensitive
+	 * @param thisHub      the Hub generating the event
+	 * @param object       the object whose property changed
+	 * @param propertyName the name of the property that changed
 	 */
 	public static void fireCalcPropertyChange(Hub thisHub, final Object object, final String propertyName) {
 		// 20180304
@@ -649,12 +790,14 @@ public class HubEventDelegate {
 	}
 
 	/**
-	 * Called by OAObject and Hub, used to notify all listeners of a property change.
+	 * Fires a before-property-change event for the given object. Notifies all
+	 * listeners via their {@code beforePropertyChange} method.
 	 *
-	 * @param oaObj        OAObject that was changed
-	 * @param propertyName name of property that changed. This is case insensitive
-	 * @param oldValue     previous value of property
-	 * @param newValue     new value of property
+	 * @param thisHub      the Hub generating the event
+	 * @param oaObj        the object whose property is changing
+	 * @param propertyName the name of the property
+	 * @param oldValue     the previous value
+	 * @param newValue     the new value
 	 */
 	public static void fireBeforePropertyChange(Hub thisHub, OAObject oaObj, String propertyName, Object oldValue, Object newValue) {
 		HubListener[] hls = getAllListeners(thisHub);
@@ -673,12 +816,18 @@ public class HubEventDelegate {
 	}
 
 	/**
-	 * Called by OAObject and Hub, used to notify all listeners of a property change.
+	 * Fires an after-property-change event for the given object and property.
+	 * Updates detail Hubs when the property corresponds to a link, validates
+	 * unique-property constraints, and notifies all listeners via their
+	 * {@code afterPropertyChange} method. Supports queued dispatch when
+	 * remote-thread queuing is enabled.
 	 *
-	 * @param oaObj        OAObject that was changed
-	 * @param propertyName name of property that changed. This is case insensitive
-	 * @param oldValue     previous value of property
-	 * @param newValue     new value of property
+	 * @param thisHub      the Hub generating the event
+	 * @param oaObj        the object whose property changed
+	 * @param propertyName the name of the changed property
+	 * @param oldValue     the previous value
+	 * @param newValue     the new value
+	 * @param linkInfo     link metadata for the property, or null
 	 */
 	public static void fireAfterPropertyChange(final Hub thisHub, final OAObject oaObj, final String propertyName, final Object oldValue,
 			final Object newValue, final OALinkInfo linkInfo) {
@@ -746,7 +895,13 @@ public class HubEventDelegate {
 	}
 
 	/**
-	 * If property change affects the property used for a detail Hub, then update detail Hub.
+	 * Updates detail Hubs whose master-to-detail link corresponds to the
+	 * specified property change. Recursively follows shared Hubs to ensure
+	 * all dependent detail Hubs are updated.
+	 *
+	 * @param thisHub      the Hub whose detail Hubs may be affected
+	 * @param object       the object whose property changed
+	 * @param propertyName the name of the changed property
 	 */
 	private static void propertyChangeUpdateDetailHubs(Hub thisHub, OAObject object, String propertyName) {
 		int i, x;
@@ -778,8 +933,12 @@ public class HubEventDelegate {
 	}
 
 	/**
-	 * Used to notify listeners that a new collection has been established. Called by select() and when a detail Hub's source of data is
-	 * changed.
+	 * Fires new-list and after-new-list events for the Hub to notify listeners
+	 * that a new collection has been established. Also increments the Hub’s
+	 * change count.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param bAll    whether to notify all listeners or a subset
 	 */
 	public static void fireOnNewListEvent(Hub thisHub, boolean bAll) {
 		if (thisHub == null) {
@@ -813,6 +972,13 @@ public class HubEventDelegate {
 		//was:  thisHub.data.setNewListCount(thisHub.data.getNewListCount()+1);
 	}
 
+	/**
+	 * Returns the {@link HubListenerTree} associated with the Hub, creating
+	 * it if necessary.
+	 *
+	 * @param thisHub the Hub whose listener tree is requested
+	 * @return the HubListenerTree instance, or null if Hub is null
+	 */
 	private static HubListenerTree getHubListenerTree(Hub thisHub) {
 		if (thisHub == null) {
 			return null;
@@ -828,10 +994,13 @@ public class HubEventDelegate {
 	}
 
 	/**
-	 * Add a Listener to this hub specifying a specific property name. If property is a calculated property, then the Hub will automatically
-	 * set up internal listeners to know when the calculated property changes.
+	 * Registers a HubListener for a specific property name with optional
+	 * dependent property paths. Clears the listener-cache afterward.
 	 *
-	 * @param property name to listen for
+	 * @param thisHub                 the Hub to attach the listener to
+	 * @param hl                      the listener to add
+	 * @param property                the property name
+	 * @param dependentPropertyPaths  dependent properties to monitor
 	 */
 	public static void addHubListener(Hub thisHub, HubListener hl, String property, String[] dependentPropertyPaths) {
 		if (property != null && property.indexOf('.') >= 0) {
@@ -842,6 +1011,17 @@ public class HubEventDelegate {
 		clearGetAllListenerCache(thisHub);
 	}
 
+	/**
+	 * Registers a HubListener for a property with optional dependent paths
+	 * and an option to receive events only for the active object. Clears the
+	 * listener cache after registration.
+	 *
+	 * @param thisHub                 the Hub to attach the listener to
+	 * @param hl                      the listener to add
+	 * @param property                the property name
+	 * @param dependentPropertyPaths  dependent properties to monitor
+	 * @param bActiveObjectOnly       true to notify only for active-object events
+	 */
 	public static void addHubListener(Hub thisHub, HubListener hl, String property, String[] dependentPropertyPaths,
 			boolean bActiveObjectOnly) {
 		if (property != null && property.indexOf('.') >= 0) {
@@ -852,6 +1032,18 @@ public class HubEventDelegate {
 		clearGetAllListenerCache(thisHub);
 	}
 
+	/**
+	 * Registers a HubListener for a property with options for dependent
+	 * paths, active-object filtering, and background-thread execution.
+	 * Clears the listener cache after registration.
+	 *
+	 * @param thisHub                 the Hub to attach the listener to
+	 * @param hl                      the listener to add
+	 * @param property                the property name
+	 * @param dependentPropertyPaths  dependent properties to monitor
+	 * @param bActiveObjectOnly       true for active-object-only events
+	 * @param bUseBackgroundThread    true to dispatch events in a background thread
+	 */
 	public static void addHubListener(Hub thisHub, HubListener hl, String property, String[] dependentPropertyPaths,
 			boolean bActiveObjectOnly, boolean bUseBackgroundThread) {
 		if (property != null && property.indexOf('.') >= 0) {
@@ -862,23 +1054,52 @@ public class HubEventDelegate {
 		clearGetAllListenerCache(thisHub);
 	}
 
+	/**
+	 * Registers a HubListener for a specific property. Clears the listener
+	 * cache after registration.
+	 *
+	 * @param thisHub the Hub to attach the listener to
+	 * @param hl      the listener to add
+	 * @param property the property name
+	 */
 	public static void addHubListener(Hub thisHub, HubListener hl, String property) {
 		getHubListenerTree(thisHub).addListener(hl, property);
 		clearGetAllListenerCache(thisHub);
 	}
 
+	/**
+	 * Registers a listener for a property with an option to receive only
+	 * active-object-related events. Clears the listener cache afterward.
+	 *
+	 * @param thisHub           the Hub to attach the listener to
+	 * @param hl                the listener to add
+	 * @param property          the property name
+	 * @param bActiveObjectOnly true to restrict events to active-object changes
+	 */
 	public static void addHubListener(Hub thisHub, HubListener hl, String property, boolean bActiveObjectOnly) {
 		getHubListenerTree(thisHub).addListener(hl, property, bActiveObjectOnly);
 		clearGetAllListenerCache(thisHub);
 	}
 
+	/**
+	 * Registers a listener for all properties with an option to restrict
+	 * events to active-object changes. Clears the listener cache afterward.
+	 *
+	 * @param thisHub           the Hub to attach the listener to
+	 * @param hl                the listener to add
+	 * @param bActiveObjectOnly true to restrict notifications
+	 */
 	public static void addHubListener(Hub thisHub, HubListener hl, boolean bActiveObjectOnly) {
 		getHubListenerTree(thisHub).addListener(hl, bActiveObjectOnly);
 		clearGetAllListenerCache(thisHub);
 	}
 
 	/**
-	 * Add a new Hub Listener, that receives all Hub and OAObject events.
+	 * Registers a listener to receive all Hub and OAObject events. Clears
+	 * the listener cache afterward.
+	 *
+	 * @param thisHub the Hub to attach the listener to
+	 * @param hl      the listener to add
 	 */
 	public static void addHubListener(Hub thisHub, HubListener hl) {
 		getHubListenerTree(thisHub).addListener(hl);
@@ -888,7 +1109,11 @@ public class HubEventDelegate {
 	public static int TotalHubListeners;
 
 	/**
-	 * Remove HubListener from list.
+	 * Removes a HubListener from the Hub’s listener tree if present. Clears
+	 * the listener cache afterward.
+	 *
+	 * @param thisHub the Hub to remove the listener from
+	 * @param l       the listener to remove
 	 */
 	protected static void removeHubListener(Hub thisHub, HubListener l) {
 		if (thisHub == null || l == null) {
@@ -905,7 +1130,11 @@ public class HubEventDelegate {
 	private final static HubListener[] hlEmpty = new HubListener[0];
 
 	/**
-	 * Returns list of registered listeners for this Hub only.
+	 * Returns all listeners registered directly on this Hub (not including
+	 * shared or duplicate Hubs). Returns an empty array when none exist.
+	 *
+	 * @param thisHub the Hub whose direct listeners are requested
+	 * @return an array of HubListeners
 	 */
 	protected static HubListener[] getHubListeners(Hub thisHub) {
 		if (thisHub.datau.getListenerTree() == null) {
@@ -919,14 +1148,22 @@ public class HubEventDelegate {
 	}
 
 	/**
-	 * Returns a count of all of the listeners for this Hub and all of Hubs that are shared with it.
+	 * Returns the count of listeners registered for this Hub, including
+	 * shared and duplicate Hubs.
+	 *
+	 * @param thisHub the Hub to inspect
+	 * @return the total listener count
 	 */
 	public static int getListenerCount(Hub thisHub) {
 		return getAllListeners(thisHub).length;
 	}
 
 	/**
-	 * Returns an array of HubListeners for all of the listeners for this Hub and all of Hubs that are shared with it.
+	 * Returns all listeners for this Hub, delegating to the type-0
+	 * variant of {@code getAllListeners(Hub,int)}.
+	 *
+	 * @param thisHub the Hub to inspect
+	 * @return all listeners associated with the Hub
 	 */
 	public static HubListener[] getAllListeners(Hub thisHub) {
 		return getAllListeners(thisHub, 0);
@@ -950,6 +1187,15 @@ public class HubEventDelegate {
 	}
 	private static final AtomicInteger aiGetAllListeners = new AtomicInteger();
 
+	/**
+	 * Returns listeners for the Hub according to the lookup type, which
+	 * controls whether shared or duplicate Hubs are included. Uses a small
+	 * cache for type-0 lookups.
+	 *
+	 * @param thisHub the Hub to inspect
+	 * @param type    lookup type selector
+	 * @return an array of listeners matching the lookup criteria
+	 */
 	protected static HubListener[] getAllListeners(final Hub thisHub, int type) {
 		if (thisHub == null) {
 			return null;
@@ -1002,6 +1248,12 @@ public class HubEventDelegate {
 		return hl;
 	}
 
+	/**
+	 * Clears cached results used for {@code getAllListeners}. Removes cache
+	 * entries for the specified Hub or all entries matching its object class.
+	 *
+	 * @param hub the Hub whose cache entries should be invalidated
+	 */
 	public static void clearGetAllListenerCache(Hub hub) {
 		try {
 			rwCacheGetAllListeners.writeLock().lock();
@@ -1029,6 +1281,15 @@ public class HubEventDelegate {
 		}
 	}
 
+	/**
+	 * Recursively collects listeners from this Hub and appropriate shared or
+	 * duplicate Hubs based on the lookup type.
+	 *
+	 * @param thisHub the Hub whose listeners are being collected
+	 * @param hub     the reference Hub used for comparison
+	 * @param type    lookup type selector
+	 * @return an array of collected listeners
+	 */
 	protected static HubListener[] getAllListenersRecursive(Hub thisHub, Hub hub, int type) {
 		ArrayList<HubListener> al = _getAllListenersRecursive(thisHub, null, hub, type, false, false);
 
@@ -1039,6 +1300,18 @@ public class HubEventDelegate {
 		return hl;
 	}
 
+	/**
+	 * Internal implementation for recursively collecting listeners. Handles
+	 * insertion-location ordering and traversal of shared Hubs.
+	 *
+	 * @param thisHub         the Hub being inspected
+	 * @param al              the accumulating list of listeners
+	 * @param hub             the reference Hub
+	 * @param type            lookup type selector
+	 * @param bHasLastChecked internal state flag for ordering
+	 * @param bHasLast        internal state flag for ordering
+	 * @return the updated listener list
+	 */
 	private static ArrayList<HubListener> _getAllListenersRecursive(Hub thisHub, ArrayList<HubListener> al, Hub hub, int type,
 			boolean bHasLastChecked, boolean bHasLast) {
 		if (type == 0 || type == 2 || thisHub.dataa == hub.dataa) {
@@ -1108,6 +1381,13 @@ public class HubEventDelegate {
 		return al;
 	}
 
+	/**
+	 * Fires an after-load event for an OAObject added to the Hub's data.
+	 * Notifies listeners via their {@code afterLoad} method.
+	 *
+	 * @param thisHub the Hub generating the event
+	 * @param oaObj   the loaded object
+	 */
 	public static void fireAfterLoadEvent(Hub thisHub, OAObject oaObj) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;

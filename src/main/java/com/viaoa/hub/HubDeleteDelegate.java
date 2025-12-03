@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,15 @@ import com.viaoa.sync.*;
  */
 public class HubDeleteDelegate {
 
+	/**
+	 * Deletes all objects in the hub. If running in client/server mode and the
+	 * delete must occur on the server, the request is delegated to the server and
+	 * no further action is taken locally. Otherwise, this method marks the hub as
+	 * deleting, enables remote message forwarding, and invokes the internal delete
+	 * routine. Remote messaging and delete flags are restored afterward.
+	 *
+	 * @param thisHub the hub whose contents will be deleted
+	 */
     public static void deleteAll(Hub thisHub) {
         // 20150206 send to server
         if (thisHub.getSize() == 0) return;
@@ -59,7 +68,14 @@ public class HubDeleteDelegate {
         }
     }
 
-    // only runs on the server
+    /**
+     * Server-side implementation that performs a complete deletion of all hub
+     * objects. Change tracking is cleared, and all objects are removed using a
+     * single bulk event. Each OAObject is deleted using a shared cascade, and then
+     * explicitly removed from the hub for synchronization with listeners.
+     *
+     * @param thisHub the hub whose contents are being deleted
+     */
     private static void _runDeleteAll(Hub thisHub) {
         Object[] objs;
         if (thisHub.isOAObject()) objs = thisHub.toArray();
@@ -79,10 +95,26 @@ public class HubDeleteDelegate {
         }
     }
 
+    /**
+     * Indicates whether the specified hub is currently in the process of having all
+     * its objects deleted. This flag is maintained using thread-local tracking.
+     *
+     * @param thisHub the hub being checked
+     * @return {@code true} if the hub is currently deleting all objects
+     */
     public static boolean isDeletingAll(Hub thisHub) {
         return OAThreadLocalDelegate.isDeleting(thisHub);
     }
 
+    /**
+     * Deletes all objects in the hub using the supplied cascade. If the hub is
+     * empty or has already been processed in the cascade, no action is taken. The
+     * hub is locked during deletion and the deleting state is enabled for the
+     * duration of the operation.
+     *
+     * @param thisHub the hub whose contents will be deleted
+     * @param cascade the cascade tracker used to avoid repeated processing
+     */
     public static void deleteAll(Hub thisHub, OACascade cascade) {
         if (thisHub.size() == 0) return;
         if (cascade.wasCascaded(thisHub, true)) return;
@@ -97,6 +129,16 @@ public class HubDeleteDelegate {
         }
     }
 
+    /**
+     * Internal deletion routine that removes all objects from the hub, updates
+     * change-tracking lists, and deletes each OAObject using the provided cascade.
+     * Handles special cases for one-to-many link tables, many-to-many link cleanup,
+     * master/detail updates, and ensures HubAddRemoveDelegate receives removal
+     * events for each object.
+     *
+     * @param thisHub the hub being cleared
+     * @param cascade the cascade used for recursive delete operations
+     */
     private static void _deleteAll(Hub thisHub, OACascade cascade) {
         final boolean bIsOa = thisHub.isOAObject();
         Object objLast = null;

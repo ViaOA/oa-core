@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,24 +32,65 @@ import com.viaoa.util.OAString;
  */
 public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 
+	/**
+	 * Property path used to locate merger objects from the root Hub.
+	 * If {@code null} or empty, the merger logic operates directly on the root Hub.
+	 */
 	private String mergerPropertyPath;
+
+	/**
+	 * Property path from the root objects to the target object that contains
+	 * the grouping Hub used to store merged objects.
+	 */
 	private String groupByPropertyPath;
+
+	/**
+	 * Name of the Hub property within the group-by target object
+	 * into which merger results are added or removed.
+	 */
 	private String groupByProperty;
 
+	/**
+	 * Number of parent-level steps required to move upward in the merger
+	 * property path to reach the object that corresponds to the group-by
+	 * starting position. Used to align merger and group-by resolution paths.
+	 */
 	private int cntAbove; // number of data.parent to go from mergePropertyPath to then use groupByPropertyPath
 
+	/**
+	 * Internal {@link HubMerger} instance used when a merger property path
+	 * is supplied, enabling automatic propagation of add/remove events into
+	 * grouped Hub structures.
+	 */
 	private HubMerger<F, T> hubMerger;
 
+
+	/**
+	 * Creates a {@code HubGroupByMerger} using the root Hub and group-by settings,
+	 * without a merger property path. This configures direct add/remove listeners
+	 * on the root Hub to maintain the grouped Hub structure.
+	 *
+	 * @param hubRoot the root Hub used as the source of objects to be grouped
+	 * @param groupByPropertyPath property path from root objects to the target object
+	 *                            that owns the grouping Hub
+	 * @param groupByProperty the name of the Hub property within the group-by target
+	 *                        object that stores grouped objects
+	 */
 	public HubGroupByMerger(Hub<F> hubRoot, String groupByPropertyPath, String groupByProperty) {
 		this(hubRoot, null, groupByPropertyPath, groupByProperty);
 	}
 
 	/**
-	 * @param hubRoot
-	 * @param mergerPropertyPath  PP from Root to merger objects
-	 * @param groupByPropertyPath PP from hubRoot objects to the object where there is a calc Hub<T> for storing the found merger objects.
-	 *                            *NOTE: this PP must start from same root as mergerPropertyPath. <T>
-	 * @param groupByProperty     name of property Hub<T> in groupByPP for storing the found merger objects.
+	 * Constructs a {@code HubGroupByMerger} that synchronizes grouped Hub relationships
+	 * using the supplied property paths.
+	 *
+	 * @param hubRoot the root Hub used as the source for grouping and merging
+	 * @param mergerPropertyPath property path from the root to merger objects; if empty,
+	 *                           direct add/remove listeners are installed on {@code hubRoot}
+	 * @param groupByPropertyPath property path from root objects to the object containing
+	 *                            the grouping Hub
+	 * @param groupByProperty the name of the Hub property within the group-by target object
+	 *                        that stores merged objects
 	 */
 	public HubGroupByMerger(Hub<F> hubRoot, String mergerPropertyPath, String groupByPropertyPath, String groupByProperty) {
 		this.mergerPropertyPath = mergerPropertyPath;

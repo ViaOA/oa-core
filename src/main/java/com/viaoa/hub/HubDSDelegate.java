@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,19 +37,38 @@ import com.viaoa.object.OAObjectInfoDelegate;
 public class HubDSDelegate {
 
 	/**
-	    Returns the OADataSource that works with this objects Class.
-	*/
+	 * Returns the {@link OADataSource} associated with the specified class.
+	 * Delegates directly to {@link OADataSource#getDataSource(Class)}.
+	 *
+	 * @param c the class used to look up its data source
+	 * @return the data source for the class, or null if none exists
+	 */
 	protected static OADataSource getDataSource(Class c) {
 	    return OADataSource.getDataSource(c);
 	}
     
-	// called by HubDelegate.updateMany2ManyLinks()
+	/**
+	 * Updates many-to-many link-table records for the specified master object.
+	 * Retrieves the appropriate data source and forwards the request to its
+	 * {@code updateMany2ManyLinks} method.
+	 *
+	 * @param masterObject   the master object whose link table is updated
+	 * @param adds           objects to add to the link table
+	 * @param removes        objects to remove from the link table
+	 * @param propFromMaster the name of the master-side property for the link
+	 */
 	protected static void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
 		OADataSource ds = OADataSource.getDataSource(masterObject.getClass());
 		if (ds != null) ds.updateMany2ManyLinks(masterObject, adds, removes, propFromMaster);
 	}
 
-	// 20120612 remove m2m link table records when an object is deleted
+	/**
+	 * Removes many-to-many link-table records associated with the removed
+	 * objects in the given hub. Only applies when the hub represents a
+	 * many-to-many relationship and has removed objects tracked.
+	 *
+	 * @param hub the hub whose removed objects should have link records deleted
+	 */
     public static void removeMany2ManyLinks(Hub hub) {
         if (hub == null) return;
         Object objMaster = hub.getMasterObject();

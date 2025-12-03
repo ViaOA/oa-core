@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,22 +41,45 @@ public class HubFlattened<TYPE extends OAObject> {
 	private OALinkInfo liRecursiveToParent;
 	private HubMerger<TYPE, TYPE> hm;
 
+	/**
+	 * Constructs a new {@code HubFlattened} instance using the specified root Hub
+	 * and target flattened Hub, then initializes internal configuration.
+	 *
+	 * @param hubRoot the root Hub that defines the recursive structure
+	 * @param hubFlat the flattened Hub to populate with all descendant objects
+	 */
 	public HubFlattened(Hub<TYPE> hubRoot, Hub<TYPE> hubFlat) {
 		this.hubRoot = hubRoot;
 		this.hubFlat = hubFlat;
 		setup();
 	}
 
+	/**
+	 * Returns the root Hub used to define the recursive hierarchy.
+	 *
+	 * @return the root Hub
+	 */
 	public Hub getRootHub() {
 		return hubRoot;
 	}
 
+	/**
+	 * Ensures resources held by the internal {@code HubMerger} are released
+	 * before garbage collection.
+	 *
+	 * @throws Throwable if an exception occurs during finalization
+	 */
 	@Override
 	protected void finalize() throws Throwable {
 		super.finalize();
 		hm.close();
 	}
 
+	/**
+	 * Initializes the flattened Hub by validating recursion, creating the
+	 * {@code HubMerger}, and installing listeners that maintain proper parent
+	 * linkage for newly added objects.
+	 */
 	void setup() {
 		if (hubFlat == null || hubRoot == null) {
 			return;

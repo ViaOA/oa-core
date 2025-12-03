@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,51 +81,136 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	private final AtomicInteger aiUpdating = new AtomicInteger();
 
 	/**
-	 * Create a new HubFilter using two supplied Hubs.
+	 * Creates a new HubFilter using the supplied master Hub and target Hub.
 	 *
-	 * @param hubMaster hub with complete list of objects.
-	 * @param hub       that stores filtered objects.
+	 * @param hubMaster the Hub containing the complete set of objects
+	 * @param hub       the Hub that will contain the filtered objects
 	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub) {
 		this(hubMaster, hub, false, false, null, null);
 	}
 
+	/**
+	 * Creates a HubFilter using the supplied master Hub, target Hub, and filter.
+	 *
+	 * @param hubMaster the Hub with the complete list of objects
+	 * @param hub       the Hub that will contain the filtered objects
+	 * @param filter    an initial filter to apply
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, OAFilter filter) {
 		this(hubMaster, hub, false, false, filter, null);
 	}
 
+	/**
+	 * Creates a HubFilter with an initial filter and dependent property paths.
+	 *
+	 * @param hubMaster               the Hub containing all objects
+	 * @param hub                     the Hub that will receive filtered objects
+	 * @param filter                  the filter to apply
+	 * @param dependentPropertyPaths  property paths whose changes trigger refresh
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, OAFilter filter, String... dependentPropertyPaths) {
 		this(hubMaster, hub, false, false, filter, dependentPropertyPaths);
 	}
 
+	/**
+	 * Creates a HubFilter and specifies whether to share active objects between
+	 * the master Hub and the filtered Hub.
+	 *
+	 * @param hubMaster the master Hub
+	 * @param hub       the filtered Hub
+	 * @param bShareAO  flag indicating whether active objects are shared
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, boolean bShareAO) {
 		this(hubMaster, hub, bShareAO, false, null, null);
 	}
 
+	/**
+	 * Creates a HubFilter with active-object sharing and an initial filter.
+	 *
+	 * @param hubMaster the master Hub
+	 * @param hub       the filtered Hub
+	 * @param bShareAO  true to share active objects
+	 * @param filter    an initial filter
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, boolean bShareAO, OAFilter filter) {
 		this(hubMaster, hub, bShareAO, false, filter, null);
 	}
 
+	/**
+	 * Creates a HubFilter with full configuration options.
+	 *
+	 * @param hubMaster             the master Hub
+	 * @param hub                   the filtered Hub
+	 * @param bShareAO              true to share active objects
+	 * @param bRefreshOnLinkChange  true to refresh when link Hub AO changes
+	 * @param filter                an initial filter
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, boolean bShareAO, boolean bRefreshOnLinkChange, OAFilter filter) {
 		this(hubMaster, hub, bShareAO, bRefreshOnLinkChange, filter, null);
 	}
 
+	/**
+	 * Creates a HubFilter with optional active-object sharing, filter, and
+	 * dependent property paths.
+	 *
+	 * @param hubMaster              the master Hub
+	 * @param hub                    the filtered Hub
+	 * @param bShareAO               true to share active objects
+	 * @param filter                 initial filter
+	 * @param dependentPropertyPaths property paths monitored for changes
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, boolean bShareAO, OAFilter filter, String... dependentPropertyPaths) {
 		this(hubMaster, hub, bShareAO, false, filter, dependentPropertyPaths);
 	}
 
+	/**
+	 * Creates a HubFilter with dependent property paths.
+	 *
+	 * @param hubMaster              the master Hub
+	 * @param hub                    the filtered Hub
+	 * @param dependentPropertyPaths property paths to monitor
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, String... dependentPropertyPaths) {
 		this(hubMaster, hub, false, false, null, dependentPropertyPaths);
 	}
 
+	/**
+	 * Creates a HubFilter with active-object sharing and dependent property paths.
+	 *
+	 * @param hubMaster              the master Hub
+	 * @param hub                    the filtered Hub
+	 * @param bShareAO               true to share active objects
+	 * @param dependentPropertyPaths property paths monitored for changes
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, boolean bShareAO, String... dependentPropertyPaths) {
 		this(hubMaster, hub, bShareAO, false, null, dependentPropertyPaths);
 	}
 
+	/**
+	 * Creates a HubFilter with full configuration except for an initial OAFilter.
+	 *
+	 * @param hubMaster              the master Hub
+	 * @param hub                    the filtered Hub
+	 * @param bShareAO               true to share active objects
+	 * @param bRefreshOnLinkChange   true to refresh when link Hub AO changes
+	 * @param dependentPropertyPaths property paths monitored for changes
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, boolean bShareAO, boolean bRefreshOnLinkChange, String... dependentPropertyPaths) {
 		this(hubMaster, hub, bShareAO, bRefreshOnLinkChange, null, dependentPropertyPaths);
 	}
 
+	/**
+	 * Constructs a HubFilter with complete configuration, including optional
+	 * active-object sharing, refresh behavior, filter, and dependent properties.
+	 *
+	 * @param hubMaster              the master Hub
+	 * @param hub                    the filtered Hub
+	 * @param bShareAO               true to share active objects
+	 * @param bRefreshOnLinkChange   true to refresh on link Hub AO change
+	 * @param filter                 an initial filter
+	 * @param dependentPropertyPaths property paths monitored for changes
+	 */
 	public HubFilter(Hub<T> hubMaster, Hub<T> hub, boolean bShareAO, boolean bRefreshOnLinkChange, OAFilter filter,
 			String... dependentPropertyPaths) {
 		// note: bObjectCache will allow hubMaster to be null, which will then use the oaObjectCache
@@ -154,6 +239,12 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		}
 	}
 
+	/**
+	 * Returns the filtered Hub referenced by this filter, or null if the weak
+	 * reference has been cleared. If cleared, this filter is also closed.
+	 *
+	 * @return the filtered Hub, or null if no longer available
+	 */
 	public Hub<T> getHub() {
 		if (weakHub == null) {
 			return null;
@@ -166,13 +257,20 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * This needs to be set to true if it is only created on the server, but client applications will be using the same Hub that is
-	 * filtered. This is so that changes on the hub will be published to the clients, even if initiated on OAClientThread.
+	 * Marks the filter as server-side-only. When true, changes made on an
+	 * OAClientThread will still be published to clients.
+	 *
+	 * @param b true if used only on the server
 	 */
 	public void setServerSideOnly(boolean b) {
 		bServerSideOnly = b;
 	}
 
+	/**
+	 * Ensures the filter is closed during finalization.
+	 *
+	 * @throws Throwable if the superclass finalize throws an exception
+	 */
 	@Override
 	protected void finalize() throws Throwable {
 		try {
@@ -182,6 +280,10 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		}
 	}
 
+	/**
+	 * Closes the filter, removes all listeners, and prevents further updates.
+	 * Subsequent calls have no effect.
+	 */
 	public void close() {
 		// need to make sure that no more events get processed
 		if (bClosed) {
@@ -212,15 +314,20 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Property names to listen for changes.
+	 * Adds a dependent property and triggers a refresh.
 	 *
-	 * @param prop property name or property path (from Hub)
-	 * @see #setRefreshOnLinkChange(boolean) to refresh list when linkTo Hub AO changes
+	 * @param prop the property name or path
 	 */
 	public void addDependentProperty(String prop) {
 		addDependentProperty(prop, true);
 	}
 
+	/**
+	 * Adds a dependent property and optionally refreshes the filtered Hub.
+	 *
+	 * @param prop     the property name or path
+	 * @param bRefesh  true to refresh after adding
+	 */
 	public void addDependentProperty(String prop, boolean bRefesh) {
 		if (bClosed) {
 			return;
@@ -228,11 +335,21 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		_addProperty(prop, bRefesh);
 	}
 
-	// 20160827
+	/**
+	 * Adds a trigger for the specified property path.
+	 *
+	 * @param propPath the property path to monitor
+	 */
 	public void addTrigger(String propPath) {
 		this.addTrigger(propPath, false);
 	}
 
+	/**
+	 * Adds a trigger for a property path with optional background execution.
+	 *
+	 * @param propPath            the property path
+	 * @param useBackgroundThread true to execute in background
+	 */
 	public void addTrigger(String propPath, boolean useBackgroundThread) {
 		final String name = "HubFilter" + (aiUniqueNameCnt.incrementAndGet());
 		hubMaster.addTriggerListener(new HubListenerAdapter<T>() {
@@ -247,7 +364,11 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Add a dependent property from an oaObj, which will call refresh.
+	 * Adds a dependent property on an OAObject. A refresh is triggered when the
+	 * property changes.
+	 *
+	 * @param obj  the OAObject to monitor
+	 * @param prop the property name
 	 */
 	public void addDependentProperty(OAObject obj, String prop) {
 		if (bClosed) {
@@ -264,7 +385,10 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Add a dependent property from a Hub, which will call refresh when hub.AO changes
+	 * Adds a dependent property based on the specified Hub. A refresh is triggered
+	 * when the Hub's active object changes.
+	 *
+	 * @param hub the Hub to monitor
 	 */
 	public void addDependentProperty(Hub hub) {
 		if (bClosed) {
@@ -284,12 +408,24 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Add a dependent property from a Hub, which will call refresh when prop changes or when hub.AO changes
+	 * Adds a dependent property from the specified Hub. A refresh is triggered
+	 * when the property or the Hub's active object changes.
+	 *
+	 * @param hub  the Hub to monitor
+	 * @param prop the property name or path
 	 */
 	public void addDependentProperty(final Hub hub, String prop) {
 		addDependentProperty(hub, prop, true);
 	}
 
+	/**
+	 * Adds a dependent property from the specified Hub with optional active-object
+	 * filtering. A refresh is triggered when the monitored property changes.
+	 *
+	 * @param hub               the Hub to monitor
+	 * @param prop              the property name or path
+	 * @param bActiveObjectOnly true to monitor only the active object
+	 */
 	public void addDependentProperty(final Hub hub, String prop, final boolean bActiveObjectOnly) {
 		if (bClosed) {
 			return;
@@ -336,15 +472,24 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Same as addDependentProperty method
+	 * Adds a dependent property. Deprecated—use addDependentProperty instead.
 	 *
-	 * @param prop
-	 * @deprecated use addDependentProperty instead
+	 * @param prop the property to monitor
+	 * @deprecated use {@link #addDependentProperty(String)} instead
 	 */
 	public void addProperty(String prop) {
 		_addProperty(prop, true);
 	}
 
+	/**
+	 * Adds a property name to the list of dependent properties and optionally
+	 * triggers a refresh. Updates internal listeners used to monitor changes
+	 * to these properties on the master Hub. If the filter is closed or the
+	 * property name is null/empty, this method returns immediately.
+	 *
+	 * @param prop      the property name or path to add
+	 * @param bRefresh  true to trigger a refresh after adding the property
+	 */
 	private void _addProperty(final String prop, final boolean bRefresh) {
 		if (bClosed) {
 			return;
@@ -389,11 +534,11 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Method used to know if object should be in filtered hub. HubFilter will automatically listen to Master hub and call this method when
-	 * needed.
+	 * Determines whether the specified object should be included in the filtered
+	 * Hub. All filters must return true for inclusion.
 	 *
-	 * @return true to include object (default)
-	 * @return false to exclude object
+	 * @param object the object to evaluate
+	 * @return true if the object passes all filters, false otherwise
 	 */
 	public boolean isUsed(T object) {
 		if (alFilters == null) {
@@ -410,15 +555,23 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * This is called when isUsed() is true, to get the object to use. <br>
-	 * This can be overwritten to replace the object with another object.
+	 * Returns the object to insert into the filtered Hub when isUsed() is true.
+	 * Subclasses may override to substitute a different object.
 	 *
-	 * @return object to insert into hub. Default is to use object.
+	 * @param object the original object
+	 * @return the object to add to the Hub
 	 */
 	public T getObject(T object) {
 		return object;
 	}
 
+	/**
+	 * Returns the HubListener used to monitor the master Hub. Creates it on first
+	 * access and configures update behavior for property changes, inserts, removes,
+	 * active-object changes, and sorting.
+	 *
+	 * @return the master Hub listener
+	 */
 	protected HubListenerAdapter<T> getMasterHubListener() {
 		if (hlHubMaster != null) {
 			return hlHubMaster;
@@ -542,16 +695,30 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		return hlHubMaster;
 	}
 
+	/**
+	 * Returns the name of the calculated dependent property, if applicable.
+	 *
+	 * @return the calculated dependent property name, or null if none
+	 */
 	public String getCalcPropertyName() {
 		return calcDependentPropertyName;
 	}
 
+	/**
+	 * Returns the array of dependent property names.
+	 *
+	 * @return array of dependent property names, or null if none
+	 */
 	public String[] getDependentPropertyNames() {
 		return dependentPropertyNames;
 	}
 
 	private boolean bIgnoreSettingAO;
 
+	/**
+	 * Sets up the filter, attaches listeners to the master Hub, initializes the
+	 * filtered Hub, and configures link-Hub monitoring.
+	 */
 	protected void setup() {
 		if (bClosed) {
 			return;
@@ -575,6 +742,10 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	private Hub hubLink;
 	protected Object objTemp; // temp object that is the current linkHub object value
 
+	/**
+	 * Configures a listener on the Hub linked to the filtered Hub. Updates the
+	 * filter when the link Hub's active object changes.
+	 */
 	protected void setupLinkHubListener() {
 		Hub<T> hub = getHub();
 		if (hub == null) {
@@ -640,12 +811,22 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	private boolean bRefreshOnLinkChange;
 
 	/**
-	 * Flag to know if refresh needs to be called when/if the linkTo hub AO is changed. This is false by default.
+	 * Sets whether the filter should be refreshed when the linked Hub's active
+	 * object changes.
+	 *
+	 * @param b true to refresh on link Hub AO changes
 	 */
 	public void setRefreshOnLinkChange(boolean b) {
 		bRefreshOnLinkChange = b;
 	}
 
+	/**
+	 * Updates the filtered Hub for a single object based on filter rules and
+	 * initialization state. Adds or removes the object as needed.
+	 *
+	 * @param obj            the object to evaluate
+	 * @param bIsInitialzing true if part of initialization
+	 */
 	protected void update(T obj, boolean bIsInitialzing) {
 		if (bClosed) {
 			return;
@@ -710,7 +891,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Re-evaluate all objects.
+	 * Re-evaluates all objects in the master Hub and rebuilds the filtered Hub.
 	 */
 	public void refresh() {
 		if (bClosed) {
@@ -719,6 +900,12 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		initialize();
 	}
 
+	/**
+	 * Re-evaluates a single object and adds or removes it from the filtered Hub
+	 * accordingly.
+	 *
+	 * @param obj the object to refresh
+	 */
 	public void refresh(T obj) {
 		Hub<T> hub = getHub();
 		if (hub == null) {
@@ -739,14 +926,17 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Called when initialize is done.
+	 * Called after initialization is complete. Default implementation does nothing.
 	 */
 	public void afterInitialize() {
 	}
 
 	private AtomicInteger aiInitializeCount = new AtomicInteger();
 
-	/** HubListener interface method, used to update filter. */
+	/**
+	 * Reinitializes the filtered Hub by clearing it, reloading all master objects,
+	 * and triggering new-list events as appropriate.
+	 */
 	public void initialize() {
 		final Hub<T> hub = getHub();
 		if (hub == null || bClosed) {
@@ -811,6 +1001,16 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		}
 	}
 
+	/**
+	 * Performs the internal initialization pass for the filter by iterating
+	 * through all objects in the master Hub and updating their inclusion
+	 * status. Also evaluates link-to Hub values and sets the active object
+	 * accordingly. Returns false if initialization is interrupted due to a
+	 * changed initialization count or a closed filter.
+	 *
+	 * @param cnt the initialization sequence value used to detect interruption
+	 * @return true if initialization completed successfully, false otherwise
+	 */
 	private boolean _initialize(final int cnt) {
 		Hub<T> hub = getHub();
 		if (hub == null) {
@@ -867,13 +1067,21 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		return true;
 	}
 
+	/**
+	 * Returns the master Hub associated with this filter.
+	 *
+	 * @return the master Hub
+	 */
 	public Hub getMasterHub() {
 		return this.hubMaster;
 	}
 
 	/**
-	 * Called to add an object to the Hub. This can be overwritten to handle a different way (ex: use different thread) to handle adding to
-	 * the hub.
+	 * Adds an object to the filtered Hub. Subclasses may override to customize
+	 * insertion behavior.
+	 *
+	 * @param obj            the object to add
+	 * @param bIsInitialzing true if part of initialization
 	 */
 	protected void addObject(T obj, boolean bIsInitialzing) {
 		Hub<T> hub = getHub();
@@ -895,8 +1103,10 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Called to remove an object from the Hub. This can be overwritten to handle a different way (ex: use different thread) to handle
-	 * removing from the hub.
+	 * Removes an object from the filtered Hub, unless required temporarily by the
+	 * link Hub relationship.
+	 *
+	 * @param obj the object to remove
 	 */
 	protected void removeObject(T obj) {
 		Hub<T> hub = getHub();
@@ -917,10 +1127,21 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		hub.remove(obj);
 	}
 
+	/**
+	 * Returns whether active-object sharing is enabled.
+	 *
+	 * @return true if this filter shares the active object with the master Hub,
+	 *         false otherwise
+	 */
 	public boolean isSharingAO() {
 		return bShareAO;
 	}
 
+	/**
+	 * Returns whether this filter is sharing the active object with the master Hub.
+	 *
+	 * @return true if active-object sharing is enabled, false otherwise
+	 */
 	public boolean getIsSharingAO() {
 		return bShareAO;
 	}
@@ -928,10 +1149,22 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	// Hub Listener code for filtered Hub
 	//    note: this needs to be here so that HubShareDelegate can find HubFilter for a hub
 
+	/**
+	 * HubListener callback that forwards the added object to {@link #afterAdd(Object)}.
+	 *
+	 * @param e the HubEvent containing the added object
+	 */
 	public @Override void afterAdd(HubEvent<T> e) {
 		afterAdd(e.getObject());
 	}
 
+	/**
+	 * Handles an object being added directly to the filtered Hub. If the object
+	 * does not already exist in the master Hub and satisfies master–detail link
+	 * ownership rules, it is added to the master Hub.
+	 *
+	 * @param obj the added object
+	 */
 	public void afterAdd(T obj) {
 		if (aiUpdating.get() != 0) {
 			return;
@@ -958,17 +1191,35 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		hubMaster.add(obj);
 	}
 
+	/**
+	 * Handles property-change events for the filtered Hub. When the "Link"
+	 * property changes, the linkHub listener is reinitialized.
+	 *
+	 * @param e the HubEvent describing the property change
+	 */
 	public @Override void afterPropertyChange(HubEvent<T> e) {
 		if (e.getPropertyName().equalsIgnoreCase("Link")) {
 			setupLinkHubListener();
 		}
 	}
 
+	/**
+	 * HubListener callback that treats inserts the same as adds by delegating
+	 * to {@link #afterAdd(HubEvent)}.
+	 *
+	 * @param e the HubEvent describing the insert
+	 */
 	@Override
 	public void afterInsert(HubEvent<T> e) {
 		afterAdd(e);
 	}
 
+	/**
+	 * HubListener callback for removals. If not currently updating or clearing,
+	 * forwards the removed object to {@link #afterRemove(Object)}.
+	 *
+	 * @param e the HubEvent containing the removed object
+	 */
 	@Override
 	public void afterRemove(HubEvent<T> e) {
 		if (aiUpdating.get() == 0 && aiClearing.get() == 0) {
@@ -976,6 +1227,12 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		}
 	}
 
+	/**
+	 * Called when an object is removed from the filtered Hub. Delegates to
+	 * {@link #afterRemoveFromFilteredHub(Object)} if a master Hub exists.
+	 *
+	 * @param obj the removed object
+	 */
 	public void afterRemove(T obj) {
 		if (hubMaster != null) {
 			HubFilter.this.afterRemoveFromFilteredHub(obj);
@@ -983,12 +1240,20 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Called when an object is removed from the filtered Hub directly. This is used by HubCopy to then remove the object from the Master
-	 * Hub. By default, this does nothing (it does not remove from hubMaster)
+	 * Called when an object is removed directly from the filtered Hub. Intended
+	 * for subclasses; the default implementation does nothing.
+	 *
+	 * @param obj the removed object
 	 */
 	protected void afterRemoveFromFilteredHub(T obj) {
 	}
 
+	/**
+	 * HubListener callback when all objects are removed from the filtered Hub.
+	 * If not currently clearing, forwards to {@link #afterRemoveAllFromFilteredHub()}.
+	 *
+	 * @param e the HubEvent for the remove-all operation
+	 */
 	@Override
 	public void afterRemoveAll(HubEvent<T> e) {
 		if (aiClearing.get() == 0) {
@@ -997,11 +1262,19 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Called when all objects are removed from the filtered Hub directly. This is used by HubCopy.
+	 * Called when all objects are removed directly from the filtered Hub.
+	 * Intended for subclasses; the default implementation does nothing.
 	 */
 	protected void afterRemoveAllFromFilteredHub() {
 	}
 
+	/**
+	 * Synchronizes active objects between filtered Hub and master Hub when
+	 * active-object sharing is enabled. If the filtered Hub's active object
+	 * is not in the master Hub, null is used instead.
+	 *
+	 * @param e the HubEvent describing the AO change
+	 */
 	@Override
 	public void afterChangeActiveObject(HubEvent<T> e) {
 		Hub<T> hub = getHub();
@@ -1019,10 +1292,18 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	private ArrayList<OAFilter> alFilters;
 	private int iBlockPos = -1;
 
+	/**
+	 * Marks the current filter position so subsequent filters can be grouped
+	 * into a block filter using {@link #endBlock()}.
+	 */
 	public void startBlock() {
 		iBlockPos = alFilters == null ? 0 : alFilters.size();
 	}
 
+	/**
+	 * Converts all filters added since {@link #startBlock()} into a single
+	 * {@link OABlockFilter} and appends it to the filter list.
+	 */
 	public void endBlock() {
 		if (iBlockPos >= 0 && alFilters != null) {
 			int x = alFilters.size();
@@ -1038,10 +1319,18 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		iBlockPos = -1;
 	}
 
+	/**
+	 * Removes all filters associated with this HubFilter.
+	 */
 	public void clearFilters() {
 		alFilters = null;
 	}
 
+	/**
+	 * Adds the specified filter to the filter list and triggers a refresh.
+	 *
+	 * @param filter the filter to add
+	 */
 	public void addFilter(OAFilter<T> filter) {
 		if (alFilters == null) {
 			alFilters = new ArrayList<OAFilter>();
@@ -1050,6 +1339,13 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		refresh();
 	}
 
+	/**
+	 * Adds a filter and registers dependent property paths that should trigger
+	 * refresh when changed.
+	 *
+	 * @param f the filter to add
+	 * @param dependentPropPaths property paths that affect the filter
+	 */
 	public void addFilter(OAFilter<T> f, String... dependentPropPaths) {
 		addFilter(f);
 		if (dependentPropPaths == null) {
@@ -1061,43 +1357,72 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * The filter will be true if there is a least one matching value in the property path;
+	 * Adds an equality filter for the specified property path.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value    the required value for equality
 	 */
 	public void addEqualFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OAEqualFilter(value));
 	}
 
+	/**
+	 * Adds a filter that evaluates to true when the property value is non-null.
+	 *
+	 * @param propPath the property path to evaluate
+	 */
 	public void addTrueFilter(final String propPath) {
 		_addFilter(propPath, new OATrueFilter());
 	}
 
+	/**
+	 * Adds a filter that always evaluates to true. (Equivalent to a true filter.)
+	 *
+	 * @param propPath the property path to evaluate
+	 */
 	public void addFalseFilter(final String propPath) {
 		_addFilter(propPath, new OATrueFilter());
 	}
 
 	/**
-	 * The filter will be true if there is a least one matching value in the property path;
+	 * Adds a filter that evaluates true when the property value does not equal
+	 * the specified value.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value    the value to compare against
 	 */
 	public void addNotEqualFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OANotEqualFilter(value));
 	}
 
 	/**
-	 * The filter will be true if there is a least one matching value in the property path;
+	 * Adds a filter that evaluates true when the property value is between
+	 * (or equal to) the specified range values.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value1   the lower bound
+	 * @param value2   the upper bound
 	 */
 	public void addBetweenOrEqualFilter(final String propPath, final Object value1, final Object value2) {
 		_addFilter(propPath, new OABetweenOrEqualFilter(value1, value2));
 	}
 
 	/**
-	 * The filter will be true if there is a least one matching value in the property path;
+	 * Adds a filter that evaluates true when the property value is strictly
+	 * between the specified lower and upper values.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value1   the lower bound
+	 * @param value2   the upper bound
 	 */
 	public void addBetween(final String propPath, final Object value1, final Object value2) {
 		_addFilter(propPath, new OABetweenFilter(value1, value2));
 	}
 
 	/**
-	 * The filter will be true if there is a least one matching value in the property path;
+	 * Adds a filter that evaluates true when the property value is null.
+	 *
+	 * @param propPath the property path to evaluate
 	 */
 	public void addNullFilter(final String propPath) {
 		if (OAString.isEmpty(propPath)) {
@@ -1112,7 +1437,10 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * The filter will be true if there is a least one matching value in the property path;
+	 * Adds a filter that evaluates true when the property value is not null.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value    unused value parameter
 	 */
 	public void addNotNullFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OAFilter() {
@@ -1124,7 +1452,9 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * The filter will be true if there is a least one matching value in the property path;
+	 * Adds a filter that evaluates true when the property value is empty.
+	 *
+	 * @param propPath the property path to evaluate
 	 */
 	public void addEmptyFilter(final String propPath) {
 		_addFilter(propPath, new OAFilter() {
@@ -1136,7 +1466,9 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * The filter will be true if there is a least one matching value in the property path;
+	 * Adds a filter that evaluates true when the property value is not empty.
+	 *
+	 * @param propPath the property path to evaluate
 	 */
 	public void addNotEmptyFilter(final String propPath) {
 		_addFilter(propPath, new OAFilter() {
@@ -1148,42 +1480,90 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	}
 
 	/**
-	 * Create a filter that is used on every object for this finder. The filter will be true if there is a least one matching value in the
-	 * property path;
+	 * Adds a filter that evaluates true when the property value matches
+	 * the supplied value using pattern comparison.
 	 *
-	 * @param propPath property path from this Finder from object to the object that will be compared.
-	 * @param value    value to compare with using OACompare.isLike(..).
+	 * @param propPath the property path to evaluate
+	 * @param value    the value or pattern to compare against
 	 */
 	public void addLikeFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OALikeFilter(value));
 	}
 
+	/**
+	 * Adds a filter that evaluates true when the property value does not
+	 * match the supplied value using pattern comparison.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value    the value or pattern to compare against
+	 */
 	public void addNotLikeFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OANotLikeFilter(value));
 	}
 
+	/**
+	 * Adds a filter that evaluates true when the property value is greater
+	 * than the supplied value.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value    the lower bound comparison value
+	 */
 	public void addGreaterFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OAGreaterFilter(value));
 	}
 
+	/**
+	 * Adds a filter that evaluates true when the property value is greater
+	 * than or equal to the supplied value.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value    the lower bound comparison value
+	 */
 	public void addGreaterOrEqualFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OAGreaterOrEqualFilter(value));
 	}
 
+	/**
+	 * Adds a filter that evaluates true when the property value is less than
+	 * the supplied value.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value    the upper bound comparison value
+	 */
 	public void addLessFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OALessFilter(value));
 	}
 
+	/**
+	 * Adds a filter that evaluates true when the property value is less than
+	 * or equal to the supplied value.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value    the upper bound comparison value
+	 */
 	public void addLessOrEqualFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OALessOrEqualFilter(value));
 	}
 
+	/**
+	 * Adds a filter that evaluates true when the property value is between
+	 * the supplied lower and upper bounds.
+	 *
+	 * @param propPath the property path to evaluate
+	 * @param value1   the lower bound
+	 * @param value2   the upper bound
+	 */
 	public void addBetweenFilter(final String propPath, final Object value1, final Object value2) {
 		_addFilter(propPath, new OABetweenFilter(value1, value2));
 	}
 
 	/**
-	 * Create a filter that is used on every object.
+	 * Internal helper used to add a filter based on a property path. Registers
+	 * the dependent property and wraps the filter for property lookup and
+	 * multi-level path resolution.
+	 *
+	 * @param propPath the property path used by the filter
+	 * @param filter   the underlying filter to apply to the resolved value
 	 */
 	private void _addFilter(final String propPath, final OAFilter filter) {
 		if (filter == null) {

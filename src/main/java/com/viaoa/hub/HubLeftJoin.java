@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,26 +39,60 @@ import com.viaoa.util.OAString;
  */
 public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 
+	/**
+	 * Reference to the left-side Hub containing objects of type A.
+	 */
 	private Hub<A> hubA;
+	
+	/**
+	 * Reference to the right-side Hub containing objects of type B.
+	 */
 	private Hub<B> hubB;
+	
+	/**
+	 * Hub that stores the combined left-join rows composed of paired A and B objects.
+	 */
 	private Hub<OALeftJoin<A, B>> hubCombined;
+	
+	/**
+	 * Property path on right-side objects used to determine the matching left-side value.
+	 */
 	private String propertyPath;
+	
+	/**
+	 * Name of the property used for listening to updates when the join is based on a property path.
+	 */
 	private String listenPropertyName;
+	
+	/**
+	 * Flag indicating whether active-object synchronization should occur between the combined Hub and the source Hubs.
+	 */
 	private boolean bSetAO;
 
+	/**
+	 * Counter used to generate unique property names when setting up property-path listeners.
+	 */
 	private final static AtomicInteger aiCnt = new AtomicInteger();
 
 	/**
-	 * Combine a left and right hubs on a propertyPath to form Hub.
+	 * Constructs a HubLeftJoin using the given Hubs and property path.
 	 *
-	 * @param hubA         left object
-	 * @param hubB         right object
-	 * @param propertyPath pp of the property from the right object to get left object.
+	 * @param hubA left-side Hub containing A objects
+	 * @param hubB right-side Hub containing B objects
+	 * @param propertyPath property path on B used to obtain its associated A value
 	 */
 	public HubLeftJoin(Hub<A> hubA, Hub<B> hubB, String propertyPath) {
 		this(hubA, hubB, propertyPath, true);
 	}
 
+	/**
+	 * Constructs a HubLeftJoin and optionally enables active-object synchronization.
+	 *
+	 * @param hubA left-side Hub containing A objects
+	 * @param hubB right-side Hub containing B objects
+	 * @param propertyPath property path on B used to obtain its associated A value
+	 * @param bSetAO flag to enable or disable active-object synchronization
+	 */
 	public HubLeftJoin(Hub<A> hubA, Hub<B> hubB, String propertyPath, boolean bSetAO) {
 		this.hubA = hubA;
 		this.hubB = hubB;
@@ -68,7 +102,9 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 	}
 
 	/**
-	 * @return Hub of combined objects
+	 * Returns the Hub containing the combined left-join rows, creating it if needed.
+	 *
+	 * @return Hub of joined A/B row objects
 	 */
 	public Hub<OALeftJoin<A, B>> getCombinedHub() {
 		if (hubCombined != null) {
@@ -78,6 +114,11 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 		return hubCombined;
 	}
 
+	/**
+	 * Initializes listeners and populates the combined Hub to maintain a live left join
+	 * between hubA and hubB. Configures synchronization behavior and responds to
+	 * structural and property changes in the source Hubs.
+	 */
 	void setup() {
 		getCombinedHub().addHubListener(new HubListenerAdapter<OALeftJoin<A, B>>() {
 			@Override
@@ -239,6 +280,12 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 		}
 	}
 
+	/**
+	 * Adds the specified B object to the combined Hub, inserting or updating the
+	 * corresponding left-join row based on the value of the join property.
+	 *
+	 * @param b the right-side object being added
+	 */
 	private void add(B b) {
 		Object valueA = b.getProperty(propertyPath);
 
@@ -269,6 +316,12 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 		}
 	}
 
+	/**
+	 * Removes or updates the left-join row associated with the specified B object,
+	 * depending on whether additional B objects reference the same A value.
+	 *
+	 * @param b the right-side object being removed
+	 */
 	private void remove(B b) {
 		OALeftJoin found = null;
 		for (OALeftJoin lj : hubCombined) {

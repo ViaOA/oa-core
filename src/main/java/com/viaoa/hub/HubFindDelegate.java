@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,20 @@ import com.viaoa.object.OAObject;
  */
 public class HubFindDelegate {
 	/**
-	    Returns first object in Hub that is Like propertyPath findValue.
-	    Returns null if not found.
-	    @param bSetAO if true then the active object is set to the found object.
-	*/
+	 * Finds the first object in the specified {@code Hub} whose property located by
+	 * {@code propertyPath} matches the supplied {@code findValue} using a
+	 * {@link com.viaoa.filter.OALikeFilter}.
+	 *
+	 * <p>If {@code bSetAO} is {@code true}, the found object is also set as the
+	 * Hub’s active object.</p>
+	 *
+	 * @param thisHub the {@code Hub} to search; may be {@code null}
+	 * @param propertyPath the property path to evaluate for matching
+	 * @param findValue the value to compare against using a like-filter match
+	 * @param bSetAO if {@code true}, sets the active object to the found object
+	 * @param lastFoundObject the last object found, used by {@link com.viaoa.object.OAFinder#findNext}
+	 * @return the first matching object, or {@code null} if none found
+	 */
     public static Object findFirst(Hub thisHub, String propertyPath, final Object findValue, final boolean bSetAO, OAObject lastFoundObject) {
         if (thisHub == null) return null;
         

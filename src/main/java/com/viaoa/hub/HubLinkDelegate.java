@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,18 @@ import com.viaoa.util.OAString;
  */
 public class HubLinkDelegate {
 	/**
-	 * Main LinkHub method used to link from one hub to another.
+	 * Configures this Hub to link to another Hub using the specified reference properties.
+	 * <p>
+	 * Sets link metadata, resolves getter/setter methods, validates class compatibility,
+	 * installs event listeners, and performs initial synchronization of Active Objects.
+	 *
+	 * @param thisHub               the Hub establishing the link
+	 * @param propertyFrom          reference property name from thisHub's objects
+	 * @param linkToHub             the Hub to link to
+	 * @param propertyTo            reference property name in linkToHub's objects
+	 * @param linkPosFlag           true if linking based on positional index
+	 * @param bAutoCreate           true to auto-create linked objects
+	 * @param bAutoCreateAllowDups  true to allow duplicates when auto-creating objects
 	 */
 	protected static void setLinkHub(Hub thisHub, String propertyFrom, Hub linkToHub, String propertyTo, boolean linkPosFlag,
 			boolean bAutoCreate, boolean bAutoCreateAllowDups) {
@@ -201,11 +212,23 @@ public class HubLinkDelegate {
 		HubEventDelegate.fireAfterPropertyChange(thisHub, null, "Link", null, null, null);
 	}
 
+	/**
+	 * Determines whether auto-create mode is enabled for this Hub's link.
+	 *
+	 * @param thisHub the Hub being checked
+	 * @return true if auto-create is enabled; otherwise false
+	 */
 	public static boolean isLinkAutoCreated(Hub thisHub) {
 		return isLinkAutoCreated(thisHub, false);
 	}
 
-	// 20131116
+	/**
+	 * Determines whether auto-create mode is enabled for the Hub or any shared Hub.
+	 *
+	 * @param thisHub            the Hub being checked
+	 * @param bIncludeCopiedHubs true to also check shared/copied Hubs
+	 * @return true if auto-create is enabled; otherwise false
+	 */
 	public static boolean isLinkAutoCreated(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.isAutoCreate()) {
 			return true;
@@ -226,11 +249,23 @@ public class HubLinkDelegate {
 		return (hubx != null);
 	}
 
+	/**
+	 * Determines whether this Hub is linked using positional index.
+	 *
+	 * @param thisHub the Hub to examine
+	 * @return true if linked by position; otherwise false
+	 */
 	public static boolean getLinkedOnPos(Hub thisHub) {
 		return getLinkedOnPos(thisHub, false);
 	}
 
-	// 20131116
+	/**
+	 * Determines whether this Hub or any shared Hub uses positional linking.
+	 *
+	 * @param thisHub            the Hub to examine
+	 * @param bIncludeCopiedHubs true to evaluate copied/shared Hubs
+	 * @return true if positional linking is active; otherwise false
+	 */
 	public static boolean getLinkedOnPos(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.isLinkPos()) {
 			return true;
@@ -251,6 +286,14 @@ public class HubLinkDelegate {
 		return (hubx != null);
 	}
 
+	/**
+	 * Updates the linked-to property for the active object based on changes
+	 * from the linked-from Hub.
+	 *
+	 * @param thisHub    the Hub owning the linked property
+	 * @param fromObject the source object whose value is being applied
+	 * @param pos        location index when linking by position
+	 */
 	public static void updateLinkProperty(Hub thisHub, Object fromObject, int pos) {
 		Hub h = thisHub.datau.getLinkToHub();
 		if (h == null || h.datau.isUpdatingActiveObject()) {
@@ -264,11 +307,13 @@ public class HubLinkDelegate {
 	}
 
 	/**
-	 * Called by HubAODelegate when ActiveObject is changed in Link From Hub.
+	 * Internal method that performs the actual update of the linked-to property.
+	 * Handles auto-create logic, property forwarding, and positional updates.
 	 *
-	 * @param linkObj object to update
-	 * @param object  new property value
-	 * @param         pos, if object is link by position
+	 * @param thisHub    the Hub owning the link
+	 * @param fromObject the object providing the new value
+	 * @param pos        positional index when applicable
+	 * @throws Exception if reflection or setter invocation fails
 	 */
 	private static void _updateLinkProperty(Hub thisHub, Object fromObject, int pos) throws Exception {
 		Object linkToObject = null;
@@ -363,13 +408,11 @@ public class HubLinkDelegate {
 	}
 
 	/**
-	 * Used to get the property value in the Linked To Hub, that is used to set the Linked From Hub Active Object.
-	 * <p>
-	 * Example:<br>
-	 * If Department Hub is linked to a Employee Hub on property "department", then for any Employee object, this will return the value of
-	 * employee.getDepartment().
+	 * Retrieves the value of the linked-to property for the given object.
 	 *
-	 * @see Hub#setLinkHub(Hub,String) Full Description of Linking Hubs
+	 * @param thisHub    the Hub whose linking configuration defines the lookup
+	 * @param linkObject the object whose linked property value is requested
+	 * @return the linked property value, or null if none
 	 */
 	public static Object getPropertyValueInLinkedToHub(Hub thisHub, Object linkObject) {
 		Hub h = getHubWithLink(thisHub, true);
@@ -379,6 +422,14 @@ public class HubLinkDelegate {
 		return _getPropertyValueInLinkedToHub(h, linkObject);
 	}
 
+	/**
+	 * Internal helper used to extract the linked-to property value using the
+	 * configured getter or positional logic.
+	 *
+	 * @param thisHub    the Hub whose link configuration applies
+	 * @param linkObject the object to inspect
+	 * @return the resolved linked-to value, or null
+	 */
 	private static Object _getPropertyValueInLinkedToHub(Hub thisHub, Object linkObject) {
 		if (thisHub.datau.getLinkToGetMethod() == null) {
 			return linkObject;
@@ -425,18 +476,22 @@ public class HubLinkDelegate {
 	}
 
 	/**
-	 * Returns the property that this Hub is linked to.
-	 * <p>
-	 * Example:<br>
-	 * DepartmentHub linked to Employee.department will return "department"
+	 * Retrieves the property name used as the link-to target.
 	 *
-	 * @see Hub#setLinkHub(Hub,String) Full Description of Linking Hubs
+	 * @param thisHub the Hub whose link property is requested
+	 * @return the link-to property name, or null if none
 	 */
 	public static String getLinkToProperty(Hub thisHub) {
 		return getLinkToProperty(thisHub, false);
 	}
 
-	// 20131116
+	/**
+	 * Retrieves the link-to property name from this Hub or shared Hubs.
+	 *
+	 * @param thisHub            the Hub to inspect
+	 * @param bIncludeCopiedHubs true to evaluate copied/shared Hubs
+	 * @return the link-to property name, or null if none
+	 */
 	public static String getLinkToProperty(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToPropertyName() != null) {
 			return thisHub.datau.getLinkToPropertyName();
@@ -463,11 +518,23 @@ public class HubLinkDelegate {
 		return hubx.datau.getLinkToPropertyName();
 	}
 
+	/**
+	 * Retrieves the property name used as the link-from reference.
+	 *
+	 * @param thisHub the Hub whose link-from property is requested
+	 * @return the link-from property name, or null if none
+	 */
 	public static String getLinkFromProperty(Hub thisHub) {
 		return getLinkFromProperty(thisHub, false);
 	}
 
-	// 20131116
+	/**
+	 * Retrieves the link-from property name from this Hub or shared Hubs.
+	 *
+	 * @param thisHub            the Hub to inspect
+	 * @param bIncludeCopiedHubs true to inspect copied/shared Hubs
+	 * @return the link-from property name, or null if none
+	 */
 	public static String getLinkFromProperty(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkFromPropertyName() != null) {
 			return thisHub.datau.getLinkFromPropertyName();
@@ -494,6 +561,13 @@ public class HubLinkDelegate {
 		return hubx.datau.getLinkFromPropertyName();
 	}
 
+	/**
+	 * Retrieves the Hub that this Hub is linked to, optionally searching shared Hubs.
+	 *
+	 * @param thisHub            the Hub whose link target is requested
+	 * @param bIncludeCopiedHubs true to include shared/copied Hubs
+	 * @return the linked-to Hub, or null if none
+	 */
 	public static Hub getLinkToHub(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToHub() != null) {
 			return thisHub.datau.getLinkToHub();
@@ -514,6 +588,13 @@ public class HubLinkDelegate {
 		return hubx.datau.getLinkToHub();
 	}
 
+	/**
+	 * Retrieves the Hub that this Hub links to.
+	 *
+	 * @param thisHub            the Hub to check
+	 * @param bIncludeCopiedHubs true to check shared/copied Hubs
+	 * @return the linked-to Hub, or null
+	 */
 	public static Hub getHubWithLink(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToHub() != null) {
 			return thisHub;
@@ -532,13 +613,22 @@ public class HubLinkDelegate {
 	}
 
 	/**
-	 * Returns true if this Hub is linked to another Hub using the position of the active object.
+	 * Determines whether the Hub is linked using position-based linking.
+	 *
+	 * @param thisHub the Hub to examine
+	 * @return true if linking by position; otherwise false
 	 */
 	public static boolean getLinkHubOnPos(Hub thisHub) {
 		return getLinkHubOnPos(thisHub, false);
 	}
 
-	// 20131116
+	/**
+	 * Determines whether this Hub or any shared Hub uses position-based linking.
+	 *
+	 * @param thisHub            the Hub to inspect
+	 * @param bIncludeCopiedHubs true to include copied/shared Hubs
+	 * @return true if any Hub uses positional linking; otherwise false
+	 */
 	public static boolean getLinkHubOnPos(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.isLinkPos()) {
 			return true;
@@ -564,14 +654,23 @@ public class HubLinkDelegate {
 	}
 
 	/**
-	 * Used for linking/connecting Hubs, to get method used to set the property value of the active object in the masterHub to the active
-	 * object in this Hub.
+	 * Retrieves the setter method used to apply linked property values.
+	 *
+	 * @param thisHub the Hub whose setter method is requested
+	 * @return the link-to setter method, or null if none configured
 	 */
 	public static Method getLinkSetMethod(Hub thisHub) {
 		return getLinkSetMethod(thisHub, false);
 	}
 
-	// 20131116
+	/**
+	 * Retrieves the link-to setter method from this Hub or, optionally, any
+	 * shared/copied Hub.
+	 *
+	 * @param thisHub            the Hub whose setter method is examined
+	 * @param bIncludeCopiedHubs true to include shared/copied Hubs
+	 * @return the link-to setter method, or null if none found
+	 */
 	public static Method getLinkSetMethod(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToSetMethod() != null) {
 			return thisHub.datau.getLinkToSetMethod();
@@ -600,13 +699,23 @@ public class HubLinkDelegate {
 	}
 
 	/**
-	 * Used to get value from active object in masterHub, that is then used to set active object in this hub.
+	 * Retrieves the getter method used to obtain values for link updates.
+	 *
+	 * @param thisHub the Hub whose getter method is requested
+	 * @return the link-to getter method, or null if none configured
 	 */
 	public static Method getLinkGetMethod(Hub thisHub) {
 		return getLinkGetMethod(thisHub, false);
 	}
 
-	// 20131116
+	/**
+	 * Retrieves the getter method used to resolve link values, optionally checking
+	 * shared/copied Hubs.
+	 *
+	 * @param thisHub            the Hub being examined
+	 * @param bIncludeCopiedHubs true to include shared/copied Hubs
+	 * @return the getter method, or null if not found
+	 */
 	public static Method getLinkGetMethod(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToGetMethod() != null) {
 			return thisHub.datau.getLinkToGetMethod();
@@ -635,13 +744,23 @@ public class HubLinkDelegate {
 	}
 
 	/**
-	 * Returns the property path of the property that this Hub is linked to.
+	 * Retrieves the property path for the link-to property.
+	 *
+	 * @param thisHub the Hub whose link path is requested
+	 * @return the link-to property path, or null if none set
 	 */
 	public static String getLinkHubPath(Hub thisHub) {
 		return getLinkHubPath(thisHub, false);
 	}
 
-	// 20131116
+	/**
+	 * Retrieves the link-to property path from this Hub or, optionally, any
+	 * shared/copied Hubs.
+	 *
+	 * @param thisHub            the Hub to evaluate
+	 * @param bIncludeCopiedHubs true to include shared/copied Hubs
+	 * @return the link-to property path, or null if none exists
+	 */
 	public static String getLinkHubPath(final Hub thisHub, boolean bIncludeCopiedHubs) {
 		if (thisHub.datau.getLinkToPropertyName() != null) {
 			return thisHub.datau.getLinkToPropertyName();
@@ -670,14 +789,27 @@ public class HubLinkDelegate {
 	}
 
 	/**
-	 * This is called by HubLinkEventListener, (which is created in this class) whenever the linked to (linkToHub) Hub is changed (active
-	 * object or linked to property). This will handle recursive hubs, hubs that have master/detail that are linked to themselves, etc.
-	 * Called by HubLinkEventListener, which is created by Hub.setLinkHub(...) methods. ... very tricky :)
+	 * Updates the from-Hub based on changes from the link-to Hub using its current
+	 * link configuration.
+	 *
+	 * @param fromHub   the Hub receiving the update
+	 * @param linkToHub the Hub providing the linked value
+	 * @param obj       the new value used for updating
 	 */
 	protected static void updateLinkedToHub(Hub fromHub, Hub linkToHub, Object obj) {
 		updateLinkedToHub(fromHub, linkToHub, obj, null);
 	}
 
+	/**
+	 * Performs a comprehensive update of the from-Hub when the linked-to Hub
+	 * changes, handling recursive relationships, positional links, and cascaded
+	 * master/detail adjustments.
+	 *
+	 * @param fromHub         the Hub being updated
+	 * @param linkToHub       the Hub that initiated the update
+	 * @param obj             the new value to apply
+	 * @param changedPropName the property that triggered the update, or null
+	 */
 	protected static void updateLinkedToHub(final Hub fromHub, Hub linkToHub, Object obj, String changedPropName) {
 		if (fromHub == null) {
 			return;

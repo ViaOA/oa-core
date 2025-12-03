@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,10 +50,31 @@ import com.viaoa.object.*;
  * </ul>
  */
 class HubLinkEventListener extends HubListenerAdapter implements java.io.Serializable {
+	
+	/**
+	 * The Hub that this listener is monitoring for active-object and property changes.
+	 */
 	Hub linkToHub;
+	
+	/**
+	 * The Hub whose active object must stay synchronized with the linked-to Hub.
+	 */
 	Hub fromHub;
+	
+	/**
+	 * Flag indicating whether weak Hub references must be updated for many-to-many
+	 * private link configurations.
+	 */
 	boolean bUpdateWeakHub;
 	
+	/**
+	 * Constructs a new listener that synchronizes the from-Hub with changes coming
+	 * from the link-to Hub. Determines whether weak Hub references must be updated
+	 * based on the link metadata.
+	 *
+	 * @param fromHub   the Hub that must follow updates from the linked-to Hub
+	 * @param linkToHub the Hub this listener monitors for change events
+	 */
 	public HubLinkEventListener(Hub fromHub, Hub linkToHub) {
 	    this.fromHub = fromHub;
 	    this.linkToHub = linkToHub;  // hub that is linked to, that this HubListener is listening to.
@@ -67,10 +88,23 @@ class HubLinkEventListener extends HubListenerAdapter implements java.io.Seriali
         }
 	}
 	
+	/**
+	 * Called after the linked-to Hub changes its active object. Updates the
+	 * from-Hub’s active object through {@link HubLinkDelegate#updateLinkedToHub}.
+	 *
+	 * @param hubEvent the event containing the new active object
+	 */
 	public @Override void afterChangeActiveObject(HubEvent hubEvent) {
 		HubLinkDelegate.updateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), null);
 	}
 	
+	/**
+	 * Called after a property on the linked-to Hub’s active object changes.
+	 * If the changed property matches the from-Hub’s link-to property, a link
+	 * update is triggered.
+	 *
+	 * @param hubEvent the event describing the property change
+	 */
 	public @Override void afterPropertyChange(HubEvent hubEvent) {
 	    if (hubEvent.getObject() == linkToHub.getActiveObject()) {
 	    	String prop = hubEvent.getPropertyName(); 
@@ -82,6 +116,13 @@ class HubLinkEventListener extends HubListenerAdapter implements java.io.Seriali
 	
 	// 20130708 check if linkToHub is based on a M2M&private, where the oaObj.weakRefs[] do not have the hub
 	//     if so, then need to add it
+	/**
+	 * Called when the linked-to Hub’s list is refreshed or replaced. Updates weak
+	 * Hub references for many-to-many private links if required, then realigns
+	 * the from-Hub by updating its active object.
+	 *
+	 * @param e the event signaling a new list
+	 */
 	@Override
 	public void onNewList(HubEvent e) {
 	    if (bUpdateWeakHub) {
