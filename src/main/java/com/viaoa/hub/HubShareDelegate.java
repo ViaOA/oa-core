@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,33 +45,64 @@ public class HubShareDelegate {
 	private static Logger LOG = Logger.getLogger(HubShareDelegate.class.getName());
 
 	/**
-	 * List of Hubs that are sharing the same objects as this Hub. Each of these Hubs will have the same HubData object. If the active
-	 * object is also being shared, then the HubDataActive object will also be the same.
+	 * Returns all Hubs that share the same underlying HubData as {@code thisHub}.
+	 *
+	 * <p>Equivalent to calling {@link #getAllSharedHubs(Hub, boolean, OAFilter)}
+	 * with {@code bChildrenOnly = false} and no filter.</p>
+	 *
+	 * @param thisHub the Hub whose shared group is requested
+	 * @return array of shared Hubs (possibly size 0), including {@code thisHub}
 	 */
 	public static Hub[] getAllSharedHubs(Hub thisHub) {
 		return getAllSharedHubs(thisHub, false, null);
 	}
 
+	/**
+	 * Returns all Hubs that share the same data as {@code thisHub}, optionally
+	 * restricting results to children in the shared chain.
+	 *
+	 * @param thisHub        the Hub to evaluate
+	 * @param bChildrenOnly  true to return only Hubs directly shared from thisHub
+	 * @return array of shared Hubs
+	 */
 	public static Hub[] getAllSharedHubs(Hub thisHub, boolean bChildrenOnly) {
 		return getAllSharedHubs(thisHub, bChildrenOnly, null);
 	}
 
+	/**
+	 * Returns all shared Hubs that satisfy the given filter.
+	 *
+	 * @param thisHub the Hub whose shared group is being enumerated
+	 * @param filter  an OAFilter determining which Hubs to include
+	 * @return array of filtered shared Hubs
+	 */
 	public static Hub[] getAllSharedHubs(Hub thisHub, OAFilter<Hub> filter) {
 		return getAllSharedHubs(thisHub, false, filter);
 	}
 
+	/**
+	 * Returns all Hubs sharing the same HubData as {@code thisHub}, with
+	 * optional child-only restriction and filtering.
+	 *
+	 * @param thisHub       the Hub whose relationships are examined
+	 * @param bChildrenOnly true to restrict results to downstream shared Hubs
+	 * @param filter        optional filter to select which Hubs to return
+	 * @return array of shared Hubs
+	 */
 	public static Hub[] getAllSharedHubs(Hub thisHub, boolean bChildrenOnly, OAFilter<Hub> filter) {
 		return getAllSharedHubs(thisHub, bChildrenOnly, filter, false, false);
 	}
 
 	/**
-	 * Used to get all Hubs that share the same data.
+	 * Core implementation for discovering all shared Hubs, including those
+	 * linked through HubFilters or AO-sharing relationships.
 	 *
-	 * @param thisHub
-	 * @param bChildrenOnly        only include Hubs that are shared from thisHub. Otherwise, go to root of shared hubs
-	 * @param filter               used to determine if a shared hub that is found should be included.
-	 * @param bIncludeFilteredHubs if true then HubFilter will also be include
-	 * @return array (could be size 0) of found hubs, including thisHub.
+	 * @param thisHub              base Hub
+	 * @param bChildrenOnly        restrict to descendants only
+	 * @param filter               filter applied to discovered Hubs
+	 * @param bIncludeFilteredHubs whether HubFilter-based shared Hubs are included
+	 * @param bOnlyIfSharedAO      true to include only Hubs sharing the AO source
+	 * @return array of discovered shared Hubs
 	 */
 	protected static Hub[] getAllSharedHubs(Hub thisHub, boolean bChildrenOnly, OAFilter<Hub> filter, boolean bIncludeFilteredHubs,
 			boolean bOnlyIfSharedAO) {
@@ -91,6 +122,19 @@ public class HubShareDelegate {
 		return hubs;
 	}
 
+	/**
+	 * Recursive worker used by getAllSharedHubs() to traverse shared Hub
+	 * relationships via weak references, HubFilters, and HubShareAO links.
+	 *
+	 * @param hub          current Hub in traversal
+	 * @param findHub      originating Hub used for AO-sharing checks
+	 * @param alHub        accumulator list
+	 * @param filter       filter deciding whether to include the current Hub
+	 * @param cnter        recursion depth counter
+	 * @param bIncludeFilteredHubs include HubFilter-based paths
+	 * @param bOnlyIfSharedAO      restrict traversal to AO-sharing Hubs
+	 * @param bIncludeHubShareAO   include HubShareAO-linked Hubs
+	 */
 	private static void _getAllSharedHubs(final Hub hub, final Hub findHub, final ArrayList<Hub> alHub, final OAFilter<Hub> filter,
 			final int cnter, final boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO, boolean bIncludeHubShareAO) {
 
@@ -143,6 +187,13 @@ public class HubShareDelegate {
 		}
 	}
 
+	/**
+	 * Returns the HubCopy associated with the shared Hub group, if present.
+	 * Searches the main shared Hub’s listeners for a HubCopy instance.
+	 *
+	 * @param thisHub the Hub to examine
+	 * @return the HubCopy instance, or null if none exists
+	 */
 	public static HubCopy getHubCopy(Hub thisHub) {
 		Hub h = HubShareDelegate.getMainSharedHub(thisHub);
 		if (h.datam.getMasterObject() != null || h.datam.getMasterHub() != null) {
@@ -162,6 +213,12 @@ public class HubShareDelegate {
 		return null;
 	}
 
+	/**
+	 * Locates a HubFilter attached to the main shared Hub.
+	 *
+	 * @param thisHub the Hub to examine
+	 * @return a HubFilter instance, or null if none is found
+	 */
 	public static HubFilter getHubFilter(Hub thisHub) {
 		Hub h = HubShareDelegate.getMainSharedHub(thisHub);
 		if (h.datam.getMasterObject() != null || h.datam.getMasterHub() != null) {
@@ -181,6 +238,13 @@ public class HubShareDelegate {
 		return null;
 	}
 
+	/**
+	 * Returns the HubShareAO listener (if any) that synchronizes Active Objects
+	 * for the given Hub’s shared group.
+	 *
+	 * @param thisHub the Hub to inspect
+	 * @return HubShareAO listener or null
+	 */
 	public static HubShareAO getHubShareAO(Hub thisHub) {
 		Hub h = HubShareDelegate.getMainSharedHub(thisHub);
 
@@ -197,6 +261,15 @@ public class HubShareDelegate {
 		return null;
 	}
 
+	/**
+	 * Returns the Hub that {@code thisHub} is shared with, optionally
+	 * including filtered or AO-sharing relationships.
+	 *
+	 * @param thisHub             the Hub whose shared parent is requested
+	 * @param bIncludeFilteredHubs include HubFilters when resolving shared hubs
+	 * @param bOnlyIfSharedAO     restrict results to AO-sharing cases
+	 * @return the shared Hub or null
+	 */
 	public static Hub getSharedHub(final Hub thisHub, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
 		if (thisHub == null) {
 			return null;
@@ -230,11 +303,34 @@ public class HubShareDelegate {
 		return null;
 	}
 
+	/**
+	 * Traverses the shared-Hub graph to find the first Hub satisfying the
+	 * given filter.
+	 *
+	 * @param thisHub              starting Hub
+	 * @param filter               filter to test against
+	 * @param bIncludeFilteredHubs include HubFilters in traversal
+	 * @param bOnlyIfSharedAO      restrict traversal to AO-sharing Hubs
+	 * @return the first matching Hub, or null if none found
+	 */
 	public static Hub getFirstSharedHub(Hub thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
 		Hub h = getMainSharedHub(thisHub);
 		return _getFirstSharedHub(h, thisHub, filter, bIncludeFilteredHubs, 0, bOnlyIfSharedAO, bIncludeFilteredHubs);
 	}
 
+	/**
+	 * Recursive worker that navigates shared-Hub relationships to find the
+	 * first Hub matching the provided filter.
+	 *
+	 * @param thisHub current Hub being tested
+	 * @param findHub originating Hub used for AO-sharing rules
+	 * @param filter  evaluation filter
+	 * @param bIncludeFilteredHubs include HubFilter paths
+	 * @param cnter   recursion depth
+	 * @param bOnlyIfSharedAO restrict traversal to AO-sharing nodes
+	 * @param bIncludeHubShareAO include HubShareAO-linked Hubs
+	 * @return a matching Hub or null
+	 */
 	private static Hub _getFirstSharedHub(
 			final Hub thisHub, final Hub findHub,
 			final OAFilter<Hub> filter, final boolean bIncludeFilteredHubs,
@@ -305,7 +401,13 @@ public class HubShareDelegate {
 		return null;
 	}
 
-	// find the root Hub that is shared
+	/**
+	 * Returns the root of a shared-Hub chain by following the sharedHub links
+	 * upward until no further parent exists.
+	 *
+	 * @param hub starting Hub
+	 * @return the root shared Hub
+	 */
 	public static Hub getMainSharedHub(Hub hub) {
 		Hub h = hub;
 		for (;;) {
@@ -318,6 +420,13 @@ public class HubShareDelegate {
 		return h;
 	}
 
+	/**
+	 * Determines whether two Hubs share the same HubData instance.
+	 *
+	 * @param hub1 first Hub
+	 * @param hub2 second Hub
+	 * @return true if both use identical HubData
+	 */
 	public static boolean isUsingSameSharedHub(Hub hub1, Hub hub2) {
 		if (hub1 == null || hub2 == null) {
 			return false;
@@ -325,10 +434,26 @@ public class HubShareDelegate {
 		return hub1.data == hub2.data;
 	}
 
+	/**
+	 * Determines whether two Hubs share the same Active Object source.
+	 *
+	 * @param hub1 first Hub
+	 * @param hub2 second Hub
+	 * @return true if they use the same HubDataActive instance
+	 */
 	public static boolean isUsingSameSharedAO(Hub hub1, Hub hub2) {
 		return isUsingSameSharedAO(hub1, hub2, false);
 	}
 
+	/**
+	 * Determines AO-sharing equivalence, optionally including filtered Hub
+	 * relationships.
+	 *
+	 * @param hub1 first Hub
+	 * @param hub2 second Hub
+	 * @param bIncludeFilteredHubs include HubFilter-based AO sharing
+	 * @return true if the Hubs share an AO source
+	 */
 	public static boolean isUsingSameSharedAO(Hub hub1, Hub hub2, boolean bIncludeFilteredHubs) {
 		if (hub1 == null || hub2 == null) {
 			return false;
@@ -353,6 +478,17 @@ public class HubShareDelegate {
 		return false;
 	}
 
+	/**
+	 * Synchronizes HubData and HubDataActive instances across all Hubs in the
+	 * shared group. Updates AO state when required and ensures detail-Hub link
+	 * consistency.
+	 *
+	 * @param thisHub            the Hub undergoing changes
+	 * @param bShareActiveObject whether AO state should be shared
+	 * @param daOld              prior HubDataActive instance
+	 * @param daNew              new HubDataActive instance
+	 * @param bUpdateLink        whether link-based AO adjustments should occur
+	 */
 	protected static void syncSharedHubs(Hub thisHub, boolean bShareActiveObject, HubDataActive daOld, HubDataActive daNew,
 			boolean bUpdateLink) {
 		// all shared hubs need to use same data
@@ -384,7 +520,12 @@ public class HubShareDelegate {
 		}
 	}
 
-	// 20140501 similiar to setSharedHubAfterRemove(..)
+	/**
+	 * Resets AO state in all shared Hubs after a remove-all operation and
+	 * recursively propagates the change through the shared-Hub graph.
+	 *
+	 * @param thisHub the Hub where the remove-all occurred
+	 */
 	protected static void setSharedHubsAfterRemoveAll(Hub thisHub) {
 		thisHub.dataa.activeObject = null;
 		HubAODelegate.setActiveObject(thisHub, -1, false, false, false); // bUpdateLink, bForce, bCalledByShareHub
@@ -404,8 +545,13 @@ public class HubShareDelegate {
 	}
 
 	/**
-	 * Used to set the active object in all shared Hubs after an object is removed. Used bNullOnRemove to determine which object to make the
-	 * active object. Note: If Hub is using a Link Hub, then active object is not set.
+	 * Updates Active Object values across all shared Hubs after a single
+	 * object removal. Ensures AO validity based on size, linkHub status,
+	 * null-on-remove rules, and AO-sharing behavior.
+	 *
+	 * @param thisHub     the Hub where removal occurred
+	 * @param objRemoved  the object removed
+	 * @param posRemoved  its position within the Hub
 	 */
 	protected static void setSharedHubsAfterRemove(Hub thisHub, Object objRemoved, int posRemoved) {
 		if (thisHub.dataa.activeObject == objRemoved) {
@@ -450,6 +596,17 @@ public class HubShareDelegate {
 		*/
 	}
 
+	/**
+	 * Creates a new Hub instance that shares its underlying data with the
+	 * specified {@code thisHub}. The new Hub is initialized using the same
+	 * object type as {@code thisHub} and is then configured to participate in
+	 * the shared-Hub relationship.
+	 *
+	 * @param thisHub      the Hub whose data and shared group the new Hub will join
+	 * @param bShareActive true to share the active object state with {@code thisHub};
+	 *                     false to maintain a separate active object
+	 * @return the newly created shared Hub
+	 */
 	public static Hub createSharedHub(Hub thisHub, boolean bShareActive) {
 		Hub sharedHub = new Hub(thisHub.getObjectClass());
 		HubShareDelegate.setSharedHub(sharedHub, thisHub, bShareActive);
@@ -457,17 +614,30 @@ public class HubShareDelegate {
 	}
 
 	/**
-	 * Navigational method used to create a shared version of another Hub, so that this Hub will use the same objects as the shared hub. All
-	 * events that affect the data will be sent to all shared Hubs.
+	 * Assigns {@code thisHub} to share data with the specified
+	 * {@code sharedMasterHub}. Sharing may optionally include the active
+	 * object state. This method performs the basic shared-Hub setup and
+	 * delegates extended behavior to the 4-argument overload.
 	 *
-	 * @param sharedMasterHub   Hub that is to be shared.
-	 * @param shareActiveObject true=use same activeObject as shared hub, false:use seperate activeObject
-	 * @see SharedHub
+	 * @param thisHub           the Hub to configure for sharing
+	 * @param sharedMasterHub   the Hub whose data will be shared
+	 * @param shareActiveObject true to share active-object state, false for independent AO
 	 */
 	public static void setSharedHub(Hub thisHub, Hub sharedMasterHub, boolean shareActiveObject) {
 		setSharedHub(thisHub, sharedMasterHub, shareActiveObject, null);
 	}
 
+	/**
+	 * Internal implementation for establishing a shared-Hub relationship.
+	 * Performs full validation, detaches any previous shared configuration,
+	 * aligns HubData/HubDataActive as required, updates shared children,
+	 * recalculates active-object values, and fires list-reset events.
+	 *
+	 * @param thisHub           the Hub being configured
+	 * @param sharedMasterHub   the Hub whose data is shared
+	 * @param shareActiveObject true to share active-object state
+	 * @param newLinkValue      optional pending link-value used during AO updates
+	 */
 	protected static void setSharedHub(Hub thisHub, Hub sharedMasterHub, boolean shareActiveObject, Object newLinkValue) {
 		_setSharedHub(thisHub, sharedMasterHub, shareActiveObject, newLinkValue);
 		// 20181030 update temp listener cache
@@ -485,6 +655,17 @@ public class HubShareDelegate {
 		}
 	}
 
+	/**
+	 * Core worker that performs the detailed process of attaching
+	 * {@code thisHub} to the shared-Hub graph. Handles recursive-Hub protection,
+	 * compatibility checks, data replacement, AO alignment, listener updates,
+	 * and propagation of active-object recalculation.
+	 *
+	 * @param thisHub           Hub being attached
+	 * @param sharedMasterHub   Hub that supplies shared data
+	 * @param shareActiveObject whether to share AO state
+	 * @param newLinkValue      temporary link value used during AO recalculation
+	 */
 	protected static void _setSharedHub(Hub thisHub, Hub sharedMasterHub, boolean shareActiveObject, Object newLinkValue) {
 		if (thisHub == null) {
 			return;
@@ -812,13 +993,29 @@ public class HubShareDelegate {
 	}
 	*/
 
+	/**
+	 * Adds {@code hub} to the list of Hubs that are shared with {@code thisHub}.
+	 * This operation records the shared relationship using a weak reference and
+	 * then clears the cached listener map so that subsequent listener lookup
+	 * reflects the updated shared-Hub configuration.
+	 *
+	 * @param thisHub the Hub whose shared-Hub list is being updated
+	 * @param hub     the Hub to add as a shared participant
+	 */
 	public static void addSharedHub(Hub thisHub, Hub hub) {
 		_addSharedHub(thisHub, hub);
 		// 20181030 update temp listener cache
 		HubEventDelegate.clearGetAllListenerCache(thisHub);
 	}
 
-	// 20120715
+	/**
+	 * Internal worker that inserts {@code hub} into {@code thisHub}'s
+	 * weak-shared-Hubs array. Expands the underlying array when full and
+	 * reuses empty or garbage-collected slots when available.
+	 *
+	 * @param thisHub the Hub whose weak-shared-Hub list is being modified
+	 * @param hub     the Hub to add as a shared reference
+	 */
 	protected static void _addSharedHub(Hub thisHub, Hub hub) {
 		if (thisHub == null || hub == null) {
 			return;
@@ -869,12 +1066,30 @@ public class HubShareDelegate {
 		}
 	}
 
+	/**
+	 * Removes {@code hub} from {@code sharedHub}'s weak-shared-Hub list.
+	 * Delegates structural cleanup to the internal worker and clears both
+	 * Hubs’ cached listener data so the system will recalculate listeners
+	 * the next time they are requested.
+	 *
+	 * @param sharedHub the Hub whose shared list is being updated
+	 * @param hub       the Hub to remove
+	 */
 	protected static void removeSharedHub(Hub sharedHub, Hub hub) {
 		_removeSharedHub(sharedHub, hub);
 		// 20181030 update temp listener cache
 		HubEventDelegate.clearGetAllListenerCache(hub); // will clear both hubs
 	}
 
+	/**
+	 * Internal worker that removes {@code hub} from {@code sharedHub}'s
+	 * weak-shared-Hub array. Handles compaction of the array, removal of
+	 * null or garbage-collected references, and resizing when appropriate
+	 * to reduce unused capacity.
+	 *
+	 * @param sharedHub the Hub whose stored references are modified
+	 * @param hub       the Hub being removed
+	 */
 	protected static void _removeSharedHub(Hub sharedHub, Hub hub) {
 		if (sharedHub.datau.getWeakSharedHubs() == null) {
 			return;
@@ -931,9 +1146,13 @@ public class HubShareDelegate {
 	private final static Hub[] EmptyHubs = new Hub[0];
 
 	/**
-	 * Returns an array of all of the Hubs that are shared with this Hub only.
+	 * Returns an array of Hubs directly recorded as shared with {@code thisHub}.
+	 * Uses the weak-shared-Hub array and trims trailing null or empty entries.
+	 * This method is deprecated in favor of {@link #getAllSharedHubs}.
 	 *
-	 * @deprecated use getAllSharedHubs, or one of the other methods
+	 * @param thisHub the Hub to inspect
+	 * @return array of directly shared Hubs (may contain null entries)
+	 * @deprecated use {@link #getAllSharedHubs} instead
 	 */
 	protected static Hub[] getSharedHubs(Hub thisHub) {
 		if (thisHub.datau.getWeakSharedHubs() == null) {
@@ -964,6 +1183,14 @@ public class HubShareDelegate {
 		return EmptyHubs;
 	}
 
+	/**
+	 * Returns the internal weak-reference array that stores Hubs sharing
+	 * data with {@code thisHub}. May be null if no shared-Hub relationships
+	 * have been established.
+	 *
+	 * @param thisHub the Hub whose shared structure is requested
+	 * @return weak-reference array, or null if none exist
+	 */
 	public static WeakReference<Hub>[] getSharedWeakHubs(Hub thisHub) {
 		if (thisHub == null) {
 			return null;
@@ -971,6 +1198,14 @@ public class HubShareDelegate {
 		return thisHub.datau.getWeakSharedHubs();
 	}
 
+	/**
+	 * Counts valid Hub references in {@code thisHub}'s weak-shared-Hub array.
+	 * Entries that are null or whose referent has been garbage-collected
+	 * are not included.
+	 *
+	 * @param thisHub the Hub to inspect
+	 * @return number of active shared-Hub references
+	 */
 	public static int getSharedWeakHubSize(Hub thisHub) {
 		if (thisHub == null) {
 			return 0;
@@ -988,16 +1223,4 @@ public class HubShareDelegate {
 		return cnt;
 	}
 
-	public static void main(String[] args) {
-		Hub<String> h = new Hub<String>(String.class);
-		for (int i = 0; i < 1000; i++) {
-			Hub<String> hx = new Hub<String>(String.class);
-			hx.setSharedHub(h);
-			System.gc();
-		}
-		for (int i = 0; i < 100; i++) {
-			System.gc();
-		}
-		System.out.println("Done");
-	}
 }

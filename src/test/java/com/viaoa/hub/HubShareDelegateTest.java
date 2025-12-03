@@ -16,4 +16,16 @@ public class HubShareDelegateTest extends OAUnitTest {
         
     }
     
+	public static void main(String[] args) {
+		Hub<String> h = new Hub<String>(String.class);
+		for (int i = 0; i < 1000; i++) {
+			Hub<String> hx = new Hub<String>(String.class);
+			hx.setSharedHub(h);
+			System.gc();
+		}
+		for (int i = 0; i < 100; i++) {
+			System.gc();
+		}
+		System.out.println("Done");
+	}
 }

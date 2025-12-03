@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,11 +53,27 @@ package com.viaoa.hub;
  * </ul>
  */
 public class HubShareAO extends HubListenerAdapter {
+	/**
+	 * The first Hub participating in Active Object synchronization.
+	 * Changes to this Hub’s Active Object may propagate to {@code hub2}.
+	 */
 	private Hub hub1;
+	
+	/**
+	 * The second Hub participating in Active Object synchronization.
+	 * Changes to this Hub’s Active Object may propagate to {@code hub1},
+	 * unless operating in one-way-only mode.
+	 */
 	private Hub hub2;
 
 	/**
-	 * @param bOneWayOnly if true, then hub1.ao change will update hub2.ao.  If false then both will set the others ao.
+	 * Creates a HubShareAO that synchronizes Active Object changes between
+	 * two Hubs, either one-way or bidirectionally.
+	 *
+	 * @param hub1        the first Hub to synchronize
+	 * @param hub2        the second Hub to synchronize
+	 * @param bOneWayOnly if true, only AO changes in {@code hub1} update {@code hub2};
+	 *                    if false, updates propagate both ways
 	 */
     public HubShareAO(Hub hub1, Hub hub2, boolean bOneWayOnly) {
         this.hub1 = hub1;
@@ -67,10 +83,22 @@ public class HubShareAO extends HubListenerAdapter {
         if (!bOneWayOnly) hub2.addHubListener(this);
     }
 	
+    /**
+     * Creates a bidirectional Active Object synchronizer for the two Hubs.
+     *
+     * @param hub1 the first Hub to synchronize
+     * @param hub2 the second Hub to synchronize
+     */
 	public HubShareAO(Hub hub1, Hub hub2) {
 	    this(hub1, hub2, false);
 	}
 
+	/**
+	 * Responds to Active Object changes on either Hub and updates the other
+	 * Hub’s AO accordingly, unless both already share the same AO source.
+	 *
+	 * @param evt the HubEvent describing the AO change
+	 */
     @Override
     public void afterChangeActiveObject(HubEvent evt) {
         if (HubShareDelegate.isUsingSameSharedAO(hub1, hub2)) {
@@ -82,15 +110,30 @@ public class HubShareAO extends HubListenerAdapter {
         else if (h == hub2) hub1.setAO(obj);
     }
 	
+    /**
+     * Detaches this listener from both Hubs, stopping AO synchronization and
+     * preventing memory leaks.
+     */
 	public void close() {
         hub1.removeHubListener(this);
         hub2.removeHubListener(this);
 	}
 	
+	/**
+	 * Returns the first Hub participating in synchronization.
+	 *
+	 * @return the first Hub
+	 */
 	public Hub getHub1() {
 	    return hub1;
 	}
-    public Hub getHub2() {
+
+	/**
+	 * Returns the second Hub participating in synchronization.
+	 *
+	 * @return the second Hub
+	 */
+	public Hub getHub2() {
         return hub2;
     }
 }

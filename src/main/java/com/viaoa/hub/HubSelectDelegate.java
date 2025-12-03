@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,12 +52,26 @@ import com.viaoa.util.OAString;
 public class HubSelectDelegate {
 	private static Logger LOG = Logger.getLogger(HubSelectDelegate.class.getName());
 
-	/** Internal method to retrieve objects from last select() */
+	/**
+	 * Retrieves additional objects for the Hub from its most recent select()
+	 * operation. Uses the select tied to the Hub.
+	 *
+	 * @param thisHub the Hub whose select results are being extended
+	 * @return number of objects loaded during this fetch
+	 */
 	protected static int fetchMore(Hub thisHub) {
 		int x = fetchMore(thisHub, HubSelectDelegate.getSelect(thisHub));
 		return x;
 	}
 
+	/**
+	 * Retrieves more objects from the given {@link OASelect}, using its
+	 * configured fetch amount to determine how many items to load.
+	 *
+	 * @param thisHub the Hub to populate
+	 * @param sel     the OASelect instance providing objects
+	 * @return number of objects fetched
+	 */
 	protected static int fetchMore(Hub thisHub, OASelect sel) {
 		if (sel == null) {
 			return 0;
@@ -67,16 +81,41 @@ public class HubSelectDelegate {
 		return x;
 	}
 
-	/** Internal method to retrieve objects from last select() */
+	/**
+	 * Retrieves more objects using an explicit fetch amount instead of the
+	 * OASelect’s configured value.
+	 *
+	 * @param thisHub the Hub to populate
+	 * @param famt    number of objects to attempt retrieval
+	 * @return number of objects fetched
+	 */
 	protected static int fetchMore(Hub thisHub, int famt) {
 		int x = fetchMore(thisHub, HubSelectDelegate.getSelect(thisHub), famt);
 		return x;
 	}
 
+	/**
+	 * Counter used internally to track the number of warnings issued for
+	 * select/fetch operations.
+	 */
 	private static int cntWarning;
 
+	/**
+	 * Tracks fetch locks per Hub to serialize concurrent fetchMore operations.
+	 * Ensures only one thread fetches data for a Hub at a time.
+	 */
 	private static ConcurrentHashMap<Hub, Integer> hmHubFetch = new ConcurrentHashMap<Hub, Integer>(11, .85f);
 
+	/**
+	 * Core thread-safe implementation of fetchMore. Ensures only one thread
+	 * loads data at a time for the given Hub by managing fetch locks in
+	 * {@code hmHubFetch}.
+	 *
+	 * @param thisHub the Hub being populated
+	 * @param sel     the OASelect providing data
+	 * @param famt    fetch amount to use
+	 * @return number of objects fetched
+	 */
 	protected static int fetchMore(Hub thisHub, OASelect sel, int famt) {
         if (sel == null) {
             return 0;
@@ -109,6 +148,21 @@ public class HubSelectDelegate {
 		}
 	}
 
+	/**
+	 * Internal worker that pulls objects from the OASelect and inserts them into
+	 * the Hub’s backing vector.
+	 *
+	 * <p>Behavior:</p>
+	 * <ul>
+	 *   <li>Stops when no more data is available.</li>
+	 *   <li>Dynamically grows Hub capacity when needed.</li>
+	 *   <li>Adds objects using {@link HubAddRemoveDelegate} with loading guarded
+	 *       by {@link OAThreadLocalDelegate}.</li>
+	 *   <li>Restores Hub “changed” state after loading completes.</li>
+	 * </ul>
+	 *
+	 * @return number of objects successfully added
+	 */
 	protected static int _fetchMore(Hub thisHub, OASelect sel, int famt) {
 		if (sel == null) {
 			return 0;
@@ -185,7 +239,11 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * Find out if more objects are available from last select from OADataSource.
+	 * Determines whether additional data is available for the Hub’s current
+	 * select() operation. Starts the select if needed.
+	 *
+	 * @param thisHub the Hub being queried
+	 * @return true if more data is available; false otherwise
 	 */
 	public static boolean isMoreData(Hub thisHub) {
 		OASelect sel = getSelect(thisHub);
@@ -199,6 +257,12 @@ public class HubSelectDelegate {
 		return sel.hasMore();
 	}
 
+	/**
+	 * Determines whether the given OASelect has more data to fetch.
+	 *
+	 * @param sel the OASelect instance
+	 * @return true if more data is available; false otherwise
+	 */
 	public static boolean isMoreData(OASelect sel) {
 		if (sel == null) {
 			return false;
@@ -211,12 +275,24 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * This will automatically read all records from current select(). By default, only 45 objects are read at a time from datasource.
+	 * Loads all remaining data for the Hub’s current select(), using the Hub’s
+	 * default select instance.
+	 *
+	 * @param thisHub the Hub whose select results should be fully loaded
 	 */
 	public static void loadAllData(Hub thisHub) {
 		loadAllData(thisHub, thisHub.getSelect());
 	}
 
+	/**
+	 * Fully loads all remaining objects from the given OASelect into the Hub.
+	 *
+	 * <p>Ensures only one thread performs the full-load operation at a time.
+	 * Handles cancellation, error recovery, and select state transitions.</p>
+	 *
+	 * @param thisHub the Hub being populated
+	 * @param select  the OASelect instance to load from
+	 */
 	public static void loadAllData(Hub thisHub, OASelect select) {
 		if (thisHub == null) {
 			return;
@@ -272,12 +348,23 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * Returns OASelect used for querying datasource.
+	 * Returns the OASelect associated with the Hub, or null if none exists.
+	 *
+	 * @param thisHub the Hub being queried
+	 * @return the Hub’s current OASelect, or null
 	 */
 	protected static OASelect getSelect(Hub thisHub) {
 		return getSelect(thisHub, false);
 	}
 
+	/**
+	 * Retrieves the Hub’s OASelect instance, optionally creating a new one if none
+	 * exists.
+	 *
+	 * @param thisHub       the Hub being queried
+	 * @param bCreateIfNull true to create a new OASelect when missing
+	 * @return the existing or newly created OASelect
+	 */
 	protected static OASelect getSelect(Hub thisHub, boolean bCreateIfNull) {
 		if (thisHub == null) {
 			return null;
@@ -293,9 +380,12 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * Used to populate Hub with objects returned from a OADataSource select. By default, all objects will first be removed from the Hub,
-	 * OASelect.select() will be called, and the first 45 objects will be added to Hub and active object will be set to null. As the Hub is
-	 * accessed for more objects, more will be returned until the query is exhausted of objects.
+	 * Main select() method for Hubs. Prepares and executes the OASelect query,
+	 * initializes Hub metadata, handles append/overwrite modes, and loads the
+	 * first batch of data.
+	 *
+	 * @param thisHub the Hub to populate
+	 * @param select  the select definition to run
 	 */
 	public static void select(final Hub thisHub, OASelect select) { // This is the main select method for Hub that all of the other select methods call.
 		cancelSelect(thisHub, true);
@@ -408,7 +498,11 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * Cancels current OASelect, calling select.cancel() This will also set SelectLater to false and RequiredWhere to null.
+	 * Cancels the Hub’s current OASelect and optionally removes it from Hub data.
+	 * Also resets selectAllHub flags and resizes the Hub to fit its contents.
+	 *
+	 * @param thisHub       the Hub whose select is being canceled
+	 * @param bRemoveSelect true to clear the Hub’s select reference
 	 */
 	protected static void cancelSelect(Hub thisHub, boolean bRemoveSelect) {
 		OASelect sel = thisHub.data.getSelect();
@@ -433,6 +527,12 @@ public class HubSelectDelegate {
 		}
 	}
 
+	/**
+	 * Returns the total number of matching records for the Hub’s current select().
+	 *
+	 * @param thisHub the Hub being queried
+	 * @return the count value, or -1 if no select exists
+	 */
 	public static int getCount(Hub thisHub) {
 		if (thisHub == null) {
 			return -1;
@@ -444,6 +544,12 @@ public class HubSelectDelegate {
 		return sel.getCount();
 	}
 
+	/**
+	 * Indicates whether the current select() has been counted.
+	 *
+	 * @param thisHub the Hub being checked
+	 * @return true if counted; false otherwise
+	 */
 	public static boolean isCounted(Hub thisHub) {
 		if (thisHub == null) {
 			return false;
@@ -456,10 +562,10 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * WHERE clause to use for select.
+	 * Updates the Hub’s select() WHERE clause, creating a new OASelect if needed.
 	 *
-	 * @see #setSelectOrder
-	 * @see OASelect
+	 * @param thisHub the Hub whose select WHERE clause is modified
+	 * @param s       the WHERE clause string
 	 */
 	public static void setSelectWhere(Hub thisHub, String s) {
 		OASelect sel = getSelect(thisHub);
@@ -470,6 +576,12 @@ public class HubSelectDelegate {
 		sel.setWhere(s);
 	}
 
+	/**
+	 * Returns the WHERE clause associated with the Hub’s current select().
+	 *
+	 * @param thisHub the Hub being queried
+	 * @return the WHERE clause, or null if none exists
+	 */
 	public static String getSelectWhere(Hub thisHub) {
 		OASelect sel = getSelect(thisHub);
 		if (sel == null) {
@@ -479,10 +591,11 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * Sort Order clause to use for select.
+	 * Sets the ORDER BY clause for the Hub’s select operation. Creates a new
+	 * OASelect instance if none exists and the sort property is non-empty.
 	 *
-	 * @see #getSelectOrder
-	 * @see OASelect
+	 * @param thisHub the Hub whose sort order is being modified
+	 * @param s       the ORDER BY clause string
 	 */
 	public static void setSelectOrder(Hub thisHub, String s) {
 		thisHub.data.setSortProperty(s);
@@ -496,10 +609,10 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * Sort Order clause to use for select.
+	 * Returns the ORDER BY clause associated with the Hub’s select().
 	 *
-	 * @see #setSelectOrder
-	 * @see OASelect
+	 * @param thisHub the Hub being queried
+	 * @return the ORDER BY clause or null if none exists
 	 */
 	public static String getSelectOrder(Hub thisHub) {
 		OASelect sel = getSelect(thisHub);
@@ -509,6 +622,13 @@ public class HubSelectDelegate {
 		return sel.getOrder();
 	}
 
+	/**
+	 * Executes a select() operation on the Hub with an optionally append-mode
+	 * OASelect created automatically.
+	 *
+	 * @param thisHub     the Hub to populate
+	 * @param bAppendFlag true to append results; false to overwrite
+	 */
 	public static void select(Hub thisHub, boolean bAppendFlag) {
 		if (thisHub == null) {
 			return;
@@ -518,7 +638,17 @@ public class HubSelectDelegate {
 		select(thisHub, sel);
 	}
 
-	// Main Select here:
+	/**
+	 * Runs a select() using a WHERE object, WHERE clause, parameter list,
+	 * ORDER BY clause, and append mode. Creates a new OASelect accordingly.
+	 *
+	 * @param thisHub      the Hub to populate
+	 * @param whereObject  the object used for property-based filtering
+	 * @param whereClause  the textual WHERE clause
+	 * @param whereParams  parameter values for the WHERE clause
+	 * @param orderByClause the sort expression
+	 * @param bAppendFlag  true to append results; false to overwrite
+	 */
 	protected static void select(Hub thisHub, OAObject whereObject, String whereClause,
 			Object[] whereParams, String orderByClause, boolean bAppendFlag) {
 		OASelect sel = new OASelect(thisHub.getObjectClass());
@@ -530,6 +660,18 @@ public class HubSelectDelegate {
 		select(thisHub, sel);
 	}
 
+	/**
+	 * Same as the other select() overload, but applies an {@link OAFilter}
+	 * to further restrict which objects qualify after retrieval.
+	 *
+	 * @param thisHub     the Hub to populate
+	 * @param whereObject the WHERE-object used for reverse property resolution
+	 * @param whereClause the WHERE clause
+	 * @param whereParams list of parameters for the WHERE clause
+	 * @param orderByClause ORDER BY clause
+	 * @param bAppendFlag true to append results
+	 * @param filter      filter applied to objects after select()
+	 */
 	protected static void select(Hub thisHub, OAObject whereObject, String whereClause,
 			Object[] whereParams, String orderByClause, boolean bAppendFlag, OAFilter filter) {
 		OASelect sel = new OASelect(thisHub.getObjectClass());
@@ -542,6 +684,14 @@ public class HubSelectDelegate {
 		select(thisHub, sel);
 	}
 
+	/**
+	 * Performs a passthru select(), sending raw WHERE and ORDER clauses directly
+	 * to the underlying data source without additional Hub-based constraints.
+	 *
+	 * @param thisHub     the Hub to populate
+	 * @param whereClause raw WHERE clause
+	 * @param orderClause raw ORDER BY clause
+	 */
 	public static void selectPassthru(Hub thisHub, String whereClause, String orderClause) {
 		OASelect sel = new OASelect(thisHub.getObjectClass());
 		sel.setPassthru(true);
@@ -550,6 +700,14 @@ public class HubSelectDelegate {
 		select(thisHub, sel);
 	}
 
+	/**
+	 * Passthru select() variant that also supports append mode.
+	 *
+	 * @param thisHub     the Hub to populate
+	 * @param whereClause raw WHERE clause
+	 * @param orderClause raw ORDER BY clause
+	 * @param bAppend     whether to append instead of clearing the Hub first
+	 */
 	public static void selectPassthru(Hub thisHub, String whereClause, String orderClause, boolean bAppend) {
 		OASelect sel = new OASelect(thisHub.getObjectClass());
 		sel.setPassthru(true);
@@ -559,6 +717,12 @@ public class HubSelectDelegate {
 		select(thisHub, sel);
 	}
 
+	/**
+	 * Returns the Hub currently used as the "whereHub" for select(), or null if none.
+	 *
+	 * @param thisHub the Hub being queried
+	 * @return the whereHub controlling select filtering, or null
+	 */
 	public static Hub getSelectWhereHub(Hub thisHub) {
 		if (thisHub == null) {
 			return null;
@@ -566,6 +730,13 @@ public class HubSelectDelegate {
 		return thisHub.data.getSelectWhereHub();
 	}
 
+	/**
+	 * Sets the Hub to be used as the "whereHub" for select(), which constrains
+	 * queries based on a linked property path.
+	 *
+	 * @param thisHub the Hub whose whereHub is being set
+	 * @param hub     the Hub to use for filtering
+	 */
 	public static void setSelectWhereHub(Hub thisHub, Hub hub) {
 		if (thisHub == null) {
 			return;
@@ -573,6 +744,12 @@ public class HubSelectDelegate {
 		thisHub.data.setSelectWhereHub(hub);
 	}
 
+	/**
+	 * Returns the property path associated with the Hub’s whereHub, or null.
+	 *
+	 * @param thisHub the Hub being queried
+	 * @return the whereHub property path
+	 */
 	public static String getSelectWhereHubPropertyPath(Hub thisHub) {
 		if (thisHub == null) {
 			return null;
@@ -580,6 +757,13 @@ public class HubSelectDelegate {
 		return thisHub.data.getSelectWhereHubPropertyPath();
 	}
 
+	/**
+	 * Sets the property path used for converting a whereHub into an equivalent
+	 * WHERE clause during select().
+	 *
+	 * @param thisHub the Hub being configured
+	 * @param pp      the property path to use for filtering
+	 */
 	public static void setSelectWhereHubPropertyPath(Hub thisHub, String pp) {
 		if (thisHub == null) {
 			return;
@@ -587,7 +771,7 @@ public class HubSelectDelegate {
 		thisHub.data.setSelectWhereHubPropertyPath(pp);
 	}
 
-	/**
+	/*
 	 * Check to see if thisHub can use the whereHub and "converted" PP as another Hub.
 	 * <p>
 	 * Example setup:<br>
@@ -612,6 +796,18 @@ public class HubSelectDelegate {
 	 * @param thisHub  Hub that could be in the same propertyPath of the hubFromHub.whereHubPropertyPath
 	 * @param propName the link name of thisHub from hubFrom.
 	 * @param hubFrom  hub that might have a selectWhereHub & PP that can be used by thisHub.
+	 */
+	
+	/**
+	 * Attempts to adopt the whereHub + propertyPath from another Hub if thisHub
+	 * participates in the same property path chain.
+	 *
+	 * <p>Used to propagate filtering constraints across related Hubs.</p>
+	 *
+	 * @param thisHub  the Hub attempting to adopt whereHub filtering
+	 * @param propName the property linking hubFrom → thisHub
+	 * @param hubFrom  the Hub that may supply whereHub filtering rules
+	 * @return true if the whereHub was successfully adopted
 	 */
 	public static boolean adoptWhereHub(final Hub thisHub, final String propName, final Hub hubFrom) {
 		if (hubFrom == null) {
@@ -646,7 +842,13 @@ public class HubSelectDelegate {
 		return true;
 	}
 
-	// 20221209
+	/**
+	 * Refreshes the Hub’s contents. Fires pre-refresh events, then delegates
+	 * to {@link #_refresh(Hub)} while honoring thread-local refresh flags.
+	 *
+	 * @param thisHub the Hub to refresh
+	 * @return true if refresh occurred; false otherwise
+	 */
 	public static boolean refresh(final Hub thisHub) {
 
 		boolean b = false;
@@ -662,7 +864,20 @@ public class HubSelectDelegate {
 		return b;
 	}
 
-	// 20220311
+	/**
+	 * Re-runs the select() operation or reloads the master-object detail list
+	 * to bring the Hub’s contents into consistency with the data source.
+	 *
+	 * <p>Behavior:</p>
+	 * <ul>
+	 *   <li>If no select exists: refreshes based on the master object link.</li>
+	 *   <li>If select exists: resets, re-selects, and reconciles adds/removes.</li>
+	 *   <li>Maintains element ordering to match the freshly retrieved dataset.</li>
+	 * </ul>
+	 *
+	 * @param thisHub the Hub being refreshed
+	 * @return true if refresh succeeded, false otherwise
+	 */
 	protected static boolean _refresh(final Hub thisHub) {
 		if (thisHub == null) {
 			return false;
@@ -720,9 +935,17 @@ public class HubSelectDelegate {
 	}
 
 	/**
-	 * This will re-run the last select.
+	 * Re-executes the last select() operation associated with the Hub.
 	 *
-	 * @see OASelect
+	 * <p>Behavior:</p>
+	 * <ul>
+	 *   <li>Rebuilds the OASelect if needed (e.g., detail Hub with no select).</li>
+	 *   <li>Runs select(), then merges results into the Hub.</li>
+	 *   <li>Restores Active Object after reload.</li>
+	 * </ul>
+	 *
+	 * @param thisHub the Hub to refresh
+	 * @return true if successful
 	 */
 	public static boolean refreshSelect(Hub thisHub) {
 		if (thisHub == null) {
