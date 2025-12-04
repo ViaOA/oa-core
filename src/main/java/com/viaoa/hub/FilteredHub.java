@@ -34,6 +34,11 @@ import com.viaoa.object.OAObject;
  */
 public abstract class FilteredHub<T> extends Hub<T> {
     
+	/**
+	 * Internal HubFilter instance bound to the master Hub. It drives the
+	 * inclusion logic for this FilteredHub by delegating its isUsed evaluation
+	 * to the subclass-defined predicate.
+	 */
     private HubFilter<T> filter;
 
     /**

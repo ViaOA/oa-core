@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,15 +61,41 @@ import java.lang.ref.*;
  * </ul>
  */
 public class HubTemp {
+	
+	/**
+	 * The temporary Hub instance associated with a single object. Created on
+	 * demand and used to provide a Hub context for operations requiring one.
+	 */
     Hub hub;
+    
+    /**
+     * The underlying object represented by this temporary Hub. Used as the key
+     * for cached lookup and identity validation.
+     */
     Object object;
+    
+    /**
+     * Reference count indicating how many callers currently require this
+     * temporary Hub. When decremented to zero, the HubTemp becomes eligible
+     * for removal from the cache.
+     */
     int cnt;
 
-    /** 
-        Temp Hub objects used when a Hub is needed for an OAObject that does not have a Hub.
-    */
+    /**
+     * Global cache mapping each object type to a per-object map of weakly
+     * referenced HubTemp instances. Ensures reuse of temporary Hubs while
+     * allowing garbage collection when no longer referenced.
+     */
     private static final Map<Class, Map<Object, WeakReference<HubTemp>>> hmClass = new HashMap<>();
     
+    /**
+     * Retrieves (or lazily creates) the per-class map used to store weak
+     * references to HubTemp instances. Thread-safe through synchronization
+     * on the shared class map.
+     *
+     * @param c the class whose temporary-Hub map is requested
+     * @return the map associated with that class, or null if class is null
+     */
     static Map getMap(Class c) {
         if (c == null) return null;
         Map hm = (Map) hmClass.get(c);
@@ -85,6 +111,15 @@ public class HubTemp {
         return hm;
     }
     
+    /**
+     * Creates or retrieves a temporary Hub for the specified object. If a
+     * HubTemp already exists for the object, increments its reference count.
+     * Otherwise creates a new Hub containing the object as its sole member
+     * and sets it as the active object.
+     *
+     * @param hubObject the object requiring a temporary Hub
+     * @return the associated Hub, or null if {@code hubObject} is null
+     */
     public static Hub createHub(Object hubObject) {
         if (hubObject == null) return null;
         
@@ -108,6 +143,14 @@ public class HubTemp {
         return ht.hub;
     }
     
+    /**
+     * Returns the reference count of the temporary Hub associated with the
+     * given object. If no temporary Hub exists or if it has been reclaimed,
+     * returns zero.
+     *
+     * @param hubObject the object whose HubTemp reference count is requested
+     * @return the number of outstanding references
+     */
     public static int getCount(Object hubObject) {
         if (hubObject == null) return 0;
         
@@ -121,7 +164,13 @@ public class HubTemp {
         }
     }
     
-
+    /**
+     * Decrements the reference count of the temporary Hub associated with the
+     * specified object. Once the count reaches zero (or the HubTemp has been
+     * GC-collected), removes the entry from the per-class map.
+     *
+     * @param hubObject the object whose temporary Hub should be released
+     */
     public static void deleteHub(Object hubObject) {
         if (hubObject == null) return;
         
@@ -137,6 +186,12 @@ public class HubTemp {
         }
     }
     
+    /**
+     * Returns the total number of active temporary Hub entries across all
+     * classes in the global cache.
+     *
+     * @return count of active temporary Hub mappings
+     */
     public static int getCount() {
     	int cnt = 0;
         for (Class c : hmClass.keySet()) {

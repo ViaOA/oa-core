@@ -52,28 +52,66 @@ import com.viaoa.util.OAFilter;
  */
 public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     private static final long serialVersionUID = 1L;
+    
+    /**
+     * The OAObject class type monitored by this cache filter.
+     */
     private Class<T> clazz;
+    
+    /**
+     * Weak reference to the target Hub that receives matching cached objects.
+     * Allows the Hub to be garbage-collected without leaking this filter.
+     */
     private WeakReference<Hub<T>> wrHub;
 
+    /**
+     * Optional internal name used when creating trigger instances.
+     */
     private String name;
 
+    /**
+     * Listener registered with the global OAObjectCache to monitor add, load,
+     * and property-change events for this class type.
+     */
     private OAObjectCacheListener cacheListener;    
     
     // list of propPaths to listen for
+    /**
+     * List of dependent property paths whose changes trigger re-evaluation of
+     * cached objects for possible inclusion in the Hub.
+     */
     private String[] dependentPropertyPaths;
     
+    /**
+     * When true, Hub update operations triggered by this filter are treated
+     * as server-side only, temporarily suppressing remote messaging.
+     */
     protected boolean bServerSideOnly;
     
-    
-    
-    // used to create a unique calc propName
+    /**
+     * Counter used to generate unique internal names for triggers.
+     */
     private static AtomicInteger aiUnique = new AtomicInteger();  
 
+    /**
+     * Trigger object used to monitor dependent property paths and refresh the
+     * Hub when affected objects change.
+     */
     private OATrigger trigger;
     
-    // list of filters that must return true for the isUsed to return true.
+    /**
+     * Collection of filters that must all return true for an object to be
+     * included in the Hub.
+     */
     private ArrayList<OAFilter<T>> alFilter;
 
+    /**
+     * Background refresher used to batch or delay filter updates when needed,
+     * particularly during large or asynchronous change events.
+     */
+    private volatile OAChangeRefresher changeRefresher;
+
+    
     
 	/**
 	 * Constructs a new OAObjectCacheFilter that monitors the specified Hub
@@ -455,9 +493,6 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             OARemoteThreadDelegate.sendMessages(false);
         }
     }
-
-
-    private volatile OAChangeRefresher changeRefresher;
 
     /**
      * Configures or replaces the internal trigger used to listen for changes

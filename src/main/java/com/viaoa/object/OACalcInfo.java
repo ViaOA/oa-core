@@ -45,31 +45,109 @@ public class OACalcInfo implements java.io.Serializable {
     static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(OACalcInfo.class.getName());
     
+    /**
+     * The name of the calculated property represented by this metadata entry.
+     */
     String name;
+
+    /**
+     * Lowercase version of the calculated property name, used for case-insensitive
+     * lookup; generated if not explicitly set.
+     */
     String lowerName;
+    
+    /**
+     * List of property paths that this calculated property depends on; changes to
+     * any of these paths trigger recalculation.
+     */
     String[] dependentProperties;  // dependent properties
+
+    /**
+     * Annotation metadata defining calculated-property behavior and configuration.
+     */
     private OACalculatedProperty oaCalculatedProperty;
+    
+    /**
+     * The return type of the calculated property’s getter method.
+     */
     private Class classType;
 
-    /** 20131027
-     *  true if this calcProp is for the whole Hub, and the method has a static method with a Hub param
+    /**
+     * Indicates whether this calculated property is defined at the Hub level,
+     * requiring a static calculation method that accepts a Hub parameter.
      */
     boolean bIsForHub;  
+
+    /**
+     * Callback method invoked to compute the calculated property’s value on an
+     * instance or Hub, depending on configuration.
+     */
     private transient Method objectCallbackMethod;
+
+    /**
+     * Flag indicating whether the calculated property contains HTML content.
+     */
     private boolean isHtml;
+    
+    /**
+     * Indicates whether the calculated property represents an object-status value.
+     */
     private boolean isObjectStatus;
     
+    /**
+     * Properties that influence when the calculated value must be refreshed in a
+     * UI or view context.
+     */
     private String[] viewDependentProperties;
+    
+    /**
+     * Properties that determine when the calculated value must be refreshed due to
+     * contextual changes.
+     */
     private String[] contextDependentProperties;
 
+    /**
+     * Property name used to determine whether this calculated property is enabled.
+     */
     private String enabledProperty;
+    
+    /**
+     * Explicit enabled/disabled boolean value associated with this calculated
+     * property.
+     */
     private boolean enabledValue;
+    
+    /**
+     * Property name used to determine whether this calculated property is visible.
+     */
     private String visibleProperty;
+    
+    /**
+     * Explicit visible/hidden boolean value associated with this calculated
+     * property.
+     */
     private boolean visibleValue;
 
+    /**
+     * Property name used to determine contextual enabled state for this calculated
+     * property.
+     */
     private String contextEnabledProperty;
+    
+    /**
+     * Explicit boolean determining contextual enabled state.
+     */
     private boolean contextEnabledValue;
+    
+    /**
+     * Property name used to determine contextual visibility for this calculated
+     * property.
+     */
     private String contextVisibleProperty;
+    
+    /**
+     * Explicit boolean determining contextual visibility.
+     */
     private boolean contextVisibleValue;
     
     /**

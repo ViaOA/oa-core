@@ -134,42 +134,153 @@ import com.viaoa.util.*;
  * @see com.viaoa.hub.Hub
  */
 public class OAFinder<F extends OAObject, T extends OAObject> {
+	
+	/**
+	 * The raw property-path expression (string form) defining the navigation
+	 * route for this finder before it is parsed into an OAPropertyPath.
+	 */
 	private String strPropertyPath;
+	
+	/**
+	 * Parsed representation of the property path used to navigate through
+	 * the Object Graph during a search.
+	 */
 	private OAPropertyPath<T> propertyPath;
 
+	/**
+	 * LinkInfo representing the recursive parent link for the root object,
+	 * enabling upward traversal for recursive models.
+	 */
 	private OALinkInfo liRecursiveRoot;
 
+	/**
+	 * LinkInfo array describing the navigational steps for each segment
+	 * of the property path.
+	 */
 	private OALinkInfo[] linkInfos;
+	
+	/**
+	 * Optional LinkInfo array for recursive link evaluation when a path
+	 * includes recursive relationships.
+	 */
 	private OALinkInfo[] recursiveLinkInfos;
+	
+	/**
+	 * Java reflection methods used to access intermediate property values
+	 * along the property path.
+	 */
 	private Method[] methods;
 
+	/**
+	 * Flag indicating that the next added filter should be composed using OR
+	 * with the existing filter.
+	 */
 	private boolean bAddOrFilter;
+	
+	/**
+	 * Flag indicating that the next added filter should be composed using AND
+	 * with the existing filter.
+	 */
 	private boolean bAddAndFilter;
+	
+	/**
+	 * The root filter applied to restrict which objects are considered matches
+	 * during search traversal.
+	 */
 	private OAFilter filter;
+	
+	/**
+	 * Cascade trackers used for each level of the property-path traversal to
+	 * prevent infinite loops and redundant recursion.
+	 */
 	private OACascade[] cascades;
 
+	/**
+	 * Flag indicating that the active search should be stopped as soon as
+	 * possible.
+	 */
 	private volatile boolean bStop;
+	
+	/**
+	 * The list of objects that have been found and accepted during the search.
+	 */
 	private ArrayList<T> alFound;
 
-	// stack
+	/**
+	 * Flag indicating whether the diagnostic traversal stack should be
+	 * maintained during find operations.
+	 */
 	private boolean bEnableStack;
 
+	/**
+	 * Current index within the traversal stack indicating how deep the
+	 * property-path recursion is.
+	 */
 	private int stackPos;
+
+	/**
+	 * Stack tracking the objects and positions visited during traversal for
+	 * diagnostic and debugging purposes.
+	 */
 	private StackValue[] stack;
+	
+	/**
+	 * Maximum number of objects to find before the search should stop.
+	 * A value of zero means no limit.
+	 */
 	private int maxFound;
+	
+	/**
+	 * The root OAObject from which the search begins when not using a Hub.
+	 */
 	private F fromObject;
+	
+	/**
+	 * The root Hub supplying starting objects for the search.
+	 */
 	private Hub<F> fromHub;
+	
+	/**
+	 * Indicates whether all Hub elements should be used as search roots
+	 * instead of only the active object.
+	 */
 	private boolean bUseAll;
+	
+	/**
+	 * Flag indicating whether recursive traversal from the root object or
+	 * Hub should be allowed.
+	 */
 	private boolean bEnableRecursiveRoot;
+	
+	/**
+	 * Internal flag indicating whether recursive-root settings were explicitly
+	 * modified by client code.
+	 */
 	private boolean bEnableRecursiveRootWasCalled;
 
+	/**
+	 * Optional externally supplied cascade tracker applied before internal
+	 * cascades to prevent repeated visits.
+	 */
 	private OACascade cascade; // cascade that can be set by calling code
 
 	/**
-	 * flag to know if it should only find data that is currently in memory.
+	 * Flag indicating whether traversal must operate strictly on already-loaded
+	 * in-memory data, without triggering lazy loads.
 	 */
 	private boolean bUseOnlyLoadedData;
 
+	/**
+	 * Current positional index within the root Hub during a Hub-based search.
+	 */
+	private int rootHubPos;
+	
+	/**
+	 * Indicates whether the finder has already been initialized based on
+	 * the root object’s class and property path.
+	 */
+	private boolean bSetup;
+	
 	/**
 	 * Creates an empty finder with no root and no property path defined.
 	 * <p>
@@ -516,8 +627,6 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		}
 		return al;
 	}
-
-	private int rootHubPos;
 
 	public int getRootHubPos() {
 		return this.rootHubPos;
@@ -891,8 +1000,6 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	public OAPropertyPath getPropertyPath() {
 		return this.propertyPath;
 	}
-
-	private boolean bSetup;
 
 	protected void setup(Class c) {
 		if (bSetup) {

@@ -48,13 +48,37 @@ import com.viaoa.util.*;
  * @param <F> starting OAObject type for the traversal
  */
 public class OAHierFinder<F extends OAObject> {
-    private final String property;
-    private final String strPropertyPath;
-    private OAPropertyPath propertyPath;
-    private Object foundValue;
-    private boolean bIncludeFromObject;
-
     
+	/**
+	 * Name of the property whose value should be evaluated at each step
+	 * of the hierarchy traversal.
+	 */
+	private final String property;
+    
+	/**
+	 * The raw string form of the property path used to navigate through
+	 * recursive or linked object hierarchies.
+	 */
+	private final String strPropertyPath;
+    
+	/**
+	 * Parsed representation of the property path, produced on first use,
+	 * and used to walk the hierarchy during evaluation.
+	 */
+	private OAPropertyPath propertyPath;
+    
+	/**
+	 * The first property value encountered during traversal that satisfies
+	 * the supplied filter; becomes the return value of the search.
+	 */
+	private Object foundValue;
+    
+	/**
+	 * Indicates whether the starting object should be evaluated before
+	 * traversing child or parent links.
+	 */
+	private boolean bIncludeFromObject;
+
     /**
      * Creates a new hierarchy finder using the specified property name and
      * property path. The starting object will be included in evaluation.

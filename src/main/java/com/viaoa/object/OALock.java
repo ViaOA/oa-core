@@ -37,9 +37,27 @@ import java.lang.ref.*;  // java1.2
  */
 public class OALock implements java.io.Serializable {
     static final long serialVersionUID = 1L;
+    
+    /**
+     * The primary object associated with this logical lock; must not be null.
+     */
     protected Object object;
+    
+    /**
+     * Optional weak reference used to control the lifetime of this lock.
+     * The lock is considered expired once the referenced object is garbage collected.
+     */
     protected transient WeakReference ref;
+    
+    /**
+     * Optional metadata object associated with this lock, such as a user,
+     * timestamp, lock reason, or additional context.
+     */
     protected Object miscObject;
+    
+    /**
+     * Counter used to track how many wait operations have occurred on this lock.
+     */
     protected int waitCnt;
 
     /**

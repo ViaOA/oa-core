@@ -63,70 +63,310 @@ import com.viaoa.util.OAString;
  */
 public class OALinkInfo { //implements java.io.Serializable {
 	static final long serialVersionUID = 1L;
+	
+	/**
+	 * Constant representing a one-to-one or one-to-many link cardinality.
+	 */
 	public static final int ONE = 0;
+
+	/**
+	 * Constant representing a many-to-one or many-to-many link cardinality.
+	 */
 	public static final int MANY = 1;
 
+	/**
+	 * Link-type identifier for a single referenced object.
+	 */
 	public static final int TYPE_ONE = 0;
+	
+	/**
+	 * Link-type identifier for a Hub (collection) of referenced objects.
+	 */
 	public static final int TYPE_MANY = 1;
 
+	/**
+	 * The property name representing this link on the source OAObject.
+	 */
 	String name;
+	
+	/**
+	 * Lowercase-mapped version of the link name for case-insensitive lookup.
+	 */
 	String lowerName;
+	
+	/**
+	 * Optional descriptive name used for display or UI contexts.
+	 */
 	String displayName;
+	
+	/**
+	 * The target OAObject class referenced by this link.
+	 */
 	Class toClass;
+	
+	/**
+	 * Link cardinality type, either {@code TYPE_ONE} or {@code TYPE_MANY}.
+	 */
 	int type;
+	
+	/**
+	 * Indicates whether a value for this link is required.
+	 */
 	boolean required;
-	boolean cascadeSave; // save, delete of this object will do same with link hub
-	boolean cascadeDelete; // save, delete of this object will do same with link hub
+	
+	/**
+	 * Whether save operations cascade to the linked object(s).
+	 */
+	boolean cascadeSave;
+	
+	/**
+	 * Whether delete operations cascade to the linked object(s).
+	 */
+	boolean cascadeDelete;
+	
 	// property that needs to be updated in an inserted object.  same as Hub.propertyToMaster
-	protected String reverseName; // reverse property name
-	boolean bOwner; // this object is the owner of the linked to object/hub
+	
+	/**
+	 * Property name of the reverse link on the target OAObject.
+	 */
+	protected String reverseName;
+	
+	/**
+	 * Indicates whether the source object owns the linked object(s).
+	 */
+	boolean bOwner;
+	
+	/**
+	 * Flag marking this link as recursive within the same OAObject type.
+	 */
 	boolean bRecursive;
+	
+	/**
+	 * Indicates whether this link is transient and not persisted.
+	 */
 	private boolean bTransient;
+	
+	/**
+	 * Whether new linked objects should be automatically created when required.
+	 */
 	private boolean bAutoCreateNew;
-	private String matchHub; // propertyPath to find matching hub
-	private String matchProperty; // propertyPath to match, using HubAutoMatch
+	
+	/**
+	 * Property path used to locate a Hub for matching operations.
+	 */
+	private String matchHub;
+	
+	/**
+	 * Property path used to determine match criteria for linked objects.
+	 */
+	private String matchProperty;
+	
+	/**
+	 * Property path indicating when matching should stop.
+	 */
 	private String matchStopProperty;  
-	boolean mustBeEmptyForDelete; // this link must be empty before other side can be deleted
-	private String uniqueProperty; // unique propertyPath
-	private String sortProperty; // sort propetyPath
-	private boolean sortAsc = true; // sort ascending
-	private String seqProperty; // sequence propetyPath
+	
+	/**
+	 * Whether this link must be empty before its opposite side can be deleted.
+	 */
+	boolean mustBeEmptyForDelete;
+	
+	/**
+	 * Property path identifying a unique value used to validate uniqueness.
+	 */
+	private String uniqueProperty;
+	
+	/**
+	 * Property path used to determine sort ordering of linked objects.
+	 */
+	private String sortProperty;
+	
+	/**
+	 * Indicates whether sorting is ascending when a sort property is defined.
+	 */
+	private boolean sortAsc = true;
+	
+	/**
+	 * Property path used to determine sequencing of linked objects.
+	 */
+	private String seqProperty;
+	
+	/**
+	 * Indicates whether this link can reference large collections.
+	 */
 	private boolean couldBeLarge;
+	
+	/**
+	 * Whether exactly one linked object is required.
+	 */
 	private boolean oneAndOnlyOne;
 
-	private String equalPropertyPath; // from this object
+	/**
+	 * Property path used to evaluate equality for this link.
+	 */
+	private String equalPropertyPath;
+	
+	/**
+	 * Property name used when automatically creating linked objects.
+	 */
 	private String autoCreateProperty;
-	private String selectFromPropertyPath; // from this object to linkedTo object
+	
+	/**
+	 * Property path used to select from linked objects.
+	 */
+	private String selectFromPropertyPath;
 
 	// runtime
+	/**
+	 * Cache size for linked Hubs created through this link.
+	 */
 	protected transient int cacheSize;
+	
+	/**
+	 * Cached reference to the resolved reverse‐link metadata, if any.
+	 */
 	private OALinkInfo revLinkInfo;
+	
+	/**
+	 * Indicates whether this link is marked as calculated.
+	 */
 	protected boolean bCalculated;
+	
+	/**
+	 * Indicates whether this link has been processed during metadata resolution.
+	 */
 	protected boolean bProcessed;
+	
+	/**
+	 * Whether this link is calculated only on the server side.
+	 */
 	protected boolean bServerSideCalc;
-	protected boolean bPrivateMethod; // true if the method is not created, or is private
-	protected boolean bNotUsed; // 20180615 flag to know that link is only used one way
+	
+	/**
+	 * Indicates whether the link's accessor method is private or not generated.
+	 */
+	protected boolean bPrivateMethod;
+	
+	/**
+	 * Indicates whether this link is unused; used to detect one-sided links.
+	 */
+	protected boolean bNotUsed;
+	
+	/**
+	 * Cached getter method for the unique-property definition.
+	 */
 	private transient Method uniquePropertyGetMethod;
+	
+	/**
+	 * Names of properties that calculated links depend on.
+	 */
 	private String[] calcDependentProperties;
+	
+	/**
+	 * Property path used during merge operations.
+	 */
 	private String mergerPropertyPath;
+	
+	/**
+	 * The {@link OAOne} annotation metadata associated with this link.
+	 */
 	private OAOne oaOne;
+	
+	/**
+	 * The {@link OAMany} annotation metadata associated with this link.
+	 */
 	private OAMany oaMany;
+	
+	/**
+	 * Callback method invoked for link-related operations.
+	 */
 	private Method objectCallbackMethod;
+	
+	/**
+	 * Properties that affect view-level refresh for this link.
+	 */
 	private String[] viewDependentProperties;
+	
+	/**
+	 * Properties that affect context-level refresh for this link.
+	 */
 	private String[] contextDependentProperties;
 
+	/**
+	 * Default property path used when navigating from this link.
+	 */
 	private String defaultPropertyPath;
+	
+	/**
+	 * Indicates whether the default property path represents a hierarchy.
+	 */
 	private boolean defaultPropertyPathIsHierarchy;
+	
+	/**
+	 * Whether the default property path can be modified.
+	 */
 	private boolean defaultPropertyPathCanBeChanged;
 
 	// default value comes from Context object.  "." is to use this object.
+	/**
+	 * Default property path used for context-based evaluations.
+	 */
 	private String defaultContextPropertyPath;
 
+	/**
+	 * Scheduler callback method associated with this link.
+	 */
 	private Method schedulerMethod;
 
+	/**
+	 * Indicates whether this link is used for import-matching logic.
+	 */
 	private boolean importMatch;
 
-	// foreign key
+	/**
+	 * Property name determining whether this link is enabled.
+	 */
+	private String enabledProperty;
+
+	/**
+	 * Boolean value indicating link enabled state.
+	 */
+	private boolean enabledValue;
+	
+	/**
+	 * Property name determining link visibility.
+	 */
+	private String visibleProperty;
+	
+	/**
+	 * Boolean value indicating link visibility.
+	 */
+	private boolean visibleValue;
+
+	/**
+	 * Property name determining context-based enabled state.
+	 */
+	private String contextEnabledProperty;
+
+	/**
+	 * Boolean indicating context-based enabled state.
+	 */
+	private boolean contextEnabledValue;
+	
+	/**
+	 * Property name determining context-based visibility.
+	 */
+	private String contextVisibleProperty;
+	
+	/**
+	 * Boolean indicating context-based visibility.
+	 */
+	private boolean contextVisibleValue;
+	
+	
+	/**
+	 * List of foreign-key metadata definitions associated with this link.
+	 */
 	private List<OAFkeyInfo> alFkeyInfo;
 
 	/**
@@ -1105,11 +1345,6 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return true;
 	}
 
-	private String enabledProperty;
-	private boolean enabledValue;
-	private String visibleProperty;
-	private boolean visibleValue;
-
 	/**
 	 * Returns the property name used to determine whether this link is enabled.
 	 *
@@ -1181,11 +1416,6 @@ public class OALinkInfo { //implements java.io.Serializable {
 	public void setVisibleValue(boolean b) {
 		visibleValue = b;
 	}
-
-	private String contextEnabledProperty;
-	private boolean contextEnabledValue;
-	private String contextVisibleProperty;
-	private boolean contextVisibleValue;
 
 	/**
 	 * Returns the property name used to determine whether this link is enabled

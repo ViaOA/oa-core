@@ -68,36 +68,83 @@ import com.viaoa.object.*;
 class HubDetail implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
 
-    /** types of values. */
+    /**
+     * Constant indicating that the detail value is an array type.
+     */
     public final static int ARRAY = 0;
+
+    /**
+     * Constant indicating that the detail value is a Hub.
+     */
     public final static int HUB = 1;
+
+    /**
+     * Constant indicating that the detail value is an OAObject.
+     */
     public final static int OAOBJECT = 2;
+
+    /**
+     * Constant indicating that the detail value is a plain Object.
+     */
     public final static int OBJECT = 3;
+
+    /**
+     * Constant indicating that the detail value is an array of OAObjects.
+     */
     public final static int OAOBJECTARRAY = 4;
+
+    /**
+     * Constant indicating that the detail value is an array of Objects.
+     */
     public final static int OBJECTARRAY = 5;
+
+    /**
+     * Constant indicating that the detail hub originates from a HubMerger.
+     */
     public final static int HUBMERGER = 6;
 
 
-    /** type of detail Hub, see static list above. */
+    /**
+     * Identifies the detail type for this HubDetail, based on the
+     * predefined constants (ARRAY, HUB, OAOBJECT, etc.).
+     */
     protected int type;
 
-    protected String path; // added for use when using a HubMerger
+    /**
+     * Property path used when this detail is created by a HubMerger,
+     * defining how the detail hub is derived.
+     */
+    protected String path;
 
     /**
-        true if the property value is a Hub, and the detail hub should use the same active object
-        as the Hub that it is sharing.  This is used to remember what object was active for the
-        detail Hub.
-    */
+     * Indicates whether the detail hub should share its active object
+     * with the linked master hub.
+     */
     protected boolean bShareActiveObject;
 
-    /** number of references to this HubDetail. */
+    /**
+     * Tracks how many consumers refer to this HubDetail instance,
+     * allowing reuse where applicable.
+     */
     protected int referenceCount;
 
-    /** Information about the reference, from master to detail. */
+    /**
+     * Link information describing the master-to-detail relationship
+     * for this HubDetail.
+     */
     protected transient OALinkInfo liMasterToDetail;
 
+    /**
+     * The master Hub whose active object drives the content of the
+     * associated detail Hub.
+     */
     protected Hub hubMaster;
-	protected Hub hubDetail;
+
+    /**
+     * The detail Hub that follows the master Hub’s active object and
+     * reflects its related objects.
+     */
+    protected Hub hubDetail;
     
 	/**
 	 * Constructs a new HubDetail instance linking a master hub to its

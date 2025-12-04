@@ -41,11 +41,40 @@ public class HubCombined<T> {
 	private static Logger LOG = Logger.getLogger(HubCombined.class.getName());
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * The master hub that receives and maintains the combined contents
+	 * of all tracked source hubs.
+	 */
 	protected final Hub<T> hubMaster;
+
+	/**
+	 * Collection of source hubs whose objects are merged into the
+	 * master hub.
+	 */
 	protected final ArrayList<Hub<T>> alHub = new ArrayList<>();
+	
+	/**
+	 * List of listeners attached to each tracked source hub to relay
+	 * changes to the master hub.
+	 */
 	protected ArrayList<HubListener<T>> alHubListener;
+	
+	/**
+	 * Listener attached to the master hub to propagate its changes
+	 * back to source hubs when appropriate.
+	 */
 	protected final HubListener<T> hlMaster;
+	
+	/**
+	 * Holds the first hub added to the combined collection, used for
+	 * handling add-back behavior and active-object propagation logic.
+	 */
 	protected Hub<T> hubFirst;
+	
+	/**
+	 * Flag indicating whether the master hub is currently being
+	 * updated, used to prevent recursive or duplicate event handling.
+	 */
 	protected volatile boolean bUpdatingMasterHub;
 
 	/**

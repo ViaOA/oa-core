@@ -35,7 +35,16 @@ package com.viaoa.object;
  */
 public class OAEditException extends RuntimeException {
     static final long serialVersionUID = 1L;
+
+    /**
+     * Name of the OAObject property for which the invalid edit was attempted.
+     */
     private String property;
+
+    /**
+     * The invalid value supplied during the edit attempt that triggered this
+     * exception.
+     */
     private Object newValue;
 
     /**

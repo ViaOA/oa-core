@@ -23,11 +23,16 @@ package com.viaoa.hub;
  * its AO resets to null.</p>
  */
 class HubDataActive implements java.io.Serializable {
+	/**
+	 * Serialization identifier used to maintain version compatibility when
+	 * HubDataActive instances are serialized.
+	 */
     static final long serialVersionUID = 1L;  // used for object serialization
 	
-	/**
-	    Current object in Hub that is the active object.
-	*/
+    /**
+     * The current Active Object (AO) for the owning Hub. Shared Hubs share
+     * this value if configured to use the same active-object state.
+     */
 	protected transient volatile Object activeObject;
 	
 	/**

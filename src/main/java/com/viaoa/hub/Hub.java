@@ -92,18 +92,34 @@ import com.viaoa.util.OAString;
  * declarative binding between model, view, and persistence layers.
  */
 public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparable<TYPE>, Iterable<TYPE> {
+	/**
+	 * Serialization version identifier used to validate compatibility when
+	 * Hub instances are serialized and deserialized.
+	 */
 	static final long serialVersionUID = 1L; // used for object serialization
 
-	/** Internal object used to store objects in Vector and Hashtable. */
+	/**
+	 * Primary internal storage object containing the Hub's vector of objects
+	 * and associated state such as size, type information, and refresh settings.
+	 */
 	protected volatile HubData data;
 
-	/** Internal object used unique information about this Hub. */
+	/**
+	 * Internal metadata object holding unique Hub configuration, including
+	 * link-hub references, shared-hub pointer, default position, and detail lists.
+	 */
 	protected HubDataUnique datau;
 
-	/** Internal object used store active object, bof flag, eof flag. */
+	/**
+	 * Internal structure storing active-object state, including the current
+	 * active object and boundary flags (BOF/EOF).
+	 */
 	protected volatile HubDataActive dataa;
 
-	/** Internal object used store master object and Hub. */
+	/**
+	 * Internal structure maintaining master-detail metadata, such as master
+	 * object, master Hub, and link information used for navigation.
+	 */
 	protected HubDataMaster datam;
 
 	/**

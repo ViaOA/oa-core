@@ -59,29 +59,94 @@ import com.viaoa.util.*;
  */
 public class OALoader<F extends OAObject, T extends OAObject> {
     private static Logger LOG = Logger.getLogger(OALoader.class.getName());
+    
+    /**
+     * Raw string form of the property path to be traversed during loading.
+     */
     private String strPropertyPath;
+    
+    /**
+     * Parsed representation of the property path used to navigate linked and
+     * recursive relationships.
+     */
     private OAPropertyPath<T> propertyPath;
 
+    /**
+     * LinkInfo describing the recursive parent relationship for the root class.
+     */
     private OALinkInfo liRecursiveRoot;
 
+    /**
+     * LinkInfo sequence defining each step in the configured property path.
+     */
     private OALinkInfo[] linkInfos;
+    
+    /**
+     * LinkInfo array describing recursive relationships encountered while
+     * traversing the property path.
+     */
     private OALinkInfo[] recursiveLinkInfos;
+    
+    /**
+     * Reflection methods used to access property values for each path segment.
+     */
     private Method[] methods;
 
+    /**
+     * Flag indicating that traversal should stop as soon as possible.
+     */
     private volatile boolean bStop;
+    
+    /**
+     * Flag indicating that traversal should stop as soon as possible.
+     */
     private boolean bSetup;
 
+    /**
+     * Maximum number of worker threads allocated for parallel loading.
+     */
     private final int threadCount;
+    
+    /**
+     * Executor service used to submit multi-threaded load tasks.
+     */
     private volatile OAExecutorService executorService;
+    
+    /**
+     * Counter tracking the number of active worker threads currently running.
+     */
     private final AtomicInteger aiThreadsUsed = new AtomicInteger(); 
 
+    /**
+     * Counter tracking how many objects have been visited during traversal.
+     */
     private final AtomicInteger aiVisitCnt = new AtomicInteger();
+    
+    /**
+     * Counter tracking how many objects were encountered whose linked values
+     * were not yet loaded.
+     */
     private final AtomicInteger aiNotLoadedCnt = new AtomicInteger();
     
+    /**
+     * Hub containing root objects for traversal when loading from a Hub or
+     * OASelect source.
+     */
     private Hub<F> hubFrom;
     
+    /**
+     * Cascade-tracking instances used to prevent redundant visits and infinite
+     * recursion during traversal.
+     */
     private OACascade[] cascades;
 
+    /**
+     * Indicates whether the main traversal thread is still active, used for
+     * shutdown coordination with worker threads.
+     */
+    private final AtomicBoolean abMainThreadRunning = new AtomicBoolean(true);
+    
+    
     /**
      * Creates a new multi-threaded loader configured to traverse the
      * specified property path using up to the given number of worker threads.
@@ -228,8 +293,6 @@ public class OALoader<F extends OAObject, T extends OAObject> {
             onThreadDone(true);
         }
     }
-    
-    private final AtomicBoolean abMainThreadRunning = new AtomicBoolean(true);
     
     private void onThreadDone(boolean bMainThread) {
         if (bMainThread) abMainThreadRunning.set(false);

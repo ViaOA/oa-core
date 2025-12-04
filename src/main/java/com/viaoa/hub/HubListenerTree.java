@@ -58,17 +58,77 @@ import com.viaoa.util.OAPropertyPath;
 public class HubListenerTree {
 	private static Logger LOG = Logger.getLogger(HubListenerTree.class.getName());
 
+	/**
+	 * Ordered array of HubListeners registered on the root Hub, maintained with
+	 * FIRST/NEXT/LAST placement rules.
+	 */
 	private volatile HubListener[] listeners;
+	
+	/**
+	 * Root node of the listener dependency tree. Stores the root Hub and forms the
+	 * entry point for routed dependent-property notifications.
+	 */
 	private final HubListenerTreeNode root = new HubListenerTreeNode();
 
+	/**
+	 * Global counter tracking the number of active HubListener instances registered
+	 * across all HubListenerTree objects, used mainly for diagnostics.
+	 */
+	public static volatile int ListenerCount;
+
+	/**
+	 * Count of listeners explicitly added with InsertLocation.LAST, used to maintain
+	 * correct ordering when inserting additional listeners.
+	 */
+	private volatile int lastCount; // number of listeners that are set as Last.
+	
+	
+	
 	private class HubListenerTreeNode {
+		/**
+		 * The Hub associated with this tree node, representing the collection on which
+		 * dependent-property listeners are installed.
+		 */
 		Hub hub;
+
+		/**
+		 * The property name representing the segment of the dependent property path
+		 * leading to this node.
+		 */
 		String property;
+
+		/**
+		 * HubMerger used to track nested collections when the dependent path includes
+		 * a many-link or Hub-returning property.
+		 */
 		HubMerger hubMerger;
+
+		/**
+		 * Child nodes representing the next segments in the dependent-property path.
+		 */
 		HubListenerTreeNode[] children;
+		
+		/**
+		 * Reference to the parent tree node, used to compute root values and navigate
+		 * upward in the dependency tree.
+		 */
 		HubListenerTreeNode parent;
+		
+		/**
+		 * Mapping of original HubListeners to the dependent listeners created for them
+		 * within this subtree node.
+		 */
 		HashMap<HubListener, HubListener[]> hmListener; // list of HubListeners created for a HubListener
+		
+		/**
+		 * Cached reverse-link information for the property represented by this node,
+		 * used to compute root values for dependent-property notifications.
+		 */
 		private OALinkInfo liReverse;
+		
+		/**
+		 * List of calculated property names dependent on this node’s portion of the path.
+		 */
 		private ArrayList<String> alCalcPropertyNames;
 
 		public ArrayList<String> getCalcPropertyNames() {
@@ -81,12 +141,49 @@ public class HubListenerTree {
 		// when an object is removed from a hub, the parent property reference could already be null.
 		//    this will use the masterObject in the hub.
 		//   note: if an object is deleted, it is done on the server and the removed object's parent reference will be null during the remove.
+		/**
+		 * Stores the object removed during the most recent hub.remove event on this node,
+		 * used when parent references may already be cleared.
+		 */
 		Object lastRemoveObject; // object from last hub.remove event
+
+		/**
+		 * The master object associated with the most recent remove event, used when
+		 * reconstructing the root-object notification targets.
+		 */
 		Object lastRemoveMasterObject; // master object from last hub.remove event
+
 		/*
 		 *  This allows getting all of the root objects that need to be notified when a change is made to an object "down" the tree from it.
 		*/
 
+		/**
+		 * Computes the set of root Hub objects that should receive calc-property
+		 * change notifications based on a change occurring at a deeper level in
+		 * the dependency tree.
+		 *
+		 * <p>This method walks upward through the HubListenerTreeNode hierarchy,
+		 * assembling a reverse property-path (when possible) using link metadata.
+		 * If the reverse links are valid, the method attempts to navigate from the
+		 * changed object back toward the root Hub. If reverse-link resolution is
+		 * not possible—or link metadata is incomplete—it falls back to the original
+		 * algorithm or to a finder-based lookup.</p>
+		 *
+		 * <p>The method evaluates whether a reverse path can be used, then selects
+		 * one of three strategies:</p>
+		 * <ul>
+		 *   <li>Use the original upward-walk algorithm via {@code getRootValues_ORIG()}</li>
+		 *   <li>Use a fallback finder-based search when the reverse path is not valid</li>
+		 *   <li>Use a property-path based match for a single-level dependency case</li>
+		 * </ul>
+		 *
+		 * @param obj the object where the change originated; this may be a detail object
+		 *            deep within the dependency tree.
+		 *
+		 * @return an array of root-level objects that should receive the routed
+		 *         calc-property notification; never {@code null}, though it may
+		 *         be empty when no valid roots are found.
+		 */
 		Object[] getRootValues(final Object obj) {
 			// 20171212 reworked to include option to use a finder
 			long ts = System.currentTimeMillis();
@@ -178,6 +275,7 @@ public class HubListenerTree {
 			return objs;
 		}
 
+		//qqqqqqqqqq remove
 		Object[] getRootValues_ORIG(Object obj, boolean bCanQuit) {
 			if (obj == null) {
 				return new Object[0];
@@ -212,6 +310,31 @@ public class HubListenerTree {
 			return newObjs;
 		}
 
+		/**
+		 * Recursively walks up the HubListenerTreeNode hierarchy to compute the
+		 * root-level objects that correspond to the supplied objects at this
+		 * node in the dependency tree.
+		 *
+		 * <p>The method evaluates each object and determines its parent objects
+		 * based on reverse-link metadata, direct property references, or Hub
+		 * membership. For Hub-valued properties, all referenced children (or
+		 * the active object, depending on HubMerger settings) are included.
+		 * For OAObject-valued properties, the referenced parent object is added
+		 * when available.</p>
+		 *
+		 * <p>Once all parent objects for this node are collected, the method
+		 * recursively calls the parent node’s {@code getRootValues(Object[])}
+		 * until the root node is reached. The final resulting array represents
+		 * the complete set of root objects that should receive routed
+		 * calc-property notifications for a change occurring at or below this
+		 * node.</p>
+		 *
+		 * @param objs the objects at the current node for which parent/root
+		 *             objects are being resolved; may be empty but not null.
+		 *
+		 * @return an array of root-level objects associated with the given
+		 *         lower-level objects; never {@code null}, but may be empty.
+		 */
 		private Object[] getRootValues(Object[] objs) {
 			if (parent == null) {
 				return objs; // reached the root
@@ -311,12 +434,6 @@ public class HubListenerTree {
 	public HubListener[] getHubListeners() {
 		return this.listeners;
 	}
-
-	// testing
-	// public static HashMap<HubListener, StackTraceElement[]> hmAll = new HashMap<HubListener, StackTraceElement[]>();
-	public static volatile int ListenerCount;
-
-	private volatile int lastCount; // number of listeners that are set as Last.
 
 	public void addListener(HubListener hl) {
 		if (hl == null) {

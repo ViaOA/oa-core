@@ -42,12 +42,44 @@ import com.viaoa.util.OALogger;
  */
 public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	private static final Logger LOG = OALogger.getLogger(HubEvent.class);
+	
+	/**
+	 * The object associated with this event, such as the added,
+	 * removed, moved, or property-changed object.
+	 */
 	T object;
+	
+	/**
+	 * Positional indices used for add/insert/remove and move events.
+	 * {@code pos} is the original or associated position;
+	 * {@code toPos} is the destination position for move events.
+	 */
 	int pos, toPos;
+	
+	/**
+	 * Flag indicating whether this event has been marked as canceled,
+	 * preventing further processing.
+	 */
 	boolean bCancel;
+	
+	/**
+	 * Optional response text that listeners can set to return
+	 * information back to the event producer.
+	 */
 	String response;
 
-	/** used to testing/watching events. */
+	/**
+	 * Cached resolved old-value object used when translating an
+	 * {@link OAObjectKey} into its corresponding {@link OAObject}
+	 * instance for reverse-link property changes.
+	 */
+	private Object oldValue2;
+	
+	
+	/**
+	 * Internal counter used for debug tracing in the optional
+	 * p(String) diagnostic helper method.
+	 */
 	static int cnt = 0;
 
 	/**
@@ -237,7 +269,6 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 		return toPos;
 	}
 
-	private Object oldValue2;
 
 	/**
 	 * Returns the old value associated with this event. If the old value is

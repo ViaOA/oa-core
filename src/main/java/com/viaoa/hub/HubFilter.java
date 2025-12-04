@@ -61,25 +61,136 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	private static Logger LOG = Logger.getLogger(HubFilter.class.getName());
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * The master Hub containing the full set of objects that the filter
+	 * evaluates and selectively includes in the target Hub.
+	 */
 	protected Hub<T> hubMaster;
+	
+	/**
+	 * Weak reference to the filtered Hub, allowing it to be garbage-collected
+	 * without preventing cleanup of this filter.
+	 */
 	protected WeakReference<Hub<T>> weakHub;
+	
+	/**
+	 * Indicates whether active-object changes should be shared between
+	 * the master Hub and the filtered Hub.
+	 */
 	private boolean bShareAO;
+	
+	/**
+	 * Flag indicating whether the filter has been closed and should no
+	 * longer process events or updates.
+	 */
 	private volatile boolean bClosed;
+	
+	/**
+	 * When true, the filter is intended for server-side filtering only;
+	 * client-side filtering still receives updates.
+	 */
 	protected boolean bServerSideOnly;
 
-	// listener setup for dependent properties
+	/**
+	 * Counter used to generate unique internal names for dependent-property
+	 * listener triggers.
+	 */
 	private static AtomicInteger aiUniqueNameCnt = new AtomicInteger();
+	
+	/**
+	 * Name assigned to a calculated dependent property used for monitoring
+	 * multi-level or calculated property changes.
+	 */
 	private volatile String calcDependentPropertyName;
+	
+	/**
+	 * List of dependent property names or paths that cause the filter to
+	 * refresh when they change.
+	 */
 	private String[] dependentPropertyNames;
+	
+	/**
+	 * Listener registered to monitor dependent properties on the master Hub.
+	 */
 	private HubListener hlDependentProperties;
 
+	/**
+	 * Debug flag enabling additional diagnostics when true.
+	 */
 	public boolean DEBUG;
+	
+	/**
+	 * Listener that monitors the master Hub for changes relevant to filtering.
+	 */
 	private HubListenerAdapter<T> hlHubMaster;
+	
+	/**
+	 * Indicates whether a new-list event is being processed to prevent
+	 * recursive or redundant event handling.
+	 */
 	private volatile boolean bNewListFlag;
 
+	/**
+	 * Counter used to track when the filtered Hub is being cleared,
+	 * preventing updates during that process.
+	 */
 	private final AtomicInteger aiClearing = new AtomicInteger();
+	
+	/**
+	 * Counter indicating whether the filter is currently processing updates,
+	 * used to suppress reentrant operations.
+	 */
 	private final AtomicInteger aiUpdating = new AtomicInteger();
 
+	
+	/**
+	 * Listener monitoring changes in the Hub linked to the filtered Hub.
+	 */
+	private HubListener linkHubListener;
+	
+	/**
+	 * The Hub that the filtered Hub is linked to, used for temporary
+	 * additions based on link relationships.
+	 */
+	private Hub hubLink;
+	
+	/**
+	 * Temporary object used to hold the current linkHub value when the
+	 * filtered Hub must include it regardless of filter rules.
+	 */
+	protected Object objTemp;
+	
+	/**
+	 * Indicates whether the filter should refresh when the linked Hub’s
+	 * active object changes.
+	 */
+	private boolean bRefreshOnLinkChange;
+	
+	/**
+	 * Internal flag used to prevent recursive active-object updates
+	 * between master and filtered Hubs.
+	 */
+	private boolean bIgnoreSettingAO;
+
+	/**
+	 * Collection of filters applied to determine whether objects are
+	 * included in the filtered Hub.
+	 */
+	private ArrayList<OAFilter> alFilters;
+
+	/**
+	 * Marks the starting index for constructing a block filter from
+	 * multiple sequential filters.
+	 */
+	private int iBlockPos = -1;
+	
+	/**
+	 * Tracks the initialization sequence to interrupt and restart
+	 * initialization safely when required.
+	 */
+	private AtomicInteger aiInitializeCount = new AtomicInteger();
+	
+	
 	/**
 	 * Creates a new HubFilter using the supplied master Hub and target Hub.
 	 *
@@ -713,8 +824,6 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		return dependentPropertyNames;
 	}
 
-	private boolean bIgnoreSettingAO;
-
 	/**
 	 * Sets up the filter, attaches listeners to the master Hub, initializes the
 	 * filtered Hub, and configures link-Hub monitoring.
@@ -735,12 +844,6 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		setupLinkHubListener();
 	}
 
-	/**
-	 * listens to link object that filteredHub is linked to, to "temp" add to filteredHub.
-	 */
-	private HubListener linkHubListener;
-	private Hub hubLink;
-	protected Object objTemp; // temp object that is the current linkHub object value
 
 	/**
 	 * Configures a listener on the Hub linked to the filtered Hub. Updates the
@@ -808,7 +911,6 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		hubLink.addHubListener(linkHubListener);
 	}
 
-	private boolean bRefreshOnLinkChange;
 
 	/**
 	 * Sets whether the filter should be refreshed when the linked Hub's active
@@ -930,8 +1032,6 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 	 */
 	public void afterInitialize() {
 	}
-
-	private AtomicInteger aiInitializeCount = new AtomicInteger();
 
 	/**
 	 * Reinitializes the filtered Hub by clearing it, reloading all master objects,
@@ -1288,9 +1388,6 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 			}
 		}
 	}
-
-	private ArrayList<OAFilter> alFilters;
-	private int iBlockPos = -1;
 
 	/**
 	 * Marks the current filter position so subsequent filters can be grouped

@@ -46,31 +46,82 @@ import com.viaoa.util.OAString;
  * <p>Used heavily in analytic or UI dashboards for pivot-like views.</p>
  */
 public class HubGroupBy<F extends OAObject, G extends OAObject> {
-	// from hub that are to be grouped
+
+	/**
+	 * The source Hub containing objects that will be grouped based on
+	 * the grouping property or key expression.
+	 */
 	private Hub<F> hubFrom;
+
+	/**
+	 * The concrete class type of objects contained in the source Hub.
+	 */
 	private final Class<F> classFrom;
+	
+	/**
+	 * The class of the groupBy key objects. Determined lazily from runtime
+	 * events when not explicitly supplied.
+	 */
 	private Class<G> classGroupBy;
 
-	// optional hub to use as groupBy list.  Required if the propertyPath has a "split/gap" (method does not exist)
+	/**
+	 * Optional Hub providing the set of explicit groupBy key objects,
+	 * required when the property path contains a split or non-navigable segment.
+	 */
 	private Hub<G> hubGroupBy;
 
-	// result hub
+	/**
+	 * The result Hub containing OAGroupBy entries, each representing a
+	 * groupBy key and its associated grouped objects.
+	 */
 	private Hub<OAGroupBy<F, G>> hubCombined;
+
+	/**
+	 * Property-path expression used to extract the grouping value from
+	 * each source object.
+	 */
 	private String propertyPath;
 
-	// optional name of Hub property in groupBy object
+	/**
+	 * Optional name of a Hub property within the groupBy object used for
+	 * establishing HubCopy behavior.
+	 */
 	private String hubPropertyName;
 
-	// internal calc prop created (if needed)
+	/**
+	 * Internal calculated property name used when installing dependent
+	 * property listeners on the source Hub.
+	 */
 	private String listenPropertyName;
 
+	/**
+	 * Hub containing synchronized groupBy key objects used for active-object
+	 * propagation and master/detail navigation.
+	 */
 	private Hub<G> hubMaster;
+
+	/**
+	 * Detail Hub representing objects belonging to the active group in the
+	 * combined results.
+	 */
 	private Hub<F> hubDetail;
 
+	/**
+	 * Internal flag used to suppress recursive active-object update handling
+	 * while programmatically modifying AO values.
+	 */
 	private boolean bIgnoreAOChange;
+	
+	/**
+	 * Indicates whether a separate group should be maintained for objects
+	 * whose grouping value is {@code null}.
+	 */
 	private boolean bCreateNullList;
 
-	// used to name internally created calcProps
+	/**
+	 * Counter used for generating unique internal names for calculated
+	 * dependent properties.
+	 */
 	private final static AtomicInteger aiCnt = new AtomicInteger();
 
 	/**

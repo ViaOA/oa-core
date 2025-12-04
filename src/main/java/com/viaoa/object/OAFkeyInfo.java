@@ -37,9 +37,22 @@ import com.viaoa.annotation.OAFkey;
 public class OAFkeyInfo implements java.io.Serializable {
 	static final long serialVersionUID = 1L;
 
+	/**
+	 * Metadata for the source (foreign-key) property participating in the
+	 * foreign-key mapping.
+	 */
 	private OAPropertyInfo fromPropertyInfo;
+	
+	/**
+	 * Metadata for the target property referenced by this foreign-key
+	 * relationship, typically a primary or unique key property.
+	 */
 	private OAPropertyInfo toPropertyInfo;
 
+	/**
+	 * The {@link OAFkey} annotation instance defining this foreign-key
+	 * relationship.
+	 */
 	private OAFkey oaFkey;
 
 	/**

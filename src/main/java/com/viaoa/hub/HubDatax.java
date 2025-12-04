@@ -131,67 +131,116 @@ public class HubDatax implements java.io.Serializable {
 	 */
 	// protected transient int newListCount;
 
-	// If bTrackChanges is true, then all objects that are added to Hub are added to this vector.
-	protected transient Vector vecAdd; // only for OAObjects
+	/**
+	 * Tracks objects added to the Hub when change tracking is enabled.
+	 */
+	protected transient Vector vecAdd;
 
-	// If bTrackChanges is true, then all objects that are removed from Hub are added to this vector.
-	protected transient Vector vecRemove; // only for OAObjects
+	/**
+	 * Tracks objects removed from the Hub when change tracking is enabled.
+	 */
+	protected transient Vector vecRemove;
 
+	/**
+	 * Listener responsible for maintaining sorted order when sorting
+	 * is enabled for this Hub.
+	 */
 	protected transient HubSortListener sortListener;
+	
 	//  info to keep Hub objects sorted when sent to other computers, see HubSerializerDelegate._readResolve - it will set up sorting when received
+	
+	/**
+	 * Name of the property used to sort Hub objects; defaults to the
+	 * sort property defined by link information.
+	 */
 	protected String sortProperty; // defaults to linkInfo.sortProperty
+
+	/**
+	 * Indicates whether sorting is in ascending order; defaults to true.
+	 */
 	protected boolean sortAsc = true;
 
-	// Used to select objects from OADataSource.
+	/**
+	 * Select query used to populate or filter objects loaded from a data source.
+	 */
 	protected transient OASelect select;
 
 	/**
-	 * Flag used by Hub.setFresh() so that active objects are always refreshed from datasource.
-	 * <p>
-	 * Note: this is not implemented.
+	 * Flag indicating whether active objects should always be refreshed
+	 * from the data source; currently not implemented.
 	 */
 	protected boolean refresh = false;
 
-	// Name of property that must be unique for all objects in the Hub.
+	/**
+	 * Name of the property that must hold a unique value among all
+	 * objects in the Hub.
+	 */
 	protected String uniqueProperty;
+
+	/**
+	 * Getter method for retrieving the value of the unique property.
+	 */
 	protected transient Method uniquePropertyGetMethod;
 
+	/**
+	 * Indicates whether this HubDatax state is disabled for processing.
+	 */
 	protected transient boolean disabled;
 
-	/** true if this is for a OAObject */
+	/**
+	 * Identifies whether this Hub stores OAObject instances.
+	 */
 	protected boolean oaObjectFlag;
 
 	/**
-	 * flag set to know if objects can be added or removed. This is false when a detail hub is from an array or non-Hub. Default is true.
+	 * Determines whether objects can be added or removed; becomes false
+	 * when detail Hubs originate from arrays or non-Hub sources.
 	 */
 	protected boolean dupAllowAddRemove = true;
 
-	/** OAObjectInfo for the Class of objects in this Hub. */
-	protected transient OAObjectInfo objectInfo; //
+	/**
+	 * Cached metadata describing the OAObject type stored in this Hub.
+	 */
+	protected transient OAObjectInfo objectInfo;
 
-	/** Misc name/values pairs stored in this Hub. Name is case insensitive. */
+	/**
+	 * Case-insensitive map of arbitrary name/value properties associated
+	 * with this HubDatax instance.
+	 */
 	protected Hashtable hashProperty;
 
-	/** property path(s) used for selectOrder */
+	/**
+	 * Property path(s) specifying alternate ordering for select operations.
+	 */
 	protected String selectOrder;
 
-	/** used to update property in objects to match its position within Hub */
+	/**
+	 * Delegate responsible for maintaining a property that matches
+	 * an object's position within the Hub.
+	 */
 	protected transient HubAutoSequence autoSequence;
 
-	/** makes sure that this Hub will have an object with a reference for each object in another Hub. */
+	/**
+	 * Delegate ensuring the Hub contains an associated object for each
+	 * object found in another Hub.
+	 */
 	protected transient HubAutoMatch autoMatch;
 
-	// Flag to know if add/insert/remove objects should be tracked. see also datam.getTrackChanges()
+	/**
+	 * Flag indicating whether add, insert, and remove operations should
+	 * be tracked for this Hub.
+	 */
 	protected boolean bTrackChanges;
 
-	// 20200302
 	/**
-	 * Hub and property[Path] used for OASelect.whereHub & propertyFromWhereObject
+	 * Hub used for OASelect.whereHub filtering when selecting objects
+	 * from a data source.
 	 */
 	protected transient Hub selectWhereHub;
 
 	/**
-	 * Property[Path] from selectWhereHub to this Hub. ex: from hubCompany, this.hub=campaigns, [hubCompany] "clients.products.campaigns"
+	 * Property path from the selectWhereHub to this Hub, defining how
+	 * related objects are navigated for select filtering.
 	 */
 	protected transient String selectWhereHubPropertyPath;
 }

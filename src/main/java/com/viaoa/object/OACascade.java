@@ -43,16 +43,49 @@ import com.viaoa.hub.Hub;
  */
 public class OACascade {
 	private static Logger LOG = Logger.getLogger(OACascade.class.getName());
-	// convert to this?  private IdentityHashMap hmCascade;
+
+	/**
+	 * Tracks GUIDs of OAObjects that have already been visited during a cascade
+	 * operation, preventing redundant processing and infinite recursion.
+	 */
 	private TreeSet<Long> treeObject;
+
+	/**
+	 * Tracks Hub instances encountered during cascading, ensuring each Hub is
+	 * processed only once.
+	 */
 	private TreeSet<Hub> treeHub;
+	
+	/**
+	 * Optional read/write lock providing thread-safe access to the object
+	 * tracking set when locking is enabled.
+	 */
 	private ReentrantReadWriteLock rwLock;
+	
+	/**
+	 * Optional read/write lock providing thread-safe access to the Hub
+	 * tracking set when locking is enabled.
+	 */
 	private ReentrantReadWriteLock rwLockHub;
 
-	// 20140821 todo: allow for max depth, restrart
+	/**
+	 * Current recursive depth of the cascade traversal, incremented and
+	 * decremented as recursion advances and unwinds.
+	 */
 	private int depth;
+
+	/**
+	 * Optional overflow list used to store objects encountered during deep
+	 * cascading or when additional bookkeeping is needed.
+	 */
 	private ArrayList<Object> alOverflow;
 
+	/**
+	 * Set of classes that should be ignored during cascade tracking; any object
+	 * of a class in this set is treated as already processed.
+	 */
+	private HashSet<Class> hsIgnore;
+	
 	/**
 	 * Creates a new cascade-tracking instance used during recursive graph
 	 * traversal operations. When {@code bUseLocks} is {@code true}, the
@@ -150,8 +183,6 @@ public class OACascade {
 	 * 20160126 not used. confusing: remove from tree or list public void remove(OAObject oaObj) { if (treeObject != null) { if (rwLock !=
 	 * null) rwLock.readLock().lock(); treeObject.remove(oaObj.guid); if (rwLock != null) rwLock.readLock().unlock(); } }
 	 */
-
-	private HashSet<Class> hsIgnore;
 
 	/**
 	 * Marks the specified class so that objects of that type are ignored

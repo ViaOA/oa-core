@@ -33,10 +33,16 @@ import com.viaoa.object.OAObjectInfoDelegate;
 class HubDataMaster implements java.io.Serializable {
 	static final long serialVersionUID = 2L; // used for object serialization
 
-	/** Only used for a Detail Hub, created by Hub.getDetail() */
+	/**
+	 * The master Hub associated with this detail Hub; used only when
+	 * the Hub originates from a detail relationship.
+	 */
 	private transient volatile Hub masterHub;
 
-	/** The object that Hub "belongs" to. */
+	/**
+	 * The object that owns this Hub, representing the source object
+	 * from which the Hub was obtained.
+	 */
 	private transient volatile OAObject masterObject;
 
 	/**
@@ -75,7 +81,10 @@ class HubDataMaster implements java.io.Serializable {
 		return this.masterObject;
 	}
 
-	/** LinkInfo from Detail (MANY) to Master (ONE). */
+	/**
+	 * Link information describing the detail-to-master relationship for
+	 * this Hub, used to access reverse-link metadata.
+	 */
 	protected transient volatile OALinkInfo liDetailToMaster;
 
 	/**

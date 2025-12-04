@@ -56,20 +56,71 @@ import com.viaoa.util.OAStr;
 public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements java.io.Serializable {
 	static final long serialVersionUID = 1L;
 
-	protected Hub hub, hubMaster;
+	/**
+	 * The target Hub that will be synchronized to match the contents of the
+	 * master Hub.
+	 */
+	protected Hub hub;
+	
+	/**
+	 * The master Hub providing source objects that the target Hub must match.
+	 */
+	protected Hub hubMaster;
+
+	/**
+	 * Name of the property used to map objects in the target Hub to matching
+	 * objects or values from the master Hub.
+	 */
 	protected String property;
+	
+	/**
+	 * Indicates whether synchronization is invoked manually instead of
+	 * automatically reacting to Hub events.
+	 */
 	protected boolean bManuallyCalled;
+	
+	/**
+	 * When true, synchronization events initiated on the server will be
+	 * published to clients even if triggered by server-only threads.
+	 */
 	private boolean bServerSideOnly;
+	
+	/**
+	 * Controls whether synchronization logic is active. When false, all update
+	 * operations are skipped.
+	 */
 	private boolean bEnabled = true;
 	
-	
+	/**
+	 * Optional object whose property controls whether synchronization should
+	 * stop dynamically.
+	 */
 	protected OAObject objStop;
+
+	/**
+	 * Name of the property on objStop used to determine whether updates should
+	 * be halted.
+	 */
 	protected String stopProperty; 
 
+	/**
+	 * Flag used to enable diagnostic or debug behavior within synchronization
+	 * operations.
+	 */
     private boolean bDebug;
 
-	protected transient Method getMethod, setMethod;
+    /**
+     * Getter method dynamically resolved for the matching property. Used to
+     * compare objects or extract key values from objects in the target Hub.
+     */
+	protected transient Method getMethod;
 
+	/**
+	 * Setter method dynamically resolved for the matching property. Used to
+	 * assign values to new or synchronized objects in the target Hub.
+	 */
+	protected transient Method setMethod;
+	
 	/**
 	 * Constructs a HubAutoMatch that synchronizes the target hub with the master hub
 	 * based on the specified property. The update behavior can be configured to run
@@ -119,6 +170,10 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	public HubAutoMatch() {
 	}
 
+	/**
+	 * Indicates whether initialization has already occurred, preventing
+	 * duplicate setup when using the default constructor.
+	 */
 	private boolean bInit;
 
 	// required to call if using the second empty constructor
@@ -243,6 +298,9 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 	}
 
+	/**
+	 * Thread-safety guard preventing reentrant or concurrent update operations.
+	 */
 	private AtomicBoolean abUpdating = new AtomicBoolean(false);
 
 	/**

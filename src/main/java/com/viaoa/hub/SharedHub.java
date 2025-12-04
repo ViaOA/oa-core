@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,19 +58,25 @@ package com.viaoa.hub;
  */
 public class SharedHub<TYPE> extends Hub<TYPE> {
     
-    /**
-        Create a Hub that uses the same data/objects as another Hub.
-        @param hub is the Hub that will be shared with.
-    */
+	/**
+	 * Creates a SharedHub that mirrors the data and object references of the
+	 * supplied Hub. Active-object sharing is disabled by default, allowing
+	 * this Hub to maintain its own navigation state.
+	 *
+	 * @param hub the Hub whose data will be shared
+	 */
     public SharedHub(Hub<TYPE> hub) {
     	this(hub, false);
     }
 
     /**
-        Create a Hub that uses the same data/objects as another Hub.
-        @param hub is the Hub that will be shared with.
-        @param bShareActiveObject if true then this Hub will also share/use the same active object as the hub.  Default is false.
-    */
+     * Creates a SharedHub that shares both the underlying data and, optionally,
+     * the active object of the supplied Hub. When {@code bShareActiveObject}
+     * is true, both Hubs track the same active object value.
+     *
+     * @param hub                 the Hub to share data with
+     * @param bShareActiveObject  true to share active object state, false otherwise
+     */
     public SharedHub(Hub<TYPE> hub, boolean bShareActiveObject) {
         if (hub != null) {
             HubDelegate.setObjectClass(this, hub.getObjectClass());
@@ -79,8 +85,11 @@ public class SharedHub<TYPE> extends Hub<TYPE> {
     }
 
     /**
-        Create a Hub that will use the same data/objects as another Hub.
-    */
+     * Constructs a standalone SharedHub with the specified object type.
+     * Data sharing must be configured later by linking it to another Hub.
+     *
+     * @param c the object class stored in this Hub
+     */
     public SharedHub(Class<TYPE> c) {
         super(c);
     }

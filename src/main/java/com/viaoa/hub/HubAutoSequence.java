@@ -63,13 +63,47 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(HubAutoSequence.class.getName());
 
+    /**
+     * Global counter tracking the number of active HubAutoSequence listeners.
+     * Useful for debugging and monitoring system-wide sequencing activity.
+     */
     public static int autoSequenceHubListenerCount;
     
+    /**
+     * The Hub whose objects will receive automatically maintained sequence
+     * values. A HubListener is attached to this Hub when sequencing is enabled.
+     */
     protected Hub hub;
+
+    /**
+     * Name of the numeric OAObject property that stores the sequence value.
+     * The corresponding setter method is resolved through reflection.
+     */
     protected String propertyName;
+
+    /**
+     * Cached setter method for the sequence property. Initialized during setup
+     * and used to update sequence numbers on objects efficiently through
+     * reflection.
+     */
     protected transient Method propertySetMethod;
+
+    /**
+     * Starting sequence number applied to the first object in the Hub.
+     * Subsequent objects receive incremented values when resequenced.
+     */
     protected int startNumber;
+
+    /**
+     * Indicates whether sequence numbers should remain contiguous after object
+     * removal. When true, deletions trigger resequencing to close gaps.
+     */
     protected boolean bKeepSeq;
+
+    /**
+     * When true, sequence updates are performed exclusively on the server and
+     * pushed to clients using Hub messaging, reducing client-side overhead.
+     */
     protected boolean bServerSideOnly;
     
     /**
@@ -259,6 +293,11 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         resequence(0);
     }
         
+    /**
+     * Atomic counter used to detect interleaving or overlapping resequence
+     * operations. Ensures resequencing is performed consistently even under
+     * concurrent Hub events.
+     */
     private final AtomicInteger aiResequenceCnt = new AtomicInteger();  // used instead of synchronization
     
     /**

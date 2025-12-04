@@ -40,19 +40,16 @@ class HubDataUniquex implements java.io.Serializable {
 	/** these options are not enforced on OAObjects, they are used to flag options */
     //	boolean allowNew = true, allowDelete = true, allowEdit = true;
 	
-	/**
-	    Position of active object to set for new list. Can be set to 0 so that first object
-	    is always made the active object whenever a new list is created.  Default is -1 (set to null).
-	    <p>
-	    This can be set for Detail Hubs, so that the first object is active whenever a new list
-	    is create - which is when the master Hub changes its active object.
-	*/
+    /**
+     * Default active-object position for newly created lists; -1 indicates
+     * no default and results in a null active object unless explicitly set.
+     */
 	protected transient int defaultPos = -1;
 	
-	/** Set ActiveObject to null when active object is removed.
-	    Default is false which will go to next object, unless last object in Hub
-	    is being removed, which will set it to previous object.
-	*/
+	/**
+	 * Flag indicating whether the active object should be set to null when
+	 * it is removed from the Hub.
+	 */
 	protected transient boolean bNullOnRemove;
 	
 	/**
@@ -63,14 +60,18 @@ class HubDataUniquex implements java.io.Serializable {
 	// protected transient Vector vecListener;
 	
 	// 20101218 replaces vetListener
+	/**
+	 * Listener tree that manages Hub and object-level event propagation
+	 * for this Hub instance.
+	 */
 	protected transient volatile HubListenerTree listenerTree;
 	
     
 	
 	/**
-	    Detail Hubs that this Hub has.
-	    @see Hub#getDetail
-	*/
+	 * Collection of HubDetail instances representing detail Hubs owned
+	 * by this Hub.
+	 */
 	protected transient volatile Vector<HubDetail> vecHubDetail;
 	
 	/**
@@ -84,77 +85,56 @@ class HubDataUniquex implements java.io.Serializable {
 	
 	
 	/**
-	    "Master" Hub that this Hub is linked to.
-	    <p>
-	    A hub can only be linked to a property in only one "master" hub.
-	    It's active object will then reflect the value of this property in the "master"
-	    hub's active object.  If the active object of the link hub changes, then the
-	    property in the "master" hub will be set to the new object.
-	    @see hub#setLink
+	 * The Hub to which this Hub is linked, defining the master side of
+	 * an active-object linkage relationship.
 	 */
 	protected transient Hub linkToHub;
 	
-	
 	/**
-	    This can be used to set a property in the Link Hub to the value
-	    of the position of the active object in this Hub.
-	    <p>
-	    Example: an object can have a property that is set to 0-9.  Another
-	    Hub can be created with ten objects, and linked to this property.
-	    Instead of setting the property to the object, it is set to the position
-	    of the object.
-	*/
+	 * Indicates whether the link relationship uses positional linking
+	 * instead of object-based linking.
+	 */
 	protected transient boolean linkPos;
 	
 	/**
-	    Property that this Hub is linked to.
-	*/
+	 * Property name on the link target object used for link-to operations.
+	 */
 	protected transient String linkToPropertyName;  // ex: hubDept linked to Emp on property  "dept"
 	
-	/** Method used to get value of link to object. */
+	/**
+	 * Getter method used to retrieve the link-to property value from the
+	 * associated object.
+	 */
 	protected transient Method linkToGetMethod;     //     getDept()
 	
-	/** Method used to set value of link to object. */
+	/**
+	 * Setter method used to assign the link-to property value on the
+	 * associated object.
+	 */
 	protected transient Method linkToSetMethod;     //     setDept()
 	
-	
 	/**
-	    Links can also be set up so that a property in the link Hub is used to update
-	    a property in the linkedTo/Master Hub.
-	    <p>
-	    LinkPropertyName is the name of the property that is used in the Linked Hub.
-	    <p>
-	    Example:
-	    A Hub that has objects of type "State" can be linked to another Hub, so that the State.name
-	    is linked to a property in the Master Hub.  The linkFromPropertyName is "name".
-	
-	*/
+	 * Property name on the link Hub used to update a corresponding
+	 * property on the linked-to (master) Hub.
+	 */
 	protected transient String linkFromPropertyName;
 	
 	/**
-	    Method that gets value from linkFromPropertyName.
-	*/
+	 * Getter method used to retrieve the link-from property value from
+	 * the associated object.
+	 */
 	protected transient Method linkFromGetMethod;
 	
-	
-	
 	/**
-	    Hub Listener used to update active object when the active object in
-	    the Master Hub changes, or when the link property in the Master Hub is changed.
-	*/
+	 * Listener responsible for synchronizing active-object changes between
+	 * this Hub and its linked master Hub.
+	 */
     protected transient HubLinkEventListener hubLinkEventListener;
 	
-	/**
-	    Hub that this Hub is a sharing with.
-	    Hubs can be set up so that they use (share) the same data.  The active object is
-	    not shared, unless specified otherwise.
-	    <p>
-	    Detail Hubs that are using properties that are Hubs will use a shared Hub that is
-	    changed whenever the active object in the Master Hub is changed.
-	
-	    @see Hub#createSharedHub
-	    @see Hub#getDetail
-	*/
+    /**
+     * Hub with which this Hub shares its data list; active object may be
+     * shared depending on configuration.
+     */
 	protected transient Hub sharedHub;
 	
 	
@@ -166,28 +146,28 @@ class HubDataUniquex implements java.io.Serializable {
 //	transient Vector vecSharedHub;
 
 	// 20120715 replaces vecSharedHubs
+	/**
+	 * Weak-reference array tracking Hubs that share the same underlying
+	 * data list as this Hub.
+	 */
 	protected transient volatile WeakReference<Hub>[] weakSharedHubs;	
 	
 	
 	/**
-	    Hub used to add active object to whenever active object is changed in this Hub.
-	    This can be used for building a pick list type program, where a user can select
-	    objects that are then added to a list.
-	*/
+	 * Hub that receives the active object whenever this Hub's active object
+	 * is changed, typically used for pick-list style behavior.
+	 */
 	protected transient Hub addHub;
 
-    /**
-        Used to automatically create a new object in the LinkTo Hub whenever
-        the active object in Link Hub is changed.  The new object will then
-        have its link property set.
-    */
+	/**
+	 * Indicates whether a new object should be automatically created in
+	 * the linked-to Hub when this Hub’s active object changes.
+	 */
     protected transient boolean bAutoCreate;
     
     /**
-     * If true and bAutoCreate, then new objects will be created.
-     * If false and a new object with value already exists, then a new object will not be created
-     *    and the current object will be set to AO
-    */
+     * Determines whether duplicates are allowed when auto-creating objects
+     * in the link-to Hub.
+     */
     protected transient boolean bAutoCreateAllowDups;
-
 }

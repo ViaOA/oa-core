@@ -45,27 +45,43 @@ import com.viaoa.util.OANullObject;
  * short-circuit when no value is needed to avoid unnecessary object creation.
  */
 public class HubData implements java.io.Serializable {
+	/**
+	 * Serialization identifier used to ensure compatibility when HubData
+	 * instances are serialized and deserialized.
+	 */
     static final long serialVersionUID = 1L;  // used for object serialization
+
     private static Logger LOG = Logger.getLogger(HubData.class.getName());
 
-    /** Class of objects in this Hub */
+    /**
+     * The class type of objects stored in the Hub. Used for validation,
+     * metadata lookup, and optimized behavior when working with OAObjects.
+     */
     protected volatile Class objClass;
     
-    // Used to store objects so that the order of the objects is known.
+    /**
+     * Underlying ordered collection of Hub elements. Stores all objects
+     * currently in the Hub and preserves their insertion order.
+     */
     protected transient Vector vector;
 
     /**
-        Counter that is incremented on: add(), insert(), remove(), setting shared hub,
-        remove(), move(), sort(), select().
-        This can be used to know if a hub has been changed without requiring the set up of a HubListener.
-        <p>
-        This is used by OA.JSP components to know if a frame should be updated.  See com.viaoa.html.OATable.
-    */
+     * Counter incremented whenever the Hub’s structure changes (add, remove,
+     * insert, move, sort, select, or shared-hub assignment). Used for efficient
+     * change detection without requiring HubListeners.
+     */
     protected volatile transient int changeCount;
     
-    // used by setChanged
+    /**
+     * Tracks whether structural changes have occurred that require refresh or
+     * downstream synchronization. Works in conjunction with changeCount.
+     */
     protected volatile boolean changed;
     
+    /**
+     * Lazily created extension object holding optional Hub state such as sort
+     * information, change-tracking vectors, metadata, filters, and more.
+     */
     protected transient volatile HubDatax hubDatax; // extension
     
     /**
@@ -309,6 +325,11 @@ public class HubData implements java.io.Serializable {
         }
     }
 
+    /**
+     * Global lookup tracking which HubData instances are currently in an
+     * all-data-loading state, keyed by the HubData object and associated with
+     * the owning thread.
+     */
     private static ConcurrentHashMap<HubData, Thread> hmLoadingAllData = new ConcurrentHashMap<HubData, Thread>(23, .85f);
 
     /**
@@ -351,6 +372,10 @@ public class HubData implements java.io.Serializable {
         return (hmLoadingAllData.remove(this) != null);
     }
 
+    /**
+     * Shared lookup table used to determine whether a HubData instance has
+     * been marked for select-all behavior.
+     */
     private static ConcurrentHashMap<HubData, HubData> hmSelectAllHub = new ConcurrentHashMap<HubData, HubData>(11, .85f);
 
     /**

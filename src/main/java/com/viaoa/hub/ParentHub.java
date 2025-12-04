@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,15 @@ package com.viaoa.hub;
  */
 public class ParentHub<TYPE> extends DetailHub<TYPE> {
 
+	/**
+	 * Constructs a ParentHub that navigates from the active object of the
+	 * supplied master Hub to its parent via the given property path.
+	 * Delegates all behavior to {@link DetailHub}, which provides the
+	 * underlying master/detail linkage mechanics.
+	 *
+	 * @param hubMaster    the master Hub whose active object defines the parent
+	 * @param propertyPath the property path pointing to the parent object
+	 */
     public ParentHub(Hub hubMaster, String propertyPath) {
         super(hubMaster, propertyPath);
     }

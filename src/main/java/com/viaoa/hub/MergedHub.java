@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,27 +64,77 @@ import com.viaoa.object.OAObject;
  */
 public class MergedHub<TYPE> extends Hub<TYPE> {
     
+	/**
+	 * The HubMerger instance that populates and maintains this MergedHub.
+	 * Responsible for traversing the master-root Hub and flattening the
+	 * property-path results into this Hub’s contents.
+	 */
     private HubMerger hm;
 
+    /**
+     * Creates a MergedHub backed by a HubMerger using the given master-root
+     * Hub and property path. Uses default settings of independent active
+     * object and “use all roots.”
+     *
+     * @param clazz         the object type stored in this Hub
+     * @param hubMasterRoot the root Hub from which property-path traversal begins
+     * @param propertyPath  the property path used to collect merged objects
+     */
     public MergedHub(Class<TYPE> clazz, Hub hubMasterRoot, String propertyPath) {
         super(clazz);
         this.hm = new HubMerger(hubMasterRoot, this, propertyPath, false, null, true); 
     }
 
+    /**
+     * Creates a MergedHub with explicit control over whether the HubMerger
+     * should traverse all master-root objects ({@code bUseAll}).
+     *
+     * @param clazz         the object type stored in this Hub
+     * @param hubMasterRoot the root Hub from which traversal begins
+     * @param propertyPath  the merge property path
+     * @param bUseAll       true to use all root objects, false for only the active one
+     */
     public MergedHub(Class<TYPE> clazz, Hub hubMasterRoot, String propertyPath, boolean bUseAll) {
         super(clazz);
         this.hm = new HubMerger(hubMasterRoot, this, propertyPath, false, null, bUseAll); 
     }
     
+    /**
+     * Full constructor allowing advanced HubMerger configuration, including
+     * shared-active-object mode and initial sort order applied to the merged
+     * results.
+     *
+     * @param clazz              the object type stored in this Hub
+     * @param hubMasterRoot      the root Hub for property-path merging
+     * @param propertyPath       the path defining which objects to merge
+     * @param bShareActiveObject true to share active-object state with master Hub
+     * @param selectOrder        optional sort order for the HubMerger
+     * @param bUseAll            true to merge from all roots, false for only the active one
+     */
     public MergedHub(Class<TYPE> clazz, Hub hubMasterRoot, String propertyPath, boolean bShareActiveObject, String selectOrder, boolean bUseAll) {
     	super(clazz);
     	this.hm = new HubMerger(hubMasterRoot, this, propertyPath, bShareActiveObject, selectOrder, bUseAll); 
     }
 
+    /**
+     * Returns the underlying HubMerger responsible for populating this
+     * MergedHub. Can be used to inspect or adjust merging behavior.
+     *
+     * @return the HubMerger associated with this MergedHub
+     */
     public HubMerger getHubMerger() {
         return this.hm;
     }
 
+    /**
+     * Convenience constructor that allows creating a MergedHub starting from
+     * a single OAObject instead of an existing master Hub. An ad-hoc Hub is
+     * created containing the supplied object as its root.
+     *
+     * @param clazz        the object type stored in this Hub
+     * @param obj          the single root object from which merging begins
+     * @param propertyPath the merge property path
+     */
     public MergedHub(Class<TYPE> clazz, OAObject obj, String propertyPath) {
         super(clazz);
         

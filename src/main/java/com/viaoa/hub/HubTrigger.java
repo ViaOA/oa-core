@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,23 +61,62 @@ import com.viaoa.util.OAFilter;
 public abstract class HubTrigger<T extends OAObject> extends HubFilter<T> {
     private static final long serialVersionUID = 1L;
     
+    /**
+     * Creates a HubTrigger that monitors the given master Hub using no filter
+     * and no dependent property paths. Delegates to the superclass constructor
+     * to initialize filtered-Hub behavior.
+     *
+     * @param hubMaster the master Hub to observe for trigger events
+     */
     public HubTrigger(Hub<T> hubMaster) {
         super(hubMaster, null);
     }
+    
+    /**
+     * Creates a HubTrigger with an explicit filter and optional dependent
+     * property paths. When objects satisfy the filter and enter the filtered
+     * view, {@link #onTrigger(OAObject)} is invoked.
+     *
+     * @param hubMaster               the Hub being monitored
+     * @param filter                  filter determining which objects enter the trigger view
+     * @param dependentPropertyPaths  optional property paths whose changes may affect filtering
+     */
     public HubTrigger(Hub<T> hubMaster, OAFilter filter, String ... dependentPropertyPaths) {
         super(hubMaster, null, filter, dependentPropertyPaths);
     }
 
+    /**
+     * Adds an object to the filtered view. If this is not part of initial
+     * HubFilter population, invokes {@link #onTrigger(OAObject)} to signal
+     * that the object newly satisfies the trigger criteria.
+     *
+     * @param obj             the object entering the filtered view
+     * @param bIsInitialzing  true if called during initialization, false otherwise
+     */
     @Override
     protected void addObject(T obj, boolean bIsInitialzing) {
         super.addObject(obj, bIsInitialzing);
         if (bIsInitialzing) return;
         onTrigger(obj);
     }
+    
+    /**
+     * Removes the object from the filtered view. Delegates entirely to the
+     * superclass removal logic without additional trigger behavior.
+     *
+     * @param obj the object being removed from the filtered view
+     */
     @Override
     protected void removeObject(T obj) {
         super.removeObject(obj);
     }
     
+    /**
+     * Callback invoked whenever an object newly satisfies the trigger criteria
+     * and enters the filtered view. Subclasses implement application-specific
+     * response logic.
+     *
+     * @param obj the object causing the trigger event
+     */
     public abstract void onTrigger(T obj);
 }

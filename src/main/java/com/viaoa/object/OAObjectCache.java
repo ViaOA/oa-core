@@ -48,15 +48,38 @@ import java.util.logging.Logger;
  */public class OAObjectCache {
 	private static Logger LOG = Logger.getLogger(OAObjectCache.class.getName());
 
+	/**
+	 * Primary cache structure storing OAObjects by class and GUID.
+	 * Each OAObject class maps to a GUID → WeakRef table ensuring
+	 * single-instance identity while allowing garbage collection.
+	 */
 	private final ConcurrentHashMap<
 	    Class<? extends OAObject>,
 	    ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>>> 
 	    hmOAObjectByGuid = new ConcurrentHashMap<>(151, 0.75F);	
 	
+	/**
+	 * Reference queue used to detect when cached objects have been
+	 * garbage-collected so their cache entries can be purged.
+	 */
 	private final ReferenceQueue<OAObject> refQueue = new ReferenceQueue<>();
+	
+	/**
+	 * Secondary index enabling lookup of objects by business (primary)
+	 * keys instead of GUID.
+	 */
 	private final OAObjectIndex objectIndex = new OAObjectIndex();
 
+	/**
+	 * Counter tracking the number of get-lookup operations performed,
+	 * used to periodically trigger reference-queue cleanup.
+	 */
 	private int cntGetObject;
+	
+	/**
+	 * Counter tracking how many cached objects were reclaimed by the
+	 * garbage collector and subsequently purged from the cache.
+	 */
 	private int cntGCd;
 	
 	/**

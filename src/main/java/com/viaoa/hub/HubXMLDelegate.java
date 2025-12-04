@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,34 @@ import com.viaoa.xml.OAXMLWriter;
  */
 public class HubXMLDelegate {
 
-    /**
-	    Called by OAXMLWriter to store all objects in xml file.
-	*/
+	/**
+	 * Writes the contents of {@code thisHub} to XML using the supplied writer.
+	 * Converts the boolean {@code bKeyOnly} flag into the appropriate writer
+	 * mode and delegates to the 4-argument {@link #write(Hub, OAXMLWriter, String, int, OACascade)}
+	 * method.
+	 *
+	 * @param thisHub  the Hub whose contents are being serialized
+	 * @param ow       XML writer receiving the output
+	 * @param tagName  optional tag name to wrap the Hub contents
+	 * @param bKeyOnly true to write only object keys, false for full serialization
+	 * @param cascade  cascade options controlling nested object serialization
+	 */
 	public static void write(Hub thisHub, OAXMLWriter ow, final String tagName, boolean bKeyOnly, OACascade cascade) {
 		write(thisHub, ow, tagName, bKeyOnly ? OAXMLWriter.WRITE_KEYONLY : OAXMLWriter.WRITE_YES, cascade);
 	}
 
+	/**
+	 * Serializes all objects in the Hub using the given write type. Wraps the
+	 * output in the provided tag name if non-null, ensuring proper push/pop
+	 * behavior on the writer stack. Delegates actual content generation to
+	 * the private {@link #_write(Hub, OAXMLWriter, String, int, OACascade)}.
+	 *
+	 * @param thisHub   the Hub whose objects are written
+	 * @param ow        the XML writer
+	 * @param tagName   optional outer tag name
+	 * @param writeType configuration flag determining full or key-only output
+	 * @param cascade   cascade settings for nested OAObject serialization
+	 */
     public static void write(Hub thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade) {
         if (thisHub == null || ow == null) return;
         try {
@@ -50,7 +71,19 @@ public class HubXMLDelegate {
         }
     }
 	
-	// 2006/09/26
+    /**
+     * Core implementation responsible for generating the XML representation of
+     * the Hub. Handles indentation, tag formatting, key-only logic, and
+     * per-object serialization via {@link OAObjectXMLDelegate#write}.
+     * Also manages pre-scan and removal tracking for objects that will be
+     * serialized to avoid redundant output.
+     *
+     * @param thisHub   the Hub being serialized
+     * @param ow        the XML writer producing the output
+     * @param tagName   wrapper tag name, or null for default <Hub> tags
+     * @param writeType determines full, key-only, or conditional key-only output
+     * @param cascade   cascade options governing nested serialization
+     */
 	private static void _write(Hub thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade) {
 	    boolean bKeyOnly = (writeType == OAXMLWriter.WRITE_KEYONLY || writeType == OAXMLWriter.WRITE_NONEW_KEYONLY);
 	    ow.indent();

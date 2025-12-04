@@ -52,35 +52,155 @@ import com.viaoa.util.OAString;
  * are tracked to aid UI enablement/visibility logic.
  */
 public abstract class HubChangeListener {
+	
+	/**
+	 * Array of rule definitions monitored by this listener. Each entry specifies
+	 * a hub, optional property path, comparison logic, and associated listener
+	 * configuration.
+	 */
 	protected HubProp[] hubProps = new HubProp[0];
+	
+	/**
+	 * Debug flag enabling diagnostic behavior within the listener’s evaluation
+	 * and event-handling routines when set to true.
+	 */
 	public boolean DEBUG;
+	
+	/**
+	 * Reference to the most recently processed HubEvent. Used to prevent
+	 * duplicate processing of the same event instance.
+	 */
 	private HubEvent lastHubEvent;
+	
+	/**
+	 * Holds the message describing the cause of the most recent rule failure
+	 * during evaluation. Used to build tooltips and UI feedback.
+	 */
 	private String failureReason;
 
 	/**
-	 * Specific types of comparisons.
+	 * Enumeration representing specific comparison types used by
+	 * HubChangeListener when evaluating hub or property rules.
+	 * Each enum constant carries a flag indicating whether the
+	 * comparison should evaluate only the active object (AO).
 	 */
 	public enum Type {
+		/**
+		 * Comparison type with no specific rule, initialized with
+		 * use-AO-only behavior enabled.
+		 */
 		Unknown(true),
+
+		/**
+		 * Comparison type indicating that the hub must be valid.
+		 * Evaluated using active-object-only mode.
+		 */
 		HubValid(true),
+		
+		/**
+		 * Comparison type requiring the hub to be not valid.
+		 * Evaluated using active-object-only mode.
+		 */
 		HubNotValid(true),
+		
+		/**
+		 * Comparison type requiring the hub to be valid and have
+		 * zero size. Active-object-only mode is disabled.
+		 */
 		HubEmpty(false),
+		
+		/**
+		 * Comparison type requiring the hub to be valid and contain
+		 * one or more objects. Active-object-only mode is disabled.
+		 */
 		HubNotEmpty(false),
+		
+		/**
+		 * Comparison type requiring the hub's active object to be null.
+		 * Evaluated using active-object-only mode.
+		 */
 		AoNull(true), // hub.activeObject
+		
+		/**
+		 * Comparison type requiring the hub's active object to be not null,
+		 * evaluated using active-object-only mode.
+		 */
 		AoNotNull(true),
+		
+		/**
+		 * Comparison type requiring the hub's active object to exist and be new.
+		 * Active-object-only mode enabled.
+		 */
 		AoNew(true),
+		
+		/**
+		 * Comparison type requiring the hub's active object to exist and not be new.
+		 * Active-object-only mode enabled.
+		 */
 		AoNotNew(true),
+		
+		/**
+		 * Comparison type that always evaluates to true.
+		 * Active-object-only mode enabled.
+		 */
 		AlwaysTrue(true),
+		
+		/**
+		 * Comparison type that always evaluates to false.
+		 * Active-object-only mode enabled.
+		 */
 		AlwaysFalse(true),
+		
+		/**
+		 * Comparison type that evaluates true only when
+		 * OAContext.isSuperAdmin() returns true.
+		 * Active-object-only mode enabled.
+		 */
 		OnlySuperAdmin(true), // OAContext.isSuperAdmin must be true
+		
+		/**
+		 * Comparison type requiring the specified property of the
+		 * active object to be null. Active-object-only mode enabled.
+		 */
 		PropertyNull(true),
+		
+		/**
+		 * Comparison type requiring the specified property of the
+		 * active object to be not null. Active-object-only mode enabled.
+		 */
 		PropertyNotNull(true),
+		
+		/**
+		 * Comparison type requiring the specified property of the
+		 * active object to be empty. Active-object-only mode enabled.
+		 */
 		PropertyEmpty(true),
+		
+		/**
+		 * Comparison type requiring the specified property of the
+		 * active object to be non-empty. Active-object-only mode enabled.
+		 */
 		PropertyNotEmpty(true),
+		
+		/**
+		 * Comparison type that uses an object callback to determine
+		 * whether the specified property of the active object is enabled.
+		 * Active-object-only mode enabled.
+		 */
 		ObjectCallbackEnabled(true),
+		
+		/**
+		 * Comparison type that uses an object callback to determine
+		 * whether the specified property of the active object is visible.
+		 * Active-object-only mode enabled.
+		 */
 		ObjectCallbackVisible(true);
 
-		private boolean bUseAoOnly; // instead of the full hub
+		/**
+		 * Flag indicating whether this comparison type should evaluate
+		 * only the hub's active object rather than all objects.
+		 */
+		private boolean bUseAoOnly;
 		
 		public boolean useAoOnly() {
 			return bUseAoOnly;
@@ -1238,17 +1358,77 @@ public abstract class HubChangeListener {
 	 * determining when a rule should be ignored due to overrides.
 	 */
 	public static class HubProp {
+
+		/**
+		 * Hub associated with this rule. Determines the source of active object,
+		 * validity checks, and property evaluations.
+		 */
 		public Hub<?> hub;
+		
+		/**
+		 * Original property path used for evaluation. May contain dotted paths that
+		 * are expanded or normalized for listener resolution.
+		 */
 		public String propertyPath; // original propertyPath
+		
+		/**
+		 * Property name used by HubListeners. Dotted paths are replaced with
+		 * underscores to create a listener-friendly identifier.
+		 */
 		public String listenToPropertyName; // name used for listener - in case property path has '.' in it, then this will replace with '_'
+		
+		/**
+		 * Expanded array of property paths when the original propertyPath contains
+		 * dotted segments. Used to attach listeners to all dependent properties.
+		 */
 		public String[] props;
+		
+		/**
+		 * Listener instance attached to the associated hub for monitoring relevant
+		 * HubEvents that may trigger rule evaluation.
+		 */
 		public HubListener hubListener;
+		
+		/**
+		 * Comparison value or rule used to evaluate the hub or property when
+		 * bUseCompareValue is true.
+		 */
 		public Object compareValue;
+		
+		/**
+		 * Flag indicating whether the compareValue field should participate in
+		 * evaluation logic.
+		 */
 		public boolean bUseCompareValue;
+		
+		/**
+		 * Optional filter applied to evaluate the rule. If present, the filter
+		 * overrides comparison logic and is evaluated instead.
+		 */
 		public OAFilter filter;
+		
+		/**
+		 * When true, rule evaluation is restricted to the active object of the hub
+		 * rather than iterating through all objects.
+		 */
 		public boolean bAoOnly;
+		
+		/**
+		 * Marks this rule as ignored when another rule overrides it. Ignored rules
+		 * are skipped during evaluation.
+		 */
 		public boolean bIgnore; // flag used when another rule overrides this one
+		
+		/**
+		 * Failure message specific to this rule instance, set when evaluation does
+		 * not pass. Propagated up to the parent listener.
+		 */
 		public String failureReason;
+		
+		/**
+		 * Optional descriptive label used for tooltips or UI reporting of this
+		 * rule’s purpose.
+		 */
 		public String description;
 
 		/**
@@ -1563,6 +1743,10 @@ public abstract class HubChangeListener {
 		}
 	}
 
+	/**
+	 * Optional list of chained HubChangeListeners. After this listener fires
+	 * its onChange callback, each chained listener is invoked in sequence.
+	 */
 	protected ArrayList<HubChangeListener> alHubChangeListener;
 
 	/**

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,38 +59,103 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
     static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(HubSortListener.class.getName()); 
     
+    /**
+     * Internal identifier used by Hub listener registration to receive
+     * notifications when sort-dependent properties change. Generated from
+     * the parsed sort property paths.
+     */
     String sortPropertyName = null;  // uniquely generated PropertyName used by hubListener(..,prop) based on property and sort properties 
+
+    /**
+     * Array of parsed property paths extracted from the sort expression.
+     * Each entry represents a dependent property that triggers re-sorting
+     * when modified.
+     */
     private String[] sortPropertyPaths;  // parsed sort strings, used as dependent propertyPaths for hubListener
+    
+    /**
+     * Original sort property-path string supplied when the listener was
+     * created. May contain multiple properties separated by commas or
+     * spaces, and may include optional "asc" or "desc" tokens.
+     */
     String propertyPaths;  // orig sort string
     
+    /**
+     * The Hub whose ordering this listener is responsible for maintaining.
+     * All property-change and list-change events are evaluated against this
+     * Hub instance.
+     */
     Hub hub;
+    
+    /**
+     * Comparator used for sorting Hub contents. If null, an OAComparator
+     * will be created automatically based on the property paths.
+     */
     Comparator comparator;
+    
+    /**
+     * Indicates whether sorting is ascending (true) or descending (false),
+     * applied when OAComparator or property-path sorting is used.
+     */
     boolean bAscending;
 
     /**
-      Used by Hub for sorting objects.
-      @param propertyPaths list of property paths ( comma or space delimited).  Can include "asc" or "desc" after
-      a propertyPath name.
-      All property paths will be listened to, so that changes to them will updated the sorted Hub.
-      @see OAComparator#OAComparator
-      @see Hub#sort instead of using this object directly.
-    */
+     * Creates a HubSortListener that uses property-path-based sorting.
+     * Delegates to the full constructor with no explicit comparator.
+     *
+     * @param hub           the Hub to keep sorted
+     * @param propertyPaths property path(s) used for sorting
+     * @param bAscending    true for ascending order, false for descending
+     */
     public HubSortListener(Hub hub, String propertyPaths, boolean bAscending) {
         this(hub, null, propertyPaths, bAscending);
     }
+
+    /**
+     * Creates a HubSortListener using the specified property paths and
+     * defaulting to ascending sort order.
+     *
+     * @param hub           the Hub to keep sorted
+     * @param propertyPaths property path(s) used for sorting
+     */
     public HubSortListener(Hub hub, String propertyPaths) {
         this(hub, null, propertyPaths, true);
     }
 
-
+    /**
+     * Creates a HubSortListener that uses a custom comparator instead of
+     * property-path sorting.
+     *
+     * @param hub        the Hub to keep sorted
+     * @param comparator explicit Comparator to use for ordering
+     * @param bAscending true if the comparator’s natural ordering should be
+     *                   treated as ascending
+     */
     public HubSortListener(Hub hub, Comparator comparator, boolean bAscending) {
         this(hub, comparator, null, bAscending);
     }
+
+    /**
+     * Creates a HubSortListener using the provided comparator and defaulting
+     * to ascending sort order.
+     *
+     * @param hub        the Hub to keep sorted
+     * @param comparator explicit Comparator for sorting
+     */
     public HubSortListener(Hub hub, Comparator comparator) {
         this(hub, comparator, null, true);
     }
 
-
+    /**
+     * Core constructor that initializes sort configuration, parses property
+     * paths when needed, creates an OAComparator if no comparator is
+     * supplied, and registers the listener with the Hub.
+     *
+     * @param hub           the Hub whose sort order is maintained
+     * @param comparator    custom comparator, or null for property-based sorting
+     * @param propertyPaths property-path expression for sorting
+     * @param bAscending    true for ascending sort, false for descending
+     */
     public HubSortListener(Hub hub, Comparator comparator, String propertyPaths, boolean bAscending) {
         this.hub = hub;
         this.comparator = comparator;
@@ -106,16 +171,32 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
         hub.addHubListener(this); 
     }
 
+    /**
+     * Ensures that listener cleanup occurs if this object is finalized.
+     * Invokes {@link #close()} before garbage collection.
+     *
+     * @throws Throwable if superclass finalization fails
+     */
     protected void finalize() throws Throwable {
         super.finalize();
         close();
     }
 
+    /**
+     * Returns the parsed list of property paths used for sorting. These
+     * property names correspond to dependent values monitored for updates.
+     *
+     * @return array of sort-dependent property paths, or null
+     */
     public String[] getPropeties() {
     	return sortPropertyPaths;
     }
 
-    
+    /**
+     * Parses the sort expression into individual property paths, validates
+     * their existence using reflection, builds the internal property list,
+     * and registers Hub listeners for dependent-property change events.
+     */
     protected void setupPropertyPaths() {
     	if (propertyPaths == null) return;
 
@@ -175,11 +256,21 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
         }
     }
 
+    /**
+     * Removes this listener from the Hub, stopping all sort-related event
+     * monitoring and cleanup of listener registrations.
+     */
     public void close() {
         hub.removeHubListener(this);
     }
 
-    // if detail hub changes then one of the properties has changed
+    /**
+     * Invoked when the Hub replaces its entire list.
+     * Attempts to re-sort the Hub up to three times in case Hub changes
+     * occur concurrently from another thread.
+     *
+     * @param e event describing the list replacement
+     */
     public @Override void onNewList(HubEvent e) {
         Hub h = (Hub) e.getSource();
         if (h == hub) {
@@ -195,7 +286,20 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
         }
     }
     
+    /**
+     * Guard flag used to prevent recursive calls to sortMove during
+     * property-change handling. Ensures that sort adjustments occur only
+     * once per triggering event.
+     */
     private boolean bCallingSortMove; // 20141205
+
+    /**
+     * Responds to property-change events affecting sort-dependent
+     * properties. Temporarily suppresses cross-client messages while
+     * repositioning the modified object using {@link HubAddRemoveDelegate#sortMove}.
+     *
+     * @param e property-change event
+     */
     public @Override void afterPropertyChange(HubEvent e) {
         if (bCallingSortMove) return;
         String s = e.getPropertyName();
@@ -211,8 +315,4 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
             }
         }
     }
-
 }
-
-
-

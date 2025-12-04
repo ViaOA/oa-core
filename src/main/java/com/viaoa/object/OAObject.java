@@ -175,8 +175,17 @@ import com.viaoa.util.OAString;
 @XmlTransient()
 public class OAObject implements java.io.Serializable, Comparable<Object> {
 
+	
+	/**
+	 * Serialization version identifier used by Java’s built-in serialization
+	 * mechanism to validate compatibility when deserializing OAObject instances.
+	 */
 	private static final long serialVersionUID = 1L; // internally used by Java Serialization to identify this version of OAObject.
 
+	/**
+	 * Framework version string assigned during class initialization. Used for
+	 * diagnostics, logging, and compatibility checks.
+	 */
 	private static final String oaversion;
 
 	/**
@@ -192,9 +201,15 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		return oaversion;
 	}
 
-	// system wide to track all changes to OAObject
+	/**
+	 * System-wide logger used for tracking OAObject-level events and diagnostic
+	 * messages.
+	 */
 	public static final Logger OALOG = OALogger.getLogger("OAObject");
 
+	/**
+	 * Class-specific logger used internally for OAObject-related diagnostics.
+	 */
 	private static final Logger LOG = OALogger.getLogger(OAObject.class);
 	
 	
@@ -237,19 +252,42 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	}
 
 
+	/**
+	 * Globally unique identifier for this OAObject instance. Used to enforce
+	 * single-instance identity across the Object Graph.
+	 */
 	protected long guid; // global identifier for this object
+	
 //	protected volatile OAObjectKey objectKey; // Object identifier
+
+	/**
+	 * Tracks whether this object has unsaved property changes. Initialized to
+	 * true for newly constructed objects.
+	 */
 	protected volatile boolean changedFlag = true; // flag to know if this object has been changed
+
+	/**
+	 * Indicates whether the object is newly created and not yet saved or loaded
+	 * from a datasource.
+	 */
 	protected volatile boolean newFlag = true; // flag to know if this object is new (not yet saved).  The object key properties can be changed as long as isNew is true.
+	
+	/**
+	 * Bit-array tracking which primitive properties are currently null. Indexed
+	 * according to OAObjectInfo’s primitive-property ordering.
+	 */
 	protected byte[] nulls; // keeps track of which primitive type properties that are NULL. Uses bit position, based on OAObjectInfo getPrimitiveProperties() position
+	
+	/**
+	 * Flag indicating whether the object has been logically deleted according to
+	 * OA deletion rules.
+	 */
 	protected volatile boolean deletedFlag;
 
-	// list of Hub Collections that this object is a member of.
-	// OAObject uses these Hubs for sending events.  See: OAObjectHubDelegate
-	// elements will be one of the following:
-	//   Hub - if a reference to object needs to be maintained, so that it wont be GCd and can be saved
-	//   null - empty slot
-	//   WeakReference<Hub> (default) - so that it does not hold the Hub from being GCd
+	/**
+	 * List of hub references in which this object is a member. Stored as weak
+	 * references so unused hubs can be garbage-collected.
+	 */
 	protected transient volatile WeakReference<Hub<?>>[] weakhubs;
 
 	/**
@@ -258,21 +296,40 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * The objects in the Hub can be OAObjectKey values that will automatically be retrieved and converted to the correct class of object.
 	 */
 
-	/** managed by OAObjectPropertyDelegate.java */
+	/**
+	 * Storage array for simple and link properties. Elements contain OAObject,
+	 * Hub, OAObjectKey, or auxiliary metadata values.
+	 */
 	protected volatile transient Object[] properties; // stores references (oaobj, hub, oaobjkey), or misc property for object.  ex: [0]="Employee" [1]=Emp [2]="Order" [3]=oakey
 
-	/** Cascade rule where no reference objects will be included. */
+	/**
+	 * Cascade constant indicating that no linked objects should participate in
+	 * change, save, or delete propagation.
+	 */
 	public static final int CASCADE_NONE = 0;
 
-	/** Cascade rule where all defined rules for references will be included. This is default for save() and delete(). */
+	/**
+	 * Cascade constant meaning that only links configured with cascade rules
+	 * participate in propagation. Default for save/delete operations.
+	 */
 	public static final int CASCADE_LINK_RULES = 1;
 
-	/** Cascade rule where all only the owned references will be included. */
+	/**
+	 * Cascade constant specifying that only owned links should participate in
+	 * cascade operations.
+	 */
 	public static final int CASCADE_OWNED_LINKS = 2;
 
-	/** Cascade rule where all reference objects are followed, even if cascade rule is false. */
+	/**
+	 * Cascade constant indicating that all link relationships are included during
+	 * cascade traversal regardless of metadata.
+	 */
 	public static final int CASCADE_ALL_LINKS = 4;
 
+	/**
+	 * Global counter tracking the number of OAObject instances created during the
+	 * lifetime of the application runtime.
+	 */
 	public static volatile int cntNew;
 
 	/**

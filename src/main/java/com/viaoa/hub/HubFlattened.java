@@ -35,10 +35,29 @@ import com.viaoa.object.OAObjectInfo;
  * </ul>
  */
 public class HubFlattened<TYPE extends OAObject> {
+	
+	/**
+	 * The root Hub representing the top of the recursive hierarchy from which all
+	 * descendant objects will be flattened.
+	 */
 	private Hub<TYPE> hubRoot;
+	
+	/**
+	 * The target Hub that will contain the non-recursive, flattened collection of
+	 * all descendant objects from the root hierarchy.
+	 */
 	private Hub<TYPE> hubFlat;
-	// private OALinkInfo liToRoot;
+	
+	/**
+	 * Link information describing the recursive parent reference used to navigate
+	 * upward in the hierarchy. Identifies the link that makes the model recursive.
+	 */
 	private OALinkInfo liRecursiveToParent;
+	
+	/**
+	 * Internal HubMerger used to populate and maintain the flattened Hub by merging
+	 * all descendant objects based on the recursive link structure.
+	 */
 	private HubMerger<TYPE, TYPE> hm;
 
 	/**

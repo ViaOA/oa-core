@@ -41,23 +41,73 @@ import com.viaoa.annotation.OAMethod;
 public class OAMethodInfo implements java.io.Serializable {
     static final long serialVersionUID = 1L;    
 
+    /**
+     * The name of the method represented by this metadata entry.
+     */
 	private String name;
 
+	/**
+	 * Name of the property that determines whether this method is enabled.
+	 */
     private String enabledProperty;
+
+    /**
+     * Boolean value that must be matched for the method to be enabled.
+     */
     private boolean enabledValue;
+    
+    /**
+     * Name of the property that determines whether this method is visible.
+     */
     private String visibleProperty;
+    
+    /**
+     * Boolean value that must be matched for the method to be visible.
+     */
     private boolean visibleValue;
 	
+    /**
+     * Name of the property that determines whether this method is enabled
+     * based on the current context.
+     */
     private String contextEnabledProperty;
+    
+    /**
+     * Context-based enabled value that must match for the method to be enabled.
+     */
     private boolean contextEnabledValue;
+    
+    /**
+     * Name of the property that determines whether this method is visible
+     * based on the current context.
+     */
     private String contextVisibleProperty;
+    
+    /**
+     * Context-based visible value that must match for the method to be visible.
+     */
     private boolean contextVisibleValue;
     
+    /**
+     * Java reflection Method invoked when this metadata entry's method is
+     * executed dynamically by the OA runtime.
+     */
     private transient Method objectCallbackMethod;
-    private OAMethod oaMethod;
-    private String[] viewDependentProperties;
-    private String[] contextDependentProperties;
     
+    /**
+     * Annotation metadata describing the method's behavior and configuration.
+     */
+    private OAMethod oaMethod;
+    
+    /**
+     * Property names whose changes affect the method's visibility state.
+     */
+    private String[] viewDependentProperties;
+    
+    /**
+     * Property names whose changes affect the method's context-dependent behavior.
+     */
+    private String[] contextDependentProperties;
     
     /**
      * Creates a new, empty method-metadata descriptor.
