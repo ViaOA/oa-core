@@ -35,7 +35,12 @@ package com.viaoa.object;
  */
 public class OAObjectLocal extends OAObject {
 
-	// Object Info 
+	/**
+	 * Static metadata definition for this local-only object type.
+	 * Configured in the class initializer to disable persistence,
+	 * caching, and automatic initialization so that instances of
+	 * this class operate solely in memory.
+	 */
 	protected static OAObjectInfo oaObjectInfo;
 	
 	/**

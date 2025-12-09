@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,79 +78,205 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
 
     private static Logger LOG = Logger.getLogger(OATypeAhead.class.getName());
 
-    // base hub
+    /**
+     * The root hub providing the search context. When present, finder-based
+     * lookups begin from this hub’s active object or full collection.
+     */
     protected Hub<F> hub;
+    
+    /**
+     * Optional list of target objects used for type-ahead matching when a hub
+     * is not supplied. Represents the direct in-memory search source.
+     */
     protected List<T> alTo;    
 
-    /* flag to know if searches that use a finder only use the root Hub's AO */
+    /**
+     * Flag indicating whether searches using a finder should restrict evaluation
+     * to the active object of the root hub rather than the full graph.
+     */
     private boolean bUseAOOnly;
     
     /**
-     *  pp from objects F to to objects T
-     *  this is not used/needed if finder is not null.
+     * Property path from objects of type F to objects of type T. Used when a
+     * finder is configured to traverse from the root hub to target objects.
      */
     protected String finderPropertyPath;
+    
+    /**
+     * Parsed representation of {@link #finderPropertyPath}. Enables evaluation of
+     * the path during finder-based traversal.
+     */
     protected OAPropertyPath ppFinder;
     
-    /** 
-     * property in T to match with search text.
+    /**
+     * Property path in target type T used to extract the value for matching user
+     * input. Defines which property supplies the searchable text.
      */
     protected String matchPropertyPath;
+    
+    /**
+     * Parsed representation of {@link #matchPropertyPath}. Used to retrieve the
+     * match value from each object during search operations.
+     */
     protected OAPropertyPath ppMatch;
 
     /**
-     * pp from T used for display value
+     * Property path used to retrieve the display value for matched objects.
+     * Determines what text the user sees in the UI result list.
      */
     protected String displayPropertyPath;
+    
+    /**
+     * Parsed representation of {@link #displayPropertyPath}. Enables formatted
+     * or converted retrieval of display text.
+     */
     protected OAPropertyPath ppDisplay;
+    
+    /**
+     * Optional formatting string applied when producing the display value for
+     * matched objects.
+     */
     protected String displayFormat;    
     
     /**
-     * pp from T used for sorting the matched objects.
+     * Property path used to extract the value for sorting matched objects.
+     * Controls ordering of type-ahead results.
      */
     protected String sortValuePropertyPath; 
+    
+    /**
+     * Parsed representation of {@link #sortValuePropertyPath}. Used to obtain
+     * sortable values during result ordering.
+     */
     protected OAPropertyPath ppSortValue;
+    
+    /**
+     * Optional formatting string applied when deriving the sort value used to
+     * order matched results.
+     */
     protected String sortValueFormat;    
 
     /**
-     * pp from T used for dropdown display
+     * Property path used to generate the dropdown display text shown in UI
+     * selection widgets.
      */
     protected String dropDownDisplayPropertyPath;
-    protected OAPropertyPath ppDropDownDisplay;
-    protected String dropDownDisplayFormat;
-
     
     /**
-     * additional custom finder for filtering T objects
+     * Parsed representation of {@link #dropDownDisplayPropertyPath}. Supports
+     * formatted retrieval of dropdown display content.
+     */
+    protected OAPropertyPath ppDropDownDisplay;
+    
+    /**
+     * Optional formatting string applied when producing dropdown display values
+     * for matched objects.
+     */
+    protected String dropDownDisplayFormat;
+
+    /**
+     * Optional custom filter used to include or exclude objects during matching.
+     * Applied in addition to text-based filtering logic.
      */
     protected OAFilter<T> filter;
     
     /**
-     * To class T using finderPropertyPath
+     * Target class type for objects being searched. Determined from the root hub
+     * or the final link of the finder property path.
      */
     private Class<T> classTo;
     
-    /*
-     * used to get from hub<F>.activeObj to hub<T>
+    /**
+     * Finder used to retrieve target objects (type T) from the hub’s object graph
+     * based on the configured finder property path. Enables graph-based traversal
+     * instead of flat list scanning.
      */
     protected OAFinder<F,T> finder;
 
+    /**
+     * The raw search text supplied for the most recent type-ahead lookup.
+     * Used when performing match evaluation.
+     */
     protected String searchText;
+
+    /**
+     * Tokenized representation of the search text, split into uppercase segments.
+     * Used to ensure that all segments match against the object's searchable value.
+     */
     protected String[] searchTextSplit;
     
+    /**
+     * Minimum number of characters required before initiating a search.
+     * A value of -1 indicates no minimum threshold.
+     */
     protected int minInputLength = -1;
+
+    /**
+     * Maximum number of results allowed in the type-ahead output.
+     * A value of zero or less implies no explicit limit.
+     */
     protected int maxResults;
+    
+    /**
+     * Flag indicating whether the full display value should be shown as a hint
+     * within the associated text field.
+     */
     protected boolean showHint=false;
     
+    /**
+     * Read/write lock providing thread-safe coordination for concurrent
+     * type-ahead searches. Ensures exclusive write access during search
+     * execution.
+     */
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    
+    /**
+     * Version counter used to cancel stale or superseded searches. Each new
+     * search increments the counter, allowing prior searches to detect
+     * cancellation.
+     */
     private final AtomicInteger aiSearch = new AtomicInteger(); 
+    
+    /**
+     * Tracks GUIDs of objects already included in search results, preventing
+     * duplicates when multiple paths or templates produce the same object.
+     */
     private final HashSet<Long> hsGuid = new HashSet<>();
     
+    /**
+     * Optional template string used to derive the match value for comparison.
+     * When defined, template-based formatting overrides property-based matching.
+     */
     protected String matchTemplate;
+    
+    /**
+     * Compiled representation of {@link #matchTemplate}. Used to produce the
+     * formatted match value for each evaluated object.
+     */
     protected OATemplate templateMatch;
+    
+    /**
+     * Optional template string used to produce the display value shown in
+     * type-ahead results.
+     */
     protected String displayTemplate;
+    
+    /**
+     * Compiled representation of {@link #displayTemplate}. Used for formatting
+     * display output when a template is defined.
+     */
     protected OATemplate templateDisplay;
+    
+    /**
+     * Template used to construct the dropdown display value for results shown
+     * in UI selection widgets.
+     */
     protected String dropDownDisplayTemplate;
+    
+    /**
+     * Compiled form of {@link #dropDownDisplayTemplate}. Generates formatted
+     * dropdown display values when enabled.
+     */
     protected OATemplate templateDropDownDisplay;
 
     
@@ -205,10 +331,21 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
     }
     
 
-    
     /**
-     * Helper class to enter all of the params.
-     * @author vvia
+     * Parameter container used to configure an {@link OATypeAhead} instance.
+     * <p>
+     * Provides definitions for all matching, display, sorting, filtering, and
+     * finder-related settings. Instances of this class are passed into the
+     * {@link OATypeAhead#OATypeAhead(Hub, OATypeAheadParams)} constructor to
+     * initialize the type-ahead engine.
+     *
+     * <h3>Responsibilities</h3>
+     * <ul>
+     *   <li>Defines property paths for finder, match, display, sort, and dropdown output.</li>
+     *   <li>Holds optional formats and templates associated with each property path.</li>
+     *   <li>Includes filtering logic, minimum input thresholds, and maximum result limits.</li>
+     *   <li>Supports hint display and active-object–only evaluation.</li>
+     * </ul>
      */
     public static class OATypeAheadParams<F extends OAObject,T extends OAObject> {
         public String finderPropertyPath;

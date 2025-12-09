@@ -50,18 +50,89 @@ import com.viaoa.util.OAString;
  */
 public class OAObjectImportMatchDelegate {
 
+	/**
+	 * Defines a single import-match operation used during JSON/POJO import
+	 * when a target OAObject must be located or created without relying on
+	 * primary keys.  
+	 *
+	 * <p>An ImportMatch bundles together:</p>
+	 * <ul>
+	 *   <li>The source object participating in the import.</li>
+	 *   <li>The link definition pointing to the target object type.</li>
+	 *   <li>A list of {@link ImportMatchDetail} items, each defining
+	 *       a property/value rule used to identify the target object.</li>
+	 *   <li>An optional {@code ownerDetail} identifying which match rule
+	 *       resolves the owner when the target type is an owned object.</li>
+	 * </ul>
+	 *
+	 * <p>Instances of this class are consumed by
+	 * {@link OAObjectImportMatchDelegate#process(ImportMatch)}, which performs
+	 * the actual resolution: searching cache, search queries, or creating new
+	 * objects and required hierarchy when no match is found.</p>
+	 */
 	public static class ImportMatch {
+		/**
+		 * The source object from which import-match resolution begins.
+		 * Represents the object whose property or link requires identifying
+		 * or constructing a corresponding target object.
+		 */
 		public OAObject fromObject;
+		
+		/**
+		 * Link definition describing the relationship from the source object
+		 * to the target object being resolved or created.
+		 */
 		public OALinkInfo liTo;
+
+		/**
+		 * Collection of property/value match definitions used to identify the
+		 * correct target object. Each detail corresponds to one matching rule.
+		 */
 		public final List<ImportMatchDetail> importMatchDetails = new ArrayList<>();
 
-		// if liTo.object is owned, then this is the owner
+		/**
+		 * Optional detail indicating which matching rule identifies the
+		 * owner of the target object, when the link-to object is owned.
+		 */
 		public ImportMatchDetail ownerDetail;
 	}
 
+	/**
+	 * Represents a single property/value rule used during an import-match
+	 * resolution.  
+	 *
+	 * <p>Each detail corresponds to one matching criterion, defining:</p>
+	 * <ul>
+	 *   <li>{@code propertyName} — the name used in the POJO or source data.</li>
+	 *   <li>{@code value} — the imported value used for lookup.</li>
+	 *   <li>{@code propertyPath} — the full OA property path to apply when
+	 *       building search queries or creating required hierarchy objects.</li>
+	 * </ul>
+	 *
+	 * <p>Multiple details can be combined to form a composite uniqueness
+	 * definition (“identity by content”), enabling OA to reconstruct or
+	 * locate objects without primary keys.</p>
+	 */
 	public static class ImportMatchDetail {
-		public String propertyName; // used in pojo
+		/**
+		 * Name of the property on the source POJO used during import.
+		 * May differ from the property path if the rule is defined
+		 * against a linked object's field.
+		 */
+		public String propertyName; 
+		
+		/**
+		 * The value supplied by the import source used to identify or
+		 * create the target object. Null values indicate that no target
+		 * object should be created.
+		 */
 		public Object value;
+
+		/**
+		 * Full property path (possibly multi-level) used for matching.
+		 * This path is used both for query-building and for creation of
+		 * any required intermediate hierarchical objects.
+		 */
 		public String propertyPath;
 	}
 

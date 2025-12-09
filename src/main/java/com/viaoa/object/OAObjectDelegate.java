@@ -86,26 +86,63 @@ public class OAObjectDelegate {
 
 	private static Logger LOG = Logger.getLogger(OAObjectDelegate.class.getName());
 
+	/**
+	 * Reserved property name representing an object's "new" lifecycle state.
+	 */
 	public static final String WORD_New = "NEW";
+
+	/**
+	 * Reserved property name representing an object's "changed" lifecycle state.
+	 */
 	public static final String WORD_Changed = "CHANGED";
+	
+	/**
+	 * Reserved property name representing an object's "deleted" lifecycle state.
+	 */
 	public static final String WORD_Deleted = "DELETED";
+	
+	/**
+	 * Reserved property name representing whether auto-add behavior is enabled
+	 * for reverse-link insertion.
+	 */
 	public static final String WORD_AutoAdd = "AutoAdd";
 
+	/**
+	 * Shared Boolean constant used when firing lifecycle-related property-change
+	 * events.
+	 */
 	public static final Boolean TRUE = Boolean.TRUE;
+	
+	/**
+	 * Shared Boolean constant used when firing lifecycle-related property-change
+	 * events.
+	 */
 	public static final Boolean FALSE = Boolean.FALSE;
 
 	/** Static global lock used when setting global properties (ex: guidCounter) */
 
-	/** global counter used for local objects. Value is positive */
+	/**
+	 * Global positive GUID generator used for locally created objects. Ensures
+	 * unique, monotonically increasing identifiers.
+	 */
 	static protected final AtomicLong guidCounter = new AtomicLong(); // unique identifier needed for objects past from client/server
 
-	/** global counter used for local objects. Value is negative */
+	/**
+	 * Global negative GUID generator used for local-only classes to avoid
+	 * collisions with server-issued GUIDs.
+	 */
 	static protected final AtomicLong localGuidCounter = new AtomicLong();
 
-	/** Flag to know if finalized objects should be automatically saved. Default is false. */
+	/**
+	 * Flag controlling whether objects that are garbage collected should be
+	 * automatically saved. Default is disabled.
+	 */
 	protected static boolean bFinalizeSave = false;
 
-	/** tracks which OAObjects should not automatically add themself to a detailHub when an oaObj property is set. */
+	/**
+	 * Tracks OAObjects for which automatic reverse-link insertion is disabled.
+	 * Presence of a GUID in this map indicates auto-add is turned off.
+	 */
 	private static final ConcurrentHashMap<Long, Long> hmAutoAdd = new ConcurrentHashMap<Long, Long>();
 
 	/**

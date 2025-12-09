@@ -37,15 +37,60 @@ package com.viaoa.object;
  * @see OATriggerListener
  */
 public class OATrigger {
-    protected String name;
-    protected Class rootClass;
-    protected String[] propertyPaths;
-    protected OATriggerListener triggerListener;
-    protected final boolean bOnlyUseLoadedData; 
-    protected final boolean bServerSideOnly;
-    protected final boolean bUseBackgroundThread;
-    protected final boolean bUseBackgroundThreadIfNeeded;
-    protected OATrigger[] dependentTriggers;
+
+	/**
+	 * The name assigned to this trigger.
+	 * Used to uniquely identify the trigger instance within the system.
+	 */
+	protected String name;
+    
+	/**
+	 * The root class from which all property paths are evaluated.
+	 * Serves as the reference type for resolving trigger dependencies.
+	 */
+	protected Class rootClass;
+    
+	/**
+	 * The list of property paths that this trigger monitors relative to the root class.
+	 * Each path represents a dependency that can cause the trigger to fire.
+	 */
+	protected String[] propertyPaths;
+    
+	/**
+	 * The listener invoked when any monitored property path produces an event.
+	 * Defines the behavior executed when the trigger fires.
+	 */
+	protected OATriggerListener triggerListener;
+    
+	/**
+	 * Flag indicating whether trigger evaluation must rely only on already-loaded data.
+	 * When true, the trigger will not cause additional data retrieval or loading.
+	 */
+	protected final boolean bOnlyUseLoadedData; 
+    
+	/**
+	 * Indicates whether this trigger is restricted to server-side execution.
+	 * Prevents execution on client environments when set to true.
+	 */
+	protected final boolean bServerSideOnly;
+    
+	/**
+	 * Determines whether the trigger should always execute in a background thread.
+	 * Provides asynchronous processing for trigger events.
+	 */
+	protected final boolean bUseBackgroundThread;
+    
+	/**
+	 * Indicates that trigger execution may occur in a background thread only if required.
+	 * Enables conditional asynchronous processing based on workload or event context.
+	 */
+	protected final boolean bUseBackgroundThreadIfNeeded;
+    
+	/**
+	 * Optional array of triggers that depend on this trigger.
+	 * Used to form dependency chains among multiple triggers.
+	 */
+	protected OATrigger[] dependentTriggers;
     
     /**
      * Creates a trigger that monitors one or more property paths relative to a

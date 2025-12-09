@@ -71,32 +71,113 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	static final long serialVersionUID = 1L;
 	private static final Logger LOG = Logger.getLogger(OAObjectSerializer.class.getName());
 
+	/**
+	 * Identifier for the client associated with this serialization session.
+	 * Used to include client context in logging and diagnostic output.
+	 */
 	private int clientId; // 20171216
+	
+	/**
+	 * Unique wrapper identifier written to the stream and used for tracking
+	 * serialization sessions, debugging, and correlation of transmitted data.
+	 */
 	private int id; // 20171216
+
+	/**
+	 * The primary root object to be serialized. This may be an OAObject,
+	 * a Hub, or any serializable structure supported by the framework.
+	 */
 	private Object object; // object to serialize
+	
+	/**
+	 * Optional secondary object to be serialized along with the primary
+	 * object. Used when two related objects must be transported together.
+	 */
 	private Object extraObject; // extra object to serialize
 
+	/**
+	 * Indicates whether compression is enabled for this serializer session.
+	 * When true, output is wrapped in Deflater streams for reduced size.
+	 */
 	private transient boolean bCompress;
+	
+	/**
+	 * Stack used to store and restore include/exclude property lists during
+	 * nested serialization callbacks. Ensures per-object property scoping.
+	 */
 	private transient Stack<Tuple<String[], String[]>> stack = new Stack(); // used for callback, to store properties to include and exclude
+	
+	/**
+	 * Stack of objects currently being serialized. Tracks the active
+	 * serialization path so callbacks can determine context and depth.
+	 */
 	private transient Stack stackObject = new Stack(); // used for callback, to know which objects are currently being serialized
+	
+	/**
+	 * Optional list of classes whose reference properties must be excluded
+	 * from serialization. Used to suppress entire reference types.
+	 */
 	private transient Class[] excludedReferences;
 
+	/**
+	 * Maximum allowed recursion depth for serializing linked objects. When
+	 * exceeded, references are written to an overflow list rather than
+	 * serialized immediately.
+	 */
 	private transient int overflowLimit = 100; // this might need to be adjusted for handling stackOverflow
 
-	// how many objects are currently being serialized.  Level is changed after callback.eetup(..) is called
+	/**
+	 * Current serialization depth counter, incremented before serializing
+	 * an object and decremented after completion.
+	 */
 	private transient int levelsDeep;
+	
+	/**
+	 * Count of all objects serialized in the current session, including
+	 * nested and overflow objects.
+	 */
 	private int totalObjectsWritten;
 
+	/**
+	 * Shared empty array used to represent explicit include/exclude lists
+	 * when all or no properties should be serialized.
+	 */
 	final static String[] EmptyProperties = new String[0];
 
+	/**
+	 * List of property names that are explicitly included during
+	 * serialization. When set, all other properties are excluded.
+	 */
 	transient String[] includeProps;
+
+	/**
+	 * List of property names that are explicitly excluded during
+	 * serialization. When set, all others are included.
+	 */
 	transient String[] excludeProps;
 
+	/**
+	 * Optional callback used to control serialization behavior, including
+	 * selective inclusion of reference properties and custom value mapping.
+	 */
 	private transient OAObjectSerializerCallback callback;
 
+	/**
+	 * Holds the previously active serializer assigned to thread-local
+	 * storage while this serializer temporarily becomes the active one.
+	 */
 	private transient OAObjectSerializer holdOAObjectSerializer; 
 	
+	/**
+	 * Global counter incremented for each write operation. Used only for
+	 * diagnostic logging to trace serialization activity.
+	 */
 	private static volatile int wcnter;
+
+	/**
+	 * Global counter incremented for each read operation. Used to trace
+	 * deserialization activity when debug mode is enabled.
+	 */
 	private static volatile int rcnter;
 
 	// Solution for handling deep object graphs that can cause stack overflow exceptions:
@@ -104,13 +185,77 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	//   The graph will only allow for "overflowLimit" recursive objects, and will then
 	//   add additional OAObjectSerializers that will then be included.
 	private transient OAObjectSerializer parentWrapper;
+	
+	/**
+	 * Holds the collection of overflow descriptors recorded when the serializer
+	 * exceeds the configured recursion-depth limit. Each {@link Overflow} entry
+	 * represents a deferred reference that could not be serialized in the
+	 * primary pass.
+	 *
+	 * <p>The list is created lazily on the first overflow event and consumed
+	 * during {@code finishWrite}, where each deferred object is serialized by its
+	 * own {@link OAObjectSerializer} wrapper. During deserialization,
+	 * {@code finishRead} uses this list to reconnect the reconstructed overflow
+	 * objects back to their parent properties.</p>
+	 */
 	private transient LinkedList<Overflow> listOverflow;
 
+
+	/**
+	 * Lightweight descriptor used to record an overflow event during serialization
+	 * when the recursion-depth limit ({@code overflowLimit}) is exceeded.
+	 *
+	 * <p>When a referenced object is too deep in the graph to serialize in the
+	 * current pass, an Overflow instance is created holding:</p>
+	 * <ul>
+	 *   <li>the parent {@link OAObject} whose property will later receive the value,</li>
+	 *   <li>the property name being assigned,</li>
+	 *   <li>the object that triggered overflow,</li>
+	 *   <li>a snapshot of the active serialization stack,</li>
+	 *   <li>the depth at which overflow occurred.</li>
+	 * </ul>
+	 *
+	 * <p>Overflow entries are written out in {@code finishWrite(ObjectOutputStream)}
+	 * and later rehydrated in {@code finishRead(ObjectInputStream)}, where the
+	 * deferred objects are reconstructed using new {@link OAObjectSerializer}
+	 * wrappers and reassigned to their parent properties.</p>
+	 */
 	static class Overflow implements Serializable {
+
+		/**
+		 * The parent OAObject that owns the reference property which could not be
+		 * serialized due to exceeding the recursion-depth limit. During
+		 * {@code finishRead}, this parent is used to assign the resolved overflow
+		 * object's value back into {@link #property}.
+		 */
 		OAObject parentObject;
+		
+		/**
+		 * Name of the reference property on {@link #parentObject} that will receive
+		 * the reconstructed overflow object once it is deserialized by the wrapper
+		 * created for deferred processing.
+		 */
 		String property;
+		
+		/**
+		 * The serialization depth at which this overflow event occurred. Used by the
+		 * overflow wrapper to adjust its own {@code overflowLimit} so it can safely
+		 * continue serialization without re-triggering overflow immediately.
+		 */
 		transient int levelsDeep;
+		
+		/**
+		 * The actual referenced object that could not be serialized in the primary
+		 * pass due to depth constraints. This object is later serialized by a new
+		 * {@link OAObjectSerializer} wrapper during {@code finishWrite}.
+		 */
 		transient Object object;
+		
+		/**
+		 * A cloned snapshot of the serializer's {@code stackObject} at the moment the
+		 * overflow occurred. The overflow wrapper inherits this stack so its callback
+		 * logic and reference-path context match the original serialization path.
+		 */
 		transient Stack stack;
 	}
 

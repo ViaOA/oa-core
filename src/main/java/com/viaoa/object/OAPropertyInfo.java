@@ -51,73 +51,333 @@ import com.viaoa.util.OAString;
 public class OAPropertyInfo implements java.io.Serializable {
 	static final long serialVersionUID = 1L;
 
+	/**
+	 * The property name as defined in the OA model. Used as the identifier
+	 * for this property throughout metadata and runtime access.
+	 */
 	private String name;
+
+	/**
+	 * Lowercase representation of the property name. If not explicitly set,
+	 * it is derived automatically from {@link #name}.
+	 */
 	private String lowerName;
 
+	/**
+	 * Display length hint for UI components. Represents the typical number
+	 * of characters shown when rendering this property.
+	 */
 	private int displayLength;
-    private int minLength;
-    private int maxLength;
+
+	/**
+	 * Minimum allowed length for string-based property values. Used for
+	 * validation rules generated from the OA model.
+	 */
+	private int minLength;
+    
+	/**
+	 * Maximum allowed length for string-based property values. Used by UI,
+	 * validation, and persistence layers to enforce size constraints.
+	 */
+	private int maxLength;
 
 	// UI grid/table column header name
+	/**
+	 * Optional display name used when this property appears as a column
+	 * header in UI grid or table components.
+	 */
 	private String uiColumnName;
+	
+	/**
+	 * Recommended display width for UI table/grid columns representing
+	 * this property.
+	 */
 	private int uiColumnLength;
 
+	/**
+	 * Indicates whether this property must have a non-null, non-empty
+	 * value. Used by validation rules and UI editing components.
+	 */
 	private boolean required;
+
+	/**
+	 * Marks this property as part of the object’s identifier (primary key
+	 * or business key). Used for matching, caching, and persistence.
+	 */
 	private boolean id;
+	
+	/**
+	 * Indicates that this property value must be unique among all instances
+	 * of the containing OAObject type.
+	 */
 	private boolean unique;
+
+	/**
+	 * Specifies whether the property value is automatically assigned by
+	 * the framework or database, rather than manually set by application code.
+	 */
 	private boolean autoAssign;
+
+	/**
+	 * The Java type associated with this property. Determines formatting,
+	 * validation, persistence behavior, and UI editing rules.
+	 */
 	private Class classType;
+
+	/**
+	 * Number of decimal places used for numeric formatting. A value of -1
+	 * indicates that no explicit decimal precision is defined.
+	 */
 	private int decimalPlaces = -1;
+
+	/**
+	 * Marks this property as storing BLOB (binary large object) data.
+	 * Used by persistence and serialization components.
+	 */
 	private boolean isBlob;
+
+	/**
+	 * Indicates whether this property participates in a name-value pattern
+	 * and is associated with a predefined list of valid name/value entries.
+	 */
 	private boolean isNameValue;
+	
+	/**
+	 * Human-readable display name for UI components. When not set, the
+	 * framework may derive one from {@link #name}.
+	 */
 	private String displayName;
 
+	/**
+	 * Indicates that this property stores Unicode text and may require
+	 * Unicode-specific encoding or database column handling.
+	 */
 	private boolean isUnicode;
+
+	/**
+	 * Marks this property as storing data that is SHA-hashed rather than
+	 * plain text. Used for password fields or integrity-checked values.
+	 */
 	private boolean isSHAHash;
+	
+	/**
+	 * Indicates whether the property value is stored in encrypted form.
+	 * Used by encryption/decryption layers during persistence.
+	 */
 	private boolean isEncrypted;
+	
+	/**
+	 * Holds the list of valid name-value entries for this property when it is
+	 * configured as a name-value type. Lazily created on first access.
+	 */
 	private Hub<String> hubNameValue;
+	
+	/**
+	 * Holds the list of valid display-name entries associated with this property.
+	 * Lazily created on first access, typically used by UI selection components.
+	 */
 	private Hub<String> hubDisplayNameValue;
+	
+	/**
+	 * Indicates whether this property represents a currency value. Influences
+	 * formatting, validation, and UI behavior.
+	 */
 	private boolean isCurrency;
+	
+	/**
+	 * Optional callback method associated with this property. Invoked by the
+	 * framework during property-level event processing. Marked transient because
+	 * reflection members are not serializable.
+	 */
 	private transient Method objectCallbackMethod;
+	
+	/**
+	 * Tracks whether this property’s metadata has been processed and finalized by
+	 * OAObjectInfoDelegate. Prevents reprocessing.
+	 */
 	private boolean isProcessed;
+	
+	/**
+	 * Indicates whether this property stores HTML content. Used by formatting and
+	 * serialization layers to preserve markup.
+	 */
 	private boolean isHtml;
+	
+	/**
+	 * Indicates whether this property stores JSON content. Enables JSON-specific
+	 * formatting or validation behaviors.
+	 */
 	private boolean isJson;
+	
+	/**
+	 * Marks this property as a timestamp value. Influences time-zone handling,
+	 * formatting, and persistence behavior.
+	 */
 	private boolean isTimestamp;
+	
+	/**
+	 * Cached flag indicating whether the Java type associated with this property
+	 * is a primitive type. Updated when {@link #classType} is assigned.
+	 */
 	private boolean bIsPrimitive;
 
+	/**
+	 * Name of the property used to determine whether this property is enabled.
+	 * Supports dynamic UI and rule-based enable/disable logic.
+	 */
 	private String enabledProperty;
+
+	/**
+	 * Static enabled value used when {@link #enabledProperty} is unset.
+	 * Determines whether this property is treated as enabled.
+	 */
 	private boolean enabledValue;
+	
+	/**
+	 * Name of the property used to determine whether this property is visible.
+	 * Supports dynamic visibility rules in UI layers.
+	 */
 	private String visibleProperty;
+	
+	/**
+	 * Static visibility value applied when {@link #visibleProperty} is unset.
+	 */
 	private boolean visibleValue;
+	
+	/**
+	 * Indicates whether this property is associated with submit-processing
+	 * semantics, commonly used in web or workflow components.
+	 */
 	private boolean isSubmit;
+	
+	/**
+	 * Marks this property as representing an object’s status field, used for
+	 * workflow or lifecycle processing.
+	 */
 	private boolean isObjectStatus;
 
+	/**
+	 * Property name used to determine whether this property is enabled within a
+	 * context-dependent rule set.
+	 */
 	private String contextEnabledProperty;
+	
+	/**
+	 * Static enabled value applied under context-dependent visibility rules when
+	 * no dynamic property name is provided.
+	 */
 	private boolean contextEnabledValue;
+	
+	/**
+	 * Property name used to determine whether this property is visible under a
+	 * context-dependent rule set.
+	 */
 	private String contextVisibleProperty;
+	
+	/**
+	 * Static visibility value applied under context-based rules when no explicit
+	 * property controls visibility.
+	 */
 	private boolean contextVisibleValue;
 
+	/**
+	 * List of property names whose value or behavior depends on the evaluation
+	 * of this property. Used to support cross-property interaction rules.
+	 */
 	private String[] contextDependentProperties;
+
+	/**
+	 * Array of property names whose behavior depends on the evaluation or
+	 * visibility of this property in UI views. Supports dynamic view-binding
+	 * and conditional UI updates.
+	 */
 	private String[] viewDependentProperties;
+	
+	/**
+	 * Indicates whether null-tracking is enabled for primitive-typed values.
+	 * When true, the framework maintains a separate null flag so primitives
+	 * can participate in nullable semantics.
+	 */
 	private boolean trackPrimitiveNull = true;
 
+	/**
+	 * Reference to the OAProperty annotation that defines metadata such as
+	 * column mapping, editability, length, formatting, and validation rules.
+	 */
 	private OAProperty oaProperty;
 
+	/**
+	 * Indicates whether time-zone adjustments should be ignored for this
+	 * property. Used for date/time fields that must remain “as entered.”
+	 */
 	private boolean ignoreTimeZone;
+
+	/**
+	 * Optional property path used to determine the time zone when evaluating
+	 * or converting timestamp values for this property.
+	 */
 	private String timeZonePropertyPath;
+	
+	/**
+	 * When true, values assigned to this property should be converted to
+	 * uppercase. Used by formatting and validation layers.
+	 */
 	private boolean isUpper;
+	
+	/**
+	 * When true, values assigned to this property should be converted to
+	 * lowercase. Used by formatting and validation layers.
+	 */
 	private boolean isLower;
+	
+	/**
+	 * Indicates whether this property contains sensitive information that
+	 * should be masked or excluded from logs, JSON output, or diagnostics.
+	 */
 	private boolean sensitiveData;
 
+	/**
+	 * Marks this property as a candidate for matching during import
+	 * operations. Used to identify existing objects when loading external
+	 * data sets.
+	 */
 	private boolean importMatch;
+
+	/**
+	 * Name of the enum property associated with this property. Used for
+	 * mapping string values to enums during serialization or UI selection.
+	 */
 	private String enumPropertyName;
 
+	/**
+	 * OAColumn annotation metadata defining database column behavior,
+	 * including name, length, precision, nullability, and column type.
+	 */
 	private OAColumn oaColumn;
 
+	/**
+	 * Optional formatting string used to display or parse this property.
+	 * Applies to numeric, date/time, and other formatted values.
+	 */
 	private String format;
+
+	/**
+	 * Indicates whether this property represents a foreign-key identifier
+	 * only, without loading the full referenced object.
+	 */
 	private boolean isFkeyOnly;
 
+	/**
+	 * When true, this property should be excluded from generated POJO
+	 * classes. Used when exposing the field to external layers is not
+	 * desirable or appropriate.
+	 */
 	private boolean noPojo;
+
+	/**
+	 * Key position used when generating POJO classes. Helps determine the
+	 * ordering of key fields for comparison and serialization purposes.
+	 */
 	private int pojoKeyPos;
 
 	

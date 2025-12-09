@@ -48,7 +48,20 @@ import com.viaoa.util.OADateTime;
 public class OAObjectEmptyHubDelegate {
     private static Logger LOG = Logger.getLogger(OAObjectEmptyHubDelegate.class.getName());
 
+    /**
+     * In-memory structure storing empty-hub metadata.
+     *
+     * The outer map is keyed by class name.
+     * The inner map is keyed by integer primary-key values and contains
+     * arrays of property names representing reference hubs that were
+     * recorded as loaded and empty.
+     */
     private static HashMap<String, HashMap<Integer, String[]>> map;    
+
+    /**
+     * Flag indicating whether empty-hub tracking is enabled.
+     * When disabled, no metadata is saved or restored.
+     */
     private static boolean bEnabled;
     
     /**

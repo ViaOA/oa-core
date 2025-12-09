@@ -47,7 +47,18 @@ import com.viaoa.util.OAString;
 public class OAPreLoader {
 	private static Logger LOG = Logger.getLogger(OAPreLoader.class.getName());
 
+	/**
+	 * The root class from which the preload operation begins. All objects of this
+	 * class are loaded first, and subsequent linked objects are preloaded based on
+	 * the configured property path.
+	 */
 	private Class classFrom;
+	
+	/**
+	 * The property-path expression defining which linked objects should be
+	 * preloaded. When non-empty, it is parsed into link metadata using
+	 * {@link OAPropertyPath}.
+	 */
 	private String strPropertyPath;
 
 	/**

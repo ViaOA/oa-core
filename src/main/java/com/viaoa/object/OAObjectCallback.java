@@ -63,40 +63,141 @@ import com.viaoa.util.OAString;
 public class OAObjectCallback {
 	static final long serialVersionUID = 1L;
 
+	/**
+	 * The Hub associated with this callback, providing contextual information
+	 * about the collection or owner from which the callback originated.
+	 */
 	private Hub hub;
+
+	/**
+	 * The target OAObject associated with this callback, representing the
+	 * domain object being evaluated or modified.
+	 */
 	private OAObject object;
 
+	/**
+	 * The semantic callback type indicating what rule, action, or UI behavior
+	 * is being evaluated. Defaults to {@link Type#Unknown}.
+	 */
 	private Type type = Type.Unknown;
+
+	/**
+	 * Bitmask of flags indicating which checking rules are applied when
+	 * evaluating the callback. Defaults to {@code CHECK_ALL}.
+	 */
 	private int checkType = CHECK_ALL;
 
-	// level of checking to include
+	/**
+	 * Bitmask flag indicating that no checking rules should be applied.
+	 */
 	public static final int CHECK_None = 0;
+
+	/**
+	 * Bitmask flag enabling evaluation related to processed-state rules.
+	 */
 	public static final int CHECK_Processed = 1; // used to include checking for processed flags
+	
+	/**
+	 * Bitmask flag enabling checking of enabled-property rules.
+	 */
 	public static final int CHECK_EnabledProperty = 2;
+
+	/**
+	 * Bitmask flag enabling checking of user-enabled property rules.
+	 */
 	public static final int CHECK_UserEnabledProperty = 4;
+	
+	/**
+	 * Bitmask flag indicating that callback methods should be invoked as
+	 * part of rule evaluation.
+	 */
 	public static final int CHECK_CallbackMethod = 8;
+
+	/**
+	 * Bitmask flag enabling evaluation of owner or master objects during
+	 * callback evaluation.
+	 */
 	public static final int CHECK_IncludeMaster = 16; // check owner object
+
+	/**
+	 * Bitmask representing all available checking rules combined.
+	 */
 	public static final int CHECK_ALL = 31;
+
+	/**
+	 * Bitmask representing all checking rules except processed-state evaluation.
+	 */
 	public static final int CHECK_AllButProcessed = (CHECK_ALL ^ CHECK_Processed);
 
+	/**
+	 * Optional confirmation dialog title used when a callback type requires
+	 * user confirmation before proceeding.
+	 */
 	private String confirmTitle; // allow interaction with UI to have user confirm before continuing
+
+	/**
+	 * Optional confirmation message presented to the user for confirmation-type
+	 * callback requests.
+	 */
 	private String confirmMessage; // message to use for confirming
+
+	/**
+	 * Tooltip text supplied by callback logic for UI presentation.
+	 */
 	private String toolTip;
+
+	/**
+	 * Optional formatting string used to control UI formatting based on the
+	 * callback type.
+	 */
 	private String format; // allows creating customized formatter
 
+	/**
+	 * Indicates whether the callback action is currently permitted. Defaults
+	 * to {@code true}.
+	 */
 	private boolean allowed = true; // flag to know if the type of objectCallback is permitted
 
+	/**
+	 * The callback value whose meaning is determined by the {@link Type}.
+	 * For example, new value, added object, removed object, or other contextual
+	 * data.
+	 */
 	private Object value; // depends on Type
+
+	/**
+	 * Optional Swing label used for UI-related callback types that allow
+	 * label configuration or rendering customization.
+	 */
 	private JLabel label; // used for UI rendering control
 
+	/**
+	 * Optional response message assigned by callback logic, typically returned
+	 * to UI or controller code for display or further handling.
+	 */
 	private String response; // used to give message back to caller
+
+	/**
+	 * Optional throwable assigned when callback logic determines that an action
+	 * should fail and propagate an exception back to the caller.
+	 */
 	private Throwable throwable; // used to tell the caller to throw this exception and not to allow further processing.
 
+	/**
+	 * The property name associated with this callback, used primarily for
+	 * verification or confirmation-type callbacks.
+	 */
 	private String propertyName;
+
+	/**
+	 * The previous value associated with a property-change callback. Used for
+	 * comparison logic in validation operations.
+	 */
 	private Object oldValue;
 
 	/**
-	 * Flag to know that the called code has Ack'd the call.
+	 * Indicates whether this callback has been acknowledged by the caller,
+	 * allowing higher-level logic to know the request was processed.
 	 */
 	private boolean acknownledged;
 
@@ -322,27 +423,65 @@ public class OAObjectCallback {
 	     */
 		GetFormat(false); // use: format
 
+		/**
+		 * Indicates whether callback evaluation should include checking owner or
+		 * master objects when determining rule applicability.
+		 */
 		protected boolean checkOwner;
+
+		/**
+		 * Indicates whether enabled-state evaluation should be performed before
+		 * invoking callback-specific logic.
+		 */
 		protected boolean checkEnabledFirst;
 		
+		/**
+		 * Returns whether this callback type requires evaluation of owner/master
+		 * objects.
+		 *
+		 * @return true if owner checking is required
+		 */
 		public boolean isCheckOwner() {
 			return checkOwner;
 		}
+
+		/**
+		 * Returns whether this callback type requires enabled-state evaluation
+		 * before executing callback-specific logic.
+		 *
+		 * @return true if enabled-first rules must run
+		 */
 		public boolean isCheckEnabledFirst() {
 			return checkEnabledFirst;
 		}
 		
-
+		/**
+		 * Constructor that initializes a callback type with a flag indicating
+		 * whether owner/master objects should be evaluated.
+		 *
+		 * @param checkOwner true to enable owner checking
+		 */
 		Type(boolean checkOwner) {
 			this.checkOwner = checkOwner;
 		}
 
+		/**
+		 * Constructor that initializes a callback type with flags indicating
+		 * whether owner checking and enabled-first evaluation should be applied.
+		 *
+		 * @param checkOwner true to include owner/master object evaluation
+		 * @param checkEnabledFirst true to perform enabled-first rules
+		 */
 		Type(boolean checkOwner, boolean checkEnabledFirst) {
 			this.checkOwner = checkOwner;
 			this.checkEnabledFirst = checkEnabledFirst;
 		}
 	}
 
+	/**
+	 * Explicit class reference used to resolve the effective class for this
+	 * callback when provided. Otherwise fallback rules apply.
+	 */
 	private Class clazz;
 
 	/**

@@ -40,45 +40,183 @@ package com.viaoa.object;
 public class OAObjectModel {
 	//was: public class OAObjectModel extends OAObject {
 
+	/**
+	 * Constant property-name identifier for the singular display-name field.
+	 * Used by UI layers and reflective components to reference the property
+	 * without relying on hard-coded string literals.
+	 */
 	public static final String P_DisplayName = "DisplayName";
+
+	/**
+	 * Constant property-name identifier for the plural display-name field.
+	 * Enables UI frameworks and model-driven components to reference the
+	 * plural form without using literal strings.
+	 */
 	public static final String P_DisplayNamePlural = "DisplayNamePlural";
 
+	/**
+	 * Indicates whether navigation to a list view is permitted for this
+	 * model type. Used by UI frameworks to enable or disable list access.
+	 */
 	protected boolean bAllowGotoList;
+
+	/**
+	 * Determines whether navigation to an edit view is allowed for this
+	 * model type. Guides UI routing and workflow actions.
+	 */
 	protected boolean bAllowGotoEdit;
+	
+	/**
+	 * Controls whether standard search operations are allowed for this
+	 * model type. Affects UI search widgets and workflow queries.
+	 */
 	protected boolean bAllowSearch;
+	
+	/**
+	 * Indicates whether hub-based search is permitted. Used for deeper,
+	 * relationship-driven search operations across linked object graphs.
+	 */
 	protected boolean bAllowHubSearch;
+	
+	/**
+	 * Specifies whether UI lists and tables may allow multi-row selection
+	 * for this model type.
+	 */
 	protected boolean bAllowMultiSelect;
-	protected boolean bAllowTableFilter; // allow the table columns to include input filters
+	
+	/**
+	 * Controls whether UI table components may include inline filter
+	 * controls for this model type.
+	 */
+	protected boolean bAllowTableFilter;
+	
+	/**
+	 * Determines whether table-column sorting is enabled for this model
+	 * type within UI components.
+	 */
 	protected boolean bAllowTableSorting;
 
+	/**
+	 * Indicates whether adding new instances of this model type is allowed.
+	 * Used to enable or disable “Add” or “New” UI actions.
+	 */
 	protected boolean bAllowAdd;
+	
+	/**
+	 * Determines whether creating a brand-new instance of this model type
+	 * is permitted. Consumed by UI and workflow layers.
+	 */
 	protected boolean bAllowNew;
 	// protected boolean bAllowAutoCreate;
 
+	/**
+	 * Specifies whether save operations are allowed for this model type.
+	 * Affects editor components and workflow persistence.
+	 */
 	protected boolean bAllowSave;
+	
+	/**
+	 * Controls whether remove operations (non-delete removal from a hub or
+	 * relationship) are allowed for this model type.
+	 */
 	protected boolean bAllowRemove;
+	
+	/**
+	 * Indicates whether delete operations are permitted for objects of
+	 * this model type.
+	 */
 	protected boolean bAllowDelete;
-	protected boolean bAllowClear; // set to null / set AO to null
+	
+	/**
+	 * Determines whether clearing a reference—setting an active object or
+	 * property to null—is allowed for this model type.
+	 */
+	protected boolean bAllowClear;
+	
+	/**
+	 * Indicates whether recursive navigation or recursive UI behaviors are
+	 * permitted for this model type.
+	 */
 	protected boolean bAllowRecursive;
-	protected boolean bAllowFilter; // to include hub filters
+	
+	/**
+	 * Controls whether hub-level filtering operations are allowed for this
+	 * model type, enabling or disabling dynamic HubFilter usage.
+	 */
+	protected boolean bAllowFilter;
+	
+	/**
+	 * Specifies whether download or export actions (CSV, Excel, etc.) are
+	 * permitted for this model type.
+	 */
 	protected boolean bAllowDownload;
+	
+	/**
+	 * Determines whether refresh operations—such as reloading or syncing
+	 * data—are enabled for this model type.
+	 */
 	protected boolean bAllowRefresh;
 
+	/**
+	 * Indicates whether UI or workflow layers should allow cut operations
+	 * for objects of this model type.
+	 */
 	protected boolean bAllowCut;
+	
+	/**
+	 * Indicates whether copy operations are permitted for this model type.
+	 * Used by UI layers to enable or disable “Copy” actions.
+	 */
 	protected boolean bAllowCopy;
+	
+	/**
+	 * Specifies whether paste operations are allowed for this model type.
+	 * Determines whether copied objects or values may be inserted.
+	 */
 	protected boolean bAllowPaste;
+	
+	/**
+	 * When true, all editing and modification actions for this model type
+	 * should be disabled, placing the model into read-only mode.
+	 */
 	protected boolean bViewOnly;
+	
+	/**
+	 * Determines whether UI components should be generated or displayed for
+	 * this model type. When false, UI layers skip creating editors/screens.
+	 */
 	protected boolean bCreateUI;
+	
+	/**
+	 * Controls whether move operations are permitted for this model type,
+	 * typically used when repositioning objects within collections.
+	 */
 	protected boolean bAllowMove;
 
-	// if  true, then use a splitPane to show children that are link=Many
+	/**
+	 * Indicates whether child collections (link=Many) should be displayed in
+	 * a split-panel layout in UI frameworks for improved navigation.
+	 */
 	protected boolean bAllowChildrenSplitPanel;  
 	
 	
+	/**
+	 * Singular display name used by UI components for captions, titles,
+	 * and labels representing this model type.
+	 */
 	protected String displayName;
+	
+	/**
+	 * Plural form of the display name, used when UI layers reference
+	 * collections or lists of this model type.
+	 */
 	protected String pluralDisplayName;
 
-	// flag to know if this model is used by JFC UI apps, in which case it can use Hubs that are loaded in swingWorker thread
+	/**
+	 * Indicates whether this model is configured for use in OA-JFC (Swing)
+	 * applications, enabling JFC-specific behaviors such as background-loaded
+	 * Hubs.
+	 */
 	protected boolean bForJfc;
 	
 	/**

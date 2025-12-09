@@ -48,6 +48,13 @@ import com.viaoa.xml.OAXMLWriter;
  */
 public class OAObjectLogDelegate {
     private static Logger LOG = Logger.getLogger(OAObjectLogDelegate.class.getName());
+    
+    /**
+     * The active XML writer used for recording {@link OALogRecord} entries.
+     * Declared volatile so that changes to the active writer are visible
+     * across threads. A value of {@code null} indicates that logging is
+     * currently disabled or the log file is closed.
+     */
     private static volatile OAXMLWriter writerXml;
 
     /**

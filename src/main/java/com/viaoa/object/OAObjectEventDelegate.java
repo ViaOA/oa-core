@@ -89,9 +89,23 @@ import com.viaoa.util.OAThrottle;
 public class OAObjectEventDelegate {
 
 	private static Logger LOG = Logger.getLogger(OAObjectEventDelegate.class.getName());
+	
+	/**
+	 * Internal reserved property name used to identify change-flag updates
+	 * emitted through the event pipeline.
+	 */
 	private static final String WORD_CHANGED = "CHANGED";
 
+	/**
+	 * Timestamp used to throttle repeated warning messages so they do not
+	 * flood the log when callback or validation errors occur frequently.
+	 */
 	private static volatile long msThrottle;
+
+	/**
+	 * Counter used to track how many validation or callback-related errors
+	 * have occurred, allowing the logger to include sequence information.
+	 */
 	private static int cntError;
 
 	/**
@@ -410,7 +424,17 @@ public class OAObjectEventDelegate {
 		}
 	}
 
+	/**
+	 * Throttling utility that limits the rate at which warnings are logged
+	 * when an owner reference is unexpectedly set to null.
+	 */
 	private static final OAThrottle throttleSetOwnerNull = new OAThrottle(500);
+
+	/**
+	 * Counter used to track how many times an owner reference has been set
+	 * to null in scenarios where such transitions may indicate modeling or
+	 * data-integrity issues.
+	 */
 	private static int cntSetOwnerNull;
 
 	/**

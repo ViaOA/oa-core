@@ -57,25 +57,54 @@ import com.viaoa.util.OAFilter;
 public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilter<T> {
     // Note: this code very similar to OAObjectCacheFilter
     private static final long serialVersionUID = 1L;
+    
+    /**
+     * The class type of objects monitored by this trigger. Determines which cached
+     * objects are evaluated for trigger activation.
+     */
     private Class<T> clazz;
-
+ 
+    /**
+     * Optional name assigned to the trigger and used when creating the underlying
+     * {@link OATrigger}. A unique name is generated if not explicitly set.
+     */
     private String name;
 
+    /**
+     * Listener registered with {@link OAObjectCacheDelegate} to receive cache-level
+     * notifications such as adds, loads, and property changes for monitored objects.
+     */
     private OAObjectCacheListener cacheListener;    
     
-    // list of propPaths to listen for
+    /**
+     * List of property paths whose changes should cause monitored objects to be
+     * re-evaluated for trigger activation.
+     */
     private String[] dependentPropertyPaths;
     
     
-    
-    // used to create a unique calc propName
+    /**
+     * Counter used to generate a unique identifier for dynamically created trigger
+     * names when none is explicitly provided.
+     */
     private static final AtomicInteger aiUnique = new AtomicInteger();  
 
+    /**
+     * The underlying {@link OATrigger} instance used to observe dependent property
+     * paths and route change events back to this trigger.
+     */
     private OATrigger trigger;
     
-    // list of filters that must return true for the isUsed to return true.
+    /**
+     * Collection of filters used to determine whether a cached object qualifies for
+     * trigger activation. All filters must accept the object.
+     */
     private ArrayList<OAFilter<T>> alFilter;
 
+    /**
+     * Flag indicating whether trigger execution should temporarily suspend outbound
+     * remote message delivery, enabling server-side-only behavior.
+     */
     protected boolean bServerSideOnly;
     
     

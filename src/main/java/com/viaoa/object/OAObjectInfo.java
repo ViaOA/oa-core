@@ -74,75 +74,326 @@ import com.viaoa.util.OAString;
 public class OAObjectInfo { //implements java.io.Serializable {
 	private static Logger LOG = Logger.getLogger(OAObjectInfo.class.getName());
 	static final long serialVersionUID = 1L;
+	
+	/**
+	 * Shared synchronization lock used for operations involving
+	 * volatile metadata updates that must be thread-safe.
+	 */
 	static final Object vlock = new Object();
 
+	/**
+	 * The Java class this metadata describes. Assigned during lookup
+	 * through OAObjectInfoDelegate.
+	 */
 	protected Class thisClass; // the Class for this ObjectInfo.  Set when calling OAObjectDelegete.getOAObjectInfo
 
+	/**
+	 * Collection of link-relationship metadata entries for this type.
+	 * Lazily initialized when first accessed.
+	 */
 	protected List<OALinkInfo> alLinkInfo;
+
+	/**
+	 * List containing calculation-property metadata. Created on demand.
+	 */
 	protected ArrayList<OACalcInfo> alCalcInfo;
+
+	/**
+	 * Set of names of calculated properties that operate on HUB data.
+	 * Stored in uppercase for fast case-insensitive lookup.
+	 */
 	protected HashSet<String> hsHubCalcInfoName = new HashSet<String>();
+
+	/**
+	 * Names of identifier (business-key) properties for this type.
+	 */
 	protected String[] idProperties;
+
+	/**
+	 * List of primitive (non-reference) property metadata entries for
+	 * this object type, built lazily.
+	 */
 	protected ArrayList<OAPropertyInfo> alPropertyInfo;
+
+	/**
+	 * List of method-metadata entries used for reflection-based access
+	 * and behavior description.
+	 */
 	protected ArrayList<OAMethodInfo> alMethodInfo;
+
+	/**
+	 * Array of simple property names used for import-match resolution
+	 * when matching POJO/JSON input to existing objects.
+	 */
 	protected String[] importMatchPropertyNames;
+
+	/**
+	 * Array of property paths (possibly multi-level) used as matching
+	 * criteria during object import.
+	 */
 	protected String[] importMatchPropertyPaths;
 
+	/**
+	 * Flag indicating whether this type participates in datasource
+	 * load/save operations.
+	 */
 	protected boolean bUseDataSource = true;
+	
+	/**
+	 * When true, objects of this type are restricted to local use and
+	 * are not transmitted to remote servers.
+	 */
 	protected boolean bLocalOnly = false; // dont send to OAServer
+
+	/**
+	 * Controls whether new or loaded objects of this type are added to
+	 * the global OAObject cache.
+	 */
 	protected boolean bAddToCache = true; // add object to Cache
+
+	/**
+	 * Indicates whether newly created instances should have primitive
+	 * properties automatically initialized by OAObject.
+	 */
 	protected boolean bInitializeNewObjects = true; // initialize object properties (used by OAObject)
+
+	/**
+	 * Model-defined name of this OAObject type.
+	 */
 	protected String name;
+
+	/**
+	 * Display-friendly name of the object type. Defaults to simple
+	 * class name when unset.
+	 */
 	protected String displayName;
+
+	/**
+	 * Lower-cased version of the type name, typically used for
+	 * generation of UI and XML identifiers.
+	 */
 	protected String lowerName;
+
+	/**
+	 * Plural form of the display name for use in UI and metadata-driven
+	 * representations.
+	 */
 	protected String pluralName;
+
+	/**
+	 * Array of property paths used to determine which linked objects
+	 * should be treated as “roots” when constructing a logical tree
+	 * view of this OAObject type.  
+	 *
+	 * <p>Each entry is a full property path identifying the starting
+	 * points for hierarchical traversal, enabling UI components or
+	 * reporting tools to build structured, expandable trees based on
+	 * the object graph.</p>
+	 */
 	protected String[] rootTreePropertyPaths;
 
-	// this is set by OAObjectInfoDelegate.initialize()
-	// All primitive properties, in uppercase and sorted.
-	// This is used by OAObject.nulls, to get the bit position for an objects primitive properties.
+	/**
+	 * Array of primitive (non-reference) property names defined for this
+	 * object type. These names correspond to properties tracked using
+	 * OAObject’s null-bitmask mechanism and are assigned during metadata
+	 * initialization by OAObjectInfoDelegate.
+	 */
 	protected String[] primitiveProps;
 
 	// protected byte[] primitiveMask; // used to mask boolean to not default to null, instead false
 
-	// 20120827 hubs that have a size of 0
+	/**
+	 * Array of hub-based property names defined for this type. These represent
+	 * reference-hub properties that typically default to size zero.
+	 */
 	protected String[] hubProps;
 
+	/**
+	 * Cached flag indicating whether objects of this type support weak-reference
+	 * behavior. Values: -1 = not yet evaluated, 0 = false, 1 = true.
+	 */
 	int weakReferenceable = -1; // flag set/used by OAObjectInfoDelegate.isWeakReferenceable -1=not checked, 0=false, 1=true
+
+	/**
+	 * Cached flag indicating whether this type supports persistent storage through
+	 * an OADataSource. Values mirror a tri-state:
+	 * -1 = not yet evaluated, 0 = does not support storage, 1 = supports storage.
+	 */
 	private int supportsStorage = -1; // flag set/used by caching  -1:not checked, 0:false, 1:true
 
+	/**
+	 * Indicates whether recursive-link metadata has been evaluated for this type.
+	 * Used to prevent redundant recursive-link resolution.
+	 */
 	protected volatile boolean bSetRecursive;
+
+	/**
+	 * Cached link-info references representing the ONE-side and MANY-side
+	 * recursive link definitions for this type, assigned by the delegate.
+	 */
 	protected OALinkInfo liRecursiveOne, liRecursiveMany;
+
+	/**
+	 * Tracks whether the owning-link metadata for this type has been determined.
+	 * Prevents repeated evaluations by the delegate.
+	 */
 	protected volatile boolean bSetLinkToOwner;
+
+	/**
+	 * Cached link-info representing the relationship in which this type is the
+	 * owned side of an ownership link. Set by OAObjectInfoDelegate.
+	 */
 	protected OALinkInfo liLinkToOwner; // set by OAObjectInfoDelegate.getLinkToOwner
 
+	/**
+	 * Flag indicating that this metadata instance has completed initialization
+	 * by OAObjectInfoDelegate. Prevents repeated initialization passes.
+	 */
 	protected boolean bProcessed;
+
+	/**
+	 * Flag indicating that this metadata instance has completed initialization
+	 * by OAObjectInfoDelegate. Prevents repeated initialization passes.
+	 */
 	protected boolean bLookup;
+
+	/**
+	 * Reflected callback method assigned to this type for object-level events.
+	 * May be null if no callback has been registered.
+	 */
 	private Method objectCallbackMethod;
 
+	/**
+	 * List of property names whose enabled/visible behavior depends on the
+	 * current view context. Assigned by higher-level metadata configuration.
+	 */
 	private String[] viewDependentProperties;
+
+	/**
+	 * List of properties whose state or evaluation rules depend on a broader
+	 * application context rather than UI view rules alone.
+	 */
 	private String[] contextDependentProperties;
 
+	/**
+	 * Name of the property used to determine whether this type should be
+	 * considered enabled. May be null if no such rule is defined.
+	 */
 	private String enabledProperty;
+
+	/**
+	 * Static enabled-state value associated with this type when no enabled
+	 * property is defined or when evaluated statically.
+	 */
 	private boolean enabledValue;
+
+	/**
+	 * Name of the property that controls the visibility of this type in UI or
+	 * metadata-driven evaluations.
+	 */
 	private String visibleProperty;
+
+	/**
+	 * Static visibility value associated with this type when no dynamic
+	 * visible-property rule is applied.
+	 */
 	private boolean visibleValue;
+
+	/**
+	 * Name of the property that determines whether this type is enabled within
+	 * a specific context-dependent rule set.
+	 */
 	private String contextEnabledProperty;
+
+	/**
+	 * Static context-enabled value assigned to this type when context-dependent
+	 * rules require a fixed boolean state.
+	 */
 	private boolean contextEnabledValue;
+
+	/**
+	 * Name of the property that controls visibility of this type under
+	 * context-dependent evaluation rules.
+	 */
 	private String contextVisibleProperty;
+	
+	/**
+	 * Static context-visible value associated with this type, used when
+	 * visibility rules require a fixed boolean state rather than a
+	 * property-driven evaluation.
+	 */
 	private boolean contextVisibleValue;
+	
+	/**
+	 * Indicates whether this type defines exactly one link property, used
+	 * for optimization and rule evaluation within the metadata layer.
+	 */
 	private boolean bHasOneAndOnlyOneLink;
 
+	/**
+	 * Name of the property that stores the soft-delete flag for this type.
+	 * Used to determine logical deletion rather than physical removal.
+	 */
 	private String softDeleteProperty;
+	
+	/**
+	 * Name of the property that stores the reason associated with a
+	 * soft-delete operation.
+	 */
 	private String softDeleteReasonProperty;
+	
+	/**
+	 * Name of the property used to store the version value for this type,
+	 * typically supporting optimistic locking or version tracking.
+	 */
 	private String versionProperty;
+	
+	/**
+	 * Name of the link property that associates this type with its
+	 * corresponding version object.
+	 */
 	private String versionLinkProperty;
+	
+	/**
+	 * Name of the property representing a time-series value for this type,
+	 * supporting temporal or historical modeling.
+	 */
 	private String timeSeriesProperty;
-    private String freezeProperty;
+    
+	/**
+	 * Name of the property indicating a freeze-state flag, which can be
+	 * used to prevent modifications to this object instance.
+	 */
+	private String freezeProperty;
 
+	/**
+	 * Indicates whether this type is configured to behave as a singleton,
+	 * allowing only one instance to exist within the object graph.
+	 */
 	private boolean singleton;
+	
+	/**
+	 * Indicates whether this type should use a singleton Pojo instance for
+	 * mapping and serialization purposes.
+	 */
 	private boolean pojoSingleton;
+	
+	/**
+	 * Flag indicating whether Pojo usage is disabled for this type.
+	 * When true, POJO mapping behavior is bypassed.
+	 */
 	private boolean noPojo;
+	
+	/**
+	 * The Pojo instance mapped to this OAObject type. Created lazily using
+	 * OAObjectPojoLoader upon first request.
+	 */
 	private Pojo pojo;
+	
+	/**
+	 * Indicates whether JSON field names should begin with a capital letter
+	 * when this type is serialized to or from JSON.
+	 */
 	private boolean bJsonUsesCapital; // JSON properties are titled (begin with capital letter)
 	
 	/**
@@ -989,6 +1240,10 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return OAObjectInfoDelegate.getRecursiveLinkInfo(this, type);
 	}
 
+	/**
+	 * Stores the datasource change-counter value used to determine when
+	 * storage-support metadata must be reevaluated.
+	 */
 	private int lastDataSourceChangeCnter;
 
 	/**
@@ -1021,11 +1276,27 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		boolean bReverseHasMany;
 	}
 
-	// list of triggers per prop/link name
+	/**
+	 * Map of trigger listeners keyed by the property name they monitor.
+	 * Each key maps to a thread-safe list of TriggerInfo entries.
+	 */
 	protected ConcurrentHashMap<String, CopyOnWriteArrayList<TriggerInfo>> hmTriggerInfo = new ConcurrentHashMap<String, CopyOnWriteArrayList<TriggerInfo>>();
+
+	/**
+	 * Counter tracking the number of triggers created for this type.
+	 */
 	private AtomicInteger aiTrigger = new AtomicInteger();
+	
+	/**
+	 * Counter tracking the number of triggers that require execution
+	 * within a background thread.
+	 */
 	private AtomicInteger aiTriggerBackgroundThread = new AtomicInteger();
 
+	/**
+	 * Global counter shared across all OAObjectInfo instances that tracks
+	 * the total number of triggers registered system-wide.
+	 */
 	private final static AtomicInteger aiAllTrigger = new AtomicInteger();
 
 	/**
@@ -1885,7 +2156,16 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return objectCallbackMethod;
 	}
 
+	/**
+	 * Cached reference to the timestamp property metadata for this type.
+	 * Determined on first access and reused thereafter.
+	 */
 	private volatile OAPropertyInfo piTimestamp;
+	
+	/**
+	 * Indicates whether the timestamp-property lookup has been performed,
+	 * preventing repeated scans of the property list.
+	 */
 	private volatile boolean bCheckTimestamp;
 
 	/**
@@ -1908,7 +2188,16 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return piTimestamp;
 	}
 
+	/**
+	 * Cached reference to the submit-property metadata for this type.
+	 * Identified on first lookup and reused afterward.
+	 */
 	private volatile OAPropertyInfo piSubmit;
+
+	/**
+	 * Indicates whether the submit-property lookup has already been
+	 * performed, preventing redundant scans of the property list.
+	 */
 	private volatile boolean bCheckSubmit;
 
 	/**

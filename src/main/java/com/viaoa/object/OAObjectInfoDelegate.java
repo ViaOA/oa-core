@@ -60,14 +60,53 @@ import com.viaoa.util.OAString;
  */
 public class OAObjectInfoDelegate {
 
+	/**
+	 * Global synchronization lock used to guard critical sections during
+	 * OAObjectInfo creation and initialization. Ensures that metadata
+	 * construction is thread-safe across all OAObject types.
+	 */
 	private static final Object Lock = new Object();
 
+	/**
+	 * Cache of reflected methods for each class, keyed by uppercase method
+	 * name. Used to accelerate method lookup and avoid repeated reflection.
+	 */
     private static final Map<Class, Map<String, Method>> hmClassMethod = new ConcurrentHashMap<>(151, 0.75F);
+    
+    /**
+     * Tracks method names that were previously searched for but not found
+     * on a per-class basis, preventing redundant failed lookups.
+     */
     private static final Map<Class, Set<String>> hmClassMethodNotFound = new ConcurrentHashMap<>(151, 0.75F);
+    
+    /**
+     * Per-link read/write locks used to coordinate safe concurrent access
+     * to each link’s Hub-cache structures.
+     */
     private static final Map<OALinkInfo, ReentrantReadWriteLock> hmLinkInfoCacheLock = new ConcurrentHashMap<>(47,0.75f);
-	private static final Map<OALinkInfo, List> hmLinkInfoCacheList = new ConcurrentHashMap<OALinkInfo, List>(47,0.75f);
+	
+    /**
+     * Ordered list-based cache used for each link’s Hub instances, storing
+     * Hubs in insertion order to support trimming by cache size.
+     */
+    private static final Map<OALinkInfo, List> hmLinkInfoCacheList = new ConcurrentHashMap<OALinkInfo, List>(47,0.75f);
+    
+    /**
+     * Set used for rapid membership checks for each link’s Hub cache,
+     * ensuring efficient duplicate-prevention.
+     */
     private static final Map<OALinkInfo, Set> hmLinkInfoCacheSet = new ConcurrentHashMap<OALinkInfo, Set>(47,0.75f);
-	private static final Map<OAObjectInfo, Hub> hmRootHub = new ConcurrentHashMap<OAObjectInfo, Hub>(41, .75f);
+	
+    /**
+     * Maps each OAObjectInfo to its assigned root Hub when the type is
+     * recursive and lacks an owner link.
+     */
+    private static final Map<OAObjectInfo, Hub> hmRootHub = new ConcurrentHashMap<OAObjectInfo, Hub>(41, .75f);
+    
+    /**
+     * Global cache mapping Java classes to their corresponding OAObjectInfo
+     * instances. All metadata lookups consult this cache first.
+     */
     private static final Map<Class, OAObjectInfo> hmObjectInfo = new ConcurrentHashMap<Class, OAObjectInfo>(147, 0.75F);
 	
 	

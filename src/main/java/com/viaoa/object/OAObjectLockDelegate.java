@@ -42,6 +42,12 @@ import com.viaoa.sync.remote.RemoteSessionInterface;
  */
 public class OAObjectLockDelegate {
     
+	/**
+	 * Shared in-JVM lock map that tracks active locks for OAObject instances.
+	 * Each locked object is stored as a key mapped to an OALock instance,
+	 * enabling local, non-distributed locking when no remote sync session
+	 * is active.
+	 */
     private static final Map<Object, Object> hmLock = new HashMap<>(11, 0.75F);
 	
 	

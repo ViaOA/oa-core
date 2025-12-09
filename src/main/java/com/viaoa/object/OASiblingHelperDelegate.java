@@ -50,8 +50,16 @@ import com.viaoa.util.OAThrottle;
  */
 public class OASiblingHelperDelegate {
 
-	private final static long MaxMs = 25; // max ms for finding
+	/**
+	 * Maximum number of milliseconds allowed for sibling-search operations
+	 * before terminating the search early to maintain UI responsiveness.
+	 */
+	private final static long MaxMs = 25;
 
+	/**
+	 * Throttle used to limit logging frequency during debug mode.
+	 * Prevents excessive console output when sibling lookups occur often.
+	 */
 	private static final OAThrottle throttle = new OAThrottle(2500);
 
 	/**
@@ -138,8 +146,29 @@ public class OASiblingHelperDelegate {
 		return keys;
 	}
 
+	/**
+	 * Container used to represent the result of a sibling-property resolution
+	 * performed by an {@link OASiblingHelper}. Instances capture both the
+	 * helper that produced the detail path and the resolved sibling property
+	 * path itself.
+	 *
+	 * <p>DetailInfo objects are returned from calls that compute a detail
+	 * property-path for a given source Hub or OAObject. They carry the
+	 * resolved path along with the originating sibling helper so the caller
+	 * can evaluate or cache the result.</p>
+	 */
 	protected static class DetailInfo {
+		/**
+		 * The sibling helper instance that produced the property-path used for
+		 * sibling discovery. Provides context for resolving detail paths.
+		 */
 		OASiblingHelper siblingHelper;
+
+		/**
+		 * Property-path expression returned by the associated sibling helper.
+		 * Used as input when evaluating hubs and reachable objects for
+		 * potential siblings.
+		 */
 		String getDetailPropertyPath;
 
 		DetailInfo(OASiblingHelper siblingHelper, String getDetailPropertyPath) {

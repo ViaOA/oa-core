@@ -58,8 +58,25 @@ import com.viaoa.util.OAString;
  */
 public class OASiblingHelper<F extends OAObject> {
 
+	/**
+	 * The root Hub from which all sibling property-path learning begins.
+	 * All discovered or added paths originate from the objects contained
+	 * in this Hub.
+	 */
 	private Hub<F> hub;
-	private final Node nodeRoot; // known paths from the root (hub)
+	
+	/**
+	 * The root node of the learned property-path tree. Represents the
+	 * starting point for resolving sibling paths back to the Hub’s
+	 * object class. Initialized using the Hub’s OAObjectInfo.
+	 */
+	private final Node nodeRoot;
+	
+	/**
+	 * Indicates whether this helper should restrict property-path
+	 * resolution to the same thread in which it was created. Used
+	 * for thread-local optimization and correctness guarantees.
+	 */
 	private boolean bUseSameThread;
 
 	/**
@@ -80,9 +97,32 @@ public class OASiblingHelper<F extends OAObject> {
 			this.nodeParent = parent;
 		}
 
+		/**
+		 * Indicates whether this helper should restrict property-path
+		 * resolution to the same thread in which it was created. Used
+		 * for thread-local optimization and correctness guarantees.
+		 */
 		Node nodeParent;
+		
+		/**
+		 * Metadata describing the OAObject type represented at this Node.
+		 * Provides link information used when learning and reconstructing
+		 * property paths.
+		 */
 		OAObjectInfo oi;
+
+		/**
+		 * Link metadata for the property that connects this Node to its
+		 * parent. Represents the relationship segment that led from the
+		 * parent to this child node.
+		 */
 		OALinkInfo li;
+		
+		/**
+		 * Child nodes representing the next steps in the learned property-path
+		 * tree. Each entry corresponds to a link/property reachable from the
+		 * OAObject type represented by this Node.
+		 */
 		ArrayList<Node> alChildren;
 	}
 
@@ -308,6 +348,12 @@ public class OASiblingHelper<F extends OAObject> {
 		return pp;
 	}
 
+	/**
+	 * Tracks the most recently matched Node during property-path
+	 * resolution. Used to improve search prioritization in
+	 * {@code getPropertyPath(...)} by optionally preferring the
+	 * last successfully located Node.
+	 */
 	private Node nodeLastFound;
 
 	/**

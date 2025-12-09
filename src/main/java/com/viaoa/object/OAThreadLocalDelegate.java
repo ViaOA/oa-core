@@ -62,28 +62,125 @@ public class OAThreadLocalDelegate {
 
 	private static Logger LOG = Logger.getLogger(OAThreadLocalDelegate.class.getName());
 
+	/**
+	 * Core thread-local container storing the OAThreadLocal instance associated
+	 * with the current thread. All OAThreadLocal access routes through this
+	 * reference to ensure correct isolation of per-thread state.
+	 */
 	private static final ThreadLocal<OAThreadLocal> threadLocal = new ThreadLocal<OAThreadLocal>();
 
+	/**
+	 * Global counter used for diagnostics to track how many threads increment
+	 * or decrement the OAThreadLocal.loading flag. Guides performance and
+	 * bulk-loading analysis.
+	 */
 	private static final AtomicInteger TotalIsLoading = new AtomicInteger();
+
+	/**
+	 * Diagnostic counter tracking how often threads modify their cacheAddMode
+	 * value inside OAThreadLocal. Used for monitoring caching behavior.
+	 */
 	private static final AtomicInteger TotalObjectCacheAddMode = new AtomicInteger();
+	
+	/**
+	 * Counts the number of times objectSerializer references are assigned or
+	 * cleared within OAThreadLocal instances across all threads.
+	 */
 	private static final AtomicInteger TotalObjectSerializer = new AtomicInteger();
+	
+	/**
+	 * Tracks the number of increments/decrements applied to the
+	 * suppressCSMessages counter across all threads. Useful for analyzing
+	 * client/server message suppression patterns.
+	 */
 	private static final AtomicInteger TotalSuppressCSMessages = new AtomicInteger();
+	
+	/**
+	 * Global counter used to measure how frequently deletion-related thread-local
+	 * states are entered or exited. Assists in understanding cascading delete
+	 * operations and suppression behavior.
+	 */
 	private static final AtomicInteger TotalDelete = new AtomicInteger();
+	
+	/**
+	 * Diagnostic counter tracking how many thread-scoped transactions are
+	 * created, activated, or completed during runtime.
+	 */
 	private static final AtomicInteger TotalTransaction = new AtomicInteger();
+	
+	/**
+	 * Counts the number of times threads enable or disable capture of undoable
+	 * property changes. Used to analyze undo/redo batching frequency.
+	 */
 	private static final AtomicInteger TotalCaptureUndoablePropertyChanges = new AtomicInteger();
+	
+	/**
+	 * Tracks the number of increments to hubMergerChangingCount across threads.
+	 * Helps profile how often HubMerger-related internal operations occur.
+	 */
 	private static final AtomicInteger TotalHubMergerChanging = new AtomicInteger();
+	
 	//    private static final AtomicInteger TotalGetDetailHub = new AtomicInteger();
+	
+	/**
+	 * Global counter tracking how many sibling-helper structures are allocated
+	 * or referenced through thread-local state.
+	 */
 	private static final AtomicInteger TotalSiblingHelper = new AtomicInteger();
+	
+	/**
+	 * Diagnostic counter that tracks how many times thread-local state related to
+	 * remote multiplexer client assignments is incremented or decremented.
+	 * 
+	 * <p>This value represents the total number of active or recently modified
+	 * RemoteMultiplexerClient references stored within OAThreadLocal instances.
+	 * It is used strictly for debugging and performance visibility, particularly
+	 * around remote messaging infrastructure.</p>
+	 */
 	private static final AtomicInteger TotalRemoteMultiplexerClient = new AtomicInteger();
+	
+	/**
+	 * Tracks how many thread-local instances currently hold a non-null notifyObject.
+	 * Used to determine whether wake-up processing is required for remote-thread
+	 * coordination.
+	 */
 	private static final AtomicInteger TotalNotifyWaitingObject = new AtomicInteger();
 
+	/**
+	 * Global diagnostic counter tracking the number of active HubListenerTree
+	 * traversal operations across all threads.
+	 */
 	private static AtomicInteger TotalHubListenerTreeCount = new AtomicInteger();
+	
+	/**
+	 * Counts how many HubEvent objects are being processed across all threads,
+	 * supporting diagnostics of event dispatch volume and sequencing.
+	 */
 	private static final AtomicInteger TotalHubEvent = new AtomicInteger();
 
+	/**
+	 * Global map associating lock keys with the OAThreadLocal instances that
+	 * currently hold read/write locks. Supports fine-grained locking and
+	 * deadlock detection logic.
+	 */
 	public static final HashMap<Object, OAThreadLocal[]> hmLock = new HashMap<Object, OAThreadLocal[]>(53, .75f);
 
+	/**
+	 * Counts how many threads have disabled automatic active-object adjustment
+	 * on Hubs. Used to optimize hub-position update behavior.
+	 */
 	private static final AtomicInteger TotalDontAdjustHub = new AtomicInteger();
+	
+	/**
+	 * Diagnostic counter tracking usage of per-thread OAJson (Jackson) helpers.
+	 * Useful for profiling JSON serialization operations.
+	 */
 	private static final AtomicInteger TotalJackson = new AtomicInteger();
+	
+	/**
+	 * Counts threads currently performing Hub.refresh operations. Enables
+	 * optimized dirty-mode querying during bulk refresh sequences.
+	 */
 	private static final AtomicInteger TotalIsRefreshing = new AtomicInteger();
 
 	/**
@@ -105,6 +202,11 @@ public class OAThreadLocalDelegate {
 	}
 
 	// Transaction -------------------
+	/**
+	 * Timestamp used to throttle logging output for transaction-related
+	 * diagnostic messages. Prevents excessive log frequency for high-volume
+	 * transaction updates.
+	 */
 	private static long msTransaction;
 
 	/**
@@ -187,6 +289,11 @@ public class OAThreadLocalDelegate {
 		return setLoading(OAThreadLocalDelegate.getThreadLocal(b), b);
 	}
 
+	/**
+	 * Timestamp used to throttle diagnostic logging for load-related operations.
+	 * Helps prevent excessive log output when object-graph loading occurs
+	 * frequently on a given thread.
+	 */
 	private static long msLoadingObject;
 
 	/**

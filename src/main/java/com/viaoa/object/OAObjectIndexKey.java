@@ -28,7 +28,18 @@ import java.util.Arrays;
  * @see OAObjectIndex
  */
 public final class OAObjectIndexKey {
+	/**
+	 * Immutable array of identifier values that define this index key.
+	 * Created as a defensive clone during construction to ensure that
+	 * external modifications cannot affect equality or hash semantics.
+	 */
     private final Object[] ids;
+
+    /**
+     * Precomputed hash code derived from the identifier array.
+     * Enables efficient, stable use of this key in concurrent maps
+     * without recalculating the hash on each lookup.
+     */
     private final int hash;
 
     /**

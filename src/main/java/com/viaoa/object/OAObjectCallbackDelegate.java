@@ -1375,6 +1375,11 @@ public class OAObjectCallbackDelegate {
 		}
 	}
 
+	/**
+	 * Global demo-mode flag that forces all OAObjectCallback evaluations
+	 * to succeed. When enabled, callback failures are overridden to allow
+	 * all operations, useful for demos or testing scenarios.
+	 */
 	private static boolean DEMO_AllowAllToPass;
 
 	/**

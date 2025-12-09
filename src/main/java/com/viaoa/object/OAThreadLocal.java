@@ -49,38 +49,88 @@ import com.viaoa.util.Tuple3;
  */
 public class OAThreadLocal {
 
+	/**
+	 * The name of the thread that owns this context instance. Assigned at
+	 * construction time and used for diagnostic and logging purposes.
+	 */
 	protected String threadName;
+	
+	/**
+	 * Optional status message associated with the thread’s current OA activity.
+	 * Used for debugging, performance tracing, or monitoring long-running tasks.
+	 */
 	protected String status;
+	
+	/**
+	 * Time value used for tracking duration of thread-scoped operations. Its
+	 * specific interpretation depends on the OA subsystem using it.
+	 */
 	protected long time;
 
+	/**
+	 * Stack-like array used to track objects currently in the process of being
+	 * deleted. Prevents cyclic delete cascades and suppresses redundant events.
+	 */
 	protected Object[] deleting;
 
 	// current mode for used by OAObjectCache
 	// see: OAObjectCacheDelegate for list of mode
+	/**
+	 * Controls how OAObjectCacheDelegate adds objects to the cache. A value of
+	 * {@code 0} means the delegate will fall back to its default add mode.
+	 */
 	protected int cacheAddMode; // 0 means that it has not been set and will use OAObjectCacheDelegate.DefaultAddMode
 
+	/**
+	 * The active transaction for this thread. Used to group object changes,
+	 * manage commit/rollback behavior, and propagate transactional events.
+	 */
 	protected OATransaction transaction;
 
+	/**
+	 * The serializer currently active on this thread. Used when serializing
+	 * objects for remote calls, sync messages, or internal wrappers.
+	 */
 	protected OAObjectSerializer objectSerializer;
 
 	// flag to know if hub events can be ignored, since hubMerger is doing an internal operation.
 	//      Otherwise, there would be a lot of extra unneeded events.
 	//      used by HubMerger and HubListenerTree
+	/**
+	 * Counter used to suppress Hub events while HubMerger performs internal
+	 * operations. Prevents recursive or duplicate event propagation.
+	 */
 	protected int hubMergerChangingCount;
 
+	/**
+	 * Counter indicating that HubEventDelegate is actively dispatching an
+	 * event. Ensures calc-property events are emitted only once per change.
+	 */
 	protected int sendingEvent; // HubEventDelegate is sending an event.  Used so that calcPropertyEvents (see HubListenerTree) are only sent out once
 
+	/**
+	 * Tracks how deeply HubListenerTree processing is nested on this thread.
+	 * Used to avoid reentrant listener traversal and redundant notifications.
+	 */
 	protected int hubListenerTreeCount; // tracks how deep listeners are for a single listener
 
+	/**
+	 * When set, identifies a property whose tree-listener callbacks should be
+	 * temporarily ignored. Used during complex merge and update operations.
+	 */
 	protected String ignoreTreeListenerProperty;
 
 	/**
-	 * Counter flag to know that an object is being loaded from DataSource. Used by OAObject when loading an object from a ds - dont verify,
-	 * call listeners, send sync events. Used by Hub when it is added/inserted to a Hub by a ds - dont verify, add to vecAdd
+	 * Counter indicating that objects are currently being loaded from a
+	 * DataSource. While non-zero, verification, listeners, sync events, and
+	 * certain Hub behaviors are suppressed.
 	 */
 	protected int loading;
 
-	// counter flag
+	/**
+	 * Counter controlling suppression of client/server sync messages for the
+	 * duration of critical update sections or batch operations.
+	 */
 	protected int suppressCSMessages;
 
 	/**
@@ -91,22 +141,46 @@ public class OAThreadLocal {
 
 	// 20110104
 	/**
-	 * List of objects that are locked by this thread. Should only be used by OAThreadLocalDelegate, where a rwLock used when accessing it.
-	 * see OAThreadLocalDelegate#lock(OAThreadInfo, Object)
+	 * The set of object-level locks held by this thread. Accessed only through
+	 * OAThreadLocalDelegate, which applies the appropriate read/write locking.
 	 */
 	protected volatile Object[] locks;
+
+	/**
+	 * Indicates whether this thread is currently blocked while attempting to
+	 * acquire the final lock in its lock chain.
+	 */
 	protected boolean bIsWaitingOnLock; // used on last lock - which is the only one that this could be waiting on.
 
+	/**
+	 * Marks this thread as a sync-processing thread, used to modify behavior
+	 * of event dispatching, object updates, or remote callback handling.
+	 */
 	protected boolean bIsSyncThread;
 
+	/**
+	 * Generic array of thread-scoped flags used internally by OA subsystems to
+	 * store lightweight state without allocating dedicated fields.
+	 */
 	protected Object[] flags;
 
 	/**
-	 * used by OAUndoManager.start/endCapturePropertyChanges - to create undoable for oaObj.propertyChanges see
-	 * OAUndoableManager#startCapturePropertyChanges
+	 * Indicates whether property changes performed on this thread should be
+	 * captured as undoable operations by OAUndoableManager.
 	 */
 	protected boolean createUndoablePropertyChanges;
+
+	/**
+	 * Optional name assigned to a compound undoable operation, grouping a
+	 * sequence of property changes under a single undoable entry.
+	 */
 	protected String compoundUndoableName;
+	
+	/**
+	 * Array of pending calc-property event descriptors. These are queued while
+	 * changes are being processed and dispatched once calc-event suppression
+	 * rules allow them.
+	 */
 	protected Tuple3<Hub, OAObject, String>[] calcPropertyEvents;
 
 	/**
@@ -118,43 +192,106 @@ public class OAThreadLocal {
 	}
 
 	// 20140121
-	// current remote request that is being invoked
+	/**
+	 * The current remote request being processed on this thread.
+	 * Used by remote invocation layers to track request context and
+	 * propagate caller/session information during execution.
+	 */
 	protected RequestInfo requestInfo;
 
 	// 20160121
+	/**
+	 * An auxiliary reference used by notification and coordination logic.
+	 * Its specific meaning depends on the subsystem interacting with the
+	 * thread’s execution state.
+	 */
 	protected Object notifyObject;
 
 	// 20160625
+	/**
+	 * Counter used to detect and prevent recursive trigger execution.
+	 * Incremented when entering trigger logic and decremented upon exit
+	 * to avoid infinite event loops.
+	 */
 	protected int recursiveTriggerCount;
 
 	// 20180223
+	/**
+	 * Counts the number of sync events generated or processed by this
+	 * thread. Used primarily for diagnostics and performance tracking.
+	 */
 	public int oaSyncEventCount;
 
-	// 20180704
+	/**
+	 * List of sibling-helper instances used by this thread to compute
+	 * and cache sibling property-path resolutions during object graph
+	 * navigation.
+	 */
 	public ArrayList<OASiblingHelper> alSiblingHelper;
+
+	/**
+	 * Counter tracking how many times sibling lookup has been requested
+	 * on this thread. Primarily used for diagnostic or tuning purposes.
+	 */
 	public int cntGetSiblingCalled;
 
-	// current HubEvent that is being processed
+	/**
+	 * Stack-like list representing the HubEvent chain currently being
+	 * processed by this thread. Supports nested event-processing flows.
+	 */
 	public ArrayList<HubEvent> alHubEvent;
 
-	// used for OAContext, to get the object/value associated with this thread
+	/**
+	 * Thread-scoped context object used by OAContext. May store any
+	 * value associated with the logical user/session context of this
+	 * thread.
+	 */
 	public Object context;
 
 	/**
-	 * used by OAContext, to automatically allow OAContext.isAdmin() to return true
+	 * Flag used by OAContext to automatically grant admin privileges
+	 * for this thread. When true, OAContext.isAdmin() returns true.
 	 */
 	public boolean isAdmin;
 
+	/**
+	 * JSON serialization/deserialization helper for this thread.
+	 * Used when converting objects to/from JSON formats.
+	 */
 	public OAJson oajackson;
 
-	// hubs that Hub.setAO should not adjust when getting pos
+	/**
+	 * List of hubs that should bypass automatic adjustment of the
+	 * active object during certain Hub operations, such as position
+	 * recalculation.
+	 */
 	public Hub[] dontAdjustHubs;
 
-	protected int refreshing; // used by Hub.refresh, so that all queries can use "dirty" mode
+	/**
+	 * Counter indicating that a Hub.refresh operation is in progress.
+	 * While non-zero, queries use “dirty mode” to avoid interference
+	 * from in-flight refresh operations.
+	 */
+	protected int refreshing; 
 	
-	public Hub fastLoadingHub; // used to flag a Hub that it is loading.  A newList event is sent when it's set to null
+	/**
+	 * Identifies a Hub currently undergoing fast-loading. When the
+	 * loading completes and this field is reset to null, a newList
+	 * event is issued.
+	 */
+	public Hub fastLoadingHub;
 
+	/**
+	 * The OAProcess instance currently associated with this thread.
+	 * Used to track progress, cancellation state, or workflow context
+	 * during multi-step operations.
+	 */
 	public OAProcess process;
 	
+	/**
+	 * Array of thread-scoped callbacks used by HubMerger during
+	 * merge operations. Allows per-thread customization of merge
+	 * behavior.
+	 */
 	public OAThreadLocalHubMergerCallback[] hubMergerCallback;
 }

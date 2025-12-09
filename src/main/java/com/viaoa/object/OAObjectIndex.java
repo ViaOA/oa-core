@@ -37,6 +37,16 @@ import com.viaoa.util.OAArray;
  * @see OAObjectCache
  */
 public class OAObjectIndex {
+	/**
+	 * Top-level index mapping each OAObject subclass to its corresponding
+	 * map of {@link OAObjectIndexKey} → GUID entries.  
+	 *
+	 * <p>The outer map is keyed by OAObject class.  
+	 * The inner map stores business-key–based index keys that resolve to
+	 * the GUID of the matching object.  
+	 * Entries are updated by OAObjectCache when identity properties change
+	 * and cleared automatically when objects are garbage collected.</p>
+	 */
 	private final ConcurrentHashMap<Class<? extends OAObject>, ConcurrentHashMap<OAObjectIndexKey, Long>> hmGuidByIndexKey = new ConcurrentHashMap<>(151, 0.75F);
 
 	/**

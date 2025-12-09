@@ -43,9 +43,32 @@ import com.viaoa.util.OAString;
  * @see com.viaoa.datasource.OASelect
  */
 public class OATriggerMethodListener implements OATriggerListener {
+	
+	/**
+	 * The class that declares the trigger method.
+	 * Used to resolve the root object type on which the reflective
+	 * invocation will be performed.
+	 */
     private final Class<?> clazz;
+    
+    /**
+     * The reflective method to invoke when the trigger fires.
+     * Represents the annotated trigger method defined on the root class.
+     */
     private final Method method;
+    
+    /**
+     * Flag indicating whether processing must be limited to already-loaded data.
+     * When true, the listener avoids performing DataSource queries and uses only
+     * in-memory objects.
+     */
     private final boolean bOnlyUseLoadedData;
+    
+    /**
+     * Metadata describing the root class associated with this trigger listener.
+     * Retrieved from OAObjectInfoDelegate and used to support selection and lookup
+     * of affected objects.
+     */
     private final OAObjectInfo oi;
     
     /**

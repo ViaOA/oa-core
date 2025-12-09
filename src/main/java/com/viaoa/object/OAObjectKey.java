@@ -43,7 +43,19 @@ import java.util.Arrays;
 public class OAObjectKey implements Serializable, Comparable<Object> {
 	static final long serialVersionUID = 1L;
 
+	/**
+	 * Array of ID components that represent the business or persistent
+	 * identity values for the object. Elements may include primitive
+	 * types, wrapper types, or nested OAObjectKey instances.
+	 * Assigned at construction time and never modified.
+	 */
 	private final Object[] objectIds; 
+	
+	/**
+	 * Globally unique identifier assigned to this key. Represents the
+	 * runtime identity of the underlying OAObject and takes precedence
+	 * over business ID values for equality and ordering.
+	 */
 	private final long guid; 
 
 	/**

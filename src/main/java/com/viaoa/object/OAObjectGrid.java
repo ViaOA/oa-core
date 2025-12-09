@@ -58,16 +58,56 @@ import com.viaoa.util.*;
  * object graphs.</p>
  */
 public class OAObjectGrid {
+	
+	/**
+	 * The list of column definitions that make up this grid. Each entry
+	 * defines a property path or relationship used when constructing the
+	 * two-dimensional object matrix.
+	 */
     private final List<Column> alColumn = new ArrayList<>(); 
+    
+    /**
+     * The cached materialized grid. Each element represents a row containing
+     * objects assigned to each column. Lazily created and cleared whenever
+     * column definitions change.
+     */
     private List<Object[]> alGrid;
 
     public static class Column<TYPE extends OAObject> {
+    	/**
+    	 * Parent column from which this column is derived. Used to represent
+    	 * hierarchical or nested property-path traversal when building the grid.
+    	 */
         Column colFrom;
+
+        /**
+         * Optional Hub serving as the data source for this column. Root columns
+         * typically have a hub, while detail or group-by columns may not.
+         */
         Hub hub;
+        
+        /**
+         * Optional single OAObject assigned to this column. Used instead of a hub
+         * when a specific object is the starting point for row generation.
+         */
         OAObject object;
         
+        /**
+         * The property path used to traverse from the parent column’s object to
+         * the objects represented by this column.
+         */
         String pp;
+
+        /**
+         * Flag indicating whether this column performs a group-by operation as
+         * opposed to a standard detail traversal.
+         */
         boolean bGroupBy;
+
+        /**
+         * Property name used during group-by evaluation to match parent objects
+         * against objects in the group-by hub.
+         */
         String matchPropName;
         
         /**

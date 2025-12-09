@@ -41,8 +41,24 @@ import java.util.logging.Logger;
 public class OAPerformance {
     public final static Logger LOG = Logger.getLogger(OAPerformance.class.getName());
     
+    /**
+     * Flag indicating whether performance diagnostics should include timing
+     * and evaluation metrics for OA trigger processing. When enabled, trigger
+     * cascades and related events may emit additional profiling output.
+     */
     public static final boolean IncludeTriggers = true;
-    public static final boolean IncludeHubListeners = false;
-    public static final boolean IncludeCircularQueue = true;
     
+    /**
+     * Flag determining whether hub listener event-dispatch timing should be
+     * included in performance diagnostics. Disabled by default to reduce
+     * overhead unless hub-level profiling is required.
+     */
+    public static final boolean IncludeHubListeners = false;
+    
+    /**
+     * Flag controlling whether performance profiling for OA’s circular event
+     * queues is active. When enabled, queue latency and throughput statistics
+     * may be logged for analysis.
+     */
+    public static final boolean IncludeCircularQueue = true;
 }

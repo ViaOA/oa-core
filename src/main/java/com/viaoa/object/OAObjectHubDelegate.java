@@ -55,6 +55,11 @@ import com.viaoa.util.OAArray;
 public class OAObjectHubDelegate {
 
     private static Logger LOG = Logger.getLogger(OAObjectHubDelegate.class.getName());
+
+    /**
+     * Enables periodic diagnostic warnings when weak-hub arrays grow to large sizes.
+     * Intended to help identify unusual Hub-membership patterns.
+     */
     public static boolean ShowWarnings=true; // if weakHubs.len % 50
 
 
@@ -434,8 +439,18 @@ public class OAObjectHubDelegate {
         return true;
     }
 
+    /**
+     * Counter tracking reuse of individual WeakReference instances to avoid
+     * unnecessary object creation when adding an OAObject to a Hub.
+     */
     public static final AtomicInteger aiReuseWeakRefArray = new AtomicInteger();
+
+    /**
+     * Counter tracking reuse of individual WeakReference instances to avoid
+     * unnecessary object creation when adding an OAObject to a Hub.
+     */
     public static final AtomicInteger aiReuseWeakRef = new AtomicInteger();
+    
     /**
      * Used by Hub to read serialized objects. Check to see if this object is already loaded in a hub
      * with same LinkInfo.
