@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,23 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAId {
+	
+	/**
+	 * Indicates whether the primary-key value should be automatically
+	 * assigned when a new object is created.
+	 */
 	boolean autoAssign() default true;
 
+	/**
+	 * Specifies that the primary-key value should be generated as a
+	 * GUID/UUID rather than a numeric or other type.
+	 */
 	boolean guid() default false;
 
+	/**
+	 * Defines the position of this property within a multi-part
+	 * primary key. A value of zero is typically used for single-part
+	 * keys.
+	 */
 	int pos() default 0; // for multiple-part keys
 }

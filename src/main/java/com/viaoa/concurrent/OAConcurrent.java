@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,14 +37,50 @@ import java.util.logging.Logger;
 public class OAConcurrent {
     private static Logger LOG = Logger.getLogger(OAConcurrent.class.getName());
     
+    /**
+     * Latch used to wait until all runnable tasks finish execution.
+     * Initialized in {@link #run()} based on the number of runnables.
+     */
     private CountDownLatch countDownLatch;
+    
+    /**
+     * Barrier used to synchronize the start of all runnable threads. Each thread
+     * blocks on this barrier until all threads have reached it.
+     */
     private CyclicBarrier barrier;
+    
+    /**
+     * Array of runnable tasks to execute concurrently. Each runnable is assigned
+     * its own thread.
+     */
     private Runnable[] runnables;
     
+    /**
+     * Constructs an OAConcurrent executor for the specified runnable tasks.
+     * The caller supplies an array of runnables that will be executed in parallel.
+     *
+     * @param runnables the runnable tasks to execute concurrently
+     */
     public OAConcurrent(Runnable[] runnables) {
         this.runnables = runnables;
     }
     
+    /**
+     * Executes all runnable tasks concurrently, ensuring that they begin at the
+     * same synchronized moment.
+     *
+     * <p>Behavior:</p>
+     * <ul>
+     *   <li>Creates a {@link CountDownLatch} to detect when all tasks complete</li>
+     *   <li>Creates a {@link CyclicBarrier} so that all threads start together</li>
+     *   <li>Spawns one thread per runnable</li>
+     *   <li>Each thread waits on the barrier, executes its runnable, logs any
+     *       thrown exceptions, and then decrements the latch</li>
+     *   <li>Blocks until all runnables have finished</li>
+     * </ul>
+     *
+     * @throws Exception if waiting on the latch is interrupted
+     */
     public void run() throws Exception {
         int max = (runnables == null) ? 0 : runnables.length;
         if (max == 0) return;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,144 +51,344 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAProperty {
 
+	/**
+	 * Provides the property name with the first character in lowercase,
+	 * used for normalized lookup and internal metadata resolution.
+	 */
 	String lowerName() default "";
 
+	/**
+	 * Human-readable name for UI components that display this property.
+	 */
 	String displayName() default "";
 
+	/**
+	 * Describes the meaning or purpose of this property for UI or
+	 * documentation use.
+	 */
 	String description() default "";
 
+	/**
+	 * Defines the default value applied when a new object is created,
+	 * before any user or programmatic assignment.
+	 */
 	String defaultValue() default "";
 
+	/**
+	 * Indicates whether the property must contain a non-null,
+	 * non-empty value.
+	 */
 	boolean required() default false;
 
+	/**
+	 * Specifies the number of decimal places for numeric properties.
+	 * A value of -1 means the setting is not applied.
+	 */
 	int decimalPlaces() default -1;
 
+	/**
+	 * Suggested width for UI display components showing this property.
+	 */
 	int displayLength() default 0;
-    int minLength() default 0;
-    int maxLength() default 0;
 
-	/** name to use for Grid/Table column heading */
+	/**
+	 * Minimum number of characters allowed for this property’s value.
+	 */
+	int minLength() default 0;
+    
+	/**
+	 * Maximum allowable number of characters for this property’s value.
+	 */
+	int maxLength() default 0;
+
+	/**
+	 * Name used as a column header when displaying this property in
+	 * grid/table UI components.
+	 */
 	String uiColumnName() default "";
 
+	/**
+	 * Deprecated: formerly used to specify a table/grid column name.
+	 * Replaced by metadata in {@link OAColumn}.
+	 */
 	@Deprecated
 	String columnName() default "";
 
-	/** @return length of the column in a table/grid UI component. */
+	/**
+	 * Specifies the width of the column in UI grid/table components.
+	 */
 	int uiColumnLength() default 0;
 
+	/**
+	 * Deprecated: legacy column length setting for UI and datasource
+	 * mapping. Superseded by {@link OAColumn}.
+	 */
 	@Deprecated
 	int columnLength() default 0;
 
+	/**
+	 * Formatting string applied to property values when rendered in UI
+	 * or converted to text.
+	 */
 	String format() default "";
 
+	/**
+	 * Enables verification logic that validates the value before it is
+	 * assigned to the property.
+	 */
 	boolean verify() default false;
 
+	/**
+	 * Defines a whitelist of characters that are allowed within the
+	 * property value.
+	 */
 	String validCharacters() default "";
 
+	/**
+	 * Defines a blacklist of characters that are not permitted within
+	 * the property value.
+	 */
 	String invalidCharacters() default "";
 
-	// 20211212 removed, use @OAColumn instead
-	/** @return column name used for table/grid UI component */
-	// String columnName() default "";
-
+	/**
+	 * Tooltip text displayed by UI components when users hover over
+	 * this property.
+	 */
 	String toolTip() default "";
 
+	/**
+	 * Optional descriptive help text shown in UI elements to guide
+	 * users when editing this property.
+	 */
 	String help() default "";
 
+	/**
+	 * Indicates that custom code exists for getter/setter logic,
+	 * preventing generators from overwriting it.
+	 */
 	boolean hasCustomCode() default false;
 
+	/**
+	 * Indicates that this property’s value should be stored in encrypted
+	 * form, enhancing data security.
+	 */
 	boolean isEncrypted() default false;
 
 	/**
-	 * use isSHAHash or isEncrypted instead
-	 *
-	 * @return
+	 * Deprecated: legacy flag indicating that this property represents a
+	 * password. Use {@code isSHAHash} or {@code isEncrypted} instead.
 	 */
 	@Deprecated
 	boolean isPassword() default false;
 
+	/**
+	 * Indicates that the property value should be stored as a SHA hash
+	 * rather than in plaintext.
+	 */
 	boolean isSHAHash() default false;
 
+	/**
+	 * Specifies that the property is read-only and cannot be modified
+	 * after initial assignment.
+	 */
 	boolean isReadOnly() default false;
 
+	/**
+	 * Marks the property as processed, requiring User.editProcessed=true
+	 * for any further modifications.
+	 */
 	boolean isProcessed() default false;
 
+	/**
+	 * Declares that this property contains an email address, enabling
+	 * email-specific validation and formatting.
+	 */
 	boolean isEmail() default false;
 
+	/**
+	 * Indicates that this property represents a URL, enabling validation
+	 * and hyperlink rendering.
+	 */
 	boolean isUrl() default false;
 
+	/**
+	 * Identifies the property value as an image filename for use in UI
+	 * rendering.
+	 */
 	boolean isImageName() default false;
 
+	/**
+	 * Identifies the property value as an icon filename used by UI
+	 * components.
+	 */
 	boolean isIconName() default false;
 
+	/**
+	 * Indicates that this property contains XML data, enabling special
+	 * formatting or validation rules.
+	 */
 	boolean isXml() default false;
 
+	/**
+	 * Marks the value as a filename, suggesting file-related behaviors
+	 * or validations.
+	 */
 	boolean isFileName() default false;
 
+	/**
+	 * Indicates that this property is automatically assigned a sequence
+	 * value by the system.
+	 */
 	boolean isAutoSeq() default false;
 
+	/**
+	 * Specifies that this property represents a timestamp and may
+	 * require time-specific formatting rules.
+	 */
 	boolean isTimestamp() default false;
 
+	/**
+	 * Determines whether comparisons and validations against this
+	 * property should be case-sensitive.
+	 */
 	boolean isCaseSensitive() default false;
 
+	/**
+	 * Marks the property as containing a phone number, enabling
+	 * phone-specific validation or formatting.
+	 */
 	boolean isPhone() default false;
 
+	/**
+	 * Indicates that the property contains a ZIP code, enabling
+	 * ZIP-specific validation.
+	 */
 	boolean isZipCode() default false;
 
+	/**
+	 * Indicates that the property contains HTML content for rendering
+	 * in UI components supporting HTML.
+	 */
 	boolean isHtml() default false;
 
+	/**
+	 * Indicates that the property contains JSON data and may require
+	 * validation or formatted display.
+	 */
 	boolean isJson() default false;
 
-	/** @return if true, then the property value must be unique. */
+	/**
+	 * Requires that all objects have a unique value for this property,
+	 * enforcing a uniqueness constraint.
+	 */
 	boolean isUnique() default false;
 
+	/**
+	 * Specifies that the property represents a monetary value, enabling
+	 * currency formatting and validation behavior.
+	 */
 	boolean isCurrency() default false;
 
-	/** @return will be used to know if there is a validation method (not yet used at this time) */
-	boolean hasValidationMethod() default false;//qqqq new, if true, then call delegate to verify? or put verify in code?
+	/**
+	 * Indicates that a custom validation method exists for this
+	 * property. When true, OA will invoke that method to verify the
+	 * property's value.
+	 */
+	boolean hasValidationMethod() default false;
 
+	/**
+	 * Identifies the property as containing binary large-object (BLOB)
+	 * data, such as images or file contents.
+	 */
 	boolean isBlob() default false;
 
+	/**
+	 * Marks this property as a name/value pair type, commonly used in
+	 * classification or enumeration-style models.
+	 */
 	boolean isNameValue() default false;
 
+	/**
+	 * Indicates that the property value should be treated as Unicode,
+	 * enabling storage of international character sets.
+	 */
 	boolean isUnicode() default false;
 
+	/**
+	 * Controls whether OA tracks whether a primitive-type field has
+	 * ever been explicitly set to null (or null-equivalent).
+	 */
 	boolean trackPrimitiveNull() default true;
 
 	/**
-	 * If true, then datetimes dont need timezone
+	 * When true, datetime values for this property are interpreted
+	 * without applying time-zone adjustments.
 	 */
 	boolean ignoreTimeZone() default false;
 
 	/**
-	 * Flag used to determine if the object is completed and ready for submitted.
+	 * Indicates that this property participates in submit/complete
+	 * workflow logic, marking readiness for submission.
 	 */
 	boolean isSubmit() default false;
 
+	/**
+	 * Identifies the property as representing an object's status,
+	 * enabling special rendering and behavior rules.
+	 */
 	boolean isObjectStatus() default false;
 	
+	/**
+	 * Property path used to determine the applicable time zone for this
+	 * property's datetime values.
+	 */
 	String timeZonePropertyPath() default "";
 
+	/**
+	 * Indicates that the property's value should be rendered or stored
+	 * in uppercase.
+	 */
 	boolean isUpper() default false;
 
+	/**
+	 * Indicates that the property's value should be rendered or stored
+	 * in lowercase.
+	 */
 	boolean isLower() default false;
 
+	/**
+	 * Flags the property as containing sensitive data, guiding UI and
+	 * serialization layers to restrict exposure.
+	 */
 	boolean sensitiveData() default false;
 
+	/**
+	 * Enables import/merge logic to match this property using equality
+	 * semantics rather than direct assignment.
+	 */
 	boolean importMatch() default false;
 
+	/**
+	 * Names a related enum-type property used to interpret or constrain
+	 * the value of this property.
+	 */
 	String enumPropertyName() default "";
 
+	/**
+	 * Indicates that this property is used strictly as a foreign-key
+	 * reference and not meant for UI editing or display.
+	 */
 	boolean isFkeyOnly() default false;
 
 	/**
-	 * Flag to know if this property is used in POJO.
+	 * Specifies that this property is not used in the generated POJO
+	 * representation, even if present on the OAObject.
 	 */
 	boolean noPojo() default false;
 
 	/**
-	 * If greater then 0 (1 based), this is a pkey (1+) property for the POJO.
+	 * If greater than zero (1-based index), identifies this property as
+	 * a primary-key component within the generated POJO.
 	 */
 	int pojoKeyPos() default 0;
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,48 +61,47 @@ public class OAMultiplexerServer {
     private static Logger LOG = Logger.getLogger(OAMultiplexerServer.class.getName());
 
     /**
-     * Server port.
+     * Network port on which the real ServerSocket listens for physical
+     * client connections.
      */
     private int _port;
 
     /**
-     * Server host/ip.
+     * Hostname or IP address used when binding or reporting the server's identity.
      */
     private String _host;
 
     /**
-     * Internal flag used to know when connections can be accepted.
+     * Internal flag indicating whether the server is currently accepting new
+     * real socket connections.
      */
     private boolean _bAllowConnections;
 
     
     /**
-     * The single/only "Real" serversocket that is accepting new connections in behalf of other
-     * VServerSockets (virtual server sockets).
+     * The single real ServerSocket that accepts client connections on behalf of
+     * all virtual server sockets.
      */
     private ServerSocket _serverSocket;
 
     /**
-     * Used by server, to manage the "real" ServerSocket that receives new client connections. Within
-     * each real socket will be new "virtual" socket connections that will be forwarded to the correct
-     * ServerSocket.accept method.
+     * Controller responsible for managing the real ServerSocket, routing new
+     * connections, maintaining virtual socket mappings, and tracking metrics.
      */
     private MultiplexerServerSocketController _controlServerSocket;
 
     /**
-     * Message to display if server receives an invalid client connection (not from a Multiplexer Socket)
+     * Message sent to clients when an incoming connection is not a valid
+     * multiplexer connection.
      */
     private String _invalidConnectionMessage;
 
     /**
-     * Creates a new server that allows for multiplexing many client connections over a single real
-     * connection.
-     * 
-     * @param host
-     *            name
-     * @param port
-     *            port number to connect to
-     * @see #start() call start to allow new connections from clients.
+     * Constructs a multiplexer server bound to the given host and port. If the
+     * host is null, the local machine's IP address is used.
+     *
+     * @param host hostname or IP address to associate with this server
+     * @param port port on which the real ServerSocket will listen
      */
     public OAMultiplexerServer(String host, int port) {
         try {
@@ -114,24 +113,43 @@ public class OAMultiplexerServer {
         this._port = port;
         LOG.fine("host=" + host + ", port=" + port);
     }
+
+    /**
+     * Convenience constructor that binds the server to the local host using the
+     * provided port.
+     *
+     * @param port listening port for the real ServerSocket
+     */
     public OAMultiplexerServer(int port) {
         this(null, port);
     }
 
     /**
-     * Used to set the limit on the number of bytes that can be written per second (in MB).  
+     * Sets an upper bound on the number of megabytes per second that can be
+     * written across all multiplexer connections.
+     *
+     * @param mbPerSecond write-throughput limit in MB/sec
+     * @throws Exception if the server socket controller cannot apply the limit
      */
     public void setThrottleLimit(int mbPerSecond) throws Exception {
         getServerSocketController().setThrottleLimit(mbPerSecond);
     }
+
+    /**
+     * Returns the currently configured throughput limit in MB/sec.
+     *
+     * @return throttle limit in MB/sec
+     * @throws Exception if the controller is not initialized
+     */
     public int getThrottleLimit() throws Exception {
         return getServerSocketController().getThrottleLimit();
     }
     
     /**
-     * This must be called to enable serverSocket to begin accepting new connections.
-     * 
-     * @throws Exception
+     * Starts the multiplexer server. Creates the real ServerSocket, initializes
+     * the controller, and begins accepting new client connections.
+     *
+     * @throws Exception if socket creation or controller startup fails
      */
     public void start() throws Exception {
         if (_bAllowConnections) return;
@@ -145,12 +163,22 @@ public class OAMultiplexerServer {
         LOG.fine("start completed");
     }
 
+    /**
+     * Stops the multiplexer and closes the controller. All virtual and real socket
+     * processing is terminated.
+     *
+     * @throws Exception if the controller cannot be closed
+     */
     public void stop() throws Exception {
         getServerSocketController().close();
     }
+    
     /**
-     * Stop the serverSocket from accepting new connections.
-     * Dont accept new client connections, but keep current client sockets connected
+     * Stops accepting new real client connections while keeping all existing
+     * connections active. The real ServerSocket is closed but the controller
+     * remains operational.
+     *
+     * @throws Exception if the underlying ServerSocket cannot be closed
      */
     public void stopServerSocket() throws Exception {
         if (!_bAllowConnections || _serverSocket == null) return;
@@ -159,21 +187,23 @@ public class OAMultiplexerServer {
         _serverSocket.close();
     }
 
-    
     /**
-     * @return true if serverSocket is accepting new connnections.
+     * Indicates whether the multiplexer server is actively accepting new
+     * connections.
+     *
+     * @return true if accepting new connections, false otherwise
      */
     public boolean isStarted() {
         return this._bAllowConnections;
     }
 
     /**
-     * Creates a serverSocket (virtual) through the real socket. This can then be used to accept new
-     * socket connections from a MultiplexerClient.
-     * 
-     * @param serverSocketName
-     *            unique name that will be used by clients when creating an vsocket.
-     * @return new ServerSocket that can be used to accept new socket connections.
+     * Creates (or retrieves) a virtual server socket registered under the given
+     * name. Clients must use the same name when creating matching virtual sockets.
+     *
+     * @param serverSocketName unique identifier for the virtual server socket
+     * @return virtual server socket instance
+     * @throws IOException if creation fails or the controller reports an error
      */
     public VirtualServerSocket createServerSocket(String serverSocketName) throws IOException {
         LOG.fine("serverSocketName=" + serverSocketName);
@@ -188,7 +218,12 @@ public class OAMultiplexerServer {
     }
 
     /**
-     * Creates a single controller that manages the server sockets.
+     * Lazily creates and returns the server socket controller that manages all
+     * real and virtual socket operations. The controller delegates connection
+     * events back to this server for override handling.
+     *
+     * @return initialized controller instance
+     * @throws Exception if initialization fails
      */
     private MultiplexerServerSocketController getServerSocketController() throws Exception {
         if (_controlServerSocket == null) {
@@ -215,55 +250,80 @@ public class OAMultiplexerServer {
     }
 
     /**
-     * Server listen port.
+     * Returns the listening port of the real ServerSocket.
+     *
+     * @return port number
      */
     public int getPort() {
         return _port;
     }
 
     /**
-     * Host name.
+     * Returns the hostname or IP address associated with the server.
+     *
+     * @return host string
      */
     public String getHost() {
         return _host;
     }
 
     /**
-     * Message to display when a non-socket connects. This message will be sent to client, followed
-     * by a disconnect.
+     * Defines the message sent to clients when a non-multiplexer connection
+     * attempts to connect.
+     *
+     * @param msg descriptive message
      */
     public void setInvalidConnectionMessage(String msg) {
         LOG.fine("InvalidConnectionMessage=" + msg);
         this._invalidConnectionMessage = msg;
     }
 
+    /**
+     * Returns the invalid-connection message configured for this server.
+     *
+     * @return message text or null
+     */
     public String getInvalidConnectionMessage() {
         return _invalidConnectionMessage;
     }
 
     /**
-     * Called when a real socket is disconnected.
+     * Callback invoked when a real client connection is disconnected. Subclasses
+     * may override to perform cleanup, logging, or auditing.
+     *
+     * @param connectionId unique connection identifier assigned by the controller
      */
     protected void onClientDisconnect(int connectionId) {
         LOG.fine("connectionId=" + connectionId);
     }
 
     /**
-     * Called when a real socket connection is made.
+     * Callback invoked when a new real client connection is established.
+     * Subclasses may override to implement authentication, logging, or session
+     * initialization.
+     *
+     * @param socket the underlying real socket
+     * @param connectionId controller-assigned connection identifier
      */
     protected void onClientConnect(Socket socket, int connectionId) {
         LOG.fine("connectionId=" + connectionId);
     }
 
     /**
-     * @return number of reads made.
+     * Returns the total number of read operations performed across all
+     * multiplexer connections.
+     *
+     * @return read count, or 0 if the controller is not initialized
      */
     public long getReadCount() {
         if (_controlServerSocket == null) return 0;
         return _controlServerSocket.getReadCount(); 
     }
-    /*
-     * size of data that has been read.
+
+    /**
+     * Returns the cumulative number of bytes read across all connections.
+     *
+     * @return number of bytes read
      */
     public long getReadSize() {
         if (_controlServerSocket == null) return 0;
@@ -271,27 +331,44 @@ public class OAMultiplexerServer {
     }
 
     /**
-     * @return number of writes made.
+     * Returns the total number of write operations performed.
+     *
+     * @return write count
      */
     public long getWriteCount() {
         if (_controlServerSocket == null) return 0;
         return _controlServerSocket.getWriteCount(); 
     }
-    /*
-     * size of data that has been written.
+
+    /**
+     * Returns the cumulative number of bytes written across all connections.
+     *
+     * @return number of bytes written
      */
     public long getWriteSize() {
         if (_controlServerSocket == null) return 0;
         return _controlServerSocket.getWriteSize(); 
     }
 
+    /**
+     * Returns the number of real client connections that have been created since
+     * server startup.
+     *
+     * @return count of created connections
+     */
     public int getCreatedConnectionCount() {
         if (_controlServerSocket == null) return 0;
         return _controlServerSocket.getCreatedConnectionCount();
     }
+
+    /**
+     * Returns the number of active real connections currently managed by the
+     * controller.
+     *
+     * @return number of live connections
+     */
     public int getLiveConnectionCount() {
         if (_controlServerSocket == null) return 0;
         return _controlServerSocket.getLiveConnectionCount();
     }
-    
 }

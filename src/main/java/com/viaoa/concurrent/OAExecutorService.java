@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,34 +53,98 @@ import com.viaoa.util.OAString;
  */
 public class OAExecutorService {
     private static Logger LOG = Logger.getLogger(OAExecutorService.class.getName());
+    
+    /**
+     * Internal thread pool executor. Lazily created by {@link #getExecutorService()}.
+     */
     private ThreadPoolExecutor executorService;
+    
+    /**
+     * Counter tracking the total number of tasks submitted to this executor.
+     */
     private final AtomicInteger aiTotalSubmitted = new AtomicInteger();
+    
+    /**
+     * Determines executor behavior:
+     * <ul>
+     *   <li>0 = cached/unbounded thread pool</li>
+     *   <li>> 0 = fixed-size thread pool</li>
+     * </ul>
+     */
     private final int size;
+    
+    /**
+     * Optional name used as part of thread naming when creating worker threads.
+     */
     private final String name;
+    
+    /**
+     * Queue backing the fixed-size thread pool. Unused when {@link #size} == 0.
+     */
     private LinkedBlockingQueue<Runnable> que;
     
+    /**
+     * Constructs an executor service in cached-thread-pool mode
+     * (equivalent to size = 0).
+     */
     public OAExecutorService() {
         this(0, null);
     }
 
+    /**
+     * Constructs an executor service in cached-thread-pool mode using the
+     * specified naming prefix for worker threads.
+     *
+     * @param name optional naming prefix for threads
+     */
     public OAExecutorService(String name) {
         this.size = 0;
         this.name = name;
         getExecutorService();
     }
     
+    /**
+     * Constructs an executor service with the specified pool size and thread
+     * naming prefix. When size is 0, a cached thread pool is created; otherwise a
+     * fixed-size pool is created.
+     *
+     * @param size number of worker threads, or 0 for cached mode
+     * @param name optional naming prefix for threads
+     */
     public OAExecutorService(int size, String name) {
         this.size = size;
         this.name = name;
         getExecutorService();
     }
     
+    /**
+     * Submits a runnable task for asynchronous execution.
+     * Increments the submitted-task counter and forwards the task to
+     * {@link #getExecutorService()}.
+     *
+     * @param r runnable to submit
+     * @return future representing the task
+     * @throws RuntimeException if the executor has been shut down
+     */
     public Future submit(Runnable r) {
         if (executorService == null) throw new RuntimeException("executorService has been shutdown");
         aiTotalSubmitted.incrementAndGet();
         Future f = getExecutorService().submit(r);
         return f;
     }
+
+    /**
+     * Submits a runnable task and waits up to the specified timeout for it to
+     * complete. The return value is the same {@link Future} produced by the
+     * executor.
+     *
+     * @param r runnable to run
+     * @param maxWait maximum wait duration
+     * @param tu time unit for maxWait
+     * @return future representing the task
+     * @throws Exception if the timeout expires or the task throws an exception
+     * @throws RuntimeException if the executor has been shut down
+     */
     public Future submitAndWait(Runnable r, int maxWait, TimeUnit tu) throws Exception {
         if (executorService == null) throw new RuntimeException("executorService has been shutdown");
         aiTotalSubmitted.incrementAndGet();
@@ -90,12 +154,33 @@ public class OAExecutorService {
         return f;
     }
     
+    /**
+     * Submits a callable task for asynchronous execution.
+     * Increments the submitted-task counter and returns the resulting Future.
+     *
+     * @param c callable to submit
+     * @return future representing the task
+     * @throws RuntimeException if the executor has been shut down
+     */
     public Future submit(Callable c) {
         if (executorService == null) throw new RuntimeException("executorService has been shutdown");
         aiTotalSubmitted.incrementAndGet();
         Future f = getExecutorService().submit(c);
         return f;
     }
+
+    /**
+     * Submits a callable task and waits for it to complete up to the specified
+     * timeout. The result of {@link Future#get(long, TimeUnit)} is ignored, and
+     * only the Future itself is returned.
+     *
+     * @param c callable to run
+     * @param maxWait maximum wait duration
+     * @param tu time unit for maxWait
+     * @return future representing the task
+     * @throws Exception if the timeout expires or the callable throws an exception
+     * @throws RuntimeException if the executor has been shut down
+     */
     public Future submitAndWait(Callable c, int maxWait, TimeUnit tu) throws Exception {
         if (executorService == null) throw new RuntimeException("executorService has been shutdown");
         aiTotalSubmitted.incrementAndGet();
@@ -105,11 +190,28 @@ public class OAExecutorService {
         return f;
     }
 
+    /**
+     * Shuts down the executor service gracefully. After shutdown, no new tasks
+     * may be submitted.
+     */
     public void close() {
         if (executorService == null) return;
         executorService.shutdown();
     }
     
+    /**
+     * Lazily creates and returns the internal {@link ThreadPoolExecutor}.  
+     *
+     * <p>Behavior:</p>
+     * <ul>
+     *   <li>Creates daemon-thread workers using a custom {@link ThreadFactory}.</li>
+     *   <li>Uses {@link SynchronousQueue} when size == 0.</li>
+     *   <li>Uses a very large {@link LinkedBlockingQueue} when size > 0.</li>
+     *   <li>In fixed-size mode, allows core threads to time out.</li>
+     * </ul>
+     *
+     * @return executor service instance
+     */
     public ExecutorService getExecutorService() {
         if (executorService != null) return executorService;
         
@@ -141,22 +243,45 @@ public class OAExecutorService {
     }
     
     /**
-     * number of elements in the queue waiting on thread to pick it up.
+     * Returns the number of tasks currently waiting in the queue for the
+     * fixed-size pool. Returns 0 for cached-mode executors.
+     *
+     * @return number of queued tasks
      */
     public int getQueueSize() {
         if (que == null) return 0;
         return que.size();
     }
+
+    /**
+     * Returns the number of threads in the pool, or 0 if the executor has not been
+     * created yet.
+     *
+     * @return current pool size
+     */
     public int getThreadPoolSize() {
         if (executorService == null) return 0;
         return executorService.getPoolSize();
     }
+
+    /**
+     * Returns the number of actively executing threads, or 0 if the executor has
+     * not been created yet.
+     *
+     * @return active thread count
+     */
     public int getActiveThreads() {
         if (executorService == null) return 0;
         return executorService.getActiveCount();
     }
 
-    // test
+    /**
+     * Test harness demonstrating ThreadPoolExecutor behavior using various pool
+     * configurations. Not used by OA runtime code.
+     *
+     * @param args ignored
+     * @throws Exception if test execution fails
+     */
     public static void main(String[] args) throws Exception {
         Executors.newCachedThreadPool();
         Executors.newFixedThreadPool(12);

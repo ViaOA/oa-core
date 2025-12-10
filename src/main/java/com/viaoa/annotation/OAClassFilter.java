@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,15 +45,51 @@ import java.util.concurrent.TimeUnit;
 @Retention(RetentionPolicy.RUNTIME) 
 
 public @interface OAClassFilter {
-    String name() default "";
-    String displayName() default "";
-    String description() default "";
-    boolean hasInputParams() default false;
     
-    // if set, then the existing filtered objects will be checked to see if they are still true 
+	/**
+	 * Specifies the internal name of the filter, used to identify the
+	 * filter implementation in filtering or query operations.
+	 */
+	String name() default "";
+    
+	/**
+	 * Provides a human-readable name for the filter, typically used in
+	 * UI components such as drop-downs or configuration dialogs.
+	 */
+	String displayName() default "";
+    
+	/**
+	 * Supplies descriptive text explaining the role or behavior of the
+	 * filter for both developers and UI display.
+	 */
+	String description() default "";
+    
+	/**
+	 * Indicates whether the filter accepts user-supplied input
+	 * parameters, enabling more dynamic filtering behavior in UI
+	 * contexts.
+	 */
+	boolean hasInputParams() default false;
+    
+	/**
+	 * Defines the numeric refresh interval for automatically rechecking
+	 * previously filtered objects to ensure they still satisfy the
+	 * filter criteria.
+	 */
     int autoRefreshInterval() default 0;
+
+    /**
+     * Specifies the {@link TimeUnit} associated with
+     * {@code autoRefreshInterval()}, determining how often automatic
+     * refresh checks should occur.
+     */
     TimeUnit autoRefreshTimeUnit() default TimeUnit.DAYS;
     
+    /**
+     * Provides an optional lightweight query expression to evaluate
+     * filter conditions without requiring a full filter class
+     * implementation.
+     */
     String query() default "";
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,54 +71,97 @@ import com.viaoa.object.OAThreadLocalDelegate;
 public abstract class MultiplexerInputStreamController {
     private static Logger LOG = Logger.getLogger(MultiplexerInputStreamController.class.getName());
 
+    /**
+     * Identifier shared by all VirtualSockets belonging to this real connection.
+     */
     private int _connectionId;
 
-    /** real inputstream. */
+    /**
+     * Underlying input stream for the physical socket. All VirtualSockets read
+     * through this shared stream according to routing rules.
+     */
     private DataInputStream _dataInputStream;
 
-    /** flag to know if socket has been closed. */
+    /**
+     * Flag indicating whether the input side of the real socket has been closed.
+     * When true, all waiting VirtualSockets are released.
+     */
     private boolean _bIsClosed;
     
-    /** time of last read */
+    /**
+     * Timestamp (ms) of the last successful read operation on the real socket.
+     */
     private long msLastRead;
 
     /**
-     * Max amount of time that real socket will wait for an vsocket to read real data from real inputstream
-     * 
-     * five seconds would be more then enough, since data is "chunked", but the thread could be
-     * "busy" outside of reading the data.
+     * Maximum time (in seconds) a VirtualSocket is allowed to block while waiting
+     * for its turn to read data after a header is assigned.
      */
     private final int _timeoutSeconds = 20;
     
-    /** Lock used to manage access to inputstream. */
+    /**
+     * Lock used to synchronize state between the real-socket read thread and
+     * VirtualSockets that are consuming their assigned payload.
+     *
+     * This ensures that only one VirtualSocket can read at a time.
+     */
     private final transient Object READLOCK = new Object();
 
-    /** flag to know if real socket reader is waiting for vsocket to finish. */
+    /**
+     * Indicates that the real-socket thread is currently waiting for the
+     * VirtualSocket to finish reading its assigned payload.
+     */
     private volatile boolean _bRealReaderIsWaiting;
 
-    /** Information about the data that is next to be read. */
+    /**
+     * VirtualSocket ID that is next allowed to read from the real socket.
+     * A value of 0 indicates a command frame; negative means "no active reader."
+     */
     private volatile int _nextReadId = -1; // from the header, < 0 means that it is not assigned, 0 is
                                            // for commands.
+    /**
+     * The total number of bytes assigned to the VirtualSocket for the current
+     * data frame.
+     */
     private volatile int _nextReadLen; // from the header, length of data for the next reader to read.
+
+    /**
+     * Number of bytes already read by the VirtualSocket for the current frame.
+     * Ensures that partial reads are tracked correctly.
+     */
     private volatile int _nextReadOffset; // used when reading n bytes at a time. This keeps track of
                                           // the amount of bytes from _nextRadLen that have been read.
 
     /**
-     * Created by MultiplexerSocketController to manager the real inputStream.
+     * Metrics tracking the cumulative byte count and number of read() operations
+     * performed across all VirtualSockets using this controller.
+     */
+    private AtomicLong aiReadSize = new AtomicLong();
+    private AtomicLong aiReadCnt = new AtomicLong();
+    
+    /**
+     * Creates a controller for the specified connection.
+     *
+     * @param connectionId unique id assigned to the real socket connection
      */
     MultiplexerInputStreamController(int connectionId) {
         this._connectionId = connectionId;
     }
 
     /**
-     * The real inputstream that is shared by vsockets.
+     * Assigns the shared real-socket input stream used by all VirtualSockets.
+     *
+     * @param dataInputStream the underlying DataInputStream for the connection
      */
     void setDataInputStream(DataInputStream dataInputStream) {
         this._dataInputStream = dataInputStream;
     }
 
     /**
-     * Flag the inputstream as closed and notify all vsockets that are waiting to read from it.
+     * Marks the controller as closed and wakes all VirtualSockets waiting on
+     * READLOCK or their own lock objects. No further reads are permitted.
+     *
+     * @throws IOException never thrown here; signature reserved for subclasses
      */
     protected void close() throws IOException {
         synchronized (READLOCK) {
@@ -127,14 +170,38 @@ public abstract class MultiplexerInputStreamController {
         }
     }
 
+    /**
+     * Returns the timestamp of the most recent read from the real socket.
+     *
+     * @return last-read time in milliseconds
+     */
     public long getLastReadTime() {
         return msLastRead;
     }
     
     /**
-     * Call by MultiplexerSocketController thread that manages the input stream. This will read the
-     * header and then allow the correct vsocket to read the data from the real socket. If the header
-     * is a command, then the command is performed. This will loop until close() is called.
+     * Main loop run by the MultiplexerSocketController’s dedicated thread.
+     * Continuously reads:
+     *
+     * <ol>
+     *   <li>A VirtualSocket id</li>
+     *   <li>The payload length</li>
+     * </ol>
+     *
+     * <p>If the id is {@code CMD_Command}, the frame is processed as a command
+     * via {@link #processCommand(int, int)}.</p>
+     *
+     * <p>Otherwise, the controller:</p>
+     * <ul>
+     *   <li>Retrieves the target VirtualSocket</li>
+     *   <li>Checks for corruption or closed sockets</li>
+     *   <li>Assigns the frame to that socket</li>
+     *   <li>Blocks until that VirtualSocket finishes reading its payload</li>
+     * </ul>
+     *
+     * <p>Loop exits when the connection is closed or an unrecoverable error occurs.</p>
+     *
+     * @throws Exception if the stream is corrupted or a fatal IO error occurs
      */
     void readRealSocketLoop() throws Exception {
         long msLastStackDump = 0;
@@ -235,30 +302,32 @@ public abstract class MultiplexerInputStreamController {
         LOG.fine("MultiplexerInputStreamController: socket has been closed, (leaving readRealSocket loop)");
     }
 
-    
-    // 20160202    
-    private AtomicLong aiReadSize = new AtomicLong();
-    private AtomicLong aiReadCnt = new AtomicLong();
-    
     /**
-     * @return number of reads made.
+     * Returns the total number of read() operations performed across all
+     * VirtualSockets.
+     *
+     * @return read count
      */
     public long getReadCount() {
         return aiReadCnt.get();
     }
-    /*
-     * size of data that has been read.
+
+    /**
+     * Returns the cumulative number of bytes read from the real socket.
+     *
+     * @return total bytes read
      */
     public long getReadSize() {
         return aiReadSize.get();
     }
     
-    
     /**
-     * Called by vsockets, to read from the "real" inputstream. Once the "readRealSocket" receives a
-     * header that is for an vsocket, it will then allow the vsocket to have access to read from the
-     * socket.inputstream. The header also includes the length of data, and the vsocket will only be
-     * able to read this amount.
+     * Called by VirtualSockets to read their portion of the real-stream payload.
+     * Delegates to {@link #_read(VirtualSocket, byte[], int, int)} and ensures
+     * the controller is released afterward.
+     *
+     * @return number of bytes read
+     * @throws IOException if the real socket has been closed or a timeout occurs
      */
     int read(VirtualSocket vs, byte[] bs, int off, int len) throws IOException {
         int x;
@@ -276,7 +345,17 @@ public abstract class MultiplexerInputStreamController {
     }
 
     /**
-     * Controls shared access to the real socket, based on which vsocket matches the current header. 
+     * Performs the actual blocking read for the given VirtualSocket.
+     *
+     * <p>Behavior:</p>
+     * <ul>
+     *   <li>Wait until the controller assigns this VirtualSocket as the active reader</li>
+     *   <li>Read up to the remaining frame length</li>
+     *   <li>Continue waiting or throw timeout/closed errors as appropriate</li>
+     * </ul>
+     *
+     * @return number of bytes read
+     * @throws IOException if closed or timed out
      */
     private int _read(VirtualSocket vs, byte[] bs, int off, int len) throws IOException {
         int readAmt = 0;
@@ -306,7 +385,11 @@ public abstract class MultiplexerInputStreamController {
     }
 
     /**
-     * Used to skip a message from a vsocket that is no longer available.
+     * Consumes and discards a frame intended for a VirtualSocket that has been
+     * closed. Ensures stream alignment is preserved.
+     *
+     * @param skipAmount number of bytes to skip
+     * @throws IOException if EOF occurs
      */
     private void skipFully(int skipAmount) throws IOException {
         for (; skipAmount > 0;) {
@@ -317,8 +400,10 @@ public abstract class MultiplexerInputStreamController {
     }
 
     /**
-     * The inputstream is shared by all of the vsockets. This will release the inputstream, and allow
-     * the controller to then read the next header.
+     * Releases the controller after a VirtualSocket finishes reading its frame.
+     * Signals the real-socket thread that it may proceed to the next header.
+     *
+     * @param vs the VirtualSocket that finished reading
      */
     private void _releaseInputStream(VirtualSocket vs) {
         synchronized (READLOCK) {
@@ -337,9 +422,22 @@ public abstract class MultiplexerInputStreamController {
     }
 
     /**
-     * Process "real" socket commands.
-     * 
-     * @see MultiplexerOutputStreamController#sendCommand(int, int)
+     * Processes multiplexed command frames sent by the remote controller.
+     *
+     * <p>Commands include:</p>
+     * <ul>
+     *   <li>Create new VirtualSocket</li>
+     *   <li>Close VirtualSocket</li>
+     *   <li>Close real socket</li>
+     *   <li>Ping</li>
+     * </ul>
+     *
+     * <p>Subcommands that require reading additional payload bytes must match the
+     * encoding used by {@code MultiplexerOutputStreamController#sendCommand}.</p>
+     *
+     * @param cmd command identifier
+     * @param param optional integer parameter
+     * @throws Exception if socket creation/closure fails
      */
     protected void processCommand(int cmd, int param) throws Exception {
         switch (cmd) {
@@ -366,23 +464,45 @@ public abstract class MultiplexerInputStreamController {
      * Abstract methods that are implemented by MultiplexerSocketController.
      */
 
-    /**
+    /*
      * These methods are needed to be supplied by the user of this object. Currently used/created by
      * MultiplexerSocketController
      */
 
-    /** Called by processCommand to create a new vsocket. */
+    /**
+     * Creates a new VirtualSocket when instructed by a command frame.
+     *
+     * @param connectionId id of the real connection
+     * @param id virtual socket id
+     * @param serverSocketName logical server-socket binding
+     */
     protected abstract void createNewSocket(int connectionId, int id, String serverSocketName);
 
-    /** Called by processCommand to close an existing vsocket. */
+    /**
+     * Closes an existing VirtualSocket identified by id.
+     *
+     * @param id virtual socket id
+     * @param bSendCommand whether the remote side should be notified
+     */
     protected abstract void closeSocket(int id, boolean bSendCommand);
 
-    /** Called by processCommand to close the "real" socket. */
+    /**
+     * Closes the underlying real socket in response to a CMD_CloseRealSocket command.
+     */
     protected abstract void closeRealSocket();
 
-    /** Used by readRealSocket when reading the header for the next vsocket data to read. */
+    /**
+     * Returns the VirtualSocket for the given id or null if none exists.
+     *
+     * @param id virtual socket id
+     * @return VirtualSocket or null
+     */
     protected abstract VirtualSocket getSocket(int id);
 
-    /** this is needed to verify the max ID used for virtual sockets */
+    /**
+     * Returns the maximum valid VirtualSocket id. Used to detect corrupted frames.
+     *
+     * @return highest allowed id
+     */
     protected abstract int getMaxSocketId();
 }

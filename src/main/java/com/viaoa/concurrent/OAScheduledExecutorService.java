@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,13 +47,33 @@ import com.viaoa.util.OATime;
  */
 public class OAScheduledExecutorService {
     private static Logger LOG = Logger.getLogger(OAScheduledExecutorService.class.getName());
+    
+    /**
+     * Lazily created scheduled executor service backed by a single daemon thread.
+     */
     private ScheduledExecutorService scheduledExecutorService;
+    
+    /** Counter tracking the number of tasks submitted to this executor. */
     private final AtomicInteger aiTotalSubmitted = new AtomicInteger();
     
+    /**
+     * Creates a new scheduled executor service. The underlying
+     * {@link ScheduledExecutorService} is initialized immediately.
+     */
     public OAScheduledExecutorService() {
         getScheduledExecutorService();
     }
 
+    /**
+     * Schedules a runnable to execute once at the specified {@link OADateTime}.
+     * If {@code dt} is null or in the past relative to the current system time,
+     * the task is executed immediately.
+     *
+     * @param r runnable to execute
+     * @param dt desired execution date/time
+     * @return ScheduledFuture representing the scheduled task
+     * @throws Exception if scheduling fails
+     */
     public ScheduledFuture<?> schedule(Runnable r, OADateTime dt) throws Exception {
         aiTotalSubmitted.incrementAndGet();
         
@@ -66,19 +86,46 @@ public class OAScheduledExecutorService {
         return f;
     }
     
-    
+    /**
+     * Schedules a runnable to execute once after the specified delay.
+     *
+     * @param r runnable to execute
+     * @param delay delay before execution
+     * @param tu time unit for the delay
+     * @return ScheduledFuture for the scheduled task
+     * @throws Exception if scheduling fails
+     */
     public ScheduledFuture<?> schedule(Runnable r, int delay, TimeUnit tu) throws Exception {
         aiTotalSubmitted.incrementAndGet();
         ScheduledFuture<?> f = getScheduledExecutorService().schedule(r, delay, tu);
         return f;
     }
+
+    /**
+     * Schedules a callable to execute once after the specified delay.
+     *
+     * @param c callable to execute
+     * @param delay delay before execution
+     * @param tu time unit for the delay
+     * @return ScheduledFuture representing the result of the callable
+     * @throws Exception if scheduling fails
+     */
     public ScheduledFuture<?> schedule(Callable<?> c, int delay, TimeUnit tu) throws Exception {
         aiTotalSubmitted.incrementAndGet();
         ScheduledFuture<?> f = getScheduledExecutorService().schedule(c, delay, tu);
         return f;
     }
 
-
+    /**
+     * Schedules a runnable to execute once per day at the specified {@link OATime}.
+     * The initial delay is calculated relative to the current time. Subsequent
+     * executions occur every 24 hours.
+     *
+     * @param r runnable to execute daily
+     * @param time time of day when execution should occur
+     * @return ScheduledFuture representing the periodic task
+     * @throws Exception if scheduling fails
+     */
     public ScheduledFuture<?> scheduleEvery(Runnable r, OATime time) throws Exception {
         aiTotalSubmitted.incrementAndGet();
         
@@ -94,12 +141,31 @@ public class OAScheduledExecutorService {
         ScheduledFuture<?> f = getScheduledExecutorService().scheduleAtFixedRate(r, secDelay, secDay, tu);
         return f;
     }
+
+    /**
+     * Schedules a runnable for periodic execution with a fixed delay between
+     * completions. The task begins after {@code initialDelay}.
+     *
+     * @param r runnable to execute periodically
+     * @param initialDelay delay before first execution
+     * @param period delay between the end of one execution and the start of the next
+     * @param tu time unit for the delay values
+     * @return ScheduledFuture representing the periodic task
+     * @throws Exception if scheduling fails
+     */
     public ScheduledFuture<?> scheduleEvery(Runnable r, int initialDelay, int period, TimeUnit tu) throws Exception {
         aiTotalSubmitted.incrementAndGet();
         ScheduledFuture<?> f = getScheduledExecutorService().scheduleWithFixedDelay(r, initialDelay, period, tu);
         return f;
     }
     
+    /**
+     * Lazily creates and returns the single-threaded scheduled executor service.
+     * The thread factory produces daemon threads named
+     * {@code "OAScheduledExecutorService.threadX"}.
+     *
+     * @return scheduled executor service instance
+     */
     public ScheduledExecutorService getScheduledExecutorService() {
         if (scheduledExecutorService != null) return scheduledExecutorService;
         ThreadFactory tf = new ThreadFactory() {
@@ -118,8 +184,13 @@ public class OAScheduledExecutorService {
     }
     
     
-    
-    
+    /**
+     * Test harness demonstrating recurring scheduling behavior. Not used by the
+     * OA runtime. Runs several periodic tasks and prints execution counters.
+     *
+     * @param args ignored
+     * @throws Exception if scheduling or thread sleep fails
+     */
     public static void main(String[] args) throws Exception {
         OAScheduledExecutorService ses = new OAScheduledExecutorService();
         final AtomicInteger ai = new AtomicInteger();

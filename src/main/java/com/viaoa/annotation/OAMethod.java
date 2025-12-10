@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,28 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME) 
 public @interface OAMethod {
-    String displayName() default "";
-    String description() default "";
-    String toolTip() default "";
-    String help() default "";
+
+	/**
+	 * Specifies a human-friendly name for the annotated method, used by
+	 * UI frameworks when presenting the action to the user.
+	 */
+	String displayName() default "";
+    
+	/**
+	 * Provides descriptive text that explains the purpose or behavior
+	 * of the action method.
+	 */
+	String description() default "";
+    
+	/**
+	 * Supplies tooltip text displayed by UI components when users hover
+	 * over the associated action.
+	 */
+	String toolTip() default "";
+    
+	/**
+	 * Defines optional help or instructional text associated with this
+	 * action method, used by UI layers to provide guidance.
+	 */
+	String help() default "";
 }

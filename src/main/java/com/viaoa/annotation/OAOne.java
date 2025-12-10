@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,112 +48,182 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAOne {
+	
+	/**
+	 * Provides the link name with the first character in lowercase,
+	 * used for normalized metadata lookup and internal resolution.
+	 */
 	String lowerName() default "";
 
+	/**
+	 * Human-readable name for UI components that display this ONE link.
+	 */
 	String displayName() default "";
 
+	/**
+	 * Describes the purpose or semantics of this ONE relationship for
+	 * user interfaces or documentation.
+	 */
 	String description() default "";
 
-	/** @return true if this object is the owner of linked to object */
+	/**
+	 * Indicates whether this object owns the ONE relationship, affecting
+	 * cascade and update rules.
+	 */
 	boolean owner() default false;
 
-	/** @return true if this is a recursive relationship. */
-	// 20131013 removed, since Manys are marked as recursive
-	// boolean recursive() default false;
-
-	/** @return name used in the toClass that refers to this class. */
+	/**
+	 * Names the property on the target class that refers back to this
+	 * class, forming the reverse link of the relationship.
+	 */
 	String reverseName() default "";
 
+	/**
+	 * Specifies whether this ONE reference is mandatory. If true, the
+	 * property must not be null.
+	 */
 	boolean required() default false;
 
+	/**
+	 * Indicates whether the referenced object should be validated or
+	 * verified before assignment.
+	 */
 	boolean verify() default false;
 
-	/** @return true if saving this class will save the many objects */
+	/**
+	 * Determines whether saving this object automatically saves the
+	 * referenced ONE object.
+	 */
 	boolean cascadeSave() default false;
 
-	/** @return true if deleting this class will delete the many objects */
+	/**
+	 * Determines whether deleting this object automatically deletes the
+	 * referenced ONE object.
+	 */
 	boolean cascadeDelete() default false;
 
-	/** @return if true, then this object is not store in datasource. */
+	/**
+	 * Indicates whether the referenced object is transient and should
+	 * not be stored in the datasource.
+	 */
 	boolean isTransient() default false;
 
-	/** @return if false, then this object can not create, but must pick an existing. */
+	/**
+	 * If false, a new referenced object cannot be created and an
+	 * existing object must be selected.
+	 */
 	boolean allowCreateNew() default true;
 
-	/** @return if true, then this object is auto created. */
+	/**
+	 * If true, a new referenced object will be automatically created
+	 * when this ONE link is accessed and found to be null.
+	 */
 	boolean autoCreateNew() default false;
 
-	/** @return if false, then an existing object can not be used - a new one must be created. */
+	/**
+	 * If false, prevents using an existing object for this ONE link,
+	 * requiring creation of a new instance instead.
+	 */
 	boolean allowAddExisting() default true;
 
-	/** @return if true, then this must be empty (null) to delete the other object */
+	/**
+	 * If true, the ONE link must be null before the linked object may
+	 * be deleted.
+	 */
 	boolean mustBeEmptyForDelete() default false;
 
+	/**
+	 * Tooltip text for UI components that present this ONE link.
+	 */
 	String toolTip() default "";
 
+	/**
+	 * Optional help or instructional text shown in UI contexts.
+	 */
 	String help() default "";
 
-	/** @return flag to know if the code for the methods has been modified. */
+	/**
+	 * Indicates whether custom code exists for methods associated with
+	 * this ONE relationship to prevent generator overwrite.
+	 */
 	boolean hasCustomCode() default false;
 
-	/** @return true if this is a calculated reference. */
+	/**
+	 * Marks this ONE relationship as calculated, meaning its value is
+	 * derived dynamically rather than stored.
+	 */
 	boolean isCalculated() default false;
 
+	/**
+	 * Lists property paths whose changes trigger recalculation of this
+	 * calculated ONE reference.
+	 */
 	String[] calcDependentProperties() default {};
 
-	/** flag to know if this is processed and will require User.editProcessed=true for it to be changed. */
+	/**
+	 * Indicates whether this ONE relationship has been marked as
+	 * processed, requiring User.editProcessed=true for changes.
+	 */
 	boolean isProcessed() default false;
 
-	/** property path for default value */
+	/**
+	 * Defines a property path used to supply the default value for this
+	 * ONE reference.
+	 */
 	String defaultPropertyPath() default "";
 
+	/**
+	 * Indicates whether the {@code defaultPropertyPath} should be
+	 * interpreted as a hierarchical path when locating the default value.
+	 */
 	boolean defaultPropertyPathIsHierarchy() default false;
 
+	/**
+	 * Determines whether the default value obtained from
+	 * {@code defaultPropertyPath} can later be modified by the user.
+	 */
 	boolean defaultPropertyPathCanBeChanged() default false;
 
-	/** property path for default value from Context object, "." is to use this object. */
+	/**
+	 * Identifies a property path, evaluated on the context object, that
+	 * provides the default reference. A value of "." indicates this object.
+	 */
 	String defaultContextPropertyPath() default "";
 
 	/**
-	 * flag to know if this One link is only to be used if the other oneOfOne=true are null.
+	 * Indicates that this ONE link is only valid if all other
+	 * one-and-only-one links are null, enforcing exclusivity.
 	 */
 	boolean isOneAndOnlyOne() default false;
 
 	/**
-	 * Properties that that are also foreign keys to other objects, which are used by Link=One.
+	 * Indicates that this ONE link is only valid if all other
+	 * one-and-only-one links are null, enforcing exclusivity.
 	 */
-	// String[] pkeyPropertyNames() default {};
-
 	boolean importMatch() default false;
 
+	/**
+	 * Defines a property path used to compare objects for equality
+	 * during linking, merging, or import operations.
+	 */
 	String equalPropertyPath() default "";
 
+	/**
+	 * Property path that locates a Hub of objects which may be selected
+	 * as candidates for this ONE reference.
+	 */
 	String selectFromPropertyPath() default "";
 
+	/**
+	 * Declares the foreign-key mappings used by this ONE relationship.
+	 * Supersedes the older {@code pojoNames} mechanism.
+	 */
 	OAFkey[] fkeys() default {};
 
-	@Deprecated // replaced with fkeys
+	/**
+	 * Deprecated: legacy mapping of POJO names used to identify foreign
+	 * keys. Replaced by {@code fkeys()}.
+	 */
+	@Deprecated 
 	String[] pojoNames() default {};
 }
-
-/*  OALinkInfo
-
-    public static final int ONE = 0;
-    public static final int MANY = 1;
-
-    String name;
-    Class toClass;
-    int type;
-    boolean cascadeSave;  // save, delete of this object will do same with link hub
-    boolean cascadeDelete;  // save, delete of this object will do same with link hub
-    // property that needs to be updated in an inserted object.  same as Hub.propertyToMaster
-    protected String reverseName;  // reverse property name
-    boolean bOwner;  // this object is the owner of relationship
-    private boolean bTransient;
-
-    // runtime
-    protected transient int cacheSize;
-    protected OALinkInfo revLinkInfo;
-
-
-*/

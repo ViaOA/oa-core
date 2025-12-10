@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,28 @@ import java.lang.annotation.Target;
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAIndex {
+
+	/**
+	 * Specifies the name of the database index as it should appear
+	 * in the underlying datasource.
+	 */
 	String name();
 
+	/**
+	 * Defines the list of columns that make up this index.
+	 * The order of columns can affect index behavior and performance.
+	 */
 	OAIndexColumn[] columns();
 
+	/**
+	 * Indicates whether this index corresponds to a foreign-key
+	 * constraint in the datasource.
+	 */
 	boolean fkey() default false; // is this index for an foreign key
 
+	/**
+	 * Marks the index as enforcing uniqueness across its defined
+	 * columns, preventing duplicate combinations of values.
+	 */
 	boolean unique() default false;
 }

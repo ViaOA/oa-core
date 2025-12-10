@@ -387,7 +387,7 @@ public class OATextFormat {
 	}
 
 	public static boolean isNumber(String str) {
-	    if (str == null || str.isBlank()) return false;
+	    if (str == null || str.length() == 0) return false;
 
 	    str = str.trim();
 	    try {
@@ -403,7 +403,7 @@ public class OATextFormat {
 	 * Returns true if the String represents a whole integer (positive or negative).
 	 */
 	public static boolean isInteger(String str) {
-	    if (str == null || str.isBlank()) return false;
+	    if (str == null || str.length() == 0) return false;
 
 	    str = str.trim();
 	    try {
@@ -421,7 +421,7 @@ public class OATextFormat {
 	 * @return true if String can be converted to a OADate. see OAConverterOADate
 	 */
 	public static boolean isDate(String s) {
-	    if (s == null || s.isBlank()) return false;
+	    if (s == null || s.length() == 0) return false;
 	    try {
 	        return OAConverter.convert(OADate.class, s.trim()) != null;
 	    } catch (Exception ex) {
@@ -436,7 +436,7 @@ public class OATextFormat {
 	 * @return true if String can be converted to a OATime. see OAConverterOATime
 	 */
 	public static boolean isTime(String s) {
-	    if (s == null || s.isBlank()) return false;
+	    if (s == null || s.length() == 0) return false;
 	    try {
 	        return OAConverter.convert(OATime.class, s.trim()) != null;
 	    } catch (Exception ex) {
@@ -451,7 +451,7 @@ public class OATextFormat {
 	 * @return true if String can be converted to a OADateTime. see OAConverterOADateTime
 	 */
 	public static boolean isDateTime(String s) {
-	    if (s == null || s.isBlank()) return false;
+	    if (s == null || s.length() == 0) return false;
 	    try {
 	        return OAConverter.convert(OADateTime.class, s.trim()) != null;
 	    } catch (Exception ex) {

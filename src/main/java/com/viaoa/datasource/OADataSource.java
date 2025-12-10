@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,23 +59,57 @@ import com.viaoa.util.OAFilter;
  * @see com.viaoa.datasource.jdbc.OADataSourceJDBC
  */
 public abstract class OADataSource implements OADataSourceInterface {
-	private static List<OADataSource> alDataSource = new ArrayList();
-	protected String name;
-	protected boolean bLast;
-	protected boolean bAssignNumberOnCreate = false; // if true, then Id will be assigned when object is created, else when saved
-	protected String guid; // seed value to use when creating GUID for seq assigned object keys
 
+	/**
+	 * List of all registered OADataSource instances. Used for global lookup,
+	 * ordering, and management.
+	 */
+	private static List<OADataSource> alDataSource = new ArrayList();
+	
+	/** Optional name assigned to this DataSource. */
+	protected String name;
+	
+	/**
+	 * Marks this DataSource as a “last resort” when searching for a supporting
+	 * DataSource. Used for catch-all sources.
+	 */
+	protected boolean bLast;
+	
+	/**
+	 * If true, autonumber properties are assigned when an object is created;
+	 * otherwise, assignment occurs when the object is saved.
+	 */
+	protected boolean bAssignNumberOnCreate = false; 
+	
+	/**
+	 * Optional GUID prefix used when generating sequence-based object keys.
+	 */
+	protected String guid;
+
+	/**
+	 * Flag indicating whether this DataSource is active for lookup and use.
+	 */
 	protected boolean bEnabled = true;
 
+	/** If true, write operations throw an exception. */
 	private boolean bReadOnly;
 
+	/** If true, write operations are silently ignored. */
 	private boolean bIgnoreWrites;
 
+	/**
+	 * Cached array of all registered data sources. Rebuilt when registration
+	 * changes.
+	 */
 	private static volatile OADataSource[] dsAll;
 
 	//-------- static methods -------------------------------
+
 	/**
-	 * Get all registered/loaded DataSources.
+	 * Returns all registered DataSources. Results are cached in {@link #dsAll}
+	 * until the registration changes.
+	 *
+	 * @return array of DataSource instances
 	 */
 	public static OADataSource[] getDataSources() {
 		if (dsAll == null) {
@@ -91,14 +125,23 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Find the dataSource that supports a given Class
+	 * Returns the first enabled DataSource that supports the given class.
 	 *
-	 * @see #setEnabled
+	 * @param clazz class to evaluate
+	 * @return supporting DataSource or null
 	 */
 	public static OADataSource getDataSource(Class clazz) {
 		return getDataSource(clazz, (OAFilter) null);
 	}
 
+	/**
+	 * Returns a DataSource that supports the class and passes the filter.
+	 * A DataSource marked as {@code bLast=true} is considered only after others.
+	 *
+	 * @param clazz class to evaluate
+	 * @param filter optional filter used by the DataSource
+	 * @return matching DataSource or null
+	 */
 	public static OADataSource getDataSource(Class clazz, OAFilter filter) {
 		OADataSource[] ds = getDataSources();
 		if (ds == null) {
@@ -128,84 +171,84 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Seed value to use when creating GUID for seq assigned object keys. Autonumber properties will prefix new values with the value plus a
-	 * "-" as the separator.
+	 * Sets a GUID prefix used when creating sequence-assigned object keys.
+	 *
+	 * @param gid GUID prefix
 	 */
 	public void setGuid(String gid) {
 		guid = gid;
 	}
 
 	/**
-	 * Seed value to use when creating GUID for seq assigned object keys. Autonumber properties will prefix new values with the value plus a
-	 * "-" to separator.
+	 * Returns the GUID prefix used for autonumber key generation.
+	 *
+	 * @return GUID prefix or null
 	 */
 	public String getGuid() {
 		return guid;
 	}
 
-	/**
-	 * Used to turn on/off a DataSource from being found in datasource lookup.<br>
-	 * If false, then requests to OADataSource.getDataSource will not return a disabled dataSource.
-	 */
+	/** Returns whether this DataSource is enabled for lookup. */
 	@Override
 	public boolean getEnabled() {
 		return this.bEnabled;
 	}
 
+	/**
+	 * Enables or disables this DataSource for lookup.
+	 *
+	 * @param b true to enable; false to disable
+	 */
 	@Override
 	public void setEnabled(boolean b) {
 		this.bEnabled = b;
 	}
 
 	/**
-	 * Used to retrieve a single object from DataSource.
+	 * Retrieves an object using a String ID value.
 	 *
-	 * @param id is the property key value for the object.
+	 * @param clazz object class
+	 * @param id String key value
+	 * @return matching object or null
 	 */
 	public static Object getObject(Class clazz, String id) {
 		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
-	/**
-	 * Used to retreive a single object from DataSource.
-	 *
-	 * @param id is the property key value for the object.
-	 */
+	/** Retrieves an object using an int ID value. */
 	public static Object getObject(Class clazz, int id) {
 		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
-	/**
-	 * Used to retrieve a single object from DataSource.
-	 *
-	 * @param id is the property key value for the object.
-	 */
+	/** Retrieves an object using a long ID value. */
 	public static Object getObject(Class clazz, long id) {
 		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
-	/**
-	 * Used to retrieve a single object from DataSource.
-	 *
-	 * @param id is the property key value for the object.
-	 */
+	/** Retrieves an object using an arbitrary ID value. */
 	public static Object getObject(Class clazz, Object id) {
 		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(clazz, id);
 		return getObject(clazz, key);
 	}
 
+	/**
+	 * Retrieves an object using a composite key composed of the given ID array.
+	 */
 	public static Object getObject(Class clazz, Object[] ids) {
 		OAObjectKey key = new OAObjectKey(ids);
 		return getObject(clazz, key);
 	}
 	
 	/**
-	 * Used to retrieve a single object from DataSource.
+	 * Retrieves a single object using the provided OAObjectKey. Uses the
+	 * DataSource returned by {@link #getDataSource(Class)}.
 	 *
-	 * @param key is the object key for the object.
+	 * @param clazz object class
+	 * @param key object key
+	 * @return matching object or null
 	 */
 	public static Object getObject(Class clazz, OAObjectKey key) {
 		if (clazz == null || key == null) {
@@ -219,6 +262,16 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return ds.getObject(oi, clazz, key, false);
 	}
 
+	/**
+	 * Resolves an object using metadata from {@link OAObjectInfo} and a generated
+	 * property-path query. Uses {@link #select} to perform the retrieval.
+	 *
+	 * @param oi object metadata
+	 * @param clazz class of object
+	 * @param key object key
+	 * @param bDirty include dirty objects
+	 * @return matching object or null
+	 */
 	@Override
 	public Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key, boolean bDirty) {
 		if (clazz == null || key == null || oi == null) {
@@ -248,34 +301,29 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return obj;
 	}
 
-	/**
-	 * Used to know if autonumber properties should be assigned on create or on save.
-	 *
-	 * @param b if true, assign autonumber property when object is created, else assign when object is saved.
-	 */
+	/** Sets whether autonumber properties are assigned on create or save. */
 	@Override
 	public void setAssignIdOnCreate(boolean b) {
 		bAssignNumberOnCreate = b;
 	}
 
-	/**
-	 * Used to know if autonumber properties should be assigned on create or on save.
-	 */
+	/** Returns whether autonumber values are assigned on create. */
 	@Override
 	public boolean getAssignIdOnCreate() {
 		return bAssignNumberOnCreate;
 	}
 
-	/**
-	 * Used to know is datasoure is currently available.
-	 */
+	/** Returns true; subclasses may override to report availability. */
 	@Override
 	public boolean isAvailable() {
 		return true;
 	}
 
 	/**
-	 * Returns a Vector of Strings listing all registered OADataSources and status.
+	 * Builds a Vector containing formatted information for all registered
+	 * DataSources.
+	 *
+	 * @return vector containing DataSource info
 	 */
 	public static Vector getInfo() {
 		Vector vec = new Vector(20, 20);
@@ -289,7 +337,10 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Adds Strings to Vector, listing information about DataSource.
+	 * Adds this DataSource's information to the provided Vector.
+	 * Default implementation does nothing.
+	 *
+	 * @param vec destination vector
 	 */
 	public void getInfo(Vector vec) {
 	}
@@ -299,7 +350,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	//-------------------------------------------------------
 
 	/**
-	 * Returns max length allowed for a property. returns "-1" for any length.
+	 * Returns the maximum allowed length for the property, or -1 for unlimited.
 	 */
 	@Override
 	public int getMaxLength(Class c, String propertyName) {
@@ -307,14 +358,19 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Default constructor that will add this DataSource to list of DataSources
+	 * Constructs and registers this DataSource.
 	 *
-	 * @see #getDataSources
+	 * @see #OADataSource(boolean)
 	 */
 	public OADataSource() {
 		this(true);
 	}
 
+	/**
+	 * Constructs a DataSource with optional registration.
+	 *
+	 * @param bRegister if true, register this DataSource in the global list
+	 */
 	public OADataSource(boolean bRegister) {
 		if (bRegister) {
 			synchronized (alDataSource) {
@@ -325,20 +381,29 @@ public abstract class OADataSource implements OADataSourceInterface {
 		}
 	}
 
+	/**
+	 * Incremented whenever DataSource registration changes, allowing observers to
+	 * detect configuration updates.
+	 */
 	protected static int dataSourceChangeCnter;
 
+	/**
+	 * Returns the global change counter, incremented when DataSource registration
+	 * changes.
+	 */
 	public static int getChangeCounter() {
 		return dataSourceChangeCnter;
 	}
 
+	/**
+	 * Finalizer that closes this DataSource before garbage collection.
+	 */
 	protected void finalize() throws Throwable {
 		close();
 		super.finalize();
 	}
 
-	/**
-	 * Static method to close all registered DataSources.
-	 */
+	/** Closes all registered data sources and clears the global list. */
 	public static void closeAll() {
 		synchronized (alDataSource) {
 			dataSourceChangeCnter++;
@@ -350,14 +415,13 @@ public abstract class OADataSource implements OADataSourceInterface {
 		}
 	}
 
-	/**
-	 * Close this DataSource.
-	 */
+	/** Closes this DataSource and removes it from the global list. */
 	@Override
 	public void close() {
 		removeFromList();
 	}
 
+	/** Removes this DataSource from the global registry. */
 	public void removeFromList() {
 		synchronized (alDataSource) {
 			alDataSource.remove(this);
@@ -367,9 +431,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * This can be called after a close has been done to make the datasoruce available again.
+	 * Re-adds this DataSource at the given position after it has been closed.
 	 *
-	 * @param pos search location in list of datasources.
+	 * @param pos insertion index
 	 */
 	@Override
 	public void reopen(int pos) {
@@ -385,16 +449,18 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Used to have a DataSource search last when finding a DataSource. This is used when you want to create a <i>catch all</i> DataSource.
+	 * Marks this DataSource to be used last in lookup operations.
 	 *
-	 * @param b If true, then this dataSource will be used last in list of DataSources
+	 * @param b true to use as fallback DataSource
 	 */
 	public void setLast(boolean b) {
 		bLast = b;
 	}
 
 	/**
-	 * Sets the position of this OADataSource within the list of datasources. (0 based).
+	 * Moves this DataSource to the specified position in the global list.
+	 *
+	 * @param pos target index
 	 */
 	public void setPosition(int pos) {
 		synchronized (alDataSource) {
@@ -420,30 +486,26 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Returns the position of this OADataSource within the list of registered datasources.
+	 * Returns this DataSource's index in the global list.
 	 *
-	 * @return -1 if not found, else position (0 based)
+	 * @return position or -1 if not registered
 	 */
 	public int getPosition() {
 		return alDataSource.indexOf(this);
 	}
 
-	/**
-	 * Name of this dataSource
-	 */
+	/** Sets the name of this DataSource. */
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	/**
-	 * Name of this dataSource
-	 */
+	/** Returns the name of this DataSource. */
 	public String getName() {
 		return name;
 	}
 
 	/**
-	 * Returns the Name of this dataSource.
+	 * Returns the name if defined, otherwise the default object representation.
 	 */
 	public String toString() {
 		if (name == null) {
@@ -454,10 +516,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Used by static OADataSource to know if a registered OADataSource subclass supports a specific Class.
-	 *
-	 * @param clazz  class
-	 * @param filter used to query the datasource
+	 * Returns whether this DataSource supports persistence for the given class.
 	 */
 	@Override
 	public abstract boolean isClassSupported(Class clazz, OAFilter filter);
@@ -468,48 +527,31 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Used by dataSources to update special requirements for handling Many2Many relationships (ex:Link Table).
-	 * <p>
+	 * Updates link-table relationships for a Many-to-Many mapping.
 	 * Uses the hub.masterObject, Hub.getRemovedObjects(), Hub.getAddedObjects() to find out which objects were added or removed. <br>
-	 * This is called by OAObject.cascadeSave/Delete methods
 	 */
 	@Override
 	public abstract void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
 
-	/**
-	 * Add/Insert a new Object into DataSource.
-	 * <p>
-	 * Called directly by OAObject.save()
-	 */
+	/** Inserts a new object into the DataSource. */
 	@Override
 	public abstract void insert(OAObject obj);
 
-	/**
-	 * Add/Insert a new Object into DataSource, without references (fkeys).
-	 * <p>
-	 * Called directly by OAObject.saveWithoutReferences() to save a reference while saving another Object.
-	 *
-	 * @see OAObject#save
-	 */
+	/** Inserts an object without its reference properties. */
 	@Override
 	public abstract void insertWithoutReferences(OAObject obj);
 
-	/**
-	 * Update an existing Object to DataSource.
-	 * <p>
-	 * Called directly by OAObject.save()
-	 */
+	/** Updates an existing object in the DataSource. */
 	@Override
 	public abstract void update(OAObject obj, String[] includeProperties, String[] excludeProperties);
 
+	/** Update an existing object in the DataSource. */
 	@Override
 	public void update(OAObject obj) {
 		update(obj, null, null);
 	}
 
-	/**
-	 * Remove an Object from a DataSource.
-	 */
+	/** Deletes an object from the DataSource. */
 	@Override
 	public abstract void delete(OAObject obj);
 
@@ -558,10 +600,30 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return Math.min(x, max);
 	}
 
+	/**
+	 * Performs a COUNT operation using the OA property-path query language.
+	 * Delegates to the primary {@link #count(Class, String, Object[], OAObject, String, String, int)}
+	 * implementation with no parameters, no where-object, and a max of zero.
+	 *
+	 * @param selectClass the class to perform the count against
+	 * @param queryWhere  the property-path based query expression
+	 * @return number of matching objects
+	 */
 	public int count(Class selectClass, String queryWhere) {
 		return count(selectClass, queryWhere, 0);
 	}
 
+	/**
+	 * Performs a COUNT operation using the given query and parameters.
+	 * Delegates to the primary count method with the provided params and max,
+	 * without a where-object or extra where-clause.
+	 *
+	 * @param selectClass the class to count
+	 * @param queryWhere  property-path query
+	 * @param params      parameters for '?' placeholders
+	 * @param max         maximum count limit, or zero for unlimited
+	 * @return number of matching objects, capped at max if max > 0
+	 */
 	public int count(Class selectClass, String queryWhere, Object[] params, int max) {
 		int x = count(	selectClass,
 						queryWhere, params,
@@ -572,6 +634,16 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return Math.min(x, max);
 	}
 
+	/**
+	 * Performs a COUNT using a single query parameter. Wraps the parameter
+	 * into an array if non-null, then delegates to the primary count method.
+	 *
+	 * @param selectClass the class to count
+	 * @param queryWhere  property-path query
+	 * @param param       single parameter value
+	 * @param max         maximum count limit, or zero for unlimited
+	 * @return number of matching objects, capped at max if max > 0
+	 */
 	public int count(Class selectClass, String queryWhere, Object param, int max) {
 		int x = count(	selectClass,
 						queryWhere, param == null ? null : (new Object[] { param }),
@@ -582,18 +654,47 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return Math.min(x, max);
 	}
 
+	/**
+	 * Performs a COUNT using a query and parameter array with no maximum limit.
+	 * Delegates to the primary count method with max set to zero.
+	 *
+	 * @param selectClass the class to count
+	 * @param queryWhere  property-path query
+	 * @param params      parameter array
+	 * @return number of matching objects
+	 */
 	public int count(Class selectClass, String queryWhere, Object[] params) {
 		return count(	selectClass,
 						queryWhere, params,
 						null, null, null, 0);
 	}
 
+	/**
+	 * Performs a COUNT using a single parameter and no maximum limit.
+	 * Delegates to the primary count method with max set to zero.
+	 *
+	 * @param selectClass the class to count
+	 * @param queryWhere  property-path query
+	 * @param param       single parameter value
+	 * @return number of matching objects
+	 */
 	public int count(Class selectClass, String queryWhere, Object param) {
 		return count(	selectClass,
 						queryWhere, param == null ? null : (new Object[] { param }),
 						null, null, null, 0);
 	}
 
+	/**
+	 * Counts objects of the given class using a where-object reference and
+	 * property name to generate the query. Delegates to the primary count
+	 * method without parameters or extra where-clause.
+	 *
+	 * @param selectClass the class to count
+	 * @param whereObject reference object for query construction
+	 * @param propertyNameFromWhereObject property used in the where-clause
+	 * @param max maximum count limit, or zero for unlimited
+	 * @return number of matching objects, capped at max if max > 0
+	 */
 	public int count(Class selectClass, OAObject whereObject, String propertyNameFromWhereObject, int max) {
 		int x = count(	selectClass,
 						null, null,
@@ -604,10 +705,32 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return Math.min(x, max);
 	}
 
+	/**
+	 * Counts objects using a where-object and property reference without a
+	 * maximum limit. Delegates to the variant with max set to zero.
+	 *
+	 * @param selectClass the class to count
+	 * @param whereObject reference object for query construction
+	 * @param propertyNameFromWhereObject property used in the where-clause
+	 * @return number of matching objects
+	 */
 	public int count(Class selectClass, OAObject whereObject, String propertyNameFromWhereObject) {
 		return count(selectClass, whereObject, propertyNameFromWhereObject, 0);
 	}
 
+	/**
+	 * Performs a COUNT using a where-object, optional extra where-clause,
+	 * and parameters. Delegates to the primary count method with the supplied
+	 * values.
+	 *
+	 * @param selectClass the class to count
+	 * @param whereObject reference object for query construction
+	 * @param extraWhere  additional where-clause expression
+	 * @param params      parameters for the expression
+	 * @param propertyNameFromWhereObject property used in the where-clause
+	 * @param max maximum count limit, or zero for unlimited
+	 * @return number of matching objects, capped at max if max > 0
+	 */
 	public int count(Class selectClass, OAObject whereObject, String extraWhere, Object[] params, String propertyNameFromWhereObject,
 			int max) {
 		int x = count(	selectClass,
@@ -619,20 +742,42 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return Math.min(x, max);
 	}
 
+	/**
+	 * Performs a COUNT using a where-object and optional extra where-clause
+	 * with no maximum limit. Delegates to the variant with max set to zero.
+	 *
+	 * @param selectClass the class to count
+	 * @param whereObject reference object for query construction
+	 * @param extraWhere  additional where-clause
+	 * @param params      parameters for the expression
+	 * @param propertyNameFromWhereObject property for where-condition
+	 * @return number of matching objects
+	 */
 	public int count(Class selectClass, OAObject whereObject, String extraWhere, Object[] params, String propertyNameFromWhereObject) {
 		return count(selectClass, whereObject, extraWhere, params, propertyNameFromWhereObject, 0);
 	}
 
 	/**
-	 * Performs a count using native query language for DataSource.
+	 * Performs a COUNT using the DataSource's native query language rather
+	 * than OA's property-path query system.
 	 *
-	 * @param queryWhere query based on DataSource structure.
-	 * @see OASelect
+	 * @param selectClass the class to count
+	 * @param queryWhere  native query expression
+	 * @param max maximum count limit, or zero for unlimited
+	 * @return number of matching rows
 	 */
 	@Override
 	public abstract int countPassthru(Class selectClass,
 			String queryWhere, int max);
 
+	/**
+	 * Performs a native COUNT without specifying a class. Delegates to the
+	 * abstract passthru method with selectClass set to null.
+	 *
+	 * @param queryWhere native query expression
+	 * @param max maximum count limit, or zero for unlimited
+	 * @return number of matching rows
+	 */
 	public int countPassthru(String queryWhere, int max) {
 		int x = countPassthru(null, queryWhere, max);
 		if (max < 1) {
@@ -641,28 +786,41 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return Math.min(x, max);
 	}
 
+	/**
+	 * Performs a native COUNT with no maximum limit. Delegates to the
+	 * variant that accepts a max value of zero.
+	 *
+	 * @param queryWhere native query expression
+	 * @return number of matching rows
+	 */
 	public int countPassthru(String queryWhere) {
 		return countPassthru(queryWhere, 0);
 	}
 
 	/**
-	 * Returns true if this dataSource supports selecting/storing/deleting.
+	 * Indicates whether the DataSource supports storing, selecting, and
+	 * deleting persistent objects.
+	 *
+	 * @return true if the DataSource supports storage operations
 	 */
 	@Override
 	public abstract boolean supportsStorage();
 
 	/**
-	 * Perform a query to retrieve objects from DataSource.
-	 * <p>
-	 * See OASelect for complete description on selects/queriess.
+	 * Performs a query using the OA property-path query language and returns
+	 * an iterator over the matching objects.
 	 *
-	 * @param selectClass Class of object to create and return
-	 * @param queryWhere  query String using property paths based on Object structure. DataSource
-	 * @param params      list of values to replace '?' in queryWhere clause.
-	 * @param filter      the datasource filter, used if the ds does not support queries (ex: sql) will convert query to native query
-	 *                    language of the datasoure.
-	 * @return OADataSourceIterator that is used to return objects of type selectClass
-	 * @see OASelect
+	 * @param selectClass the class of objects to return
+	 * @param queryWhere  property-path query expression
+	 * @param params      parameter values for query substitution
+	 * @param queryOrder  ordering expression
+	 * @param whereObject optional reference object used in query construction
+	 * @param propertyFromWhereObject property used for where-object filtering
+	 * @param extraWhere  additional where-clause
+	 * @param max maximum number of objects to return, or zero for unlimited
+	 * @param filter optional OAFilter for post-filtering
+	 * @param bDirty whether dirty (unsaved) objects should be included
+	 * @return iterator yielding matching objects
 	 */
 	@Override
 	public abstract OADataSourceIterator select(Class selectClass,
@@ -670,6 +828,13 @@ public abstract class OADataSource implements OADataSourceInterface {
 			OAObject whereObject, String propertyFromWhereObject, String extraWhere,
 			int max, OAFilter filter, boolean bDirty);
 
+	/**
+	 * Performs a select for all objects of the given class. Delegates to the
+	 * primary select method with no query, parameters, or limits.
+	 *
+	 * @param selectClass the class of objects to select
+	 * @return iterator yielding matching objects
+	 */
 	public OADataSourceIterator select(Class selectClass) {
 		return select(	selectClass,
 						(String) null, (Object[]) null, (String) null,
@@ -677,6 +842,14 @@ public abstract class OADataSource implements OADataSourceInterface {
 						0, (OAFilter) null, false);
 	}
 
+	/**
+	 * Performs a select using the given query expression. Delegates to the
+	 * primary select method without parameters, ordering, or limits.
+	 *
+	 * @param selectClass the class of objects to select
+	 * @param queryWhere property-path query expression
+	 * @return iterator yielding matching objects
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere) {
 		return select(	selectClass,
 						queryWhere, (Object[]) null, (String) null,
@@ -684,6 +857,15 @@ public abstract class OADataSource implements OADataSourceInterface {
 						0, (OAFilter) null, false);
 	}
 
+	/**
+	 * Performs a select using the given query expression and orderBy clause.
+	 * Delegates to the primary select method without parameters or limits.
+	 *
+	 * @param selectClass the class of results
+	 * @param queryWhere query expression
+	 * @param orderBy ordering expression
+	 * @return iterator yielding matching objects
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, String orderBy) {
 		return select(	selectClass,
 						queryWhere, (Object[]) null, orderBy,
@@ -691,6 +873,18 @@ public abstract class OADataSource implements OADataSourceInterface {
 						0, (OAFilter) null, false);
 	}
 
+	/**
+	 * Performs a select with query, ordering, max limit, filter, and dirty
+	 * flag. Delegates to the primary select method.
+	 *
+	 * @param selectClass result class
+	 * @param queryWhere query expression
+	 * @param queryOrder ordering expression
+	 * @param max maximum results, or zero for unlimited
+	 * @param filter optional OAFilter
+	 * @param bDirty whether to include dirty objects
+	 * @return iterator yielding matching objects
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, String queryOrder, int max, OAFilter filter, boolean bDirty) {
 		return select(	selectClass,
 						queryWhere, null, queryOrder,
@@ -698,6 +892,17 @@ public abstract class OADataSource implements OADataSourceInterface {
 						max, filter, bDirty);
 	}
 
+	/**
+	 * Performs a select using the given query, ordering, max limit, and
+	 * dirty flag. Delegates to the primary select method with no filter.
+	 *
+	 * @param selectClass result class
+	 * @param queryWhere query expression
+	 * @param queryOrder ordering expression
+	 * @param max max results
+	 * @param bDirty include dirty objects
+	 * @return iterator yielding matching objects
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, String queryOrder, int max, boolean bDirty) {
 		return select(	selectClass,
 						queryWhere, null, queryOrder,
@@ -705,6 +910,16 @@ public abstract class OADataSource implements OADataSourceInterface {
 						max, null, bDirty);
 	}
 
+	/**
+	 * Performs a select using the given query, ordering, and dirty flag
+	 * with no max limit. Delegates to the primary select method.
+	 *
+	 * @param selectClass result class
+	 * @param queryWhere query expression
+	 * @param queryOrder ordering expression
+	 * @param bDirty include dirty objects
+	 * @return iterator yielding matching objects
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, String queryOrder, boolean bDirty) {
 		return select(	selectClass,
 						queryWhere, null, queryOrder,
@@ -712,6 +927,19 @@ public abstract class OADataSource implements OADataSourceInterface {
 						0, null, bDirty);
 	}
 
+	/**
+	 * Performs a select using the given query, parameters, ordering,
+	 * maximum limit, and dirty flag. Delegates to the primary select method
+	 * without a filter.
+	 *
+	 * @param selectClass result class
+	 * @param queryWhere  property-path query expression
+	 * @param params      parameter values
+	 * @param queryOrder  ordering expression
+	 * @param max         maximum results, or zero for unlimited
+	 * @param bDirty      whether to include dirty objects
+	 * @return iterator yielding matching objects
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, Object[] params, String queryOrder, int max, boolean bDirty) {
 		return select(	selectClass,
 						queryWhere, params, queryOrder,
@@ -719,6 +947,18 @@ public abstract class OADataSource implements OADataSourceInterface {
 						max, null, bDirty);
 	}
 
+	/**
+	 * Performs a select using the given query, parameters, ordering,
+	 * and dirty flag with no maximum limit. Delegates to the primary
+	 * select method with max set to zero.
+	 *
+	 * @param selectClass result class
+	 * @param queryWhere  query expression
+	 * @param params      parameter values
+	 * @param queryOrder  ordering expression
+	 * @param bDirty      include dirty objects
+	 * @return iterator yielding matching objects
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, Object[] params, String queryOrder, boolean bDirty) {
 		return select(	selectClass,
 						queryWhere, params, queryOrder,
@@ -726,6 +966,20 @@ public abstract class OADataSource implements OADataSourceInterface {
 						0, null, bDirty);
 	}
 
+	/**
+	 * Performs a select using the given query, parameters, ordering,
+	 * maximum limit, filter, and dirty flag. Delegates to the primary
+	 * select method.
+	 *
+	 * @param selectClass result class
+	 * @param queryWhere  query expression
+	 * @param params      parameter values
+	 * @param queryOrder  ordering clause
+	 * @param max         maximum results
+	 * @param filter      optional OAFilter
+	 * @param bDirty      include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, Object[] params, String queryOrder, int max, OAFilter filter,
 			boolean bDirty) {
 		return select(	selectClass,
@@ -734,6 +988,19 @@ public abstract class OADataSource implements OADataSourceInterface {
 						max, filter, bDirty);
 	}
 
+	/**
+	 * Performs a select using a single parameter value wrapped into an array.
+	 * Delegates to the primary select method.
+	 *
+	 * @param selectClass result class
+	 * @param queryWhere  query expression
+	 * @param param       single parameter value
+	 * @param queryOrder  ordering clause
+	 * @param max         maximum results
+	 * @param filter      optional OAFilter
+	 * @param bDirty      include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, Object param, String queryOrder, int max, OAFilter filter,
 			boolean bDirty) {
 		return select(	selectClass,
@@ -742,14 +1009,54 @@ public abstract class OADataSource implements OADataSourceInterface {
 						max, filter, bDirty);
 	}
 
+	/**
+	 * Performs a select using a single parameter, ordering, maximum limit,
+	 * and dirty flag, without a filter. Delegates to the variant that
+	 * supports filtering.
+	 *
+	 * @param selectClass result class
+	 * @param queryWhere  query expression
+	 * @param param       single parameter value
+	 * @param queryOrder  ordering clause
+	 * @param max         maximum results
+	 * @param bDirty      include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, Object param, String queryOrder, int max, boolean bDirty) {
 		return select(selectClass, queryWhere, param, queryOrder, max, null, bDirty);
 	}
 
+	/**
+	 * Performs a select using a single parameter, ordering clause, and dirty
+	 * flag with no maximum limit. Delegates to the variant that accepts max.
+	 *
+	 * @param selectClass result class
+	 * @param queryWhere  query expression
+	 * @param param       single parameter
+	 * @param queryOrder  ordering clause
+	 * @param bDirty      include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass, String queryWhere, Object param, String queryOrder, boolean bDirty) {
 		return select(selectClass, queryWhere, param, queryOrder, 0, null, bDirty);
 	}
 
+	/**
+	 * Performs a select using a where-object reference, additional
+	 * where-clause, parameters, ordering, maximum limit, and optional filter.
+	 * Delegates to the primary select method.
+	 *
+	 * @param selectClass result class
+	 * @param whereObject reference object for query construction
+	 * @param propertyNameFromWhereObject property name used for linking
+	 * @param addToWhere  additional where-clause
+	 * @param args        parameter values
+	 * @param queryOrder  ordering clause
+	 * @param max         maximum results
+	 * @param filter      optional OAFilter
+	 * @param bDirty      include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass,
 			OAObject whereObject, String propertyNameFromWhereObject, String addToWhere, Object[] args,
 			String queryOrder, int max, OAFilter filter, boolean bDirty) {
@@ -759,17 +1066,59 @@ public abstract class OADataSource implements OADataSourceInterface {
 						max, filter, bDirty);
 	}
 
+	/**
+	 * Performs a select using a where-object, extra where text, parameters,
+	 * ordering, maximum limit, and dirty flag without a filter. Delegates
+	 * to the variant that accepts a filter.
+	 *
+	 * @param selectClass result class
+	 * @param whereObject reference object
+	 * @param propertyNameFromWhereObject linking property
+	 * @param addToWhere additional where-clause text
+	 * @param args       parameter values
+	 * @param queryOrder ordering clause
+	 * @param max        maximum results
+	 * @param bDirty     include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass, OAObject whereObject,
 			String propertyNameFromWhereObject, String addToWhere, Object[] args, String queryOrder, int max, boolean bDirty) {
 		return select(selectClass, whereObject, propertyNameFromWhereObject, addToWhere, args, queryOrder, max, null, bDirty);
 	}
 
+	/**
+	 * Performs a select using a where-object, extra where-clause text,
+	 * parameters, ordering, and dirty flag with no maximum limit.
+	 *
+	 * @param selectClass result class
+	 * @param whereObject reference object
+	 * @param propertyNameFromWhereObject linking property
+	 * @param addToWhere additional where text
+	 * @param args       parameters
+	 * @param queryOrder ordering clause
+	 * @param bDirty     include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass, OAObject whereObject, String propertyNameFromWhereObject,
 			String addToWhere, Object[] args,
 			String queryOrder, boolean bDirty) {
 		return select(selectClass, whereObject, propertyNameFromWhereObject, addToWhere, args, queryOrder, 0, null, bDirty);
 	}
 
+	/**
+	 * Performs a select using a where-object, linking property, ordering,
+	 * maximum limit, filter, and dirty flag. Delegates to the primary select
+	 * method.
+	 *
+	 * @param selectClass result class
+	 * @param whereObject reference object
+	 * @param propertyNameFromWhereObject linking property name
+	 * @param queryOrder ordering clause
+	 * @param max        maximum results
+	 * @param filter     optional OAFilter
+	 * @param bDirty     include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass, OAObject whereObject, String propertyNameFromWhereObject, String queryOrder,
 			int max, OAFilter filter, boolean bDirty) {
 		return select(	selectClass,
@@ -778,11 +1127,35 @@ public abstract class OADataSource implements OADataSourceInterface {
 						max, filter, bDirty);
 	}
 
+	/**
+	 * Performs a select using a where-object, linking property, ordering,
+	 * maximum limit, and dirty flag without a filter. Delegates to the
+	 * variant supporting filters.
+	 *
+	 * @param selectClass result class
+	 * @param whereObject reference object
+	 * @param propertyNameFromWhereObject linking property
+	 * @param queryOrder ordering clause
+	 * @param max        maximum results
+	 * @param bDirty     include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass, OAObject whereObject, String propertyNameFromWhereObject, String queryOrder,
 			int max, boolean bDirty) {
 		return select(selectClass, whereObject, propertyNameFromWhereObject, queryOrder, max, null, bDirty);
 	}
 
+	/**
+	 * Performs a select using a where-object, linking property, ordering,
+	 * and dirty flag with no maximum limit.
+	 *
+	 * @param selectClass result class
+	 * @param whereObject reference object
+	 * @param propertyNameFromWhereObject linking property
+	 * @param queryOrder ordering clause
+	 * @param bDirty     include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator select(Class selectClass, OAObject whereObject, String propertyNameFromWhereObject, String queryOrder,
 			boolean bDirty) {
 		return select(selectClass, whereObject, propertyNameFromWhereObject, queryOrder, 0, null, bDirty);
@@ -791,41 +1164,96 @@ public abstract class OADataSource implements OADataSourceInterface {
 	// hasNext(), next(), remove() (used to close)
 
 	/**
-	 * Performs a select using native query language for DataSource.
+	 * Performs a select using the DataSource's native query language rather
+	 * than OA's property-path query system.
 	 *
-	 * @param selectClass Class of object to create and return
-	 * @param queryWhere  query based on DataSource structure.
-	 * @see OASelect
-	 * @return OADataSourceIterator that is used to return objects of type selectClass
+	 * @param selectClass class of returned objects
+	 * @param queryWhere  native query expression
+	 * @param queryOrder  native ordering expression
+	 * @param max         maximum results, or zero for unlimited
+	 * @param filter      optional filter
+	 * @param bDirty      include dirty objects
+	 * @return iterator over matching results
 	 */
 	public abstract OADataSourceIterator selectPassthru(Class selectClass,
 			String queryWhere, String queryOrder,
 			int max, OAFilter filter, boolean bDirty);
 
+	/**
+	 * Performs a native select using the given query, maximum limit, filter,
+	 * and dirty flag. Delegates to the primary passthru select method.
+	 *
+	 * @param selectClass result class
+	 * @param query       native query expression
+	 * @param max         maximum results
+	 * @param filter      optional filter
+	 * @param bDirty      include dirty objects
+	 * @return iterator over matching results
+	 */
 	public OADataSourceIterator selectPassthru(Class selectClass, String query, int max, OAFilter filter, boolean bDirty) {
 		return selectPassthru(	selectClass,
 								query, null,
 								max, filter, bDirty);
 	}
 
+	/**
+	 * Performs a native select with a maximum limit and dirty flag without a
+	 * filter. Delegates to the variant that accepts a filter.
+	 *
+	 * @param selectClass result class
+	 * @param query       native query
+	 * @param max         maximum results
+	 * @param bDirty      include dirty objects
+	 * @return iterator over results
+	 */
 	public OADataSourceIterator selectPassthru(Class selectClass, String query, int max, boolean bDirty) {
 		return selectPassthru(	selectClass,
 								query, null,
 								max, null, bDirty);
 	}
 
+	/**
+	 * Performs a native select with no maximum limit. Delegates to the
+	 * variant that accepts a max value.
+	 *
+	 * @param selectClass result class
+	 * @param query       native query
+	 * @param bDirty      include dirty objects
+	 * @return iterator over results
+	 */
 	public OADataSourceIterator selectPassthru(Class selectClass, String query, boolean bDirty) {
 		return selectPassthru(	selectClass,
 								query, null,
 								0, null, bDirty);
 	}
 
+	/**
+	 * Performs a native select using the given query, ordering, maximum
+	 * limit, and dirty flag. Delegates to the variant that accepts a filter.
+	 *
+	 * @param selectClass result class
+	 * @param query       native query expression
+	 * @param queryOrder  ordering expression
+	 * @param max         maximum results
+	 * @param bDirty      include dirty objects
+	 * @return iterator over results
+	 */
 	public OADataSourceIterator selectPassthru(Class selectClass, String query, String queryOrder, int max, boolean bDirty) {
 		return selectPassthru(	selectClass,
 								query, queryOrder,
 								max, null, bDirty);
 	}
 
+	/**
+	 * Performs a native select using a query and ordering expression with
+	 * no maximum limit. Delegates to the variant that accepts a max value.
+	 *
+	 * @param selectClass result class
+	 * @param query       native query
+	 * @param queryOrder  ordering expression
+	 * @param bDirty      include dirty objects
+	 * @return iterator over results
+	 */
 	public OADataSourceIterator selectPassthru(Class selectClass, String query, String queryOrder, boolean bDirty) {
 		return selectPassthru(	selectClass,
 								query, queryOrder,
@@ -833,21 +1261,30 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Execute a command on the dataSource.
+	 * Executes a native command on the underlying DataSource.
 	 *
-	 * @param command DataSource native command.
+	 * @param command native command to execute
+	 * @return result of the command, if any
 	 */
 	@Override
 	public abstract Object execute(String command);
 
 	/**
-	 * Called by OAObject to initialize a new Object.
+	 * Assigns an identifier value to the given object. Called during object
+	 * initialization for DataSources that manage ID assignment.
+	 *
+	 * @param obj the object receiving an assigned id
 	 */
 	@Override
 	public abstract void assignId(OAObject obj);
 
 	/**
-	 * Returns true if the dataSource will set the property value before saving.
+	 * Indicates whether the DataSource will assign a value for the specified
+	 * property before the object is saved. Defaults to false.
+	 *
+	 * @param object        the OAObject being evaluated
+	 * @param propertyName  the property to check
+	 * @return true if the DataSource will assign the value, otherwise false
 	 */
 	@Override
 	public boolean willCreatePropertyValue(OAObject object, String propertyName) {
@@ -855,8 +1292,10 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Defaults to return true, allowing object Id properties to be changed. Most DataSources that use foreign keys for references will not
-	 * allow the object id to be changed after the object has been saved.
+	 * Indicates whether object identifier properties may be changed after
+	 * the object has been saved. Defaults to true.
+	 *
+	 * @return true if ID values are allowed to change
 	 */
 	@Override
 	public boolean getAllowIdChange() {
@@ -864,13 +1303,22 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Select BLOB (large byte[]) property
+	 * Retrieves the byte[] (BLOB) value of the specified property from the
+	 * underlying DataSource.
+	 *
+	 * @param obj           the OAObject containing the property
+	 * @param propertyName  name of the property to retrieve
+	 * @return BLOB value as byte array, or null if not found
 	 */
 	@Override
 	public abstract byte[] getPropertyBlobValue(OAObject obj, String propertyName);
 
 	/**
-	 * Can this datasource get a count of the objects that will be selected.
+	 * Indicates whether this DataSource supports pre-count operations,
+	 * allowing the number of rows to be determined before a select.
+	 * Defaults to true.
+	 *
+	 * @return true if pre-count operations are supported
 	 */
 	@Override
 	public boolean getSupportsPreCount() {
@@ -878,8 +1326,11 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Helper method to know if there is an OATransaction that has batchUpdate=true. If using OATransaction wth batchUpdate=true, then
-	 * datasource can batch the updates that it makes to the database.
+	 * Determines whether batch update operations are permitted based on the
+	 * current active transaction. Returns true if the active transaction has
+	 * batch mode enabled.
+	 *
+	 * @return true if batch updates are allowed
 	 */
 	public boolean isAllowingBatch() {
 		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
@@ -887,33 +1338,53 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return bIsForBatch;
 	}
 
+	/**
+	 * Indicates whether there is an active OATransaction for the current
+	 * thread.
+	 *
+	 * @return true if in an active transaction
+	 */
 	public boolean isInTransaction() {
 		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
 		return (tran != null);
 	}
 
 	/**
-	 * Flag to know if datasource is read only.
+	 * Sets the read-only flag. When false, write operations such as insert,
+	 * update, and delete will throw an exception.
 	 *
-	 * @param readOnly if false, then writes (insert/update/delete) will throw an exception.
+	 * @param readOnly true to enable read-only mode
 	 */
 	public void setReadOnly(boolean readOnly) {
 		this.bReadOnly = readOnly;
 	}
 
+	/**
+	 * Returns whether this DataSource is in read-only mode.
+	 *
+	 * @return true if read-only
+	 */
 	public boolean getReadOnly() {
 		return bReadOnly;
 	}
 
 	/**
-	 * Flag to know if datasource should ignore writes.
+	 * Sets whether write operations should be ignored. When true, insert,
+	 * update, and delete operations are silently skipped.
 	 *
-	 * @param ignoreWrites if true, then writes (insert/update/delete) will be ignored.
+	 * @param ignoreWrites true to ignore write operations
 	 */
 	public void setIgnoreWrites(boolean ignoreWrites) {
 		this.bIgnoreWrites = ignoreWrites;
 	}
 
+	/**
+	 * Returns whether write operations are ignored. If ignore-writes is
+	 * enabled but the current transaction allows writes for read-only
+	 * DataSources, then false is returned.
+	 *
+	 * @return true if write operations are ignored
+	 */
 	public boolean getIgnoreWrites() {
 		if (bIgnoreWrites) {
 			final OATransaction tran = OAThreadLocalDelegate.getTransaction();

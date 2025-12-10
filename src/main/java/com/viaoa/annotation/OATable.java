@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,16 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME) 
 public @interface OATable {
-    String name() default "";
-    OAIndex[] indexes() default {};
+
+	/**
+	 * Specifies the physical database table name associated with the
+	 * annotated OAObject class.
+	 */
+	String name() default "";
+    
+	/**
+	 * Defines zero or more index definitions applied to the table,
+	 * including unique, foreign-key, and multi-column indexes.
+	 */
+	OAIndex[] indexes() default {};
 }

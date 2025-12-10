@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,24 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAFkey {
-	String fromProperty() default "";
+	
+	/**
+	 * Specifies the local link property name that defines the
+	 * relationship’s originating side.
+	 */
+ 	String fromProperty() default "";
 
-	// name of pkey property in the link.objectTo
+ 	/**
+ 	 * Identifies the primary-key property on the target object
+ 	 * referenced by this foreign-key relationship.
+ 	 */
 	String toProperty() default "";
 
-	@Deprecated // for old models only
+	/**
+	 * Deprecated: legacy definition of one or more foreign-key column
+	 * names for older OA models. Modern models should not use this
+	 * field.
+	 */
+	@Deprecated
 	String[] columns() default {};
 }

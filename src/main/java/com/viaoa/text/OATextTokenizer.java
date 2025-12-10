@@ -120,7 +120,7 @@ public class OATextTokenizer {
 	 *
 	 * @see #field(String,String,int,int)
 	 */
-	@Deprecated(since="4.0.0")
+	@Deprecated
 	public static String field(String str, String sep, int beg) {
 		return field(str, sep, beg, 1);
 	}
@@ -136,7 +136,7 @@ public class OATextTokenizer {
 	 * @param amt number of fields to return, -1 for all after the beg
 	 * @return string value of field if begin position exists, else null if not found
 	 */
-	@Deprecated(since="4.0.0")
+	@Deprecated
 	public static String field(final String str, final String sep, final int beg, final int amt) {
 		if (str == null) {
 			return null;
@@ -191,7 +191,7 @@ public class OATextTokenizer {
 	 *
 	 * @see #field(String,String,int,int)
 	 */
-	@Deprecated(since="4.0.0")
+	@Deprecated
 	public static String field(String str, char sep, int beg) {
 		return field(str, sep + "", beg, 1);
 	}
@@ -201,7 +201,7 @@ public class OATextTokenizer {
 	 *
 	 * @see #field(String,String,int,int)
 	 */
-	@Deprecated(since="4.0.0")
+	@Deprecated
 	public static String field(String str, char sep, int beg, int amt) {
 		return field(str, sep + "", beg, amt);
 	}

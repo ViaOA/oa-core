@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,35 +57,79 @@ import com.viaoa.util.OAString;
  * {@link com.viaoa.object.OAObjectCallback}.
  */
 public class OAContext {
+	
+	/**
+	 * Map of context-key → Hub, stored using weak references so entries expire
+	 * automatically when no longer referenced. Each Hub's active object represents
+	 * the OAObject associated with that context.
+	 */
 	private static final ConcurrentHashMap<Object, WeakReference<Hub<? extends OAObject>>> hmContextHub = new ConcurrentHashMap<>();
+	
+	/**
+	 * Map of context-key → OAUserAccess rules, stored using weak references.
+	 * Enables context-specific permission evaluation.
+	 */
 	private static final ConcurrentHashMap<Object, WeakReference<OAUserAccess>> hmContextUserAccess = new ConcurrentHashMap<>();
 
+	/**
+	 * Special placeholder used when no thread-local context is provided. This
+	 * distinguishes “no context provided” from an actual null key.
+	 */
 	private static final Object NullContext = new Object();
 
 	// by default, these property names are in AppUser
+
+	/**
+	 * Property path used to determine whether the context user has admin rights.
+	 * Defaults to "Admin".
+	 */
 	private static String adminPropertyPath = "Admin";
+	
+	/**
+	 * Property path used to determine whether the context user has super-admin
+	 * rights. Defaults to "SuperAdmin".
+	 */
 	private static String superAdminPropertyPath = "SuperAdmin";
+	
+	/**
+	 * Property path used to determine whether the context user may edit processed
+	 * objects. Defaults to "EditProcessed".
+	 */
 	private static String allowEditProcessedPropertyPath = "EditProcessed";
 
 	
+	/**
+	 * Private constructor to prevent instantiation. OAContext exposes only static
+	 * methods.
+	 */
 	private OAContext() {
 	    // static methods only
 	}
 	
 	/**
-	 * Property path used to find the user property for allowing users to edit objects/properties/etc that are annotatied as processed.
-	 * Defaults to "EditProcessed"
+	 * Sets the property path used to determine whether a user may edit processed
+	 * objects.
+	 *
+	 * @param pp property path to use
 	 */
 	public static void setAllowEditProcessedPropertyPath(String pp) {
 		OAContext.allowEditProcessedPropertyPath = pp;
 	}
 
+	/**
+	 * Returns the property path used for evaluating edit-processed permissions.
+	 *
+	 * @return property path
+	 */
 	public static String getAllowEditProcessedPropertyPath() {
 		return OAContext.allowEditProcessedPropertyPath;
 	}
 
 	/**
-	 * Does the current thread have rights to edit processed objects.
+	 * Returns whether the current thread's context permits editing processed
+	 * objects. Delegates to {@link #getAllowEditProcessed(Object)}.
+	 *
+	 * @return true if permitted; false otherwise
 	 */
 	public static boolean getAllowEditProcessed() {
 		Object context = OAThreadLocalDelegate.getContext();
@@ -93,7 +137,11 @@ public class OAContext {
 	}
 
 	/**
-	 * Does the context have rights to edit processed objects.
+	 * Evaluates whether the specified context allows editing processed objects.
+	 * Applies special server-thread logic when context is null.
+	 *
+	 * @param context context key; null is converted to NullContext
+	 * @return true if permitted; false otherwise
 	 */
 	public static boolean getAllowEditProcessed(Object context) {
 		if (context == null) {
@@ -126,24 +174,41 @@ public class OAContext {
 	}
 
 	/**
-	 * Property path used to find the user property for allowing users to have admin rights. Defaults to "Admin"
+	 * Sets the property path used to determine whether the context user has
+	 * admin rights.
+	 *
+	 * @param pp property path to use
 	 */
 	public static void setAdminPropertyPath(String pp) {
 		OAContext.adminPropertyPath = pp;
 	}
 
+	/**
+	 * Returns the property path used for admin-right evaluation.
+	 *
+	 * @return property path
+	 */
 	public static String getAdminPropertyPath() {
 		return OAContext.adminPropertyPath;
 	}
 
 	/**
-	 * Does the context have admin rights.
+	 * Returns whether the current thread's context has admin rights.
+	 *
+	 * @return true if admin; false otherwise
 	 */
 	public static boolean isAdmin() {
 		Object context = OAThreadLocalDelegate.getContext();
 		return isAdmin(context);
 	}
 
+	/**
+	 * Evaluates whether the specified context has admin rights. Applies special
+	 * server-thread rules when context is null.
+	 *
+	 * @param context context key
+	 * @return true if admin; false otherwise
+	 */
 	public static boolean isAdmin(Object context) {
 		if (context == null) {
 			context = NullContext;
@@ -179,25 +244,39 @@ public class OAContext {
 	}
 
 	/**
-	 * Property path used to find the user property for allowing users to have super admin rights. If true, then the user will have all
-	 * ObjectCallback.allowed=true Defaults to "SuperAdmin"
+	 * Sets the property path used to determine super-admin rights.
+	 *
+	 * @param pp property path
 	 */
 	public static void setSuperAdminPropertyPath(String pp) {
 		OAContext.superAdminPropertyPath = pp;
 	}
 
+	/**
+	 * Returns the property path used for evaluating super-admin rights.
+	 *
+	 * @return property path
+	 */
 	public static String getSuperAdminPropertyPath() {
 		return OAContext.superAdminPropertyPath;
 	}
 
 	/**
-	 * Does the context have super admin rights.
+	 * Returns whether the current thread’s context has super-admin rights.
+	 *
+	 * @return true if super-admin; false otherwise
 	 */
 	public static boolean isSuperAdmin() {
 		Object context = OAThreadLocalDelegate.getContext();
 		return isSuperAdmin(context);
 	}
 
+	/**
+	 * Evaluates whether the specified context has super-admin rights.
+	 *
+	 * @param context context key; null converted to NullContext
+	 * @return true if super-admin; false otherwise
+	 */
 	public static boolean isSuperAdmin(Object context) {
 		if (OAString.isEmpty(superAdminPropertyPath)) {
 			return false;
@@ -216,13 +295,28 @@ public class OAContext {
 	}
 
 	/**
-	 * Check to see if context (user) property path is equal to bEqualTo.
+	 * Determines whether the property at the given path for the current context
+	 * equals the specified boolean value. Delegates to
+	 * {@link #isEnabled(Object, String, boolean)}.
+	 *
+	 * @param pp property path
+	 * @param bEqualTo required boolean value
+	 * @return true if property equals bEqualTo; false otherwise
 	 */
 	public static boolean isEnabled(final String pp, final boolean bEqualTo) {
 		Object context = OAThreadLocalDelegate.getContext();
 		return isEnabled(context, pp, bEqualTo);
 	}
 
+	/**
+	 * Determines whether the property at the given path for the specified context
+	 * matches the required boolean value. Applies special server-thread defaults.
+	 *
+	 * @param context context key
+	 * @param pp property path
+	 * @param bEqualTo required boolean value
+	 * @return true if enabled; false otherwise
+	 */
 	public static boolean isEnabled(Object context, final String pp, final boolean bEqualTo) {
 		if (context == null) {
 			context = NullContext;
@@ -255,11 +349,11 @@ public class OAContext {
 	}
 
 	/**
-	 * Associated an object value with a context.
+	 * Associates an OAObject with the specified context. The object is wrapped
+	 * inside a Hub whose active object represents the context user.
 	 *
-	 * @param context is value used to lookup obj
-	 * @param obj     object that is associated with context.
-	 * @see OAThreadLocalDelegate#getContext()
+	 * @param context context key; null converted to NullContext
+	 * @param obj OAObject representing the user; null removes the mapping
 	 */
 	public static void setContextObject(Object context, OAObject obj) {
 		if (context == null) {
@@ -275,18 +369,34 @@ public class OAContext {
 		}
 	}
 
+	/**
+	 * Alias for {@link #setContextObject(Object, OAObject)}.
+	 *
+	 * @param context context key
+	 * @param obj OAObject to associate
+	 */
 	public static void setContext(Object context, OAObject obj) {
 		setContextObject(context, obj);
 	}
 
 	/**
-	 * Returns the object associated with the current thread local (or null) context.
+	 * Returns the OAObject associated with the current thread's context, or
+	 * null if none.
+	 *
+	 * @return associated OAObject or null
 	 */
 	public static OAObject getContextObject() {
 		Object context = OAThreadLocalDelegate.getContext();
 		return getContextObject(context);
 	}
 
+	/**
+	 * Returns the OAObject associated with the specified context by retrieving the
+	 * context Hub's active object.
+	 *
+	 * @param context context key
+	 * @return OAObject, or null
+	 */
 	public static OAObject getContextObject(Object context) {
 		Hub<? extends OAObject> hub = getContextHub(context);
 		if (hub == null) {
@@ -296,7 +406,11 @@ public class OAContext {
 	}
 
 	/**
-	 * Allows the value to be associated with a context, to be the ActiveObject in a hub.
+	 * Associates a Hub with the specified context. The Hub’s active object
+	 * represents the context user.
+	 *
+	 * @param context context key
+	 * @param hub Hub to associate; null removes the mapping
 	 */
 	public static void setContextHub(Object context, Hub<? extends OAObject> hub) {
 		if (context == null) {
@@ -312,10 +426,18 @@ public class OAContext {
 		}
 	}
 
+	/**
+	 * Removes the Hub associated with the NullContext.
+	 */
 	public static void removeContextHub() {
 		removeContextHub(NullContext);
 	}
 
+	/**
+	 * Removes the Hub associated with the specified context.
+	 *
+	 * @param context context key
+	 */
 	public static void removeContextHub(Object context) {
 		if (context == null) {
 			context = NullContext;
@@ -323,19 +445,39 @@ public class OAContext {
 		hmContextHub.remove(context);
 	}
 
+	/**
+	 * Removes all context information for the specified context key.
+	 *
+	 * @param context context key
+	 */
 	public static void removeContext(Object context) {
 		removeContextHub(context);
 	}
 
+	/**
+	 * Removes all context information for the NullContext.
+	 */
 	public static void removeContext() {
 		removeContextHub(null);
 	}
 
+	/**
+	 * Returns the Hub associated with the current thread's context.
+	 *
+	 * @return associated Hub, or null
+	 */
 	public static Hub<? extends OAObject> getContextHub() {
 		Object context = OAThreadLocalDelegate.getContext();
 		return getContextHub(context);
 	}
 
+	/**
+	 * Returns the Hub associated with the specified context by dereferencing its
+	 * weak reference.
+	 *
+	 * @param context context key
+	 * @return Hub instance or null
+	 */
 	public static Hub<? extends OAObject> getContextHub(Object context) {
 		if (context == null) {
 			context = NullContext;
@@ -348,9 +490,10 @@ public class OAContext {
 	}
 
 	/**
-	 * Associated an OAUserAccess with a context.
+	 * Associates an OAUserAccess rule object with the specified context.
 	 *
-	 * @see OAThreadLocalDelegate#getContext()
+	 * @param context context key
+	 * @param ua OAUserAccess instance; null removes mapping
 	 */
 	public static void setContextUserAccess(Object context, OAUserAccess ua) {
 		if (context == null) {
@@ -363,11 +506,22 @@ public class OAContext {
 		}
 	}
 
+	/**
+	 * Returns the OAUserAccess associated with the current thread's context.
+	 *
+	 * @return OAUserAccess or null
+	 */
 	public static OAUserAccess getContextUserAccess() {
 		Object context = OAThreadLocalDelegate.getContext();
 		return getContextUserAccess(context);
 	}
 
+	/**
+	 * Returns the OAUserAccess associated with the specified context.
+	 *
+	 * @param context context key
+	 * @return OAUserAccess instance or null
+	 */
 	public static OAUserAccess getContextUserAccess(Object context) {
 		if (context == null) {
 			context = NullContext;

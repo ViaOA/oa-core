@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,27 +41,70 @@ import com.viaoa.object.OAObjectCallback;
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAObjCallback {
+	
+	/**
+	 * Identifies a property whose value determines whether the
+	 * annotated method or object should be enabled.
+	 */
 	String enabledProperty() default "";
 
+	/**
+	 * Specifies the value of {@code enabledProperty} that results in
+	 * the annotated method or object being considered enabled.
+	 */
 	boolean enabledValue() default true;
 
+	/**
+	 * Identifies a property whose value determines whether the
+	 * annotated method or object should be visible.
+	 */
 	String visibleProperty() default "";
 
+	/**
+	 * Specifies the value of {@code visibleProperty} that results in
+	 * the annotated method or object being considered visible.
+	 */
 	boolean visibleValue() default true;
 
+	/**
+	 * Property evaluated on the surrounding context object to determine
+	 * whether the annotated method or class should be enabled.
+	 */
 	String contextEnabledProperty() default "";
 
+	/**
+	 * Specifies the value of {@code contextEnabledProperty} that results
+	 * in the method or class being considered enabled within context.
+	 */
 	boolean contextEnabledValue() default true;
 
+	/**
+	 * Property evaluated on the surrounding context object to determine
+	 * whether the annotated method or class should be visible.
+	 */
 	String contextVisibleProperty() default "";
 
+	/**
+	 * Specifies the value of {@code contextVisibleProperty} that results
+	 * in the method or class being considered visible within context.
+	 */
 	boolean contextVisibleValue() default true;
 
-	// any properties that affect visiblity, enabled, or rendering
+	/**
+	 * Lists property paths whose changes should trigger reevaluation of
+	 * enabled/visible state for the annotated method or class.
+	 */
 	String[] viewDependentProperties() default {};
 
+	/**
+	 * Lists context-level properties whose changes should trigger
+	 * reevaluation of UI state for the annotated element.
+	 */
 	String[] contextDependentProperties() default {};
 
-	// expected types that the method is expecting and will call ack() method when called.
+	/**
+	 * Declares the callback types that the annotated method expects,
+	 * allowing OA to route enable/visible checks appropriately.
+	 */
 	OAObjectCallback.Type[] supportedTypes() default {};
 }

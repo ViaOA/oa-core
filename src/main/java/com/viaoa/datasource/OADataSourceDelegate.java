@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,14 @@ import com.viaoa.datasource.jdbc.OADataSourceJDBC;
  */
 public class OADataSourceDelegate {
 
+	/**
+	 * Returns the first registered {@link OADataSourceJDBC} instance.
+	 * Iterates through all registered DataSources and returns the first one
+	 * that is an instance of {@code OADataSourceJDBC}.
+	 *
+	 * @return the matching JDBC DataSource, or null if none exist
+	 * @throws Exception if lookup fails
+	 */
 	public static OADataSourceJDBC getJDBCDataSource() throws Exception {
 		OADataSource[] dss = OADataSource.getDataSources();
 		if (dss == null) {
@@ -66,6 +74,14 @@ public class OADataSourceDelegate {
 		return null;
 	}
 
+	/**
+	 * Retrieves a JDBC {@link Connection} from the first registered
+	 * {@link OADataSourceJDBC}. Iterates through all DataSources and returns
+	 * the connection obtained from the first JDBC-based DataSource.
+	 *
+	 * @return a JDBC connection, or null if no JDBC DataSource exists
+	 * @throws Exception if connection retrieval fails
+	 */
 	public static Connection getConnection() throws Exception {
 		OADataSource[] dss = OADataSource.getDataSources();
 		if (dss == null) {
@@ -80,6 +96,13 @@ public class OADataSourceDelegate {
 		return null;
 	}
 
+	/**
+	 * Releases the given JDBC {@link Connection} through the first registered
+	 * {@link OADataSourceJDBC}. If the connection is null or no JDBC DataSource
+	 * exists, the method exits quietly.
+	 *
+	 * @param connection the JDBC connection to release
+	 */
 	public static void releaseConnection(Connection connection) {
 		if (connection == null) {
 			return;
@@ -97,6 +120,14 @@ public class OADataSourceDelegate {
 		}
 	}
 
+	/**
+	 * Obtains a default JDBC {@link Statement} from the first registered
+	 * {@link OADataSourceJDBC}. Uses an empty message string when requesting
+	 * the statement.
+	 *
+	 * @return a JDBC Statement, or null if no JDBC DataSource exists
+	 * @throws Exception if statement creation fails
+	 */
 	public static Statement getStatement() throws Exception {
 		OADataSource[] dss = OADataSource.getDataSources();
 		if (dss == null) {
@@ -111,6 +142,14 @@ public class OADataSourceDelegate {
 		return null;
 	}
 
+	/**
+	 * Obtains a JDBC {@link Statement} from the first registered
+	 * {@link OADataSourceJDBC}, using the provided diagnostic message.
+	 *
+	 * @param msg optional text for logging or diagnostics
+	 * @return a JDBC Statement, or null if none exist
+	 * @throws Exception if statement creation fails
+	 */
 	public static Statement getStatement(String msg) throws Exception {
 		OADataSource[] dss = OADataSource.getDataSources();
 		if (dss == null) {
@@ -125,6 +164,14 @@ public class OADataSourceDelegate {
 		return null;
 	}
 
+	/**
+	 * Retrieves a batch-capable JDBC {@link Statement} from the first
+	 * registered {@link OADataSourceJDBC}. Uses an empty message string
+	 * for the batch request.
+	 *
+	 * @return a batch JDBC Statement, or null if none exist
+	 * @throws Exception if statement creation fails
+	 */
 	public static Statement getBatchStatement() throws Exception {
 		OADataSource[] dss = OADataSource.getDataSources();
 		if (dss == null) {
@@ -139,6 +186,15 @@ public class OADataSourceDelegate {
 		return null;
 	}
 
+	/**
+	 * Retrieves a batch-capable JDBC {@link Statement} using the provided
+	 * diagnostic message. Searches the registered DataSources and delegates
+	 * to the first {@link OADataSourceJDBC}.
+	 *
+	 * @param msg optional text used during statement creation
+	 * @return a batch-enabled Statement, or null if unavailable
+	 * @throws Exception if retrieval fails
+	 */
 	public static Statement getBatchStatement(String msg) throws Exception {
 		OADataSource[] dss = OADataSource.getDataSources();
 		if (dss == null) {
@@ -153,6 +209,13 @@ public class OADataSourceDelegate {
 		return null;
 	}
 
+	/**
+	 * Releases the supplied JDBC {@link Statement} using the first registered
+	 * {@link OADataSourceJDBC}. If the statement is null or no JDBC DataSource
+	 * exists, the method returns without action.
+	 *
+	 * @param statement the Statement to release
+	 */
 	public static void releaseStatement(Statement statement) {
 		if (statement == null) {
 			return;

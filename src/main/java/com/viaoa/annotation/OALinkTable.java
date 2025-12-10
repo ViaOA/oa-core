@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,22 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME) 
 public @interface OALinkTable {
-    String name();
-    String[] columns();  // these match the pkey columns for the object that this is used in.
-    String indexName();
+
+	/**
+	 * Specifies the physical name of the link (join) table used to
+	 * implement a many-to-many relationship.
+	 */
+	String name();
+    
+	/**
+	 * Lists the foreign-key column names in the link table that
+	 * correspond to the primary-key columns of the local object.
+	 */
+	String[] columns();  // these match the pkey columns for the object that this is used in.
+    
+	/**
+	 * Defines the name of the index applied to the link table for
+	 * optimizing many-to-many operations.
+	 */
+	String indexName();
 }

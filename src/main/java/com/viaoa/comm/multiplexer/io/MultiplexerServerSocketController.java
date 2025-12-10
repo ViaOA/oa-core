@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,91 +68,121 @@ public class MultiplexerServerSocketController {
     private static Logger LOG = Logger.getLogger(MultiplexerServerSocketController.class.getName());
 
     /**
-     * used to wait on new MultiplexerServerSocket connections
+     * Lock object used to synchronize VirtualServerSocket.accept() calls with new
+     * incoming VirtualSocket creations. Ensures that each VirtualSocket is delivered
+     * to exactly one waiting accept() call.
      */
     private Object ACCEPTLOCK = new Object();
 
     /**
-     * used by timeout thread to check for connections that have been timedout and disconnect them.
+     * Lock used by the timeout thread to wait and signal when connection validation
+     * activity occurs.
      */
     private final Object TIMEOUTLOCK = new Object();
 
     /**
-     * "real" serversocket used for accepting "real" client connections.
+     * Real ServerSocket used to accept physical TCP client connections.
      */
     private ServerSocket _serverSocket;
 
     /**
-     * next client socket connection for a vserversocket to accept.
+     * The next VirtualSocket to be returned by a VirtualServerSocket.accept() call.
+     * Set when a client creates a VirtualSocket and the server routes it to the
+     * appropriate VirtualServerSocket.
      */
     private volatile VirtualSocket _nextSocket;
 
     /**
-     * name of next client socket connection for a vserversocket to accept.
+     * Name of the VirtualServerSocket that should receive the next VirtualSocket
+     * assigned to {@link #_nextSocket}.
      */
     private volatile String _nextServerSocketName;
 
     /**
-     * sequential counter used for assigning id number to socketcontrollers.
+     * Sequential counter used to assign unique connection IDs for newly accepted
+     * client sockets. Server is implicitly connectionId=0; first client is 1.
      */
     private int _cntSocketController; // note: first connection needs to start at "1", since server is assumed to be "0"
 
     /**
-     * total valid sockets created.
+     * Number of client connections that successfully completed the multiplexer
+     * handshake and were validated as legitimate Multiplexer clients.
      */
     private int _totalValidSocketsCreated;
 
     /**
-     * Thread that listens for new client connections, named: "MultiplexerServerSocket.Accept"
+     * Background thread responsible for accepting new real client connections.
      */
     private Thread _threadAccept;
 
     /**
-     * Thread that listens for new client connections, named: "MultiplexerServerSocket.timeout"
+     * Background thread that monitors new connections for handshake timeout
+     * (5-second limit).
      */
     private Thread _threadTimeout;
 
     /**
-     * flag to know if serversocket is closed.
+     * Indicates whether the controller and underlying server socket have been
+     * closed. When true, accept loops and timeout loops exit.
      */
     private boolean _bClosed;
 
     /**
-     * List of all client connections that are live, each managed by MultiplexerSocketController.
+     * List of all active MultiplexerSocketController instances. Each entry
+     * represents one real client connection.
      */
     private ArrayList<MultiplexerSocketController> _alSocketController = new ArrayList<MultiplexerSocketController>();
 
     /**
-     * Collection of serverSockets that are using accept() to get new client connections.
+     * Mapping of VirtualServerSocket names to VirtualServerSocket instances used
+     * for routing VirtualSockets to their accept() callers.
      */
     private Hashtable<String, VirtualServerSocket> hashServerSocketName = new Hashtable<String, VirtualServerSocket>();
 
     /**
-     * Message to display if server receives an invalid client connection (not from an
-     * MultiplexerSocket)
+     * Message sent to clients that connect but fail to identify themselves as a
+     * valid Multiplexer client.
      */
     private String _invalidConnectionMessage;
 
     /**
-     * Created by MultiplexerServer to manage a "real" serversocket, to accept client connections
-     * created by MultiplexerClient.
+     * Creates a new controller for managing server-side multiplexed connections.
+     * The real ServerSocket is assigned later via {@link #start(ServerSocket)}.
      */
     public MultiplexerServerSocketController() {
     }
 
     /**
-     * Message to display when a non-socket connects. This message will be sent to client, followed
-     * by a disconnect.
+     * Returns the message that is sent to invalid clients who fail the handshake.
+     *
+     * @return invalid-connection message
+     */
+    public String getInvalidConnectionMessage() {
+        return _invalidConnectionMessage;
+    }
+    
+    /**
+     * Sets the message that will be sent to clients when they connect but do not
+     * provide a valid multiplexer handshake.
+     *
+     * @param msg text to send before disconnecting invalid clients
      */
     public void setInvalidConnectionMessage(String msg) {
         LOG.fine("InvalidConnectionMessage=" + msg);
         this._invalidConnectionMessage = msg;
     }
 
-    public String getInvalidConnectionMessage() {
-        return _invalidConnectionMessage;
-    }
-
+    /**
+     * Starts the controller using the provided real ServerSocket. Creates and
+     * starts:
+     * <ul>
+     *   <li>The accept thread (MultiplexerServerSocket.Accept)</li>
+     *   <li>The timeout thread (MultiplexerServerSocket.timeout)</li>
+     * </ul>
+     *
+     * @param ss real ServerSocket used to accept client connections
+     * @throws IllegalArgumentException if ss is null
+     */
     public synchronized void start(ServerSocket ss) {
         if (ss == null) throw new IllegalArgumentException("ServerSocket can not be null");
 
@@ -182,8 +212,10 @@ public class MultiplexerServerSocketController {
     }
 
     /**
-     * Accepts new connections for Server and create an MultiplexerSocketController to manage the
-     * connection.
+     * Loop executed by the accept thread. Accepts incoming physical client
+     * connections and delegates them to {@link #onAcceptRealClientConnection(Socket)}.
+     *
+     * <p>Terminates when the controller is closed.</p>
      */
     private void acceptConnections() {
         for (int i = 0; !_bClosed; i++) {
@@ -198,26 +230,49 @@ public class MultiplexerServerSocketController {
         }
     }
 
-    // used by multiplexerOutputStream
+    /**
+     * Global throttle limit applied to write throughput for each connection's
+     * MultiplexerOutputStreamController.
+     */
     private int mbThrottleLimit;
 
     /**
-     * Used to set the limit on the number of bytes that can be written per second (in MB).  
+     * Sets the number of megabytes per second allowed across all writes for each
+     * connection. Applied to each connection's output stream controller.
+     *
+     * @param mbPerSecond new throttle limit
      */
     public void setThrottleLimit(int mbPerSecond) {
         LOG.config("new value="+mbPerSecond);
         mbThrottleLimit = mbPerSecond;
     }
+
+    /**
+     * Returns the current global write-throttle limit.
+     *
+     * @return throttle limit in MB/sec
+     */
     public int getThrottleLimit() {
         return mbThrottleLimit;
     }
     
-    
     /**
-     * This is internally called when a new "real" client socket connection is accepted on the server.
-     * This will create a MultiplexerSocketController (ISC) to manage the connection. The ISC will then
-     * create MultiplexerSockets, which will then be "given" to MultiplexerServerSocket accept(). This
-     * method is thread safe, since only one accept() can be done at a time.
+     * Handles a newly accepted real client socket. Creates a new
+     * {@link MultiplexerSocketController} to manage the connection.
+     *
+     * <p>The created controller overrides key behavior:</p>
+     * <ul>
+     *   <li>Handshake verification (increments valid-socket counter and invokes
+     *       {@link #onClientConnect(Socket, int)}).</li>
+     *   <li>createSocket(...) to route VirtualSockets to the correct
+     *       VirtualServerSocket.accept().</li>
+     *   <li>close(...) to remove the controller and invoke
+     *       {@link #onClientDisconnect(int)}.</li>
+     *   <li>getInvalidConnectionMessage() to supply server-side messaging.</li>
+     * </ul>
+     *
+     * @param socket newly accepted TCP socket
+     * @throws IOException if controller creation fails
      */
     protected void onAcceptRealClientConnection(final Socket socket) throws IOException {
         _cntSocketController++;  
@@ -287,8 +342,10 @@ public class MultiplexerServerSocketController {
     }
 
     /**
-     * Used by Thread to check new connections to make sure that they are valid connections. Each new
-     * connection is given 5 seconds to be validated by MultiplexerSocketController.
+     * Loop executed by the timeout thread. Periodically checks all connections to
+     * ensure that they complete their multiplexer handshake within 5 seconds.
+     *
+     * <p>Connections that fail validation within the timeout interval are closed.</p>
      */
     protected void timeoutConnections() {
         for (; !_bClosed;) {
@@ -307,6 +364,13 @@ public class MultiplexerServerSocketController {
             }
         }
     }
+
+    /**
+     * Performs the actual timeout scanning for incomplete handshakes.
+     *
+     * @return true if at least one unvalidated connection still remains within
+     *         the timeout window; false if none require waiting
+     */
     private boolean _timeoutConnections() {
         MultiplexerSocketController[] scs = getSocketControllers();
         long msNow = System.currentTimeMillis();
@@ -331,7 +395,10 @@ public class MultiplexerServerSocketController {
     }
 
     /**
-     * Adds a new SocketController to list.
+     * Adds a newly created MultiplexerSocketController to the active list and
+     * signals the timeout thread.
+     *
+     * @param vsc controller to add
      */
     protected void add(MultiplexerSocketController vsc) {
         aiCreatedConnectionCnt.incrementAndGet();
@@ -344,9 +411,11 @@ public class MultiplexerServerSocketController {
     }
 
     
-    
     /**
-     * Removes a SocketController from list.
+     * Removes a controller from the active list, aggregates its IO statistics,
+     * and invokes {@link #onClientDisconnect(int)} if the connection was valid.
+     *
+     * @param vsc controller to remove
      */
     protected void remove(MultiplexerSocketController vsc) {
         if (vsc == null) return;
@@ -367,7 +436,10 @@ public class MultiplexerServerSocketController {
     }
 
     /**
-     * @return list of all client connections.
+     * Returns a snapshot array of all currently active MultiplexerSocketController
+     * instances.
+     *
+     * @return array of active controllers
      */
     protected MultiplexerSocketController[] getSocketControllers() {
         MultiplexerSocketController[] vscs;
@@ -379,8 +451,19 @@ public class MultiplexerServerSocketController {
     }
 
     /**
-     * Create a new ServerSocket that will accept new client MultiplexerSockets through a multiplexed
-     * connection. This is used by MultiplexerServer to create new server sockets.
+     * Returns the VirtualServerSocket associated with the given name, creating one
+     * if necessary. The returned VirtualServerSocket blocks in its accept() method
+     * until a matching VirtualSocket is created by a client connection.
+     *
+     * <p>Routing logic:</p>
+     * <ul>
+     *   <li>Clients create VirtualSockets with a name</li>
+     *   <li>The server maps that name to a VirtualServerSocket</li>
+     *   <li>The VirtualSocket is delivered to a waiting accept() caller</li>
+     * </ul>
+     *
+     * @param serverSocketName name of the logical server socket
+     * @return VirtualServerSocket instance
      */
     public VirtualServerSocket getServerSocket(final String serverSocketName) throws IOException {
         if (serverSocketName == null || serverSocketName.length() == 0) return null;
@@ -421,7 +504,10 @@ public class MultiplexerServerSocketController {
     }
 
     /**
-     * Close all client connections.
+     * Closes all active connections and the real ServerSocket. After closure, the
+     * accept and timeout threads will stop.
+     *
+     * @throws Exception if closing the ServerSocket fails
      */
     public void close() throws Exception {
         LOG.fine("closing all connections");
@@ -437,26 +523,51 @@ public class MultiplexerServerSocketController {
         if (_serverSocket != null) _serverSocket.close();
     }
 
+    /**
+     * Called when a new client connection completes a valid multiplexer handshake.
+     * Default implementation does nothing.
+     *
+     * @param socket underlying real socket
+     * @param connectionId assigned connection id
+     */
     public void onClientConnect(Socket socket, int connectionId) {
     }
 
+    /**
+     * Called when a client connection closes and is removed. Default implementation
+     * does nothing.
+     *
+     * @param connectionId id of the disconnected client
+     */
     public void onClientDisconnect(int connectionId) {
     }
 
 
-
     
-    // 20160202
+    /**
+     * Aggregated IO statistics for connections that have already been closed and
+     * removed from the controller list.
+     *
+     * Values from closed connections are added here so that overall statistics can
+     * be accurately reported even after individual controllers are gone.
+     */
     private AtomicLong aiRemovedReadCnt = new AtomicLong();
     private AtomicLong aiRemovedReadSize = new AtomicLong();
     
     private AtomicLong aiRemovedWriteCnt = new AtomicLong();
     private AtomicLong aiRemovedWriteSize = new AtomicLong();
     
+    /**
+     * Counter tracking the total number of MultiplexerSocketControllers that were
+     * successfully created and added.
+     */
     private AtomicInteger aiCreatedConnectionCnt = new AtomicInteger();
     
     /**
-     * @return number of writes made.
+     * Returns the total number of write operations performed across all current
+     * and previously closed connections.
+     *
+     * @return total write count
      */
     public long getWriteCount() {
         long cnt = aiRemovedWriteCnt.get();
@@ -465,8 +576,12 @@ public class MultiplexerServerSocketController {
         }
         return cnt;
     }
-    /*
-     * size of data that has been written.
+    
+    /**
+     * Returns the total number of bytes written across all connections, including
+     * closed ones.
+     *
+     * @return cumulative bytes written
      */
     public long getWriteSize() {
         long size = aiRemovedWriteSize.get();
@@ -476,9 +591,11 @@ public class MultiplexerServerSocketController {
         return size;
     }
 
-    
     /**
-     * @return number of reads made.
+     * Returns the total number of read operations across all current and closed
+     * connections.
+     *
+     * @return total read count
      */
     public long getReadCount() {
         long cnt = aiRemovedReadCnt.get();
@@ -487,8 +604,11 @@ public class MultiplexerServerSocketController {
         }
         return cnt;
     }
-    /*
-     * size of data that has been read.
+
+    /**
+     * Returns the total number of bytes read across all connections.
+     *
+     * @return cumulative bytes read
      */
     public long getReadSize() {
         long size = aiRemovedReadSize.get();
@@ -498,12 +618,23 @@ public class MultiplexerServerSocketController {
         return size;
     }
 
+    /**
+     * Returns the number of MultiplexerSocketController instances created since
+     * startup.
+     *
+     * @return created-connection count
+     */
     public int getCreatedConnectionCount() {
         return aiCreatedConnectionCnt.get();
     }
+    
+    /**
+     * Returns the number of currently active client connections.
+     *
+     * @return count of live controllers
+     */
     public int getLiveConnectionCount() {
         if (_alSocketController == null) return 0;
         return _alSocketController.size();
     }
-    
 }

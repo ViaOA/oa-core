@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,45 +31,61 @@ import java.io.*;
  */
 public abstract class VirtualSocket extends Socket {
 
-    /**
-     * Real socket connection id (assigned on server)
-     */
+	/**
+	 * Identifier of the real TCP connection hosting this VirtualSocket. Assigned
+	 * by the server during handshake.
+	 */
     protected final int _connectionId;
+
     /**
-     * unique identifer (assigned by MultiplexerSocketController)
+     * Unique virtual-socket id assigned by the MultiplexerSocketController. Used
+     * to route all inbound and outbound frames for this logical socket.
      */
     protected final int _id;
 
     /**
-     * Name of server socket.
+     * Name of the logical VirtualServerSocket on the server to which this
+     * VirtualSocket is bound.
      */
     protected String _serverSocketName;
 
     /**
-     * the internal stream returned by getInputStream. All reads will be share the real socket.
+     * The shared-input wrapper returned by {@link #getInputStream()}. All reads
+     * ultimately delegate to the virtualized {@link #read()} or
+     * {@link #read(byte[], int, int)} methods implemented by the controller.
      */
     private InputStream _inputStream;
 
     /**
-     * the internal stream returned by getOutputStream. All writes will share the real socket.
+     * The shared-output wrapper returned by {@link #getOutputStream()}. All writes
+     * ultimately delegate to the virtualized {@link #write(int)} or
+     * {@link #write(byte[], int, int)} methods implemented by the controller.
      */
     private OutputStream _outputStream;
 
     /**
-     * Lock used when waiting to perform a read on the real socket.
+     * Lock used by subclasses and the controller when coordinating read access to
+     * the real socket. VirtualSocket read calls may block on this lock until the
+     * controller assigns a frame for this socket id.
      */
     protected final Object _lockObject = new Object();
 
-    // timeout used when waiting to read
+    /**
+     * Timeout duration (in seconds) applied to read operations. Used by the
+     * controller to determine when a waiting VirtualSocket should yield or abort.
+     */
     private int timeoutSeconds; 
     
     
     /**
-     * Called by MultiplexerSocketController when creating a new socket or receiving a command to create
-     * a new virtual socket.
-     * 
-     * @param id
-     *            seq number assigned by MultiplexerSocketController.
+     * Constructs a VirtualSocket associated with a specific real-connection id and
+     * virtual-socket id. Initializes internal input and output stream wrappers.
+     *
+     * @param connectionId id of the real connection hosting this logical socket
+     * @param id virtual-socket id assigned by the MultiplexerSocketController;
+     *           must be >= 0
+     * @param serverSocketName name of the logical server-side VirtualServerSocket
+     * @throws IllegalArgumentException if id is less than 0
      */
     protected VirtualSocket(int connectionId, int id, String serverSocketName) {
         if (id < 0) {
@@ -83,7 +99,10 @@ public abstract class VirtualSocket extends Socket {
     }
 
     /**
-     * Implement an inputStream that will use/share/multiplex the "real" socket.
+     * Lazily initializes the internal InputStream wrapper. All read operations on
+     * this wrapper delegate to {@link #read()} or the multi-byte version of read.
+     * The wrapper ensures that calling code never interacts directly with the real
+     * socket.
      */
     protected synchronized void createInputStream() {
         if (_inputStream != null) return;
@@ -109,6 +128,13 @@ public abstract class VirtualSocket extends Socket {
         };
     }
 
+    /**
+     * Returns this VirtualSocket's InputStream wrapper. The wrapper delegates all
+     * reads to the virtualized read methods implemented by the controller.
+     *
+     * @return InputStream for this virtual socket
+     * @throws SocketException if the socket has been closed
+     */
     @Override
     public InputStream getInputStream() throws IOException {
         if (isClosed()) {
@@ -122,7 +148,9 @@ public abstract class VirtualSocket extends Socket {
     }
 
     /**
-     * Implement an outputStream that will use/share/multiplex the "real" socket.
+     * Lazily initializes the internal OutputStream wrapper. All write operations
+     * on the wrapper delegate to {@link #write(int)} or the multi-byte version of
+     * write, allowing the controller to serialize writes through the real socket.
      */
     protected synchronized void createOutputStream() {
         if (_outputStream != null) return;
@@ -146,6 +174,14 @@ public abstract class VirtualSocket extends Socket {
         };
     }
 
+    /**
+     * Returns this VirtualSocket's OutputStream wrapper. Write operations on the
+     * wrapper are forwarded to the virtualized write methods implemented by the
+     * controller.
+     *
+     * @return OutputStream for this virtual socket
+     * @throws SocketException if the socket has been closed
+     */
     @Override
     public OutputStream getOutputStream() throws IOException {
         if (isClosed()) {
@@ -159,47 +195,104 @@ public abstract class VirtualSocket extends Socket {
     }
 
     /**
-     * The ID that is assigned on the server to the real socket connection.
+     * Returns the id of the real TCP connection associated with this VirtualSocket.
+     *
+     * @return real-connection id
      */
     public int getConnectionId() {
         return _connectionId;
     }
 
     /**
-     * The ID that is assigned by MultiplexerSocketController. This is assigned during the constructor,
-     * and is a sequential number.
+     * Returns the unique virtual-socket id assigned by the MultiplexerSocketController.
+     *
+     * @return virtual-socket id
      */
     public int getId() {
         return _id;
     }
 
+    /**
+     * Returns the name of the VirtualServerSocket to which this VirtualSocket is
+     * logically connected.
+     *
+     * @return server-socket name
+     */
     public String getServerSocketName() {
         return this._serverSocketName;
     }
 
     /**
-     * Used so that the real socket is used for the vsocket read. MultiplexerSocketController will
-     * implement these methods and then manage access to the "real" socket.
+     * Reads up to {@code len} bytes for this VirtualSocket. The implementation is
+     * provided by MultiplexerSocketController, which manages routing and ensures
+     * that only this VirtualSocket may read its assigned frame.
+     *
+     * @param bs destination buffer
+     * @param off offset into buffer
+     * @param len maximum bytes to read
+     * @return number of bytes read
+     * @throws IOException if the connection is closed or a socket error occurs
      */
     public abstract int read(byte[] bs, int off, int len) throws IOException;
 
+    /**
+     * Reads a single byte for this VirtualSocket. Delegated through the controller
+     * to the real socket, but only when the controller assigns this VirtualSocket
+     * as the active reader.
+     *
+     * @return next byte, or -1 on end of stream
+     * @throws IOException if the connection is closed or a socket error occurs
+     */
     public abstract int read() throws IOException;
 
     /**
-     * Used so that the real socket is used for the vsocket write. MultiplexerSocketController will
-     * implement these methods and then manage access to the "real" socket.
+     * Writes {@code len} bytes for this VirtualSocket. The controller determines
+     * chunking, fairness, throttling, and ordering when multiplexing data onto the
+     * real socket.
+     *
+     * @param bs source buffer
+     * @param off offset into buffer
+     * @param len number of bytes to write
+     * @throws IOException if the underlying real connection fails
      */
     public abstract void write(byte[] bs, int off, int len) throws IOException;
 
+    /**
+     * Writes a single byte for this VirtualSocket. Delegated through the
+     * MultiplexerSocketController so the real socket is accessed safely.
+     *
+     * @param b byte to write
+     * @throws IOException if writing fails
+     */
     public abstract void write(int b) throws IOException;
 
+    /**
+     * Closes this VirtualSocket. If {@code bSendCommand} is true, the controller
+     * sends a CMD_CloseVSocket command to the peer. Regardless of whether a
+     * command is sent, all blocked readers/writers for this socket are released.
+     *
+     * @param bSendCommand true to notify peer of close; false to close locally only
+     * @throws IOException if close notification or internal cleanup fails
+     */
     public abstract void close(boolean bSendCommand) throws IOException;
     
+    /**
+     * Sets the timeout (in seconds) used when waiting for read operations. The
+     * MultiplexerSocketController enforces this timeout when determining whether a
+     * VirtualSocket has waited too long for its frame.
+     *
+     * @param x timeout value in seconds
+     */
     public void setTimeoutSeconds(int x) {
         this.timeoutSeconds = x;
     }
+
+    /**
+     * Returns the read timeout (in seconds) assigned to this VirtualSocket.
+     *
+     * @return timeout in seconds
+     */
     public int getTimeoutSeconds() {
         return this.timeoutSeconds;
     }
-    
 }

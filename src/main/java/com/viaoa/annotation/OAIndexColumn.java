@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,22 @@ import java.lang.annotation.Target;
 @Target({})
 @Retention(RetentionPolicy.RUNTIME) 
 public @interface OAIndexColumn {
-    String name();
-    String lowerName() default "";
-    boolean descend() default false;
+
+	/**
+	 * Specifies the physical column name used in the index definition.
+	 */
+	String name();
+    
+	/**
+	 * Provides a version of the column name where only the first
+	 * character is in lowercase. Used for normalized lookups or
+	 * case-insensitive matching in metadata.
+	 */
+	String lowerName() default "";
+    
+	/**
+	 * Indicates whether the index should sort this column in descending
+	 * order rather than ascending.
+	 */
+	boolean descend() default false;
 }

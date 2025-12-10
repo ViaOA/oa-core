@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,24 +47,28 @@ import com.viaoa.hub.HubEvent;
 @Retention(RetentionPolicy.RUNTIME) 
 public @interface OATriggerMethod {
 
-    /** 
-     * @return Property paths that will automatically call this method when the propPath is changed.
-     */
+	/**
+	 * Lists the property paths that will cause this trigger method to
+	 * be invoked whenever any of them change within the object graph.
+	 */
     String[] properties() default {};
     
     
     /**
-     * @return if true (default), then triggers are only made on objects that are in memory.
+     * If true, the trigger executes only for objects that are already
+     * loaded in memory, avoiding operations on unloaded objects.
      */
     boolean onlyUseLoadedData() default true;
     
     /**
-     * @return if true (default), then only run on the server.
+     * If true, the trigger is executed only on the server side. Client-
+     * side systems will not invoke the method.
      */
     boolean runOnServer() default true;
     
     /**
-     * @return If true, then this will be ran in another thread. Otherwise false (default), run in the current thread.
+     * If true, the trigger executes asynchronously in a background
+     * thread; otherwise it runs in the calling thread.
      */
     boolean runInBackgroundThread() default false;
 }

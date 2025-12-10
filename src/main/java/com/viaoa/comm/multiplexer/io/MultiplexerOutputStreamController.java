@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,42 +62,82 @@ import java.util.logging.Logger;
 public class MultiplexerOutputStreamController {
 	private static Logger LOG = Logger.getLogger(MultiplexerOutputStreamController.class.getName());
 
-	/** outputstream for "real" socket. */
+	/**
+	 * The shared real-socket output stream onto which all multiplexer frames are
+	 * written.
+	 */
 	private DataOutputStream _dataOutputStream;
-	/** flag to know if socket has been closed. */
+
+	/**
+	 * Indicates whether the real output stream has been flagged as closed. Writers
+	 * must stop writing once this is set.
+	 */
 	private volatile boolean _bIsClosed;
 
-	/** set when an vsocket has the socket.outputSream */
-	private volatile boolean _bWritingLock;
 	/**
-	 * Keeps track of how many vsockets are waiting to do a write on the real socket outputstream.
+	 * Internal flag indicating whether a VirtualSocket currently owns the write
+	 * lock for the shared DataOutputStream.
+	 */
+	private volatile boolean _bWritingLock;
+
+	/**
+	 * Number of VirtualSockets currently waiting to acquire the write lock. Used
+	 * to compute fair write chunk sizes.
 	 */
 	private volatile int _writeLockWaitingCount; // this is only changed within a synch block
 
 	/**
-	 * Throttle to limit the number of MB per second, calculated 10 times per second. if 0 then no limit.
+	 * Maximum allowed write throughput in megabytes per second across all writers.
+	 * A value of zero disables throttling.
 	 */
 	private int mbThrottleLimitPerSecond;
+
+	/**
+	 * Maximum number of bytes that may be written during one throttling interval
+	 * (1 / {@link #iThrottleFractionOfSecond} seconds).
+	 */
 	private int iThrottleLimitPerFractionSecond; // number of bytes per 1/iThrottleGrandularity second
 
 	/**
-	 * how often to check (times per second) for throttling Max value should not be greater then 1000 (which is a single milisecond).
+	 * Number of times per second throttling checks occur. Determines the size of
+	 * each throttling time slice.
 	 */
 	private final int iThrottleFractionOfSecond = 250; // this will use 1000/250 = 4 miliseconds
 
-	/** used to synchronize access to outputstream by vsockets. */
+	/**
+	 * Lock object used to synchronize and serialize access to the shared output
+	 * stream among multiple VirtualSocket writers.
+	 */
 	private final transient Object WRITELOCK = new Object();
 
 	/**
-	 * Created by MultiplexerSocketController to manager the real outputstream.
+	 * Metrics tracking total bytes written and total number of write operations
+	 * performed through this controller.
+	 */
+	private AtomicLong aiWriteSize = new AtomicLong();
+	private AtomicLong aiWriteCnt = new AtomicLong();
+	
+	/**
+	 * Internal state used to enforce write throttling across small fractional time
+	 * windows.
+	 */
+	private long throttleLastMs;
+	private long throttleTotalBytesWritten;
+	
+	/**
+	 * Creates a new output-stream controller. The controller begins in a locked
+	 * state until {@link #setDataOutputStream(DataOutputStream)} provides the real
+	 * underlying output stream.
 	 */
 	MultiplexerOutputStreamController() {
 		this._bWritingLock = true;
 	}
 
 	/**
-	 * Throttle to limit the number of MB per second, calculated 10 times per second. if 0 then no limit. Each write will check to see if
-	 * the max has been written for the current time slice (10th sec), and sleep for the remainder if the limit has been exceeded.
+	 * Configures the maximum number of megabytes per second that the controller
+	 * may write. A value of zero disables throttling.
+	 *
+	 * @param mbPerSecond desired write limit in MB/sec
 	 */
 	public void setThrottleLimit(int mbPerSecond) {
 		mbThrottleLimitPerSecond = mbPerSecond;
@@ -108,12 +148,20 @@ public class MultiplexerOutputStreamController {
 		}
 	}
 
+	/**
+	 * Returns the configured MB/sec throttle limit.
+	 *
+	 * @return throttle limit, or zero if disabled
+	 */
 	public int getThrottleLimit() {
 		return mbThrottleLimitPerSecond;
 	}
 
 	/**
-	 * The real outputstream that is shared by vsockets.
+	 * Sets the real output stream used for all writes. Releases the initial
+	 * write lock so VirtualSockets may begin writing.
+	 *
+	 * @param dataOutputStream shared output stream for the real socket
 	 */
 	void setDataOutputStream(DataOutputStream dataOutputStream) {
 		this._dataOutputStream = dataOutputStream;
@@ -124,7 +172,8 @@ public class MultiplexerOutputStreamController {
 	}
 
 	/**
-	 * Flag the outputstream as closed and notify all vsockets that are waiting to write to it.
+	 * Marks the controller as closed and wakes all VirtualSockets waiting to
+	 * acquire the write lock. Future write attempts will fail.
 	 */
 	void close() {
 		synchronized (WRITELOCK) {
@@ -133,28 +182,36 @@ public class MultiplexerOutputStreamController {
 		}
 	}
 
-	// 20160202
-	private AtomicLong aiWriteSize = new AtomicLong();
-	private AtomicLong aiWriteCnt = new AtomicLong();
-
 	/**
-	 * @return number of writes made.
+	 * Returns the number of write operations completed by this controller.
+	 *
+	 * @return count of writes
 	 */
 	public long getWriteCount() {
 		return aiWriteCnt.get();
 	}
 
-	/*
-	 * size of data that has been written.
+	/**
+	 * Returns the total number of bytes written to the real output stream.
+	 *
+	 * @return cumulative byte count
 	 */
 	public long getWriteSize() {
 		return aiWriteSize.get();
 	}
 
 	/**
-	 * Called by vsockets, to write to the "real" outputstream. A header is created that includes the vsocket Id, length of data. <br>
-	 * Data is written in "chunks" so that other threads do not have to wait on another thread to send a large amount of data. This will
-	 * call _write() until the full amount is sent.
+	 * Writes a full payload for the specified VirtualSocket. The payload is broken
+	 * into chunks using {@link #getMaxWriteLength(VirtualSocket, int)} so that no
+	 * single writer monopolizes the real socket.
+	 *
+	 * <p>After chunking, each subsection is written using {@link #_write}.</p>
+	 *
+	 * @param vs virtual socket issuing the write
+	 * @param bs source buffer
+	 * @param off starting offset in the buffer
+	 * @param fullLength total number of bytes to write
+	 * @throws IOException if the stream is closed or a write error occurs
 	 */
 	void write(VirtualSocket vs, byte[] bs, int off, int fullLength) throws IOException {
 		// make sure that data is sent in chunks
@@ -175,8 +232,17 @@ public class MultiplexerOutputStreamController {
 	}
 
 	/**
-	 * Called by write() to output a "chunk" of the data. Locking/Synchronizing the outputstream is accomplished by calling
-	 * getOutputStream().
+	 * Writes a single chunk of the payload. Acquires the WRITELOCK via
+	 * {@link #getOutputStream()} and ensures the stream is released via
+	 * {@link #releaseOutputStream()}.
+	 *
+	 * <p>This method writes the virtual-socket header (id + payload length) and
+	 * then the bytes for the chunk.</p>
+	 *
+	 * @param vs virtual socket issuing the write
+	 * @param bs source buffer
+	 * @param offset buffer position
+	 * @param len number of bytes in this chunk
 	 */
 	private void _write(VirtualSocket vs, byte[] bs, int offset, int len) throws IOException {
 		// this method will create a lock from other threads, since the outputStream is a shared
@@ -191,6 +257,18 @@ public class MultiplexerOutputStreamController {
 		}
 	}
 
+	/**
+	 * Performs the actual header and data write to the underlying stream. Updates
+	 * throttling counters and sleeps if the current throttling window has been
+	 * exceeded.
+	 *
+	 * @param vs virtual socket issuing the write
+	 * @param bs buffer containing data
+	 * @param offset buffer offset
+	 * @param len number of bytes to write
+	 * @param outputStream the locked shared output stream
+	 * @throws IOException if writing to the stream fails
+	 */
 	private void _write(VirtualSocket vs, byte[] bs, int offset, int len, DataOutputStream outputStream) throws IOException {
 		// System.out.println("   mosc_write=>  vs.id="+vs._id+", offset="+offset+", len="+len+", waitingCount="+_writeLockWaitingCount+", thread="+Thread.currentThread().getName());
 		outputStream.writeInt(vs._id); // header
@@ -222,13 +300,20 @@ public class MultiplexerOutputStreamController {
 		}
 	}
 
-	// used to track throttling
-	private long throttleLastMs;
-	private long throttleTotalBytesWritten;
-
 	/**
-	 * Used to determine the max size that can be written to real socket per request. This is a recommendation, and is not enforced when
-	 * writing to the real outputstream.
+	 * Returns the recommended maximum chunk size for a write operation based on
+	 * the current number of threads waiting to acquire the write lock.
+	 *
+	 * <ul>
+	 *   <li>No waiting threads → up to 32 KB</li>
+	 *   <li>1 waiting thread → 16 KB</li>
+	 *   <li>2–5 waiting threads → 8 KB</li>
+	 *   <li>6+ waiting threads → 4 KB</li>
+	 * </ul>
+	 *
+	 * @param vs virtual socket requesting the write
+	 * @param requestSize total request size for this chunk
+	 * @return permitted chunk size
 	 */
 	protected int getMaxWriteLength(VirtualSocket vs, int requestSize) {
 		int max;
@@ -252,7 +337,19 @@ public class MultiplexerOutputStreamController {
 	private long tailWaitingThreads;
 
 	/**
-	 * Used to synchronized access the the real outputstream.
+	 * Acquires exclusive access to the shared output stream. Implements a fairness
+	 * policy using a FIFO wait queue so that long or frequent writers do not starve
+	 * other threads.
+	 *
+	 * <p>Behavior:</p>
+	 * <ul>
+	 *   <li>If the stream is closed, throws an IOException.</li>
+	 *   <li>If no writer holds the lock and conditions permit, grants the lock.</li>
+	 *   <li>Otherwise, waits and enters the waiting queue when appropriate.</li>
+	 * </ul>
+	 *
+	 * @return the locked DataOutputStream
+	 * @throws IOException if the controller has been closed
 	 */
 	private DataOutputStream getOutputStream() throws IOException {
 		// long tsBegin = System.nanoTime(); // measurement
@@ -302,10 +399,10 @@ public class MultiplexerOutputStreamController {
 	}
 
 	/**
-	 * Releases the outputstream, and notifies other threads that it is available.
+	 * Releases the write lock and wakes waiting threads. Flushes the output stream
+	 * when no writers are waiting.
 	 *
-	 * @param bFlush if true, since a buffered stream is used, a flush will be done according to the following: if there are no other
-	 *               vsockets waiting to do a write, or if this is the 5th write to be done.
+	 * @throws IOException if flushing fails
 	 */
 	private void releaseOutputStream() throws IOException {
 		if (_bIsClosed) {
@@ -329,27 +426,51 @@ public class MultiplexerOutputStreamController {
 		}
 	}
 
+	/**
+	 * Sends a ping command to the remote side. Useful for keep-alive behavior.
+	 *
+	 * @throws IOException if the stream is closed or the write fails
+	 */
 	public void sendPingCommand() throws IOException {
 		sendCommand(MultiplexerSocketController.CMD_Ping, 0, null);
 	}
 
+	/**
+	 * Hook invoked when socket-level write failures occur. Subclasses may override
+	 * to implement custom error handling or reconnection logic.
+	 *
+	 * @param e exception encountered during write
+	 */
 	protected void onSocketException(Exception e) {
-
 	}
 
 	/**
-	 * Send a command to receiver. The command is then read by MultiplexerInputStreamController.readRealSocket() can processed by
-	 * MultiplexerInputStreamController and/or MultiplexerSocketController.
+	 * Sends a multiplexer command without an associated server-socket name.
+	 *
+	 * @param cmd command identifier
+	 * @param param command parameter
+	 * @throws IOException if writing fails
 	 */
 	protected void sendCommand(int cmd, int param) throws IOException {
 		sendCommand(cmd, param, null);
 	}
 
 	/**
-	 * Send a command to receiver. The command is then read by MultiplexerInputStreamController.readRealSocket() can processed by
-	 * MultiplexerInputStreamController and/or MultiplexerSocketController.
+	 * Sends a command frame to the peer, encoding:
+	 * <pre>
+	 *   CMD_Command
+	 *   cmd
+	 *   param
+	 *   [ optional serverSocketName length + bytes ]
+	 * </pre>
 	 *
-	 * @param cmd see MultiplexerSocketController for list of commands
+	 * <p>Must match the format expected by
+	 * {@link MultiplexerInputStreamController#readRealSocketLoop()}.</p>
+	 *
+	 * @param cmd command identifier
+	 * @param param command parameter
+	 * @param serverSocketName optional name of virtual server socket
+	 * @throws IOException if the stream is closed or write fails
 	 */
 	protected void sendCommand(int cmd, int param, String serverSocketName) throws IOException {
 		if (this._bIsClosed) {
