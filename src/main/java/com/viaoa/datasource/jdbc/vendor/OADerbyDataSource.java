@@ -1,6 +1,5 @@
-package com.viaoa.datasource.jdbc.vendor;
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +13,7 @@ package com.viaoa.datasource.jdbc.vendor;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.viaoa.datasource.jdbc.vendor;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -61,24 +61,34 @@ import com.viaoa.util.OAString;
  * <h2>Example</h2>
  * <pre>{@code
  * OADerbyDataSource ds = new OADerbyDataSource(database, dbmd);
- * ds.backup("DBBackup_2025_11_12");
+ * ds.backup("DBBackup");
  * ds.checkForCorruption();
  * ds.compress();
  * }</pre>
  *
- * @see com.viaoa.datasource.jdbc.OADataSourceJDBC
- * @see com.viaoa.datasource.jdbc.db.DBMetaData
- * @since OA 4.0
  */
 public class OADerbyDataSource extends OADataSourceJDBC {
 	private static Logger LOG = OALogger.getLogger(OADerbyDataSource.class);
 
+	/**
+	 * Creates a new Derby-specific data source using the provided database
+	 * configuration and metadata.
+	 *
+	 * @param database the database configuration used for connections
+	 * @param dbmd the metadata describing the JDBC database type and settings
+	 */
 	public OADerbyDataSource(Database database, DBMetaData dbmd) {
 		super(database, dbmd);
 	}
 
 	/**
-	 * @see #isDataSourceReady() for descriptions.
+	 * Performs Derby integrity verification across all tables in the {@code APP}
+	 * schema. For each table, invokes
+	 * {@code SYSCS_UTIL.SYSCS_CHECK_TABLE('APP', tableName)} and logs the
+	 * resulting status. This method returns immediately when the configured
+	 * {@link DBMetaData} is not Derby.
+	 *
+	 * @throws Exception if an error occurs while querying or verifying a table
 	 */
 	public void checkForCorruption() throws Exception {
 		DBMetaData dbmd = getDBMetaData();
@@ -128,10 +138,14 @@ public class OADerbyDataSource extends OADataSourceJDBC {
 	}
 
 	/**
-	 * This will make a backup of the live database, with rollforward support. The database will be under backupDirectory
+	 * Executes a live backup of the Derby database, enabling log-archive mode so
+	 * the backup can later be used for roll-forward recovery. The operation calls
+	 * {@code SYSCS_UTIL.SYSCS_BACKUP_DATABASE_AND_ENABLE_LOG_ARCHIVE_MODE}.
+	 * This method is a no-op when the configured {@link DBMetaData} is not Derby.
 	 *
-	 * @param backupDirectory example: DB20100428
-	 * @throws Exception
+	 * @param backupDirectory target directory where the Derby backup files are
+	 *                        written
+	 * @throws Exception if Derby fails to execute the backup operation
 	 */
 	public void backup(String backupDirectory) throws Exception {
 		DBMetaData dbmd = getDBMetaData();
@@ -164,7 +178,15 @@ public class OADerbyDataSource extends OADataSourceJDBC {
 	}
 
 	/**
+	 * Restores a Derby database by opening it with a JDBC URL that includes
+	 * {@code rollForwardRecoveryFrom=<backupDirectory>}, enabling Derby to apply
+	 * archived log files and roll the database forward. After the restore, the
+	 * data source is reopened. This method is a no-op when the configured
+	 * {@link DBMetaData} is not Derby.
 	 *
+	 * @param backupDirectory directory containing a previously created Derby
+	 *                        backup with log-archive mode enabled
+	 * @throws Exception if the roll-forward recovery or connection attempt fails
 	 */
 	public void restore(String backupDirectory) throws Exception {
 		DBMetaData dbmd = getDBMetaData();
@@ -193,6 +215,14 @@ public class OADerbyDataSource extends OADataSourceJDBC {
 		reopen(0);
 	}
 
+	/**
+	 * Reclaims unused space in all Derby tables within the {@code APP} schema by
+	 * invoking {@code SYSCS_UTIL.SYSCS_COMPRESS_TABLE('APP', tableName, 1)} for
+	 * each table. Table names are queried from Derby system catalogs. This method
+	 * returns immediately when the configured {@link DBMetaData} is not Derby.
+	 *
+	 * @throws Exception if compression fails for any individual table
+	 */
 	public void compress() throws Exception {
 		DBMetaData dbmd = getDBMetaData();
 		if (dbmd == null || dbmd.getDatabaseType() != DBMetaData.DERBY) {

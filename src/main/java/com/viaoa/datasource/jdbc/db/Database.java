@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,18 +45,38 @@ import com.viaoa.util.OAArray;
  */
 public class Database {
 
+	/**
+	 * The ordered list of {@link Table} definitions registered with this
+	 * database. Updated when tables are added or removed.
+	 */
 	private Table[] tables = new Table[0];
+	
+	/**
+	 * Lookup table mapping Java model classes to their corresponding
+	 * {@link Table} metadata. Allows fast table retrieval by class.
+	 */
 	private Hashtable hash = new Hashtable();
 
-	/** type of database is generic (currently not used). */
+	/**
+	 * Constant representing a generic database type. Currently unused.
+	 */
 	public static final int DATABASE_GENERIC = 0;
-	/** type of database is generic (currently not used). */
+
+	/**
+	 * Constant representing a Microsoft Access database type. Currently unused.
+	 */
 	public static final int DATABASE_ACCESS = 1;
-	/** maximum number of database types defined (currently not used). */
+
+	/**
+	 * Maximum number of defined database type constants. Currently unused.
+	 */
 	public static final int DATABASE_MAX = 2;
 
 	/**
-	 * Returns that Table that is mapped to a Class.
+	 * Returns the {@link Table} mapped to the specified Java class.
+	 *
+	 * @param clazz the model class whose table is requested
+	 * @return the matching Table, or null if none exists
 	 */
 	public Table getTable(Class clazz) {
 		if (clazz == null) {
@@ -65,6 +85,13 @@ public class Database {
 		return (Table) hash.get(clazz);
 	}
 
+	/**
+	 * Finds a {@link Table} by case-insensitive name lookup. Searches first
+	 * through the class-based hash map, then through the ordered table list.
+	 *
+	 * @param name the table name to look up
+	 * @return the matching Table, or null if not found
+	 */
 	public Table getTable(String name) {
 		if (name == null) {
 			return null;
@@ -87,12 +114,27 @@ public class Database {
 		return null;
 	}
 
+	/**
+	 * Removes the specified table from this database. Updates both the ordered
+	 * table list and the class-lookup hash map.
+	 *
+	 * @param table the table to remove
+	 */
 	public void removeTable(Table table) {
 		this.tables = (Table[]) OAArray.removeValue(Table.class, this.tables, table);
 		hash.remove(table.clazz);
 		//todo: include superclasses, like add table
 	}
 
+	/**
+	 * Registers a new {@link Table} with this database. Adds it to the ordered
+	 * list and the class-lookup hash.  
+	 * <p>
+	 * If the table's class has a superclass that is also mapped, the superclass
+	 * table's {@code subclasses} array is updated to include this class.
+	 *
+	 * @param table the table to add
+	 */
 	public void addTable(Table table) {
 		if (table == null) {
 			return;
@@ -119,7 +161,10 @@ public class Database {
 	}
 
 	/**
-	 * Sets the Tables that are used in this Database.
+	 * Replaces the current table list with the supplied array. Clears the
+	 * class-lookup hash and re-registers each table using {@link #addTable}.
+	 *
+	 * @param tables the array of tables to install
 	 */
 	public void setTables(Table[] tables) {
 		if (tables == null) {
@@ -133,10 +178,11 @@ public class Database {
 	}
 
 	/**
-	 * Returns the Tables that are used in this Database.
+	 * Returns the list of all {@link Table} objects registered in this database.
+	 *
+	 * @return the table array
 	 */
 	public Table[] getTables() {
 		return tables;
 	}
-
 }

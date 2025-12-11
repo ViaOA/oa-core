@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,33 +44,153 @@ package com.viaoa.datasource.query;
  */
 public interface OAQueryTokenType {
 
+	/**
+	 * Token type indicating the end of the input stream.
+	 * Used by the tokenizer to signal that no more characters remain.
+	 */
 	public static final int EOF = 1;
-    public static final int NUMBER = 2;
-    public static final int OPERATOR = 3;
-    public static final int SEPERATORBEGIN = 4;  // "("  block
-    public static final int SEPERATOREND = 5;    // ")"  block
-    public static final int VARIABLE = 7;
-    public static final int GT = 8;
-    public static final int GE = 9;
-    public static final int LT = 10;
-    public static final int LE = 11;
-    public static final int EQUAL = 12;
-    public static final int NOTEQUAL = 13;
-    public static final int AND = 14;
-    public static final int OR = 15;
-    public static final int LIKE = 17;
-    public static final int NOTLIKE = 18;
-    public static final int NULL = 19;
-    public static final int STRINGSQ = 20; // single quote
-    public static final int STRINGDQ = 21; // double quote
-    public static final int STRINGESC = 22; // escape bracket "{"
-    public static final int TRUE = 23;
-    public static final int FALSE = 24;
-    public static final int PASSTHRU = 25;  // PASS[xxx]THRU
-    public static final int QUESTION = 26;  // question mark "?"
-    public static final int FUNCTIONBEGIN = 27;  // the '(' for a sql function, ex: lower(lastName)
-    public static final int FUNCTIONEND = 28;    // the ')' for a sql function, ex: lower(lastName)
-    public static final int IN = 29; // operator IN(..,..)
-    public static final int COMMA = 30; // separator
+
+	/**
+	 * Token type representing a numeric literal.
+	 * Identifies integer or decimal values encountered in the query.
+	 */
+	public static final int NUMBER = 2;
+    
+	/**
+	 * Token type used for generic operators that do not have a
+	 * more specific classification.
+	 */
+	public static final int OPERATOR = 3;
+    
+	/**
+	 * Token type marking the beginning separator of an expression block.
+	 * Represents the '(' character.
+	 */
+	public static final int SEPERATORBEGIN = 4;  // "("  block
+    
+	/**
+	 * Token type marking the ending separator of an expression block.
+	 * Represents the ')' character.
+	 */
+	public static final int SEPERATOREND = 5;    // ")"  block
+    
+	/**
+	 * Token type representing a variable reference within the query.
+	 * Typically corresponds to property or field names.
+	 */
+	public static final int VARIABLE = 7;
+    
+	/**
+	 * Token type representing the '>' (greater than) comparison operator.
+	 */
+	public static final int GT = 8;
+    
+	/**
+	 * Token type representing the '>=' (greater than or equal) operator.
+	 */
+	public static final int GE = 9;
+    
+	/**
+	 * Token type representing the '<' (less than) comparison operator.
+	 */
+	public static final int LT = 10;
+    
+	/**
+	 * Token type representing the '<=' (less than or equal) operator.
+	 */
+	public static final int LE = 11;
+    
+	/**
+	 * Token type representing the '=' equality comparison operator.
+	 */
+	public static final int EQUAL = 12;
+    
+	/**
+	 * Token type representing the '<>' or '!=' inequality operator.
+	 */
+	public static final int NOTEQUAL = 13;
+    
+	/**
+	 * Token type representing the logical AND operator.
+	 */
+	public static final int AND = 14;
+    
+	/**
+	 * Token type representing the logical OR operator.
+	 */
+	public static final int OR = 15;
+    
+	/**
+	 * Token type representing the LIKE operator used for pattern matching.
+	 */
+	public static final int LIKE = 17;
+    
+	/**
+	 * Token type representing the NOT LIKE operator for negated pattern matching.
+	 */
+	public static final int NOTLIKE = 18;
+    
+	/**
+	 * Token type representing the NULL keyword within queries.
+	 */
+	public static final int NULL = 19;
+    
+	/**
+	 * Token type representing a single-quoted string literal.
+	 */
+	public static final int STRINGSQ = 20; // single quote
+    
+	/**
+	 * Token type representing a double-quoted string literal.
+	 */
+	public static final int STRINGDQ = 21; // double quote
+    
+	/**
+	 * Token type representing an escaped string literal using bracket syntax.
+	 */
+	public static final int STRINGESC = 22; // escape bracket "{"
+    
+	/**
+	 * Token type representing the boolean literal TRUE.
+	 */
+	public static final int TRUE = 23;
+    
+	/**
+	 * Token type representing the boolean literal FALSE.
+	 */
+	public static final int FALSE = 24;
+    
+	/**
+	 * Token type used for a PASS[xxx]THRU construct, allowing sections
+	 * of the query to bypass normal parsing rules.
+	 */
+	public static final int PASSTHRU = 25;  // PASS[xxx]THRU
+    
+	/**
+	 * Token type representing the '?' placeholder symbol.
+	 * Often used for parameterized query values.
+	 */
+	public static final int QUESTION = 26;  // question mark "?"
+    
+	/**
+	 * Token type marking the beginning parenthesis of a SQL function call.
+	 */
+	public static final int FUNCTIONBEGIN = 27;  // the '(' for a sql function, ex: lower(lastName)
+    
+	/**
+	 * Token type marking the ending parenthesis of a SQL function call.
+	 */
+	public static final int FUNCTIONEND = 28;    // the ')' for a sql function, ex: lower(lastName)
+    
+	/**
+	 * Token type representing the IN operator for set membership evaluation.
+	 */
+	public static final int IN = 29; // operator IN(..,..)
+    
+	/**
+	 * Token type representing a comma separator used in lists,
+	 * such as within function arguments or IN(...) sets.
+	 */
+	public static final int COMMA = 30; // separator
 
 }

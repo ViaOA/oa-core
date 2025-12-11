@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,27 @@ import com.viaoa.filter.OAQueryFilter;
  */
 public class OASelectFilter<T> extends OAQueryFilter<T> {
 
+	/**
+	 * Creates a new filter using the specified class, property-path query,
+	 * and parameter values. This constructor is used when a query contains
+	 * one or more '?' substitution markers.
+	 *
+	 * @param clazz the object type being filtered
+	 * @param query the property-path or native query expression
+	 * @param args  parameter values substituted into the query
+	 */
     public OASelectFilter(Class<T> clazz, String query, Object[] args) {
         super(clazz, query, args);
     }
+    
+    /**
+     * Creates a new filter using the specified class and query expression.
+     * This version is used when filtering does not require parameter
+     * substitution.
+     *
+     * @param clazz the object type being filtered
+     * @param query the property-path or native query expression
+     */
     public OASelectFilter(Class<T> clazz, String query) {
         super(clazz, query);
     }

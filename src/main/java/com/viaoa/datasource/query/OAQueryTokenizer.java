@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,11 +53,34 @@ import java.util.Vector;
  * @see OAQueryTokenType
  */
 public class OAQueryTokenizer implements OAQueryTokenType {
+	
+	/**
+	 * Manages lexical scanning of the query string. This instance produces
+	 * {@link OAQueryToken} objects consumed by the tokenizer during parsing.
+	 */
 	OAQueryTokenManager tokenManager;
+	
+	/**
+	 * token: the current token being evaluated during parsing.
+	 * lastToken: the previously processed token, used for error reporting and
+	 * contextual parsing decisions.
+	 */
 	OAQueryToken token, lastToken;
+	
+	/**
+	 * The collection into which parsed {@link OAQueryToken} objects are stored.
+	 * This vector represents the final token stream returned by the tokenizer.
+	 */
 	Vector vec;
 
-	/** convert query to vector of tokens */
+	/**
+	 * Converts the supplied query string into a vector of {@link OAQueryToken}
+	 * objects. Initializes the token manager if needed, triggers tokenization,
+	 * invokes the parse-evaluation process, and returns the resulting token list.
+	 *
+	 * @param query the textual query expression to tokenize
+	 * @return a vector containing the parsed token sequence
+	 */
 	public Vector convertToTokens(String query) {
 		if (tokenManager == null) {
 			tokenManager = new OAQueryTokenManager();
@@ -69,6 +92,11 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 		return vec;
 	}
 
+	/**
+	 * Initiates the top-level parse evaluation. Delegates to {@link #evaluateA()}
+	 * and ensures the query ends with an EOF token. Throws a runtime exception
+	 * for any remaining unexpected tokens.
+	 */
 	protected void evaluate() {
 		evaluateA();
 		if (token.type != OAQueryTokenType.EOF) {
@@ -76,7 +104,11 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 		}
 	}
 
-	// AND OR
+	/**
+	 * Parses logical AND/OR expressions. Evaluates lower-precedence terms via
+	 * {@link #evaluateB()}, then recursively processes subsequent AND/OR
+	 * operators, appending tokens to the output vector.
+	 */
 	protected void evaluateA() {
 		evaluateB();
 		if (token.type == OAQueryTokenType.AND || token.type == OAQueryTokenType.OR) {
@@ -87,6 +119,11 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 	}
 
 	// GT, GE, LT, LE, EQUAL, NOTEQUAL, LIKE
+	/**
+	 * Parses comparison expressions such as =, <> , >, >=, <, <=, LIKE.
+	 * First evaluates higher-precedence terms via {@link #evaluateB2()},
+	 * then checks for operator tokens and recursively processes the left-hand side.
+	 */
 	protected void evaluateB() {
 		evaluateB2();
 		if (token.isOperator()) {
@@ -106,6 +143,11 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 
 	// 20171222 support for IN(1,2,3)
 	// IN
+	/**
+	 * Parses IN expressions. Evaluates the left-side expression via
+	 * {@link #evaluateC()}, then detects and handles the IN operator.
+	 * Adds associated tokens to the output vector and delegates recursion.
+	 */
 	protected void evaluateB2() {
 		evaluateC();
 
@@ -144,6 +186,11 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 	}
 
 	// () used to surround
+	/**
+	 * Parses parenthesized expressions. When encountering '(', recursively
+	 * evaluates nested expressions while capturing commas and ensuring matching
+	 * closing parentheses. Otherwise delegates to {@link #evaluateC2()}.
+	 */
 	protected void evaluateC() {
 		if (token.type == OAQueryTokenType.SEPERATORBEGIN) {
 			vec.addElement(token);
@@ -174,6 +221,11 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 
 	// 20090608 added C2, to allow for sql functions, ex: lower(lastName)
 	// () func call
+	/**
+	 * Parses SQL-style function calls such as lower(name). After evaluating the
+	 * function name via {@link #evaluateD()}, repurposes '(' and ')' tokens as
+	 * FUNCTIONBEGIN and FUNCTIONEND markers and evaluates the argument list.
+	 */
 	protected void evaluateC2() {
 		evaluateD();
 		if (token.type == OAQueryTokenType.SEPERATORBEGIN) {
@@ -193,6 +245,10 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 	}
 
 	// single quotes
+	/**
+	 * Parses single-quoted string literals. Delegates to {@link #evaluateE()},
+	 * captures STRINGSQ tokens, and advances the token stream.
+	 */
 	protected void evaluateD() {
 		evaluateE();
 		if (token.type == OAQueryTokenType.STRINGSQ) {
@@ -202,6 +258,10 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 	}
 
 	// Single Quote
+	/**
+	 * Handles SQL single-quote doubling and repeated string literal sequences.
+	 * Delegates to {@link #evaluateF()} and consumes consecutive STRINGSQ tokens.
+	 */
 	protected void evaluateE() {
 		// sql allows for single quotes to be doubled up to show a single quote in string
 		evaluateF();
@@ -212,6 +272,11 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 	}
 
 	// VARIABLE, NUMBER, EOF, ?
+	/**
+	 * Parses atomic token types such as string literals, numbers, variables,
+	 * NULL, passthrough blocks, and '?'. Adds them to the output token vector
+	 * and advances the stream. Throws an exception on invalid tokens.
+	 */
 	protected void evaluateF() {
 		if ((token.type == OAQueryTokenType.STRINGDQ) ||
 				(token.type == OAQueryTokenType.STRINGSQ) ||
@@ -229,11 +294,21 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 		}
 	}
 
+	/**
+	 * Advances to the next token produced by the token manager, preserving the
+	 * previous token for contextual reference.
+	 */
 	protected void nextToken() {
 		lastToken = token;
 		token = tokenManager.getNext();
 	}
 
+	/**
+	 * Test method demonstrating tokenization of a string containing embedded
+	 * quotes. Not used by the tokenizer itself.
+	 *
+	 * @param args ignored
+	 */
 	public static void main2(String[] args) {
 		OAQueryTokenizer qt = new OAQueryTokenizer();
 		String query = "Code = 'CT13''6\"X16HALF-COL'";
@@ -241,6 +316,12 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 		int x = vec.size();
 	}
 
+	/**
+	 * Demonstration method showing tokenization of various IN expressions and
+	 * composite key patterns. Useful for regression testing and examples.
+	 *
+	 * @param args ignored
+	 */
 	public static void main(String[] args) {
 		OAQueryTokenizer qt = new OAQueryTokenizer();
 		String query = "(date, store_number) in ( ('2021-12-15', 12345), ('2021-10-07', 67890) )";
@@ -257,7 +338,6 @@ public class OAQueryTokenizer implements OAQueryTokenType {
 
 		query = "(date, store_number) in ?";
 		vec = qt.convertToTokens(query);
-
 	}
 
 }

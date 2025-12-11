@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,11 +44,37 @@ package com.viaoa.datasource.query;
  * @see OAQueryTokenType
  */
 public class OAQueryTokenManager {
-    String query;
-    int len;
-    int pos = 0;
-    StringBuffer sb;
+    
+	/**
+	 * The full query string currently being scanned for token extraction.
+	 * Assigned by {@link #setQuery(String)} before tokenization begins.
+	 */
+	String query;
+    
+	/**
+	 * Cached length of the active query string. Used to avoid repeated
+	 * calls to {@link String#length()} during scanning.
+	 */
+	int len;
+    
+	/**
+	 * Current character index within the query string. Incremented after
+	 * each character is processed by {@link #getNext()}.
+	 */
+	int pos = 0;
+    
+	/**
+	 * Accumulator used to construct the textual value of the current token.
+	 * Contents are cleared for each new token.
+	 */
+	StringBuffer sb;
 
+	/**
+	 * Initializes the token manager with a new query string, resets internal
+	 * scanning state, and prepares the token buffer for use.
+	 *
+	 * @param query the query text to tokenize
+	 */
     public void setQuery(String query) {
         this.query = query;
         len = query.length();
@@ -56,6 +82,15 @@ public class OAQueryTokenManager {
         pos = 0;
     }
 
+    /**
+     * Scans the query string and returns the next {@link OAQueryToken}.
+     * Performs character-by-character analysis to identify token types such
+     * as strings, numbers, variables, operators, parentheses, passthrough
+     * sections, and EOF markers. Throws {@link RuntimeException} for illegal
+     * sequences or malformed tokens.
+     *
+     * @return the next parsed token
+     */
     public OAQueryToken getNext() {
         OAQueryToken token = new OAQueryToken();
         char charWaitFor = 0;

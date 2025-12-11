@@ -50,18 +50,42 @@ import com.viaoa.object.OASiblingHelper;
  */
 public interface OADataSourceIterator extends Iterator {
     
-
+	/**
+	 * Returns the primary query expression used to produce this iterator,
+	 * if available. Default implementation returns {@code null}.
+	 *
+	 * @return the primary query string, or null if not available
+	 */
     public default String getQuery() {
         return null;
     }
+
+    /**
+     * Returns a secondary or translated query string associated with this
+     * iterator. Default implementation returns {@code null}.
+     *
+     * @return secondary query string, or null if none exists
+     */
     public default String getQuery2() {
         return null;
     }
     
+    /**
+     * Returns an optional {@link OASiblingHelper} used for tracking sibling
+     * relationships within the result set. Default implementation returns
+     * {@code null}.
+     *
+     * @return an OASiblingHelper instance, or null if unsupported
+     */
     public default OASiblingHelper getSiblingHelper() {
         return null;
     }
     
+    /**
+     * No-operation implementation of {@link Iterator#remove()}. Iterators
+     * produced by OADataSource typically do not support element removal,
+     * and this default method silently ignores the request.
+     */
     @Override
     default void remove() {
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,40 +21,96 @@ import java.sql.SQLException;
 import com.viaoa.object.OAObject;
 
 /**
- * Defines the contract for classes that populate {@link com.viaoa.object.OAObject}
- * instances from JDBC {@link java.sql.ResultSet} data.
- * <p>
- * Implementations of {@code DataAccessObject} handle mapping result set
- * columns to object properties, guided by {@link Table} and {@link Column}
- * metadata. Each {@code ResultSetInfo} tracks caching state and the
- * current cursor position.
- * </p>
- *
- * @see Table
- * @see com.viaoa.datasource.jdbc.OADataSourceJDBC
+ * Defines methods for populating {@link com.viaoa.object.OAObject} instances
+ * from JDBC result sets. Implementations map {@link java.sql.ResultSet}
+ * columns to OAObject properties using {@link Table} and {@link Column}
+ * metadata.
  */
 public interface DataAccessObject {
 
+	/**
+	 * Holds state for processing a {@link java.sql.ResultSet}, including
+	 * caching flags and a reference to the current result set used when
+	 * constructing OAObject instances.
+	 */
     public class ResultSetInfo {
+    	/**
+    	 * The current JDBC {@link ResultSet} being processed. Updated through
+    	 * {@link #reset(ResultSet)}.
+    	 */
         ResultSet rs;
+        
+        /**
+         * Flag indicating whether the requested object was found in the cache
+         * rather than created from the result set.
+         */
         boolean foundInCache;
+        
+        /**
+         * Resets this {@code ResultSetInfo} instance with a new {@link ResultSet}
+         * and clears the cache-hit flag.
+         *
+         * @param rs the result set to associate with this info object
+         */
         public void reset(ResultSet rs) {
             this.rs = rs;
             foundInCache = false;
         }
+
+        /**
+         * Returns whether the object corresponding to this result set row was
+         * found in the cache rather than populated from JDBC data.
+         *
+         * @return true if the object was retrieved from cache
+         */
         public boolean getFoundInCache() {
             return this.foundInCache;
         }
+        
+        /**
+         * Sets whether the object for this result set row was retrieved from
+         * cache rather than created from JDBC values.
+         *
+         * @param b true if the object came from cache
+         */
         public void setFoundInCache(boolean b) {
             this.foundInCache = b;
         }
+        
+        /**
+         * Returns the associated JDBC {@link ResultSet} for this info object.
+         *
+         * @return the current ResultSet
+         */
         public ResultSet getResultSet() {
             return rs;
         }
     }
     
+    /**
+     * Creates or retrieves an {@link OAObject} populated using the data at the
+     * current row of the given {@link ResultSetInfo}. Implementations translate
+     * column values into object properties.
+     *
+     * @param rsi the result set wrapper providing JDBC data and cache state
+     * @return the populated OAObject
+     * @throws SQLException if a JDBC error occurs
+     */
     public OAObject getObject(ResultSetInfo rsi) throws SQLException;
-    public String getPkeySelectColumns();
-    public String getSelectColumns();
     
+    /**
+     * Returns a comma-separated list of column names required to uniquely
+     * identify an object (its primary key columns) during SELECT operations.
+     *
+     * @return SQL column list used for primary-key selection
+     */
+    public String getPkeySelectColumns();
+
+    /**
+     * Returns a comma-separated list of all database columns required to fully
+     * populate an OAObject instance during SELECT operations.
+     *
+     * @return SQL column list used for full object selection
+     */
+    public String getSelectColumns();
 }

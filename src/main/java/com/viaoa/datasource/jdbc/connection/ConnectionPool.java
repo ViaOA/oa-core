@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,16 +55,48 @@ import com.viaoa.transaction.OATransactionListener;
 public class ConnectionPool implements Runnable {
 	private static Logger LOG = Logger.getLogger(ConnectionPool.class.getName());
 
+	/**
+	 * Metadata describing the target JDBC database, including driver, URL,
+	 * credentials, and pool configuration such as minimum and maximum
+	 * connection counts.
+	 */
 	private DBMetaData dbmd;
+	
+	/**
+	 * The list of pooled {@link OAConnection} instances managed by this pool.
+	 * Connections in the list may be available, in-use, or pending cleanup.
+	 */
 	private ArrayList<OAConnection> alOAConnection = new ArrayList<OAConnection>();
+	
+	/**
+	 * Background monitor thread that periodically validates connections and
+	 * prunes unused ones. Runs every 10 minutes while the pool is open.
+	 */
 	private transient Thread thread; // used to release connections
+	
+	/**
+	 * Flag used to signal the monitor thread to stop. Set when the pool is
+	 * being closed.
+	 */
 	private boolean bStopThread; // tells thread to stop
+	
+	/**
+	 * Synchronization lock used by the monitor thread for timed waiting
+	 * and wake-up notifications during shutdown.
+	 */
 	private Object threadLOCK = new Object();
 
+	/**
+	 * Reentrant lock protecting access to the internal connection list and
+	 * preventing concurrent modification of pooled-connection state.
+	 */
 	private final ReentrantLock lock = new ReentrantLock();
 
 	/**
-	 * Create new Pool that is used for a OADataSourceJDBC.
+	 * Constructs a new connection pool using the supplied database metadata.
+	 * Initializes internal structures and starts the background monitor thread.
+	 *
+	 * @param dbmd metadata describing driver, URL, credentials, and pool limits
 	 */
 	public ConnectionPool(DBMetaData dbmd) {
 		this.dbmd = dbmd;
@@ -73,6 +105,11 @@ public class ConnectionPool implements Runnable {
 		open();
 	}
 
+	/**
+	 * Starts the background monitor thread if it is not already running.
+	 * Resets the stop flag and initializes a daemon thread named
+	 * “OAConnectionPool”.
+	 */
 	public void open() {
 		bStopThread = false;
 		if (thread == null) {
@@ -83,6 +120,10 @@ public class ConnectionPool implements Runnable {
 		}
 	}
 
+	/**
+	 * Stops the monitor thread, wakes it from waiting, and closes all connections
+	 * in the pool. After calling this, the pool is no longer usable.
+	 */
 	public void close() {
 		if (thread != null) {
 			thread = null;
@@ -95,7 +136,14 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Low priority Thread used to close extra connections that are not being used. Runs every 10 minutes.
+	 * Background monitor thread that maintains pool health. Approximately every
+	 * 10 minutes it:
+	 * <ul>
+	 *   <li>Validates each existing connection.</li>
+	 *   <li>Closes invalid or idle connections beyond the minimum threshold.</li>
+	 *   <li>Creates new connections when fewer than {@code dbmd.minConnections} exist.</li>
+	 * </ul>
+	 * The thread stops when {@link #bStopThread} becomes true.
 	 */
 	public void run() {
 		if (dbmd.minConnections < 1) {
@@ -191,7 +239,11 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Returns true if database is still connected.
+	 * Checks whether the database is reachable by acquiring and immediately
+	 * releasing a JDBC {@link Statement}. Logs and returns false if an error
+	 * occurs.
+	 *
+	 * @return true if the database can be accessed
 	 */
 	public boolean isDatabaseAvailable() {
 		try {
@@ -205,7 +257,8 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Close all connections and remove from Connection Pool.
+	 * Closes all connections currently in the pool and clears the internal list.
+	 * Any exceptions during close are logged but do not halt processing.
 	 */
 	public void closeAllConnections() {
 		try {
@@ -227,7 +280,13 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Returns an unused JDBC connection, null if maxConnections has been reached and all current connections are used.
+	 * Acquires a JDBC connection from the pool. If {@code bExclusive} is true,
+	 * only connections with zero active statements are eligible. Returns null
+	 * if the pool is at its maximum size and no connections are available.
+	 *
+	 * @param bExclusive true to request an exclusive (unused) connection
+	 * @return a JDBC connection or null if none available
+	 * @throws Exception if acquisition fails
 	 */
 	public Connection getConnection(boolean bExclusive) throws Exception {
 		OAConnection c = getOAConnection(false, bExclusive);
@@ -237,9 +296,33 @@ public class ConnectionPool implements Runnable {
 		return c.connection;
 	}
 
+	/**
+	 * Counter used to offset selection of the next candidate connection,
+	 * providing round-robin distribution across the connection list.
+	 */
 	private final AtomicInteger aiGetConnection = new AtomicInteger();
+
+	/**
+	 * Counter tracking how many connections are in the process of being created.
+	 * Used to prevent exceeding the configured maximum connection count.
+	 */
 	private int cntCreateConnection;
 
+	/**
+	 * Core method for acquiring an {@link OAConnection}. Supports:
+	 * <ul>
+	 *   <li>Thread-local transactions via {@link OAThreadLocalDelegate}.</li>
+	 *   <li>Statement pooling and exclusive/non-exclusive usage rules.</li>
+	 *   <li>Creation of new connections when allowed and needed.</li>
+	 * </ul>
+	 * Returns null only when the pool is at maximum capacity and all
+	 * connections are in use.
+	 *
+	 * @param bForStatement true if acquiring for a Statement or PreparedStatement
+	 * @param bExclusive    true if connection must be unused
+	 * @return an OAConnection or null when unavailable
+	 * @throws Exception if connection acquisition fails
+	 */
 	protected OAConnection getOAConnection(boolean bForStatement, boolean bExclusive) throws Exception {
 		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
 
@@ -329,6 +412,14 @@ public class ConnectionPool implements Runnable {
 		return con;
 	}
 
+	/**
+	 * Creates a brand-new JDBC connection using driver, URL, user, and password
+	 * from {@link DBMetaData}. Wraps the connection in a new {@link OAConnection}
+	 * configured for auto-commit and READ_COMMITTED isolation.
+	 *
+	 * @return a new OAConnection instance
+	 * @throws Exception if driver loading or connection creation fails
+	 */
 	protected OAConnection createNewOAConnection() throws Exception {
 		Class.forName(dbmd.driverJDBC).newInstance();
 		Connection connection = DriverManager.getConnection(dbmd.urlJDBC, dbmd.user, dbmd.password);
@@ -338,6 +429,12 @@ public class ConnectionPool implements Runnable {
 		return oacon;
 	}
 
+	/**
+	 * Releases a JDBC connection back to the pool, resetting auto-commit and
+	 * isolation level. Marks the underlying {@link OAConnection} as available.
+	 *
+	 * @param connection the connection to release
+	 */
 	public void releaseConnection(Connection connection) {
 		try {
 			lock.lock();
@@ -359,6 +456,14 @@ public class ConnectionPool implements Runnable {
 		}
 	}
 
+	/**
+	 * Acquires an {@link OAConnection} specifically for creating JDBC statements.
+	 * Repeatedly attempts to get a usable connection, sleeping briefly between
+	 * attempts until one becomes available.
+	 *
+	 * @return an OAConnection suitable for statement creation
+	 * @throws Exception if acquisition fails
+	 */
 	protected OAConnection getStatementConnection() throws Exception {
 		for (int i = 0;; i++) {
 			OAConnection c = getOAConnection(true, false);
@@ -370,13 +475,35 @@ public class ConnectionPool implements Runnable {
 		// return null;
 	}
 
+	/**
+	 * Transaction listener bound to a specific {@link OAConnection}. Ensures that
+	 * commit, rollback, and batch execution operations are forwarded to the
+	 * connection when an {@link OATransaction} completes or is aborted.
+	 */
 	class MyOATransactionListener implements OATransactionListener {
+		/**
+		 * The OAConnection associated with the transaction listener. All commit and
+		 * rollback operations apply directly to this connection.
+		 */
 		OAConnection conx;
 
+		/**
+		 * Constructs a transaction listener bound to a specific connection.
+		 *
+		 * @param con the OAConnection associated with this listener
+		 * @throws Exception not thrown by this implementation
+		 */
 		public MyOATransactionListener(OAConnection con) throws Exception {
 			this.conx = con;
 		}
 
+		/**
+		 * Commits the underlying JDBC connection. If batch mode is enabled, executes
+		 * all open batches before committing. The connection is released back to the
+		 * pool after completion.
+		 *
+		 * @param tran the transaction being committed
+		 */
 		@Override
 		public void commit(OATransaction tran) {
 			if (conx == null) {
@@ -395,6 +522,12 @@ public class ConnectionPool implements Runnable {
 			}
 		}
 
+		/**
+		 * Rolls back the underlying JDBC connection. If batch mode is enabled, clears
+		 * pending batches before rolling back. The connection is released afterward.
+		 *
+		 * @param tran the transaction being rolled back
+		 */
 		@Override
 		public void rollback(OATransaction tran) {
 			if (conx == null) {
@@ -414,6 +547,12 @@ public class ConnectionPool implements Runnable {
 			}
 		}
 
+		/**
+		 * Executes open batches on the associated connection when batch mode is in
+		 * use. Called during certain transaction phases.
+		 *
+		 * @param tran the transaction invoking batch execution
+		 */
 		@Override
 		public void executeOpenBatches(OATransaction tran) {
 			if (conx == null) {
@@ -431,9 +570,12 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Returns a JDBC Statement that can be used for direct JDBC calls.
+	 * Obtains a JDBC {@link Statement} from the pool for direct SQL execution.
+	 * Delegates to the internal @_getStatement method with batch mode disabled.
 	 *
-	 * @param message reason/description for using statement. This is used by getInfo(),
+	 * @param message diagnostic label attached to the statement acquisition
+	 * @return a JDBC Statement
+	 * @throws Exception if statement acquisition fails
 	 */
 	public Statement getStatement(String message) throws Exception {
 		Statement st = _getStatement(message, false);
@@ -441,15 +583,28 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Used when using an OATransaction with useBatch=true
+	 * Obtains a JDBC {@link Statement} intended for batch execution when
+	 * transaction batch mode is enabled. Returns null if batch mode is inactive.
 	 *
-	 * @return null if OATransaction is null or useBatch != true
+	 * @param message diagnostic label for batch statement acquisition
+	 * @return a batch-enabled Statement or null if unsupported
+	 * @throws Exception if acquisition fails
 	 */
 	public Statement getBatchStatement(String message) throws Exception {
 		Statement st = _getStatement(message, true);
 		return st;
 	}
 
+	/**
+	 * Internal helper for obtaining a JDBC Statement. Retrieves an
+	 * {@link OAConnection} appropriate for statement creation, requests either a
+	 * normal or batch statement, and configures timeout and row limits.
+	 *
+	 * @param message   diagnostic label for the request
+	 * @param bForBatch true to request a batch statement
+	 * @return a configured JDBC Statement
+	 * @throws Exception if acquisition fails or connection is invalid
+	 */
 	private Statement _getStatement(String message, boolean bForBatch) throws Exception {
 		OAConnection con = getStatementConnection();
 		Statement statement;
@@ -471,7 +626,11 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Release a Statement obtained from getStatement.
+	 * Releases a JDBC {@link Statement} previously acquired through
+	 * {@link #getStatement} or {@link #getBatchStatement}. Iterates over pooled
+	 * connections to locate the owner and delegates release to it.
+	 *
+	 * @param statement the Statement to release
 	 */
 	public void releaseStatement(Statement statement) {
 		if (statement == null) {
@@ -493,10 +652,14 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Returns a JDBC PreparedStatment that can be used for direct JDBC calls.
+	 * Obtains a JDBC {@link PreparedStatement} for a given SQL string. If
+	 * auto-generated key support is enabled, the statement is configured to return
+	 * generated keys. Delegates to internal prepared-statement acquisition logic.
 	 *
-	 * @param sql               to assign to prepared statement.
-	 * @param bHasAutoGenerated true if this is an insert that will have a generated pkey
+	 * @param sql               SQL text for prepared statement creation
+	 * @param bHasAutoGenerated true if auto-generated keys are expected
+	 * @return a JDBC PreparedStatement
+	 * @throws Exception if acquisition fails
 	 */
 	public PreparedStatement getPreparedStatement(String sql, boolean bHasAutoGenerated) throws Exception {
 		PreparedStatement ps = _getPreparedStatement(sql, bHasAutoGenerated, false);
@@ -504,15 +667,29 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Used when using an OATransaction with useBatch=true
+	 * Obtains a batch-enabled {@link PreparedStatement} when transaction batch
+	 * mode is active. Returns null if batch mode is not enabled.
 	 *
-	 * @return null if OATransaction is null or useBatch != true
+	 * @param sql SQL text for prepared statement creation
+	 * @return a batch-enabled PreparedStatement or null
+	 * @throws Exception if acquisition fails
 	 */
 	public PreparedStatement getBatchPreparedStatement(String sql) throws Exception {
 		PreparedStatement ps = _getPreparedStatement(sql, false, true);
 		return ps;
 	}
 
+	/**
+	 * Internal helper for preparing JDBC statements. Ensures pool configuration
+	 * is valid, acquires a statement connection, and requests either a normal or
+	 * batch prepared statement. Applies timeout and row-limit defaults.
+	 *
+	 * @param sql               SQL text
+	 * @param bHasAutoGenerated true if auto-generated keys should be supported
+	 * @param bForBatch         true for acquiring a batch prepared statement
+	 * @return a configured PreparedStatement
+	 * @throws Exception if acquisition fails or configuration is invalid
+	 */
 	private PreparedStatement _getPreparedStatement(final String sql, final boolean bHasAutoGenerated, final boolean bForBatch)
 			throws Exception {
 		if (dbmd.minConnections < 1) {
@@ -549,7 +726,11 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Release a PreparedStatement obtained from getPreparedStatement.
+	 * Releases a prepared statement back to the pool. Iterates through pooled
+	 * connections to locate the owning connection and delegates release handling.
+	 *
+	 * @param statement     the PreparedStatement to release
+	 * @param bCanBeReused  true if the statement may be cached for reuse
 	 */
 	public void releasePreparedStatement(PreparedStatement statement, boolean bCanBeReused) {
 		if (statement == null) {
@@ -571,7 +752,11 @@ public class ConnectionPool implements Runnable {
 	}
 
 	/**
-	 * Called by OADataSource.getInfo to return information about database connections.
+	 * Appends detailed connection-pool diagnostics to the supplied vector.
+	 * Includes driver, URL, user, connection counts, and per-connection statistics
+	 * such as statement usage, prepared-statement usage, and query counts.
+	 *
+	 * @param vec the vector to populate with diagnostic information
 	 */
 	public void getInfo(Vector<Object> vec) {
 		vec.addElement("Driver: " + dbmd.driverJDBC);

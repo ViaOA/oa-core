@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.autonumber;
 
 import java.util.logging.Logger;
@@ -18,9 +23,14 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.object.OAObject;
 
 /**
- * Class used to store sequential numbers for assigning autonumber propeties in Objects.
+ * Stores and manages sequential counters used for assigning autonumber-style
+ * property values to {@link OAObject} instances. Each {@code NextNumber}
+ * record corresponds to a specific class/property pair and maintains the
+ * next integer to be assigned.
  * <p>
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ * This class is annotated as {@code localOnly=true} and {@code useDataSource=false},
+ * meaning it is never persisted through an {@link com.viaoa.datasource.OADataSource}
+ * and exists only within the local runtime for autonumber management.
  */
 @OAClass(localOnly = true, useDataSource = false, initialize = false)
 public class NextNumber extends OAObject {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,39 +21,82 @@ import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.*;
 
 /**
- * Defines a relationship between two {@link Table} objects.
+ * Represents a foreign-key relationship between two {@link Table} objects in the
+ * OA JDBC metadata model.
  * <p>
- * Each {@code Link} maps a Java reference property (e.g. {@code getDept()})
- * to a foreign-key relationship in the database, and may have a corresponding
- * reverse property in the related table. Used for building JOIN clauses and
- * maintaining bidirectional navigation between OAObjects.
+ * A {@code Link} maps an OA reference property (for example, a Java getter such
+ * as {@code getDept()}) to the corresponding database relationship. This includes
+ * the target table, the foreign-key columns, and an optional reverse property
+ * name for bidirectional navigation.
  * </p>
+ *
+ * <h2>Responsibilities</h2>
+ * <ul>
+ *   <li>Identify the referenced table.</li>
+ *   <li>Store the foreign-key columns used to join tables.</li>
+ *   <li>Resolve the reverse link for bidirectional relationships.</li>
+ *   <li>Resolve the Java getter method representing the link.</li>
+ * </ul>
  *
  * @see Table
  * @see Column
  */
 public class Link {
-    // keep all fkeys that dont have a column-property pair
-    /** name of reference property. */
-    public String propertyName;    // name used by object.  ex: getDept() where name="dept"
-    /** Table that this references. */
+
+	/**
+	 * Name of the object reference property corresponding to this link.
+	 * <p>
+	 * For example, if the Java getter is {@code getDept()}, then the
+	 * property name would be {@code "dept"}.
+	 * </p>
+	 */
+	public String propertyName; 
+    
+	/**
+	 * The destination {@link Table} referenced by this link. Represents the table
+	 * that this object's foreign-key values map to.
+	 */
     public Table toTable;
-    /** columns that are used to join other table. */
+    
+    /**
+     * List of foreign-key {@link Column} objects used to join this table to the
+     * referenced {@link #toTable}. Each entry maps to a component of the primary
+     * key or foreign key being referenced.
+     */
     public Column[] fkeys;  // foreign key columns that need to match pkey/fkey in toTable
-    /** name of reference property in reference table that references this table.*/
+    
+    /**
+     * Name of the reverse reference property in {@link #toTable} that represents
+     * navigation back to this table. Used for establishing bidirectional links.
+     */
     public String reversePropertyName;
 
+    /**
+     * Cached Java reflection {@link Method} reference for the getter corresponding
+     * to {@link #propertyName}. Resolved lazily by {@link #getGetMethod()}.
+     */
     Method methodGet;
+    
+    /**
+     * The {@link Table} owning this link definition. Used to resolve supporting
+     * metadata such as the Java class backing the table.
+     */
     Table table;
     
+    /**
+     * Default constructor creating an empty {@code Link}. Callers are responsible
+     * for populating reference names, foreign keys, and target table.
+     */
     public Link() {
     }
-    /** 
-        Create a new reference from one table to another. 
-        @param propertyName is name of reference property in object.
-        @param reversePropertyName is name of reference property in the table that this table references.
-        @param toTable table that this reference is for.
-    */
+
+    /**
+     * Constructs a {@code Link} connecting this table to another table.
+     *
+     * @param propertyName the reference property name on this table
+     * @param reversePropertyName the reverse reference name in the destination table
+     * @param toTable the table that this link references
+     */
     public Link(String propertyName,String reversePropertyName, Table toTable) {
         this.propertyName = propertyName;
         this.reversePropertyName = reversePropertyName;
@@ -61,17 +104,26 @@ public class Link {
     }
 
     /**
-        Returns Link from toTable back to this table.
-        This is used to map the columns together when building a JOIN clause.
-    */
+     * Retrieves the reverse {@code Link} from {@link #toTable} that points back to
+     * the owning table. Used when constructing JOIN relationships or navigating
+     * bidirectional references.
+     *
+     * @return the reverse {@code Link}, or {@code null} if none exists
+     */
     public Link getReverseLink() {
         return toTable.getLink(reversePropertyName);
     }
 
-    
     /**
-        Method used to get reference property.
-    */
+     * Returns the Java getter method associated with {@link #propertyName}.
+     * <p>
+     * Resolution is performed lazily: the method is looked up when first accessed
+     * using the support class provided by this link's owning {@link Table}.
+     * Subsequent calls return the cached {@link Method}.
+     * </p>
+     *
+     * @return the getter {@link Method}, or {@code null} if not found
+     */
     public Method getGetMethod() {
         if (methodGet == null && table != null) {
             Class clazz = table.getSupportClass();
@@ -82,6 +134,5 @@ public class Link {
         }
         return methodGet;
     }
-
 }
 

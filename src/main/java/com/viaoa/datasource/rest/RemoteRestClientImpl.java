@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,12 +32,22 @@ import com.viaoa.sync.remote.RemoteClientImpl;
 public abstract class RemoteRestClientImpl extends RemoteClientImpl {
 	private static Logger LOG = Logger.getLogger(RemoteRestClientImpl.class.getName());
 
+	/**
+	 * Constructs a REST client instance associated with the specified remote
+	 * session. Delegates initialization to the superclass.
+	 *
+	 * @param sessionId the session identifier for the remote connection
+	 */
 	public RemoteRestClientImpl(int sessionId) {
 		super(sessionId, null);
 	}
 
 	/**
-	 * Called to add objects to a client's server side cache, so that server will not GC the object.
+	 * Callback invoked to inform the client that the given object should be
+	 * referenced in the client-side cache. This prevents the server from
+	 * garbage-collecting the object while it remains in use by the client.
+	 *
+	 * @param obj the object to retain in the client cache
 	 */
 	public abstract void setCached(OAObject obj);
 }

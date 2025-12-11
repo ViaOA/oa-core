@@ -40,9 +40,28 @@ package com.viaoa.datasource.query;
  * @see OAQueryTokenType
  */
 public class OAQueryToken implements OAQueryTokenType {
+	
+	/**
+	 * Primary and secondary token classification codes. These integer values
+	 * correspond to constants defined in {@link OAQueryTokenType} and identify
+	 * both the general token category and any optional subtype used during
+	 * query parsing.
+	 */
     public int type, subtype;
+
+    /**
+     * The literal text captured from the query string for this token. This
+     * value reflects the exact substring parsed by the tokenizer.
+     */
     public String value;
 
+    /**
+     * Determines whether this token represents an operator. Operators include
+     * arithmetic, comparison, and LIKE-related tokens defined in
+     * {@link OAQueryTokenType}.
+     *
+     * @return true if this token is one of the operator token types; otherwise false
+     */
     public boolean isOperator() {
         return (type == OAQueryToken.OPERATOR || type == OAQueryToken.GT || type == OAQueryToken.GE || 
                 type == OAQueryToken.LT || type == OAQueryToken.LE || type == OAQueryToken.EQUAL || 

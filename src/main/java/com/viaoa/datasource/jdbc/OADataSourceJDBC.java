@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,12 +85,30 @@ public class OADataSourceJDBC extends OADataSource {
 
 	private static Logger LOG = Logger.getLogger(OADataSourceJDBC.class.getName());
 
+	/**
+	 * Database metadata object describing schema details such as tables, columns,
+	 * primary keys, and database-specific capabilities (e.g., auto-assign support).
+	 */
 	protected DBMetaData dbmd;
+
+	/**
+	 * The OA database mapping representing tables, relationships, and column
+	 * configurations mapped to OA classes and properties.
+	 */
 	protected Database database;
+
+	/**
+	 * Connection pool used to manage creation, reuse, and lifecycle of JDBC
+	 * connections, statements, and prepared statements for this datasource.
+	 */
 	protected ConnectionPool connectionPool;
 
 	/**
-	 * Create new OADataSourceJDBC using a Database mapping object.
+	 * Constructs a new JDBC datasource bound to the specified database mapping
+	 * and metadata. Initializes a {@link ConnectionPool} using the metadata.
+	 *
+	 * @param database the database mapping used for class/table resolution
+	 * @param dbmd     the metadata describing schema and JDBC capabilities
 	 */
 	public OADataSourceJDBC(Database database, DBMetaData dbmd) {
 		this.database = database;
@@ -99,31 +117,60 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Returns database mapping object.
+	 * Returns the {@link Database} mapping object used to translate OA classes
+	 * into relational tables.
+	 *
+	 * @return the database mapping
 	 */
 	public Database getDatabase() {
 		return database;
 	}
 
+	/**
+	 * Returns the {@link DBMetaData} object containing database schema and
+	 * capability information.
+	 *
+	 * @return the metadata for this datasource
+	 */
 	public DBMetaData getDBMetaData() {
 		return dbmd;
 	}
 
+	/**
+	 * Assigns a new {@link DBMetaData} instance to this datasource.
+	 *
+	 * @param dbmd the metadata object to use
+	 */
 	public void setDBMetaData(DBMetaData dbmd) {
 		this.dbmd = dbmd;
 	}
 
+	/**
+	 * Returns the connection pool used by this datasource for managing JDBC
+	 * connections and statements.
+	 *
+	 * @return the connection pool
+	 */
 	public ConnectionPool getConnectionPool() {
 		return connectionPool;
 	}
 
 	/**
-	 * Returns true, this datasource supports selecting/storing/deleting
+	 * Indicates that this datasource supports full storage operations,
+	 * including insert, update, delete, and select.
+	 *
+	 * @return true
 	 */
 	public @Override boolean supportsStorage() {
 		return true;
 	}
 
+	/**
+	 * Checks whether the underlying database is reachable by querying the
+	 * connection pool. Logs and returns false if an exception occurs.
+	 *
+	 * @return true if the datasource is available
+	 */
 	public @Override boolean isAvailable() {
 		boolean b = true;
 		try {
@@ -134,13 +181,22 @@ public class OADataSourceJDBC extends OADataSource {
 		}
 	}
 
-	/** returns false */
+	/**
+	 * Indicates that identifier values are not allowed to change after assignment.
+	 *
+	 * @return false
+	 */
 	public @Override boolean getAllowIdChange() {
 		return false;
 	}
 
 	/**
-	 * Returns true if Database has Table that is mapped to Class.
+	 * Determines whether the specified class has a corresponding table in the
+	 * database mapping.
+	 *
+	 * @param clazz  the class to test
+	 * @param filter unused for JDBC datasources
+	 * @return true if the class is mapped to a table
 	 */
 	public @Override boolean isClassSupported(Class clazz, OAFilter filter) {
 		boolean b = (database.getTable(clazz) != null);
@@ -148,14 +204,21 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Adds Strings to Vector, listing information about DataSource.
+	 * Adds datasource information to the provided vector by delegating to the
+	 * connection pool.
+	 *
+	 * @param vec the vector to populate with datasource information
 	 */
 	public void getInfo(Vector vec) {
 		connectionPool.getInfo(vec);
 	}
 
 	/**
-	 * Set all properties that are mapped to a column to NULL
+	 * Assigns an identifier value for the specified object if auto-assignment
+	 * on create is enabled. Wraps the internal assignment call with assigning-ID
+	 * guards to prevent recursive property updates.
+	 *
+	 * @param object the object whose ID should be assigned
 	 */
 	public @Override void assignId(OAObject object) {
 		if (!bAssignNumberOnCreate) {
@@ -169,6 +232,14 @@ public class OADataSourceJDBC extends OADataSource {
 		}
 	}
 
+	/**
+	 * Internal implementation used to assign autonumber values for objects whose
+	 * primary key columns support automatic number assignment. Walks up the class
+	 * hierarchy and assigns values for each table that has a primary key column
+	 * configured for next-number assignment.
+	 *
+	 * @param object the object receiving an assigned ID
+	 */
 	private void _assignId(OAObject object) {
 		if (!dbmd.supportsAutoAssign) {
 			return;
@@ -195,11 +266,27 @@ public class OADataSourceJDBC extends OADataSource {
 		}
 	}
 
+	/**
+	 * Sets the next autonumber value for the specified class by delegating
+	 * to {@link AutonumberDelegate#setNextNumber}.
+	 *
+	 * @param c               the class whose table sequence will be updated
+	 * @param nextNumberToUse the next number to assign
+	 */
 	public void setNextNumber(Class c, int nextNumberToUse) {
 		Table table = database.getTable(c);
 		AutonumberDelegate.setNextNumber(this, table, nextNumberToUse);
 	}
 
+	/**
+	 * Updates the specified object in the database by delegating to
+	 * {@link #_update}. Batch/transaction handling code is present but commented
+	 * out, leaving this method as a direct call to the internal update routine.
+	 *
+	 * @param object            the object to update
+	 * @param includeProperties optional list of properties to include
+	 * @param excludeProperties optional list of properties to exclude
+	 */
 	public @Override void update(OAObject object, String[] includeProperties, String[] excludeProperties) {
 		// 20221206
 		_update(object, includeProperties, excludeProperties);
@@ -221,12 +308,27 @@ public class OADataSourceJDBC extends OADataSource {
 		*/
 	}
 
+	/**
+	 * Internal update implementation. Logs key information about the object and
+	 * delegates the actual persistence operation to {@link UpdateDelegate#update}.
+	 *
+	 * @param object            the object to update
+	 * @param includeProperties properties to include
+	 * @param excludeProperties properties to exclude
+	 */
 	protected void _update(OAObject object, String[] includeProperties, String[] excludeProperties) {
 		OAObjectKey key = OAObjectKeyDelegate.getKey(object);
 		LOG.finer("object=" + object.getClass() + ", key=" + key);
 		UpdateDelegate.update(this, object, includeProperties, excludeProperties);
 	}
 
+	/**
+	 * Inserts the specified object into the database by delegating to
+	 * {@link #_insert}. Batch/transaction logic exists but is commented out,
+	 * leaving this method as a direct insert call.
+	 *
+	 * @param object the object to insert
+	 */
 	public @Override void insert(OAObject object) {
 		// 20221206
 		_insert(object);
@@ -248,31 +350,68 @@ public class OADataSourceJDBC extends OADataSource {
 		*/
 	}
 
+	/**
+	 * Internal insert implementation. Logs the object's class, key, and new-state
+	 * status, then delegates the actual persistence logic to
+	 * {@link InsertDelegate#insert}.
+	 *
+	 * @param object the object to insert
+	 */
 	protected void _insert(OAObject object) {
 		OAObjectKey key = OAObjectKeyDelegate.getKey(object);
 		LOG.finer("object=" + object.getClass() + ", key=" + key + ", isNew=" + object.isNew());
 		InsertDelegate.insert(this, object);
 	}
 
+	/**
+	 * Inserts the specified object without processing any reference properties.
+	 * Logs diagnostic key information and delegates to
+	 * {@link InsertDelegate#insertWithoutReferences}.
+	 *
+	 * @param obj the object to insert without references
+	 */
 	public @Override void insertWithoutReferences(OAObject obj) {
 		OAObjectKey key = OAObjectKeyDelegate.getKey(obj);
 		LOG.fine("object=" + obj.getClass() + ", key=" + key + ", isNew=" + obj.isNew());
 		InsertDelegate.insertWithoutReferences(this, obj);
 	}
 
+	/**
+	 * Deletes the specified object from the database. Logs object identity
+	 * information and delegates to {@link DeleteDelegate#delete}.
+	 *
+	 * @param object the object to delete
+	 */
 	public @Override void delete(OAObject object) {
 		OAObjectKey key = OAObjectKeyDelegate.getKey(object);
 		LOG.fine("object=" + object.getClass().getSimpleName() + ", key=" + key);
 		DeleteDelegate.delete(this, object);
 	}
 
-	// 20210325
+	/**
+	 * Deletes all rows mapped to the specified class. This operation is not
+	 * implemented for JDBC datasources due to potential data-loss risks and
+	 * always throws a {@link RuntimeException}.
+	 *
+	 * @param c the class whose objects would be deleted
+	 * @throws RuntimeException always thrown, as delete-all is not supported
+	 */
 	public @Override void deleteAll(Class c) {
 		LOG.fine("object=" + c.getSimpleName());
 		// could be dangerous
 		throw new RuntimeException("OADataSource.deleteAll(class) not yet implemented for OADataSourceJDBC - could be dangerous :)");
 	}
 
+	/**
+	 * Updates a many-to-many relationship for the specified master object.
+	 * Logs identifying information and delegates to
+	 * {@link UpdateDelegate#updateMany2ManyLinks}.
+	 *
+	 * @param masterObject   the master object
+	 * @param adds           objects to add to the link table
+	 * @param removes        objects to remove from the link table
+	 * @param propFromMaster the property defining the relationship
+	 */
 	public @Override void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
 		OAObjectKey key = OAObjectKeyDelegate.getKey(masterObject);
 		LOG.finer("object=" + masterObject.getClass().getSimpleName() + ", key=" + key);
@@ -280,9 +419,13 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Called by OAObject.getRequiredProperties() to find required properties that are unassigned.
+	 * Determines whether this datasource will automatically create a value for
+	 * the specified property before saving the object. Only true when the
+	 * property maps to a primary-key column configured for next-number assignment.
 	 *
-	 * @return true if the datasource will set the property value before saving.
+	 * @param object       the object being evaluated
+	 * @param propertyName the name of the property
+	 * @return true if a next-number assignment will occur
 	 */
 	public @Override boolean willCreatePropertyValue(OAObject object, String propertyName) {
 		if (object == null) {
@@ -310,7 +453,27 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * @param filter not used, since the jdbc ds supports queries.
+	 * Performs a SELECT query using JDBC, delegating to {@link SelectDelegate}.
+	 * <p>
+	 * Special behavior:
+	 * <ul>
+	 *   <li>If {@code whereObject} is used with a property path, it is converted
+	 *       into a corresponding query clause.</li>
+	 *   <li>Delegates to an overload of SelectDelegate depending on whether
+	 *       {@code whereObject} is present.</li>
+	 * </ul>
+	 *
+	 * @param selectClass             class of objects to select
+	 * @param queryWhere              where clause
+	 * @param params                  where-clause parameters
+	 * @param queryOrder              order by clause
+	 * @param whereObject             optional object used for reverse-path lookup
+	 * @param propertyFromWhereObject property path used with whereObject
+	 * @param extraWhere              extra where clause
+	 * @param max                     maximum rows
+	 * @param filter                  unused for JDBC
+	 * @param bDirty                  include dirty objects
+	 * @return an iterator for selected objects
 	 */
 	@Override
 	public OADataSourceIterator select(Class selectClass,
@@ -350,9 +513,22 @@ public class OADataSourceJDBC extends OADataSource {
 										max, bDirty);
 	}
 
-	/**
+	/*
 	 * Note: queryWhere needs to begin with "FROM TABLENAME WHERE ...", the queryOrder will be prefixed with "ORDER BY ". This is for cases
 	 * where there are joins, etc.
+	 */
+	/**
+	 * Performs a passthrough SELECT query. Assumes the {@code queryWhere} begins
+	 * with a full SQL FROM/WHERE clause. Delegates to
+	 * {@link SelectDelegate#selectPassthru}.
+	 *
+	 * @param selectClass the class to select
+	 * @param queryWhere  SQL fragment beginning with FROM
+	 * @param queryOrder  ORDER BY clause
+	 * @param max         maximum results
+	 * @param filter      unused
+	 * @param bDirty      include dirty objects
+	 * @return an iterator for selected results
 	 */
 	public OADataSourceIterator selectPassthru(Class selectClass,
 			String queryWhere, String queryOrder,
@@ -360,10 +536,30 @@ public class OADataSourceJDBC extends OADataSource {
 		return SelectDelegate.selectPassthru(this, selectClass, queryWhere, queryOrder, max, bDirty);
 	}
 
+	/**
+	 * Executes an SQL command by delegating to {@link SelectDelegate#execute}.
+	 *
+	 * @param command SQL command to execute
+	 * @return result returned by the delegate
+	 */
 	public @Override Object execute(String command) {
 		return SelectDelegate.execute(this, command);
 	}
 
+	/**
+	 * Counts objects matching the specified query. If a {@code whereObject} is
+	 * supplied, delegates to the SelectDelegate overload that accepts an object
+	 * key. Otherwise, delegates to the basic count implementation.
+	 *
+	 * @param selectClass             class to count
+	 * @param queryWhere              where clause
+	 * @param params                  parameters
+	 * @param whereObject             optional object used for reverse lookup
+	 * @param propertyFromWhereObject property path from whereObject
+	 * @param extraWhere              extra where clause
+	 * @param max                     limit
+	 * @return the count result
+	 */
 	@Override
 	public int count(Class selectClass,
 			String queryWhere, Object[] params,
@@ -374,20 +570,36 @@ public class OADataSourceJDBC extends OADataSource {
 		return SelectDelegate.count(this, selectClass, queryWhere, params, max);
 	}
 
+	/**
+	 * Performs a passthrough COUNT query for the specified SELECT fragment by
+	 * delegating to {@link SelectDelegate#countPassthru}.
+	 *
+	 * @param selectClass class to count
+	 * @param queryWhere  raw SQL WHERE fragment
+	 * @param max         maximum results considered
+	 * @return the counted value
+	 */
 	@Override
 	public int countPassthru(Class selectClass, String queryWhere, int max) {
 		return SelectDelegate.countPassthru(this, queryWhere, max);
 	}
 
 	/**
-	 * Returns a JDBC Statement from connection pool. Note: you must call releaseStatement() to return the Statement to the Connection Pool
+	 * Returns a JDBC {@link Statement} from the connection pool using a default
+	 * diagnostic message. Must be released using {@link #releaseStatement}.
+	 *
+	 * @return a Statement from the pool
 	 */
 	public Statement getStatement() {
 		return getStatement("OADataSourceJDBC.getStatement()");
 	}
 
 	/**
-	 * Returns a JDBC Statement from connection pool. Note: you must call releaseStatement() to return the Statement to the Connection Pool
+	 * Returns a JDBC {@link Statement} from the connection pool. Uses the
+	 * supplied message for connection-pool diagnostics.
+	 *
+	 * @param message diagnostic message used when obtaining a statement
+	 * @return a Statement from the pool
 	 */
 	public Statement getStatement(String message) {
 		try {
@@ -398,9 +610,11 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Used when using an OATransaction with useBatch=true
+	 * Returns a batch-mode JDBC {@link Statement} from the connection pool if
+	 * the current transaction supports batch operations. Returns null otherwise.
 	 *
-	 * @return null if OATransaction is null or useBatch != true
+	 * @param message diagnostic message used to obtain the statement
+	 * @return a batch statement or null if batching is unavailable
 	 */
 	public Statement getBatchStatement(String message) {
 		try {
@@ -410,7 +624,11 @@ public class OADataSourceJDBC extends OADataSource {
 		}
 	}
 
-	/** release a JDBC Statement from connection pool. */
+	/**
+	 * Releases the specified {@link Statement} back to the connection pool.
+	 *
+	 * @param statement the Statement to release
+	 */
 	public void releaseStatement(Statement statement) {
 		if (statement != null) {
 			connectionPool.releaseStatement(statement);
@@ -418,13 +636,24 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Returns a JDBC PreparedStatement from connection pool. Note: you must call releasePreparedStatement() to return the PreparedStatement
-	 * to the Connection Pool
+	 * Returns a {@link PreparedStatement} for the given SQL text. Must be released
+	 * using {@link #releasePreparedStatement(PreparedStatement)}.
+	 *
+	 * @param sql the SQL string used to create the PreparedStatement
+	 * @return a prepared statement
 	 */
 	public PreparedStatement getPreparedStatement(String sql) {
 		return getPreparedStatement(sql, false);
 	}
 
+	/**
+	 * Returns a {@link PreparedStatement} for the given SQL string, optionally
+	 * configured to return auto-generated keys.
+	 *
+	 * @param sql               SQL text
+	 * @param bHasAutoGenerated true to request generated keys
+	 * @return a prepared statement
+	 */
 	public PreparedStatement getPreparedStatement(String sql, boolean bHasAutoGenerated) {
 		try {
 			return connectionPool.getPreparedStatement(sql, bHasAutoGenerated);
@@ -434,9 +663,11 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Used when using an OATransaction with useBatch=true
+	 * Returns a batch-mode {@link PreparedStatement} if the current transaction
+	 * supports batching. Returns null otherwise.
 	 *
-	 * @return null if OATransaction is null or useBatch != true
+	 * @param sql SQL used to create the PreparedStatement
+	 * @return a batch prepared statement or null
 	 */
 	public PreparedStatement getBatchPreparedStatement(String sql) {
 		try {
@@ -447,7 +678,10 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Releases a JDBC PreparedStatement from connection pool.
+	 * Releases the specified {@link PreparedStatement} back to the connection
+	 * pool. Marks it as non-reusable.
+	 *
+	 * @param ps the prepared statement
 	 */
 	public void releasePreparedStatement(PreparedStatement ps) {
 		if (ps != null) {
@@ -455,6 +689,13 @@ public class OADataSourceJDBC extends OADataSource {
 		}
 	}
 
+	/**
+	 * Releases the specified {@link PreparedStatement} back to the connection
+	 * pool, specifying whether it may be reused without recompilation.
+	 *
+	 * @param ps            the prepared statement
+	 * @param bCanBeReused  true if the statement is reusable
+	 */
 	public void releasePreparedStatement(PreparedStatement ps, boolean bCanBeReused) {
 		if (ps != null) {
 			connectionPool.releasePreparedStatement(ps, bCanBeReused);
@@ -462,7 +703,8 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Close all Connections.
+	 * Closes this datasource by removing it from the active datasource list,
+	 * closing the connection pool, and closing associated metadata resources.
 	 */
 	public void close() {
 		super.close(); // remove from list of available datasources
@@ -472,6 +714,12 @@ public class OADataSourceJDBC extends OADataSource {
 		DBMetaDataDelegate.close(dbmd);
 	}
 
+	/**
+	 * Reopens this datasource after it has been closed or reset. Calls the
+	 * superclass implementation and reopens the connection pool.
+	 *
+	 * @param pos the reopen position (used by superclass)
+	 */
 	@Override
 	public void reopen(int pos) {
 		super.reopen(pos);
@@ -481,7 +729,8 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Close all Connections.
+	 * Closes all JDBC connections in the connection pool. Intended for full
+	 * shutdown or diagnostic cleanup.
 	 */
 	public void closeAllConnections() {
 		if (connectionPool != null) {
@@ -490,27 +739,58 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Get a jdbc Connection from Connection Pool.
+	 * Obtains a JDBC connection from the connection pool. The connection is
+	 * non-exclusive (shared) unless otherwise configured.
+	 *
+	 * @return a JDBC connection
+	 * @throws Exception if the connection cannot be obtained
 	 */
 	public Connection getConnection() throws Exception {
 		return connectionPool.getConnection(false);
 	}
 
+	/**
+	 * Obtains a JDBC connection from the connection pool.
+	 *
+	 * @param bExclusive true to request an exclusive connection
+	 * @return a JDBC connection, exclusive if requested
+	 * @throws Exception if the connection cannot be obtained
+	 */
 	public Connection getConnection(boolean bExclusive) throws Exception {
 		return connectionPool.getConnection(bExclusive);
 	}
 
+	/**
+	 * Releases a JDBC connection back to the connection pool if it is non-null.
+	 *
+	 * @param connection the connection to release
+	 */
 	public void releaseConnection(Connection connection) {
 		if (connection != null) {
 			connectionPool.releaseConnection(connection);
 		}
 	}
 
+	/**
+	 * Performs datasource verification by invoking the {@link VerifyDelegate}.
+	 * Prints a blank line before running verification.
+	 *
+	 * @return the result of the verification process
+	 * @throws Exception if verification fails
+	 */
 	public boolean verify() throws Exception {
 		System.out.println("");
 		return VerifyDelegate.verify(this);
 	}
 
+	/**
+	 * Retrieves a BLOB value for the specified object and property by delegating
+	 * to {@link SelectDelegate#getPropertyBlobValue}. Logs a warning on error.
+	 *
+	 * @param obj          the object owning the property
+	 * @param propertyName the property name
+	 * @return the blob value, or null if unavailable or error occurs
+	 */
 	@Override
 	public byte[] getPropertyBlobValue(OAObject obj, String propertyName) {
 		byte[] result = null;
@@ -522,6 +802,17 @@ public class OADataSourceJDBC extends OADataSource {
 		return result;
 	}
 
+	/**
+	 * Retrieves a single object from the datasource using the specified class
+	 * and key. Delegates to {@link SelectDelegate#selectObject}; if no iterator
+	 * is returned, falls back to {@link OADataSource#getObject}.
+	 *
+	 * @param oi     the OAObjectInfo for the class
+	 * @param clazz  the object's class
+	 * @param key    the object's key
+	 * @param bDirty include dirty objects
+	 * @return the retrieved object, or null if not found
+	 */
 	@Override
 	public Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key, boolean bDirty) {
 		Object obj = null;
@@ -537,12 +828,26 @@ public class OADataSourceJDBC extends OADataSource {
 		return obj;
 	}
 
+	/**
+	 * Retrieves the maximum allowed length for the given property by delegating
+	 * to {@link Delegate#getPropertyMaxLength}.
+	 *
+	 * @param c            the class defining the property
+	 * @param propertyName the property name
+	 * @return the maximum length value
+	 */
 	@Override
 	public int getMaxLength(Class c, String propertyName) {
 		int x = Delegate.getPropertyMaxLength(this, c, propertyName);
 		return x;
 	}
 
+	/**
+	 * Assigns a GUID to this datasource and updates the underlying metadata to
+	 * reflect the same GUID. Delegates to {@link OADataSource#setGuid}.
+	 *
+	 * @param guid the new datasource GUID
+	 */
 	@Override
 	public void setGuid(String guid) {
 		super.setGuid(guid);
@@ -550,7 +855,11 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * Select the objectKeys from a link table.
+	 * Retrieves many-to-many link entries for the specified link information
+	 * by delegating to {@link SelectDelegate#getManyToMany}.
+	 *
+	 * @param linkInfo the link information object
+	 * @return a list of many-to-many entries, or null if linkInfo is null
 	 */
 	public ArrayList<ManyToMany> getManyToMany(OALinkInfo linkInfo) {
 		if (linkInfo == null) {
@@ -561,7 +870,11 @@ public class OADataSourceJDBC extends OADataSource {
 	}
 
 	/**
-	 * used to set the next number for databases that support auto assigned (seq) pkeys.
+	 * Updates the database sequence values for auto-assigned primary keys
+	 * belonging to the specified class. If supported, the method synchronizes
+	 * the database sequence with the current maximum identifier value.
+	 *
+	 * @param clazz the OAObject class whose sequence should be updated
 	 */
 	public void updateAutoSequence(Class<? extends OAObject> clazz) {
 		if (dbmd == null || clazz == null) {

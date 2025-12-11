@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,59 +71,238 @@ import com.viaoa.util.OATime;
 public class ResultSetIterator implements OADataSourceIterator {
 	private static Logger LOG = Logger.getLogger(ResultSetIterator.class.getName());
 
+	/**
+	 * The JDBC data source used to create statements, obtain connections,
+	 * and access database metadata during iteration.
+	 */
 	OADataSourceJDBC ds;
+
+	/**
+	 * The OAObject class type that will be instantiated for each row in the
+	 * result set.
+	 */
 	Class clazz;
+	
+	/**
+	 * The primary SQL query used to retrieve data or primary keys from the
+	 * underlying database.
+	 */
 	String query;
+	
+	/**
+	 * JDBC statement used when executing a non-prepared SQL query.
+	 */
 	Statement statement;
+	
+	/**
+	 * JDBC prepared statement used when the iterator is configured to run
+	 * parameterized queries.
+	 */
 	PreparedStatement preparedStatement;
+	
+	/**
+	 * Optional transaction context associated with the iteration, used for
+	 * committing work once reading is complete.
+	 */
 	OATransaction transaction;
+	
+	/**
+	 * The active JDBC result set containing retrieved rows for iteration.
+	 */
 	ResultSet rs;
+	
+	/**
+	 * Column metadata describing how each result-set column maps to OAObject
+	 * properties or foreign-key references.
+	 */
 	Column[] columns;
+	
+	/**
+	 * Temporary working array for storing raw or converted column values for
+	 * the current row.
+	 */
 	Object[] values;
+	
+	/**
+	 * Internal metadata describing each column’s mapping state, including its
+	 * primary-key position if applicable.
+	 */
 	ColumnInfo[] columnInfos;
+	
+	/**
+	 * Indicates whether the iterator has additional rows available to read.
+	 */
 	volatile boolean bMore = false;
+	
+	/**
+	 * Index of the last column required to fully construct a primary key,
+	 * enabling cache lookups before object creation.
+	 */
 	int lastPkeyColumn; // last column needed to be able to create an ObjectKey, to do a cache lookup
+	
+	/**
+	 * Optional maximum number of rows to read from the result set. A value of
+	 * zero or less indicates no limit.
+	 */
 	int max;
+	
+	/**
+	 * Counter tracking the number of objects returned so far from the
+	 * iterator.
+	 */
 	int cnter;
 
-	// used when first selecting only the primary key column
+	/**
+	 * Secondary SQL query used when initial retrieval only yields primary-key
+	 * values and a follow-up query is required to fetch full row data.
+	 */
 	String query2;
+	
+	/**
+	 * JDBC statement used to execute the secondary query (query2) when
+	 * two-phase selection logic is active.
+	 */
 	Statement statement2;
+	
+	/**
+	 * Result set for the secondary query used to load full data rows when
+	 * primary-key selection is performed separately.
+	 */
 	ResultSet rs2;
+	
+	/**
+	 * Number of primary-key columns participating in object identity and used
+	 * to determine when enough values have been read to construct an
+	 * OAObjectKey.
+	 */
 	int idColumnCount;
+	
+	/**
+	 * OAObject metadata describing ID properties, caching rules, and other
+	 * structural information for the target class.
+	 */
 	OAObjectInfo oi;
+	
+	/**
+	 * Temporary array holding primary-key values for the current row, used to
+	 * construct an OAObjectKey for cache lookup or foreign-key assignment.
+	 */
 	Object[] pkeyValues;
+	
+	/**
+	 * Indicates whether date values from the database include time
+	 * information, as determined by JDBC metadata.
+	 */
 	boolean bDatesIncludeTime;
+	
+	/**
+	 * Database-specific representations of boolean true and false values,
+	 * used to convert numeric or DB-native flags to Java booleans.
+	 */
 	Object objectTrue, objectFalse;
+	
+	/**
+	 * Flag indicating whether the iterator should force property assignment
+	 * even for objects already present in the cache.
+	 */
 	boolean bDirty;
+	
+	/**
+	 * Indicates that a SQL query is currently being executed. Used to control
+	 * cancellation and closing behavior.
+	 */
 	volatile boolean bIsSelecting;
+	
+	/**
+	 * Tracks whether the iterator’s initialization process has already been
+	 * executed.
+	 */
 	volatile boolean bInit;
+	
+	/**
+	 * Optional DAO used to construct OAObjects directly from result-set data,
+	 * bypassing explicit column-by-column processing when available.
+	 */
 	DataAccessObject dataAccessObject;
+	
+	/**
+	 * Buffer structure used by DataAccessObject to map result-set columns to
+	 * object properties during direct object creation.
+	 */
 	DataAccessObject.ResultSetInfo resultSetInfo = new DataAccessObject.ResultSetInfo();
+	
+	/**
+	 * Prepared-statement arguments supplied when executing a parameterized
+	 * SQL query.
+	 */
 	Object[] arguments; // when using preparedStatement
+	
+	/**
+	 * Indicates whether a prepared statement should be used instead of a
+	 * standard SQL Statement.
+	 */
 	private boolean bUsePreparedStatement;
 
-	// 20220513 was: 2500
+	/**
+	 * Throttle used to regulate logging of long-running query operations,
+	 * preventing excessive output while still reporting performance issues.
+	 */
 	public static final OAThrottle throttle = new OAThrottle(500);
 
+	/**
+	 * Returns the primary SQL query used by this iterator.
+	 *
+	 * @return the SQL query string.
+	 */
 	public String getQuery() {
 		return query;
 	}
 
+	/**
+	 * Returns the secondary SQL query used for two-phase primary-key/data
+	 * retrieval.
+	 *
+	 * @return the secondary SQL query string, or null if not used.
+	 */
 	public String getQuery2() {
 		return query2;
 	}
 
+	/**
+	 * Holds metadata for a specific column in the result set, including a
+	 * reference to the Column definition and its primary-key position within
+	 * the object’s identity.
+	 */
 	class ColumnInfo {
 		Column column;
 		int pkeyPos = -1;
 	}
 
+	/**
+	 * Creates a new iterator using an optional DataAccessObject and a
+	 * two-phase query (primary key select plus data select).
+	 *
+	 * @param ds the JDBC data source.
+	 * @param clazz the OAObject class type to be instantiated.
+	 * @param dataAccessObject DAO used for direct object creation.
+	 * @param query the primary SQL query.
+	 * @param query2 secondary SQL query for full-row selection.
+	 * @param max the maximum number of rows to read.
+	 */
 	public ResultSetIterator(OADataSourceJDBC ds, Class clazz, DataAccessObject dataAccessObject, String query, String query2, int max) {
 		this(ds, clazz, null, query, query2, max, dataAccessObject);
 	}
 
-	// 20121013 to use with preparedStatement
+	/**
+	 * Creates a new iterator that executes a prepared SQL statement using the
+	 * given arguments.
+	 *
+	 * @param ds the JDBC data source.
+	 * @param clazz the OAObject class type to be instantiated.
+	 * @param dataAccessObject DAO for creating objects from result-set data.
+	 * @param query the SQL query to prepare.
+	 * @param arguments parameter values for the prepared statement.
+	 */
 	public ResultSetIterator(OADataSourceJDBC ds, Class clazz, DataAccessObject dataAccessObject, String query, Object[] arguments) {
 		this.ds = ds;
 		this.clazz = clazz;
@@ -133,24 +312,64 @@ public class ResultSetIterator implements OADataSourceIterator {
 		bUsePreparedStatement = true;
 	}
 
+	/**
+	 * Creates a new iterator using explicit column metadata and a prepared
+	 * statement.
+	 *
+	 * @param ds the JDBC data source.
+	 * @param clazz the OAObject class type.
+	 * @param columns metadata describing column/property mappings.
+	 * @param query the SQL query to prepare.
+	 * @param arguments parameter values for the prepared statement.
+	 * @param max maximum number of rows to read.
+	 */
 	public ResultSetIterator(OADataSourceJDBC ds, Class clazz, Column[] columns, String query, Object[] arguments, int max) {
 		this(ds, clazz, columns, query, null, max, null);
 		this.arguments = arguments;
 		bUsePreparedStatement = true;
 	}
 
+	/**
+	 * Creates a new iterator using explicit column metadata and a standard
+	 * non-prepared SQL query.
+	 *
+	 * @param ds the JDBC data source.
+	 * @param clazz the OAObject class type.
+	 * @param columns metadata for result-set to object mapping.
+	 * @param query SQL query to execute.
+	 * @param max maximum number of rows to fetch.
+	 */
 	public ResultSetIterator(OADataSourceJDBC ds, Class clazz, Column[] columns, String query, int max) {
 		this(ds, clazz, columns, query, null, max, null);
 	}
 
 	/**
-	 * @param query2 used if the first query only returns pkIds. Query2 will need to use ? to position where the id values will be inserted.
-	 *               Query2 needs to be the correct SQL statement.
+	 * Creates a new iterator using explicit column metadata and optional
+	 * two-phase primary-key/data retrieval.
+	 *
+	 * @param ds JDBC data source.
+	 * @param clazz OAObject class type.
+	 * @param columns column metadata definitions.
+	 * @param query primary SQL query.
+	 * @param query2 secondary SQL query.
+	 * @param max maximum number of rows to read.
 	 */
 	public ResultSetIterator(OADataSourceJDBC ds, Class clazz, Column[] columns, String query, String query2, int max) {
 		this(ds, clazz, columns, query, query2, max, null);
 	}
 
+	/**
+	 * Internal constructor shared by the public overloads. Initializes
+	 * internal fields but does not execute any queries.
+	 *
+	 * @param ds the JDBC data source.
+	 * @param clazz the OAObject class type.
+	 * @param columns optional column metadata.
+	 * @param query primary SQL query.
+	 * @param query2 secondary SQL query.
+	 * @param max maximum number of rows.
+	 * @param dataAccessObject optional DAO for object construction.
+	 */
 	private ResultSetIterator(OADataSourceJDBC ds, Class clazz, Column[] columns, String query, String query2, int max,
 			DataAccessObject dataAccessObject) {
 		// LOG.fine("query="+query+", query2="+query2+", columns.length="+columns.length+", max="+max);
@@ -163,14 +382,29 @@ public class ResultSetIterator implements OADataSourceIterator {
 		this.dataAccessObject = dataAccessObject;
 	}
 
+	/**
+	 * Sets whether the iterator should treat objects as dirty, which forces
+	 * properties to be reassigned even when an object is found in the cache.
+	 *
+	 * @param b true to enable dirty mode, false otherwise.
+	 */
 	public void setDirty(boolean b) {
 		this.bDirty = b;
 	}
 
+	/**
+	 * Returns whether the iterator is currently operating in dirty mode.
+	 *
+	 * @return true if dirty mode is enabled, false otherwise.
+	 */
 	public boolean getDirty() {
 		return this.bDirty;
 	}
 
+	/**
+	 * Performs one-time initialization of the iterator, including execution
+	 * of the SQL query and setup of metadata used during row processing.
+	 */
 	protected synchronized void init() {
 		if (bInit) {
 			return;
@@ -209,6 +443,11 @@ public class ResultSetIterator implements OADataSourceIterator {
 		}
 	}
 
+	/**
+	 * Internal implementation of {@link #init()} that prepares column
+	 * metadata, configures statements, executes queries, and positions the
+	 * result set at the first row.
+	 */
 	private void _init() {
 		/*
 		if ( (qqq%(DisplayMod*4)==0)) {
@@ -308,6 +547,12 @@ public class ResultSetIterator implements OADataSourceIterator {
 		}
 	}
 
+	/**
+	 * Determines whether additional objects are available to iterate over.
+	 * This includes prefetched rows in the read-ahead hub.
+	 *
+	 * @return true if another object can be returned, false otherwise.
+	 */
 	public boolean hasNext() {
 		if (!bInit) {
 			init();
@@ -315,11 +560,31 @@ public class ResultSetIterator implements OADataSourceIterator {
 		return (bMore || hubReadAhead != null);
 	}
 
-	// 20171222 add prefetch into hub, so that OAThreadLocalDelegate.setGetDetailHub could be used
+	/**
+	 * Hub used for read-ahead caching of OAObjects to support streaming and
+	 * sibling-helper functionality.
+	 */
 	private Hub hubReadAhead;
+
+	/**
+	 * Tracks which objects were newly loaded during iteration so their
+	 * afterLoad() method can be invoked once they are returned.
+	 */
 	private HashSet<Long> hsObjectWasLoaded;
+	
+	/**
+	 * Helper used to support sibling processing when objects are retrieved
+	 * through the iterator.
+	 */
 	private OASiblingHelper siblingHelper;
 
+	/**
+	 * Returns the next OAObject from the iterator. Loads additional rows into
+	 * the read-ahead buffer when needed and triggers afterLoad() for newly
+	 * created objects.
+	 *
+	 * @return the next OAObject, or null if no more data exists.
+	 */
 	public synchronized Object next() {
 		if (!bInit) {
 			init();
@@ -358,11 +623,24 @@ public class ResultSetIterator implements OADataSourceIterator {
 		return obj;
 	}
 
+	/**
+	 * Returns the sibling helper used for managing related objects when
+	 * iterating through results.
+	 *
+	 * @return the active OASiblingHelper instance or null.
+	 */
 	@Override
 	public OASiblingHelper getSiblingHelper() {
 		return siblingHelper;
 	}
 
+	/**
+	 * Internal method that reads the next result-set row, constructs or
+	 * updates the corresponding OAObject, manages caching behavior, and adds
+	 * the object to the read-ahead hub.
+	 *
+	 * @return true if another row was successfully processed, false otherwise.
+	 */
 	protected boolean _next() {
 		if (!bInit) {
 			init();
@@ -587,19 +865,34 @@ public class ResultSetIterator implements OADataSourceIterator {
 		}
 	}
 
+	/**
+	 * Indicates whether the iterator has been fully closed and can no longer
+	 * be used for reading data.
+	 */
 	private boolean bClosed;
 
 	// part of iterator interface
+	/**
+	 * Part of the iterator interface; removes the current element. For this
+	 * implementation, it simply triggers resource cleanup.
+	 */
 	public void remove() {
 		_close();
 	}
 
+	/**
+	 * Ensures that iterator resources are closed during garbage collection
+	 * if the user did not explicitly call close().
+	 */
 	public void finalize() throws Throwable {
 		super.finalize();
 		close();
 	}
 
-	// 20110407 added synchronized, since OASelectManager could close iterator while it is performing next()
+	/**
+	 * Closes the iterator and releases associated resources, including hubs,
+	 * statements, result sets, and sibling helpers.
+	 */
 	public synchronized void close() {
 		if (hubReadAhead != null) {
 			hubReadAhead.clear();
@@ -613,6 +906,11 @@ public class ResultSetIterator implements OADataSourceIterator {
 		_close();
 	}
 
+	/**
+	 * Performs low-level cleanup during close(), including canceling in-flight
+	 * queries, closing result sets, committing transactions, and releasing
+	 * statements back to the data source.
+	 */
 	protected void _close() {
 		boolean b = false;
 		try {
@@ -668,6 +966,16 @@ public class ResultSetIterator implements OADataSourceIterator {
 		}
 	}
 
+	/**
+	 * Converts a raw database value to the expected Java type, handling JDBC
+	 * types, numeric conversions, date/time formats, booleans, and byte-array
+	 * mappings as needed.
+	 *
+	 * @param paramType expected target type.
+	 * @param obj the database value to convert.
+	 * @return converted value appropriate for the property type.
+	 * @throws Exception if conversion fails.
+	 */
 	private Object convert(Class paramType, Object obj) throws Exception {
 		if (obj == null) {
 			return null;
@@ -809,13 +1117,15 @@ public class ResultSetIterator implements OADataSourceIterator {
 		return obj;
 	}
 
+	/**
+	 * Repairs single-quote characters in string values when needed. Currently
+	 * implemented as a passthrough.
+	 *
+	 * @param value input string.
+	 * @return the repaired string.
+	 */
 	protected String repairSingleQuotes(String value) {
 		return value;
-	}
-
-	public static void main(String[] args) {
-		System.out.println(1000000.0f + 1.2f - 1000000.0f);
-		System.out.println(1000000.0d + 1.2d - 1000000.0d);
 	}
 
 }

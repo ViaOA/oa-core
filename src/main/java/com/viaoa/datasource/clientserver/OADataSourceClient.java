@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,66 +74,166 @@ import com.viaoa.util.OAFilter;
  * @see com.viaoa.sync.OASyncDelegate
  */
 public class OADataSourceClient extends OADataSource {
+	/**
+	 * Cache mapping classes to Boolean values indicating whether each class
+	 * is supported by the remote datasource. Entries are populated after
+	 * querying the remote server.
+	 */
 	private Hashtable hashClass = new Hashtable();
+	
+	/**
+	 * Cached reference to the remote client used for executing datasource
+	 * operations against the OA Server. Lazily initialized on first access.
+	 */
 	private RemoteClientInterface remoteClientSync;
 
-	/** internal value to work with OAClient */
+	/**
+	 * Operation code used to query the remote datasource to determine whether
+	 * it is currently available.
+	 */
 	public static final int IS_AVAILABLE = 0;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to request the maximum length of a property from
+	 * the remote datasource.
+	 */
 	public static final int MAX_LENGTH = 1;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to check whether a class is supported by the
+	 * remote datasource.
+	 */
 	public static final int IS_CLASS_SUPPORTED = 2;
 
+	/**
+	 * Operation code used to insert an object on the remote datasource
+	 * without processing its references.
+	 */
 	public static final int INSERT_WO_REFERENCES = 3;
+
+	/**
+	 * Operation code used to update many-to-many link relationships
+	 * on the remote datasource.
+	 */
 	public static final int UPDATE_MANY2MANY_LINKS = 4;
 
-	/** internal value to work with OAClient */
+	/**
+	 * Operation code used to insert an object on the remote datasource.
+	 */
 	public static final int INSERT = 5;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to update an object on the remote datasource.
+	 */
 	public static final int UPDATE = 6;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to delete an object on the remote datasource.
+	 */
 	public static final int DELETE = 7;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to perform a save operation on the remote datasource.
+	 */
 	public static final int SAVE = 8;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to count records matching a query on the remote datasource.
+	 */
 	public static final int COUNT = 10;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used for passthrough count operations on the remote datasource.
+	 */
 	public static final int COUNTPASSTHRU = 11;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to determine whether the remote datasource supports
+	 * storage operations (insert, update, delete).
+	 */
 	public static final int SUPPORTSSTORAGE = 13;
 
 	//public static final int CONVERTTOSTRING = 14;
 	//public static final int CONVERTTOSTRING2 = 15;
 
-	/** internal value to work with OAClient */
+	/**
+	 * Operation code used to execute an arbitrary command on the remote datasource.
+	 */
 	public static final int EXECUTE = 16;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to determine whether the remote datasource will
+	 * create a value for a specific property.
+	 */
 	public static final int WILLCREATEPROPERTYVALUE = 17;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used by iterator proxies to determine whether more results
+	 * are available from the remote datasource.
+	 */
 	public static final int IT_HASNEXT = 18;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used by iterator proxies to request the next batch of items
+	 * from the remote datasource.
+	 */
 	public static final int IT_NEXT = 19;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used by iterator proxies to remove an item from the remote
+	 * datasource.
+	 */
 	public static final int IT_REMOVE = 20;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to perform a select (query) operation on the remote
+	 * datasource, returning an iterator token for fetching results.
+	 */
 	public static final int SELECT = 21;
 
-	/** internal value to work with OAClient */
+	/**
+	 * Operation code used to perform a passthrough select query on the remote
+	 * datasource, returning an iterator token for result retrieval.
+	 */
 	public static final int SELECTPASSTHRU = 22;
 
-	/** internal value to work with OAClient */
+	/**
+	 * Operation code used to retrieve from the remote datasource whether IDs
+	 * should be automatically assigned when objects are created.
+	 */
 	public static final int GET_ASSIGN_ID_ON_CREATE = 24;
-	/** internal value to work with OAClient */
+
+	/**
+	 * Operation code used to instruct the remote datasource to assign an ID
+	 * to a specified object.
+	 */
 	public static final int ASSIGN_ID = 25;
 
+	/**
+	 * Operation code used to retrieve a property value—specifically blob data—
+	 * from the remote datasource for a given object.
+	 */
 	public static final int GET_PROPERTY = 26;
 
+	/**
+	 * Operation code used to delete all objects of a given class from the
+	 * remote datasource.
+	 */
 	public static final int DELETE_ALL = 27;
 
+	/**
+	 * The package identifier used to retrieve the corresponding remote client
+	 * from {@link com.viaoa.sync.OASyncDelegate}. Defines the synchronization
+	 * namespace under which operations are executed.
+	 */
 	private final Package packagex;
 
 	/**
-	 * Create new OADataSourceClient that uses OAClient to communicate with OADataSource on OAServer.
+	 * Constructs a new client-side datasource using the specified package to
+	 * resolve remote synchronization clients. If {@code packagex} is null,
+	 * the default {@code OASync.ObjectPackage} is used.
+	 *
+	 * @param packagex the package namespace for synchronization
 	 */
 	public OADataSourceClient(Package packagex) {
 		if (packagex == null) {
@@ -142,10 +242,21 @@ public class OADataSourceClient extends OADataSource {
 		this.packagex = packagex;
 	}
 
+	/**
+	 * Constructs a client-side datasource using the default synchronization
+	 * package. Delegates to {@link #OADataSourceClient(Package)}.
+	 */
 	public OADataSourceClient() {
 		this(null);
 	}
 
+	/**
+	 * Returns the remote client used to communicate with the OA Server. The
+	 * client reference is lazily initialized on first access using
+	 * {@link com.viaoa.sync.OASyncDelegate#getRemoteClient(Package)}.
+	 *
+	 * @return the remote client interface
+	 */
 	public RemoteClientInterface getRemoteClient() {
 		if (remoteClientSync == null) {
 			remoteClientSync = OASyncDelegate.getRemoteClient(packagex);
@@ -153,14 +264,39 @@ public class OADataSourceClient extends OADataSource {
 		return remoteClientSync;
 	}
 
+	/**
+	 * Tracks whether {@link #getAssignIdOnCreate()} has already been invoked
+	 * or overridden locally, preventing repeated remote calls.
+	 */
 	private boolean bCalledGetAssignIdOnCreate;
+
+	/**
+	 * Cached flag indicating whether the remote datasource is configured to
+	 * automatically assign IDs upon object creation.
+	 */
 	private boolean bGetAssignIdOnCreate;
 
+	/**
+	 * Overrides the remote datasource setting for automatic ID assignment.
+	 * Marks this instance as having an explicitly configured value.
+	 *
+	 * @param b true to enable automatic ID assignment
+	 */
 	public void setAssignIdOnCreate(boolean b) {
 		bCalledGetAssignIdOnCreate = true;
 		bGetAssignIdOnCreate = b;
 	}
 
+	/**
+	 * Returns whether the remote datasource is configured to automatically
+	 * assign IDs when objects are created.
+	 * <p>
+	 * If the value was previously overridden via {@link #setAssignIdOnCreate},
+	 * the cached value is returned. Otherwise, the setting is retrieved from
+	 * the remote datasource and cached for subsequent access.
+	 *
+	 * @return true if automatic ID assignment on create is enabled
+	 */
 	public boolean getAssignIdOnCreate() {
 		if (bCalledGetAssignIdOnCreate) {
 			return bGetAssignIdOnCreate;
@@ -174,6 +310,12 @@ public class OADataSourceClient extends OADataSource {
 		return bGetAssignIdOnCreate;
 	}
 
+	/**
+	 * Queries the remote datasource to determine whether it is currently
+	 * available. Returns false if the remote response is not a Boolean.
+	 *
+	 * @return true if the datasource is available
+	 */
 	public boolean isAvailable() {
 		verifyConnection();
 		Object obj = getRemoteClient().datasource(IS_AVAILABLE, null);
@@ -183,8 +325,23 @@ public class OADataSourceClient extends OADataSource {
 		return false;
 	}
 
+	/**
+	 * Cache storing maximum property lengths returned from the remote datasource
+	 * using keys of the form "CLASSNAME-PROPERTYNAME".
+	 */
 	private Map<String, Integer> hmMax = new HashMap<String, Integer>();
 
+	/**
+	 * Retrieves the maximum allowed length for the specified property of the
+	 * given class. Uses a cache to avoid repeated remote calls.
+	 * <p>
+	 * If no cached value exists, the remote datasource is queried and the
+	 * result (or -1 if invalid) is stored in the cache.
+	 *
+	 * @param c the class owning the property
+	 * @param propertyName the property name
+	 * @return the maximum length, or -1 if unavailable
+	 */
 	public int getMaxLength(Class c, String propertyName) {
 		String key = (c.getName() + "-" + propertyName).toUpperCase();
 		Object objx = hmMax.get(key);
@@ -204,6 +361,14 @@ public class OADataSourceClient extends OADataSource {
 		return iResult;
 	}
 
+	/**
+	 * Manually sets the cached maximum length for the specified property.
+	 * Does not perform any remote communication.
+	 *
+	 * @param c the class owning the property
+	 * @param propertyName the property name
+	 * @param length the maximum length to cache
+	 */
 	public void setMaxLength(Class c, String propertyName, int length) {
 		if (c == null || propertyName == null) {
 			return;
@@ -212,6 +377,10 @@ public class OADataSourceClient extends OADataSource {
 		hmMax.put(key, Integer.valueOf(length));
 	}
 
+	/**
+	 * Ensures that a remote client connection is available. Throws a
+	 * {@link RuntimeException} if the remote client has not been initialized.
+	 */
 	protected void verifyConnection() {
 		if (getRemoteClient() == null) {
 			throw new RuntimeException("OADataSourceClient connection is not set");
@@ -219,6 +388,17 @@ public class OADataSourceClient extends OADataSource {
 	}
 
 	//NOTE: this needs to see if any of "clazz" superclasses are supported
+	/**
+	 * Determines whether the specified class is supported by the remote datasource.
+	 * <p>
+	 * Checks the local cache first. If a filter is present and the class has a
+	 * locally cached "select all" Hub, the class is automatically treated as
+	 * supported. Otherwise, a remote query is performed, and the result cached.
+	 *
+	 * @param clazz  the class to test
+	 * @param filter optional filter used for local cached evaluation
+	 * @return true if supported by the remote datasource
+	 */
 	public boolean isClassSupported(Class clazz, OAFilter filter) {
 		if (clazz == null) {
 			return false;
@@ -246,6 +426,12 @@ public class OADataSourceClient extends OADataSource {
 		return b;
 	}
 
+	/**
+	 * Sends an insert-without-references request for the specified object to
+	 * the remote datasource. Does nothing if the object is null.
+	 *
+	 * @param obj the object to insert
+	 */
 	public void insertWithoutReferences(OAObject obj) {
 		if (obj == null) {
 			return;
@@ -253,6 +439,12 @@ public class OADataSourceClient extends OADataSource {
 		getRemoteClient().datasource(INSERT_WO_REFERENCES, new Object[] { obj });
 	}
 
+	/**
+	 * Sends an insert request for the specified object to the remote datasource.
+	 * Does nothing if the object is null.
+	 *
+	 * @param obj the object to insert
+	 */
 	public void insert(OAObject obj) {
 		if (obj == null) {
 			return;
@@ -260,6 +452,15 @@ public class OADataSourceClient extends OADataSource {
 		getRemoteClient().datasource(INSERT, new Object[] { obj });
 	}
 
+	/**
+	 * Sends an update request for the specified object to the remote datasource.
+	 * Includes optional arrays for controlling which properties should be included
+	 * or excluded during the update. Does nothing if the object is null.
+	 *
+	 * @param obj               the object to update
+	 * @param includeProperties properties to include in the update
+	 * @param excludeProperties properties to exclude from the update
+	 */
 	public @Override void update(OAObject obj, String[] includeProperties, String[] excludeProperties) {
 		if (obj == null) {
 			return;
@@ -267,6 +468,13 @@ public class OADataSourceClient extends OADataSource {
 		getRemoteClient().datasource(UPDATE, new Object[] { obj, includeProperties, excludeProperties });
 	}
 
+	/**
+	 * Sends a save request for the specified object to the remote datasource.
+	 * Uses a return-on-queue call to avoid blocking. Does nothing if the object
+	 * is null.
+	 *
+	 * @param obj the object to save
+	 */
 	public @Override void save(OAObject obj) {
 		if (obj == null) {
 			return;
@@ -274,6 +482,12 @@ public class OADataSourceClient extends OADataSource {
 		getRemoteClient().datasourceReturnOnQueue(SAVE, new Object[] { obj });
 	}
 
+	/**
+	 * Sends a delete request for the specified object to the remote datasource
+	 * using a return-on-queue call. Does nothing if the object is null.
+	 *
+	 * @param obj the object to delete
+	 */
 	public @Override void delete(OAObject obj) {
 		if (obj == null) {
 			return;
@@ -281,6 +495,12 @@ public class OADataSourceClient extends OADataSource {
 		getRemoteClient().datasourceReturnOnQueue(DELETE, new Object[] { obj });
 	}
 
+	/**
+	 * Sends a delete-all request to the remote datasource for the specified class.
+	 * Does nothing if the class parameter is null.
+	 *
+	 * @param c the class of objects to delete
+	 */
 	public @Override void deleteAll(Class c) {
 		if (c == null) {
 			return;
@@ -288,6 +508,20 @@ public class OADataSourceClient extends OADataSource {
 		getRemoteClient().datasourceReturnOnQueue(DELETE_ALL, new Object[] { c });
 	}
 
+	/**
+	 * Counts the number of matching records on the remote datasource using the
+	 * specified query parameters. Converts the where-object into a class and key
+	 * pair for remote transmission.
+	 *
+	 * @param selectClass             the class to count
+	 * @param queryWhere              the where clause
+	 * @param params                  query parameters
+	 * @param whereObject             optional object used as the source of the query
+	 * @param propertyFromWhereObject property used when evaluating against whereObject
+	 * @param extraWhere              additional where clause fragment
+	 * @param max                     maximum result threshold
+	 * @return the record count, or -1 if unavailable
+	 */
 	@Override
 	public int count(Class selectClass,
 			String queryWhere, Object[] params,
@@ -308,6 +542,15 @@ public class OADataSourceClient extends OADataSource {
 		return -1;
 	}
 
+	/**
+	 * Performs a passthrough count operation on the remote datasource for the
+	 * specified class and where clause.
+	 *
+	 * @param selectClass the class to count
+	 * @param queryWhere  the where clause
+	 * @param max         the maximum number of rows to consider
+	 * @return the count value, or -1 if unavailable
+	 */
 	@Override
 	public int countPassthru(Class selectClass, String queryWhere, int max) {
 		Object obj = getRemoteClient().datasource(COUNTPASSTHRU, new Object[] { selectClass, queryWhere, max });
@@ -317,10 +560,24 @@ public class OADataSourceClient extends OADataSource {
 		return -1;
 	}
 
+	/**
+	 * Tracks whether the supports-storage flag has been retrieved from the
+	 * remote datasource, preventing redundant remote calls.
+	 */
 	private boolean bCalledSupportsStorage;
+
+	/**
+	 * Cached result indicating whether the remote datasource supports storage
+	 * operations such as insert, update, and delete.
+	 */
 	private boolean bSupportsStorage;
 
-	/** does this dataSource support selecting/storing/deleting */
+	/**
+	 * Returns whether the remote datasource supports storage operations.
+	 * The result is cached on first call; subsequent calls use the cached value.
+	 *
+	 * @return true if storage operations are supported
+	 */
 	public @Override boolean supportsStorage() {
 		if (bCalledSupportsStorage) {
 			return bSupportsStorage;
@@ -338,6 +595,26 @@ public class OADataSourceClient extends OADataSource {
 		return bSupportsStorage;
 	}
 
+	/**
+	 * Performs a select query against the remote datasource and returns a
+	 * proxy iterator for retrieving results in batches.
+	 * <p>
+	 * If a filter is provided and the class has a locally cached "select all"
+	 * hub, a local {@link ObjectCacheIterator} is returned instead of using
+	 * the remote datasource.
+	 *
+	 * @param selectClass             the class to query
+	 * @param queryWhere              where clause
+	 * @param params                  query parameters
+	 * @param queryOrder              order clause
+	 * @param whereObject             optional source object for contextual filtering
+	 * @param propertyFromWhereObject optional property for whereObject filtering
+	 * @param extraWhere              extra where clause fragment
+	 * @param max                     maximum number of returned results
+	 * @param filter                  optional filter to apply locally
+	 * @param bDirty                  whether to include dirty objects
+	 * @return a datasource iterator, or null if remote server returns null
+	 */
 	@Override
 	public OADataSourceIterator select(Class selectClass,
 			String queryWhere, Object[] params, String queryOrder,
@@ -374,6 +651,19 @@ public class OADataSourceClient extends OADataSource {
 		return new MyIterator(selectClass, obj, filter);
 	}
 
+	/**
+	 * Performs a passthrough select query against the remote datasource.
+	 * If a local "select all" hub exists for the class, returns an
+	 * {@link ObjectCacheIterator} instead.
+	 *
+	 * @param selectClass the class to query
+	 * @param queryWhere  where clause
+	 * @param queryOrder  order clause
+	 * @param max         maximum number of results
+	 * @param filter      local filter
+	 * @param bDirty      whether dirty objects are included
+	 * @return an iterator for remote result retrieval
+	 */
 	@Override
 	public OADataSourceIterator selectPassthru(Class selectClass,
 			String queryWhere, String queryOrder,
@@ -392,14 +682,35 @@ public class OADataSourceClient extends OADataSource {
 		return new MyIterator(selectClass, obj, filter);
 	}
 
+	/**
+	 * Executes an arbitrary command on the remote datasource using the
+	 * {@link #EXECUTE} operation code.
+	 *
+	 * @param command the command to execute
+	 * @return the result returned by the remote datasource
+	 */
 	public @Override Object execute(String command) {
 		return getRemoteClient().datasource(EXECUTE, new Object[] { command });
 	}
 
+	/**
+	 * Requests that the remote datasource assign an ID to the specified object.
+	 * Uses a queued call to avoid blocking.
+	 *
+	 * @param obj the object requiring ID assignment
+	 */
 	public @Override void assignId(OAObject obj) {
 		getRemoteClient().datasourceReturnOnQueue(ASSIGN_ID, new Object[] { obj });
 	}
 
+	/**
+	 * Determines whether the remote datasource will create a value for the
+	 * specified property on the given object.
+	 *
+	 * @param object       the object being considered
+	 * @param propertyName the property being evaluated
+	 * @return true if the remote datasource indicates a value will be created
+	 */
 	public @Override boolean willCreatePropertyValue(OAObject object, String propertyName) {
 		Object obj = getRemoteClient().datasource(WILLCREATEPROPERTYVALUE, new Object[] { object, propertyName });
 		if (obj instanceof Boolean) {
@@ -409,19 +720,69 @@ public class OADataSourceClient extends OADataSource {
 	}
 
 	/**
-	 * Iterator Class that is used by select methods, works directly with OADataSource on OAServer.
+	 * Iterator implementation used for remote query results. Communicates with
+	 * the remote datasource to fetch result batches and update local caches.
 	 */
 	class MyIterator implements OADataSourceIterator {
+		/**
+		 * Identifier returned by the remote datasource representing the remote
+		 * iterator state. Used when requesting additional result batches.
+		 */
 		Object id;
+
+		/**
+		 * The class type of objects returned by this iterator.
+		 */
 		Class clazz;
+		
+		/**
+		 * Optional object key used when the iterator represents a single object
+		 * reference rather than a batched remote iterator.
+		 */
 		OAObjectKey key; // object to return
+		
+		/**
+		 * Indicates whether this iterator is in single-key mode, returning exactly
+		 * one object referenced by {@link #key}.
+		 */
 		boolean bKey;
+		
+		/**
+		 * Local buffer containing the most recently fetched batch of results
+		 * from the remote datasource. Used by {@link #hasNext()} and {@link #next()}.
+		 */
 		Object[] cache;
+		
+		/**
+		 * Current read position within the {@link #cache} array.
+		 */
 		int cachePos = 0;
+		
+		/**
+		 * Optional filter applied locally when iterating over remote batches.
+		 * Objects failing the filter are skipped.
+		 */
 		OAFilter filter;
+		
+		/**
+		 * Helper used to maintain sibling relationships among objects returned
+		 * by this iterator. Created upon first server fetch.
+		 */
 		private OASiblingHelper siblingHelper;
+		
+		/**
+		 * Hub used for read-ahead support when receiving batches of objects from
+		 * the remote datasource.
+		 */
 		private Hub hubReadAhead;
 
+		/**
+		 * Constructs a new iterator operating in remote-batch mode.
+		 *
+		 * @param c      the class of returned objects
+		 * @param id     the remote iterator token
+		 * @param filter optional local filter applied to returned objects
+		 */
 		public MyIterator(Class c, Object id, OAFilter filter) {
 			this.clazz = c;
 			this.id = id;
@@ -429,16 +790,40 @@ public class OADataSourceClient extends OADataSource {
 			getMoreFromServer();
 		}
 
+		/**
+		 * Constructs an iterator operating in single-key mode, returning at most
+		 * one object identified by the supplied {@link OAObjectKey}.
+		 *
+		 * @param key the key of the object to return
+		 */
 		public MyIterator(OAObjectKey key) {
 			this.key = key;
 			this.bKey = true;
 		}
 
+		/**
+		 * Returns the sibling helper created for this iterator, if any.
+		 *
+		 * @return the sibling helper, or null if none exists
+		 */
 		@Override
 		public OASiblingHelper getSiblingHelper() {
 			return siblingHelper;
 		}
 
+		/**
+		 * Determines whether more objects are available from this iterator.
+		 * <p>
+		 * Behavior:
+		 * <ul>
+		 *   <li>If in key mode, returns true until the single referenced object
+		 *       has been consumed.</li>
+		 *   <li>Iterates through the current cache and applies the optional filter.</li>
+		 *   <li>If cache is exhausted, fetches the next batch from the server.</li>
+		 * </ul>
+		 *
+		 * @return true if another object is available
+		 */
 		public synchronized boolean hasNext() {
 			if (key != null) {
 				return (bKey);
@@ -462,6 +847,11 @@ public class OADataSourceClient extends OADataSource {
 			return false;
 		}
 
+		/**
+		 * Retrieves the next batch of objects from the remote datasource using
+		 * the {@link #IT_NEXT} operation code. Updates local caches and sibling
+		 * structures. If no more results are available, closes the iterator.
+		 */
 		protected synchronized void getMoreFromServer() {
 			cachePos = 0;
 			cache = (Object[]) getRemoteClient().datasource(IT_NEXT, new Object[] { id });
@@ -486,6 +876,18 @@ public class OADataSourceClient extends OADataSource {
 			}
 		}
 
+		/**
+		 * Returns the next object from this iterator.
+		 * <p>
+		 * Behavior:
+		 * <ul>
+		 *   <li>In key mode: returns the object identified by {@link #key} and ends iteration.</li>
+		 *   <li>In batch mode: returns the next cached object, fetching additional
+		 *       batches as needed via {@link #hasNext()}.</li>
+		 * </ul>
+		 *
+		 * @return the next object, or null if none are available
+		 */
 		public synchronized Object next() {
 			if (!hasNext()) {
 				return null;
@@ -505,23 +907,41 @@ public class OADataSourceClient extends OADataSource {
 			return obj;
 		}
 
+		/**
+		 * Requests removal of the current iterator element on the remote datasource
+		 * using the {@link #IT_REMOVE} operation code, then closes the iterator.
+		 */
 		public void remove() {
 			getRemoteClient().datasourceNoReturn(IT_REMOVE, new Object[] { id });
 			close();
 		}
 
+		/**
+		 * Placeholder method returning null. Query string retrieval is not implemented.
+		 *
+		 * @return null
+		 */
 		@Override
 		public String getQuery() {
 			// TODO Auto-generated method stub
 			return null;
 		}
 
+		/**
+		 * Placeholder method returning null. Secondary query string retrieval is
+		 * not implemented.
+		 *
+		 * @return null
+		 */
 		@Override
 		public String getQuery2() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
+		/**
+		 * Releases iterator resources, clearing the read-ahead hub and resetting
+		 * the sibling helper.
+		 */
 		public void close() {
 			if (hubReadAhead != null) {
 				hubReadAhead.clear();
@@ -532,18 +952,41 @@ public class OADataSourceClient extends OADataSource {
 			}
 		}
 
+		/**
+		 * Finalizer that ensures iterator resources are released by calling
+		 * {@link #close()} before garbage collection.
+		 *
+		 * @throws Throwable if the superclass finalizer throws an exception
+		 */
 		public void finalize() throws Throwable {
 			super.finalize();
 			close();
 		}
-
 	}
 
+	/**
+	 * Sends an update-many-to-many-links request to the remote datasource.
+	 * Includes the master object's class, key, added objects, removed objects,
+	 * and the property name defining the relationship.
+	 *
+	 * @param masterObject            the master object
+	 * @param adds                    objects to add to the relationship
+	 * @param removes                 objects to remove
+	 * @param propertyNameFromMaster  the property representing the relationship
+	 */
 	public @Override void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propertyNameFromMaster) {
 		getRemoteClient().datasource(UPDATE_MANY2MANY_LINKS, new Object[] { masterObject.getClass(),
 				OAObjectKeyDelegate.getKey(masterObject), adds, removes, propertyNameFromMaster });
 	}
 
+	/**
+	 * Retrieves a blob property value from the remote datasource for the given
+	 * object and property name. Returns null if the response is not a byte array.
+	 *
+	 * @param obj          the object whose blob value is being requested
+	 * @param propertyName the name of the property
+	 * @return the blob value, or null if unavailable
+	 */
 	@Override
 	public byte[] getPropertyBlobValue(OAObject obj, String propertyName) {
 		Object objx = getRemoteClient().datasource(	GET_PROPERTY,
@@ -554,6 +997,11 @@ public class OADataSourceClient extends OADataSource {
 		return null;
 	}
 
+	/**
+	 * Identifies this datasource as a client-side implementation.
+	 *
+	 * @return true
+	 */
 	@Override
 	public boolean isClient() {
 		return true;

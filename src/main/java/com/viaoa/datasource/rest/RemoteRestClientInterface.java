@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,45 @@ import com.viaoa.sync.remote.RemoteClientInterface;
 @OARestClass()
 public interface RemoteRestClientInterface extends RemoteClientInterface {
 
+	/**
+	 * Creates and returns a copy of the specified object on the remote server.
+	 * Properties listed in {@code excludeProperties} will not be included in
+	 * the copied object.
+	 *
+	 * @param objectClass the class of the object to copy
+	 * @param objectKey the identity key of the object
+	 * @param excludeProperties names of properties to exclude from the copy
+	 * @return the copied {@link OAObject} instance
+	 */
 	@OARestMethod(methodType = MethodType.OARemote)
 	OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties);
 
+	/**
+	 * Retrieves detail data for a master object using the specified property.
+	 *
+	 * @param id client request identifier
+	 * @param masterClass the class of the master object
+	 * @param masterObjectKey the identity of the master object
+	 * @param property the detail property to retrieve
+	 * @param bForHubMerger whether results are used for hub-merging
+	 * @return the retrieved detail value
+	 */
 	@OARestMethod(methodType = MethodType.OARemote)
 	Object getDetail(int id, Class masterClass, OAObjectKey masterObjectKey, String property, boolean bForHubMerger);
 
+	/**
+	 * Retrieves detail data for a master object with additional master property
+	 * values and sibling object keys used for more complex synchronization.
+	 *
+	 * @param id client request identifier
+	 * @param masterClass the class of the master object
+	 * @param masterObjectKey the identity of the master object
+	 * @param property the detail property to retrieve
+	 * @param masterProps property names used to provide master-side context
+	 * @param siblingKeys keys of sibling objects included in the request
+	 * @param bForHubMerger whether results are used for hub-merging
+	 * @return the retrieved detail value
+	 */
 	@OARestMethod(methodType = MethodType.OARemote)
 	Object getDetail(int id, Class masterClass, OAObjectKey masterObjectKey,
 			String property, String[] masterProps, OAObjectKey[] siblingKeys, boolean bForHubMerger);
@@ -48,20 +81,65 @@ public interface RemoteRestClientInterface extends RemoteClientInterface {
 	// dont put in queue, but have it returned on vsocket for queued messages
 	//     All of the other methods are put in queue to be processed and have the return value set.
 	//@OARemoteMethod(returnOnQueueSocket = true)
+
+	/**
+	 * Retrieves detail information immediately instead of placing the request
+	 * into the remote message queue. Used for synchronous operations that
+	 * require an immediate return value.
+	 *
+	 * @param id client request identifier
+	 * @param masterClass the class of the master object
+	 * @param masterObjectKey the identity of the master object
+	 * @param property the detail property name
+	 * @param masterProps property names used to provide master-side context
+	 * @param siblingKeys keys of sibling objects included in the request
+	 * @param bForHubMerger whether results are used for hub-merging
+	 * @return the detail value returned immediately
+	 */
 	@OARestMethod(methodType = MethodType.OARemote)
 	Object getDetailNow(int id, Class masterClass, OAObjectKey masterObjectKey,
 			String property, String[] masterProps, OAObjectKey[] siblingKeys, boolean bForHubMerger);
 
+	/**
+	 * Executes a data source command on the server and returns the result.
+	 *
+	 * @param command the numeric command identifier
+	 * @param objects optional command parameters
+	 * @return the result returned by the remote data source
+	 */
 	@OARestMethod(methodType = MethodType.OARemote)
 	Object datasource(int command, Object[] objects);
 
+	/**
+	 * Executes a data source command on the server without expecting a return
+	 * value. Used for one-way operations.
+	 *
+	 * @param command the numeric command identifier
+	 * @param objects optional command parameters
+	 */
 	//@OARemoteMethod(noReturnValue = true)
 	@OARestMethod(methodType = MethodType.OARemote)
 	void datasourceNoReturn(int command, Object[] objects);
 
+	/**
+	 * Deletes the object identified by the given class and key on the server.
+	 *
+	 * @param objectClass the class of the object to delete
+	 * @param objectKey the identity key of the object
+	 * @return {@code true} if deletion succeeded; otherwise {@code false}
+	 */
 	@OARestMethod(methodType = MethodType.OARemote)
 	boolean delete(Class objectClass, OAObjectKey objectKey);
 
+	/**
+	 * Deletes all objects linked to a master object through the specified hub
+	 * property.
+	 *
+	 * @param objectClass the class of the master object
+	 * @param objectKey the identity of the master object
+	 * @param hubPropertyName the hub-property whose linked objects should be deleted
+	 * @return {@code true} if deletion succeeded; otherwise {@code false}
+	 */
 	@OARestMethod(methodType = MethodType.OARemote)
 	boolean deleteAll(Class objectClass, OAObjectKey objectKey, String hubPropertyName);
 }

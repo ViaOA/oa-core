@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,25 +62,97 @@ import com.viaoa.util.OAString;
 public class QueryConverter {
 	private static Logger LOG = Logger.getLogger(QueryConverter.class.getName());
 
+	/**
+	 * Metadata describing database features, column quoting rules, and dialect-specific
+	 * behaviors used while translating queries to SQL.
+	 */
 	private DBMetaData dbmd;
+	
+	/**
+	 * Reference to the database schema definition, including tables, columns, and link
+	 * relationships used to resolve property paths and join structures.
+	 */
 	private Database database;
+	
+	/**
+	 * Flag indicating that the whereObject does not resolve to any records, causing
+	 * query generation to return empty SQL results.
+	 */
 	private boolean bEmpty; // if set, then the whereObject does not have any records to select
+	
+	/**
+	 * Optional object used as the direct result of a selection, bypassing normal
+	 * query translation when non-null.
+	 */
 	private Object selectObject; // the object to use in place of select, instead of using query
+	
+	/**
+	 * Root link information node representing the base table and its relationship
+	 * hierarchy, used by join construction methods.
+	 */
 	private Linkinfo root; // root of tree that keeps track of tables/objects that are needed for query.  Method getJoins() uses this to build Join clause
+	
+	/**
+	 * Counter used internally by Linkinfo instances to allocate unique numbering
+	 * for aliased table references.
+	 */
 	private int counter; // used by LinkInfo
+	
+	/**
+	 * Indicates that all joins should be generated as LEFT OUTER JOIN operations,
+	 * generally triggered when OR conditions are present.
+	 */
 	private boolean bUseLeftJoin; // all joins need to use "LEFT OUTER JOIN"
+	
+	/**
+	 * Tracks whether the WHERE clause contains OR conditions, which can alter join
+	 * strategy and affect the need for LEFT OUTER JOIN usage.
+	 */
 	private boolean bUsingOR; // an "OR" is used in where clause.  If other Joins will be needed then bUseLeftJoin will be set to true
+	
+	/**
+	 * Determines whether EXISTS-based SQL should be used when resolving many-side
+	 * relationships, depending on database capabilities and conditions.
+	 */
 	private boolean bUseExists;
+	
+	/**
+	 * Left and right bracket characters used to quote identifiers such as table and
+	 * column names, derived from database metadata.
+	 */
 	private String LB, RB;
+	
+	/**
+	 * Additional WHERE clause content produced during join creation, particularly for
+	 * Oracle outer-join emulation.
+	 */
 	private String extraWhere;
+	
+	/**
+	 * True when DISTINCT must be applied to prevent duplicates resulting from
+	 * many-side joins on the relationship graph.
+	 */
 	private boolean bUseDistinct;
 
+	/**
+	 * Constructs a QueryConverter using metadata and database information obtained
+	 * from the provided JDBC data source.
+	 *
+	 * @param ds the JDBC-based data source supplying metadata and database schema
+	 */
 	public QueryConverter(OADataSourceJDBC ds) {
 		this.dbmd = ds.getDBMetaData();
 		this.database = ds.getDatabase();
 		reset();
 	}
 
+	/**
+	 * Constructs a QueryConverter using explicitly supplied database and metadata
+	 * objects.
+	 *
+	 * @param database the database schema information
+	 * @param dbmd     the database metadata used for SQL construction rules
+	 */
 	public QueryConverter(Database database, DBMetaData dbmd) {
 		this.database = database;
 		this.dbmd = dbmd;
@@ -88,13 +160,19 @@ public class QueryConverter {
 	}
 
 	/**
-	 * returns true if this query will only be able to select the Pk columns and the "Distinct" keyword should be used by the query to make
-	 * sure that duplicates are not selected.
+	 * Indicates whether the SQL query requires DISTINCT because only primary key
+	 * columns can be selected while preventing duplicate rows.
+	 *
+	 * @return true if DISTINCT should be applied; otherwise false
 	 */
 	public boolean getUseDistinct() {
 		return bUseDistinct;
 	}
 
+	/**
+	 * Resets internal state including identifier quoting characters, EXISTS-mode
+	 * determination, and stored prepared-statement arguments.
+	 */
 	protected void reset() {
 		this.LB = dbmd.leftBracket;
 		this.RB = dbmd.rightBracket;
@@ -102,7 +180,13 @@ public class QueryConverter {
 		this.arguments = null;
 	}
 
-	/** returns list of columns to select for clazz primary key column */
+	/**
+	 * Builds and returns a comma-separated list of primary-key column references
+	 * (quoted with LB/RB) for the given class’s table.
+	 *
+	 * @param clazz the class representing the target table
+	 * @return SQL column list for the table's primary key columns
+	 */
 	public String getPrimaryKeyColumns(Class clazz) {
 		Table table = database.getTable(clazz);
 		if (table == null) {
@@ -138,6 +222,13 @@ public class QueryConverter {
 	}
 
 	// only used if table.DataAccessObject is not used
+	/**
+	 * Retrieves all selectable columns for the given class, including inherited and
+	 * subclass columns, excluding byte[] properties.
+	 *
+	 * @param clazz the class whose table columns should be selected
+	 * @return array of Column definitions used for SELECT clause construction
+	 */
 	public Column[] getSelectColumnArray(Class clazz) {
 		Table tableMain = database.getTable(clazz);
 		if (tableMain.selectColumnArray != null) {
@@ -181,7 +272,14 @@ public class QueryConverter {
 		return cols;
 	}
 
-	/** returns list of columns to select for clazz, not pkey or fkey columns, includes columns for superClasses */
+	/**
+	 * Returns a comma-separated list of SELECT column expressions for the given class,
+	 * optionally regenerating cached results when dirty.
+	 *
+	 * @param clazz  the target class whose table columns should be selected
+	 * @param bDirty if true, forces recalculation rather than using cached values
+	 * @return SQL column list for SELECT clause generation
+	 */
 	public String getSelectColumns(Class clazz, boolean bDirty) {
 		Table tableMain = database.getTable(clazz);
 		if (!bDirty && tableMain.selectColumns != null) {
@@ -218,6 +316,14 @@ public class QueryConverter {
 		return strColumn;
 	}
 
+	/**
+	 * Determines all classes participating in SELECT operations for the given start
+	 * class, including superclasses and subclasses. The result is cached on the
+	 * corresponding table.
+	 *
+	 * @param startClass the class whose inheritance hierarchy should be evaluated
+	 * @return array of classes contributing columns to SELECT statements
+	 */
 	public Class[] getSelectClasses(Class startClass) {
 		Table table = database.getTable(startClass);
 		if (table.selectClasses != null) {
@@ -234,6 +340,13 @@ public class QueryConverter {
 		return cs;
 	}
 
+	/**
+	 * Recursively collects all superclasses of the given class (up to but excluding
+	 * OAObject) into the provided vector, in hierarchical order.
+	 *
+	 * @param vec   vector receiving discovered superclass entries
+	 * @param clazz the class whose superclasses are being processed
+	 */
 	private void getSelectSuperclasses(Vector vec, Class clazz) {
 		Table table = database.getTable(clazz);
 		if (table == null) {
@@ -247,6 +360,14 @@ public class QueryConverter {
 		vec.addElement(clazz);
 	}
 
+	/**
+	 * Recursively collects all subclasses of the given class, optionally including the
+	 * class itself, and adds them to the provided vector.
+	 *
+	 * @param vec          vector receiving discovered subclass entries
+	 * @param clazz        the class whose subclasses are being processed
+	 * @param bIncludeThis true to add the class itself before descending
+	 */
 	private void getSelectSubclasses(Vector vec, Class clazz, boolean bIncludeThis) {
 		Table table = database.getTable(clazz);
 		if (table == null) {
@@ -263,7 +384,16 @@ public class QueryConverter {
 		}
 	}
 
-	// 20121013
+	/**
+	 * Produces a full SQL statement using prepared-statement placeholders based on the
+	 * supplied select class, where object, and ordering.
+	 *
+	 * @param selectClass             the root class for selection
+	 * @param whereObject             object defining the link-based WHERE criteria
+	 * @param propertyFromWhereObject link name used to evaluate the whereObject
+	 * @param orderBy                 optional ORDER BY clause
+	 * @return SQL query string using '?' placeholders
+	 */
 	public String convertForPreparedStatmentSql(Class selectClass, Object whereObject, String propertyFromWhereObject, String orderBy) {
 
 		reset();
@@ -279,7 +409,18 @@ public class QueryConverter {
 	}
 
 	/**
-	 * propertyFromWhereObject name of link to use, from whereObject from Table(clazz).getLinks()[].propertyName = propertyFromWhereObject
+	 * Builds a full SQL statement by combining link-based WHERE logic from the
+	 * whereObject with an additional queryWhere clause, explicit extraWhere content,
+	 * and ORDER BY settings.
+	 *
+	 * @param selectClass             root class used for table resolution
+	 * @param whereObject             object defining link-based WHERE criteria
+	 * @param propertyFromWhereObject link to follow from whereObject
+	 * @param queryWhere              additional WHERE text to append
+	 * @param args                    parameters associated with queryWhere
+	 * @param extraWhere              optional extra WHERE content
+	 * @param orderBy                 ORDER BY clause
+	 * @return SQL string combining FROM, WHERE, and ORDER BY clauses
 	 */
 	public String convertToSql(Class selectClass, Object whereObject, String propertyFromWhereObject,
 			String queryWhere, Object[] args,
@@ -321,7 +462,19 @@ public class QueryConverter {
 		return convertToSql(selectClass, s, params, orderBy);
 	}
 
-	// 20121013
+	/**
+	 * Generates a full SQL statement using prepared-statement placeholders, combining
+	 * link-based WHERE logic, additional WHERE expressions, and ordering.
+	 *
+	 * @param selectClass             the selection root class
+	 * @param whereObject             object defining link-based WHERE criteria
+	 * @param propertyFromWhereObject link to follow from the whereObject
+	 * @param queryWhere              additional WHERE clause text
+	 * @param args                    parameters for queryWhere
+	 * @param extraWhere              extra WHERE clause text
+	 * @param orderBy                 ORDER BY clause
+	 * @return SQL string using '?' placeholders
+	 */
 	public String convertToPreparedStatementSql(Class selectClass,
 			Object whereObject, String propertyFromWhereObject,
 			String queryWhere, Object[] args,
@@ -358,13 +511,30 @@ public class QueryConverter {
 		return sql;
 	}
 
-	/** used when calling convertToPreparedStatementSql */
+	/**
+	 * Storage for parameters used during prepared-statement SQL generation.
+	 */
 	private Object[] arguments;
 
+	/**
+	 * Returns the prepared-statement argument array produced during SQL generation.
+	 *
+	 * @return argument array or null if none were generated
+	 */
 	public Object[] getArguments() {
 		return arguments;
 	}
 
+	/**
+	 * Produces the WHERE condition based on the link relationship from selectClass to
+	 * whereObject, adding parameter values to the provided vector.
+	 *
+	 * @param selectClass             class representing the root table
+	 * @param whereObject             object used to derive key values
+	 * @param propertyFromWhereObject link name from the whereObject
+	 * @param vecParam                vector receiving parameter values
+	 * @return WHERE clause fragment or empty string if none applies
+	 */
 	private String convertToWhere(Class selectClass, Object whereObject, String propertyFromWhereObject, Vector vecParam) {
 		String s = null;
 
@@ -418,6 +588,18 @@ public class QueryConverter {
 		return s;
 	}
 
+	/**
+	 * Attempts to locate a matching link between fromTable and toTable and constructs
+	 * a WHERE expression comparing foreign-key values against the whereObject's key.
+	 *
+	 * @param links                   links originating from the fromTable
+	 * @param fromTable               table serving as source of the link
+	 * @param toTable                 destination table expected in the link
+	 * @param whereObject             object providing key values
+	 * @param propertyFromWhereObject expected reverse property name for validation
+	 * @param vecParams               vector receiving parameter values
+	 * @return WHERE clause fragment or null if link not applicable
+	 */
 	private String getWhere(Link[] links, Table fromTable, Table toTable, Object whereObject, String propertyFromWhereObject,
 			Vector vecParams) {
 		// these are used to see if the object can be found without using select
@@ -538,6 +720,18 @@ public class QueryConverter {
 		return null; // not found
 	}
 
+	/**
+	 * Legacy version of getWhere(), performing similar link resolution and WHERE
+	 * clause construction using earlier logic.
+	 *
+	 * @param links                   links from the source table
+	 * @param fromTable               the source table
+	 * @param toTable                 target table whose keys must match
+	 * @param whereObject             object supplying key values
+	 * @param propertyFromWhereObject link name from whereObject
+	 * @param vecParams               vector receiving parameter values
+	 * @return WHERE clause fragment or null if no matching link exists
+	 */
 	private String getWhere_ORIG(Link[] links, Table fromTable, Table toTable, Object whereObject, String propertyFromWhereObject,
 			Vector vecParams) {
 		// these are used to see if the object can be found without using select
@@ -622,15 +816,47 @@ public class QueryConverter {
 		return null; // not found
 	}
 
+	/**
+	 * Produces FROM/WHERE/ORDER BY SQL text for the given class, without resolving
+	 * subclass participation.
+	 *
+	 * @param clazz   root class for table resolution
+	 * @param where   WHERE clause text
+	 * @param params  parameter list, stored for later retrieval
+	 * @param orderBy ORDER BY clause text
+	 * @return FROM/WHERE/ORDER BY SQL fragment
+	 */
 	public String convertToSql(Class clazz, String where, Object[] params, String orderBy) {
 		return convertToSql(clazz, where, params, orderBy, true);
 	}
 
-	// returns FROM, WHERE and ORDER BY clauses as a single String
+	/**
+	 * Produces SQL using join resolution, optionally including subclass tables.
+	 *
+	 * @param clazz          root class for selecting table information
+	 * @param where          WHERE clause text
+	 * @param params         argument list
+	 * @param orderBy        ORDER BY clause
+	 * @param bGetSubclasses true to include subclass tables in join generation
+	 * @return SQL fragment including FROM, WHERE, ORDER BY
+	 */
 	protected String convertToSql(Class clazz, String where, Object[] params, String orderBy, boolean bGetSubclasses) {
 		return convertToSql(clazz, where, params, orderBy, bGetSubclasses, false);
 	}
 
+	/**
+	 * Core SQL construction routine that sets up root Linkinfo, configures join
+	 * usage, resolves WHERE logic (JOIN vs. EXISTS mode), and assembles the final
+	 * FROM/WHERE/ORDER BY SQL text.
+	 *
+	 * @param clazz                   root selection class
+	 * @param where                   WHERE clause text
+	 * @param params                  argument array
+	 * @param orderBy                 ORDER BY clause
+	 * @param bGetSubclasses          whether subclasses participate in joins
+	 * @param bUsingPreparedStatement true when '?' placeholders should be used
+	 * @return SQL fragment combining joins and filtering
+	 */
 	protected String convertToSql(Class clazz, String where, Object[] params, String orderBy, boolean bGetSubclasses,
 			boolean bUsingPreparedStatement) {
 
@@ -686,6 +912,14 @@ public class QueryConverter {
 		return s;
 	}
 
+	/**
+	 * Parses an ORDER BY expression containing property paths, resolves each to the
+	 * correct table/column, and returns an equivalent SQL ORDER BY clause.
+	 *
+	 * @param clazz root class for property resolution
+	 * @param line  textual ORDER BY expression
+	 * @return transformed ORDER BY SQL clause
+	 */
 	protected String parseOrderBy(Class clazz, String line) {
 		if (line == null) {
 			return null;
@@ -773,6 +1007,17 @@ public class QueryConverter {
 		return newString;
 	}
 
+	/**
+	 * Converts a WHERE clause that relies on JOIN-based navigation, resolving column
+	 * paths, applying case-sensitivity rules, handling NULL semantics, and converting
+	 * parameters to SQL text or '?' placeholders.
+	 *
+	 * @param clazz                   class used for base table resolution
+	 * @param whereClause             textual WHERE clause
+	 * @param params                  parameter list
+	 * @param bUsingPreparedStatement true when '?' placeholders should be used
+	 * @return SQL WHERE clause
+	 */
 	protected String parseWhereUseJoin(Class clazz, String whereClause, Object[] params, boolean bUsingPreparedStatement) {
 		OAQueryTokenizer qa = new OAQueryTokenizer();
 		Vector vecToken = qa.convertToTokens(whereClause);
@@ -1079,6 +1324,16 @@ public class QueryConverter {
 		return where;
 	}
 
+	/**
+	 * Converts a WHERE clause into EXISTS-based SQL, used for navigating many-side
+	 * relationships. Builds nested EXISTS statements and resolves column paths.
+	 *
+	 * @param clazz                   root class for resolving table links
+	 * @param whereClause             textual WHERE clause
+	 * @param params                  parameter list
+	 * @param bUsingPreparedStatement true when '?' placeholders should be used
+	 * @return SQL WHERE clause using EXISTS semantics
+	 */
 	protected String parseWhereUseExist(Class clazz, String whereClause, Object[] params, boolean bUsingPreparedStatement) {
 		OAQueryTokenizer qa = new OAQueryTokenizer();
 		Vector vecToken = qa.convertToTokens(whereClause);
@@ -1447,7 +1702,14 @@ public class QueryConverter {
 		return where;
 	}
 
-	/** @param vec list of Linkinfos to find property. */
+	/**
+	 * Parses a dotted property path into a sequence of Linkinfo nodes and determines
+	 * the final column(s) addressed by the path.
+	 *
+	 * @param vec  vector receiving Linkinfo objects along the property path
+	 * @param line property path to parse
+	 * @return array of resolved columns, or null when path terminates in a link
+	 */
 	protected Column[] parseLink(Vector vec, String line) {
 		StringTokenizer st = new StringTokenizer(line, ".", true);
 
@@ -1492,6 +1754,13 @@ public class QueryConverter {
 		}
 	}
 
+	/**
+	 * Normalizes query tokens by adjusting operators, merging adjacent quoted text,
+	 * applying NULL-comparison rules, and updating parameters where needed.
+	 *
+	 * @param vec    token list produced by the tokenizer
+	 * @param params parameter array associated with '?' tokens
+	 */
 	protected void cleanTokens(Vector vec, Object[] params) {
 		OAQueryToken prevToken = null;
 		int questionCnt = 0;
@@ -1587,6 +1856,12 @@ public class QueryConverter {
 		}
 	}
 
+	/**
+	 * Generates the full JOIN clause beginning at the root Linkinfo, including
+	 * superclasses, subclasses, and relationship links.
+	 *
+	 * @return SQL fragment containing all required JOIN expressions
+	 */
 	protected String getJoins() {
 		Table table = root.table;
 		String s = LB + table.name.toUpperCase() + RB;
@@ -1596,7 +1871,16 @@ public class QueryConverter {
 
 	// strJoin = "(" + strJoin + " {oj LEFT OUTER JOIN " + toTable.name + " ON ";
 	// {oj dept A left outer join emp B on A.deptNo = B.deptNo}
-	/** uses root Linkinfo to build JOIN clause */
+	/**
+	 * Recursively builds JOIN expressions for superclass and subclass tables, as well
+	 * as relationship links, starting from the specified Linkinfo node.
+	 *
+	 * @param strJoin current JOIN clause under construction
+	 * @param li      link info node representing a table in the hierarchy
+	 * @param bSuper  true to include superclass joins
+	 * @param bSub    true to include subclass joins
+	 * @return updated JOIN clause including all applicable tables
+	 */
 	private String getJoins(String strJoin, Linkinfo li, boolean bSuper, boolean bSub) {
 		Table table = li.table;
 		Column[] cols = table.getColumns();
@@ -1730,6 +2014,15 @@ public class QueryConverter {
 
 	}
 
+	/**
+	 * Generates a JOIN clause covering a sequence of Linkinfo nodes, typically used
+	 * for constructing EXISTS-based subqueries.
+	 *
+	 * @param vec     ordered list of Linkinfo nodes representing a property path
+	 * @param liStart starting Linkinfo in the join sequence
+	 * @param liEnd   ending Linkinfo in the join sequence
+	 * @return SQL fragment containing the required JOIN relationships
+	 */
 	protected String getJoins(Vector vec, Linkinfo liStart, Linkinfo liEnd) {
 		Linkinfo li = liStart;
 
@@ -1813,6 +2106,19 @@ public class QueryConverter {
 		return strJoin;
 	}
 
+	/**
+	 * Creates JOIN expressions between two tables based on the specified link,
+	 * generating equality conditions between corresponding foreign-key columns.
+	 *
+	 * @param bUseLeftJoin     true to generate LEFT OUTER JOIN instead of INNER JOIN
+	 * @param strJoin          current JOIN clause under construction
+	 * @param link             link describing the foreign-key relationship
+	 * @param fromTable        source table in the relationship
+	 * @param toTable          target table in the relationship
+	 * @param fromTableNumber  alias number for the source table
+	 * @param toTableNumber    alias number for the target table
+	 * @return updated JOIN clause
+	 */
 	private String createLinkJoins(boolean bUseLeftJoin, String strJoin, Link link, Table fromTable, Table toTable, int fromTableNumber,
 			int toTableNumber) {
 		Column[] fkeys = link.fkeys;
@@ -1867,25 +2173,90 @@ public class QueryConverter {
 	}
 
 	/**
-	 * Linkinfo represent a single link from a parent Linkinfo. Ex: Emp -> Dept
-	 **/
+	 * Represents a table and its relationship paths within the query translation
+	 * process. Each Linkinfo tracks parent/child links, subclass/superclass
+	 * relationships, table alias numbering, and join usage flags.
+	 */
 	class Linkinfo {
+		/**
+		 * The database table associated with this Linkinfo node, representing the
+		 * table reached along a property or inheritance path.
+		 */
 		Table table;
+
+		/**
+		 * The Java class corresponding to this table. Used to load metadata and
+		 * navigate inheritance relationships.
+		 */
 		Class clazz;
+		
+		/**
+		 * Unique alias number assigned to this table reference when producing SQL.
+		 */
 		int number; // unique number
 
+		/**
+		 * Link definition describing how this Linkinfo's table relates to its parent
+		 * table.
+		 */
 		Link linkFromParent;
+
+		/**
+		 * Reverse link definition for navigating from the parent table back to this
+		 * table.
+		 */
 		Link linkToParent;
+		
+		/**
+		 * Indicates whether this table is a link table (many-to-many association),
+		 * affecting join generation and navigation.
+		 */
 		boolean bLink; // link table
 
+		/**
+		 * Base Linkinfo representing the true superclass table in inheritance
+		 * relationships.
+		 */
 		Linkinfo base; // base link, used for super/sub links
+		
+		/**
+		 * Parent Linkinfo representing the table from which this link originates.
+		 */
 		Linkinfo parent;
+
+		/**
+		 * Linkinfo instance representing the immediate superclass table within the
+		 * inheritance hierarchy.
+		 */
 		Linkinfo superLink;
+
+		/**
+		 * Array of Linkinfo instances representing subclasses derived from this table.
+		 */
 		Linkinfo[] subLinks;
+		
+		/**
+		 * Array of Linkinfo nodes representing relationship links (non-inheritance) from
+		 * this table to others.
+		 */
 		Linkinfo[] links; // same order as Table.Links
 
+		/**
+		 * True when the relationship represented by this Linkinfo is a many-side
+		 * association, affecting join strategy and DISTINCT usage.
+		 */
 		boolean bMany;
+
+		/**
+		 * Indicates whether this Linkinfo must appear in the generated SQL and therefore
+		 * requires join construction.
+		 */
 		boolean bUsed;
+		
+		/**
+		 * Indicates that LEFT OUTER JOIN should be used when joining this Linkinfo's
+		 * table rather than INNER JOIN.
+		 */
 		boolean bUseLeftJoin;
 
 		/** used internally by this class for setting nodes from root. */
@@ -1898,7 +2269,12 @@ public class QueryConverter {
 			}
 		}
 
-		/** root linkinfo */
+		/**
+		 * Constructs a root Linkinfo instance for the specified class, initializing table
+		 * metadata and populating inheritance and relationship links.
+		 *
+		 * @param c the class associated with the root table
+		 */
 		public Linkinfo(Class c) {
 			this(c, 0, null);
 			counter = 0;
@@ -1907,7 +2283,15 @@ public class QueryConverter {
 			loadSub();
 		}
 
-		/** @param vec list of Linkinfos to find property. */
+		/**
+		 * Attempts to resolve a property name to a column in this Linkinfo's table
+		 * or any superclass table. If found, this Linkinfo is added to the supplied
+		 * vector to record the navigation path.
+		 *
+		 * @param vec          vector receiving the Linkinfo nodes visited
+		 * @param propertyName the property or column name to locate
+		 * @return matching Column or null if not found
+		 */
 		public Column findColumn(Vector vec, String propertyName) {
 			// first look in columns of this class and its superclass(es)
 			Column[] columns = table.getColumns();
@@ -1929,7 +2313,15 @@ public class QueryConverter {
 			return null; // property not found
 		}
 
-		/** @param vec list of Linkinfos to find property. */
+		/**
+		 * Attempts to resolve a property name to a relationship link in this table.
+		 * If the link is found, the method returns the target Linkinfo node, creating
+		 * it if necessary. The current node is added to the supplied vector.
+		 *
+		 * @param vec          vector recording the path of Linkinfo nodes navigated
+		 * @param propertyName name of the link property to locate
+		 * @return Linkinfo representing the target of the link, or null if not found
+		 */
 		public Linkinfo findLink(Vector vec, String propertyName) {
 			loadLinks();
 			Link[] tabLinks = table.getLinks();
@@ -1956,6 +2348,11 @@ public class QueryConverter {
 			return null; // not found
 		}
 
+		/**
+		 * Loads and initializes Linkinfo instances for all subclasses of this
+		 * Linkinfo's class. Inheritance metadata is populated once and reused
+		 * for navigation.
+		 */
 		private void loadSub() {
 			if (subLinks == null) {
 				Class[] subclasses = table.subclasses;
@@ -1974,6 +2371,13 @@ public class QueryConverter {
 			}
 		}
 
+		/**
+		 * Loads and initializes the Linkinfo instance representing this class’s
+		 * immediate superclass, unless it is OAObject or null. Recursively loads
+		 * all superclasses for root.
+		 *
+		 * @return the Linkinfo for the superclass, or null if none exists
+		 */
 		private Linkinfo loadSuper() {
 			if (superLink == null) {
 				Class c = clazz.getSuperclass();
@@ -1993,6 +2397,11 @@ public class QueryConverter {
 			return superLink;
 		}
 
+		/**
+		 * Initializes Linkinfo nodes for each relationship link defined on this
+		 * table. Each link is analyzed to determine whether it represents a link
+		 * table or a many-side association.
+		 */
 		private void loadLinks() {
 			if (links != null || table == null) {
 				return;

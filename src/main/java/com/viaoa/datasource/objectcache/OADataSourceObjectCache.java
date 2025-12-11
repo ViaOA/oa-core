@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,26 +68,86 @@ import com.viaoa.util.*;
 public class OADataSourceObjectCache extends OADataSourceAuto {
     private static final Logger LOG = OALogger.getLogger(OADataSourceObjectCache.class);
 
+    /**
+     * Thread-safe map storing the in-memory object sets for each OAObject class.
+     * Each key is a class type, and each value is the set of its instantiated
+     * objects currently held in the cache.
+     */
     private final ConcurrentHashMap<Class, Set> hmClass = new ConcurrentHashMap<>();
     
+    /**
+     * Read/write lock protecting modifications to the in-memory object sets
+     * and ensuring thread-safe access during persistence operations.
+     */
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+    /**
+     * Creates a new object-cache data source and registers it as the active
+     * data source. Delegates to {@link #OADataSourceObjectCache(boolean)} with
+     * {@code true}.
+     */
     public OADataSourceObjectCache() {
         this(true);
     }
 
+    /**
+     * Creates a new object-cache data source with optional registration
+     * behavior. Delegates to
+     * {@link #OADataSourceObjectCache(Hub, boolean, boolean)} with a null hub
+     * and {@code bMakeLastDataSource = true}.
+     *
+     * @param bRegister whether this data source should be registered
+     */
     public OADataSourceObjectCache(boolean bRegister) {
         this(null, bRegister, true);
     }
 
+    /**
+     * Creates a new object-cache data source with explicit registration and
+     * ordering flags. Delegates to the full constructor with a null hub.
+     *
+     * @param bRegister whether this data source should be registered
+     * @param bMakeLastDataSource whether this instance should become the final
+     *                            data source in the chain
+     */
     public OADataSourceObjectCache(boolean bRegister, boolean bMakeLastDataSource) {
         this(null, bRegister, bMakeLastDataSource);
     }
 
+    /**
+     * Full constructor allowing specification of the hub used for autonumber
+     * operations as well as registration and ordering flags.
+     *
+     * @param hubNextNumber hub used for autonumbering operations
+     * @param bRegister whether to register this data source
+     * @param bMakeLastDataSource whether this instance should be last in the
+     *                            data-source chain
+     */
     public OADataSourceObjectCache(Hub hubNextNumber, boolean bRegister, boolean bMakeLastDataSource) {
         super(hubNextNumber, bRegister, bMakeLastDataSource);
     }
 
+    /**
+     * Selects objects from the in-memory cache matching the supplied filters,
+     * query expressions, and optional ordering. Query text is converted to
+     * {@link OAQueryFilter} instances, merged via {@link OAAndFilter}, and
+     * applied to the object sets. If a {@code whereObject} and property path
+     * are supplied, the method resolves the referenced objects or collections
+     * and returns a list-based iterator. Otherwise, an {@link ObjectCacheIterator}
+     * is used.
+     *
+     * @param selectClass the class of objects to search
+     * @param queryWhere where-clause expression used to create a filter
+     * @param params parameters for the where-clause
+     * @param queryOrder property-path ordering expression
+     * @param whereObject reference object used for property-path based selection
+     * @param propertyFromWhereObject property or property path from the reference object
+     * @param extraWhere additional query filter expression
+     * @param max maximum number of results, or zero for unlimited
+     * @param filterx optional filter applied before query evaluation
+     * @param bDirty whether to include dirty or uncommitted objects
+     * @return iterator over selected objects
+     */
     @Override
     public OADataSourceIterator select(final Class selectClass, String queryWhere, Object[] params, String queryOrder, OAObject whereObject, String propertyFromWhereObject,
         String extraWhere, int max, OAFilter filterx, boolean bDirty) {
@@ -285,6 +345,20 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         return itx;
     }
 
+    /**
+     * Performs a select-operation identical to {@link #select(Class, String,
+     * Object[], String, OAObject, String, String, int, OAFilter, boolean)}
+     * but without parameters or reference-object processing. Equivalent to a
+     * passthrough query for this in-memory data source.
+     *
+     * @param selectClass the class of objects to retrieve
+     * @param queryWhere query expression to apply
+     * @param queryOrder ordering expression
+     * @param max maximum number of results
+     * @param filter additional filter to apply
+     * @param bDirty whether to include dirty objects
+     * @return iterator over selected objects
+     */
     @Override
     public OADataSourceIterator selectPassthru(Class selectClass, String queryWhere, String queryOrder, int max, OAFilter filter, boolean bDirty) {
 
@@ -296,19 +370,46 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
          */
     }
 
+    /**
+     * Assigns an ID to the given object using the autonumber mechanism
+     * provided by the superclass.
+     *
+     * @param obj the object requiring an ID assignment
+     */
     public @Override void assignId(OAObject obj) {
         super.assignId(obj); // have autonumber handle this
     }
 
+    /**
+     * Indicates whether this data source can return row counts without
+     * performing a full select. The object-cache implementation does not
+     * support pre-count behavior.
+     *
+     * @return always {@code false}
+     */
     public boolean getSupportsPreCount() {
         return false;
     }
 
+    /**
+     * Determines whether multiple data sources are currently registered.
+     *
+     * @return {@code true} if more than one data source exists; otherwise false
+     */
     protected boolean isOtherDataSource() {
         OADataSource[] dss = OADataSource.getDataSources();
         return dss != null && dss.length > 1;
     }
 
+    /**
+     * Determines whether the specified class is supported by this in-memory
+     * data source. Support depends on the presence of other data sources and
+     * whether all objects for the class have been loaded.
+     *
+     * @param clazz the class to check
+     * @param filter optional filter for conditional support
+     * @return true if the class is fully supported for selection
+     */
     @Override
     public boolean isClassSupported(Class clazz, OAFilter filter) {
         if (filter == null) {
@@ -328,6 +429,13 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         return false;
     }
 
+    /**
+     * Inserts the given object into the in-memory cache after delegating to
+     * the superclass for autonumber and reference handling. The object's class
+     * set is updated under write-lock protection.
+     *
+     * @param object the object to insert
+     */
     @Override
     public void insert(OAObject object) {
         super.insert(object);
@@ -345,7 +453,15 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         }        
     }
 
-    
+    /**
+     * Saves all cached objects—and an optional extra object—to a compressed
+     * storage file. The method writes using a {@link DeflaterOutputStream}
+     * and protects the write sequence with the class write-lock.
+     *
+     * @param file target file for serialized output
+     * @param extraObject optional additional object to serialize first
+     * @throws Exception if file I/O or serialization fails
+     */
     public void saveToStorageFile(File file, Object extraObject) throws Exception {
         LOG.fine("saving to storage file=" + file);
         if (file == null) {
@@ -376,6 +492,16 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
     }        
         
 
+    /**
+     * Internal implementation that writes class-grouped cached objects to the
+     * provided output stream. Only supported classes are serialized. An optional
+     * extra object is serialized first.
+     *
+     * @param file the original target file
+     * @param oos output stream used for serialization
+     * @param extraObject optional extra object to serialize
+     * @throws Exception if serialization fails
+     */
     protected void _saveToStorageFile(File file, ObjectOutputStream oos, Object extraObject) throws Exception {
         oos.writeBoolean(extraObject != null);
         if (extraObject != null) {
@@ -402,6 +528,15 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         oos.close();
     }
 
+    /**
+     * Loads cached objects from a compressed storage file, replacing in-memory
+     * data. The method uses an {@link InflaterInputStream} and protects all
+     * modifications with the write-lock.
+     *
+     * @param file the file to read from
+     * @return true if any objects were loaded
+     * @throws Exception if deserialization fails
+     */
     public boolean loadFromStorageFile(final File file) throws Exception {
         LOG.fine("loading from storage file=" + file);
         if (file == null) {
@@ -435,6 +570,16 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         return bResult;
     }
     
+    /**
+     * Internal method for deserializing cached objects and optional extra data
+     * from the provided input stream. Results are merged into the existing
+     * class-based sets.
+     *
+     * @param file the source file
+     * @param ois the object-input stream used for reading
+     * @return true if any objects or extra data were loaded
+     * @throws Exception if deserialization fails
+     */
     protected boolean _loadFromStorageFile(final File file, OAObjectInputStream ois) throws Exception {
         int cnt = 0;
         
@@ -474,6 +619,12 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         return (cnt > 0);
     }
 
+    /**
+     * Retrieves the object set for the specified class, creating it if necessary.
+     *
+     * @param c the class whose object set is requested
+     * @return the set associated with the class, or null if class is null
+     */
     private Set getSet(Class c) {
         if (c == null) {
             return null;
@@ -482,6 +633,13 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         return hs;
     }
 
+    /**
+     * Inserts the given object into the cache without processing references.
+     * If the object is not already present in its class set, it is added under
+     * write-lock protection.
+     *
+     * @param obj the object to insert without reference handling
+     */
     @Override
     public void insertWithoutReferences(OAObject obj) {
         super.insertWithoutReferences(obj);
@@ -501,6 +659,13 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         }
     }
 
+    /**
+     * Removes the specified object from the in-memory cache after delegating to
+     * the superclass for reference cleanup. If the object's class set exists, the
+     * object is removed under write-lock protection.
+     *
+     * @param obj the object to delete
+     */
     @Override
     public void delete(OAObject obj) {
         super.delete(obj);
@@ -520,6 +685,13 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         }
     }
 
+    /**
+     * Removes all objects of the specified class from the in-memory cache and
+     * delegates to {@link OAObjectCacheDelegate#removeAllObjects(Class)} to clear
+     * the global cache. The class set is cleared under write-lock protection.
+     *
+     * @param c the class whose objects should be removed
+     */
     @Override
     public void deleteAll(Class c) {
         super.deleteAll(c);

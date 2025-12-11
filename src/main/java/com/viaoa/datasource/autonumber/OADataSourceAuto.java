@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.autonumber;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,39 +29,103 @@ import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.OAFilter;
 
 /**
- * OADataSource that does not support selects or storage. Can be used to act as a "dummy" datasource. It can assign autoNumbers for new
- * objects that have object Id properties that are numbers and not initialized. (see setAssignIdOnCreate(true))
+ * A lightweight {@link OADataSource} implementation that does not support
+ * storage or select operations. Its primary responsibility is assigning
+ * autonumber-style object identifier values to newly created {@link OAObject}
+ * instances.
  * <p>
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
+ * This datasource can operate in two modes:
+ * <ul>
+ *   <li><b>Global mode:</b> uses a shared Hub of {@link NextNumber} objects.</li>
+ *   <li><b>Local mode:</b> uses a caller-supplied Hub that defines NextNumber
+ *       sequences on a per-class basis.</li>
+ * </ul>
+ * <p>
+ * When enabled via {@link #setAssignIdOnCreate(boolean)}, object IDs are
+ * automatically assigned when objects are constructed. Otherwise, IDs are
+ * assigned during {@link #insert(OAObject)} or related operations.
+ * <p>
+ * This datasource is often used as a “dummy” fallback datasource in systems
+ * that require object ID assignment but that do not need persistence or query
+ * capabilities.
  */
-
 public class OADataSourceAuto extends OADataSource {
+
+	/**
+	 * Global Hub of {@link NextNumber} objects used to store autonumber sequences
+	 * shared across all OADataSourceAuto instances unless overridden.
+	 */
 	private static Hub hubNextNumberGlobal; // new numbers for seq ids
+
+	/**
+	 * Indicates whether this datasource should respond positively to class-support
+	 * checks for all classes. When true, autonumber assignment will be attempted
+	 * for any class unless explicitly ignored.
+	 */
 	private boolean bSupportAllClasses = true;
+
+	/**
+	 * Hub containing {@link NextNumber} instances for autonumber assignment. This
+	 * may point to a caller-supplied Hub or the global shared Hub.
+	 */
 	private Hub hubNextNumber; // new numbers for seq ids
 
+	/**
+	 * Cache mapping classes to their corresponding {@link NextNumber} objects or
+	 * placeholder mappings to indicate that no autonumber assignment should occur
+	 * for a given class.
+	 */
 	private final ConcurrentHashMap<Class, NextNumber> hmIgnoreClass = new ConcurrentHashMap();
 
+	/**
+	 * Creates a new OADataSourceAuto instance that registers itself and configures
+	 * itself as the last datasource. Uses or initializes the global Hub of
+	 * {@link NextNumber} sequences.
+	 */
 	public OADataSourceAuto() {
 		this(true);
 	}
 
+	/**
+	 * Creates an OADataSourceAuto with explicit registration and ordering flags.
+	 *
+	 * @param bRegister             true to register this datasource with the global
+	 *                              datasource registry
+	 * @param bMakeLastDataSource   true to mark this datasource as the last in the
+	 *                              global datasource chain
+	 */
 	public OADataSourceAuto(boolean bRegister, boolean bMakeLastDataSource) {
 		this(null, bRegister, bMakeLastDataSource);
 	}
 
+	/**
+	 * Creates an OADataSourceAuto and optionally marks it as the last datasource.
+	 * Registration is enabled by default.
+	 *
+	 * @param bMakeLastDataSource true to designate this datasource as last in chain
+	 */
 	public OADataSourceAuto(boolean bMakeLastDataSource) {
 		this(null, true, bMakeLastDataSource);
 	}
 
+	/**
+	 * Creates an OADataSourceAuto that uses the specified Hub to store
+	 * {@link NextNumber} objects for autonumbering.
+	 *
+	 * @param hubNextNumber Hub containing NextNumber instances
+	 */
 	public OADataSourceAuto(Hub hubNextNumber) {
 		this(hubNextNumber, true, true);
 	}
 
 	/**
-	 * Hub hubNextNumber must include a separate NextNumber2 object for each class that needs to have a seqId assigned to its objectId
-	 * property. The objects in hubNextNumber also need to be saved (OAObject.save() or hubNextNumber.saveAll()). The objectId property will
-	 * be set when the object is created (OAObject constructor)
+	 * Internal constructor that performs full initialization of the datasource,
+	 * including Hub selection, global Hub installation, and datasource ordering.
+	 *
+	 * @param hubNextNumber        Hub containing NextNumber instances, or null to
+	 *                             use the global Hub
+	 * @param bRegister            true to register in global datasource registry
+	 * @param bMakeLastDataSource  true to mark as last datasource
 	 */
 	public OADataSourceAuto(Hub hubNextNumber, boolean bRegister, boolean bMakeLastDataSource) {
 		super(bRegister);
@@ -77,16 +146,31 @@ public class OADataSourceAuto extends OADataSource {
 		setName("OADataSourceAuto DataSource");
 	}
 
+	/**
+	 * Configures the global Hub of {@link NextNumber} instances used for
+	 * autonumber assignment across all OADataSourceAuto instances.
+	 *
+	 * @param hubNextNumber the Hub to install as the global sequence source
+	 */
 	public static void setGlobalNextNumber(Hub hubNextNumber) {
 		hubNextNumberGlobal = hubNextNumber;
 	}
 
+	/**
+	 * Returns the global Hub containing {@link NextNumber} objects.
+	 *
+	 * @return the shared Hub of autonumber sequences
+	 */
 	public static Hub<NextNumber> getGlobalNextNumber() {
 		return hubNextNumberGlobal;
 	}
 
 	/**
-	 * Hub used to store NextNumber2 objects used for assigning new property ids.
+	 * Sets the Hub used to store {@link NextNumber} objects for autonumbering.
+	 * The Hub must be typed for {@link NextNumber} objects.
+	 *
+	 * @param hubNextNumber the Hub to use for autonumber storage
+	 * @throws IllegalArgumentException if the Hub is not for NextNumber objects
 	 */
 	public void setHub(Hub hubNextNumber) {
 		if (hubNextNumber == null || !hubNextNumber.getObjectClass().equals(NextNumber.class)) {
@@ -96,40 +180,51 @@ public class OADataSourceAuto extends OADataSource {
 	}
 
 	/**
-	 * Hub used to store NextNumber2 objects used for assigning new property ids.
+	 * Returns the Hub that stores {@link NextNumber} objects used for autonumber
+	 * assignment.
+	 *
+	 * @return the NextNumber Hub
 	 */
 	public Hub getHub() {
 		return hubNextNumber;
 	}
 
 	/**
-	 * Overwritten to return false.
+	 * Always returns false. OADataSourceAuto does not support any form of storage.
+	 *
+	 * @return false
 	 */
 	public boolean supportsStorage() {
 		return false;
 	}
 
 	/**
-	 * Used to know if this DataSource should respond true to all request for service for Classes. This can be used to act as a catch all
-	 * for DataSource requests.
+	 * Returns whether autonumber assignment should be attempted for all classes.
+	 *
+	 * @return true if this datasource supports all classes
 	 */
 	public boolean getSupportAllClasses() {
 		return bSupportAllClasses;
 	}
 
 	/**
-	 * Used to know if this DataSource should respond true to all request for service for Classes. This can be used to act as a catch all
-	 * for DataSource requests.
+	 * Configures whether autonumber assignment should be applied to all classes.
+	 *
+	 * @param b true to support all classes
 	 */
 	public void setSupportAllClasses(boolean b) {
 		bSupportAllClasses = b;
 	}
 
 	/**
-	 * Returns true if NextNumber2 with Class name as Id is in HubNextNumber or if getSupportAllClasses is true.
+	 * Determines whether autonumber assignment should be allowed for the
+	 * specified class. When {@link #bSupportAllClasses} is true, all classes
+	 * are treated as supported unless explicitly ignored. Otherwise, a class
+	 * must already exist in the {@link #hmIgnoreClass} map or the NextNumber Hub.
 	 *
-	 * @see #getHub
-	 * @see #setSupportAllClasses
+	 * @param clazz  the class to test
+	 * @param filter optional filter (ignored for this datasource)
+	 * @return true if autonumber assignment is supported for this class
 	 */
 	@Override
 	public boolean isClassSupported(Class clazz, OAFilter filter) {
@@ -144,10 +239,47 @@ public class OADataSourceAuto extends OADataSource {
 		return (nn != null);
 	}
 
+	/**
+	 * Synchronization lock object used when lazily creating {@link NextNumber}
+	 * instances for previously unseen classes.
+	 */
 	private Object LOCK = new Object();
+
+	/**
+	 * Internal reference used during NextNumber creation. Reserved for internal
+	 * processing; not externally visible.
+	 */
 	private NextNumber nextNumberNextNumber;
+
+	/**
+	 * Internal guard flag used to prevent recursive or reentrant calls during
+	 * NextNumber lookup and creation.
+	 */
 	private boolean bGettingNextNumber;
 
+	/**
+	 * Retrieves or creates the {@link NextNumber} sequence object associated with the
+	 * specified class.
+	 * <p>
+	 * The method first checks the internal {@code hmIgnoreClass} map for an existing
+	 * mapping. If a mapping is present, it is returned immediately.
+	 * <p>
+	 * When class support is globally enabled, the method attempts to lazily create a
+	 * new {@link NextNumber} instance for classes not yet seen. Creation is performed
+	 * within a synchronized block using {@link #LOCK} to ensure thread safety.
+	 * <p>
+	 * A new {@link NextNumber} is initialized with:
+	 * <ul>
+	 *   <li>its ID set to the class name</li>
+	 *   <li>a property selected from the class's ID properties, if any are marked
+	 *       with auto-assign</li>
+	 * </ul>
+	 * The created object is added to the configured {@code hubNextNumber} and cached
+	 * in {@code hmIgnoreClass}.
+	 *
+	 * @param clazz the class whose autonumber sequence is requested
+	 * @return the {@link NextNumber} for the class, or {@code null} if unsupported
+	 */
 	private NextNumber getNextNumber(final Class<?> clazz) {
 		NextNumber nn = hmIgnoreClass.get(clazz);
 		if (nn != null) {
@@ -194,8 +326,17 @@ public class OADataSourceAuto extends OADataSource {
 	}
 
 	/**
-	 * Set any objectId properties that are of class Number (or primitive equiv) and whose value is "0" to the value in the NextNumber
-	 * object found in getHub(). This will also call OAObject.save() if Auto Save is true.
+	 * Assigns an autonumber ID to the specified object.
+	 * <p>
+	 * The method retrieves the {@link NextNumber} sequence for the object's class
+	 * and updates the object's ID property if the property is defined and marked
+	 * for auto-assignment.
+	 * <p>
+	 * A unique ID is generated by incrementing the sequence value and verifying
+	 * that no existing cached object already uses the ID. Assignment occurs within
+	 * an assigning-ID guard via {@link OAObjectDSDelegate}.
+	 *
+	 * @param oaObj the object to receive an assigned ID
 	 */
 	public void assignId(OAObject oaObj) {
 		if (oaObj == null) {
@@ -233,12 +374,25 @@ public class OADataSourceAuto extends OADataSource {
 		}
 	}
 
+	/**
+	 * No-op implementation. This datasource does not manage many-to-many link updates.
+	 *
+	 * @param masterObject          ignored
+	 * @param adds                  ignored
+	 * @param removes               ignored
+	 * @param propertyNameFromMaster ignored
+	 */
 	@Override
 	public void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propertyNameFromMaster) {
 	}
 
 	/**
-	 * Returns true if propertyName is an Object Id property.
+	 * Determines whether the specified property name matches the autonumber
+	 * property defined for the object's class.
+	 *
+	 * @param oaObj        the object being checked
+	 * @param propertyName the property name to test
+	 * @return true if the property corresponds to the class's autonumber field
 	 */
 	public boolean willCreatePropertyValue(OAObject oaObj, String propertyName) {
 		if (oaObj != null && propertyName != null) {
@@ -253,7 +407,10 @@ public class OADataSourceAuto extends OADataSource {
 	}
 
 	/**
-	 * Overwritten to only initialize object. OADataSourceNextNumber Does not support data storage.
+	 * Inserts the object by assigning an ID if automatic assignment on create
+	 * is disabled. No persistence is performed.
+	 *
+	 * @param object the object being inserted
 	 */
 	public void insert(OAObject object) {
 		if (!getAssignIdOnCreate()) {
@@ -261,6 +418,12 @@ public class OADataSourceAuto extends OADataSource {
 		}
 	}
 
+	/**
+	 * Inserts the object without references. Behaves the same as {@link #insert}
+	 * by assigning an ID when automatic creation assignment is disabled.
+	 *
+	 * @param obj the object to insert
+	 */
 	public void insertWithoutReferences(OAObject obj) {
 		if (!getAssignIdOnCreate()) {
 			assignId(obj);
@@ -268,46 +431,108 @@ public class OADataSourceAuto extends OADataSource {
 	}
 
 	/**
-	 * Overwritten to do nothing. OADataSourceNextNumber Does not support data storage.
+	 * No-op implementation. This datasource does not support updating objects.
+	 *
+	 * @param object            ignored
+	 * @param includeProperties ignored
+	 * @param excludeProperties ignored
 	 */
 	public void update(OAObject object, String[] includeProperties, String[] excludeProperties) {
 	}
 
 	/**
-	 * Does not support data storage.
+	 * No-op implementation. This datasource does not support deleting objects.
+	 *
+	 * @param object ignored
 	 */
 	public void delete(OAObject object) {
 	}
 
 	/**
-	 * Overwritten to always return null. OADataSourceNextNumber Does not support data storage.
+	 * Always returns null. Command execution is not supported by this datasource.
+	 *
+	 * @param command ignored
+	 * @return null
 	 */
 	public Object execute(String command) {
 		return null;
 	}
 
+	/**
+	 * Returns null. Blob property retrieval is not supported.
+	 *
+	 * @param obj          ignored
+	 * @param propertyName ignored
+	 * @return null
+	 */
 	@Override
 	public byte[] getPropertyBlobValue(OAObject obj, String propertyName) {
 		return null;
 	}
 
+	/**
+	 * Always returns -1. Counting is not supported by this datasource.
+	 *
+	 * @param selectClass            ignored
+	 * @param queryWhere             ignored
+	 * @param params                 ignored
+	 * @param whereObject            ignored
+	 * @param propertyFromWhereObject ignored
+	 * @param extraWhere             ignored
+	 * @param max                    ignored
+	 * @return -1
+	 */
 	@Override
 	public int count(Class selectClass, String queryWhere, Object[] params, OAObject whereObject, String propertyFromWhereObject,
 			String extraWhere, int max) {
 		return -1;
 	}
 
+	/**
+	 * Always returns -1. Passthru counting is not supported.
+	 *
+	 * @param selectClass ignored
+	 * @param queryWhere  ignored
+	 * @param max         ignored
+	 * @return -1
+	 */
 	@Override
 	public int countPassthru(Class selectClass, String queryWhere, int max) {
 		return -1;
 	}
 
+	/**
+	 * Always returns null. Selection is not supported by this datasource.
+	 *
+	 * @param selectClass             ignored
+	 * @param queryWhere              ignored
+	 * @param params                  ignored
+	 * @param queryOrder              ignored
+	 * @param whereObject             ignored
+	 * @param propertyFromWhereObject ignored
+	 * @param extraWhere              ignored
+	 * @param max                     ignored
+	 * @param filter                  ignored
+	 * @param bDirty                  ignored
+	 * @return null
+	 */
 	@Override
 	public OADataSourceIterator select(Class selectClass, String queryWhere, Object[] params, String queryOrder, OAObject whereObject,
 			String propertyFromWhereObject, String extraWhere, int max, OAFilter filter, boolean bDirty) {
 		return null;
 	}
 
+	/**
+	 * Always returns null. Passthru selection is not supported.
+	 *
+	 * @param selectClass ignored
+	 * @param queryWhere  ignored
+	 * @param queryOrder  ignored
+	 * @param max         ignored
+	 * @param filter      ignored
+	 * @param bDirty      ignored
+	 * @return null
+	 */
 	@Override
 	public OADataSourceIterator selectPassthru(Class selectClass, String queryWhere, String queryOrder, int max, OAFilter filter,
 			boolean bDirty) {

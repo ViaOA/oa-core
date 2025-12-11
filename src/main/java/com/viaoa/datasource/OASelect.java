@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,17 +83,50 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 
 	private static Logger LOG = Logger.getLogger(OASelect.class.getName());
 
+	/**
+	 * Counter used to assign unique IDs to each OASelect instance.
+	 */
 	private static final AtomicInteger aiId = new AtomicInteger();
-	private final int id;
-
-	protected Class clazz;
-	protected String where;
-	protected String order;
-	protected boolean bPassthru;
-	protected boolean bAppend;
-	protected boolean bRewind = true; // set back to first object
 
 	/**
+	 * Unique identifier assigned to this OASelect instance when created.
+	 */
+	private final int id;
+
+	/**
+	 * Class of objects being selected by this query.
+	 */
+	protected Class clazz;
+
+	/**
+	 * The property-path or passthru where-clause associated with this query.
+	 */
+	protected String where;
+	
+	/**
+	 * Ordering clause used to sort results, if supported by the DataSource.
+	 */
+	protected String order;
+	
+	/**
+	 * Flag indicating whether the query uses DataSource.selectPassthru()
+	 * instead of OA property-path evaluation.
+	 */
+	protected boolean bPassthru;
+	
+	/**
+	 * Whether results should be appended to an existing Hub or collection
+	 * instead of overwriting it.
+	 */
+	protected boolean bAppend;
+	
+	/**
+	 * Indicates whether the associated Hub should rewind to its first object
+	 * when new results are loaded.
+	 */
+	protected boolean bRewind = true; // set back to first object
+
+	/*
 	 * Select based on a where object/hub.ao and the property path to this.hub<TYPE>.
 	 * <p>
 	 * This will then add to the whereClause of the query, by taking the reverse of the PP that is equal the whereObject.
@@ -102,45 +135,181 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 * <p>
 	 * if whereObject+pp is Dept+"emps.orders" and this select is for Order.class, then query will have added: "AND "emp.dept = ?", dept
 	 */
+
+	/**
+	 * Object used to generate a reverse-path where clause that selects all
+	 * objects referencing this whereObject.
+	 */
 	protected OAObject whereObject;
+
+	/**
+	 * Hub used as an alternative where source; its active object may act as
+	 * the whereObject for query construction.
+	 */
 	protected Hub whereHub;
+
+	/**
+	 * Property path used to relate the whereObject (or Hub.AO) to the objects
+	 * selected by this OASelect.
+	 */
 	protected String whereObjectPropertyPath;
 
+	/**
+	 * Maximum number of objects to load. Zero means unlimited.
+	 */
 	protected int max; // max amount of objects to load
+	
+	/**
+	 * When true, the DataSource count() method is invoked before selecting
+	 * to determine total result size.
+	 */
 	protected boolean bCountFirst; // count before selecting
+	
+	/**
+	 * Number of objects read so far. Starts at -1 until reading begins.
+	 */
 	protected int amountRead = -1;
+	
+	/**
+	 * Cached count of total matching objects. -1 indicates that no count
+	 * has been performed or completed.
+	 */
 	protected volatile int amountCount = -1;
+	
+	/**
+	 * Parameter values substituted for '?' placeholders in the where clause.
+	 */
 	protected Object[] params;
+	
+	/**
+	 * Iterator returned by the underlying DataSource during execution.
+	 * Provides streaming access to query results.
+	 */
 	protected volatile transient OADataSourceIterator query;
 
+	/**
+	 * Default number of records to fetch per batch when performing incremental
+	 * read operations. This value is used by {@link Hub} and other components
+	 * that support lazy or paged loading of DataSource results. A higher value
+	 * increases throughput at the cost of memory; a lower value improves
+	 * responsiveness for UIs that load progressively.
+	 */
 	public static final int defaultFetchAmount = 45;
+	
+	/**
+	 * Number of records to fetch at a time when reading from the DataSource.
+	 * Defaults to {@link #defaultFetchAmount}. This value is used primarily by
+	 * {@link Hub} to support progressive loading, enabling large result sets to
+	 * be retrieved in smaller chunks instead of all at once.
+	 */
 	protected int fetchAmount = defaultFetchAmount; // used by Hub to know how many to read at a time
+	
+	/**
+	 * Indicates whether the select operation has been cancelled. When true,
+	 * iteration stops early and the underlying {@link OADataSourceIterator}
+	 * is closed to release resources.
+	 */
 	protected volatile boolean bCancelled;
+	
+	/**
+	 * Tracks whether this OASelect has begun execution. Used to prevent
+	 * double-starting and to determine cancellation semantics.
+	 */
 	protected volatile boolean bHasBeenStarted;
+
+	/**
+	 * Flag indicating whether selection should be performed using an
+	 * {@link OAFinder} instead of the {@link OADataSource}. This is true when
+	 * searching from a Hub, or when the DataSource does not support direct
+	 * queries for the given whereClause.
+	 */
 	protected boolean bUseFinder;
+
+	/**
+	 * Timestamp of the last object retrieval (via {@link #next()}).
+	 * Used for timeout detection and long-running query diagnostics.
+	 */
 	protected volatile long lastReadTime; // used with for determining timeout
+
+	/**
+	 * Optional in-memory filter applied after the DataSource iterator returns
+	 * objects. Used to exclude objects that do not meet criteria not handled
+	 * by the underlying DataSource.
+	 */
 	protected OAFilter<TYPE> oaFilter; // this will be used by OASelect to filter iterator returned values
+	
+	/**
+	 * Optional filter passed to the DataSource. If the DataSource does not
+	 * support query evaluation, it may use this filter to perform in-memory
+	 * evaluation of candidate objects.
+	 */
 	protected OAFilter<TYPE> dsFilter; // this will be sent to DataSource, which will use it if it does not support queries
+
+	/**
+	 * Finder used as an alternative selection mechanism. When present and
+	 * enabled via {@link #bUseFinder}, all results are derived from scanning
+	 * objects reachable from the finder root rather than from the DataSource.
+	 */
 	protected OAFinder<?, TYPE> finder; // will be used instead of calling datasource
+
+	/**
+	 * Hub whose contents serve as the search domain when using an
+	 * {@link OAFinder}. This allows selection to operate directly against an
+	 * existing in-memory collection instead of querying the DataSource.
+	 */
 	protected Hub<TYPE> hubSearch; // hub used to search from, instead of using DataSource
+
+	/**
+	 * Signals whether the DataSource should bypass caching and return fresh
+	 * data. When true, select operations force a read-through rather than
+	 * reusing cached objects.
+	 */
 	private boolean bDirty; // data should always be loaded from datasource
+
+	/**
+	 * Tracks whether {@link #bDirty} was explicitly set by the caller.
+	 * Prevents automatic refresh behavior from overriding user intent.
+	 */
 	private boolean bDirtyWasSet;
+	
+	/**
+	 * Indicates that a select operation is actively executing. Used to manage
+	 * cancellation behavior and ensure thread-safe select sequencing.
+	 */
 	private volatile boolean bIsSelectingNow;
+	
+	/**
+	 * Marks that iteration has completed (no additional objects available).
+	 * Prevents repeated queries or redundant `hasNext()` checks.
+	 */
 	private volatile boolean bHasNextCompleted;
 
-	/** Create a new OASelect that is not initialzed. */
+	/**
+	 * Creates a new uninitialized OASelect instance and assigns it a unique
+	 * identifier. The selectClass, where clause, and other query parameters
+	 * must be configured before use.
+	 */
 	public OASelect() {
 		this.id = aiId.incrementAndGet();
 	}
 
-	/** Create a new OASelect that is initialzed to query Objects for a Class. */
+	/**
+	 * Creates a new OASelect configured to select objects of the specified class.
+	 *
+	 * @param c the class of objects to be selected
+	 */
 	public OASelect(Class<TYPE> c) {
 		this();
 		setSelectClass(c);
 	}
 
 	/**
-	 * Create a new OASelect that is initialzed to query Objects for a Class for a passthru query.
+	 * Creates a new OASelect for passthru-based queries.
+	 *
+	 * @param c the class of objects to select
+	 * @param passthru true to use DataSource.selectPassthru
+	 * @param where the passthru where clause
+	 * @param order an optional ordering clause
 	 */
 	public OASelect(Class<TYPE> c, boolean passthru, String where, String order) {
 		this();
@@ -151,7 +320,11 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Create a new OASelect that is initialized to query Objects for a Class.
+	 * Creates a new OASelect configured with a where clause and optional order.
+	 *
+	 * @param c the class of objects to select
+	 * @param where the OA property-path where clause
+	 * @param order the order-by clause
 	 */
 	public OASelect(Class<TYPE> c, String where, String order) {
 		this();
@@ -161,7 +334,12 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Create a new OASelect that is initialized to query Objects for a Class.
+	 * Creates a new OASelect that uses parameterized query values.
+	 *
+	 * @param c the class of objects to select
+	 * @param where the OA property-path where clause
+	 * @param params parameter values substituted for '?' placeholders
+	 * @param order the order-by clause
 	 */
 	public OASelect(Class<TYPE> c, String where, Object[] params, String order) {
 		this();
@@ -172,7 +350,11 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Create a new OASelect that is initialzed to query Objects for a Class.
+	 * Creates a new OASelect using a whereObject-based reverse-path query.
+	 *
+	 * @param c the class of objects to select
+	 * @param whereObject the object used to build a reverse relationship constraint
+	 * @param order the order-by clause
 	 */
 	public OASelect(Class<TYPE> c, OAObject whereObject, String order) {
 		this();
@@ -180,48 +362,77 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		setOrder(order);
 	}
 
+	/**
+	 * Returns the unique identifier assigned to this OASelect instance.
+	 *
+	 * @return the select ID
+	 */
 	public int getId() {
 		return id;
 	}
 
 	/**
-	 * Values used to replace '?' in where clause.
+	 * Sets the parameter values used to replace '?' markers in the where clause.
 	 *
-	 * @param params list of values to replace '?' in where clause.
+	 * @param params the parameter array
 	 */
 	public void setParams(Object[] params) {
 		this.params = params;
 	}
 
+	/**
+	 * Returns the parameter values currently associated with this select.
+	 *
+	 * @return the query parameters, or null if none were assigned
+	 */
 	public Object[] getParams() {
 		return this.params;
 	}
 
-	// 20180726
+	/**
+	 * Adds an additional where-clause segment and its parameters to the existing
+	 * where clause. The new clause is appended using "AND".
+	 *
+	 * @param whereClause the additional where fragment
+	 * @param params parameter values for the new fragment
+	 */
 	public void add(String whereClause, Object[] params) {
 		this.where = OAString.concat(this.where, whereClause, " AND ");
 		this.params = OAArray.add(Object.class, this.params, params);
 	}
 
+	/**
+	 * Sets the Hub whose contents will be used as the local search domain instead
+	 * of querying the DataSource.
+	 *
+	 * @param hub the Hub used for in-memory searching
+	 */
 	public void setSearchHub(Hub<TYPE> hub) {
 		this.hubSearch = hub;
 	}
 
+	/**
+	 * Returns the Hub used for local search operations, or null if none is set.
+	 *
+	 * @return the Hub serving as the search domain
+	 */
 	public Hub<TYPE> getSearchHub() {
 		return this.hubSearch;
 	}
 
 	/**
-	 * Calls reset(false)
+	 * Resets the select and clears iteration state, allowing it to be executed
+	 * again using the existing configuration.
 	 */
 	public void reset() {
 		reset(false);
 	}
 
 	/**
-	 * Reset so that select can be used again
+	 * Resets internal select state and optionally clears the where clause,
+	 * order clause, and whereObject.
 	 *
-	 * @param bClearOutValues if true then clears where, order, whereObject
+	 * @param bClearOutValues true to remove where/order/whereObject settings
 	 */
 	public void reset(boolean bClearOutValues) {
 		closeQuery();
@@ -239,8 +450,11 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * @param whereObject object that this select is based on.
-	 * @param pp          property path from whereObject to this.selectClass
+	 * Sets the whereObject and the property path used to derive a reverse-path
+	 * relationship for the query.
+	 *
+	 * @param whereObject the base object used to restrict results
+	 * @param pp the property path from whereObject to the select class
 	 */
 	public void setWhereObject(OAObject whereObject, String pp) {
 		this.whereObject = whereObject;
@@ -248,52 +462,70 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * WhereObject is used to build a where statement that will select all objects that have a reference to whereObject.
+	 * Sets the whereObject used to generate a reverse-path constraint. The
+	 * property path must be supplied separately if multiple paths exist.
 	 *
-	 * @see #setWhereObjectPropertyPath
+	 * @param whereObject the object used to restrict the query
 	 */
 	public void setWhereObject(OAObject whereObject) {
 		this.whereObject = whereObject;
 	}
 
 	/**
-	 * WhereObject is used to build a where statement that will select all objects that have have a reference to whereObject.
+	 * Returns the object used to generate reverse-path where constraints, or null
+	 * if no whereObject has been assigned.
 	 *
-	 * @see #setWhereObjectPropertyPath
+	 * @return the whereObject
 	 */
 	public Object getWhereObject() {
 		return whereObject;
 	}
 
 	/**
-	 * Property name in whereObject that is used to select objects for this class. This is not required, but should be supplied if the
-	 * whereObject has more then one path to the select class.
-	 * <p>
-	 * example: if whereObject is Dept and class is Emp, then "emps"
+	 * Returns the object used to generate reverse-path where constraints, or null
+	 * if no whereObject has been assigned.
+	 *
+	 * @return the whereObject
 	 */
 	public void setPropertyFromWhereObject(String propName) {
 		whereObjectPropertyPath = propName;
 	}
 
+	/**
+	 * Sets the property path used to derive the reverse-path query constraint.
+	 *
+	 * @param propName the property path from whereObject to the target class
+	 */
 	public void setWhereObjectPropertyPath(String propName) {
 		whereObjectPropertyPath = propName;
 	}
 
 	/**
-	 * Returns property from Where Object
+	 * Returns the relationship property name used when selecting from a
+	 * whereObject that has multiple paths to the target class.
 	 *
-	 * @see #setWhereObjectPropertyPath
+	 * @return the property name or null if unspecified
 	 */
 	public String getPropertyFromWhereObject() {
 		return whereObjectPropertyPath;
 	}
 
+	/**
+	 * Returns the property path used to relate the whereObject (or Hub.AO)
+	 * to the target select class. This path is used to construct a reverse-path
+	 * query constraint.
+	 *
+	 * @return the property path, or null if none has been assigned
+	 */
 	public String getWhereObjectPropertyPath() {
 		return whereObjectPropertyPath;
 	}
 
 	/**
-	 * DataSource that will be used for query/select.
+	 * Returns the {@link OADataSource} associated with the selectClass. If no
+	 * class has been assigned, null is returned.
+	 *
+	 * @return the DataSource used for select operations, or null
 	 */
 	public OADataSource getDataSource() {
 		if (clazz == null) {
@@ -304,214 +536,366 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Class of objects that are being selected.
+	 * Sets the class of objects that this OASelect will return. This must be
+	 * assigned before execution of the select operation.
+	 *
+	 * @param c the class to be selected
 	 */
 	public void setSelectClass(Class c) {
 		this.clazz = c;
 	}
 
 	/**
-	 * Class of objects that are being selected.
+	 * Returns the class of objects selected by this OASelect instance.
+	 *
+	 * @return the target class
 	 */
 	public Class getSelectClass() {
 		return clazz;
 	}
 
+	/**
+	 * Sets the where clause associated with this query. This may be a full
+	 * property-path expression or a passthru clause depending on query mode.
+	 *
+	 * @param s the where clause text
+	 */
 	public void setWhere(String s) {
 		where = s;
 	}
 
+	/**
+	 * Sets the where clause and its corresponding parameter values in a single
+	 * operation.
+	 *
+	 * @param s the where clause
+	 * @param params parameter values substituted for '?' markers
+	 */
 	public void setWhere(String s, Object[] params) {
 		where = s;
 		setParams(params);
 	}
 
+	/**
+	 * Convenience method for setting a where clause with a single parameter.
+	 *
+	 * @param s the where clause
+	 * @param param single parameter value for '?'
+	 */
 	public void setWhere(String s, Object param) {
 		where = s;
 		setParams(new Object[] { params });
 	}
 
 	/**
-	 * Where clause to use for query. See notes at beginning of class.
+	 * Returns the current where clause, which may be a property-path expression
+	 * or a passthru clause depending on query mode.
+	 *
+	 * @return the where clause text, or null
 	 */
 	public String getWhere() {
 		return where;
 	}
 
+	/**
+	 * Sets the internal flag indicating whether the select operation has begun.
+	 * This is typically controlled by OASelect but may be overridden externally.
+	 *
+	 * @param b true to mark as started
+	 */
 	public void setHasBeenSelected(boolean b) {
 		this.bHasBeenStarted = b;
 	}
 
+	/**
+	 * Returns whether this select has already been executed or initiated via
+	 * lazy execution.
+	 *
+	 * @return true if select has begun
+	 */
 	public boolean getHasBeenSelected() {
 		return this.bHasBeenStarted;
 	}
 
-	// 20120617
+	/**
+	 * Assigns the in-memory filter applied after the DataSource returns objects.
+	 * This affects which objects are returned by {@link #next()}.
+	 *
+	 * @param hfi the Hub-based filter to apply
+	 */
 	public void setHubFilter(OAFilter<TYPE> hfi) {
 		this.oaFilter = hfi;
 	}
 
+	/**
+	 * Returns the Hub-level filter used to screen objects after they are returned
+	 * from the DataSource or finder.
+	 *
+	 * @return the filter, or null if none
+	 */
 	public OAFilter<TYPE> getHubFilter() {
 		return this.oaFilter;
 	}
 
+	/**
+	 * Sets the in-memory OAFilter applied to results. Equivalent to calling
+	 * {@link #setHubFilter(OAFilter)}.
+	 *
+	 * @param hfi the filter used to evaluate returned objects
+	 */
 	public void setFilter(OAFilter<TYPE> hfi) {
 		this.oaFilter = hfi;
 	}
 
+	/**
+	 * Returns the in-memory OAFilter applied after fetching objects.
+	 *
+	 * @return the filter, or null
+	 */
 	public OAFilter<TYPE> getFilter() {
 		return this.oaFilter;
 	}
 
+	/**
+	 * Sets an optional filter that the DataSource can use to evaluate objects
+	 * when it does not support where-clause queries natively.
+	 *
+	 * @param hfi the DataSource-level filter
+	 */
 	public void setDataSourceFilter(OAFilter<TYPE> hfi) {
 		this.dsFilter = hfi;
 	}
 
+	/**
+	 * Returns the filter used by the DataSource when query expressions are not
+	 * supported or when post-processing is needed.
+	 *
+	 * @return the DataSource filter, or null
+	 */
 	public OAFilter<TYPE> getDataSourceFilter() {
 		return this.dsFilter;
 	}
 
 	/**
-	 * @param finder
+	 * Assigns an {@link OAFinder} instance used to produce results through
+	 * in-memory traversal rather than querying the DataSource.
+	 *
+	 * @param finder the finder used for object discovery
 	 */
 	public void setFinder(OAFinder<?, TYPE> finder) {
 		this.finder = finder;
 	}
 
+	/**
+	 * Returns the currently assigned {@link OAFinder}, or null if selection
+	 * will not use finder-based traversal.
+	 *
+	 * @return the finder instance
+	 */
 	public OAFinder<?, TYPE> getFinder() {
 		return this.finder;
 	}
 
 	/**
-	 * Sort order clause to use for query. See notes at beginning of class.
+	 * Sets the order-by clause used to sort query results.
+	 *
+	 * @param s the order-by clause
 	 */
 	public void setOrder(String s) {
 		order = s;
 	}
 
+	/**
+	 * Returns the order-by clause applied to the select operation.
+	 *
+	 * @return the ordering clause, or null
+	 */
 	public String getOrder() {
 		return order;
 	}
 
+	/**
+	 * Sets the order-by clause for this query. This is an alias for
+	 * {@link #setOrder(String)}.
+	 *
+	 * @param s the order-by clause
+	 */
 	public void setOrderBy(String s) {
 		order = s;
 	}
 
+	/**
+	 * Returns the order-by clause. This is an alias for {@link #getOrder()}.
+	 *
+	 * @return the order-by text or null
+	 */
 	public String getOrderBy() {
 		return order;
 	}
 
+	/**
+	 * Convenience alias for {@link #setOrder(String)}. Sets the property path
+	 * used to sort results.
+	 *
+	 * @param s the sort property path
+	 */
 	public void setSortBy(String s) {
 		setOrder(s);
 	}
 
+	/**
+	 * Returns the sort property path used to order results, equivalent to
+	 * {@link #getOrder()}.
+	 *
+	 * @return the sort path or null
+	 */
 	public String getSortBy() {
 		return getOrder();
 	}
 
 	/**
-	 * Flag to show if query should use OADataSource.selectPassthru() instead of OADataSource.select()
+	 * Alias for {@link #setPassthru(boolean)}. Enables passthru query execution
+	 * against the DataSource.
+	 *
+	 * @param b true to use selectPassthru()
 	 */
 	public void setPassThru(boolean b) {
 		setPassthru(b);
 	}
 
 	/**
-	 * Flag to show if query should use OADataSource.selectPassthru() instead of OADataSource.select()
+	 * Sets whether this select should use passthru mode. When enabled, the query
+	 * is passed directly to the DataSource without OA property-path interpretation.
+	 *
+	 * @param b true to use passthru select mode
 	 */
 	public void setPassthru(boolean b) {
 		bPassthru = b;
 	}
 
 	/**
-	 * Flag to show if query should use OADataSource.selectPassthru() instead of OADataSource.select()
+	 * Returns whether passthru mode is enabled for this query.
+	 *
+	 * @return true if passthru mode is active
 	 */
 	public boolean getPassthru() {
 		return bPassthru;
 	}
 
 	/**
-	 * Flag to show if query should use OADataSource.selectPassthru() instead of OADataSource.select()
+	 * Alias for {@link #getPassthru()}. Returns true if passthru select mode
+	 * is enabled.
+	 *
+	 * @return true when using passthru selection
 	 */
 	public boolean getPassThru() {
 		return bPassthru;
 	}
 
 	/**
-	 * Flag to show if data should be append to existing collection (used by Hub).
+	 * Sets whether results should be appended to an existing Hub or collection
+	 * rather than replacing its contents.
+	 *
+	 * @param b true to append results instead of overwriting
 	 */
 	public void setAppend(boolean b) {
 		bAppend = b;
 	}
 
 	/**
-	 * Flag to show if data should be append to existing collection (used by Hub).
+	 * Returns whether results will be appended to the destination Hub or
+	 * collection during binding.
+	 *
+	 * @return true if append mode is active
 	 */
 	public boolean getAppend() {
 		return bAppend;
 	}
 
 	/**
-	 * Flag to show if data should be rewound to beginning object (used by Hub).
+	 * Sets whether the Hub should rewind to its first object when new results
+	 * are loaded.
+	 *
+	 * @param b true to rewind to the first object
 	 */
 	public void setRewind(boolean b) {
 		bRewind = b;
 	}
 
 	/**
-	 * Flag to show if data should be rewound to beginning object (used by Hub).
+	 * Returns whether Hub rewind behavior is enabled.
+	 *
+	 * @return true if Hub rewind is active
 	 */
 	public boolean getRewind() {
 		return bRewind;
 	}
 
 	/**
-	 * Flag have a count performed before query is executed.
+	 * Enables a pre-count operation before selecting. When true, the DataSource
+	 * will compute the total number of result rows before iteration begins.
+	 *
+	 * @param b true to run count() before select()
 	 */
 	public void setCountFirst(boolean b) {
 		this.bCountFirst = b;
 	}
 
 	/**
-	 * Flag have a count performed before query is executed.
+	 * Returns whether a pre-count operation is configured to run before the
+	 * main select operation.
+	 *
+	 * @return true if pre-count is enabled
 	 */
 	public boolean getCountFirst() {
 		return bCountFirst;
 	}
 
 	/**
-	 * Maximum number of objects to load. Default=0 (read all).
+	 * Sets the maximum number of objects to return. A value of zero means
+	 * unlimited results.
+	 *
+	 * @param x the maximum number of rows to fetch
 	 */
 	public void setMax(int x) {
 		max = x;
 	}
 
 	/**
-	 * Maximum number of objects to load. Default=0 (read all).
+	 * Returns the maximum number of objects to retrieve for this query.
+	 *
+	 * @return the max row limit, or zero if unlimited
 	 */
 	public int getMax() {
 		return max;
 	}
 
 	/**
-	 * Set the amount of records to read at a time (Default = 45).
+	 * Returns the batch size used when progressively fetching results from the
+	 * DataSource or Hub. Defaults to {@link #defaultFetchAmount}.
+	 *
+	 * @return the fetch amount
 	 */
 	public int getFetchAmount() {
 		return fetchAmount;
 	}
 
 	/**
-	 * Set the amount of records to read at a time (Default = 45).
+	 * Sets the batch size for progressive loading. A value less than zero is
+	 * treated as zero.
+	 *
+	 * @param fa the number of records to fetch at once
 	 */
 	public void setFetchAmount(int fa) {
 		fetchAmount = Math.max(0, fa);
 	}
 
 	/**
-	 * Returns the amount of records that will be returned from select. Calls the OADataSource.count() method.
+	 * Returns the total number of matching objects. Uses the DataSource count()
+	 * method when supported, or derives the count from Finder results or the
+	 * number of items already read.
 	 *
-	 * @see OASelect#isCounted to see if count was already preformed.
-	 * @see OASelect#setCountFirst to have count ran before select is performed
+	 * @return the total row count
 	 */
 	public synchronized int getCount() {
 		if (amountCount < 0) {
@@ -542,7 +926,10 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Flag to see if a count has been executed for this query/select.
+	 * Returns true if the count has already been computed, either via pre-count
+	 * or because iteration has completed and all results are known.
+	 *
+	 * @return true if row count is available
 	 */
 	public boolean isCounted() {
 		if (amountCount != -1) {
@@ -555,16 +942,22 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Number of objects loaded so far.
+	 * Returns the number of objects that have been read so far from this select.
+	 * This value increments each time {@link #next()} successfully returns an object.
 	 *
-	 * @see #next
+	 * @return the number of objects read
 	 */
 	public int getAmountRead() {
 		return (Math.max(0, amountRead));
 	}
 
 	/**
-	 * Used to send a "passThru" command to OADataSource.
+	 * Sends a passthru command directly to the underlying {@link OADataSource}.
+	 * This is used for DataSource-specific operations that are not part of the
+	 * standard OASelect query workflow.
+	 *
+	 * @param command the command string to execute
+	 * @throws RuntimeException if the selectClass is not set or no DataSource exists
 	 */
 	public void execute(String command) {
 		if (clazz == null) {
@@ -578,7 +971,10 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Used to set where and order by clauses, and then perform select.
+	 * Assigns a where clause and order-by clause, then performs the select.
+	 *
+	 * @param where the where clause
+	 * @param order the order-by clause
 	 */
 	public void select(String where, String order) {
 		setWhere(where);
@@ -587,7 +983,11 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Used to set where and order by clauses, and then perform select.
+	 * Assigns a where clause, parameters, and ordering, then executes the select.
+	 *
+	 * @param where the where clause
+	 * @param params query parameter values
+	 * @param order the order-by clause
 	 */
 	public void select(String where, Object[] params, String order) {
 		setWhere(where);
@@ -597,7 +997,9 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Used to set where clause, and then perform select.
+	 * Sets the where clause and immediately performs the select.
+	 *
+	 * @param where the where clause to use
 	 */
 	public void select(String where) {
 		setWhere(where);
@@ -605,7 +1007,10 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Used to set where clause, and then perform select.
+	 * Sets the where clause and its parameters, then performs the select.
+	 *
+	 * @param where the where clause
+	 * @param params parameter values for the clause
 	 */
 	public void select(String where, Object[] params) {
 		setWhere(where);
@@ -613,11 +1018,22 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		select();
 	}
 
+	/**
+	 * Cached list of results produced by the {@link OAFinder} when finder-based
+	 * selection is used. Iteration proceeds from this list instead of from
+	 * a DataSource iterator.
+	 */
 	private volatile ArrayList<TYPE> alFinderResults;
+
+	/**
+	 * Cursor used when iterating through {@link #alFinderResults}. Tracks the
+	 * next index to return from the finder result list.
+	 */
 	private int posFinderResults;
 
 	/**
-	 * Used to perform select.
+	 * Executes the select operation. Initializes timing, delegates to
+	 * {@link #_select()}, and records performance metrics. This method is thread-safe.
 	 */
 	public synchronized void select() {
 		lastReadTime = System.currentTimeMillis();
@@ -629,6 +1045,17 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		}
 	}
 
+	/**
+	 * Core selection engine for OASelect. Determines whether to use a DataSource
+	 * select, passthru query, Finder-based traversal, or Hub-based search.
+	 *
+	 * Responsibilities include:
+	 *  • preparing filters  
+	 *  • determining finder vs. DataSource execution  
+	 *  • initializing DataSource iterator  
+	 *  • computing pre-counts  
+	 *  • registering with OASelectManager  
+	 */
 	protected void _select() {
 		if (bHasBeenStarted && !bCancelled) {
 			closeQuery(); // cancel previous select
@@ -641,7 +1068,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		amountCount = -1;
 		bUseFinder = false;
 
-		//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+		//qqqqqqq
 		// 20221209
 		if (!bDirty && !bDirtyWasSet) {
 			bDirty = OAThreadLocalDelegate.isRefreshing();
@@ -756,15 +1183,31 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		OASelectManager.add(this);
 	}
 
+	/**
+	 * Returns whether a select operation is currently executing. Used to prevent
+	 * reentrancy and to coordinate cancellation behavior.
+	 *
+	 * @return true if select() or _select() is actively running
+	 */
 	public boolean isSelectingNow() {
 		return bIsSelectingNow;
 	}
 
+	/**
+	 * Ensures that query resources are released when the OASelect instance is
+	 * garbage collected. Calls {@link #closeQuery()}.
+	 */
 	protected void finalize() throws Throwable {
 		super.finalize();
 		closeQuery();
 	}
 
+	/**
+	 * Returns the primary SQL/native query string produced by the underlying
+	 * {@link OADataSourceIterator}, or null if no query is active.
+	 *
+	 * @return the DataSource query text
+	 */
 	public String getDataSourceQuery() {
 		if (query == null) {
 			return null;
@@ -772,6 +1215,13 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		return query.getQuery();
 	}
 
+	/**
+	 * Returns an optional secondary query representation, depending on the
+	 * DataSource implementation. May include additional debug or internal
+	 * statement information.
+	 *
+	 * @return the secondary query text or null
+	 */
 	public String getDataSourceQuery2() {
 		if (query == null) {
 			return null;
@@ -780,7 +1230,11 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Returns next object loaded from select, else null if no other objects are available.
+	 * Returns the next matching object, applying OAFilter and finder-based
+	 * filtering as needed. Automatically skips objects that do not pass
+	 * in-memory filters and closes the query when results are exhausted.
+	 *
+	 * @return the next object, or null when no more results exist
 	 */
 	public TYPE next() {
 		// 20120617 added hubFilter
@@ -810,6 +1264,13 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		return obj;
 	}
 
+	/**
+	 * Internal version of {@link #next()}. Retrieves the next object from either
+	 * the finder results or the DataSource iterator. Updates internal counters,
+	 * enforces max limits, and closes the query when done.
+	 *
+	 * @return the next object or null if finished
+	 */
 	public synchronized TYPE _next() {
         if (hasNextCompleted()) return null;
 		if (!bHasBeenStarted) {
@@ -857,12 +1318,19 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		return obj;
 	}
 
+	/**
+	 * Returns whether this select has been cancelled. Once cancelled, iteration
+	 * stops and the underlying query iterator is closed.
+	 *
+	 * @return true if cancelled
+	 */
 	public boolean isCancelled() {
 		return bCancelled;
 	}
 
 	/**
-	 * Cancels and releases query Iterator from OADataSource.
+	 * Cancels the select, stops iteration, clears finder results, and closes the
+	 * DataSource iterator if active.
 	 */
 	public void cancel() { // 20200516 removed sync
 		//was: public synchronized void cancel() {
@@ -876,12 +1344,18 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	}
 
 	/**
-	 * Same as cancel, except it is synchronized.
+	 * Thread-safe version of {@link #cancel()}. Closes the select and releases
+	 * associated resources.
 	 */
 	public synchronized void close() {
 		cancel();
 	}
 
+	/**
+	 * Releases the DataSource iterator, unregisters this select from
+	 * {@link OASelectManager}, clears cached finder results, and marks the
+	 * iteration as completed.
+	 */
 	private void closeQuery() {
 		if (query != null) {
 			query.remove();
@@ -892,16 +1366,33 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		bHasNextCompleted = true;
 	}
 	
+	/**
+	 * Returns true when iteration has completed and no more results will ever
+	 * be available. Used to short-circuit redundant hasNext() calls.
+	 *
+	 * @return true if iteration is finished
+	 */
 	public boolean hasNextCompleted() {
 	    return bHasNextCompleted;
 	}
 
+	/**
+	 * Alias for {@link #hasMore()}. Returns true if at least one more object
+	 * may be available.
+	 *
+	 * @return true if more results may exist
+	 */
 	public boolean hasNext() {
 		return hasMore();
 	}
 
 	/**
-	 * Returns true if more objects are available to be loaded.
+	 * Returns true if additional results are available. If the select has not yet
+	 * started, it will be automatically executed. Uses finder-based iteration or
+	 * DataSource iteration depending on configuration. Closes the query when no
+	 * more results exist.
+	 *
+	 * @return true if another object can be retrieved
 	 */
 	public synchronized boolean hasMore() {
 	    if (hasNextCompleted()) return false;
@@ -924,6 +1415,12 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		return b;
 	}
 
+	/**
+	 * Returns true if this OASelect represents a full-table scan — meaning no where
+	 * clause, no filters, no max limit, no finder, and no whereObject/whereHub.
+	 *
+	 * @return true if the query selects all objects of the class
+	 */
 	public boolean isSelectAll() {
 		boolean result = false;
 		if (!bCancelled && OAString.isEmpty(getWhere()) && getFilter() == null && getFinder() == null && getMax() == 0
@@ -933,14 +1430,33 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		return result;
 	}
 
+	/**
+	 * Returns whether the select has already been initiated, either explicitly
+	 * through select() or implicitly through hasMore()/next().
+	 *
+	 * @return true if selection has begun
+	 */
 	public synchronized boolean hasBeenStarted() {
 		return bHasBeenStarted;
 	}
 
+	/**
+	 * Returns the timestamp (milliseconds) of when the most recent object was
+	 * retrieved. Useful for monitoring long-running queries and idle timeouts.
+	 *
+	 * @return timestamp of last read
+	 */
 	public long getLastReadTime() {
 		return lastReadTime;
 	}
 
+	/**
+	 * Returns an Iterator backed by this OASelect. The iterator delegates to
+	 * {@link #hasMore()} and {@link #next()}, enabling foreach-style traversal
+	 * while preserving all OASelect behaviors.
+	 *
+	 * @return an Iterator over the selected objects
+	 */
 	public Iterator<TYPE> iterator() {
 		Iterator<TYPE> iter = new Iterator<TYPE>() {
 			int pos;
@@ -964,35 +1480,77 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		return iter;
 	}
 
+	/**
+	 * Sets the dirty flag, which instructs the DataSource to bypass caching and
+	 * retrieve fresh data. Also marks that the dirty value was explicitly set so
+	 * automatic refresh logic does not override it.
+	 *
+	 * @param b true to enforce uncached DataSource reads
+	 */
 	public void setDirty(boolean b) {
 		bDirtyWasSet = true;
 		this.bDirty = b;
 	}
 
+	/**
+	 * Returns whether the select is marked as dirty, meaning the DataSource should
+	 * bypass cached read optimization and fetch fresh results.
+	 *
+	 * @return true if dirty mode is active
+	 */
 	public boolean getDirty() {
 		return this.bDirty;
 	}
 
-	// similiar to whereObject, uses hub.AO as the whereObject
+	/**
+	 * Sets the whereHub and its relationship property path. The Hub's active
+	 * object is used as a reverse-path selector for the query.
+	 *
+	 * @param hubWhere the Hub defining the source object
+	 * @param ppFromWhereHub the property path from hubWhere.AO to the select class
+	 */
 	public void setWhereHub(Hub hubWhere, String ppFromWhereHub) {
 		setWhereHub(hubWhere);
 		setWhereHubPropertyPath(ppFromWhereHub);
 	}
 
+	/**
+	 * Sets the Hub whose active object will be used as the whereObject for
+	 * reverse-path query construction.
+	 *
+	 * @param hub the Hub supplying the active object for filtering
+	 */
 	public void setWhereHub(Hub hub) {
 		this.whereHub = hub;
 	}
 
+	/**
+	 * Returns the Hub whose active object serves as the implicit whereObject
+	 * when constructing reverse-path filtering logic.
+	 *
+	 * @return the whereHub, or null if not configured
+	 */
 	public Hub getWhereHub() {
 		return whereHub;
 	}
 
+	/**
+	 * Returns the property path used when applying reverse-path selection based on
+	 * whereHub.AO. This mirrors the logic used for whereObject-based filtering.
+	 *
+	 * @return the property path, or null if unspecified
+	 */
 	public String getWhereHubPropertyPath() {
 		return this.whereObjectPropertyPath;
 	}
 
+	/**
+	 * Sets the property path used to relate whereHub.AO to the select class.
+	 * This path defines the reverse-relationship constraint for the query.
+	 *
+	 * @param pp the property path from Hub.AO to the target type
+	 */
 	public void setWhereHubPropertyPath(String pp) {
 		this.whereObjectPropertyPath = pp;
 	}
-
 }

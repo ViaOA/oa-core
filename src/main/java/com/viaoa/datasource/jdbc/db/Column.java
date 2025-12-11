@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,74 +35,193 @@ import com.viaoa.util.OAReflect;
  */
 public class Column { // need to select all with properyName!=null
 
-	/** table that this column belongs to. */
+	/**
+	 * The {@link Table} this column belongs to. Assigned during table
+	 * initialization via {@code Table.setColumns()}.
+	 */
 	public Table table; // set by Table.setColumns()
-	/** name of column in table */
-	public String columnName;
-	/** name of column in table that stores in lowercase, for case sensitive Databases */
-	public String columnLowerName;
-	/** name of property that column is mapped to. */
-	public String propertyName;
-	/** is this a primary key column. */
-	public boolean primaryKey;
-	/** flag to know if this is a foreign key. */
-	public boolean foreignKey; // set by Table.setColumns() & Table.setLinks() if this column is a fkey in a link
 
-	public Class clazz; // 20090301 set by Table.setColumns() & Table.setLinks() if this column is a fkey in a link
-	/** type of column variable, java.sql.Types. */
+	/**
+	 * The database column name as defined in the physical table.
+	 */
+	public String columnName;
+
+	/**
+	 * Lower-cased version of {@link #columnName}, used for case-sensitive
+	 * database engines that require normalized name comparisons.
+	 */
+	public String columnLowerName;
+
+	/**
+	 * The OAObject property that this column maps to. Used for reflection-based
+	 * getter/setter lookup and ORM binding.
+	 */
+	public String propertyName;
+
+	/**
+	 * Indicates whether this column represents part of the primary key.
+	 */
+	public boolean primaryKey;
+
+	/**
+	 * True if this column participates in a foreign-key relationship.
+	 * Set when table metadata is constructed.
+	 */
+	public boolean foreignKey;
+
+	/**
+	 * The Java type referenced by this column when used as a foreign key.
+	 * Assigned during table/link initialization.
+	 */
+	public Class clazz;
+
+	/**
+	 * JDBC type value for this column (from {@link java.sql.Types}).
+	 */
 	public int type; // from sql.Types
-	/** maximum length of column. */
+
+	/**
+	 * Maximum length allowed for this column, applicable to character or
+	 * variable-length data types.
+	 */
 	public int maxLength;
-	/** amount of decimal places for a numeric column. */
+
+	/**
+	 * Number of decimal places for numeric columns. A value of -1 indicates
+	 * that no fixed scale was defined.
+	 */
 	public int decimalPlaces = -1;
 
-	/** flag to know if column is a autonumber. */
-	public boolean assignNextNumber; // assign seq number to a new object
-	/** flag to know if column is a global unique identifier. */
+	/**
+	 * True if this column auto-assigns sequential numbers for new objects.
+	 * Used for primary-key autonumber columns.
+	 */
+	public boolean assignNextNumber; 
+
+	/**
+	 * True if this column stores a globally unique identifier (GUID/UUID).
+	 */
 	public boolean guid;
 
+	/**
+	 * Indicates whether this column stores Unicode character data.
+	 */
 	public boolean unicode;
 
+	/**
+	 * True if this column contains JSON data or is treated as a JSON column
+	 * by the datasource.
+	 */
 	public boolean json;
 
+	/**
+	 * True if this column participates in a full-text index within the
+	 * underlying database.
+	 */
 	public boolean fullTextIndex;
 
-	public Link fkeyLink; // 20090301 set by Table.setColumns() & Table.setLinks() if this column is a fkey in a link
-	public int fkeyLinkPos; // 20090301 set by Table.setColumns() & Table.setLinks() if this column is a fkey in a link
-	public Column fkeyToColumn; // 20090301 set by Table.setColumns() & Table.setLinks() if this column is a fkey in a link
+	/**
+	 * Link metadata representing the foreign-key relationship associated
+	 * with this column, if any.
+	 */
+	public Link fkeyLink;
+	
+	/**
+	 * Position of this column within a foreign-key link definition.
+	 */
+	public int fkeyLinkPos;
+	
+	/**
+	 * The referenced column in the target table when this column is part
+	 * of a foreign-key relationship.
+	 */
+	public Column fkeyToColumn;
 
-	// 2007/03/08
+	/**
+	 * Indicates whether comparisons involving this column should be treated
+	 * as case-sensitive.
+	 */
 	public boolean caseSensitive;
 
+	/**
+	 * True if this column is read-only and should not be updated by the
+	 * datasource during persistence.
+	 */
 	public boolean readOnly;
 
-	/** methods to get property value. */
+	/**
+	 * Cached Java reflection method used to read the mapped OAObject property.
+	 * Lazily initialized on first access via {@link #getGetMethod()}.
+	 */
 	Method methodGet;
-	/** methods to set property value. */
+
+	/**
+	 * Cached Java reflection method used to write the mapped OAObject property.
+	 * Lazily initialized on first access via {@link #getSetMethod()}.
+	 */
 	Method methodSet;
 
+	/**
+	 * Default constructor creating an empty Column definition with no name,
+	 * type, or property mapping assigned.
+	 */
 	public Column() {
 	}
 
+	/**
+	 * Constructs a Column with the specified database column name and default
+	 * property name, type, and length values.
+	 *
+	 * @param columnName the database column name
+	 */
 	public Column(String columnName) {
 		this(columnName, "", 0, 0);
 	}
 
+	/**
+	 * Constructs a Column with the specified name and marks it as a foreign key.
+	 *
+	 * @param columnName the database column name
+	 * @param fkey       true to flag this column as a foreign-key column
+	 */
 	public Column(String columnName, boolean fkey) {
 		this(columnName, "", 0, 0);
 		foreignKey = fkey;
 	}
 
+	/**
+	 * Constructs a Column that maps the specified database column to the given
+	 * OAObject property name.
+	 *
+	 * @param columnName  the database column name
+	 * @param propertyName the mapped OAObject property
+	 */
 	public Column(String columnName, String propertyName) {
 		this(columnName, propertyName, 0, 0);
 	}
 
+	/**
+	 * Constructs a Column with the given database column name, mapped property,
+	 * and JDBC type.
+	 *
+	 * @param columnName  the database column name
+	 * @param propertyName the OAObject property name
+	 * @param type         the JDBC type (from {@link java.sql.Types})
+	 */
 	public Column(String columnName, String propertyName, int type) {
 		this.columnName = columnName;
 		this.propertyName = propertyName;
 		this.type = type;
 	}
 
+	/**
+	 * Constructs a fully defined Column including JDBC type and maximum length.
+	 *
+	 * @param columnName  the database column name
+	 * @param propertyName the OAObject property name
+	 * @param type         the JDBC type
+	 * @param maxLength    maximum column length
+	 */
 	public Column(String columnName, String propertyName, int type, int maxLength) {
 		this.columnName = columnName;
 		this.propertyName = propertyName;
@@ -110,12 +229,21 @@ public class Column { // need to select all with properyName!=null
 		this.maxLength = maxLength;
 	}
 
+	/**
+	 * Returns the JDBC type assigned to this column.
+	 *
+	 * @return the JDBC {@link java.sql.Types} value
+	 */
 	public int getSqlType() {
 		return type;
 	}
 
 	/**
-	 * Method used to get property value.
+	 * Returns the cached getter method for reading the OAObject property mapped
+	 * to this column. If not already cached and the column belongs to a table,
+	 * the method is resolved using OAObjectInfoDelegate.
+	 *
+	 * @return the property getter method, or null if unavailable
 	 */
 	public Method getGetMethod() {
 		if (methodGet == null && table != null) {
@@ -129,7 +257,11 @@ public class Column { // need to select all with properyName!=null
 	}
 
 	/**
-	 * Method used to set property value.
+	 * Returns the cached setter method for writing the OAObject property mapped
+	 * to this column. If not already cached and the column belongs to a table,
+	 * the method is resolved using OAObjectInfoDelegate.
+	 *
+	 * @return the property setter method, or null if unavailable
 	 */
 	public Method getSetMethod() {
 		if (methodSet == null && table != null) {
