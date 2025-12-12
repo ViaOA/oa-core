@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,22 +94,73 @@ import com.viaoa.util.OAPropertyPath;
 public class OAQueryFilter<T> implements OAFilter<T> {
     private static final long serialVersionUID = 1L;
 
+    /**
+     * The root class type for which the query expression is evaluated.
+     * Used when creating {@link OAPropertyPath} instances.
+     */
 	private Class<T> clazz;
+
+	/**
+	 * The raw query expression string to be parsed into a filter tree.
+	 */
 	private String query;
+	
+	/**
+	 * Optional argument array used to supply runtime parameters for
+	 * placeholder tokens represented by '?' in the query.
+	 */
 	private Object[] args;
+	
+	/**
+	 * Tracks the next positional argument to consume from the {@link #args}
+	 * array during parsing.
+	 */
 	private int posArgs;
 
 	// root filter for query
+	/**
+	 * The root filter generated from parsing the query expression.
+	 * Invoked during evaluation via {@link #isUsed(Object)}.
+	 */
 	private OAFilter filter;
 
+	/**
+	 * Working stack used by the parser to construct composite filter trees
+	 * based on operator precedence and grouping.
+	 */
 	private Stack<OAFilter> stack = new Stack<OAFilter>();
+	
+	/**
+	 * The list of tokens produced by {@link OAQueryTokenizer} for the
+	 * current query expression.
+	 */
 	private Vector vecToken;
+	
+	/**
+	 * Current position in the token vector during recursive-descent parsing.
+	 */
 	private int posToken;
 
+	/**
+	 * Constructs a query filter using the specified class and query text,
+	 * without placeholder arguments.
+	 *
+	 * @param clazz the class for which the filter is evaluated
+	 * @param query the query expression to parse
+	 */
 	public OAQueryFilter(Class<T> clazz, String query) {
 		this(clazz, query, null);
 	}
 
+	/**
+	 * Constructs a query filter using the specified class, query text, and
+	 * optional argument array for '?' placeholders. Parsing occurs
+	 * immediately, and syntax problems result in a {@link RuntimeException}.
+	 *
+	 * @param clazz the class for which the filter is evaluated
+	 * @param query the query expression to parse
+	 * @param args  optional argument array for placeholder substitution
+	 */
 	public OAQueryFilter(Class<T> clazz, String query, Object[] args) {
 		this.clazz = clazz;
 		this.query = query;
@@ -125,6 +176,13 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		}
 	}
 
+	/**
+	 * Tokenizes the query string and parses the token sequence into a
+	 * corresponding filter tree.
+	 *
+	 * @return the root {@link OAFilter} generated from the query
+	 * @throws Exception if tokenization or parsing fails
+	 */
 	private OAFilter parse() throws Exception {
 		OAQueryTokenizer qa = new OAQueryTokenizer();
 		vecToken = qa.convertToTokens(query);
@@ -132,6 +190,14 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return f;
 	}
 
+	/**
+	 * Parses a grouped expression block beginning at the current token.
+	 * Handles nested expressions and enforces that at least one filter is
+	 * produced within the block.
+	 *
+	 * @return the filter produced from the block
+	 * @throws Exception if the block is syntactically invalid
+	 */
 	private OAFilter parseBlock() throws Exception {
 		OAQueryToken token = nextToken();
 		if (token == null) {
@@ -149,6 +215,13 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return fi;
 	}
 
+	/**
+	 * Parses logical conjunction operators by delegating to AND processing.
+	 *
+	 * @param token the current token
+	 * @return the next token to process
+	 * @throws Exception if parsing fails
+	 */
 	private OAQueryToken parseForConjuction(OAQueryToken token) throws Exception {
 		if (token == null) {
 			return null;
@@ -157,6 +230,15 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// AND
+	/**
+	 * Parses AND operators and constructs corresponding {@link OAAndFilter}
+	 * nodes from the filter stack. Recursively processes chained AND
+	 * sequences.
+	 *
+	 * @param token the current token
+	 * @return the next token after processing all AND operators
+	 * @throws Exception if required operands are missing
+	 */
 	private OAQueryToken parseForAnd(OAQueryToken token) throws Exception {
 		if (token == null || token.type != OAQueryTokenType.AND) {
 			token = parseForOr(token);
@@ -183,6 +265,15 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// OR
+	/**
+	 * Parses OR operators and constructs {@link OAOrFilter} nodes by
+	 * combining previously parsed filter expressions. Recursively processes
+	 * chained OR sequences.
+	 *
+	 * @param token the current token
+	 * @return the next token after OR processing
+	 * @throws Exception if operands are missing
+	 */
 	private OAQueryToken parseForOr(OAQueryToken token) throws Exception {
 		if (token == null || token.type != OAQueryTokenType.OR) {
 			token = parseForBracket(token);
@@ -210,6 +301,14 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// ()
+	/**
+	 * Parses a bracketed subexpression "( ... )" and handles compound IN
+	 * list syntax when multiple property names are enclosed.
+	 *
+	 * @param token the current token
+	 * @return the next token following the closing bracket
+	 * @throws Exception if parentheses or IN structure is invalid
+	 */
 	private OAQueryToken parseForBracket(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken;
 		if (token.type != OAQueryTokenType.SEPERATORBEGIN) {
@@ -238,6 +337,14 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return nextToken;
 	}
 
+	/**
+	 * Continues parsing after encountering a closing bracket, delegating to
+	 * the next comparison-level parser.
+	 *
+	 * @param token the current token
+	 * @return the next token to process
+	 * @throws Exception if parsing fails
+	 */
 	private OAQueryToken parseForEndBracket(OAQueryToken token) throws Exception {
 		if (token.type == OAQueryTokenType.SEPERATOREND) {
 			return token;
@@ -249,6 +356,15 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	// Operators begin
 
 	// ==
+	/**
+	 * Parses equality expressions and creates an {@link OAEqualFilter}
+	 * using the identified property path and comparison value. Case is
+	 * ignored by default.
+	 *
+	 * @param token the current token representing a property name
+	 * @return the next token after the equality expression
+	 * @throws Exception if an operand is missing
+	 */
 	private OAQueryToken parseForEqual(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForNotEqual(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.EQUAL) {
@@ -268,6 +384,14 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// get correct value
+	/**
+	 * Resolves the literal value associated with a token, performing
+	 * placeholder substitution for '?' and mapping NULL tokens to
+	 * {@code null}.
+	 *
+	 * @param token the token providing the value reference
+	 * @return the resolved comparison value
+	 */
 	private Object getValueToUse(OAQueryToken token) {
 		if (token == null) {
 			return null;
@@ -284,6 +408,15 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// !=
+	/**
+	 * Parses not-equal ("!=" or "<>") expressions and constructs an
+	 * {@link OANotEqualFilter} using the identified property path and
+	 * comparison value. Case is ignored by default.
+	 *
+	 * @param token the current token representing a property name
+	 * @return the next token following the not-equal expression
+	 * @throws Exception if required operands are missing
+	 */
 	private OAQueryToken parseForNotEqual(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForGreater(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.NOTEQUAL) {
@@ -300,6 +433,14 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// >
+	/**
+	 * Parses greater-than (">") expressions and creates an
+	 * {@link OAGreaterFilter} using the parsed property path and value.
+	 *
+	 * @param token the current property token
+	 * @return the next token after the greater-than expression
+	 * @throws Exception if an operand is missing
+	 */
 	private OAQueryToken parseForGreater(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForGreaterOrEqual(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.GT) {
@@ -316,6 +457,14 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// >=
+	/**
+	 * Parses ">=" expressions and creates an {@link OAGreaterOrEqualFilter}
+	 * using the identified property path and comparison value.
+	 *
+	 * @param token the current property token
+	 * @return the next token after the ">=" expression
+	 * @throws Exception if an operand is missing
+	 */
 	private OAQueryToken parseForGreaterOrEqual(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForLess(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.GE) {
@@ -332,6 +481,14 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// <
+	/**
+	 * Parses less-than ("<") expressions and creates an {@link OALessFilter}
+	 * for the property path and comparison value.
+	 *
+	 * @param token the current property token
+	 * @return the next token after the less-than expression
+	 * @throws Exception if an operand is missing
+	 */
 	private OAQueryToken parseForLess(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForLessOrEqual(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.LT) {
@@ -348,6 +505,15 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// <=
+	/**
+	 * Parses "<=" expressions and constructs an
+	 * {@link OALessOrEqualFilter} instance using the parsed property path
+	 * and value.
+	 *
+	 * @param token the current property token
+	 * @return the next token after the "<=" expression
+	 * @throws Exception if an operand is missing
+	 */
 	private OAQueryToken parseForLessOrEqual(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForLike(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.LE) {
@@ -365,6 +531,14 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// LIKE
+	/**
+	 * Parses LIKE expressions and creates an {@link OALikeFilter} using the
+	 * specified property path and pattern value.
+	 *
+	 * @param token the current property-name token
+	 * @return the next token after the LIKE expression
+	 * @throws Exception if a pattern value is missing
+	 */
 	private OAQueryToken parseForLike(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForNotLike(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.LIKE) {
@@ -382,6 +556,14 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	}
 
 	// NOTLIKE
+	/**
+	 * Parses NOT LIKE expressions and creates an {@link OANotLikeFilter}
+	 * using the specified property path and pattern value.
+	 *
+	 * @param token the current property-name token
+	 * @return the next token after the NOT LIKE expression
+	 * @throws Exception if a pattern value is missing
+	 */
 	private OAQueryToken parseForNotLike(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForInMutiplePropertyNames(token);
 		//was: OAQueryToken nextToken = parseForIn(token);
@@ -398,9 +580,21 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return nextToken;
 	}
 
+	/**
+	 * Temporary list used to store property-name tokens for multi-column
+	 * IN expressions.
+	 */
 	private ArrayList<OAQueryToken> alInTokens = new ArrayList<>();
 
 	// Comma separated list (used by IN)
+	/**
+	 * Parses comma-separated property names used in multi-column IN
+	 * expressions, storing each in {@link #alInTokens}.
+	 *
+	 * @param token the first property-name token
+	 * @return the next token after the property-name list
+	 * @throws Exception if syntax is invalid
+	 */
 	private OAQueryToken parseForInMutiplePropertyNames(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseForIn(token);
 		for (;;) {
@@ -431,8 +625,15 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return nextToken;
 	}
 
-	// 20171222
 	// IN
+	/**
+	 * Parses IN expressions and delegates to {@link #parseIn(OAQueryToken)}
+	 * when an IN operator is detected.
+	 *
+	 * @param token the property-name token
+	 * @return the next token after processing the IN operator
+	 * @throws Exception if parsing fails
+	 */
 	private OAQueryToken parseForIn(OAQueryToken token) throws Exception {
 		OAQueryToken nextToken = parseBottom(token);
 		if (nextToken != null && nextToken.type == OAQueryTokenType.IN) {
@@ -441,8 +642,15 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return nextToken;
 	}
 
+	/**
+	 * Parses a standard IN clause, constructing a chain of {@code OAEqualFilter}
+	 * objects connected by {@code OAOrFilter}. Supports '?' parameter lists.
+	 *
+	 * @param token the property-name token
+	 * @return the next token after the IN list
+	 * @throws Exception if argument or value syntax is invalid
+	 */
 	private OAQueryToken parseIn(OAQueryToken token) throws Exception {
-
 		OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
 		OAQueryToken nextToken = null;
 
@@ -490,6 +698,15 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return nextToken;
 	}
 
+	/**
+	 * Parses a compound IN expression where multiple property names map to
+	 * multiple-column value tuples, creating {@code OABlockFilter} instances
+	 * and combining them with OR.
+	 *
+	 * @param token not used; present for signature compatibility
+	 * @return the next token after the compound IN clause
+	 * @throws Exception if the structure or values are invalid
+	 */
 	private OAQueryToken parseCompoundIn(OAQueryToken token) throws Exception {
 		int bracketCount = 0;
 		int commaCount = 0;
@@ -599,10 +816,22 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return nextToken;
 	}
 
+	/**
+	 * Lowest-level parser that simply returns the next token.
+	 *
+	 * @param token ignored
+	 * @return the next token
+	 * @throws Exception never thrown in current implementation
+	 */
 	private OAQueryToken parseBottom(OAQueryToken token) throws Exception {
 		return nextToken();
 	}
 
+	/**
+	 * Retrieves and advances to the next token in {@link #vecToken}.
+	 *
+	 * @return the next {@code OAQueryToken}, or {@code null} if at end
+	 */
 	private OAQueryToken nextToken() {
 		if (vecToken == null || posToken >= vecToken.size()) {
 			return null;
@@ -611,6 +840,12 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return t;
 	}
 
+	/**
+	 * Evaluates the root filter against the supplied object.
+	 *
+	 * @param obj the object to evaluate
+	 * @return true if the filter evaluates to true; false otherwise
+	 */
 	@Override
 	public boolean isUsed(Object obj) {
 		if (filter != null) {
@@ -631,6 +866,12 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		return false;
 	}
 
+	/**
+	 * Test method demonstrating compound IN usage and constructor invocation.
+	 *
+	 * @param args not used
+	 * @throws Exception if parsing fails
+	 */
 	public static void main2(String[] args) throws Exception {
 		String query = "A = 1";
 		query = "A == 1 && B = 2";
@@ -646,6 +887,12 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		xx++;
 	}
 
+	/**
+	 * Test method demonstrating compound IN usage and constructor invocation.
+	 *
+	 * @param args not used
+	 * @throws Exception if parsing fails
+	 */
 	public static void main(String[] args) throws Exception {
 		OAQueryFilter qf;
 		String query = "(date, store_number) in ( ('2021-12-15', 12345), ('2021-10-07', 67890) )";

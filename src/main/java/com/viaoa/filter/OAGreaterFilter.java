@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,24 +40,78 @@ import com.viaoa.util.OAPropertyPath;
  */
 public class OAGreaterFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OAGreaterFilter.class.getName());
+    
+    /**
+     * Optional property path used to obtain a nested value from the evaluated
+     * object before performing the greater-than comparison.
+     */
     private OAPropertyPath pp;
+    
+    /**
+     * The comparison value used to determine whether the evaluated property
+     * value is greater.
+     */
     private Object value;
+    
+    /**
+     * Finder created when the property path crosses a many-relationship.
+     * Used to locate the correct target object before comparison.
+     */
     private OAFinder finder;
 
+    /**
+     * Creates a filter that evaluates whether the object itself is greater
+     * than the specified comparison value.
+     *
+     * @param value the value to compare against
+     */
     public OAGreaterFilter(Object value) {
         this.value = value;
     }
+
+    /**
+     * Creates a filter that evaluates whether the value obtained through
+     * the given property path is greater than the specified comparison value.
+     *
+     * @param pp the property path used to retrieve the target value
+     * @param value the value to compare against
+     */
     public OAGreaterFilter(OAPropertyPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
+
+    /**
+     * Convenience constructor that creates a property-path–based filter using
+     * a string expression.
+     *
+     * @param pp the property path expression; may be {@code null}
+     * @param value the value to compare against
+     */
     public OAGreaterFilter(String pp, Object value) {
         this(pp==null?null:new OAPropertyPath(pp), value);
     }
     
+    /**
+     * Internal flag indicating whether finder setup has already been performed.
+     */
     private boolean bSetup;
+
+    /**
+     * Tracks internal errors during filter evaluation. Behavior not expanded
+     * in the visible implementation.
+     */
     private int cntError;
     
+    /**
+     * Evaluates whether the supplied object (or a nested value retrieved
+     * through its property path) is greater than the configured comparison
+     * value. If needed, initializes a finder to resolve many-relationship
+     * traversal before comparison.
+     *
+     * @param obj the object being evaluated
+     * @return {@code true} if the value is greater; otherwise {@code false}
+     */
     @Override
     public boolean isUsed(Object obj) {
         if (!bSetup && pp != null && obj != null) {
@@ -84,6 +138,13 @@ public class OAGreaterFilter implements OAFilter {
         return OACompare.isGreater(obj, value);
     }
 
+    /**
+     * Retrieves the value from the object using the configured property
+     * path. If no property path is defined, returns the object unchanged.
+     *
+     * @param obj the source object
+     * @return the extracted value or the original object
+     */
     protected Object getPropertyValue(Object obj) {
         Object objx = obj;
         if (pp != null) {

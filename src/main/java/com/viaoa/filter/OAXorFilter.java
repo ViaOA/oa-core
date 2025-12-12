@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,13 +38,41 @@ import com.viaoa.util.OAFilter;
  */
 public class OAXorFilter implements OAFilter {
 
+	/**
+	 * The two {@link com.viaoa.util.OAFilter} instances whose results are used in
+	 * the XOR evaluation. Either filter may be {@code null}.
+	 */
 	private OAFilter filter1, filter2;
 
+	/**
+	 * Creates an XOR filter that evaluates exactly one of the supplied filters
+	 * as {@code true}. If both filters are {@code null}, the overall filter
+	 * defaults to {@code true}.
+	 *
+	 * @param filter1 the first filter to evaluate; may be {@code null}
+	 * @param filter2 the second filter to evaluate; may be {@code null}
+	 */
 	public OAXorFilter(OAFilter filter1, OAFilter filter2) {
 		this.filter1 = filter1;
 		this.filter2 = filter2;
 	}
 
+	/**
+	 * Evaluates the XOR of the two configured filters against the supplied
+	 * object.
+	 *
+	 * <ul>
+	 *   <li>If both filters are {@code null}, returns {@code true}.</li>
+	 *   <li>If only one filter is non-null, its evaluation result is compared
+	 *       against {@code false} to satisfy XOR semantics.</li>
+	 *   <li>If both filters are non-null, returns {@code true} only when one
+	 *       filter evaluates to {@code true} and the other to {@code false}.</li>
+	 * </ul>
+	 *
+	 * @param obj the object to evaluate
+	 * @return {@code true} if exactly one filter evaluates to {@code true},
+	 *         {@code false} otherwise
+	 */
 	@Override
 	public boolean isUsed(Object obj) {
 		boolean b1 = false;

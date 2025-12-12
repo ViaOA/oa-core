@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,21 +57,78 @@ import com.viaoa.util.OAString;
 public class OAInFilter implements OAFilter {
 	private static Logger LOG = Logger.getLogger(OAInFilter.class.getName());
 
+	/**
+	 * The source object whose property-path value is used to evaluate
+	 * membership against the target collection or Hub.
+	 */
 	private OAObject objFrom;
 
+	/**
+	 * Hub whose active object (AO) supplies the base object for resolving
+	 * the property path when the filter is constructed with a Hub.
+	 */
 	private final Hub hubFrom; // uses AO
+
+	/**
+	 * Tracks the last active object from {@link #hubFrom}. If the AO changes,
+	 * the filter must be reinitialized.
+	 */
 	private Object objHubFromAO; // last (AO) Object used for hubFrom
 
+	/**
+	 * The original property-path expression supplied during construction.
+	 * Used when recalculating shortened or modified paths.
+	 */
 	private final String strPropPathOrig;
+	
+	/**
+	 * Working property-path expression used by the filter. This may differ
+	 * from the original when Hub-based path shortening occurs.
+	 */
 	private String strPropPath;
+	
+	/**
+	 * Parsed representation of the property path used to retrieve the
+	 * value that will be tested for membership.
+	 */
 	private OAPropertyPath pp;
+	
+	/**
+	 * The Hub used for membership testing. If set, the filter evaluates
+	 * whether the resolved property-path value is contained in this Hub.
+	 */
 	private Hub hubIn;
 
+	/**
+	 * Reverse-direction property path used when the filter must first
+	 * traverse a reverse link before performing the membership lookup.
+	 */
 	private OAPropertyPath ppReverse;
+	
+	/**
+	 * String representation of the reverse property-path expression.
+	 * Constructed during setup when reverse lookup is needed.
+	 */
 	private String strReversePropPath;
+	
+	/**
+	 * Finder used when the property path ends in a many-relationship and
+	 * membership must be resolved by traversing linked objects.
+	 */
 	private OAFinder finder;
+	
+	/**
+	 * Temporary holder for the comparison object during evaluation.
+	 * Used when either forward or reverse traversal is required.
+	 */
 	private Object objFind;
 
+	/**
+	 * Creates an IN filter that checks whether candidate objects appear
+	 * within the supplied Hub.
+	 *
+	 * @param hubIn the Hub used for membership testing
+	 */
 	public OAInFilter(Hub hubIn) {
 		this.hubIn = hubIn;
 		objFrom = null;
@@ -81,10 +138,11 @@ public class OAInFilter implements OAFilter {
 	}
 
 	/**
-	 * Uses a fromHub.AO and property path for the list of objects that are used to match.
+	 * Creates an IN filter that derives its comparison list from a property
+	 * path evaluated on the active object of the supplied Hub.
 	 *
-	 * @param fromHub  uses the AO
-	 * @param propPath to use for finding objects
+	 * @param fromHub the Hub whose AO supplies the base object
+	 * @param propPath the property path used to retrieve the comparison list
 	 */
 	public OAInFilter(Hub fromHub, String propPath) {
 		this.hubFrom = fromHub;
@@ -96,6 +154,12 @@ public class OAInFilter implements OAFilter {
 		setup();
 	}
 
+	/**
+	 * Creates an IN filter using a specific source object and property path.
+	 *
+	 * @param fromObject the object supplying the comparison list
+	 * @param propPath the property path used to obtain the list of values
+	 */
 	public OAInFilter(OAObject fromObject, String propPath) {
 		this.objFrom = fromObject;
 		hubFrom = null;
@@ -107,6 +171,16 @@ public class OAInFilter implements OAFilter {
 	// ex:   Depts.emps m/d hubs if dept AO changes and emp AO was null
 	// needs to listen to this.hubFrom.getMasterHub AOchanges
 
+	/**
+	 * Initializes the filter by:
+	 * <ul>
+	 *   <li>building or shortening the property path,</li>
+	 *   <li>resolving the base object from a Hub's active object hierarchy,</li>
+	 *   <li>splitting the path into forward and reverse components,</li>
+	 *   <li>detecting Hub-based endpoints suitable for direct membership checks,</li>
+	 *   <li>initializing a finder when required for many-relationship traversal.</li>
+	 * </ul>
+	 */
 	protected void setup() {
 		strPropPath = strPropPathOrig;
 		if (strPropPath == null) {
@@ -263,10 +337,29 @@ public class OAInFilter implements OAFilter {
 		}
 	}
 
+	/**
+	 * Returns the parsed property path used for membership extraction.
+	 *
+	 * @return the property path associated with this filter
+	 */
 	public OAPropertyPath getPropertyPath() {
 		return pp;
 	}
 
+	/**
+	 * Evaluates whether the supplied object matches the IN condition.
+	 * This includes:
+	 * <ul>
+	 *   <li>refreshing setup when the Hub AO changes,</li>
+	 *   <li>applying reverse-path traversal if required,</li>
+	 *   <li>performing Hub membership tests when a Hub is present,</li>
+	 *   <li>using a finder when the property path ends in a many-link,</li>
+	 *   <li>comparing resolved values directly when no Hub or finder is used.</li>
+	 * </ul>
+	 *
+	 * @param obj the object being evaluated
+	 * @return {@code true} if the object satisfies the IN condition; otherwise {@code false}
+	 */
 	@Override
 	public boolean isUsed(final Object obj) {
 		if (hubFrom != null) {
@@ -315,6 +408,15 @@ public class OAInFilter implements OAFilter {
 		return bResult;
 	}
 
+	/**
+	 * Updates a select statement to optimize server-side filtering when
+	 * reverse property paths are available. If a reverse path can identify
+	 * a unique where-object constraint, the select is updated accordingly.
+	 *
+	 * @param select the select query being prepared
+	 * @return {@code false} if the filter has applied a where-object;
+	 *         otherwise the default filter behavior result
+	 */
 	@Override
 	public boolean updateSelect(OASelect select) {
 		if (hubFrom != null) {

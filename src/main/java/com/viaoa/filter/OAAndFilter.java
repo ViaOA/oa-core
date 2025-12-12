@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,34 @@ import com.viaoa.util.OAFilter;
  */
 public class OAAndFilter implements OAFilter {
 
+	/**
+	 * The two delegate filters that are combined using logical AND. Both
+	 * filters must allow an object for it to be accepted by this filter.
+	 */
 	private OAFilter filter1, filter2;
 
+	/**
+	 * Creates a new AND-composed filter using the supplied delegate filters.
+	 *
+	 * @param filter1 the first filter to evaluate
+	 * @param filter2 the second filter to evaluate
+	 */
 	public OAAndFilter(OAFilter filter1, OAFilter filter2) {
 		this.filter1 = filter1;
 		this.filter2 = filter2;
 	}
 
+	/**
+	 * Evaluates the supplied object against both delegate filters using logical
+	 * AND semantics.
+	 * <ul>
+	 *   <li>If {@code filter1} is non-null and rejects the object, this method returns {@code false}.</li>
+	 *   <li>If {@code filter1} accepts the object, {@code filter2} is evaluated (if non-null).</li>
+	 * </ul>
+	 *
+	 * @param obj the object to evaluate
+	 * @return {@code true} if both filters (when present) accept the object; otherwise {@code false}
+	 */
 	@Override
 	public boolean isUsed(Object obj) {
 		if (filter1 != null && !filter1.isUsed(obj)) {
@@ -47,6 +68,18 @@ public class OAAndFilter implements OAFilter {
 		return b;
 	}
 
+	/**
+	 * Delegates select-optimization to both filters, combining their results
+	 * using logical OR on the return flags.
+	 * <p>
+	 * Each non-null delegate filter is allowed to update the supplied
+	 * {@link OASelect}. If either filter reports that it updated the select,
+	 * this method returns {@code true}.
+	 * </p>
+	 *
+	 * @param select the select instance that can be refined by the filters
+	 * @return {@code true} if at least one delegate filter updated the select; otherwise {@code false}
+	 */
 	@Override
 	public boolean updateSelect(OASelect select) {
 		boolean b = false;

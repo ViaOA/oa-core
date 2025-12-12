@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,40 +45,119 @@ import com.viaoa.util.*;
  */
 public class OAEqualFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OAEqualFilter.class.getName());
+    
+    /**
+     * The comparison value used to determine equality with the evaluated
+     * property value.
+     */
     private Object matchValue;
+    
+    /**
+     * Indicates whether string comparisons should ignore character case
+     * during equality evaluation.
+     */
     private boolean bIgnoreCase;//was: =true;
+    
+    /**
+     * Optional property path used to obtain a nested value from the object
+     * before performing the equality comparison.
+     */
     private OAPropertyPath pp;
+    
+    /**
+     * Finder created when the property path traverses multi-valued
+     * references, enabling the filter to evaluate the located target
+     * object instead of the source object.
+     */
     private OAFinder finder;
+    
+    /**
+     * Optional number of decimal places to use when comparing floating-point
+     * values. A negative value disables decimal-place comparison.
+     */
     private int deciPlaces = -1;
 
+    /**
+     * Creates an equality filter using the supplied comparison value.  
+     * Case-sensitive comparison is used by default.
+     *
+     * @param matchValue the value to compare against
+     */
     public OAEqualFilter(Object matchValue) {
         this.matchValue = matchValue;
         bSetup = true;
     }
 
+    /**
+     * Convenience constructor that creates a property-path–based filter
+     * using a string expression.
+     *
+     * @param pp the property path expression; may be {@code null}
+     * @param matchValue the value to compare against
+     */
     public OAEqualFilter(String pp, Object matchValue) {
         this(pp==null?null:new OAPropertyPath(pp), matchValue);
     }
     
+    /**
+     * Creates a filter that evaluates equality using the value resolved
+     * through the supplied property path.
+     *
+     * @param pp the property path used to retrieve values from the object
+     * @param matchValue the value to compare against
+     */
     public OAEqualFilter(OAPropertyPath pp, Object matchValue) {
         this.pp = pp;
         this.matchValue = matchValue;
     }
 
+    /**
+     * Convenience constructor allowing case-insensitive evaluation with a
+     * property path expressed as a string.
+     *
+     * @param pp the property path expression; may be {@code null}
+     * @param matchValue the value to compare against
+     * @param bIgnoreCase {@code true} to ignore case for string comparisons
+     */
     public OAEqualFilter(String pp, Object matchValue,  boolean bIgnoreCase) {
         this(pp==null?null:new OAPropertyPath(pp), matchValue, bIgnoreCase);
     }
     
+    /**
+     * Creates a filter that uses the supplied property path and optional
+     * case-insensitive comparison.
+     *
+     * @param pp the property path for retrieving the value from the object
+     * @param matchValue the value to compare against
+     * @param bIgnoreCase {@code true} to ignore case during string comparison
+     */
     public OAEqualFilter(OAPropertyPath pp, Object matchValue, boolean bIgnoreCase) {
         this.pp = pp;
         this.matchValue = matchValue;
         this.bIgnoreCase = bIgnoreCase;
     }
 
+    /**
+     * Convenience constructor that creates a filter using a property path
+     * expression and applies decimal-place comparison for floating-point
+     * values.
+     *
+     * @param pp the property path expression; may be {@code null}
+     * @param matchValue the value to compare against
+     * @param deciPlaces number of decimal places to use for float comparison
+     */
     public OAEqualFilter(String pp, Object matchValue, int deciPlaces) {
         this(pp==null?null:new OAPropertyPath(pp), matchValue, deciPlaces);
     }
     
+    /**
+     * Creates a filter using the supplied property path and decimal-place
+     * precision for floating-point comparisons.
+     *
+     * @param pp the property path to evaluate
+     * @param matchValue the value to compare against
+     * @param deciPlaces number of decimal places for equality checks
+     */
     public OAEqualFilter(OAPropertyPath pp, Object matchValue, int deciPlaces) {
         this.pp = pp;
         this.matchValue = matchValue;
@@ -87,22 +166,59 @@ public class OAEqualFilter implements OAFilter {
     
     
     /**
-     * Default is true.
+     * Sets whether string comparisons should ignore character case.
+     *
+     * @param b {@code true} to ignore case; otherwise case-sensitive
      */
     public void setIgnoreCase(boolean b) {
         this.bIgnoreCase = b;
     }
 
+    /**
+     * Sets the number of decimal places to use when comparing floating-point
+     * values.
+     *
+     * @param dp the decimal-place precision to apply
+     */
     public void setDeciPlaces(int dp) {
         this.deciPlaces = dp;
     }
+
+    /**
+     * Returns the number of decimal places configured for floating-point
+     * comparison.
+     *
+     * @return the decimal-place precision, or a negative value if disabled
+     */
     public int getDeciPlaces() {
         return this.deciPlaces;
     }
     
+    /**
+     * Internal flag used to ensure finder setup logic is performed only once.
+     */
     private boolean bSetup;
+    
+    /**
+     * Tracks the number of errors encountered during equality evaluation.
+     * Its behavior is not expanded in the visible implementation.
+     */
     private int cntError;
     
+    /**
+     * Evaluates whether the supplied object (or a nested value resolved via
+     * the property path) is equal to the configured comparison value. Finder
+     * initialization occurs lazily if the property path traverses
+     * multi-valued references. Special cases include:
+     * <ul>
+     *   <li>Hub membership checks,</li>
+     *   <li>case-insensitive string comparison,</li>
+     *   <li>decimal-place float comparison.</li>
+     * </ul>
+     *
+     * @param obj the object being evaluated
+     * @return {@code true} if the values are considered equal, otherwise {@code false}
+     */
     @Override
     public boolean isUsed(Object obj) {
         if (!bSetup && pp != null && obj != null) {
@@ -147,6 +263,13 @@ public class OAEqualFilter implements OAFilter {
         return OACompare.isEqual(obj, matchValue);
     }
     
+    /**
+     * Retrieves the property's value using the configured property path,
+     * if present. Otherwise returns the supplied object unchanged.
+     *
+     * @param obj the source object
+     * @return the extracted property value or the original object
+     */
     protected Object getPropertyValue(Object obj) {
         Object objx = obj;
         if (pp != null) {

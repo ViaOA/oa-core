@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,30 @@ import com.viaoa.util.OAPropertyPath;
  */
 public class OAFalseFilter extends OAEqualFilter {
 
+	/**
+	 * Creates a filter that always returns {@code false} by configuring the
+	 * superclass with a comparison value of {@link Boolean#FALSE}.
+	 */
 	public OAFalseFilter() {
 		super(Boolean.FALSE);
 	}
 
+	/**
+	 * Creates a filter that always returns {@code false}, applying the filter
+	 * to the value obtained through the supplied property-path expression.
+	 *
+	 * @param pp the property-path expression used to retrieve the evaluated value
+	 */
 	public OAFalseFilter(String pp) {
 		super(pp, Boolean.FALSE);
 	}
 
+	/**
+	 * Creates a filter that always evaluates to {@code false}, using the
+	 * provided {@link OAPropertyPath} to retrieve the value being compared.
+	 *
+	 * @param pp the property path used to access the evaluated value
+	 */
 	public OAFalseFilter(OAPropertyPath pp) {
 		super(pp, Boolean.FALSE);
 	}

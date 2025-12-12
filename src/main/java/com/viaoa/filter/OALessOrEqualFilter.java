@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,24 +55,88 @@ import com.viaoa.util.OAPropertyPath;
  */
 public class OALessOrEqualFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OALessOrEqualFilter.class.getName());
+
+    /**
+     * Optional property path used to retrieve the value from the evaluated
+     * object before applying the less-or-equal comparison.
+     */
     private OAPropertyPath pp;
+    
+    /**
+     * Finder created when the property path traverses a many-relationship.
+     * Used to locate the correct target object prior to comparison.
+     */
     private OAFinder finder;
 
+    /**
+     * The comparison value used to evaluate whether the resolved property
+     * value is less than or equal to this value.
+     */
     private Object value;
+    
+    /**
+     * Creates a filter that evaluates whether the object itself is less
+     * than or equal to the supplied value.
+     *
+     * @param value the comparison value
+     */
     public OALessOrEqualFilter(Object value) {
         this.value = value;
     }
+    
+    /**
+     * Creates a filter that evaluates whether the value obtained from the
+     * specified property path is less than or equal to the comparison value.
+     *
+     * @param pp the property path used to retrieve the value
+     * @param value the comparison value
+     */
     public OALessOrEqualFilter(OAPropertyPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
+    
+    /**
+     * Convenience constructor that creates a property-path–based filter from
+     * a string expression.
+     *
+     * @param pp the property path expression; may be {@code null}
+     * @param value the comparison value
+     */
     public OALessOrEqualFilter(String pp, Object value) {
         this(pp==null?null:new OAPropertyPath(pp), value);
     }
 
+    /**
+     * Internal flag indicating whether finder initialization has been
+     * performed. Ensures setup occurs only once.
+     */
     private boolean bSetup;
+    
+    /**
+     * Tracks the number of errors encountered during filter evaluation.
+     * Not further used in the visible implementation.
+     */
     private int cntError;
     
+    /**
+     * Evaluates whether the supplied object (or the value resolved through
+     * the property path) is less than or equal to the configured comparison
+     * value. If the property path requires traversal through a many-
+     * relationship, a finder is created and a nested filter is attached.
+     *
+     * <p>Evaluation steps:</p>
+     * <ul>
+     *   <li>Initialize finder on first use when needed,</li>
+     *   <li>Use finder to locate a target object for OAObjects or Hubs,</li>
+     *   <li>Resolve the property value when no finder is used,</li>
+     *   <li>Apply {@link OACompare#isLessOrEqual(Object, Object)}.</li>
+     * </ul>
+     *
+     * @param obj the object being evaluated
+     * @return {@code true} if the value is less than or equal to the
+     *         comparison value; otherwise {@code false}
+     */
     @Override
     public boolean isUsed(Object obj) {
         if (!bSetup && pp != null && obj != null) {
@@ -99,6 +163,14 @@ public class OALessOrEqualFilter implements OAFilter {
         return OACompare.isLessOrEqual(obj, value);
     }
 
+    /**
+     * Retrieves the value from the supplied object using the configured
+     * property path. If no property path is defined, the object itself is
+     * returned.
+     *
+     * @param obj the source object
+     * @return the extracted property value or the original object
+     */
     protected Object getPropertyValue(Object obj) {
         Object objx = obj;
         if (pp != null) {

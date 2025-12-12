@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,21 +50,74 @@ import com.viaoa.util.OAPropertyPath;
  */
 public class OANotEmptyFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OANotEmptyFilter.class.getName());
+
+    /**
+     * Optional property path used to extract the value from the evaluated
+     * object before applying the not-empty check.
+     */
     private OAPropertyPath pp;
+    
+    /**
+     * Finder created when the property path crosses a many-relationship,
+     * allowing the filter to locate the target object before evaluating
+     * whether its value is non-empty.
+     */
     private OAFinder finder;
 
+    /**
+     * Creates a filter that evaluates whether the object itself is not empty.
+     */
     public OANotEmptyFilter() {
     }
+    
+    /**
+     * Creates a filter that evaluates whether the value obtained through
+     * the supplied property path is not empty.
+     *
+     * @param pp the property path used to retrieve the value
+     */
     public OANotEmptyFilter(OAPropertyPath pp) {
         this.pp = pp;
     }
+
+    /**
+     * Convenience constructor that creates a property-path–based filter from
+     * a string expression.
+     *
+     * @param pp the property-path expression; may be {@code null}
+     */
     public OANotEmptyFilter(String pp) {
         this(pp==null?null:new OAPropertyPath(pp));
     }
     
+    /**
+     * Internal flag indicating whether finder initialization has occurred.
+     * Ensures setup is performed only once.
+     */
     private boolean bSetup;
+    
+    /**
+     * Counter for tracking errors encountered during evaluation. Not further
+     * used in the visible implementation.
+     */
     private int cntError;
     
+    /**
+     * Evaluates whether the supplied object (or the nested value obtained
+     * through a property path) is not empty.
+     *
+     * <p>Evaluation process:</p>
+     * <ul>
+     *   <li>If needed, initializes a finder for many-relationship traversal,</li>
+     *   <li>Uses the finder to locate the target OAObject or Hub,</li>
+     *   <li>Otherwise resolves the value using {@link #getPropertyValue(Object)},</li>
+     *   <li>Returns {@code true} when the resolved value is not empty according
+     *       to {@link OACompare#isEmpty(Object, boolean)}.</li>
+     * </ul>
+     *
+     * @param obj the object being evaluated
+     * @return {@code true} if the value is not empty; otherwise {@code false}
+     */
     @Override
     public boolean isUsed(Object obj) {
         if (!bSetup && pp != null && obj != null) {
@@ -91,6 +144,14 @@ public class OANotEmptyFilter implements OAFilter {
         return !OACompare.isEmpty(obj, true);
     }
 
+    /**
+     * Retrieves the value from the supplied object using the configured
+     * property path. If no property path is provided, returns the object
+     * itself.
+     *
+     * @param obj the source object
+     * @return the extracted value or the original object
+     */
     protected Object getPropertyValue(Object obj) {
         Object objx = obj;
         if (pp != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,44 +39,130 @@ import com.viaoa.util.OAString;
  */
 public class OAContainsFilter implements OAFilter {
 	private static Logger LOG = Logger.getLogger(OAContainsFilter.class.getName());
+
+	/**
+	 * The value whose string representation will be searched for within
+	 * the evaluated property's string value.
+	 */
 	private Object value;
+	
+	/**
+	 * Flag indicating whether the substring comparison should ignore
+	 * character case during evaluation.
+	 */
 	private boolean bIgnoreCase;
+	
+	/**
+	 * Optional property path used to extract a target value from the
+	 * evaluated object. If {@code null}, the object itself is used.
+	 */
 	private OAPropertyPath pp;
+	
+	/**
+	 * Optional finder created when the property path traverses a
+	 * many-relationship, allowing lookup of the target value before
+	 * performing the contains check.
+	 */
 	private OAFinder finder;
 
+	/**
+	 * Creates a filter that checks whether the object's string value
+	 * contains the specified value, using case-sensitive comparison.
+	 *
+	 * @param value the value to search for
+	 */
 	public OAContainsFilter(Object value) {
 		this.value = value;
 		bSetup = true;
 	}
 
+	/**
+	 * Creates a filter that applies a property path to obtain the target
+	 * value before performing a case-sensitive contains comparison.
+	 *
+	 * @param pp the property path used to retrieve a value from the object
+	 * @param value the substring to search for
+	 */
 	public OAContainsFilter(OAPropertyPath pp, Object value) {
 		this.pp = pp;
 		this.value = value;
 	}
 
+	/**
+	 * Convenience constructor that creates a property-path–based filter
+	 * using a string expression.
+	 *
+	 * @param pp the property path expression; may be {@code null}
+	 * @param value the substring to search for
+	 */
 	public OAContainsFilter(String pp, Object value) {
 		this(pp == null ? null : new OAPropertyPath(pp), value);
 	}
 
+	/**
+	 * Creates a filter that checks whether the object's string value
+	 * contains the specified value, using optional case-insensitive search.
+	 *
+	 * @param value the value to search for
+	 * @param bIgnoreCase {@code true} to ignore case during comparison
+	 */
 	public OAContainsFilter(Object value, boolean bIgnoreCase) {
 		this.value = value;
 		this.bIgnoreCase = bIgnoreCase;
 		bSetup = true;
 	}
 
+	/**
+	 * Creates a filter that retrieves a value using the supplied property
+	 * path and compares it against the target substring, optionally
+	 * ignoring case.
+	 *
+	 * @param pp the property path for retrieving comparison values
+	 * @param value the substring to search for
+	 * @param bIgnoreCase {@code true} to ignore case during comparison
+	 */
 	public OAContainsFilter(OAPropertyPath pp, Object value, boolean bIgnoreCase) {
 		this.pp = pp;
 		this.value = value;
 		this.bIgnoreCase = bIgnoreCase;
 	}
 
+	/**
+	 * Convenience constructor using a string expression to create the
+	 * property path for value retrieval, with optional case-insensitive
+	 * comparison.
+	 *
+	 * @param pp the property path expression; may be {@code null}
+	 * @param value the substring to search for
+	 * @param bIgnoreCase {@code true} to ignore case during comparison
+	 */
 	public OAContainsFilter(String pp, Object value, boolean bIgnoreCase) {
 		this(pp == null ? null : new OAPropertyPath(pp), value, bIgnoreCase);
 	}
 
+	/**
+	 * Internal flag indicating whether finder initialization has been
+	 * performed for the first time the filter is evaluated.
+	 */
 	private boolean bSetup;
+
+	/**
+	 * Counter used to track errors encountered while evaluating the
+	 * filter. Its use is not expanded in the visible implementation.
+	 */
 	private int cntError;
 
+	/**
+	 * Evaluates the object using the configured property path, finder, and
+	 * substring comparison rules. If a finder is required, it is lazily
+	 * created on first use. When a finder is applied, the method returns
+	 * whether a matching object is found. Otherwise, it performs a
+	 * contains comparison against the converted string values.
+	 *
+	 * @param obj the object being evaluated
+	 * @return {@code true} if the object's value contains the target
+	 *         substring; otherwise {@code false}
+	 */
 	@Override
 	public boolean isUsed(Object obj) {
 		if (!bSetup && pp != null && obj != null) {
@@ -115,6 +201,13 @@ public class OAContainsFilter implements OAFilter {
 		return b;
 	}
 
+	/**
+	 * Retrieves the value from the object using the configured property
+	 * path, if present. Otherwise returns the object unchanged.
+	 *
+	 * @param obj the source object
+	 * @return the retrieved property value or the original object
+	 */
 	protected Object getPropertyValue(Object obj) {
 		Object objx = obj;
 		if (pp != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,21 +38,70 @@ import com.viaoa.util.OAPropertyPath;
  */
 public class OAEmptyFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OAEmptyFilter.class.getName());
+    
+    /**
+     * Optional property path used to extract a nested value from the
+     * evaluated object before performing the empty check.
+     */
     private OAPropertyPath pp;
+    
+    /**
+     * Finder created when the property path traverses multi-valued
+     * references, allowing resolution of a target object prior to
+     * evaluating emptiness.
+     */
     private OAFinder finder;
 
+    /**
+     * Creates an empty filter that evaluates the object itself for
+     * emptiness without applying any property path.
+     */
     public OAEmptyFilter() {
     }
+
+    /**
+     * Creates an empty filter that evaluates the value obtained using the
+     * supplied property path.
+     *
+     * @param pp the property path used to retrieve a nested value
+     */
     public OAEmptyFilter(OAPropertyPath pp) {
         this.pp = pp;
     }
+    
+    /**
+     * Convenience constructor that creates a property-path–based filter
+     * using a string expression.
+     *
+     * @param pp the property path expression; may be {@code null}
+     */
     public OAEmptyFilter(String pp) {
         this(pp==null?null:new OAPropertyPath(pp));
     }
     
+    /**
+     * Internal flag used to ensure that finder initialization logic is
+     * executed only once on first evaluation.
+     */
     private boolean bSetup;
+    
+    /**
+     * Tracks the number of errors encountered during filter evaluation.
+     * Its behavior is not expanded within the visible implementation.
+     */
     private int cntError;
     
+    /**
+     * Evaluates whether the object (or a nested value retrieved through
+     * the property path) is considered empty. Lazily initializes a finder
+     * if the property path traverses multi-valued references. If a finder
+     * is used, the method returns whether a matching object is located.
+     * Otherwise, emptiness is determined using
+     * {@link com.viaoa.util.OACompare#isEmpty(Object, boolean)}.
+     *
+     * @param obj the object to evaluate
+     * @return {@code true} if the evaluated value is empty; otherwise {@code false}
+     */
     @Override
     public boolean isUsed(Object obj) {
         if (!bSetup && pp != null && obj != null) {
@@ -80,6 +129,14 @@ public class OAEmptyFilter implements OAFilter {
         return OACompare.isEmpty(obj, true);
     }
 
+    /**
+     * Retrieves the value from the supplied object using the configured
+     * property path, if one is present. Otherwise returns the original
+     * object.
+     *
+     * @param obj the source object
+     * @return the extracted property value or the object itself
+     */
     protected Object getPropertyValue(Object obj) {
         Object objx = obj;
         if (pp != null) {

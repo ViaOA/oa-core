@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,13 +36,42 @@ import com.viaoa.util.OAFilter;
  */
 public class OAOrFilter implements OAFilter {
 
+	/**
+	 * The two filters whose results are combined logically using OR
+	 * semantics. Either filter may be {@code null}.
+	 */
 	private OAFilter filter1, filter2;
 
+	/**
+	 * Constructs a filter that performs a logical OR between two
+	 * {@link OAFilter} instances.
+	 *
+	 * @param filter1 the first filter; may be {@code null}
+	 * @param filter2 the second filter; may be {@code null}
+	 */
 	public OAOrFilter(OAFilter filter1, OAFilter filter2) {
 		this.filter1 = filter1;
 		this.filter2 = filter2;
 	}
 
+	/**
+	 * Evaluates the OR condition for the supplied object.
+	 *
+	 * <p>Evaluation rules:</p>
+	 * <ul>
+	 *   <li>If {@code filter1} is non-null and returns {@code true},
+	 *       the result is {@code true}.</li>
+	 *   <li>If {@code filter2} is non-null and returns {@code true},
+	 *       the result is {@code true}.</li>
+	 *   <li>If both filters are {@code null}, the method returns
+	 *       {@code true}.</li>
+	 *   <li>Otherwise, returns {@code false}.</li>
+	 * </ul>
+	 *
+	 * @param obj the object being evaluated
+	 * @return {@code true} if either filter accepts the object or both
+	 *         filters are {@code null}; otherwise {@code false}
+	 */
 	@Override
 	public boolean isUsed(Object obj) {
 		if (filter1 != null) {

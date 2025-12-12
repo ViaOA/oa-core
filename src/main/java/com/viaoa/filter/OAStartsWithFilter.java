@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,43 +57,170 @@ import com.viaoa.util.OAString;
  */
 public class OAStartsWithFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OAStartsWithFilter.class.getName());
+    
+    /**
+     * Value whose string representation is used as the prefix for the
+     * {@code startsWith} comparison against the target property value.
+     */
     private Object value;
+    
+    /**
+     * Flag indicating whether the {@code startsWith} comparison should be
+     * performed without regard to case by uppercasing both operands.
+     */
     private boolean bIgnoreCase;
+    
+    /**
+     * Optional property path used to resolve the value to be compared from
+     * the target object. When non-{@code null}, this path is evaluated to
+     * obtain the object whose string value is tested.
+     */
     private OAPropertyPath pp;
+    
+    /**
+     * Optional {@link com.viaoa.object.OAFinder} created when the property path
+     * crosses a many-relationship, allowing this filter to evaluate matches
+     * against related objects resolved by the finder.
+     */
     private OAFinder finder;
 
+    /**
+     * Creates a {@link OAStartsWithFilter} that compares the string representation
+     * of the given value as a prefix against the target object's property value.
+     * The comparison is case-sensitive.
+     *
+     * @param value the comparison value whose string representation is used as
+     *              the prefix in the {@code startsWith} test
+     */
     public OAStartsWithFilter(Object value) {
         this.value = value;
         bSetup = true;
     }
 
+    /**
+     * Creates a {@link OAStartsWithFilter} that evaluates the value obtained from
+     * the supplied property path on the target object and compares it to the
+     * supplied value using a case-sensitive {@code startsWith} test.
+     *
+     * @param pp    the property path used to resolve the value from the target
+     *              object; may be {@code null} to use the object itself
+     * @param value the comparison value whose string representation is used as
+     *              the prefix in the {@code startsWith} test
+     */
     public OAStartsWithFilter(OAPropertyPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
+    
+    /**
+     * Convenience constructor that builds an {@link com.viaoa.util.OAPropertyPath}
+     * from the supplied path string and creates a case-sensitive
+     * {@link OAStartsWithFilter}.
+     *
+     * @param pp    the property path expression string; {@code null} to indicate
+     *              that the target object itself should be used
+     * @param value the comparison value whose string representation is used as
+     *              the prefix in the {@code startsWith} test
+     */
     public OAStartsWithFilter(String pp, Object value) {
         this(pp==null?null:new OAPropertyPath(pp), value);
     }
 
+    /**
+     * Creates a {@link OAStartsWithFilter} that compares the string representation
+     * of the given value as a prefix against the target object's property value,
+     * optionally ignoring case.
+     *
+     * @param value       the comparison value whose string representation is used
+     *                    as the prefix in the {@code startsWith} test
+     * @param bIgnoreCase {@code true} to perform a case-insensitive comparison by
+     *                    uppercasing both operands, {@code false} for a case-sensitive
+     *                    comparison
+     */
     public OAStartsWithFilter(Object value, boolean bIgnoreCase) {
         this.value = value;
         this.bIgnoreCase = bIgnoreCase;
         bSetup = true;
     }
     
+    /**
+     * Creates a {@link OAStartsWithFilter} that evaluates the value obtained from
+     * the supplied property path on the target object and compares it to the given
+     * value using a {@code startsWith} test with optional case-insensitivity.
+     *
+     * @param pp          the property path used to resolve the value from the target
+     *                    object; may be {@code null} to use the object itself
+     * @param value       the comparison value whose string representation is used
+     *                    as the prefix in the {@code startsWith} test
+     * @param bIgnoreCase {@code true} to perform a case-insensitive comparison by
+     *                    uppercasing both operands, {@code false} for a case-sensitive
+     *                    comparison
+     */
     public OAStartsWithFilter(OAPropertyPath pp, Object value, boolean bIgnoreCase) {
         this.pp = pp;
         this.value = value;
         this.bIgnoreCase = bIgnoreCase;
     }
+
+    /**
+     * Convenience constructor that builds an {@link com.viaoa.util.OAPropertyPath}
+     * from the supplied path string and creates an {@link OAStartsWithFilter} with
+     * optional case-insensitive comparison.
+     *
+     * @param pp          the property path expression string; {@code null} to indicate
+     *                    that the target object itself should be used
+     * @param value       the comparison value whose string representation is used
+     *                    as the prefix in the {@code startsWith} test
+     * @param bIgnoreCase {@code true} to perform a case-insensitive comparison by
+     *                    uppercasing both operands, {@code false} for a case-sensitive
+     *                    comparison
+     */
     public OAStartsWithFilter(String pp, Object value, boolean bIgnoreCase) {
         this(pp==null?null:new OAPropertyPath(pp), value, bIgnoreCase);
     }
     
 
+    /**
+     * Indicates whether this filter has been initialized, including any creation
+     * and configuration of an {@link com.viaoa.object.OAFinder} based on the
+     * property path.
+     */
     private boolean bSetup;
+    
+    /**
+     * Internal counter field intended for tracking errors encountered during
+     * filter evaluation. Currently not used within this implementation.
+     */
     private int cntError;
     
+    /**
+     * Evaluates whether the supplied object is accepted by this filter.
+     * <ul>
+     *   <li>If the filter has not been set up and a property path and non-null
+     *       object are available, it calls
+     *       {@link com.viaoa.filter.OAFilterDelegate#createFinder(Class, com.viaoa.util.OAPropertyPath)}
+     *       to determine if an {@link com.viaoa.object.OAFinder} is needed. When
+     *       a finder is returned, it is stored and a nested {@link OAStartsWithFilter}
+     *       is added to the finder.</li>
+     *   <li>If a finder is present and the object is an {@link com.viaoa.object.OAObject}
+     *       or {@link com.viaoa.hub.Hub}, the finder is used to resolve the first
+     *       matching related object; the method returns {@code true} if a match is
+     *       found and {@code false} otherwise.</li>
+     *   <li>Otherwise, the value to test is obtained via {@link #getPropertyValue(Object)},
+     *       converted to a string along with the configured comparison value using
+     *       {@link com.viaoa.util.OAString#toString(Object)}, and both are compared
+     *       using {@code startsWith}. If either string is {@code null}, the method
+     *       returns {@code false}. When {@code bIgnoreCase} is {@code true}, both
+     *       strings are uppercased before comparison.</li>
+     * </ul>
+     *
+     * @param obj the object to evaluate against this filter; may be an
+     *            {@link com.viaoa.object.OAObject} or {@link com.viaoa.hub.Hub},
+     *            or any object compatible with the configured property path
+     * @return {@code true} if the object (or a related object resolved by a finder)
+     *         has a value whose string representation starts with the configured
+     *         comparison value, {@code false} otherwise
+     */
     @Override
     public boolean isUsed(Object obj) {
         if (!bSetup && pp != null && obj != null) {
@@ -131,6 +258,19 @@ public class OAStartsWithFilter implements OAFilter {
         return b;
     }
     
+    /**
+     * Resolves the value to be tested from the supplied object.
+     * <ul>
+     *   <li>If a property path is configured, the path's {@code getValue} method
+     *       is invoked on the supplied object and the result is returned.</li>
+     *   <li>If no property path is configured, the supplied object is returned
+     *       unchanged.</li>
+     * </ul>
+     *
+     * @param obj the source object from which the value should be resolved
+     * @return the value obtained by applying the configured property path to the
+     *         supplied object, or the object itself when no path is configured
+     */
     protected Object getPropertyValue(Object obj) {
         Object objx = obj;
         if (pp != null) {

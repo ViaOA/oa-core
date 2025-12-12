@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,24 +39,82 @@ import com.viaoa.util.OAPropertyPath;
  */
 public class OAGreaterOrEqualFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OAGreaterOrEqualFilter.class.getName());
+    
+    /**
+     * Optional property path used to retrieve a nested value from the
+     * evaluated object before applying the comparison.
+     */
     private OAPropertyPath pp;
+    
+    /**
+     * The comparison value used to determine whether the evaluated value
+     * is greater than or equal to this value.
+     */
     private Object value;
+    
+    /**
+     * Finder created when the property path requires traversal across a
+     * many-relationship. Used to locate the correct target object for
+     * comparison.
+     */
     private OAFinder finder;
 
+    /**
+     * Creates a filter that evaluates whether the object itself is greater
+     * than or equal to the specified comparison value.
+     *
+     * @param value the value to compare against
+     */
     public OAGreaterOrEqualFilter(Object value) {
         this.value = value;
     }
+    
+    /**
+     * Creates a filter that evaluates whether the value retrieved through
+     * the supplied property path is greater than or equal to the comparison
+     * value.
+     *
+     * @param pp the property path used to obtain the value to compare
+     * @param value the comparison value
+     */
     public OAGreaterOrEqualFilter(OAPropertyPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
+    
+    /**
+     * Convenience constructor that creates a property-path-based filter
+     * from a string expression.
+     *
+     * @param pp the property-path expression; may be {@code null}
+     * @param value the comparison value
+     */
     public OAGreaterOrEqualFilter(String pp, Object value) {
         this(pp==null?null:new OAPropertyPath(pp), value);
     }
 
+    /**
+     * Internal flag indicating whether finder initialization has been
+     * performed to avoid repeated setup.
+     */
     private boolean bSetup;
+    
+    /**
+     * Tracks the number of errors encountered during evaluation.
+     * Not further utilized in the visible implementation.
+     */
     private int cntError;
     
+    /**
+     * Evaluates whether the supplied object (or a nested value resolved
+     * through the property path) is greater than or equal to the configured
+     * comparison value. Automatically initializes a finder when the property
+     * path traverses a many-relationship.
+     *
+     * @param obj the object being evaluated
+     * @return {@code true} if the value satisfies the greater-or-equal condition;
+     *         otherwise {@code false}
+     */
     @Override
     public boolean isUsed(Object obj) {
         if (!bSetup && pp != null && obj != null) {
@@ -83,6 +141,13 @@ public class OAGreaterOrEqualFilter implements OAFilter {
         return OACompare.isGreaterOrEqual(obj, value);
     }
 
+    /**
+     * Retrieves the value from the object using the configured property
+     * path. If no property path is defined, the object itself is returned.
+     *
+     * @param obj the source object
+     * @return the resolved property value or the original object
+     */
     protected Object getPropertyValue(Object obj) {
         Object objx = obj;
         if (pp != null) {

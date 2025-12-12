@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,30 @@ import com.viaoa.util.OAPropertyPath;
  */
 public class OATrueFilter extends OAEqualFilter {
 
+	/**
+	 * Creates a filter that evaluates the target object itself as
+	 * {@code Boolean.TRUE}. Delegates to {@code super(Boolean.TRUE)}.
+	 */
 	public OATrueFilter() {
 		super(Boolean.TRUE);
 	}
 
+	/**
+	 * Creates a filter that evaluates the value resolved from the supplied
+	 * property path string as {@code Boolean.TRUE}.
+	 *
+	 * @param pp the property path expression used to obtain the value
+	 */
 	public OATrueFilter(String pp) {
 		super(pp, Boolean.TRUE);
 	}
 
+	/**
+	 * Creates a filter that evaluates the value resolved from the supplied
+	 * {@link OAPropertyPath} as {@code Boolean.TRUE}.
+	 *
+	 * @param pp the property path used to obtain the value
+	 */
 	public OATrueFilter(OAPropertyPath pp) {
 		super(pp, Boolean.TRUE);
 	}

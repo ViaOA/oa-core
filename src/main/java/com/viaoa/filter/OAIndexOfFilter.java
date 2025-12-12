@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,43 +44,125 @@ import com.viaoa.util.OAString;
  */
 public class OAIndexOfFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OAIndexOfFilter.class.getName());
+    
+    /**
+     * The substring value whose index position will be searched for within
+     * the evaluated property's string representation.
+     */
     private Object value;
+    
+    /**
+     * Flag indicating whether substring matching should ignore character
+     * case.
+     */
     private boolean bIgnoreCase;
+    
+    /**
+     * Optional property path used to extract the target value from the
+     * evaluated object prior to performing substring search.
+     */
     private OAPropertyPath pp;
+    
+    /**
+     * Finder created when the property path traverses a many-relationship,
+     * allowing resolution of the appropriate object before evaluation.
+     */
     private OAFinder finder;
 
+    /**
+     * Creates an index-of filter that evaluates the object's string
+     * representation for the presence of the specified substring using
+     * case-sensitive comparison.
+     *
+     * @param value the substring to search for
+     */
     public OAIndexOfFilter(Object value) {
         this.value = value;
         bSetup = true;
     }
 
+    /**
+     * Creates a filter that evaluates substring position on a value
+     * retrieved via a property path.
+     *
+     * @param pp the property path used to extract the value
+     * @param value the substring to search for
+     */
     public OAIndexOfFilter(OAPropertyPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
+    
+    /**
+     * Convenience constructor using a string-based property-path expression.
+     *
+     * @param pp the property path expression; may be {@code null}
+     * @param value the substring to search for
+     */
     public OAIndexOfFilter(String pp, Object value) {
         this(pp==null?null:new OAPropertyPath(pp), value);
     }
 
+    /**
+     * Creates an index-of filter that optionally ignores character case
+     * during substring matching.
+     *
+     * @param value the substring to search for
+     * @param bIgnoreCase {@code true} to ignore case
+     */
     public OAIndexOfFilter(Object value, boolean bIgnoreCase) {
         this.value = value;
         this.bIgnoreCase = bIgnoreCase;
         bSetup = true;
     }
     
+    /**
+     * Creates a filter that evaluates substring position on the value
+     * retrieved through a property path, using optional case-insensitive
+     * comparison.
+     *
+     * @param pp the property path used to extract the value
+     * @param value the substring to search for
+     * @param bIgnoreCase whether to ignore case
+     */
     public OAIndexOfFilter(OAPropertyPath pp, Object value, boolean bIgnoreCase) {
         this.pp = pp;
         this.value = value;
         this.bIgnoreCase = bIgnoreCase;
     }
+
+    /**
+     * Convenience constructor building a property-path–based filter with
+     * optional case-insensitive substring matching.
+     *
+     * @param pp the property path expression; may be {@code null}
+     * @param value the substring to search for
+     * @param bIgnoreCase whether to ignore case
+     */
     public OAIndexOfFilter(String pp, Object value, boolean bIgnoreCase) {
         this(pp==null?null:new OAPropertyPath(pp), value, bIgnoreCase);
     }
     
-
+    /**
+     * Tracks whether finder initialization has been performed to avoid
+     * duplicate setup.
+     */
     private boolean bSetup;
+
+    /**
+     * Tracks errors encountered during filter evaluation. Not further used
+     * in the visible code.
+     */
     private int cntError;
     
+    /**
+     * Evaluates whether the substring value exists within the string
+     * representation of the evaluated object or its property-path value.
+     * Initializes a finder if multi-valued traversal is required.
+     *
+     * @param obj the object being evaluated
+     * @return {@code true} if the substring occurs at any index, otherwise {@code false}
+     */
     @Override
     public boolean isUsed(Object obj) {
         if (!bSetup && pp != null && obj != null) {
@@ -118,6 +200,13 @@ public class OAIndexOfFilter implements OAFilter {
         return x >= 0;
     }
     
+    /**
+     * Retrieves the value from the object using the configured property
+     * path. If none is set, the object itself is used.
+     *
+     * @param obj the source object
+     * @return the extracted value or the original object
+     */
     protected Object getPropertyValue(Object obj) {
         Object objx = obj;
         if (pp != null) {

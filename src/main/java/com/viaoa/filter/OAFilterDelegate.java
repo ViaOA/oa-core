@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,32 @@ import com.viaoa.util.OAString;
  */
 public class OAFilterDelegate {
 
+	/**
+	 * Container object returned by {@link OAFilterDelegate#createFinder(Class, OAPropertyPath)}.
+	 * Holds a generated {@link OAFinder} and the remaining portion of the
+	 * property path that should be applied by the filter after the finder
+	 * performs its lookup.
+	 */
     static public class FinderInfo {
+    	/**
+    	 * The finder created to traverse Hub-based links in the property path
+    	 * and locate the target object used for further filtering.
+    	 */
         public OAFinder finder;
+
+        /**
+         * The remaining property-path segment that the calling filter should
+         * evaluate after the finder has located the appropriate object.
+         */
         public String pp;  // remaining propertyPath to use by the filter
+        
+        /**
+         * Constructs a FinderInfo wrapper containing a finder and the remaining
+         * property-path segment.
+         *
+         * @param f the finder used for Hub-traversal lookup
+         * @param pp the remaining property path to be applied by the filter
+         */
         public FinderInfo(OAFinder f, String pp) {
             this.finder = f;
             this.pp = pp;
@@ -48,10 +71,24 @@ public class OAFilterDelegate {
     }
     
     /**
-     * Create a finder that should be used by a filter, since there
-     * are Hub links in the property path.
-     * This will return the OAFinder to use, and the remaining property that should be filtered.
-     * see the OAxxxFilters for examples. 
+     * Creates a finder for property paths that traverse Hub links. If the
+     * property path includes at least one Hub-returning method, a corresponding
+     * {@link OAFinder} is created and any remaining property-path segment is
+     * returned for continued filtering.
+     *
+     * <p>The method performs the following steps:</p>
+     * <ul>
+     *   <li>Validates the input class and property path,</li>
+     *   <li>Ensures the path is initialized for the given class,</li>
+     *   <li>Inspects the resolved getter methods for Hub-returning links,</li>
+     *   <li>Creates a finder for the Hub-based portion of the path,</li>
+     *   <li>Returns the remaining property-path segment, if any.</li>
+     * </ul>
+     *
+     * @param clazz the class defining the starting point of the property path
+     * @param pp the property path to inspect for Hub traversal
+     * @return a {@link FinderInfo} containing the finder and remaining path,
+     *         or {@code null} if no Hub traversal is needed
      */
     public static FinderInfo createFinder(Class clazz, OAPropertyPath pp) {
         if (clazz == null || pp == null) return null;
