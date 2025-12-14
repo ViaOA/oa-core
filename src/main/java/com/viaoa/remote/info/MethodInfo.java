@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,36 +52,88 @@ import java.lang.reflect.Method;
  */
 public class MethodInfo {
     
-    public MethodInfo() {
-        
-    }
-    
+	/**
+	 * The reflected {@link Method} instance representing the remotely callable
+	 * method associated with this metadata record.
+	 */
     public Method method;
-    // unique name based on methodName and params
+
+    /**
+     * A unique signature created from the method name and parameter types, used to
+     * distinguish overloaded methods during remote invocation.
+     */
     public String methodNameSignature;
 
-    // if return value is a remote object
+    /**
+     * The return type of the method when it represents a remote interface. Null
+     * if the return value is not a remote object.
+     */
     public Class remoteReturn;
-    // flag to know if return value should be compressed 
+ 
+    /**
+     * Indicates whether the return value should be compressed before being
+     * transmitted across the remoting channel.
+     */
     public boolean compressedReturn;
     
-    // if any of the params are remote object
+    /**
+     * Array of parameter types that represent remote objects. Null if no
+     * parameters are remote interfaces.
+     */
     public Class[] remoteParams;
     
+    /**
+     * Flags indicating which method parameters should be compressed when
+     * serialized for remote invocation.
+     */
     public boolean[] compressedParams;
+
+    /**
+     * Flags indicating which parameters should bypass asynchronous queue handling
+     * during remote dispatch.
+     */
     public boolean[] dontUseQueues;
     
-    // true if dont wait for return value (void methods)
+    /**
+     * True when the method does not expect a return value, typically for void
+     * methods or those explicitly configured to suppress return handling.
+     */
     public boolean noReturnValue;
 
+    /**
+     * Indicates whether the return value, if any, should bypass asynchronous queue
+     * processing and be returned directly.
+     */
     public boolean dontUseQueueForReturnValue;
     
+    /**
+     * True if the return value should be delivered on the queue socket rather
+     * than through the normal request/response channel.
+     */
     public boolean returnOnQueueSocket;
     
+    /**
+     * Determines whether the method invocation itself should bypass the
+     * asynchronous queue mechanism.
+     */
     public boolean dontUseQueue;
     
+    /**
+     * Number of seconds to wait before timing out a remote invocation. A value of
+     * zero indicates no configured timeout.
+     */
     public int timeoutSeconds = 0;
     
-    /** option for server broadcast to run in RemoteThread */
+    /**
+     * True if the method invocation should be executed in a dedicated remote
+     * thread rather than in the calling context.
+     */
     public boolean runInRemoteThread;
+    
+    /**
+     * Default constructor. Performs no initialization; all fields retain their
+     * default values.
+     */
+    public MethodInfo() {
+    }
 }

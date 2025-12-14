@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,14 @@ package com.viaoa.text;
 public class OATextFilter {
 	
 	/**
-	 * Removes characters from a String.
+	 * Removes all characters in {@code chars} from the input {@code value}.
+	 * <p>
+	 * Delegates to {@link #stripChars(String, String, boolean)} with
+	 * {@code bKeepChars == false}.
 	 *
-	 * @param value is String to strip from.
-	 * @param chars values to remove from value
+	 * @param value the text to filter; may be null
+	 * @param chars characters to remove
+	 * @return a filtered string, or {@code null} if {@code value} is null
 	 */
 	public static String strip(String value, String chars) {
 		return stripChars(value, chars, false);
@@ -51,23 +55,32 @@ public class OATextFilter {
 
 	
 	/**
-	 * Removes characters from a String that are not valid.
+	 * Keeps only the characters that appear in {@code chars}, removing all others.
+	 * <p>
+	 * Delegates to {@link #stripChars(String, String, boolean)} with
+	 * {@code bKeepChars == true}.
 	 *
-	 * @param value is String to strip from.
-	 * @param chars is the characters that are valid, other characters will be removed.
+	 * @param value the text to filter; may be null
+	 * @param chars the whitelist of valid characters
+	 * @return a filtered string, or {@code null} if {@code value} is null
 	 */
 	public static String accept(String value, String chars) {
 		return stripChars(value, chars, true);
 	}
 
-
 	/**
-	 * Removes or keeps characters based on bKeepChars:
+	 * Core filtering mechanism supporting both blacklist and whitelist behavior.
+	 * <ul>
+	 *   <li>If {@code bKeepChars == false}, removes any character that appears in {@code chars}.</li>
+	 *   <li>If {@code bKeepChars == true}, keeps only characters that appear in {@code chars}.</li>
+	 * </ul>
+	 * Optimizes lookups for ASCII characters using a boolean mask before falling
+	 * back to {@link String#indexOf(int)} for non-ASCII values.
 	 *
-	 * bKeepChars == false: remove any characters found in 'chars'
-	 * bKeepChars == true:  keep only characters found in 'chars'
-	 *
-	 * Does not trim whitespace unless included in 'chars'.
+	 * @param value      the text to filter; returned unchanged if null
+	 * @param chars      the character set to check against; if null or empty, {@code value} is returned
+	 * @param bKeepChars whether to keep (true) or remove (false) characters found in {@code chars}
+	 * @return a filtered string
 	 */
 	protected static String stripChars(String value, String chars, boolean bKeepChars) {
 	    if (value == null) return null;
@@ -101,43 +114,56 @@ public class OATextFilter {
 	    return sb.toString();
 	}
 		
-
 	/**
-	 * Used to replace one value with another within a String.
+	 * Replaces each occurrence of character {@code c} in {@code value} with the
+	 * provided replacement string. Case-sensitive.
 	 *
-	 * @param replace the string or null that will replace every occurance of the the character "c"
-	 * @see #convert(String,String,String,boolean) convert()
+	 * @param value   the text to modify
+	 * @param c       the character to replace
+	 * @param replace the replacement string; null is treated as an empty string
+	 * @return the converted string
 	 */
 	public static String convert(String value, char c, String replace) {
 		return convert(value, c + "", replace, false);
 	}
 
 	/**
-	 * Used to replace one value with another within a String, ignoring case.
+	 * Performs case-insensitive replacement of all occurrences of {@code search}
+	 * within {@code line}.
+	 * <p>
+	 * Delegates to the core {@link #convert(String, String, String, boolean)} with
+	 * {@code bIgnoreCase == true}.
 	 *
-	 * @param replace the string or null that will replace every occurance of the the search string
-	 * @see #convert(String,String,String,boolean) convert()
+	 * @param line    the text to modify; may be null
+	 * @param search  the substring to find
+	 * @param replace the replacement string; null becomes an empty string
+	 * @return the converted string
 	 */
 	public static String convertIgnoreCase(String line, String search, String replace) {
 		return convert(line, search, replace, true);
 	}
 
 	/**
-	 * Used to replace one value with another within a String.
+	 * Replaces each case-sensitive occurrence of {@code search} in {@code line}.
+	 * <p>
+	 * Delegates to {@link #convert(String, String, String, boolean)} with
+	 * {@code bIgnoreCase == false}.
 	 *
-	 * @param replace the string or null that will replace every occurance of the the search string
-	 * @see #convert(String,String,String,boolean) convert()
+	 * @param line    the text to modify
+	 * @param search  the substring to replace
+	 * @param replace the replacement string
+	 * @return a modified string, or {@code null} if {@code line} is null
 	 */
 	public static String convert(String line, String search, String replace) {
 		return convert(line, search, replace, false);
 	}
 
 	/**
-	 * Remove any and all search characters from a string.
+	 * Removes every character from {@code line} that appears in {@code search}.
 	 *
-	 * @param line   original data
-	 * @param search characters to remove
-	 * @return
+	 * @param line   the text to filter; may be null
+	 * @param search the characters to remove; if null, {@code line} is returned
+	 * @return the filtered string
 	 */
 	public static String removeCharacters(String line, String search) {
 		if (line == null || search == null) {
@@ -155,9 +181,12 @@ public class OATextFilter {
 	}
 
 	/**
-	 * Remove any and all characters that are not in string
+	 * Removes every character from {@code line} that does not appear in the
+	 * {@code keep} set.
 	 *
-	 * @param line original data param search characters to keep
+	 * @param line the text to filter; may be null
+	 * @param keep the whitelist of characters; if null, {@code line} is returned
+	 * @return a filtered string containing only characters in {@code keep}
 	 */
 	public static String removeOtherCharacters(String line, String keep) {
 		if (line == null || keep == null) {
@@ -174,16 +203,26 @@ public class OATextFilter {
 		return new String(sb);
 	}
 	
-	
 	/**
-	 * Remove any and all characters that are not digits
+	 * Removes all non-digit characters from {@code line}.
+	 * <p>
+	 * Delegates to {@link #removeNonDigits(String, boolean)} with dot-allowance disabled.
 	 *
-	 * @param line original data
+	 * @param line the text to filter
+	 * @return a string containing only digits, or {@code null} if {@code line} is null
 	 */
 	public static String removeNonDigits(String line) {
 		return removeNonDigits(line, false);
 	}
 
+	/**
+	 * Removes all characters from {@code line} except digits, optionally allowing
+	 * the decimal point character '.'.
+	 *
+	 * @param line      the text to filter; may be null
+	 * @param bAllowDot whether '.' should be considered valid
+	 * @return a filtered string
+	 */
 	public static String removeNonDigits(String line, boolean bAllowDot) {
 		if (line == null) {
 			return line;
@@ -201,8 +240,14 @@ public class OATextFilter {
 	
 	
 	public static final String OtherFileNameChars = "_-. \\/";
+
 	/**
-	 * Remove any and all characters that are not valid in filename.
+	 * Removes characters that are not permitted in filename values. Allows
+	 * alphanumeric characters and symbols listed in {@link #OtherFileNameChars}.
+	 * Also allows a colon (:) only when located at index 1 (Windows drive letter).
+	 *
+	 * @param line the filename text to sanitize
+	 * @return a cleaned filename string, or {@code null} if {@code line} is null
 	 */
 	public static String removeNonFileNameChars(String line) {
 		if (line == null) {
@@ -225,19 +270,39 @@ public class OATextFilter {
 
 	
 	/**
-	 * Used to replace one value with another within a String.
+	 * Delegates to the full-parameter convert method, specifying that replacements
+	 * should not be limited to the first match and the entire string range should
+	 * be scanned.
 	 *
-	 * @param line        is String that is to be converted.
-	 * @param search      is String that is to be replaced.
-	 * @param replace     is replacement value to use. If null, then a blank String will be used.
-	 * @param bIgnoreCase if true, then search is not case sensitive.
-	 * @return new String where search String is replaced with replace String. If line is null then null is returned. If search is null then
-	 *         line is returned.
+	 * @param line        the text to modify
+	 * @param search      the substring to replace
+	 * @param replace     the replacement value; null becomes ""
+	 * @param bIgnoreCase whether matching is case-insensitive
+	 * @return the modified string, or {@code null} if {@code line} is null
 	 */
 	public static String convert(String line, String search, String replace, boolean bIgnoreCase) {
 		return convert(line, search, replace, bIgnoreCase, false, 0, -1);
 	}
 
+	/**
+	 * Core substring replacement engine supporting case-insensitive matching,
+	 * limiting to the first replacement, and restricting the scan range.
+	 * <ul>
+	 *   <li>If {@code line} or {@code search} is null/empty, {@code line} is returned.</li>
+	 *   <li>Lowercases characters when {@code bIgnoreCase} is true.</li>
+	 *   <li>Performs manual scanning to avoid repeated substring allocation.</li>
+	 *   <li>Backtracks on partial matches to ensure correct behavior.</li>
+	 * </ul>
+	 *
+	 * @param line        the text to modify
+	 * @param search      the substring to find
+	 * @param replace     the replacement text; null converted to empty
+	 * @param bIgnoreCase whether search is case-insensitive
+	 * @param bFirstOnly  whether only the first match should be replaced
+	 * @param startPos    starting index for scanning
+	 * @param endPos      exclusive end index, or -1 to scan the entire string
+	 * @return the modified string
+	 */
 	public static String convert(final String line, String search, String replace, final boolean bIgnoreCase, final boolean bFirstOnly, final int startPos, final int endPos) {
 		if (line == null || search == null || search.length() == 0) {
 			return line;
@@ -310,10 +375,11 @@ public class OATextFilter {
 	}
 	
 	/**
-	 * Remove digit characters from String.
+	 * Removes all digit characters (0–9) from {@code value}. Does not remove
+	 * decimal points or other symbols.
 	 *
-	 * @param value is String to strip.
-	 * @return if value=null then null, else new String with digits removed. Note: does not remove "." between digits.
+	 * @param value the text to filter; may be null
+	 * @return a string with digits removed
 	 */
 	public static String stripDigits(String value) {
 		if (value == null) {
@@ -330,9 +396,13 @@ public class OATextFilter {
 		return sb.toString();
 	}
 
-
 	/**
-	 * Make sure that all chars value is &lt;= 127, otherwise convert to a space char
+	 * Converts any non-ASCII characters in {@code text} to ASCII equivalents when
+	 * possible (e.g., curly quotes → straight quotes, en dash → hyphen). Characters
+	 * without a mapping are replaced with a space (' ').
+	 *
+	 * @param text the text to sanitize; may be null
+	 * @return ASCII-only text, or the original text if already ASCII
 	 */
 	public static String convertToAscii(String text) {
 		if (text == null) {
@@ -375,9 +445,14 @@ public class OATextFilter {
 		return sb.toString();
 	}
 	
-
-
-
+	/**
+	 * Removes {@code amt} characters from the end of {@code s}. If {@code amt}
+	 * exceeds the string length, an empty string is returned.
+	 *
+	 * @param s   the text to modify; may be null
+	 * @param amt number of characters to remove from the end
+	 * @return the shortened string
+	 */
 	public static String removeEndingChars(String s, int amt) {
 		if (s == null) {
 			return null;
@@ -390,10 +465,28 @@ public class OATextFilter {
 		return s;
 	}
 
+	/**
+	 * Delegates to {@link #removeLeading(String, char, int)} with no limit on how
+	 * many leading characters can be removed.
+	 *
+	 * @param s  the text to modify
+	 * @param ch the character to remove from the start
+	 * @return the string without leading occurrences of {@code ch}
+	 */
 	public static String removeLeading(String s, char ch) {
 	    return removeLeading(s, ch, 0);
 	}
 	
+	/**
+	 * Removes up to {@code maxAmount} leading occurrences of character {@code ch}
+	 * from {@code s}. If {@code maxAmount} is zero or negative, all leading
+	 * occurrences are removed.
+	 *
+	 * @param s         the text to modify; may be null
+	 * @param ch        the character to strip
+	 * @param maxAmount maximum number of characters to remove; 0 means unlimited
+	 * @return the modified string
+	 */
     public static String removeLeading(String s, char ch, int maxAmount) {
         if (s == null) return s;
         
@@ -410,17 +503,18 @@ public class OATextFilter {
         return s.substring(i);
     }
 
-	/**
-	 * String trim method.<br>
-	 * 1: removes leading spaces<br>
-	 * 2: removes extra spaces within. (Note: even if enclosed in quotes)<br>
-	 * 3: removes trailing spaces <br>
-	 * <p>
-	 *
-	 * <pre>
-	 Example:  "  this    is   a  test  "  will be: "this is a test"
-	 * </pre>
-	 */
+    /**
+     * Collapses whitespace by:
+     * <ol>
+     *   <li>Removing all leading spaces</li>
+     *   <li>Reducing sequences of internal spaces to a single space</li>
+     *   <li>Removing trailing spaces</li>
+     * </ol>
+     * Does not treat quoted text specially.
+     *
+     * @param line the text to trim; may be null
+     * @return the condensed string
+     */
 	public static String trimSpaces(final String line) {
 		if (line == null) return line;
 		StringBuilder sb = null;
@@ -453,9 +547,18 @@ public class OATextFilter {
 	}
 
 	/**
-	 * safe String substring function. Will not throw out of bounds exception.
+	 * Safely returns a substring starting at {@code pos} without throwing
+	 * {@link IndexOutOfBoundsException}.
+	 * <ul>
+	 *   <li>If {@code s} is {@code null}, returns {@code null}.</li>
+	 *   <li>If {@code pos} is greater than or equal to {@code s.length()}, returns an empty string.</li>
+	 *   <li>Otherwise, delegates to {@link String#substring(int)}.</li>
+	 * </ul>
 	 *
-	 * @param pos begin pos (0 based)
+	 * @param s   the source string
+	 * @param pos the zero-based starting index
+	 * @return the substring from {@code pos}, an empty string if {@code pos} is out of range,
+	 *         or {@code null} if {@code s} is null
 	 */
 	public static String substring(String s, int pos) {
 		if (s == null) {
@@ -468,11 +571,20 @@ public class OATextFilter {
 	}
 
 	/**
-	 * safe String substring function. Will not throw out of bounds exception.
+	 * Safely returns a substring in the range {@code [pos1, pos2)} without
+	 * throwing {@link IndexOutOfBoundsException}.
+	 * <ul>
+	 *   <li>If {@code s} is {@code null}, returns {@code null}.</li>
+	 *   <li>If {@code pos1} is greater than or equal to {@code s.length()}, returns an empty string.</li>
+	 *   <li>If {@code pos2} is beyond the end of the string, it is clamped to {@code s.length()}.</li>
+	 *   <li>Otherwise, delegates to {@link String#substring(int, int)}.</li>
+	 * </ul>
 	 *
-	 * @param s
-	 * @param pos1 begin pos (0 based)
-	 * @param pos2 exclusive end pos (0 based)
+	 * @param s    the source string
+	 * @param pos1 the zero-based start index (inclusive)
+	 * @param pos2 the zero-based end index (exclusive)
+	 * @return the requested substring, an empty string if {@code pos1} is out of range,
+	 *         or {@code null} if {@code s} is null
 	 */
 	public static String substring(String s, int pos1, int pos2) {
 		if (s == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,25 @@ import com.viaoa.util.OATime;
  */
 public class OAJacksonModule extends SimpleModule {
 
+	/**
+	 * Constructs a new OA-aware Jackson module and registers serializers and
+	 * deserializers for OAObject and temporal OA types.
+	 * <p>
+	 * The module is initialized with a fixed {@link Version}. Serializer and
+	 * deserializer instances are then added for:
+	 * <ul>
+	 *   <li>{@link OAObject} — using {@link OAJacksonSerializer} and
+	 *       {@link OAJacksonDeserializer}</li>
+	 *   <li>{@link OADateTime} — using {@link OADateTimeSerializer} and
+	 *       {@link OADateTimeDeserializer}</li>
+	 *   <li>{@link OADate} — using {@link OADateSerializer} and
+	 *       {@link OADateDeserializer}</li>
+	 *   <li>{@link OATime} — using {@link OATimeSerializer} and
+	 *       {@code OATimeDeserializer}</li>
+	 * </ul>
+	 *
+	 * @see com.fasterxml.jackson.databind.ObjectMapper#registerModule
+	 */
 	public OAJacksonModule() {
 		super("OAJackson", new Version(1, 0, 0, "RELEASE", "com.viaoa", "jackson"));
 

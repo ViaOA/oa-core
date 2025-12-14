@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,16 +51,41 @@ import com.viaoa.util.OAString;
  */
 public class OATextUtil {
 
-	
-
+	/**
+	 * Appends {@code append} to {@code orig}, inserting a single space when
+	 * {@code orig} is non-empty. Delegates to {@link #concat(String, String, String, boolean)}
+	 * with a space separator.
+	 *
+	 * @param orig   original text (may be null)
+	 * @param append value to append (may be null)
+	 * @return concatenated string, never {@code null}
+	 */
 	public static String append(String orig, String append) {
 		return concat(orig, append, " ");
 	}
 
+	/**
+	 * Appends {@code append} to {@code orig} using the supplied separator.
+	 * The separator is inserted only when {@code orig} is non-empty.
+	 *
+	 * @param orig   original text (may be null)
+	 * @param append value to append (may be null)
+	 * @param sep    separator inserted between values
+	 * @return concatenated string, never {@code null}
+	 */
 	public static String append(String orig, String append, String sep) {
 		return concat(orig, append, sep, true);
 	}
 
+	/**
+	 * Prepends {@code prepend} to {@code orig}, optionally inserting a separator
+	 * before the original text when it is non-empty.
+	 *
+	 * @param orig    original text (may be null)
+	 * @param prepend value to put before {@code orig}
+	 * @param sep     separator inserted before {@code orig} when it has content
+	 * @return resulting string with {@code prepend} placed first
+	 */
 	public static String prepend(String orig, String prepend, String sep) {
 		if (orig == null) {
 			orig = "";
@@ -72,19 +97,64 @@ public class OATextUtil {
 		return orig;
 	}
     
+	/**
+	 * Concatenates {@code value} to {@code toText} using a single space as the
+	 * separator. If {@code value} is null or empty, the original {@code toText}
+	 * is returned, with null converted to an empty string.
+	 *
+	 * @param toText existing text (may be null)
+	 * @param value  value to append (may be null)
+	 * @return concatenated string, never {@code null}
+	 */
 	public static String concat(String toText, String value) {
 		return concat(toText, value, " ", true);
 	}
 
+	/**
+	 * Concatenates {@code value} to {@code toText} using {@code sepChar} as the
+	 * separator. The {@code value} is converted with {@code toString()} when
+	 * non-null.
+	 *
+	 * @param toText existing text (may be null)
+	 * @param value  value to append (may be null)
+	 * @param sepChar separator to insert between values
+	 * @return concatenated string, never {@code null}
+	 */
 	public static String concat(String toText, Object value, String sepChar) {
 		String strValue = value == null ? null : value.toString();
 		return concat(toText, strValue, sepChar, false);
 	}
 
+	/**
+	 * Concatenates {@code value} to {@code toText} using {@code sepChar} as the
+	 * separator. If {@code value} is null or empty, {@code toText} is returned,
+	 * with null converted to an empty string.
+	 *
+	 * @param toText existing text (may be null)
+	 * @param value  value to append (may be null)
+	 * @param sepChar separator to insert between values
+	 * @return concatenated string, never {@code null}
+	 */
 	public static String concat(String toText, String value, String sepChar) {
 		return concat(toText, value, sepChar, false);
 	}
 
+	/**
+	 * Core concatenation helper that appends {@code value} to {@code toText}
+	 * using {@code sepChar} as the separator.
+	 * <ul>
+	 *   <li>If {@code bForce} is false and {@code value} is null or empty,
+	 *       returns {@code toText} (null becomes empty string).</li>
+	 *   <li>Otherwise {@code value} is coerced to non-null and appended.</li>
+	 *   <li>When {@code toText} is null or empty, no separator is added.</li>
+	 * </ul>
+	 *
+	 * @param toText existing text (may be null)
+	 * @param value  value to append (may be null)
+	 * @param sepChar separator to insert between values
+	 * @param bForce whether to append even when {@code value} is null/empty
+	 * @return concatenated string, never {@code null}
+	 */
 	public static String concat(String toText, String value, String sepChar, boolean bForce) {
 		if (!bForce && (value == null || value.length() == 0)) {
 			if (toText == null) return "";  // always return non-null, so a null check does not have be used.
@@ -103,11 +173,11 @@ public class OATextUtil {
 	}
 
     
-    
 	/**
-	 * Converts a color to a String that represents the Hex value.
+	 * Converts a {@link Color} to a 6-digit RGB hex string prefixed with {@code "#"}.
 	 *
-	 * @return null if color=null, else Hex String with leading "#", ex: "#00FFCC"
+	 * @param color color to convert (may be null)
+	 * @return hex string such as {@code "#00FFCC"}, or null if {@code color} is null
 	 */
 	public static String colorToHex(Color color) {
 		if (color == null) {
@@ -117,13 +187,13 @@ public class OATextUtil {
 		return colorStr;
 	}
     
-
-	
-
-
-
 	/**
-	 * Converts any non-Java identifier characters to a '_'
+	 * Converts {@code txt} into a Java identifier-compatible string by replacing
+	 * any character that is not a {@link Character#isJavaIdentifierPart(char)}
+	 * with an underscore.
+	 *
+	 * @param txt input text (may be null)
+	 * @return sanitized identifier, or null if {@code txt} is null
 	 */
 	public static String makeJavaIdentifier(String txt) {
 		if (txt == null) {
@@ -153,12 +223,12 @@ public class OATextUtil {
 	}
 
 
-
-
 	/**
-	 * get last N chars from string.
+	 * Returns at most the last {@code len} characters from {@code text}.
 	 *
-	 * @param len number of chars to get
+	 * @param text source text (may be null)
+	 * @param len  number of characters to return; {@code len <= 0} yields {@code ""}
+	 * @return last {@code len} characters, entire string if shorter, or null when {@code text} is null
 	 */
 	public static String getEnd(String text, int len) {
 		if (text == null) {
@@ -173,14 +243,23 @@ public class OATextUtil {
 		return s;
 	}
 
+	/**
+	 * Alias for {@link #getEnd(String, int)}.
+	 *
+	 * @param text source text (may be null)
+	 * @param len  number of characters to return
+	 * @return last {@code len} characters or null when {@code text} is null
+	 */
 	public static String getLast(String text, int len) {
 		return getEnd(text, len);
 	}
 
 	/**
-	 * get first N chars from string.
+	 * Returns at most the first {@code len} characters from {@code text}.
 	 *
-	 * @param len number of chars to get
+	 * @param text source text (may be null)
+	 * @param len  number of characters to return; {@code len <= 0} yields {@code ""}
+	 * @return first {@code len} characters, entire string if shorter, or null when {@code text} is null
 	 */
 	public static String getBegin(String text, int len) {
 		if (text == null) {
@@ -195,17 +274,29 @@ public class OATextUtil {
 		return s;
 	}
 
+	/**
+	 * Alias for {@link #getBegin(String, int)}.
+	 *
+	 * @param text source text (may be null)
+	 * @param len  number of characters to return
+	 * @return first {@code len} characters or null when {@code text} is null
+	 */
 	public static String getFirst(String text, int len) {
 		return getBegin(text, len);
 	}
 
 
-	
-	
-
-
-	
-	
+	/**
+	 * Parses the first contiguous numeric run in {@code val} into an int.
+	 * <ul>
+	 *   <li>Skips non-digit characters until a digit or leading {@code '-'} is found.</li>
+	 *   <li>Accumulates digits until a non-digit is encountered.</li>
+	 *   <li>Applies a negative sign if a leading {@code '-'} was seen.</li>
+	 * </ul>
+	 *
+	 * @param val input text (may be null)
+	 * @return parsed integer value, or 0 when no digits are found
+	 */
 	public static int parseInt(String val) {
 		int x = 0;
 		if (val == null) {
@@ -237,8 +328,14 @@ public class OATextUtil {
 	}
 	
 	/**
-	 * Update the string to be used for a Like operator search, by converting '*' to '%' and by adding a '%' at the end if there is not one
-	 * already.
+	 * Converts a value into a pattern suitable for a SQL LIKE search.
+	 * <ul>
+	 *   <li>Replaces all '{@code *}' characters with '{@code %}'.</li>
+	 *   <li>If no '{@code %}' is present after replacement, appends one.</li>
+	 * </ul>
+	 *
+	 * @param s input text (may be null)
+	 * @return transformed pattern, or null when {@code s} is null
 	 */
 	public static String convertToLikeSearch(String s) {
 		if (s == null) {
@@ -252,11 +349,15 @@ public class OATextUtil {
 	}
 
 	/**
-	 * Create a 3 row column heading.
+	 * Builds a two-line string that visually displays column indices.
+	 * <p>
+	 * The first line contains the tens digit (or space) for each position;
+	 * the second line contains the ones digit. Positions are inclusive
+	 * between {@code startPos} and {@code endPos}.
 	 *
-	 * @param startPos first position (usually 0 or 1)
-	 * @param endPos
-	 * @return 2 rows of numbers, showing each digit vertically
+	 * @param startPos starting index (inclusive)
+	 * @param endPos   ending index (inclusive)
+	 * @return multi-line string showing vertical numeric labels
 	 */
 	public static String getVerticalNumberLines(int startPos, int endPos) {
 		StringBuilder sb = new StringBuilder();
@@ -279,6 +380,15 @@ public class OATextUtil {
 		return sb.toString();
 	}
 
+	/**
+	 * Produces a two-line vertical representation of hex bytes.
+	 * <p>
+	 * The first line contains the high nibble of each byte, and the second
+	 * line contains the low nibble, using uppercase hex digits.
+	 *
+	 * @param bs byte array to render
+	 * @return two-line hex representation
+	 */
 	public static String getVerticalHex(byte[] bs) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < bs.length; i++) {
@@ -295,9 +405,20 @@ public class OATextUtil {
 		return sb.toString();
 	}
 
+	/**
+	 * Lookup table of hexadecimal characters used by {@link #bytesToHex(byte[])}
+	 * for efficient byte-to-hex encoding.
+	 */
 	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 	// https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
 
+	/**
+	 * Converts a byte array into an uppercase hex string with two characters
+	 * per byte.
+	 *
+	 * @param bytes source byte array
+	 * @return hex string representation of {@code bytes}
+	 */
 	public static String bytesToHex(byte[] bytes) {
 		char[] hexChars = new char[bytes.length * 2];
 		for (int j = 0; j < bytes.length; j++) {
@@ -308,6 +429,13 @@ public class OATextUtil {
 		return new String(hexChars);
 	}
 
+	/**
+	 * Converts a hex string into a byte array. Each pair of hex characters
+	 * is parsed into a single byte.
+	 *
+	 * @param hex hex string (may be null)
+	 * @return decoded bytes, or null when {@code hex} is null
+	 */
 	public static byte[] hexToBytes(String hex) {
 		if (hex == null) {
 			return null;
@@ -322,6 +450,15 @@ public class OATextUtil {
 		return bs;
 	}
 
+	/**
+	 * Creates a new string consisting of {@code length} repetitions of
+	 * {@code repeatChar}. Uses a {@link StringBuilder} sized to the
+	 * requested length.
+	 *
+	 * @param repeatChar the character to repeat
+	 * @param length     number of repetitions to generate
+	 * @return a string composed of {@code repeatChar} repeated {@code length} times
+	 */
 	public static String createString(char repeatChar, int length) {
 		StringBuilder sb = new StringBuilder(length);
 		for (int i = 0; i < length; i++) {
@@ -330,6 +467,18 @@ public class OATextUtil {
 		return sb.toString();
 	}
 	
+	/**
+	 * Builds a dot-delimited property path from a sequence of string segments.
+	 * <ul>
+	 *   <li>Null {@code args} returns an empty string.</li>
+	 *   <li>Null or empty elements are skipped.</li>
+	 *   <li>A segment beginning with ':' is appended verbatim (used for filters).</li>
+	 *   <li>Otherwise segments are joined with '.' characters.</li>
+	 * </ul>
+	 *
+	 * @param args property path segments
+	 * @return dot-delimited path string
+	 */
 	public static String createPropertyPath(String... args) {
 		if (args == null) {
 			return "";
@@ -356,6 +505,15 @@ public class OATextUtil {
 		return sb.toString();
 	}
 
+	/**
+	 * Builds a dot-delimited property path beginning with the simple name
+	 * of {@code clazz}. Remaining segments follow the same rules as
+	 * {@link #createPropertyPath(String...)}.
+	 *
+	 * @param clazz starting class whose simple name is used as prefix
+	 * @param args  additional path segments
+	 * @return property path beginning with the class name
+	 */
 	public static String createPropertyPath(Class clazz, String... args) {
 		if (args == null) {
 			return "";

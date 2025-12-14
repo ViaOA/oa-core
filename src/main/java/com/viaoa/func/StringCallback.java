@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ package com.viaoa.func;
  * can be appended. Implementations may accumulate text, forward it to a log,
  * or stream it to an external target.
  */
-
 public interface StringCallback {
 	void add(String msg);
 }

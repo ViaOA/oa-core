@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.text;
 
 /**
@@ -27,17 +42,19 @@ package com.viaoa.text;
  */
 public class OATextGrammar {
 
-
 	/**
-	 * Used to convert a String that uses CamelCase notation to a titled, space separated String. The first char and all letter chars
-	 * following non-letter characters will be converted to uppercase. Words will be separated using space character.
-	 * <p>
-	 * Example: "yourNameTest" converts to "Your Name Test" <br>
-	 * Example: "USAmerica" converts to "US America" <br>
-	 * Example: "v.via" converts to "V.Via"
+	 * Converts a camelCase or mixed-case identifier into a display name with
+	 * spaces and title casing.
+	 * <ul>
+	 *   <li>First character is uppercased if it is a letter.</li>
+	 *   <li>Underscores are converted to spaces; the letter after an underscore is uppercased.</li>
+	 *   <li>When an uppercase letter follows a lowercase letter, a space is inserted.</li>
+	 *   <li>For runs of uppercase letters, a space is inserted before the last
+	 *       uppercase when followed by a lowercase letter (e.g., "USAmerica" → "US America").</li>
+	 * </ul>
 	 *
-	 * @param value String to convert
-	 * @return new String that is titled case, with spaces to separate words. If value is null, then a blank "" is returned.
+	 * @param value the identifier to convert; null returns an empty string
+	 * @return a human-readable display name
 	 */
 	public static String getDisplayName(String value) {
 		if (value == null) {
@@ -84,22 +101,40 @@ public class OATextGrammar {
 		return new String(sb);
 	}
 
+	/**
+	 * Convenience method that delegates to {@link #getDisplayName(String)}.
+	 *
+	 * @param value the identifier to convert; null returns an empty string
+	 * @return a human-readable display name
+	 */
 	public static String createDisplayName(String value) {
 		return getDisplayName(value);
 	}
 
+	/**
+	 * Convenience method that delegates to {@link #getDisplayName(String)}.
+	 *
+	 * @param value the identifier to convert; null returns an empty string
+	 * @return a human-readable display name
+	 */
 	public static String convertToDisplayName(String value) {
 		return getDisplayName(value);
 	}
 	
 
 	/**
-	 * Converts a String that is plural to singular.<br>
-	 * Converts end characters: "hes" to "h", "ses" to "s", "zzes" to "zz", "ies" to "y", "s" to "". This is the reverse method of
-	 * makePlural.
+	 * Converts a plural word to its singular form using simple English suffix
+	 * rules. Case of the returned text matches the input.
+	 * <ul>
+	 *   <li>If the word does not end in 's' or is too short, it is returned unchanged.</li>
+	 *   <li>Handles suffixes: "hes", "ses", "zzes", "ies", and "xes" using
+	 *       specialized removal or substitution rules.</li>
+	 *   <li>Words ending in 'ies' become 'y' or 'Y' based on the original case.</li>
+	 *   <li>All other words ending in 's' simply have the last 's' removed.</li>
+	 * </ul>
 	 *
-	 * @return new String. If s is null, then a blank "" is returned.
-	 * @see #makePlural
+	 * @param str the plural word; null returns an empty string
+	 * @return a singular form of the word, or the original if no rule applies
 	 */
 	public static String makeSingular(String str) {
 		if (str == null) {
@@ -137,6 +172,18 @@ public class OATextGrammar {
 		return str.substring(0, x - 1);
 	}
 	
+	/**
+	 * Returns the article "a" or "an" for the supplied word based on its first
+	 * character.
+	 * <ul>
+	 *   <li>If the word is null or empty, {@code "a"} is returned.</li>
+	 *   <li>If the first character (case-insensitive) is a, e, i, o, or u,
+	 *       returns {@code "an"}; otherwise {@code "a"}.</li>
+	 * </ul>
+	 *
+	 * @param s the word to examine
+	 * @return "a" or "an" depending on the starting letter
+	 */
 	public static String getAorAn(String s) {
 		if (s == null || s.length() == 0) {
 			return "a";
@@ -147,24 +194,23 @@ public class OATextGrammar {
 		}
 		return "an";
 	}
-
+	
 	/**
-	 * Converts a String to plural.
+	 * Converts a singular word to its plural form using simple English suffix
+	 * rules. Appended characters preserve the original case (upper or lower).
 	 * <ul>
-	 * <li>If str ends in "es" then no change is made.
-	 * <li>If str ends in "s" then add "es".
-	 * <li>If str ends in "zz" then add "s".
-	 * <li>If str ends is an "h", "z", "x" then add "es".
-	 * <li>If str ends in a vowel + "y", then add "s".
-	 * <li>If str ends in a nonvowel + "y", then convert "y" to "ies".
-	 * <li>All others have an "s" added.
+	 *   <li>If the word ends in "es" (case-insensitive), it is returned unchanged.</li>
+	 *   <li>If it ends in "s", appends "es".</li>
+	 *   <li>If it ends in "zz", appends "s".</li>
+	 *   <li>If it ends in "th", appends "s".</li>
+	 *   <li>If it ends in 'h', 'z', or 'x', appends "es".</li>
+	 *   <li>If it ends with vowel + 'y', appends "s".</li>
+	 *   <li>If it ends with consonant + 'y', replaces 'y' with "ies".</li>
+	 *   <li>All other endings simply append 's'.</li>
 	 * </ul>
-	 * <p>
-	 * Note: case will be matched, whatever characters are appended will match the case of the String. This is the reverse method of
-	 * makeSingular.
 	 *
-	 * @return new plural String. If s is null, then a blank "" is returned.
-	 * @see #makeSingular
+	 * @param str the singular word; null returns an empty string
+	 * @return the plural form of the word
 	 */
 	public static String makePlural(String str) {
 		if (str == null) {
@@ -209,6 +255,17 @@ public class OATextGrammar {
 		return str + (bUpper ? "S" : "s");
 	}
 
+	/**
+	 * Creates a possessive form of the supplied word.
+	 * <ul>
+	 *   <li>If the word ends with 's' or 'S', appends an apostrophe (').</li>
+	 *   <li>Otherwise appends an apostrophe followed by 's' or 'S' based on the
+	 *       case of the last character.</li>
+	 * </ul>
+	 *
+	 * @param str the base word; null returns an empty string
+	 * @return the possessive form, such as "car's" or "class'"
+	 */
 	public static String makePossessive(String str) {
 		if (str == null) {
 			return "";
@@ -228,7 +285,15 @@ public class OATextGrammar {
 	}
 
 	/**
-	 * Converts a String to possissive by adding "'s" or "'".
+	 * Alternate possessive helper using a slightly different case rule than
+	 * {@link #makePossessive(String)}.
+	 * <ul>
+	 *   <li>If the word ends with 's' or 'S', appends an apostrophe (').</li>
+	 *   <li>Otherwise appends "'S" for uppercase endings or "'s" for lowercase.</li>
+	 * </ul>
+	 *
+	 * @param str the base word; null returns an empty string
+	 * @return the possessive form of the word
 	 */
 	public static String getPossessive(String str) {
 		if (str == null) {
@@ -247,9 +312,17 @@ public class OATextGrammar {
 	}
 
 	/**
-	 * Converts first letter in each word to uppercase.
+	 * Title-cases a string by uppercasing the first letter of each word and
+	 * optionally lowercasing the remaining letters.
+	 * <ul>
+	 *   <li>A "word" starts after any non-letter character.</li>
+	 *   <li>If the entire input is uppercase, non-initial letters are converted
+	 *       to lowercase to avoid all-caps output.</li>
+	 *   <li>Non-letter characters are preserved.</li>
+	 * </ul>
 	 *
-	 * @return new String.
+	 * @param s the text to convert; null returns an empty string
+	 * @return the title-cased string
 	 */
 	public static String getTitle(String s) {
 		if (s == null) {
@@ -285,6 +358,24 @@ public class OATextGrammar {
 		return sb.toString();
 	}
 	
+	/**
+	 * Title-cases a string but only continues capitalizing leading letters while
+	 * they still match the pattern implied by {@code basedOn}.
+	 * <ul>
+	 *   <li>Behavior is similar to {@link #getTitle(String)} for the initial
+	 *       letters.</li>
+	 *   <li>For each letter position, the capitalized form is compared against
+	 *       the corresponding character in {@code basedOn} when available.</li>
+	 *   <li>Once a mismatch is detected, subsequent letters are no longer forced
+	 *       to uppercase, except for the all-uppercase-to-lowercase normalization.</li>
+	 *   <li>If the input is entirely uppercase, non-initial letters may be
+	 *       lowercased.</li>
+	 * </ul>
+	 *
+	 * @param s        the text to convert; null returns an empty string
+	 * @param basedOn  reference string used to control how long capitalization is applied
+	 * @return the title-cased string with behavior influenced by {@code basedOn}
+	 */
 	public static String getTitle(String s, String basedOn) {
 		if (s == null) {
 			return "";
@@ -331,6 +422,22 @@ public class OATextGrammar {
 		return sb.toString();
 	}
 
+	/**
+	 * Produces a short, lowercased name derived from a longer identifier, using
+	 * uppercase letters and consonants to build an abbreviation up to a maximum
+	 * length.
+	 * <ul>
+	 *   <li>If {@code name} is null or empty, returns an empty string.</li>
+	 *   <li>First character is always included (lowercased).</li>
+	 *   <li>All subsequent uppercase letters are included (lowercased).</li>
+	 *   <li>Additional consonants are included until {@code max} is reached,
+	 *       with the amount limited based on the number of uppercase letters.</li>
+	 * </ul>
+	 *
+	 * @param name the source name; may be null or empty
+	 * @param max  maximum length of the resulting short name
+	 * @return a compact short name, or an empty string if {@code name} is blank
+	 */
 	public static String getShortName(final String name, final int max) {
 		if (OATextSanitize.isEmpty(name)) {
 			return "";

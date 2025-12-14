@@ -54,10 +54,24 @@ import com.viaoa.util.OAString;
 public class OAObjectPojoLoader implements Serializable {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Creates a new {@code OAObjectPojoLoader} instance.
+	 */
 	public OAObjectPojoLoader() {
 
 	}
 
+	/**
+	 * Generates a {@link Pojo} metadata definition for the supplied
+	 * {@link OAObjectInfo}.
+	 * <p>
+	 * Populates POJO regular properties, link-one structures (including fkeys,
+	 * import matches, and unique-property patterns), and link-many structures.
+	 * Key positions are finalized using {@link #markAllPojoPropertyKeys(Pojo, OAObjectInfo)}.
+	 *
+	 * @param oi the {@link OAObjectInfo} describing the OAObject model
+	 * @return a fully populated {@link Pojo} metadata tree
+	 */
 	public Pojo loadIntoPojo(final OAObjectInfo oi) {
 		Pojo pojo = new Pojo();
 		pojo.setName(oi.getName());
@@ -138,6 +152,19 @@ public class OAObjectPojoLoader implements Serializable {
 	}
 
 	// recursive when following link with importMatch or unique that is a LinkProperty
+	/**
+	 * Processes a link-one association to populate its fkey, import-match,
+	 * and unique-property POJO metadata.
+	 * <p>
+	 * May recurse into deeper link-one structures when import-match or
+	 * unique-property rules require following nested paths.
+	 *
+	 * @param oi                  OAObject metadata
+	 * @param prefixPropertyPath  accumulated property-path prefix
+	 * @param pojo                the root {@link Pojo} metadata tree
+	 * @param pojoLinkOne         link-one metadata container
+	 * @param lp                  OA link-one definition
+	 */
 	protected void processPojoLinkOne(final OAObjectInfo oi, final String prefixPropertyPath, final Pojo pojo,
 			final PojoLinkOne pojoLinkOne,
 			final OALinkInfo lp) {
@@ -177,6 +204,18 @@ public class OAObjectPojoLoader implements Serializable {
 
 	}
 
+	/**
+	 * Adds POJO import-match properties for a link-one association.
+	 * <p>
+	 * Includes both direct property-based import matches and nested matches
+	 * traversed through link-one paths.
+	 *
+	 * @param oi                  OAObject metadata
+	 * @param prefixPropertyPath  accumulated property-path prefix
+	 * @param pojo                root POJO metadata
+	 * @param plo                 link-one metadata holder
+	 * @param lp                  OA link-one definition
+	 */
 	protected void processPojoLinkOneWithImportMatches(final OAObjectInfo oi, final String prefixPropertyPath, final Pojo pojo,
 			final PojoLinkOne plo,
 			OALinkInfo lp) {
@@ -244,6 +283,19 @@ public class OAObjectPojoLoader implements Serializable {
 		}
 	}
 
+	/**
+	 * Adds POJO metadata for link-one relationships that participate in
+	 * equal-property-path uniqueness rules.
+	 * <p>
+	 * Handles both simple unique-property cases and nested link-one unique
+	 * references that require recursion.
+	 *
+	 * @param oi                  OAObject metadata
+	 * @param prefixPropertyPath  accumulated property-path prefix
+	 * @param pojo                root POJO metadata
+	 * @param lp                  OA link-one definition
+	 * @param plo                 link-one POJO metadata holder
+	 */
 	protected void processPojoLinkOneWithEqualPropPathsAndUnique(final OAObjectInfo oi, final String prefixPropertyPath, final Pojo pojo,
 			final OALinkInfo lp,
 			final PojoLinkOne plo) {
@@ -327,6 +379,16 @@ public class OAObjectPojoLoader implements Serializable {
 		return;
 	}
 
+	/**
+	 * Determines and assigns key positions for all POJO properties derived from
+	 * {@link OAObjectInfo}.
+	 * <p>
+	 * Considers pkey fields, compound keys, import-match keys, and nested
+	 * link-one uniqueness structures.
+	 *
+	 * @param pojo the POJO metadata tree to update
+	 * @param oi   OAObject metadata providing property definitions
+	 */
 	protected void markAllPojoPropertyKeys(final Pojo pojo, final OAObjectInfo oi) {
 
 		// properties that are key(s)
@@ -443,6 +505,16 @@ public class OAObjectPojoLoader implements Serializable {
 		}
 	}
 
+	/**
+	 * Recursively assigns key positions within a {@link PojoLinkOne} subtree.
+	 * <p>
+	 * Processes foreign-key POJO properties, import-match POJO properties,
+	 * and unique-property link-one references.
+	 *
+	 * @param plo link-one POJO metadata node
+	 * @param oi  OAObject metadata for key lookups
+	 * @return true if any keys were assigned; otherwise false
+	 */
 	protected boolean markAllPojoPropertyKeys(final PojoLinkOne plo, final OAObjectInfo oi) {
 		boolean bFound = false;
 		for (PojoLinkFkey plf : plo.getPojoLinkFkeys()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,17 @@ import com.viaoa.util.OATime;
  */
 public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
+	/**
+	 * Serializes the supplied {@link OAObject} into JSON.
+	 * <p>
+	 * Establishes the root {@link StackItem} when necessary, then delegates
+	 * serialization to {@link #_serialize(OAJson, OAObject, OAObjectInfo, OAObject, JsonGenerator, SerializerProvider)}.
+	 *
+	 * @param value        the OAObject to serialize
+	 * @param gen          JSON generator for writing output
+	 * @param serializers  serializer provider
+	 * @throws IOException if writing fails
+	 */
 	@Override
 	public void serialize(final OAObject value, final JsonGenerator gen, final SerializerProvider serializers) throws IOException {
 
@@ -89,6 +100,21 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		}
 	}
 
+	/**
+	 * Core serialization routine for writing OAObject and Hub data structures.
+	 * <p>
+	 * Writes ID properties, non-ID properties, applies property callbacks,
+	 * includes POJO-specific fields when configured, and serializes link-one
+	 * and link-many associations according to cascade and inclusion rules.
+	 *
+	 * @param oaj         the current OAJson context
+	 * @param oaObj       the object being serialized
+	 * @param oi          OAObject metadata
+	 * @param value       the root object value
+	 * @param gen         JSON output generator
+	 * @param serializers provider for additional serializers
+	 * @throws IOException if writing fails
+	 */
 	protected void _serialize(final OAJson oaj, final OAObject oaObj, final OAObjectInfo oi, final OAObject value, final JsonGenerator gen,
 			final SerializerProvider serializers) throws IOException {
 
@@ -327,11 +353,15 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 	}
 
 	/**
-	 * Include other properties that could be needed for Pojo. Pojo classes dont always have a pkey property, but uniqueness can be found
-	 * using other data. Uses pojo information to determine other fkey'like values to include. This includes importMatch, links with unique
-	 * property, and fkeys from another link.
-	 * <p>
-	 * see OABuilder model OABuilderPojo
+	 * Writes additional POJO-related fields not directly represented as OAObject
+	 * properties. Includes foreign-key, import-match, and unique-property values
+	 * derived from POJO metadata.
+	 *
+	 * @param oaj    OAJson context
+	 * @param oi     OAObject metadata
+	 * @param oaObj  object being serialized
+	 * @param gen    JSON generator
+	 * @throws IOException if writing fails
 	 */
 	protected void writeExtraPojoProperties(final OAJson oaj, final OAObjectInfo oi, final OAObject oaObj, final JsonGenerator gen)
 			throws IOException {
@@ -344,6 +374,17 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		}
 	}
 
+	/**
+	 * Writes POJO link-one auxiliary properties used to support various uniqueness,
+	 * import-match, and foreign-key lookup strategies.
+	 *
+	 * @param oaj    OAJson context
+	 * @param oi     OAObject metadata
+	 * @param oaObj  source object
+	 * @param gen    JSON generator
+	 * @param plo    POJO link-one metadata
+	 * @throws IOException if writing fails
+	 */
 	protected void writePojoLinkOne(final OAJson oaj, final OAObjectInfo oi, final OAObject oaObj, final JsonGenerator gen,
 			final PojoLinkOne plo) throws IOException {
 
@@ -384,6 +425,19 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		}
 	}
 
+	/**
+	 * Writes a single POJO property determined by {@link PojoProperty}.
+	 * <p>
+	 * Resolves the OA property via {@link OAPropertyPath}, applies callbacks,
+	 * and writes the value in JSON format.
+	 *
+	 * @param oaj    OAJson context
+	 * @param oi     OAObject metadata
+	 * @param oaObj  object containing the property
+	 * @param gen    JSON generator
+	 * @param pjp    POJO property metadata
+	 * @throws IOException if writing fails
+	 */
 	protected void writePojoProperty(final OAJson oaj, final OAObjectInfo oi, final OAObject oaObj, final JsonGenerator gen,
 			final PojoProperty pjp) throws IOException {
 		String propertyName = pjp.getName();
@@ -403,6 +457,16 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		}
 	}
 
+	/**
+	 * Determines whether a link should be included in serialization based on
+	 * OAJson property-path filters, ownership, and cascade rules.
+	 *
+	 * @param oaj             OAJson context
+	 * @param li              link metadata
+	 * @param bIncludeOwned   whether owned objects should be included
+	 * @param alPropertyPaths property-path inclusion filters
+	 * @return true if the link should be serialized; otherwise false
+	 */
 	protected boolean shouldInclude(OAJson oaj, OALinkInfo li, boolean bIncludeOwned, ArrayList<String> alPropertyPaths) {
 		if (li == null) {
 			return false;
@@ -440,10 +504,31 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		return false;
 	}
 
+	/**
+	 * Writes a scalar OA property using its lower-case name and the property's
+	 * current value from the object.
+	 *
+	 * @param pi     property metadata
+	 * @param gen    JSON generator
+	 * @param oaObj  object containing the property
+	 * @throws IOException if writing fails
+	 */
 	protected void writeProperty(OAPropertyInfo pi, JsonGenerator gen, OAObject oaObj) throws IOException {
 		writeProperty(pi, pi.getLowerName(), null, gen, oaObj);
 	}
 
+	/**
+	 * Writes a property value using the supplied field name, performing type
+	 * conversions, null handling, format application, and raw-JSON output for
+	 * properties marked as JSON.
+	 *
+	 * @param pi         metadata for the property
+	 * @param lowerName  output JSON field name
+	 * @param value      pre-computed value or null to auto-resolve
+	 * @param gen        JSON generator
+	 * @param oaObj      object containing the property
+	 * @throws IOException if writing fails
+	 */
 	protected void writeProperty(OAPropertyInfo pi, final String lowerName, Object value, JsonGenerator gen, OAObject oaObj)
 			throws IOException {
 		boolean bCheckValue = (value == null);

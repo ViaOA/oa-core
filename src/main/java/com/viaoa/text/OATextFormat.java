@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,18 @@ import com.viaoa.util.OATime;
  */
 public class OATextFormat {
 
+	/**
+	 * Regular expression used to detect the presence of date/time formatting
+	 * characters within a format string. Enables automatic delegation to
+	 * {@link OADateTime} when alignment directives are not present.
+	 */
 	private static final Pattern DATE_PATTERN = Pattern.compile(".*[yMdHhmsS].*");
+	
+	/**
+	 * Regular expression used to detect numeric-related formatting characters
+	 * such as digits, '$', ',', or '#'. Enables automatic numeric conversion
+	 * when alignment directives are not present.
+	 */
 	private static final Pattern NUMBER_PATTERN = Pattern.compile(".*[0-9,$#].*");
 	
 
@@ -115,6 +126,23 @@ public class OATextFormat {
 	}
 
 	
+	/**
+	 * Internal formatting engine implementing alignment, padding, decimal handling,
+	 * masking, truncation, comma separators, currency prefixing, and ellipsis rules.
+	 * <p>
+	 * Behavior includes:
+	 * <ul>
+	 *   <li>Automatic numeric/date/time detection when no alignment directive exists</li>
+	 *   <li>Interpretation of width, justification (L/R/C), decimals, commas, '$', pad chars</li>
+	 *   <li>Mask parsing using '#' placeholders for character insertion</li>
+	 *   <li>Optional leading/trailing ellipsis when truncation is required</li>
+	 *   <li>Centering logic when justification = 'C'</li>
+	 * </ul>
+	 *
+	 * @param strOrig the original value to format
+	 * @param format  the formatting or masking expression
+	 * @return the formatted string
+	 */
 	private static String _fmt(final String strOrig, final String format) {
 		if (format == null || format.length() == 0) {
 			return strOrig;
@@ -355,17 +383,12 @@ public class OATextFormat {
 
 	
 	/**
-	 * Find the number of decimal places for a String decimal number.
-	 * Ignores trailing '0'.
-	 * <p>
-	 * Examples:  "123.25" = 2<br>
-	 * "123.2000" = true=1, false=4<br>
-	 * "123.2001" = 4<br>
-	 * "123.249" = 3<br.
-	 * "123.00" = true=0, false=2<br>
-	 * @param num
-	 * @param bIgnoreTrailingZeros dont count trailing '0' digits.
-	 * @return
+	 * Calculates the number of decimal places in a numeric string. Validates that
+	 * all characters after the decimal point are digits; otherwise returns zero.
+	 *
+	 * @param num                   the numeric string to inspect
+	 * @param bIgnoreTrailingZeros  whether trailing zeros should be excluded
+	 * @return the count of decimal digits based on the rules
 	 */
 	public static int getNumberOfDecimalPlaces(String num, boolean bIgnoreTrailingZeros) {
 		if (num == null) return 0;
@@ -386,6 +409,14 @@ public class OATextFormat {
 		return cnt;
 	}
 
+	/**
+	 * Returns whether the supplied string can be converted to a {@link Double}
+	 * using {@link OAConverter}. Rejects empty or whitespace-only input and values
+	 * that parse to NaN or infinity.
+	 *
+	 * @param str the text to evaluate
+	 * @return true if it represents a valid number
+	 */
 	public static boolean isNumber(String str) {
 	    if (str == null || str.length() == 0) return false;
 
@@ -400,7 +431,11 @@ public class OATextFormat {
 
 	
 	/**
-	 * Returns true if the String represents a whole integer (positive or negative).
+	 * Determines whether the supplied string represents a whole integer. Delegates
+	 * to {@link OAConverter} to attempt conversion to {@link Long}.
+	 *
+	 * @param str the text to evaluate
+	 * @return true if the string converts to a non-null Long
 	 */
 	public static boolean isInteger(String str) {
 	    if (str == null || str.length() == 0) return false;
@@ -415,10 +450,11 @@ public class OATextFormat {
 	}
 	
 	/**
-	 * Returns true if String is a valid Date. This will try to convert the String to a OADate.
+	 * Indicates whether the string can be converted into an {@link OADate}.
+	 * Delegates to {@link OAConverter}.
 	 *
-	 * @param s String to check
-	 * @return true if String can be converted to a OADate. see OAConverterOADate
+	 * @param s the text to evaluate
+	 * @return true if conversion to OADate succeeds
 	 */
 	public static boolean isDate(String s) {
 	    if (s == null || s.length() == 0) return false;
@@ -430,10 +466,11 @@ public class OATextFormat {
 	}
 
 	/**
-	 * Returns true if String is a valid Time. This will try to convert the String to a OATime.
+	 * Indicates whether the string can be converted into an {@link OATime}.
+	 * Delegates to {@link OAConverter}.
 	 *
-	 * @param s String to check
-	 * @return true if String can be converted to a OATime. see OAConverterOATime
+	 * @param s the text to evaluate
+	 * @return true if conversion to OATime succeeds
 	 */
 	public static boolean isTime(String s) {
 	    if (s == null || s.length() == 0) return false;
@@ -445,10 +482,11 @@ public class OATextFormat {
 	}
 	
 	/**
-	 * Returns true if String is a valid DateTime. This will try to convert the String to a OADateTime.
+	 * Indicates whether the string can be converted into an {@link OADateTime}.
+	 * Delegates to {@link OAConverter}.
 	 *
-	 * @param s String to check
-	 * @return true if String can be converted to a OADateTime. see OAConverterOADateTime
+	 * @param s the text to evaluate
+	 * @return true if conversion to OADateTime succeeds
 	 */
 	public static boolean isDateTime(String s) {
 	    if (s == null || s.length() == 0) return false;
@@ -459,16 +497,18 @@ public class OATextFormat {
 	    }
 	}	
 	
-
-
 	/**
-	 * Used to generate a String based on a mask.
+	 * Applies a mask expression to the supplied value. Characters in the mask
+	 * that are '#' are replaced with characters from {@code value}; all others
+	 * are copied literally.
+	 * <p>
+	 * When right-justified, the value is padded or truncated to match the number
+	 * of '#' placeholders before mask expansion begins.
 	 *
-	 * @param value           is String to use with mask. If null, then value is set to a blank "" String.
-	 * @param mask            where all # characters will be replaced by data in value. All other characters (non #) in mask will be
-	 *                        outputted with new String.
-	 * @param bRightJustified if true, then mask will be generated from right to left, else left to right.
-	 * @return new String with mask applied. If mask == null, then value is returned.
+	 * @param value           the text to apply the mask to; null becomes ""
+	 * @param mask            the mask pattern; if null, {@code value} is returned
+	 * @param bRightJustified whether value should be aligned to the right within '#' slots
+	 * @return the masked output
 	 */
 	public static String mask(String value, String mask, boolean bRightJustified) {
 		if (mask == null) {
@@ -520,7 +560,12 @@ public class OATextFormat {
 	}
 	
 	/**
-	 * Returns an ordinal number string. Examples: 1st, 2nd, 3rd, 4th, ...
+	 * Converts an integer into its ordinal English representation:
+	 * 1 → "1st", 2 → "2nd", 3 → "3rd", everything else ends in "th".
+	 * Accounts for the special 11–13 exception case.
+	 *
+	 * @param x the number to convert
+	 * @return the ordinal representation
 	 */
 	public static String toNumberString(int x) {
 	    int mod100 = x % 100;
@@ -536,7 +581,11 @@ public class OATextFormat {
 	}	
 
 	/**
-	 * Only allows digits and ' ' characters. Will left pad with spaces to make 10 char long.
+	 * Normalizes a phone number to contain only digits and spaces, then left pads
+	 * it with spaces to a length of 10. Non-digit, non-space characters are removed.
+	 *
+	 * @param phone the phone number to clean
+	 * @return a 10-character digit/space phone number, or null if input is null
 	 */
 	public static String convertToValidPhoneNumber(String phone) {
 		if (phone == null) {
@@ -570,7 +619,14 @@ public class OATextFormat {
 		return phone;
 	}
 
-	// add leading spaces to each line in a string that is separated by '\n'
+	/**
+	 * Indents each line of a newline-separated string by prefixing {@code amt}
+	 * space characters. Always returns a non-null string.
+	 *
+	 * @param text the text to indent; null becomes ""
+	 * @param amt  number of leading spaces to add
+	 * @return the indented result
+	 */
 	public static String indent(String text, int amt) {
 		if (text == null) text = "";
 		StringBuilder sb = new StringBuilder(text.length() + amt);
@@ -585,15 +641,38 @@ public class OATextFormat {
 		return sb.toString();
 	}
 	
+	/**
+	 * Removes leading spaces from each line of the text. Delegates to
+	 * {@link #unindent(String, boolean)} using {@code false}.
+	 *
+	 * @param text the text to process; may be null
+	 * @return the unindented form
+	 */
 	public static String unindent(String text) {
 		return unindent(text, false);
 	}
 
+	/**
+	 * Removes leading spaces from each line based on the indentation level
+	 * of the first line. Useful for normalizing code blocks.
+	 *
+	 * @param text the text to process
+	 * @return the unindented result
+	 */
 	public static String unindentCode(String text) {
 		return unindent(text, true);
 	}
 	
 	
+	/**
+	 * Removes up to a uniform number of leading spaces from each line. When
+	 * {@code bBasedOnFirstLine} is true, the number of spaces removed is fixed
+	 * based on the first line’s indentation.
+	 *
+	 * @param text               the text to process
+	 * @param bBasedOnFirstLine  whether indentation should match first line
+	 * @return text with leading spaces removed on each line
+	 */
 	public static String unindent(String text, boolean bBasedOnFirstLine) {
 		StringBuilder sb = new StringBuilder(text.length());
 		int max = -1;
@@ -619,7 +698,11 @@ public class OATextFormat {
 	}
 	
 	/**
-	 * Remove ending whitespace from a string.
+	 * Removes all trailing whitespace characters from the string. If the string
+	 * contains no trailing whitespace, it is returned unchanged.
+	 *
+	 * @param text the text to trim; may be null
+	 * @return the trimmed string, or null if the input is null
 	 */
 	public static String trimEndingWhitespace(String text) {
 		if (text == null) {
@@ -638,9 +721,13 @@ public class OATextFormat {
 		return "";
 	}
 
-
 	/**
-	 * Removes any leading &amp; trailing whitespace chars, but will leave single space chars within text.
+	 * Removes leading and trailing whitespace, while preserving internal single
+	 * spaces. Collapses runs of whitespace into a single space without modifying
+	 * non-space characters.
+	 *
+	 * @param text the text to trim; may be null
+	 * @return the whitespace-normalized text
 	 */
 	public static String trimWhitespace(String text) {
 		if (text == null) {
@@ -686,24 +773,68 @@ public class OATextFormat {
 	}
 
 
+	/**
+	 * Default set of separator characters used by camel-case and Hungarian-case
+	 * conversion routines. Any character in this set is treated as a word
+	 * boundary during name transformation.
+	 */
 	private final static String validToCamelCaseSep = " _,.:|\t-/";
 
-	/**
+	/*
 	 * Example: "Your Name Test" converts to "YourNameTest" Example: "your name test" converts to "yourNameTest" Example: "Your_name_test"
 	 * converts to "YourNameTest" Example: "your.name.test" converts to "yourNameTest" first char upper/lower-case is not changed.
+	 */
+	/**
+	 * Converts the input text to camelCase form using the default separator set.
+	 * Delegates to {@link #convertToHungarian(String, String)} without altering
+	 * the case of the first character.
+	 *
+	 * @param value the text to convert; may be null
+	 * @return camelCase representation, or null if value is null
 	 */
 	public static String convertToCamelCase(String value) {
 		return convertToHungarian(value, null);
 	}
 
+	/**
+	 * Converts the input text to camelCase using the supplied separator characters.
+	 * Delegates to {@link #convertToHungarian(String, String)}.
+	 *
+	 * @param value    the text to convert; may be null
+	 * @param sepChars characters treated as separators; null uses defaults
+	 * @return camelCase representation, or null if value is null
+	 */
 	public static String convertToCamelCase(String value, String sepChars) {
 		return convertToHungarian(value, sepChars);
 	}
 
+	/**
+	 * Converts a string into Hungarian-style camelCase, using the default separator
+	 * set. Delegates to {@link #convertToHungarian(String, String)}.
+	 *
+	 * @param value the text to convert; may be null
+	 * @return transformed string, or null if value is null
+	 */
 	public static String convertToHungarian(String value) {
 		return convertToHungarian(value, null);
 	}
 
+	/**
+	 * Converts text to Hungarian/camelCase by removing separators and capitalizing
+	 * characters following separators. Digits immediately following other digits
+	 * preserve separator behavior by inserting the separator character if the
+	 * original separator was a space.
+	 *
+	 * <ul>
+	 *   <li>Characters in {@code sepChars} are skipped but remembered as boundaries.</li>
+	 *   <li>After a boundary, letters are upper-cased; consecutive digits remain grouped.</li>
+	 *   <li>If {@code value} is null, returns null.</li>
+	 * </ul>
+	 *
+	 * @param value    the text to convert
+	 * @param sepChars characters treated as word boundaries; null uses defaults
+	 * @return Hungarian/camelCase transformation
+	 */
 	public static String convertToHungarian(String value, String sepChars) {
 		if (value == null) {
 			return null;
@@ -741,10 +872,28 @@ public class OATextFormat {
 		return sb.toString();
 	}
 	
+	/**
+	 * Delegates to {@link #toUTF8(String)} to convert an ISO-8859-1 encoded
+	 * string into UTF-8. Provided for naming convenience.
+	 *
+	 * @param isoString the ISO-8859-1 text; may be null
+	 * @return UTF-8 decoded string
+	 */
 	public static String toUtf8(String isoString) {
 		return toUTF8(isoString);
 	}
 
+	/**
+	 * Converts a string assumed to be encoded in ISO-8859-1 into a UTF-8 string.
+	 * <ul>
+	 *   <li>If the input is null or empty, it is returned unchanged.</li>
+	 *   <li>If the JVM does not support ISO-8859-1 or UTF-8 (should never occur),
+	 *       logs the exception and returns the original string.</li>
+	 * </ul>
+	 *
+	 * @param isoString the ISO-8859-1 encoded text
+	 * @return UTF-8 string, or original string on encoding failure
+	 */
 	public static String toUTF8(String isoString) {
 		String utf8String = null;
 		if (null != isoString && !isoString.equals("")) {

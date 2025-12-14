@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,14 +44,40 @@ import java.util.List;
  */
 public class OARestClassInfo {
 
+	/**
+	 * The Java interface class that defines the remote REST API. This is the
+	 * interface annotated with {@code @OARestClass}.
+	 */
 	public Class interfaceClass;
+	
+	/**
+	 * List of {@link OARestMethodInfo} objects, one for each annotated method
+	 * discovered on the remote interface.
+	 */
 	public ArrayList<OARestMethodInfo> alMethodInfo = new ArrayList();
+	
+	/**
+	 * Optional context name supplied by {@code @OARestClass}, used as a logical
+	 * grouping or routing prefix for the interface's REST methods.
+	 */
 	public String contextName;
 
+	/**
+	 * Creates a new metadata container for the specified remote interface.
+	 *
+	 * @param clazz the remote interface class annotated with {@code @OARestClass}
+	 */
 	public OARestClassInfo(Class clazz) {
 		this.interfaceClass = clazz;
 	}
 
+	/**
+	 * Verifies the configuration of all REST methods declared in this class
+	 * by invoking {@link OARestMethodInfo#verify()} on each entry. Aggregates
+	 * all reported errors into a single list.
+	 *
+	 * @return a list of configuration error messages, empty if none found
+	 */
 	public ArrayList<String> verify() {
 		ArrayList<String> alErrors = new ArrayList();
 

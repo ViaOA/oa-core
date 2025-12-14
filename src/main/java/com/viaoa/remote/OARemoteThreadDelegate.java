@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,14 +49,25 @@ import com.viaoa.remote.info.RequestInfo;
  */
 public class OARemoteThreadDelegate {
 
+	/**
+	 * Determines whether the current thread is an {@link OARemoteThread}. The
+	 * method checks the runtime type of the current thread and returns true if it
+	 * is an instance of {@code OARemoteThread}.
+	 *
+	 * @return true if the current thread is an OARemoteThread, otherwise false
+	 */
     public static boolean isRemoteThread() {
         Thread t = Thread.currentThread();
         return (t instanceof OARemoteThread);
     }
 
     /**
-     * Used to check to check if a RemoteThread has reach it's "mark"/purpose
-     * for the method that it's currently processing. 
+     * Determines whether it is safe to perform additional remote method calls
+     * within the current thread. If the thread is not an
+     * {@link OARemoteThread}, it is always considered safe; otherwise the method
+     * returns true only if the thread has already started the next remote thread.
+     *
+     * @return true if it is safe to call a remote method, otherwise false
      */
     public static boolean isSafeToCallRemoteMethod() {
         Thread t = Thread.currentThread();
@@ -67,8 +78,12 @@ public class OARemoteThreadDelegate {
     }
     
     /**
-     * By default OARemoteThreads do not sent messages. 
-     * This is to check if OARemoteThread.sendMessages is true.
+     * Indicates whether remote messages should be broadcast from the current
+     * thread. If the current thread is not an {@link OARemoteThread}, messages
+     * should be sent. If it is a remote thread, its internal send-messages flag
+     * determines the result.
+     *
+     * @return true if messages should be sent, otherwise false
      */
     public static boolean shouldSendMessages() {
         Thread t = Thread.currentThread();
@@ -77,8 +92,11 @@ public class OARemoteThreadDelegate {
     }
 
     /**
-     * This is called once the msg that is being processed has met it's "mark".
-     * This will notify another OARemoteThread to process the next msg in the queue.
+     * Marks that the current thread has reached its primary processing point and
+     * may allow another {@link OARemoteThread} to begin handling the next
+     * message. If the current thread is a remote thread and has not already
+     * started the next thread, its {@code startNextThread()} method is invoked.
+     * Afterward, any thread waiting in {@code OAThreadLocalDelegate} is notified.
      */
     public static void startNextThread() {
         Thread t = Thread.currentThread();
@@ -91,7 +109,11 @@ public class OARemoteThreadDelegate {
     }
     
     /**
-     * Check to see if nextThread has been started.
+     * Returns whether the current thread has already signaled that another
+     * {@link OARemoteThread} may begin processing a new message. If the current
+     * thread is not a remote thread, the method always returns true.
+     *
+     * @return true if the next thread has been started, otherwise false
      */
     public static boolean startedNextThread() {
         Thread t = Thread.currentThread();
@@ -103,7 +125,10 @@ public class OARemoteThreadDelegate {
     }
 
     /**
-     * Get the current RequestInfo message that is being processed by this thread.
+     * Retrieves the {@link RequestInfo} associated with the current thread if it
+     * is an {@link OARemoteThread}. Otherwise, returns null.
+     *
+     * @return the RequestInfo for the current remote thread, or null if not a remote thread
      */
     public static RequestInfo getRequestInfo() {
         Thread t = Thread.currentThread();
@@ -115,14 +140,23 @@ public class OARemoteThreadDelegate {
     }
     
     /**
-     * Flat to have oasync msgs sent to other computers.
+     * Enables message sending for the current thread by delegating to
+     * {@link #sendMessages(boolean)} with a value of true.
+     *
+     * @return the previous send-messages state for the current thread
      */
     public static boolean sendMessages() {
         return sendMessages(true);
     }
+    
     /**
-     * This allows messages from an OARemoteThread to be sent out to clients.
-     * By default, any messages generated from an OARemoteThread are not sent.
+     * Updates whether messages should be sent from the current thread. If the
+     * thread is not an {@link OARemoteThread}, messages are always considered
+     * sendable and the method returns true. For remote threads, the previous
+     * send-messages state is returned after setting the new state.
+     *
+     * @param b true to enable message sending, false to disable it
+     * @return the previous send-messages state
      */
     public static boolean sendMessages(boolean b) {
         Thread t = Thread.currentThread();
@@ -132,6 +166,12 @@ public class OARemoteThreadDelegate {
         return bx;
     }
 
+    /**
+     * Checks whether the current thread, if it is an {@link OARemoteThread}, is
+     * currently configured to send remote messages.
+     *
+     * @return true if the remote thread is sending messages, otherwise false
+     */
     public static boolean isRemoteThreadSendingMessages() {
         Thread t = Thread.currentThread();
         if (!(t instanceof OARemoteThread)) return false;
@@ -139,7 +179,13 @@ public class OARemoteThreadDelegate {
         return bx;
     }
     
-    
+    /**
+     * Determines whether runnable events should be queued for background
+     * processing. This is true only if the current thread is an
+     * {@link OARemoteThread} and the thread allows runnables to be queued.
+     *
+     * @return true if events should be queued, otherwise false
+     */
     public static boolean shouldEventsBeQueued() {
         Thread t = Thread.currentThread();
         if (!(t instanceof OARemoteThread)) return false;
@@ -148,9 +194,14 @@ public class OARemoteThreadDelegate {
     }
     
     /**
-     * If this is an OARemoteThread, then add this to background thread processing.
-     * @param r runnable to run.
-     * @return true if runnable was added to que for background OARemoteThreads to process.
+     * Queues the given runnable for execution within the current
+     * {@link OARemoteThread}, provided that the thread allows runnables to be
+     * processed. If the current thread is not a remote thread or event queuing is
+     * not allowed, the method returns false. Otherwise, the runnable is executed
+     * via the thread's {@code addRunnable} method and true is returned.
+     *
+     * @param r the runnable to process
+     * @return true if the runnable was queued and executed, otherwise false
      */
     public static boolean queueEvent(Runnable r) {
         Thread t = Thread.currentThread();

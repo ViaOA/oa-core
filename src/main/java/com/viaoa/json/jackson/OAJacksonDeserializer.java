@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,24 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 
 	// https://fasterxml.github.io/jackson-databind/javadoc/2.9/com/fasterxml/jackson/databind/JsonDeserializer.html
 
+	/**
+	 * Deserializes the current JSON subtree into an {@link OAObject} graph.
+	 * <p>
+	 * The method retrieves the current {@link OAJson} instance from
+	 * {@link OAThreadLocalDelegate} to determine the target object type and
+	 * configuration. A new {@link OAJacksonDeserializerLoader} is created to load
+	 * the JSON data into an existing root object or produce a new one.
+	 * <p>
+	 * The JSON is first converted to a {@link JsonNode} tree, which is then passed
+	 * to the loader to construct or update the corresponding {@link OAObject}
+	 * instances.
+	 *
+	 * @param jp    the JSON parser providing the input data
+	 * @param ctxt  the deserialization context supplied by Jackson
+	 * @return the root {@link OAObject} produced by deserialization
+	 * @throws IOException       if an I/O error occurs during parsing
+	 * @throws JacksonException  if Jackson encounters a parsing error
+	 */
 	@Override
 	public OAObject deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JacksonException {
 

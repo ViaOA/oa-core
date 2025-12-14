@@ -80,60 +80,165 @@ import com.viaoa.util.*;
  */
 public class OATemplate<F extends OAObject> {
 	private static Logger LOG = Logger.getLogger(OATemplate.class.getName());
+	
+	/**
+	 * Internal map of template-level properties referenced using the
+	 * <%= $name %> syntax. These override or supplement values supplied
+	 * through {@link OAProperties}.
+	 */
 	private Properties propInternal;
+	
+	/**
+	 * Root of the parsed template tree representing all literal text and
+	 * template tokens. Lazily created on first call to {@link #process(...)}.
+	 */
 	private TreeNode rootTreeNode;
+	
+	/**
+	 * Raw template text supplied by callers. Parsed into a tree structure
+	 * when processing begins.
+	 */
 	private String template;
+	
+	/**
+	 * Counter incremented whenever {@link #stopProcessing()} is invoked.
+	 * Used to cancel in-progress template generation.
+	 */
 	private final AtomicInteger aiStopCalled = new AtomicInteger();
+	
+	/**
+	 * Optional output-text transformation settings:
+	 * <ul>
+	 *   <li>{@code fromText} and {@code toText} — used for string substitution
+	 *       in {@link #getOutputText(String)}.</li>
+	 *   <li>{@code hiliteText} — optional highlight directive applied using
+	 *       {@link OAString#hilite(String, String)}.</li>
+	 * </ul>
+	 */
 	protected String fromText, toText, hiliteText;
+	
+	/**
+	 * Counter for tracking template-parsing errors. Limits warning output to
+	 * avoid excessive logging.
+	 */
 	private int parseErrorCnt = 0;
 
+	/**
+	 * Creates an empty template instance. Call {@link #setTemplate(String)}
+	 * before processing.
+	 */
 	public OATemplate() {
 	}
 
+	/**
+	 * Creates a template instance initialized with the supplied template text.
+	 *
+	 * @param htmlTemplate the full template content to parse and evaluate
+	 */
 	public OATemplate(String htmlTemplate) {
 		setTemplate(htmlTemplate);
 	}
 
+	/**
+	 * Assigns the template text to use for processing. Resets parse state so
+	 * that the template will be re-parsed on next evaluation.
+	 *
+	 * @param temp the raw template string
+	 */
 	public void setTemplate(String temp) {
 		this.template = temp;
 		this.rootTreeNode = null;
 		this.parseErrorCnt = 0;
 	}
 
+	/**
+	 * Returns the raw template text assigned to this instance.
+	 *
+	 * @return template string, or null if not set
+	 */
 	public String getTemplate() {
 		return this.template;
 	}
 
+	/**
+	 * Processes the template with no root objects, hub, or external properties.
+	 *
+	 * @return rendered template output
+	 */
 	public String process() {
 		String s = process(null, null, null, null);
 		return s;
 	}
 
+	/**
+	 * Processes the template using the supplied root object.
+	 *
+	 * @param objRoot primary root object for property evaluation
+	 * @return rendered template output
+	 */
 	public String process(F objRoot) {
 		String s = process(objRoot, null, null, null);
 		return s;
 	}
 
+	/**
+	 * Processes the template with two possible root objects. Selection is made
+	 * internally based on template property-path evaluation.
+	 *
+	 * @param objRoot1 first root object
+	 * @param objRoot2 second root object
+	 * @return rendered template output
+	 */
 	public String process(F objRoot1, F objRoot2) {
 		String s = process(objRoot1, objRoot2, null, null);
 		return s;
 	}
 
+	/**
+	 * Processes the template with two root objects and an external properties
+	 * map used to resolve <%= $var %> values.
+	 *
+	 * @param objRoot1 first root object
+	 * @param objRoot2 second root object
+	 * @param props    external property map
+	 * @return rendered output
+	 */
 	public String process(F objRoot1, F objRoot2, OAProperties props) {
 		String s = process(objRoot1, objRoot2, null, props);
 		return s;
 	}
 
+	/**
+	 * Processes the template using one root object and an external property map.
+	 *
+	 * @param objRoot main root object
+	 * @param props   external properties for variable substitution
+	 * @return rendered output
+	 */
 	public String process(F objRoot, OAProperties props) {
 		String s = process(objRoot, null, null, props);
 		return s;
 	}
 
+	/**
+	 * Processes the template with a hub as the primary data source, along with
+	 * optional external property values.
+	 *
+	 * @param hub   hub used for foreach operations
+	 * @param props external properties
+	 * @return rendered output
+	 */
 	public String process(Hub<F> hub, OAProperties props) {
 		String s = process(null, null, hub, props);
 		return s;
 	}
 
+	/**
+	 * Processes the template using the supplied hub without external properties.
+	 *
+	 * @param hub hub used for foreach operations
+	 * @return rendered output
+	 */
 	public String process(Hub<F> hub) {
 		String s = process(null, null, hub, null);
 		return s;
@@ -148,20 +253,49 @@ public class OATemplate<F extends OAObject> {
 	 */
 
 	/**
-	 * Used to have a a call to getHtml stopped.
+	 * Requests cancellation of any active template processing operation. Causes
+	 * {@link #generate(...)} to stop early.
 	 */
 	public void stopProcessing() {
 		aiStopCalled.incrementAndGet();
 	}
 
-	// this is used to determine which object to use (objRoot1 or 2).
+	/**
+	 * Tracks which of the two root object classes was selected during template
+	 * evaluation so that subsequent calls reuse the same decision.
+	 */
 	private Class classChoosen;
+	
+	/**
+	 * Stores a sampled property path extracted during parsing. Used to determine
+	 * which of the two root objects should be used during evaluation.
+	 */
 	private String ppSample;
 
+	/**
+	 * Delegates to the main process method that accepts two root objects, a hub,
+	 * and external properties.
+	 *
+	 * @param objRoot1 root object used for evaluation
+	 * @param hubRoot hub supplying data for foreach processing
+	 * @param props external properties for $name substitution
+	 * @return rendered template output
+	 */
 	public String process(F objRoot1, Hub<F> hubRoot, OAProperties props) {
 		return process(objRoot1, null, hubRoot, props);
 	}
 
+	/**
+	 * Core template evaluation method that selects the correct root object,
+	 * ensures the template is parsed, initializes standard date/time properties,
+	 * and then delegates to the generate routine.
+	 *
+	 * @param objRoot1 first candidate root object
+	 * @param objRoot2 second candidate root object
+	 * @param hubRoot hub used for foreach evaluation
+	 * @param props external property values
+	 * @return rendered output, or "cancelled" if stopped
+	 */
 	public String process(F objRoot1, F objRoot2, Hub<F> hubRoot, OAProperties props) {
 		final int cntStopCalled = aiStopCalled.get();
 		this.parseErrorCnt = 0;
@@ -220,9 +354,11 @@ public class OATemplate<F extends OAObject> {
 	}
 
 	/**
-	 * Set a property, that is then referenced using <%=$name%> in the html.
+	 * Sets or removes an internal template variable referenced using the
+	 * $name placeholder. Leading '$' is removed if present.
 	 *
-	 * @param name name used in html tag, without the '$' prefix. Note: it will remove '$' prefix if it is included.
+	 * @param name property name
+	 * @param value value to assign, or null to remove the property
 	 */
 	public void setProperty(String name, Object value) {
 		if (name == null) {
@@ -242,6 +378,13 @@ public class OATemplate<F extends OAObject> {
 		}
 	}
 
+	/**
+	 * Parses the template text into a tree structure by preprocessing the text,
+	 * tokenizing it, and recursively building TreeNode instances.
+	 *
+	 * @param doc raw template text
+	 * @return root of the parsed tree
+	 */
 	protected TreeNode createTree(String doc) {
 		//qqqq   alDependentProperties.clear();
 		if (doc == null) {
@@ -260,6 +403,12 @@ public class OATemplate<F extends OAObject> {
 		return root;
 	}
 
+	/**
+	 * Recursively trims HTML row tags surrounding foreach blocks by delegating
+	 * to helper methods that adjust sibling node text.
+	 *
+	 * @param treeNode node to process
+	 */
 	protected void removeRowTags(TreeNode treeNode) {
 	    if (treeNode == null) return;
 	    
@@ -276,7 +425,17 @@ public class OATemplate<F extends OAObject> {
 	}
 
 	
+	/**
+	 * Removes HTML table row markup around the foreach node located at the given
+	 * child index within its parent node.
+	 *
+	 * @param treeNode parent node
+	 * @param childPos index of the foreach child
+	 */
 	protected void _removeRowTags(TreeNode treeNode, int childPos) {
+	    if (treeNode == null) return;
+	    if (childPos <= 0) return;
+	    if (childPos + 1 >= treeNode.alChildren.size()) return;
 	    
 	    TreeNode tn = treeNode.alChildren.get(childPos-1);
         _removeRowTagsBefore(tn);
@@ -296,6 +455,12 @@ public class OATemplate<F extends OAObject> {
            
 	}
 	
+	/**
+	 * Scans backward through a node’s text and trims leading sequences such as
+	 * "<tr><td>" until a stopping condition is reached.
+	 *
+	 * @param treeNode node whose text is modified
+	 */
 	protected void _removeRowTagsBefore(TreeNode treeNode) {
         /*        
              <tr>
@@ -343,6 +508,13 @@ public class OATemplate<F extends OAObject> {
         }
         treeNode.arg1 = s;
 	}        
+	
+	/**
+	 * Scans forward through a node’s text and removes trailing table tags like
+	 * "</td></tr>" up to a boundary condition.
+	 *
+	 * @param treeNode node whose text is modified
+	 */
     protected void _removeRowTagsAfter(TreeNode treeNode) {
         
         String s = treeNode.arg1;
@@ -395,15 +567,25 @@ public class OATemplate<F extends OAObject> {
     }
 	
 	
-	
-	
-	
-	
-	
+    /**
+     * Preprocesses the template text by delegating to the overload that accepts an
+     * include-tracking list.
+     *
+     * @param doc raw template text
+     * @return processed text
+     */
 	protected String preprocess(String doc) {
 		return preprocess(doc, null);
 	}
 
+	/**
+	 * Expands <%=include %> directives by replacing them with the text returned
+	 * by getIncludeText. Prevents recursive includes using the tracking list.
+	 *
+	 * @param doc text to preprocess
+	 * @param alInclude names already included
+	 * @return processed template text
+	 */
 	protected String preprocess(String doc, ArrayList<String> alInclude) {
 		if (alInclude == null) {
 			alInclude = new ArrayList<String>();
@@ -431,21 +613,28 @@ public class OATemplate<F extends OAObject> {
 				alInclude.add(text);
 				text = getIncludeText(text);
 			}
-			if (pos > 0) {
-				doc = doc.substring(0, pos) + text + doc.substring(pos2 + 2);
-			}
+			doc = doc.substring(0, pos) + text + doc.substring(pos2 + 2);
 		}
 		return doc;
 	}
 
 	/**
-	 * This is called to get the text for any include tags. By default, it will return an error message.
+	 * Returns replacement text for an include directive. The default implementation
+	 * returns an error message and can be overridden by subclasses.
+	 *
+	 * @param name include identifier
+	 * @return replacement text for the include
 	 */
 	protected String getIncludeText(String name) {
 		return " ERROR: no text for include " + name + " ";
 	}
 
-	// descendant parser for html <%= xxx %> tags
+	/**
+	 * Converts tokens into a hierarchy of TreeNode instances by repeatedly calling
+	 * parseA for each token until input is exhausted.
+	 *
+	 * @param root root node receiving parsed children
+	 */
 	protected void parse(TreeNode root) {
 		ppSample = null;
 		for (;;) {
@@ -459,10 +648,23 @@ public class OATemplate<F extends OAObject> {
 		}
 	}
 
+	/**
+	 * Returns whether any parse errors were encountered while building the template
+	 * tree.
+	 *
+	 * @return true if parse errors occurred
+	 */
 	public boolean getHasParseError() {
 		return parseErrorCnt > 0;
 	}
 
+	/**
+	 * Interprets a token and configures the Node's tag type and arguments.
+	 * For block-style tags, delegates further parsing to parseB.
+	 *
+	 * @param tok token to interpret
+	 * @param node node to populate
+	 */
 	private void parseA(Token tok, TreeNode node) {
 		if (tok.hasEndToken()) {
 			Token tokB = parseB(tok, node);
@@ -527,7 +729,14 @@ public class OATemplate<F extends OAObject> {
 		node.arg2 = fmt;
 	}
 
-	// if token has an end token
+	/**
+	 * Handles tags that span a block with a matching end tag. Sets tag metadata
+	 * and parses enclosed content using parseC.
+	 *
+	 * @param tok opening token
+	 * @param node node to configure
+	 * @return end token or null
+	 */
 	private Token parseB(Token tok, TreeNode node) {
 		if (tok.tagType == TagType.Format) {
 			node.tagType = TagType.Format;
@@ -604,7 +813,14 @@ public class OATemplate<F extends OAObject> {
 		return tokx;
 	}
 
-	// process to the end tag
+	/**
+	 * Reads tokens until an end tag matching the supplied opening token is found,
+	 * adding each intermediate token as a child TreeNode.
+	 *
+	 * @param tok opening tag token
+	 * @param node node that receives child nodes
+	 * @return end token or null if input ends prematurely
+	 */
 	private Token parseC(Token tok, TreeNode node) {
 		Token tokX;
 		for (;;) {
@@ -619,9 +835,22 @@ public class OATemplate<F extends OAObject> {
 		return tokX;
 	}
 
+	/**
+	 * Internal list of tokens produced by parseTokens and consumed during tree
+	 * construction.
+	 */
 	private ArrayList<Token> alToken;
+	
+	/**
+	 * Current read position within the token list, advanced by getNextToken during
+	 * parsing.
+	 */
 	private int posToken;
 
+	/**
+	 * Enumeration of all tag types supported by the template engine, including
+	 * property lookups, conditionals, loops, counters, and formatting directives.
+	 */
 	static enum TagType {
 		GetProp, // arg1=prop, arg2=fmt
 		Format, // arg1=fmt
@@ -643,6 +872,10 @@ public class OATemplate<F extends OAObject> {
 		Sum // arg1=prop, arg2=prop, arg3=fmt
 	}
 
+	/**
+	 * Represents a parsed element of the template. Holds tag type information,
+	 * arguments, error state, and a list of child nodes used during evaluation.
+	 */
 	static class TreeNode {
 		TagType tagType;
 		String arg1, arg2, arg3;
@@ -650,6 +883,10 @@ public class OATemplate<F extends OAObject> {
 		final ArrayList<TreeNode> alChildren = new ArrayList<TreeNode>(5);
 	}
 
+	/**
+	 * Represents a token extracted from the template during parseTokens. Contains
+	 * raw text, tag metadata, and end-tag identification flags.
+	 */
 	static class Token {
 		String data;
 		TagType tagType;
@@ -670,6 +907,11 @@ public class OATemplate<F extends OAObject> {
 		}
 	}
 
+	/**
+	 * Returns the next token in the token list or null if no more tokens remain.
+	 *
+	 * @return next token or null
+	 */
 	private Token getNextToken() {
 		int x = alToken.size();
 		if (posToken >= x) {
@@ -679,6 +921,13 @@ public class OATemplate<F extends OAObject> {
 		return t;
 	}
 
+	/**
+	 * Tokenizes raw template text into literal segments and tagged expressions.
+	 * Assigns tag types where applicable.
+	 *
+	 * @param doc raw template text
+	 * @return list of parsed tokens
+	 */
 	protected ArrayList<Token> parseTokens(String doc) {
 		ArrayList<Token> alToken = new ArrayList<OATemplate.Token>();
 		int pos = 0;
@@ -760,10 +1009,25 @@ public class OATemplate<F extends OAObject> {
 		return alToken;
 	}
 
+	/**
+	 * Tracks iteration counters for active foreach loops. Each loop name maps to
+	 * its current iteration index, allowing ${#counter} style expressions to
+	 * resolve numeric positions.
+	 */
 	private HashMap<String, Integer> hmForEachCounter = new HashMap<String, Integer>();
 
 	/**
-	 * Returns false if it did not complete (stopProcessing was called)
+	 * Drives template evaluation by recursively walking the parsed tree and
+	 * appending output to the provided StringBuilder. Returns false if
+	 * stopProcessing() was invoked during generation.
+	 *
+	 * @param node current tree node to evaluate
+	 * @param obj current root object used for property lookup
+	 * @param hub hub used for foreach evaluation
+	 * @param sb StringBuilder that receives output
+	 * @param props external properties for $name resolution
+	 * @param cntStop initial stop counter used to detect cancellations
+	 * @return true if generation completed normally, false if cancelled
 	 */
 	protected boolean generate(TreeNode node, OAObject obj, Hub hub, StringBuilder sb, OAProperties props, final int cntStop) {
 		boolean b = false;
@@ -783,8 +1047,25 @@ public class OATemplate<F extends OAObject> {
 	}
 	
 	
+	/**
+	 * Tracks whether template processing is occurring within a data grid expansion.
+	 * Used to modify behavior for nested property resolution.
+	 */
 	private int cntInDataGrid;
 
+	/**
+	 * Internal recursive implementation of template generation. Handles all tag
+	 * types—including foreach, formatting, conditionals, counters, and property
+	 * lookups—and appends results to the provided StringBuilder.
+	 *
+	 * @param node tree node to process
+	 * @param obj root object used for property evaluation
+	 * @param hub hub used for foreach iteration
+	 * @param sb accumulated output buffer
+	 * @param props external property map
+	 * @param cntStop stop counter used to detect cancellation
+	 * @return true if processing completed without interruption
+	 */
 	protected boolean _generate(final TreeNode node, final OAObject obj, final Hub hub, StringBuilder sb, final OAProperties props,
 			final int cntStop) {
 
@@ -1059,6 +1340,15 @@ public class OATemplate<F extends OAObject> {
 		return true;
 	}
 
+	/**
+	 * Constructs an OAObjectGrid based on the property paths referenced within a
+	 * foreach block. Columns are added according to link traversal, and the grid
+	 * is materialized before iteration.
+	 *
+	 * @param node foreach node whose children define the required property paths
+	 * @param hub hub providing source objects for grid expansion
+	 * @return an OAObjectGrid instance or null if not required
+	 */
 	protected OAObjectGrid createObjectGrid(TreeNode node, Hub hub) {
         OAObjectGrid og = new OAObjectGrid();
         final OAObjectGrid.Column colRoot = og.addColumn(hub);
@@ -1111,8 +1401,12 @@ public class OATemplate<F extends OAObject> {
         return og;
     }
 
-    /**
-	 * Called to be able to convert before adding to output string.
+	/**
+	 * Applies optional output transformations to the supplied string, including
+	 * a replace-from/replace-to conversion and text highlighting if configured.
+	 *
+	 * @param s text to convert
+	 * @return transformed output text
 	 */
 	protected String getOutputText(String s) {
 		if (OAString.isNotEmpty(fromText)) {
@@ -1125,7 +1419,11 @@ public class OATemplate<F extends OAObject> {
 	}
 
 	/**
-	 * Used by getOutPutText to call OAString.convert(value, from, to)
+	 * Assigns conversion parameters used by getOutputText to replace occurrences
+	 * of fromText with toText in the generated output.
+	 *
+	 * @param fromText source sequence to replace
+	 * @param toText replacement sequence
 	 */
 	public void setOutputTextConversion(String fromText, String toText) {
 		this.fromText = fromText;
@@ -1133,23 +1431,40 @@ public class OATemplate<F extends OAObject> {
 	}
 
 	/**
-	 * Used by getOutPutText to call OAString.hilite(text)
+	 * Configures a highlight expression applied by getOutputText, allowing matching
+	 * segments of output to be emphasized.
+	 *
+	 * @param text highlight directive
 	 */
 	public void setHiliteOutputText(String text) {
 		this.hiliteText = text;
 	}
 
-	/*
+	/*qqqqqqqqq
 	 * Called to get the value of a property.
 	 * @param obj Object parameter from getHtml()
 	 * @param propertyName name of property parsed between <%=XX%> parameters.
 	 * @return
 	 */
-	/*
+	/*qqqqqqq
 	protected String getValue(OAObject obj, String propertyName, int width, String fmt, OAProperties props) {
 	    return getValue(obj, propertyName, width, fmt, props, false);
 	}
 	*/
+
+	/**
+	 * Resolves a template variable or object property value as a string. Handles
+	 * $name variables, property paths, hubs, booleans, dates, formatting, and
+	 * fixed-width truncation.
+	 *
+	 * @param obj active object used for property resolution
+	 * @param propertyName name of the variable or property
+	 * @param width optional max width to truncate the result
+	 * @param fmt optional output format
+	 * @param props external property map for $name resolution
+	 * @param bUseFormat true to apply default format from OAPropertyPath
+	 * @return resolved value as a string, never null
+	 */
 	protected String getValue(OAObject obj, String propertyName, int width, String fmt, OAProperties props, boolean bUseFormat) {
 		if (propertyName == null) {
 			return "";
@@ -1260,9 +1575,13 @@ public class OATemplate<F extends OAObject> {
 	}
 
 	/**
-	 * Method that is called to get an object property value.
+	 * Retrieves the value of a property from the supplied OAObject. Supports
+	 * nested property paths and automatically resolves multi-valued properties
+	 * using OAFinder to concatenate values.
 	 *
-	 * @param oaObj object that is currently active. Either the report object or the object in foreach loop.
+	 * @param oaObj object from which to read the property
+	 * @param propertyName simple or nested property name
+	 * @return property value or null
 	 */
 	protected Object getProperty(OAObject oaObj, String propertyName) {
 		if (oaObj == null) {

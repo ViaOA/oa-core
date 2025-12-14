@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,19 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class OAEmbeddedJsonStringDeserializer extends JsonDeserializer<String> {
 
+	/**
+	 * Deserializes a JSON object or array into its raw JSON string.
+	 * <p>
+	 * The method reads the current value as a {@link JsonNode}. If the parsed
+	 * value is {@code null}, it returns {@code null}. Otherwise, it returns the
+	 * node's unescaped JSON string using {@link JsonNode#toString()}.
+	 *
+	 * @param jp    the JSON parser positioned at the value to read
+	 * @param ctxt  the deserialization context supplied by Jackson
+	 * @return the raw JSON string representation of the value, or {@code null} if none
+	 * @throws IOException       if an I/O error occurs while reading
+	 * @throws JacksonException  if Jackson encounters a parsing error
+	 */
 	@Override
 	public String deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JacksonException {
 		Object objx = jp.readValueAs(JsonNode.class);

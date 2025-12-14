@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,58 +77,209 @@ import com.viaoa.util.OAString;
  */
 public class OARestMethodInfo {
 
+	/**
+	 * Annotation instance defining how this Java method is exposed over REST.
+	 * Populated from {@link com.viaoa.remote.rest.annotation.OARestMethod}.
+	 */
 	public OARestMethod restMethod;
 
+	/**
+	 * Reference to the parent {@link OARestClassInfo} that owns this method
+	 * and provides interface-level REST metadata.
+	 */
 	public OARestClassInfo classInfo;
 
+	/**
+	 * Java reflection {@link Method} object for the interface method that this
+	 * metadata instance describes.
+	 */
 	public Method method;
 
+	/**
+	 * Logical name of the REST method, usually the Java method name unless
+	 * overridden by the annotation.
+	 */
 	public String name;
+	
+	/**
+	 * Configured URL path from the {@code @OARestMethod} annotation, before any
+	 * automatic derivation or template expansion is applied.
+	 */
 	public String urlPath;
+	
+	/**
+	 * URL path that is derived automatically from return type, method type, or
+	 * other metadata when the annotation does not supply an explicit path.
+	 */
 	public String derivedUrlPath;
+	
+	/**
+	 * Template used to expand tokens (such as class name or ID) into the final
+	 * URL path at invocation time.
+	 */
 	public OATemplate urlPathTemplate;
 
+	/**
+	 * Static query-string fragment configured on the method, before adding any
+	 * parameter-based query values.
+	 */
 	public String urlQuery;
 
+	/**
+	 * Ordered list of parameter metadata, one {@link OARestParamInfo} per
+	 * Java method parameter.
+	 */
 	public ArrayList<OARestParamInfo> alParamInfo = new ArrayList();
 
+	/**
+	 * Name of the OAObject method to invoke for OAObject-based remote calls,
+	 * when required by the selected {@link MethodType}.
+	 */
 	public String objectMethodName;
 
+	/**
+	 * Raw return type from the Java method signature, before any generic or
+	 * container-type resolution is applied.
+	 */
 	public Class origReturnClass;
+	
+	/**
+	 * Return class explicitly supplied by the {@code @OARestMethod.returnClass}
+	 * annotation, when used to override or clarify the actual element type.
+	 */
 	public Class rmReturnClass;
+	
+	/**
+	 * Effective return class used for JSON deserialization, resolved from the
+	 * original return type, generics, and optional annotation overrides.
+	 */
 	public Class returnClass;
 
+	/**
+	 * REST method type that controls HTTP verb selection, URL derivation, and
+	 * valid parameter/annotation combinations.
+	 */
 	public OARestMethod.MethodType methodType;
+	
+	/**
+	 * Classification of the method's return shape (void, String, array, List,
+	 * Hub, JsonNode, or InvokeInfo) used during validation and deserialization.
+	 */
 	public ReturnClassType returnClassType;
 
+	/**
+	 * Collected configuration and verification error messages for this method.
+	 * Populated by {@link #initialize()} and various verify* methods.
+	 */
 	public ArrayList<String> alErrors;
 
+	/**
+	 * Enumerates the high-level shapes that a method's return value can take.
+	 * Used to drive validation rules and response handling behavior.
+	 */
 	public static enum ReturnClassType {
+		/**
+		 * Indicates that the return type classification has not been determined.
+		 * Verification should flag this as an error.
+		 */
 		Unassigned,
+		/**
+		 * Marks methods that do not return a value (void or {@link Void}).
+		 */
 		Void,
+		/**
+		 * Marks methods that return a {@link String} value.
+		 */
 		String,
 		Array,
 		List,
 		Hub,
+		/**
+		 * Indicates the method returns a JSON tree structure (OAJsonNode or similar),
+		 * allowing arbitrary JSON content to be returned without a specific Java type.
+		 */
 		JsonNode,
 		InvokeInfo
 	}
 
+	/**
+	 * Depth of reference expansion to include when serializing OAObjects in
+	 * the response.
+	 * <p>
+	 * A value greater than zero enables automatic traversal of referenced
+	 * objects up to the configured level, and is validated in
+	 * {@link #verifyIncludeReferenceLevelAmount(String, java.util.List)}
+	 * against the resolved {@link #returnClass}.
+	 */
 	public int includeReferenceLevelAmount;
+
+	/**
+	 * List of property-path expressions to include when serializing OAObjects
+	 * in the response.
+	 * <p>
+	 * When present, each path is appended as a {@code pp=} query parameter in
+	 * {@link #getInvokeInfo(Object[], String)} and validated by
+	 * {@link #verifyIncludePropertyPaths(String, java.util.List)} to ensure
+	 * that it only applies to OAObject-based return types.
+	 */
 	public List<String> alIncludePropertyPaths;
 
+	/**
+	 * Static search filter expression applied when the method performs a
+	 * search-style operation.
+	 * <p>
+	 * Used primarily for {@code OASearch} and related method types and
+	 * validated by the corresponding verify* methods to ensure that it is
+	 * only configured when supported for the current {@link #methodType}.
+	 */
 	public String searchWhere;
+
+	/**
+	 * Static sort expression applied to search results for this method.
+	 * <p>
+	 * Relevant for search-style method types and checked by the verification
+	 * logic so that it is not used with method types that do not support
+	 * server-side ordering.
+	 */
 	public String searchOrderBy;
 
+	/**
+	 * Creates a new metadata instance for a REST-accessible method.
+	 *
+	 * @param method the Java {@link Method} being described; used to
+	 *               retrieve annotations and reflective information
+	 *               required for validation and request construction.
+	 *
+	 * <p>
+	 * The constructor stores the method reference and extracts its
+	 * {@link OARestMethod} annotation, if present. All remaining values
+	 * are initialized later during {@link #initialize()}.
+	 */
 	public OARestMethodInfo(Method method) {
 		this.method = method;
 		this.restMethod = method.getAnnotation(OARestMethod.class);
 	}
 
+	/**
+	 * Returns the list of validation errors accumulated during
+	 * {@link #initialize()}.
+	 *
+	 * @return list of error messages, or {@code null} if no
+	 *         verification has been performed.
+	 */
 	public List<String> verify() {
 		return alErrors;
 	}
 
+	/**
+	 * Initializes and validates all metadata for this method.
+	 * <p>
+	 * Creates the error list, verifies required annotation state,
+	 * applies default parameter settings, validates method type,
+	 * URL path, query, return class, paging, parameter types,
+	 * and other rules enforced by the verify* methods. Any
+	 * detected errors are added to {@link #alErrors}.
+	 */
 	public void initialize() {
 		alErrors = new ArrayList();
 
@@ -171,6 +322,15 @@ public class OARestMethodInfo {
 		verifyRestParams(msgPrefix, alErrors);
 	}
 
+	/**
+	 * Applies default parameter-type assignments based on the
+	 * configured {@link #methodType}.
+	 * <p>
+	 * Parameters with an undefined or unassigned type will adopt the
+	 * default type for certain method categories, such as
+	 * {@code MethodCallArg} for {@code OARemote}. All other fields
+	 * remain unchanged.
+	 */
 	public void setDefaults() {
 		ParamType ptDefault = null;
 		switch (methodType) {
@@ -199,6 +359,19 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Performs detailed validation of each {@link OARestParamInfo} entry.
+	 *
+	 * @param msgPrefix prefix used when constructing error messages
+	 * @param alErrors  collection to receive validation errors
+	 *
+	 * <p>
+	 * This routine evaluates every parameter against its expected
+	 * configuration rules: allowed combinations, required names,
+	 * type usage, class constraints, restrictions on body and
+	 * byte-array parameters, and mutual exclusion rules. Errors are
+	 * appended to the supplied list.
+	 */
 	public void verifyRestParams(String msgPrefix, List<String> alErrors) {
 		String origMsgPrefix = msgPrefix;
 		for (OARestParamInfo pi : alParamInfo) {
@@ -345,6 +518,21 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Checks whether a parameter matches a specific {@link ParamType}
+	 * and enforces its associated configuration rules.
+	 *
+	 * @param msgPrefix           prefix used in any error messages
+	 * @param alErrors            list to append validation errors
+	 * @param pi                  parameter metadata being checked
+	 * @param ptCheck             the parameter type being validated
+	 * @param bUsesName           whether a name is required
+	 * @param bUsesParamClass     whether a parameter class is required
+	 * @param bUsesFormat         whether a format string is supported
+	 * @param bUsesIncludePPs     whether include-property-paths are allowed
+	 *
+	 * @return {@code true} if {@code pi.paramType == ptCheck}, otherwise {@code false}
+	 */
 	public boolean verifyParamType(String msgPrefix, List<String> alErrors, OARestParamInfo pi, ParamType ptCheck,
 			boolean bUsesName,
 			boolean bUsesParamClass,
@@ -353,6 +541,22 @@ public class OARestMethodInfo {
 		return verifyParamType(msgPrefix, alErrors, pi, ptCheck, bUsesName, bUsesParamClass, bUsesFormat, bUsesIncludePPs, false);
 	}
 
+	/**
+	 * Variant of {@link #verifyParamType(String, List, OARestParamInfo, ParamType, boolean, boolean, boolean, boolean)}
+	 * that additionally enforces a string-type requirement.
+	 *
+	 * @param msgPrefix       prefix used in error messages
+	 * @param alErrors        list to collect validation errors
+	 * @param pi              parameter metadata being inspected
+	 * @param ptCheck         expected parameter type
+	 * @param bUsesName       whether a name is required
+	 * @param bUsesParamClass whether a parameter class is required
+	 * @param bUsesFormat     whether a format string is supported
+	 * @param bUsesIncludePPs whether include-property-paths are allowed
+	 * @param bTypeString     whether the parameter must be a {@link String}
+	 *
+	 * @return {@code true} if the parameter matches {@code ptCheck}
+	 */
 	public boolean verifyParamType(String msgPrefix, List<String> alErrors, OARestParamInfo pi, ParamType ptCheck,
 			boolean bUsesName,
 			boolean bUsesParamClass,
@@ -393,6 +597,18 @@ public class OARestMethodInfo {
 		return true;
 	}
 
+	/**
+	 * Ensures that only one instance exists for parameter types that
+	 * are required to be unique.
+	 *
+	 * @param msgPrefix prefix used for error messages
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Examines all parameters and flags any duplicates for types
+	 * where only a single parameter is permitted (such as
+	 * {@code MethodUrlPath}, {@code MethodSearchWhere}, and others).
+	 */
 	public void verifyParamAmounts(String msgPrefix, List<String> alErrors) {
 		HashSet<String> hs = new HashSet();
 		for (OARestParamInfo pi : alParamInfo) {
@@ -430,6 +646,14 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates that {@link #methodType} is assigned and not
+	 * {@code Unassigned}. Adds an error if the method type is
+	 * missing or invalid.
+	 *
+	 * @param msgPrefix prefix for error messages
+	 * @param alErrors  list to receive validation errors
+	 */
 	protected void verifyMethodType(String msgPrefix, List<String> alErrors) {
 		if (methodType == null) {
 			String s = "methodType can not be null";
@@ -441,6 +665,18 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates that the configured page size is compatible with
+	 * the method's return type.
+	 *
+	 * @param msgPrefix prefix for diagnostic messages
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Ensures that page size is used only with array, list, or hub
+	 * return types and only when a {@code PageNumber} parameter
+	 * exists.
+	 */
 	protected void verifyMethodPageSize(String msgPrefix, List<String> alErrors) {
 		if (restMethod != null && restMethod.pageSize() > 0) {
 			if (returnClassType != ReturnClassType.Array && returnClassType != ReturnClassType.List
@@ -463,6 +699,17 @@ public class OARestMethodInfo {
 
 	}
 
+	/**
+	 * Performs GET-specific validation rules.
+	 *
+	 * @param msgPrefix prefix for error messages
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Confirms compatibility of search fields, method name usage,
+	 * return types, and parameter types when the method type is GET.
+	 * Flags any parameter types not allowed for GET requests.
+	 */
 	protected void verifyMethodTypeGET(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.GET) {
 			return;
@@ -530,6 +777,17 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Performs POST-specific validation rules.
+	 *
+	 * @param msgPrefix prefix for error messages
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Validates combinations of form parameters, body parameters,
+	 * search fields, and method name usage. Ensures prohibited
+	 * parameter types are not used with POST.
+	 */
 	protected void verifyMethodTypePOST(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.POST) {
 			return;
@@ -611,6 +869,16 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates rules specific to PUT method types.
+	 *
+	 * @param msgPrefix prefix for error messages
+	 * @param alErrors  list to add validation errors
+	 *
+	 * <p>
+	 * Delegates shared logic to {@link #_verifyMethodTypeX(String, java.util.List)}
+	 * and enforces PUT-specific restrictions.
+	 */
 	protected void verifyMethodTypePUT(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.PUT) {
 			return;
@@ -618,6 +886,16 @@ public class OARestMethodInfo {
 		_verifyMethodTypeX(msgPrefix, alErrors);
 	}
 
+	/**
+	 * Validates PATCH-specific method rules.
+	 *
+	 * @param msgPrefix prefix used in error reporting
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Relies on {@link #_verifyMethodTypeX(String, java.util.List)} for
+	 * common validation applicable to both PUT and PATCH operations.
+	 */
 	protected void verifyMethodTypePATCH(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.PATCH) {
 			return;
@@ -625,6 +903,17 @@ public class OARestMethodInfo {
 		_verifyMethodTypeX(msgPrefix, alErrors);
 	}
 
+	/**
+	 * Shared validation routine for PUT and PATCH methods.
+	 *
+	 * @param msgPrefix prefix used when reporting validation errors
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Confirms proper usage of search filters, object method names,
+	 * body parameters, and other constraints common to PUT/PATCH
+	 * semantics.
+	 */
 	protected void _verifyMethodTypeX(String msgPrefix, List<String> alErrors) {
 		// done by verifyUrlPath
 		// if (OAString.isNotEmpty(urlPath)) {
@@ -688,6 +977,18 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates rules specific to the {@code OAGet} method type.
+	 *
+	 * @param msgPrefix prefix used when generating error messages
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Confirms that return types and parameters match the
+	 * requirements for object retrieval, such as requiring
+	 * {@code OAObjectId} parameters and disallowing unsupported
+	 * parameter types.
+	 */
 	protected void verifyMethodTypeOAGet(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.OAGet) {
 			return;
@@ -788,6 +1089,17 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates rules for the {@code OASearch} method type.
+	 *
+	 * @param msgPrefix prefix added to error messages
+	 * @param alErrors  list collecting validation errors
+	 *
+	 * <p>
+	 * Ensures that search filters, return types, and tag/value
+	 * parameter usage follow the conventions required for server-side
+	 * search operations.
+	 */
 	protected void verifyMethodTypeOASearch(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.OASearch) {
 			return;
@@ -909,6 +1221,17 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates rules for the {@code OASearch} method type.
+	 *
+	 * @param msgPrefix prefix added to error messages
+	 * @param alErrors  list collecting validation errors
+	 *
+	 * <p>
+	 * Ensures that search filters, return types, and tag/value
+	 * parameter usage follow the conventions required for server-side
+	 * search operations.
+	 */
 	protected void verifyMethodTypeOAObjectMethodCall(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.OAObjectMethodCall) {
 			return;
@@ -1000,6 +1323,16 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates rules specific to the {@code OARemote} method type.
+	 *
+	 * @param msgPrefix prefix applied in error messages
+	 * @param alErrors  list to collect validation errors
+	 *
+	 * <p>
+	 * Ensures compatible parameter types and disallows fields that
+	 * do not apply to remote method-call forwarding.
+	 */
 	protected void verifyMethodTypeOARemote(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.OARemote) {
 			return;
@@ -1064,6 +1397,17 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates the {@code OAInsert} method type.
+	 *
+	 * @param msgPrefix prefix applied to error messages
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Confirms that an {@code OAObject} parameter exists and that only
+	 * permitted parameter types are used during object insertion
+	 * operations.
+	 */
 	protected void verifyMethodTypeOAInsert(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.OAInsert) {
 			return;
@@ -1142,6 +1486,17 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates the {@code OAUpdate} method type.
+	 *
+	 * @param msgPrefix prefix to use when creating error messages
+	 * @param alErrors  list that collects validation errors
+	 *
+	 * <p>
+	 * Ensures that an {@code OAObject} parameter is supplied, checks for
+	 * incompatible parameter types, and enforces update-specific rules
+	 * mirroring those used for insert operations.
+	 */
 	protected void verifyMethodTypeOAUpdate(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.OAUpdate) {
 			return;
@@ -1220,6 +1575,17 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates use of the {@code OADelete} method type.
+	 *
+	 * @param msgPrefix prefix used for error reporting
+	 * @param alErrors  list to receive validation messages
+	 *
+	 * <p>
+	 * Confirms that the method is configured with either an {@code OAObject}
+	 * or {@code OAObjectId} source, disallows include-property-paths, and
+	 * checks all parameter types for compatibility with delete semantics.
+	 */
 	protected void verifyMethodTypeOADelete(String msgPrefix, List<String> alErrors) {
 		if (methodType != MethodType.OAUpdate) {
 			return;
@@ -1307,6 +1673,16 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates all parameters assigned to {@code UrlQueryNameValue}.
+	 *
+	 * @param msgPrefix prefix to apply to error messages
+	 * @param alErrors  list to append validation failures
+	 *
+	 * <p>
+	 * Ensures that each query-name/value parameter defines a name and
+	 * reports any violations.
+	 */
 	protected void verifyUrlQuery(String msgPrefix, List<String> alErrors) {
 		int cnt = 0;
 		for (OARestParamInfo pi : alParamInfo) {
@@ -1321,6 +1697,16 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates configured include-property-paths.
+	 *
+	 * @param msgPrefix prefix for diagnostic messages
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Ensures that property-path expansion is only used when the
+	 * return class is an {@code OAObject}.
+	 */
 	protected void verifyIncludePropertyPaths(String msgPrefix, List<String> alErrors) {
 		if (alIncludePropertyPaths == null || alIncludePropertyPaths.size() == 0) {
 			return;
@@ -1332,6 +1718,16 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates the reference-level expansion depth.
+	 *
+	 * @param msgPrefix prefix for error messages
+	 * @param alErrors  collection receiving validation errors
+	 *
+	 * <p>
+	 * Ensures that reference-level expansion only applies when the
+	 * method returns an {@code OAObject}.
+	 */
 	protected void verifyIncludeReferenceLevelAmount(String msgPrefix, List<String> alErrors) {
 		if (includeReferenceLevelAmount == 0) {
 			return;
@@ -1343,6 +1739,18 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates configuration of the return class.
+	 *
+	 * @param msgPrefix prefix used for error reporting
+	 * @param alErrors  list to collect validation errors
+	 *
+	 * <p>
+	 * Ensures that only one {@code MethodReturnClass} parameter exists,
+	 * checks consistency with annotation-supplied return classes, verifies
+	 * that the final resolved {@link #returnClass} is valid for the method
+	 * type, and enforces rules for {@code InvokeInfo} return types.
+	 */
 	protected void verifyMethodReturnClass(String msgPrefix, List<String> alErrors) {
 		boolean bFoundParam = false;
 		for (OARestParamInfo pi : alParamInfo) {
@@ -1380,6 +1788,18 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Validates the configured URL path and resolves template markers.
+	 *
+	 * @param msgPrefix prefix used for error messages
+	 * @param alErrors  list to append validation messages
+	 *
+	 * <p>
+	 * Confirms whether URL paths are allowed or required for the method
+	 * type, checks for mutually exclusive configurations, transforms
+	 * placeholder syntax, and ensures that parameter counts and template
+	 * tags are consistent.
+	 */
 	protected void verifyUrlPath(String msgPrefix, List<String> alErrors) {
 		if (!restMethod.methodType().requiresUrlPath()) {
 			if (OAString.isNotEmpty(urlPath)) {
@@ -1471,6 +1891,18 @@ public class OARestMethodInfo {
 		}
 	}
 
+	/**
+	 * Determines and validates the final derived URL path template.
+	 *
+	 * @param msgPrefix prefix applied to all validation messages
+	 * @param alErrors  list to receive validation errors
+	 *
+	 * <p>
+	 * Creates method-type-specific paths (for example OAGet,
+	 * OAObjectMethodCall, OASearch, OARemote), verifies that required
+	 * parameters exist, and ensures that template variables can be
+	 * resolved during invocation.
+	 */
 	protected void verifyDerviedUrlPath(String msgPrefix, List<String> alErrors) {
 		// make sure that it can derive urlPath
 		if (methodType == MethodType.OAObjectMethodCall || methodType == MethodType.OAInsert || methodType == MethodType.OAUpdate
@@ -1573,7 +2005,7 @@ public class OARestMethodInfo {
 		}
 	}
 
-	/**
+	/*
 	 * Called when a method is invoked, so that all of the HTTP params can be setup.
 	 * <p>
 	 * Note: if a method param/argument is type OARestInvokeInfo, then it will be used instead of creating a new one. If so, then it will be
@@ -1582,6 +2014,25 @@ public class OARestMethodInfo {
 	 *
 	 * @param args from method invocation
 	 * @return new RestInvokeInfo with all of the HTTP information needed to make the call to the endpoint.
+	 */
+	/**
+	 * Builds and returns an {@link OARestInvokeInfo} instance describing
+	 * all HTTP request details for a method invocation.
+	 *
+	 * @param args        the argument values passed to the method
+	 * @param idSeparater string used to join multi-part object IDs
+	 *
+	 * @return a fully populated {@code OARestInvokeInfo} containing
+	 *         HTTP method, URL path, query string, body content,
+	 *         headers, cookies, and resolved return-class information
+	 *
+	 * @throws Exception if argument validation or request assembly fails
+	 *
+	 * <p>
+	 * Detects existing {@code OARestInvokeInfo} parameters, assembles
+	 * URL components, applies search filters, encodes include-property
+	 * paths, resolves body/form/byte-array content, and attaches any
+	 * header or cookie parameters.
 	 */
 	public OARestInvokeInfo getInvokeInfo(final Object[] args, final String idSeparater) throws Exception {
 		OARestInvokeInfo invokeInfo = null;
@@ -1664,6 +2115,17 @@ public class OARestMethodInfo {
 		return invokeInfo;
 	}
 
+	/**
+	 * Returns the cached template for the derived URL path, creating it
+	 * on first access.
+	 *
+	 * @return an {@link OATemplate} instance representing the
+	 *         {@link #derivedUrlPath}
+	 *
+	 * <p>
+	 * Templates are reused across invocations to substitute values such
+	 * as object class names and IDs efficiently.
+	 */
 	public OATemplate getUrlPathTemplate() {
 		if (urlPathTemplate != null) {
 			return urlPathTemplate;
@@ -1672,6 +2134,20 @@ public class OARestMethodInfo {
 		return urlPathTemplate;
 	}
 
+	/**
+	 * Produces the final URL path for a specific invocation.
+	 *
+	 * @param args        argument values from the method call
+	 * @param idSeparater separator used when combining composite IDs
+	 *
+	 * @return the resolved URL path for the request
+	 *
+	 * <p>
+	 * Applies method-type-specific resolution rules, substituting
+	 * template variables (such as class name, ID, or plural name)
+	 * and injecting URL-path arguments supplied by parameters of
+	 * type {@code UrlPathTagValue}.
+	 */
 	public String getUrlPath(final Object[] args, final String idSeparater) {
 		getUrlPathTemplate();
 
@@ -1779,6 +2255,18 @@ public class OARestMethodInfo {
 		return result;
 	}
 
+	/**
+	 * Constructs the URL query string for a request.
+	 *
+	 * @param args the method arguments from the invocation
+	 *
+	 * @return the composed query string, or {@code null} if none
+	 *
+	 * <p>
+	 * Processes parameters of type {@code UrlQueryNameValue} and
+	 * appends name/value pairs using each parameter's formatting
+	 * rules.
+	 */
 	public String getUrlQuery(Object[] args) throws Exception {
 		String urlQuery = this.urlQuery;
 		if (urlQuery == null) {
@@ -1847,6 +2335,20 @@ public class OARestMethodInfo {
 		return urlQuery;
 	}
 
+	/**
+	 * Creates the search-where expression for this invocation.
+	 *
+	 * @param args the method arguments passed at invocation time
+	 *
+	 * @return the formatted search-where expression, or {@code null} if none
+	 *
+	 * <p>
+	 * Evaluates parameters of type {@code MethodSearchWhere},
+	 * {@code SearchWhereTagValue}, and {@code SearchWhereAddNameValue},
+	 * substituting tag values and concatenating additional name/value
+	 * expressions. Returns the complete search filter to append to the
+	 * URL query string.
+	 */
 	public String getSearchWhere(Object[] args) throws Exception {
 		String search = searchWhere;
 		String orderBy = searchOrderBy;
@@ -2024,9 +2526,18 @@ public class OARestMethodInfo {
 		return search;
 	}
 
-	/*
-	 *  Build http body using Json.
-	*/
+	/**
+	 * Builds the JSON request body for this invocation.
+	 *
+	 * @param args the argument values passed to the method
+	 *
+	 * @return a JSON string, or {@code null} if no JSON body is required
+	 *
+	 * <p>
+	 * Processes parameters of type {@code BodyObject} and
+	 * {@code BodyJson}, serializes objects using {@link OAJson},
+	 * and includes optional include-property-path information.
+	 */
 	public String getJsonBody(Object[] args) throws Exception {
 
 		if (methodType == MethodType.GET) {
@@ -2175,6 +2686,17 @@ public class OARestMethodInfo {
 		return jsonBody;
 	}
 
+	/**
+	 * Resolves the final return class for this method invocation.
+	 *
+	 * @param args the invocation arguments
+	 *
+	 * @return the resolved return class
+	 *
+	 * <p>
+	 * Considers annotation-supplied return classes, method-level
+	 * overrides, and parameters of type {@code MethodReturnClass}.
+	 */
 	public Class getMethodReturnClass(Object[] args) {
 		Class result = returnClass;
 		if (returnClass == null) {
@@ -2205,6 +2727,18 @@ public class OARestMethodInfo {
 		return result;
 	}
 
+	/**
+	 * Creates form-encoded request body content.
+	 *
+	 * @param args method call arguments
+	 *
+	 * @return a map of form-field names to values, or {@code null}
+	 *         if no form parameters are present
+	 *
+	 * <p>
+	 * Uses parameters of type {@code FormNameValue}, applying
+	 * formatting rules where specified.
+	 */
 	public String getFormData(Object[] args) throws Exception {
 		if (methodType != MethodType.POST) {
 			return null;
@@ -2230,6 +2764,18 @@ public class OARestMethodInfo {
 		return formData;
 	}
 
+	/**
+	 * Extracts the byte-array request body, if present.
+	 *
+	 * @param args the method invocation arguments
+	 *
+	 * @return the byte array supplied by a parameter of type
+	 *         {@code BodyByteArray}, or {@code null} if none exists
+	 *
+	 * <p>
+	 * Only one such parameter is permitted; if present, it takes
+	 * precedence over JSON and form-data bodies.
+	 */
 	public byte[] getByteArrayBody(Object[] args) throws Exception {
 		byte[] bs = null;
 		for (int argPos = 0; argPos < alParamInfo.size(); argPos++) {

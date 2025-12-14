@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,42 +52,43 @@ import java.util.HashMap;
 public class OARestInvokeInfo {
 
 	/**
-	 * MethodInfo for this invoke.
+	 * Metadata describing the REST method that initiated this invocation.
 	 */
 	public OARestMethodInfo methodInfo;
 
 	/**
-	 * Arguments from method that was invoked.
+	 * The arguments supplied to the proxied method when the remote call was made.
 	 */
 	public Object[] args;
 
 	/**
-	 * Milisecond (timestamp) for start, http msg sent, and end.
+	 * Timestamps in milliseconds marking when the invocation began, when the
+	 * request was sent, and when the invocation completed.
 	 */
 	public long tsStart, tsSent, tsEnd;
 
 	/**
-	 * HTTP method used, ex: GET, POST, etc
+	 * The HTTP method used for the request (e.g., GET, POST, PUT, PATCH).
 	 */
 	public String httpMethod;
 
 	/**
-	 * HTTP url path. Note: does not have to have baseUrl, or method.contextName
+	 * The URL path portion of the HTTP request, excluding base URL and context.
 	 */
 	public String urlPath;
 
 	/**
-	 * HTTP url query.
+	 * The query-string portion of the request URL.
 	 */
 	public String urlQuery;
 
 	/**
-	 * Final http url used to connect to server.<br>
-	 * Created using value from urlPath & urlQuery in the format: "protocol://host[:port][/oarest|contextname]/urlPath?urlQuery"
+	 * The fully constructed request URL including protocol, host, context,
+	 * path, and query string.
 	 */
 	public String finalUrl;
 
-	/**
+	/*
 	 * Json object (text) for http request body
 	 * <p>
 	 * Depends on methodType:<br>
@@ -96,33 +97,89 @@ public class OARestInvokeInfo {
 	 * OARemote: JSON array, params that are annotated with MethodCallArg<br>
 	 * params that are annotated with BodyObject, BodyJson<br>
 	 */
+	/**
+	 * JSON text used as the request body. Content varies depending on the
+	 * REST method type and parameter annotations.
+	 */
 	public String jsonBody;
 
+	/**
+	 * Explicit content type for the request body, if assigned.
+	 */
 	public String contentType;
-	public String textBody;
 
 	/**
+	 * Text payload used as the request body when not sending JSON or binary data.
+	 */
+	public String textBody;
+
+	/*
 	 * Uses http content type <br>
 	 * Used for params annotated as FormNameValue.
 	 */
+	/**
+	 * URL-encoded form data constructed from parameters annotated as
+	 * {@code FormNameValue}.
+	 */
 	public String formData;
+	
+	/**
+	 * Raw byte array used as the request body for binary transmissions.
+	 */
 	public byte[] byteArrayBody;
 
+	/**
+	 * Outbound HTTP headers included with the request. Multiple header values
+	 * are concatenated into a single comma-separated string.
+	 */
 	public HashMap<String, String> hsHeaderOut = new HashMap();
+
+	/**
+	 * Outgoing cookies added to the request, stored as name/value pairs.
+	 */
 	public HashMap<String, String> hsCookieOut = new HashMap();
 
 	// note: headers with multiple values are comma seperated
+	/**
+	 * Headers returned by the server in the HTTP response. Multiple values
+	 * are combined as a comma-separated string.
+	 */
 	public HashMap<String, String> hsHeaderIn = new HashMap();
 
+	/**
+	 * The resolved return class for the method, used during JSON deserialization.
+	 */
 	public Class methodReturnClass;
 
+	/**
+	 * The HTTP status code returned by the server.
+	 */
 	public int responseCode;
+
+	/**
+	 * The HTTP status message returned by the server.
+	 */
 	public String responseCodeMessage;
+	
+	/**
+	 * The full response body text returned by the server.
+	 */
 	public String responseBody;
+	
+	/**
+	 * Any exception encountered during HTTP execution or response processing.
+	 */
 	public Exception responseException;
 
+	/**
+	 * The deserialized return value produced by the REST call, if successful.
+	 */
 	public Object returnObject;
 
+	/**
+	 * Constructs a new, empty {@code OARestInvokeInfo} instance for tracking
+	 * the state and diagnostics of a REST invocation.
+	 */
 	public OARestInvokeInfo() {
 
 	}

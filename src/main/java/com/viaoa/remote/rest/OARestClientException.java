@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,30 +54,71 @@ import com.viaoa.remote.rest.info.OARestInvokeInfo;
  * @author vvia
  */
 public class OARestClientException extends RuntimeException {
+
+	/**
+	 * Invocation details associated with the failed REST request. Marked transient
+	 * so it is not serialized with the exception.
+	 */
 	private transient OARestInvokeInfo invokeInfo;
 
+	/**
+	 * Creates an exception with the supplied message and no associated
+	 * {@link OARestInvokeInfo}.
+	 *
+	 * @param msg the error message
+	 */
 	public OARestClientException(String msg) {
 		super(msg);
 	}
 
+	/**
+	 * Creates an exception that wraps the supplied {@link OARestInvokeInfo}
+	 * without adding an error message.
+	 *
+	 * @param invokeInfo the invocation details for the failed REST call
+	 */
 	public OARestClientException(OARestInvokeInfo invokeInfo) {
 		this.invokeInfo = invokeInfo;
 	}
 
+	/**
+	 * Creates an exception with a message and associated invocation details.
+	 *
+	 * @param invokeInfo the invocation information
+	 * @param msg        the error message to associate with this exception
+	 */
 	public OARestClientException(OARestInvokeInfo invokeInfo, String msg) {
 		super(msg);
 		this.invokeInfo = invokeInfo;
 	}
 
+	/**
+	 * Creates an exception with a message, cause, and associated invocation details.
+	 *
+	 * @param invokeInfo the invocation information for the failed REST call
+	 * @param msg        the message describing the error
+	 * @param e          the underlying cause of the failure
+	 */
 	public OARestClientException(OARestInvokeInfo invokeInfo, String msg, Exception e) {
 		super(msg, e);
 		this.invokeInfo = invokeInfo;
 	}
 
+	/**
+	 * Returns the {@link OARestInvokeInfo} describing the failed REST invocation.
+	 *
+	 * @return the invocation details, or {@code null} if none were supplied
+	 */
 	public OARestInvokeInfo getInvokeInfo() {
 		return this.invokeInfo;
 	}
 
+	/**
+	 * Returns the HTTP status code from the associated invocation info, or 200
+	 * if no invocation information is available.
+	 *
+	 * @return the HTTP status code for the failed request
+	 */
 	public int getHttpStatusCode() {
 		if (invokeInfo == null) {
 			return 200; // HttpServletResponse.SC_OK;
@@ -85,6 +126,12 @@ public class OARestClientException extends RuntimeException {
 		return invokeInfo.responseCode;
 	}
 
+	/**
+	 * Returns the HTTP status message from the associated invocation info,
+	 * or {@code null} if none is available.
+	 *
+	 * @return the HTTP status message for the failed request
+	 */
 	public String getHttpStatusMessage() {
 		if (invokeInfo == null) {
 			return null;

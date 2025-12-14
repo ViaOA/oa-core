@@ -41,14 +41,33 @@ import com.viaoa.hub.*;
 public abstract class OAChangeProcessor {
     private static Logger LOG = Logger.getLogger(OAChangeProcessor.class.getName());
 
+    /**
+     * Counter used to generate unique listener names for property-path listeners.
+     */
     private static final AtomicInteger aiCount = new AtomicInteger();
+    
+    /**
+     * Collection of active listeners registered by this processor.
+     * <p>
+     * Each entry stores the target {@link Hub} and its associated {@link HubListener}.
+     */
     private ArrayList<MyListener> alMyListener;
+    
+    /**
+     * Optional background executor used to dispatch processing callbacks.
+     * <p>
+     * When {@code null}, processing occurs on the calling thread.
+     */
     private final OAExecutorService execService;
     
     
     /**
-     * 
-     * @param bUseThreadPool if false then use current thread.
+     * Constructs a processor that can run callbacks either synchronously or
+     * using a background thread pool.
+     *
+     * @param bUseThreadPool if {@code true}, uses an {@link OAExecutorService}
+     *                       to run {@link #process(HubEvent)} asynchronously;
+     *                       otherwise processing occurs on the current thread
      */
     public OAChangeProcessor(boolean bUseThreadPool) {
         if (bUseThreadPool) {
@@ -59,11 +78,19 @@ public abstract class OAChangeProcessor {
     
 
     /**
-     * Called when it's time to process.
+     * Callback invoked when a registered hub fires a matching property-change event.
+     *
+     * @param evt the event describing the hub change
      */
     protected abstract void process(HubEvent evt) ;
     
 
+    /**
+     * Dispatches a processing callback either on the executor service or
+     * directly on the current thread.
+     *
+     * @param evt the hub event to process
+     */
     private void onProcess(final HubEvent evt) {
         if (execService != null) {
             execService.submit(new Runnable() {
@@ -79,16 +106,45 @@ public abstract class OAChangeProcessor {
     }
     
     
+    /**
+     * Internal structure pairing a {@link Hub} with its associated
+     * {@link HubListener}. Used for cleanup and tracking active listeners.
+     */
     private static class MyListener {
+    	/**
+    	 * The hub that owns the registered listener.
+    	 */
         Hub hub;
+        /**
+         * The listener attached to the hub for receiving change events.
+         */
         HubListener hl;
 
+        /**
+         * Creates a new listener mapping.
+         *
+         * @param h  the hub to listen to
+         * @param hl the listener registered on the hub
+         */
         public MyListener(Hub h, HubListener hl) {
             this.hub = h;
             this.hl = hl;
         }
     }
 
+    /**
+     * Registers a listener on the given {@link Hub} for one or more property paths.
+     * <p>
+     * If {@code propertyPaths} is {@code null}, delegates to
+     * {@link #addListener(Hub, String)}.
+     * <p>
+     * Otherwise, generates a unique listener name and registers a listener that
+     * calls {@link #onProcess(HubEvent)} when the hub fires an event matching
+     * that name.
+     *
+     * @param hub           the hub to monitor
+     * @param propertyPaths property paths to listen for
+     */
     public void addListener(Hub hub, String... propertyPaths) {
         if (hub == null) return;
         if (propertyPaths == null) {
@@ -111,6 +167,15 @@ public abstract class OAChangeProcessor {
         }
     }
     
+    /**
+     * Registers a listener on the given {@link Hub} for a single property path.
+     * <p>
+     * If the path has no dot, listens directly for that property name.
+     * Otherwise registers a generated-path listener similar to the varargs method.
+     *
+     * @param hub          the hub to monitor
+     * @param propertyPath the property path to listen for
+     */
     public void addListener(Hub hub, final String propertyPath) {
         if (hub == null) return;
         HubListener hl;
@@ -143,6 +208,9 @@ public abstract class OAChangeProcessor {
         alMyListener.add(ml);
     }
 
+    /**
+     * Delegates to the superclass finalizer after local cleanup is complete.
+     */
     @Override
     protected void finalize() throws Throwable {
         if (alMyListener != null) {

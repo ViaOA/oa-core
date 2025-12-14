@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,20 @@ import com.viaoa.util.OADate;
  * {@code ObjectMapper} instances can transparently serialize {@link OADate}
  * properties.
  */
-
 public class OADateSerializer extends JsonSerializer<OADate> {
+
+	/**
+	 * Serializes an {@link OADate} value into JSON.
+	 * <p>
+	 * If the supplied {@code value} is {@code null}, the method writes a JSON
+	 * {@code null}. Otherwise, it writes the date as a formatted string using
+	 * {@link OADate#toString(String)} with {@link OADate#JsonFormat}.
+	 *
+	 * @param value        the {@link OADate} to serialize; may be {@code null}
+	 * @param gen          the JSON generator used to write output
+	 * @param serializers  the provider that can access serializer configuration
+	 * @throws IOException if writing to the generator fails
+	 */
 	@Override
 	public void serialize(OADate value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
 		if (value == null) {

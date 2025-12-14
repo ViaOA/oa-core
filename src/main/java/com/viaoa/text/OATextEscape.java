@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,12 @@ public class OATextEscape {
 
 	
 	/**
-	 * Convert '&amp;' prefixed html codes to character.
+	 * Converts HTML entity codes (e.g., &amp;amp;, &amp;quot;, &amp;lt;) into their
+	 * corresponding characters. If the input is {@code null}, {@code null} is
+	 * returned. Only known entities are replaced; all others remain unchanged.
+	 *
+	 * @param html the HTML-encoded string
+	 * @return a decoded string or {@code null} if the input is null
 	 */
 	public static String convertFromHtml(String html) {
 		if (html == null) {
@@ -63,6 +68,15 @@ public class OATextEscape {
 		return html;
 	}
 
+	/**
+	 * Converts raw text into HTML-safe text unless the value already appears to
+	 * contain HTML markup. Uses {@link #convertToXml(String, boolean, boolean, boolean)}
+	 * to escape characters and optionally wraps the result in &lt;html&gt; tags.
+	 *
+	 * @param value       the text to convert; {@code null} yields an empty string
+	 * @param bAddHTMLTag whether to wrap the result in &lt;html&gt; tags
+	 * @return HTML-safe text, possibly wrapped in an HTML element
+	 */
 	public static String convertTextToHtml(String value, boolean bAddHTMLTag) {
 		if (value == null) {
 			return "";
@@ -87,34 +101,60 @@ public class OATextEscape {
 		return value;
 	}
 	
+	/**
+	 * Delegates to {@link #convertToXml(String, boolean, boolean)} with settings
+	 * appropriate for HTML escaping.
+	 *
+	 * @param value the text to convert
+	 * @return an HTML-safe version of the text
+	 */
 	public static String convertToHtml(String value) {
 		return convertToXml(value, false, true);
 	}
 	
 
 	/**
-	 * Convert a String to a valid XML String, using special coding for illegal characters. <br>
-	 * Converts &amp; to &amp;amp;, &quot; to &amp;quot, &#39; to &amp;apos, &lt; to &amp;&lt;, &gt; to &amp;gt;<br>
-	 * For characters less then 32, it calls encodeIllegalXML().
-	 * <p>
-	 * Note: Some characters are illegal even within CDATA blocks.
-	 * <p>
-	 * NOTE: decodeIllegalXML() should be called to <i>reverse</i> this String, since encodeIllegalXML() uses a special tag.
+	 * Converts text into XML-safe form, escaping markup characters and encoding
+	 * illegal XML characters using internal encoding rules. Delegates to the
+	 * more detailed overload.
 	 *
-	 * @param value  is XML String to convert.
-	 * @param bCData true if this String will be used in an XML CDATA block.
-	 * @return converted string. If value is null then a blank "" is returned.
-	 * @see #decodeIllegalXML
-	 * @see #encodeIllegalXML
+	 * @param value  the text to convert
+	 * @param bCData whether the value will be placed inside a CDATA block
+	 * @return XML-safe text, or an empty string if value is null
 	 */
 	public static String convertToXml(String value, boolean bCData) {
 		return convertToXml(value, bCData, false);
 	}
 
+	/**
+	 * Delegates to {@link #convertToXml(String, boolean, boolean, boolean)} with
+	 * default newline handling rules based on HTML mode.
+	 *
+	 * @param value   the text to convert
+	 * @param bCData  true if used inside CDATA
+	 * @param bIsHtml true if converting for HTML output
+	 * @return the converted XML text
+	 */
 	public static String convertToXml(String value, boolean bCData, boolean bIsHtml) {
 		return convertToXml(value, bCData, bIsHtml, !bIsHtml);
 	}
 
+	/**
+	 * Core XML escaping routine. Escapes markup characters, optionally replaces
+	 * newline sequences with &lt;br&gt; for HTML mode, and encodes characters
+	 * illegal in XML using {@link #encodeIllegalXml(char, boolean)}.
+	 * <ul>
+	 *   <li>If {@code value} is null, returns an empty string.</li>
+	 *   <li>Illegal XML characters (ASCII&lt;32 except tab/CR/LF) are encoded.</li>
+	 *   <li>Optional CR/LF preservation controlled by {@code bLeaveCRLF}.</li>
+	 * </ul>
+	 *
+	 * @param value      the text to convert
+	 * @param bCData     whether the output will be inside a CDATA block
+	 * @param bIsHtml    whether HTML-specific newline conversion is enabled
+	 * @param bLeaveCRLF whether CR/LF should be preserved
+	 * @return the escaped XML string
+	 */
 	public static String convertToXml(String value, boolean bCData, boolean bIsHtml, boolean bLeaveCRLF) {
 		if (value == null) {
 			return "";
@@ -184,46 +224,38 @@ public class OATextEscape {
 	}
 
 	/**
-	 * converts null to "" and does other xml/html conversions for &lt;, &gt; &amp; &quot; &#39;
+	 * Delegates to {@link #convertToXml(String, boolean, boolean)} using
+	 * non-CDATA and non-HTML mode.
 	 *
-	 * <pre>
-	   see: http://www.w3.org/TR/REC-xml#NT-Char
-
-	   Legal Chars ::=   #x9 | #xA | #xD | [#x20-#xD7FF] |
-	             [#xE000-#xFFFD] | [#x10000-#x10FFFF]
-
-	   9, 10, 13
-	   tab, lf, cr
-	 * </pre>
-	 *
-	 * @see #convertToXml(String,boolean)
+	 * @param value the text to convert
+	 * @return the converted XML string
 	 */
 	public static String convertToXml(String value) {
 		return convertToXml(value, false, false);
 	}
 
 	
-
 	/**
-	 * Encode/Replace chars that are illegal for XML/HTML with &amp; codes.
+	 * Encodes illegal XML characters by routing through
+	 * {@link #convertToXml(String, boolean, boolean)} in CDATA mode.
+	 * Illegal characters are replaced using internal XML-encoding tags.
 	 *
-	 * @see #convertToXml(String,boolean)
+	 * @param value the text to encode
+	 * @return encoded XML-safe text
 	 */
 	public static String encodeIllegalXml(String value) {
 		return convertToXml(value, true, false);
 	}
 
 	/**
-	 * Encode illegal XML characters with &lt;OAXML#999/&gt; where 999 is character integer value.<br>
-	 * decodeIllegalXML() is used to convert back to character.
-	 * <p>
-	 * This is used internally by convertToXML
+	 * Encodes an illegal XML character into a special marker tag of the form
+	 * {@code <OAXML#NNN/>}, where {@code NNN} is the integer value of the
+	 * character. When {@code bConvertLTGT} is true, &lt; and &gt; are escaped
+	 * as HTML entities.
 	 *
-	 * @param ch           is character to encode
-	 * @param bConvertLTGT if true then convert &lt; to &amp;lt; and &gt; to &amp;gt;. This is needed when it is not going to be used in a
-	 *                     XML CDATA block.
-	 * @see #decodeIllegalXML
-	 * @see #convertToXml(String,boolean)
+	 * @param ch           the character to encode
+	 * @param bConvertLTGT whether to convert &lt; and &gt; to entities
+	 * @return the encoded marker string
 	 */
 	public static String encodeIllegalXml(char ch, boolean bConvertLTGT) {
 		if (bConvertLTGT) {
@@ -234,10 +266,12 @@ public class OATextEscape {
 
 
 	/**
-	 * Used to determine if a String has any illegal XML characters in it.
+	 * Determines whether the supplied string contains only characters legal
+	 * in XML content. Illegal characters include markup symbols, CR/LF, and
+	 * any character with value < 32 except tab.
 	 *
-	 * @return false if any of the following characters are found: &amp; &quot; \ &lt; &gt; LF CR or char&lt;32. If value is null then false
-	 *         is returned.
+	 * @param value the text to examine
+	 * @return {@code true} if all characters are XML-legal; otherwise {@code false}
 	 */
 	public static boolean isLegalXml(String value) {
 		if (value == null) {
@@ -267,11 +301,15 @@ public class OATextEscape {
 	}
 	
 	/**
-	 * Convert XML Strings converted with encodeIllegalXML() back to a String. Since encodeIllegalXML encodes illegal characters with a
-	 * &lt;OAXML#99/&gt; code, this method will convert those tags to the actual character.
+	 * Reverses encoding performed by {@link #encodeIllegalXml(char, boolean)}
+	 * and converts marker tags (e.g., &lt;OAXML#123/&gt;) back to their literal
+	 * character values.
+	 * <p>
+	 * Iteratively scans the string and replaces each tag. If parsing fails for
+	 * a particular tag, the character is skipped without throwing an exception.
 	 *
-	 * @return string that was decoded. If value is null then null is returned.
-	 * @see #encodeIllegalXML
+	 * @param value the encoded string
+	 * @return a decoded string, or {@code null} if the input is null
 	 */
 	public static String decodeIllegalXml(String value) {
 		if (value == null) {
@@ -297,6 +335,14 @@ public class OATextEscape {
 		return value;
 	}
 
+	/**
+	 * Escapes characters for safe JavaScript/JSON string usage. Replaces
+	 * backslashes, quotes, and common control characters with their escape
+	 * sequences. Does not escape all non-printing characters.
+	 *
+	 * @param raw the input text
+	 * @return the escaped string
+	 */
 	public static String escape(String raw) {
 		String escaped = raw;
 		escaped = escaped.replace("\\", "\\\\");
@@ -312,10 +358,32 @@ public class OATextEscape {
 
 
 	
+	/**
+	 * Delegates to {@link #escapeJs(String, char, boolean)} with HTML-embedded
+	 * JavaScript disabled.
+	 *
+	 * @param text         the JavaScript snippet or literal
+	 * @param jsQuoteChar  the quote character that must be escaped
+	 * @return escaped JavaScript text
+	 */
 	public static String escapeJs(final String text, final char jsQuoteChar) {
 	    return escapeJs(text, jsQuoteChar, false);
 	}
 
+	/**
+	 * Escapes content for safe embedding in JavaScript, optionally adjusting
+	 * escaping rules when the code is embedded inside HTML attributes.
+	 * <ul>
+	 *   <li>Escapes newline, backslash, and the active quote character.</li>
+	 *   <li>HTML-sensitive escaping converts quotes to hex codes.</li>
+	 *   <li>Returns an empty string for null input.</li>
+	 * </ul>
+	 *
+	 * @param text                      the text to escape
+	 * @param jsQuoteChar               the quote type in use (' or ")
+	 * @param bIsJsCodeEmbeddedInHtml   whether HTML-safe escaping is required
+	 * @return the escaped JavaScript string
+	 */
 	public static String escapeJs(final String text, final char jsQuoteChar, final boolean bIsJsCodeEmbeddedInHtml) {
         if (text == null) return "";
         final int x = text.length();
@@ -373,6 +441,13 @@ public class OATextEscape {
 	
 	
 	
+	/**
+	 * Escapes a string for safe JSON encoding by creating a new buffer and
+	 * delegating to {@link #escapeJson(String, StringBuffer)}.
+	 *
+	 * @param s the string to escape
+	 * @return the escaped JSON text, or {@code null} if input is null
+	 */
 	public static String escapeJson(String s) {
 		if (s == null) {
 			return null;
@@ -382,6 +457,15 @@ public class OATextEscape {
 		return sb.toString();
 	}
 
+	/**
+	 * Escapes characters per JSON rules, writing output into the supplied
+	 * buffer. Handles escape sequences for quotation marks, backslashes, and
+	 * control characters, and uses \\uXXXX notation for non-printing and
+	 * extended Unicode ranges.
+	 *
+	 * @param s  the text to escape; ignored if null
+	 * @param sb the destination buffer
+	 */
 	public static void escapeJson(String s, StringBuffer sb) {
 	    if (s == null) return;
 		final int len = s.length();
@@ -433,8 +517,16 @@ public class OATextEscape {
 		}
 	}
 	
-	/* ex:
-	 * <div style='background-image:url(oaproperty://com.tmgsc.hifive.model.oa.ImageStore/bytes?232); width:88; height:99' colspan=4 test xyz abc=Abcde123>adfa</div>
+	/**
+	 * Tokenizes an HTML tag into attribute name/value pairs using
+	 * {@link OATextTokenizer#tokenize(String, char, boolean, boolean, char, char, char)}.
+	 * <p>
+	 * The tag name is skipped and all remaining tokens are interpreted as
+	 * attribute keys and their corresponding values. Missing values default
+	 * to empty strings.
+	 *
+	 * @param htmlTag the raw HTML tag
+	 * @return a map of attribute names to values; never null
 	 */
 	public static Map<String, String> getHtmlAttributeMap(String htmlTag) {
 		Map<String, String> map = new HashMap<String, String>();
@@ -466,6 +558,14 @@ public class OATextEscape {
 		return map;
 	}
 
+	/**
+	 * Reverses JSON escaping by converting escape sequences (e.g., \\n, \\t,
+	 * \\\", \\\\) back to their literal characters. Uses {@link OAString#convert(String, String, String)}
+	 * for sequential unescaping.
+	 *
+	 * @param s the escaped JSON string
+	 * @return the unescaped result
+	 */
 	public static String unescapeJson(String s) {
 		s = OAString.convert(s, "\\\"", "\"");
 		s = OAString.convert(s, "\\\\", "\\");
@@ -479,6 +579,23 @@ public class OATextEscape {
 		return s;
 	}
 
+	/**
+	 * Highlights all occurrences of {@code search} within {@code line} by wrapping
+	 * matches with {@code beginTag} and {@code endTag}. Matching is sequential and
+	 * allows case-insensitive scanning.
+	 * <ul>
+	 *   <li>If either {@code line} or {@code search} is null, returns {@code line}.</li>
+	 *   <li>Does not allocate a buffer until the first match is found.</li>
+	 *   <li>Handles overlapping and partial matches by backtracking as needed.</li>
+	 * </ul>
+	 *
+	 * @param line        the text to scan
+	 * @param search      the substring to highlight
+	 * @param beginTag    the prefix inserted before each match
+	 * @param endTag      the suffix inserted after each match
+	 * @param bIgnoreCase whether matching is case-insensitive
+	 * @return a new string with highlighted regions or the original if no matches found
+	 */
 	public static String hilite(String line, String search, String beginTag, String endTag, boolean bIgnoreCase) {
 		if (line == null || search == null) {
 			return line;

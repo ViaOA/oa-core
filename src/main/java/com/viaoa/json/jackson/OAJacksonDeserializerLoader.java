@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,27 +84,91 @@ import com.viaoa.util.OATime;
  */
 public class OAJacksonDeserializerLoader {
 
+	/**
+	 * Owning {@link OAJson} context that drives deserialization behavior, including
+	 * property callbacks, naming conventions, and stack management for nested
+	 * objects.
+	 */
 	private final OAJson oajson;
+	
+	/**
+	 * Flag indicating whether the loader is working in POJO mode.
+	 * <p>
+	 * When {@code true}, POJO metadata and mappings are used to interpret JSON
+	 * keys; otherwise, OAObject metadata is used directly.
+	 */
 	private final boolean bUsesPojo;
 
+	/**
+	 * Enables or disables debug output during loading.
+	 * <p>
+	 * When {@code true}, internal operations emit trace messages to
+	 * {@link System#out} via the {@link #debug(StackItem, boolean, String)} helper.
+	 */
 	private boolean debug = false;
+	
+	/**
+	 * Counter tracking how many times {@link #load(OAJson.StackItem)} has been
+	 * invoked.
+	 * <p>
+	 * Primarily used to prefix debug messages with a simple sequence number.
+	 */
 	private int cntLoadCalled;
 
-	// list of references that were not found, that will be retried once at the end of load.
+	/**
+	 * Collection of POJO link references that could not be resolved on the first
+	 * pass.
+	 * <p>
+	 * These entries are revisited once the initial load completes, allowing
+	 * cross-object references to be resolved after all objects are created.
+	 */
 	private final List<RetryPojoReference> alRetryPojoReference = new ArrayList();
 
+	/**
+	 * Creates a new loader bound to the given {@link OAJson} context.
+	 * <p>
+	 * The context determines whether POJO mode is used and supplies callbacks,
+	 * naming rules, and the active stack item during loading.
+	 *
+	 * @param oaj the {@link OAJson} instance controlling deserialization behavior
+	 */
 	public OAJacksonDeserializerLoader(OAJson oaj) {
 		this.oajson = oaj;
 		this.bUsesPojo = oaj.getReadingPojo();
 	}
 
+	/**
+	 * Convenience overload that loads JSON into the given root object using its
+	 * runtime type.
+	 * <p>
+	 * This method delegates to
+	 * {@link #load(JsonNode, OAObject, Class)} with a {@code null} type hint and
+	 * returns the resulting root instance.
+	 *
+	 * @param <T>  the concrete {@link OAObject} type
+	 * @param node the JSON node representing the root object and its subtree
+	 * @param root the existing root object to populate, or {@code null} to create
+	 * @return the loaded root object, which may be newly created or updated
+	 */
 	public <T extends OAObject> T load(final JsonNode node, final T root) {
 		T t = load(node, root, null);
 		return t;
 	}
 
 	/**
-	 * Main method called by OAJacksonModule to load an OAObject and any references from json tree.
+	 * Entry point for loading a JSON subtree into an {@link OAObject} graph.
+	 * <p>
+	 * A {@link OAJson.StackItem} is created to represent the root, associated
+	 * metadata is resolved, and {@link #load(OAJson.StackItem)} is invoked. Any
+	 * deferred POJO references are then retried before restoring the previous
+	 * stack item.
+	 *
+	 * @param <T>   the concrete {@link OAObject} type
+	 * @param node  the JSON node to load; may be {@code null}
+	 * @param root  the existing root object, or {@code null} to create one
+	 * @param clazz optional target type hint; if {@code null}, the type is taken
+	 *              from {@code root}
+	 * @return the loaded root object, or {@code null} if nothing could be created
 	 */
 	public <T extends OAObject> T load(final JsonNode node, final T root, Class<T> clazz) {
 		if (node == null) {
@@ -135,11 +199,16 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	/**
-	 * Main method for loading JsonObject into a (new or existing) OAObject.<br>
-	 * Recursively will load all link objects.
+	 * Core routine that loads a single {@link OAObject} and its links from the
+	 * current {@link StackItem}.
 	 * <p>
-	 * find or create a matching OAObject from an JsonObject.<br>
-	 * This will first use the stack, then guid, pkeys, importMatches, linkWithUnique, linkWithEqualAndUnique.
+	 * The method attempts to find an existing instance, creates one if needed,
+	 * loads identifier properties when appropriate, and then populates scalar
+	 * properties and links. Debug messages are emitted when debugging is enabled.
+	 *
+	 * @param stackItem the current stack frame describing the object and JSON node
+	 * @return {@code true} if the stack item was processed, {@code false} if it
+	 *         was ignored or invalid
 	 */
 	protected boolean load(final StackItem stackItem) {
 		if (stackItem == null) {
@@ -176,6 +245,16 @@ public class OAJacksonDeserializerLoader {
 		return true;
 	}
 
+	/**
+	 * Creates a new {@link OAObject} instance for the given {@link StackItem}.
+	 * <p>
+	 * The object type is taken from the associated {@link OAPropertyInfo} metadata.
+	 * Identifier properties are loaded, and initialization callbacks are invoked
+	 * via {@link OAObjectDelegate#initializeAfterLoading(OAObject, boolean, boolean, boolean)}
+	 * when appropriate.
+	 *
+	 * @param stackItem the stack frame describing the object to create
+	 */
 	protected void createObject(final StackItem stackItem) {
 		final Class clazz = stackItem.oi.getForClass();
 		debug2(stackItem, "createObject");
@@ -195,6 +274,17 @@ public class OAJacksonDeserializerLoader {
 		}
 	}
 
+	/**
+	 * Loads identifier-related properties from JSON into the current object.
+	 * <p>
+	 * For POJO mode, key properties are resolved using {@link PojoProperty}
+	 * metadata; otherwise, OAObject ID properties are used directly. The method
+	 * applies callbacks and format-aware conversion before assigning values.
+	 *
+	 * @param stackItem the stack frame describing the object and its JSON node
+	 * @return {@code true} if an assigned ID is still needed, {@code false} if all
+	 *         required ID values were provided
+	 */
 	protected boolean loadObjectIdProperties(final StackItem stackItem) {
 		boolean bNeedsAssignedId = false;
 		if (bUsesPojo) {
@@ -258,6 +348,17 @@ public class OAJacksonDeserializerLoader {
 		return bNeedsAssignedId;
 	}
 
+	/**
+	 * Populates the current object's scalar properties and links from its JSON
+	 * node.
+	 * <p>
+	 * The method first loads non-ID properties, then processes one-to-one and
+	 * one-to-many links found in the JSON, and finally resolves remaining
+	 * references that require key-based lookup.
+	 *
+	 * @param stackItem the stack frame describing the object being populated
+	 * @throws RuntimeException if the JSON node is not an object
+	 */
 	protected void loadObject(final StackItem stackItem) {
 		if (stackItem.node == null || !stackItem.node.isObject()) {
 			throw new RuntimeException("loadObject does not have a node.isObject=true");
@@ -295,6 +396,16 @@ public class OAJacksonDeserializerLoader {
 		loadObjectReferences(stackItem, hsLinkInfoOneLoaded);
 	}
 
+	/**
+	 * Loads non-identifier scalar properties for the current object.
+	 * <p>
+	 * Optional GUID handling is performed for non-POJO mode, followed by
+	 * iteration over all {@link OAPropertyInfo} entries. Each property is mapped
+	 * from the JSON node using naming conventions, converted, passed through
+	 * callbacks, and then assigned.
+	 *
+	 * @param stackItem the stack frame describing the object and its JSON node
+	 */
 	protected void loadObjectProperties(final StackItem stackItem) {
 		OAObjectKey objKey = stackItem.obj.getObjectKey();
 
@@ -337,6 +448,18 @@ public class OAJacksonDeserializerLoader {
 		}
 	}
 
+	/**
+	 * Loads a single-valued link property from JSON for the given link metadata.
+	 * <p>
+	 * A child {@link StackItem} is constructed for the linked type, populated with
+	 * the appropriate JSON node, and delegated to
+	 * {@link #loadObjectOneLink(OAJson.StackItem, OAJson.StackItem)}.
+	 *
+	 * @param stackItem the parent stack frame containing the owning object
+	 * @param li        the link metadata describing the one link
+	 * @return {@code true} if a linked object was loaded or resolved, otherwise
+	 *         {@code false}
+	 */
 	protected boolean loadObjectOneLink(final StackItem stackItem, final OALinkInfo li) {
 		if (li.getType() != li.TYPE_ONE) {
 			return false;
@@ -366,6 +489,19 @@ public class OAJacksonDeserializerLoader {
 		}
 	}
 
+	/**
+	 * Loads and assigns a single-valued link using a prepared child
+	 * {@link StackItem}.
+	 * <p>
+	 * The child stack item is processed via {@link #load(OAJson.StackItem)} and,
+	 * if successful, the resulting object is assigned to the parent's link
+	 * property.
+	 *
+	 * @param stackItem      the parent stack frame
+	 * @param stackItemChild the child stack frame representing the linked object
+	 * @return {@code true} if the link was successfully loaded, otherwise
+	 *         {@code false}
+	 */
 	protected boolean loadObjectOneLink(final StackItem stackItem, final StackItem stackItemChild) {
 		debug2(stackItem, "loadObjectOneLink " + stackItemChild.li.getName());
 
@@ -380,6 +516,17 @@ public class OAJacksonDeserializerLoader {
 		return b;
 	}
 
+	/**
+	 * Loads a collection-valued link from a JSON array.
+	 * <p>
+	 * For each array element, a child {@link StackItem} is created and loaded,
+	 * and the resulting objects are added to the target {@link Hub}. Existing
+	 * items not present in the JSON are removed, and hub order is updated to match
+	 * the JSON sequence. After loading, an {@code afterRead} callback is invoked.
+	 *
+	 * @param stackItem the parent stack frame containing the owner object
+	 * @param li        the link metadata describing the many-valued association
+	 */
 	protected void loadObjectManyLink(final StackItem stackItem, final OALinkInfo li) {
 		// load links of type=many
 		debug2(stackItem, "loadObjectManyLink " + li.getName());
@@ -450,6 +597,19 @@ public class OAJacksonDeserializerLoader {
 		oajson.afterReadCallback(stackItem.node, stackItem.obj);
 	}
 
+	/**
+	 * Resolves link-one references that were not explicitly provided as nested
+	 * JSON objects.
+	 * <p>
+	 * Depending on POJO mode, either
+	 * {@link #loadObjectNonPojoReferences(OAJson.StackItem, Set)} or
+	 * {@link #loadObjectPojoReferences(OAJson.StackItem, Set)} is invoked to
+	 * perform key-based lookups for remaining links.
+	 *
+	 * @param stackItem              the stack frame describing the current object
+	 * @param hsLinkInfoOneLoaded    set of link-one definitions already populated
+	 *                               from nested JSON
+	 */
 	protected void loadObjectReferences(final StackItem stackItem, final Set<OALinkInfo> hsLinkInfoOneLoaded) {
 		if (!bUsesPojo) {
 			loadObjectNonPojoReferences(stackItem, hsLinkInfoOneLoaded);
@@ -458,6 +618,17 @@ public class OAJacksonDeserializerLoader {
 		}
 	}
 
+	/**
+	 * Resolves link-one references for non-POJO mode using foreign key metadata.
+	 * <p>
+	 * For each unresolved link, foreign key values are gathered from the current
+	 * or parent JSON nodes, converted, and used to locate existing objects via
+	 * the cache or data source. If no object is found, the link property is
+	 * populated with an {@link OAObjectKey} placeholder.
+	 *
+	 * @param stackItem           the stack frame for the current object
+	 * @param hsLinkInfoOneLoaded set of link-one definitions already resolved
+	 */
 	protected void loadObjectNonPojoReferences(final StackItem stackItem, final Set<OALinkInfo> hsLinkInfoOneLoaded) {
 		// load linkOne using fkeys, if the linkOne node did not exist
 		for (OALinkInfo li : stackItem.oi.getLinkInfos()) {
@@ -518,6 +689,16 @@ public class OAJacksonDeserializerLoader {
 		}
 	}
 
+	/**
+	 * Resolves link-one references for POJO mode using POJO key definitions.
+	 * <p>
+	 * Foreign-key, import-match, and link-unique strategies are tried in sequence
+	 * for each {@link PojoLinkOne}. When an object cannot be found immediately,
+	 * a {@link RetryPojoReference} is queued for later retry.
+	 *
+	 * @param stackItem           the stack frame describing the current object
+	 * @param hsLinkInfoOneLoaded set of link-one definitions already resolved
+	 */
 	protected void loadObjectPojoReferences(final StackItem stackItem, final Set<OALinkInfo> hsLinkInfoOneLoaded) {
 		// load Pojo key properties (fkey, importMatch, linkUnique+equalsPp)
 
@@ -540,6 +721,20 @@ public class OAJacksonDeserializerLoader {
 		}
 	}
 
+	/**
+	 * Attempts to resolve a POJO-based link-one reference using foreign-key
+	 * properties defined in {@link PojoLinkOne}.
+	 * <p>
+	 * JSON values for the POJO key properties are converted and collected. If all
+	 * required values are present, an {@link OAObjectKey} is constructed and used
+	 * to locate the referenced object in the cache or data source. If the object
+	 * cannot be found, a placeholder key is assigned.
+	 *
+	 * @param stackItem the current stack frame
+	 * @param plo       POJO metadata describing the link-one foreign-key mapping
+	 * @param li        the corresponding OA link metadata
+	 * @return {@code true} once processing is complete; always returns true
+	 */
 	protected boolean loadObjectPojoFkeyReferences(final StackItem stackItem, final PojoLinkOne plo, final OALinkInfo li) {
 		List<PojoProperty> alPojoProperty = PojoLinkOneDelegate.getLinkFkeyPojoProperties(plo);
 		if (alPojoProperty == null || alPojoProperty.size() == 0) {
@@ -603,6 +798,18 @@ public class OAJacksonDeserializerLoader {
 		return true;
 	}
 
+	/**
+	 * Attempts to resolve a POJO link-one reference using import-match key fields.
+	 * <p>
+	 * A SQL filter is constructed based on the POJO import-match properties. If all
+	 * required JSON values are available, the loader searches the cache and then
+	 * the data source. Missing references are queued for a retry.
+	 *
+	 * @param stackItem the current stack frame
+	 * @param plo       POJO import-match metadata
+	 * @param li        corresponding OA link metadata
+	 * @return always {@code true} once processed
+	 */
 	protected boolean loadObjectPojoImportMatchReferences(final StackItem stackItem, final PojoLinkOne plo, final OALinkInfo li) {
 		List<PojoProperty> alPojoProperty = PojoLinkOneDelegate.getImportMatchPojoProperties(plo);
 		if (alPojoProperty == null || alPojoProperty.size() == 0) {
@@ -662,6 +869,18 @@ public class OAJacksonDeserializerLoader {
 		return true;
 	}
 
+	/**
+	 * Attempts to resolve a POJO link-one reference using link-unique metadata.
+	 * <p>
+	 * A SQL query is built from unique and equal-property mappings. If no match is
+	 * immediately found, the lookup is deferred and a {@link RetryPojoReference}
+	 * entry is added.
+	 *
+	 * @param stackItem the current stack frame
+	 * @param plo       POJO metadata defining link-unique rules
+	 * @param li        OA link metadata for the reference
+	 * @return {@code true} once processing is complete
+	 */
 	protected boolean loadObjectPojoUniqueReferences(final StackItem stackItem, final PojoLinkOne plo, final OALinkInfo li) {
 		// link unique with equalPp
 		List<PojoProperty> alPojoProperty = PojoLinkOneDelegate.getLinkUniquePojoProperties(plo);
@@ -730,6 +949,17 @@ public class OAJacksonDeserializerLoader {
 		return true;
 	}
 
+	/**
+	 * Determines whether an existing object instance should be used rather than
+	 * creating a new one.
+	 * <p>
+	 * In auto-create scenarios, the parent object may already contain the linked
+	 * instance. Otherwise, the lookup is delegated to either
+	 * {@link #_findExistingObject(OAJson.StackItem)} or
+	 * {@link #_findExistingObjectFromPojo(OAJson.StackItem)} depending on mode.
+	 *
+	 * @param stackItem the stack frame describing the object to locate
+	 */
 	public void findExistingObject(final StackItem stackItem) {
 		if (stackItem.li != null && stackItem.li.getAutoCreateNew() && stackItem.parent != null) {
 			stackItem.obj = (OAObject) stackItem.li.getValue(stackItem.parent.obj);
@@ -745,6 +975,15 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	// NOTE: the same logic is also in _findExistingObjectPojo
+	/**
+	 * Attempts to find an existing OAObject using its ID properties.
+	 * <p>
+	 * JSON key values are mapped to identifier fields, converted, and used to
+	 * search hubs, the object cache, and finally the data source. Compound and
+	 * GUID-based keys are supported.
+	 *
+	 * @param stackItem the stack frame describing the object to locate
+	 */
 	protected void _findExistingObject(final StackItem stackItem) {
 		final String[] keys = stackItem.oi.getIdProperties();
 		final boolean bHasKey = keys != null && keys.length > 0;
@@ -900,6 +1139,15 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	// NOTE: the same logic is also in _findExistingObject
+	/**
+	 * Attempts to locate an existing object when using POJO key rules.
+	 * <p>
+	 * Key resolution may use POJO primary keys, import-match keys, or link-unique
+	 * keys. Matching objects are searched first in hubs, then the cache, and then
+	 * the data source.
+	 *
+	 * @param stackItem the stack frame describing the object to locate
+	 */
 	protected void _findExistingObjectFromPojo(final StackItem stackItem) {
 		final List<PojoProperty> alPojoProperyKeys = PojoDelegate.getPojoPropertyKeys(stackItem.oi.getPojo());
 		final boolean bHasKey = alPojoProperyKeys != null && alPojoProperyKeys.size() > 0;
@@ -1077,6 +1325,16 @@ public class OAJacksonDeserializerLoader {
 		stackItem.obj = (OAObject) objx;
 	}
 
+	/**
+	 * Converts a JSON node into a Java value for the given property.
+	 * <p>
+	 * Conversion rules consider name-value lists, numeric parsing, date/time
+	 * formats, textual values, and fallback serialization of structured nodes.
+	 *
+	 * @param jn the JSON node containing the value
+	 * @param pi metadata describing the target property
+	 * @return the converted Java value, or {@code null} if none
+	 */
 	protected Object convert(final JsonNode jn, final OAPropertyInfo pi) {
 		if (jn == null) {
 			return null;
@@ -1131,6 +1389,13 @@ public class OAJacksonDeserializerLoader {
 		return objx;
 	}
 
+	/**
+	 * Holds parameters needed to build an equality query when resolving
+	 * link-unique object references.
+	 * <p>
+	 * Includes the property path to compare, the resolved reference value, and
+	 * optional OR-clause SQL fragments.
+	 */
 	protected static class EqualQueryForObject {
 		String propPath;
 		OAObject value;
@@ -1140,6 +1405,16 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	// build query based on Link that has unique and equalPp
+	/**
+	 * Builds query parameters for resolving link-unique references in non-POJO
+	 * mode.
+	 * <p>
+	 * Determines the correct property path for equality comparison and resolves
+	 * the reference object by analyzing the stack and link configuration.
+	 *
+	 * @param stackItem the stack frame describing the current object
+	 * @return an {@link EqualQueryForObject} containing comparison data
+	 */
 	protected EqualQueryForObject getEqualQueryForObject(StackItem stackItem) {
 		if (stackItem == null) {
 			return null;
@@ -1252,6 +1527,13 @@ public class OAJacksonDeserializerLoader {
 		return eq;
 	}
 
+	/**
+	 * Container for equality-query information used when resolving POJO link-unique
+	 * references.
+	 * <p>
+	 * Includes the target property path, resolved reference object, and metadata
+	 * needed to construct SQL OR-conditions.
+	 */
 	protected static class EqualQueryForReference {
 		StackItem stackItem;
 		PojoLinkUnique plu;
@@ -1260,6 +1542,16 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	// build query based on Link that has unique and equalPp
+	/**
+	 * Builds query parameters for resolving POJO link-unique relationships.
+	 * <p>
+	 * Determines the correct root object for comparison by analyzing equal-property
+	 * paths and walking the stack hierarchy.
+	 *
+	 * @param stackItem the current stack frame
+	 * @param plu       POJO link-unique metadata
+	 * @return an {@link EqualQueryForReference} describing the match criteria
+	 */
 	protected EqualQueryForReference getEqualQueryForReference(final StackItem stackItem, final PojoLinkUnique plu) {
 		if (stackItem == null || plu == null) {
 			return null;
@@ -1377,12 +1669,24 @@ public class OAJacksonDeserializerLoader {
 		return eq;
 	}
 
+	/**
+	 * Records a POJO link-one reference that could not be resolved during the
+	 * initial load pass.
+	 * <p>
+	 * Deferred references are retried after the object graph has been constructed.
+	 */
 	protected static class RetryPojoReference {
 		StackItem stackItem;
 		PojoLinkOne plo;
 		OALinkInfo li;
 	}
 
+	/**
+	 * Retries all deferred POJO link-one references.
+	 * <p>
+	 * Each entry is processed using import-match rules first, followed by
+	 * link-unique rules if necessary.
+	 */
 	protected void retryPojoReferences() {
 		List<RetryPojoReference> al = new ArrayList();
 		al.addAll(getRetryPojoReferences());
@@ -1395,28 +1699,64 @@ public class OAJacksonDeserializerLoader {
 	}
 
 	/**
-	 * List of references that were not found.
+	 * Returns the list of POJO references that could not be resolved immediately.
+	 *
+	 * @return the modifiable retry-reference list
 	 */
 	public List<RetryPojoReference> getRetryPojoReferences() {
 		return alRetryPojoReference;
 	}
 
+	/**
+	 * Enables or disables debug tracing for the loader.
+	 *
+	 * @param b {@code true} to enable debug output, {@code false} to disable it
+	 */
 	public void setDebug(boolean b) {
 		this.debug = b;
 	}
 
+	/**
+	 * Indicates whether debug tracing is currently enabled.
+	 *
+	 * @return {@code true} if debug mode is active, otherwise {@code false}
+	 */
 	public boolean getDebug() {
 		return this.debug;
 	}
 
+	/**
+	 * Emits a debug message including the object path for the given stack frame.
+	 * <p>
+	 * Shows object hierarchy and indentation when debug mode is enabled.
+	 *
+	 * @param si  the stack frame associated with the message
+	 * @param msg the debug message text
+	 */
 	public void debug(StackItem si, String msg) {
 		debug(si, true, msg);
 	}
 
+	/**
+	 * Emits a debug message without including object-path information.
+	 *
+	 * @param si  the stack frame associated with the message
+	 * @param msg the debug message text
+	 */
 	protected void debug2(StackItem si, String msg) {
 		debug(si, false, msg);
 	}
 
+	/**
+	 * Internal helper for emitting formatted debug messages.
+	 * <p>
+	 * Based on the {@code bShowObj} flag, includes or omits object-path display.
+	 * Indentation is derived from stack depth.
+	 *
+	 * @param si        the stack frame to inspect
+	 * @param bShowObj  whether to include object-path information
+	 * @param msg       the debug message text
+	 */
 	protected void debug(StackItem si, boolean bShowObj, String msg) {
 		if (!debug) {
 			return;

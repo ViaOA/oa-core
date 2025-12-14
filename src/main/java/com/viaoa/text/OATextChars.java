@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,10 +46,13 @@ package com.viaoa.text;
 public class OATextChars {
 	
 	/**
-	 * Returns true if the String contains at least one digit [0-9].
+	 * Determines whether the given string contains at least one digit
+	 * ('0'–'9').
+	 * <p>
+	 * If {@code word} is {@code null}, {@code false} is returned.
 	 *
-	 * @param word String to test
-	 * @return true if any character in word is a digit, otherwise false.
+	 * @param word the string to examine
+	 * @return {@code true} if any character is a digit; otherwise {@code false}
 	 */
 	public static boolean hasDigits(String word) {
 	    if (word == null) return false;
@@ -59,6 +62,16 @@ public class OATextChars {
 	    return false;
 	}	
 
+	/**
+	 * Converts the first character of the given string to lowercase if
+	 * it is uppercase. If {@code s} is {@code null}, {@code null} is
+	 * returned. If the string has a single character, it is converted
+	 * directly; otherwise only the leading character is modified.
+	 *
+	 * @param s the text to modify
+	 * @return a string with the first character converted to lowercase,
+	 *         or the original string if no change is needed
+	 */
 	public static String makeFirstCharLower(String s) {
 		if (s == null) {
 			return null;
@@ -79,7 +92,17 @@ public class OATextChars {
 	}
 	
 	/**
-	 * Example: GSMRServer -&gt; gsmrServer
+	 * Converts the leading sequence of uppercase characters to lowercase.
+	 * <p>
+	 * The scan continues until a non-uppercase character is encountered,
+	 * or until the final character is reached. Only the initial run of
+	 * uppercase characters is modified.
+	 * <p>
+	 * Example: {@code "GSMRServer"} becomes {@code "gsmrServer"}.
+	 *
+	 * @param s the text to modify; {@code null} returns {@code null}
+	 * @return the string with its initial uppercase sequence converted to
+	 *         lowercase, or the original string if no change occurs
 	 */
 	public static String makeFirstUpperCharsLower(String s) {
 		if (s == null) {
@@ -109,6 +132,16 @@ public class OATextChars {
 		return s;
 	}
 
+	/**
+	 * Converts the first character of the given string to uppercase if
+	 * it is lowercase. If {@code s} is {@code null}, {@code null} is
+	 * returned. If the string has a single character, it is converted
+	 * directly; otherwise only the leading character is modified.
+	 *
+	 * @param s the text to modify
+	 * @return a string with the first character converted to uppercase,
+	 *         or the original string if no change is needed
+	 */
 	public static String makeFirstCharUpper(String s) {
 		if (s == null) {
 			return null;
@@ -128,6 +161,14 @@ public class OATextChars {
 		return s;
 	}
 
+	/**
+	 * Converts the entire string to uppercase. If {@code value} is
+	 * {@code null}, {@code null} is returned.
+	 *
+	 * @param value the text to convert
+	 * @return the uppercase version of {@code value}, or {@code null}
+	 *         if {@code value} is null
+	 */
 	public static String upper(String value) {
 		if (value == null) {
 			return null;
@@ -135,6 +176,14 @@ public class OATextChars {
 		return value.toUpperCase();
 	}
 
+	/**
+	 * Converts the entire string to lowercase. If {@code value} is
+	 * {@code null}, {@code null} is returned.
+	 *
+	 * @param value the text to convert
+	 * @return the lowercase version of {@code value}, or {@code null}
+	 *         if {@code value} is null
+	 */
 	public static String lower(String value) {
 		if (value == null) {
 			return null;

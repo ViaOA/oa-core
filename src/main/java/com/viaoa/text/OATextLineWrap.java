@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,95 +100,226 @@ import java.util.List;
  * @author Vince Via
  */
 public class OATextLineWrap {
-    private int maxWidth; // row width
-    private String separator;
+    
+	/**
+	 * Maximum number of code points allowed per output row before a wrap occurs.
+	 */
+	private int maxWidth; // row width
+    
+	/**
+	 * String inserted between rows when using {@link #wrapToString(String)}.
+	 * Not counted against the width budget of each row.
+	 */
+	private String separator;
 
+	/**
+	 * Optional limit on the number of rows produced. A value of zero disables
+	 * truncation and allows unlimited rows.
+	 */
     private int maxRows = 0;            // 0 = unlimited
+    
+    /**
+     * Minimum number of code points that must remain on the next line when
+     * performing forced hyphenation on an unbreakable word.
+     */
     private int minSegmentLen = 3;      // minimum segment when forced-hyphenating
+    
+    /**
+     * Additional break characters—beyond whitespace—that may be used as natural
+     * wrap boundaries (e.g., hyphens).
+     */
     private String breakChars = "-";    // additional natural break chars besides whitespace
 
     
+    /**
+     * Constructs a wrapper with default settings: width 5 and an empty separator.
+     * Intended for quick testing or minimal-configuration scenarios.
+     */
     public OATextLineWrap() {
     	this.maxWidth = 5;
     	this.separator = "";
     }
     
+    /**
+     * Constructs a wrapper with the specified row width and separator.
+     *
+     * @param width     maximum row width in code points; must be > 0
+     * @param separator value inserted between rows; null becomes ""
+     * @throws IllegalArgumentException if width is not greater than zero
+     */
     public OATextLineWrap(int width, String separator) {
         if (width <= 0) throw new IllegalArgumentException("width must be > 0");
         this.maxWidth = width;
         this.separator = (separator == null) ? "" : separator;
     }
 
+    /**
+     * Returns the configured maximum width in code points for each row.
+     *
+     * @return maximum row width
+     */
     public int getMaxWidth() {
         return maxWidth;
     }
 
+    /**
+     * Sets the maximum row width.
+     *
+     * @param v new width; must be > 0
+     * @throws IllegalArgumentException if v is less than 1
+     */
     public void setMaxWidth(int v) {
         if (v < 1) throw new IllegalArgumentException("maxWidth must be > 0");
         this.maxWidth = v;
     }
 
+    /**
+     * Fluent wrapper for {@link #setMaxWidth(int)}.
+     *
+     * @param v new maximum width
+     * @return this instance for method chaining
+     */
     public OATextLineWrap withMaxWidth(int v) {
         setMaxWidth(v);
         return this;
     }
 
+    /**
+     * Returns the configured upper bound for the number of output rows.
+     * A value of zero indicates no limit.
+     *
+     * @return maximum number of rows or zero for unlimited
+     */
     public int getMaxRows() {
         return maxRows;
     }
     
+    /**
+     * Sets the maximum number of output rows.
+     *
+     * @param v number of rows allowed; must be > 0
+     * @throws IllegalArgumentException if v is less than 1
+     */
     public void setMaxRows(int v) {
         if (v < 1) throw new IllegalArgumentException("maxRows must be > 0");
         this.maxRows = v;
     }
 
+    /**
+     * Fluent wrapper for {@link #setMaxRows(int)}.
+     *
+     * @param v maximum number of rows
+     * @return this instance for chaining
+     */
     public OATextLineWrap withMaxRows(int v) {
         setMaxRows(v);
         return this;
     }
 
+    /**
+     * Returns the minimum number of code points that must be preserved on the
+     * following line when forced hyphenation occurs.
+     *
+     * @return minimum segment length
+     */
     public int getMinSegmentLen() {
         return minSegmentLen;
     }
 
+    /**
+     * Sets the minimum segment length used during forced hyphenation.
+     *
+     * @param v minimum allowed segment length; must be > 0
+     * @throws IllegalArgumentException if v is less than 1
+     */
     public void setMinSegmentLen(int v) {
         if (v < 1) throw new IllegalArgumentException("minSegmentLen must be > 0");
         this.minSegmentLen = v;
     }
 
+    /**
+     * Fluent wrapper for {@link #setMinSegmentLen(int)}.
+     *
+     * @param v minimum segment length
+     * @return this instance for chaining
+     */
     public OATextLineWrap withMinSegmentLen(int v) {
         setMinSegmentLen(v);
         return this;
     }
 
+    /**
+     * Returns the set of extra break characters used when searching for wrap
+     * positions in addition to whitespace.
+     *
+     * @return configured break characters; never null
+     */
     public String getBreakChars() {
         return breakChars;
     }
 
+    /**
+     * Sets the break characters that should be treated as natural wrap points.
+     *
+     * @param v characters used as break points; null becomes ""
+     */
     public void setBreakChars(String v) {
         this.breakChars = (v != null) ? v : "";
     }
 
+    /**
+     * Fluent wrapper for {@link #setBreakChars(String)}.
+     *
+     * @param v new break-character set
+     * @return this instance for chaining
+     */
     public OATextLineWrap withBreakChars(String v) {
         setBreakChars(v);
         return this;
     }
 
+    /**
+     * Returns the separator string used when joining wrapped rows in
+     * {@link #wrapToString(String)}.
+     *
+     * @return the row separator; never null
+     */
     public String getSeparator() {
         return separator;
     }
 
+    /**
+     * Sets the separator used to join wrapped rows.
+     *
+     * @param s the separator; null becomes ""
+     */
     public void setSeparator(String v) {
         this.separator = (v != null) ? v : "";
     }
 
+    /**
+     * Fluent wrapper for {@link #setSeparator(String)}.
+     *
+     * @param s the new separator
+     * @return this instance for chaining
+     */
     public OATextLineWrap withSeparator(String v) {
         setSeparator(v);
         return this;
     }
     
 
-    /** Wraps text into rows (rows do not include the separator). */
+    /**
+     * Wraps the supplied text into a list of rows based on current configuration.
+     * <ul>
+     *   <li>Delegates to {@link #wrapToString(String)} and splits the result using
+     *       {@link #separator}.</li>
+     *   <li>Always returns a non-null list; empty input yields a single empty row.</li>
+     * </ul>
+     *
+     * @param text the text to wrap; null becomes ""
+     * @return list of wrapped rows
+     */
     public List<String> wrap(String text) {
         final List<String> alRow = new ArrayList<>();
         if (text == null || text.isEmpty()) return alRow;
@@ -242,7 +373,13 @@ public class OATextLineWrap {
         return alRow;
     }
 
-    /** Returns rows joined with the configured separator (no trailing separator at the end). */
+    /**
+     * Wraps text using the configured width, max rows, and break characters,
+     * returning a single joined string separated by {@link #separator}.
+     *
+     * @param text the text to wrap; null becomes ""
+     * @return wrapped text using the current separator
+     */
     public String wrapToString(String text) {
         List<String> alRow = wrap(text);
         if (alRow.size() == 0) return "";
@@ -261,11 +398,23 @@ public class OATextLineWrap {
     }
 
     /**
-     * Normal row emission (not final truncation row).
-     * Uses last-seen-break tracking while scanning forward by code points:
-     *  - Track last whitespace or configured break char (e.g., '-')
-     *  - On limit: break at last-seen; if none: forced hyphenation with minSegmentLen (append '-')
-     * Returns new char-position for next row.
+     * Emits a single non-final wrapped row starting at the given character index.
+     * <p>
+     * The method scans forward from {@code startChar}, counting code points up to
+     * {@link #maxWidth}. While scanning, it tracks the last whitespace or configured
+     * break character to use as a natural wrap point. If the width limit is reached
+     * without encountering a usable break, forced hyphenation is performed, ensuring
+     * that at least {@link #minSegmentLen} code points remain for the next row.
+     * <p>
+     * The substring for the row is right-stripped of trailing whitespace. When a forced
+     * hyphenation occurs, a hyphen is appended to the emitted row. The finished row is
+     * added to {@code alRow}.
+     *
+     * @param s         full source text being wrapped
+     * @param startChar UTF-16 character index where this row begins
+     * @param alRow     destination list receiving the generated row
+     * @return the next starting UTF-16 character index after the emitted row,
+     *         with leading whitespace skipped
      */
     private int emitRow(String s, int startChar, List<String> alRow) {
         final int n = s.length();
@@ -341,11 +490,19 @@ public class OATextLineWrap {
     }
 
     /**
-     * Final row emission when truncation is required (maxRows hit and text remains).
-     * Produces a row that fits within width, then appends a smart ellipsis "..." that
-     * counts against width. If the cut is mid-word and space is available, inserts a
-     * space before ellipsis. Avoids duplicate period before "...".
-     * Returns new char-position (end of text or where truncation finished).
+     * Emits the final truncated row when {@code maxRows} has been reached and
+     * additional text remains. The method reserves space for an ellipsis ("...")
+     * within {@link #maxWidth}, scans forward up to the usable budget, and selects
+     * a cut point—preferring whitespace or configured break characters if found.
+     * <p>
+     * The resulting substring is right-trimmed, a trailing period is removed if it
+     * would create a double-ellipsis, and the final row is limited to the maximum
+     * width in code points. The completed row is added to {@code alRow}.
+     *
+     * @param text      the full input text
+     * @param startChar UTF-16 index where the truncated row begins
+     * @param alRow     list receiving the truncated row
+     * @return {@code text.length()}, since truncation completes processing
      */
     private int emitRowTruncated(final String text, final int startChar, final List<String> alRow) {
         final int n = text.length();
@@ -398,8 +555,18 @@ public class OATextLineWrap {
     }
 
     /**
-     * Greedy final row (when NOT truncating): pack whole tokens (words separated by whitespace)
-     * into a single row up to width. No hyphenation.
+     * Greedy non-truncating final-row packing routine. Starting at
+     * {@code startChar}, the method accumulates whole tokens (words separated by
+     * whitespace) into the final row while staying within {@code width} code points.
+     * <p>
+     * If the first token exceeds {@code width}, the token is hard-cut at the width
+     * boundary without hyphenation. Otherwise, additional tokens are added only if a
+     * leading space plus the token’s code-point length fits within the budget.
+     *
+     * @param text      full source text
+     * @param startChar UTF-16 index where packing begins
+     * @param width     maximum allowed code-point width
+     * @return the UTF-16 index where the final packed row ends
      */
     private static int packFinalRow(String text, int startChar, int width) {
         final int n = text.length();
@@ -448,10 +615,25 @@ public class OATextLineWrap {
         return lastGood;
     }
 
+    /**
+     * Determines whether the supplied code point is classified as whitespace.
+     * Delegates to {@link Character#isWhitespace(int)}.
+     *
+     * @param cp code point to evaluate
+     * @return true if the code point is whitespace
+     */
     private static boolean isWhitespace(int cp) {
         return Character.isWhitespace(cp);
     }
 
+    /**
+     * Determines whether the supplied code point matches one of the configured
+     * {@link #breakChars}. Performs a fast ASCII hyphen check, then falls back to
+     * character-by-character comparison within the break-character set.
+     *
+     * @param cp code point to evaluate
+     * @return true if the code point is a configured break character
+     */
     private boolean isBreakChar(int cp) {
         if (breakChars == null || breakChars.isEmpty()) return false;
         // fast path for ASCII hyphen
@@ -464,6 +646,14 @@ public class OATextLineWrap {
     }
 
 
+    /**
+     * Appends a hyphen to {@code text} unless it already ends with one. Intended for
+     * forced-hyphenation rows. Surrogate-safe examination is performed via
+     * {@link String#codePointBefore(int)}.
+     *
+     * @param text base text segment to modify
+     * @return the text with a hyphen appended when appropriate
+     */
     private static String appendHyphen(String text) {
         if (text == null || text.isEmpty()) return "";
         int lastCp = text.codePointBefore(text.length());
@@ -471,6 +661,15 @@ public class OATextLineWrap {
     }
     
     
+    /**
+     * Advances {@code posChar} forward while the encountered code points are
+     * whitespace. Returns the first index whose code point is non-whitespace or the
+     * string length.
+     *
+     * @param text    source string
+     * @param posChar UTF-16 index to begin scanning
+     * @return new UTF-16 index positioned at the first non-whitespace character
+     */
     private static int skipWhitespace(String text, int posChar) {
         final int n = text.length();
         int i = posChar;
@@ -482,14 +681,41 @@ public class OATextLineWrap {
         return i;
     }
 
+    /**
+     * Returns the number of Unicode code points between {@code startChar} and
+     * {@code endChar}. Delegates to {@link String#codePointCount(int, int)}.
+     *
+     * @param text      source string
+     * @param startChar starting UTF-16 index
+     * @param endChar   ending UTF-16 index (exclusive)
+     * @return number of code points in the range
+     */
     private static int getCodePointCount(String text, int startChar, int endChar) {
         return text.codePointCount(startChar, endChar);
     }
 
+    /**
+     * Computes the UTF-16 index obtained by advancing {@code count} code points from
+     * {@code startChar}. Delegates to {@link String#offsetByCodePoints(int, int)}.
+     *
+     * @param text      source string
+     * @param startChar starting UTF-16 index
+     * @param count     number of code points to advance
+     * @return resulting UTF-16 index
+     */
     private static int advanceByCodePoints(String text, int startChar, int count) {
         return text.offsetByCodePoints(startChar, count);
     }
 
+    /**
+     * Removes trailing whitespace from {@code text}. The scan proceeds backward using
+     * code-point–aware navigation via {@link String#codePointBefore(int)} and
+     * {@link Character#charCount(int)}. If no trailing whitespace is found, the
+     * original string is returned unchanged.
+     *
+     * @param text input text
+     * @return text with trailing whitespace removed
+     */
     private static String rstrip(String text) {
         int i = text.length();
         while (i > 0) {
@@ -500,6 +726,15 @@ public class OATextLineWrap {
         return (i == text.length()) ? text : text.substring(0, i);
     }
 
+    /**
+     * Ensures the returned string does not exceed {@code maxCp} Unicode code points.
+     * If the text exceeds this limit, the method computes the UTF-16 boundary for the
+     * allowed code-point width and returns the substring up to that point.
+     *
+     * @param text  input text
+     * @param maxCp maximum number of code points allowed
+     * @return text limited to at most {@code maxCp} code points
+     */
     private static String trimToCodePointWidth(String text, int maxCp) {
         int cps = text.codePointCount(0, text.length());
         if (cps <= maxCp) return text;

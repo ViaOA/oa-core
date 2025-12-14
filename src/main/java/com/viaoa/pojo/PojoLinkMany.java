@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,22 +28,43 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class PojoLinkMany implements java.io.Serializable {
 	private static final long serialVersionUID = 1L;
 
-	// References to other objects
-	// PojoLink
+	/**
+	 * Reference to the owning {@link PojoLink} metadata, which represents the
+	 * to-many association.
+	 */
 	protected volatile PojoLink pojoLink;
 
+	/**
+	 * Creates an empty {@code PojoLinkMany} metadata instance.
+	 */
 	public PojoLinkMany() {
 	}
 
+	/**
+	 * Returns the {@link PojoLink} metadata object that owns this to-many
+	 * definition.
+	 *
+	 * @return the owning {@link PojoLink}, or {@code null} if not assigned
+	 */
 	@JsonIgnore
 	public PojoLink getPojoLink() {
 		return pojoLink;
 	}
 
+	/**
+	 * Sets the owning {@link PojoLink} for this to-many association metadata.
+	 *
+	 * @param newValue the new link metadata reference
+	 */
 	public void setPojoLink(PojoLink newValue) {
 		this.pojoLink = newValue;
 	}
 
+	/**
+	 * Returns a simple string representation for debugging.
+	 *
+	 * @return formatted string description of this {@code PojoLinkMany}
+	 */
 	@Override
 	public String toString() {
 		return "PojoLinkMany [" +

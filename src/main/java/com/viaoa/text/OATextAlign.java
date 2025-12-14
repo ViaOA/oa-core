@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,53 +31,146 @@ package com.viaoa.text;
  */
 public final class OATextAlign {
 
+	/**
+	 * Literal sequence appended to truncated text when ellipsis mode is enabled.
+	 * <p>
+	 * The visible width of the truncated result reserves enough space for this
+	 * sequence so the final string length never exceeds the requested width.
+	 */
     private static final String ELLIPSIS = "...";
 
     private OATextAlign() {
     }
 
-    // =========================================================================
-    // Public API
-    // =========================================================================
-
+    /**
+     * Delegates to {@link #padStart(String, int, char)} using a space character
+     * as the default padding.
+     *
+     * @param value the text to be padded; {@code null} is treated as an empty string
+     * @param width the target width of the result
+     * @return the padded string with leading spaces added as needed
+     */
     public static String padStart(String value, int width) {
         return padStart(value, width, ' ');
     }
 
+    /**
+     * Delegates to {@link #alignRight(String, int, char)} to pad on the left
+     * until the requested width is reached.
+     *
+     * @param value   the text to be padded; {@code null} is treated as an empty string
+     * @param width   the target width of the result
+     * @param padChar the character used to fill leading positions
+     * @return the padded string with the original text right aligned
+     */
     public static String padStart(String value, int width, char padChar) {
         return alignRight(value, width, padChar);
     }
 
+    /**
+     * Delegates to {@link #padEnd(String, int, char)} using a space character
+     * as the default padding.
+     *
+     * @param value the text to be padded; {@code null} is treated as an empty string
+     * @param width the target width of the result
+     * @return the padded string with trailing spaces added as needed
+     */
     public static String padEnd(String value, int width) {
         return padEnd(value, width, ' ');
     }
 
+    /**
+     * Delegates to {@link #alignLeft(String, int, char)} to pad on the right
+     * until the requested width is reached.
+     *
+     * @param value   the text to be padded; {@code null} is treated as an empty string
+     * @param width   the target width of the result
+     * @param padChar the character used to fill trailing positions
+     * @return the padded string with the original text left aligned
+     */
     public static String padEnd(String value, int width, char padChar) {
         return alignLeft(value, width, padChar);
     }
 
     // Alignment core with optional ellipsis
 
+    /**
+     * Delegates to {@link #alignLeft(String, int, char, boolean)} with ellipsis
+     * behavior disabled.
+     *
+     * @param value   the text to be aligned; {@code null} is treated as an empty string
+     * @param width   the target width of the result
+     * @param padChar the character used to fill any extra positions on the right
+     * @return the left-aligned and padded string
+     */
     public static String alignLeft(String value, int width, char padChar) {
         return alignLeft(value, width, padChar, false);
     }
 
+    /**
+     * Delegates to {@link #align(String, int, Align, char, boolean)} using
+     * {@link Align#LEFT} alignment.
+     *
+     * @param value    the text to be aligned; {@code null} is treated as an empty string
+     * @param width    the target width of the result
+     * @param padChar  the character used to fill any extra positions on the right
+     * @param ellipsis whether overflow should be truncated with an ellipsis sequence
+     * @return the left-aligned string, padded or truncated to the requested width
+     */
     public static String alignLeft(String value, int width, char padChar, boolean ellipsis) {
         return align(value, width, Align.LEFT, padChar, ellipsis);
     }
 
+    /**
+     * Delegates to {@link #alignRight(String, int, char, boolean)} with ellipsis
+     * behavior disabled.
+     *
+     * @param value   the text to be aligned; {@code null} is treated as an empty string
+     * @param width   the target width of the result
+     * @param padChar the character used to fill any extra positions on the left
+     * @return the right-aligned and padded string
+     */
     public static String alignRight(String value, int width, char padChar) {
         return alignRight(value, width, padChar, false);
     }
 
+    /**
+     * Delegates to {@link #align(String, int, Align, char, boolean)} using
+     * {@link Align#RIGHT} alignment.
+     *
+     * @param value    the text to be aligned; {@code null} is treated as an empty string
+     * @param width    the target width of the result
+     * @param padChar  the character used to fill any extra positions on the left
+     * @param ellipsis whether overflow should be truncated with an ellipsis sequence
+     * @return the right-aligned string, padded or truncated to the requested width
+     */
     public static String alignRight(String value, int width, char padChar, boolean ellipsis) {
         return align(value, width, Align.RIGHT, padChar, ellipsis);
     }
 
+    /**
+     * Delegates to {@link #alignCenter(String, int, char, boolean)} with ellipsis
+     * behavior disabled.
+     *
+     * @param value   the text to be aligned; {@code null} is treated as an empty string
+     * @param width   the target width of the result
+     * @param padChar the character used to fill any extra positions on both sides
+     * @return the centered and padded string
+     */
     public static String alignCenter(String value, int width, char padChar) {
         return alignCenter(value, width, padChar, false);
     }
 
+    /**
+     * Delegates to {@link #align(String, int, Align, char, boolean)} using
+     * {@link Align#CENTER} alignment.
+     *
+     * @param value    the text to be aligned; {@code null} is treated as an empty string
+     * @param width    the target width of the result
+     * @param padChar  the character used to fill any extra positions on both sides
+     * @param ellipsis whether overflow should be truncated with an ellipsis sequence
+     * @return the centered string, padded or truncated to the requested width
+     */
     public static String alignCenter(String value, int width, char padChar, boolean ellipsis) {
         return align(value, width, Align.CENTER, padChar, ellipsis);
     }
@@ -86,8 +179,39 @@ public final class OATextAlign {
     // Core Internal Alignment
     // =========================================================================
 
+    /**
+     * Supported alignment modes used by the core {@link #align(String, int, Align, char, boolean)}
+     * method.
+     * <ul>
+     *   <li>{@link #LEFT} – pads on the right</li>
+     *   <li>{@link #RIGHT} – pads on the left</li>
+     *   <li>{@link #CENTER} – distributes padding on both sides</li>
+     * </ul>
+     */
     public static enum Align { LEFT, RIGHT, CENTER }
 
+    /**
+     * Core alignment routine used by all public alignment helpers.
+     * <p>
+     * If the value is {@code null}, it is treated as an empty string. When the
+     * requested width is less than one, an empty string is returned. Width
+     * comparisons are based on Unicode code points rather than UTF-16 units so
+     * surrogate pairs and emoji are never split.
+     * <ul>
+     *   <li>If the value exactly matches the requested width, it is returned as is.</li>
+     *   <li>If the value is longer than the requested width, it is either truncated
+     *       or truncated with ellipsis depending on the {@code ellipsis} flag.</li>
+     *   <li>If the value is shorter than the requested width, padding is added
+     *       according to the selected {@code alignment}.</li>
+     * </ul>
+     *
+     * @param value      the text to be aligned; {@code null} is treated as an empty string
+     * @param width      the target width of the result in Unicode code points
+     * @param alignment  alignment mode controlling where padding is applied
+     * @param padChar    the character used to fill extra positions
+     * @param ellipsis   whether long values should be truncated with an ellipsis sequence
+     * @return the aligned string, padded or truncated to the requested width
+     */
     public static String align(String value, int width, Align alignment, char padChar, boolean ellipsis) {
         if (width < 1) return "";
         if (value == null) value = "";
@@ -121,6 +245,20 @@ public final class OATextAlign {
     // Internal helpers
     // =========================================================================
 
+    /**
+     * Truncates the given value to the specified width and appends the ellipsis
+     * sequence so that the final width does not exceed the requested value.
+     * <p>
+     * The available space is computed by subtracting the length of the ellipsis
+     * sequence from the requested width. The base portion is then taken from the
+     * left side of the string using code point–safe substring operations. If the
+     * base portion ends with a period, that period is removed to avoid duplicate
+     * punctuation before appending the ellipsis sequence.
+     *
+     * @param value the text to be truncated; must not be {@code null}
+     * @param width the total width including the ellipsis sequence
+     * @return a truncated string with an ellipsis appended
+     */
     private static String truncateWithEllipsis(String value, int width) {
         int avail = width - ELLIPSIS.length();
         if (avail < 1) {
@@ -136,6 +274,24 @@ public final class OATextAlign {
         return base + ELLIPSIS;
     }
 
+    /**
+     * Returns a substring of the given value using Unicode code point positions
+     * instead of raw UTF-16 indices.
+     * <p>
+     * When the requested width is greater than or equal to the number of code
+     * points in {@code value}, the original string is returned. Otherwise, a
+     * substring of the requested width is taken based on the supplied alignment:
+     * <ul>
+     *   <li>{@link Align#LEFT} – from the start of the string</li>
+     *   <li>{@link Align#RIGHT} – from the end of the string</li>
+     *   <li>{@link Align#CENTER} – centered within the original string</li>
+     * </ul>
+     *
+     * @param value the source text; must not be {@code null}
+     * @param width the number of code points to include
+     * @param align the alignment used to choose the substring region
+     * @return a code point–safe substring of the requested width
+     */
     private static String substringCp(String value, int width, Align align) {
         int lenCp = value.codePointCount(0, value.length());
         if (width >= lenCp) return value;
@@ -157,6 +313,17 @@ public final class OATextAlign {
         }
     }
 
+    /**
+     * Creates a new string by repeating the given character a specified number
+     * of times.
+     * <p>
+     * If {@code count} is less than or equal to zero, an empty string is returned.
+     *
+     * @param c     the character to repeat
+     * @param count the number of times to repeat the character
+     * @return a string consisting of {@code count} copies of {@code c},
+     *         or an empty string if {@code count} is non-positive
+     */
     private static String repeat(char c, int count) {
         if (count <= 0) return "";
         StringBuilder sb = new StringBuilder(count);
@@ -165,6 +332,14 @@ public final class OATextAlign {
     }
 
 
+    /**
+     * Delegates to {@link #padStart(String, int, char)}.
+     *
+     * @param value   the text to be padded; {@code null} is treated as an empty string
+     * @param width   the target width of the result
+     * @param padChar the character used to fill leading positions
+     * @return the padded string with the original text right aligned
+     */
     public static String leftPad(String value, int width, char padChar) {
         return padStart(value, width, padChar);
     }
@@ -175,15 +350,51 @@ public final class OATextAlign {
         return padEnd(value, width, padChar);
     }
 
+    /**
+     * Aligns the given value either left or right based on the {@code bAlignLeft}
+     * flag. This is a convenience method that delegates to
+     * {@link #alignLeft(String, int, char)} or
+     * {@link #alignRight(String, int, char)} accordingly.
+     *
+     * @param value      the text to be aligned; {@code null} is treated as an empty string
+     * @param width      the target width of the result
+     * @param bAlignLeft {@code true} to left align, {@code false} to right align
+     * @param padChar    the character used to fill extra positions
+     * @return the aligned string padded to the requested width
+     */
     public static String align(String value, int width, boolean bAlignLeft, char padChar) {
         return bAlignLeft ? alignLeft(value, width, padChar) : alignRight(value, width, padChar);
     }
 
     
+    /**
+     * Returns the leftmost portion of the given text using
+     * {@link OATextFilter#substring(String, int, int)}.
+     * <p>
+     * If {@code value} is {@code null}, {@code null} is returned. If the string
+     * is shorter than or equal to {@code amount}, it is returned unchanged.
+     *
+     * @param value  the text to extract from
+     * @param amount the number of characters to return
+     * @return the leftmost {@code amount} characters, or the entire string
+     *         if shorter; {@code null} if {@code value} is null
+     */
 	public static String left(String value, int amount) {
 		return OATextFilter.substring(value, 0, amount);
 	}
 
+	/**
+	 * Returns the rightmost portion of the given text using
+	 * {@link OATextFilter#substring(String, int, int)}.
+	 * <p>
+	 * If {@code value} is {@code null}, {@code null} is returned. If the string
+	 * is shorter than or equal to {@code amount}, it is returned unchanged.
+	 *
+	 * @param value  the text to extract from
+	 * @param amount the number of characters to return
+	 * @return the rightmost {@code amount} characters, or the entire string
+	 *         if shorter; {@code null} if {@code value} is null
+	 */
 	public static String right(String value, int amount) {
 		if (value == null) {
 			return null;
@@ -195,6 +406,25 @@ public final class OATextAlign {
 		return OATextFilter.substring(value, len - amount, amount);
 	}
 
+	/**
+	 * Extracts a centered substring of the specified length using
+	 * {@link OATextFilter#substring(String, int, int)}.
+	 * <p>
+	 * If {@code value} is {@code null}, {@code null} is returned. If
+	 * {@code amount} is less than one, an empty string is returned. If the
+	 * string is shorter than or equal to {@code amount}, the original value
+	 * is returned unchanged.
+	 * <p>
+	 * When centering, the starting offset is computed from half the string
+	 * length minus half the requested amount. If this offset is negative,
+	 * zero is used instead.
+	 *
+	 * @param value  the text to extract from
+	 * @param amount the number of characters to return
+	 * @return a centered substring of {@code amount} characters, the whole
+	 *         string if shorter, an empty string if {@code amount} < 1,
+	 *         or {@code null} if {@code value} is null
+	 */
 	public static String center(String value, int amount) {
 		if (value == null) {
 			return null;

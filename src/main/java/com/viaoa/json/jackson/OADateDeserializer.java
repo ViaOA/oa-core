@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,19 @@ import com.viaoa.util.OADate;
  */
 public class OADateDeserializer extends JsonDeserializer<OADate> {
 
+	/**
+	 * Deserializes the current JSON value into an {@link OADate}.
+	 * <p>
+	 * The method reads the text from the {@link JsonParser}. If the text is
+	 * {@code null}, it returns {@code null}. Otherwise, it creates a new
+	 * {@link OADate} using the text and {@link OADate#JsonFormat}.
+	 *
+	 * @param jp   the JSON parser positioned at the value to deserialize
+	 * @param ctxt the deserialization context supplied by Jackson
+	 * @return the parsed {@link OADate}, or {@code null} if the JSON text is {@code null}
+	 * @throws IOException      if an I/O error occurs while reading from the parser
+	 * @throws JacksonException if a Jackson-specific parsing error occurs
+	 */
 	@Override
 	public OADate deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JacksonException {
 		String s = jp.getText();

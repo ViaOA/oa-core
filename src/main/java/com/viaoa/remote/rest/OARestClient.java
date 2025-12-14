@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -272,82 +272,174 @@ OARestClient CLI (Todo)
  * via {@link com.viaoa.json.OAJson}.
  * </p>
  *
- * @author vvia
  */
 public class OARestClient {
-	private String protocol; // http, https
-	private String baseUrl; // www.test.com:8080
-
-	private String defaultOARestUrl = "/servlet/oarest"; // when MethodType=OA*
 
 	/**
+	 * Protocol scheme to use when building HTTP URLs, such as {@code "http"} or {@code "https"}.
+	 */
+	private String protocol; // http, https
+	
+	/**
+	 * Base URL host and optional port for remote calls, for example {@code "www.test.com:8080"}.
+	 */
+	private String baseUrl; // www.test.com:8080
+
+	/**
+	 * Default servlet path used when invoking OA REST-style endpoints for {@code MethodType=OA*} methods.
+	 */
+	private String defaultOARestUrl = "/servlet/oarest"; // when MethodType=OA*
+
+	/*
 	 * object ID separator used for compound IDs. Note that JSON "prefers" single ID values.<br>
 	 * Common values are "/", "_", "-" <br>
 	 * default: "/"
 	 */
+	/**
+	 * Default separator character used when building compound object ID values for URLs.
+	 */
 	private String defaultIdSeperator = "/";
 
+	/**
+	 * User identifier used for HTTP basic authentication when calling remote endpoints.
+	 */
 	private String userId;
-	private transient String password;
+
+	/**
+	 * Password for HTTP basic authentication; marked transient so it is not serialized with the client.
+	 */
+ 	private transient String password;
+	
+	/**
+	 * Last HTTP cookie value returned by the server, reused on subsequent requests for session continuity.
+	 */
 	private String cookie;
 
+	/**
+	 * Cache of REST metadata per interface class, populated from {@link OARestClassInfo}.
+	 */
 	private final HashMap<Class, OARestClassInfo> hmClassInfo = new HashMap<>();
+
+	/**
+	 * Cache of REST metadata per method, mapping reflected {@link Method} instances to {@link OARestMethodInfo}.
+	 */
 	private final HashMap<Method, OARestMethodInfo> hmMethodInfo = new HashMap<>();
 
+	/**
+	 * Cache of dynamically created proxy instances keyed by their interface class.
+	 */
 	private final HashMap<Class, Object> hmRemoteObjectInstance = new HashMap<>();
 
+	/**
+	 * Flag indicating whether HTTPS trust configuration has already been initialized.
+	 */
 	private static boolean bSetupHttpsAccess;
 
 	/**
-	 * Create an OARestClient that can be used to call another server using HTTP.
+	 * Creates a new {@code OARestClient} with default settings; protocol, base URL, and credentials can be configured later via setters.
 	 */
 	public OARestClient() {
 	}
 
+	/**
+	 * Sets the user credentials to be used for HTTP basic authentication.
+	 *
+	 * @param userId the user identifier to send in the Authorization header
+	 * @param pw     the password associated with the user identifier
+	 */
 	public void setUserPw(String userId, String pw) {
 		this.userId = userId;
 		this.password = pw;
 	}
 
+	/**
+	 * Sets the base URL host (and optional port) used when constructing request URLs.
+	 *
+	 * @param baseUrl the base host and optional port, for example {@code "www.test.com:8080"}
+	 */
 	public void setBaseUrl(String baseUrl) {
 		this.baseUrl = baseUrl;
 	}
 
+	/**
+	 * Returns the configured base URL used when constructing request URLs.
+	 *
+	 * @return the current base URL value, or {@code null} if none has been set
+	 */
 	public String getBaseUrl() {
 		return baseUrl;
 	}
 
+	/**
+	 * Sets the protocol scheme to use when building HTTP URLs.
+	 *
+	 * @param p the protocol value, such as {@code "http"} or {@code "https"}
+	 */
 	public void setProtocol(String p) {
 		this.protocol = p;
 	}
 
+	/**
+	 * Returns the protocol scheme currently used when building HTTP URLs.
+	 *
+	 * @return the protocol value, such as {@code "http"} or {@code "https"}, or {@code null} if unset
+	 */
 	public String getProtocol() {
 		return this.protocol;
 	}
 
+	/**
+	 * Sets the default servlet path used for OA REST-style endpoints.
+	 *
+	 * @param defaultOARestUrl the servlet path to use when invoking {@code MethodType=OA*} methods
+	 */
 	public void setDefaultOARestUrl(String defaultOARestUrl) {
 		this.defaultOARestUrl = defaultOARestUrl;
 	}
 
+	/**
+	 * Returns the default servlet path used for OA REST-style endpoint access.
+	 *
+	 * @return the configured default OA REST URL
+	 */
 	public String getDefaultOARestUrl() {
 		return defaultOARestUrl;
 	}
 
+	/**
+	 * Sets the character or string used to join compound object IDs in URL paths.
+	 *
+	 * @param defaultIdSeperator separator used when formatting multi-part key values
+	 */
 	public void setDefaultIdSeperator(String defaultIdSeperator) {
 		this.defaultIdSeperator = defaultIdSeperator;
 	}
 
+	/**
+	 * Returns the separator used when constructing multi-part object IDs in URLs.
+	 *
+	 * @return the configured ID separator value
+	 */
 	public String getDefaultIdSeperator() {
 		return defaultIdSeperator;
 	}
 
-	/**
+	/*
 	 * Used to create and instance of a Java interface that has been annotated using OARest* for the class, methods, and method parameters.
 	 * <p>
 	 * This will use a Java proxy object to manage all of the method calls.
 	 * <p>
 	 *
 	 * @param clazz Java interface to create an instance of.
+	 */
+	/**
+	 * Creates or returns a cached dynamic proxy instance for the given annotated Java interface.
+	 * The proxy intercepts method invocations and routes them through REST metadata to remote
+	 * HTTP endpoints.
+	 *
+	 * @param clazz the interface class to proxy
+	 * @return the proxy instance implementing the interface, or {@code null} if {@code clazz} is null
+	 * @throws Exception if {@code clazz} is not an interface or metadata loading fails
 	 */
 	public <API> API getInstance(Class<API> clazz) throws Exception {
 		if (clazz == null) {
@@ -384,7 +476,13 @@ public class OARestClient {
 	}
 
 	/**
-	 * Manages any method that is called from a remote object.
+	 * Handles a remote method invocation by delegating to {@link #_onInvoke(Method, Object[])}
+	 * and returning the remote method's resulting object.
+	 *
+	 * @param method the reflected method being invoked
+	 * @param args   arguments passed to the proxy invocation
+	 * @return the return object produced by the remote invocation
+	 * @throws Throwable if the remote invocation encounters an error
 	 */
 	protected Object onInvoke(Method method, Object[] args) throws Throwable {
 		OARestInvokeInfo ii = _onInvoke(method, args);
@@ -392,7 +490,18 @@ public class OARestClient {
 	}
 
 	/**
-	 * Creates an OARestInvokeInfo to setup and manage a remote method call over HTTP
+	 * Performs the full setup and execution of a remote REST invocation, including:
+	 * <ul>
+	 *   <li>building an {@link OARestInvokeInfo} instance,</li>
+	 *   <li>triggering the HTTP call,</li>
+	 *   <li>handling errors and response codes,</li>
+	 *   <li>mapping returned JSON into the appropriate Java object type.</li>
+	 * </ul>
+	 *
+	 * @param method the reflected method being invoked
+	 * @param args   arguments for the invocation
+	 * @return the populated {@link OARestInvokeInfo} describing the call and its result
+	 * @throws Throwable if metadata, HTTP communication, or JSON conversion fails
 	 */
 	protected OARestInvokeInfo _onInvoke(Method method, Object[] args) throws Throwable {
 		final OARestMethodInfo mi = hmMethodInfo.get(method);
@@ -455,6 +564,13 @@ public class OARestClient {
 		return invokeInfo;
 	}
 
+	/**
+	 * Uses the cached {@link OARestClassInfo} for the interface to validate its annotation
+	 * configuration and identify any definition errors.
+	 *
+	 * @param interfaceClass the interface previously used with {@link #getInstance(Class)}
+	 * @return a list of configuration error messages, or {@code null} if no metadata exists
+	 */
 	public ArrayList<String> verify(Class interfaceClass) {
 		OARestClassInfo ci = hmClassInfo.get(interfaceClass);
 		if (ci == null) {
@@ -465,10 +581,10 @@ public class OARestClient {
 	}
 
 	/**
-	 * Get OARestClassInfo about an existing Java instance created from calling getInstance(class)
-	 * <p>
+	 * Returns the {@link OARestClassInfo} associated with a previously proxied interface.
 	 *
-	 * @see OARestClassInfo#verify() to find any issues with the interface annotations and methods.
+	 * @param interfaceClass the interface class used with {@link #getInstance(Class)}
+	 * @return the class-level REST metadata, or {@code null} if none has been loaded
 	 */
 	public OARestClassInfo getRestClassInfo(Class interfaceClass) {
 		if (interfaceClass == null) {
@@ -479,8 +595,16 @@ public class OARestClient {
 	}
 
 	/**
-	 * Used by getInstance to gather class/method/parameter metadata to be able to make an HTTP method call for each method in the Java
-	 * interface.
+	 * Gathers and caches reflection-based metadata for the annotated interface, including:
+	 * <ul>
+	 *   <li>class-level REST annotations,</li>
+	 *   <li>method-level REST definitions,</li>
+	 *   <li>parameter metadata and type mappings,</li>
+	 *   <li>derived invocation configuration.</li>
+	 * </ul>
+	 *
+	 * @param interfaceClass the annotated interface for which metadata is collected
+	 * @throws Exception if metadata cannot be analyzed or initialized
 	 */
 	protected void loadMetaData(Class interfaceClass) throws Exception {
 		if (interfaceClass == null) {
@@ -707,13 +831,38 @@ public class OARestClient {
 		}
 	}
 
-	/**
+	/*
 	 * internally needed for PATCH support because the Java HttpURLConnection does not support httpMethod PATCH
 	 */
+	/**
+	 * Reflected {@link java.lang.reflect.Field} handle for {@link HttpURLConnection} method override used to support PATCH.
+	 */
 	private static java.lang.reflect.Field fieldHttpURLConnectMethod;
+	
+	/**
+	 * Reflected field used to access the HTTPS delegate connection when configuring PATCH support for {@link HttpsURLConnection}.
+	 */
 	private static java.lang.reflect.Field fieldHttpsURLConnectMethod1;
+	
+	/**
+	 * Reflected field used to access the nested {@link HttpsURLConnection} instance when configuring PATCH support.
+	 */
 	private static java.lang.reflect.Field fieldHttpsURLConnectMethod2;
 
+	/**
+	 * Executes an HTTP request based on values configured in the supplied
+	 * {@link OARestInvokeInfo}, including:
+	 * <ul>
+	 *   <li>building the final URL and query string,</li>
+	 *   <li>setting headers and authentication,</li>
+	 *   <li>writing body content,</li>
+	 *   <li>reading the response and headers,</li>
+	 *   <li>recording timing and error information.</li>
+	 * </ul>
+	 *
+	 * @param invokeInfo contains all parameters and state for the HTTP invocation
+	 * @throws Exception if the HTTP connection or I/O fails
+	 */
 	public void callHttpEndPoint(OARestInvokeInfo invokeInfo)
 			throws Exception {
 
@@ -920,7 +1069,15 @@ public class OARestClient {
 	}
 
 	/**
-	 * Manually call an HTTP end point using JSON and expecting JSON return value.
+	 * Convenience method that creates an {@link OARestInvokeInfo}, performs a JSON-based
+	 * HTTP request, and returns the raw JSON response body.
+	 *
+	 * @param httpMethod the HTTP method to use
+	 * @param urlPath    the URL path relative to the base URL
+	 * @param query      optional query string
+	 * @param jsonBody   JSON text to send as the request body
+	 * @return the JSON response body returned by the server
+	 * @throws Exception if the HTTP request fails
 	 */
 	public String callJsonEndpoint(String httpMethod, String urlPath, String query, String jsonBody) throws Exception {
 		OARestInvokeInfo invokeInfo = new OARestInvokeInfo();
@@ -934,7 +1091,10 @@ public class OARestClient {
 	}
 
 	/**
-	 * Configure HTTPS support.
+	 * Ensures HTTPS trust configuration is installed; initializes relaxed certificate
+	 * and hostname verification on first invocation.
+	 *
+	 * @throws Exception if setup fails
 	 */
 	public static void setupHttpsAccess() throws Exception {
 		if (bSetupHttpsAccess) {
@@ -948,6 +1108,12 @@ public class OARestClient {
 		}
 	}
 
+	/**
+	 * Installs a permissive SSL context and hostname verifier that accept all
+	 * certificates and hostnames, used for development or testing environments.
+	 *
+	 * @throws Exception if SSL configuration fails
+	 */
 	protected static void _setupHttpsAccess() throws Exception {
 		// Create a trust manager that does not validate certificate chains
 		TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
@@ -979,7 +1145,7 @@ public class OARestClient {
 		HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
 	}
 
-	/**
+	/*
 	 * Call an HTTP endPoint.
 	 *
 	 * @param ii          (optional) defines details about how to call the server.
@@ -990,6 +1156,21 @@ public class OARestClient {
 	 * @param jsonBody    JSON object(s) to send as http body
 	 * @param mapFormData
 	 * @return restInvokeInfo that defines the http call.
+	 */
+	/**
+	 * Performs a general-purpose REST call using the supplied parameters to populate
+	 * or update an {@link OARestInvokeInfo}. URL query parameters, form data, and JSON
+	 * body content are encoded as needed before the HTTP call is executed.
+	 *
+	 * @param ii          optional existing invocation info to populate
+	 * @param httpMethod  HTTP method to use
+	 * @param urlPath     request URL path
+	 * @param urlQuery    initial URL query string
+	 * @param mapUrlQuery additional query name/value pairs
+	 * @param jsonBody    JSON body text
+	 * @param mapFormData form data name/value pairs
+	 * @return the updated invocation info after executing the HTTP request
+	 * @throws Exception if the HTTP call fails
 	 */
 	public OARestInvokeInfo callEndPoint(OARestInvokeInfo ii, String httpMethod, String urlPath, String urlQuery,
 			Map<String, Object> mapUrlQuery,
@@ -1023,7 +1204,7 @@ public class OARestClient {
 		return ii;
 	}
 
-	/**
+	/*
 	 * call an OARestServlet to access data in an OAGraph.
 	 *
 	 * @param ii            (optional) defines details about how to call the server.
@@ -1032,6 +1213,18 @@ public class OARestClient {
 	 * @param searchOrderBy sort order by
 	 * @param includePPs    extra property paths to include in the results.
 	 * @return InvokeInfo with details (including JSON result)
+	 */
+	/**
+	 * Issues an OA REST GET request to retrieve a set of OAObjects matching a query,
+	 * optionally including additional property paths in the response.
+	 *
+	 * @param ii            optional invocation info to use
+	 * @param clazz         OAObject class to operate on
+	 * @param searchWhere   query expression
+	 * @param searchOrderBy ordering expression
+	 * @param includePPs    optional property paths to include in results
+	 * @return the populated invocation info containing the JSON response
+	 * @throws Exception if the HTTP request fails
 	 */
 	public OARestInvokeInfo callOASelect(OARestInvokeInfo ii, Class<? extends OAObject> clazz, String searchWhere, String searchOrderBy,
 			final String... includePPs)
@@ -1078,13 +1271,15 @@ public class OARestClient {
 	}
 
 	/**
-	 * call an OARestServlet to access an object from an OAGraph.
+	 * Retrieves an OAObject from an OA REST servlet by its primary key, optionally
+	 * including additional property paths.
 	 *
-	 * @param ii         (optional) defines details about how to call the server.
-	 * @param clazz      OAObject class that is being called.
-	 * @param id         the object key value of object.
-	 * @param includePPs extra property paths to include in the results.
-	 * @return InvokeInfo with details (including JSON result)
+	 * @param ii         optional invocation info to use
+	 * @param clazz      OAObject class to retrieve
+	 * @param id         primary key value
+	 * @param includePPs property paths to include
+	 * @return invocation info containing the HTTP response
+	 * @throws Exception if the request fails
 	 */
 	public OARestInvokeInfo callOAGet(OARestInvokeInfo ii, Class<? extends OAObject> clazz, Object id,
 			final String... includePPs) throws Exception {
@@ -1092,13 +1287,16 @@ public class OARestClient {
 	}
 
 	/**
-	 * call an OARestServlet to access an object with 2 part key, from an OAGraph.
+	 * Retrieves an OAObject with a two-part key from an OA REST servlet, optionally
+	 * including additional property paths.
 	 *
-	 * @param ii         (optional) defines details about how to call the server.
-	 * @param clazz      OAObject class that is being called.
-	 * @param id         the object key value of object.
-	 * @param includePPs extra property paths to include in the results.
-	 * @return InvokeInfo with details (including JSON result)
+	 * @param ii         optional invocation info to use
+	 * @param clazz      OAObject class to retrieve
+	 * @param id         first key value
+	 * @param id2        second key value
+	 * @param includePPs property paths to include
+	 * @return invocation info containing the HTTP response
+	 * @throws Exception if the request fails
 	 */
 	public OARestInvokeInfo callOAGet(OARestInvokeInfo ii, Class<? extends OAObject> clazz, Object id, Object id2,
 			final String... includePPs) throws Exception {
@@ -1133,12 +1331,14 @@ public class OARestClient {
 	}
 
 	/**
-	 * call an OARestServlet to insert an object.
+	 * Inserts a new OAObject using POST semantics, serializing the object to JSON and
+	 * optionally including additional property paths in the payload.
 	 *
-	 * @param ii         (optional) defines details about how to call the server.
-	 * @param obj        object to insert.
-	 * @param includePPs extra property paths to include in the results.
-	 * @return InvokeInfo with details (including JSON result)
+	 * @param ii         optional invocation info to use
+	 * @param obj        the object to insert
+	 * @param includePPs property paths to include
+	 * @return invocation info containing the HTTP response
+	 * @throws Exception if the request fails
 	 */
 	public <T extends OAObject> OARestInvokeInfo callOAInsert(OARestInvokeInfo ii, T obj,
 			final String... includePPs) throws Exception {
@@ -1171,11 +1371,13 @@ public class OARestClient {
 	}
 
 	/**
-	 * call an OARestServlet to insert an object.
+	 * Deletes an OAObject from the OA REST servlet using DELETE semantics and the
+	 * object's key value encoded in the URL.
 	 *
-	 * @param ii  (optional) defines details about how to call the server.
-	 * @param obj object to insert.
-	 * @return InvokeInfo with details (including JSON result)
+	 * @param ii  optional invocation info to use
+	 * @param obj the object to delete
+	 * @return invocation info describing the HTTP response
+	 * @throws Exception if the request fails
 	 */
 	public <T extends OAObject> OARestInvokeInfo callOADelete(OARestInvokeInfo ii, T obj) throws Exception {
 		if (obj == null) {
@@ -1198,12 +1400,15 @@ public class OARestClient {
 	}
 
 	/**
-	 * call an OARestServlet to update an object.
+	 * Updates an existing OAObject using PUT semantics. The object's key is encoded
+	 * into the URL, and the object is serialized to JSON for the request body. Optional
+	 * property paths may be included in the JSON.
 	 *
-	 * @param ii         (optional) defines details about how to call the server.
-	 * @param obj        object to update.
-	 * @param includePPs extra property paths to include in the results.
-	 * @return InvokeInfo with details (including JSON result)
+	 * @param ii         optional invocation info to use
+	 * @param obj        the object to update
+	 * @param includePPs property paths to include
+	 * @return invocation info describing the HTTP response
+	 * @throws Exception if the request fails
 	 */
 	public <T extends OAObject> OARestInvokeInfo callOAUpdate(OARestInvokeInfo ii, T obj,
 			final String... includePPs) throws Exception {

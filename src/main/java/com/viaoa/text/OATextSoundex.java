@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,10 +74,21 @@ public class OATextSoundex {
 	
 	
 	/**
-	 * Generates a 4-character Soundex code (U.S. Census standard).
-	 * Non-letter characters are ignored.
+	 * Generates a 4-character U.S. Census Soundex code for the supplied word.
+	 * <p>
+	 * The algorithm:
+	 * <ul>
+	 *   <li>Returns {@code "0000"} for null or blank input.</li>
+	 *   <li>Normalizes input to uppercase.</li>
+	 *   <li>Preserves the first letter verbatim.</li>
+	 *   <li>Converts subsequent letters to Soundex digits, ignoring vowels and
+	 *       non-letters.</li>
+	 *   <li>Skips duplicate adjacent codes.</li>
+	 *   <li>Pads the result with {@code '0'} as needed to reach four characters.</li>
+	 * </ul>
 	 *
-	 * If input is null/blank → "0000"
+	 * @param word the input text to encode; may be null
+	 * @return a 4-character Soundex code, or {@code "0000"} for null/blank input
 	 */
 	public static String soundex(String word) {
 	    if (word == null) return "0000";
@@ -104,6 +115,24 @@ public class OATextSoundex {
 	    return new String(result);
 	}
 
+	/**
+	 * Returns the Soundex classification code for a given uppercase character.
+	 * <p>
+	 * Mapping:
+	 * <ul>
+	 *   <li>B, F, P, V → '1'</li>
+	 *   <li>C, G, J, K, Q, S, X, Z → '2'</li>
+	 *   <li>D, T → '3'</li>
+	 *   <li>L → '4'</li>
+	 *   <li>M, N → '5'</li>
+	 *   <li>R → '6'</li>
+	 *   <li>A, E, I, O, U, Y, H, W → 1 (vowel/ignored class)</li>
+	 *   <li>All others → 0 (non-letter or skipped)</li>
+	 * </ul>
+	 *
+	 * @param ch uppercase character to classify
+	 * @return Soundex code character, or 1/0 indicating skip rules
+	 */
 	private static char _getSoundexCode(char ch) {
 	    switch (ch) {
 	        case 'B': case 'F': case 'P': case 'V': return '1';

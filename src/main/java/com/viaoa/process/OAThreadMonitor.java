@@ -34,14 +34,41 @@ import com.viaoa.util.OAString;
  * production use.
  */
 public class OAThreadMonitor {
+	
+	/**
+	 * Map storing previously observed thread information, indexed by thread
+	 * instance. Used to compare current thread dumps against prior states.
+	 */
     protected final HashMap<Thread, OAThreadMonitor.ThreadInfo> hmThreadInfo = new HashMap<>();
 
+    /**
+     * Holds diagnostic information for a single thread, including the thread
+     * reference, creation timestamp, and last-seen stack trace snapshot.
+     */
     static class ThreadInfo {
-        Thread thread;
+    	/**
+    	 * Reference to the thread associated with this diagnostic record.
+    	 */
+    	Thread thread;
+    	
+    	/**
+    	 * Timestamp indicating when this diagnostic record was created.
+    	 */
         long tsCreated;
+
+        /**
+         * Last recorded stack trace snapshot for this thread.
+         */
         StackTraceElement[] stes;
     }
 
+    /**
+     * Captures the current thread dump using {@link Thread#getAllStackTraces()},
+     * compares each thread with previously recorded data, and prints thread
+     * names. Newly observed threads are added to the internal tracking map.
+     *
+     * @throws Exception if an error occurs during inspection
+     */
     public void checkThreadDump() throws Exception {
         long tsNow = System.currentTimeMillis();
         Map<Thread, StackTraceElement[]> map = Thread.getAllStackTraces();
@@ -69,6 +96,13 @@ public class OAThreadMonitor {
         }
     }
 
+    /**
+     * Test harness that repeatedly performs thread-dump inspection once per
+     * second. Optionally creates a CPU-consuming thread for demonstration.
+     *
+     * @param args command-line arguments (unused)
+     * @throws Exception if an error occurs during execution
+     */
     public static void main(String[] args) throws Exception {
 /*        
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);

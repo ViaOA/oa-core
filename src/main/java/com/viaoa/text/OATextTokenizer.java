@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,11 +53,12 @@ import java.util.Map;
 public class OATextTokenizer {
 	
 	/**
-	 * Returns the amount of particular String within a String.
+	 * Counts the number of occurrences of {@code sep} within {@code str}.
+	 * A null string, empty string, or null separator returns 0.
 	 *
-	 * @param str is String to search within.
-	 * @param sep is String to search for.
-	 * @return number of occurrences of sep.
+	 * @param str the text to search
+	 * @param sep the substring to match
+	 * @return number of occurrences of {@code sep}
 	 */
 	public static int count(String str, String sep) {
 		if (str == null || str.length() == 0 || sep == null) return 0;
@@ -78,21 +79,39 @@ public class OATextTokenizer {
 	}
 	
 	
+	/**
+	 * Delegates to {@link #dcount(String, String)} to compute the number of
+	 * delimited values implied by {@code sep}.
+	 *
+	 * @param str input text
+	 * @param sep delimiter substring
+	 * @return count of matches (value count)
+	 */
 	public static int countMatches(String str, String sep) {
 		return dcount(str, sep);
 	}
+
+	/**
+	 * Delegates to {@link #dcount(String, char)} to compute the number of
+	 * delimited values implied by the separator character.
+	 *
+	 * @param str input text
+	 * @param sep delimiter character
+	 * @return count of matches (value count)
+	 */
 	public static int countMatches(String str, char sep) {
 		return dcount(str, sep);
 	}
 	
-	
 	/**
-	 * Used to get a count of the number of values between a separator/delimiter.
+	 * Returns the number of values separated by {@code sep} within {@code str}.
+	 * Consecutive separators still count as distinct value positions.
 	 * <p>
-	 * Note: even if there is not a value between consective separators, it is still counted as another value - in this case a blank.
+	 * A null or empty input returns 0.
 	 *
-	 * @param str is String to search. If null or length = 0, then 0 is returned.
-	 * @param sep separator.
+	 * @param str the text to parse
+	 * @param sep delimiter substring
+	 * @return number of delimited values
 	 */
 	public static int dcount(String str, String sep) {
 		if (str == null || str.length() == 0) {
@@ -101,7 +120,15 @@ public class OATextTokenizer {
 		return count(str, sep) + 1;
 	}
 
-
+	/**
+	 * Returns the number of values separated by {@code sep}. Converts the
+	 * separator character into a string and delegates to
+	 * {@link #dcount(String, String)}.
+	 *
+	 * @param str the text to parse
+	 * @param sep delimiter character
+	 * @return number of delimited values
+	 */
 	public static int dcount(String str, char sep) {
 		if (str == null || str.length() == 0 || sep == 0) {
 			return 0;
@@ -111,14 +138,15 @@ public class OATextTokenizer {
 
 	
 	
-	
-	
-	
-	
 	/**
-	 * Used to retrieve a portion of a String based on a separator value.
+	 * Deprecated. Retrieves a single field from {@code str} using 1-based field
+	 * numbering. Delegates to {@link #field(String, String, int, int)} with
+	 * {@code amt = 1}.
 	 *
-	 * @see #field(String,String,int,int)
+	 * @param str the text to parse
+	 * @param sep delimiter substring
+	 * @param beg 1-based starting field index
+	 * @return extracted field or null if not found
 	 */
 	@Deprecated
 	public static String field(String str, String sep, int beg) {
@@ -207,55 +235,116 @@ public class OATextTokenizer {
 	}
 	
 	
+	/**
+	 * Zero-based wrapper for the deprecated 1-based {@code field()} method.
+	 * Converts {@code beg} to {@code beg+1} for backward compatibility.
+	 *
+	 * @param str text to parse
+	 * @param sep delimiter substring
+	 * @param beg zero-based field index
+	 * @return extracted field or null if not found
+	 */
 	public static String fieldAt(String str, String sep, int beg) {
 		return field(str, sep, beg+1);
 	}
+
 	/**
-	 * '0' based modernized version in 4.0
+	 * Zero-based modernized version of the deprecated 1-based multi-field
+	 * extraction. Delegates to {@link #field(String, String, int, int)}
+	 * using {@code beg+1}.
+	 *
+	 * @param str text to parse
+	 * @param sep delimiter substring
+	 * @param beg zero-based starting field index
+	 * @param amt number of fields to return; -1 for remaining
+	 * @return extracted substring
 	 */
 	public static String fieldAt(final String str, final String sep, final int beg, final int amt) {
 		return field(str, sep, beg+1, amt);
 	}
 	
+	/**
+	 * Zero-based wrapper for character-delimiter field extraction.
+	 * Delegates to the string-based method after converting {@code sep}.
+	 *
+	 * @param str text to parse
+	 * @param sep delimiter character
+	 * @param beg zero-based field index
+	 * @return extracted field or null when not found
+	 */
 	public static String fieldAt(String str, char sep, int beg) {
 		return field(str, sep + "", beg+1, 1);
 	}
 
+	/**
+	 * Zero-based wrapper for multi-field extraction using a character
+	 * delimiter. Delegates to the string-based version after converting
+	 * {@code sep}.
+	 *
+	 * @param str text to parse
+	 * @param sep delimiter character
+	 * @param beg zero-based starting field index
+	 * @param amt number of fields to return
+	 * @return substring representing the requested fields
+	 */
 	public static String fieldAt(String str, char sep, int beg, int amt) {
 		return field(str, sep + "", beg+1, amt);
 	}
 
 
-
-	
-	
-
-
+	/**
+	 * Convenience wrapper for {@link #maskPassword(String, String, String, boolean, String...)}
+	 * using a default mask of {@code "*****"} and common password-related keywords.
+	 *
+	 * @param name key or attribute name
+	 * @param val  value associated with {@code name}
+	 * @return masked value if {@code name} indicates a password; otherwise {@code val}
+	 */
 	public static String maskPassword(String name, String val) {
 		String s = maskPassword(name, val, "*****", false, "password", "pw", "pass");
 		return s;
 	}
 
+	/**
+	 * Convenience wrapper that allows specifying the mask string while using
+	 * default case-insensitive matching rules.
+	 *
+	 * @param name          key or attribute name
+	 * @param val           associated value
+	 * @param passwordReturn mask returned when name appears to denote a password
+	 * @param words         list of substrings signaling a password
+	 * @return masked or unmodified value
+	 */
 	public static String maskPassword(String name, String val, String passwordReturn, String... words) {
 		String s = maskPassword(name, val, passwordReturn, false, words);
 		return s;
 	}
 
+	/**
+	 * Convenience wrapper that uses {@code "*****"} as the mask value and performs
+	 * case-insensitive matching against supplied words.
+	 *
+	 * @param name  key or attribute name
+	 * @param val   associated value
+	 * @param words substrings identifying password fields
+	 * @return masked or unmodified value
+	 */
 	public static String maskPassword(String name, String val, String... words) {
 		String s = maskPassword(name, val, "*****", false, words);
 		return s;
 	}
 
 	/**
-	 * Checks to see if name has any words in it that could make it the name of a password. If so then it will return a new value, else
-	 * value is returned.
+	 * Evaluates {@code name} against a set of password-indicator words.
+	 * If any word is contained within {@code name}, returns {@code maskValue};
+	 * otherwise returns {@code value}.
 	 *
-	 * @param name           name for the value
-	 * @param value          the actual value for name
-	 * @param maskValue      return value to use if the name is for a password
-	 * @param bCaseSensitive if the check should be casesensitive
-	 * @param words          words that are used to check if name is a password. Note: uses indexOf>=0 and not equals
-	 * @return if name is a password, then passwordReturn else value.
+	 * @param name           field name (null returns {@code value})
+	 * @param value          original value
+	 * @param maskValue      substitution when name indicates a password
+	 * @param bCaseSensitive whether comparison should be case-sensitive
+	 * @param words          substrings used to identify password names
+	 * @return masked or unmodified value
 	 */
 	public static String maskPassword(String name, String value, String maskValue, boolean bCaseSensitive, String... words) {
 		if (name == null || words == null) {
@@ -280,13 +369,30 @@ public class OATextTokenizer {
 	}
 
 
+	/**
+	 * Delegates to {@link #parseLine(String, char, boolean, int)} using a default
+	 * size estimate of 25.
+	 *
+	 * @param line             input text
+	 * @param sep              delimiter character
+	 * @param bCouldHaveQuotes whether quoted values may appear
+	 * @return array of parsed column values, or null if invalid input
+	 */
 	public static String[] parseLine(String line, char sep, boolean bCouldHaveQuotes) {
 		return parseLine(line, sep, bCouldHaveQuotes, 25);
 	}
 
 	/**
-	 * Strips out leading and trailing whitespace for each column. if bCouldHaveQuotes is true, then begin and end quotes will be removed;
-	 * either single or double quote char.
+	 * Parses a delimited line into column values, optionally supporting quoted
+	 * sections using single or double quotes. Leading and trailing whitespace
+	 * for each column is trimmed. Quote characters surrounding a value are not
+	 * included in the returned tokens.
+	 *
+	 * @param line            input text
+	 * @param sep             delimiter character
+	 * @param bCouldHaveQuotes whether quote parsing is enabled
+	 * @param sizeEstimate    initial array-list capacity hint
+	 * @return parsed column values; empty array when {@code line} is empty
 	 */
 	public static String[] parseLine(String line, char sep, boolean bCouldHaveQuotes, int sizeEstimate) {
 		if (line == null || sep == 0) {
@@ -384,16 +490,23 @@ public class OATextTokenizer {
 
 
 	/**
-	 * This will split a string based on a delimiter char, and will also take into account values that are in single or double quotes. Used
-	 * to parse attributes from html tag, or name/value pairs from CSS style
+	 * Tokenizes {@code text} into name/value segments for CSS/HTML-style
+	 * attribute parsing. Supports:
+	 * <ul>
+	 *   <li>quoted values</li>
+	 *   <li>optional inclusion of the delimiter token</li>
+	 *   <li>begin/end wrappers (e.g., '&lt;' and '&gt;')</li>
+	 *   <li>end-of-value terminators (e.g., ';')</li>
+	 * </ul>
 	 *
-	 * @param text
-	 * @param delimChar     ex: '=', or ':'
-	 * @param bIncludeDelim if true then the delim will be included in the tokens
-	 * @param begChar       ex: '&lt;'
-	 * @param endChar       ex: '&gt;'
-	 * @param eovChar       end of value, ex: ';'
-	 * @return
+	 * @param text         input text (null returns null)
+	 * @param delimChar    delimiter separating name/value
+	 * @param spaceIsDelim whether whitespace ends tokens
+	 * @param bIncludeDelim whether to emit delimiter as separate token
+	 * @param begChar      expected beginning wrapper (e.g., '<')
+	 * @param endChar      expected ending wrapper (e.g., '>')
+	 * @param eovChar      explicit end-of-value marker (e.g., ';')
+	 * @return token array
 	 */
 	public static String[] tokenize(String text, char delimChar, boolean spaceIsDelim, boolean bIncludeDelim, char begChar, char endChar,
 			char eovChar) {
@@ -483,6 +596,24 @@ public class OATextTokenizer {
 		return ss;
 	}
 
+	/**
+	 * Parses a CSS-style attribute string into a name/value map.
+	 * <p>
+	 * Behavior:
+	 * <ul>
+	 *   <li>Empty or null input returns an empty map.</li>
+	 *   <li>If the string begins with a quote, that quote type is used
+	 *       as the begin/end wrapper when tokenizing.</li>
+	 *   <li>Delegates to {@link #tokenize(String, char, boolean, boolean, char, char, char)}
+	 *       using ':' as the delimiter and ';' as the end-of-value marker.</li>
+	 *   <li>Every even index in the token array is treated as a key and the next
+	 *       token (if any) as its value.</li>
+	 *   <li>If a key has no corresponding value token, an empty string is stored.</li>
+	 * </ul>
+	 *
+	 * @param style CSS-style attribute text
+	 * @return map of attribute names to values (never null)
+	 */
 	public static Map<String, String> getCssMap(String style) {
 		Map<String, String> map = new HashMap<String, String>();
 		if (style == null || style.length() == 0) {
@@ -502,6 +633,27 @@ public class OATextTokenizer {
 		return map;
 	}
 
+	/**
+	 * Appends {@code value} to an existing CSV string {@code toText} using
+	 * comma-separated formatting rules.
+	 * <p>
+	 * Behavior:
+	 * <ul>
+	 *   <li>Null values are converted to empty strings.</li>
+	 *   <li>If the value is a String or contains ',', '\n', or '"':
+	 *       <ul>
+	 *         <li>Internal quotes are doubled.</li>
+	 *         <li>The entire value is wrapped in quotes unless already quoted.</li>
+	 *       </ul>
+	 *   </li>
+	 *   <li>Whitespace is trimmed after quoting logic.</li>
+	 *   <li>Delegates to {@code OATextUtil.concat(...)} for final concatenation.</li>
+	 * </ul>
+	 *
+	 * @param toText existing CSV string (may be null)
+	 * @param value  value to append (null becomes empty string)
+	 * @return updated CSV string with {@code value} appended
+	 */
 	public static String csv(String toText, Object value) {
 		if (value == null) {
 			value = "";

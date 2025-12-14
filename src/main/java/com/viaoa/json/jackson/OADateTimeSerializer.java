@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,19 @@ import com.viaoa.util.OADateTime;
  * Jackson {@code ObjectMapper} instances.
  */
 public class OADateTimeSerializer extends JsonSerializer<OADateTime> {
+
+	/**
+	 * Serializes an {@link OADateTime} into JSON.
+	 * <p>
+	 * If the supplied {@code value} is {@code null}, the method writes a JSON
+	 * {@code null}. Otherwise, it writes the formatted string representation of
+	 * the value using {@link OADateTime#JsonFormat}.
+	 *
+	 * @param value        the {@link OADateTime} to serialize; may be {@code null}
+	 * @param gen          the JSON generator used to produce output
+	 * @param serializers  provider for accessing serializer configuration
+	 * @throws IOException if an error occurs while writing to the generator
+	 */
 	@Override
 	public void serialize(OADateTime value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
 		if (value == null) {

@@ -36,23 +36,67 @@ import com.viaoa.util.OADateTime;
 public class OACronProcessor {
     private static Logger LOG = Logger.getLogger(OACronProcessor.class.getName());
 
+    /**
+     * Executor service used to asynchronously run cron job processing in
+     * separate worker threads.
+     */
     private final OAExecutorService execService;
+    
+    /**
+     * Thread-safe list of registered cron entries. Uses CopyOnWriteArrayList
+     * to support concurrent iteration and modification.
+     */
     private CopyOnWriteArrayList<OACron> alCron;
 
+    /**
+     * Background daemon thread responsible for evaluating cron schedules
+     * and dispatching executions.
+     */
     private Thread thread;
+    
+    /**
+     * Synchronization lock used to coordinate start/stop activity and timed
+     * waiting within the cron processing loop.
+     */
     private final Object lock = new Object();
+    
+    /**
+     * Counter used to detect start/stop events. Incremented on each invocation
+     * of {@link #start()} or {@link #stop()} and used by the worker thread to
+     * determine whether it should exit.
+     */
     private final AtomicInteger aiStartStop = new AtomicInteger();
+    
+    /**
+     * Counter used to assign unique names to spawned processor threads.
+     */
     private final AtomicInteger aiThreadId = new AtomicInteger();
     
+    /**
+     * Creates a new cron processor, initializing the executor service and the
+     * internal list of cron entries.
+     */
     public OACronProcessor() {
         execService = new OAExecutorService();
         alCron = new CopyOnWriteArrayList<OACron>();
     }
     
+    /**
+     * Returns all currently registered cron entries.
+     *
+     * @return array of registered {@link OACron} instances
+     */
     public OACron[] getCrons() {
         return (OACron[]) alCron.toArray(new OACron[0]);
     }
 
+    /**
+     * Registers a new cron entry for processing. Logs the cron details, adds
+     * it to the internal list if not already present, and wakes the processor
+     * thread if needed.
+     *
+     * @param cron the cron entry to register
+     */
     public void add(OACron cron) {
         LOG.fine("cron="+cron.getName()+", "+cron.getDescription());
         if (!alCron.contains(cron)) {
@@ -62,15 +106,31 @@ public class OACronProcessor {
             }
         }
     }
+    
+    /**
+     * Removes a previously registered cron entry and logs the removal.
+     *
+     * @param cron the cron entry to remove
+     */
     public void remove(OACron cron) {
         LOG.fine("cron="+cron.getName()+", "+cron.getDescription());
         alCron.remove(cron);
     }
 
+    /**
+     * Determines whether the cron processor's background thread is active.
+     *
+     * @return true if the processor thread has been created
+     */
     public boolean isRunning() {
         return (thread != null);
     }
     
+    /**
+     * Starts the cron processor. Increments the start/stop counter, wakes any
+     * waiting thread, creates a new daemon worker thread, and begins cron
+     * evaluation and dispatch processing.
+     */
     public void start() {
         aiStartStop.incrementAndGet();
 
@@ -90,6 +150,11 @@ public class OACronProcessor {
         thread.start();
     }
 
+    /**
+     * Signals the processor to stop. Increments the start/stop counter, wakes
+     * the processor loop, and clears the thread reference so the worker thread
+     * will terminate.
+     */
     public void stop() {
         aiStartStop.incrementAndGet();
 
@@ -100,8 +165,12 @@ public class OACronProcessor {
         LOG.fine("stop called, aiStartStop=" + aiStartStop);
     }
 
-    /*
-     * called by {@link #runProcessInAnotherThread(OACron, boolean)} using an execService thread.
+    /**
+     * Executes the {@link OACron#process(boolean)} method for the given cron.
+     * Updates the cron's last-processed timestamp and logs the execution.
+     *
+     * @param cron             the cron entry to process
+     * @param bManuallyCalled  true if triggered manually
      */
     protected void callProcess(final OACron cron, boolean bManuallyCalled) {
         if (cron == null) return;
@@ -111,8 +180,12 @@ public class OACronProcessor {
     }
 
     
-    /*
-     * will use execService to then call {@link #process(OACron,boolean)}
+    /**
+     * Submits a task to process the cron asynchronously using the executor
+     * service. Delegates actual work to {@link #callProcess(OACron, boolean)}.
+     *
+     * @param cron             the cron entry to process
+     * @param bManuallyCalled  true if triggered manually
      */
     public void callProcessInAnotherThread(final OACron cron, final boolean bManuallyCalled) {
         if (cron == null) return;
@@ -124,6 +197,12 @@ public class OACronProcessor {
         });
     }
     
+    /**
+     * Main loop executed by the cron processor thread. Evaluates all
+     * registered crons once per minute, prevents duplicate firings within the
+     * same minute, and dispatches matching crons for asynchronous processing.
+     * Terminates when the start/stop counter changes.
+     */
     protected void runThread() {
         final int iStartStop = aiStartStop.get();
         LOG.fine("created cron processor, cntStartStop=" + iStartStop + ", thread name=" + Thread.currentThread().getName());
@@ -175,6 +254,12 @@ public class OACronProcessor {
         LOG.fine("stopped OACronProcessor thread, cntStartStop=" + iStartStop + ", thread name=" + Thread.currentThread().getName());
     }
     
+    /**
+     * Hook method invoked before cron evaluations for the current cycle.
+     * Designed for subclasses to override. Default implementation does nothing.
+     *
+     * @param dtNow the timestamp representing the current minute
+     */
     protected void beforeProcess(OADateTime dtNow) {
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,19 @@ import com.viaoa.util.OATime;
  * </p>
  */
 public class OATimeSerializer extends JsonSerializer<OATime> {
+
+	/**
+	 * Serializes an {@link OATime} value into its JSON representation.
+	 * <p>
+	 * If {@code value} is {@code null}, a JSON {@code null} is written.
+	 * Otherwise, the time is formatted using {@link OATime#JsonFormat} and written
+	 * as a JSON string.
+	 *
+	 * @param value        the {@link OATime} instance to serialize; may be null
+	 * @param gen          JSON generator used to write the output
+	 * @param serializers  provider for accessing serialization configuration
+	 * @throws IOException if writing to the JSON generator fails
+	 */
 	@Override
 	public void serialize(OATime value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
 		if (value == null) {

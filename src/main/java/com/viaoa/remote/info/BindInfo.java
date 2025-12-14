@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,22 +65,85 @@ import com.viaoa.remote.multiplexer.annotation.OARemoteParameter;
 public class BindInfo {
 	private static Logger LOG = Logger.getLogger(BindInfo.class.getName());
 
-	// internal name of object, that is past instead of the real object
+	/**
+	 * Internal numeric identifier used for referencing this bound object within
+	 * the remoting subsystem.
+	 */
 	public short id;
+
+	/**
+	 * The internal bind-name used to represent this remote object in place of the
+	 * actual instance during remote communication.
+	 */
 	public String name;
 
+	/**
+	 * Indicates whether the bound object supports broadcast-style remote method
+	 * invocation.
+	 */
 	public boolean isBroadcast;
+
+	/**
+	 * True if the bound object uses an asynchronous queue for remote method
+	 * processing.
+	 */
 	public boolean usesQueue;
+	
+	/**
+	 * Name of the asynchronous queue used for remote method dispatch, or null if
+	 * queue-based dispatching is not used.
+	 */
 	public String asyncQueueName;
+	
+	/**
+	 * Size of the asynchronous queue used when queue-based remote dispatch is
+	 * enabled.
+	 */
 	public int asyncQueueSize;
+	
+	/**
+	 * Indicates whether the interface for this bound object is annotated as
+	 * supporting OA-Sync semantics according to {@code @OARemoteInterface}.
+	 */
 	public boolean isOASync;
 
+	/**
+	 * Weak reference to the actual implementation object. Allows the object to be
+	 * garbage-collected when no longer in use.
+	 */
 	public WeakReference weakRef;
+	
+	/**
+	 * Interface class used to generate the remote proxy for this binding.
+	 */
 	public Class interfaceClass; // used to create the proxy
 
+	/**
+	 * Maps generated method-signature strings to their associated {@link MethodInfo}
+	 * metadata.
+	 */
 	private HashMap<String, MethodInfo> hmNameToMethod;
+	
+	/**
+	 * Maps {@link Method} instances to their corresponding {@link MethodInfo}
+	 * metadata.
+	 */
 	private HashMap<Method, MethodInfo> hmMethod;
 
+	/**
+	 * Constructs a new {@code BindInfo} record for a remote object. The supplied
+	 * object is wrapped in a weak reference, and interface/queue metadata are
+	 * initialized. The {@code @OARemoteInterface} annotation on the interface
+	 * class is scanned to determine OA-Sync behavior.
+	 *
+	 * @param name internal bind-name for the remote object
+	 * @param obj the actual implementation instance, or null
+	 * @param interfaceClass interface used to create the remote proxy
+	 * @param referenceQueue optional reference queue for GC notifications
+	 * @param bIsBroadcast true if broadcast behavior is enabled
+	 * @param queueName asynchronous queue name, or null
+	 * @param queueSize maximum queue size
+	 */
 	public BindInfo(String name, Object obj, Class interfaceClass, ReferenceQueue referenceQueue, boolean bIsBroadcast, String queueName,
 			int queueSize) {
 		this.name = name;
@@ -99,6 +162,14 @@ public class BindInfo {
 		}
 	}
 
+	/**
+	 * Assigns the underlying implementation object for this binding, wrapping it
+	 * in a {@link WeakReference}. If a reference queue is supplied, the weak
+	 * reference is registered with it.
+	 *
+	 * @param obj the object to bind
+	 * @param referenceQueue optional reference queue used to track garbage-collection
+	 */
 	public void setObject(Object obj, ReferenceQueue referenceQueue) {
 		if (referenceQueue == null) {
 			weakRef = new WeakReference<Object>(obj);
@@ -107,8 +178,19 @@ public class BindInfo {
 		}
 	}
 
+	/**
+	 * Tracks whether the underlying object has already been detected as
+	 * garbage-collected. Used to prevent repeated warning messages.
+	 */
 	private boolean bObjectGCd;
 
+	/**
+	 * Returns the underlying implementation object, or null if it has been
+	 * garbage-collected. Logs a warning the first time the reference is found to
+	 * be cleared.
+	 *
+	 * @return the bound implementation object, or null if GC’d
+	 */
 	public Object getObject() {
 		if (weakRef != null) {
 			Object obj = weakRef.get();
@@ -121,6 +203,13 @@ public class BindInfo {
 		return null;
 	}
 
+	/**
+	 * Retrieves the {@link MethodInfo} associated with the given generated method
+	 * signature. Initializes method metadata on first use.
+	 *
+	 * @param methodNameSig generated method signature
+	 * @return the associated MethodInfo, or null if not found
+	 */
 	public MethodInfo getMethodInfo(String methodNameSig) {
 		if (hmNameToMethod == null) {
 			loadMethodInfo();
@@ -129,6 +218,13 @@ public class BindInfo {
 		return mi;
 	}
 
+	/**
+	 * Retrieves the {@link MethodInfo} associated with the given {@link Method}
+	 * instance. Initializes method metadata on first use.
+	 *
+	 * @param method the reflected Java method
+	 * @return the corresponding MethodInfo, or null if none exists
+	 */
 	public MethodInfo getMethodInfo(Method method) {
 		if (hmMethod == null) {
 			loadMethodInfo();
@@ -138,7 +234,10 @@ public class BindInfo {
 	}
 
 	/**
-	 * used to initialize the information about the methods for the bind class.
+	 * Initializes metadata for all remotely accessible methods defined in the
+	 * interface class. This includes generating method signatures, detecting
+	 * remote return types, evaluating {@code @OARemoteMethod} and
+	 * {@code @OARemoteParameter} annotations, and populating lookup maps.
 	 */
 	public synchronized void loadMethodInfo() {
 		if (interfaceClass == null) {

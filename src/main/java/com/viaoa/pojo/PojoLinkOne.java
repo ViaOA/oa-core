@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,41 +39,94 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class PojoLinkOne implements java.io.Serializable {
 	private static final long serialVersionUID = 1L;
 
-	// References to other objects
-	// PojoLink
+	/**
+	 * Reference to the owning {@link PojoLink} that represents the link property
+	 * in the parent {@link Pojo}.
+	 */
 	protected volatile PojoLink pojoLink;
-	// PojoLinkUnique
+
+	/**
+	 * Optional {@link PojoLinkUnique} metadata describing unique-property rules
+	 * associated with this link-one definition.
+	 */
 	protected volatile PojoLinkUnique pojoLinkUnique;
-	// PojoImportMatches
+
+	/**
+	 * List of {@link PojoImportMatch} definitions describing import-match
+	 * strategies for resolving this link during JSON import.
+	 */
 	protected volatile CopyOnWriteArrayList<PojoImportMatch> alPojoImportMatches = new CopyOnWriteArrayList<>();
-	// PojoLinkFkeys
+
+	/**
+	 * List of {@link PojoLinkFkey} entries representing scalar foreign-key
+	 * properties on the source type used to resolve this link-one relationship.
+	 */
 	protected volatile CopyOnWriteArrayList<PojoLinkFkey> alPojoLinkFkeys = new CopyOnWriteArrayList<>();
 
+	/**
+	 * Creates an empty {@code PojoLinkOne} metadata instance.
+	 */
 	public PojoLinkOne() {
 	}
 
+	/**
+	 * Returns the {@link PojoLink} that owns this link-one definition.
+	 *
+	 * @return the parent link metadata
+	 */
 	@JsonIgnore
 	public PojoLink getPojoLink() {
 		return pojoLink;
 	}
 
+	/**
+	 * Sets the owning {@link PojoLink} for this link-one metadata entry.
+	 *
+	 * @param newValue the new parent link metadata reference
+	 */
 	public void setPojoLink(PojoLink newValue) {
 		this.pojoLink = newValue;
 	}
 
+	/**
+	 * Returns the {@link PojoLinkUnique} metadata associated with this link-one
+	 * definition, if any.
+	 *
+	 * @return the unique-property metadata or {@code null} if not defined
+	 */
 	// @JsonIgnore
 	public PojoLinkUnique getPojoLinkUnique() {
 		return pojoLinkUnique;
 	}
 
+	/**
+	 * Sets the {@link PojoLinkUnique} metadata describing unique-property rules
+	 * for this link-one association.
+	 *
+	 * @param newValue the new unique-property metadata
+	 */
 	public void setPojoLinkUnique(PojoLinkUnique newValue) {
 		this.pojoLinkUnique = newValue;
 	}
 
+	/**
+	 * Returns the list of {@link PojoImportMatch} entries associated with this
+	 * link-one definition.
+	 *
+	 * @return list of import-match metadata
+	 */
 	public CopyOnWriteArrayList<PojoImportMatch> getPojoImportMatches() {
 		return alPojoImportMatches;
 	}
 
+	/**
+	 * Replaces the list of {@link PojoImportMatch} entries.
+	 * <p>
+	 * If {@code list} is null, the existing list is cleared; otherwise a new
+	 * thread-safe list is created from the supplied entries.
+	 *
+	 * @param list the new import-match list or null to clear
+	 */
 	public void setPojoImportMatches(List<PojoImportMatch> list) {
 		if (list == null) {
 			this.alPojoImportMatches.clear();
@@ -82,10 +135,24 @@ public class PojoLinkOne implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Returns the list of {@link PojoLinkFkey} foreign-key mappings associated
+	 * with this link-one definition.
+	 *
+	 * @return list of fkey metadata entries
+	 */
 	public CopyOnWriteArrayList<PojoLinkFkey> getPojoLinkFkeys() {
 		return alPojoLinkFkeys;
 	}
 
+	/**
+	 * Replaces the list of {@link PojoLinkFkey} entries.
+	 * <p>
+	 * If {@code list} is null, the existing list is cleared; otherwise the list
+	 * is replaced with a thread-safe copy.
+	 *
+	 * @param list the new list of fkey metadata or null to clear
+	 */
 	public void setPojoLinkFkeys(List<PojoLinkFkey> list) {
 		if (list == null) {
 			this.alPojoLinkFkeys.clear();
@@ -94,6 +161,11 @@ public class PojoLinkOne implements java.io.Serializable {
 		}
 	}
 
+	/**
+	 * Returns a simple string representation for debugging.
+	 *
+	 * @return formatted metadata description string
+	 */
 	@Override
 	public String toString() {
 		return "PojoLinkOne [" +

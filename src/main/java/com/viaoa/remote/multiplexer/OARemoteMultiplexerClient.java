@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,38 +93,94 @@ import com.viaoa.util.Tuple;
 public class OARemoteMultiplexerClient {
 	private static Logger LOG = Logger.getLogger(OARemoteMultiplexerClient.class.getName());
 
-	// / multiplexer client
+	/**
+	 * Underlying multiplexer client used as the transport layer for creating and
+	 * managing virtual sockets to the server.
+	 */
 	private OAMultiplexerClient multiplexerClient;
 
-	// remote objects that have already been retrieved from server.
+	/**
+	 * Cache of previously looked-up remote objects keyed by their lookup name so
+	 * that subsequent calls can reuse existing proxy instances.
+	 */
 	private final ConcurrentHashMap<String, Object> hmLookup = new ConcurrentHashMap<String, Object>();
 
-	// used to uniquely identify any objects that this client sends to server.
+	/**
+	 * Counter used to generate unique bind names for client-side objects that are
+	 * exposed to the server.
+	 */
 	private final AtomicInteger aiBindCount = new AtomicInteger();
 
-	// pool of vsockets
+	/**
+	 * Pool that manages reusable client-to-server {@link VirtualSocket} instances
+	 * for issuing remote requests.
+	 */
 	private OAPool<VirtualSocket> poolVirtualSocketCtoS;
 
-	// mapping for Remote objects
+	/**
+	 * Mapping from bind name to {@link BindInfo} containing metadata and weak
+	 * references for each registered remote object.
+	 */
 	private final ConcurrentHashMap<String, BindInfo> hmNameToBind = new ConcurrentHashMap<String, BindInfo>();
-	// used to manage GC for remote objects.  See performDGC.
+
+	/**
+	 * Reference queue used to detect when remote objects have been garbage
+	 * collected so their associated bindings can be cleaned up.
+	 */
 	private final  ReferenceQueue referenceQueue = new ReferenceQueue();
 
-	// performance enhancement for ObjectSteams
+	/**
+	 * Cache of class descriptors received from the server, keyed by an integer
+	 * identifier, to optimize deserialization of remote messages.
+	 */
 	private final ConcurrentHashMap<Integer, ObjectStreamClass> hmClassDescInput = new ConcurrentHashMap<Integer, ObjectStreamClass>();
+
+	/**
+	 * Cache of class descriptors sent to the server, keyed by class name and
+	 * mapped to an integer identifier, to optimize serialization overhead.
+	 */
 	private final ConcurrentHashMap<String, Integer> hmClassDescOutput = new ConcurrentHashMap<String, Integer>();
+	
+	/**
+	 * Counter used to assign unique integer identifiers for class descriptors
+	 * written to the output stream.
+	 */
 	private final AtomicInteger aiClassDescOutput = new AtomicInteger();
 
+	/**
+	 * Registry of in-flight asynchronous requests keyed by message id so that
+	 * responses from the server can be matched back to their original calls.
+	 */
 	private final ConcurrentHashMap<Integer, RequestInfo> hmAsyncRequestInfo = new ConcurrentHashMap<Integer, RequestInfo>();
+	
+	/**
+	 * Counter used to generate unique message identifiers for client-to-server
+	 * requests.
+	 */
 	private final AtomicInteger aiMessageId = new AtomicInteger();
 
+	/**
+	 * Cache of client-to-server proxy instances keyed by bind or lookup name to
+	 * ensure a single proxy per remote interface on this client.
+	 */
     private final ConcurrentHashMap<String, Object> hmProxyCtoS = new ConcurrentHashMap<String, Object>();
+    
+    /**
+     * Cache of broadcast proxy instances keyed by broadcast name so that
+     * broadcast-capable remote interfaces can be reused.
+     */
     private ConcurrentHashMap<String, Object> hmProxyBroadcast = new ConcurrentHashMap<String, Object>();
 
 	
-	/**
-	 * Creates a new Distributed Client, using the ICEClient multiplexer connection as the transport.
-	 */
+    /**
+     * Constructs a new remote multiplexer client using the supplied
+     * {@link OAMultiplexerClient} as the transport layer and initializes the
+     * background threads required for processing remote requests and callbacks.
+     *
+     * @param multiplexerClient the underlying multiplexer client used to create
+     *                          and manage virtual sockets; must not be {@code null}
+     * @throws IllegalArgumentException if {@code multiplexerClient} is {@code null}
+     */
 	public OARemoteMultiplexerClient(OAMultiplexerClient multiplexerClient) {
 		LOG.fine("new multiplexer client");
 		if (multiplexerClient == null) {
@@ -136,16 +192,36 @@ public class OARemoteMultiplexerClient {
 		setupRequestQueueThread();
 	}
 
+	/**
+	 * Returns the underlying multiplexer client used by this remote client.
+	 *
+	 * @return the {@link OAMultiplexerClient} instance used for socket creation
+	 *         and connectivity checks
+	 */
 	public OAMultiplexerClient getMultiplexerClient() {
 		return multiplexerClient;
 	}
 
+	/**
+	 * Flag indicating whether this client has been closed, used to signal worker
+	 * threads to stop processing.
+	 */
 	private volatile boolean bClosed;
 
+	/**
+	 * Marks this client as closed so that background worker threads will stop
+	 * polling and processing further requests.
+	 */
 	public void close() {
 		bClosed = true;
 	}
 
+	/**
+	 * Ensures the client is closed during garbage collection by invoking
+	 * {@link #close()} before delegating to {@code super.finalize()}.
+	 *
+	 * @throws Throwable if the superclass finalizer throws an exception
+	 */
 	@Override
 	protected void finalize() throws Throwable {
 		close();
@@ -153,11 +229,15 @@ public class OARemoteMultiplexerClient {
 	}
 
 	/**
-	 * Register a remote object to be called for server broadcasts.
+	 * Registers a local callback object to receive broadcast invocations from the
+	 * server for the specified lookup name.
 	 *
-	 * @param lookupName name used on server, see: RemoteMultiplexerServer.createClientBroadcast
-	 * @param callback   an impl used when receiving messages from other clients see RemoteMultiplexerServer#createClientBroadcast(String,
-	 *                   Class)
+	 * @param lookupName the broadcast name used by the server to identify this
+	 *                   callback registration; must not be {@code null}
+	 * @param callback   the local implementation that will receive broadcast
+	 *                   method calls; must not be {@code null}
+	 * @throws Exception if the broadcast lookup fails or the callback type is
+	 *                   incompatible with the server-side interface
 	 */
 	public void registerBroadcast(final String lookupName, Object callback) throws Exception {
 		lookupBroadcast(lookupName, callback);
@@ -209,9 +289,14 @@ public class OARemoteMultiplexerClient {
 	}
 
 	/**
-	 * Get a remote object from the server.
+	 * Looks up a remote object from the server using the specified lookup name.
+	 * Results are cached so repeated lookups for the same name return the same
+	 * proxy instance.
 	 *
-	 * @param lookupName name that the server has used to bind the object.
+	 * @param lookupName the server-side name of the remote object to resolve;
+	 *                   must not be {@code null}
+	 * @return the proxy object representing the remote interface
+	 * @throws Exception if the lookup request fails or the server returns an error
 	 */
 	public Object lookup(String lookupName) throws Exception {
 		LOG.fine("lookupName=" + lookupName);
@@ -258,27 +343,72 @@ public class OARemoteMultiplexerClient {
 	}
 
 	/**
-	 * Get the real socket.
+	 * Returns the underlying {@link Socket} used by this client for low-level
+	 * communication with the remote multiplexer server.
+	 *
+	 * @return the active socket instance, or {@code null} if the client is not connected
 	 */
 	public Socket getSocket() {
 		return multiplexerClient.getSocket();
 	}
 
-	/** create a name that will be unique on the server. */
+	/**
+	 * Creates a unique bind name for a client-side remote object being
+	 * exposed to the server. The name is composed of:
+	 * <ul>
+	 *   <li>A prefix identifying the client ("C.")</li>
+	 *   <li>The connection id of the socket used for the request</li>
+	 *   <li>A monotonically increasing counter used to ensure uniqueness</li>
+	 * </ul>
+	 *
+	 * This bind name is later used by the server to reference the
+	 * callback object on the client.
+	 *
+	 * @param ri the request information containing the socket and connection id;
+	 *           must not be {@code null}
+	 * @return a unique bind name for this client/session
+	 */
 	protected String createBindName(RequestInfo ri) {
 		String bindName = "C." + ri.socket.getConnectionId() + "." + aiBindCount.incrementAndGet();
 		return bindName;
 	}
 
-
+	
 	/**
-	 * Create a proxy instance for an Object that is on the server. This is used for lookups and when the server returns a remote instance.
-	 * All methods that are called on the proxy will be sent to the server, and act as-if it were ran locally.
+	 * Creates or retrieves a proxy instance used for client-to-server remote
+	 * method calls. This overload determines whether queue-based messaging
+	 * should be used based on the calling request and method metadata.
+	 *
+	 * The method delegates to the main {@link #getProxyForCtoS(String, Class, boolean)}
+	 * implementation after resolving the correct queue usage rules.
+	 *
+	 * @param ri            request information for the current invocation
+	 * @param name          the bind or lookup name used to identify the remote reference
+	 * @param c             the remote interface class
+	 * @param bDontUseQueue if true, socket calls are forced instead of queued calls
+	 * @return the proxy implementing the remote interface
+	 * @throws Exception if proxy creation fails
 	 */
 	protected Object getProxyForCtoS(RequestInfo ri, String name, Class c, boolean bDontUseQueue) throws Exception {
 		return getProxyForCtoS(name, c, (ri.bind.usesQueue && !bDontUseQueue));
 	}
 
+	/**
+	 * Creates or returns a cached client-side proxy for a remote server interface.
+	 * The proxy uses a dynamic {@link InvocationHandler} to route method calls
+	 * through {@link #onInvokeForCtoS(BindInfo, Object, Method, Object[])}.
+	 *
+	 * If an existing proxy is already cached for the name, it is reused.
+	 * Otherwise, a new proxy is created, registered in bind metadata,
+	 * and (if required) ensures that the first StoC socket is created
+	 * for receiving callbacks.
+	 *
+	 * @param name       the lookup or bind name identifying the remote interface
+	 * @param c          the interface class implemented by the remote object
+	 * @param bUsesQueue true to route calls using the asynchronous queue
+	 * @return the proxy instance
+	 * @throws Exception if proxy creation or bind setup fails
+	 */
 	protected Object getProxyForCtoS(String name, Class c, boolean bUsesQueue) throws Exception {
 		if (name == null) {
 			return null;
@@ -310,6 +440,20 @@ public class OARemoteMultiplexerClient {
 		return proxy;
 	}
 
+	/**
+	 * Creates or retrieves a proxy for broadcast-capable remote interfaces.
+	 * Broadcast proxies forward method calls to the server, which then
+	 * fan-out to all registered listeners.
+	 *
+	 * A callback object is registered as the client-side implementation
+	 * for receiving broadcast calls initiated by the server.
+	 *
+	 * @param name      the broadcast lookup identifier
+	 * @param c         the remote broadcast interface class
+	 * @param callback  client-side receiver for incoming broadcast calls
+	 * @return a proxy instance used to send broadcast operations
+	 * @throws Exception if proxy creation fails or binding cannot be established
+	 */
 	protected Object getProxyForBroadcast(String name, Class c, Object callback) throws Exception {
 		if (name == null) {
 			return null;
@@ -337,7 +481,21 @@ public class OARemoteMultiplexerClient {
 		return proxy;
 	}
 
-	// volatile static int threadCheck;
+	/**
+	 * Handles a method invocation made on a client-side proxy and converts it
+	 * into a remote request sent to the server. This method initializes the
+	 * {@link RequestInfo}, configures timeout and metadata, chooses the correct
+	 * message type, optionally waits for a response, and processes return values.
+	 *
+	 * Errors and timeout conditions are captured in the {@link RequestInfo}.
+	 *
+	 * @param bind   metadata describing the remote binding
+	 * @param proxy  the proxy object on which the method was invoked
+	 * @param method the Java method being invoked
+	 * @param args   the invocation arguments (may be null)
+	 * @return the return value from the server, or null if void
+	 * @throws Throwable if a remote or local error occurs
+	 */
 	protected Object onInvokeForCtoS(BindInfo bind, Object proxy, Method method, Object[] args) throws Throwable {
 		//LOG.fine(method.getName());
 		aiMethodCallCnt.incrementAndGet();
@@ -433,7 +591,10 @@ public class OARemoteMultiplexerClient {
 	}
 
 	/**
-	 * Called after a CtoS remote method is called.
+	 * Called after a client-to-server invocation completes. This logs warnings
+	 * for exceptions or error messages contained in the {@link RequestInfo}.
+	 *
+	 * @param ri the request information for the completed invocation
 	 */
 	protected void afterInvokeForCtoS(RequestInfo ri) {
 		if (ri == null || !ri.bSent) {
@@ -444,14 +605,45 @@ public class OARemoteMultiplexerClient {
 		}
 	}
 
-	// "dummy" object, that is used when methods are not supported in proxy interface, but are in Object
-	// class
+	/**
+	 * Placeholder object used when invoking methods inherited from {@link Object}
+	 * on proxy instances. This allows the client to locally simulate calls such as
+	 * {@code toString()}, {@code hashCode()}, and {@code equals(Object)} without
+	 * routing them through the remote invocation layer.
+	 *
+	 * <p>This avoids unnecessary remote calls for methods that have no meaning
+	 * in the context of remote proxies and ensures consistent local behavior.
+	 */
 	private final Object stuntObject = new Object();
+
+	/**
+	 * Counter used to track the number of times a remote invocation attempt fails
+	 * due to unsafe thread conditions as detected by
+	 * {@link com.viaoa.remote.OARemoteThreadDelegate#isSafeToCallRemoteMethod()}.
+	 *
+	 * <p>The value is used for throttling and diagnostic logging to prevent
+	 * excessive warning output when repeated unsafe-call scenarios occur.
+	 */
 	private int errorCnt;
 
 	/**
-	 * Called when a remote/proxy object method is invoked. The method info will be sent to the server, and return the method return value
-	 * from the server.
+	 * Implements the low-level send-logic for a client-to-server invocation.
+	 * This performs:
+	 * <ul>
+	 *   <li>Argument compression</li>
+	 *   <li>Remote-object parameter mapping</li>
+	 *   <li>Message type determination</li>
+	 *   <li>Asynchronous request registration</li>
+	 *   <li>Socket-based or queue-based message transmission</li>
+	 *   <li>Reading socket-based return values</li>
+	 * </ul>
+	 *
+	 * The method updates the {@link RequestInfo} with the final state,
+	 * exceptions, and response value.
+	 *
+	 * @param ri the request being transmitted
+	 * @return true if the message was sent to the server
+	 * @throws Exception if transmission fails
 	 */
 	protected boolean _onInvokeForCtoS(RequestInfo ri) throws Exception {
 		if (ri.methodInfo == null) {
@@ -613,10 +805,21 @@ public class OARemoteMultiplexerClient {
 		return true;
 	}
 
+	/**
+	 * Sets the minimum number of virtual sockets maintained in the
+	 * client-to-server socket pool.
+	 *
+	 * @param x the minimum pool size
+	 */
 	public void setMinimumSocketsForCtoS(int x) {
 		getVirtualSocketCtoSPool().setMinimum(x);
 	}
 
+	/**
+	 * Returns the minimum size configured for the client-to-server socket pool.
+	 *
+	 * @return the minimum number of maintained sockets
+	 */
 	public int getMinimumSocketsForCtoS() {
 		if (poolVirtualSocketCtoS == null) {
 			return 1;
@@ -624,10 +827,21 @@ public class OARemoteMultiplexerClient {
 		return getVirtualSocketCtoSPool().getMinimum();
 	}
 
+	/**
+	 * Sets the maximum number of virtual sockets the client-to-server pool
+	 * may allocate.
+	 *
+	 * @param x the maximum pool size
+	 */
 	public void setMaximumSocketsForCtoS(int x) {
 		getVirtualSocketCtoSPool().setMaximum(x);
 	}
 
+	/**
+	 * Returns the maximum number of sockets allowed in the client-to-server pool.
+	 *
+	 * @return the maximum socket count, or zero if the pool is not initialized
+	 */
 	public int getMaximumSocketsForCtoS() {
 		if (poolVirtualSocketCtoS == null) {
 			return 0;
@@ -635,6 +849,13 @@ public class OARemoteMultiplexerClient {
 		return getVirtualSocketCtoSPool().getMaximum();
 	}
 
+	/**
+	 * Lazily initializes and returns the pool managing client-to-server
+	 * {@link VirtualSocket} instances. The pool provides configurable min/max
+	 * sizes and closes sockets when removed.
+	 *
+	 * @return the socket pool instance
+	 */
 	protected OAPool<VirtualSocket> getVirtualSocketCtoSPool() {
 		if (poolVirtualSocketCtoS != null) {
 			return poolVirtualSocketCtoS;
@@ -664,11 +885,25 @@ public class OARemoteMultiplexerClient {
 		return poolVirtualSocketCtoS;
 	}
 
+	/**
+	 * Retrieves a virtual socket from the client-to-server pool for issuing
+	 * a remote request.
+	 *
+	 * @return an available virtual socket
+	 * @throws Exception if the pool cannot supply a socket
+	 */
 	protected VirtualSocket getSocketForCtoS() throws Exception {
 		VirtualSocket vs = getVirtualSocketCtoSPool().get();
 		return vs;
 	}
 
+	/**
+	 * Returns a virtual socket to the pool or removes it if it has been closed.
+	 * Resets its timeout state before releasing.
+	 *
+	 * @param vs the virtual socket to release
+	 * @throws Exception if the pool rejects the socket
+	 */
 	protected void releaseSocketForCtoS(VirtualSocket vs) throws Exception {
 		if (vs == null) {
 			return;
@@ -686,10 +921,17 @@ public class OARemoteMultiplexerClient {
 	// flag to know if the initial StoC vsocket has been created
 	private volatile boolean bFirstStoCsocketCreated;
 
-	/**
+	/*
 	 * These are vsockets used to listen/wait for method calls from server. This is used when a client sends a remote object to the server,
 	 * so that server can then call methods on it, and have it invoked on the client. On the server, each client has a session that has a
 	 * list of the StoC vsockets.
+	 */
+	/**
+	 * Creates a new server-to-client virtual socket used for receiving callback
+	 * invocations from the server. A dedicated thread is spawned to read and
+	 * process incoming messages on this socket.
+	 *
+	 * @throws Exception if the socket cannot be created
 	 */
 	protected void createSocketForStoC() throws Exception {
 		final VirtualSocket socket = (VirtualSocket) multiplexerClient.createSocket("StoC");
@@ -732,9 +974,28 @@ public class OARemoteMultiplexerClient {
 		LOG.fine("created StoC socket and thread, connectionId=" + socket.getConnectionId() + ", vid=" + id);
 	}
 
+	/**
+	 * Counter tracking the total number of {@link OARemoteThread} instances
+	 * ever created by this client. Used for diagnostics and scaling decisions.
+	 */
 	private final AtomicInteger aiRemoteThreadCount = new AtomicInteger();
+
+	/**
+	 * List of active or reusable {@link OARemoteThread} instances used to
+	 * process incoming StoC (server-to-client) method invocations. Threads
+	 * are reused whenever idle to minimize creation overhead.
+	 */
 	private final ArrayList<OARemoteThread> alRemoteThread = new ArrayList<OARemoteThread>();
 
+	/**
+	 * Acquires or creates a reusable {@link OARemoteThread} to process a
+	 * server-to-client request. Threads are reused when idle and new ones
+	 * are allocated only when necessary.
+	 *
+	 * @param ri            the request to associate with the thread
+	 * @param bSendMessgage whether the thread should send outgoing messages
+	 * @return a remote-thread ready to process the request
+	 */
 	private OARemoteThread getRemoteThread(RequestInfo ri, boolean bSendMessgage) {
 		OARemoteThread remoteThread;
 		synchronized (alRemoteThread) {
@@ -808,9 +1069,22 @@ public class OARemoteMultiplexerClient {
 		return remoteThread;
 	}
 
+	/**
+	 * Callback invoked whenever a new {@link OARemoteThread} is created.
+	 * Subclasses may override to monitor thread creation rates.
+	 *
+	 * @param totalCount total threads ever created
+	 * @param liveCount  current number of active threads
+	 */
 	protected void onRemoteThreadCreated(int totalCount, int liveCount) {
 	}
 
+	/**
+	 * Allocates and starts a new {@link OARemoteThread}. The thread processes
+	 * incoming StoC method requests and may execute queued runnables.
+	 *
+	 * @return the newly created remote thread
+	 */
 	private OARemoteThread createRemoteThread() {
 		OARemoteThread t = new OARemoteThread() {
 			@Override
@@ -887,6 +1161,13 @@ public class OARemoteMultiplexerClient {
 		return t;
 	}
 
+	/**
+	 * Determines whether an idle {@link OARemoteThread} should be closed based
+	 * on inactivity duration, thread pool size, and system load.
+	 *
+	 * @param remoteThread the thread under evaluation
+	 * @return true if the thread should be terminated
+	 */
 	private boolean shouldClose(final OARemoteThread remoteThread) {
 		if (remoteThread.requestInfo != null) {
 			return false;
@@ -933,6 +1214,25 @@ public class OARemoteMultiplexerClient {
 		return true;
 	}
 
+	/**
+	 * Processes the next incoming server-to-client message on the given socket.
+	 * Depending on message type, this may:
+	 * <ul>
+	 *   <li>Request new StoC sockets</li>
+	 *   <li>Start or close stream reuse</li>
+	 *   <li>Dispatch remote invocations to queues</li>
+	 *   <li>Handle queued return values</li>
+	 * </ul>
+	 *
+	 * The method returns either a reusable input stream or null
+	 * if a new one should be created for the next cycle.
+	 *
+	 * @param socket   the StoC virtual socket
+	 * @param threadId id of the worker thread handling the socket
+	 * @param ois      the current input stream, or null to allocate a new one
+	 * @return the input stream to use for subsequent reads (or null)
+	 * @throws Exception if stream or message processing fails
+	 */
 	protected RemoteObjectInputStream processStoCSocket(final VirtualSocket socket, int threadId, RemoteObjectInputStream ois)
 			throws Exception {
 		if (socket.isClosed()) {
@@ -995,10 +1295,18 @@ public class OARemoteMultiplexerClient {
 		return null;
 	}
 
+	/**
+	 * Queue of asynchronous server-to-client requests. Each entry represents
+	 * a remote invocation that must be processed by an available
+	 * {@link OARemoteThread}. This queue feeds the RequestQueueThread.
+	 */
 	private final LinkedBlockingQueue<RequestInfo> queRequestInfo = new LinkedBlockingQueue<RequestInfo>();
 
 	/**
-	 * que that has a remoteThread process the request
+	 * Initializes and starts the worker thread responsible for processing
+	 * asynchronous server-to-client requests. The thread continuously polls
+	 * the request queue and assigns each request to a suitable
+	 * {@link OARemoteThread} for execution.
 	 */
 	protected void setupRequestQueueThread() {
 		Thread t = new Thread(new Runnable() {
@@ -1025,10 +1333,20 @@ public class OARemoteMultiplexerClient {
 		t.start();
 	}
 
+	/**
+	 * Queue of synchronous server-to-client requests. These requests expect
+	 * return values and must be processed in strict order. The SyncRequestQueueThread
+	 * reads from this queue and dispatches work to remote threads.
+	 */
 	private final LinkedBlockingQueue<RequestInfo> queSyncRequestInfo = new LinkedBlockingQueue<RequestInfo>();
 
 	/**
-	 * que that is for sync requests, and sync return values/ack
+	 * Initializes and starts the worker thread responsible for processing
+	 * synchronous server-to-client requests. These requests expect return
+	 * values or acknowledgements and must be handled in order.
+	 *
+	 * The thread obtains a remote thread, signals it to process the request,
+	 * and waits (with timeout rules) for completion.
 	 */
 	protected void setupSyncRequestQueueThread() {
 		Thread t = new Thread(new Runnable() {
@@ -1112,15 +1430,20 @@ public class OARemoteMultiplexerClient {
 		t.start();
 	}
 
-	// 20160317
 	/**
-	 * que that is for Runnable that are set by calling OARemoteThread.addRunnable, which are used by OA events when the thread is
-	 * OARemoteThead and getAllowRunnable=true (which is set up when processing queSyncRequestInfo messages.
+	 * Queue of runnable tasks scheduled during synchronous remote processing.
+	 * These runnables are associated with the originating {@link RequestInfo} and
+	 * executed by worker threads to support OA event callbacks and sequencing.
 	 */
 	private LinkedBlockingQueue<Tuple<RequestInfo, Runnable>> queSyncRunnable = new LinkedBlockingQueue<Tuple<RequestInfo, Runnable>>();
 
 	/**
-	 * Called by oaRemoteThread.addRunnable()
+	 * Enqueues a runnable that must be executed within a remote-thread
+	 * context used for synchronous message processing. The runnable is paired
+	 * with its associated {@link RequestInfo} for correct thread-local handling.
+	 *
+	 * @param ri the request context associated with the runnable
+	 * @param r  the runnable to execute
 	 */
 	private void addSyncRunnable(RequestInfo ri, Runnable r) {
 		int x = queSyncRunnable.size();
@@ -1180,6 +1503,11 @@ public class OARemoteMultiplexerClient {
 		}
 	}
 
+	/**
+	 * Initializes multiple worker threads responsible for processing queued
+	 * runnables submitted during synchronous remote processing. These threads
+	 * assist in executing OA event callbacks while maintaining ordering rules.
+	 */
 	protected void setupSyncRunnableQueueThread() {
 		LOG.fine("setup");
 		for (int i = 0; i < 3; i++) {
@@ -1188,12 +1516,41 @@ public class OARemoteMultiplexerClient {
 		}
 	}
 
+	/**
+	 * Lock object used to coordinate scaling decisions and throttling behavior
+	 * when adding threads to the synchronous runnable processing pool.
+	 */
 	private final Object lockRunnableQueue = new Object();
+
+	/**
+	 * Secondary lock used during cleanup and down-scaling of the synchronous
+	 * runnable-queue thread pool. Ensures consistent state while evaluating load.
+	 */
 	private final Object lockRunnableQueue2 = new Object();
+	
+	/**
+	 * Tracks the current number of active worker threads dedicated to processing
+	 * synchronous runnable tasks. Adjusted dynamically as load increases or decreases.
+	 */
 	private final AtomicInteger aiSyncRunnableQueueThread = new AtomicInteger(0); // current size
+	
+	/**
+	 * Total number of synchronous runnable-processing threads ever created.
+	 * A diagnostic metric for scaling behavior over time.
+	 */
 	private final AtomicInteger aiSyncRunnableQueueThreadTotal = new AtomicInteger(0); // total created
+	
+	/**
+	 * Counter indicating how many synchronous runnable-processing threads
+	 * are currently executing work. Used for scaling and throttling decisions.
+	 */
 	private final AtomicInteger aiSyncRunnableQueueThreadBusy = new AtomicInteger(0); // number that are running
 
+	/**
+	 * Creates a single worker thread used to process runnables from the
+	 * synchronous runnable queue. Threads terminate themselves when queue load
+	 * is reduced, allowing dynamic scaling.
+	 */
 	protected void createSyncRunnableQueueThread() {
 		OARemoteThread t = new OARemoteThread() {
 			@Override
@@ -1260,7 +1617,20 @@ public class OARemoteMultiplexerClient {
 	}
 
 	/**
-	 * @return true if this message is completed and can be logged
+	 * Processes a low-level incoming server-to-client message that has already
+	 * been identified by its {@link RequestInfo.Type}. Depending on the message
+	 * type, this may:
+	 * <ul>
+	 *   <li>Handle queued responses</li>
+	 *   <li>Dispatch method invocations</li>
+	 *   <li>Translate remote references into proxies</li>
+	 *   <li>Queue work for threads</li>
+	 * </ul>
+	 *
+	 * @param ri  the request information object
+	 * @param ois the input stream used to read message content
+	 * @return true if the message is complete and can be logged
+	 * @throws Exception if message processing fails
 	 */
 	private boolean _processSocket(final RequestInfo ri, final RemoteObjectInputStream ois) throws Exception {
 
@@ -1453,6 +1823,14 @@ public class OARemoteMultiplexerClient {
 		return true;
 	}
 
+	/**
+	 * Processes a full server-to-client method invocation by delegating to
+	 * {@link #_processMessageForStoC(RequestInfo)} and then sending a response
+	 * back to the server when required.
+	 *
+	 * @param ri the request information containing invocation data
+	 * @throws Exception if invocation or response transmission fails
+	 */
 	protected void processMessageForStoC(RequestInfo ri) throws Exception {
 		try {
 			_processMessageForStoC(ri); // invoke
@@ -1468,7 +1846,11 @@ public class OARemoteMultiplexerClient {
 	}
 
 	/**
-	 * This will throttle how many messages will be read into the sync processing queue.
+	 * Places a synchronous message into the sync request queue while applying
+	 * throttling rules to prevent excessive queueing under load.
+	 *
+	 * @param ri the request information to enqueue
+	 * @throws Exception if queueing is interrupted
 	 */
 	private void putQueSyncRequestInfo(final RequestInfo ri) throws Exception {
 		// add throttle, based on number of current remoteThreads, etc
@@ -1511,6 +1893,21 @@ public class OARemoteMultiplexerClient {
 		}
 	}
 
+	/**
+	 * Executes a server-to-client remote method invocation.
+	 * Steps include:
+	 * <ul>
+	 *   <li>Resolving bind information</li>
+	 *   <li>Locating the correct method</li>
+	 *   <li>Restoring compressed arguments</li>
+	 *   <li>Resolving remote-object parameters into proxies</li>
+	 *   <li>Invoking the underlying method on the client-side implementation</li>
+	 *   <li>Handling compressed or remote-object return values</li>
+	 * </ul>
+	 *
+	 * @param ri the request containing invocation metadata
+	 * @throws Exception if invocation fails
+	 */
 	private void _processMessageForStoC(RequestInfo ri) throws Exception {
 		if (ri.bind == null) {
 			ri.bind = getBindInfo(ri.bindName);
@@ -1628,6 +2025,20 @@ public class OARemoteMultiplexerClient {
 		ri.nsEnd = System.nanoTime();
 	}
 
+	/**
+	 * Sends a response back to the server for a server-to-client method
+	 * invocation when the request type requires a return value. The response
+	 * may include:
+	 * <ul>
+	 *   <li>Exceptions</li>
+	 *   <li>Error messages</li>
+	 *   <li>Return values</li>
+	 *   <li>Remote-object bind references</li>
+	 * </ul>
+	 *
+	 * @param ri the request whose result should be transmitted
+	 * @throws Exception if the reply cannot be written or socket allocation fails
+	 */
 	protected void sendResponseForStoC(RequestInfo ri) throws Exception {
 		if (ri.type.hasReturnValue()) {
 			if (ri.socket == null || (ri.bind != null && ri.bind.usesQueue)) {
@@ -1693,7 +2104,10 @@ public class OARemoteMultiplexerClient {
 	}
 
 	/**
-	 * called after a callback method from the server to a local remote object.
+	 * Called after a server-to-client method completes. Logs any errors or
+	 * exceptions contained in the request information.
+	 *
+	 * @param ri the completed request information
 	 */
 	public void afterInvokForStoC(RequestInfo ri) {
 		if (ri == null) {
@@ -1705,7 +2119,10 @@ public class OARemoteMultiplexerClient {
 	}
 
 	/**
-	 * Find the bind information based on unique name assigned to it.
+	 * Retrieves bind metadata for the given bind name.
+	 *
+	 * @param name the unique bind identifier
+	 * @return the associated {@link BindInfo}, or null if not found
 	 */
 	protected BindInfo getBindInfo(String name) {
 		if (name == null) {
@@ -1714,7 +2131,11 @@ public class OARemoteMultiplexerClient {
 		return hmNameToBind.get(name);
 	}
 
-	// remove gc'd binding objects
+	/**
+	 * Performs distributed garbage-collection cleanup by removing bind entries
+	 * whose associated remote objects have been garbage collected. This scans
+	 * the reference queue for collected weak references.
+	 */
 	public void performDGC() {
 		for (;;) {
 			WeakReference ref = (WeakReference) referenceQueue.poll();
@@ -1733,7 +2154,11 @@ public class OARemoteMultiplexerClient {
 	}
 
 	/**
-	 * This is used to be able to find the unique name given to a remote object.
+	 * Locates the bind information associated with a previously exposed
+	 * remote object by scanning all known bindings.
+	 *
+	 * @param obj the remote object instance
+	 * @return the bind info if found, otherwise null
 	 */
 	protected BindInfo getBindInfoForObject(Object obj) {
 		if (obj == null) {
@@ -1747,10 +2172,33 @@ public class OARemoteMultiplexerClient {
 		return null;
 	}
 
+	/**
+	 * Mapping of bind names to their associated {@link BindInfo} metadata.
+	 * Each entry represents a remote object (either client-side or server-side)
+	 * that has been registered with this client.
+	 *
+	 * <p>The map is used to:
+	 * <ul>
+	 *   <li>Resolve bind names during CtoS and StoC invocation processing</li>
+	 *   <li>Locate the client-side callback object for incoming StoC requests</li>
+	 *   <li>Track metadata such as interface class, queue usage, and weak references</li>
+	 * </ul>
+	 *
+	 * <p>Entries are removed automatically when the associated weak references are
+	 * cleared, allowing unused bindings to be reclaimed.
+	 */
 	private ConcurrentHashMap<String, BindInfo> hmBindInfo = new ConcurrentHashMap<String, BindInfo>();
 
 	/**
-	 * Create information that is used to manage a remote object.
+	 * Creates or retrieves bind metadata for a remote object. If a new bind is
+	 * created, its method metadata is loaded and it is registered in the bind map.
+	 *
+	 * @param name          the bind name
+	 * @param obj           the associated client-side object (may be null)
+	 * @param interfaceClass the interface defining remote methods
+	 * @param bUsesQueue    whether queue-based messaging is used
+	 * @param bIsBroadcast  whether this is for a broadcast remote interface
+	 * @return the bind info instance
 	 */
 	protected BindInfo getBindInfo(String name, Object obj, Class interfaceClass, boolean bUsesQueue, boolean bIsBroadcast) {
 		if (name == null || interfaceClass == null) {
@@ -1773,23 +2221,51 @@ public class OARemoteMultiplexerClient {
 		return bind;
 	}
 
+	/**
+	 * Convenience method that derives queue usage rules from an existing
+	 * request's bind metadata and delegates to the primary bind creation
+	 * method.
+	 *
+	 * @param ri            the originating request information
+	 * @param name          the bind name to assign
+	 * @param obj           the client-side remote object implementation
+	 * @param interfaceClass the remote interface class
+	 * @param bDontUseQueue true to force socket calls instead of queue usage
+	 * @return the bind metadata for the object
+	 */
 	protected BindInfo getBindInfo(RequestInfo ri, String name, Object obj, Class interfaceClass, boolean bDontUseQueue) {
 		return getBindInfo(name, obj, interfaceClass, (ri.bind.usesQueue && !bDontUseQueue), ri.bind.isBroadcast);
 	}
 
-	// 20160202
+
+	/**
+	 * Counter tracking the total number of client-to-server method invocations
+	 * made through this multiplexer client. Incremented for each outgoing
+	 * remote call, primarily for diagnostics, monitoring, and debugging.
+	 */
 	private AtomicInteger aiMethodCallCnt = new AtomicInteger();
+
+	/**
+	 * Counter tracking the total number of server-to-client method invocations
+	 * received and processed by this client. Incremented for each StoC call and
+	 * used for diagnostics and performance monitoring.
+	 */
 	private AtomicInteger aiReceivedMethodCallCnt = new AtomicInteger();
 
 	/**
-	 * number of remote methods called.
+	 * Returns the total number of remote method calls initiated by this client.
+	 *
+	 * @return the count of client-to-server invocations
 	 */
 	public long getMethodCallCount() {
 		return aiMethodCallCnt.get();
 	}
 
-	/*
-	 * number of methods/broadcast received
+	/**
+	 * Returns the number of remote method calls or broadcasts received from
+	 * the server.
+	 *
+	 * @return the count of server-to-client invocations
 	 */
 	public long getReceivedMethodCount() {
 		return aiReceivedMethodCallCnt.get();
