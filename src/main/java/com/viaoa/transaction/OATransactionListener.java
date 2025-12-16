@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,27 @@ package com.viaoa.transaction;
  */
 public interface OATransactionListener {
 
+	/**
+	 * Invoked when a transaction is committed. Implementations should finalize
+	 * any pending operations associated with the transaction.
+	 *
+	 * @param t the transaction being committed.
+	 */
 	public void commit(OATransaction t);
 
+	/**
+	 * Invoked when a transaction is rolled back. Implementations should discard
+	 * or undo work performed during the transaction.
+	 *
+	 * @param t the transaction being rolled back.
+	 */
 	public void rollback(OATransaction t);
 
+	/**
+	 * Called before commit to allow execution of any deferred or batched
+	 * operations accumulated during the transaction.
+	 *
+	 * @param t the transaction associated with the pending batch operations.
+	 */
 	public void executeOpenBatches(OATransaction t);
 }

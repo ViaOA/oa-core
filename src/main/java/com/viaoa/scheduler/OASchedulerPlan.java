@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,97 +32,182 @@ import com.viaoa.util.OADateTime;
  * date–time.
  */
 public class OASchedulerPlan<R> {
-    private OADateTime dtBegin, dtEnd;
+    
+	/**
+	 * The overall begin and end timestamps that bound the scheduling plan.
+	 * Availability checks require the requested time to fall within this window.
+	 */
+	private OADateTime dtBegin, dtEnd;
+
+	/**
+	 * Optional list of child scheduler plans. Currently unused but reserved for
+	 * composite or hierarchical scheduling structures.
+	 */
     private ArrayList<OASchedulerPlan> alSchedulePlan;
 
     /**
-     * DateTime ranges that this resource is avail/open.
+     * Schedule representing hard open/available ranges for the resource.
      */
     private OASchedule<R> schOpen;
 
     /**
-     * DateTime ranges that this resource is willing to extend open/avail only if necessary.
+     * Schedule representing soft or flexible open ranges that are available
+     * only when needed.
      */
     private OASchedule<R> schOpenSoft;
     
     /**
-     * Preferred DateTime ranges for this resouce. 
+     * Schedule representing preferred available date–time ranges.
      */
     private OASchedule<R> schPreferred;
 
     /**
-     * Preferred but flexible DateTime ranges for this resouce. 
+     * Schedule representing preferred but flexible ranges that may adjust
+     * when necessary.
      */
     private OASchedule<R> schPreferredSoft;
     
     /**
-     * DateTime ranges that this resource has blocked (private)
+     * Schedule representing hard blocked (unavailable) date–time ranges.
      */
     private OASchedule<R> schBlocked;
 
     /**
-     * DateTime ranges that this resource has blocked but can be available only if needed (ex: emergency)
+     * Schedule representing soft blocked ranges that may be available only in
+     * emergency or override scenarios.
      */
     private OASchedule<R> schBlockedSoft;
     
     /**
-     * DateTime ranges that this resource is already scheduled.
+     * Schedule representing ranges already scheduled for the resource.
      */
     private OASchedule<R> schScheduled;
     
     
+    /**
+     * Creates a scheduling plan covering a default one-day range starting today.
+     */
     public OASchedulerPlan() {
         this(new OADate(), new OADate().addDays(1));
     }
+
+    /**
+     * Creates a scheduling plan beginning at the supplied date and extending
+     * one day forward.
+     *
+     * @param date the starting date for the plan; if null, today's date is used
+     */
     public OASchedulerPlan(OADate date) {
         this(date != null ? date : new OADate(), date != null ? date.addDays(1) : new OADate().addDays(1));
     }
+    
+    /**
+     * Creates a scheduling plan starting at the supplied date–time and extending
+     * one day forward.
+     *
+     * @param dt the starting date–time; if null, the current time is used
+     */
     public OASchedulerPlan(OADateTime dt) {
         this(dt != null ? dt : new OADateTime(), dt != null ? new OADate(dt).addDays(1) : new OADate().addDays(1));
     }
     
+    /**
+     * Creates a scheduling plan using explicit begin and end date–time values.
+     * The supplied values are copied into new OADateTime instances.
+     *
+     * @param dtBegin the start of the plan
+     * @param dtEnd the end of the plan
+     */
     public OASchedulerPlan(OADateTime dtBegin, OADateTime dtEnd) {
         this.dtBegin = new OADateTime(dtBegin);
         this.dtEnd = new OADateTime(dtEnd);
     }
 
+    /**
+     * Returns the beginning of the plan's active date–time window.
+     *
+     * @return the begin timestamp
+     */
     public OADateTime getBegin() {
         return dtBegin;
     }
+    
+    /**
+     * Returns the end of the plan's active date–time window.
+     *
+     * @return the end timestamp
+     */
     public OADateTime getEnd() {
         return dtEnd;
     }
     
+    /**
+     * Returns the hard-open schedule, initializing it on first access.
+     *
+     * @return the open schedule
+     */
     public OASchedule<R> getOpenSchedule() {
         if (schOpen == null) {
             schOpen = new OASchedule();
         }
         return schOpen;
     }
+    
+    /**
+     * Returns the soft-open schedule, initializing it on first access.
+     *
+     * @return the soft open schedule
+     */
     public OASchedule<R> getOpenSoftSchedule() {
         if (schOpenSoft == null) {
             schOpenSoft = new OASchedule();
         }
         return schOpenSoft;
     }
+    
+    /**
+     * Returns the preferred schedule, initializing it on first access.
+     *
+     * @return the preferred schedule
+     */
     public OASchedule<R> getPreferredSchedule() {
         if (schPreferred == null) {
             schPreferred = new OASchedule();
         }
         return schPreferred;
     }
+    
+    /**
+     * Returns the flexible preferred schedule, initializing it on first access.
+     *
+     * @return the soft preferred schedule
+     */
     public OASchedule<R> getPreferredSoftSchedule() {
         if (schPreferredSoft == null) {
             schPreferredSoft = new OASchedule();
         }
         return schPreferredSoft;
     }
+    
+    /**
+     * Returns the hard-blocked schedule, initializing it on first access.
+     *
+     * @return the blocked schedule
+     */
     public OASchedule<R> getBlockedSchedule() {
         if (schBlocked == null) {
             schBlocked = new OASchedule();
         }
         return schBlocked;
     }
+    
+    /**
+     * Returns the soft-blocked schedule, initializing it on first access. These
+     * ranges indicate times that are normally unavailable but may be overridden
+     * under special circumstances.
+     *
+     * @return the soft blocked schedule
+     */
     public OASchedule<R> getBlockedSoftSchedule() {
         if (schBlockedSoft == null) {
             schBlockedSoft = new OASchedule();
@@ -130,6 +215,12 @@ public class OASchedulerPlan<R> {
         return schBlockedSoft;
     }
     
+    /**
+     * Returns the ranges in which the resource is already scheduled. The schedule
+     * is initialized on first access.
+     *
+     * @return the scheduled ranges
+     */
     public OASchedule<R> getScheduledSchedule() {
         if (schScheduled == null) {
             schScheduled = new OASchedule();
@@ -137,6 +228,19 @@ public class OASchedulerPlan<R> {
         return schScheduled;
     }
     
+    /**
+     * Determines whether the resource is available at the specified date–time.
+     * Enforces the following rules:
+     * <ul>
+     *   <li>dt must fall within the plan's begin/end window.</li>
+     *   <li>dt must be inside an open or soft-open range.</li>
+     *   <li>dt must not be inside any blocked or soft-blocked range.</li>
+     *   <li>dt must not be inside a previously scheduled range.</li>
+     * </ul>
+     *
+     * @param dt the date–time to test; null returns false
+     * @return true if available, false otherwise
+     */
     public boolean isAvailable(OADateTime dt) {
         if (dt == null) return false;
         
@@ -171,7 +275,5 @@ public class OASchedulerPlan<R> {
         }
         
         return true;
-        
     }
-
 }

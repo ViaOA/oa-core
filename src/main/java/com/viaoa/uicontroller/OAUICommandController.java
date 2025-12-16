@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.viaoa.util.OALogger;
 import com.viaoa.util.OAStr;
 
 
-//qqqqqqqqqqqqqqqqq 20250116 under construction
+// qqqqqqq 20250116 under construction
 
 /**
  * Controller used to bind UI command components (buttons, menu items, etc.)
@@ -54,11 +54,28 @@ import com.viaoa.util.OAStr;
 public class OAUICommandController extends OAUIController {
     private static final Logger LOG = OALogger.getLogger(OAUICommandController.class);
 
+    /**
+     * The command that this controller represents. Determines enable/visible
+     * rules and the behavior executed when the command is invoked.
+     */
     private Command command;
 
-    
+    /**
+     * Optional property name used to apply a post-command update to an object
+     * or collection of objects.
+     */
     private String updateProperty;
+
+    /**
+     * Optional target object to receive a property update after the command
+     * completes. If null, updates are applied to the Hub’s AO or selected objects.
+     */
     private OAObject updateObject;
+    
+    /**
+     * Value assigned to {@link #updateProperty} on the target object(s) after
+     * command execution.
+     */
     private Object updateValue;
     
     
@@ -78,8 +95,13 @@ public class OAUICommandController extends OAUIController {
 */    
     
     
-    
-    
+    /**
+     * Enumeration describing all supported UI command types, including
+     * navigation, CRUD operations, submission, clipboard placeholders, and
+     * miscellaneous AO/Hub-based commands. Each enum value defines whether it
+     * changes the Hub's AO and the HubChangeListener.Type used to monitor
+     * enabled/visibility conditions.
+     */
     public static enum Command {
         /**
          * Misc command that uses a Hub or AO.
@@ -156,38 +178,90 @@ public class OAUICommandController extends OAUIController {
         MoveUp(true, HubChangeListener.Type.AoNotNull),
         MoveDown(true, HubChangeListener.Type.AoNotNull);
     
+    	/**
+    	 * The listener type associated with this command, used to determine when the
+    	 * component should be re-evaluated for enable/visible state.
+    	 */
         HubChangeListener.Type changeListenerType;
         
+        /**
+         * Indicates whether the command will change the Hub's active object when
+         * executed.
+         */
         private boolean bChangesAO;
         
+        /**
+         * Constructor for command values that do not change the active object.
+         *
+         * @param type the listener type used to track Hub/AO state.
+         */
         private Command(HubChangeListener.Type type) {
             this.changeListenerType = type;
         }
         
+        /**
+         * Constructor for command values that may change the active object.
+         *
+         * @param changesAO true if executing the command changes the AO.
+         * @param type the listener type used for state tracking.
+         */
         private Command(boolean changesAO, HubChangeListener.Type type) {
             this.bChangesAO = changesAO;
             this.changeListenerType = type;
         }
         
+        /**
+         * Returns whether executing this command changes the Hub's active object.
+         *
+         * @return true if the command alters the AO.
+         */
         public boolean getChangesAO() {
             return bChangesAO;
         }
     }
 
+    /**
+     * Creates a controller bound to the given Hub and command, using AO-only
+     * mode and the command’s configured HubChangeListener.Type.
+     *
+     * @param hub the Hub this command operates on.
+     * @param command the command type for this controller.
+     */
     public OAUICommandController(Hub hub, Command command) {
         super(hub, null, null, true, command.changeListenerType);
         this.command = command;
     }
 
+    /**
+     * Returns the command associated with this controller.
+     *
+     * @return the command value.
+     */
     public Command getCommand() {
         return command;
     }
 
+    /**
+     * Evaluates whether the command should be enabled for the current Hub and
+     * its active object, delegating to {@link #isEnabled(Hub, OAObject)}.
+     *
+     * @return true if the command is currently enabled.
+     */
     public boolean isEnabled() {
         Hub h = getHub();
         return isEnabled(h, (OAObject) h.getAO());
     }    
     
+    /**
+     * Determines whether this command is enabled based on Hub validity, AO
+     * state, navigation boundaries, OAObject callbacks, and command-specific
+     * rules. Uses callback delegates (e.g., allowSave, allowDelete) to enforce
+     * business logic.
+     *
+     * @param hub the Hub used by the controller.
+     * @param obj the active OAObject.
+     * @return true if the command may be invoked.
+     */
     public boolean isEnabled(final Hub hub, final OAObject obj) {
         if (!hub.isValid()) return false;
         
@@ -279,6 +353,12 @@ public class OAUICommandController extends OAUIController {
         return cb == null || cb.getAllowed();
     }
     
+    /**
+     * Executes the command by calling the internal handler and, if successful,
+     * triggers the completion message via {@link #onCompleted(String, String)}.
+     *
+     * @return true once command processing completes.
+     */
     public boolean onCommand() {
         final OAObject obj = (OAObject) hub.getAO();
         if (_onCommand(hub, obj)) {
@@ -290,6 +370,16 @@ public class OAUICommandController extends OAUIController {
         return true;
     }
     
+    /**
+     * Internal command dispatcher. Performs command staging: determining new AO,
+     * validating link changes, performing confirmations, and finally invoking
+     * {@link #performCommand(Hub, OAObject)}. Also evaluates object callbacks
+     * and confirmation prompts.
+     *
+     * @param hub the Hub for the operation.
+     * @param obj the current active object.
+     * @return true if the command should proceed; false if cancelled.
+     */
     private boolean _onCommand(final Hub hub, final OAObject obj) {
         OAObjectCallback cb; 
         OAObject newObject = null;
@@ -472,14 +562,14 @@ public class OAUICommandController extends OAUIController {
 
     
     /**
-     * This is called to perform the actual command,
-     * after calling onConfirm, and before calling onCompleted.
-     * <p>
-     * This should be overwritten for Commands:
-     * OtherUsesHub, OtherUsesAO
-     * <p>
-     * Call onError if needed.
-     * @return true if command was performed, false otherwise.
+     * Executes the final command logic after confirmations. Supports navigation,
+     * creation, deletion, submission, copying, AO changes, removal operations,
+     * and Refresh. Updates additional target objects when {@link #updateProperty}
+     * is set.
+     *
+     * @param hub the Hub to operate on.
+     * @param obj the object to apply the command to.
+     * @return true if the command was successfully performed.
      */
     protected boolean performCommand(final Hub hub, final OAObject obj) {
         switch (command) {
@@ -578,37 +668,78 @@ public class OAUICommandController extends OAUIController {
     }
     
     /**
-     * These allow for overwriting to handle user interactions.
+     * Hook for intercepting confirmation prompts. Default implementation always
+     * returns true. Subclasses override to display UI confirmation dialogs.
+     *
+     * @param confirmMessage the message shown to the user.
+     * @param title optional title for the dialog.
+     * @return true to continue command execution.
      */
     protected boolean onConfirm(String confirmMessage, String title) {
         return true;
     }
 
+    /**
+     * Hook invoked when an error prevents command execution. Subclasses may show
+     * UI error dialogs or log details.
+     *
+     * @param errorMessage the primary error description.
+     * @param detailMessage additional detail text.
+     */
     protected void onError(String errorMessage, String detailMessage) {
     }
     
+    /**
+     * Hook invoked after a command completes successfully. Subclasses may override
+     * to display a completion dialog or notification.
+     *
+     * @param completedMessage the message to show upon completion.
+     * @param title optional title for the completion UI.
+     */
     protected void onCompleted(String completedMessage, String title) {
     }
 
     /**
-     * For commands that will be manually assigning an object.
-     * <br>
-     * For Commands NewManual, AddManual, and ManualChangeAO
-     * <p>
-     * This should be overwritten to supply the object to use. 
+     * Supplies a manually created object for commands that require one
+     * (NewManual, AddManual, ManualChangeAO). Default implementation returns null.
+     * Subclasses override to provide domain-specific object creation.
+     *
+     * @return the manually supplied object or null.
      */
     protected Object getManualObject() {
         return null;
     }
 
+    /**
+     * Called when the UI component must refresh its display based on the active
+     * object. Default implementation does nothing; subclasses override to update
+     * visuals.
+     *
+     * @param object the active object used to populate UI state.
+     */
     @Override
     public void updateComponent(Object object) {
     }
 
+    /**
+     * Updates any label or descriptive text associated with the UI component.
+     * Default implementation does nothing.
+     *
+     * @param object the active object supplying label data.
+     */
     @Override
     public void updateLabel(Object object) {
     }
 
+    /**
+     * Configures the controller so that after command execution, a property update
+     * will be applied automatically to selected objects, the Hub AO, or a specific
+     * target object if assigned. Registers enabled/visible rules tied to the
+     * property and then requests a UI update.
+     *
+     * @param property the property name to update.
+     * @param newValue the value assigned to the property.
+     */
     public void setUpdateObject(String property, Object newValue) {
         this.updateObject = null;
         this.updateProperty = property;

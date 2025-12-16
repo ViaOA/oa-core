@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,23 @@ import com.viaoa.object.OAObjectCallbackDelegate;
  */
 public class OAUIMultiSelectController extends OAUIBaseController {
 
+	/**
+	 * Creates a controller used for multi-selection UI components backed by the
+	 * specified Hub. Delegates initialization to the base controller.
+	 *
+	 * @param hubSelect the Hub whose objects can be selected by the user.
+	 */
     public OAUIMultiSelectController(Hub hubSelect) {
         super(hubSelect);
     }
 
+    /**
+     * Determines whether the UI component should be enabled. Requires that the
+     * base controller is enabled and that the AllowEnabled object-callback rule
+     * associated with the Hub permits selection.
+     *
+     * @return true if the component is allowed to be enabled.
+     */
     @Override
     public boolean isEnabled() {
         if (!super.isEnabled()) return false;
@@ -45,6 +58,13 @@ public class OAUIMultiSelectController extends OAUIBaseController {
         return eq.getAllowed();
     }
     
+    /**
+     * Determines whether the UI component should be visible. Requires that the
+     * base controller is visible and that the AllowVisible object-callback rule
+     * associated with the Hub permits display.
+     *
+     * @return true if the component should be visible.
+     */
     @Override
     public boolean isVisible() {
         if (!super.isVisible()) return false;
@@ -54,8 +74,13 @@ public class OAUIMultiSelectController extends OAUIBaseController {
 
     
     /**
-     * This can be used to get the confirm message before the actual new value is known.<br>
-     * This is used to send a confirm message (javascript) to browser.
+     * Returns the callback used to obtain a pre-confirmation message before the
+     * new selection value is known. This allows UI layers (such as JavaScript
+     * clients) to present a confirmation prompt prior to completing the
+     * selection change.
+     *
+     * @return the callback used for generating a pre-confirmation message, or
+     *         null if none is available.
      */
     public OAObjectCallback getPreConfirmMessage() {
         OAObjectCallback cb = null; 

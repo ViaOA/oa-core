@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,17 +49,41 @@ import com.viaoa.util.OAStr;
  * </p>
  */
 public class OAUIMethodController extends OAUIBaseController {
-    private final String methodName;
+
+	/**
+	 * The name of the method to invoke on the active OAObject when this
+	 * controller's action is triggered.
+	 */
+	private final String methodName;
     
+	/**
+	 * Creates a controller that binds a UI action to a method on the active
+	 * object in the supplied Hub.
+	 *
+	 * @param hub the Hub whose active object contains the method.
+	 * @param methodName the name of the method to invoke.
+	 */
     public OAUIMethodController(Hub hub, String methodName) {
         super(hub);
         this.methodName = methodName;
     }
     
+    /**
+     * Returns the name of the method that will be invoked on the active object.
+     *
+     * @return the method name.
+     */
     public String getMethodName() {
         return this.methodName;
     }
     
+    /**
+     * Determines whether the controller is enabled. Requires that the base
+     * controller is enabled, the active object exists, and the AllowEnabled
+     * callback for the method permits execution.
+     *
+     * @return true if the method may be invoked.
+     */
     @Override
     public boolean isEnabled() {
         if (!super.isEnabled()) return false;
@@ -72,6 +96,13 @@ public class OAUIMethodController extends OAUIBaseController {
     }
     
         
+    /**
+     * Determines whether the controller is visible. Requires that the base
+     * controller is visible and the AllowVisible callback for the method
+     * allows the method to be displayed.
+     *
+     * @return true if the method should be visible.
+     */
     @Override
     public boolean isVisible() {
         if (!super.isVisible()) return false;
@@ -81,10 +112,26 @@ public class OAUIMethodController extends OAUIBaseController {
     }
 
     
+    /**
+     * Executes the method on the current active object. Delegates to
+     * {@link #onCallMethod(Hub, OAObject)} using the controller's Hub and
+     * active object.
+     *
+     * @return true after processing completes.
+     */
     public boolean onCallMethod() {
         return onCallMethod(hub, (OAObject) hub.getAO());
     }
 
+    /**
+     * Executes the bound method on the specified object. Processes confirmation,
+     * verification, and completion handling. Invokes {@code _onCallMethod} to
+     * perform the actual call.
+     *
+     * @param hub the Hub containing the object.
+     * @param obj the target object whose method will be invoked.
+     * @return true after the call sequence completes.
+     */
     public boolean onCallMethod(final Hub hub, final OAObject obj) {
         Response resp = new Response();
         _onCallMethod(hub, obj, resp);
@@ -97,11 +144,32 @@ public class OAUIMethodController extends OAUIBaseController {
         return true;
     }
     
+    /**
+     * Internal container used to track completion state and the result of the
+     * invoked method.
+     */
     private static class Response {
+    	/**
+    	 * Internal container used to track completion state and the result of the
+    	 * invoked method.
+    	 */
         boolean bCompleted;
+
+        /**
+         * The result returned from the invoked method.
+         */
         Object result;
     }
     
+    /**
+     * Performs the confirmation, verification, and reflective invocation of the
+     * target method. Updates the response object to indicate completion status
+     * and returned value.
+     *
+     * @param hub the Hub supplying context.
+     * @param obj the object whose method is invoked.
+     * @param resp the response container tracking results.
+     */
     private void _onCallMethod(final Hub hub, final OAObject obj, final Response resp) {
         OAObjectCallback cb; 
         String s;

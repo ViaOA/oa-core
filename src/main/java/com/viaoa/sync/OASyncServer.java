@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,37 +98,133 @@ import com.viaoa.util.OADateTime;
 public class OASyncServer {
 	private static Logger LOG = Logger.getLogger(OASyncServer.class.getName());
 
+	/**
+	 * Default lookup name used when registering the primary {@code RemoteServer}
+	 * instance with the remote multiplexer.
+	 */
 	public static final String ServerLookupName = "syncserver";
+
+	/**
+	 * Lookup name used when registering the {@code RemoteSync} broadcast endpoint
+	 * with the remote multiplexer.
+	 */
 	public static final String SyncLookupName = "oasync";
+	
+	/**
+	 * Name of the message queue used for synchronization-related remote method
+	 * calls and broadcasts.
+	 */
 	public static final String SyncQueueName = "oasync";
+	
+	/**
+	 * Default maximum size of the internal message queues used for sync-related
+	 * remote calls and broadcasts.
+	 */
 	public static final int QueueSize = 20000;
 
+	/**
+	 * TCP port number that the underlying {@link OAMultiplexerServer} listens on
+	 * for incoming client connections.
+	 */
 	private int port;
+	
+	/**
+	 * Underlying socket multiplexer that accepts client connections and manages
+	 * low-level network I/O for this sync server.
+	 */
 	private OAMultiplexerServer multiplexerServer;
+	
+	/**
+	 * Remote invocation wrapper on top of the {@link OAMultiplexerServer} that
+	 * exposes remote objects, broadcasts, and sessions to connected clients.
+	 */
 	private OARemoteMultiplexerServer remoteMultiplexerServer;
 
+	/**
+	 * Lazily created implementation of the {@link RemoteSyncInterface} used to
+	 * broadcast synchronization messages to connected clients.
+	 */
 	private RemoteSyncImpl remoteSync;
+
+	/**
+	 * Lazily created implementation of the {@link RemoteServerInterface} that
+	 * provides server-side services such as session creation and cache control to
+	 * remote clients.
+	 */
 	private RemoteServerImpl remoteServer;
 
-	/** used to log requests to a log file */
+	/**
+	 * Bounded queue used by the request-logging thread to asynchronously receive
+	 * {@link RequestInfo} instances representing remote method invocations.
+	 */
 	private ArrayBlockingQueue<RequestInfo> queRemoteRequestLogging;
 
+	/**
+	 * Map of connection identifiers to {@link ClientInfoExt} structures that track
+	 * per-connection state such as sockets, sessions, and client metadata.
+	 */
 	private ConcurrentHashMap<Integer, ClientInfoExt> hmClientInfoExt = new ConcurrentHashMap<Integer, ClientInfoExt>();
 
-	// for this server instance
+	/**
+	 * Lazily initialized {@link ServerInfo} instance containing metadata about the
+	 * running server, including host information and startup time.
+	 */
 	private ServerInfo serverInfo;
+
+	/**
+	 * {@link ClientInfo} representing this server when it acts as a logical
+	 * client, for example when creating a server-side session and client proxy.
+	 */
 	private ClientInfo clientInfo;
+	
+	/**
+	 * Server-side {@link RemoteSessionInterface} instance associated with the
+	 * server's own {@link ClientInfo}, used for internal cache and lock
+	 * management.
+	 */
 	private RemoteSessionInterface remoteSessionServer;
+	
+	/**
+	 * Server-side {@link RemoteClientInterface} instance associated with the
+	 * server's own {@link ClientInfo}, used when the server needs a client-style
+	 * proxy for remote operations.
+	 */
 	private RemoteClientInterface remoteClientForServer;
+	
+	/**
+	 * Package used when registering this sync server and its remote objects with
+	 * {@link OASyncDelegate}, allowing multiple models to be isolated by package.
+	 */
 	private final Package packagex;
 
-	// allow upload/download files with clients
+	/**
+	 * {@link ServerFile} helper used to coordinate file upload and download
+	 * operations between the server and connected clients.
+	 */
 	private ServerFile serverFile;
 
+	/**
+	 * Constructs a new sync server bound to the specified port using the default
+	 * package derived from {@link Object#getPackage()}.
+	 *
+	 * @param port the TCP port the multiplexer server will listen on for incoming
+	 *             client connections
+	 */
 	public OASyncServer(int port) {
 		this(null, port);
 	}
 
+	/**
+	 * Constructs a new sync server for the given package and port, initializes the
+	 * package reference, and registers this instance with {@link OASyncDelegate}.
+	 * If the supplied package is {@code null}, the package of {@link Object} is
+	 * used instead.
+	 *
+	 * @param packagex the package used to scope this sync server's registrations,
+	 *                 or {@code null} to use the {@link Object} package
+	 * @param port     the TCP port the multiplexer server will listen on for
+	 *                 incoming client connections
+	 */
 	public OASyncServer(Package packagex, int port) {
 		if (packagex == null) {
 			packagex = Object.class.getPackage();
@@ -138,6 +234,12 @@ public class OASyncServer {
 		OASyncDelegate.setSyncServer(packagex, this);
 	}
 
+	/**
+	 * Returns the lazily created {@link RemoteSyncImpl} instance used to broadcast
+	 * synchronization messages. A new instance is created on first access.
+	 *
+	 * @return the {@link RemoteSyncImpl} used for sync broadcasts
+	 */
 	public RemoteSyncImpl getRemoteSync() {
 		if (remoteSync == null) {
 			remoteSync = new RemoteSyncImpl();
@@ -145,6 +247,15 @@ public class OASyncServer {
 		return remoteSync;
 	}
 
+	/**
+	 * Returns the lazily created {@link RemoteServerImpl} instance that provides
+	 * remote server functionality to clients. On first access, this method creates
+	 * a new instance with overridden methods for obtaining sessions, clients, and
+	 * server display messages. It also registers the instance with
+	 * {@link OASyncDelegate} and ensures the server's own session is created.
+	 *
+	 * @return the {@link RemoteServerImpl} instance for this server
+	 */
 	public RemoteServerImpl getRemoteServer() {
 		if (remoteServer == null) {
 			remoteServer = new RemoteServerImpl() {
@@ -182,6 +293,13 @@ public class OASyncServer {
 		return remoteServer;
 	}
 
+	/**
+	 * Returns the {@link ClientInfo} representing this server as a logical client.
+	 * The instance is lazily created and initialized with connectionId=0 and the
+	 * current timestamp.
+	 *
+	 * @return the server's {@link ClientInfo}
+	 */
 	public ClientInfo getClientInfo() {
 		if (clientInfo == null) {
 			clientInfo = new ClientInfo();
@@ -191,6 +309,13 @@ public class OASyncServer {
 		return clientInfo;
 	}
 
+	/**
+	 * Returns the server-side {@link RemoteSessionInterface} associated with the
+	 * server's own {@link ClientInfo}. On first access, a session is created and
+	 * registered with {@link OASyncDelegate}.
+	 *
+	 * @return the server’s {@link RemoteSessionInterface}
+	 */
 	protected RemoteSessionInterface getRemoteSessionForServer() {
 		if (remoteSessionServer == null) {
 			remoteSessionServer = getRemoteSession(getClientInfo(), null);
@@ -199,6 +324,13 @@ public class OASyncServer {
 		return remoteSessionServer;
 	}
 
+	/**
+	 * Returns the server-side {@link RemoteClientInterface} associated with the
+	 * server's own {@link ClientInfo}. On first access, a client proxy is created
+	 * and registered with {@link OASyncDelegate}.
+	 *
+	 * @return the server’s {@link RemoteClientInterface}
+	 */
 	protected RemoteClientInterface getRemoteClientForServer() {
 		if (remoteClientForServer == null) {
 			remoteClientForServer = getRemoteClient(getClientInfo());
@@ -207,6 +339,18 @@ public class OASyncServer {
 		return remoteClientForServer;
 	}
 
+	/**
+	 * Returns or creates a {@link RemoteSessionInterface} for the specified client
+	 * connection. If the {@link ClientInfo} is not associated with an active
+	 * connection, {@code null} is returned. Otherwise, a new
+	 * {@link RemoteSessionImpl} is created if needed and configured with
+	 * lock-checking, cache-handling, exception forwarding, and update callbacks.
+	 *
+	 * @param ci       the client connection information
+	 * @param callback optional callback interface for client-side notifications
+	 * @return the associated {@link RemoteSessionInterface}, or {@code null} if
+	 *         the connection is not active
+	 */
 	protected RemoteSessionInterface getRemoteSession(final ClientInfo ci, RemoteClientCallbackInterface callback) {
 		if (ci == null) {
 			return null;
@@ -273,7 +417,12 @@ public class OASyncServer {
 	}
 
 	/**
-	 * updates ClientInfo
+	 * Starts a daemon thread that periodically updates this server’s
+	 * {@link ClientInfo} with memory statistics and sends the update via
+	 * {@link #onUpdate(ClientInfo)}. The thread sleeps the specified number of
+	 * seconds between updates.
+	 *
+	 * @param seconds number of seconds between update notifications
 	 */
 	public void startUpdateThread(final int seconds) {
 		Thread t = new Thread(new Runnable() {
@@ -297,8 +446,11 @@ public class OASyncServer {
 	}
 
 	/**
-	 * This can be overwritten to capture info about the server and client connections. see #startServerUpdateThread(int) see
-	 * OASyncClient#startClientUpdateThread(int)
+	 * Updates the stored {@link ClientInfo} for the specified connection. This
+	 * method can be overridden to capture additional information. By default, the
+	 * method replaces the existing {@link ClientInfo} entry in the internal map.
+	 *
+	 * @param ci the updated client information
 	 */
 	public void onUpdate(ClientInfo ci) {
 		int cid = ci.getConnectionId();
@@ -308,6 +460,16 @@ public class OASyncServer {
 		}
 	}
 
+	/**
+	 * Returns or creates a {@link RemoteClientInterface} for the specified client.
+	 * If no active connection is found, {@code null} is returned. A new
+	 * {@link RemoteClientImpl} is created when needed and configured to update the
+	 * session cache and load background data.
+	 *
+	 * @param ci the client connection information
+	 * @return the associated {@link RemoteClientInterface}, or {@code null} if the
+	 *         connection is not active
+	 */
 	protected RemoteClientInterface getRemoteClient(ClientInfo ci) {
 		if (ci == null) {
 			return null;
@@ -342,7 +504,11 @@ public class OASyncServer {
 	}
 
 	/**
-	 * Saved serverSide cached objects from clients.
+	 * Iterates over all active client sessions and instructs each session to save
+	 * its cached objects using the specified cascade and rule.
+	 *
+	 * @param cascade       the cascade definition used when saving cached objects
+	 * @param iCascadeRule  the cascade rule constant
 	 */
 	public void saveCache(OACascade cascade, int iCascadeRule) {
 		for (Map.Entry<Integer, ClientInfoExt> entry : hmClientInfoExt.entrySet()) {
@@ -353,6 +519,13 @@ public class OASyncServer {
 		}
 	}
 
+	/**
+	 * Returns the lazily created {@link ServerInfo} containing metadata such as
+	 * creation time, host name, and IP address. Host information is retrieved from
+	 * {@link InetAddress#getLocalHost()} when first initialized.
+	 *
+	 * @return the server's {@link ServerInfo} instance
+	 */
 	public ServerInfo getServerInfo() {
 		if (serverInfo == null) {
 			serverInfo = new ServerInfo();
@@ -368,18 +541,35 @@ public class OASyncServer {
 		return serverInfo;
 	}
 
+	/**
+	 * Sets the message returned to clients when an invalid connection attempt is
+	 * detected by the multiplexer server.
+	 *
+	 * @param msg the message to return for invalid connections
+	 */
 	public void setInvalidConnectionMessage(String msg) {
 		getMultiplexerServer().setInvalidConnectionMessage(msg);
 	}
 
+	/**
+	 * Returns a connection-invalid message. The default implementation simply
+	 * returns the supplied {@code defaultMsg}, but subclasses may override this to
+	 * customize the message.
+	 *
+	 * @param defaultMsg the fallback message
+	 * @return the message to return to clients for invalid connections
+	 */
 	public String getInvalidConnectionMessage(String defaultMsg) {
 		return defaultMsg;
 	}
 
 	/**
-	 * Used to manage multiplexed socket connections from client computers.
-	 * 
-	 * @return
+	 * Returns the lazily created {@link OAMultiplexerServer} that accepts and
+	 * manages multiplexed socket connections. The instance overrides connection
+	 * and disconnection handlers to integrate with this server and to supply
+	 * server-specific invalid-connection messaging.
+	 *
+	 * @return the {@link OAMultiplexerServer} instance
 	 */
 	public OAMultiplexerServer getMultiplexerServer() {
 		if (multiplexerServer == null) {
@@ -411,6 +601,10 @@ public class OASyncServer {
 		return multiplexerServer;
 	}
 
+	/**
+	 * Internal container for per-connection state including {@link ClientInfo},
+	 * socket reference, and remote session/client objects.
+	 */
 	class ClientInfoExt {
 		ClientInfo ci;
 		Socket socket;
@@ -419,6 +613,14 @@ public class OASyncServer {
 		RemoteClientCallbackInterface remoteClientCallback;
 	}
 
+	/**
+	 * Handles a new client connection by creating a {@link ClientInfo}, recording
+	 * host information, opening a remote multiplexer session, and storing the
+	 * resulting {@link ClientInfoExt}.
+	 *
+	 * @param socket       the accepted socket connection
+	 * @param connectionId the assigned connection identifier
+	 */
 	protected void onClientConnect(Socket socket, int connectionId) {
 		LOG.fine("new client connection, id=" + connectionId);
 
@@ -437,6 +639,13 @@ public class OASyncServer {
 		hmClientInfoExt.put(connectionId, cx);
 	}
 
+	/**
+	 * Handles a client disconnection by recording the disconnect timestamp,
+	 * clearing locks, releasing caches when appropriate, and closing any existing
+	 * {@link RemoteClientImpl}.
+	 *
+	 * @param connectionId the connection identifier of the disconnecting client
+	 */
 	protected void onClientDisconnect(int connectionId) {
 		LOG.fine("client disconnect, connectionId=" + connectionId);
 		ClientInfoExt cx = hmClientInfoExt.get(connectionId);
@@ -454,6 +663,13 @@ public class OASyncServer {
 		}
 	}
 
+	/**
+	 * Returns the underlying {@link Socket} for the given client connection, or
+	 * {@code null} if no such connection is active.
+	 *
+	 * @param connectionId the connection identifier
+	 * @return the associated socket, or {@code null} if unavailable
+	 */
 	public Socket getSocket(int connectionId) {
 		ClientInfoExt cx = hmClientInfoExt.get(connectionId);
 		if (cx != null) {
@@ -462,6 +678,14 @@ public class OASyncServer {
 		return null;
 	}
 
+	/**
+	 * Handles exceptions originating from a client by formatting the message with
+	 * client metadata and logging it at warning level.
+	 *
+	 * @param ci  the client information, may be {@code null}
+	 * @param msg the message describing the exception context
+	 * @param ex  the thrown exception
+	 */
 	protected void onClientException(ClientInfo ci, String msg, Throwable ex) {
 		if (ci != null) {
 			msg = String.format(
@@ -471,6 +695,13 @@ public class OASyncServer {
 		LOG.log(Level.WARNING, msg, ex);
 	}
 
+	/**
+	 * Builds and returns a formatted status message containing server metadata,
+	 * including version, host information, discovery state, OA version, and the
+	 * number of connected clients.
+	 *
+	 * @return a descriptive server status message
+	 */
 	public String getDisplayMessage() {
 		int ccnt = 0;
 		for (Map.Entry<Integer, ClientInfoExt> entry : hmClientInfoExt.entrySet()) {
@@ -494,6 +725,17 @@ public class OASyncServer {
 		return msg;
 	}
 
+	/**
+	 * Returns the lazily created {@link OARemoteMultiplexerServer} used for
+	 * managing remote object lookup, broadcast channels, and client sessions.
+	 * The instance overrides several behaviors, including post-invocation
+	 * handling, exception routing, session lifecycle notifications, and
+	 * filtering logic for determining whether sync messages should be sent to
+	 * a specific client. It also registers the server’s remote interfaces and
+	 * creates the sync broadcast channel.
+	 *
+	 * @return the configured {@link OARemoteMultiplexerServer}
+	 */
 	public OARemoteMultiplexerServer getRemoteMultiplexerServer() {
 		if (remoteMultiplexerServer == null) {
 			remoteMultiplexerServer = new OARemoteMultiplexerServer(getMultiplexerServer()) {
@@ -636,43 +878,125 @@ public class OASyncServer {
 
 	private AtomicInteger aiSessionCount = new AtomicInteger(); // needs to start at 1 (0 is for the server)
 
+	/**
+	 * Returns the number of active remote sessions tracked by the remote
+	 * multiplexer server.
+	 *
+	 * @return the current session count
+	 */
 	public int getSessionCount() {
 		return aiSessionCount.get();
 	}
 
+	/**
+	 * Callback invoked when a remote session is created. This implementation
+	 * performs no additional work but can be overridden to add custom behavior.
+	 *
+	 * @param connectionId the identifier of the newly created session
+	 * @param socket       the socket associated with the session
+	 */
 	protected void onSessionCreated(int connectionId, Socket socket) {
 	}
 
+	/**
+	 * Callback invoked when a remote session is removed. This implementation
+	 * performs no additional work but can be overridden to add custom behavior.
+	 *
+	 * @param connectionId the identifier of the removed session
+	 */
 	protected void onSessionRemoved(int connectionId) {
 	}
 
+	/**
+	 * Registers a lookup entry with the remote multiplexer server using the
+	 * specified name, object instance, and interface class. No custom queue
+	 * configuration is used.
+	 *
+	 * @param name           the binding name for the remote object
+	 * @param obj            the object instance to expose
+	 * @param interfaceClass the interface clients will use when invoking methods
+	 */
 	public void createLookup(String name, Object obj, Class interfaceClass) {
 		getRemoteMultiplexerServer().createLookup(name, obj, interfaceClass, null, -1);
 	}
 
 	/**
-	 * use the same queue that is used by sync remote object.
+	 * Registers a lookup entry for the given object using the sync queue
+	 * parameters defined by {@link #SyncQueueName} and {@link #QueueSize}.
+	 *
+	 * @param name           the binding name for the remote object
+	 * @param obj            the object instance to expose
+	 * @param interfaceClass the interface clients will use when invoking methods
 	 */
 	public void createSyncLookup(String name, Object obj, Class interfaceClass) {
 		getRemoteMultiplexerServer().createLookup(name, obj, interfaceClass, SyncQueueName, QueueSize);
 	}
 
+	/**
+	 * Registers a lookup entry for the given object and interface using the
+	 * specified queue name and size.
+	 *
+	 * @param name           the binding name for the remote object
+	 * @param obj            the object instance to expose
+	 * @param interfaceClass the interface clients will use
+	 * @param queueName      the name of the queue to associate with this lookup
+	 * @param queueSize      maximum number of messages allowed in the queue
+	 */
 	public void createLookup(String name, Object obj, Class interfaceClass, String queueName, int queueSize) {
 		getRemoteMultiplexerServer().createLookup(name, obj, interfaceClass, queueName, queueSize);
 	}
 
+	/**
+	 * Creates and returns a broadcast remote object bound under the specified
+	 * name, using the given interface, queue name, and queue size.
+	 *
+	 * @param bindName       the lookup name for the broadcast
+	 * @param interfaceClass the broadcast interface class
+	 * @param queueName      name of the broadcast queue
+	 * @param queueSize      maximum broadcast queue size
+	 * @return the created broadcast remote object
+	 */
 	public Object createBroadcast(final String bindName, Class interfaceClass, String queueName, int queueSize) {
 		return getRemoteMultiplexerServer().createBroadcast(bindName, interfaceClass, queueName, queueSize);
 	}
 
+	/**
+	 * Creates and returns a broadcast remote object bound under the specified
+	 * name and configured with the given callback object, interface class,
+	 * queue name, and queue size.
+	 *
+	 * @param bindName       the lookup name for the broadcast
+	 * @param callback       the callback instance for broadcast events
+	 * @param interfaceClass the broadcast interface class
+	 * @param queueName      name of the broadcast queue
+	 * @param queueSize      maximum broadcast queue size
+	 * @return the created broadcast remote object
+	 */
 	public Object createBroadcast(final String bindName, Object callback, Class interfaceClass, String queueName, int queueSize) {
 		return getRemoteMultiplexerServer().createBroadcast(bindName, callback, interfaceClass, queueName, queueSize);
 	}
 
+	/**
+	 * Creates and returns a broadcast remote object using the sync queue
+	 * parameters defined by {@link #SyncQueueName} and {@link #QueueSize}.
+	 *
+	 * @param bindName       the broadcast lookup name
+	 * @param interfaceClass the broadcast interface class
+	 * @return the created broadcast remote object
+	 */
 	public Object createSyncBroadcast(final String bindName, Class interfaceClass) {
 		return getRemoteMultiplexerServer().createBroadcast(bindName, interfaceClass, SyncQueueName, QueueSize);
 	}
 
+	/**
+	 * Creates and returns a broadcast remote object using the sync queue
+	 * parameters and the specified callback handler.
+	 *
+	 * @param bindName       the broadcast lookup name
+	 * @param callback       callback instance to receive broadcast events
+	 * @param interfaceClass the broadcast interface class
+	 * @return the created broadcast remote object
+	 */
 	public Object createSyncBroadcast(final String bindName, Object callback, Class interfaceClass) {
 		return getRemoteMultiplexerServer().createBroadcast(bindName, callback, interfaceClass, SyncQueueName, QueueSize);
 	}
@@ -683,6 +1007,13 @@ public class OASyncServer {
 	}
 	*/
 
+	/**
+	 * Called after a remote method invocation completes. Unless the request is a
+	 * normal sync message with no exception, the {@link RequestInfo} is added to
+	 * the logging queue if available; otherwise it is logged at FINE level.
+	 *
+	 * @param ri information about the completed remote method invocation
+	 */
 	protected void afterInvokeRemoteMethod(RequestInfo ri) {
 		if (ri == null) {
 			return;
@@ -710,15 +1041,30 @@ public class OASyncServer {
 		LOG.fine("RemoteLog data: " + ri.toLogString());
 	}
 
-	/** thread used to log all requests */
+	/**
+	 * Background thread used to process and write remote request log entries.
+	 */
 	private Thread threadStatsLogger;
-	/** stream to write request logs */
+
+	/**
+	 * Writer used by the request logging thread to write formatted log entries to
+	 * the current log file.
+	 */
 	private PrintWriter pwRemoteRequestLogger;
-	/** time to change to another log file, so each file is by day */
+
+	/**
+	 * Timestamp indicating when the next rollover to a new daily log file should
+	 * occur.
+	 */
 	private long msNextRemoteRequestLogDateChange;
 
 	/**
-	 * Thread that will get requests from the queue, and write to request log file.
+	 * Starts the request-logging subsystem, including creating the logging queue
+	 * and launching the background thread that writes request log entries to
+	 * disk. If logging is disabled or already started, the method returns without
+	 * creating additional threads.
+	 *
+	 * @throws Exception if the log writer cannot be created
 	 */
 	void startRequestLoggerThread() throws Exception {
 		LOG.fine("starting remote method log thread");
@@ -746,7 +1092,11 @@ public class OASyncServer {
 		threadStatsLogger.start();
 	}
 
-	// loops to log all requests that are added to the queue
+	/**
+	 * Internal loop executed by the request-logging thread. Continuously takes
+	 * {@link RequestInfo} objects from the logging queue and writes them to the
+	 * log file, handling and rate-limiting errors.
+	 */
 	private void _runRequestStatsLogger() {
 		LOG.fine("Request logger thread is now running");
 		int errorCnt = 0;
@@ -766,6 +1116,14 @@ public class OASyncServer {
 		}
 	}
 
+	/**
+	 * Writes a formatted log entry for the specified {@link RequestInfo} to the
+	 * current log file, or prints it to standard output if the log writer is not
+	 * available.
+	 *
+	 * @param ri the request information to log
+	 * @throws Exception if the log writer cannot be accessed
+	 */
 	protected void logRequest(RequestInfo ri) throws Exception {
 		if (ri == null) {
 			return;
@@ -785,6 +1143,15 @@ public class OASyncServer {
 		}
 	}
 
+	/**
+	 * Opens or returns the existing log file writer. Handles daily log rotation
+	 * based on the current date. When creating a new log file, writes an initial
+	 * header line.
+	 *
+	 * @return the active {@link PrintWriter} for request logs, or {@code null} if
+	 *         logging is disabled
+	 * @throws Exception if the log file cannot be opened
+	 */
 	private PrintWriter getRemoteRequestLogPrintWriter() throws Exception {
 		if (pwRemoteRequestLogger != null) {
 			if (System.currentTimeMillis() < msNextRemoteRequestLogDateChange) {
@@ -810,10 +1177,23 @@ public class OASyncServer {
 		return pwRemoteRequestLogger;
 	}
 
+	/**
+	 * Returns the full filename to use for writing request logs. The default
+	 * implementation returns {@code null}, which disables request logging.
+	 *
+	 * @return the log filename, or {@code null} to disable logging
+	 */
 	protected String getLogFileName() {
 		return null;
 	}
 
+	/**
+	 * Starts the sync server by initializing and launching the request logger,
+	 * server metadata, multiplexer server, remote multiplexer server, server file
+	 * services, and background sibling-loading thread.
+	 *
+	 * @throws Exception if any startup operation fails
+	 */
 	public void start() throws Exception {
 		startRequestLoggerThread();
 		getServerInfo();
@@ -823,6 +1203,12 @@ public class OASyncServer {
 		startLoadDataInBackgroundThread();
 	}
 
+	/**
+	 * Stops the sync server by shutting down the multiplexer server and file
+	 * transfer services.
+	 *
+	 * @throws Exception if shutdown operations fail
+	 */
 	public void stop() throws Exception {
 		if (multiplexerServer != null) {
 			multiplexerServer.stop();
@@ -830,12 +1216,23 @@ public class OASyncServer {
 		getServerFile().stop();
 	}
 
+	/**
+	 * Performs distributed garbage collection on the remote multiplexer server,
+	 * if it has been initialized.
+	 */
 	public void performDGC() {
 		if (remoteMultiplexerServer != null) {
 			getRemoteMultiplexerServer().performDGC();
 		}
 	}
 
+	/**
+	 * Returns the lazily created {@link ServerFile} instance used for handling
+	 * server-side file uploads and downloads. The instance is created with the
+	 * directory name {@code "shared"}.
+	 *
+	 * @return the {@link ServerFile} instance
+	 */
 	public ServerFile getServerFile() {
 		if (serverFile == null) {
 			serverFile = new ServerFile("shared");
@@ -843,7 +1240,13 @@ public class OASyncServer {
 		return serverFile;
 	}
 
-	// 20171217
+	/**
+	 * Creates a new request to load a sibling property for the specified object.
+	 * The current system time is recorded for age-based filtering.
+	 *
+	 * @param obj      the object whose sibling data should be loaded
+	 * @param property the property name to load
+	 */
 	private static class LoadSibling {
 		long ms;
 		OAObject obj;
@@ -856,11 +1259,18 @@ public class OASyncServer {
 		}
 	}
 
+	/**
+	 * Queue of pending sibling-load requests to be processed by the background
+	 * loading thread.
+	 */
 	private final ArrayBlockingQueue<LoadSibling> queLoadDataInBackground = new ArrayBlockingQueue<>(250);
 
 	/**
-	 * called when props or sibling data cant be loaded for client getDetail request, because of timeout. This can be overwritten to have it
-	 * done in a background thread.
+	 * Adds a request to load sibling or detail data for the specified object when
+	 * it could not be loaded during a client request, typically due to timeout.
+	 *
+	 * @param obj      the object requiring additional data loading
+	 * @param property the property to load
 	 */
 	protected void loadDataInBackground(OAObject obj, String property) {
 		queLoadDataInBackground.offer(new LoadSibling(obj, property));
@@ -868,6 +1278,13 @@ public class OASyncServer {
 
 	private Thread threadLoadSibling;
 
+	/**
+	 * Starts the background thread responsible for processing sibling-load
+	 * requests from {@link #queLoadDataInBackground}. The thread is created as a
+	 * daemon with low priority.
+	 *
+	 * @throws Exception if the thread cannot be created
+	 */
 	protected void startLoadDataInBackgroundThread() throws Exception {
 		LOG.fine("starting LoadSibling log thread");
 
@@ -884,6 +1301,13 @@ public class OASyncServer {
 		threadLoadSibling.start();
 	}
 
+	/**
+	 * Starts the background thread responsible for processing sibling-load
+	 * requests from {@link #queLoadDataInBackground}. The thread is created as a
+	 * daemon with low priority.
+	 *
+	 * @throws Exception if the thread cannot be created
+	 */
 	protected void _runLoadDataInBackground() {
 		long msLastError = 0;
 		for (;;) {

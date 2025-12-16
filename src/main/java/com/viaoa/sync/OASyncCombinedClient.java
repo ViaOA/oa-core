@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,21 +66,70 @@ import com.viaoa.sync.remote.RemoteSyncInterface;
 public class OASyncCombinedClient {
     private static Logger LOG = Logger.getLogger(OASyncCombinedClient.class.getName());
 
-    // connection to the combined server.
+    /**
+     * The {@link OASyncClient} connected to the combined (master) sync server.
+     * All forwarded sync events from source servers ultimately route through
+     * this client.
+     */
     private OASyncClient syncClient;
 
-    // mapping between the object on each server and the combined server
+    /**
+     * Mapping of each participating source server's remote multiplexer client
+     * to its associated {@link ClientSession}, which tracks per-class mappers
+     * and GUID allocation for that source.
+     */
     private ConcurrentHashMap<OARemoteMultiplexerClient, ClientSession> hmClientSession = new ConcurrentHashMap<OARemoteMultiplexerClient, ClientSession>();
     
+    /**
+     * Holds state for a single source sync server participating in the combined
+     * sync space. Each session maintains:
+     * <ul>
+     *   <li>a dedicated {@link OASyncClient} connected to that server,</li>
+     *   <li>per-class key mappers,</li>
+     *   <li>state required to allocate GUIDs for remapped objects.</li>
+     * </ul>
+     */
     private class ClientSession {
+    	/**
+    	 * The sync client connected directly to a specific source server. All
+    	 * forwarded messages destined for that source will use this client.
+    	 */
         OASyncClient syncClient;
+
+        /**
+         * Per-class mapping table storing bidirectional {@link Mapper} instances
+         * that translate object keys between the source server and the combined
+         * server.
+         */
         ConcurrentHashMap<Class, Mapper> hmClassToMapper = new ConcurrentHashMap<Class, OASyncCombinedClient.Mapper>();
         
 
+        /**
+         * Lock object used to synchronize allocation of server-side GUIDs when
+         * forwarding newly created objects to the combined server.
+         */
         private final Object NextGuidLock = new Object();
+
+        /**
+         * The next GUID value to assign when mapping new objects from the source
+         * server to the combined server.
+         */
         private long nextGuid;
+        
+        /**
+         * The upper bound (exclusive) for the current block of GUIDs allocated from
+         * the combined server. When {@link #nextGuid} reaches this value, a new block
+         * is requested.
+         */
         private long maxNextGuid;
         
+        /**
+         * Allocates and returns the next GUID for a source-server object being
+         * mapped into the combined server namespace. When the local block is
+         * exhausted, requests a new block of 50 GUIDs from the combined server.
+         *
+         * @return the next GUID assigned for combined-server mapping
+         */
         long getNextGuid() {
             long x = 0;
             synchronized (NextGuidLock) {
@@ -98,20 +147,44 @@ public class OASyncCombinedClient {
             return x;
         }
     }
+    
+    /**
+     * Holds two bidirectional key-mapping tables for a specific class:
+     * <ul>
+     *   <li>{@code hmClientToServer}: maps source-server keys → combined-server keys,</li>
+     *   <li>{@code hmServerToClient}: maps combined-server keys → source-server keys.</li>
+     * </ul>
+     */
     private class Mapper {
+    	/**
+    	 * Mapping from source-server {@link OAObjectKey} values to their
+    	 * combined-server key counterparts.
+    	 */
         ConcurrentHashMap<OAObjectKey, OAObjectKey> hmClientToServer = new ConcurrentHashMap<OAObjectKey, OAObjectKey>();
+
+        /**
+         * Mapping from combined-server {@link OAObjectKey} values back to their
+         * source-server key counterparts.
+         */
         ConcurrentHashMap<OAObjectKey, OAObjectKey> hmServerToClient = new ConcurrentHashMap<OAObjectKey, OAObjectKey>();
     }
     
     /**
-     * 
+     * Default constructor for creating an {@code OASyncCombinedClient}.
+     * Combined-client registration is currently disabled (commented out).
      */
     public OASyncCombinedClient() {
 //        OASyncDelegate.setSyncCombinedClient(this);
     }
 
     /**
-     * Find the client that is the source for the object on the combinedServer.
+     * Finds the {@link ClientSession} whose mapping for the given class contains
+     * the specified combined-server key. Used to determine which source server an
+     * incoming combined-server sync event should be forwarded to.
+     *
+     * @param c the object's class
+     * @param okServer the combined-server object key
+     * @return the matching client session, or {@code null} if not found
      */
     private ClientSession getClientSession(Class c, OAObjectKey okServer) {
         for (Map.Entry<OARemoteMultiplexerClient, ClientSession> me : hmClientSession.entrySet()) { 
@@ -124,14 +197,25 @@ public class OASyncCombinedClient {
     
     
     /**
-     * SyncClient that is connected to combined server
-     * @param hostName
-     * @param port
+     * Lazily creates and returns the {@link OASyncClient} connected to the
+     * combined sync server. Overrides its {@code getRemoteSyncImpl} method so
+     * that all sync events received from the combined server are remapped
+     * (via mappers) and forwarded to their appropriate source servers.
+     *
+     * @param packagex the model package used by the combined server
+     * @param hostName the host name of the combined server
+     * @param port the port of the combined server
+     * @return the initialized combined sync client
      */
     public OASyncClient getCombinedSyncClient(Package packagex, String hostName, int port) {
         if (syncClient != null) return syncClient;
         syncClient = new OASyncClient(packagex, hostName, port, true) {
-            RemoteSyncInterface remoteSync;
+
+        	/**
+        	 * Cached remote sync callback implementation responsible for translating
+        	 * combined-server sync events into source-server sync operations.
+        	 */
+        	RemoteSyncInterface remoteSync;
 
             // redirect changes from combined server to the correct server
             @Override
@@ -140,6 +224,13 @@ public class OASyncCombinedClient {
                 
                 remoteSync = new RemoteSyncInterface() {
                     
+                	/**
+                	 * Helper method that retrieves the remote sync interface for a given
+                	 * source server’s {@link ClientSession}.
+                	 *
+                	 * @param cs the client session associated with a source server
+                	 * @return the remote sync interface, or {@code null} if unavailable
+                	 */
                     RemoteSyncInterface getRemoteSyncInterface(ClientSession cs) {
                         try {
                             return cs.syncClient.getRemoteSync();
@@ -149,10 +240,28 @@ public class OASyncCombinedClient {
                         return null;
                     }
                     
+                    /**
+                     * Combined-server implementation of {@code sort}. Currently a stub that
+                     * performs no sorting and always returns {@code true}.
+                     */
                     @Override
                     public boolean sort(Class objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator comp) {
                         return true;
                     }
+
+                    /**
+                     * Forwards a hub-removal event from the combined server to the correct
+                     * source server by:
+                     * <ul>
+                     *   <li>resolving the appropriate {@link ClientSession},</li>
+                     *   <li>translating both object keys from combined-server → source-server
+                     *       keys using per-class mappers,</li>
+                     *   <li>invoking {@code removeFromHub} on the target server’s
+                     *       {@link RemoteSyncInterface}.</li>
+                     * </ul>
+                     *
+                     * @return {@code true} if forwarded successfully, otherwise {@code false}
+                     */
                     @Override
                     public boolean removeFromHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName, Class objectClassX, OAObjectKey objectKeyX) {
                         ClientSession cs = getClientSession(objectClass, objectKey);
@@ -179,6 +288,15 @@ public class OASyncCombinedClient {
                         return true;
                     }
                     
+                    /**
+                     * Forwards a "remove all from hub" event from the combined server to the
+                     * appropriate source server. Resolves the target {@link ClientSession},
+                     * translates the combined-server key to the source-server key, and invokes
+                     * {@code removeAllFromHub} on the source server’s
+                     * {@link RemoteSyncInterface}.
+                     *
+                     * @return {@code true} if the event is forwarded successfully; otherwise {@code false}
+                     */
                     @Override
                     public boolean removeAllFromHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName) {
                         ClientSession cs = getClientSession(objectClass, objectKey);
@@ -197,6 +315,24 @@ public class OASyncCombinedClient {
                         return true;
                     }
                     
+                    /**
+                     * Forwards a property-change event from the combined server to the correct
+                     * source server. Handles:
+                     * <ul>
+                     *   <li>mapping combined-server → source keys,</li>
+                     *   <li>special handling for ID-property changes,</li>
+                     *   <li>recognition of "new" and "changed" markers,</li>
+                     *   <li>translating {@link OAObject} or {@link OAObjectKey} values as needed,</li>
+                     *   <li>creating mapped keys for newly encountered objects.</li>
+                     * </ul>
+                     *
+                     * @param objectClass the class of the affected object
+                     * @param origServerKey the combined-server key for the object
+                     * @param propertyName the property being updated
+                     * @param newValue the new property value (may be an object or key)
+                     * @param bIsBlob whether the property represents BLOB data
+                     * @return {@code true} if successfully forwarded; otherwise {@code false}
+                     */
                     @Override
                     public boolean propertyChange(final Class objectClass, final OAObjectKey origServerKey, final String propertyName, Object newValue, final boolean bIsBlob) {
 //qqqqqqq check to see if objectId is changed, if so then use the old value to find match
@@ -285,11 +421,23 @@ public class OASyncCombinedClient {
                         return true;
                     }
                     
+                    /**
+                     * Stub implementation for forwarding reordering events in hubs.
+                     * Currently unsupported and always returns {@code false}.
+                     */
                     @Override
                     public boolean moveObjectInHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName, int posFrom, int posTo) {
                         return false;
                     }
                     
+                    /**
+                     * Forwards an insert-into-hub event from the combined server to the
+                     * appropriate source server. Translates the combined-server key to
+                     * the source-server key and invokes {@code insertInHub} on the target's
+                     * remote sync interface.
+                     *
+                     * @return {@code true} if forwarded successfully; otherwise {@code false}
+                     */
                     @Override
                     public boolean insertInHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj, int pos) {
                         OAObjectKey k1 = getClientToServerKey(masterObjectClass, masterObjectKey);
@@ -304,10 +452,21 @@ public class OASyncCombinedClient {
                         return true;
                     }
                     
+                    /**
+                     * Stub implementation for clearing hub-change logs.
+                     * No action is taken.
+                     */
                     @Override
                     public void clearHubChanges(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
                     }
                     
+                    /**
+                     * Forwards an "add to hub" event from the combined server to the correct
+                     * source server by translating the combined-server key to the source-server
+                     * key and invoking the corresponding remote sync method.
+                     *
+                     * @return {@code true} if forwarded successfully; otherwise {@code false}
+                     */
                     @Override
                     public boolean addToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj) {
                         OAObjectKey k1 = getClientToServerKey(masterObjectClass, masterObjectKey);
@@ -321,11 +480,24 @@ public class OASyncCombinedClient {
                         }
                         return true;
                     }
+                    
+                    /**
+                     * Convenience wrapper that extracts the object from the serializer and
+                     * forwards the operation via {@link #addToHub(Class, OAObjectKey, String, Object)}.
+                     *
+                     * @return {@code true} if forwarded successfully
+                     */
                     @Override
                     public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
                         return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj.getObject());
                     }
 
+                    /**
+                     * Forwards a refresh request from the combined server to the appropriate
+                     * source server. Resolves the source {@link ClientSession}, translates
+                     * the combined-server key to the source-server key, and calls
+                     * {@code refresh} on the remote sync interface.
+                     */
                     @Override
                     public void refresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
                         ClientSession cs = getClientSession(masterObjectClass, masterObjectKey);
@@ -343,12 +515,20 @@ public class OASyncCombinedClient {
                         rs.refresh(masterObjectClass, masterObjectKey, hubPropertyName);
                     }
 
+                    /**
+                     * Stub method for forwarding server-side delete events.
+                     * Not yet implemented.
+                     */
                     @Override
                     public void serverDelete(Class objectClass, OAObjectKey objectKey) {
                         // TODO Auto-generated method stub
 //qqqqqqqqqqqqqqqqqqqqqqqq                        
                     }
 
+                    /**
+                     * Stub method for forwarding client-side delete events.
+                     * Not yet implemented.
+                     */
                     @Override
                     public void clientDelete(Class objectClass, OAObjectKey objectKey) {
                         // TODO Auto-generated method stub
@@ -367,11 +547,26 @@ public class OASyncCombinedClient {
     
     
     
-    
-    
-    
+    /**
+     * Creates a new {@link OASyncClient} for a source server that participates
+     * in the combined sync space. The created sync client overrides
+     * {@code getRemoteSyncImpl()} so that all sync events originating from the
+     * source server are forwarded to the combined server after appropriate
+     * key translation.
+     *
+     * Registers a new {@link ClientSession} for the source server.
+     *
+     * @param packagex the model package for the source server
+     * @param hostName the source-server host name
+     * @param port the source-server port
+     * @return the created sync client associated with the source server
+     */
     public OASyncClient createSyncClient(Package packagex, String hostName, int port) {
         OASyncClient sc = new OASyncClient(packagex, hostName, port, false) {
+        	/**
+        	 * Cached remote sync callback implementation used to forward source-server
+        	 * sync events to the combined server.
+        	 */
             RemoteSyncInterface remoteSync;
             
             // redirect changes from one server to the combined server
@@ -380,10 +575,22 @@ public class OASyncCombinedClient {
                 if (remoteSync != null) return remoteSync;
                 
                 remoteSync = new RemoteSyncInterface() {
+                	/**
+                	 * Stub implementation for sorting operations on a source server.
+                	 * Currently performs no operation and always returns {@code true}.
+                	 */
                     @Override
                     public boolean sort(Class objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator comp) {
                         return true;
                     }
+                    
+                    /**
+                     * Forwards a hub-removal event from a source server to the combined server.
+                     * The source keys are translated to combined-server keys before invoking
+                     * {@code removeFromHub} on the combined server’s remote sync interface.
+                     *
+                     * @return {@code true} if forwarded successfully; otherwise {@code false}
+                     */
                     @Override
                     public boolean removeFromHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName, Class objectClassX, OAObjectKey objectKeyX) {
                         OAObjectKey k1 = getClientToServerKey(objectClass, objectKey);
@@ -401,6 +608,12 @@ public class OASyncCombinedClient {
                         return true;
                     }
                     
+                    /**
+                     * Forwards a remove-all-from-hub event from a source server to the combined
+                     * server via key translation and a remote sync invocation.
+                     *
+                     * @return {@code true} if forwarded successfully; otherwise {@code false}
+                     */
                     @Override
                     public boolean removeAllFromHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName) {
                         OAObjectKey k1 = getClientToServerKey(objectClass, objectKey);
@@ -415,6 +628,13 @@ public class OASyncCombinedClient {
                         return true;
                     }
                     
+                    /**
+                     * Forwards a property-change event from a source server to the combined
+                     * server after resolving and translating the source key to its corresponding
+                     * combined-server key.
+                     *
+                     * @return {@code true} if successfully forwarded; otherwise {@code false}
+                     */
                     @Override
                     public boolean propertyChange(Class objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob) {
                         OAObjectKey k1 = getClientToServerKey(objectClass, origKey);
@@ -429,11 +649,21 @@ public class OASyncCombinedClient {
                         return true;
                     }
                     
+                    /**
+                     * Stub for source-server hub reordering events.
+                     * Currently unsupported and always returns {@code false}.
+                     */
                     @Override
                     public boolean moveObjectInHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName, int posFrom, int posTo) {
                         return false;
                     }
                     
+                    /**
+                     * Forwards an insertion event from a source server to the combined server
+                     * after translating the source keys to combined-server keys.
+                     *
+                     * @return {@code true} if forwarded; otherwise {@code false}
+                     */
                     @Override
                     public boolean insertInHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj, int pos) {
                         OAObjectKey k1 = getClientToServerKey(masterObjectClass, masterObjectKey);
@@ -448,10 +678,21 @@ public class OASyncCombinedClient {
                         return true;
                     }
                     
+                    /**
+                     * Stub implementation for clearing hub change history.
+                     * No operations are performed.
+                     */
                     @Override
                     public void clearHubChanges(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
                     }
                     
+                    /**
+                     * Forwards an add-to-hub event from a source server to the combined server
+                     * by translating object keys and invoking the combined server’s
+                     * {@code addToHub}.
+                     *
+                     * @return {@code true} if forwarded; otherwise {@code false}
+                     */
                     @Override
                     public boolean addToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj) {
                         OAObjectKey k1 = getClientToServerKey(masterObjectClass, masterObjectKey);
@@ -465,10 +706,24 @@ public class OASyncCombinedClient {
                         }
                         return true;
                     }
+                    
+                    /**
+                     * Convenience wrapper used when the source server sends a serialized object.
+                     * Extracts the object from the {@link OAObjectSerializer} and forwards the
+                     * add-to-hub event to the combined server after key translation.
+                     *
+                     * @return {@code true} if forwarded successfully; otherwise {@code false}
+                     */
                     @Override
                     public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
                         return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj.getObject());
                     }
+                    
+                    /**
+                     * Forwards a refresh request from a source server to the combined server.
+                     * Translates the source-server key to the corresponding combined-server key,
+                     * then invokes the combined server's {@code refresh}.
+                     */
                     @Override
                     public void refresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
                         OAObjectKey k1 = getClientToServerKey(masterObjectClass, masterObjectKey);
@@ -481,11 +736,21 @@ public class OASyncCombinedClient {
                             LOG.log(Level.WARNING, "", e);
                         }
                     }
+                    
+                    /**
+                     * Stub for forwarding server-side delete events from a source server to the
+                     * combined server. Not implemented.
+                     */
                     @Override
                     public void serverDelete(Class objectClass, OAObjectKey objectKey) {
                         // TODO Auto-generated method stub
 //qqqqqqqqqqqqqqqqqqqqqqqq                        
                     }
+                    
+                    /**
+                     * Stub for forwarding client-side delete events from a source server to the
+                     * combined server. Not implemented.
+                     */
                     @Override
                     public void clientDelete(Class objectClass, OAObjectKey objectKey) {
                         // TODO Auto-generated method stub
@@ -505,6 +770,12 @@ public class OASyncCombinedClient {
     }
     
     
+    /**
+     * Returns the {@link OASyncClient} associated with the current thread's
+     * remote multiplexer client. If no mapping exists, {@code null} is returned.
+     *
+     * @return the thread-associated sync client, or {@code null} if unavailable
+     */
     public OASyncClient getCurrentThreadSyncClient() {
         OARemoteMultiplexerClient rmc = null;//OAThreadLocalDelegate.getRemoteMultiplexerClient();
         if (rmc == null) {
@@ -518,17 +789,40 @@ public class OASyncCombinedClient {
     }
 
     
+    /**
+     * Returns the {@link Mapper} for the specified class within a given
+     * {@link ClientSession}. If the mapper does not exist, it is created and
+     * added to the session.
+     *
+     * @param cs the client session owning the mapping
+     * @param c the class whose mapper is requested
+     * @return the existing or newly created mapper
+     */
     private Mapper getMapper(ClientSession cs, Class c) {
         Mapper mapper = cs.hmClassToMapper.computeIfAbsent(c, k -> new Mapper());
         return mapper;
     }
 
     
-    /**
+    /*
      * Called from OAObjectSerialization.resolveObject, to get the correct object that is used on the
      * combined server.
      * @param objClient
      * @return null if this is not used, otherwise it will change the object with new Id for combined server.
+     */
+    /**
+     * Resolves an object originating from a source server into its corresponding
+     * combined-server object. Handles:
+     * <ul>
+     *   <li>detecting whether resolution applies to the current call context,</li>
+     *   <li>translating client → server keys,</li>
+     *   <li>creating new server-side objects and assigning new GUIDs,</li>
+     *   <li>updating mappers for newly created mappings,</li>
+     *   <li>rewriting object-key-valued properties to use mapped server keys.</li>
+     * </ul>
+     *
+     * @param objClient the client-side object to resolve
+     * @return the combined-server object, or {@code null} if resolution does not apply
      */
     public OAObject resolveObject(final OAObject objClient) {
 
@@ -601,6 +895,15 @@ public class OASyncCombinedClient {
     
     
     // get the key that was created for the combined server
+    /**
+     * Translates a source-server object key into its corresponding combined-server
+     * object key using the per-class mapping tables in the relevant
+     * {@link ClientSession}.
+     *
+     * @param c the class of the object whose key is being translated
+     * @param keyClient the object key from the source server
+     * @return the mapped combined-server key, or {@code null} if none exists
+     */
     public OAObjectKey getClientToServerKey(final Class c, final OAObjectKey keyClient) {
         
         OARemoteMultiplexerClient rmc = null;//OAThreadLocalDelegate.getRemoteMultiplexerClient();

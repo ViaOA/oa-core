@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,11 +62,29 @@ import com.viaoa.object.OAThreadLocalDelegate;
  * whether this transaction is the one currently bound to the thread.
  */
 public class OATransaction {
+	/**
+	 * Isolation level assigned to this transaction. Corresponds to one of the
+	 * standard {@link java.sql.Connection} isolation constants and determines
+	 * visibility and locking behavior for transactional operations.
+	 */
 	private final int transactionLevel;
+	
+	/**
+	 * Collection of registered {@link OATransactionListener} instances that will
+	 * be notified on commit, rollback, and open-batch execution events.
+	 */
 	private final ArrayList<OATransactionListener> al = new ArrayList<OATransactionListener>();
 
+	/**
+	 * Flag indicating whether batch mode is enabled for this transaction. When
+	 * true, datasources and listeners may defer writes until batch execution.
+	 */
 	private boolean bUseBatch;
 
+	/**
+	 * Indicates whether write operations should be allowed even when a datasource
+	 * is marked read-only. Used to override default safety checks.
+	 */
 	private boolean bAllowWritesIfDsIsReadonly;
 
 	/*  java.sql.Connection isolation levels
@@ -77,42 +95,96 @@ public class OATransaction {
 	    TRANSACTION_REPEATABLE_READ - prevents others from writing<br>
 	    TRANSACTION_SERIALIZABLE - prevents others from reading & writing<br>
 	*/
+	/**
+	 * Creates a new transaction with the specified JDBC-style isolation level.
+	 *
+	 * @param transactionLevel the desired transaction isolation level as defined
+	 *        by {@link java.sql.Connection} constants.
+	 */
 	public OATransaction(int transactionLevel) {
 		this.transactionLevel = transactionLevel;
 	}
 
+	/**
+	 * Creates a new transaction using {@link java.sql.Connection#TRANSACTION_READ_COMMITTED}
+	 * as the default isolation level.
+	 */
 	public OATransaction() {
 		this(java.sql.Connection.TRANSACTION_READ_COMMITTED);
 	}
 
+	/**
+	 * Returns the configured transaction isolation level.
+	 *
+	 * @return the JDBC-style isolation level assigned to this transaction.
+	 */
 	public int getTransactionIsolationLevel() {
 		return transactionLevel;
 	}
 
+	/**
+	 * Sets whether batch mode should be used for this transaction.
+	 *
+	 * @param b true to enable batch mode; false to disable it.
+	 */
 	public void setUseBatch(boolean b) {
 		this.bUseBatch = b;
 	}
 
+	/**
+	 * Indicates whether batch mode is enabled for this transaction.
+	 *
+	 * @return true if batch mode is enabled; otherwise false.
+	 */
 	public boolean getUseBatch() {
 		return this.bUseBatch;
 	}
 
+	/**
+	 * Specifies whether write operations should be permitted even when datasources
+	 * are configured as read-only.
+	 *
+	 * @param b true to allow writes; false to prevent them.
+	 */
 	public void setAllowWritesIfDsIsReadonly(boolean b) {
 		bAllowWritesIfDsIsReadonly = b;
 	}
 
+	/**
+	 * Returns whether write operations are allowed when datasources are marked
+	 * read-only.
+	 *
+	 * @return true if writes are permitted; otherwise false.
+	 */
 	public boolean getAllowWritesIfDsIsReadonly() {
 		return bAllowWritesIfDsIsReadonly;
 	}
 
+	/**
+	 * Associates this transaction with the current thread by placing it in the
+	 * thread-local storage used by OA. Marks the beginning of a transactional
+	 * context for the calling thread.
+	 */
 	public void start() {
 		OAThreadLocalDelegate.setTransaction(this);
 	}
 
+	/**
+	 * Determines whether this transaction is currently active on the calling
+	 * thread.
+	 *
+	 * @return true if this transaction is the one bound to the thread; otherwise
+	 *         false.
+	 */
 	public boolean isStarted() {
 		return OAThreadLocalDelegate.getTransaction() == this;
 	}
 
+	/**
+	 * Performs a rollback of the transaction. All registered listeners are
+	 * notified via {@code rollback(this)}. The transaction is then cleared from
+	 * thread-local storage.
+	 */
 	public void rollback() {
 		try {
 			for (OATransactionListener tl : al) {
@@ -123,6 +195,11 @@ public class OATransaction {
 		}
 	}
 
+	/**
+	 * Commits the transaction. All registered listeners are notified via
+	 * {@code commit(this)}. Regardless of listener behavior, the transaction is
+	 * removed from thread-local storage.
+	 */
 	public void commit() {
 		try {
 			for (OATransactionListener tl : al) {
@@ -133,31 +210,68 @@ public class OATransaction {
 		}
 	}
 
+	/**
+	 * Registers a transaction listener if it is not already present.
+	 *
+	 * @param tl the listener to add.
+	 */
 	public void addTransactionListener(OATransactionListener tl) {
 		if (!al.contains(tl)) {
 			al.add(tl);
 		}
 	}
 
+	/**
+	 * Removes a previously registered transaction listener.
+	 *
+	 * @param tl the listener to remove.
+	 */
 	public void removeTransactionListener(OATransactionListener tl) {
 		al.remove(tl);
 	}
 
 	// used by TransactionListeners to "store" information.
+	/**
+	 * Internal key/value store used by listeners to associate temporary data with
+	 * the lifespan of this transaction.
+	 */
 	private HashMap hm = new HashMap();
 
+	/**
+	 * Stores a key/value pair in the transaction's internal map.
+	 *
+	 * @param key the lookup key.
+	 * @param value the associated value.
+	 */
 	public void put(Object key, Object value) {
 		hm.put(key, value);
 	}
 
+	/**
+	 * Retrieves a value from the transaction's internal map.
+	 *
+	 * @param key the lookup key.
+	 * @return the stored value associated with the key, or null if none exists.
+	 */
 	public Object get(Object key) {
 		return hm.get(key);
 	}
 
+	/**
+	 * Removes the entry associated with the given key from the transaction's
+	 * internal map.
+	 *
+	 * @param key the lookup key whose entry should be removed.
+	 * @return the value previously associated with the key, or null if none existed.
+	 */
 	public Object remove(Object key) {
 		return hm.remove(key);
 	}
 
+	/**
+	 * Notifies all registered {@link OATransactionListener} instances to execute
+	 * any batches they have open by invoking {@code executeOpenBatches(this)}.
+	 */
 	public void executeOpenBatches() {
 		for (OATransactionListener tl : al) {
 			tl.executeOpenBatches(this);

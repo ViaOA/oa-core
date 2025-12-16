@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,21 +43,81 @@ import com.viaoa.util.*;
  */
 public abstract class OAUISelectController  {
 
+	/**
+	 * The internal UI controller responsible for monitoring and updating the
+	 * main Hub associated with this selector.
+	 */
     private OAUIController controlHub;
+
+    /**
+     * Optional UI controller used when selections affect a linked reference Hub.
+     * Created only when the controller represents a link-based selection.
+     */
     private OAUIController controlLinkHub;
+
+    /**
+     * The primary Hub whose active object is affected by the user's selection.
+     */
     private Hub hub;
+    
+    /**
+     * The property path used by the main UI controller to determine or update
+     * the selected value on the active object.
+     */
     private String propertyPath;
+    
+    /**
+     * The Hub representing a linked reference (master or related object) when
+     * selection is applied to a relationship rather than a simple property.
+     */
     private Hub hubLink;
+    
+    /**
+     * Indicates whether the link relationship is based on positional indexing
+     * within the Hub rather than a direct object reference.
+     */
     private boolean linkOnPos;
+    
+    /**
+     * The name of the link property on the active object used to retrieve or
+     * update the reference when a selection changes.
+     */
     private String linkPropertyName; 
+    
+    /**
+     * Flag set after construction to indicate that initialization is complete.
+     * Used to prevent premature updates during controller construction.
+     */
     private final boolean bInitialized;
+    
+    /**
+     * Optional Hub providing the list of objects that may be selected. When
+     * non-null, a listener is attached to track changes and update selection UI.
+     */
     private Hub hubSelect;
+    
+    /**
+     * Listener used to track modifications in the select Hub so that the UI
+     * component’s selected indices remain synchronized with the underlying data.
+     */
     private HubListenerAdapter hlSelect;
     
     
+    /**
+     * Creates a selection controller for the given Hub and property path.
+     * Optionally associates a select Hub and initializes listeners to keep the
+     * UI state synchronized with underlying Hub changes.
+     *
+     * @param hub the main Hub whose AO is modified by selection.
+     * @param propertyPath the property path to update when selections change.
+     * @param hubSelect the Hub representing selectable choices (optional).
+     * @param bCallReset whether to call reset() after initialization.
+     */
     public OAUISelectController(Hub hub, String propertyPath, Hub hubSelect, boolean bCallReset) {
         this.hub = hub;
+        
         this.propertyPath = propertyPath;
+        
         this.hubSelect = hubSelect;
         
         getUIController();
@@ -102,31 +162,72 @@ public abstract class OAUISelectController  {
         if (bCallReset) reset();
     }
     
+    /**
+     * Returns the main Hub associated with this controller, sourced from the
+     * primary UI controller.
+     *
+     * @return the main Hub instance.
+     */
     public Hub getHub() {
         return getUIController().getHub();
     }
+
+    /**
+     * Returns the property path name associated with the selection operation.
+     *
+     * @return the property path used by this controller.
+     */
     public String getPropertyName() {
         return getUIController().getPropertyPath();
     }
+    
+    /**
+     * Returns the Hub providing selectable choices, or null if no select Hub is
+     * used.
+     *
+     * @return the select Hub.
+     */
     public Hub getSelectHub() {
         return hubSelect;
     }
+    
+    /**
+     * Returns the Hub used for link-based selection updates, if applicable. If
+     * no link controller exists, null is returned.
+     *
+     * @return the link Hub or null.
+     */
     public Hub getLinkHub() {
         if (getLinkUIController() == null) return null;
         return getLinkUIController().getHub();
     }
+
+    /**
+     * Returns the link property name used by the link UI controller. Returns null
+     * when no link controller is active.
+     *
+     * @return the link property name or null.
+     */
     public String getLinkPropertyName() {
         if (getLinkUIController() == null) return null;
         return getLinkUIController().getPropertyPath();
     }
     
     
+    /**
+     * Resets both the primary and link controllers so that the UI component
+     * refreshes based on current Hub state.
+     */
     public void reset() {
         getUIController().reset();
         OAUIController c = getLinkUIController();
         if (c != null) c.reset();
     }
     
+    /**
+     * Closes both the main and link UI controllers and removes the select Hub
+     * listener if one was assigned, releasing all controller resources.
+     */
     public void close() {
         getUIController().close();
         OAUIController c = getLinkUIController();
@@ -136,6 +237,14 @@ public abstract class OAUISelectController  {
         }
     }
     
+    /**
+     * Lazily creates and returns the primary UI controller responsible for
+     * monitoring the main Hub. Overrides multiple Hub events so that selection
+     * state, list changes, and property changes propagate to this controller’s
+     * higher-level selection methods.
+     *
+     * @return the primary OAUIController.
+     */
     protected OAUIController getUIController() {
         if (controlHub != null) return controlHub ;
         
@@ -200,6 +309,13 @@ public abstract class OAUISelectController  {
         return controlHub;
     }
         
+    /**
+     * Lazily creates and returns the UI controller responsible for monitoring
+     * link-based Hub updates. Determines the correct link Hub and property name
+     * using Hub metadata, and installs event routing into this controller.
+     *
+     * @return the link Hub controller, or null if no link is available.
+     */
     protected OAUIController getLinkUIController() {
         if (controlLinkHub != null || hubSelect != null) return controlLinkHub;
     
@@ -242,7 +358,14 @@ public abstract class OAUISelectController  {
         return controlLinkHub;
     }
 
-    
+    /**
+     * Returns whether this selector is currently enabled. The result is based on
+     * the enabled state of the primary UI controller and, when present, the link
+     * UI controller.
+     *
+     * @return true if both the main and link controllers (if any) are enabled;
+     *         false otherwise.
+     */
     public boolean isEnabled() {
         boolean b = getUIController().isEnabled();
         if (b) {
@@ -251,6 +374,14 @@ public abstract class OAUISelectController  {
         return b;
     }
 
+    /**
+     * Returns whether this selector should be visible. The result is based on
+     * the visible state of the primary UI controller and, when present, the link
+     * UI controller.
+     *
+     * @return true if both the main and link controllers (if any) are visible;
+     *         false otherwise.
+     */
     public boolean isVisible() {
         boolean b = getUIController().isVisible();
         if (b) {
@@ -259,7 +390,15 @@ public abstract class OAUISelectController  {
         return b;
     }
     
-
+    /**
+     * Returns the displayable String value for the supplied object, taking into
+     * account link-based selection. When the link is position-based, the value
+     * is resolved by index into the main Hub before being formatted.
+     *
+     * @param hubFrom the originating Hub (not used directly in this method).
+     * @param obj the source object whose selection value is to be displayed.
+     * @return the formatted value string for the resolved selection.
+     */
     public String getValueAsString(Hub hubFrom, Object obj) {
         Object objx = getLinkUIController().getValue(obj);
         if (linkOnPos && objx instanceof Number) objx = getHub().getAt(OAConv.toInt(objx));  
@@ -267,37 +406,107 @@ public abstract class OAUISelectController  {
         return s;
     }
     
+    /**
+     * Returns the displayable String value for the supplied object using the
+     * primary UI controller's formatting rules.
+     *
+     * @param obj the object whose value should be displayed.
+     * @return the formatted value string.
+     */
     public String getValueAsString(Object obj) {
         String s = getUIController().getValueAsString(obj);
         return s;
     }
     
+    /**
+     * Convenience method that selects a single index by delegating to
+     * {@link #setSelected(int[])} with a one-element array.
+     *
+     * @param pos the index to select.
+     */
     public void setSelected(int pos) {
         setSelected(new int[] {pos});
     }
+    
+    /**
+     * Updates the current selection based on the supplied index positions.
+     * Subclasses are expected to implement this to synchronize the UI widget
+     * with the controller's selection state.
+     *
+     * @param poss the indexes that should be marked as selected.
+     */
     public void setSelected(int[] poss) {
     }
+    
+    /**
+     * Notification hook invoked when an object is added to the main Hub. 
+     * Subclasses can override to update their UI representation of the list.
+     *
+     * @param obj the object that was added.
+     */
     public void add(Object obj) {
     }
+    
+    /**
+     * Notification hook invoked when an object is inserted into the main Hub at
+     * a specific position. Subclasses can override to update the UI list.
+     *
+     * @param obj the object that was inserted.
+     * @param pos the position at which the object was inserted.
+     */
     public void insert(Object obj, int pos) {
     }
+    
+    /**
+     * Notification hook invoked when an object is removed from the main Hub at
+     * the given position. Subclasses can override to update their UI state.
+     *
+     * @param pos the position of the removed object.
+     */
     public void remove(int pos) {
     }
+    
+    /**
+     * Notification hook invoked when all objects are cleared from the main Hub.
+     * Subclasses can override to clear any corresponding UI list or selection.
+     */
     public void clear() {
     }
+    
+    /**
+     * Notification hook invoked when the main Hub receives a new list. Subclasses
+     * can override to rebuild their UI representation from the updated list.
+     */
     public void newList() {
     }
+
+    /**
+     * Notification hook invoked when the value associated with a particular
+     * object changes in a way that may affect the selection display. Subclasses
+     * can override to refresh the UI element for that object.
+     *
+     * @param object the object whose state changed.
+     */
     public void changed(Object object) {
     }
 
-    
-    
-    /** 
-     * Called when a change is necessary for UI component. 
-     * */
+    /**
+     * Invoked when the UI component needs to refresh its state based on the
+     * supplied object. Concrete subclasses must implement this to synchronize
+     * their widget with the controller.
+     *
+     * @param object the object used to update the component.
+     */
     public abstract void updateComponent(Object object);
     
 
+    /**
+     * Invoked when any label or textual description associated with the selector
+     * needs to be updated. Concrete subclasses must implement this to update
+     * label text in their UI environment.
+     *
+     * @param object the object used to generate label content.
+     */
     public abstract void updateLabel(Object object);
     
     

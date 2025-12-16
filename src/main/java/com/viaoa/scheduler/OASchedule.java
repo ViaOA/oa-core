@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,16 +31,40 @@ import com.viaoa.util.OADateTime;
  * whether a specific {@link com.viaoa.util.OADateTime} falls within any range.
  */
 public class OASchedule<R> implements Iterable<OADateTimeRange<R>> {
-    private TreeSet<OADateTimeRange<R>> tree = new TreeSet<>();
-    private OADateTimeRange<R> dtrLast;
-    private boolean bEol;
 
+	/**
+	 * Holds the chronologically ordered set of date–time ranges that make up
+	 * the schedule. Entries are merged, split, and replaced as ranges are added
+	 * or cleared.
+	 */
+	private TreeSet<OADateTimeRange<R>> tree = new TreeSet<>();
+    
+	/**
+	 * Tracks the last range returned by iteration methods, enabling sequential
+	 * navigation through the schedule.
+	 */
+	private OADateTimeRange<R> dtrLast;
+    
+	/**
+	 * Flag indicating whether iteration has reached the end of the range list.
+	 */
+	private boolean bEol;
+
+	/**
+	 * Creates an empty schedule with no ranges defined.
+	 */
     public OASchedule() {
     }
 
     /**
-     * Clear a time range that might already be scheduled.
-     * This allows for overriding the current available time ranges.
+     * Removes or adjusts existing scheduled ranges within the specified begin
+     * and end timestamps. Overlapping ranges are split or replaced as needed to
+     * eliminate any portion that falls inside the supplied range.
+     *
+     * @param dtBegin the start of the range to clear; if null, the earliest
+     *                existing begin value is used
+     * @param dtEnd the end of the range to clear; if null, the latest existing
+     *              end value is used
      */
     public void clear(OADateTime dtBegin, OADateTime dtEnd) {
         if (dtBegin == null) {
@@ -102,11 +126,27 @@ public class OASchedule<R> implements Iterable<OADateTimeRange<R>> {
     }
     
     /**
-     * Add a date range.
+     * Convenience method for adding a range without an associated reference.
+     *
+     * @param dtBegin the begin timestamp
+     * @param dtEnd the end timestamp
      */
     public void add(OADateTime dtBegin, OADateTime dtEnd) {
         add(dtBegin, dtEnd, null);
     }
+
+    /**
+     * Adds a new date–time range to the schedule. The method merges the new
+     * range with existing ones when overlaps occur, possibly absorbing or being
+     * absorbed by neighboring ranges, and may create new merged ranges to
+     * maintain a consistent, non-overlapping structure.
+     *
+     * @param dtBegin the starting timestamp; may default to the earliest
+     *                existing begin when null
+     * @param dtEnd the ending timestamp; may default to the latest existing
+     *              end when null
+     * @param reference optional reference object to associate with the added range
+     */
     public void add(OADateTime dtBegin, OADateTime dtEnd, R reference) {
         if (dtBegin == null) {
             if (tree.size() > 0) dtBegin = tree.first().getBegin();
@@ -185,33 +225,51 @@ public class OASchedule<R> implements Iterable<OADateTimeRange<R>> {
     
     
     /**
-     * true if next has exhausted the list.
-     * @return
+     * Indicates whether iteration has reached the end of the schedule.
+     *
+     * @return true if no more ranges remain during sequential iteration
      */
     public boolean isEndOfList() {
         return bEol;
     }
 
     /**
-     * rewind so that next will start from the beginning.
+     * Resets the iteration state so that the next call to next() begins from
+     * the first range.
      */
     public void reset() {
         bEol = false;
     }
+
+    /**
+     * Same as reset(); restores iteration to the beginning.
+     */
     public void rewind() {
         bEol = false;
     }
 
+    /**
+     * Returns the number of scheduled ranges currently stored.
+     *
+     * @return the number of ranges
+     */
     public int size() {
         return tree.size();
     }
+
+    /**
+     * Delegates to {@link #size()}.
+     */
     public int getSize() {
         return tree.size();
     }
     
     /**
-     * Get the next dtr, starting at the beginning and each call to next will be the next one in order.
-     * @return dateRange, else null if list is empty or exhausted.
+     * Returns the next scheduled range in chronological order, updating
+     * internal iteration state. Returns null when the list is empty or fully
+     * consumed.
+     *
+     * @return the next range, or null when iteration is complete
      */
     public OADateTimeRange<R> next() {
         if (bEol) return null;
@@ -226,6 +284,13 @@ public class OASchedule<R> implements Iterable<OADateTimeRange<R>> {
         return dtrLast;
     }
 
+    /**
+     * Returns a synthetic date–time range representing the empty space between
+     * the last returned range and the next one. Uses the end of the last range
+     * and the begin of the upcoming range to define the gap.
+     *
+     * @return a range representing the empty interval, or null at end of list
+     */
     public OADateTimeRange<R> nextEmpty() {
         if (bEol) return null;
 
@@ -238,10 +303,19 @@ public class OASchedule<R> implements Iterable<OADateTimeRange<R>> {
     }
     
     
+    /**
+     * Removes all scheduled ranges, leaving the schedule empty.
+     */
     public void clear() {
         tree.clear();
     }
     
+    /**
+     * Returns an iterator that traverses scheduled ranges in chronological
+     * order. Iteration state is reset prior to creation of the iterator.
+     *
+     * @return an iterator over the scheduled ranges
+     */
     public Iterator<OADateTimeRange<R>> iterator() {
         reset();
         Iterator<OADateTimeRange<R>> iter = new Iterator<OADateTimeRange<R>>() {
@@ -266,6 +340,13 @@ public class OASchedule<R> implements Iterable<OADateTimeRange<R>> {
         return iter;
     }
     
+    /**
+     * Determines whether the given timestamp falls within any scheduled range.
+     * Iterates through the schedule and checks begin/end boundaries.
+     *
+     * @param dt the timestamp to test; null returns false
+     * @return true if the timestamp lies within an existing range
+     */
     public boolean isRangeAdded(OADateTime dt) {
         if (dt == null) return false;
         for (OADateTimeRange dtr : this) {

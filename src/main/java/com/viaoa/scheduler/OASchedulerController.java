@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,18 +47,58 @@ import com.viaoa.util.OATime;
  */
 public class OASchedulerController<F extends OAObject, T extends OAObject> {
 
-    // can use either datetime or date+time properties
+	/**
+	 * Property path for the schedule object's begin datetime value.
+	 */
     private String ppDateTimeFrom;
+
+    /**
+     * Property path for the schedule object's end datetime value.
+     */
     private String ppDateTimeTo;
 
+    /**
+     * Property path for the schedule object's begin date value when date+time
+     * properties are used instead of a single datetime.
+     */
     private String ppDateFrom;
+    
+    /**
+     * Property path for the schedule object's begin time value.
+     */
     private String ppTimeFrom;
+    
+    /**
+     * Property path for the schedule object's end date value when date+time
+     * properties are used.
+     */
     private String ppDateTo;
+    
+    /**
+     * Property path for the schedule object's end time value.
+     */
     private String ppTimeTo;
 
+    /**
+     * Hub that contains the objects being scheduled and whose active object is
+     * used as the scheduling target.
+     */
     private Hub<F> hubFrom;
+    
+    /**
+     * Property path to the schedule reference (OAOne) on the objects in hubFrom.
+     */
     private String ppSchedule;
+    
+    /**
+     * Detail hub associated with the schedule property, used to locate or create
+     * schedule objects.
+     */
     private Hub<? extends OAObject> hubDetail;
+    
+    /**
+     * Optional link hub used when schedules are attached through a link object.
+     */
     private Hub<? extends OAObject> hubLink;
 
     /** type of schedule
@@ -71,15 +111,17 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
     
     
     /**
-     * Create a new scheduler panel, that allows user to find an available datetime slot to schedule the active object in hubFrom.
-     * @param hubFrom object that is being scheduled.
-     * @param hubLink (optional) link hub that has the reference schedule object 
-     * @param ppSchedule property path to the schedule reference (OAOne) link object. 
-     * @param ppDisplay property from schedule to use for display/renderer. 
-     * @param ppDateFrom property from schedule object
-     * @param ppTimeFrom property from schedule object
-     * @param ppDateTo property from schedule object
-     * @param ppTimeTo property from schedule object
+     * Creates a scheduler controller using separate date and time properties for
+     * the schedule object. Link hubs may optionally be supplied when relationships
+     * involve link objects.
+     *
+     * @param hubFrom hub containing objects being scheduled
+     * @param hubLink optional link hub for accessing linked schedule objects
+     * @param ppSchedule property path to the schedule reference
+     * @param ppDateFrom schedule begin date property
+     * @param ppTimeFrom schedule begin time property
+     * @param ppDateTo schedule end date property
+     * @param ppTimeTo schedule end time property
      */
     public OASchedulerController(Hub<F> hubFrom, Hub hubLink, String ppSchedule, String ppDateFrom, String ppTimeFrom, String ppDateTo, String ppTimeTo) {
         this.hubFrom = hubFrom;
@@ -91,6 +133,18 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         this.ppTimeTo = ppTimeTo;
         setup();
     }
+    
+    /**
+     * Creates a scheduler controller using separate date and time properties
+     * without supplying a link hub.
+     *
+     * @param hubFrom hub containing objects being scheduled
+     * @param ppSchedule property path to the schedule reference
+     * @param ppDateFrom schedule begin date property
+     * @param ppTimeFrom schedule begin time property
+     * @param ppDateTo schedule end date property
+     * @param ppTimeTo schedule end time property
+     */
     public OASchedulerController(Hub<F> hubFrom, String ppSchedule, String ppDateFrom, String ppTimeFrom, String ppDateTo, String ppTimeTo) {
         this.hubFrom = hubFrom;
         // this.hubLink = 
@@ -102,14 +156,14 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         setup();
     }
 
-    
     /**
-     * Constructor that uses datetime properties (instead of date & time)
-     * @param hubFrom
-     * @param ppSchedule
-     * @param ppDisplay
-     * @param ppDateTimeFrom
-     * @param ppDateTimeTo
+     * Creates a scheduler controller using datetime properties for begin and end.
+     *
+     * @param hubFrom hub containing objects being scheduled
+     * @param hubLink optional link hub
+     * @param ppSchedule property path to the schedule reference
+     * @param ppDateTimeFrom begin datetime property
+     * @param ppDateTimeTo end datetime property
      */
     public OASchedulerController(Hub<F> hubFrom, Hub hubLink, String ppSchedule, String ppDateTimeFrom, String ppDateTimeTo) {
         this.hubFrom = hubFrom;
@@ -119,6 +173,16 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         this.ppDateTimeTo = ppDateTimeTo;
         setup();
     }
+    
+    /**
+     * Creates a scheduler controller using datetime properties without supplying
+     * a link hub.
+     *
+     * @param hubFrom hub containing objects being scheduled
+     * @param ppSchedule property path to the schedule reference
+     * @param ppDateTimeFrom begin datetime property
+     * @param ppDateTimeTo end datetime property
+     */
     public OASchedulerController(Hub<F> hubFrom, String ppSchedule, String ppDateTimeFrom, String ppDateTimeTo) {
         this.hubFrom = hubFrom;
         // this.hubLink =
@@ -128,17 +192,39 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         setup();
     }
 
+    /**
+     * Returns the resolved scheduling mode.
+     *
+     * @return the scheduling type value
+     */
     public int getType() {
         return this.type;
     }
 
+    /**
+     * Returns the detail hub associated with the schedule reference property.
+     *
+     * @return the detail hub, or null if none exists
+     */
     public Hub getDetailHub() {
         return hubDetail;
     }
+
+    /**
+     * Returns the effective begin-date property. Prefers the date property when
+     * provided, otherwise returns the datetime property.
+     *
+     * @return the begin-date or begin-datetime property path
+     */
     public String getFromDateProperty() {
         if (ppDateFrom != null) return ppDateFrom;
         return ppDateTimeFrom;
     }
+    
+    /**
+     * Analyzes the hubFrom → schedule relationship using property paths and link
+     * metadata. Determines the scheduling type and initializes hubDetail.
+     */
     protected void setup() {
         if (hubFrom == null) return;
         
@@ -168,9 +254,11 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
     }
 
     /**
-     * Called to call the Hub activeObject scheduler callback.  Uses OAObjectSchedulerDelegate.getScheduler(..) to create and populate an OAScheduler.
-     * @param date
-     * @return
+     * Invokes the OAObjectSchedulerDelegate to obtain an OAScheduler for the
+     * active object at the specified date.
+     *
+     * @param date the date for which scheduling should be evaluated
+     * @return the scheduler created for the active object
      */
     public OAScheduler getSchedulerCallback(OADate date) {
         F obj = hubFrom.getAO();
@@ -180,10 +268,13 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
     
     
     /**
-     * Called to update the active object's schedule object's date & time values.
-     * @param objSchedule schedule object that was selected (can be null)
-     * @param dtFrom begin date/time slot selected
-     * @param dtTo end date/time slot selected
+     * Assigns the schedule object's begin and end date–time values for the active
+     * object. Handles four scheduling types, checks for existing schedule usage,
+     * locates or creates the appropriate schedule object, and updates or assigns it
+     * based on relationship rules.
+     *
+     * @param dtFrom the selected begin date–time
+     * @param dtTo the selected end date–time
      */
     public void set(final OADateTime dtFrom, final OADateTime dtTo) {
         if (dtFrom == null) return;
@@ -195,6 +286,14 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
 
         // see if date/time is already used for this object
         OAFinder f = new OAFinder(hubFrom, ppSchedule) {
+        	/**
+        	 * Determines whether the given schedule object matches the specified begin and
+        	 * end date–time values. Compares either datetime properties or separate date
+        	 * and time properties depending on controller configuration.
+        	 *
+        	 * @param obj the schedule object to test
+        	 * @return true if the schedule object's date–time values match dtFrom/dtTo
+        	 */
             @Override
             protected boolean isUsed(OAObject obj) {
                 if (ppDateTimeFrom != null) {
