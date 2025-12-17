@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,13 +66,44 @@ import com.viaoa.sync.OASyncDelegate;
  */
 public abstract class RemoteClientImpl implements RemoteClientInterface {
 	private static Logger LOG = Logger.getLogger(RemoteClientImpl.class.getName());
+
 	// protected ConcurrentHashMap<Object, Object> hashCache = new ConcurrentHashMap<Object, Object>();
 	// protected ConcurrentHashMap<Object, Object> hashLock = new ConcurrentHashMap<Object, Object>();
+	
+	/**
+	 * Helper responsible for servicing detail-loading requests from the client.
+	 */
 	private ClientGetDetail clientGetDetail;
+	
+	/**
+	 * Lazily initialized remote data source wrapper used to execute datasource
+	 * commands on behalf of the client.
+	 */
 	private volatile RemoteDataSource remoteDataSource;
+	
+	/**
+	 * Identifier for the client session associated with this remote client instance.
+	 */
 	private int sessionId;
+	
+	/**
+	 * Map tracking GUIDs of OAObjects known to exist on the client.
+	 * <p>
+	 * The value indicates whether the object has been fully sent with all references.
+	 * </p>
+	 */
 	private final Map<Long, Boolean> hmGuid;
 
+	/**
+	 * Creates a new remote client instance for a given session.
+	 * <p>
+	 * Initializes the {@link ClientGetDetail} helper and configures it to delegate
+	 * background loading requests to this instance.
+	 * </p>
+	 *
+	 * @param sessionId the unique session identifier
+	 * @param hmGuid map used to track object GUIDs sent to the client
+	 */
 	public RemoteClientImpl(int sessionId, Map<Long, Boolean> hmGuid) {
 		this.sessionId = sessionId;
 		this.hmGuid = hmGuid;
@@ -85,19 +116,48 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	}
 
 	/**
-	 * called when a other props or sibling data cant be loaded for current request, because of timeout. This can be overwritten to have it
-	 * done in a background thread.
+	 * Called when property or sibling data cannot be loaded within the current
+	 * request time budget.
+	 * <p>
+	 * The default implementation does nothing and may be overridden to perform
+	 * background loading.
+	 * </p>
+	 *
+	 * @param obj the object whose property should be loaded
+	 * @param property the property name to load
 	 */
 	protected void loadDataInBackground(OAObject obj, String property) {
 	}
 
-	// 20160101
+	/**
+	 * Closes this remote client instance.
+	 * <p>
+	 * Releases references to the {@link ClientGetDetail} helper and the
+	 * remote datasource.
+	 * </p>
+	 */
 	public void close() {
 		clientGetDetail.close();
 		clientGetDetail = null;
 		remoteDataSource = null;
 	}
 
+	/**
+	 * Retrieves a detail property or hub value for a master object.
+	 * <p>
+	 * Delegates the request to {@link ClientGetDetail} and returns either the
+	 * direct value or a serialized result.
+	 * </p>
+	 *
+	 * @param id request identifier
+	 * @param masterClass the class of the master object
+	 * @param masterObjectKey key identifying the master object
+	 * @param property name of the property or reference to retrieve
+	 * @param masterProps additional master properties to load
+	 * @param siblingKeys keys of sibling objects
+	 * @param bForHubMerger flag indicating hub-merger usage
+	 * @return the requested detail value or serialized result
+	 */
 	@Override
 	public Object getDetail(int id, Class masterClass, OAObjectKey masterObjectKey, String property, String[] masterProps,
 			OAObjectKey[] siblingKeys, boolean bForHubMerger) {
@@ -106,7 +166,22 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		return obj;
 	}
 
-	// 20151129 does not put in the msg queue, but will write the return value using the same vsocket that the msg queue thread uses.
+	/**
+	 * Retrieves a detail property or hub value immediately, bypassing the message queue.
+	 * <p>
+	 * Uses the same logic as {@link #getDetail(int, Class, OAObjectKey, String, String[], OAObjectKey[], boolean)}
+	 * but writes the response directly.
+	 * </p>
+	 *
+	 * @param id request identifier
+	 * @param masterClass the class of the master object
+	 * @param masterObjectKey key identifying the master object
+	 * @param property name of the property or reference to retrieve
+	 * @param masterProps additional master properties to load
+	 * @param siblingKeys keys of sibling objects
+	 * @param bForHubMerger flag indicating hub-merger usage
+	 * @return the requested detail value or serialized result
+	 */
 	@Override
 	public Object getDetailNow(int id, Class masterClass, OAObjectKey masterObjectKey, String property, String[] masterProps,
 			OAObjectKey[] siblingKeys, boolean bForHubMerger) {
@@ -115,12 +190,32 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		return obj;
 	}
 
+	/**
+	 * Retrieves a detail property or hub value for a master object without
+	 * additional master or sibling properties.
+	 *
+	 * @param id request identifier
+	 * @param masterClass the class of the master object
+	 * @param masterObjectKey key identifying the master object
+	 * @param property name of the property or reference to retrieve
+	 * @param bForHubMerger flag indicating hub-merger usage
+	 * @return the requested detail value or serialized result
+	 */
 	@Override
 	public Object getDetail(int id, Class masterClass, OAObjectKey masterObjectKey, String property, boolean bForHubMerger) {
 		Object obj = clientGetDetail.getDetail(id, masterClass, masterObjectKey, property, null, null, bForHubMerger);
 		return obj;
 	}
 
+	/**
+	 * Returns the remote data source for this client.
+	 * <p>
+	 * Lazily creates the data source wrapper and ensures objects loaded
+	 * from the datasource are tracked in the client GUID registry.
+	 * </p>
+	 *
+	 * @return the remote data source
+	 */
 	public RemoteDataSource getRemoteDataSource() {
 		if (remoteDataSource == null) {
 			synchronized (this) {
@@ -142,6 +237,14 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		return remoteDataSource;
 	}
 
+	/**
+	 * Executes a datasource command on behalf of the client.
+	 *
+	 * @param command the datasource command identifier
+	 * @param objects arguments for the command
+	 * @return the result of the datasource operation
+	 * @throws RuntimeException if execution fails
+	 */
 	@Override
 	public Object datasource(int command, Object[] objects) {
 		Object result = null;
@@ -156,6 +259,14 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	}
 
 	
+	/**
+	 * Executes a datasource command and returns the result on the message queue.
+	 *
+	 * @param command the datasource command identifier
+	 * @param objects arguments for the command
+	 * @return the result of the datasource operation
+	 * @throws RuntimeException if execution fails
+	 */
 	@Override
 	public Object datasourceReturnOnQueue(int command, Object[] objects) {
 		Object result = null;
@@ -170,6 +281,13 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	}
 	
 	
+	/**
+	 * Executes a datasource command without returning a result.
+	 *
+	 * @param command the datasource command identifier
+	 * @param objects arguments for the command
+	 * @throws RuntimeException if execution fails
+	 */
 	@Override
 	public void datasourceNoReturn(int command, Object[] objects) {
 		try {
@@ -181,6 +299,12 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		}
 	}
 
+	/**
+	 * Resolves the appropriate datasource for the specified class.
+	 *
+	 * @param c the class used to determine the datasource
+	 * @return the resolved datasource, or a default datasource if not found
+	 */
 	protected OADataSource getDataSource(Class c) {
 		if (c != null) {
 			OADataSource ds = OADataSource.getDataSource(c);
@@ -197,12 +321,32 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		return defaultDataSource;
 	}
 
+	/**
+	 * Default datasource used when no class-specific datasource is available.
+	 */
 	protected OADataSource defaultDataSource;
 
+	/**
+	 * Returns the default datasource.
+	 *
+	 * @return the default datasource
+	 */
 	protected OADataSource getDataSource() {
 		return getDataSource(null);
 	}
 
+	/**
+	 * Creates a copy of an existing object.
+	 * <p>
+	 * Retrieves the object from cache and creates a copy, optionally excluding
+	 * specified properties.
+	 * </p>
+	 *
+	 * @param objectClass the object class
+	 * @param objectKey key identifying the object
+	 * @param excludeProperties property names to exclude from the copy
+	 * @return the copied object, or {@code null} if the source object is not found
+	 */
 	@Override
 	public OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties) {
 		OAObject obj = (OAObject) OAObjectCacheDelegate.getObject(objectClass, objectKey);
@@ -214,10 +358,25 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	}
 
 	/**
-	 * Called to add objects to a client's server side cache, so that server will not GC the object.
+	 * Updates the server-side cache to mark an object as retained for this client.
+	 *
+	 * @param obj the object to retain in the server cache
 	 */
 	public abstract void updateObjectCache(OAObject obj);
 
+	/**
+	 * Deletes all objects from a hub property of the specified object.
+	 * <p>
+	 * Retrieves the target object, resolves the hub by property name, and deletes
+	 * all hub entries. If the hub is not found and the call is not on the server,
+	 * an empty hub reference may be set on the object.
+	 * </p>
+	 *
+	 * @param objectClass the class of the object
+	 * @param objectKey the key identifying the object
+	 * @param hubPropertyName the name of the hub property to clear
+	 * @return {@code true} if the hub existed and was cleared, otherwise {@code false}
+	 */
 	@Override
 	public boolean deleteAll(Class objectClass, OAObjectKey objectKey, String hubPropertyName) {
 		OAObject obj = getObject(objectClass, objectKey);
@@ -238,6 +397,17 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	}
 
 	// on the server, if the object is not found in the cache, then it will be loaded by the datasource
+	/**
+	 * Retrieves an object by key from cache or datasource.
+	 * <p>
+	 * On the server, if the object is not found in cache, it is loaded from the
+	 * datasource and reassigned the original GUID.
+	 * </p>
+	 *
+	 * @param objectClass the class of the object
+	 * @param origKey the original object key
+	 * @return the resolved object, or {@code null} if not found
+	 */
 	private OAObject getObject(Class objectClass, OAObjectKey origKey) {
 		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, origKey);
 		if (obj == null && OASyncDelegate.isServer(objectClass)) {
@@ -251,6 +421,16 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	}
 
 	// on the server, if the Hub is not found in the cache, then it will be loaded by the datasource
+	/**
+	 * Retrieves a hub property from an object.
+	 * <p>
+	 * Ensures the hub is loaded when required and returns it if present.
+	 * </p>
+	 *
+	 * @param obj the master object
+	 * @param hubPropertyName the hub property name
+	 * @return the hub instance, or {@code null} if not available
+	 */
 	private Hub getHub(OAObject obj, String hubPropertyName) {
 		if (obj == null) {
 			return null;
@@ -280,6 +460,12 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	}
 	*/
 
+	/**
+	 * Refreshes an object from the datasource.
+	 *
+	 * @param objectClass the class of the object
+	 * @param objectKey the key identifying the object
+	 */
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey) {
 		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, objectKey);
@@ -288,6 +474,13 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		}
 	}
 
+	/**
+	 * Refreshes a specific property of an object from the datasource.
+	 *
+	 * @param objectClass the class of the object
+	 * @param objectKey the key identifying the object
+	 * @param propertyName the name of the property to refresh
+	 */
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey, String propertyName) {
 		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, objectKey);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,19 +29,43 @@ package com.viaoa.util;
  */
 public class OANotExist implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
+
+    /**
+     * Singleton instance representing the not-exist comparison token.
+     */
     public static final OANotExist instance = new OANotExist();
     
+    /**
+     * Creates a new instance.
+     */
     private OANotExist() {
     }
     
+    /**
+     * Returns the singleton not-exist comparison instance.
+     *
+     * @return the singleton instance
+     */
     public OANotExist getNotExistObject() {
         return instance;
     }
     
+    /**
+     * Compares the given object to determine whether it represents a non-existent value.
+     *
+     * @param obj the object to compare
+     * @return true if the object is null, the singleton instance, or another {@code OANotExist}
+     */
     @Override
     public boolean equals(Object obj) {
         return (obj == null || obj == OANotExist.instance || obj instanceof OANotExist);
     }
+
+    /**
+     * Returns a constant hash code value.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
         return 1;

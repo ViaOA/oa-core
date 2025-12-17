@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,18 @@ import com.viaoa.json.jackson.OAJacksonModule;
  */
 public class OAXml extends OAJson {
 	
+	/**
+	 * Shared XML {@link ObjectMapper} instance used for serialization and
+	 * deserialization.
+	 */
 	private static ObjectMapper xmlObjectMapper;
 	
+	/**
+	 * Returns the shared XML {@link ObjectMapper}, creating and configuring it
+	 * lazily if necessary.
+	 *
+	 * @return the shared XML {@link ObjectMapper}
+	 */
 	public ObjectMapper getXmlObjectMapper() {
 		if (xmlObjectMapper == null) {
 			synchronized (lock) {
@@ -75,6 +85,14 @@ public class OAXml extends OAJson {
 		return xmlObjectMapper;
 	}
 	
+	/**
+	 * Creates and configures a new XML {@link ObjectMapper}.
+	 * <p>
+	 * The mapper is configured with OA-specific modules and serialization
+	 * settings.
+	 *
+	 * @return a newly created XML {@link ObjectMapper}
+	 */
 	public ObjectMapper createXmlObjectMapper() {
 		XmlMapper objectMapperx = new XmlMapper();
 		objectMapperx.registerModule(new JavaTimeModule());
@@ -91,17 +109,39 @@ public class OAXml extends OAJson {
 	}
 	
 	
+	/**
+	 * Returns the {@link ObjectMapper} used by this instance.
+	 * <p>
+	 * If not already set, this delegates to {@link #getXmlObjectMapper()}.
+	 *
+	 * @return the active {@link ObjectMapper}
+	 */
 	public ObjectMapper getObjectMapper() {
 		if (objectMapper == null) {
 			objectMapper = getXmlObjectMapper();
 		}
 		return objectMapper;
 	}
+
+	/**
+	 * Creates and returns a new, unshared XML {@link ObjectMapper}.
+	 * <p>
+	 * This replaces the current mapper reference with a newly created instance.
+	 *
+	 * @return a new XML {@link ObjectMapper}
+	 */
 	public ObjectMapper getUnsharedObjectMapper() {
 		objectMapper = createXmlObjectMapper();
 		return objectMapper;
 	}
 
+	/**
+	 * Serializes the supplied object to an XML string.
+	 *
+	 * @param obj the object to serialize
+	 * @return the XML representation of the object
+	 * @throws JsonProcessingException if serialization fails
+	 */
 	public String toXml(Object obj) throws JsonProcessingException {
 		return write(obj);
 	}

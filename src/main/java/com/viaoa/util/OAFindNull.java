@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,19 @@ import java.util.IdentityHashMap;
  * terminate the search.
  */
 public class OAFindNull {
-    private IdentityHashMap<Object, Object> hm = new IdentityHashMap<Object, Object>();
-    /**
-     * Find a null value for an object or any of it's fields/references. 
-     * @param obj
-     * @return true if a null was found, the foundOne(..) will be called.
-     */
+    
+	/**
+	 * Tracks visited objects to detect and prevent circular reference traversal.
+	 */
+	private IdentityHashMap<Object, Object> hm = new IdentityHashMap<Object, Object>();
+    
+	/**
+	 * Initiates a recursive search for null values starting from the given object.
+	 *
+	 * @param obj the root object to inspect
+	 * @return true if a null value was found
+	 * @throws IllegalAccessException if field access fails
+	 */
     public boolean findNull(Object obj) throws IllegalAccessException {
         hm.clear();
         String s = obj == null ? "" : obj.getClass().getName();
@@ -49,6 +56,14 @@ public class OAFindNull {
         return _findNull(s, obj);
     }    
 
+    /**
+     * Recursively inspects the given object and its references for null values.
+     *
+     * @param propertyPath the current property path being inspected
+     * @param obj the current object reference
+     * @return true if a null value was found
+     * @throws IllegalAccessException if field access fails
+     */
     private boolean _findNull(String propertyPath, Object obj) throws IllegalAccessException {
         if (obj == null) {
             foundOne(propertyPath);
@@ -78,6 +93,14 @@ public class OAFindNull {
     }
 
     
+    /**
+     * Inspects all eligible fields of the given object for null values.
+     *
+     * @param propertyPath the current property path being inspected
+     * @param obj the object whose fields are inspected
+     * @return true if a null value was found in any field
+     * @throws IllegalAccessException if field access fails
+     */
     private boolean _findNullFields(String propertyPath, Object obj) throws IllegalAccessException {
         Field[] objFields = obj.getClass().getDeclaredFields();
         AccessibleObject.setAccessible(objFields, true);
@@ -94,7 +117,10 @@ public class OAFindNull {
     }
     
     /**
-     * @return true to continue, false to stop
+     * Callback invoked when a null value is found at the given property path.
+     *
+     * @param propertyPath the property path where a null value was encountered
+     * @return true to continue searching, false to stop
      */
     public boolean foundOne(String propertyPath) {
         System.out.println(propertyPath);

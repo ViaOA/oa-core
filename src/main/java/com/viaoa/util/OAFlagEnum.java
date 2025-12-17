@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,26 @@
 package com.viaoa.util;
 
 /**
- * used as an 3-state flag
+ * Enumeration representing a three-state flag value.
  *
- * @author vvia
+ * <p>
+ * This enum provides explicit constants for {@code true}, {@code false},
+ * or an indeterminate state that allows either value.
+ * </p>
  */
 public enum OAFlagEnum {
+	/**
+	 * Indicates a false state.
+	 */
 	False,
+
+	/**
+	 * Indicates a true state.
+	 */
 	True,
+	
+	/**
+	 * Indicates either a true or false state.
+	 */
 	Either
 }

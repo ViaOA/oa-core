@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,211 +85,618 @@ import java.math.BigDecimal;
 		return performMathOp(MATH_OP_ADD, n1, n2, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Adds a primitive double value and a numeric value using the specified scale and rounding mode.
+	 *
+	 * @param d the first value
+	 * @param n the second value, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed sum as a double
+	 */
 	public static double add(double d, Number n, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_ADD, BigDecimal.valueOf(d), n, decimalPlaces, roundType);
 	}
 	
+	/**
+	 * Adds a numeric value and a primitive double value using the specified scale and rounding mode.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param d1 the second value
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed sum as a double
+	 */
 	public static double add(Number n1, double d1, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_ADD, n1, BigDecimal.valueOf(d1), decimalPlaces, roundType);
 	}
 
+	/**
+	 * Adds two primitive double values using the specified scale and rounding mode.
+	 *
+	 * @param d the first value
+	 * @param d1 the second value
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed sum as a double
+	 */
 	public static double add(double d, double d1, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_ADD, d, d1, decimalPlaces, roundType);
 	}
 	
+	/**
+	 * Adds two numeric values using {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param n2 the second value, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed sum as a double
+	 */
 	public static double add(Number n1, Number n2, int decimalPlaces) {
 		return performMathOp(MATH_OP_ADD, n1, n2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Adds a primitive double value and a numeric value using {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param d the first value
+	 * @param n the second value, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed sum as a double
+	 */
 	public static double add(double d, Number n, int decimalPlaces) {
 		return performMathOp(MATH_OP_ADD, BigDecimal.valueOf(d), n, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Adds a numeric value and a primitive double value using {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param d1 the second value
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed sum as a double
+	 */
 	public static double add(Number n1, double d1, int decimalPlaces) {
 		return performMathOp(MATH_OP_ADD, n1, d1, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Adds two primitive double values using {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param d1 the first value
+	 * @param d2 the second value
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed sum as a double
+	 */
 	public static double add(double d1, double d2, int decimalPlaces) {
 		return performMathOp(MATH_OP_ADD, d1, d2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Adds two numeric values without enforcing a scale or rounding configuration.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param n2 the second value, or null to treat as 0.0
+	 * @return the computed sum as a double
+	 */
 	public static double add(Number n1, Number n2) {
 		return performMathOp(MATH_OP_ADD, n1, n2, -1, -1);
 	}
 
+	/**
+	 * Adds a primitive double value and a numeric value without enforcing a scale or rounding configuration.
+	 *
+	 * @param d the first value
+	 * @param n the second value, or null to treat as 0.0
+	 * @return the computed sum as a double
+	 */
 	public static double add(double d, Number n) {
 		return performMathOp(MATH_OP_ADD, BigDecimal.valueOf(d), n, -1, -1);
 	}
 
+	/**
+	 * Adds a numeric value and a primitive double value without enforcing a scale or rounding configuration.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param d1 the second value
+	 * @return the computed sum as a double
+	 */
 	public static double add(Number n1, double d1) {
 		return performMathOp(MATH_OP_ADD, n1, d1, -1, -1);
 	}
 
+	/**
+	 * Adds two primitive double values without enforcing a scale or rounding configuration.
+	 *
+	 * @param d the first value
+	 * @param d1 the second value
+	 * @return the computed sum as a double
+	 */
 	public static double add(double d, double d1) {
 		return performMathOp(MATH_OP_ADD, d, d1, -1, -1);
 	}
 	
 	
-    /**
-     * Subtracts {@code n2} from {@code n1} with rounding control.
-     */
+	/**
+	 * Subtracts the second numeric value from the first using the specified scale and rounding mode.
+	 *
+	 * @param n1 the value to subtract from, or null to treat as 0.0
+	 * @param n2 the value to subtract, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(Number n1, Number n2, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_SUBTRACT, n1, n2, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Subtracts a numeric value from a primitive double value using the specified scale and rounding mode.
+	 *
+	 * @param d the value to subtract from
+	 * @param n the value to subtract, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(double d, Number n, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_SUBTRACT, BigDecimal.valueOf(d), n, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Subtracts a primitive double value from a numeric value using the specified scale and rounding mode.
+	 *
+	 * @param n1 the value to subtract from, or null to treat as 0.0
+	 * @param d1 the value to subtract
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(Number n1, double d1, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_SUBTRACT, n1, BigDecimal.valueOf(d1), decimalPlaces, roundType);
 	}
 
+	/**
+	 * Subtracts the second primitive double value from the first using the specified scale and rounding mode.
+	 *
+	 * @param d the value to subtract from
+	 * @param d1 the value to subtract
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(double d, double d1, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_SUBTRACT, d, d1, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Subtracts the second numeric value from the first using {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param n1 the value to subtract from, or null to treat as 0.0
+	 * @param n2 the value to subtract, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(Number n1, Number n2, int decimalPlaces) {
 		return performMathOp(MATH_OP_SUBTRACT, n1, n2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Subtracts a numeric value from a primitive double value using {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param d the value to subtract from
+	 * @param n the value to subtract, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(double d, Number n, int decimalPlaces) {
 		return performMathOp(MATH_OP_SUBTRACT, BigDecimal.valueOf(d), n, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Subtracts a primitive double value from a numeric value using
+	 * {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param n1 the value to subtract from, or null to treat as 0.0
+	 * @param d1 the value to subtract
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(Number n1, double d1, int decimalPlaces) {
 		return performMathOp(MATH_OP_SUBTRACT, n1, BigDecimal.valueOf(d1), decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Subtracts the second primitive double value from the first using
+	 * {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param d the value to subtract from
+	 * @param d1 the value to subtract
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(double d1, double d2, int decimalPlaces) {
 		return performMathOp(MATH_OP_SUBTRACT, d1, d2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Subtracts the second numeric value from the first without enforcing
+	 * a scale or rounding configuration.
+	 *
+	 * @param n1 the value to subtract from, or null to treat as 0.0
+	 * @param n2 the value to subtract, or null to treat as 0.0
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(Number n1, Number n2) {
 		return performMathOp(MATH_OP_SUBTRACT, n1, n2, -1, -1);
 	}
 
+	/**
+	 * Subtracts a numeric value from a primitive double value without enforcing
+	 * a scale or rounding configuration.
+	 *
+	 * @param d the value to subtract from
+	 * @param n the value to subtract, or null to treat as 0.0
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(double d, Number n) {
 		return performMathOp(MATH_OP_SUBTRACT, BigDecimal.valueOf(d), n, -1, -1);
 	}
 
+	/**
+	 * Subtracts a primitive double value from a numeric value without enforcing
+	 * a scale or rounding configuration.
+	 *
+	 * @param n1 the value to subtract from, or null to treat as 0.0
+	 * @param d1 the value to subtract
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(Number n1, double d1) {
 		return performMathOp(MATH_OP_SUBTRACT, n1, BigDecimal.valueOf(d1), -1, -1);
 	}
 
+	/**
+	 * Subtracts the second primitive double value from the first without enforcing
+	 * a scale or rounding configuration.
+	 *
+	 * @param d the value to subtract from
+	 * @param d1 the value to subtract
+	 * @return the computed difference as a double
+	 */
 	public static double subtract(double d1, double d2) {
 		return performMathOp(MATH_OP_SUBTRACT, d1, d2, -1, -1);
 	}
 
 	
-    /**
-     * Multiplies two {@link Number} values with rounding control.
-     */
+	/**
+	 * Multiplies two numeric values using the specified scale and rounding mode.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param n2 the second value, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed product as a double
+	 */
 	public static double multiply(Number n1, Number n2, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_MULTIPLY, n1, n2, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Multiplies a primitive double value and a numeric value using the specified
+	 * scale and rounding mode.
+	 *
+	 * @param d the first value
+	 * @param n the second value, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed product as a double
+	 */
 	public static double multiply(double d, Number n, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_MULTIPLY, BigDecimal.valueOf(d), n, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Multiplies a numeric value and a primitive double value using the specified
+	 * scale and rounding mode.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param d1 the second value
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed product as a double
+	 */
 	public static double multiply(Number n1, double d1, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_MULTIPLY, n1, BigDecimal.valueOf(d1), decimalPlaces, roundType);
 	}
 
+	/**
+	 * Multiplies two primitive double values using the specified scale and rounding mode.
+	 *
+	 * @param d the first value
+	 * @param d1 the second value
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed product as a double
+	 */
 	public static double multiply(double d, double d1, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_MULTIPLY, d, d1, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Multiplies two numeric values using {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param n2 the second value, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed product as a double
+	 */
 	public static double multiply(Number n1, Number n2, int decimalPlaces) {
 		return performMathOp(MATH_OP_MULTIPLY, n1, n2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Multiplies a primitive double value and a numeric value using
+	 * {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param d the first value
+	 * @param n the second value, or null to treat as 0.0
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed product as a double
+	 */
 	public static double multiply(double d, Number n, int decimalPlaces) {
 		return performMathOp(MATH_OP_MULTIPLY, BigDecimal.valueOf(d), n, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Multiplies a numeric value and a primitive double value using
+	 * {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param d1 the second value
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed product as a double
+	 */
 	public static double multiply(Number n1, double d1, int decimalPlaces) {
 		return performMathOp(MATH_OP_MULTIPLY, n1, BigDecimal.valueOf(d1), decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
 	
+	/**
+	 * Multiplies two primitive double values using {@link BigDecimal#ROUND_HALF_UP}
+	 * rounding.
+	 *
+	 * @param d1 the first value
+	 * @param d2 the second value
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed product as a double
+	 */
 	public static double multiply(double d1, double d2, int decimalPlaces) {
 		return performMathOp(MATH_OP_MULTIPLY, d1, d2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Multiplies two numeric values without enforcing a scale or rounding configuration.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param n2 the second value, or null to treat as 0.0
+	 * @return the computed product as a double
+	 */
 	public static double multiply(Number n1, Number n2) {
 		return performMathOp(MATH_OP_MULTIPLY, n1, n2, -1, -1);
 	}
 
+	/**
+	 * Multiplies a primitive double value and a numeric value without enforcing
+	 * a scale or rounding configuration.
+	 *
+	 * @param d the first value
+	 * @param n the second value, or null to treat as 0.0
+	 * @return the computed product as a double
+	 */
 	public static double multiply(double d, Number n) {
 		return performMathOp(MATH_OP_MULTIPLY, BigDecimal.valueOf(d), n, -1, -1);
 	}
 
+	/**
+	 * Multiplies a numeric value and a primitive double value without enforcing
+	 * a scale or rounding configuration.
+	 *
+	 * @param n1 the first value, or null to treat as 0.0
+	 * @param d1 the second value
+	 * @return the computed product as a double
+	 */
 	public static double multiply(Number n1, double d1) {
 		return performMathOp(MATH_OP_MULTIPLY, n1, BigDecimal.valueOf(d1), -1, -1);
 	}
 
+	/**
+	 * Multiplies two primitive double values without enforcing a scale or rounding
+	 * configuration.
+	 *
+	 * @param d the first value
+	 * @param d1 the second value
+	 * @return the computed product as a double
+	 */
 	public static double multiply(double d, double d1) {
 		return performMathOp(MATH_OP_MULTIPLY, d, d1, -1, -1);
 	}
 
-    /**
-     * Divides {@code n1} by {@code n2} with rounding control.
-     * Returns {@link Double#NaN} if {@code n2} is zero.
-     */
+	/**
+	 * Divides the first numeric value by the second using the specified scale and
+	 * rounding mode.
+	 *
+	 * @param n1 the dividend, or null to treat as 0.0
+	 * @param n2 the divisor
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(Number n1, Number n2, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_DIVIDE, n1, n2, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Divides a primitive double value by a numeric value using the specified scale
+	 * and rounding mode.
+	 *
+	 * @param d the dividend
+	 * @param n the divisor
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(double d, Number n, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_DIVIDE, BigDecimal.valueOf(d), n, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Divides a numeric value by a primitive double value using the specified scale
+	 * and rounding mode.
+	 *
+	 * @param n1 the dividend, or null to treat as 0.0
+	 * @param d1 the divisor
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(Number n1, double d1, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_DIVIDE, n1, BigDecimal.valueOf(d1), decimalPlaces, roundType);
 	}
 
+	/**
+	 * Divides one primitive double value by another using the specified scale and
+	 * rounding mode.
+	 *
+	 * @param d the dividend
+	 * @param d1 the divisor
+	 * @param decimalPlaces number of decimal places to retain, or negative to skip rounding
+	 * @param roundType the {@link BigDecimal} rounding mode constant to use
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(double d, double d1, int decimalPlaces, int roundType) {
 		return performMathOp(MATH_OP_DIVIDE, d, d1, decimalPlaces, roundType);
 	}
 
+	/**
+	 * Divides the first numeric value by the second using
+	 * {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param n1 the dividend, or null to treat as 0.0
+	 * @param n2 the divisor
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(Number n1, Number n2, int decimalPlaces) {
 		return performMathOp(MATH_OP_DIVIDE, n1, n2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Divides a primitive double value by a numeric value using
+	 * {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param d the dividend
+	 * @param n the divisor
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(double d, Number n, int decimalPlaces) {
 		return performMathOp(MATH_OP_DIVIDE, BigDecimal.valueOf(d), n, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Divides a numeric value by a primitive double value using
+	 * {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param n1 the dividend, or null to treat as 0.0
+	 * @param d1 the divisor
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(Number n1, double d1, int decimalPlaces) {
 		return performMathOp(MATH_OP_DIVIDE, n1, BigDecimal.valueOf(d1), decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Divides one primitive double value by another using
+	 * {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param d1 the dividend
+	 * @param d2 the divisor
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(double d1, double d2, int decimalPlaces) {
 		return performMathOp(MATH_OP_DIVIDE, d1, d2, decimalPlaces, BigDecimal.ROUND_HALF_UP);
 	}
 
+	/**
+	 * Divides one primitive double value by another using
+	 * {@link BigDecimal#ROUND_HALF_UP} rounding.
+	 *
+	 * @param d1 the dividend
+	 * @param d2 the divisor
+	 * @param decimalPlaces number of decimal places to retain
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(Number n1, Number n2) {
 		return performMathOp(MATH_OP_DIVIDE, n1, n2, -1, -1);
 	}
 
+	/**
+	 * Divides a primitive double value by a numeric value without enforcing a scale
+	 * or rounding configuration.
+	 *
+	 * @param d the dividend
+	 * @param n the divisor
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(double d, Number n) {
 		return performMathOp(MATH_OP_DIVIDE, BigDecimal.valueOf(d), n, -1, -1);
 	}
 
+	/**
+	 * Divides a numeric value by a primitive double value without enforcing a scale
+	 * or rounding configuration.
+	 *
+	 * @param n1 the dividend, or null to treat as 0.0
+	 * @param d1 the divisor
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(Number n1, double d1) {
 		return performMathOp(MATH_OP_DIVIDE, n1, BigDecimal.valueOf(d1), -1, -1);
 	}
 
+	/**
+	 * Divides one primitive double value by another without enforcing a scale or
+	 * rounding configuration.
+	 *
+	 * @param d the dividend
+	 * @param d1 the divisor
+	 * @return the computed quotient, or {@link Double#NaN} if the divisor is zero
+	 */
 	public static double divide(double d, double d1) {
 		return performMathOp(MATH_OP_DIVIDE, d, d1, -1, -1);
 	}
 
 
+	/**
+	 * Operation code representing multiplication.
+	 */
 	public static final int MATH_OP_MULTIPLY = 0;
+
+	/**
+	 * Operation code representing division.
+	 */
 	public static final int MATH_OP_DIVIDE = 1;
+	
+	/**
+	 * Operation code representing addition.
+	 */
 	public static final int MATH_OP_ADD = 2;
+	
+	/**
+	 * Operation code representing subtraction.
+	 */
 	public static final int MATH_OP_SUBTRACT = 3;
 	
 	

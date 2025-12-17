@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,6 +111,13 @@ public class OAConverterString implements OAConverterInterface<String> {
     }
 
 
+	/**
+	 * Applies optional formatting to an existing {@link String} value.
+	 *
+	 * @param fromValue the string value to format
+	 * @param fmt optional formatting rules
+	 * @return the formatted string, or an empty string if the result is {@code null}
+	 */
 	@Override
 	public String convertToString(String fromValue, String fmt) {
 		String s = fromValue;

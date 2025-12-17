@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,16 @@ import com.viaoa.object.OAObjectKeyDelegate;
 public class DeleteDelegate {
 	private static Logger LOG = Logger.getLogger(DeleteDelegate.class.getName());
 
+	/**
+	 * Deletes the database rows associated with the specified object.
+	 * <p>
+	 * If the object is {@code null} or marked as new (unsaved), no action is taken.
+	 * Otherwise, deletion begins with the object's concrete class and continues
+	 * up the inheritance hierarchy.
+	 *
+	 * @param ds the JDBC data source
+	 * @param object the object to delete
+	 */
 	public static void delete(OADataSourceJDBC ds, OAObject object) {
 		if (object == null) {
 			return;
@@ -48,6 +58,17 @@ public class DeleteDelegate {
 		delete(ds, object, object.getClass());
 	}
 
+	/**
+	 * Deletes the database row for the specified class mapping of an object.
+	 * <p>
+	 * This method generates and executes a {@code DELETE} statement for the
+	 * table mapped to {@code clazz}, then recursively deletes rows for
+	 * superclass mappings.
+	 *
+	 * @param ds the JDBC data source
+	 * @param oaObj the object being deleted
+	 * @param clazz the class whose table mapping is being deleted
+	 */
 	private static void delete(OADataSourceJDBC ds, OAObject oaObj, Class clazz) {
 		if (ds.getIgnoreWrites()) {
 			return;
@@ -85,7 +106,16 @@ public class DeleteDelegate {
 	}
 
 	/**
-	 * This is needed when a object has a super class that needs to be deleted.
+	 * Builds a {@code DELETE} SQL statement for the specified object and class.
+	 * <p>
+	 * The {@code WHERE} clause is constructed using all primary key columns
+	 * defined for the table mapped to {@code clazz}.
+	 *
+	 * @param ds the JDBC data source
+	 * @param oaObj the object being deleted
+	 * @param clazz the class whose table mapping is used
+	 * @return the generated {@code DELETE} SQL statement
+	 * @throws Exception if no table mapping exists for the class
 	 */
 	private static String getDeleteSQL(OADataSourceJDBC ds, OAObject oaObj, Class clazz) throws Exception {
 		Table table = ds.getDatabase().getTable(clazz);
@@ -121,6 +151,16 @@ public class DeleteDelegate {
 		return str;
 	}
 
+	/**
+	 * Executes the supplied {@code DELETE} SQL statement.
+	 * <p>
+	 * If batch operations are enabled, the statement is added to the current
+	 * batch; otherwise, it is executed immediately.
+	 *
+	 * @param ds the JDBC data source
+	 * @param str the {@code DELETE} SQL statement
+	 * @throws Exception if a JDBC error occurs
+	 */
 	private static void performDelete(OADataSourceJDBC ds, String str) throws Exception {
 		LOG.fine(str);
 		final boolean bUseBatch = ds.isAllowingBatch();

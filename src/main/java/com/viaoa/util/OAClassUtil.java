@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,14 @@ package com.viaoa.util;
  */
 public class OAClassUtil {
 
+	/**
+	 * Returns the simple (unqualified) name of the specified class.
+	 *
+	 * If the supplied class reference is {@code null}, this method returns {@code null}.
+	 *
+	 * @param c the {@link Class} to inspect
+	 * @return the simple class name, or {@code null} if the class is {@code null}
+	 */
 	public static String getClassName(Class c) {
 		if (c == null) {
 			return null;
@@ -34,6 +42,15 @@ public class OAClassUtil {
 		return c.getSimpleName();
 	}
 
+	/**
+	 * Returns the package name portion of the specified class.
+	 *
+	 * If the supplied class reference is {@code null}, this method returns {@code null}.
+	 * The returned value is derived from the fully qualified class name.
+	 *
+	 * @param c the {@link Class} to inspect
+	 * @return the package name, or {@code null} if the class is {@code null}
+	 */
 	public static String getPackageName(Class c) {
 		if (c == null) {
 			return null;

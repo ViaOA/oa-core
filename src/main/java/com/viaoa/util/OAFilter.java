@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,13 @@ import com.viaoa.datasource.OASelect;
  */
 @FunctionalInterface
 public interface OAFilter<T> extends Serializable {
+	
+	/**
+	 * Determines whether the given object should be included.
+	 *
+	 * @param obj the object to evaluate
+	 * @return true if the object is accepted by this filter
+	 */
 	boolean isUsed(T obj);
 
 	/**

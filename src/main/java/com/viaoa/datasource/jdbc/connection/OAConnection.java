@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,51 +53,140 @@ import com.viaoa.transaction.OATransaction;
 public class OAConnection {
 	private static Logger LOG = Logger.getLogger(OAConnection.class.getName());
 
+	/**
+	 * The underlying JDBC connection being wrapped and managed.
+	 */
 	protected final Connection connection;
+	
+	/**
+	 * Pool of {@link Statement} objects managed by this connection.
+	 */
 	protected final List<Pool> alStatement = new ArrayList<>();
+	
+	/**
+	 * List of {@link PreparedStatement} instances currently in use.
+	 */
 	protected final List<PreparedStatement> alUsedPreparedStatement = new ArrayList<>();
+	
+	/**
+	 * List of {@link PreparedStatement} instances currently used for batch updates.
+	 */
 	protected final List<PreparedStatement> alUsedBatchPreparedStatement = new ArrayList<PreparedStatement>();
+	
+	/**
+	 * Flag indicating whether this connection is currently available for use.
+	 */
 	protected volatile boolean bAvailable;
+	
+	/**
+	 * Flag indicating that a statement is currently being acquired.
+	 */
 	protected volatile boolean bGettingStatement;
 
+	/**
+	 * Cache mapping SQL strings to pooled {@link PreparedStatement} instances.
+	 */
 	private final Map<String, List<PreparedStatement>> hmSqlToPreparedStatements = new ConcurrentHashMap<>();
+	
+	/**
+	 * Reverse lookup map from {@link PreparedStatement} to its SQL string.
+	 */
 	private final Map<PreparedStatement, String> hmPreparedStatementToSql = new ConcurrentHashMap<PreparedStatement, String>();
 
+	/**
+	 * Counter tracking total calls to get a {@link Statement}.
+	 */
 	volatile int cntGetStatement;
+	
+	/**
+	 * Counter tracking total created {@link Statement} instances.
+	 */
 	volatile int cntCreateStatement;
+	
+	/**
+	 * Counter tracking total released {@link Statement} instances.
+	 */
 	volatile int cntReleaseStatement;
 
+	/**
+	 * Counter tracking total calls to get a {@link PreparedStatement}.
+	 */
 	volatile int cntGetPreparedStatement;
+	
+	/**
+	 * Counter tracking total created {@link PreparedStatement} instances.
+	 */
 	volatile int cntCreatePreparedStatement;
+	
+	/**
+	 * Counter tracking total released {@link PreparedStatement} instances.
+	 */
 	volatile int cntReleasePreparedStatement;
 
+	/**
+	 * Creates a new OAConnection wrapping the supplied JDBC connection.
+	 *
+	 * @param con the JDBC connection to wrap
+	 */
 	public OAConnection(Connection con) {
 		connection = con;
 	}
 
+	/**
+	 * Returns whether the current {@link OATransaction} allows batch operations.
+	 *
+	 * @return {@code true} if batch operations are allowed
+	 */
 	public boolean isAllowingBatch() {
 		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
 		final boolean bIsForBatch = tran != null && tran.getUseBatch();
 		return bIsForBatch;
 	}
 
+	/**
+	 * Returns the underlying JDBC {@link Connection}.
+	 *
+	 * @return the wrapped connection
+	 */
 	public Connection getConnection() {
 		return connection;
 	}
 
 	/**
-	 * Must be in an OATransaction that has allowBatch=true
+	 * Returns a {@link Statement} configured for batch updates.
+	 * <p>
+	 * This method must be called within an {@link OATransaction} that allows batching.
+	 *
+	 * @param message diagnostic message associated with the statement
+	 * @return a batch-enabled {@link Statement}, or {@code null} if batching is not allowed
+	 * @throws SQLException if a JDBC error occurs
 	 */
 	public Statement getBatchStatement(String message) throws SQLException {
 		Statement st = _getStatement(message, true);
 		return st;
 	}
 
+	/**
+	 * Returns a {@link Statement} for non-batch SQL execution.
+	 *
+	 * @param message diagnostic message associated with the statement
+	 * @return a {@link Statement} instance
+	 * @throws SQLException if a JDBC error occurs
+	 */
 	public Statement getStatement(String message) throws SQLException {
 		Statement st = _getStatement(message, false);
 		return st;
 	}
 
+	/**
+	 * Internal method used to acquire a {@link Statement}, optionally configured
+	 * for batch updates.
+	 *
+	 * @param message diagnostic message associated with the statement
+	 * @param bBatchUpdate {@code true} to request a batch-enabled statement
+	 * @return a {@link Statement} instance, or {@code null} if batch usage is not allowed
+	 * @throws SQLException if a JDBC error occurs
+	 */
 	private Statement _getStatement(final String message, final boolean bBatchUpdate) throws SQLException {
 		Statement statement = null;
 		cntGetStatement++;
@@ -151,7 +240,14 @@ public class OAConnection {
 		return statement;
 	}
 
-	/** returns true if found */
+	/**
+	 * Releases a {@link Statement} back to the internal pool.
+	 * <p>
+	 * If the statement was used for batching, any pending batch is cleared.
+	 *
+	 * @param statement the statement to release
+	 * @return {@code true} if the statement was found and released
+	 */
 	public boolean releaseStatement(Statement statement) {
 
 		boolean bResult = false;
@@ -190,6 +286,11 @@ public class OAConnection {
 		return bResult;
 	}
 
+	/**
+	 * Executes all open batch statements and prepared statement batches.
+	 *
+	 * @throws SQLException if a JDBC error occurs during batch execution
+	 */
 	protected void executeOpenBatches() throws SQLException {
 		for (Pool pool : alStatement) {
 			if (pool.used && pool.bIsForBatch) {
@@ -205,6 +306,11 @@ public class OAConnection {
 		}
 	}
 
+	/**
+	 * Clears and releases all open batch statements without executing them.
+	 *
+	 * @throws SQLException if a JDBC error occurs
+	 */
 	protected void clearOpenBatches() throws SQLException {
 		for (Pool pool : alStatement) {
 			if (pool.used && pool.bIsForBatch) {
@@ -219,16 +325,40 @@ public class OAConnection {
 	}
 
 	/**
-	 * Must be in an OATransaction that has allowBatch=true
+	 * Returns a {@link PreparedStatement} configured for batch updates.
+	 * <p>
+	 * This method must be called within an {@link OATransaction} that allows batching.
+	 *
+	 * @param sql the SQL statement
+	 * @return a batch-enabled {@link PreparedStatement}, or {@code null} if batching is not allowed
+	 * @throws SQLException if a JDBC error occurs
 	 */
 	public PreparedStatement getBatchPreparedStatement(String sql) throws SQLException {
 		return _getPreparedStatement(sql, false, true);
 	}
 
+	/**
+	 * Returns a {@link PreparedStatement} for the specified SQL.
+	 *
+	 * @param sql the SQL statement
+	 * @param bHasAutoGenerated {@code true} if auto-generated keys are required
+	 * @return a {@link PreparedStatement} instance
+	 * @throws SQLException if a JDBC error occurs
+	 */
 	public PreparedStatement getPreparedStatement(String sql, boolean bHasAutoGenerated) throws SQLException {
 		return _getPreparedStatement(sql, bHasAutoGenerated, false);
 	}
 
+	/**
+	 * Internal method used to acquire a {@link PreparedStatement}, optionally
+	 * configured for batch updates.
+	 *
+	 * @param sql the SQL statement
+	 * @param bHasAutoGenerated {@code true} if auto-generated keys are required
+	 * @param bBatchUpdate {@code true} to request batch usage
+	 * @return a {@link PreparedStatement} instance, or {@code null} if batch usage is not allowed
+	 * @throws SQLException if a JDBC error occurs
+	 */
 	private PreparedStatement _getPreparedStatement(final String sql, final boolean bHasAutoGenerated, final boolean bBatchUpdate)
 			throws SQLException {
 
@@ -290,6 +420,15 @@ public class OAConnection {
 		return ps;
 	}
 
+	/**
+	 * Releases a {@link PreparedStatement} back to the internal pool.
+	 * <p>
+	 * Depending on usage and pool size, the statement may be reused or closed.
+	 *
+	 * @param ps the prepared statement to release
+	 * @param bCanBeReused {@code true} if the statement may be reused
+	 * @return {@code true} if the statement was found and released
+	 */
 	public boolean releasePreparedStatement(PreparedStatement ps, boolean bCanBeReused) {
 		boolean bFound = false;
 		synchronized (alUsedPreparedStatement) {
@@ -338,6 +477,11 @@ public class OAConnection {
 		return bFound;
 	}
 
+	/**
+	 * Returns the total number of statements and prepared statements currently in use.
+	 *
+	 * @return the total count of in-use statements
+	 */
 	public int getTotalUsed() {
 		int x = alUsedPreparedStatement.size();
 		x += getCurrentlyUsedStatementCount();
@@ -347,6 +491,11 @@ public class OAConnection {
 		return x;
 	}
 
+	/**
+	 * Returns the number of {@link Statement} instances currently in use.
+	 *
+	 * @return the count of active statements
+	 */
 	protected int getCurrentlyUsedStatementCount() {
 		int totalUsed = 0;
 		;
@@ -362,6 +511,11 @@ public class OAConnection {
 		return totalUsed;
 	}
 
+	/**
+	 * Appends diagnostic information about this connection to the supplied list.
+	 *
+	 * @param vec the list to receive diagnostic messages
+	 */
 	public void getInfo(List vec) {
 		try {
 			if (connection.isClosed()) {
@@ -389,7 +543,7 @@ public class OAConnection {
 	}
 
 	/**
-	 * internal class used by Connection to get a list of Statement objects
+	 * Internal pool entry used to track a {@link Statement} and its usage state.
 	 */
 	class Pool {
 		Statement statement;
@@ -404,6 +558,11 @@ public class OAConnection {
 		}
 	}
 
+	/**
+	 * Returns the total number of cached {@link PreparedStatement} instances.
+	 *
+	 * @return the total prepared statement count
+	 */
 	public int getTotalPreparedStatements() {
 		int i = 0;
 		for (Entry<String, List<PreparedStatement>> entry : hmSqlToPreparedStatements.entrySet()) {

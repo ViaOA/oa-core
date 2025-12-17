@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,14 @@ import com.viaoa.util.OADateTime;
  */
 public class OAConverterZoneId implements OAConverterInterface<ZoneId> {
 
+	/**
+	 * Converts the supplied value into a {@link ZoneId}.
+	 *
+	 * @param thisClass the target class, {@link ZoneId}
+	 * @param fromValue the value to convert
+	 * @param fmt ignored
+	 * @return the converted {@link ZoneId}, or {@code null} if conversion is not possible
+	 */
     @Override
     public ZoneId convert(Class<ZoneId> thisClass, Object fromValue, String fmt) {
         if (fromValue == null) return null;
@@ -99,6 +107,13 @@ public class OAConverterZoneId implements OAConverterInterface<ZoneId> {
         return null;
     }
 
+    /**
+     * Converts a {@link ZoneId} into its string identifier.
+     *
+     * @param fromValue the {@link ZoneId} value to convert
+     * @param fmt ignored
+     * @return the zone identifier string, or an empty string if the value is {@code null}
+     */
     @Override
     public String convertToString(ZoneId fromValue, String fmt) {
         if (fromValue == null) return "";

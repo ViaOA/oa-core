@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,13 +40,44 @@ import com.viaoa.xml.OAXMLReader;
  * each parse operation.
  */
 public class OAYamlReader {
+	
+	/**
+	 * Length of the input text being processed.
+	 */
 	private int len;
+	
+	/**
+	 * Current position within the input text.
+	 */
 	private int pos;
+	
+	/**
+	 * Buffer used to build the generated XML output.
+	 */
 	private StringBuilder sb;
+	
+	/**
+	 * Class representing the root object type for parsed YAML content.
+	 */
 	private Class rootClass;
+	
+	/**
+	 * Property names used to map top-level YAML entries to root object properties.
+	 */
 	private String rootPropertyName, rootPropertyName2;
+	
+	/**
+	 * XML element name used for each root object created from the YAML input.
+	 */
 	private String rootObjectName;
 
+	/**
+	 * Creates a new YAML reader configured for the specified root object mapping.
+	 *
+	 * @param rootObjectName the XML element name for root objects
+	 * @param rootPropertyName the primary property name for top-level YAML entries
+	 * @param rootPropertyName2 the secondary property name for top-level YAML entries
+	 */
 	public OAYamlReader(String rootObjectName, String rootPropertyName, String rootPropertyName2) {
 		this.rootObjectName = rootObjectName;
 		this.rootPropertyName = rootPropertyName;
@@ -54,8 +85,13 @@ public class OAYamlReader {
 	}
 
 	/**
-	 * @param rootClass class for the root object. If it is a Hub, then it needs to be the OAObjectClass of the Hub. param rootPropertyName
-	 *                  name of property for top level values in yaml
+	 * Parses YAML text into OAObjects of the specified root class.
+	 * <p>
+	 * The YAML is first converted to XML and then parsed using {@link OAXMLReader}.
+	 *
+	 * @param yaml the YAML text to parse
+	 * @param rootClass the class of the root object
+	 * @return an array of parsed objects
 	 */
 	public Object[] parse(String yaml, Class rootClass) {
 		try {
@@ -108,29 +144,60 @@ public class OAYamlReader {
 		}
 	}
 
-	// get the classname to use for a property
+	/**
+	 * Returns the class name to use when resolving a property class.
+	 *
+	 * @param className the class name found in the XML
+	 * @return the resolved class name
+	 */
 	protected String getClassName(String className) {
 		//System.out.println("getClassName className="+className);//qqqqqqqqq
 		//        className = "com.viaoa.object.OAObject";
 		return className;
 	}
 
-	// get the propertyName to use
+	/**
+	 * Returns the property name to use when setting a value on an object.
+	 *
+	 * @param obj the target object
+	 * @param propName the property name from the XML
+	 * @return the resolved property name
+	 */
 	protected String getPropertyName(OAObject obj, String propName) {
 		//System.out.println("getPropertyName obj="+obj+", propName="+propName);//qqqqqqqqq
 		//propName = null;
 		return propName;
 	}
 
-	// get the value to use when setting a property
+	/**
+	 * Returns the value to use when setting a property on an object.
+	 *
+	 * @param obj the target object
+	 * @param name the property name
+	 * @param value the parsed value
+	 * @return the value to assign
+	 */
 	protected Object getValue(OAObject obj, String name, Object value) {
 		//System.out.println("getValue obj="+obj+", propName="+name+", value="+value);//qqqqqqqqq        
 		return value;
 	}
 
+	/**
+	 * Callback invoked when an object has finished being read.
+	 *
+	 * @param obj the object that was completed
+	 * @param hasParent {@code true} if the object has a parent object
+	 */
 	protected void endObject(OAObject obj, boolean hasParent) {
 	}
 
+	/**
+	 * Converts YAML text into an XML representation compatible with {@link OAXMLReader}.
+	 *
+	 * @param text the YAML text to convert
+	 * @param rootClass the class of the root object
+	 * @return the generated XML string
+	 */
 	public String convertToXML(String text, Class rootClass) {
 		this.rootClass = rootClass;
 		pos = 0;

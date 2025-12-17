@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,9 @@ public class OAReflect {
 
 	private static Logger LOG = Logger.getLogger(OAReflect.class.getName());
 
+	/**
+	 * Lookup table that maps primitive types to their corresponding wrapper classes.
+	 */
 	static private Hashtable tblPrimitives;
 	static {
 		tblPrimitives = new Hashtable(10, 1.0F);
@@ -80,31 +83,36 @@ public class OAReflect {
 		tblPrimitives.put(java.lang.Void.TYPE, java.lang.Void.class);
 	}
 
+	/**
+	 * Delegates to {@link #getMethod(Class,String,int)}.
+	 */
 	public static Method getMethod(Class clazz, String methodName) {
 		return getMethod(clazz, methodName, -1);
 	}
 
 	/**
-	 * Finds a Method in a class.
-	 *
-	 * @param clazz      is the Class to use to find method name.
-	 * @param methodName is case insensitive name of method. <br>
-	 *                   Example: Employee.class, "getLastName")
-	 * @return method in clazz that matches methodName.
+	 * Delegates to {@link #getMethod(Class,String,int,Object[])}.
 	 */
 	public static Method getMethod(Class clazz, String methodName, int paramCount) {
 		return getMethod(clazz, methodName, paramCount, null);
 	}
 
+	/**
+	 * Delegates to {@link #getMethod(Class,String,int,Object[])}.
+	 */
 	public static Method getMethod(Class clazz, String methodName, Object[] args) {
 		int paramCount = args == null ? 0 : args.length;
 		return getMethod(clazz, methodName, paramCount, args);
 	}
 
 	/**
-	 * 20121028
+	 * Finds a public method on the given class by name, parameter count, and optional argument types.
 	 *
-	 * @param args list of arguments used in method call
+	 * @param clazz the class to search
+	 * @param methodName case-insensitive name of the method
+	 * @param paramCount expected number of parameters, or negative to ignore
+	 * @param args optional argument values used to match parameter types
+	 * @return the matching Method, or null if none is found
 	 */
 	public static Method getMethod(Class clazz, String methodName, int paramCount, Object[] args) {
 		if (clazz == null || methodName == null || methodName.length() == 0) {
@@ -140,6 +148,14 @@ public class OAReflect {
 		return null;
 	}
 
+	/**
+	 * Finds a public method with a single parameter, allowing wrapper and primitive equivalence.
+	 *
+	 * @param clazz the class to search
+	 * @param methodName case-insensitive name of the method
+	 * @param classParam the expected parameter type
+	 * @return the matching Method, or null if none is found
+	 */
 	public static Method getMethod(Class clazz, String methodName, Class classParam) {
 		if (clazz == null || methodName == null || methodName.length() == 0 || classParam == null) {
 			return null;
@@ -163,17 +179,7 @@ public class OAReflect {
 	}
 
 	/**
-	 * Get the methods for a property path.
-	 *
-	 * @param clazz        beginning Class object to start with.
-	 * @param propertyPath is dot "." separated list (case insensitive). <br>
-	 *                     Example: getMethods(Order.class, "employee.department.region.name") will retrieve the following methods:
-	 *                     Order.getEmployee(), Employee.getDepartment(), Department.getRegion(), Region.getName()
-	 *                     <p>
-	 *                     Note: if any of the propertyNames is a Hub, then it will use the Hub's activeObject when retrieving the property.
-	 * @return array of "get' methods that can be used to retrieve a value from an object of type clazz.
-	 * @see #getPropertyValue(Object,Method)
-	 * @see #getMethods(Class,String,boolean)
+	 * Delegates to {@link #getMethods(Class,String,boolean)}.
 	 */
 	public static Method[] getMethods(Class clazz, String propertyPath) {
 		return getMethods(clazz, propertyPath, true);
@@ -505,6 +511,22 @@ public class OAReflect {
 		return object;
 	}
 
+	/**
+	 * Invokes up to a specified number of Methods from the given array on the supplied object.
+	 *
+	 * <p>The method starts with the provided object and sequentially invokes each Method
+	 * in the array, stopping when either:
+	 * <ul>
+	 *   <li>The object becomes null</li>
+	 *   <li>The end of the method array is reached</li>
+	 *   <li>The specified maximum number of method invocations is reached</li>
+	 * </ul>
+	 *
+	 * @param object the starting object used for the first method invocation
+	 * @param method array of Methods to invoke in order
+	 * @param amt maximum number of methods from the array to invoke
+	 * @return the resulting object after invoking the specified methods, or null if any invocation returns null
+	 */
 	public static Object getPropertyValue(Object object, Method method[], int amt) {
 		if (method == null || method.length == 0) {
 			return object;
@@ -598,7 +620,14 @@ public class OAReflect {
 	}
 
 	/**
-	 * If a "get" method, will find type of class to send method, else will find the type of return class.
+	 * Determines the Class associated with a Method based on its parameters or return type.
+	 *
+	 * <p>If the Method has no parameters, the return type is returned unless it is {@code void},
+	 * in which case {@code null} is returned. If the Method has exactly one parameter, the
+	 * parameter type is returned. For all other cases, {@code null} is returned.
+	 *
+	 * @param m the Method to inspect
+	 * @return the associated Class, or null if it cannot be determined
 	 */
 	static public Class getClass(Method m) {
 		if (m == null) {
@@ -670,6 +699,15 @@ public class OAReflect {
 		return classPrimitive;
 	}
 
+	/**
+	 * Determines whether the given Class represents a primitive wrapper type.
+	 *
+	 * <p>This method explicitly checks for common Java wrapper classes corresponding
+	 * to primitive types.
+	 *
+	 * @param clazz the Class to test
+	 * @return true if the class is a primitive wrapper type, false otherwise
+	 */
 	static public boolean isPrimitiveClassWrapper(Class clazz) {
 		if (clazz == null) {
 			return false;
@@ -769,6 +807,23 @@ public class OAReflect {
 		return null;
 	}
 
+	/**
+	 * Returns a default empty value for the specified primitive type.
+	 *
+	 * <p>If the supplied class represents a primitive type (or its wrapper),
+	 * this method returns a corresponding default value:
+	 * <ul>
+	 *   <li>{@code boolean}/{@code Boolean} → {@code true}</li>
+	 *   <li>{@code int}/{@code Integer} → {@code 0}</li>
+	 *   <li>{@code long}/{@code Long} → {@code 0L}</li>
+	 *   <li>{@code short}/{@code Short} → {@code (short) 0}</li>
+	 *   <li>{@code double}/{@code Double} → {@code 0.0D}</li>
+	 *   <li>{@code float}/{@code Float} → {@code 0.0F}</li>
+	 * </ul>
+	 *
+	 * @param c the Class representing a primitive or wrapper type
+	 * @return the default value for the primitive type, or null if the class is not a supported primitive
+	 */
 	public static Object getEmptyPrimitive(Class c) {
 		Object response = null;
 		if (c.isPrimitive()) {

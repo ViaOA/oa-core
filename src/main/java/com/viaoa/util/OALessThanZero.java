@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,15 +30,34 @@ package com.viaoa.util;
  */
 public class OALessThanZero implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
+    
+    /**
+     * Singleton instance representing the less-than-zero comparison token.
+     */
     public static final OALessThanZero instance = new OALessThanZero();
     
+    /**
+     * Creates a new instance.
+     */
     private OALessThanZero() {
     }
 
-    public OALessThanZero getGreaterThanZeroObject() {
+    /**
+     * Returns the singleton less-than-zero comparison instance.
+     *
+     * @return the singleton instance
+     */
+    public OALessThanZero getLessThanZeroObject() {
         return instance;
     }
     
+    /**
+     * Compares the given object to determine whether it represents a numeric value
+     * less than zero or is null.
+     *
+     * @param obj the object to compare
+     * @return true if the object is null or can be converted to a number less than zero
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj == null) return true;
@@ -46,6 +65,12 @@ public class OALessThanZero implements OASpecialCompareObject, java.io.Serializa
         if (num == null) return false;
         return (num.doubleValue() < 0.0);
     }
+
+    /**
+     * Returns a constant hash code value.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
         return 1;

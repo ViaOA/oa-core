@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,8 +78,25 @@ import com.viaoa.util.OAThrottle;
 public class RemoteSyncImpl implements RemoteSyncInterface {
 	private static Logger LOG = Logger.getLogger(RemoteSyncImpl.class.getName());
 
+	/**
+	 * Throttle used to limit repeated property-change error logging.
+	 */
 	private final OAThrottle throttlePropertyChangeError = new OAThrottle(5000);
 
+	/**
+	 * Applies a property change to an object identified by class and key.
+	 * <p>
+	 * Resolves the object, updates the specified property, and clears cached
+	 * blob values when required so that the value is reloaded from the server.
+	 * </p>
+	 *
+	 * @param objectClass the class of the object
+	 * @param origKey the key identifying the object
+	 * @param propertyName the name of the property to update
+	 * @param newValue the new property value
+	 * @param bIsBlob {@code true} if the property represents a blob value
+	 * @return {@code true} if the object was found and updated, otherwise {@code false}
+	 */
 	@Override
 	public boolean propertyChange(Class objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob) {
 		OAObject obj = getObject(objectClass, origKey, true);
@@ -100,6 +117,15 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		return true;
 	}
 
+	/**
+	 * Adds an object to a hub property on a master object.
+	 *
+	 * @param masterObjectClass the class of the master object
+	 * @param masterObjectKey the key identifying the master object
+	 * @param hubPropertyName the name of the hub property
+	 * @param objAdd the object to add to the hub
+	 * @return {@code true} if the object was added, otherwise {@code false}
+	 */
 	@Override
 	public boolean addToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object objAdd) {
 		OAObject obj = getObject(masterObjectClass, masterObjectKey, true);
@@ -116,12 +142,31 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		return true;
 	}
 
+	/**
+	 * Adds a newly created object to a hub property on a master object.
+	 *
+	 * @param masterObjectClass the class of the master object
+	 * @param masterObjectKey the key identifying the master object
+	 * @param hubPropertyName the name of the hub property
+	 * @param obj serializer containing the object to add
+	 * @return {@code true} if the object was added, otherwise {@code false}
+	 */
 	@Override
 	public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
 		Object objx = obj.getObject();
 		return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, objx);
 	}
 
+	/**
+	 * Inserts an object into a hub property at a specific position.
+	 *
+	 * @param masterObjectClass the class of the master object
+	 * @param masterObjectKey the key identifying the master object
+	 * @param hubPropertyName the name of the hub property
+	 * @param objInsert the object to insert
+	 * @param pos the position at which to insert the object
+	 * @return {@code true} if the object was inserted, otherwise {@code false}
+	 */
 	@Override
 	public boolean insertInHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object objInsert, int pos) {
 		OAObject obj = getObject(masterObjectClass, masterObjectKey, true);
@@ -138,6 +183,16 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		return true;
 	}
 
+	/**
+	 * Removes an object from a hub property on a master object.
+	 *
+	 * @param objectClass the class of the master object
+	 * @param objectKey the key identifying the master object
+	 * @param hubPropertyName the name of the hub property
+	 * @param objectClassRemove the class of the object to remove
+	 * @param objectKeyRemove the key identifying the object to remove
+	 * @return {@code true} if the object was removed, otherwise {@code false}
+	 */
 	@Override
 	public boolean removeFromHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName, Class objectClassRemove,
 			OAObjectKey objectKeyRemove) {
@@ -179,6 +234,14 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	}
 	*/
 
+	/**
+	 * Removes all objects from a hub property on a master object.
+	 *
+	 * @param objectClass the class of the master object
+	 * @param objectKey the key identifying the master object
+	 * @param hubPropertyName the name of the hub property
+	 * @return {@code true} if the hub was cleared, otherwise {@code false}
+	 */
 	@Override
 	public boolean removeAllFromHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName) {
 		OAObject obj = getObject(objectClass, objectKey, false);
@@ -197,6 +260,16 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		return true;
 	}
 
+	/**
+	 * Moves an object within a hub from one position to another.
+	 *
+	 * @param objectClass the class of the master object
+	 * @param objectKey the key identifying the master object
+	 * @param hubPropertyName the name of the hub property
+	 * @param posFrom the original position
+	 * @param posTo the destination position
+	 * @return {@code true} if the move was applied, otherwise {@code false}
+	 */
 	@Override
 	public boolean moveObjectInHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName, int posFrom, int posTo) {
 		OAObject obj = getObject(objectClass, objectKey, false);
@@ -213,6 +286,17 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		return true;
 	}
 
+	/**
+	 * Sorts a hub property using the specified property paths and order.
+	 *
+	 * @param objectClass the class of the master object
+	 * @param objectKey the key identifying the master object
+	 * @param hubPropertyName the name of the hub property
+	 * @param propertyPaths property paths used for sorting
+	 * @param bAscending {@code true} for ascending order, {@code false} for descending
+	 * @param comp optional comparator
+	 * @return {@code true} if the hub was sorted, otherwise {@code false}
+	 */
 	@Override
 	public boolean sort(Class objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending,
 			Comparator comp) {
@@ -238,6 +322,14 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	 */
 
 	// on the server, if the object is not found in the cache, then it will be loaded by the datasource
+	/**
+	 * Resolves an object by class and key from cache or datasource.
+	 *
+	 * @param objectClass the class of the object
+	 * @param origKey the object key
+	 * @param bCheckGuidKey flag indicating GUID validation behavior
+	 * @return the resolved object, or {@code null} if not found
+	 */
 	private OAObject getObject(final Class objectClass, final OAObjectKey origKey, final boolean bCheckGuidKey) {
 		if (origKey == null) {
 			return null;
@@ -255,6 +347,13 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	}
 
 	// on the server, if the Hub is not found in the cache, then it will be loaded by the datasource
+	/**
+	 * Resolves a hub property from an object.
+	 *
+	 * @param obj the master object
+	 * @param hubPropertyName the name of the hub property
+	 * @return the hub instance, or {@code null} if not available
+	 */
 	private Hub getHub(OAObject obj, String hubPropertyName) {
 		if (obj == null) {
 			return null;
@@ -272,7 +371,13 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		return (Hub) objx;
 	}
 
-	// 20150420
+	/**
+	 * Clears pending change state for a hub property.
+	 *
+	 * @param masterObjectClass the class of the master object
+	 * @param masterObjectKey the key identifying the master object
+	 * @param hubPropertyName the name of the hub property
+	 */
 	@Override
 	public void clearHubChanges(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
 		OAObject obj = getObject(masterObjectClass, masterObjectKey, false);
@@ -289,7 +394,11 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	}
 
 	/**
-	 * Used when the server Hub.sendRefresh() is called, so that clients can replace with new collection.
+	 * Refreshes a hub property by replacing its contents with server-provided data.
+	 *
+	 * @param masterObjectClass the class of the master object
+	 * @param masterObjectKey the key identifying the master object
+	 * @param hubPropertyName the name of the hub property
 	 */
 	@Override
 	public void refresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
@@ -312,6 +421,12 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		HubAddRemoveDelegate.refresh(hub, hubNew);
 	}
 
+	/**
+	 * Applies a server-initiated delete operation.
+	 *
+	 * @param objectClass the class of the object to delete
+	 * @param objectKey the key identifying the object
+	 */
     @Override
     public void serverDelete(Class objectClass, OAObjectKey objectKey) {
         OAObject obj = getObject(objectClass, objectKey, false);
@@ -323,6 +438,12 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
     }
 	
 	
+    /**
+     * Applies a client-initiated delete operation.
+     *
+     * @param objectClass the class of the object to delete
+     * @param objectKey the key identifying the object
+     */
     @Override
     public void clientDelete(Class objectClass, OAObjectKey objectKey) {
         OAObject obj = getObject(objectClass, objectKey, false);

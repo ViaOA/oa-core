@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,14 @@ import com.viaoa.util.OATime;
  */
 public class OAConverterOATime implements OAConverterInterface<OATime> {
 
+	/**
+	 * Converts the supplied value into a {@link java.sql.Time}.
+	 *
+	 * @param thisClass the expected result type ({@code Time.class})
+	 * @param fromValue the value to convert
+	 * @param fmt optional format string used when parsing string values
+	 * @return the converted {@link java.sql.Time}, or {@code null} if conversion is not possible
+	 */
     @Override
     public OATime convert(Class<OATime> thisClass, Object fromValue, String fmt) {
         if (fromValue == null) return null;
@@ -126,6 +134,13 @@ public class OAConverterOATime implements OAConverterInterface<OATime> {
         return null;
     }
 
+    /**
+     * Converts a {@link java.sql.Time} value into a formatted string.
+     *
+     * @param fromValue the {@link java.sql.Time} value to convert
+     * @param fmt optional time format string
+     * @return the formatted string, or an empty string if the value is {@code null}
+     */
     @Override
     public String convertToString(OATime fromValue, String fmt) {
         if (fromValue == null) return "";

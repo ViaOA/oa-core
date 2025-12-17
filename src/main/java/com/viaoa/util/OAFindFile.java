@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,43 @@ import java.util.zip.*;
  * Instances are not thread-safe and should not be shared across threads.
  */
 public class OAFindFile {
+	
+	/**
+	 * File extensions that are treated as ZIP-compatible archives during search.
+	 */
 	static final String[] ZIP_EXTENSIONS = { ".zip", ".jar", ".war", ".ear" };
 
+	/**
+	 * The target file name to search for.
+	 */
 	private String findFileName;
+	
+	/**
+	 * Accumulates matched file paths during the search.
+	 */
 	private ArrayList<String> list;
 
+	/**
+	 * Searches recursively starting from the given root path for files with the specified name.
+	 *
+	 * @param rootFile the root directory path to start searching from
+	 * @param findFileName the file name to search for
+	 * @return an array of matched file paths
+	 * @throws IOException if an I/O error occurs
+	 */
 	public String[] findAll(String rootFile, String findFileName) throws IOException {
 		if (rootFile == null || rootFile.trim().length() == 0) rootFile = ".";
 		return findAll(new File(rootFile), findFileName);
 	}
+	
+	/**
+	 * Searches recursively starting from the given root file for files with the specified name.
+	 *
+	 * @param rootFile the root file or directory to start searching from
+	 * @param findFileName the file name to search for
+	 * @return an array of matched file paths
+	 * @throws IOException if an I/O error occurs
+	 */
 	public String[] findAll(File rootFile, String findFileName) throws IOException {
 		if (findFileName == null || findFileName.trim().length() == 0) return new String[0];
 		this.findFileName = findFileName;
@@ -54,6 +82,12 @@ public class OAFindFile {
 		return ss;
 	}
 	
+	/**
+	 * Recursively inspects the given file or directory, adding matches to the result list.
+	 *
+	 * @param file the file or directory to inspect
+	 * @throws IOException if an I/O error occurs
+	 */
 	protected void findFile(File file) throws IOException {
 		if (file.isDirectory()) {
 	        // System.out.println("checking "+file);         
@@ -88,6 +122,12 @@ public class OAFindFile {
 		}
 	}
 
+	/**
+	 * Searches a ZIP-compatible archive file for entries matching the target file name.
+	 *
+	 * @param file the archive file to search
+	 * @throws IOException if an I/O error occurs
+	 */
 	protected void findZip(File file) throws IOException {
         //System.out.println("checking zip "+file);         
 		InputStream in = new FileInputStream(file);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,10 +55,27 @@ import com.viaoa.util.OAString;
 public class SelectDelegate {
 	private static Logger LOG = Logger.getLogger(SelectDelegate.class.getName());
 
+	/**
+	 * Cache of prepared SELECT SQL strings keyed by {@link WhereObjectSelect}
+	 * definitions for where-object based queries.
+	 */
 	private static final Map<WhereObjectSelect, String> hmPreparedStatementSql = new ConcurrentHashMap<WhereObjectSelect, String>();
+
+	/**
+	 * Cache of prepared SELECT SQL strings keyed by class for primary-key lookups
+	 * using clean (non-dirty) reads.
+	 */
 	private static final Map<Class, String> hmPreparedStatementSqlx = new ConcurrentHashMap<Class, String>();
 
+	/**
+	 * Cache of prepared SELECT SQL strings keyed by class for dirty reads
+	 * using primary-key lookups.
+	 */
 	private static final Map<Class, String> hmPreparedStatementSqlxDirty = new ConcurrentHashMap<Class, String>();
+
+	/**
+	 * Cache of column arrays associated with dirty prepared SELECT statements.
+	 */
 	private static final Map<Class, Column[]> hmPreparedStatementSqlxDirtyColumns = new ConcurrentHashMap<Class, Column[]>();
 
 	/*
@@ -75,6 +92,19 @@ public class SelectDelegate {
 	}
 	*/
 
+	/**
+	 * Executes a SELECT query for the specified class using a where clause,
+	 * parameters, and ordering.
+	 *
+	 * @param ds the JDBC data source
+	 * @param clazz the class being selected
+	 * @param queryWhere the WHERE clause expression
+	 * @param params query parameter values
+	 * @param queryOrder ORDER BY clause
+	 * @param max maximum number of rows to return
+	 * @param bDirty {@code true} to allow dirty reads
+	 * @return an iterator over the result set, or {@code null} if not applicable
+	 */
 	public static OADataSourceIterator select(OADataSourceJDBC ds, Class clazz, String queryWhere, Object[] params, String queryOrder,
 			int max, boolean bDirty) {
 		if (ds == null) {
@@ -109,7 +139,20 @@ public class SelectDelegate {
 	}
 
 	/**
-	 * @returns array [0]=sql [1]=sql2 (if needed)
+	 * Builds one or two SELECT SQL statements for the given query definition.
+	 * <p>
+	 * When DISTINCT is required, a two-step primary-key select followed by
+	 * a full-row select is generated.
+	 *
+	 * @param qc the query converter
+	 * @param ds the JDBC data source
+	 * @param clazz the class being selected
+	 * @param queryWhere the WHERE clause
+	 * @param params query parameters
+	 * @param queryOrder ORDER BY clause
+	 * @param max maximum number of rows
+	 * @param bDirty {@code true} to allow dirty reads
+	 * @return an array containing the primary SQL and optional secondary SQL
 	 */
 	private static String[] getSelectSQL(QueryConverter qc, OADataSourceJDBC ds, Class clazz, String queryWhere, Object[] params,
 			String queryOrder, int max, boolean bDirty) {
@@ -173,17 +216,45 @@ public class SelectDelegate {
 		return queries;
 	}
 
+	/**
+	 * Composite key used to cache prepared SELECT SQL for where-object queries.
+	 */
 	private static class WhereObjectSelect {
+
+		/**
+		 * Target class being selected.
+		 */
 		private Class clazz;
+		
+		/**
+		 * Class of the where-object used in the query.
+		 */
 		private Class whereClazz;
+		
+		/**
+		 * Property name used to relate the where-object to the target class.
+		 */
 		private String propertyFromWhereObject;
 
+		/**
+		 * Creates a new where-object select key.
+		 *
+		 * @param clazz the target class
+		 * @param whereClazz the where-object class
+		 * @param propertyFromWhereObject the linking property name
+		 */
 		public WhereObjectSelect(Class clazz, Class whereClazz, String propertyFromWhereObject) {
 			this.clazz = clazz;
 			this.whereClazz = whereClazz;
 			this.propertyFromWhereObject = propertyFromWhereObject;
 		}
 
+		/**
+		 * Compares this instance to another for equality.
+		 *
+		 * @param obj the object to compare
+		 * @return {@code true} if all key fields are equal
+		 */
 		@Override
 		public boolean equals(Object obj) {
 			if (!(obj instanceof WhereObjectSelect)) {
@@ -218,6 +289,11 @@ public class SelectDelegate {
 			return true;
 		}
 
+		/**
+		 * Returns a hash code based on the key fields.
+		 *
+		 * @return the computed hash code
+		 */
 		@Override
 		public int hashCode() {
 			int x = 0;
@@ -234,6 +310,21 @@ public class SelectDelegate {
 		}
 	}
 
+	/**
+	 * Executes a SELECT query using a where-object relationship.
+	 *
+	 * @param ds the JDBC data source
+	 * @param clazz the class being selected
+	 * @param whereObject the related where-object
+	 * @param propertyFromWhereObject property linking the where-object
+	 * @param queryWhere additional WHERE clause
+	 * @param params query parameters
+	 * @param extraWhere extra SQL WHERE conditions
+	 * @param queryOrder ORDER BY clause
+	 * @param max maximum number of rows
+	 * @param bDirty {@code true} to allow dirty reads
+	 * @return an iterator over the result set, or {@code null} if not applicable
+	 */
 	public static OADataSourceIterator select(OADataSourceJDBC ds, Class clazz,
 			OAObject whereObject, String propertyFromWhereObject,
 			String queryWhere, Object[] params,
@@ -305,7 +396,16 @@ public class SelectDelegate {
 		return rsi;
 	}
 
-	// 20121013
+	/**
+	 * Selects a single object by its primary key.
+	 *
+	 * @param ds the JDBC data source
+	 * @param clazz the object class
+	 * @param key the object key
+	 * @param bDirty {@code true} to allow dirty reads
+	 * @return an iterator positioned at the selected object
+	 * @throws Exception if selection fails
+	 */
 	public static OADataSourceIterator selectObject(OADataSourceJDBC ds, Class clazz, OAObjectKey key, boolean bDirty) throws Exception {
 		if (ds == null) {
 			return null;
@@ -376,6 +476,22 @@ public class SelectDelegate {
 		return rsi;
 	}
 
+	/**
+	 * Builds a SELECT SQL statement for a where-object based query.
+	 *
+	 * @param ds the JDBC data source
+	 * @param qc the query converter
+	 * @param clazz the class being selected
+	 * @param whereObject the related where-object
+	 * @param propertyFromWhereObject property linking the where-object
+	 * @param queryWhere WHERE clause
+	 * @param args query parameters
+	 * @param extraWhere extra SQL conditions
+	 * @param queryOrder ORDER BY clause
+	 * @param max maximum number of rows
+	 * @param bDirty {@code true} to allow dirty reads
+	 * @return the generated SELECT SQL statement
+	 */
 	public static String getSelectSQL(OADataSourceJDBC ds, QueryConverter qc, Class clazz,
 			OAObject whereObject, String propertyFromWhereObject,
 			String queryWhere, Object[] args,
@@ -391,6 +507,16 @@ public class SelectDelegate {
 		return query;
 	}
 
+	/**
+	 * Executes a passthrough SELECT query fragment.
+	 *
+	 * @param ds the JDBC data source
+	 * @param clazz the class being selected
+	 * @param query SQL fragment beginning after SELECT
+	 * @param max maximum number of rows
+	 * @param bDirty {@code true} to allow dirty reads
+	 * @return an iterator over the result set
+	 */
 	public static Iterator selectPassthru(OADataSourceJDBC ds, Class clazz, String query, int max, boolean bDirty) {
 		Table table = ds.getDatabase().getTable(clazz);
 		if (table == null) {
@@ -428,7 +554,15 @@ public class SelectDelegate {
 	*/
 
 	/**
-	 * Note: queryWhere needs to begin with "FROM TABLENAME WHERE ..." queryOrder will be prefixed with "ORDER BY "
+	 * Executes a passthrough SELECT using explicit WHERE and ORDER BY clauses.
+	 *
+	 * @param ds the JDBC data source
+	 * @param clazz the class being selected
+	 * @param queryWhere FROM/WHERE clause
+	 * @param queryOrder ORDER BY clause
+	 * @param max maximum number of rows
+	 * @param bDirty {@code true} to allow dirty reads
+	 * @return an iterator over the result set
 	 */
 	public static OADataSourceIterator selectPassthru(OADataSourceJDBC ds, Class clazz, String queryWhere, String queryOrder, int max,
 			boolean bDirty) {
@@ -459,6 +593,19 @@ public class SelectDelegate {
 		return rsi;
 	}
 
+	/**
+	 * Executes a SQL command using the provided JDBC data source.
+	 * <p>
+	 * Obtains a {@link java.sql.Statement} from the data source, executes the
+	 * supplied command, and ensures the statement is released afterward.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source used to obtain and release the statement
+	 * @param command the SQL command to execute
+	 * @return {@code null} upon successful execution
+	 * @throws RuntimeException if an exception occurs during execution, wrapping
+	 *         the original exception
+	 */
 	public static Object execute(OADataSourceJDBC ds, String command) {
 		// LOG.fine("command="+command);
 		Statement st = null;
@@ -476,6 +623,20 @@ public class SelectDelegate {
 	}
 
 	// Note: queryWhere needs to begin with "FROM TABLENAME WHERE ..."
+	/**
+	 * Executes a passthrough COUNT query using the provided SQL fragment.
+	 * <p>
+	 * Builds a {@code SELECT COUNT(*)} statement, executes it using a JDBC
+	 * {@link java.sql.Statement}, applies the {@code max} limit if specified,
+	 * and returns the resulting count.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source used to execute the query
+	 * @param query the SQL fragment appended after {@code SELECT COUNT(*)}
+	 * @param max maximum count value to return
+	 * @return the count result, limited by {@code max} if specified
+	 * @throws RuntimeException if an error occurs during execution
+	 */
 	public static int countPassthru(OADataSourceJDBC ds, String query, int max) {
 		String s = "SELECT COUNT(*) ";
 		//was: String s = "SELECT "+getMax(ds, max)+"COUNT(*) ";
@@ -503,10 +664,42 @@ public class SelectDelegate {
 
 	}
 
+	/**
+	 * Counts rows for the specified class using a related where-object.
+	 * <p>
+	 * Delegates to the overloaded {@code count} method with additional parameters
+	 * set to {@code null}.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param selectClass the class being counted
+	 * @param whereObject the related where-object
+	 * @param propertyFromWhereObject property linking the where-object
+	 * @param max maximum count value to return
+	 * @return the count result
+	 */
 	public static int count(OADataSourceJDBC ds, Class selectClass, Object whereObject, String propertyFromWhereObject, int max) {
 		return count(ds, selectClass, whereObject, propertyFromWhereObject, null, null, null, max);
 	}
 
+	/**
+	 * Counts rows for the specified class using a where-object and optional filters.
+	 * <p>
+	 * Builds a {@code SELECT COUNT(*)} SQL statement using the provided parameters,
+	 * executes it, and returns the resulting count, limited by {@code max} if specified.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param selectClass the class being counted
+	 * @param whereObject the related where-object
+	 * @param propertyFromWhereObject property linking the where-object
+	 * @param queryWhere additional WHERE clause
+	 * @param args query parameter values
+	 * @param extraWhere extra SQL conditions
+	 * @param max maximum count value to return
+	 * @return the count result
+	 * @throws RuntimeException if execution fails
+	 */
 	public static int count(OADataSourceJDBC ds, Class selectClass,
 			Object whereObject, String propertyFromWhereObject,
 			String queryWhere, Object[] args,
@@ -557,10 +750,36 @@ public class SelectDelegate {
 		}
 	}
 
+	/**
+	 * Counts rows for the specified class using a WHERE clause.
+	 * <p>
+	 * Delegates to the overloaded {@code count} method with no parameters array.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param clazz the class being counted
+	 * @param queryWhere the WHERE clause
+	 * @param max maximum count value to return
+	 * @return the count result
+	 */
 	public static int count(OADataSourceJDBC ds, Class clazz, String queryWhere, int max) {
 		return count(ds, clazz, queryWhere, (Object[]) null, max);
 	}
 
+	/**
+	 * Counts rows for the specified class using a WHERE clause and a single parameter.
+	 * <p>
+	 * Wraps the parameter into an array and delegates to the array-based
+	 * {@code count} method.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param clazz the class being counted
+	 * @param queryWhere the WHERE clause
+	 * @param param a single query parameter value
+	 * @param max maximum count value to return
+	 * @return the count result
+	 */
 	public static int count(OADataSourceJDBC ds, Class clazz, String queryWhere, Object param, int max) {
 		Object[] params = null;
 		if (param != null) {
@@ -569,6 +788,22 @@ public class SelectDelegate {
 		return count(ds, clazz, queryWhere, params, max);
 	}
 
+	/**
+	 * Counts rows for the specified class using a WHERE clause and parameters.
+	 * <p>
+	 * Builds and executes a {@code SELECT COUNT(*)} SQL statement using the
+	 * {@link QueryConverter}, applies the {@code max} limit if specified,
+	 * and returns the resulting count.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param clazz the class being counted
+	 * @param queryWhere the WHERE clause
+	 * @param params query parameter values
+	 * @param max maximum count value to return
+	 * @return the count result
+	 * @throws RuntimeException if execution fails
+	 */
 	public static int count(OADataSourceJDBC ds, Class clazz, String queryWhere, Object[] params, int max) {
 		QueryConverter qc = new QueryConverter(ds);
 
@@ -606,6 +841,19 @@ public class SelectDelegate {
 		}
 	}
 
+	/**
+	 * Retrieves a BLOB property value for the specified object.
+	 * <p>
+	 * Selects the column corresponding to the given property using the object's
+	 * primary key and returns its value as a byte array.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param whereObject the object whose property value is retrieved
+	 * @param property the property name representing a BLOB column
+	 * @return the BLOB value as a byte array, or {@code null} if not found
+	 * @throws Exception if the table, column, or primary key cannot be resolved
+	 */
 	public static byte[] getPropertyBlobValue(OADataSourceJDBC ds, OAObject whereObject, String property) throws Exception {
 		if (whereObject.getNew()) {
 			return null;
@@ -676,7 +924,16 @@ public class SelectDelegate {
 	}
 
 	/**
-	 * 20180602 select Link table.
+	 * Selects entries from a many-to-many link table.
+	 * <p>
+	 * Resolves the link table and foreign keys for the specified link information,
+	 * executes a SELECT query, and returns the resulting key pairs.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param linkInfo the link metadata describing the many-to-many relationship
+	 * @return a list of {@link ManyToMany} key pairs, or {@code null} if not applicable
+	 * @throws RuntimeException if execution fails
 	 */
 	public static ArrayList<ManyToMany> getManyToMany(OADataSourceJDBC ds, OALinkInfo linkInfo) {
 		if (linkInfo == null) {

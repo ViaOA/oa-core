@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,21 @@ import javax.imageio.ImageIO;
  */
 public class ImageResizer extends Panel {
 
-    /**
-    * @param originalImage the file name of the image to resize
-    * @param newImage the new file name for the resized image
-    * @param factor the new image's width will be  width * factor.
-    *   The height will be proportionally scaled.
-    */
+	/**
+	 * Resizes an image file and writes the scaled result as a JPEG image.
+	 * <p>
+	 * The original image is loaded using the AWT {@link Toolkit}, fully realized
+	 * using a {@link MediaTracker}, and then scaled proportionally based on the
+	 * supplied resize factor. The resulting image is rendered into a
+	 * {@link BufferedImage} and written to disk using {@link ImageIO}.
+	 * <p>
+	 * The new image width is computed as {@code originalWidth * factor}, and
+	 * the height is automatically adjusted to preserve the original aspect ratio.
+	 *
+	 * @param originalImage the file name of the source image to resize
+	 * @param newImage the file name for the resized output image
+	 * @param factor the scaling factor applied to the original width
+	 */
     public void doResize(String originalImage, String newImage, double factor) {
         Image img = getToolkit().getImage(originalImage);
         if (img == null) return;
@@ -85,7 +94,13 @@ public class ImageResizer extends Panel {
     }
 
     /**
-     * Causes the image to be loaded into the Image object
+     * Forces an {@link Image} to be fully loaded and realized.
+     * <p>
+     * This method uses a {@link MediaTracker} to block until the image data
+     * has been completely loaded, ensuring that width and height information
+     * is available before further processing.
+     *
+     * @param img the image to load and realize
      */
     private void loadImage(Image img){
         try {
@@ -95,10 +110,5 @@ public class ImageResizer extends Panel {
         }
         catch (Exception e) {
         }
-    }
-
-    public static void usage(){
-        System.out.println("usage: java Resize original_file new_filename resize_factor");
-        System.exit(1);
     }
 }

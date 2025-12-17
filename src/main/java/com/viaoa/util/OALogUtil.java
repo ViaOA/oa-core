@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,15 @@ import java.util.logging.Logger;
  * root log level and is thread-safe for normal use.
  */
 public class OALogUtil {
-    private static Level levelRoot;
+    
+	/**
+	 * Caches the root logging level to avoid redundant reconfiguration.
+	 */
+	private static Level levelRoot;
 
+	/**
+	 * Disables all logging by turning off the root logger and its handlers.
+	 */
     public static void disable() {
         Logger log = Logger.getLogger("");
         log.setLevel(Level.OFF);        
@@ -47,6 +54,12 @@ public class OALogUtil {
             hs[i].setLevel(Level.OFF);
         }
     }
+
+    /**
+     * Configures logging to output only to the console at the specified level.
+     *
+     * @param level the logging level to use
+     */
     public static void consoleOnly(Level level) {
         if (levelRoot != null) {
             if (levelRoot.equals(level)) return; // already done
@@ -56,7 +69,7 @@ public class OALogUtil {
     }    
 
     /**
-     * Send OAPerformance logging to console.
+     * Sends performance-related logging to the console at {@link Level#FINE}.
      */
     public static void consolePerformance() {
         ConsoleHandler ch = new ConsoleHandler();
@@ -77,6 +90,12 @@ public class OALogUtil {
 
      */
     
+    /**
+     * Configures console-only logging for the specified logger name.
+     *
+     * @param level the logging level to use
+     * @param name the logger name
+     */
     public static void consoleOnly(Level level, String name) {
         Logger log = Logger.getLogger("");
         log.setLevel(Level.OFF);        
@@ -101,6 +120,11 @@ public class OALogUtil {
         log.addHandler(ch);
     }
     
+    /**
+     * Returns a formatted stack trace dump of all JVM threads.
+     *
+     * @return a string containing the stack traces of all threads
+     */
     public static String getAllThreadDump() {
         StringBuilder sb = new StringBuilder(1024 * 32);
         String s;
@@ -123,6 +147,11 @@ public class OALogUtil {
         return new String(sb);
     }
     
+    /**
+     * Returns a formatted stack trace dump of the current thread.
+     *
+     * @return a string containing the current thread stack trace
+     */
     public static String getThreadDump() {
         StringBuilder sb = new StringBuilder(1024 * 4);
         Thread t = Thread.currentThread();
@@ -137,6 +166,13 @@ public class OALogUtil {
         }
         return new String(sb);
     }
+
+    /**
+     * Returns a formatted stack trace string for the given exception.
+     *
+     * @param e the exception whose stack trace is returned
+     * @return the formatted stack trace, or null if the exception is null
+     */
     public static String getStackTrace(Exception e) {
         if (e == null) return null;
         StringBuilder sb = new StringBuilder(1024 * 2);

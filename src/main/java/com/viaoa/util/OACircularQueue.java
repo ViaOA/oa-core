@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,32 +59,76 @@ import com.viaoa.object.OAPerformance;
 public abstract class OACircularQueue<TYPE> {
     private static final Logger LOG = Logger.getLogger(OACircularQueue.class.getName());
     
+    /**
+     * The size of the underlying array backing the circular queue.
+     */
     private volatile int queueSize;
+    
+    /**
+     * Lock object used to synchronize access to queue state and operations.
+     */
     private final Object LOCKQueue = new Object();
     
+    /**
+     * The array that stores queued messages in circular fashion.
+     */
     private volatile TYPE[] msgQueue;
+    
+    /**
+     * Optional name assigned to this circular queue instance.
+     */
     private String name;
 
-    /** running value that keeps next position to insert a message.
-     *  Uses module queueSize to determine the array position.  
-    */
+    /**
+     * Monotonically increasing position indicating where the next message
+     * will be inserted into the queue.
+     */
     private volatile long queueHeadPosition;  
+
+    /**
+     * Tracks the lowest queue position currently in use by active sessions.
+     */
     private volatile long queueLowPosition;  
 
-    // last position that a registered session has used. All previous positions can be set to null
+    /**
+     * The last queue position that was fully consumed by all registered sessions.
+     */
     private volatile long lastUsedPos;
 
+    /**
+     * Flag indicating that one or more consumer threads are waiting for messages.
+     */
     private volatile boolean bWaitingToGet;
 
+    /**
+     * The runtime {@link Class} representing the generic TYPE stored in the queue.
+     */
     private Class<TYPE> classType;
 
+    /**
+     * Map of session identifiers to their corresponding session state.
+     */
     private final ConcurrentHashMap<Integer, Session> hmSession = new ConcurrentHashMap<Integer, Session>();;
     
+    /**
+     * Millisecond delay used for initial throttling when consumers lag behind.
+     */
     private final int MS_Throttle1 = 2;
+
+    /**
+     * Millisecond delay used for extended throttling when throttling persists.
+     */
     private final int MS_Throttle2 = 6;
+    
+    /**
+     * Millisecond delay used when waiting to avoid queue overrun.
+     */
     private final int MS_Wait = 20;
     
     
+    /**
+     * Internal structure used to track per-session queue consumption state.
+     */
     private static class Session {
         int id;
         volatile long queuePos;
@@ -95,17 +139,35 @@ public abstract class OACircularQueue<TYPE> {
     
     
     /**
-     * Create a new circular queue. 
-     * @param queueSize actual size of the array that backs the queue.
+     * Creates a new circular queue with the specified backing array size.
+     *
+     * This constructor initializes the instance and sets the queue size.
+     *
+     * @param queueSize the size of the array backing the queue
      */
     public OACircularQueue(int queueSize) {
         this();
         setSize(queueSize);
     }
+
+    /**
+     * Creates a new circular queue with an explicit message class and array size.
+     *
+     * @param clazz the {@link Class} representing the message type
+     * @param queueSize the size of the array backing the queue
+     */
     public OACircularQueue(Class clazz, int queueSize) {
         this.classType = clazz;
         setSize(queueSize);
     }    
+    
+    /**
+     * Protected constructor that determines the generic message type using
+     * reflection on the class hierarchy.
+     *
+     * This constructor resolves the TYPE parameter from the generic superclass
+     * definition and validates that it is available.
+     */
     protected OACircularQueue() {
         Class c = getClass();
         for (; c != null;) {
@@ -121,8 +183,14 @@ public abstract class OACircularQueue<TYPE> {
             throw new RuntimeException("class must define <TYPE>, or use construture that accepts 'Class clazz'");
         }
     }
+    
     /**
-     * set the size of the array behind the circular queue 
+     * Sets the size of the array backing the circular queue.
+     *
+     * This method reallocates the internal message array using the configured
+     * message type.
+     *
+     * @param queueSize the new size of the queue array
      */
     public void setSize(int queueSize) {
         synchronized(LOCKQueue) {
@@ -130,18 +198,24 @@ public abstract class OACircularQueue<TYPE> {
             msgQueue = (TYPE[]) Array.newInstance(classType, queueSize);
         }
     }
+    
+    /**
+     * Returns the size of the array backing the circular queue.
+     *
+     * @return the queue size
+     */
     public int getSize() {
         return queueSize;
     }
     
-    
     /**
-     * This is used to let the queue know who the consumers are, so that 
-     * queue slots can be set to null once they are not needed.  
-     * It is also used so that queue writers dont go too fast and overrun the readers.
+     * Registers a new consumer session with the queue.
+     *
+     * This initializes session state and sets the session's starting position
+     * to the current head position.
+     *
      * @param sessionId identifier for the session
-     * param maxFallBehind max amount that it can fall behind the head, else an addMessage will wait for up to 1 second.
-     * @return current queueHeadPosition
+     * @return the current queue head position
      */
     public long registerSession(int sessionId) {
         this.queueLowPosition = 0; // reset
@@ -157,13 +231,26 @@ public abstract class OACircularQueue<TYPE> {
         }
         return x;
     }
+    
+    /**
+     * Unregisters a consumer session from the queue.
+     *
+     * This removes the session so it is no longer tracked for consumption
+     * or cleanup purposes.
+     *
+     * @param sessionId identifier for the session to remove
+     */
     public void unregisterSession(int sessionId) {
         this.queueLowPosition = 0; // reset
         hmSession.remove(sessionId);
     }
     
-    // 20141208 null out queue slots, so that they can be GC'd
-    //   this is called from a sync block
+    /**
+     * Cleans up queue entries that are no longer needed by any registered session.
+     *
+     * This method nulls out message slots that all active sessions have
+     * advanced past.
+     */
     protected void cleanupQueue() {
         if (hmSession.size() == 0) return; // no session registered
         if (queueHeadPosition < 1) return;
@@ -187,7 +274,9 @@ public abstract class OACircularQueue<TYPE> {
     }
     
     /**
-     * current position where the next message will be added. 
+     * Returns the current head position where the next message will be added.
+     *
+     * @return the current queue head position
      */
     public long getHeadPostion() {
         synchronized(LOCKQueue) {
@@ -196,22 +285,46 @@ public abstract class OACircularQueue<TYPE> {
     }
     
     /**
-     * Add a new message to the queue.
-     * @return position of message in the queue
+     * Adds a message to the queue without throttling.
+     *
+     * @param msg the message to add
+     * @return the position where the message was added
      */
     public int addMessageToQueue(TYPE msg) {
         return addMessageToQueue(msg, 0);
     }
+
+    /**
+     * Adds a message to the queue without throttling.
+     *
+     * @param msg the message to add
+     * @return the position where the message was added
+     */
     public int addMessage(TYPE msg) {
         return addMessageToQueue(msg, 0);
     }
+
     /**
-     * param bThrottle if true, then make sure that headPos is not too far ahead of readers
+     * Adds a message to the queue with a specified throttle amount.
+     *
+     * @param msg the message to add
+     * @param throttleAmount throttle limit to apply
+     * @return the position where the message was added
      */
     public int addMessageToQueue(final TYPE msg, final int throttleAmount) {
         return addMessageToQueue(msg, throttleAmount, -1);
     }
     
+    /**
+     * Adds a message to the queue with throttling and an optional session to ignore.
+     *
+     * This method may wait or retry internally to avoid queue overruns.
+     *
+     * @param msg the message to add
+     * @param throttleAmount throttle limit to apply
+     * @param throttleSessionToIgnore session identifier to ignore for throttling
+     * @return the position where the message was added
+     */
     public int addMessageToQueue(final TYPE msg, final int throttleAmount, final int throttleSessionToIgnore) {
         int x;
         for (int i=0 ; ;i++) {
@@ -229,14 +342,50 @@ public abstract class OACircularQueue<TYPE> {
         return x;
     }
     
+    /**
+     * Counter tracking how many times message insertion waited to avoid overrun.
+     */
     private volatile int cntQueueWait; // number of times a addMessage has called wait.    
+
+    /**
+     * Counter tracking how many times message insertion was throttled.
+     */
     private volatile int cntQueueThrottle;    
+    
+    /**
+     * Timestamp of the last log entry related to avoiding a queue overrun.
+     */
     private volatile long tsLastAvoidOverrunLog;
+    
+    /**
+     * Timestamp of the last log entry related to throttling.
+     */
     private volatile long tsLastThrottleLog;
+    
+    /**
+     * Timestamp of the last periodic add-message status log.
+     */
     private volatile long tsLastAddLog;
+    
+    /**
+     * Timestamp of the last log entry related to a session lagging over one second.
+     */
     private volatile long tsLastOneSecondLog;
     
     
+    /**
+     * Internal method that performs the actual insertion of a message into the queue.
+     *
+     * This method applies overrun detection, throttling logic, and wait behavior
+     * based on session consumption state and retry count.
+     *
+     * @param msg the message to add
+     * @param throttleAmount throttle limit to apply
+     * @param throttleSessionToIgnore session identifier to ignore for throttling
+     * @param retryCnt number of retries attempted so far
+     * @return the position where the message was added, or a negative value
+     *         indicating a wait duration
+     */
     private int _addMessage(final TYPE msg, int throttleAmount, final int throttleSessionToIgnore, final int retryCnt) {
         final long tsNow = System.currentTimeMillis();
         if (throttleAmount < 1 && ((queueLowPosition + queueSize) > (queueHeadPosition + Math.min(100,(queueSize/10)))) ) {
@@ -358,35 +507,57 @@ public abstract class OACircularQueue<TYPE> {
         return posHead;
     }
     
+    /**
+     * Constant indicating that a consumer should wait until notified
+     * rather than using a fixed timeout.
+     */
     public final int msWaitUntilNotified = -1;
     
     /**
-     * This is call whenever a session is getting close to a queue overrun and it has not
-     * called get for 1+ seconds.
-     * @param sessionId
-     * @return default is false
+     * Called when a session is approaching a queue overrun condition.
+     *
+     * @param sessionId identifier for the session
+     * @param msSinceLastRead milliseconds since the session last read a message
+     * @return {@code false} by default, indicating the queue should not wait
      */
     protected boolean shouldWaitOnSlowSession(int sessionId, int msSinceLastRead) {
         return false;
     }
     
     /**
-     * will block until a message is available.
+     * Returns the next available message, blocking until one is available.
+     *
+     * @param posTail current position to pull the message from
+     * @return the next message
+     * @throws Exception if a queue overrun occurs
      */
     public TYPE getMessage(long posTail) throws Exception {
         TYPE[] vals = getMessages(posTail, 1, msWaitUntilNotified);
         return vals[0];
     }
+    
     /**
-     * Get next message, with a timeout
-     * @param posTail current position to pull messages from
-     * @param msMaxWait max number of milliseconds to wait
+     * Returns the next available message, waiting up to the specified time.
+     *
+     * @param posTail current position to pull the message from
+     * @param msMaxWait maximum number of milliseconds to wait
+     * @return the next message, or {@code null} if none are available
+     * @throws Exception if a queue overrun occurs
      */
     public TYPE getMessage(long posTail, int msMaxWait) throws Exception {
         TYPE[] vals = getMessages(posTail, 1, msMaxWait);
         if (vals == null || vals.length == 0) return null;
         return vals[0];
     }
+
+    /**
+     * Returns the number of messages currently available starting from the
+     * specified tail position.
+     *
+     * @param posTail current position to evaluate availability from
+     * @return the number of available messages
+     * @throws Exception if the queue has been overrun
+     */
     public int getAmountAvailable(long posTail) throws Exception {
         int amt;
         synchronized(LOCKQueue) {
@@ -399,28 +570,59 @@ public abstract class OACircularQueue<TYPE> {
     }
     
     /**
-     * will block until at least one message is available.
+     * Returns available messages starting from the specified tail position.
+     *
+     * This method blocks until at least one message is available.
+     *
+     * @param posTail current position to pull messages from
+     * @return an array of messages
+     * @throws Exception if a queue overrun occurs
      */
     public TYPE[] getMessages(long posTail) throws Exception {
         return getMessages(posTail, 0, msWaitUntilNotified);
     }
     
     /**
-     * will block until at least one message is available.
+     * Returns available messages starting from the specified tail position.
+     *
+     * This method blocks until at least one message is available or the
+     * maximum return amount is reached.
+     *
+     * @param posTail current position to pull messages from
+     * @param maxReturnAmount maximum number of messages to return
+     * @return an array of messages
+     * @throws Exception if a queue overrun occurs
      */
     public TYPE[] getMessages(long posTail, int maxReturnAmount) throws Exception {
         return getMessages(posTail, maxReturnAmount, msWaitUntilNotified);
     }
 
     /**
-     * @param posTail current position to use to get next message
-     * @param maxReturnAmount 
-     * @param msMaxWait if no messages are available, wait this amount of miliseconds for an available message.
+     * Returns available messages starting from the specified tail position.
+     *
+     * @param posTail current position to pull messages from
+     * @param maxReturnAmount maximum number of messages to return
+     * @param msMaxWait maximum number of milliseconds to wait for messages
+     * @return an array of messages
+     * @throws Exception if a queue overrun occurs
      */
     public TYPE[] getMessages(long posTail, int maxReturnAmount, int msMaxWait) throws Exception {
         TYPE[] msgs =  _getMessages(-1, null, posTail, maxReturnAmount, msMaxWait);
         return msgs;
     }
+    
+    /**
+     * Returns available messages for a specific session.
+     *
+     * This method updates session state before and after retrieving messages.
+     *
+     * @param sessionId identifier for the session
+     * @param posTail current position to pull messages from
+     * @param maxReturnAmount maximum number of messages to return
+     * @param msMaxWait maximum number of milliseconds to wait for messages
+     * @return an array of messages
+     * @throws Exception if a queue overrun occurs
+     */
     public TYPE[] getMessages(final int sessionId, final long posTail, final int maxReturnAmount, int msMaxWait) throws Exception {
         TYPE[] msgs = null;
 
@@ -443,8 +645,24 @@ public abstract class OACircularQueue<TYPE> {
         return msgs;
     }
 
+    /**
+     * Timestamp used to control periodic cleanup operations.
+     */
     private volatile long msLastTime;
     
+    /**
+     * Internal method that retrieves messages from the queue.
+     *
+     * This method handles blocking, overrun detection, cleanup, and message copying.
+     *
+     * @param sessionId identifier for the session
+     * @param session session state, or {@code null} if not applicable
+     * @param posTail current position to pull messages from
+     * @param maxReturnAmount maximum number of messages to return
+     * @param maxWait maximum number of milliseconds to wait for messages
+     * @return an array of messages, or {@code null} if none are available
+     * @throws Exception if a queue overrun occurs
+     */
     private TYPE[] _getMessages(final int sessionId, final Session session, long posTail, final int maxReturnAmount, final int maxWait) throws Exception {
         int amt;
         if ((posTail + queueSize) < queueHeadPosition) {
@@ -514,6 +732,11 @@ public abstract class OACircularQueue<TYPE> {
         return msgs;
     }
 
+    /**
+     * Updates the last-read timestamp for the specified session.
+     *
+     * @param sessionId identifier for the session to keep active
+     */
     public void keepAlive(final int sessionId) {
         Session session = hmSession.get(sessionId);
         if (session != null) {
@@ -523,9 +746,10 @@ public abstract class OACircularQueue<TYPE> {
     }
     
     /**
-     * Get message at actual position in queue
-     * @param pos is actual array position, must be less then queSize, else null is returned. 
-     * @return
+     * Returns the message at the specified array position.
+     *
+     * @param pos actual array position within the queue
+     * @return the message at the position, or {@code null} if invalid
      */
     public TYPE getMessagesAtPos(int pos) {
         if (pos < 0 || pos >= msgQueue.length) return null;
@@ -533,9 +757,20 @@ public abstract class OACircularQueue<TYPE> {
         return x;
     }
     
+    /**
+     * Sets the name for this circular queue instance.
+     *
+     * @param s the name to assign
+     */
     public void setName(String s) {
         this.name = s;
     }
+
+    /**
+     * Returns the name of this circular queue instance.
+     *
+     * @return the queue name
+     */
     public String getName() {
         return name;
     }

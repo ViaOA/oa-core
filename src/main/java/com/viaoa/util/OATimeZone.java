@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,34 +46,104 @@ import java.util.concurrent.*;
  * @see OADateTime#convertTo(TimeZone)
  */
 public class OATimeZone {
+	
+	/**
+	 * Cached list of all available time zones wrapped as {@link TZ} objects.
+	 * This list is lazily initialized and refreshed based on a time threshold.
+	 */
 	private static volatile ArrayList<TZ> alTZ;
+	
+	/**
+	 * Cached array of unique timezone short names derived from available time zones.
+	 */
 	private static String[] shortNames;
+	
+	/**
+	 * Cached instance of the UTC {@link TimeZone}.
+	 */
 	private static TimeZone tzUTC;
 
+	/**
+	 * Time zone ID constant for Eastern Time (New York).
+	 */
     public static final String TZ_Eastern = "America/New_York";
+    
+    /**
+     * Time zone ID constant for New York (Eastern Time).
+     */
     public static final String TZ_NewYork = "America/New_York"; // Eastern
     
+    /**
+     * Time zone ID constant for Central Time.
+     */
     public static final String TZ_Central = "America/Chicago";  // Central
+    
+    /**
+     * Time zone ID constant for Chicago (Central Time).
+     */
     public static final String TZ_Chicago = "America/Chicago";  // Central
     
+    /**
+     * Time zone ID constant for Mountain Time.
+     */
     public static final String TZ_Mountain = "America/Phoenix"; 
+    
+    /**
+     * Time zone ID constant for Phoenix (Mountain Time).
+     */
     public static final String TZ_Phoenix = "America/Phoenix"; // Mountain
     
+    /**
+     * Time zone ID constant for Pacific Time.
+     */
     public static final String TZ_Pacific = "America/Los_Angeles";
+    
+    /**
+     * Time zone ID constant for Los Angeles (Pacific Time).
+     */
     public static final String TZ_LosAngeles = "America/Los_Angeles";  // Pacific
     
+    /**
+     * Time zone ID constant for Anchorage.
+     */
     public static final String TZ_Anchorage = "America/Anchorage";
+    
+    /**
+     * Time zone ID constant for London.
+     */
     public static final String TZ_London = "Europe/London";
+    
+    /**
+     * Time zone ID constant for Tokyo.
+     */
     public static final String TZ_Tokyo = "Asia/Tokyo";
+    
+    /**
+     * Time zone ID constant for Hong Kong.
+     */
     public static final String TZ_HongKong = "Asia/Hong_Kong";
 
+    /**
+     * Time zone ID constant for GMT.
+     */
     public static final String TZ_GMT = "GMT";
+    
+    /**
+     * Time zone ID constant for Zulu time (UTC).
+     */
     public static final String TZ_Zulu = "Zulu";  // UTC-00
     // public static final String TZ_ = "";
     
+    /**
+     * Time zone ID constant for UTC.
+     */
     public static final String TZ_UTC = "UTC";
 		
 	
+    /**
+     * Container class that represents a time zone with associated display
+     * and formatting information.
+     */
 	public static class TZ {
 		public String id;
 		public String utcValue; 
@@ -87,6 +157,12 @@ public class OATimeZone {
 	}
 
 
+	/**
+	 * Returns the cached UTC {@link TimeZone} instance.
+	 * If it has not yet been initialized, it will be created.
+	 *
+	 * @return the UTC time zone
+	 */
 	public static TimeZone getTimeZoneUTC() {
 		if (tzUTC == null) {
 			tzUTC = TimeZone.getTimeZone("UTC");
@@ -95,17 +171,34 @@ public class OATimeZone {
 	}
 	
 	
+	/**
+	 * Returns the local system time zone wrapped as a {@link TZ} object.
+	 *
+	 * @return the local {@link TZ} instance
+	 */
 	public static TZ getLocalOATimeZone() {
 		TimeZone timeZone = TimeZone.getDefault();
 		TZ tz = getOATimeZone(timeZone);
 		return tz;
 	}
 
+	/**
+	 * Returns the local system {@link TimeZone}.
+	 *
+	 * @return the default system time zone
+	 */
 	public static TimeZone getLocalTimeZone() {
 		TimeZone timeZone = TimeZone.getDefault();
 		return timeZone;
 	}
 	
+	/**
+	 * Returns an array of unique timezone short names.
+	 * <p>
+	 * The result is cached after the first call.
+	 *
+	 * @return an array of short timezone names
+	 */
 	public static String[] getShortNames() {
 		if (shortNames != null) return shortNames;
 		
@@ -130,9 +223,24 @@ public class OATimeZone {
 		return shortNames;
 	}
 	
+	/**
+	 * Lock object used to synchronize time zone list initialization and updates.
+	 */
 	private static final Object lockTimeZones = new Object();
+
+	/**
+	 * Timestamp, in milliseconds, indicating when the cached time zone list
+	 * should be refreshed.
+	 */
 	private static long msNextUpdate = 0;
 	
+	/**
+	 * Returns the cached list of available time zones wrapped as {@link TZ} objects.
+	 * <p>
+	 * The list is lazily initialized and refreshed based on an internal schedule.
+	 *
+	 * @return a list of {@link TZ} instances
+	 */
 	public static ArrayList<TZ> getOATimeZones() {
 		if (alTZ == null || msNextUpdate < System.currentTimeMillis()) {
 	        synchronized (lockTimeZones) {
@@ -147,7 +255,15 @@ public class OATimeZone {
 		}
         return alTZ;
 	}	
-    protected static ArrayList<TZ> _getOATimeZones() {
+
+	/**
+	 * Builds and returns a new list of available time zones wrapped as {@link TZ} objects.
+	 * <p>
+	 * Time zones are sorted by raw UTC offset.
+	 *
+	 * @return a newly constructed list of {@link TZ} instances
+	 */
+	protected static ArrayList<TZ> _getOATimeZones() {
         ArrayList<TZ> alTZ = new ArrayList<>();
 
 		String[] tzs = TimeZone.getAvailableIDs();
@@ -205,9 +321,13 @@ public class OATimeZone {
 	}
 
 	/**
-	 * Find the java TimeZone.
-	 * 
-	 * @param value can be the tz.id, display name, short name, or long name.
+	 * Finds and returns a {@link TimeZone} matching the supplied value.
+	 * <p>
+	 * The value may be a timezone ID, UTC offset string, short name, long name,
+	 * or formatted display value.
+	 *
+	 * @param value the timezone identifier or display value
+	 * @return the matching {@link TimeZone}, or {@code null} if not found
 	 */
 	public static TimeZone getTimeZone(final String value) {
 		if (OAString.isEmpty(value)) {
@@ -233,6 +353,12 @@ public class OATimeZone {
 		return null;
 	}
 
+	/**
+	 * Returns the {@link TZ} wrapper corresponding to the supplied {@link TimeZone}.
+	 *
+	 * @param timeZone the time zone to match
+	 * @return the corresponding {@link TZ}, or {@code null} if not found
+	 */
 	public static TZ getOATimeZone(TimeZone timeZone) {
 		if (timeZone == null) {
 			return null;
@@ -247,9 +373,10 @@ public class OATimeZone {
 	}
 
 	/**
-	 * 
-	 * @param value number from UTC, 0 to +14, and -12 to 0
-	 * @return
+	 * Returns a {@link TZ} representing a UTC offset.
+	 *
+	 * @param value the hour offset from UTC
+	 * @return the matching {@link TZ}, or {@code null} if not found
 	 */
     public static TZ getUtcTimeZone(int value) {
         String s = "UTC" + (value > 0 ? "+" : "-") + String.format("%02d", Math.abs(value));
@@ -261,9 +388,24 @@ public class OATimeZone {
         return null;
     }
 
+    /**
+     * Holds the last cached reference to the time zone list for cache validation.
+     */
     private static ArrayList<TZ> alTZhold;
+
+    /**
+     * Cache mapping timezone IDs to {@link TZ} instances for fast lookup.
+     */
     private static Map<String, TZ> hmTZbyId = new ConcurrentHashMap();
     
+    /**
+     * Returns a {@link TimeZone} matching the supplied timezone ID.
+     * <p>
+     * Results are cached for repeated lookups.
+     *
+     * @param id the timezone ID
+     * @return the matching {@link TimeZone}, or {@code null} if not found
+     */
     public static TimeZone getTimeZoneById(String id) {
         if (alTZhold != alTZ) {
             hmTZbyId.clear();
@@ -286,6 +428,15 @@ public class OATimeZone {
         return null;
     }
     
+    /**
+     * Finds and returns a {@link TZ} matching the supplied value.
+     * <p>
+     * The value may be a timezone ID, UTC offset string, short name, long name,
+     * or formatted display value.
+     *
+     * @param value the timezone identifier or display value
+     * @return the matching {@link TZ}, or {@code null} if not found
+     */
 	public static TZ getOATimeZone(String value) {
 		if (OAString.isEmpty(value)) {
 			value = TimeZone.getDefault().getID();
@@ -300,6 +451,9 @@ public class OATimeZone {
 		return null;
 	}
 
+	/**
+	 * Test and demonstration entry point for time zone conversion and lookup.
+	 */
     public static void main(String[] args) {
         {
             OATimeZone.TZ tz = OATimeZone.getOATimeZone("America/Chicago");  

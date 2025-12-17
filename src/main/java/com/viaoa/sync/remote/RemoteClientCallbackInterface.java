@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,30 @@ import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 @OARemoteInterface()
 public interface RemoteClientCallbackInterface {
     
+	/**
+	 * Requests that the client terminate its connection.
+	 *
+	 * @param title the title text associated with the stop request
+	 * @param msg the message explaining the reason for the stop request
+	 */
     @OARemoteMethod(noReturnValue=true, timeoutSeconds=2, dontUseQueue=true)
     void stop(String title, String msg);
     
+    /**
+     * Sends a ping message to the client and returns a response.
+     *
+     * @param msg the ping message to send
+     * @return the response from the client
+     */
     @OARemoteMethod(dontUseQueue=true)
     String ping(String msg);
     
+    /**
+     * Requests that the client perform a thread dump.
+     *
+     * @param msg a message describing the thread dump request
+     * @return the thread dump output or related response
+     */
     @OARemoteMethod(dontUseQueue=true)
     public String performThreadDump(String msg);
 

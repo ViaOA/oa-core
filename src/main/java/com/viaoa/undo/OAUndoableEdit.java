@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,30 +80,175 @@ import com.viaoa.util.OAString;
  */
 public class OAUndoableEdit implements UndoableEdit {
 
+	/**
+	 * Identifies the type of undoable operation represented by this edit.
+	 * <p>
+	 * The value corresponds to one of the predefined constants such as
+	 * {@link #ADD}, {@link #REMOVE}, {@link #MOVE}, {@link #INSERT},
+	 * {@link #CHANGEAO}, {@link #PROPCHANGE}, or {@link #HOLDER}.
+	 * This field controls the logic executed during {@link #undo()} and {@link #redo()}.
+	 */
 	int type;
+	
+	/**
+	 * The {@link Hub} associated with this undoable edit.
+	 * <p>
+	 * This is used for operations that affect hub membership, ordering,
+	 * or active object selection, such as add, remove, move, insert,
+	 * and active object changes.
+	 */
 	Hub hub;
+	
+	/**
+	 * The name of the property being modified for property change edits.
+	 * <p>
+	 * This value is only applicable when {@link #type} is {@link #PROPCHANGE}
+	 * and identifies the OAObject property whose value is being changed.
+	 */
 	String propertyName;
+	
+	/**
+	 * The previous and new values associated with this undoable edit.
+	 * <p>
+	 * These values are primarily used for property change and active object
+	 * change operations to restore or reapply state during undo and redo.
+	 */
 	Object prevValue, newValue;
+	
+	/**
+	 * The target object affected by this undoable edit.
+	 * <p>
+	 * This may be an {@link OAObject} for property changes or a hub member
+	 * object for add, remove, insert, or move operations.
+	 */
 	Object object;
+	
+	/**
+	 * The human-readable name used to describe this edit in the UI.
+	 * <p>
+	 * This value is displayed in undo and redo menu items and may be
+	 * automatically generated when not explicitly provided.
+	 */
 	String presentationName;
+	
+	/**
+	 * Indicates whether this edit can currently be undone.
+	 * <p>
+	 * This flag is updated as undo and redo operations are performed
+	 * to enforce correct undo/redo sequencing.
+	 */
 	boolean bCanUndo = true;
+	
+	/**
+	 * Stores the previous and new positions for move and insert operations.
+	 * <p>
+	 * These values are used to reverse or reapply ordering changes
+	 * within a {@link Hub}.
+	 */
 	int prevPos, newPos;
+	
+	/**
+	 * Flag indicating whether this edit is allowed to replace a previous edit.
+	 * <p>
+	 * Replacement is determined by {@link #equals(Object)} and is used
+	 * to coalesce similar edits into a single undoable action.
+	 */
 	boolean bAllowReplace;
+	
+	/**
+	 * Controls whether redo operations are permitted for this edit.
+	 * <p>
+	 * When set to {@code false}, the edit will not allow redo even
+	 * after a successful undo.
+	 */
 	boolean bAllowRedo = true;
+	
+	/**
+	 * Indicates whether the target {@link OAObject} was previously marked as changed.
+	 * <p>
+	 * This is used during property change undo operations to restore
+	 * the original changed state when appropriate.
+	 */
 	boolean wasChanged;
 
+	/**
+	 * Edit type constant representing the addition of an object to a {@link Hub}.
+	 * <p>
+	 * Undoing this edit removes the object, while redoing it adds the object back.
+	 */
 	public static final int ADD = 0;
+
+	/**
+	 * Edit type constant representing the removal of an object from a {@link Hub}.
+	 * <p>
+	 * Undoing this edit reinserts the object at its original position.
+	 */
 	public static final int REMOVE = 1;
+	
+	/**
+	 * Edit type constant representing a reordering of an object within a {@link Hub}.
+	 * <p>
+	 * Undo and redo operations swap the previous and new positions.
+	 */
 	public static final int MOVE = 2;
+	
+	/**
+	 * Edit type constant representing insertion of an object at a specific position.
+	 * <p>
+	 * Undoing this edit removes the object from the hub.
+	 */
 	public static final int INSERT = 3;
+	
+	/**
+	 * Edit type constant representing a change to a hub's active object.
+	 * <p>
+	 * Undo restores the previous active object, while redo reapplies the new one.
+	 */
 	public static final int CHANGEAO = 4;
+	
+	/**
+	 * Edit type constant representing a property value change on an {@link OAObject}.
+	 * <p>
+	 * Undo restores the previous property value, and redo reapplies the new value.
+	 */
 	public static final int PROPCHANGE = 5;
+	
+	/**
+	 * Alternate constant for {@link #PROPCHANGE}.
+	 * <p>
+	 * This alias exists for backward compatibility and semantic clarity.
+	 */
 	public static final int PROPERTYCHANGE = 5;
+	
+	/**
+	 * Edit type constant representing a placeholder or custom undoable action.
+	 * <p>
+	 * This type performs no default undo or redo logic and can be used
+	 * for application-specific behaviors.
+	 */
 	public static final int HOLDER = 6;
 
+	/**
+	 * Private constructor to enforce controlled creation of undoable edits.
+	 * <p>
+	 * Instances are created exclusively through static factory methods,
+	 * ensuring correct initialization based on edit type.
+	 */
 	private OAUndoableEdit() {
 	}
 
+	/**
+	 * Creates an undoable edit representing the addition of an object to a Hub.
+	 * <p>
+	 * Undoing this edit will remove the object from the hub, while redoing
+	 * it will add the object back. If no presentation name is supplied,
+	 * a default name based on the object type is generated.
+	 *
+	 * @param presentationName the UI presentation name, or {@code null} to auto-generate
+	 * @param hub the hub to which the object is added
+	 * @param obj the object being added to the hub
+	 * @return a configured {@code OAUndoableEdit} instance
+	 */
 	public static OAUndoableEdit createUndoableAdd(String presentationName, Hub hub, Object obj) {
 		OAUndoableEdit oe = new OAUndoableEdit();
 		oe.type = ADD;
@@ -116,6 +261,19 @@ public class OAUndoableEdit implements UndoableEdit {
 		return oe;
 	}
 
+	/**
+	 * Creates an undoable edit representing a change to a hub's active object.
+	 * <p>
+	 * Undoing this edit restores the previous active object, while redoing
+	 * it sets the new active object. When the presentation name is not provided,
+	 * it is automatically generated using hub and link metadata.
+	 *
+	 * @param presentationName the UI presentation name, or {@code null} to auto-generate
+	 * @param hub the hub whose active object is being changed
+	 * @param prevObject the previously active object
+	 * @param newObject the new active object
+	 * @return a configured {@code OAUndoableEdit} instance
+	 */
 	public static OAUndoableEdit createUndoableChangeAO(String presentationName, Hub hub, Object prevObject, Object newObject) {
 		OAUndoableEdit oe = new OAUndoableEdit();
 		oe.type = CHANGEAO;
@@ -140,6 +298,19 @@ public class OAUndoableEdit implements UndoableEdit {
 		return oe;
 	}
 
+	/**
+	 * Creates an undoable edit representing insertion of an object into a Hub
+	 * at a specific position.
+	 * <p>
+	 * Undoing this edit removes the object from the hub, while redoing it
+	 * reinserts the object at the specified position.
+	 *
+	 * @param presentationName the UI presentation name, or {@code null} to auto-generate
+	 * @param hub the hub receiving the inserted object
+	 * @param obj the object being inserted
+	 * @param pos the target position for insertion
+	 * @return a configured {@code OAUndoableEdit} instance
+	 */
 	public static OAUndoableEdit createUndoableInsert(String presentationName, Hub hub, Object obj, int pos) {
 		OAUndoableEdit oe = new OAUndoableEdit();
 		oe.type = INSERT;
@@ -153,6 +324,18 @@ public class OAUndoableEdit implements UndoableEdit {
 		return oe;
 	}
 
+	/**
+	 * Creates an undoable edit representing removal of an object from a Hub.
+	 * <p>
+	 * Undoing this edit reinserts the object at its original position,
+	 * while redoing it removes the object again.
+	 *
+	 * @param presentationName the UI presentation name, or {@code null} to auto-generate
+	 * @param hub the hub from which the object is removed
+	 * @param obj the object being removed
+	 * @param pos the original position of the object
+	 * @return a configured {@code OAUndoableEdit} instance
+	 */
 	public static OAUndoableEdit createUndoableRemove(String presentationName, Hub hub, Object obj, int pos) {
 		OAUndoableEdit oe = new OAUndoableEdit();
 		oe.type = REMOVE;
@@ -166,6 +349,18 @@ public class OAUndoableEdit implements UndoableEdit {
 		return oe;
 	}
 
+	/**
+	 * Creates an undoable edit representing a move operation within a Hub.
+	 * <p>
+	 * Undoing this edit moves the object back to its previous position,
+	 * while redoing it moves the object to the new position.
+	 *
+	 * @param presentationName the UI presentation name, or {@code null} to auto-generate
+	 * @param hub the hub whose contents are being reordered
+	 * @param prevPos the original position of the object
+	 * @param newPos the new position of the object
+	 * @return a configured {@code OAUndoableEdit} instance
+	 */
 	public static OAUndoableEdit createUndoableMove(String presentationName, Hub hub, int prevPos, int newPos) {
 		OAUndoableEdit oe = new OAUndoableEdit();
 		oe.type = MOVE;
@@ -179,11 +374,38 @@ public class OAUndoableEdit implements UndoableEdit {
 		return oe;
 	}
 
+	/**
+	 * Creates an undoable edit representing a property change on an OAObject.
+	 * <p>
+	 * This convenience method assumes the object was marked as changed
+	 * and delegates to the full property change factory method.
+	 *
+	 * @param presentationName the UI presentation name, or {@code null} to auto-generate
+	 * @param obj the object whose property is being changed
+	 * @param prop the name of the property being modified
+	 * @param prevValue the previous property value
+	 * @param newValue the new property value
+	 * @return a configured {@code OAUndoableEdit} instance
+	 */
 	public static OAUndoableEdit createUndoablePropertyChange(String presentationName, Object obj, String prop, Object prevValue,
 			Object newValue) {
 		return createUndoablePropertyChange(presentationName, obj, prop, prevValue, newValue, true);
 	}
 
+	/**
+	 * Creates an undoable edit representing a property change on an OAObject.
+	 * <p>
+	 * Undoing this edit restores the previous property value and optionally
+	 * restores the original changed-state flag of the object.
+	 *
+	 * @param presentationName the UI presentation name, or {@code null} to auto-generate
+	 * @param obj the object whose property is being changed
+	 * @param prop the name of the property being modified
+	 * @param prevValue the previous property value
+	 * @param newValue the new property value
+	 * @param wasChanged the original changed-state flag of the object
+	 * @return a configured {@code OAUndoableEdit} instance
+	 */
 	public static OAUndoableEdit createUndoablePropertyChange(String presentationName, Object obj, String prop, Object prevValue,
 			Object newValue, boolean wasChanged) {
 		OAUndoableEdit oe = new OAUndoableEdit();
@@ -202,6 +424,15 @@ public class OAUndoableEdit implements UndoableEdit {
 		return oe;
 	}
 
+	/**
+	 * Creates a placeholder undoable edit with no default undo or redo behavior.
+	 * <p>
+	 * This edit type can be used for grouping or custom undo logic
+	 * defined externally by the application.
+	 *
+	 * @param presentationName the UI presentation name
+	 * @return a configured {@code OAUndoableEdit} instance
+	 */
 	public static OAUndoableEdit createUndoable(String presentationName) {
 		OAUndoableEdit oe = new OAUndoableEdit();
 		oe.type = HOLDER;
@@ -209,6 +440,14 @@ public class OAUndoableEdit implements UndoableEdit {
 		return oe;
 	}
 
+	/**
+	 * Determines the human-readable class name for this edit.
+	 * <p>
+	 * The name is derived from the affected object's class or the hub's
+	 * object class and converted to a user-friendly format.
+	 *
+	 * @return a formatted class name, or {@code null} if unavailable
+	 */
 	private String getClassName() {
 		Class c = null;
 		String s = null;
@@ -224,26 +463,62 @@ public class OAUndoableEdit implements UndoableEdit {
 		return s;
 	}
 
+	/**
+	 * Sets the presentation name used to describe this edit in the UI.
+	 *
+	 * @param name the presentation name to assign
+	 */
 	public void setName(String name) {
 		presentationName = name;
 	}
 
+	/**
+	 * Returns the presentation name for this undoable edit.
+	 * <p>
+	 * This name is used by UI components to describe the edit
+	 * in undo and redo menu items.
+	 *
+	 * @return the presentation name
+	 */
 	public String getName() {
 		return presentationName;
 	}
 
+	/**
+	 * Sets the presentation name used for UI display of this edit.
+	 *
+	 * @param name the presentation name to assign
+	 */
 	public void setPresentationName(String name) {
 		presentationName = name;
 	}
 
+	/**
+	 * Returns the presentation name used for UI display.
+	 *
+	 * @return the presentation name
+	 */
 	public String getPresentationName() {
 		return presentationName;
 	}
 
+	/**
+	 * Indicates whether this edit can currently be undone.
+	 *
+	 * @return {@code true} if undo is allowed, otherwise {@code false}
+	 */
 	public boolean canUndo() {
 		return bCanUndo;
 	}
 
+	/**
+	 * Undoes the operation represented by this edit.
+	 * <p>
+	 * The undo logic performed depends on the edit {@link #type}
+	 * and restores the previous state of the hub or object.
+	 *
+	 * @throws CannotUndoException if the undo operation is not permitted
+	 */
 	public void undo() throws CannotUndoException {
 		bCanUndo = false;
 		switch (type) {
@@ -273,6 +548,14 @@ public class OAUndoableEdit implements UndoableEdit {
 		}
 	}
 
+	/**
+	 * Redoes the operation represented by this edit.
+	 * <p>
+	 * The redo logic performed depends on the edit {@link #type}
+	 * and reapplies the change previously undone.
+	 *
+	 * @throws CannotRedoException if the redo operation is not permitted
+	 */
 	public void redo() throws CannotRedoException {
 		bCanUndo = true;
 		switch (type) {
@@ -299,50 +582,126 @@ public class OAUndoableEdit implements UndoableEdit {
 		}
 	}
 
+	/**
+	 * Indicates whether this edit can currently be redone.
+	 *
+	 * @return {@code true} if redo is allowed, otherwise {@code false}
+	 */
 	public boolean canRedo() {
 		return !bCanUndo && bAllowRedo;
 	}
 
+	/**
+	 * Returns the UI presentation name for undo operations.
+	 *
+	 * @return the undo presentation name
+	 */
 	public String getUndoPresentationName() {
 		return "Undo " + presentationName;
 	}
 
+	/**
+	 * Returns the UI presentation name for redo operations.
+	 *
+	 * @return the redo presentation name
+	 */
 	public String getRedoPresentationName() {
 		return "Redo " + presentationName;
 	}
 
+	/**
+	 * Indicates whether this edit is considered significant.
+	 * <p>
+	 * Significant edits are typically shown to the user
+	 * in undo and redo UI components.
+	 *
+	 * @return {@code true}, indicating this edit is significant
+	 */
 	public boolean isSignificant() {
 		return true;
 	}
 
+	/**
+	 * Attempts to incorporate another edit into this edit.
+	 * <p>
+	 * This implementation does not combine edits and always
+	 * returns {@code false}.
+	 *
+	 * @param anEdit the incoming edit to add
+	 * @return {@code false}, indicating the edit was not added
+	 */
 	public boolean addEdit(UndoableEdit anEdit) {
 		return false;
 	}
 
+	/**
+	 * Marks this edit as no longer needed.
+	 * <p>
+	 * This implementation performs no cleanup and is provided
+	 * to satisfy the {@link UndoableEdit} contract.
+	 */
 	public void die() {
 	}
 
+	/**
+	 * Determines whether this edit should replace a previous edit.
+	 * <p>
+	 * Replacement is allowed when the incoming edit is an
+	 * {@code OAUndoableEdit}, replacement is enabled, and both
+	 * edits are considered equal.
+	 *
+	 * @param anEdit the edit to potentially replace
+	 * @return {@code true} if the previous edit should be replaced
+	 */
 	public boolean replaceEdit(UndoableEdit anEdit) {
 		return (anEdit != null && (anEdit instanceof OAUndoableEdit) && ((OAUndoableEdit) anEdit).bAllowReplace && this.equals(anEdit));
 	}
 
-	/** if true, an event can replace a previous matching event that is equals() */
+	/**
+	 * Enables or disables replacement of a previous matching edit.
+	 *
+	 * @param b {@code true} to allow replacement, {@code false} otherwise
+	 */
 	public void setAllowReplace(boolean b) {
 		bAllowReplace = b;
 	}
 
+	/**
+	 * Indicates whether replacement of a previous edit is allowed.
+	 *
+	 * @return {@code true} if replacement is enabled
+	 */
 	public boolean getAllowReplace() {
 		return bAllowReplace;
 	}
 
+	/**
+	 * Enables or disables redo operations for this edit.
+	 *
+	 * @param b {@code true} to allow redo, {@code false} otherwise
+	 */
 	public void setAllowRedo(boolean b) {
 		bAllowRedo = b;
 	}
 
+	/**
+	 * Indicates whether redo operations are allowed for this edit.
+	 *
+	 * @return {@code true} if redo is enabled
+	 */
 	public boolean getAllowRedo() {
 		return bAllowRedo;
 	}
 
+	/**
+	 * Compares this edit with another object for equality.
+	 * <p>
+	 * Edits are considered equal when they represent the same
+	 * type of operation on the same target object and property.
+	 *
+	 * @param obj the object to compare against
+	 * @return {@code true} if the edits are considered equal
+	 */
 	public boolean equals(Object obj) {
 		if (obj == null || !(obj instanceof OAUndoableEdit)) {
 			return false;
@@ -367,6 +726,14 @@ public class OAUndoableEdit implements UndoableEdit {
 		return true;
 	}
 
+	/**
+	 * Returns a hash code for this undoable edit.
+	 * <p>
+	 * The hash code is derived from the edit type and target object
+	 * to remain consistent with {@link #equals(Object)}.
+	 *
+	 * @return the hash code value for this edit
+	 */
 	@Override
 	public int hashCode() {
 		return (type + "." + object).hashCode();

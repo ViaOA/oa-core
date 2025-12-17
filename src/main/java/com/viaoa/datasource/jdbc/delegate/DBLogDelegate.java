@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,33 @@ import java.util.logging.Logger;
 public class DBLogDelegate {
 	private static Logger LOG = Logger.getLogger(DBLogDelegate.class.getName());
 
+	/**
+	 * Logs a DELETE SQL statement using a structured marker format.
+	 *
+	 * @param sql the DELETE SQL statement
+	 */
 	public static void logDelete(String sql) {
 		LOG.fine("DELETE: [[BEGIN[" + sql + "]END]]");
 	}
 
+	/**
+	 * Logs a DDL SQL statement using a structured marker format.
+	 *
+	 * @param sql the DDL SQL statement
+	 */
 	public static void logDDL(String sql) {
 		LOG.fine("DDL: [[BEGIN[" + sql + "]END]]");
 	}
 
+	/**
+	 * Logs an INSERT SQL statement along with its parameter values.
+	 * <p>
+	 * Each parameter value is logged using a bounded marker to preserve ordering
+	 * and enable later extraction.
+	 *
+	 * @param sql the INSERT SQL statement
+	 * @param params the parameter values associated with the statement
+	 */
 	public static void logInsert(String sql, Object[] params) {
 		String s = "";
 		for (int i = 0; params != null && i < params.length; i++) {
@@ -44,6 +63,15 @@ public class DBLogDelegate {
 		LOG.fine("INSERT: [[BEGIN[" + sql + s + "]END]]");
 	}
 
+	/**
+	 * Logs an UPDATE SQL statement along with its parameter values.
+	 * <p>
+	 * Each parameter value is logged using a bounded marker to preserve ordering
+	 * and enable later extraction.
+	 *
+	 * @param sql the UPDATE SQL statement
+	 * @param params the parameter values associated with the statement
+	 */
 	public static void logUpdate(String sql, Object[] params) {
 		String s = "";
 		for (int i = 0; params != null && i < params.length; i++) {

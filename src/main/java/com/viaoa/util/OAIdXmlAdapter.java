@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,26 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
  */
 public class OAIdXmlAdapter extends XmlAdapter<String, Integer> {
 
+	/**
+	 * Converts an Integer identifier to its string representation for XML output.
+	 *
+	 * @param id the identifier value
+	 * @return the string representation of the identifier, or "0" if the value is null
+	 * @throws Exception if marshalling fails
+	 */
     @Override
     public String marshal(Integer id) throws Exception {
         if (id == null) return "0";
         return ""+id.intValue();
     }
 
+    /**
+     * Converts a string value from XML into an Integer identifier.
+     *
+     * @param s the string representation of the identifier
+     * @return the parsed integer value, or 0 if the string is null
+     * @throws Exception if parsing fails
+     */
     @Override
     public Integer unmarshal(String s) throws Exception {
         if (s == null) return (int) 0;

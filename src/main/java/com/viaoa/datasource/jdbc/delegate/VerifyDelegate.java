@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.delegate;
 
 import java.sql.Connection;
@@ -32,8 +37,24 @@ import com.viaoa.util.OAString;
  */
 public class VerifyDelegate {
 	private static Logger LOG = Logger.getLogger(VerifyDelegate.class.getName());
+
+	/**
+	 * JDBC data source associated with this verification delegate.
+	 */
 	OADataSourceJDBC ds;
 
+	/**
+	 * Verifies that the database schema matches the OA datasource metadata.
+	 * <p>
+	 * Opens a database connection, delegates verification to the internal
+	 * verification method, prints any errors to the console, and releases
+	 * the connection.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source to verify
+	 * @return {@code true} if verification succeeds, otherwise {@code false}
+	 * @throws Exception if a connection error occurs
+	 */
 	public static boolean verify(OADataSourceJDBC ds) throws Exception {
 		final ArrayList<String> alError = new ArrayList<>();
 		Connection connection = null;
@@ -55,9 +76,18 @@ public class VerifyDelegate {
 	}
 
 	/**
-	 * Verifies Tables, Columns and Indexes. Prints to console window.
+	 * Performs detailed verification of tables, columns, indexes, and links.
+	 * <p>
+	 * Iterates through datasource tables and compares them against database
+	 * metadata, collecting errors and warnings for missing or mismatched
+	 * schema elements.
+	 * </p>
 	 *
-	 * @returns true if all tables, columns and indexes exist, else returns false if any are missing.
+	 * @param ds the JDBC data source
+	 * @param connection the active database connection
+	 * @param alError list used to collect error and warning messages
+	 * @return {@code true} if no blocking errors are found, otherwise {@code false}
+	 * @throws Exception if metadata access fails
 	 */
 	private static boolean _verify(OADataSourceJDBC ds, Connection connection, final ArrayList<String> alError) throws Exception {
 		final DatabaseMetaData dbmd = connection.getMetaData();
@@ -320,6 +350,20 @@ public class VerifyDelegate {
 		return bResult;
 	}
 
+	/**
+	 * Verifies link and foreign-key metadata for a table.
+	 * <p>
+	 * Compares link definitions, key columns, column types, and required
+	 * indexes between datasource metadata and database schema.
+	 * </p>
+	 *
+	 * @param t the table whose links are verified
+	 * @param dbmd database metadata
+	 * @param ds the JDBC data source
+	 * @param alError list used to collect error and warning messages
+	 * @return {@code true} if any link errors are detected, otherwise {@code false}
+	 * @throws Exception if metadata access fails
+	 */
 	public static boolean verifyLinks(Table t, DatabaseMetaData dbmd, OADataSourceJDBC ds, final ArrayList<String> alError)
 			throws Exception {
 		boolean bError = false;
@@ -391,6 +435,16 @@ public class VerifyDelegate {
 		return bError;
 	}
 
+	/**
+	 * Converts a table or column name to the database-specific case.
+	 * <p>
+	 * Uses lowercase for PostgreSQL databases and uppercase for all others.
+	 * </p>
+	 *
+	 * @param dbmd database metadata
+	 * @param name the logical table or column name
+	 * @return the name converted to database-specific case
+	 */
 	protected static String convertDBName(DBMetaData dbmd, String name) {
 		if (name != null && dbmd != null) {
 			if (dbmd.databaseType == dbmd.POSTGRES) {

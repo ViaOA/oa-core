@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,19 +30,58 @@ package com.viaoa.util;
  */
 public class OAAnyValueObject implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
+    
+    /**
+     * Singleton instance of {@code OAAnyValueObject}.
+     * <p>
+     * This instance should be used wherever a match-all comparison value
+     * is required.
+     */
     public static final OAAnyValueObject instance = new OAAnyValueObject();
     
+    /**
+     * Private constructor to prevent external instantiation.
+     * <p>
+     * Enforces the singleton pattern for this class.
+     */
     private OAAnyValueObject() {
     }
     
+    /**
+     * Returns the singleton match-all instance.
+     * <p>
+     * This method provides a semantic accessor used by comparison
+     * and filtering frameworks to retrieve the null-equivalent object.
+     *
+     * @return the singleton {@code OAAnyValueObject} instance
+     */
     public OAAnyValueObject getNullObject() {
         return instance;
     }
     
+    /**
+     * Indicates equality with any object.
+     * <p>
+     * This method always returns {@code true}, allowing this object
+     * to match any comparison target, including {@code null}.
+     *
+     * @param obj the object to compare against
+     * @return {@code true} for all comparisons
+     */
     @Override
     public boolean equals(Object obj) {
         return true;
     }
+
+    /**
+     * Returns a constant hash code value.
+     * <p>
+     * This implementation ensures consistent behavior when this object
+     * is used in hashed collections, aligning with its universal
+     * equality semantics.
+     *
+     * @return a constant hash code value
+     */
     @Override
     public int hashCode() {
         return 1;

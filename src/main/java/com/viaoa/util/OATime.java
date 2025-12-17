@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,21 +31,56 @@ import java.util.Vector;
 public class OATime extends OADateTime {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Time format using 12-hour clock with minutes and AM/PM indicator.
+	 */
 	public final static String Format1 = "hh:mma";
+
+	/**
+	 * Time format using 12-hour clock with minutes, seconds, and AM/PM indicator.
+	 */
 	public final static String Format2 = "hh:mm:ssa";
+	
+	/**
+	 * Time format using 12-hour clock with minutes, seconds, milliseconds,
+	 * and AM/PM indicator.
+	 */
 	public final static String Format3 = "hh:mm:ss.SSSa";
 
+	/**
+	 * Time format using 24-hour clock with hours and minutes.
+	 */
 	public final static String Format4 = "HH:mm";
+	
+	/**
+	 * Time format using 24-hour clock with hours, minutes, and seconds.
+	 */
 	public final static String Format5 = "HH:mm:ss";
+	
+	/**
+	 * Time format using 24-hour clock with hours, minutes, seconds,
+	 * and milliseconds.
+	 */
 	public final static String Format6 = "HH:mm:ss.SSS";
 
-	// Unique for this subclass
-	/** default output format */
+	/**
+	 * Default output format used when converting this time to a String.
+	 */
 	protected static String timeOutputFormat = "hh:mma";
 
+	/**
+	 * Time format used for JSON serialization without timezone information.
+	 */
 	public final static String JsonFormat = "HH:mm:ss";
+	
+	/**
+	 * Time format used for JSON serialization including timezone offset.
+	 */
 	public final static String JsonFormatTZ = "HH:mm:ssX";
 
+	/**
+	 * Time format used for JDBC and SQL operations.
+	 */
 	public final static String JdbcFormat = "HH:mm:ss"; // SQL
 	
 	// format used by browser: : HH:mm   ... not all support seconds "HH:mm:ss"
@@ -53,7 +88,9 @@ public class OATime extends OADateTime {
     // public final static String HtmlInputTimeFormat = "hh:mm"; // java format to use 
     
 
-	/** default parse formats */
+	/**
+	 * Collection of default formats used when parsing time values from strings.
+	 */
 	private static Vector vecTimeParseFormat = new Vector(10, 10);
 
 	static {
@@ -75,9 +112,9 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Create a new time that uses that uses the current Time.
+	 * Creates a new time instance using the current system time.
 	 * <p>
-	 * Note: clearDate() is called to set date information to 0.
+	 * The date portion is cleared so that only time values are retained.
 	 */
 	public OATime() {
 		this(new Date());
@@ -85,9 +122,11 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Create a new time that uses that uses a supplied Time.
+	 * Creates a new time instance using the supplied {@link java.sql.Time}.
 	 * <p>
-	 * Note: clearDate() is called to set date information to 0.
+	 * The date portion is cleared so that only time values are retained.
+	 *
+	 * @param time the SQL time value to use
 	 */
 	public OATime(java.sql.Time time) {
 		super(time);
@@ -95,24 +134,35 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Create a new time that uses that uses a supplied Date.
+	 * Creates a new time instance using the supplied {@link Date}.
 	 * <p>
-	 * Note: clearDate() is called to set date information to 0.
+	 * The date portion is cleared so that only time values are retained.
+	 *
+	 * @param date the date whose time value will be used
 	 */
 	public OATime(Date date) {
 		this(new java.sql.Time(date.getTime()));
 		clearDate();
 	}
 
+	/**
+	 * Creates a new time instance using the supplied time in milliseconds.
+	 * <p>
+	 * The date portion is cleared so that only time values are retained.
+	 *
+	 * @param time the time value in milliseconds since the epoch
+	 */
 	public OATime(long time) {
 		this(new java.sql.Time(time));
 		clearDate();
 	}
 
 	/**
-	 * Create a new time that uses that uses a supplied Calendar.
+	 * Creates a new time instance using the supplied {@link Calendar}.
 	 * <p>
-	 * Note: clearDate() is called to set date information to 0.
+	 * The date portion is cleared so that only time values are retained.
+	 *
+	 * @param c the calendar whose time value will be used
 	 */
 	public OATime(Calendar c) {
 		super(c);
@@ -120,9 +170,12 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Create a new time that uses that uses a supplied OADateTime.
+	 * Creates a new time instance using the supplied {@link OADateTime}.
 	 * <p>
-	 * Note: clearDate() is called to set date information to 0.
+	 * The date portion is cleared and the timezone is copied from the
+	 * supplied instance.
+	 *
+	 * @param od the date-time instance to copy from
 	 */
 	public OATime(OADateTime od) {
 		super(od);
@@ -131,11 +184,12 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Create a new time that uses a supplied String.
+	 * Creates a new time instance by parsing the supplied string using
+	 * the default time format.
 	 * <p>
-	 * Note: uses default format of "hh:mma" Note: clearDate() is called to set date information to 0.
+	 * The date portion is cleared so that only time values are retained.
 	 *
-	 * @see OATime#valueOf
+	 * @param strTime the string representation of the time
 	 */
 	public OATime(String strTime) {
 		this(OATime.valueOf(strTime));
@@ -143,28 +197,36 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Create a new time that uses a supplied String and format.
+	 * Creates a new time instance by parsing the supplied string using
+	 * the specified format.
 	 * <p>
-	 * Note: clearDate() is called to set date information to 0.
+	 * The date portion is cleared so that only time values are retained.
 	 *
-	 * @see OATime#valueOf
+	 * @param strTime the string representation of the time
+	 * @param fmt the format used to parse the time string
 	 */
 	public OATime(String strTime, String fmt) {
 		this(OATime.valueOf(strTime, fmt));
 		clearDate();
 	}
 
+	/**
+	 * Creates a new time instance using the supplied {@link LocalTime}.
+	 *
+	 * @param lt the local time whose hour, minute, second, and millisecond values are used
+	 */
 	public OATime(LocalTime lt) {
 		this(lt.getHour(), lt.getMinute(), lt.getSecond(), (int) (lt.getNano() / Math.pow(10, 6)));
 	}
 
 	/**
-	 * Create a new time that uses that uses a supplied hours, minutes, seconds.
+	 * Creates a new time instance using the supplied hours, minutes, and seconds.
 	 * <p>
-	 * Note: clearDate() is called to set date information to 0.
+	 * The date portion is cleared so that only time values are retained.
 	 *
-	 * @param hrs 0-23
-	 * @see OATime#valueOf
+	 * @param hrs the hour value, from 0 to 23
+	 * @param mins the minute value
+	 * @param secs the second value
 	 */
 	public OATime(int hrs, int mins, int secs) {
 		super(0, 0, 0, hrs, mins, secs, 0);
@@ -172,12 +234,15 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Create a new time that uses that uses a supplied hours, minutes, seconds, milliseconds.
+	 * Creates a new time instance using the supplied hours, minutes, seconds,
+	 * and milliseconds.
 	 * <p>
-	 * Note: clearDate() is called to set date information to 0.
+	 * The date portion is cleared so that only time values are retained.
 	 *
-	 * @param hrs 0-23
-	 * @see OATime#valueOf
+	 * @param hrs the hour value, from 0 to 23
+	 * @param mins the minute value
+	 * @param secs the second value
+	 * @param mili the millisecond value
 	 */
 	public OATime(int hrs, int mins, int secs, int mili) {
 		super(0, 0, 0, hrs, mins, secs, mili);
@@ -185,30 +250,33 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Time comparision with any object. Object will first be converted to OATime.
+	 * Compares this time with another object.
+	 * <p>
+	 * The supplied object is compared using {@link #compareTo(Object)}.
 	 *
-	 * @param obj Date, OADate, Calendar
-	 * @return "0" if equal, "-1" if this OADateTime is less than, "1" if this OADateTime is greater than, "2" if objects can not be
-	 *         compared.
+	 * @param obj the object to compare with
+	 * @return 0 if equal, -1 if less than, 1 if greater than, or 2 if not comparable
 	 */
 	public int compare(Object obj) {
 		return this.compareTo(obj);
 	}
 
 	/**
-	 * Converts this time to a String value using default format. The default format is the first format that has been set: "format",
-	 * "timeOutputFormat" else or "hh:mma" See OADateTime for list of formatting symbols.
+	 * Converts this time to a string using the default output format.
 	 *
-	 * @see OADateTime
+	 * @return the formatted time string
 	 */
 	public String toString() {
 		return toString(null);
 	}
 
 	/**
-	 * Converts this time to a String value using supplied format. See OADateTime for list of formatting symbols.
+	 * Converts this time to a string using the supplied format.
+	 * <p>
+	 * If the format is {@code null}, a default format is selected.
 	 *
-	 * @see OADateTime
+	 * @param f the format to use, or {@code null} to use the default
+	 * @return the formatted time string
 	 */
 	public String toString(String f) {
 		if (f == null) {
@@ -221,27 +289,27 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Converts a String to an OATime using a supplied format. See OADateTime for list of formatting symbols.
+	 * Converts a string to an {@link OATime} using the supplied format.
 	 *
-	 * @see #valueOf(String,String)
-	 * @see OADateTime
+	 * @param time the string representation of the time
+	 * @param fmt the format to use for parsing
+	 * @return a new {@link OATime} instance, or {@code null} if parsing fails
 	 */
 	public static OATime timeValue(String time, String fmt) {
 		return (OATime) valueOf(time, fmt);
 	}
 
 	/**
-	 * Converts a String to an OATime using a default format. The default format is the first format that has been set: "format",
-	 * "timeOutputFormat" else or "hh:mma" See OADateTime for list of formatting symbols.
+	 * Converts a string to an {@link OATime} using the default format.
 	 *
-	 * @see #valueOf(String,String)
-	 * @see OADateTime
+	 * @param time the string representation of the time
+	 * @return a new {@link OATime} instance, or {@code null} if parsing fails
 	 */
 	public static OATime timeValue(String time) {
 		return (OATime) valueOf(time, null);
 	}
 
-	/**
+	/*
 	 * Converts a String to an OATime. See OADateTime for list of formatting symbols. If time can not be parsed based on supplied format,
 	 * then other formatting and conversions will be used to try to convert to an OATime.
 	 * <p>
@@ -250,6 +318,15 @@ public class OATime extends OADateTime {
 	 * @param fmt is format to use for parsing. See OADateTime for list of formatting symbols.
 	 * @see OADateTime
 	 * @see #timeValue(String,String)
+	 */
+	/**
+	 * Converts a string to an {@link OADateTime} using the supplied format.
+	 * <p>
+	 * If parsing fails with the supplied format, additional formats are attempted.
+	 *
+	 * @param time the string representation of the time
+	 * @param fmt the format to use for parsing
+	 * @return an {@link OADateTime} representing the parsed time, or {@code null} if parsing fails
 	 */
 	public static OADateTime valueOf(String time, String fmt) {
 		if (time != null && time.length() > 0) {
@@ -266,7 +343,7 @@ public class OATime extends OADateTime {
 		return new OATime(d);
 	}
 
-	/**
+	/*
 	 * Converts a String to an OATime using a default format. The default format is the first format that has been set: "format",
 	 * "timeOutputFormat" else or "hh:mma" See OADateTime for list of formatting symbols.
 	 * <p>
@@ -276,55 +353,64 @@ public class OATime extends OADateTime {
 	 * @see OADateTime
 	 * @see #timeValue(String,String)
 	 */
+	/**
+	 * Converts a string to an {@link OADateTime} using the default format.
+	 *
+	 * @param time the string representation of the time
+	 * @return an {@link OADateTime} representing the parsed time, or {@code null} if parsing fails
+	 */
 	public static OADateTime valueOf(String time) {
 		return OATime.valueOf(time, null);
 	}
 
 	/**
-	 * Sets the default global format used when converting OADate to String.
+	 * Sets the default global format used when converting times to strings.
 	 *
-	 * @see OADate#setFormat
+	 * @param fmt the format to use as the global output format
 	 */
 	public static void setGlobalOutputFormat(String fmt) {
 		timeOutputFormat = fmt;
 	}
 
 	/**
-	 * Gets the default global format used when converting OADate to String.
+	 * Returns the default global format used when converting times to strings.
 	 *
-	 * @see OADate#setFormat
+	 * @return the global output format
 	 */
 	public static String getGlobalOutputFormat() {
 		return timeOutputFormat;
 	}
 
 	/**
-	 * Sets the default global parse format used when converting a String to OATime.
+	 * Adds a global parse format used when converting strings to times.
 	 *
-	 * @see OADate#setFormat
+	 * @param fmt the format to add
 	 */
 	public static void addGlobalParseFormat(String fmt) {
 		vecTimeParseFormat.addElement(fmt);
 	}
 
 	/**
-	 * Removes a default global parse format that is used when converting a String to OATime.
+	 * Removes a global parse format used when converting strings to times.
 	 *
-	 * @see OADate#setFormat
+	 * @param fmt the format to remove
 	 */
 	public static void removeGlobalParseFormat(String fmt) {
 		vecTimeParseFormat.removeElement(fmt);
 	}
 
 	/**
-	 * Removes all global parse formats that are used when converting a String to OATime.
-	 *
-	 * @see OADate#setFormat
+	 * Removes all global parse formats used when converting strings to times.
 	 */
 	public static void removeAllGlobalParseFormats() {
 		vecTimeParseFormat.removeAllElements();
 	}
 
+	/**
+	 * Converts this time to a {@link LocalTime} instance.
+	 *
+	 * @return a {@link LocalTime} representing this time
+	 */
 	public LocalTime getLocalTime() {
 		LocalTime lt = LocalTime.of(get24Hour(), getMinute(), getSecond(), (int) (getMilliSecond() * (Math.pow(10, 6))));
 		return lt;

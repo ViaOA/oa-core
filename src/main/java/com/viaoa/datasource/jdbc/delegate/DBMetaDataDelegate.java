@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,14 @@ import com.viaoa.util.OAString;
 public class DBMetaDataDelegate {
 
 	/**
-	 * Set the type of Database SQLSERVER, ACCESS, DERBY, ORACLE, MYSQL default: SQLSERVER
+	 * Updates the supplied {@link DBMetaData} instance with vendor-specific
+	 * defaults and capabilities based on its configured database type.
+	 * <p>
+	 * This method configures identifier quoting, case sensitivity, auto-assign
+	 * behavior, maximum VARCHAR lengths, fetch/limit support, default drivers
+	 * and URLs, JSON casting behavior, and other database-specific options.
+	 *
+	 * @param dbmd the database metadata instance to update
 	 */
 	public static void updateAfterTypeChange(DBMetaData dbmd) {
 		if (dbmd == null) {
@@ -198,6 +205,13 @@ public class DBMetaDataDelegate {
 		dbmd.setDistinctKeyword(distinctKeyword);
 	}
 
+	/**
+	 * Performs database-type-specific shutdown or cleanup operations.
+	 * <p>
+	 * Currently used to shut down embedded Derby databases when applicable.
+	 *
+	 * @param dbmd the database metadata instance
+	 */
 	public static void close(DBMetaData dbmd) {
 		if (dbmd.databaseType == dbmd.DERBY) {
 			try {
@@ -208,6 +222,16 @@ public class DBMetaDataDelegate {
 		}
 	}
 
+	/**
+	 * Returns a database-safe identifier name by avoiding reserved keywords.
+	 * <p>
+	 * Certain reserved words are rewritten using a placeholder token that
+	 * is later converted to a valid identifier suffix.
+	 *
+	 * @param dbmd the database metadata instance
+	 * @param name the original identifier name
+	 * @return a transformed name safe for database usage
+	 */
 	private static String getValidName(DBMetaData dbmd, String name) {
 		if (name == null) {
 			return "";
@@ -239,16 +263,37 @@ public class DBMetaDataDelegate {
 		return name;
 	}
 
+	/**
+	 * Returns a valid database table name derived from the supplied name.
+	 *
+	 * @param dbmd the database metadata instance
+	 * @param name the original table name
+	 * @return a database-safe table name
+	 */
 	public static String getValidTableName(DBMetaData dbmd, String name) {
 		name = getValidName(dbmd, name);
 		return OAString.convert(name, "XvXvX", "Table");
 	}
 
+	/**
+	 * Returns a valid database column name derived from the supplied name.
+	 *
+	 * @param dbmd the database metadata instance
+	 * @param name the original column name
+	 * @return a database-safe column name
+	 */
 	public static String getValidColumnName(DBMetaData dbmd, String name) {
 		name = getValidName(dbmd, name);
 		return OAString.convert(name, "XvXvX", "Value");
 	}
 
+	/**
+	 * Returns a valid database index name derived from the supplied name.
+	 *
+	 * @param dbmd the database metadata instance
+	 * @param name the original index name
+	 * @return a database-safe index name
+	 */
 	public static String getValidIndexName(DBMetaData dbmd, String name) {
 		name = getValidName(dbmd, name);
 		return OAString.convert(name, "XvXvX", "Index");

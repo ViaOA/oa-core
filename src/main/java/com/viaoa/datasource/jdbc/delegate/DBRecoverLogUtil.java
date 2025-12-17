@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,17 @@ import com.viaoa.util.OAArray;
  */
 public class DBRecoverLogUtil {
 
+	/**
+	 * Reads structured database log entries from the supplied input stream and
+	 * parses SQL commands and parameter values.
+	 * <p>
+	 * This method expects log lines prefixed with {@code FINE: } and bounded by
+	 * {@code [[BEGIN[... ]END]]} markers. INSERT, UPDATE, DELETE, and DDL commands
+	 * are recognized, and parameter segments are accumulated as encountered.
+	 *
+	 * @param is the input stream containing database log output
+	 * @throws IOException if an I/O error occurs while reading the stream
+	 */
 	public void recover(InputStream is) throws IOException {
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));

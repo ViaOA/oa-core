@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,19 +38,51 @@ import com.viaoa.object.OAObject;
  * @param <F> the OAObject type contained in the hub.
  */
 public abstract class OADownloadCsv<F extends OAObject> {
+    /**
+     * The hub containing the objects to be exported.
+     */
     protected Hub<F> hub;
+
+    /**
+     * Collection of registered properties defining CSV columns.
+     */
     private ArrayList<MyProperty> alProperty = new ArrayList<>();
     
+    /**
+     * Creates a new CSV download utility for the given hub.
+     *
+     * @param hub the hub containing objects to export
+     */
     public OADownloadCsv(Hub<F> hub) {
         this.hub = hub;
     }
 
+    /**
+     * Container for a CSV column definition.
+     */
     protected static class MyProperty {
+    	/**
+    	 * The column title used in the CSV header.
+    	 */
         String title;
+
+        /**
+         * The property-path expression used to retrieve values.
+         */
         String propPath;
+
+        /**
+         * Resolved property-path helper used to extract values from objects.
+         */
         OAPropertyPath pp;
     }
 
+    /**
+     * Registers a property path to be exported as a CSV column.
+     *
+     * @param title the column title
+     * @param propPath the property-path expression
+     */
     public void addProperty(String title, String propPath) {
         MyProperty mp = new MyProperty();
         mp.title = title;
@@ -61,6 +93,9 @@ public abstract class OADownloadCsv<F extends OAObject> {
         alProperty.add(mp);
     }
     
+    /**
+     * Writes the CSV header and one data line for each object in the hub.
+     */
     public void download() {
         writeHeading();
         for (F obj : hub) {
@@ -68,6 +103,9 @@ public abstract class OADownloadCsv<F extends OAObject> {
         }
     }
     
+    /**
+     * Builds and writes the CSV header line using registered column titles.
+     */
     protected void writeHeading() {
         String txt = "";
         for (MyProperty mp : alProperty) {
@@ -76,6 +114,11 @@ public abstract class OADownloadCsv<F extends OAObject> {
         onWriteLine(txt);
     }
     
+    /**
+     * Builds and writes a CSV data line for the given object.
+     *
+     * @param obj the object whose property values are written
+     */
     protected void writeData(F obj) {
         String txt = "";
         for (MyProperty mp : alProperty) {
@@ -85,6 +128,11 @@ public abstract class OADownloadCsv<F extends OAObject> {
         onWriteLine(txt);
     }
     
+    /**
+     * Writes a single CSV line to the output destination.
+     *
+     * @param txt the CSV-formatted line
+     */
     protected abstract void onWriteLine(String txt);
     
 }

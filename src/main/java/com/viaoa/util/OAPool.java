@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,28 +40,87 @@ import java.util.logging.Logger;
  */
 public abstract class OAPool<TYPE> {
     private static Logger LOG = Logger.getLogger(OAPool.class.getName());
+
+    /**
+     * Runtime class type of the pooled resource.
+     */
     private Class<TYPE> classType;
+    
+    /**
+     * Minimum number of resources the pool should maintain.
+     */
     private int min;
+    
+    /**
+     * Maximum number of resources allowed in the pool, or zero for unlimited.
+     */
     private int max;
+    
+    /**
+     * Count of threads currently waiting for a resource to become available.
+     */
     private int waitCnt;
+    
+    /**
+     * Internal list of pooled resources and their usage state.
+     */
     private final ArrayList<Pool> alResource = new ArrayList<Pool>();
+    
+    /**
+     * Current number of resources that are checked out for use.
+     */
     private volatile int currentUsed;
+    
+    /**
+     * High-water mark representing recent peak concurrent usage.
+     */
     private volatile int highMark;
+    
+    /**
+     * Time, in milliseconds, until which the high-water mark remains valid.
+     */
     private volatile long msHighMarkValid;  // msTime that highMark is valid
 
+    /**
+     * Duration in milliseconds that the high-water mark remains valid.
+     */
     private int msHighMarkValidTimeLimit = 5000;
     
+    /**
+     * Internal container representing a pooled resource and its usage state.
+     */
     class Pool {
+    	/**
+    	 * The pooled resource instance.
+    	 */
         TYPE resource;
+
+        /**
+         * Flag indicating whether the resource is currently in use.
+         */
         boolean used;
     }
     
+    /**
+     * Creates a new pool using an explicit resource class type.
+     *
+     * @param clazz the class of the pooled resource
+     * @param min the minimum number of resources to maintain
+     * @param max the maximum number of resources allowed
+     */
     public OAPool(Class clazz, int min, int max) {
         this.classType = clazz;
         this.min = min;
         this.max = max;
     }
     
+    /**
+     * Creates a new pool and infers the resource class type from the generic
+     * superclass declaration.
+     *
+     * @param min the minimum number of resources to maintain
+     * @param max the maximum number of resources allowed
+     */
     public OAPool(int min, int max) {
         this.min = min;
         this.max = max;
@@ -80,26 +139,57 @@ public abstract class OAPool<TYPE> {
         }
     }
     
-    
     /**
-     * Amount of time to wait before removing extra objects from the pool.
+     * Sets the amount of time that the high-water mark remains valid before
+     * allowing the pool to shrink.
+     *
+     * @param ms time limit in milliseconds
      */
     public void setHighMarkTimeLimit(int ms) {
         msHighMarkValidTimeLimit = ms;
     }
     
+    /**
+     * Sets the minimum number of resources the pool should maintain.
+     *
+     * @param x the minimum pool size
+     */
     public void setMinimum(int x) {
         min = x;
     }
+
+    /**
+     * Returns the minimum number of resources the pool should maintain.
+     *
+     * @return the minimum pool size
+     */
     public int getMinimum() {
         return min;
     }
+    
+    /**
+     * Sets the maximum number of resources allowed in the pool.
+     *
+     * @param x the maximum pool size
+     */
     public void setMaximum(int x) {
         max = x;
     }
+    
+    /**
+     * Returns the maximum number of resources allowed in the pool.
+     *
+     * @return the maximum pool size
+     */
     public int getMaximum() {
         return max;
     }
+    
+    /**
+     * Returns the current number of pooled entries (in-use and available).
+     *
+     * @return the current size of the internal pool list
+     */
     public int getCurrentSize() {
         int x;
         synchronized (alResource) {
@@ -107,15 +197,25 @@ public abstract class OAPool<TYPE> {
         }
         return x;
     }
+    
+    /**
+     * Returns the current number of pooled resources that are checked out for use.
+     *
+     * @return the number of resources currently in use
+     */
     public int getCurrentUsed() {
         synchronized (alResource) {
             return currentUsed;
         }
     }
 
-    /**
+    /*
      * This will make sure that the pool has at least minimum amount of objects.
      * By default, the pool will start with size zero objects.  
+     */
+    /**
+     * Ensures that the pool contains at least the configured minimum number of
+     * resource entries, creating new resources as needed.
      */
     public void loadMinimum() {
         ArrayList<Pool> al = new ArrayList<Pool>(min);
@@ -144,6 +244,12 @@ public abstract class OAPool<TYPE> {
         }
     }
     
+    /**
+     * Obtains a resource from the pool, blocking if necessary until one becomes
+     * available or a new resource can be created.
+     *
+     * @return an available pooled resource
+     */
     public TYPE get() {
         Pool pool = null;
         synchronized (alResource) {
@@ -197,7 +303,11 @@ public abstract class OAPool<TYPE> {
         return pool.resource;
     }
     
-    // remove from the pool
+    /**
+     * Removes the specified resource from the pool and invokes the removal callback.
+     *
+     * @param resource the resource to remove from the pool
+     */
     public void remove(TYPE resource) {
         boolean bFound = false;
         synchronized (alResource) {
@@ -214,6 +324,12 @@ public abstract class OAPool<TYPE> {
         if (bFound) removed(resource);
     }
     
+    /**
+     * Returns a previously obtained resource to the pool, or removes it if pool
+     * shrink conditions are met.
+     *
+     * @param resource the resource to release back to the pool
+     */
     public void release(TYPE resource) {
         if (resource == null) return;
         boolean bRelease = false;
@@ -251,7 +367,9 @@ public abstract class OAPool<TYPE> {
     }
 
     /**
-     * @return object array of all objects that are currently in the pool.
+     * Returns an array containing all resources currently managed by the pool.
+     *
+     * @return an array of pooled resource instances
      */
     public Object[] getAllItems() {
         synchronized (alResource) {
@@ -265,6 +383,11 @@ public abstract class OAPool<TYPE> {
         }
     }
 
+    /**
+     * Adds an externally created resource to the pool and marks it as available.
+     *
+     * @param obj the resource instance to add
+     */
     public void add(TYPE obj) {
         if (obj == null) return;
         synchronized (alResource) {
@@ -277,12 +400,16 @@ public abstract class OAPool<TYPE> {
     }
     
     /**
-     * Callback method used to request a new object for the pool.
+     * Callback used to create a new resource instance for the pool.
+     *
+     * @return a newly created resource
      */
     protected abstract TYPE create();
     
     /**
-     * Callback method used when an object in the pool is no longer needed.
+     * Callback invoked when a resource is permanently removed from the pool.
+     *
+     * @param resource the resource that was removed
      */
     protected abstract void removed(TYPE resource);
     

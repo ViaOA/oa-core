@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,14 +52,44 @@ import java.util.*;
 public class OADate extends OADateTime {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Standard date format: year-month-day.
+	 */
 	public final static String Format1 = "yyyy-MM-dd";
+
+	/**
+	 * Standard date format: month/day/year.
+	 */
 	public final static String Format2 = "MM/dd/yyyy";
+	
+	/**
+	 * Standard date format without separators.
+	 */
 	public final static String Format3 = "yyyyMMdd";
+	
+	/**
+	 * Standard date format using abbreviated month name.
+	 */
 	public final static String Format4 = "yyyy-MMM-dd";
+	
+	/**
+	 * Standard date format using month name and comma.
+	 */
 	public final static String Format5 = "MMM dd, yyyy";
+	
+	/**
+	 * Standard date format using abbreviated year.
+	 */
 	public final static String Format6 = "MMM dd, yy";
 
+	/**
+	 * Date format used for JDBC and SQL interactions.
+	 */
 	public final static String JdbcFormat = "yyyy-MM-dd"; // SQL
+	
+	/**
+	 * Date format used for JSON serialization.
+	 */
 	public final static String JsonFormat = Format1;
 
     // format used by browser: "YYYY-MM-DD";
@@ -71,13 +101,20 @@ public class OADate extends OADateTime {
 	/** default output format. Default is DateFormat.SHORT */
 	protected static String dateOutputFormat;
 
-	/** default parse formats: "MM/dd/yy", "MM/dd/yyyy" or "dd/MM/yy", "dd/MM/yyyy" */
+	/**
+	 * Collection of date formats used when parsing strings into dates.
+	 */
 	private static Vector vecDateParseFormat = new Vector(10, 10);
 
 	static {
 		setLocale(Locale.getDefault());
 	}
 
+	/**
+	 * Sets locale-specific date parsing and output formats.
+	 *
+	 * @param loc the locale to use when determining date formats
+	 */
 	public static void setLocale(Locale loc) {
 		vecDateParseFormat = new Vector(15, 10);
 		String s = getFormat(DateFormat.SHORT, loc);
@@ -112,7 +149,7 @@ public class OADate extends OADateTime {
 	}
 
 	/**
-	 * Create a new date that uses todays date. Same as new OADate(new Date())
+	 * Creates a new date initialized to today's date.
 	 */
 	public OADate() {
 		super(new Date());
@@ -120,32 +157,47 @@ public class OADate extends OADateTime {
 	}
 
 	/**
-	 * Create a new date that uses a specified Date.
+	 * Creates a new date from a {@link Date} instance.
+	 *
+	 * @param date the source date
 	 */
-
 	public OADate(Date date) {
 		super(date);
 		clearTime();
 	}
 
+	/**
+	 * Creates a new date from a millisecond time value.
+	 *
+	 * @param time milliseconds since epoch
+	 */
 	public OADate(long time) {
 		this(new Date(time));
 	}
 
 	/**
-	 * Create a new date that uses a specified Time.
+	 * Creates a new date from a {@link Time} instance.
+	 *
+	 * @param time the source time
 	 */
 	public OADate(Time time) {
 		super(time);
 		clearTime();
 	}
 
+	/**
+	 * Creates a new date from a {@link LocalDate} instance.
+	 *
+	 * @param ld the source local date
+	 */
 	public OADate(LocalDate ld) {
 		this(new Date(ld.getYear() - 1900, (ld.getMonth().getValue()) - 1, ld.getDayOfMonth()));
 	}
 
 	/**
-	 * Create a new date that uses a specified Calendar.
+	 * Creates a new date from a {@link Calendar} instance.
+	 *
+	 * @param c the source calendar
 	 */
 	public OADate(Calendar c) {
 		super(c.get(c.YEAR), c.get(c.MONTH), c.get(c.DATE));
@@ -153,7 +205,9 @@ public class OADate extends OADateTime {
 	}
 
 	/**
-	 * Create a new date that uses a specified OADateTime.
+	 * Creates a new date from an {@link OADateTime} instance.
+	 *
+	 * @param odt the source date-time
 	 */
 	public OADate(OADateTime odt) {
 		super(odt.getYear(), odt.getMonth(), odt.getDay());
@@ -161,10 +215,9 @@ public class OADate extends OADateTime {
 	}
 
 	/**
-	 * Create a new date from a specified String.
-	 * <p>
+	 * Creates a new date from a string value.
 	 *
-	 * @see OADate#valueOf
+	 * @param strDate the string representation of the date
 	 */
 	public OADate(String strDate) {
 		this(OADate.valueOf2(strDate));
@@ -172,21 +225,27 @@ public class OADate extends OADateTime {
 	}
 
 	/**
-	 * Create a new date from a specified String, using a specified format.
-	 * <p>
+	 * Creates a new date from a string value using a specified format.
 	 *
-	 * @see OADateTime
-	 * @see OADate#valueOf
+	 * @param strDate the string representation of the date
+	 * @param format the format to use for parsing
 	 */
 	public OADate(String strDate, String format) {
 		super(strDate, format);
 		clearTime();
 	}
 
-	/**
+	/*
 	 * Create new date using year, month, day.
 	 *
 	 * @param year full year (not year minus 1900 like Date) param month 0-11, use Calendar.JUNE, etc. param date day of the month (1-31)
+	 */
+	/**
+	 * Creates a new date using year, month, and day values.
+	 *
+	 * @param year the full year value
+	 * @param month the month value (0–11)
+	 * @param day the day of the month
 	 */
 	public OADate(int year, int month, int day) {
 		super(year, month, day);
@@ -194,50 +253,54 @@ public class OADate extends OADateTime {
 	}
 
 	/**
-	 * Sets the default global format used when converting OADate to String. This format will be used if this dates format has not been set
-	 * and a format is not specified.
+	 * Sets the default global output format used when converting dates to strings.
 	 *
-	 * @see #setFormat
+	 * @param fmt the format string to use
 	 */
 	public static void setGlobalOutputFormat(String fmt) {
 		dateOutputFormat = fmt;
 	}
 
 	/**
-	 * Returns the default global format used when converting OADate to String.
+	 * Returns the default global output format used when converting dates to strings.
+	 *
+	 * @return the global output format
 	 */
 	public static String getGlobalOutputFormat() {
 		return dateOutputFormat;
 	}
 
 	/**
-	 * Sets the default global parse format used when converting a String to OADate.
+	 * Adds a global parse format used when converting strings to dates.
 	 *
-	 * @see #setFormat
+	 * @param fmt the format string to add
 	 */
 	public static void addGlobalParseFormat(String fmt) {
 		vecDateParseFormat.addElement(fmt);
 	}
 
 	/**
-	 * Removes a global parse format used when converting a String to OADate.
+	 * Removes a global parse format used when converting strings to dates.
+	 *
+	 * @param fmt the format string to remove
 	 */
 	public static void removeGlobalParseFormat(String fmt) {
 		vecDateParseFormat.removeElement(fmt);
 	}
 
 	/**
-	 * Removes all global parse formats that are used to convert Strings to OADates.
+	 * Removes all global parse formats used to convert strings to dates.
 	 */
 	public static void removeAllGlobalParseFormats() {
 		vecDateParseFormat.removeAllElements();
 	}
 
 	/**
-	 * Compares this date with two dates to see if this date is between them.
+	 * Tests whether this date is between or equal to two other values.
 	 *
-	 * @return true if this.OADate is GreaterThan or Equal to Obj1 and LessThan or Equal Obj2 param obj Date, OADate, Calendar
-	 * @param obj2 Date, OADate, Calendar
+	 * @param obj1 the lower bound value
+	 * @param obj2 the upper bound value
+	 * @return true if between or equal
 	 */
 	public boolean between(Object obj1, Object obj2) {
 		int i = compareTo(obj1);
@@ -248,9 +311,25 @@ public class OADate extends OADateTime {
 		return (i <= 0);
 	}
 
+	/**
+	 * Delegates to {@link #isBetweenOrEqual(Object, Object)}.
+	 *
+	 * @param obj1 the lower bound value
+	 * @param obj2 the upper bound value
+	 * @return true if between or equal
+	 */
     public boolean betweenOrEqual(Object obj1, Object obj2) {
         return isBetweenOrEqual(obj1, obj2);
     }
+
+    /**
+     * Tests whether this date is greater than or equal to the first value
+     * and less than or equal to the second value.
+     *
+     * @param obj1 the lower bound value
+     * @param obj2 the upper bound value
+     * @return true if between or equal
+     */
     public boolean isBetweenOrEqual(Object obj1, Object obj2) {
         int i = compareTo(obj1);
         if (i < 0) {
@@ -260,9 +339,25 @@ public class OADate extends OADateTime {
         return (i <= 0);
     }
 
+    /**
+     * Delegates to {@link #isBetweenNotEqual(Object, Object)}.
+     *
+     * @param obj1 the lower bound value
+     * @param obj2 the upper bound value
+     * @return true if strictly between
+     */
     public boolean betweenNotEqual(Object obj1, Object obj2) {
         return isBetweenNotEqual(obj1, obj2);
     }
+    
+    /**
+     * Tests whether this date is strictly greater than the first value
+     * and strictly less than the second value.
+     *
+     * @param obj1 the lower bound value
+     * @param obj2 the upper bound value
+     * @return true if strictly between
+     */
     public boolean isBetweenNotEqual(Object obj1, Object obj2) {
         int i = compareTo(obj1);
         if (i <= 0) {
@@ -272,20 +367,20 @@ public class OADate extends OADateTime {
         return (i < 0);
     }
     
-	/**
-	 * Converts this date to a String value using default format. The default format is the first format that has been set: "format",
-	 * "dateOutputFormat" else or "yyyy-MMM-dd" See OADateTime for list of formatting symbols.
-	 *
-	 * @see OADateTime
-	 */
+    /**
+     * Converts this date to a string using the default format.
+     *
+     * @return the formatted date string
+     */
 	public String toString() {
 		return toString(null);
 	}
 
 	/**
-	 * Converts this date to a String value using specified format. See OADateTime for list of formatting symbols.
+	 * Converts this date to a string using the specified format.
 	 *
-	 * @see OADateTime
+	 * @param f the format string to use
+	 * @return the formatted date string
 	 */
 	public String toString(String f) {
 		if (f == null) {
@@ -298,31 +393,33 @@ public class OADate extends OADateTime {
 	}
 
 	/**
-	 * Converts a String to an OADate.
+	 * Converts a string to an {@link OADate} using the specified format.
 	 *
-	 * @see #valueOf(String,String)
+	 * @param date the string representation of the date
+	 * @param fmt the format string to use
+	 * @return the parsed OADate instance
 	 */
 	public static OADate dateValue(String date, String fmt) {
 		return (OADate) valueOf(date, fmt);
 	}
 
 	/**
-	 * Converts a String to an OADate.
+	 * Converts a string to an {@link OADate} using default parsing rules.
 	 *
-	 * @see #valueOf(String,String)
+	 * @param date the string representation of the date
+	 * @return the parsed OADate instance
 	 */
 	public static OADate dateValue(String date) {
 		return (OADate) valueOf(date, null);
 	}
 
 	/**
-	 * Converts a String to an OADate. See OADateTime for list of formatting symbols. If date can not be parsed based on supplied format,
-	 * then other formatting and conversions will be used to try to convert to an OADate.
+	 * Converts a string to an {@link OADateTime} using the specified format
+	 * and global parsing rules.
 	 *
-	 * @param fmt is format to use for parsing. See OADateTime for list of formatting symbols.
-	 * @see OADateTime
-	 * @see #valueOf(String,String)
-	 * @see OADateTime
+	 * @param date the string representation of the date
+	 * @param fmt the format string to use
+	 * @return the parsed OADateTime instance, or null if parsing fails
 	 */
 	public static OADateTime valueOf(String date, String fmt) {
 		if (date == null) {
@@ -343,16 +440,22 @@ public class OADate extends OADateTime {
 	}
 
 	/**
-	 * Converts a String to an OADate.
+	 * Converts a string to an {@link OADateTime} using default parsing rules.
 	 *
-	 * @see #valueOf(String,String)
+	 * @param date the string representation of the date
+	 * @return the parsed OADateTime instance, or null if parsing fails
 	 */
 	public static OADateTime valueOf(String date) {
 		return OADate.valueOf(date, null);
 	}
 
 	/**
-	 * Throws an exception if date if not valid.
+	 * Converts a string to an {@link OADateTime} and throws an exception
+	 * if the date cannot be parsed.
+	 *
+	 * @param date the string representation of the date
+	 * @return the parsed OADateTime instance
+	 * @throws IllegalArgumentException if the date cannot be parsed
 	 */
 	public static OADateTime valueOf2(String date) {
 		OADateTime dt = OADate.valueOf(date, null);
@@ -362,6 +465,11 @@ public class OADate extends OADateTime {
 		return dt;
 	}
 
+	/**
+	 * Returns a {@link LocalDate} representing this date.
+	 *
+	 * @return the corresponding LocalDate value
+	 */
 	public LocalDate getLocalDate() {
 		LocalDate ld = LocalDate.of(getYear(), getMonth() + 1, getDay());
 		return ld;

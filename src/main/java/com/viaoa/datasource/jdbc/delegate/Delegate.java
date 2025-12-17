@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,16 @@ import com.viaoa.datasource.jdbc.query.QueryConverter;
 public class Delegate {
 
 	/**
-	 * Returns max length allowed for a property. returns "-1" for any length
+	 * Returns the maximum length allowed for a property based on the active
+	 * SELECT column set for the specified class.
+	 * <p>
+	 * If the property is not found or no explicit length applies, {@code -1}
+	 * is returned.
+	 *
+	 * @param ds the JDBC data source
+	 * @param c the OAObject class being queried
+	 * @param propertyName the property name to inspect
+	 * @return the maximum allowed length, or {@code -1} if not constrained
 	 */
 	public static int getPropertyMaxLength(OADataSourceJDBC ds, Class c, String propertyName) {
 		QueryConverter qc = new QueryConverter(ds);
@@ -58,6 +67,15 @@ public class Delegate {
 		return -1;
 	}
 
+	/**
+	 * Returns the maximum length allowed for a property by scanning all
+	 * tables in the supplied database.
+	 *
+	 * @param database the database metadata container
+	 * @param c the OAObject class being queried
+	 * @param propertyName the property name to inspect
+	 * @return the maximum allowed length, or {@code -1} if not constrained
+	 */
 	public static int getPropertyMaxLength(Database database, Class c, String propertyName) {
 		for (Table table : database.getTables()) {
 			Column[] columns = table.getSelectColumns();
@@ -70,6 +88,16 @@ public class Delegate {
 		return -1;
 	}
 
+	/**
+	 * Returns the effective maximum length for a column.
+	 * <p>
+	 * If the column maps to a {@link String} property and represents a
+	 * VARCHAR or CHAR SQL type with a defined maximum length, that length
+	 * is returned. Otherwise, {@code -1} is returned.
+	 *
+	 * @param c the column metadata
+	 * @return the maximum length, or {@code -1} if not applicable
+	 */
 	public static int getMaxLength(Column c) {
 		if (c == null) {
 			return -1;
@@ -89,6 +117,15 @@ public class Delegate {
 		return c.maxLength;
 	}
 
+	/**
+	 * Adjusts database metadata to account for case-insensitive column behavior.
+	 * <p>
+	 * This method updates index definitions and optional lowercase mirror
+	 * columns based on database case-sensitivity rules to ensure consistent
+	 * querying and indexing behavior.
+	 *
+	 * @param ds the JDBC data source whose database metadata will be adjusted
+	 */
 	public static void adjustDatabase(OADataSourceJDBC ds) {
 		if (ds == null) {
 			return;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,46 +91,176 @@ import com.viaoa.object.OAPropertyInfo;
  */
 public class OAPropertyPath<F> {
 
+	/**
+	 * The starting class used to resolve the property path.
+	 *
+	 * <p>This defines the root type from which property resolution begins.</p>
+	 */
 	private Class<F> fromClass;
+	
+	/**
+	 * The raw property path string as provided to the constructor.
+	 *
+	 * <p>This value is trimmed and parsed during setup.</p>
+	 */
 	private String propertyPath;
+	
+	/**
+	 * Array of resolved getter or accessor methods corresponding to the property path.
+	 *
+	 * <p>Each method represents one segment of the property path.</p>
+	 */
 	private Method[] methods = new Method[0];
+	
+	/**
+	 * Flag indicating whether the final resolved method requires a {@link Hub} parameter.
+	 *
+	 * <p>This is used when invoking static methods that accept a Hub as input.</p>
+	 */
 	private boolean bLastMethodHasHubParam; // true if method requires a Hub param
 
-	/**
+	/*
 	 * property class. if casting is used, then this will have the casted class. note: if the method returns a Hub, then this will be the
 	 * hub.objectClass
+	 */
+	/**
+	 * Array of resolved classes for each segment in the property path.
+	 *
+	 * <p>If casting is used, the casted class is stored. If a method returns a Hub,
+	 * the Hub object class is used.</p>
 	 */
 	private Class[] classes = new Class[0];
 
 	// flag that is used when data is needed to find the real classes, since generics are being used.
+	/**
+	 * Flag indicating that runtime data is required to fully verify class resolution.
+	 *
+	 * <p>This is used when generics or {@link OAObject} placeholders prevent
+	 * compile-time class determination.</p>
+	 */
 	private boolean bNeedsDataToVerify;
+	
+	/**
+	 * Array of property names extracted from the property path.
+	 *
+	 * <p>Property names are stored without casting or filtering syntax.</p>
+	 */
 	private String[] properties = new String[0]; // convert properties, without casting
+	
+	/**
+	 * Array of cast class names applied to individual property path segments.
+	 *
+	 * <p>Entries may be {@code null} when no cast is specified.</p>
+	 */
 	private String[] castNames = new String[0];
+	
+	/**
+	 * Array of filter names associated with property path segments.
+	 *
+	 * <p>Filters are specified using ':' syntax in the property path.</p>
+	 */
 	private String[] filterNames = new String[0];
+	
+	/**
+	 * Array of raw filter parameter strings.
+	 *
+	 * <p>Examples include "(a,b)" or "()".</p>
+	 */
 	private String[] filterParams = new String[0];
+	
+	/**
+	 * Parsed filter parameter values corresponding to each filter.
+	 *
+	 * <p>Each entry aligns with a filter segment in the property path.</p>
+	 */
 	private Object[][] filterParamValues = new Object[0][];
 
+	/**
+	 * Array of resolved filter classes for each filter segment.
+	 *
+	 * <p>Entries may be {@code null} if a filter class could not be resolved.</p>
+	 */
 	private Class[] filterClasses = new Class[0];
+	
+	/**
+	 * Array of constructors used to instantiate filter instances.
+	 *
+	 * <p>Each constructor corresponds to a resolved filter class.</p>
+	 */
 	private Constructor[] filterConstructors = new Constructor[0];
 
-	/** NOTE: this also includes endLinkInfo */
+	/* NOTE: this also includes endLinkInfo */
+	/**
+	 * Array of link metadata resolved from the property path.
+	 *
+	 * <p>This includes link information for each link segment.</p>
+	 */
 	private OALinkInfo[] linkInfos = new OALinkInfo[0];
+	
+	/**
+	 * Array of recursive link metadata corresponding to {@link #linkInfos}.
+	 *
+	 * <p>Entries are populated only for recursive link definitions.</p>
+	 */
 	private OALinkInfo[] recursiveLinkInfos = new OALinkInfo[0]; // for each linkInfos[]
+	
+	/**
+	 * Cached reverse property path derived from link information.
+	 *
+	 * <p>This value is lazily created when requested.</p>
+	 */
 	private OAPropertyPath revPropertyPath;
 
 	// the ending propery in the property path will be one of these
+	/**
+	 * Metadata for the final property resolved by the property path.
+	 *
+	 * <p>This is set when the path ends on a standard property.</p>
+	 */
 	private OAPropertyInfo endPropertyInfo;
+	
+	/**
+	 * Metadata for the final calculated property resolved by the property path.
+	 *
+	 * <p>This is set when the path ends on a calculated property.</p>
+	 */
 	private OACalcInfo endCalcInfo;
+	
+	/**
+	 * Metadata for the final link resolved by the property path.
+	 *
+	 * <p>This link is also included in {@link #linkInfos}.</p>
+	 */
 	private OALinkInfo endLinkInfo; // note: will also be in linkInfos
 
+	/**
+	 * Creates a property path using the supplied property path string.
+	 *
+	 * @param propertyPath the raw property path string to parse
+	 */
 	public OAPropertyPath(String propertyPath) {
 		this.propertyPath = propertyPath;
 	}
 
+	/**
+	 * Creates a property path using a starting class and property path string.
+	 *
+	 * @param fromClass    the starting class used to resolve the property path
+	 * @param propertyPath the raw property path string to parse
+	 */
 	public OAPropertyPath(Class<F> fromClass, String propertyPath) {
 		this(fromClass, propertyPath, false);
 	}
 
+	/**
+	 * Creates a property path using a starting class and property path string.
+	 *
+	 * <p>If setup fails and {@code bIgnoreError} is false, an exception is thrown.</p>
+	 *
+	 * @param fromClass     the starting class used to resolve the property path
+	 * @param propertyPath  the raw property path string to parse
+	 * @param bIgnoreError  if true, setup errors are ignored
+	 */
 	public OAPropertyPath(Class<F> fromClass, String propertyPath, boolean bIgnoreError) {
 		this.propertyPath = propertyPath;
 		this.fromClass = fromClass;
@@ -149,14 +279,32 @@ public class OAPropertyPath<F> {
 		}
 	}
 
+	/**
+	 * Returns the raw property path string.
+	 *
+	 * @return the property path string
+	 */
 	public String getPropertyPath() {
 		return this.propertyPath;
 	}
 
+	/**
+	 * Returns the reverse property path using default behavior.
+	 *
+	 * @return the reverse property path, or {@code null} if not available
+	 */
 	public OAPropertyPath getReversePropertyPath() {
 		return getReversePropertyPath(false);
 	}
 
+	/**
+	 * Returns the reverse property path.
+	 *
+	 * <p>The reverse path is constructed from resolved link information.</p>
+	 *
+	 * @param bAllowPrivateLinks if true, private links are allowed
+	 * @return the reverse property path, or {@code null} if not available
+	 */
 	public OAPropertyPath getReversePropertyPath(final boolean bAllowPrivateLinks) {
 		if (revPropertyPath != null) {
 			return revPropertyPath;
@@ -184,6 +332,13 @@ public class OAPropertyPath<F> {
 		return revPropertyPath;
 	}
 
+	/**
+	 * Returns a string representation of the property path containing only link segments.
+	 *
+	 * <p>This includes casting and filter syntax where applicable.</p>
+	 *
+	 * @return the link-only property path string, or {@code null} if no links exist
+	 */
 	public String getPropertyPathLinksOnly() {
 		if (linkInfos == null || linkInfos.length == 0) {
 			return null;
@@ -216,18 +371,38 @@ public class OAPropertyPath<F> {
 		return s;
 	}
 
+	/**
+	 * Returns metadata for the final property in the property path.
+	 *
+	 * @return the ending {@link OAPropertyInfo}, or {@code null} if not applicable
+	 */
 	public OAPropertyInfo getEndPropertyInfo() {
 		return endPropertyInfo;
 	}
 
+	/**
+	 * Returns metadata for the final calculated property in the property path.
+	 *
+	 * @return the ending {@link OACalcInfo}, or {@code null} if not applicable
+	 */
 	public OACalcInfo getEndCalcInfo() {
 		return endCalcInfo;
 	}
 
+	/**
+	 * Returns metadata for the final link in the property path.
+	 *
+	 * @return the ending {@link OALinkInfo}, or {@code null} if not applicable
+	 */
 	public OALinkInfo getEndLinkInfo() {
 		return endLinkInfo;
 	}
 
+	/**
+	 * Returns the {@link OAProperty} annotation for the final resolved method.
+	 *
+	 * @return the {@link OAProperty} annotation, or {@code null} if not present
+	 */
 	public OAProperty getOAPropertyAnnotation() {
 		if (methods == null || methods.length == 0) {
 			return null;
@@ -235,6 +410,11 @@ public class OAPropertyPath<F> {
 		return methods[methods.length - 1].getAnnotation(OAProperty.class);
 	}
 
+	/**
+	 * Returns the {@link OACalculatedProperty} annotation for the final resolved method.
+	 *
+	 * @return the {@link OACalculatedProperty} annotation, or {@code null} if not present
+	 */
 	public OACalculatedProperty getOACalculatedPropertyAnnotation() {
 		if (methods == null || methods.length == 0) {
 			return null;
@@ -242,6 +422,11 @@ public class OAPropertyPath<F> {
 		return methods[methods.length - 1].getAnnotation(OACalculatedProperty.class);
 	}
 
+	/**
+	 * Returns the {@link OAOne} annotation for the final resolved method.
+	 *
+	 * @return the {@link OAOne} annotation, or {@code null} if not present
+	 */
 	public OAOne getOAOneAnnotation() {
 		if (methods == null || methods.length == 0) {
 			return null;
@@ -249,64 +434,142 @@ public class OAPropertyPath<F> {
 		return methods[methods.length - 1].getAnnotation(OAOne.class);
 	}
 
+	/**
+	 * Returns the list of property names parsed from the property path.
+	 *
+	 * @return array of property names
+	 */
 	public String[] getProperties() {
 		return properties;
 	}
 
+	/**
+	 * Returns the list of cast names associated with the property path.
+	 *
+	 * @return array of cast class names
+	 */
 	public String[] getCastNames() {
 		return castNames;
 	}
 
 	// ex: Employees:recentBirthday()  => "recentBirthday()"
+	/**
+	 * Returns the list of filter names associated with the property path.
+	 *
+	 * @return array of filter names
+	 */
 	public String[] getFilterNames() {
 		return filterNames;
 	}
 
 	// params used for filter, ex: "(a,b)", "()"
+	/**
+	 * Returns the list of raw filter parameter strings.
+	 *
+	 * @return array of filter parameter strings
+	 */
 	public String[] getFilterParams() {
 		return filterParams;
 	}
 
+	/**
+	 * Returns the parsed filter parameter values.
+	 *
+	 * @return two-dimensional array of filter parameter values
+	 */
 	public Object[][] getFilterParamValues() {
 		return filterParamValues;
 	}
 
+	/**
+	 * Returns the resolved methods corresponding to the property path.
+	 *
+	 * @return array of {@link Method} objects
+	 */
 	public Method[] getMethods() {
 		return methods;
 	}
 
+	/**
+	 * Returns the resolved classes for each segment of the property path.
+	 *
+	 * @return array of {@link Class} objects
+	 */
 	public Class[] getClasses() {
 		return classes;
 	}
 
+	/**
+	 * Returns the constructors used to create filter instances.
+	 *
+	 * @return array of filter constructors
+	 */
 	public Constructor[] getFilterConstructors() {
 		return filterConstructors;
 	}
 
+	/**
+	 * Returns the link metadata resolved from the property path.
+	 *
+	 * @return array of {@link OALinkInfo} objects
+	 */
 	public OALinkInfo[] getLinkInfos() {
 		return linkInfos;
 	}
 
+	/**
+	 * Indicates whether the property path contains any link segments.
+	 *
+	 * @return {@code true} if link information exists, otherwise {@code false}
+	 */
 	public boolean hasLinks() {
 		return linkInfos != null && linkInfos.length > 0;
 	}
 
+	/**
+	 * Returns recursive link metadata corresponding to resolved link segments.
+	 *
+	 * @return array of recursive {@link OALinkInfo} objects
+	 */
 	public OALinkInfo[] getRecursiveLinkInfos() {
 		return recursiveLinkInfos;
 	}
 
+	/**
+	 * Returns the value of the property path starting from the given object.
+	 *
+	 * @param fromObject the object to evaluate the property path against
+	 * @return the resolved value, or {@code null} if evaluation fails or encounters {@code null}
+	 */
 	public Object getValue(F fromObject) {
 		return getValue(null, fromObject);
 	}
 
+	/**
+	 * Returns the value of the property path as a formatted string.
+	 *
+	 * @param fromObject the object to evaluate the property path against
+	 * @return the formatted string value, or {@code null}
+	 */
 	public String getValueAsString(F fromObject) {
 		return getValueAsString(null, fromObject);
 	}
 
+	/**
+	 * Returns the value of the last link in the property path.
+	 *
+	 * @param fromObject the object to evaluate the property path against
+	 * @return the value of the last link, or {@code null}
+	 */
 	public Object getLastLinkValue(F fromObject) {
 		return getValue(null, fromObject, true);
 	}
 
+	/**
+	 * Returns the name of the last property in the property path.
+	 *
+	 * @return the last property name, or {@code null} if none exist
+	 */
 	public String getLastPropertyName() {
 		String[] ss = getProperties();
 		if (ss == null || ss.length == 0) {
@@ -315,6 +578,11 @@ public class OAPropertyPath<F> {
 		return ss[ss.length - 1];
 	}
 
+	/**
+	 * Returns the name of the first property in the property path.
+	 *
+	 * @return the first property name, or {@code null} if none exist
+	 */
 	public String getFirstPropertyName() {
 		String[] ss = getProperties();
 		if (ss == null || ss.length == 0) {
@@ -323,14 +591,32 @@ public class OAPropertyPath<F> {
 		return ss[0];
 	}
 
-	/**
+	/*
 	 * Returns the value of the propertyPath from a base object. Notes: if any of the property's is null, then null is returned. If any of
 	 * the non-last properties is a Hub, then the AO will be used.
+	 */
+	/**
+	 * Returns the value of the property path from a base object using a Hub context.
+	 *
+	 * <p>If any intermediate property is {@code null}, {@code null} is returned.
+	 * If a non-final property resolves to a Hub, its active object is used.</p>
+	 *
+	 * @param hub        the Hub context used during evaluation
+	 * @param fromObject the object to evaluate the property path against
+	 * @return the resolved value, or {@code null}
 	 */
 	public Object getValue(Hub<F> hub, F fromObject) {
 		return getValue(hub, fromObject, false);
 	}
 
+	/**
+	 * Returns the value of the property path with optional link-only traversal.
+	 *
+	 * @param hub         the Hub context used during evaluation
+	 * @param fromObject  the object to evaluate the property path against
+	 * @param bLinksOnly  if true, traversal stops after link segments
+	 * @return the resolved value, or {@code null}
+	 */
 	public Object getValue(Hub<F> hub, F fromObject, boolean bLinksOnly) {
 		if (fromObject == null) {
 			return null;
@@ -374,8 +660,15 @@ public class OAPropertyPath<F> {
 		return result;
 	}
 
-	/**
+	/*
 	 * This will call getValue, and then call OAConv.toString using getFormat.
+	 */
+	/**
+	 * Returns the value of the property path as a formatted string using a Hub context.
+	 *
+	 * @param hub        the Hub context used during evaluation
+	 * @param fromObject the object to evaluate the property path against
+	 * @return the formatted string value, or {@code null}
 	 */
 	public String getValueAsString(Hub<F> hub, F fromObject) {
 		Object obj = getValue(hub, fromObject);
@@ -383,16 +676,34 @@ public class OAPropertyPath<F> {
 		return s;
 	}
 
+	/**
+	 * Returns the value of the property path as a formatted string using the supplied format.
+	 *
+	 * @param hub        the Hub context used during evaluation
+	 * @param fromObject the object to evaluate the property path against
+	 * @param format     the format string to apply
+	 * @return the formatted string value, or {@code null}
+	 */
 	public String getValueAsString(Hub<F> hub, F fromObject, String format) {
 		Object obj = getValue(hub, fromObject);
 		String s = OAConv.toString(obj, format);
 		return s;
 	}
 
+	/**
+	 * Returns the starting class used to resolve the property path.
+	 *
+	 * @return the starting class
+	 */
 	public Class<F> getFromClass() {
 		return fromClass;
 	}
 
+	/**
+	 * Initializes the property path using the supplied Hub.
+	 *
+	 * @param hub the Hub used to determine the object class
+	 */
 	public void setup(Hub hub) {
 		if (hub == null) {
 			return;
@@ -400,10 +711,21 @@ public class OAPropertyPath<F> {
 		setup(hub, hub.getObjectClass(), false);
 	}
 
+	/**
+	 * Initializes the property path using the supplied class.
+	 *
+	 * @param clazz the class used to resolve the property path
+	 */
 	public void setup(Class clazz) {
 		setup(clazz, false);
 	}
 
+	/**
+	 * Initializes the property path using the supplied class.
+	 *
+	 * @param clazz              the class used to resolve the property path
+	 * @param bIgnorePrivateLink if true, private links are ignored
+	 */
 	public void setup(Class clazz, boolean bIgnorePrivateLink) {
 		String s = setup(null, clazz, bIgnorePrivateLink);
 		if (s != null) {
@@ -411,6 +733,11 @@ public class OAPropertyPath<F> {
 		}
 	}
 
+	/**
+	 * Indicates whether the property path contains any private link segments.
+	 *
+	 * @return {@code true} if a private link exists, otherwise {@code false}
+	 */
 	public boolean hasPrivateLink() {
 		if (linkInfos == null) {
 			return false;
@@ -423,21 +750,51 @@ public class OAPropertyPath<F> {
 		return false;
 	}
 
+	/**
+	 * Indicates whether the last resolved method requires a Hub parameter.
+	 *
+	 * @return {@code true} if the last method requires a Hub parameter
+	 */
 	public boolean getDoesLastMethodHasHubParam() {
 		return bLastMethodHasHubParam;
 	}
 
+	/**
+	 * Indicates whether runtime data is required to fully verify the property path.
+	 *
+	 * @return {@code true} if runtime data is needed
+	 */
 	public boolean getNeedsDataToVerify() {
 		return bNeedsDataToVerify;
 	}
 
+	/**
+	 * Initializes the property path using a Hub and starting class.
+	 *
+	 * @param hub               the Hub used during property resolution
+	 * @param clazz             the starting class used to resolve the property path
+	 * @param bIgnorePrivateLink if true, private links are ignored
+	 * @return an error message if setup fails, otherwise {@code null}
+	 */
 	public String setup(final Hub hub, Class clazz, final boolean bIgnorePrivateLink) {
 		return setup(hub, clazz, null, bIgnorePrivateLink);
 	}
 
-	/**
+	/*
 	 * @param substituteClass    class to use if a link property is of type OAObject.class
 	 * @param bIgnorePrivateLink if true, then a link that does not have a get method will not throw an exception. Used by HubGroupBy
+	 */
+	/**
+	 * Parses and resolves the property path using the supplied context.
+	 *
+	 * <p>This method resolves methods, classes, link metadata, and filter metadata
+	 * based on the property path string.</p>
+	 *
+	 * @param hub                the Hub used during resolution
+	 * @param clazz              the starting class
+	 * @param substituteClass    class to substitute when a link property type is {@link OAObject}
+	 * @param bIgnorePrivateLink if true, private links do not cause errors
+	 * @return an error message if setup fails, otherwise {@code null}
 	 */
 	public String setup(final Hub hub, Class clazz, final Class substituteClass, final boolean bIgnorePrivateLink) {
 		bNeedsDataToVerify = false;
@@ -887,10 +1244,23 @@ public class OAPropertyPath<F> {
 	}
 
 	// 20150715 find the class by looking at the data
+	/**
+	 * Determines the final resolved class by inspecting runtime data.
+	 *
+	 * @param obj the object to inspect
+	 * @return the resolved class, or {@code null} if it cannot be determined
+	 */
 	private Class findLastClass(final Object obj) {
 		return _findLastClass(obj, 0);
 	}
 
+	/**
+	 * Recursively determines the final resolved class starting at a given position.
+	 *
+	 * @param obj the current object to inspect
+	 * @param pos the property index position
+	 * @return the resolved class, or {@code null}
+	 */
 	private Class _findLastClass(final Object obj, final int pos) {
 		if (this.properties == null || pos >= this.properties.length) {
 			return null;
@@ -906,6 +1276,13 @@ public class OAPropertyPath<F> {
 		return clazz;
 	}
 
+	/**
+	 * Determines the final resolved class by iterating through objects in a Hub.
+	 *
+	 * @param hubRoot the Hub to inspect
+	 * @param pos     the property index position
+	 * @return the resolved class, or {@code null}
+	 */
 	private Class _findLastClass(final Hub hubRoot, final int pos) {
 		if (hubRoot == null) {
 			return null;
@@ -929,6 +1306,13 @@ public class OAPropertyPath<F> {
 		return clazz;
 	}
 
+	/**
+	 * Determines the final resolved class by traversing an {@link OAObject}.
+	 *
+	 * @param obj the object to inspect
+	 * @param pos the property index position
+	 * @return the resolved class, or {@code null}
+	 */
 	private Class _findLastClass(final OAObject obj, final int pos) {
 		if (obj == null) {
 			return null;
@@ -947,9 +1331,21 @@ public class OAPropertyPath<F> {
 		return clazz;
 	}
 
+	/**
+	 * Flag indicating whether the output format has been evaluated.
+	 */
 	private boolean bFormat;
+
+	/**
+	 * Cached format string used when converting values to strings.
+	 */
 	private String format;
 
+	/**
+	 * Determines and returns the output format for the final property.
+	 *
+	 * @return the format string, or {@code null} if none applies
+	 */
 	public String getFormat() {
 		if (format != null || bFormat) {
 			return format;
@@ -1034,11 +1430,24 @@ public class OAPropertyPath<F> {
 		return format;
 	}
 
+	/**
+	 * Returns a decimal format string with the specified number of decimal places.
+	 *
+	 * @param deci the number of decimal places
+	 * @return the decimal format string
+	 */
 	private String getDecimalFormat(int deci) {
 		String format = OAConv.getDecimalFormat();
 		return getDecimalFormat(format, deci);
 	}
 
+	/**
+	 * Adjusts a decimal format string to the specified number of decimal places.
+	 *
+	 * @param format the base format string
+	 * @param deci   the number of decimal places
+	 * @return the adjusted decimal format string
+	 */
 	private String getDecimalFormat(String format, int deci) {
 		if (format == null) {
 			format = "";
@@ -1070,9 +1479,21 @@ public class OAPropertyPath<F> {
 		return format;
 	}
 
+	/**
+	 * Flag indicating whether the property path contains a Hub property.
+	 */
 	private boolean bHasHubProperty;
+
+	/**
+	 * Flag indicating whether the Hub property check has been performed.
+	 */
 	private boolean bHasHubPropertyCheck;
 
+	/**
+	 * Indicates whether the property path contains a Hub-valued property.
+	 *
+	 * @return {@code true} if a Hub property exists, otherwise {@code false}
+	 */
 	public boolean getHasHubProperty() {
 		if (bHasHubPropertyCheck) {
 			return bHasHubProperty;
@@ -1089,11 +1510,18 @@ public class OAPropertyPath<F> {
 		return bHasHubProperty;
 	}
 
-	/**
+	/*
 	 * Used when fromObject is already in the propertyPath.
 	 *
 	 * @param fromObject object to start with
 	 * @param startPos   number of properties to skip in the PP, that aligns with fromObject's position in the PP.
+	 */
+	/**
+	 * Returns the value of the property path starting from a specific position.
+	 *
+	 * @param fromObject the object to start evaluation from
+	 * @param startPos   the index of the property path to begin traversal
+	 * @return the resolved value, or {@code null}
 	 */
 	public Object getValue(final OAObject fromObject, final int startPos) {
 		if (fromObject == null) {

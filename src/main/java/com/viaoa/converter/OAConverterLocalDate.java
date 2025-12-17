@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,23 @@ import com.viaoa.util.OATime;
  */
 public class OAConverterLocalDate implements OAConverterInterface<LocalDate> {
 
+	/**
+	 * Constant representing the epoch date (1970-01-01) used when no date
+	 * information is available.
+	 */
     private static final LocalDate EPOCH_DATE = LocalDate.of(1970, 1, 1);
 
+    /**
+     * Converts the supplied value into a {@link LocalDate}.
+     * <p>
+     * The conversion behavior depends on the runtime type of {@code fromValue}
+     * and may apply system default timezone rules when required.
+     *
+     * @param thisClass the target class, {@link LocalDate}
+     * @param fromValue the value to convert
+     * @param fmt the format string used when parsing string values
+     * @return the converted {@link LocalDate}, or {@code null} if conversion fails
+     */
     @Override
     public LocalDate convert(Class<LocalDate> thisClass, Object fromValue, String fmt) {
         if (fromValue == null) return null;
@@ -135,6 +150,13 @@ public class OAConverterLocalDate implements OAConverterInterface<LocalDate> {
         return null;
     }
 
+    /**
+     * Converts a {@link LocalDate} into a formatted string.
+     *
+     * @param fromValue the {@link LocalDate} value to convert
+     * @param fmt the format string to use
+     * @return the formatted string, or an empty string if the value is {@code null}
+     */
     @Override
     public String convertToString(LocalDate fromValue, String fmt) {
         if (fromValue == null) return "";

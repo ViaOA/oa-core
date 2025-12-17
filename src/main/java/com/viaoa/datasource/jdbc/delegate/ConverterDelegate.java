@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,15 @@ import com.viaoa.util.OATime;
  */
 public class ConverterDelegate {
 
+	/**
+	 * Converts a value into a SQL-compatible literal string based on the
+	 * supplied database metadata and column definition.
+	 *
+	 * @param dbmd database metadata defining vendor-specific behavior
+	 * @param column column metadata describing SQL type and constraints
+	 * @param value the value to convert
+	 * @return SQL-ready literal representation of the value
+	 */
 	public static String convert(DBMetaData dbmd, Column column, Object value) {
 		Class clazz = null;
 
@@ -180,6 +189,13 @@ public class ConverterDelegate {
 		return convertToString(dbmd, value, true, column.maxLength, column.decimalPlaces, column);
 	}
 
+	/**
+	 * Determines whether values for the specified column type require
+	 * single-quote wrapping in SQL.
+	 *
+	 * @param column the column metadata
+	 * @return {@code true} if single quotes are required
+	 */
 	public static boolean areSingleQuotesNeeded(Column column) {
 		switch (column.type) {
 		case Types.CLOB:
@@ -190,6 +206,18 @@ public class ConverterDelegate {
 		return false;
 	}
 
+	/**
+	 * Converts a Java value into a SQL literal string using database-specific
+	 * formatting rules.
+	 *
+	 * @param dbmd database metadata defining vendor-specific behavior
+	 * @param obj the value to convert
+	 * @param bConvertSingleQuotes {@code true} to escape and wrap string values
+	 * @param maxLength maximum allowed string length
+	 * @param decimalPlaces numeric decimal precision
+	 * @param column column metadata, or {@code null}
+	 * @return SQL-ready literal string
+	 */
 	protected static String convertToString(DBMetaData dbmd, Object obj, boolean bConvertSingleQuotes, int maxLength, int decimalPlaces,
 			Column column) {
 		if (obj == null) {
@@ -267,6 +295,14 @@ public class ConverterDelegate {
 		return s;
 	}
 
+	/**
+	 * Escapes single-quote characters in a string according to database-specific
+	 * escape rules.
+	 *
+	 * @param dbmd database metadata defining escape behavior
+	 * @param value the string value to escape
+	 * @return escaped string value
+	 */
 	protected static String convertSingleQuotes(DBMetaData dbmd, String value) {
 		if (value == null) {
 			return null;

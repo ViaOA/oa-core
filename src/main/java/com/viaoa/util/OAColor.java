@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,18 +29,46 @@ import java.awt.Color;
  */
 public class OAColor {
 
+	/**
+	 * Returns a foreground color based on the specified background color.
+	 *
+	 * If the background color is {@code null}, this method returns {@link Color#white}.
+	 * Otherwise, the RGB components of the background color are used to determine
+	 * the foreground color.
+	 *
+	 * @param backgroundColor the background {@link Color}
+	 * @return the selected foreground {@link Color}
+	 */
     public static Color getForeground(Color backgroundColor) {
         if (backgroundColor == null) return Color.white;
         return getForegroundColor(backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue());
     }
     
+    /**
+     * Returns a foreground color based on the specified background color.
+     *
+     * If the background color is {@code null}, this method returns {@link Color#white}.
+     * Otherwise, the RGB components of the background color are used to determine
+     * the foreground color.
+     *
+     * @param backgroundColor the background {@link Color}
+     * @return the selected foreground {@link Color}
+     */
     public static Color getForegroundColor(Color backgroundColor) {
         if (backgroundColor == null) return Color.white;
         return getForegroundColor(backgroundColor.getRed(), backgroundColor.getGreen(), backgroundColor.getBlue());
     }
 
     /**
-     * Get best foreground color to use with the background color r,g,b value
+     * Returns a foreground color based on the specified RGB background values.
+     *
+     * This method computes a luminance value using the supplied red, green,
+     * and blue components and returns either black or white based on the result.
+     *
+     * @param r the red component value
+     * @param g the green component value
+     * @param b the blue component value
+     * @return the selected foreground {@link Color}
      */
     public static Color getForegroundColor(int r, int g, int b) {
         float f = (0.2126f*r) + (0.7152f*g) + (0.0722f*b);

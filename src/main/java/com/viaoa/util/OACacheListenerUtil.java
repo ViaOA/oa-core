@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,23 +35,54 @@ import com.viaoa.object.OAObjectCacheListener;
  */
 public class OACacheListenerUtil {
 
+	/**
+	 * The {@link Class} of {@link OAObject} instances to monitor for cache events.
+	 */
     private final Class clazz;
+    
+    /**
+     * The name of the property to monitor for changes.
+     */
     private final String property;
+    
+    /**
+     * The cache listener instance registered with {@link OAObjectCacheDelegate},
+     * or {@code null} if not currently installed.
+     */
     private OAObjectCacheListener listener;
     
     
+    /**
+     * Creates a new listener utility for monitoring changes to a specific property
+     * on all {@link OAObject} instances of the given class.
+     *
+     * This constructor stores the provided parameters and initializes the
+     * underlying cache listener.
+     *
+     * @param clazz the {@link Class} of {@link OAObject} instances to monitor
+     * @param property the name of the property to monitor
+     */
     public OACacheListenerUtil(Class clazz, String property) {
         this.clazz = clazz;
         this.property = property;
         init();
     }
     
+    /**
+     * Initializes and registers the {@link OAObjectCacheListener} if it has not
+     * already been created.
+     *
+     * This method creates an anonymous listener implementation and registers it
+     * with {@link OAObjectCacheDelegate} for the configured class.
+     */
     protected void init() {
         if (listener != null) return;
         listener = new OAObjectCacheListener() {
             @Override
             public void afterPropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
-                if (!property.equalsIgnoreCase(propertyName)) return;
+            	if (property != null) {
+            		if (!property.equalsIgnoreCase(propertyName)) return;
+            	}
 
                 Thread t = Thread.currentThread();
                 StringBuilder sb = new StringBuilder(2048);
@@ -84,14 +115,32 @@ public class OACacheListenerUtil {
         OAObjectCacheDelegate.addListener(clazz, listener);
     }
     
+    /**
+     * Removes the registered {@link OAObjectCacheListener} from the
+     * {@link OAObjectCacheDelegate} for the configured class.
+     *
+     * This method unregisters the listener and clears the internal reference,
+     * preventing further cache events from being received.
+     */
     public void close() {
         OAObjectCacheDelegate.removeListener(clazz, listener);
         listener = null;
     }
 
     /**
-     * called when the property is changed.
-     * @param stackTrace from current thread
+     * Called when the monitored property is changed on a matching {@link OAObject}.
+     *
+     * This method is invoked after a property change event has been detected and
+     * the current thread stack trace has been captured.
+     *
+     * The default implementation performs no actions and is intended to be
+     * overridden by subclasses.
+     *
+     * @param obj the {@link OAObject} whose property was changed
+     * @param propertyName the name of the property that changed
+     * @param oldValue the previous value of the property
+     * @param newValue the new value of the property
+     * @param stackTrace the captured stack trace of the current thread
      */
     public void onEvent(OAObject obj, String propertyName, Object oldValue, Object newValue, String stackTrace) {
     }

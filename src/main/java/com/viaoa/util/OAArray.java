@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,16 @@ import java.util.Arrays;
  */
 public class OAArray {
 
+	/**
+	 * Checks whether an object array contains the supplied value.
+	 * <p>
+	 * Uses reference comparison first ({@code ==}), then falls back to
+	 * {@link Object#equals(Object)} when the array element is non-null.
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find (may be {@code null})
+	 * @return {@code true} if the value is found, otherwise {@code false}
+	 */
 	public static boolean contains(Object[] array, Object searchValue) {
 		if (array == null || array.length == 0) {
 			return false;
@@ -51,6 +61,15 @@ public class OAArray {
 		return false;
 	}
 
+	/**
+	 * Checks whether an object array contains the supplied value using reference equality only.
+	 * <p>
+	 * This method performs only {@code ==} comparisons and does not call {@code equals()}.
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find (may be {@code null})
+	 * @return {@code true} if the same instance is found, otherwise {@code false}
+	 */
 	public static boolean containsExact(Object[] array, Object searchValue) {
 		if (array == null || array.length == 0) {
 			return false;
@@ -63,6 +82,13 @@ public class OAArray {
 		return false;
 	}
 
+	/**
+	 * Checks whether an {@code int} array contains the supplied value.
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find
+	 * @return {@code true} if the value is found, otherwise {@code false}
+	 */
 	public static boolean contains(int[] array, int searchValue) {
 		if (array == null || array.length == 0) {
 			return false;
@@ -75,6 +101,15 @@ public class OAArray {
 		return false;
 	}
 
+	/**
+	 * Checks whether a {@code double} array contains the supplied value.
+	 * <p>
+	 * Uses direct {@code ==} comparison (no epsilon tolerance).
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find
+	 * @return {@code true} if the value is found, otherwise {@code false}
+	 */
 	public static boolean contains(double[] array, double searchValue) {
 		if (array == null || array.length == 0) {
 			return false;
@@ -87,6 +122,15 @@ public class OAArray {
 		return false;
 	}
 
+	/**
+	 * Checks whether a {@code double} array contains the supplied value.
+	 * <p>
+	 * Uses direct {@code ==} comparison (no epsilon tolerance).
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find
+	 * @return {@code true} if the value is found, otherwise {@code false}
+	 */
 	public static boolean contains(String[] array, String searchValue, boolean bCaseSensitive) {
 		if (array == null || array.length == 0) {
 			return false;
@@ -104,6 +148,20 @@ public class OAArray {
 		return false;
 	}
 
+	/**
+	 * Compares two object arrays for element-by-element equality.
+	 * <p>
+	 * Arrays are considered equal if they are the same reference, or if both are non-null,
+	 * have the same length, and each corresponding element is equal by:
+	 * <ul>
+	 *   <li>reference equality ({@code ==}), or</li>
+	 *   <li>{@link Object#equals(Object)} when both elements are non-null.</li>
+	 * </ul>
+	 *
+	 * @param objs1 the first array (may be {@code null})
+	 * @param objs2 the second array (may be {@code null})
+	 * @return {@code true} if the arrays are equal, otherwise {@code false}
+	 */
 	public static boolean isEqual(Object[] objs1, Object[] objs2) {
 		if (objs1 == objs2) {
 			return true;
@@ -129,6 +187,16 @@ public class OAArray {
 		return true;
 	}
 
+	/**
+	 * Returns the index of the first occurrence of a value in an object array.
+	 * <p>
+	 * Uses reference comparison first ({@code ==}), then falls back to
+	 * {@link Object#equals(Object)} when the array element is non-null.
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find (may be {@code null})
+	 * @return the index of the first matching element, or {@code -1} if not found
+	 */
 	public static int indexOf(Object[] array, Object searchValue) {
 		if (array == null || array.length == 0) {
 			return -1;
@@ -144,6 +212,18 @@ public class OAArray {
 		return -1;
 	}
 
+	/**
+	 * Returns the index of the first occurrence of a value in an object array,
+	 * starting at the supplied position.
+	 * <p>
+	 * Uses reference comparison first ({@code ==}), then falls back to
+	 * {@link Object#equals(Object)} when the array element is non-null.
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find (may be {@code null})
+	 * @param startPos the starting index (0-based); must be within array bounds
+	 * @return the index of the first matching element at or after {@code startPos}, or {@code -1} if not found
+	 */
 	public static int indexOf(Object[] array, Object searchValue, int startPos) {
 		if (array == null || array.length == 0) {
 			return -1;
@@ -163,6 +243,13 @@ public class OAArray {
 		return -1;
 	}
 
+	/**
+	 * Returns the index of the first occurrence of a value in an {@code int} array.
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find
+	 * @return the index of the first matching element, or {@code -1} if not found
+	 */
 	public static int indexOf(int[] array, int searchValue) {
 		if (array == null || array.length == 0) {
 			return -1;
@@ -175,6 +262,15 @@ public class OAArray {
 		return -1;
 	}
 
+	/**
+	 * Returns the index of the first occurrence of a value in a {@code double} array.
+	 * <p>
+	 * Uses direct {@code ==} comparison (no epsilon tolerance).
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find
+	 * @return the index of the first matching element, or {@code -1} if not found
+	 */
 	public static int indexOf(double[] array, double searchValue) {
 		if (array == null || array.length == 0) {
 			return -1;
@@ -187,6 +283,18 @@ public class OAArray {
 		return -1;
 	}
 
+	/**
+	 * Returns the index of the first occurrence of a value in a {@code String} array.
+	 * <p>
+	 * This method first checks reference equality ({@code ==}), then checks string equality.
+	 * Note: the current implementation uses {@link String#equalsIgnoreCase(String)} and
+	 * does not apply {@code bCaseSensitive} when comparing.
+	 *
+	 * @param array the array to search (may be {@code null})
+	 * @param searchValue the value to find (may be {@code null})
+	 * @param bCaseSensitive whether comparisons should be case-sensitive (currently not enforced)
+	 * @return the index of the first matching element, or {@code -1} if not found
+	 */
 	public static int indexOf(String[] array, String searchValue, boolean bCaseSensitive) {
 		if (array == null || array.length == 0) {
 			return -1;
@@ -205,6 +313,17 @@ public class OAArray {
 	}
 
 	//qqqqqqqqqq TEST
+	/**
+	 * Adds multiple values to the end of an object array, returning the resized array.
+	 * <p>
+	 * Values are appended in the order provided. The returned array may be the same
+	 * reference if {@code addValues} is empty, otherwise a new array is returned.
+	 *
+	 * @param <T> the component type
+	 * @param array the array to append to (may be {@code null})
+	 * @param addValues the values to append (may be {@code null} or empty)
+	 * @return a new array containing the original elements followed by {@code addValues}
+	 */
 	public static <T> T[] add(T[] array, T... addValues) {
 		for (T t : addValues) {
 			array = add(array, t);
@@ -212,6 +331,18 @@ public class OAArray {
 		return array;
 	}
 
+	/**
+	 * Adds a single value to the end of an object array, returning the resized array.
+	 * <p>
+	 * If the input array is {@code null}, a new array of length 1 is created using
+	 * the runtime type of {@code addValue}, or the component type of {@code array}
+	 * when {@code addValue} is {@code null}.
+	 *
+	 * @param <T> the component type
+	 * @param array the array to append to (may be {@code null})
+	 * @param addValue the value to append (may be {@code null})
+	 * @return a new array containing the original elements plus {@code addValue}, or {@code null} if type cannot be determined
+	 */
 	public static <T> T[] add(final T[] array, T addValue) {
 		Class c;
 		if (addValue != null) {
@@ -235,11 +366,15 @@ public class OAArray {
 	}
 
 	/**
-	 * Example: String[] ss = null; ss = (String[]) OAArray.add(String.class, ss, s);
+	 * Adds a single value to the end of an object array, using an explicit component type.
+	 * <p>
+	 * This is useful when the existing array is {@code null} and the component type
+	 * must be specified for {@link java.lang.reflect.Array#newInstance(Class, int)}.
 	 *
-	 * @param c
-	 * @param array param searchValue
-	 * @return
+	 * @param c the array component type (required when {@code array} is {@code null})
+	 * @param array the array to append to (may be {@code null})
+	 * @param addValue the value to append (may be {@code null})
+	 * @return a new array containing the original elements plus {@code addValue}
 	 */
 	public static Object[] add(Class c, Object[] array, Object addValue) {
 		int x = (array == null) ? 0 : array.length;
@@ -253,6 +388,17 @@ public class OAArray {
 		return newArray;
 	}
 
+	/**
+	 * Adds multiple values to the end of an object array, using an explicit component type.
+	 * <p>
+	 * If {@code array} is {@code null}, a new array is created using {@code c}.
+	 * If {@code addValues} is {@code null} or empty, the original {@code array} is returned.
+	 *
+	 * @param c the array component type (required when {@code array} is {@code null})
+	 * @param array the array to append to (may be {@code null})
+	 * @param addValues the values to append (may be {@code null} or empty)
+	 * @return a new array containing the original elements followed by {@code addValues}
+	 */
 	public static Object[] add(Class c, Object[] array, Object... addValues) {
 		if (addValues == null || addValues.length == 0) {
 			return array;
@@ -273,6 +419,13 @@ public class OAArray {
 		return newArray;
 	}
 
+	/**
+	 * Adds a single {@code int} value to the end of an {@code int} array.
+	 *
+	 * @param array the array to append to (may be {@code null})
+	 * @param searchValue the value to append
+	 * @return a new array containing the original elements plus {@code searchValue}
+	 */
 	public static int[] add(int[] array, int searchValue) {
 		int x = (array == null) ? 0 : array.length;
 
@@ -286,6 +439,13 @@ public class OAArray {
 		return newArray;
 	}
 
+	/**
+	 * Adds a single {@code boolean} value to the end of a {@code boolean} array.
+	 *
+	 * @param array the array to append to (may be {@code null})
+	 * @param bAdd the value to append
+	 * @return a new array containing the original elements plus {@code bAdd}
+	 */
 	public static boolean[] add(boolean[] array, boolean bAdd) {
 		int x = (array == null) ? 0 : array.length;
 
@@ -299,6 +459,13 @@ public class OAArray {
 		return newArray;
 	}
 
+	/**
+	 * Adds a single {@code double} value to the end of a {@code double} array.
+	 *
+	 * @param array the array to append to (may be {@code null})
+	 * @param searchValue the value to append
+	 * @return a new array containing the original elements plus {@code searchValue}
+	 */
 	public static double[] add(double[] array, double searchValue) {
 		int x = (array == null) ? 0 : array.length;
 
@@ -312,10 +479,38 @@ public class OAArray {
 		return newArray;
 	}
 
+	/**
+	 * Adds an array of {@code String} values to the end of a {@code String} array.
+	 * <p>
+	 * This is a convenience overload that allows duplicates and delegates to
+	 * {@link #add(String[], String[], boolean)}.
+	 *
+	 * @param array the destination array to append to (may be {@code null})
+	 * @param values the values to append (may be {@code null})
+	 * @return the resized array containing the original elements followed by {@code values}
+	 */
 	public static String[] add(String[] array, String[] values) {
 		return add(array, values, true);
 	}
 
+	/**
+	 * Adds the supplied {@code String} values to the end of a {@code String} array.
+	 * <p>
+	 * If {@code values} is {@code null}, the original {@code array} is returned.
+	 * Null values within {@code values} are ignored.
+	 * <p>
+	 * When {@code bAllowDups} is {@code false}, each non-null candidate value is
+	 * compared against the current contents of {@code array} using
+	 * {@link String#equals(Object)}; values already present are skipped. :contentReference[oaicite:1]{index=1}
+	 * <p>
+	 * Each accepted value is appended by delegating to {@link #add(String[], String)},
+	 * which resizes the array as needed. :contentReference[oaicite:2]{index=2}
+	 *
+	 * @param array the destination array to append to (may be {@code null})
+	 * @param values the values to append (may be {@code null}; null entries are skipped)
+	 * @param bAllowDups {@code true} to allow duplicates, {@code false} to skip values already present
+	 * @return the updated array containing the appended values
+	 */
 	public static String[] add(String[] array, String[] values, boolean bAllowDups) {
 		if (values == null) {
 			return array;
@@ -343,6 +538,16 @@ public class OAArray {
 		return array;
 	}
 
+	/**
+	 * Appends a single {@code String} value to the end of a {@code String} array.
+	 * <p>
+	 * If {@code array} is {@code null}, a new array of length 1 is created.
+	 * Otherwise, the array is resized by one using {@link Arrays#copyOf(Object[], int)}.
+	 *
+	 * @param array the destination array to append to (may be {@code null})
+	 * @param value the value to append (may be {@code null})
+	 * @return a new array containing the original elements followed by {@code value}
+	 */
 	public static String[] add(String[] array, String value) {
 		int x = (array == null) ? 0 : array.length;
 
@@ -357,7 +562,25 @@ public class OAArray {
 	}
 
 	/**
-	 * Removes the first searchValue found in an array - it does not search and try to remove multiple copies of the same value.
+	 * Removes the first occurrence of {@code searchValue} from an object array.
+	 * <p>
+	 * This method searches for the first matching element using:
+	 * <ol>
+	 *   <li>reference equality ({@code ==}) for an exact match, then</li>
+	 *   <li>{@link Object#equals(Object)} for a logical match.</li>
+	 * </ol>
+	 * Only the first match is removed; additional duplicates (if any) are not removed.
+	 * <p>
+	 * If {@code array} is {@code null} or empty, or if {@code searchValue} is
+	 * {@code null}, the original array is returned unchanged.
+	 * <p>
+	 * The returned array is created using the supplied component type {@code c}
+	 * to preserve the runtime array type via {@link Array#newInstance(Class, int)}.
+	 *
+	 * @param c the array component type used when creating the resized array
+	 * @param array the source array (may be {@code null})
+	 * @param searchValue the value to remove (must not be {@code null})
+	 * @return a new array with the first matching value removed, or the original array if not found
 	 */
 	public static Object[] removeValue(Class c, Object[] array, Object searchValue) {
 		if (array == null || array.length == 0) {
@@ -385,6 +608,25 @@ public class OAArray {
 	}
 
 	//qqqqqqqqq TEST
+	/**
+	 * Removes the element at a specified position from a typed object array.
+	 * <p>
+	 * If {@code pos} is out of range, the original array is returned.
+	 * The returned array preserves the component type of the original array.
+	 * <p>
+	 * This method handles common cases efficiently:
+	 * <ul>
+	 *   <li>length 0: returns the original array,</li>
+	 *   <li>length 1: returns an empty array of the same component type,</li>
+	 *   <li>removing last element: uses {@link Arrays#copyOf(Object[], int)},</li>
+	 *   <li>otherwise: uses {@link System#arraycopy(Object, int, Object, int, int)}.</li>
+	 * </ul>
+	 *
+	 * @param <T> the component type
+	 * @param array the source array (may be {@code null})
+	 * @param pos the position to remove (0-based)
+	 * @return a new array with the element removed, or the original array if no removal occurs
+	 */
 	public static <T> T[] removeAt(final T[] array, final int pos) {
 		if (array == null) {
 			return null;
@@ -419,6 +661,20 @@ public class OAArray {
 		return newArray;
 	}
 
+	/**
+	 * Removes the element at a specified position from an object array using an explicit component type.
+	 * <p>
+	 * This method is useful when the desired component type must be preserved even
+	 * when the array is manipulated as an {@code Object[]}.
+	 * <p>
+	 * If {@code pos} is out of range, the original array is returned. If the array
+	 * length is 1, an empty array is returned using {@link Array#newInstance(Class, int)}.
+	 *
+	 * @param c the array component type used when creating the resized array
+	 * @param array the source array (may be {@code null})
+	 * @param pos the position to remove (0-based)
+	 * @return a new array with the element removed, or the original array if no removal occurs
+	 */
 	public static Object[] removeAt(final Class c, final Object[] array, final int pos) {
 		if (array == null) {
 			return null;
@@ -454,6 +710,22 @@ public class OAArray {
 	//qqqqqqqqqq ?? Insert should add nulls to "pad" when inserting beyond the array size qqqqqqqq
 
 	//qqqqqqqqqq TEST
+	/**
+	 * Inserts a value into a typed array at the specified position.
+	 * <p>
+	 * The component type is determined from {@code value} when non-null, otherwise
+	 * from {@code array}'s component type. If neither is available, {@code null}
+	 * is returned.
+	 * <p>
+	 * If {@code atPos} is greater than or equal to the array length, this method
+	 * appends the value by delegating to {@link #add(Object[], Object)}.
+	 *
+	 * @param <T> the component type
+	 * @param array the source array (may be {@code null})
+	 * @param value the value to insert (may be {@code null})
+	 * @param atPos the insertion position (0-based)
+	 * @return a new array with {@code value} inserted, or {@code null} if the component type cannot be determined
+	 */
 	public static <T> T[] insert(final T[] array, T value, int atPos) {
 		Class c;
 		if (value != null) {
@@ -482,6 +754,20 @@ public class OAArray {
 		return newArray;
 	}
 
+	/**
+	 * Inserts a value into an object array at the specified position using an explicit component type.
+	 * <p>
+	 * If {@code atPos} is greater than or equal to the array length, this method
+	 * appends the value by delegating to {@link #add(Class, Object[], Object)}.
+	 * Otherwise, a new array is created and elements are shifted to make room for
+	 * the inserted value.
+	 *
+	 * @param c the array component type used when creating the resized array
+	 * @param array the source array (may be {@code null})
+	 * @param value the value to insert (may be {@code null})
+	 * @param atPos the insertion position (0-based)
+	 * @return a new array with {@code value} inserted
+	 */
 	public static Object[] insert(Class c, Object[] array, Object value, int atPos) {
 		int x = (array == null) ? 0 : array.length;
 
@@ -501,6 +787,16 @@ public class OAArray {
 		return newArray;
 	}
 
+	/**
+	 * Removes the first occurrence of a value from an {@code int} array.
+	 * <p>
+	 * If the array is {@code null} or empty, the original array is returned.
+	 * Only the first matching element is removed.
+	 *
+	 * @param array the source array (may be {@code null})
+	 * @param searchValue the value to remove
+	 * @return a new array with the first matching value removed, or the original array if not found
+	 */
 	public static int[] removeValue(int[] array, int searchValue) {
 		if (array == null || array.length == 0) {
 			return array;
@@ -519,6 +815,17 @@ public class OAArray {
 		return removeAt(array, pos);
 	}
 
+	/**
+	 * Removes the element at a specified position from an {@code int} array.
+	 * <p>
+	 * If {@code pos} is out of range, the original array is returned.
+	 * This method handles common cases efficiently, including removal of the
+	 * last element using {@link Arrays#copyOf(int[], int)}.
+	 *
+	 * @param array the source array (may be {@code null})
+	 * @param pos the position to remove (0-based)
+	 * @return a new array with the element removed, or the original array if no removal occurs
+	 */
 	public static int[] removeAt(int[] array, int pos) {
 		if (array == null || array.length == 0) {
 			return array;
@@ -548,6 +855,16 @@ public class OAArray {
 		return newArray;
 	}
 
+	/**
+	 * Removes the first occurrence of a value from a {@code double} array.
+	 * <p>
+	 * If the array is {@code null} or empty, the original array is returned.
+	 * Only the first matching element is removed using direct {@code ==} comparison.
+	 *
+	 * @param array the source array (may be {@code null})
+	 * @param searchValue the value to remove
+	 * @return a new array with the first matching value removed, or the original array if not found
+	 */
 	public static double[] removeValue(double[] array, double searchValue) {
 		if (array == null || array.length == 0) {
 			return array;
@@ -566,6 +883,17 @@ public class OAArray {
 		return removeAt(array, pos);
 	}
 
+	/**
+	 * Removes the element at a specified position from a {@code double} array.
+	 * <p>
+	 * If {@code pos} is out of range, the original array is returned.
+	 * This method handles common cases efficiently, including removal of the
+	 * last element using {@link Arrays#copyOf(double[], int)}.
+	 *
+	 * @param array the source array (may be {@code null})
+	 * @param pos the position to remove (0-based)
+	 * @return a new array with the element removed, or the original array if no removal occurs
+	 */
 	public static double[] removeAt(double[] array, int pos) {
 		if (array == null || array.length == 0) {
 			return array;
@@ -596,7 +924,17 @@ public class OAArray {
 	}
 
 	/**
-	 * reorders one array to match a second, if possible.
+	 * Reorders the contents of one array to match the ordering of a second array.
+	 * <p>
+	 * If both arrays are non-null and have the same length, this method attempts to
+	 * place each element from {@code obja} into the position where an equal element
+	 * occurs in {@code objb}. Equality is determined using {@link Object#equals(Object)}.
+	 * <p>
+	 * If any element from {@code obja} cannot be matched to an element in {@code objb},
+	 * no changes are applied to {@code obja}.
+	 *
+	 * @param obja the array to reorder (modified in place)
+	 * @param objb the array whose ordering should be matched
 	 */
 	public static void reorderToMatch(Object[] obja, Object[] objb) {
 		if (obja == null) {
@@ -626,6 +964,12 @@ public class OAArray {
 		}
 	}
 	
+	/**
+	 * Determines whether an object array contains any {@code null} elements.
+	 *
+	 * @param objs the array to check (may be {@code null})
+	 * @return {@code true} if the array contains at least one {@code null} element
+	 */
 	public static boolean hasNull(Object[] objs) {
 		if (objs == null) return false;
 		for (int i=0; i<objs.length; i++) {

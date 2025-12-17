@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,19 +30,45 @@ package com.viaoa.util;
  */
 public class OAUnknownObject implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
+
+    /**
+     * Singleton instance representing an unknown value.
+     */
     public static final OAUnknownObject instance = new OAUnknownObject();
     
+    /**
+     * Private constructor to enforce singleton usage.
+     */
     private OAUnknownObject() {
     }
     
+    /**
+     * Returns the singleton unknown object instance.
+     *
+     * @return the singleton {@link OAUnknownObject} instance
+     */
     public OAUnknownObject getUnknownObject() {
         return instance;
     }
     
+    /**
+     * Compares this object with another for equality.
+     * <p>
+     * Equality is true only if the supplied object is the singleton instance.
+     *
+     * @param obj the object to compare
+     * @return {@code true} if the object is the singleton instance; {@code false} otherwise
+     */
     @Override
     public boolean equals(Object obj) {
         return (obj == instance);
     }
+
+    /**
+     * Returns the hash code for this object.
+     *
+     * @return a constant hash code value
+     */
     @Override
     public int hashCode() {
         return 1;

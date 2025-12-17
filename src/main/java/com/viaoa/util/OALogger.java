@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,27 +46,70 @@ import java.util.logging.Logger;
 public class OALogger extends Logger {
 
 	// Log Level used to distingish between a SEVERE and WARNING.
+	/**
+	 * Custom log level representing a bug condition.
+	 */
 	public static final Level BUG = new MyLevel("Bug", Level.WARNING.intValue() + 4);
+	
+	/**
+	 * Custom log level representing an application error condition.
+	 */
 	public static final Level ERROR = new MyLevel("Error", Level.WARNING.intValue() + 3);
+	
+	/**
+	 * Custom log level representing a server-side error condition.
+	 */
 	public static final Level SERVERERROR = new MyLevel("ServerError", Level.WARNING.intValue() + 2);
+	
+	/**
+	 * Custom log level representing a client-side error condition.
+	 */
 	public static final Level CLIENTERROR = new MyLevel("ClientError", Level.WARNING.intValue() + 1);
 
 	// used for IndentFormatter to "act" the same as LOG.entering() and LOG.exiting()
+	/**
+	 * Marker string used to indicate method entry.
+	 */
 	public static final String Enter = "ENTRY";
+	
+	/**
+	 * Marker string used to indicate method exit.
+	 */
 	public static final String Exit = "RETURN";
 
+	/**
+	 * Custom {@link Level} implementation used to define application-specific log levels.
+	 */
 	static class MyLevel extends Level {
+		/**
+		 * Creates a new custom logging level.
+		 *
+		 * @param name the name of the logging level
+		 * @param value the integer value of the logging level
+		 */
 		public MyLevel(String name, int value) {
 			super(name, value);
 		}
 	};
 
+	/**
+	 * Creates a new logger with the specified name and resource bundle.
+	 *
+	 * @param name the logger name
+	 * @param resourceBundleName the resource bundle name
+	 */
 	protected OALogger(String name, String resourceBundleName) {
 		super(name, resourceBundleName);
 	}
 
-	/**
+	/*
 	 * @return Logger for class name that uses the resource bundle file values.properties. see Format#getResourceBundleFileName
+	 */
+	/**
+	 * Returns a logger for the given class name.
+	 *
+	 * @param c the class for which a logger is requested
+	 * @return the logger instance, or null if the class is null
 	 */
 	public static Logger getLogger(Class c) {
 		if (c == null) {
@@ -77,11 +120,17 @@ public class OALogger extends Logger {
 		return Logger.getLogger(c.getName());
 	}
 
-	/**
+	/*
 	 * Create console logging for ClassPath.
 	 * 
 	 * @param classPath    root path for messages
 	 * @param defaultLevel of messages to display.
+	 */
+	/**
+	 * Creates a console logger with indentation formatting for the specified class path.
+	 *
+	 * @param classPath the root class path for logging
+	 * @param defaultLevel the default logging level
 	 */
 	public static void createIndentConsoleLogger(String classPath, Level defaultLevel) {
 		if (defaultLevel == null) {
@@ -106,6 +155,12 @@ public class OALogger extends Logger {
 		log.addHandler(ch);
 	}
 
+	/**
+	 * Sets up a basic console logger for the specified class path.
+	 *
+	 * @param classPath the root class path for logging
+	 * @param defaultLevel the default logging level
+	 */
 	public static void setupConsoleLogger(String classPath, Level defaultLevel) {
 		if (defaultLevel == null) {
 			defaultLevel = Level.CONFIG;
@@ -126,7 +181,6 @@ public class OALogger extends Logger {
 		log = Logger.getLogger(classPath);
 		log.setLevel(defaultLevel);
 		log.addHandler(ch);
-
 	}
 
 }

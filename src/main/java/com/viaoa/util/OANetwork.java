@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,12 @@ import java.util.Enumeration;
  */
 public class OANetwork {
 
+	/**
+	 * Scans a fixed range of IP addresses on the local subnet and outputs reachability
+	 * and reverse DNS lookup information to standard output.
+	 *
+	 * @throws Exception if an error occurs while resolving or probing addresses
+	 */
 	public static void findAllServers() throws Exception {
 		InetAddress localhost = InetAddress.getLocalHost();
 
@@ -69,8 +75,17 @@ public class OANetwork {
 	}
 
 	//return current client mac address
+	/**
+	 * Cached MAC address of the local network interface.
+	 */
 	protected static String macAddress;
 
+	/**
+	 * Returns the MAC address of the local machine.
+	 *
+	 * @return the MAC address string
+	 * @throws Exception if the MAC address cannot be determined
+	 */
 	public static String getMACAddress() throws Exception {
 		if (macAddress != null) {
 			return macAddress;
@@ -89,6 +104,11 @@ public class OANetwork {
 		return macAddress;
 	}
 
+	/**
+	 * Returns the first non-loopback IPv4 address found on the active network interfaces.
+	 *
+	 * @return the primary {@link InetAddress}, or null if none is found
+	 */
 	public static InetAddress getMainInetAddress() {
 		try {
 			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
@@ -108,6 +128,12 @@ public class OANetwork {
 		return null;
 	}
 
+	/**
+	 * Returns the first non-loopback IPv4 address found on the active network interfaces
+	 * as a string.
+	 *
+	 * @return the IP address string, or null if none is found
+	 */
 	public static String getIPAddress() {
 		try {
 			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
@@ -127,6 +153,12 @@ public class OANetwork {
 		return null;
 	}
 
+	/**
+	 * Returns a comma-separated list of all non-loopback IPv4 addresses found on the
+	 * active network interfaces.
+	 *
+	 * @return a comma-separated list of IP addresses, or null if none are found
+	 */
 	public static String getIPAddresses() {
 		String ips = null;
 		try {
@@ -151,6 +183,11 @@ public class OANetwork {
 		return ips;
 	}
 
+	/**
+	 * Returns the local host name.
+	 *
+	 * @return the host name, or null if it cannot be determined
+	 */
 	public static String getHostName() {
 		try {
 			InetAddress ia = InetAddress.getLocalHost();
@@ -161,6 +198,12 @@ public class OANetwork {
 		return null;
 	}
 
+	/**
+	 * Entry point used for diagnostic or test execution.
+	 *
+	 * @param args command-line arguments
+	 * @throws Exception if an error occurs during execution
+	 */
 	public static void main(String[] args) throws Exception {
 		// findAllServers();
 		for (int i = -5; i < 5; i++) {
@@ -172,6 +215,12 @@ public class OANetwork {
 		i++;
 	}
 
+	/**
+	 * Returns a 32-bit binary string representation of the given integer value.
+	 *
+	 * @param x the integer value to convert
+	 * @return the binary string representation
+	 */
 	public static String showAsBinary(final int x) {
 		String s = "";
 		for (int i = 0; i < 32; i++) {

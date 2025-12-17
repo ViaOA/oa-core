@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,20 +68,48 @@ import com.viaoa.sync.model.ClientInfo;
 public abstract class RemoteServerImpl implements RemoteServerInterface {
 	private static Logger LOG = Logger.getLogger(RemoteServerImpl.class.getName());
 
+	/**
+	 * Echoes a ping message.
+	 *
+	 * @param msg the message to echo
+	 * @return the same message that was received
+	 */
 	@Override
 	public String ping(String msg) {
 		return msg;
 	}
 
+	/**
+	 * Receives a ping message with no return value.
+	 *
+	 * @param msg the ping message
+	 */
 	@Override
 	public void ping2(String msg) {
 	}
 
+	/**
+	 * Returns a display name for this remote server.
+	 *
+	 * @return a display string identifying the server
+	 */
 	@Override
 	public String getDisplayMessage() {
 		return "OASyncServer";
 	}
 
+	/**
+	 * Saves an object on the server using the specified cascade rule.
+	 * <p>
+	 * Temporarily enables message sending so that save operations generate
+	 * appropriate sync events.
+	 * </p>
+	 *
+	 * @param objectClass the class of the object to save
+	 * @param objectKey the key identifying the object
+	 * @param iCascadeRule the cascade rule to apply during save
+	 * @return {@code true} if the object was found and saved, otherwise {@code false}
+	 */
 	@Override
 	public boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule) {
 		boolean bPrev = OAThreadLocalDelegate.setSendMessages(true);
@@ -98,11 +126,23 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		return bResult;
 	}
 
+	/**
+	 * Returns the next block of object GUIDs.
+	 *
+	 * @return the starting GUID for the next block of fifty GUIDs
+	 */
 	@Override
 	public long getNextFiftyObjectGuids() {
 		return OAObjectDelegate.getNextFiftyGuids();
 	}
 
+	/**
+	 * Retrieves an object by key from cache or datasource.
+	 *
+	 * @param objectClass the class of the object
+	 * @param objectKey the key identifying the object
+	 * @return the resolved object, or {@code null} if not found
+	 */
 	@Override
 	public OAObject getObject(Class objectClass, OAObjectKey objectKey) {
 		OAObject obj = (OAObject) OAObjectCacheDelegate.getObject(objectClass, objectKey);
@@ -114,6 +154,16 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		return obj;
 	}
 
+	/**
+	 * Invokes an instance method on a server-side object using reflection.
+	 *
+	 * @param clazz the class of the target object
+	 * @param objKey the key identifying the target object
+	 * @param methodName the name of the method to invoke
+	 * @param args arguments to pass to the method
+	 * @return the result returned by the invoked method
+	 * @throws RuntimeException if the object or method cannot be found, or invocation fails
+	 */
 	@Override
 	public Object runRemoteMethod(Class clazz, OAObjectKey objKey, String methodName, Object[] args) {
 		Object obj = getObject(clazz, objKey);
@@ -142,6 +192,15 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 
 	
 
+	/**
+	 * Invokes an instance method on a provided server-side object using reflection.
+	 *
+	 * @param obj the target object
+	 * @param methodName the name of the method to invoke
+	 * @param args arguments to pass to the method
+	 * @return the result returned by the invoked method
+	 * @throws RuntimeException if the method cannot be found or invocation fails
+	 */
     @Override
     public Object runRemoteMethod2(OAObject obj, String methodName, Object[] args) {
         Class clazz = obj.getClass();
@@ -166,6 +225,15 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
     }
 	
 	
+    /**
+     * Invokes a static hub-based method using reflection.
+     *
+     * @param hub the hub passed as the first argument to the static method
+     * @param methodName the name of the method to invoke
+     * @param args additional arguments to pass to the method
+     * @return the result returned by the invoked method
+     * @throws RuntimeException if the method cannot be found or invocation fails
+     */
 	@Override
 	public Object runRemoteMethod(Hub hub, String methodName, Object[] args) {
 		if (hub == null) {
@@ -197,12 +265,31 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		return objResult;
 	}
 
+	/**
+	 * Creates or retrieves a {@link RemoteClientInterface} for the specified client.
+	 *
+	 * @param clientInfo information describing the client
+	 * @return a remote client interface instance for the client
+	 */
 	@Override
 	public abstract RemoteClientInterface getRemoteClient(ClientInfo clientInfo);
 
+	/**
+	 * Creates or retrieves a {@link RemoteSessionInterface} for the specified client.
+	 *
+	 * @param clientInfo information describing the client
+	 * @param callback callback interface implemented by the client
+	 * @return a remote session interface instance for the client
+	 */
 	@Override
 	public abstract RemoteSessionInterface getRemoteSession(ClientInfo clientInfo, RemoteClientCallbackInterface callback);
 
+	/**
+	 * Captures and logs a full thread dump of the JVM.
+	 *
+	 * @param msg a message to prefix the thread dump
+	 * @return the captured thread dump as a string
+	 */
 	@Override
 	public String performThreadDump(String msg) {
 		String s = OAThreadLocalDelegate.getAllStackTraces();

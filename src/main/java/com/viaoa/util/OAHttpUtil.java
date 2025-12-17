@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,12 @@ import java.util.Map;
  */
 public class OAHttpUtil {
 
+	/**
+	 * Builds a URL-encoded query string from a map of name/value pairs.
+	 *
+	 * @param mapNameValue the map of parameter names to values
+	 * @return the URL-encoded name/value string, or null if the map is null
+	 */
 	public static String getUrlEncodedNameValues(Map<String, Object> mapNameValue) {
 		if (mapNameValue == null) {
 			return null;
@@ -53,6 +59,15 @@ public class OAHttpUtil {
 		return result;
 	}
 
+	/**
+	 * Builds a URL-encoded name/value string for the given parameter.
+	 * Supports single values, arrays, and lists.
+	 *
+	 * @param name the parameter name
+	 * @param value the value, array, or list of values
+	 * @param format optional format passed to value conversion
+	 * @return the URL-encoded name/value string
+	 */
 	public static String getUrlEncodedNameValues(final String name, final Object value, final String format) {
 		if (OAString.isEmpty(name)) {
 			throw new RuntimeException("name can not be null");
@@ -118,6 +133,14 @@ public class OAHttpUtil {
 		return result;
 	}
 
+	/**
+	 * Normalizes leading and trailing slashes for a URL path fragment.
+	 *
+	 * @param urlValue the URL path value to normalize
+	 * @param bLeadingSlash true to ensure a leading slash
+	 * @param bTrailingSlash true to ensure a trailing slash
+	 * @return the normalized URL path
+	 */
 	public static String updateSlashes(String urlValue, boolean bLeadingSlash, boolean bTrailingSlash) {
 		if (urlValue == null) {
 			return "";

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,25 +35,63 @@ import java.util.concurrent.atomic.*;
  */
 public class OAThrottle {
 
+	/**
+	 * Stores the timestamp, in milliseconds, of the last successful throttle check.
+	 * This value is updated when {@link #check()} returns {@code true}.
+	 */
     private final AtomicLong aiMsLast = new AtomicLong();
+    
+    /**
+     * Counts the total number of times {@link #check()} has been invoked.
+     * This counter is incremented on every call, regardless of throttle outcome.
+     */
     private final AtomicLong aiCnt = new AtomicLong();
+    
+    /**
+     * The minimum delay interval, in milliseconds, that must elapse between
+     * successful throttle checks.
+     */
     private long msDelay;
 
   
+    /**
+     * Creates a new throttle instance with the specified delay interval.
+     *
+     * @param msDelay the minimum number of milliseconds required between
+     *                successful calls to {@link #check()}.
+     */
     public OAThrottle(long msDelay) {
         setDelay(msDelay);
     }
 
+    /**
+     * Sets the minimum delay interval between successful throttle checks.
+     *
+     * @param msDelay the delay interval in milliseconds.
+     */
     public void setDelay(long msDelay) {
         this.msDelay = msDelay;
     }
+
+    /**
+     * Returns the configured delay interval for this throttle.
+     *
+     * @return the delay interval in milliseconds.
+     */
     public long getDelay() {
         return msDelay;
     }
     
     /**
-     * This will check to see if the the required delay/time has passed since the last call to check.
-     * @return
+     * Checks whether the required delay interval has elapsed since the last
+     * successful throttle check.
+     * <p>
+     * This method increments the internal check counter on every invocation.
+     * If the delay interval has not yet elapsed, it returns {@code false}.
+     * Otherwise, it updates the last successful check time and returns {@code true}.
+     *
+     * @return {@code true} if the delay interval has elapsed since the last
+     *         successful check; {@code false} otherwise.
      */
     public boolean check() {
         aiCnt.incrementAndGet();
@@ -65,27 +103,50 @@ public class OAThrottle {
         return true;
     }
     
+    /**
+     * Returns the current system time in milliseconds.
+     *
+     * @return the current value of {@link System#currentTimeMillis()}.
+     */
     public long now() {
         long ms = System.currentTimeMillis();
         return ms;
     }
 
     /**
-     * sets throttle counter and last valid check time to 0L.
+     * Resets the throttle state by clearing the check counter and the last
+     * successful throttle timestamp.
+     * <p>
+     * After calling this method, the next call to {@link #check()} will return
+     * {@code true}.
      */
     public void reset() {
         aiMsLast.set(0);
         aiCnt.set(0);
     }
     
+    /**
+     * Returns the total number of times {@link #check()} has been called.
+     *
+     * @return the number of check invocations.
+     */
     public long getCheckCount() {
         return aiCnt.get();
     }
+
+    /**
+     * Returns the total number of times {@link #check()} has been called.
+     *
+     * @return the number of check invocations.
+     */
     public long getCount() {
         return aiCnt.get();
     }
+
     /**
-     * Returns the last time that a call to check() returned true.
+     * Returns the total number of times {@link #check()} has been called.
+     *
+     * @return the number of check invocations.
      */
     public long getLastThrottle() {
         return aiMsLast.get();

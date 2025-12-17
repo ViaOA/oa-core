@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,14 +48,23 @@ import javax.crypto.spec.DESKeySpec;
  */
 public class OAEncryption {
 
-	/**
+	/*
 	 * Generates a SHA-256 hash code base64 string for a given input. This is a one way function (irreversible). Example: used when the real
 	 * password is not stored. Instead the hash is stored and is used to compare the hash of user input.
+	 * 
+	 * @param input the input value to hash
+	 * @return the SHA-256 hash string, or null if input is null
 	 */
 	public static String getSHAHash(String input) {
 		return getHash(input);
 	}
 
+	/**
+	 * Computes a SHA-256 hash string for the given input.
+	 *
+	 * @param input the input value to hash
+	 * @return the hash string, or null if input is null or hashing fails
+	 */
 	public static String getHash(String input) {
 		if (input == null) {
 			return null;
@@ -80,10 +89,17 @@ public class OAEncryption {
 		return hash;
 	}
 
-	/**
+	/*
 	 * Encrypt bytes into a new byte array.
 	 * 
 	 * @see #decrypt(byte[])
+	 */
+	/**
+	 * Encrypts the given byte array using the default secret key.
+	 *
+	 * @param bs the byte array to encrypt
+	 * @return the encrypted byte array
+	 * @throws Exception if encryption fails
 	 */
 	public static byte[] encrypt(byte[] bs) throws Exception {
 		Cipher cipher = Cipher.getInstance("DES");
@@ -93,6 +109,14 @@ public class OAEncryption {
 		return bs;
 	}
 
+	/**
+	 * Encrypts the given byte array using a password-based or default secret key.
+	 *
+	 * @param bs the byte array to encrypt
+	 * @param password the password used to derive the secret key
+	 * @return the encrypted byte array
+	 * @throws Exception if encryption fails
+	 */
 	public static byte[] encrypt(byte[] bs, String password) throws Exception {
 		Cipher cipher = Cipher.getInstance("DES");
 
@@ -109,6 +133,12 @@ public class OAEncryption {
 		return bs;
 	}
 
+	/**
+	 * Creates and initializes a DES cipher for encryption using the default secret key.
+	 *
+	 * @return an initialized Cipher instance
+	 * @throws Exception if cipher initialization fails
+	 */
 	public static Cipher getCipher() throws Exception {
 		Cipher cipher = Cipher.getInstance("DES");
 		cipher.init(Cipher.ENCRYPT_MODE, getSecretKey());
@@ -116,9 +146,11 @@ public class OAEncryption {
 	}
 
 	/**
-	 * Decrypt bytes into a new byte array.
-	 * 
-	 * @see #encrypt(byte[])
+	 * Decrypts the given byte array using the default secret key.
+	 *
+	 * @param bs the byte array to decrypt
+	 * @return the decrypted byte array
+	 * @throws Exception if decryption fails
 	 */
 	public static byte[] decrypt(byte[] bs) throws Exception {
 		Cipher cipher = Cipher.getInstance("DES");
@@ -127,6 +159,14 @@ public class OAEncryption {
 		return bs;
 	}
 
+	/**
+	 * Decrypts the given byte array using a password-based or default secret key.
+	 *
+	 * @param bs the byte array to decrypt
+	 * @param password the password used to derive the secret key
+	 * @return the decrypted byte array
+	 * @throws Exception if decryption fails
+	 */
 	public static byte[] decrypt(byte[] bs, String password) throws Exception {
 		Cipher cipher = Cipher.getInstance("DES");
 
@@ -142,10 +182,16 @@ public class OAEncryption {
 		return bs;
 	}
 
+	/**
+	 * Cached default secret key used for encryption and decryption.
+	 */
 	private static SecretKey _secretKey;
 
 	/**
-	 * DES secret key used for encrypting data.
+	 * Returns the default DES secret key, creating it if necessary.
+	 *
+	 * @return the default secret key
+	 * @throws Exception if key generation fails
 	 */
 	public static SecretKey getSecretKey() throws Exception {
 		if (_secretKey == null) {
@@ -160,6 +206,13 @@ public class OAEncryption {
 		return _secretKey;
 	}
 
+	/**
+	 * Creates and returns a DES secret key derived from the given password.
+	 *
+	 * @param password the password used to derive the key
+	 * @return the generated secret key
+	 * @throws Exception if key generation fails
+	 */
 	public static SecretKey getSecretKey(String password) throws Exception {
 		byte[] bs = new byte[DESKeySpec.DES_KEY_LEN];
 
@@ -180,7 +233,11 @@ public class OAEncryption {
 	}
 
 	/**
-	 * Encrypt a string to a Base64 string.
+	 * Encrypts the given string and encodes the result as a Base64 string.
+	 *
+	 * @param input the string to encrypt
+	 * @return the encrypted Base64 string
+	 * @throws Exception if encryption fails
 	 */
 	public static String encrypt(String input) throws Exception {
 		byte[] bs = encrypt(input.getBytes());
@@ -189,6 +246,15 @@ public class OAEncryption {
 		return s;
 	}
 
+	/**
+	 * Encrypts the given string using a password-based or default secret key
+	 * and encodes the result as a Base64 string.
+	 *
+	 * @param input the string to encrypt
+	 * @param password the password used to derive the secret key
+	 * @return the encrypted Base64 string
+	 * @throws Exception if encryption fails
+	 */
 	public static String encrypt(String input, String password) throws Exception {
 		byte[] bs = encrypt(input.getBytes(), password);
 		char[] cs = Base64.encode(bs);
@@ -197,7 +263,11 @@ public class OAEncryption {
 	}
 
 	/**
-	 * Decrypt a base64 string to a string.
+	 * Decrypts a Base64-encoded string using the default secret key.
+	 *
+	 * @param inputBase64 the Base64-encoded string to decrypt
+	 * @return the decrypted string, or null if inputBase64 is null
+	 * @throws Exception if decryption fails
 	 */
 	public static String decrypt(String inputBase64) throws Exception {
 		if (inputBase64 == null) {
@@ -214,6 +284,14 @@ public class OAEncryption {
 
 	}
 
+	/**
+	 * Decrypts a Base64-encoded string using a password-based or default secret key.
+	 *
+	 * @param inputBase64 the Base64-encoded string to decrypt
+	 * @param password the password used to derive the secret key
+	 * @return the decrypted string
+	 * @throws Exception if decryption fails
+	 */
 	public static String decrypt(String inputBase64, String password) throws Exception {
 		char[] cs = new char[inputBase64.length()];
 		inputBase64.getChars(0, inputBase64.length(), cs, 0);
@@ -223,10 +301,14 @@ public class OAEncryption {
 		bs = decrypt(bs, password);
 
 		return new String(bs);
-
 	}
 
-	// same that is used for "FileZilla Server.xml"
+	/**
+	 * Generates an MD5 hash string for the given input.
+	 *
+	 * @param input the input value to hash
+	 * @return the MD5 hash string
+	 */
 	public static String getMD5Hash(String input) {
 		MessageDigest md = null;
 
@@ -252,15 +334,24 @@ public class OAEncryption {
 		return hash;
 	}
 
+	/**
+	 * Returns a UUID string created from the given value.
+	 *
+	 * @param value the UUID string value
+	 * @return the normalized UUID string
+	 */
     public static String getUUID(String value) {
         String s = UUID.fromString(value).toString();
         return s;
     }
+
+    /**
+     * Generates and returns a random UUID string.
+     *
+     * @return a randomly generated UUID string
+     */
     public static String getUUID() {
         String s = UUID.randomUUID().toString();
         return s;
     }
-	
-
-
 }

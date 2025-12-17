@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,17 @@ import com.viaoa.util.OATime;
  */
 public class OAConverterLocalTime implements OAConverterInterface<LocalTime> {
 
+	/**
+	 * Converts the supplied value into a {@link LocalTime}.
+	 * <p>
+	 * The conversion behavior depends on the runtime type of {@code fromValue}
+	 * and may apply system default timezone rules when required.
+	 *
+	 * @param thisClass the target class, {@link LocalTime}
+	 * @param fromValue the value to convert
+	 * @param fmt the format string used when parsing string values
+	 * @return the converted {@link LocalTime}, or {@code null} if conversion fails
+	 */
     @Override
     public LocalTime convert(Class<LocalTime> thisClass, Object fromValue, String fmt) {
         if (fromValue == null) return null;
@@ -118,11 +129,25 @@ public class OAConverterLocalTime implements OAConverterInterface<LocalTime> {
         return null;
     }
 
+    /**
+     * Converts an {@link OATime} instance to a {@link LocalTime}, preserving
+     * hour, minute, second, and millisecond precision.
+     *
+     * @param t the {@link OATime} value to convert
+     * @return the corresponding {@link LocalTime}
+     */
     private LocalTime convertOATime(OATime t) {
         int nanos = t.getMilliSecond() * 1_000_000;
         return LocalTime.of(t.get24Hour(), t.getMinute(), t.getSecond(), nanos);
     }
 
+    /**
+     * Converts a {@link LocalTime} into a formatted string.
+     *
+     * @param fromValue the {@link LocalTime} value to convert
+     * @param fmt the format string to use
+     * @return the formatted string, or an empty string if the value is {@code null}
+     */
     @Override
     public String convertToString(LocalTime fromValue, String fmt) {
         if (fromValue == null) return "";

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,8 +73,24 @@ import com.viaoa.util.OATime;
  */
 public class OAConverterZonedDateTime implements OAConverterInterface<ZonedDateTime> {
 
+	/**
+	 * Constant representing the epoch date (1970-01-01) used when only
+	 * time-of-day values are available.
+	 */
     private static final LocalDate EPOCH_DATE = LocalDate.of(1970, 1, 1);
 
+    /**
+     * Converts the supplied value into a {@link ZonedDateTime}.
+     * <p>
+     * The conversion behavior depends on the runtime type of {@code fromValue}
+     * and applies the system default timezone when no explicit timezone
+     * information is available.
+     *
+     * @param thisClass the target class, {@link ZonedDateTime}
+     * @param fromValue the value to convert
+     * @param fmt the format string used when parsing string values
+     * @return the converted {@link ZonedDateTime}, or {@code null} if conversion fails
+     */
     @Override
     public ZonedDateTime convert(Class<ZonedDateTime> thisClass, Object fromValue, String fmt) {
         if (fromValue == null) return null;
@@ -150,22 +166,50 @@ public class OAConverterZonedDateTime implements OAConverterInterface<ZonedDateT
         return null;
     }
 
+    /**
+     * Converts an {@link OADateTime} instance into a {@link ZonedDateTime},
+     * preserving date, time, and timezone information.
+     *
+     * @param dt the {@link OADateTime} value to convert
+     * @return the corresponding {@link ZonedDateTime}
+     */
     private ZonedDateTime toZDT(OADateTime dt) {
         LocalDate ld = LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
         LocalTime lt = toLocalTime(dt);
         return ZonedDateTime.of(ld, lt, dt.getTimeZone().toZoneId());
     }
 
+    /**
+     * Converts an {@link OATime} instance into a {@link LocalTime},
+     * preserving hour, minute, second, and millisecond precision.
+     *
+     * @param t the {@link OATime} value to convert
+     * @return the corresponding {@link LocalTime}
+     */
     private LocalTime toLocalTime(OATime t) {
         int nanos = t.getMilliSecond() * 1_000_000;
         return LocalTime.of(t.get24Hour(), t.getMinute(), t.getSecond(), nanos);
     }
 
+    /**
+     * Converts an {@link OADateTime} instance into a {@link LocalTime},
+     * preserving hour, minute, second, and millisecond precision.
+     *
+     * @param dt the {@link OADateTime} value to convert
+     * @return the corresponding {@link LocalTime}
+     */
     private LocalTime toLocalTime(OADateTime dt) {
         int nanos = dt.getMilliSecond() * 1_000_000;
         return LocalTime.of(dt.get24Hour(), dt.getMinute(), dt.getSecond(), nanos);
     }
 
+    /**
+     * Converts a {@link ZonedDateTime} value into a formatted string.
+     *
+     * @param fromValue the {@link ZonedDateTime} value to convert
+     * @param fmt the format string to use
+     * @return the formatted string, or an empty string if the value is {@code null}
+     */
     @Override
     public String convertToString(ZonedDateTime fromValue, String fmt) {
         if (fromValue == null) return "";

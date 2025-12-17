@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,39 +30,93 @@ package com.viaoa.util;
  * use.
  */
 public class OADouble {
-    private double x;
-    private boolean bIsSet;
     
+	/**
+	 * Stores the current numeric value held by this instance.
+	 */
+	private double x;
+    
+	/**
+	 * Indicates whether a value has been explicitly assigned.
+	 */
+	private boolean bIsSet;
+    
+	/**
+	 * Creates a new instance with the default numeric value.
+	 */
     public OADouble() {
     }
+
+    /**
+     * Creates a new instance initialized with the given value.
+     *
+     * @param x the initial numeric value
+     */
     public OADouble(double x) {
         this.x = x;
         bIsSet = true;
     }
     
+    /**
+     * Assigns a new numeric value and marks it as set.
+     *
+     * @param x the value to assign
+     */
     public void set(double x) {
         this.x = x;
         bIsSet = true;
     }
+
+    /**
+     * Returns the current numeric value.
+     *
+     * @return the stored value
+     */
     public double get() {
         return x;
     }
     
+    /**
+     * Adds the given amount to the current value and returns the result.
+     *
+     * @param x the amount to add
+     * @return the updated value
+     */
     public double add(double x) {
         this.x += x;
         return this.x;
     }
+
+    /**
+     * Delegates to {@link #add(double)}.
+     */
     public double add() {
         return this.add(1);
     }
+
+    /**
+     * Subtracts the given amount from the current value and returns the result.
+     *
+     * @param x the amount to subtract
+     * @return the updated value
+     */
     public double subtract(int x) {
         this.x -= x;
         return this.x;
     }
+
+    /**
+     * Delegates to {@link #subtract(int)}.
+     */
     public double subtract() {
         return this.subtract(1);
     }
 
+    /**
+     * Returns whether a value has been explicitly assigned.
+     *
+     * @return true if a value has been set
+     */
     public boolean isSet() {
         return bIsSet;
     }

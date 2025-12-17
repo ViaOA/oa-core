@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,22 +40,52 @@ import javax.swing.text.html.HTMLEditorKit;
  * simple HTML manipulation tasks.
  */
 public class OAHtml {
-    private String htmlText;
-    private boolean bInit;
-    private HTMLEditorKit kit;
-    private HTMLDocument doc;
-    private Reader reader;
+    
+	/**
+	 * Stores the raw HTML text to be parsed and processed.
+	 */
+	private String htmlText;
+    
+	/**
+	 * Indicates whether the HTML document has been initialized.
+	 */
+	private boolean bInit;
+    
+	/**
+	 * Editor kit used to parse and write HTML content.
+	 */
+	private HTMLEditorKit kit;
+    
+	/**
+	 * Parsed HTML document created from the HTML text.
+	 */
+	private HTMLDocument doc;
+    
+	/**
+	 * Reader used to supply HTML text to the editor kit.
+	 */
+	private Reader reader;
 
+	/**
+	 * Creates a new instance with no initial HTML text.
+	 */
     public OAHtml() {
         
     }
     
+    /**
+     * Creates a new instance initialized with the given HTML text.
+     *
+     * @param htmlText the HTML text to parse
+     */
     public OAHtml(String htmlText) {
         setText(htmlText);
     }
     
     /**
-     * Set html text
+     * Sets the HTML text and resets the initialization state.
+     *
+     * @param htmlText the HTML text to set
      */
     public void setText(String htmlText) {
         this.htmlText = htmlText;
@@ -63,14 +93,17 @@ public class OAHtml {
     }
 
     /**
-     * @return length of text, without markup tags.  Returns -1 if error.
+     * Returns the length of the parsed text excluding markup tags.
+     *
+     * @return the length of the text, or -1 if parsing fails
      */
     public int getLength() {
         if (!init()) return -1;
         return doc.getLength();
     }
+
     /**
-     * @return length of text, without markup tags.  Returns -1 if error.
+     * Delegates to {@link #getLength()}.
      */
     public int length() {
         return getLength();
@@ -78,13 +111,19 @@ public class OAHtml {
     
     
     /**
-     * 
-     * @return html text
+     * Returns the raw HTML text.
+     *
+     * @return the HTML text
      */
     public String getText() {
         return htmlText;
     }
     
+    /**
+     * Initializes the HTML document by parsing the HTML text.
+     *
+     * @return true if initialization succeeded, false otherwise
+     */
     private boolean init() {
         if (bInit || htmlText == null) return bInit;
         
@@ -104,9 +143,10 @@ public class OAHtml {
     }
 
     /**
-     * Insert a string at a given position.  Use substring to get html document with the inserted text.
-     * @param text text to insert, should not include tags.
-     * @param pos
+     * Inserts plain text into the HTML document at the given position.
+     *
+     * @param text the text to insert
+     * @param pos the document position at which to insert
      */
     public void insert(String text, int pos) {
         if (!init()) return;
@@ -121,6 +161,13 @@ public class OAHtml {
     /*
      * Get substring of html document text, which will then include html tags/attributes.
      * example: if the substring(1,3) for html doc '<html><body>abced<body><html>' will return '<html><body>bc<body><html>'
+     */
+    /**
+     * Returns a substring of the HTML document including markup.
+     *
+     * @param beginPos the starting text position
+     * @param endPos the ending text position
+     * @return the HTML substring, or null if parsing fails
      */
     public String substring(int beginPos, int endPos) {
         if (!init()) return null;

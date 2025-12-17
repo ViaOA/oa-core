@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,30 +40,72 @@ import com.viaoa.hub.Hub;
  * @see com.viaoa.hub.Hub#sort(String, boolean)
  */
 public class OAComparator implements Comparator {
-    Class clazz;
-    String propertyPaths;
-    boolean bAscending;
-    Method[][] methodss;
-    boolean[] bAscendings; 
+    
+	/**
+	 * The class whose properties are used for comparison.
+	 */
+	Class clazz;
+    
+	/**
+	 * Comma-separated list of property paths used to extract values for comparison.
+	 */
+	String propertyPaths;
+    
+	/**
+	 * Default sort direction used when no explicit direction is specified
+	 * in the property paths.
+	 */
+	boolean bAscending;
+    
+	/**
+	 * Cached arrays of {@link Method} chains corresponding to each property path.
+	 */
+	Method[][] methodss;
+    
+	/**
+	 * Per-property sort direction flags corresponding to each method chain.
+	 */
+	boolean[] bAscendings; 
 
-    /**
-     * @param clazz
-     * @param propertyPaths, can include keywords "ASC" or "DESC" to determine ascending or descending.
-     * @param bAscending default value for sorting, true=Ascending, false=Descending
-     */
+	/**
+	 * Creates a new comparator using the specified class and property paths.
+	 *
+	 * @param clazz the class whose properties will be used for comparison
+	 * @param propertyPaths comma-separated property paths, optionally including
+	 *        ASC or DESC keywords
+	 * @param bAscending default sort direction
+	 */
     public OAComparator(Class clazz, String propertyPaths, boolean bAscending) {
         this.clazz = clazz;
         this.propertyPaths = propertyPaths;
         this.bAscending = bAscending;
     }
 
+    /**
+     * Returns the configured property paths string.
+     *
+     * @return the property paths
+     */
     public String getPropertyPaths() {
         return propertyPaths;
     }
+
+    /**
+     * Returns the default ascending flag.
+     *
+     * @return {@code true} if ascending, {@code false} if descending
+     */
     public boolean getAsc() {
         return bAscending;
     }
     
+    /**
+     * Compares two objects using the configured property paths.
+     *
+     * @param o1 the first object to compare
+     * @param o2 the second object to compare
+     * @return a negative value, zero, or a positive value as required by {@link Comparator}
+     */
     public int compare(Object o1, Object o2) {
         int x = preCheck(o1, o2);
         if (x < 5) return x;
@@ -94,6 +136,15 @@ public class OAComparator implements Comparator {
         return 0;
     }
 
+    /**
+     * Compares two objects using a specific chain of accessor methods.
+     *
+     * @param o1 the first object
+     * @param o2 the second object
+     * @param methods method chain used to extract comparable values
+     * @param bAscend {@code true} for ascending order, {@code false} for descending
+     * @return comparison result
+     */
     private int compare(Object o1, Object o2, Method[] methods, boolean bAscend) {
         if (methods != null && methods.length != 0) {
             o1 = OAReflect.getPropertyValue(o1, methods);
@@ -147,6 +198,13 @@ public class OAComparator implements Comparator {
         return -x;
     }
 
+    /**
+     * Performs a preliminary comparison check for null values.
+     *
+     * @param o1 the first object
+     * @param o2 the second object
+     * @return comparison result, or a sentinel value indicating further comparison
+     */
     protected int preCheck(Object o1, Object o2) {
         if (o1 == null && o2 == null) return 0;
         if (o1 == null) {
@@ -160,6 +218,10 @@ public class OAComparator implements Comparator {
         return 5;
     }
 
+    /**
+     * Initializes internal method chains and sort direction flags based on
+     * the configured property paths.
+     */
     protected void init() {
         if (clazz == null) return;
         if (propertyPaths == null || propertyPaths.length() == 0) {

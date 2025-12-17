@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,42 +76,81 @@ import com.viaoa.util.OANotExist;
  */
 public class ClientGetDetail {
 	private static Logger LOG = Logger.getLogger(ClientGetDetail.class.getName());
+	
+	/**
+	 * Identifier of the remote client requesting detail data.
+	 */
 	private final int clientId;
 
 	// tracks guid for all oaObjects sent to client, used by sync filter to know which objects exist on client app.
+	/**
+	 * Map tracking GUIDs of OAObjects that have been sent to the client.
+	 * <p>
+	 * The value indicates whether the object has been fully sent with all
+	 * references.
+	 * </p>
+	 */
 	private final Map<Long, Boolean> hmGuid;
 
 	
+	/**
+	 * Creates a new ClientGetDetail instance for a specific client.
+	 *
+	 * @param clientId the client identifier
+	 * @param hmGuid map used to track object GUIDs sent to the client
+	 */
 	public ClientGetDetail(int clientId, Map<Long, Boolean> hmGuid) {
 		this.clientId = clientId;
 		this.hmGuid = hmGuid;
 	}
 
+	/**
+	 * Removes a GUID from the client tracking map.
+	 *
+	 * @param guid the object GUID to remove
+	 */
 	public void removeGuid(long guid) {
 	    hmGuid.remove(guid);
 	}
 
+	/**
+	 * Adds a GUID to the client tracking map.
+	 *
+	 * @param guid the object GUID to add
+	 */
 	public void addGuid(long guid) {
 	    hmGuid.put(guid, false);
 	}
 
+	/**
+	 * Closes this ClientGetDetail instance.
+	 */
 	public void close() {
 	}
 
 	//    private static volatile int cntx;
+	/**
+	 * Counter used to limit repeated error logging.
+	 */
 	private static volatile int errorCnt;
 
 	/**
-	 * called by OASyncClient.getDetail(..), from an OAClient to the OAServer
-	 * 
-	 * @param masterClass
-	 * @param masterObjectKey object key that needs to get a prop/reference value
-	 * @param property        name of prop/reference
-	 * @param masterProps     the names of any other properties to get
-	 * @param siblingKeys     any other objects of the same class to get the same property from. This is usually objects in the same hub of
-	 *                        the masterObjectKey
-	 * @return the property reference, or an OAObjectSerializer that will wrap the reference, along with additional objects that will be
-	 *         sent back to the client.
+	 * Retrieves a detail property or hub value for a master object.
+	 * <p>
+	 * Locates the master object, resolves the requested property value,
+	 * optionally loads additional master or sibling data, and returns either
+	 * the direct value or an {@link OAObjectSerializer} containing the value
+	 * and related objects.
+	 * </p>
+	 *
+	 * @param id request identifier
+	 * @param masterClass the class of the master object
+	 * @param masterObjectKey key identifying the master object
+	 * @param property name of the property or reference to retrieve
+	 * @param masterProps additional master properties to load
+	 * @param siblingKeys keys of sibling objects to retrieve the same property from
+	 * @param bForHubMerger flag indicating hub-merger usage
+	 * @return the property value or an {@link OAObjectSerializer} wrapping the result
 	 */
 	public Object getDetail(final int id, final Class masterClass, final OAObjectKey masterObjectKey,
 			final String property, final String[] masterProps, final OAObjectKey[] siblingKeys, final boolean bForHubMerger) {
@@ -224,11 +263,22 @@ public class ClientGetDetail {
 	}
 
 	/**
-	 * 20130213 getDetail() requirements load referencs for master object and detail object/hub, and one level of ownedReferences serialize
-	 * all first level references for master, and detail send existing references for 1 more level from master, and 2 levels from detail
-	 * dont send any references that equal master or have master in the hub dont send any references that have detail/hub in it dont send
-	 * detail if it has already been sent with all references dont send a reference if it has already been sent to client, and has been
-	 * added to tree send max X objects
+	 * Creates an {@link OAObjectSerializer} for a detail request.
+	 * <p>
+	 * Loads required references for the master and detail objects,
+	 * prepares any extra sibling data, and configures a serializer
+	 * with limits and callbacks.
+	 * </p>
+	 *
+	 * @param msStart start time of the request
+	 * @param masterObject the master object
+	 * @param detailObject the detail object or hub
+	 * @param propFromMaster property name on the master
+	 * @param masterProperties additional master properties
+	 * @param cntMasterPropsLoaded count of master properties already loaded
+	 * @param siblingKeys keys of sibling objects
+	 * @param bForHubMerger flag indicating hub-merger usage
+	 * @return a configured {@link OAObjectSerializer}
 	 */
 	protected OAObjectSerializer getSerializedDetail(final long msStart, final OAObject masterObject, final Object detailObject,
 			final String propFromMaster, final String[] masterProperties, final int cntMasterPropsLoaded, final OAObjectKey[] siblingKeys,
@@ -339,14 +389,32 @@ public class ClientGetDetail {
 	}
 
 	/**
-	 * called when a property or sibling data cant be loaded for current request, because of timeout. This can be overwritten to have it
-	 * done in a background thread.
+	 * Loads a property value in the background when it cannot be loaded
+	 * within the current request time budget.
+	 *
+	 * @param obj the object whose property should be loaded
+	 * @param property the property name to load
 	 */
 	protected void loadDataInBackground(OAObject obj, String property) {
 
 	}
 
 	// callback to customize the return values from getDetail(..) 
+	/**
+	 * Creates a serializer callback used to control object and reference
+	 * serialization behavior.
+	 *
+	 * @param os the object serializer
+	 * @param masterObject the master object
+	 * @param bMasterWasPreviouslySent flag indicating master was fully sent
+	 * @param detailObject the detail object
+	 * @param detailHub the detail hub, if applicable
+	 * @param propFromMaster property name on the master
+	 * @param masterProperties additional master properties
+	 * @param siblingKeys sibling object keys
+	 * @param hmExtraData extra sibling data to include
+	 * @return a configured {@link OAObjectSerializerCallback}
+	 */
 	private OAObjectSerializerCallback createOAObjectSerializerCallback(
 			final OAObjectSerializer os,
 			final OAObject masterObject, final boolean bMasterWasPreviouslySent,
@@ -641,6 +709,12 @@ public class ClientGetDetail {
 		return callback;
 	}
 
+	/**
+	 * Determines whether an object exists on the client.
+	 *
+	 * @param obj the object to test
+	 * @return {@code true} if the object exists on the client, otherwise {@code false}
+	 */
 	private boolean isOnClient(Object obj) {
 		if (!(obj instanceof OAObject)) {
 			return false;
@@ -650,6 +724,12 @@ public class ClientGetDetail {
 		return hmGuid.containsKey(guid);
 	}
 
+	/**
+	 * Determines whether an object has already been fully sent to the client.
+	 *
+	 * @param obj the object to test
+	 * @return {@code true} if the object was fully sent, otherwise {@code false}
+	 */
 	private boolean wasFullySentToClient(Object obj) {
 		if (!(obj instanceof OAObject)) {
 			return false;

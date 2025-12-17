@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,22 @@ package com.viaoa.util;
  */
 public class Tuple<A, B> {
 
+	/**
+	 * First value in the tuple.
+	 */
     public final A a;
+
+    /**
+     * Second value in the tuple.
+     */
     public final B b;
     
+    /**
+     * Creates a new tuple containing the supplied values.
+     *
+     * @param a the first value
+     * @param b the second value
+     */
     public Tuple(A a, B b) {
         this.a = a;
         this.b = b;

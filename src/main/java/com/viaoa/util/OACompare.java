@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,21 +210,49 @@ public class OACompare {
 		return x == 0;
 	}
 
-    /**
-     * Returns true if the two values are not equal after applying coercion rules.
-     */
+	/**
+	 * Returns {@code true} if the two values are not equal.
+	 *
+	 * @param value first value
+	 * @param matchValue second value
+	 * @return true if not equal
+	 */
 	public static boolean isNotEqual(Object value, Object matchValue) {
 	    return !isEqual(value, matchValue);
 	}
 
+	/**
+	 * Returns {@code true} if the two values are equal, optionally ignoring case.
+	 *
+	 * @param value first value
+	 * @param matchValue second value
+	 * @param bIgnoreCase true to ignore case for strings
+	 * @return true if equal
+	 */
 	public static boolean isEqual(Object value, Object matchValue, boolean bIgnoreCase) {
 		return isEqual(value, matchValue, bIgnoreCase, -1);
 	}
 
+	/**
+	 * Returns {@code true} if the two values are not equal, optionally ignoring case.
+	 *
+	 * @param value first value
+	 * @param matchValue second value
+	 * @param bIgnoreCase true to ignore case for strings
+	 * @return true if not equal
+	 */
     public static boolean isNotEqual(Object value, Object matchValue, boolean bIgnoreCase) {
         return !isEqual(value, matchValue, bIgnoreCase, -1);
     }
 	
+    /**
+     * Returns {@code true} if the two values are equal using decimal precision.
+     *
+     * @param value first value
+     * @param matchValue second value
+     * @param decimalPlaces number of decimal places to use
+     * @return true if equal
+     */
 	public static boolean isEqual(Object value, Object matchValue, int decimalPlaces) {
 		return isEqual(value, matchValue, false, decimalPlaces);
 	}
@@ -245,6 +273,15 @@ public class OACompare {
         return !isEqual(value, matchValue, bIgnoreCase, decimalPlaces);
     }
 	
+	/**
+	 * Returns {@code true} if the two values are equal using case and precision options.
+	 *
+	 * @param value first value
+	 * @param matchValue second value
+	 * @param bIgnoreCase true to ignore case for strings
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if equal
+	 */
 	public static boolean isEqual(Object value, Object matchValue, boolean bIgnoreCase, int decimalPlaces) {
 		if (bIgnoreCase) {
 			if (value instanceof String) {
@@ -258,18 +295,28 @@ public class OACompare {
 		return x == 0;
 	}
 
-    /**
-     * Tests whether a value is between (exclusive) two bounds.
-     * Supports coercion for mixed-type inputs.
-     */
+	/**
+	 * Tests whether a value is between two bounds.
+	 *
+	 * @param value value to test
+	 * @param fromValue lower bound
+	 * @param toValue upper bound
+	 * @return true if between
+	 */
 	public static boolean isBetween(Object value, Object fromValue, Object toValue) {
 		return isBetween(value, fromValue, toValue, -1);
 	}
 
 
-    /**
-     * Tests whether a value is between (exclusive) two bounds, with optional decimal precision.
-     */
+	/**
+	 * Tests whether a value is between two bounds using decimal precision.
+	 *
+	 * @param value value to test
+	 * @param fromValue lower bound
+	 * @param toValue upper bound
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if between
+	 */
 	public static boolean isBetween(Object value, Object fromValue, Object toValue, int decimalPlaces) {
         if (value == null) {
             return false;
@@ -290,16 +337,27 @@ public class OACompare {
     }
 	
 	
-    /**
-     * Returns true if value is equal to or between (inclusive) two bounds.
-     */
+	/**
+	 * Returns {@code true} if the value is equal to or between two bounds.
+	 *
+	 * @param value value to test
+	 * @param fromValue lower bound
+	 * @param toValue upper bound
+	 * @return true if equal or between
+	 */
 	public static boolean isEqualOrBetween(Object value, Object fromValue, Object toValue) {
 	    return isEqualOrBetween(value, fromValue, toValue, -1);
 	}
 
-    /**
-     * Returns true if value is equal to or between (inclusive) two bounds with optional decimal precision.
-     */	
+	/**
+	 * Returns {@code true} if the value is equal to or between two bounds using precision.
+	 *
+	 * @param value value to test
+	 * @param fromValue lower bound
+	 * @param toValue upper bound
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if equal or between
+	 */
 	public static boolean isEqualOrBetween(Object value, Object fromValue, Object toValue, int decimalPlaces) {
 		if (value == null) {
 			return (fromValue == null);
@@ -319,113 +377,196 @@ public class OACompare {
 		return true;
 	}
 
+	/**
+	 * Delegates to {@link #isEqualOrBetween(Object, Object, Object)}.
+	 */
 	public static boolean isBetweenOrEqual(Object value, Object fromValue, Object toValue) {
 		return isEqualOrBetween(value, fromValue, toValue, -1);
 	}
     
+	/**
+	 * Delegates to {@link #isEqualOrBetween(Object, Object, Object, int)}.
+	 */
 	public static boolean isBetweenOrEqual(Object value, Object fromValue, Object toValue, int decimalPlaces) {
         return isEqualOrBetween(value, fromValue, toValue, decimalPlaces);
     }
 
-    /**
-     * Returns true if value is greater than the given value.
-     */
+	/**
+	 * Returns {@code true} if the value is greater than the given value.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @return true if greater
+	 */
 	public static boolean isGreater(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x > 0;
 	}
 
-    /**
-     * Returns true if value is greater than the given value with decimal precision control.
-     */
+	/**
+	 * Returns {@code true} if the value is greater than the given value using precision.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if greater
+	 */
 	public static boolean isGreater(Object value, Object fromValue, int decimalPlaces) {
         int x = compare(value, fromValue, decimalPlaces);
         return x > 0;
     }
 
-    /**
-     * Returns true if value is greater than or equal to the given value.
-     */
+	/**
+	 * Returns {@code true} if the value is greater than the given value using precision.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if greater
+	 */
 	public static boolean isEqualOrGreater(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x >= 0;
 	}
 
-    /**
-     * Returns true if value is greater than or equal to the given value, with decimal precision.
-     */
+	/**
+	 * Returns {@code true} if the value is greater than or equal to the given value
+	 * using decimal precision.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if greater than or equal
+	 */
 	public static boolean isEqualOrGreater(Object value, Object fromValue, int decimalPlaces) {
         int x = compare(value, fromValue, decimalPlaces);
         return x >= 0;
     }
 
+	/**
+	 * Returns {@code true} if the value is greater than or equal to the given value.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @return true if greater than or equal
+	 */
 	public static boolean isGreaterOrEqual(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x >= 0;
 	}
 
+	/**
+	 * Returns {@code true} if the value is greater than or equal to the given value
+	 * using decimal precision.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if greater than or equal
+	 */
 	public static boolean isGreaterOrEqual(Object value, Object fromValue, int decimalPlaces) {
         int x = compare(value, fromValue, decimalPlaces);
         return x >= 0;
     }
 
-    /**
-     * Returns true if value is less than the given value.
-     */
+	/**
+	 * Returns {@code true} if the value is less than the given value.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @return true if less
+	 */
 	public static boolean isLess(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x < 0;
 	}
 	
-    /**
-     * Returns true if value is less than the given value with decimal precision.
-     */
+	/**
+	 * Returns {@code true} if the value is less than the given value
+	 * using decimal precision.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if less
+	 */
     public static boolean isLess(Object value, Object fromValue, int decimalPlaces) {
         int x = compare(value, fromValue, decimalPlaces);
         return x < 0;
     }
 
+    /**
+     * Returns {@code true} if the value is less than or equal to the given value.
+     *
+     * @param value value to test
+     * @param fromValue comparison value
+     * @return true if less than or equal
+     */
 	public static boolean isEqualOrLess(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x <= 0;
 	}
+	
+	/**
+	 * Returns {@code true} if the value is less than or equal to the given value
+	 * using decimal precision.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if less than or equal
+	 */
     public static boolean isEqualOrLess(Object value, Object fromValue, int decimalPlaces) {
         int x = compare(value, fromValue, decimalPlaces);
         return x <= 0;
     }
 
     /**
-     * Returns true if value is less than or equal to the given value.
+     * Returns {@code true} if the value is less than or equal to the given value.
+     *
+     * @param value value to test
+     * @param fromValue comparison value
+     * @return true if less than or equal
      */
 	public static boolean isLessOrEqual(Object value, Object fromValue) {
 		int x = compare(value, fromValue);
 		return x <= 0;
 	}
 	
-    /**
-     * Returns true if value is less than or equal to the given value with decimal precision.
-     */
+	/**
+	 * Returns {@code true} if the value is less than or equal to the given value
+	 * using decimal precision.
+	 *
+	 * @param value value to test
+	 * @param fromValue comparison value
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if less than or equal
+	 */
     public static boolean isLessOrEqual(Object value, Object fromValue, int decimalPlaces) {
         int x = compare(value, fromValue, decimalPlaces);
         return x <= 0;
     }
 
     /**
-     * Compares two integers using standard compare semantics.
+     * Compares two integer values using standard comparison semantics.
+     *
+     * @param a first integer
+     * @param b second integer
+     * @return a negative value, zero, or a positive value as a is less than,
+     *         equal to, or greater than b
      */
     public static int compare(int a, int b) {
 		return Integer.compare(a, b);
 	}
 
-   
     /**
-     * Compares two double values using fixed decimal precision or epsilon tolerance.
-     * Handles NaN and Infinity safely.
+     * Compares two double values using the specified decimal precision.
      *
-     * @param d1 first double
-     * @param d2 second double
-     * @param decimalPlaces rounding precision; negative values use relative epsilon comparison
-     * @return -1 if d1 &lt; d2, 0 if approximately equal, 1 if d1 &gt; d2
+     * @param d1 first double value
+     * @param d2 second double value
+     * @param decimalPlaces number of decimal places to use for rounding, or a
+     *        negative value to use epsilon-based comparison
+     * @return -1, 0, or 1 based on the comparison result
      */
     public static int compare(double d1, double d2, int decimalPlaces) {
 		if (Double.isNaN(d1) || Double.isNaN(d2)) return Double.compare(d1, d2);
@@ -445,6 +586,13 @@ public class OACompare {
 	}
     
     
+    /**
+     * Converts a double value into a scaled long value for comparison purposes.
+     *
+     * @param d the double value to convert
+     * @param decimalPlaces number of decimal places to use for scaling
+     * @return the scaled long comparison value
+     */
 	private static long getLongCompareValue(double d, int decimalPlaces) {
 	    if (decimalPlaces < 0) decimalPlaces = 0;
 	    else if (decimalPlaces > 9) decimalPlaces = 9; // prevent FP drift, and long overrun
@@ -469,21 +617,38 @@ public class OACompare {
 	}
 	
 	/**
-	 * Compare two doubles, using fixed decimal places.
+	 * Returns {@code true} if the two double values are equal using the specified
+	 * decimal precision.
+	 *
+	 * @param d1 first double value
+	 * @param d2 second double value
+	 * @param decimalPlaces number of decimal places to use
+	 * @return true if equal
 	 */
 	public static boolean isEqual(double d1, double d2, int decimalPlaces) {
 		return compare(d1, d2, decimalPlaces) == 0;
 	}
+	
+	/**
+	 * Returns {@code true} if the two double values are equal using default
+	 * comparison semantics.
+	 *
+	 * @param d1 first double value
+	 * @param d2 second double value
+	 * @return true if equal
+	 */
 	public static boolean isEqual(double d1, double d2) {
 		return compare(d1, d2, -1) == 0;
 	}
 	
 	
-	
-	
-	
-	
-	
+	/**
+	 * Compares two objects using default comparison rules.
+	 *
+	 * @param value first object
+	 * @param matchValue second object
+	 * @return -1, 0, or 1 based on the comparison result
+	 */
 	public static int compare(Object value, Object matchValue) {
 		return compare(value, matchValue, -1);
 	}
@@ -887,10 +1052,12 @@ public class OACompare {
 
 
 	
-    /**
-     * Returns true if the given object is not empty.
-     * Equivalent to {@code !isEmpty(obj)}.
-     */
+	/**
+	 * Returns {@code true} if the given object is not empty.
+	 *
+	 * @param obj the object to test
+	 * @return true if not empty
+	 */
 	public static boolean isNotEmpty(Object obj) {
 		return !isEmpty(obj);
 	}
@@ -902,6 +1069,12 @@ public class OACompare {
 		return !isEmpty(obj, bTrim);
 	}
 
+	/**
+	 * Returns {@code true} if the given object is empty.
+	 *
+	 * @param obj the object to test
+	 * @return true if empty
+	 */
 	public static boolean isEmpty(Object obj) {
 		return isEmpty(obj, false);
 	}

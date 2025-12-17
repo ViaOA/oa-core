@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,17 +46,30 @@ import java.util.List;
 public class OAFile extends java.io.File {
 	static final long serialVersionUID = 1L;
 
+	/**
+	 * File separator string for the current platform.
+	 */
 	public static final String FS = File.separator;
+
+	/**
+	 * Line separator string for the current platform.
+	 */
 	public static final String NL = System.getProperty("line.separator");
 
+	/**
+	 * Creates a new file instance using a normalized file name.
+	 *
+	 * @param fname the file name or path
+	 */
 	public OAFile(String fname) {
 		super(OAString.convertFileName(fname));
 	}
 
 	/**
-	 * Copy this file to another file.
+	 * Copies this file to the specified file name.
 	 *
-	 * @see #copy(String,String)
+	 * @param fileNameTo the destination file name
+	 * @return true if the copy succeeded, false otherwise
 	 */
 	public boolean copyTo(String fileNameTo) {
 		try {
@@ -68,9 +81,10 @@ public class OAFile extends java.io.File {
 	}
 
 	/**
-	 * Copy this file to another file.
+	 * Copies this file to the specified destination file.
 	 *
-	 * @see #copy(String,String)
+	 * @param fileTo the destination file
+	 * @return true if the copy succeeded, false otherwise
 	 */
 	public boolean copyTo(OAFile fileTo) {
 		if (fileTo == null) {
@@ -85,25 +99,29 @@ public class OAFile extends java.io.File {
 	}
 
 	/**
-	 * Create all directories for fileName.
+	 * Creates all required directories for this file.
 	 */
 	public void mkdirsForFile() {
 		mkdirsForFile(getPath());
 	}
 
 	/**
-	 * Converts fileName path to correct system file.separator characters.
+	 * Converts a file path to use the platform-specific file separator.
 	 *
-	 * @return new String with corrected file path characters.
+	 * @param fileName the file path to convert
+	 * @return the converted file path
 	 */
 	public static String convertFileName(String fileName) {
 		return convertFileName(fileName, false);
 	}
 
 	/**
-	 * Converts fileName path to correct system file.separator characters.
+	 * Converts a file path to use the platform-specific file separator and
+	 * optionally ensures it ends with a separator.
 	 *
-	 * @return new String with corrected file path characters.
+	 * @param fileName the file path to convert
+	 * @param bEndWithSlashChar true to ensure the path ends with a separator
+	 * @return the converted file path
 	 */
 	public static String convertFileName(String fileName, boolean bEndWithSlashChar) {
 		if (fileName == null) {
@@ -124,6 +142,12 @@ public class OAFile extends java.io.File {
 		return fileName;
 	}
 
+	/**
+	 * Extracts the file name from a file path.
+	 *
+	 * @param filePath the full file path
+	 * @return the file name portion of the path
+	 */
 	public static String getFileName(String filePath) {
 		filePath = filePath.replace('\\', '/');
 
@@ -136,7 +160,10 @@ public class OAFile extends java.io.File {
 	}
 
 	/**
-	 * Get the direcory (path) for a file path.
+	 * Returns the directory path portion of a file path.
+	 *
+	 * @param filePath the full file path
+	 * @return the directory path
 	 */
 	public static String getDirectoryName(String filePath) {
 		filePath = filePath.replace('\\', '/');
@@ -150,6 +177,12 @@ public class OAFile extends java.io.File {
 		return dir;
 	}
 
+	/**
+	 * Returns the file extension for the given file.
+	 *
+	 * @param file the file whose extension is returned
+	 * @return the file extension, or null if file is null
+	 */
 	public static String getExtension(File file) {
 		if (file == null) {
 			return null;
@@ -157,6 +190,12 @@ public class OAFile extends java.io.File {
 		return getExtension(file.getName());
 	}
 
+	/**
+	 * Returns the file extension from a file path.
+	 *
+	 * @param filePath the file path
+	 * @return the file extension, or an empty string if none exists
+	 */
 	public static String getExtension(String filePath) {
 		String ext;
 		int x = filePath.lastIndexOf('.');
@@ -168,11 +207,16 @@ public class OAFile extends java.io.File {
 		return ext;
 	}
 
-	/**
+	/*
 	 * Create directories for fileName.<br>
 	 * Compared to the method in the File.class, "File.mkdirs()" which creates a directory using the full fileName, where fileName itself
 	 * will end up being a directory. This method assumes that the fileName is for a file and will then create the directories needed so
 	 * that the file can be saved.
+	 */
+	/**
+	 * Creates all required directories for the given file name.
+	 *
+	 * @param fileName the file path
 	 */
 	public static void mkdirsForFile(String fileName) {
 		if (fileName == null) {
@@ -186,6 +230,11 @@ public class OAFile extends java.io.File {
 		}
 	}
 
+	/**
+	 * Creates all required directories for the given file.
+	 *
+	 * @param file the file whose parent directories are created
+	 */
 	public static void mkdirsForFile(File file) {
 		if (file == null) {
 			return;
@@ -200,7 +249,9 @@ public class OAFile extends java.io.File {
 	}
 
 	/**
-	 * Renames this file to another name. This will create the required directories for the new file.
+	 * Renames this file to the specified file name, creating directories if needed.
+	 *
+	 * @param fileName the new file name
 	 */
 	public void renameTo(String fileName) {
 		if (fileName != null) {
@@ -214,9 +265,12 @@ public class OAFile extends java.io.File {
 	}
 
 	/**
-	 * Copy a file to another file. This will create the required directories for the new file.
-	 * <p>
+	 * Copies one file to another file by file name.
 	 * NOTE: if the fileNameTo already exists, it will be overwritten.
+	 *
+	 * @param fileNameFrom the source file name
+	 * @param fileNameTo the destination file name
+	 * @throws Exception if the copy fails
 	 */
 	public static void copy(String fileNameFrom, String fileNameTo) throws Exception {
 		if (fileNameFrom == null || fileNameTo == null) {
@@ -231,6 +285,13 @@ public class OAFile extends java.io.File {
 		copy(fileFrom, fileTo);
 	}
 
+	/**
+	 * Copies one file to another file.
+	 *
+	 * @param file the source file
+	 * @param fileTo the destination file
+	 * @throws Exception if the copy fails
+	 */
 	public static void copy(File file, File fileTo) throws Exception {
 		if (file == null || fileTo == null) {
 			return;
@@ -262,13 +323,21 @@ public class OAFile extends java.io.File {
 		os.close();
 	}
 
-	/**
+	/*
 	 * Copy a file from class/jar to file.
 	 *
 	 * @param c
 	 * @param resourceName class path name for file to read param fname file name to save as param estimatedSize
 	 * @return true if successful, false if resource did not exist
-	 * @throws Exception
+	 */
+	/**
+	 * Copies a resource from the classpath to a file.
+	 *
+	 * @param c the class used to locate the resource
+	 * @param resourceName the classpath resource name
+	 * @param fname the destination file name
+	 * @return true if successful, false if the resource was not found
+	 * @throws Exception if copying fails
 	 */
 	public static boolean copyResourceToFile(Class c, String resourceName, String fname) throws Exception {
 		if (fname == null) {
@@ -304,9 +373,17 @@ public class OAFile extends java.io.File {
 		return true;
 	}
 
-	/**
+	/*
 	 * Read the contents of a text file from a specific class location. This will read from a jar file. param fname '/' seperated file name,
 	 * located from the class. If fname begins with '/' then the file will go to the root directory.
+	 */
+	/**
+	 * Reads a text resource from the classpath into an array of strings.
+	 *
+	 * @param c the class used to locate the resource
+	 * @param resourceName the classpath resource name
+	 * @return an array of text lines, or null if the resource was not found
+	 * @throws Exception if reading fails
 	 */
 	public static String[] readResourceTextFile(Class c, String resourceName) throws Exception {
 		InputStream is = c.getResourceAsStream(resourceName);
@@ -330,10 +407,19 @@ public class OAFile extends java.io.File {
 		return al.toArray(new String[0]);
 	}
 
-	/**
+	/*
 	 * Read the contents of a text file from a specific class location. This will read from a jar file.
 	 *
 	 * @param fname '/' seperated file name, located from the class. If fname begins with '/' then the file will go to the root directory.
+	 */
+	/**
+	 * Reads the contents of a text resource from the classpath into a string.
+	 *
+	 * @param c the class used to locate the resource
+	 * @param fname the classpath resource name
+	 * @param estimatedSize the estimated size of the content
+	 * @return the text content, or null if the resource was not found
+	 * @throws Exception if reading fails
 	 */
 	public static String readTextFile(Class c, String fname, int estimatedSize) throws Exception {
 		if (fname == null) {
@@ -362,6 +448,14 @@ public class OAFile extends java.io.File {
 		return new String(sb);
 	}
 
+	/**
+	 * Reads the contents of a text file into a string.
+	 *
+	 * @param file the file to read
+	 * @param estimatedSize the estimated size of the content
+	 * @return the text content
+	 * @throws Exception if reading fails
+	 */
 	public static String readTextFile(File file, int estimatedSize) throws Exception {
 		BufferedReader reader = new BufferedReader(new FileReader(file));
 		StringBuffer sb = new StringBuffer(estimatedSize);
@@ -377,6 +471,14 @@ public class OAFile extends java.io.File {
 		return new String(sb);
 	}
 
+	/**
+	 * Reads the contents of a text file specified by name into a string.
+	 *
+	 * @param fname the file name to read
+	 * @param estimatedSize the estimated size of the content
+	 * @return the text content, or null if the file name is null
+	 * @throws Exception if reading fails
+	 */
 	public static String readTextFile(String fname, int estimatedSize) throws Exception {
 		if (fname == null) {
 			return null;
@@ -399,6 +501,13 @@ public class OAFile extends java.io.File {
 		return new String(sb);
 	}
 
+	/**
+	 * Reads the contents of a text file and adds each line to the given list.
+	 *
+	 * @param fname the file name to read
+	 * @param lst the list to populate with lines from the file
+	 * @throws Exception if reading fails
+	 */
 	public static void readTextFile(String fname, final List<String> lst) throws Exception {
 		if (fname == null || lst == null) {
 			return;
@@ -415,6 +524,14 @@ public class OAFile extends java.io.File {
 		reader.close();
 	}
 
+	/**
+	 * Writes text data to a file specified by name.
+	 *
+	 * @param fname the file name to write
+	 * @param data the text data to write
+	 * @return true if the write succeeded, false otherwise
+	 * @throws Exception if writing fails
+	 */
 	public static boolean writeTextFile(String fname, String data) throws Exception {
 		if (fname == null) {
 			return false;
@@ -434,6 +551,14 @@ public class OAFile extends java.io.File {
 		return true;
 	}
 
+	/**
+	 * Writes text data to the specified file.
+	 *
+	 * @param file the file to write
+	 * @param data the text data to write
+	 * @return true if the write succeeded, false otherwise
+	 * @throws Exception if writing fails
+	 */
 	public static boolean writeTextFile(File file, String data) throws Exception {
 		if (file == null) {
 			return false;
@@ -451,16 +576,31 @@ public class OAFile extends java.io.File {
 	}
 
 	/**
-	 * Remove directory and all children files.
+	 * Removes a directory and all of its contents.
+	 *
+	 * @param f the directory to remove
+	 * @throws IOException if removal fails
 	 */
 	public static void rmDir(File f) throws IOException {
 		delTree(f);
 	}
 
+	/**
+	 * Removes a directory and all of its contents.
+	 *
+	 * @param f the directory to remove
+	 * @throws IOException if removal fails
+	 */
 	public static void removeDir(File f) throws IOException {
 		delTree(f);
 	}
 
+	/**
+	 * Recursively deletes a file or directory tree.
+	 *
+	 * @param f the file or directory to delete
+	 * @throws IOException if deletion fails
+	 */
 	public static void delTree(File f) throws IOException {
 		if (f == null || !f.exists()) {
 			return;

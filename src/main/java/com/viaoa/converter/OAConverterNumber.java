@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,11 +131,31 @@ import com.viaoa.util.OAString;
  */
 public class OAConverterNumber implements OAConverterInterface<Number> {
 
+	/**
+	 * Shared zero value used as the default numeric result when the source
+	 * value is {@code null}.
+	 */
 	protected static final Double DOUBLE_ZERO = Double.valueOf(0.0d);	
+
+	/**
+	 * Default {@link DecimalFormat} pattern used when no format is supplied.
+	 */
 	protected static final String DEFAULT_PATTERN = "#,###";
+	
+	/**
+	 * Regular expression pattern used to remove grouping, currency,
+	 * and whitespace characters from numeric strings.
+	 */
 	protected static final Pattern CLEAN_PATTERN = Pattern.compile("[,$ ]");	
 	
+	/**
+	 * Pool of reusable {@link DecimalFormat} instances keyed by format pattern.
+	 */
 	protected final List<FormatPool> alFormatPool = new ArrayList<>();
+	
+	/**
+	 * Lock used to coordinate access to the {@link #alFormatPool} and formatter usage.
+	 */
 	protected final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 	
 	
@@ -282,6 +302,13 @@ public class OAConverterNumber implements OAConverterInterface<Number> {
 		return num;
 	}
 
+	/**
+	 * Removes non-numeric formatting characters from a numeric string and
+	 * applies suffix multipliers such as {@code k} and {@code M}.
+	 *
+	 * @param value the raw numeric string
+	 * @return a cleaned numeric string suitable for parsing
+	 */
 	String cleanNumber(String value) {
 		value = CLEAN_PATTERN.matcher(value).replaceAll("");
 
@@ -299,6 +326,13 @@ public class OAConverterNumber implements OAConverterInterface<Number> {
 	}
 
 
+	/**
+	 * Returns a {@link FormatPool} containing a {@link DecimalFormat} for
+	 * the specified format pattern.
+	 *
+	 * @param fmt the desired decimal format pattern
+	 * @return an acquired {@link FormatPool} instance
+	 */
 	protected FormatPool getFormatter(String fmt) {
 		if (fmt == null) fmt = "";
 		FormatPool fp = null;
@@ -334,6 +368,11 @@ public class OAConverterNumber implements OAConverterInterface<Number> {
 		return fp;
 	}
 
+	/**
+	 * Releases a previously acquired {@link FormatPool} back to the pool.
+	 *
+	 * @param fp the formatter pool entry to release
+	 */
 	protected void releaseFormatter(FormatPool fp) {
 		try {
 			lock.writeLock().lock();
@@ -345,11 +384,32 @@ public class OAConverterNumber implements OAConverterInterface<Number> {
 	}
 	
 	
+	/**
+	 * Container class used to manage a pooled {@link DecimalFormat}
+	 * and its usage state.
+	 */
 	static class FormatPool {
+		/**
+		 * Format pattern associated with this pooled formatter.
+		 */
 		volatile String fmt;
+
+		/**
+		 * Flag indicating whether this formatter is currently in use.
+		 */
 		volatile boolean used;
+		
+		/**
+		 * {@link DecimalFormat} instance used for numeric parsing and formatting.
+		 */
 		DecimalFormat decimalFormat;
 
+		/**
+		 * Creates a new formatter pool entry.
+		 *
+		 * @param fmt the format pattern
+		 * @param deciFmt the decimal formatter instance
+		 */
 		public FormatPool(String fmt, DecimalFormat deciFmt) {
 			this.fmt = fmt;
 			this.decimalFormat = deciFmt;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,21 +42,37 @@ public final class OACompressWrapper implements Serializable {
     static final long serialVersionUID = 1L;
     private static final Logger LOG = Logger.getLogger(OACompressWrapper.class.getName());
     
+    /**
+     * The object to be serialized and compressed.
+     */
     private Object object; // object to serialize
 
     /**
-     * @param object to serialize
+     * Creates a new wrapper for the specified object.
+     *
+     * @param object the object to serialize and compress
      */
     public OACompressWrapper(Object object) {
         this.object = object;
     }
 
+    /**
+     * Returns the wrapped object.
+     *
+     * @return the wrapped object
+     */
     public Object getObject() {
         return object;
     }
     
     /**
-     * Called by objectStream to serialize wrapper.  
+     * Custom serialization hook used to write the wrapped object.
+     *
+     * This method writes a flag indicating whether an object is present and,
+     * if so, serializes the object through a compressed output stream.
+     *
+     * @param stream the {@link ObjectOutputStream} used for serialization
+     * @throws IOException if an I/O error occurs during writing
      */
     private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
         stream.writeBoolean(object != null);
@@ -76,7 +92,14 @@ public final class OACompressWrapper implements Serializable {
 
 
     /**
-     * Called by objectStream to deserialize a wrapper. 
+     * Custom deserialization hook used to read the wrapped object.
+     *
+     * This method reads a presence flag and, if set, restores the wrapped
+     * object from a compressed input stream.
+     *
+     * @param stream the {@link ObjectInputStream} used for deserialization
+     * @throws IOException if an I/O error occurs during reading
+     * @throws ClassNotFoundException if the wrapped object's class cannot be found
      */
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         if (stream.readBoolean()) {

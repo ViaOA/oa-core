@@ -1,13 +1,18 @@
-/*  Copyright 1999 Vince Via vvia@viaoa.com
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+/*
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.viaoa.datasource.jdbc.delegate;
 
 import java.sql.PreparedStatement;
@@ -37,6 +42,17 @@ import com.viaoa.util.OANotExist;
 public class UpdateDelegate {
 	private static Logger LOG = Logger.getLogger(UpdateDelegate.class.getName());
 
+	/**
+	 * Removes a reference value for a specific property on the given object.
+	 * <p>
+	 * Delegates to {@link #update(OADataSourceJDBC, OAObject, Class, String[], String[])}
+	 * using the provided property name as the only included property.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param oaObj the object whose reference property is removed
+	 * @param propertyName the name of the property to clear
+	 */
 	public static void removeReference(OADataSourceJDBC ds, OAObject oaObj, String propertyName) {
 		if (oaObj == null) {
 			return;
@@ -44,6 +60,16 @@ public class UpdateDelegate {
 		update(ds, oaObj, oaObj.getClass(), new String[] { propertyName }, null);
 	}
 
+	/**
+	 * Updates all persistent properties of the given object.
+	 * <p>
+	 * Delegates to the internal update method using the object's runtime class
+	 * with no include or exclude property filters.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param oaObj the object to update
+	 */
 	public static void update(OADataSourceJDBC ds, OAObject oaObj) {
 		if (oaObj == null) {
 			return;
@@ -51,6 +77,18 @@ public class UpdateDelegate {
 		update(ds, oaObj, oaObj.getClass(), null, null);
 	}
 
+	/**
+	 * Updates the given object using optional include and exclude property filters.
+	 * <p>
+	 * Delegates to the internal update method using the object's runtime class
+	 * and the provided property filters.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param oaObj the object to update
+	 * @param includeProperties property names to explicitly include, or {@code null}
+	 * @param excludeProperties property names to exclude, or {@code null}
+	 */
 	public static void update(OADataSourceJDBC ds, OAObject oaObj, String[] includeProperties, String[] excludeProperties) {
 		if (oaObj == null) {
 			return;
@@ -58,6 +96,20 @@ public class UpdateDelegate {
 		update(ds, oaObj, oaObj.getClass(), includeProperties, excludeProperties);
 	}
 
+	/**
+	 * Performs an update for the specified class level of an object.
+	 * <p>
+	 * Recursively updates superclass mappings, generates SQL update statements,
+	 * and executes the resulting update against the data source.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param oaObj the object being updated
+	 * @param clazz the class level to update
+	 * @param includeProperties property names to explicitly include, or {@code null}
+	 * @param excludeProperties property names to exclude, or {@code null}
+	 * @throws RuntimeException if the data source is read-only or update fails
+	 */
 	protected static void update(OADataSourceJDBC ds, OAObject oaObj, Class clazz, String[] includeProperties, String[] excludeProperties) {
 		if (ds.getIgnoreWrites()) {
 			return;
@@ -111,6 +163,24 @@ public class UpdateDelegate {
 		}
 	}
 
+	/**
+	 * Builds an SQL UPDATE statement and parameter list for the specified object
+	 * and class mapping.
+	 * <p>
+	 * Iterates table columns, applies include/exclude filters, handles primary keys,
+	 * foreign keys, BLOB values, case-sensitive columns, and returns the generated
+	 * SQL along with any bound parameters.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param oaObj the object being updated
+	 * @param clazz the class whose table mapping is used
+	 * @param includeProperties property names to explicitly include, or {@code null}
+	 * @param excludeProperties property names to exclude, or {@code null}
+	 * @return an array containing the SQL UPDATE string and a vector of parameters,
+	 *         or {@code null} if no columns are updated
+	 * @throws Exception if table metadata cannot be resolved
+	 */
 	private static Object[] getUpdateSQL(OADataSourceJDBC ds, OAObject oaObj, Class clazz, String[] includeProperties,
 			String[] excludeProperties) throws Exception {
 		String s;
@@ -310,6 +380,18 @@ public class UpdateDelegate {
 		return new Object[] { s, vecParam };
 	}
 
+	/**
+	 * Executes an SQL UPDATE statement using the provided parameters.
+	 * <p>
+	 * Uses prepared statements when parameters are present, supports optional
+	 * batch execution, and logs a warning if the update count is not one.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param sqlUpdate the SQL UPDATE statement to execute
+	 * @param sqlParams parameter values for the statement, or {@code null}
+	 * @throws Exception if execution fails
+	 */
 	private static void performUpdate(OADataSourceJDBC ds, String sqlUpdate, Object[] sqlParams) throws Exception {
 		// DBLogDelegate.logUpdate(sqlUpdate, sqlParams);
 
@@ -371,6 +453,19 @@ public class UpdateDelegate {
 		}
 	}
 
+	/**
+	 * Updates a many-to-many link table for the specified master object.
+	 * <p>
+	 * Inserts link rows for added objects and deletes link rows for removed objects
+	 * based on resolved link-table metadata and foreign keys.
+	 * </p>
+	 *
+	 * @param ds the JDBC data source
+	 * @param masterObject the master object owning the relationship
+	 * @param adds objects to be added to the relationship
+	 * @param removes objects to be removed from the relationship
+	 * @param propFromMaster the property name on the master object defining the link
+	 */
 	public static void updateMany2ManyLinks(OADataSourceJDBC ds, OAObject masterObject, OAObject[] adds, OAObject[] removes,
 			String propFromMaster) {
 		if (masterObject == null) {

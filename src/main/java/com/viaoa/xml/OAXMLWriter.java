@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,12 +73,19 @@ import com.viaoa.util.OAString;
  * New code should use {@link OAXml} (Jackson-based).
  */
 public class OAXMLWriter {
+	
 	protected PrintWriter pw;
+	
 	public int indent;
+	
 	private String pad = "";
+	
 	private int indentLast;
+	
 	public int indentAmount = 2;
+	
 	private boolean bInit;
+	
 	private String encodeMessage;
 
 	/** param used to write an object */

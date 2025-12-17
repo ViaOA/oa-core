@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,17 @@ import com.viaoa.util.OATime;
  */
 public class OAConverterInstant implements OAConverterInterface<Instant> {
 
+	/**
+	 * Converts the supplied value into an {@link Instant}.
+	 * <p>
+	 * The conversion behavior depends on the runtime type of {@code fromValue}
+	 * and may apply system default timezone rules when necessary.
+	 *
+	 * @param thisClass the target class, {@link Instant}
+	 * @param fromValue the value to convert
+	 * @param fmt the format string used when parsing string values
+	 * @return the converted {@link Instant}, or {@code null} if conversion fails
+	 */
     @Override
     public Instant convert(Class<Instant> thisClass, Object fromValue, String fmt) {
         if (fromValue == null) return null;
@@ -149,6 +160,13 @@ public class OAConverterInstant implements OAConverterInterface<Instant> {
         return null;
     }
 
+    /**
+     * Converts an {@link Instant} into a formatted string.
+     *
+     * @param fromValue the {@link Instant} value to convert
+     * @param fmt the format string to use
+     * @return the formatted string, or an empty string if the value is {@code null}
+     */
     @Override
     public String convertToString(Instant fromValue, String fmt) {
         if (fromValue == null) return "";

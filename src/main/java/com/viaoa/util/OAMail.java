@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,27 +44,64 @@ import javax.mail.util.ByteArrayDataSource;
 public class OAMail implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
     
+    /**
+     * SMTP server host name.
+     */
     private String host;
+    
+    /**
+     * SMTP server port.
+     */
     private int port;
+    
+    /**
+     * User ID for authenticating with the mail server.
+     */
     private String userId;
+    
+    /**
+     * Password for authenticating with the mail server.
+     */
     private String password;
+    
+    /**
+     * Flag indicating whether JavaMail debug output is enabled.
+     */
     private boolean bDebug;
+    
+    /**
+     * Flag indicating whether SSL should be used for SMTP connections.
+     */
     private boolean bUseSSL;
 
     
+    /**
+     * Container for an in-memory email attachment.
+     */
     public static class OAMailAttachment {
+    	/**
+    	 * Raw attachment data.
+    	 */
         public byte[] bsData;
+
+        /**
+         * MIME type of the attachment.
+         */
         public String mimeType;
+        
+        /**
+         * File name of the attachment.
+         */
         public String fileName;
     }
     
 
     /**
-     * Used to send emails.
-     * @param host 
-     * @param port if &lt; 1, then it will use default 25
-     * @param user  user id for mail server
-     * @param pw  user password for mail server
+     * Creates a mail sender using the default SMTP port.
+     *
+     * @param host the SMTP server host
+     * @param user the user ID for authentication
+     * @param pw the password for authentication
      */
     public OAMail(String host, String user, String pw) {
         this.host = host;
@@ -72,6 +109,15 @@ public class OAMail implements java.io.Serializable {
         this.userId = user;
         this.password = pw;
     }
+
+    /**
+     * Creates a mail sender using the specified SMTP port.
+     *
+     * @param host the SMTP server host
+     * @param port the SMTP server port
+     * @param user the user ID for authentication
+     * @param pw the password for authentication
+     */
     public OAMail(String host, int port, String user, String pw) {
         this.host = host;
         this.port = port;
@@ -79,18 +125,46 @@ public class OAMail implements java.io.Serializable {
         this.password = pw;
     }
 
+    /**
+     * Enables or disables SSL for SMTP connections.
+     *
+     * @param b true to enable SSL, false otherwise
+     */
     public void setUseSSL(boolean b) {
         bUseSSL = b;
     }
+
+    /**
+     * Returns whether SSL is enabled for SMTP connections.
+     *
+     * @return true if SSL is enabled
+     */
     public boolean getUsesSSL() {
         return bUseSSL;
     }
     
+    /**
+     * Enables or disables JavaMail debug output.
+     *
+     * @param b true to enable debug output
+     */
     public void setDebug(boolean b) {
         this.bDebug = b;
 
     }
 
+    /**
+     * Sends an email with optional file attachments using single recipient strings.
+     *
+     * @param to the TO recipient
+     * @param cc the CC recipient
+     * @param from the FROM address
+     * @param subject the message subject
+     * @param text the message body
+     * @param contentType the MIME content type
+     * @param fileNames file paths to attach
+     * @throws Exception if sending fails
+     */
     public void sendSmtp( 
             String to, String cc, String from, 
             String subject, String text,
@@ -100,6 +174,20 @@ public class OAMail implements java.io.Serializable {
         sendSmtp(new String[] {to}, new String[] {cc}, from, subject, text, contentType, fileNames);
     }    
 
+    /**
+     * Sends an email with a single in-memory attachment using single recipient strings.
+     *
+     * @param to the TO recipient
+     * @param cc the CC recipient
+     * @param from the FROM address
+     * @param subject the message subject
+     * @param text the message body
+     * @param contentType the MIME content type
+     * @param bsAttachment attachment data
+     * @param mimeTypeBs attachment MIME type
+     * @param bsFileName attachment file name
+     * @throws Exception if sending fails
+     */
     public void sendSmtp( 
             String to, String cc, String from, 
             String subject, String text,
@@ -109,17 +197,21 @@ public class OAMail implements java.io.Serializable {
         sendSmtp(new String[] {to}, new String[] {cc}, from, subject, text, contentType, null, bsAttachment, mimeTypeBs, bsFileName);
     }    
     
-    /**
-     * 
-     * @param to
-     * @param cc
-     * @param from
-     * @param subject
-     * @param text
+    /*
      * @param contentType if null or blank, then will default to "text/html; charset=UTF-8"
      *              , others: "text/html", "text/plain", "text/richtext", "text/css", "image/gif"
-     * @param fileNames
-     * @throws Exception
+     */
+    /**
+     * Sends an email with optional file attachments using recipient arrays.
+     *
+     * @param to the TO recipients
+     * @param cc the CC recipients
+     * @param from the FROM address
+     * @param subject the message subject
+     * @param text the message body
+     * @param contentType the MIME content type
+     * @param fileNames file paths to attach
+     * @throws Exception if sending fails
      */
     public void sendSmtp( 
             String[] to, String[] cc, String from, 
@@ -129,6 +221,18 @@ public class OAMail implements java.io.Serializable {
     {
         sendSmtp(to, cc, from, subject, text, contentType, fileNames, null, null, null);
     }
+
+    /**
+     * Sends an email without attachments using recipient arrays.
+     *
+     * @param to the TO recipients
+     * @param cc the CC recipients
+     * @param from the FROM address
+     * @param subject the message subject
+     * @param text the message body
+     * @param contentType the MIME content type
+     * @throws Exception if sending fails
+     */
     public void sendSmtp( 
             String[] to, String[] cc, String from, 
             String subject, String text,
@@ -138,6 +242,20 @@ public class OAMail implements java.io.Serializable {
         sendSmtp(to, cc, from, subject, text, contentType, null, null, null, null);
     }
 
+    /**
+     * Sends an email with a single in-memory attachment using recipient arrays.
+     *
+     * @param to the TO recipients
+     * @param cc the CC recipients
+     * @param from the FROM address
+     * @param subject the message subject
+     * @param text the message body
+     * @param contentType the MIME content type
+     * @param bsAttachment attachment data
+     * @param mimeTypeBs attachment MIME type
+     * @param bsFileName attachment file name
+     * @throws Exception if sending fails
+     */
     public void sendSmtp( 
             String[] to, String[] cc, String from, 
             String subject, String text,
@@ -147,6 +265,21 @@ public class OAMail implements java.io.Serializable {
         sendSmtp(to, cc, from, subject, text, contentType, null, bsAttachment, mimeTypeBs, bsFileName);
     }
     
+    /**
+     * Sends an email with optional file and in-memory attachments using recipient arrays.
+     *
+     * @param to the TO recipients
+     * @param cc the CC recipients
+     * @param from the FROM address
+     * @param subject the message subject
+     * @param text the message body
+     * @param contentType the MIME content type
+     * @param fileNames file paths to attach
+     * @param bsAttachment attachment data
+     * @param mimeTypeBs attachment MIME type
+     * @param bsFileName attachment file name
+     * @throws Exception if sending fails
+     */
     public void sendSmtp( 
             String[] to, String[] cc, String from, 
             String subject, String text,
@@ -166,6 +299,19 @@ public class OAMail implements java.io.Serializable {
     }
     
     
+    /**
+     * Sends an email with optional file attachments and attachment objects.
+     *
+     * @param to the TO recipients
+     * @param cc the CC recipients
+     * @param from the FROM address
+     * @param subject the message subject
+     * @param text the message body
+     * @param contentType the MIME content type
+     * @param fileNames file paths to attach
+     * @param attachments in-memory attachments
+     * @throws Exception if sending fails
+     */
     public void sendSmtp( 
             String[] to, String[] cc, String from, 
             String subject, String text,
@@ -274,6 +420,12 @@ public class OAMail implements java.io.Serializable {
     }
 
     
+    /**
+     * Validates whether the given string is a syntactically valid email address.
+     *
+     * @param email the email address to validate
+     * @return true if the email address is valid
+     */
     public boolean isValidEmailAddress(String email) {
         if (email == null || email.length() == 0) return false;
         

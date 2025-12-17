@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,8 +78,27 @@ import com.viaoa.util.OAFilter;
 public abstract class RemoteDataSource {
 	private static Logger LOG = Logger.getLogger(RemoteDataSource.class.getName());
 
+	/**
+	 * Map storing active iterators for SELECT operations.
+	 * <p>
+	 * The key is a generated iterator identifier returned to the client,
+	 * and the value is the server-side iterator instance.
+	 * </p>
+	 */
 	private ConcurrentHashMap<String, Iterator> hashIterator = new ConcurrentHashMap<String, Iterator>(); // used to store DB
 
+	/**
+	 * Executes a datasource command on behalf of a remote client.
+	 * <p>
+	 * Dispatches the command to the appropriate {@link OADataSource} operation,
+	 * manages iterator lifecycle, resolves objects from keys when required,
+	 * and returns any result value.
+	 * </p>
+	 *
+	 * @param command the datasource command identifier
+	 * @param objects arguments for the datasource command
+	 * @return the result of the command, or {@code null} if none
+	 */
 	public Object datasource(int command, Object[] objects) {
 		//LOG.finer("command="+command);
 		Object obj = null;
@@ -352,6 +371,17 @@ public abstract class RemoteDataSource {
 		return obj;
 	}
 
+	/**
+	 * Resolves an object instance from a key or object reference.
+	 * <p>
+	 * Attempts to locate the object in cache first, then loads it
+	 * from the datasource if not found.
+	 * </p>
+	 *
+	 * @param objectClass the class of the object
+	 * @param obj the object key or object instance
+	 * @return the resolved {@link OAObject}, or {@code null} if not found
+	 */
 	private OAObject getObject(Class objectClass, Object obj) {
 		if (objectClass == null || obj == null) {
 			return null;
@@ -369,6 +399,12 @@ public abstract class RemoteDataSource {
 		return objNew;
 	}
 
+	/**
+	 * Resolves the datasource associated with a specific class.
+	 *
+	 * @param c the class used to determine the datasource
+	 * @return the resolved datasource, or a default datasource if not found
+	 */
 	protected OADataSource getDataSource(Class c) {
 		if (c != null) {
 			OADataSource ds = OADataSource.getDataSource(c);
@@ -385,15 +421,46 @@ public abstract class RemoteDataSource {
 		return defaultDataSource;
 	}
 
+	/**
+	 * Counter used to generate unique identifiers for SELECT iterators.
+	 */
 	private AtomicInteger aiSelectCount = new AtomicInteger();
+    
+	/**
+	 * Default datasource used when no class-specific datasource is available.
+	 */
 	private OADataSource defaultDataSource;
 
+	/**
+	 * Returns the default datasource.
+	 *
+	 * @return the default datasource
+	 */
 	protected OADataSource getDataSource() {
 		return getDataSource(null);
 	}
 
+	/**
+	 * Marks an object as cached on behalf of the remote client.
+	 * <p>
+	 * Implementations should record that the client now holds a reference
+	 * to this object to prevent premature server-side eviction.
+	 * </p>
+	 *
+	 * @param obj the object to mark as cached
+	 */
 	public abstract void setCached(OAObject obj);
 
+	/**
+	 * Retrieves the next batch of objects from a server-side SELECT iterator.
+	 * <p>
+	 * Returns up to a fixed number of objects and updates the iterator
+	 * lifecycle, removing it when exhausted.
+	 * </p>
+	 *
+	 * @param id the iterator identifier
+	 * @return an array of result objects, or {@code null} if none remain
+	 */
 	protected Object[] datasourceNext(String id) {
 		Iterator iterator = (Iterator) hashIterator.get(id);
 		if (iterator == null) {
@@ -433,6 +500,12 @@ public abstract class RemoteDataSource {
 		return objs;
 	}
 
+	/**
+	 * Determines whether a SELECT iterator has additional results.
+	 *
+	 * @param id the iterator identifier
+	 * @return {@code true} if more results are available, otherwise {@code false}
+	 */
 	protected boolean datasourceHasNext(String id) {
 		Iterator iterator = (Iterator) hashIterator.get(id);
 		return (iterator != null && iterator.hasNext());

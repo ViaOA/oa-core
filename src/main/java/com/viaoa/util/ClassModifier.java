@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,17 @@
  */
 package com.viaoa.util;
 
+/**
+ * Specialized reflection utility that extends {@link OAReflect}.
+ * <p>
+ * {@code ClassModifier} serves as a semantic extension point for class-level
+ * reflection and modification operations within the OA framework.
+ * <p>
+ * This class currently does not add behavior beyond {@code OAReflect}, but
+ * exists to provide a clear type distinction and future expansion point for
+ * APIs that operate specifically on class metadata or structural modification
+ * logic.
+ */
 public class ClassModifier extends OAReflect {
 
 }

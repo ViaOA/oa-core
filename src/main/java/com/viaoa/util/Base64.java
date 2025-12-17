@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,11 +34,14 @@ package com.viaoa.util;
 public class Base64 {
 
 	/**
-	 * Static method to encode a String using Base64.
+	 * Encodes a {@link String} using Base64 encoding.
+	 * <p>
+	 * The input string is converted to a byte array using the platform’s
+	 * default character encoding, then encoded using Base64 rules.
+	 * A {@code null} input returns {@code null}.
 	 *
-	 * @param str string to encode
-	 * @return null if str is null, otherwise base64 encoded String.
-	 * @see #decode
+	 * @param str the string to encode
+	 * @return {@code null} if {@code str} is {@code null}, otherwise a Base64-encoded string
 	 */
 	static public String encode(String str) {
 		if (str == null) {
@@ -48,10 +51,14 @@ public class Base64 {
 	}
 
 	/**
-	 * returns an array of base64-encoded characters to represent the passed data array.
+	 * Encodes a byte array using Base64 encoding.
+	 * <p>
+	 * The input data is processed in 3-byte groups and converted into
+	 * 4-character Base64 blocks. Padding characters ('=') are added
+	 * as required to ensure the output length is a multiple of four.
 	 *
-	 * @param data the array of bytes to encode
-	 * @return base64-coded character array.
+	 * @param data the byte array to encode
+	 * @return a character array containing the Base64-encoded representation
 	 */
 	static public char[] encode(byte[] data) {
 		char[] out = new char[((data.length + 2) / 3) * 4];
@@ -87,9 +94,14 @@ public class Base64 {
 	}
 
 	/**
-	 * Decodes a String that is encoded using Base64 encoding.
+	 * Decodes a Base64-encoded {@link String} back into its original form.
+	 * <p>
+	 * The input string is first converted to a character array and then
+	 * decoded into raw bytes using Base64 decoding rules. A {@code null}
+	 * input returns {@code null}.
 	 *
-	 * @param s is the encoded String that will be decoded.
+	 * @param s the Base64-encoded string to decode
+	 * @return {@code null} if {@code s} is {@code null}, otherwise the decoded string
 	 */
 	static public String decode(String s) {
 		if (s == null) {
@@ -102,10 +114,15 @@ public class Base64 {
 	}
 
 	/**
-	 * Returns an array of bytes which were encoded in the passed character array.
+	 * Decodes a Base64-encoded character array into its original byte array.
+	 * <p>
+	 * Non-Base64 characters are ignored. Padding characters are handled
+	 * according to Base64 specifications. The decoded byte count is verified
+	 * to ensure the encoded input is well-formed.
 	 *
-	 * @param data the array of base64-encoded characters
-	 * @return decoded data array
+	 * @param data the Base64-encoded character array
+	 * @return the decoded byte array
+	 * @throws Error if the calculated output length does not match the decoded length
 	 */
 	static public byte[] decode(char[] data) {
 		int len = ((data.length + 3) / 4) * 3;
@@ -141,16 +158,31 @@ public class Base64 {
 		return out;
 	}
 
-	//
-	// code characters for values 0..63
-	//
+	/**
+	 * Base64 alphabet used for encoding values in the range 0–63.
+	 * <p>
+	 * This character set follows the standard Base64 specification
+	 * and is used to map 6-bit values to encoded characters.
+	 */
 	static private char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 			.toCharArray();
 
-	//
-	// lookup table for converting base64 characters to value in range 0..63
-	//
+	/**
+	 * Lookup table for decoding Base64 characters into their numeric values.
+	 * <p>
+	 * Each index corresponds to a character’s unsigned byte value.
+	 * Entries contain values in the range 0–63 for valid Base64 characters
+	 * or {@code -1} for invalid characters.
+	 */
 	static private byte[] codes = new byte[256];
+	
+	/**
+	 * Static initializer that populates the Base64 decoding lookup table.
+	 * <p>
+	 * This initializes mappings for uppercase letters, lowercase letters,
+	 * digits, and the '+' and '/' characters, marking all other entries
+	 * as invalid.
+	 */
 	static {
 		for (int i = 0; i < 256; i++) {
 			codes[i] = -1;

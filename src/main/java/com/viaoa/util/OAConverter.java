@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1016,6 +1016,12 @@ public class OAConverter {
 		return !isEmpty(obj, bTrim);
 	}
 	
+	/**
+	 * Round a double to a set amount of decimal places. 
+	 * @param value to round
+	 * @param decimalPlaces number of decimal places
+	 * @return new double
+	 */
 	public static double round(double value, int decimalPlaces) {
 		return OAMath.round(value, decimalPlaces);
 	}

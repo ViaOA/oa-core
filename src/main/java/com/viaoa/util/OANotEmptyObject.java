@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,21 +31,44 @@ package com.viaoa.util;
  */
 public class OANotEmptyObject implements OASpecialCompareObject, java.io.Serializable {
 	static final long serialVersionUID = 1L;
+
+	/**
+	 * Singleton instance representing the not-empty comparison token.
+	 */
 	public static final OANotEmptyObject instance = new OANotEmptyObject();
 
+	/**
+	 * Creates a new instance.
+	 */
 	private OANotEmptyObject() {
 	}
 
+	/**
+	 * Returns the singleton not-empty comparison instance.
+	 *
+	 * @return the singleton instance
+	 */
 	public OANotEmptyObject getNotEmptyObject() {
 		return instance;
 	}
 
+	/**
+	 * Compares the given object to determine whether it is considered non-empty.
+	 *
+	 * @param obj the object to compare
+	 * @return true if the object is non-null and considered not empty
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == OANotEmptyObject.instance) return true;
 		return OAConverter.isNotEmpty(obj);
 	}
 
+	/**
+	 * Returns a constant hash code value.
+	 *
+	 * @return the hash code
+	 */
 	@Override
 	public int hashCode() {
 		return 1;

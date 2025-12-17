@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,24 @@ import com.viaoa.object.OAObjectReflectDelegate;
 public class AutonumberDelegate {
 	private static Logger LOG = Logger.getLogger(AutonumberDelegate.class.getName());
 
+	/**
+	 * Map of table name (upper-case) to the next sequence number to assign.
+	 * <p>
+	 * Values are initialized from the database using a MAX query and
+	 * incremented atomically in memory.
+	 */
 	private static final Map<String, AtomicInteger> hmTabelNextSeq = new ConcurrentHashMap<String, AtomicInteger>(39, .75f); // Table.name.upper, Integer
 
 	/**
-	 * Assigns autonumber properties. If guid is being used, then it will prefix the autonumber.
+	 * Assigns an auto-numbered primary key value to the specified object.
+	 * <p>
+	 * If GUID mode is enabled for the column, the generated sequence number
+	 * is prefixed with the configured GUID value.
+	 *
+	 * @param ds the JDBC data source
+	 * @param object the object receiving the assigned value
+	 * @param table the database table metadata
+	 * @param column the primary key column metadata
 	 */
 	public static void assignNumber(OADataSourceJDBC ds, OAObject object, Table table, Column column) {
 		// LOG.finer("table="+table.name+", column="+column.columnName);
@@ -74,7 +88,14 @@ public class AutonumberDelegate {
 	}
 
 	/**
-	 * This is used to determine if an assigned ID needs to change the autoNextNumber ID
+	 * Verifies that the supplied ID has been accounted for in the autonumber
+	 * sequence and advances the next value if required.
+	 *
+	 * @param ds the JDBC data source
+	 * @param object the object associated with the ID, or {@code null}
+	 * @param table the database table metadata
+	 * @param column the primary key column metadata
+	 * @param id the ID value that has already been used
 	 */
 	public static void verifyNumberUsed(OADataSourceJDBC ds, OAObject object, Table table, Column column, final int id) {
 		if (table == null || table.name == null || column == null) {
@@ -93,6 +114,14 @@ public class AutonumberDelegate {
 		}
 	}
 
+	/**
+	 * Updates the autonumber sequence to ensure that the next assigned value
+	 * will be greater than or equal to the specified number.
+	 *
+	 * @param ds the JDBC data source
+	 * @param table the database table metadata
+	 * @param nextNumberToUse the next number that should be considered used
+	 */
 	public static void setNextNumber(OADataSourceJDBC ds, Table table, int nextNumberToUse) {
 		if (table == null || table.name == null) {
 			return;
@@ -108,6 +137,16 @@ public class AutonumberDelegate {
 		}
 	}
 
+	/**
+	 * Returns the next available autonumber value for the specified table
+	 * and primary key column.
+	 *
+	 * @param ds the JDBC data source
+	 * @param table the database table metadata
+	 * @param pkColumn the primary key column metadata
+	 * @param bAutoIncrement {@code true} to increment the sequence; {@code false} to read only
+	 * @return the next available number
+	 */
 	public static int getNextNumber(final OADataSourceJDBC ds, final Table table, final Column pkColumn, final boolean bAutoIncrement) {
 		int x = _getNextNumber(ds, table, pkColumn, bAutoIncrement);
 		//LOG.finer("table="+table+", name="+table.name+", bAutoIncrement="+bAutoIncrement+", returning="+x);
@@ -115,6 +154,16 @@ public class AutonumberDelegate {
 	}
 
 	//========================= Utilities ===========================
+	/**
+	 * Internal implementation used to retrieve and optionally increment the
+	 * autonumber sequence for a table.
+	 *
+	 * @param ds the JDBC data source
+	 * @param table the database table metadata
+	 * @param pkColumn the primary key column metadata
+	 * @param bAutoIncrement {@code true} to increment the sequence
+	 * @return the current or next autonumber value
+	 */
 	private static int _getNextNumber(final OADataSourceJDBC ds, final Table table, final Column pkColumn, final boolean bAutoIncrement) {
 		if (table == null || table.name == null || pkColumn == null) {
 			return -1;
@@ -168,6 +217,15 @@ public class AutonumberDelegate {
 		return max;
 	}
 
+	/**
+	 * Builds a database-specific SQL query used to determine the maximum
+	 * numeric portion of a GUID-prefixed primary key.
+	 *
+	 * @param dbmd database metadata
+	 * @param table the database table metadata
+	 * @param dbcolumn the primary key column metadata
+	 * @return the SQL query used to determine the maximum GUID-based value
+	 */
 	protected static String getMaxGuidQuery(DBMetaData dbmd, Table table, Column dbcolumn) {
 		// ACCESS Version to get string value of seq number
 		String column = dbcolumn.columnName;
@@ -195,6 +253,15 @@ public class AutonumberDelegate {
 		return s;
 	}
 
+	/**
+	 * Builds a database-specific SQL query used to determine the maximum
+	 * numeric primary key value for a table.
+	 *
+	 * @param dbmd database metadata
+	 * @param table the database table metadata
+	 * @param dbcolumn the primary key column metadata
+	 * @return the SQL query used to determine the maximum numeric ID
+	 */
 	protected static String getMaxIdQuery(DBMetaData dbmd, Table table, Column dbcolumn) {
 		String column = dbcolumn.columnName;
 		String s;

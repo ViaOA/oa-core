@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,42 +50,100 @@ import com.viaoa.sync.model.ClientInfo;
 @OARemoteInterface()
 public interface RemoteSessionInterface {
     
-    /**
-     * This is called when a new OAObject is created on the Client, 
-     * so that the Server side Session can use it when filtering broadcast msgs.
-     */
+	/**
+	 * Notifies the server session that a new object was created on the client.
+	 *
+	 * @param guid the GUID of the newly created object
+	 */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
     void objectCreated(long guid);
 
     /**
-     * Called by client OAObject finalization, to remove guid from server side client session.
+     * Notifies the server session that client-side objects have been finalized.
+     *
+     * @param guids array of GUIDs for objects that were finalized on the client
      */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
     void objectsFinalized(long[] guids);
 
     /**
-     * Used to make sure that objects are stored in the server side and wont be GCd.
-     * This is used when a client removes an OAObject from hubs, which means it might not be referenceable on the server (and get GC'd)
-     * This will keep it referenceable on the server  
+     * Updates server-side tracking for objects that are no longer in any hub.
+     *
+     * @param c the class of the object
+     * @param ok the object key
+     * @param bIsInHub {@code true} if the object is in a hub, {@code false} otherwise
      */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
     void updateObjectsWithoutHubs(Class c, OAObjectKey ok, boolean bIsInHub);
     
-    
+    /**
+     * Sets or clears a lock on an object for this client session.
+     *
+     * @param objectClass the class of the object
+     * @param objectKey the key identifying the object
+     * @param bLock {@code true} to lock, {@code false} to unlock
+     * @return {@code true} if the object was found and the lock state was applied
+     */
     boolean setLock(Class objectClass, OAObjectKey objectKey, boolean bLock);
+
+    /**
+     * Determines whether an object is locked by any client.
+     *
+     * @param objectClass the class of the object
+     * @param objectKey the key identifying the object
+     * @return {@code true} if the object is locked, otherwise {@code false}
+     */
     boolean isLocked(Class objectClass, OAObjectKey objectKey);
+    
+    /**
+     * Determines whether an object is locked by a different client session.
+     *
+     * @param objectClass the class of the object
+     * @param objectKey the key identifying the object
+     * @return {@code true} if locked by another client, otherwise {@code false}
+     */
     boolean isLockedByAnotherClient(Class objectClass, OAObjectKey objectKey);
+    
+    /**
+     * Determines whether an object is locked by this client session.
+     *
+     * @param objectClass the class of the object
+     * @param objectKey the key identifying the object
+     * @return {@code true} if locked by this client, otherwise {@code false}
+     */
     boolean isLockedByThisClient(Class objectClass, OAObjectKey objectKey);
 
+    /**
+     * Updates this server-side session with client information.
+     *
+     * @param ci the client information to apply
+     */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
     void update(ClientInfo ci); 
     
+    /**
+     * Sends an exception notification to the client.
+     *
+     * @param msg a message describing the exception
+     * @param ex the exception to report
+     */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
     void sendException(String msg, Throwable ex);
 
+    /**
+     * Sends a ping message to the server session and returns a response.
+     *
+     * @param msg the ping message
+     * @return the response message
+     */
     @OARemoteMethod(dontUseQueue=true)
     String ping(String msg);
     
+    /**
+     * Sends a ping message to the server session with no return value.
+     *
+     * @param msg the ping message
+     */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
     void ping2(String msg);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,19 +68,51 @@ import java.util.Vector;
 public class OADateTime implements java.io.Serializable, Comparable {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Long date/time format including milliseconds and AM/PM.
+	 */
 	public final static String FORMAT_long = "yyyy/MM/dd hh:mm:ss.S a";
+	
+	/**
+	 * Long date/time format including milliseconds and time zone.
+	 */
 	public final static String FORMAT_xlong = "yyyy/MM/dd hh:mm:ss.S a z";
 
+	/**
+	 * Time value stored as milliseconds since the epoch.
+	 */
 	protected long _time;
+	
+	/**
+	 * Optional time zone associated with this date/time.
+	 */
 	protected TimeZone timeZone;
+	
+	/**
+	 * Flag indicating that time zone should be ignored during serialization.
+	 */
 	protected boolean ignoreTimeZone;
 
+	/**
+	 * Instance-specific output format used when converting to a string.
+	 */
 	protected String format;
 
+	/**
+	 * Default time zone used when no instance time zone is specified.
+	 */
 	private static TimeZone defaultTimeZone;
 
+	/**
+	 * Pool of {@link SimpleDateFormat} instances used for formatting and parsing.
+	 */
 	private static SimpleDateFormat[] simpleDateFormats;
+	
+	/**
+	 * Counter used to rotate through the SimpleDateFormat pool.
+	 */
 	private static int simpleDateFormatCounter;
+	
 	static {
 		// used by getFormatter()
 		simpleDateFormats = new SimpleDateFormat[12]; // keeps a pool of 12 that are shared in a "round robin" pool
@@ -91,14 +123,34 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	// UTC.
 	// The calling code should call dt.setTimeZoneUTC()
 
+	/**
+	 * RFC-339 compliant date/time format without milliseconds.
+	 */
 	public final static String RFC339Format = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // 2023-09-04T07:11:12:32-0400
+	
+	/**
+	 * RFC-339 compliant date/time format with milliseconds.
+	 */
 	public final static String RFC339FormatWms = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"; // 2023-09-04T07:11:12:32.123-0400
 
-	/** default output format */
+	/**
+	 * Global default output format used when converting date/time values to strings.
+	 */
 	protected static String staticOutputFormat;
+	
+	/**
+	 * JSON date/time format without time zone.
+	 */
 	public final static String JsonFormat = "yyyy-MM-dd'T'HH:mm:ss";
+	
+	/**
+	 * JSON date/time format including time zone.
+	 */
 	public final static String JsonFormatTZ = "yyyy-MM-dd'T'HH:mm:ssX";
 
+	/**
+	 * JDBC-compatible SQL date/time format.
+	 */
 	public final static String JdbcFormat = "yyyy-MM-dd HH:mm:ss"; // SQL
 
 	// format used by browser: : "YYYY-MM-DD'T'HH:mm";
@@ -106,7 +158,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	// public final static String HtmlInputDateTimeFormat = "yyyy-MM-dd'T'hh:mm"; //
 	// java format to use
 
-	/** default parse formats */
+	/**
+	 * Collection of global date/time parse formats.
+	 */
 	private static Vector vecDateTimeParseFormat;
 
 	static {
@@ -114,6 +168,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		defaultTimeZone = TimeZone.getDefault();
 	}
 
+	/**
+	 * Sets the default time zone to use when no instance-specific time zone is defined.
+	 *
+	 * @param tz the default TimeZone to use; if null, the system default is used
+	 */
 	public static void setDefaultTimeZone(TimeZone tz) {
 		if (tz == null) {
 			tz = TimeZone.getDefault();
@@ -121,11 +180,18 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		defaultTimeZone = tz;
 	}
 
+	/**
+	 * Returns the default time zone used when no instance-specific time zone is set.
+	 *
+	 * @return the default TimeZone
+	 */
 	public static TimeZone getDefaultTimeZone() {
 		return defaultTimeZone;
 	}
 
-	// use a pool of GregorianCalendar since they are so heavy
+	/**
+	 * Pool of GregorianCalendar instances used to reduce allocation overhead.
+	 */
 	private static final OAPool<GregorianCalendar> poolGregorianCalendar = new OAPool<GregorianCalendar>(GregorianCalendar.class, 20, 50) {
 		@Override
 		protected GregorianCalendar create() {
@@ -138,6 +204,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	};
 
+	/**
+	 * Obtains a GregorianCalendar from the pool, initializes it with the current
+	 * time value, and applies the appropriate time zone.
+	 *
+	 * @return a pooled and initialized GregorianCalendar instance
+	 */
 	protected GregorianCalendar _getCal() {
 		GregorianCalendar cal = poolGregorianCalendar.get();
 		cal.setTimeInMillis(_time);
@@ -149,12 +221,26 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return cal;
 	}
 
+	/**
+	 * Releases a previously obtained GregorianCalendar back to the pool.
+	 *
+	 * @param cal the GregorianCalendar to release
+	 */
 	protected void _releaseCal(GregorianCalendar cal) {
 		poolGregorianCalendar.release(cal);
 	}
 
+	/**
+	 * Locale used for date/time formatting and parsing.
+	 */
 	private static Locale locale;
 
+	/**
+	 * Sets the locale used for formatting and parsing date/time values and
+	 * initializes global parse and output formats based on the locale.
+	 *
+	 * @param loc the Locale to use
+	 */
 	public static void setLocale(Locale loc) {
 		locale = loc;
 		vecDateTimeParseFormat = new Vector(15, 10);
@@ -243,22 +329,21 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Creates new datetime, using current date and time.
+	 * Creates a new date/time initialized to the current system time.
 	 */
 	public OADateTime() {
 		this._time = System.currentTimeMillis();
 	}
 
 	/**
-	 * Creates new datetime, using time parameter.
+	 * Creates a new date/time using a SQL Time value.
+	 *
+	 * @param time the SQL Time instance
 	 */
 	public OADateTime(java.sql.Time time) {
 		this._time = time.getTime();
 	}
 
-	/**
-	 * Creates new datetime, using date parameter.
-	 */
 	public OADateTime(Date date) {
 		if (date == null) {
 			this._time = System.currentTimeMillis();
@@ -268,14 +353,19 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Creates new datetime, using date parameter.
+	 * Creates a new date/time using the specified millisecond value since the epoch.
+	 *
+	 * @param time milliseconds since the epoch
 	 */
 	public OADateTime(long time) {
 		this._time = time;
 	}
 
 	/**
-	 * Creates new datetime, using timestamp parameter.
+	 * Creates a new date/time using the specified SQL Timestamp value.
+	 * If the timestamp is null, the current system time is used.
+	 *
+	 * @param date the SQL Timestamp used to initialize this instance
 	 */
 	public OADateTime(java.sql.Timestamp date) {
 		if (date == null) {
@@ -286,7 +376,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Creates new datetime, using Calendar parameter.
+	 * Creates a new date/time using the specified Calendar value.
+	 * If the calendar is null, the current system time is used.
+	 *
+	 * @param c the Calendar used to initialize this instance
 	 */
 	public OADateTime(Calendar c) {
 		if (c == null) {
@@ -298,7 +391,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Creates new datetime, using OADateTime parameter.
+	 * Creates a new date/time using another OADateTime instance.
+	 * If the parameter is null, the current system time is used.
+	 *
+	 * @param odt the OADateTime to copy from
 	 */
 	public OADateTime(OADateTime odt) {
 		if (odt == null) {
@@ -309,36 +405,67 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Creates a new date/time using the specified LocalDateTime value.
+	 *
+	 * @param ldt the LocalDateTime used to initialize this instance
+	 */
 	public OADateTime(LocalDateTime ldt) {
 		this(new java.sql.Date(Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()).getTime()));
 	}
 
+	/**
+	 * Creates a new date/time using the specified Instant value.
+	 *
+	 * @param instant the Instant used to initialize this instance
+	 */
 	public OADateTime(Instant instant) {
 		this(Date.from((Instant) instant).getTime());
 	}
 
+	/**
+	 * Creates a new date/time using the specified ZonedDateTime value.
+	 *
+	 * @param zdt the ZonedDateTime used to initialize this instance
+	 */
 	public OADateTime(ZonedDateTime zdt) {
 		this(new java.sql.Date(Date.from(zdt.toInstant()).getTime()));
 	}
 
+	/**
+	 * Returns this date/time as a LocalDateTime using the current field values.
+	 *
+	 * @return a LocalDateTime representation of this instance
+	 */
 	public LocalDateTime getLocalDateTime() {
 		LocalDateTime ldt = LocalDateTime.of(getYear(), getMonth() + 1, getDay(), get24Hour(), getMinute(), getSecond(), (int) (getMilliSecond() / Math.pow(10, 6)));
 		return ldt;
 	}
 
+	/**
+	 * Returns this date/time as a ZonedDateTime using the associated time zone.
+	 *
+	 * @return a ZonedDateTime representation of this instance
+	 */
 	public ZonedDateTime getZonedDateTime() {
 		ZonedDateTime zdt = ZonedDateTime.of(getYear(), getMonth() + 1, getDay(), get24Hour(), getMinute(), getSecond(), (int) (getMilliSecond() / Math.pow(10, 6)), getTimeZone().toZoneId());
 		return zdt;
 	}
 
+	/**
+	 * Returns this date/time as an Instant.
+	 *
+	 * @return an Instant representing this date/time
+	 */
 	public Instant getInstant() {
 		Instant instant = getZonedDateTime().toInstant();
 		return instant;
 	}
 
 	/**
-	 * Creates new datetime, using String parameter.
+	 * Creates a new date/time using a string value.
 	 *
+	 * @param strDate the string representation of the date/time
 	 * @see #valueOf(String)
 	 */
 	public OADateTime(String strDate) {
@@ -346,8 +473,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Creates new datetime, using String parameter and format.
+	 * Creates a new date/time using a string value and a specified format.
 	 *
+	 * @param strDate the string representation of the date/time
+	 * @param format the format used to parse the string
 	 * @see #valueOf(String)
 	 */
 	public OADateTime(String strDate, String format) {
@@ -355,7 +484,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Creates new datetime, using date and time.
+	 * Creates a new date/time using a date and time.
+	 * If the date is null, a new OADate is created.
+	 * If the time is not null, its time value is applied.
+	 *
+	 * @param d the OADate providing the date portion
+	 * @param t the OATime providing the time portion
 	 */
 	public OADateTime(OADate d, OATime t) {
 		if (d == null) {
@@ -371,32 +505,67 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * @param year  full year (not year minus 1900 like Date)
-	 * @param month 0-11
-	 * @param day   day of the month 1-31
+	 * Creates a new date/time using the specified year, month, and day.
+	 *
+	 * @param year full year value
+	 * @param month month value from 0 to 11
+	 * @param day day of month from 1 to 31
 	 */
 	public OADateTime(int year, int month, int day) {
 		this(new Date(year - 1900, month, day));
 	}
 
+	/**
+	 * Creates a new date/time using the specified date and time values.
+	 *
+	 * @param year full year value
+	 * @param month month value from 0 to 11
+	 * @param day day of month from 1 to 31
+	 * @param hrs hour value
+	 * @param mins minute value
+	 */
 	public OADateTime(int year, int month, int day, int hrs, int mins) {
 		this(new Date(year - 1900, month, day, hrs, mins));
 	}
 
+	/**
+	 * Creates a new date/time using the specified date and time values.
+	 *
+	 * @param year full year value
+	 * @param month month value from 0 to 11
+	 * @param day day of month from 1 to 31
+	 * @param hrs hour value
+	 * @param mins minute value
+	 * @param secs second value
+	 */
 	public OADateTime(int year, int month, int day, int hrs, int mins, int secs) {
 		this(new Date(year - 1900, month, day, hrs, mins, secs));
 	}
 
 	/**
-	 * @param year  full year (not year minus 1900 like Date)
-	 * @param month 0-11
-	 * @param day   day of the month
+	 * Creates a new date/time using the specified date, time, and millisecond values.
+	 *
+	 * @param year full year value
+	 * @param month month value from 0 to 11
+	 * @param day day of month
+	 * @param hrs hour value
+	 * @param mins minute value
+	 * @param secs second value
+	 * @param milsecs millisecond value
 	 */
 	public OADateTime(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
 		this(new Date(year - 1900, month, day, hrs, mins, secs));
 		this._time += milsecs;
 	}
 
+	/**
+	 * Custom serialization logic for writing this object to an ObjectOutputStream.
+	 * Handles different versions and serialization formats depending on type and
+	 * time zone settings.
+	 *
+	 * @param stream the ObjectOutputStream to write to
+	 * @throws IOException if an I/O error occurs
+	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
 		// 20240805
 		if (timeZone != null && timeZone != defaultTimeZone) {
@@ -446,6 +615,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Custom deserialization logic for reading this object from an ObjectInputStream.
+	 * Restores the internal time value and optional time zone based on version data.
+	 *
+	 * @param in the ObjectInputStream to read from
+	 * @throws IOException if an I/O error occurs
+	 * @throws ClassNotFoundException if a class cannot be resolved
+	 */
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
 		int x = in.readInt();
 		String tzId = null;
@@ -502,6 +679,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 
 	}
 
+	/**
+	 * Returns the value of the specified calendar field.
+	 *
+	 * @param fld the Calendar field constant
+	 * @return the field value
+	 */
 	private int getField(int fld) {
 		int x;
 		GregorianCalendar c = _getCal();
@@ -514,7 +697,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Returns a clone of the calendar used by this object.
+	 * Returns a clone of the Calendar used by this date/time instance.
+	 *
+	 * @return a cloned Calendar representing this date/time
 	 */
 	public Calendar getCalendar() {
 		Calendar cNew;
@@ -527,12 +712,28 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return cNew;
 	}
 
-	// conversions
+	/**
+	 * Sets the internal time value using the specified date and time components.
+	 *
+	 * @param year full year value
+	 * @param month month value from 0 to 11
+	 * @param day day of month
+	 * @param hrs hour value
+	 * @param mins minute value
+	 * @param secs second value
+	 * @param milsecs millisecond value
+	 */
 	protected void setCalendar(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
 		long t = new Date(year - 1900, month, day, hrs, mins, secs).getTime();
 		this._time = t + milsecs;
 	}
 
+	/**
+	 * Sets the internal time value using the specified GregorianCalendar.
+	 * If the calendar is null, the current system time is used.
+	 *
+	 * @param c the GregorianCalendar to copy values from
+	 */
 	protected void setCalendar(GregorianCalendar c) {
 		if (c == null) {
 			this._time = System.currentTimeMillis();
@@ -542,6 +743,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Sets the internal time value using the specified SQL Timestamp.
+	 * If the timestamp is null, the current system time is used.
+	 *
+	 * @param date the SQL Timestamp to use
+	 */
 	protected void setCalendar(java.sql.Timestamp date) {
 		if (date == null) {
 			this._time = System.currentTimeMillis();
@@ -550,6 +757,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Sets the internal time value using the specified Date.
+	 * If the date is null, the current system time is used.
+	 *
+	 * @param date the Date to use
+	 */
 	protected void setCalendar(Date date) {
 		if (date == null) {
 			this._time = System.currentTimeMillis();
@@ -558,6 +771,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Sets the internal time value using the specified SQL Time.
+	 * If the time is null, the current system time is used.
+	 *
+	 * @param time the SQL Time to use
+	 */
 	protected void setCalendar(Time time) {
 		if (time == null) {
 			this._time = System.currentTimeMillis();
@@ -566,6 +785,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Sets the internal time value using another OADateTime instance.
+	 * If the instance is null, the current system time is used.
+	 *
+	 * @param dt the OADateTime to copy values from
+	 */
 	protected void setCalendar(OADateTime dt) {
 		if (dt == null) {
 			this._time = System.currentTimeMillis();
@@ -575,6 +800,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Sets the internal time value using a string representation of a date/time.
+	 * If the string is null, the current system time is used.
+	 *
+	 * @param strDate the string representation of the date/time
+	 * @throws IllegalArgumentException if the string cannot be converted
+	 */
 	protected void setCalendar(String strDate) {
 		if (strDate == null) {
 			this._time = System.currentTimeMillis();
@@ -587,6 +819,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Sets the internal time value using a string representation and format.
+	 * If the string is null, the current system time is used.
+	 *
+	 * @param strDate the string representation of the date/time
+	 * @param fmt the format used to parse the string
+	 * @throws IllegalArgumentException if the string cannot be converted
+	 */
 	protected void setCalendar(String strDate, String fmt) {
 		if (strDate == null) {
 			this._time = System.currentTimeMillis();
@@ -600,7 +840,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Sets hour,minutes and seconds to zero.
+	 * Sets the hour, minute, second, and millisecond values to zero.
 	 */
 	public void clearTime() {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -623,7 +863,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * sets date to 1/1/1970 (time 0)
+	 * Sets the date portion to January 1, 1970 while preserving the time portion.
 	 */
 	public void clearDate() {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -655,25 +895,33 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Sets time.
+	 * Sets the time using hour and minute values.
 	 *
-	 * @see #setTime(int, int, int, int) setTime
+	 * @param hr hour value
+	 * @param m minute value
 	 */
 	public void setTime(int hr, int m) {
 		setTime(hr, m, 0, 0);
 	}
 
 	/**
-	 * Sets time.
+	 * Sets the time using hour, minute, and second values.
 	 *
-	 * @see #setTime(int, int, int, int) setTime
+	 * @param hr hour value
+	 * @param m minute value
+	 * @param s second value
 	 */
 	public void setTime(int hr, int m, int s) {
 		setTime(hr, m, s, 0);
 	}
 
 	/**
-	 * Sets hour,minutes,seconds and milliseconds.
+	 * Sets the hour, minute, second, and millisecond values.
+	 *
+	 * @param hr hour value
+	 * @param m minute value
+	 * @param s second value
+	 * @param ms millisecond value
 	 */
 	public void setTime(int hr, int m, int s, int ms) {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -694,6 +942,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Sets the time using an OATime instance.
+	 * If the parameter is null, the time portion is cleared.
+	 *
+	 * @param t the OATime to copy values from
+	 */
 	public void setTime(OATime t) {
 		if (t == null) {
 			clearTime();
@@ -716,7 +970,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Sets year (ex: 2017), month (0-11), and day (1-31).
+	 * Sets the date using year, month, and day values.
+	 *
+	 * @param yr full year value
+	 * @param m month value from 0 to 11
+	 * @param d day of month
 	 */
 	public void setDate(int yr, int m, int d) {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -740,6 +998,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Sets the date using an OADate instance.
+	 * If the parameter is null, the date portion is cleared.
+	 *
+	 * @param d the OADate to copy values from
+	 */
 	public void setDate(OADate d) {
 		if (d == null) {
 			clearDate();
@@ -749,8 +1013,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Returns year. This is the <i>real</i>, unlike java.util.Date, which is the
-	 * date minus 1900.
+	 * Returns the full year value for this date/time.
+	 *
+	 * @return the year value
 	 */
 	public int getYear() {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -768,8 +1033,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Sets the year. This is the <i>real</i>, unlike java.util.Date, which is the
-	 * date minus 1900.
+	 * Sets the year value for this date/time.
+	 *
+	 * @param y full year value
 	 */
 	public void setYear(int y) {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -792,9 +1058,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Get month, values between 0-11.
+	 * Returns the month value.
 	 *
-	 * @return month as 0-11
+	 * @return month value from 0 to 11
 	 */
 	public int getMonth() {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -812,9 +1078,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * returns quarter from 0-3
+	 * Returns the quarter of the year.
 	 *
-	 * @return
+	 * @return quarter value from 0 to 3
 	 */
 	public int getQuarter() {
 		int x = getMonth();
@@ -823,9 +1089,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Set month, values between 0-11.
+	 * Sets the month value.
 	 *
-	 * @param month must be between <b>0-11</b>.
+	 * @param month month value from 0 to 11
 	 */
 	public void setMonth(int month) {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -847,7 +1113,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
-	/** @return day of month, 1-31. */
+	/**
+	 * Returns the day of the month.
+	 *
+	 * @return day of month from 1 to 31
+	 */
 	public int getDay() {
 		if (timeZone == null || timeZone == defaultTimeZone) {
 			Date d = new Date(_time);
@@ -863,7 +1133,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return d;
 	}
 
-	/** Set the day of month, 1-31. */
+	/**
+	 * Sets the day of the month.
+	 *
+	 * @param d day of month from 1 to 31
+	 */
 	public void setDay(int d) {
 		if (timeZone == null || timeZone == defaultTimeZone) {
 			long ms = getMilliSecond();
@@ -884,18 +1158,27 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Sets the time zone to UTC.
+	 */
 	public void setTimeZoneUTC() {
 		setTimeZone(OATimeZone.getTimeZoneUTC());
 	}
 
+	/**
+	 * Sets the time zone using an OATimeZone.TZ value.
+	 *
+	 * @param tz the OATimeZone.TZ to set
+	 */
 	public void setTimeZone(OATimeZone.TZ tz) {
 		setTimeZone(tz.timeZone);
 	}
 
 	/**
-	 * Change the tz and keep the same other values (day,month,hour,etc). This
-	 * changes the time (long) value. Use convertTo(tz) to have values adjusted and
-	 * the time (long) to stay the same.
+	 * Sets the time zone for this date/time while keeping the same date and time
+	 * field values, adjusting the underlying time value accordingly.
+	 *
+	 * @param tz the TimeZone to set
 	 */
 	public void setTimeZone(TimeZone tz) {
 		if (tz == timeZone) {
@@ -924,19 +1207,18 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * @see OATimeZone
+	 * Returns the time zone associated with this date/time.
+	 *
+	 * @return the TimeZone for this instance, or the default time zone if none is set
 	 */
 	public TimeZone getTimeZone() {
 		return timeZone == null ? defaultTimeZone : timeZone;
 	}
 
 	/**
-	 * Gets the hour of the day based on 24 hour clock.
+	 * Returns the hour of the day using a 24-hour clock.
 	 *
-	 * @return the Hour 0-23
-	 * @see #get12Hour
-	 * @see #get24Hour
-	 * @see #getAM_PM
+	 * @return hour value from 0 to 23
 	 */
 	public int getHour() {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -955,12 +1237,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Sets the hour of the day based on 24 hour clock.
+	 * Sets the hour of the day using a 24-hour clock.
 	 *
-	 * @param hr is the Hour 0-12
-	 * @see #setAM_PM
-	 * @see #set12Hour
-	 * @see #set24Hour
+	 * @param hr hour value
 	 */
 	public void setHour(int hr) {
 		if (timeZone == null || timeZone == defaultTimeZone) {
@@ -982,6 +1261,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Returns the hour of the day using a 12-hour clock.
+	 *
+	 * @return hour value from 0 to 11
+	 */
 	public int get12Hour() {
 		if (timeZone == null || timeZone == defaultTimeZone) {
 			Date d = new Date(_time);
@@ -1001,6 +1285,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return hr;
 	}
 
+	/**
+	 * Sets the hour of the day using a 12-hour clock.
+	 *
+	 * @param hr hour value from 1 to 12
+	 * @throws IllegalArgumentException if hr is outside the range 1 to 12
+	 */
 	public void set12Hour(int hr) {
 		// Accept 1–12; coerce into 0–11
 		if (hr < 1 || hr > 12)
@@ -1010,28 +1300,28 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Gets the hour of the day based on 24 hour clock.
+	 * Returns the hour of the day using a 24-hour clock.
 	 *
-	 * @return Hour 0-23
-	 * @see #setAM_PM
-	 * @see #setHour
+	 * @return hour value from 0 to 23
 	 */
 	public int get24Hour() {
 		return getHour();
 	}
 
 	/**
-	 * Sets the hour of the day based on 24 hour clock.
+	 * Sets the hour of the day using a 24-hour clock.
 	 *
-	 * @param hr is the Hour 0-23
-	 * @see #setAM_PM
-	 * @see #setHour
+	 * @param hr hour value from 0 to 23
 	 */
 	public void set24Hour(int hr) {
 		setHour(hr);
 	}
 
-	/** returns Calendar.AM or Calendar.PM */
+	/**
+	 * Returns whether the current time is AM or PM.
+	 *
+	 * @return Calendar.AM or Calendar.PM
+	 */
 	public int getAM_PM() {
 		if (getHour() >= 12) {
 			return Calendar.PM;
@@ -1039,7 +1329,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return Calendar.AM;
 	}
 
-	/** Calendar.AM or Calendar.PM */
+	/**
+	 * Sets the AM or PM value for the current time.
+	 *
+	 * @param ap Calendar.AM or Calendar.PM
+	 */
 	public void setAM_PM(int ap) {
 		int hr = getHour();
 
@@ -1053,14 +1347,22 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		set24Hour(hr);
 	}
 
-	/** Return value of minutes. */
+	/**
+	 * Returns the minute value.
+	 *
+	 * @return minute value from 0 to 59
+	 */
 	public int getMinute() {
 		Date d = new Date(_time);
 		int hr = d.getMinutes();
 		return hr;
 	}
 
-	/** Set value for minutes. */
+	/**
+	 * Sets the minute value.
+	 *
+	 * @param mins minute value
+	 */
 	public void setMinute(int mins) {
 		long ms = getMilliSecond();
 		Date dThis = new Date(_time);
@@ -1071,14 +1373,22 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
-	/** Return value of seconds. */
+	/**
+	 * Returns the second value.
+	 *
+	 * @return second value from 0 to 59
+	 */
 	public int getSecond() {
 		Date d = new Date(_time);
 		int secs = d.getSeconds();
 		return secs;
 	}
 
-	/** Sets value for seconds. */
+	/**
+	 * Sets the second value.
+	 *
+	 * @param s second value
+	 */
 	public void setSecond(int s) {
 		long ms = getMilliSecond();
 		Date dThis = new Date(_time);
@@ -1089,13 +1399,20 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Clears the second and millisecond values by setting them to zero.
+	 */
 	public void clearSecondAndMilliSecond() {
 		Date dThis = new Date(_time);
 		Date dNew = new Date(dThis.getYear(), dThis.getMonth(), dThis.getDate(), dThis.getHours(), dThis.getMinutes(), 0);
 		_time = dNew.getTime();
 	}
 
-	/** Return value of milliseconds. */
+	/**
+	 * Returns the millisecond value.
+	 *
+	 * @return millisecond value
+	 */
 	public int getMilliSecond() {
 		Date dThis = new Date(_time);
 		Date dNew = new Date(dThis.getYear(), dThis.getMonth(), dThis.getDate(), dThis.getHours(), dThis.getMinutes(), dThis.getSeconds());
@@ -1104,23 +1421,29 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return ms;
 	}
 
-	/** Sets value for milliseconds. */
+	/**
+	 * Sets the millisecond value.
+	 *
+	 * @param ms millisecond value
+	 */
 	public void setMilliSecond(int ms) {
 		_time -= getMilliSecond();
 		_time += ms;
 	}
 
 	/**
-	 * Returns java.util.Date object that matches this DateTime.
+	 * Returns a Date instance representing this date/time.
+	 *
+	 * @return a Date with the same time value
 	 */
 	public Date getDate() {
 		return new Date(_time);
 	}
 
 	/**
-	 * Returns day of week for date. See Calendar for list of days (ex: SUNDAY).
+	 * Returns the day of the week for this date.
 	 *
-	 * @see Calendar
+	 * @return Calendar day-of-week constant
 	 */
 	public int getDayOfWeek() {
 		GregorianCalendar c = _getCal();
@@ -1134,7 +1457,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Returns day of year, where Jan 1 is 1.
+	 * Returns the day of the year.
+	 *
+	 * @return day of year where January 1 is 1
 	 */
 	public int getDayOfYear() {
 		GregorianCalendar c = _getCal();
@@ -1147,7 +1472,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return x;
 	}
 
-	/** Returns the number of the week within the month, where first week is 1. */
+	/**
+	 * Returns the week of the month.
+	 *
+	 * @return week number within the month, where first week is 1.
+	 */
 	public int getWeekOfMonth() {
 		GregorianCalendar c = _getCal();
 		int x;
@@ -1159,7 +1488,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return x;
 	}
 
-	/** Returns number week within the year, where first week is 1. */
+	/**
+	 * Returns the week of the year.
+	 *
+	 * @return week number within the year, where first week is 1
+	 */
 	public int getWeekOfYear() {
 		GregorianCalendar c = _getCal();
 		int x;
@@ -1171,7 +1504,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return x;
 	}
 
-	/** Returns number of days in this month. */
+	/**
+	 * Returns the number of days in the current month.
+	 *
+	 * @return number of days in month
+	 */
 	public int getDaysInMonth() {
 		GregorianCalendar c = _getCal();
 		int x;
@@ -1184,11 +1521,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Compares this OADateTime with any object. If object is not an OADateTime, it
+	 * Compares this date/time with another object for equality..
+	 * If object is not an OADateTime, it
 	 * will be converted and then compared.
 	 *
-	 * @param obj Date, OADate, Calendar, String, etc.
-	 * @see #compareTo
+	 * @param obj the object to compare
+	 * @return true if equal; false otherwise
 	 */
 	public boolean equals(Object obj) {
 		try {
@@ -1201,17 +1539,23 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 	}
 
+	/**
+	 * Returns a hash code based on the internal time value.
+	 *
+	 * @return hash code for this instance
+	 */
 	@Override
 	public int hashCode() {
 		return (int) (_time % Integer.MAX_VALUE);
 	}
 
 	/**
-	 * Compares this OADateTime with any object. If object is not an OADateTime, it
+	 * Determines whether this date/time occurs before another object.
+	 * If object is not an OADateTime, it
 	 * will be converted and then compared.
 	 *
-	 * @param obj Date, OADate, Calendar, String, etc.
-	 * @see #compareTo
+	 * @param obj the object to compare to
+	 * @return true if this date/time is before the other
 	 */
 	public boolean before(Object obj) {
 		return (compareTo(obj) < 0);
@@ -1229,32 +1573,41 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Compares this OADateTime with any object. If object is not an OADateTime, it
-	 * will be converted and then compared.
+	 * Determines whether this date/time occurs after another object.
 	 *
-	 * @param obj Date, OADate, Calendar, String, etc.
-	 * @see #compareTo
+	 * @param obj the object to compare to
+	 * @return true if this date/time is after the other
 	 */
 	public boolean after(Object obj) {
 		return (compareTo(obj) > 0);
 	}
 
+	/**
+	 * Determines whether this date/time occurs after another object.
+	 *
+	 * @param obj the object to compare to
+	 * @return true if this date/time is after the other
+	 */
 	public boolean isAfter(Object obj) {
 		return (compareTo(obj) > 0);
 	}
 
+	/**
+	 * Compares this date/time with another object.
+	 *
+	 * @param obj the object to compare to
+	 * @return the comparison result
+	 */
 	public int compare(Object obj) {
 		return compareTo(obj);
 	}
 
 	/**
-	 * Compares this object with the specified object for order.<br>
-	 * Returns a negative integer, zero, or a positive integer as this object is
-	 * less than, equal to, or greater than the specified object.
+	 * Compares this date/time with another object for ordering.
+	 * Returns a negative value, zero, or a positive value depending on ordering.
 	 *
-	 * @param obj Date, OADate, Calendar, String
-	 * @return "0" if equal, "-1" if this OADateTime is less than, "1" if this
-	 *         OADateTime is greater than, "2" if objects can not be compared.
+	 * @param obj the object to compare to
+	 * @return comparison result
 	 */
 	public int compareTo(Object obj) {
 		if (obj == null) {
@@ -1328,15 +1681,26 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return -1;
 	}
 
+	/**
+	 * Converts this date/time to UTC.
+	 *
+	 * @return a new OADateTime converted to UTC
+	 */
 	public OADateTime convertToUTC() {
 		return convertTo(OATimeZone.getTimeZoneUTC());
 	}
 
-	/**
+	/*
 	 * Convert the current dt to a different tz, which will adjust the (long) time
 	 * value, affecting (year,month,day,hour) values Note: for OADate
 	 * year,month,day(,hour,min..) are not affected, only the timezone Note: for
 	 * OATime only hour and timezone are affected.
+	 */
+	/**
+	 * Converts this date/time to the specified time zone.
+	 *
+	 * @param tz the TimeZone to convert to
+	 * @return a new OADateTime converted to the specified time zone
 	 */
 	public OADateTime convertTo(TimeZone tz) {
 		OADateTime dt;
@@ -1364,6 +1728,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dt;
 	}
 
+	/**
+	 * Converts this date/time to the specified OATimeZone.
+	 *
+	 * @param tz the OATimeZone.TZ to convert to
+	 * @return a new OADateTime converted to the specified time zone
+	 */
 	public OADateTime convertTo(OATimeZone.TZ tz) {
 		OADateTime dt;
 		if (this instanceof OADate) {
@@ -1393,7 +1763,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dt;
 	}
 
-	/**
+	/*
 	 * Return an OADateTime where a specified amount of days is added.
 	 * <p>
 	 * Note: if this is an instanceof OADate or OATime, then the returned object
@@ -1401,6 +1771,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @param amount number of days to increment/deincrement (negative number).
 	 * @return new OADateTime object.
+	 */
+	/**
+	 * Returns a new date/time with the specified number of days added.
+	 *
+	 * @param amount number of days to add (negative to subtract)
+	 * @return a new OADateTime instance
 	 */
 	public OADateTime addDays(int amount) {
 		if (amount == 0) {
@@ -1427,19 +1803,35 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	/**
+	 * Returns a new date/time with the specified number of days subtracted.
+	 *
+	 * @param amount number of days to subtract
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime subtractDays(int amount) {
 		return addDays(-amount);
 	}
 
+	/**
+	 * Returns a new date/time incremented by one day.
+	 *
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime addDay() {
 		return addDays(1);
 	}
 
+	/**
+	 * Returns a new date/time decremented by one day.
+	 *
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime subtractDay() {
 		return addDays(-1);
 	}
 
-	/**
+	/*
 	 * Return an OADateTime where a specified amount of weeks added.
 	 * <p>
 	 * Note: if this is an instanceof OADate or OATime, then the returned object
@@ -1448,15 +1840,27 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @param amount number of weeks to increment/deincrement (negative number).
 	 * @return new OADateTime object.
 	 */
+	/**
+	 * Returns a new date/time with the specified number of weeks added.
+	 *
+	 * @param amount number of weeks to add (negative to subtract)
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime addWeeks(int amount) {
 		return addDays(amount * 7);
 	}
 
+	/**
+	 * Returns a new date/time with the specified number of weeks subtracted.
+	 *
+	 * @param amount number of weeks to subtract
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime subtractWeeks(int amount) {
 		return addDays(-(amount * 7));
 	}
 
-	/**
+	/*
 	 * Return an OADateTime where a specified amount of months is added.
 	 * <p>
 	 * Note: if this is an instanceof OADate or OATime, then the returned object
@@ -1464,6 +1868,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @param amount number of months to increment/deincrement (negative number).
 	 * @return new OADateTime object.
+	 */
+	/**
+	 * Returns a new date/time with the specified number of months added.
+	 *
+	 * @param amount number of months to add (negative to subtract)
+	 * @return a new OADateTime instance
 	 */
 	public OADateTime addMonths(int amount) {
 		if (this instanceof OATime) {
@@ -1487,11 +1897,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	/**
+	 * Returns a new date/time with the specified number of months subtracted.
+	 *
+	 * @param amount number of months to subtract
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime subtractMonths(int amount) {
 		return addMonths(-amount);
 	}
 
-	/**
+	/*
 	 * Return an OADateTime where a specified amount of years is added.
 	 * <p>
 	 * Note: if this is an instanceof OADate or OATime, then the returned object
@@ -1499,6 +1915,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @param amount number of years to increment/deincrement (negative number).
 	 * @return new OADateTime object.
+	 */
+	/**
+	 * Returns a new date/time with the specified number of years added.
+	 *
+	 * @param amount number of years to add (negative to subtract)
+	 * @return a new OADateTime instance
 	 */
 	public OADateTime addYears(int amount) {
 		if (this instanceof OATime) {
@@ -1522,11 +1944,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	/**
+	 * Returns a new date/time with the specified number of years subtracted.
+	 *
+	 * @param amount number of years to subtract
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime subtractYears(int amount) {
 		return addYears(-amount);
 	}
 
-	/**
+	/*
 	 * Return an OADateTime where a specified amount of hours is added.
 	 * <p>
 	 * Note: if this is an instanceof OADate or OATime, then the returned object
@@ -1534,6 +1962,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @param amount number of hours to increment/deincrement (negative number).
 	 * @return new OADateTime object.
+	 */
+	/**
+	 * Returns a new date/time with the specified number of hours added.
+	 *
+	 * @param amount number of hours to add (negative to subtract)
+	 * @return a new OADateTime instance
 	 */
 	public OADateTime addHours(int amount) {
 		OADateTime dtNew;
@@ -1554,11 +1988,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	/**
+	 * Returns a new date/time with the specified number of hours subtracted.
+	 *
+	 * @param amount number of hours to subtract
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime subtractHours(int amount) {
 		return addHours(-amount);
 	}
 
-	/**
+	/*
 	 * Return an OADateTime where a specified amount of minutes is added.
 	 * <p>
 	 * Note: if this is an instanceof OADate or OATime, then the returned object
@@ -1566,6 +2006,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @param amount number of minutes to increment/deincrement (negative number).
 	 * @return new OADateTime object.
+	 */
+	/**
+	 * Returns a new date/time with the specified number of minutes added.
+	 *
+	 * @param amount number of minutes to add (negative to subtract)
+	 * @return a new OADateTime instance
 	 */
 	public OADateTime addMinutes(int amount) {
 		OADateTime dtNew;
@@ -1586,11 +2032,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	/**
+	 * Returns a new date/time with the specified number of minutes subtracted.
+	 *
+	 * @param amount number of minutes to subtract
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime subtractMinutes(int amount) {
 		return addMinutes(-amount);
 	}
 
-	/**
+	/*
 	 * Return an OADateTime where a specified amount of seconds is added.
 	 * <p>
 	 * Note: if this is an instanceof OADate or OATime, then the returned object
@@ -1598,6 +2050,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @param amount number of seconds to increment/deincrement (negative number).
 	 * @return new OADateTime object.
+	 */
+	/**
+	 * Returns a new date/time with the specified number of seconds added.
+	 *
+	 * @param amount number of seconds to add (negative to subtract)
+	 * @return a new OADateTime instance
 	 */
 	public OADateTime addSeconds(int amount) {
 		OADateTime dtNew;
@@ -1618,11 +2076,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	/**
+	 * Returns a new date/time with the specified number of seconds subtracted.
+	 *
+	 * @param amount number of seconds to subtract
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime subtractSeconds(int amount) {
 		return addSeconds(-amount);
 	}
 
-	/**
+	/*
 	 * Return an OADateTime where a specified amount of milliseconds is added.
 	 * <p>
 	 * Note: if this is an instanceof OADate or OATime, then the returned object
@@ -1631,6 +2095,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @param amount number of milliseconds to increment/deincrement (negative
 	 *               number).
 	 * @return new OADateTime object.
+	 */
+	/**
+	 * Returns a new date/time with the specified number of milliseconds added.
+	 *
+	 * @param amount number of milliseconds to add (negative to subtract)
+	 * @return a new OADateTime instance
 	 */
 	public OADateTime addMilliSeconds(int amount) {
 		OADateTime dtNew;
@@ -1651,26 +2121,44 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dtNew;
 	}
 
+	/**
+	 * Returns a new date/time with the specified number of milliseconds subtracted.
+	 *
+	 * @param amount number of milliseconds to subtract
+	 * @return a new OADateTime instance
+	 */
 	public OADateTime subtractMilliSeconds(int amount) {
 		return addMilliSeconds(-amount);
 	}
 
-	/**
+	/*
 	 * Returns the number of years between this OADateTime and obj.
 	 *
 	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
 	 *            OADateTime.
+	 */
+	/**
+	 * Returns the number of years between this date/time and another object.
+	 *
+	 * @param obj an object convertible to OADateTime
+	 * @return number of years between the two dates
 	 */
 	public int betweenYears(Object obj) {
 		OADateTime d = convert(obj, false);
 		return Math.abs(this.getYear() - d.getYear());
 	}
 
-	/**
+	/*
 	 * Returns the number of months betweeen this OADateTime and obj.
 	 *
 	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
 	 *            OADateTime.
+	 */
+	/**
+	 * Returns the number of months between this date/time and another object.
+	 *
+	 * @param obj an object convertible to OADateTime
+	 * @return number of months between the two dates
 	 */
 	public int betweenMonths(Object obj) {
 		OADateTime d = convert(obj, false);
@@ -1687,11 +2175,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return Math.abs(amt);
 	}
 
-	/**
+	/*
 	 * Returns the number of days between this OADateTime and obj.
 	 *
 	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
 	 *            OADateTime.
+	 */
+	/**
+	 * Returns the number of days between this date/time and another object.
+	 *
+	 * @param obj an object convertible to OADateTime
+	 * @return number of days between the two dates
 	 */
 	public int betweenDays(Object obj) {
 		OADateTime d = convert(obj, true);
@@ -1709,11 +2203,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return (int) Math.floor(millis / (1000 * 60 * 60 * 24) + .5d); // accounts for daylight savings (23hr day, or 25hr day)
 	}
 
-	/**
+	/*
 	 * Returns the number of hours betweeen this OADateTime and obj.
 	 *
 	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
 	 *            OADateTime.
+	 */
+	/**
+	 * Returns the number of hours between this date/time and another object.
+	 *
+	 * @param obj an object convertible to OADateTime
+	 * @return number of hours between the two dates
 	 */
 	public int betweenHours(Object obj) {
 		OADateTime d = convert(obj, true);
@@ -1730,11 +2230,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return (int) Math.ceil(millis / (1000 * 60 * 60));
 	}
 
-	/**
+	/*
 	 * Returns the number of minutes betweeen this OADateTime and obj.
 	 *
 	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
 	 *            OADateTime.
+	 */
+	/**
+	 * Returns the number of minutes between this date/time and another object.
+	 *
+	 * @param obj an object convertible to OADateTime
+	 * @return number of minutes between the two dates
 	 */
 	public int betweenMinutes(Object obj) {
 		OADateTime d = convert(obj, true);
@@ -1751,11 +2257,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return (int) Math.ceil(millis / (1000 * 60));
 	}
 
-	/**
+	/*
 	 * Returns the number of seconds betweeen this OADateTime and obj.
 	 *
 	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
 	 *            OADateTime.
+	 */
+	/**
+	 * Returns the number of seconds between this date/time and another object.
+	 *
+	 * @param obj an object convertible to OADateTime
+	 * @return number of seconds between the two dates
 	 */
 	public int betweenSeconds(Object obj) {
 		OADateTime d = convert(obj, true);
@@ -1772,11 +2284,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return (int) Math.ceil(millis / (1000));
 	}
 
-	/**
+	/*
 	 * Returns the number of seconds betweeen this OADateTime and obj.
 	 *
 	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
 	 *            OADateTime.
+	 */
+	/**
+	 * Returns the number of milliseconds between this date/time and another object.
+	 *
+	 * @param obj an object convertible to OADateTime
+	 * @return number of milliseconds between the two dates
 	 */
 	public long betweenMilliSeconds(Object obj) {
 		OADateTime d = convert(obj, false);
@@ -1792,15 +2310,24 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return millis;
 	}
 
-	/**
+	/*
 	 * Time as milliseconds, same as Date.getTime()
+	 */
+	/**
+	 * Returns the internal time value as milliseconds since the epoch.
+	 *
+	 * @return milliseconds since the epoch
 	 */
 	public long getTime() {
 		return _time;
 	}
 
 	/**
-	 * Convert an Object to an OADateTime.
+	 * Converts an object to an OADateTime.
+	 *
+	 * @param obj the object to convert
+	 * @param bAlways if true, always return a new instance
+	 * @return an OADateTime instance or null if conversion is not possible
 	 */
 	protected OADateTime convert(Object obj, boolean bAlways) {
 		if (obj == null) {
@@ -1834,7 +2361,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		// "+obj.getClass()+" to an OADateTime");
 	}
 
-	/**
+	/*
 	 * Static method for converting a String date to an OADateTime.<br>
 	 * If date is " " (space) then todays date will be returned.<br>
 	 * If date is null or "" then null is returned.<br>
@@ -1845,10 +2372,24 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @see OADateTime#setFormat
 	 * @see OADateTime#valueOf to convert a string using global parse strings
 	 */
+	/**
+	 * Converts a string to an OADateTime using the specified format.
+	 *
+	 * @param strDateTime the string representation of the date/time
+	 * @param fmt the format to use for parsing
+	 * @return an OADateTime instance or null
+	 */
 	public static OADateTime valueOf(String strDateTime, String fmt) {
 		return valueOf(strDateTime, fmt, true);
 	}
 
+	/**
+	 * Converts a string to an OADateTime using the specified format.
+	 *
+	 * @param strDateTime the string representation of the date/time
+	 * @param fmt the format to use for parsing
+	 * @return an OADateTime instance or null
+	 */
 	public static OADateTime valueOf(String strDateTime, String fmt, boolean bTryOtherFormats) {
 		if (strDateTime == null) {
 			return null;
@@ -1860,8 +2401,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return new OADateTime(d);
 	}
 
-	/**
+	/*
 	 * Internally used to fix a String date.
+	 */
+	/**
+	 * Normalizes a date string by replacing non-alphanumeric separators.
+	 *
+	 * @param s the input string
+	 * @return the normalized date string
 	 */
 	protected static String fixDate(String s) {
 		if (s == null) {
@@ -1881,7 +2428,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return new String(sb);
 	}
 
-	/**
+	/*
 	 * Converts a String date to an OADateTime. <br>
 	 * If value is " " (space) then todays date/time will be returned.<br>
 	 * If value is null or "" then null is returned.<br>
@@ -1893,11 +2440,25 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @see #addGlobalParseFormat see #getGlobalParseFormats
 	 * @see #valueOf(String,String)
 	 */
+	/**
+	 * Converts a string to an OADateTime using global parse formats.
+	 *
+	 * @param strDateTime the string representation of the date/time
+	 * @return an OADateTime instance or null
+	 */
 	public static OADateTime valueOf(String strDateTime) {
 		return valueOf(strDateTime, null);
 	}
 
-	// convert from string ------------------------------------------------------
+	/**
+	 * Internal method used to parse a string into a Date using multiple formats.
+	 *
+	 * @param value the string to parse
+	 * @param inputFormat the preferred input format
+	 * @param vec collection of fallback parse formats
+	 * @param outputFormat fallback output format
+	 * @return a Date instance or null
+	 */
 	protected static Date valueOfMain(String value, String inputFormat, Vector vec, String outputFormat) {
 		if (value == null || value.length() == 0) {
 			return null;
@@ -1951,19 +2512,30 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return date;
 	}
 
-	/**
+	/*
 	 * Converts OADateTime to a String using specified formatting String.<br>
 	 * Uses the first format that has been set: "format", "staticOutputFormat" else
 	 * or "yyyy-MMM-dd hh:mma"
+	 */
+	/**
+	 * Converts this date/time to a String using the configured or default format.
+	 *
+	 * @return the formatted date/time string
 	 */
 	public String toString() {
 		return toString(null);
 	}
 
-	/**
+	/*
 	 * Converts OADateTime to a String using specified formatting String.
 	 *
 	 * @param f is format to apply
+	 */
+	/**
+	 * Converts this date/time to a String using the specified format.
+	 *
+	 * @param f the format to apply
+	 * @return the formatted date/time string
 	 */
 	public String toString(String f) {
 		if (f == null) {
@@ -1978,6 +2550,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	// main method called to get string value
+	/**
+	 * Performs the actual formatting of this date/time using the specified format.
+	 *
+	 * @param format the format to apply
+	 * @return the formatted date/time string
+	 */
 	protected String toStringMain(String format) {
 		if (format == null || format.length() == 0) {
 			return getDate().toString();
@@ -1993,46 +2571,49 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Sets the default global format used when converting OADateTime to String.
+	 * Sets the global output format used when converting date/time values to strings.
 	 *
-	 * @see #setFormat
+	 * @param fmt the global output format
 	 */
 	public static void setGlobalOutputFormat(String fmt) {
 		staticOutputFormat = fmt;
 	}
 
 	/**
-	 * Gets the default global format used when converting OADateTime to String.
+	 * Sets the global output format used when converting date/time values to strings.
 	 *
-	 * @see #setFormat
+	 * @param fmt the global output format
 	 */
 	public static String getGlobalOutputFormat() {
 		return staticOutputFormat;
 	}
 
-	/**
+	/*
 	 * Add additional global parse formats that are used when converting a String to
 	 * OADateTime.
 	 *
 	 * @see #setFormat
+	 */
+	/**
+	 * Adds a global parse format used when converting strings to date/time values.
+	 *
+	 * @param fmt the parse format to add
 	 */
 	public static void addGlobalParseFormat(String fmt) {
 		vecDateTimeParseFormat.addElement(fmt);
 	}
 
 	/**
-	 * Remove a global parse format.
+	 * Removes a global parse format.
 	 *
-	 * @see addGlobalParseFormat
+	 * @param fmt the parse format to remove
 	 */
 	public static void removeGlobalParseFormat(String fmt) {
 		vecDateTimeParseFormat.removeElement(fmt);
 	}
 
 	/**
-	 * Remove a all globally used parse format.
-	 *
-	 * @see addGlobalParseFormat
+	 * Removes all global parse formats.
 	 */
 	public static void removeAllGlobalParseFormats() {
 		vecDateTimeParseFormat.removeAllElements();
@@ -2147,13 +2728,19 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * get format to use for this OADateTime
-	 * @see #getFormat()
+	 * Returns the instance-specific format used when converting this date/time to a string.
+	 *
+	 * @return the instance format
 	 */
 	public String getFormat() {
 		return format;
 	}
 
+	/**
+	 * Returns a SimpleDateFormat instance from the formatter pool.
+	 *
+	 * @return a pooled SimpleDateFormat instance
+	 */
 	protected static SimpleDateFormat getFormatter() {
 		SimpleDateFormat sdf;
 		synchronized (simpleDateFormats) {
@@ -2179,10 +2766,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return getFormat(type, locale);
 	}
 
-	/**
+	/*
 	 * Returns the format string to use for system format.
 	 *
 	 * @param type DateFormat.SHORT, MEDIUM, LONG, FULL, DEFAULT
+	 */
+	/**
+	 * Returns a date/time format string for the specified DateFormat style and locale.
+	 *
+	 * @param style the DateFormat style constant
+	 * @param loc the Locale to use
+	 * @return the format string
 	 */
 	public static String getFormat(int type, Locale locale) {
 		DateFormat df = DateFormat.getDateInstance(type, locale);
@@ -2193,10 +2787,23 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return null;
 	}
 
+	/**
+	 * Determines whether this date/time is on the last day of its month.
+	 *
+	 * @return true if {@link #getDay()} equals {@link #getDaysInMonth()}; otherwise false
+	 */
 	public boolean isLastDayOfMonth() {
 		return getDay() == getDaysInMonth();
 	}
 
+	/**
+	 * Determines whether this date/time falls on the first occurrence of the
+	 * specified weekday within the current month.
+	 *
+	 * @param weekday the Calendar day-of-week constant to test against
+	 * @return true if this date is within the first seven days of the month and
+	 *         its day-of-week matches the specified value; otherwise false
+	 */
 	public boolean isFirstWeekDayOfMonth(int weekday) {
 		int day = getDay();
 		if (day > 7) {
@@ -2205,6 +2812,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return (getDayOfWeek() == weekday);
 	}
 
+	/**
+	 * Determines whether this date/time falls on the last occurrence of the
+	 * specified weekday within the current month.
+	 *
+	 * @param weekday the Calendar day-of-week constant to test against
+	 * @return true if this date is within the last seven days of the month and
+	 *         its day-of-week matches the specified value; otherwise false
+	 */
 	public boolean isLastWeekDayOfMonth(int weekday) {
 		int d = getDay();
 		if (d + 7 <= getDaysInMonth()) {
@@ -2213,6 +2828,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return (getDayOfWeek() == weekday);
 	}
 
+	/**
+	 * Returns the day-of-month for the last occurrence of the specified weekday
+	 * within the current month.
+	 *
+	 * @param weekday the Calendar day-of-week constant to locate
+	 * @return the day-of-month for the last matching weekday, or -1 if not found
+	 */
 	public int getLastWeekDayOfMonth(int weekday) {
 		OADateTime dt = new OADateTime(this);
 		int x = getDaysInMonth();
@@ -2225,6 +2847,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return -1; // error
 	}
 
+	/**
+	 * Returns the day-of-month for the first occurrence of the specified weekday
+	 * within the current month.
+	 *
+	 * @param weekday the Calendar day-of-week constant to locate
+	 * @return the day-of-month for the first matching weekday, or -1 if not found
+	 */
 	public int getFirstWeekDayOfMonth(int weekday) {
 		OADateTime dt = new OADateTime(this);
 		for (int i = 0; i < 7; i++) {
@@ -2236,14 +2865,25 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return -1; // error
 	}
 
+	/**
+	 * Sets whether the time zone should be ignored during serialization.
+	 *
+	 * @param b true to ignore the time zone; false otherwise
+	 */
 	public void setIgnoreTimeZone(boolean b) {
 		this.ignoreTimeZone = b;
 	}
 
+	/**
+	 * Returns whether the time zone is ignored during serialization.
+	 *
+	 * @return true if the time zone is ignored; false otherwise
+	 */
 	public boolean getIgnoreTimeZone() {
 		return this.ignoreTimeZone;
 	}
 
+	
 	public static void main2(String[] args) throws Exception {
 		OADateTime dt;
 		SimpleDateFormat sdf;

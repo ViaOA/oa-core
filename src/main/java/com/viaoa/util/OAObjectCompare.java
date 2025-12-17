@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,46 +40,121 @@ import java.util.Map;
  * independent comparison.
  */
 public class OAObjectCompare {
-    // hashmap used to add a Visitor pattern
+
+	/**
+	 * Tracks pairs of objects that have already been compared to prevent infinite
+	 * recursion when cycles are encountered.
+	 */
     IdentityHashMap<Object, Object> hmVisitor = new IdentityHashMap<Object, Object>();
+    
+    /**
+     * Tracks pairs of objects that have already been compared to prevent infinite
+     * recursion when cycles are encountered.
+     */
     private String leftName;
+    
+    /**
+     * Display name used to identify the right-hand object in comparison output.
+     */
     private String rightName;
     
+    /**
+     * Creates a new object comparison instance with default object names.
+     */
     public OAObjectCompare() {
         setObjectNames(null, null);
     }
+
+    /**
+     * Compares two objects starting at the root level.
+     *
+     * @param objLeft the left-hand object to compare
+     * @param objRight the right-hand object to compare
+     * @return true if the objects are considered equal
+     * @throws IllegalAccessException if reflective field access fails
+     */
     public boolean compare(Object objLeft, Object objRight) throws IllegalAccessException {
         String s = objLeft == null ? "" : objLeft.getClass().getName();
         int x = s.lastIndexOf('.');
         if (x > 0) s = s.substring(x+1);
         return _compare(s, objLeft, objRight);
     }    
+    
+    /**
+     * Internal entry point that performs a comparison using the given property path.
+     *
+     * @param propertyPath the current property path
+     * @param objLeft the left-hand object
+     * @param objRight the right-hand object
+     * @return true if the objects are considered equal
+     * @throws IllegalAccessException if reflective field access fails
+     */
     private boolean _compare(String propertyPath, Object objLeft, Object objRight) throws IllegalAccessException {
         boolean bResult = true;
         bResult = _compare(propertyPath, objLeft, objRight, true);
         return bResult;
     }
 
+    /**
+     * Sets the display names used for the left-hand and right-hand objects.
+     *
+     * @param leftName display name for the left-hand object
+     * @param rightName display name for the right-hand object
+     */
     public void setObjectNames(String leftName, String rightName) {
         setLeftObjectName(leftName);
         setRightObjectName(rightName);
     }
+
+    /**
+     * Returns the display name for the left-hand object.
+     *
+     * @return the left-hand object name
+     */
     public String getLeftObjectName() {
         return leftName;
     }
+    
+    /**
+     * Sets the display name for the left-hand object.
+     *
+     * @param name the display name to use
+     */
     public void setLeftObjectName(String name) {
         if (name == null) name = "leftObj";
         leftName = name;
     }
+    
+    /**
+     * Returns the display name for the right-hand object.
+     *
+     * @return the right-hand object name
+     */
     public String getRightObjectName() {
         return rightName;
     }
+    
+    /**
+     * Sets the display name for the right-hand object.
+     *
+     * @param name the display name to use
+     */
     public void setRightObjectName(String name) {
         if (name == null) name = "rightObj";
         rightName = name;
     }
     
     
+    /**
+     * Performs a recursive comparison of two objects with optional mismatch reporting.
+     *
+     * @param propertyPath the current property path
+     * @param objLeft the left-hand object
+     * @param objRight the right-hand object
+     * @param bReportNotEquals true to report mismatches as they are found
+     * @return true if the objects are considered equal
+     * @throws IllegalAccessException if reflective field access fails
+     */
     protected boolean _compare(String propertyPath, Object objLeft, Object objRight, boolean bReportNotEquals) throws IllegalAccessException {
         if (objLeft == objRight) return true;
         if (objLeft == null || objRight == null) {
@@ -160,10 +235,26 @@ public class OAObjectCompare {
         return b;
     }
 
+    /**
+     * Returns the key used to match elements when comparing unordered arrays.
+     *
+     * @param obj the array element
+     * @return the key used for element matching
+     */
     protected Object getKey(Object obj) {
         return obj;
     }
     
+    /**
+     * Compares all non-static, non-transient fields of two objects using reflection.
+     *
+     * @param propertyPath the current property path
+     * @param objLeft the left-hand object
+     * @param objRight the right-hand object
+     * @param bReportNotEquals true to report mismatches as they are found
+     * @return true if all fields are considered equal
+     * @throws IllegalAccessException if reflective field access fails
+     */
     private boolean _compareFields(String propertyPath, Object objLeft, Object objRight, boolean bReportNotEquals) throws IllegalAccessException {
         // check to see if these objects have already been compared
         Object objx = hmVisitor.get(objLeft);
@@ -194,6 +285,13 @@ public class OAObjectCompare {
         return bResult;
     }
     
+    /**
+     * Called when a mismatch is detected between two objects.
+     *
+     * @param propertyPath the property path where the mismatch occurred
+     * @param objLeft the left-hand value
+     * @param objRight the right-hand value
+     */
     public void foundOne(String propertyPath, Object objLeft, Object objRight) {
         String s1 = objLeft+"";
         if (s1.length() > 40) s1 = s1.substring(0,40)+"...";
@@ -202,6 +300,12 @@ public class OAObjectCompare {
         System.out.println(propertyPath+": "+leftName+"="+s1+", "+rightName+"="+s2);
     }
     
+    /**
+     * Entry point used for simple testing of object comparison behavior.
+     *
+     * @param args command-line arguments
+     * @throws Exception if an error occurs during execution
+     */
     public static void main(String[] args) throws Exception {
         Object obj1 = "test";
         Object obj2 = null;

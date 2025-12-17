@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,19 +29,43 @@ package com.viaoa.util;
  */
 public class OANullObject implements OASpecialCompareObject, java.io.Serializable {
     static final long serialVersionUID = 1L;
+
+    /**
+     * Singleton instance representing the null comparison token.
+     */
     public static final OANullObject instance = new OANullObject();
     
+    /**
+     * Creates a new instance.
+     */
     private OANullObject() {
     }
     
+    /**
+     * Returns the singleton null comparison instance.
+     *
+     * @return the singleton instance
+     */
     public OANullObject getNullObject() {
         return instance;
     }
     
+    /**
+     * Compares the given object to determine whether it represents a null value.
+     *
+     * @param obj the object to compare
+     * @return true if the object is null, the singleton instance, or another {@code OANullObject}
+     */
     @Override
     public boolean equals(Object obj) {
         return (obj == null || obj == OANullObject.instance || obj instanceof OANullObject);
     }
+
+    /**
+     * Returns a constant hash code value.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
         return 1;

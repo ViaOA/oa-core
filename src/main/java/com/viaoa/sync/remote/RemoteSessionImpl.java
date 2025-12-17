@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,9 +68,12 @@ import com.viaoa.sync.model.ClientInfo;
 public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	private static Logger LOG = Logger.getLogger(RemoteSessionImpl.class.getName());
 
+	/**
+	 * Identifier for this remote client session.
+	 */
     protected final int sessionId;
 
-    /**
+    /*
      *  List of guids that are on the client.
      *  This is used for filtering sync messages that are sent to clients.
      *  
@@ -78,12 +81,32 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
      *  1: whenever objects are serialized to the client.
      *  2: when an object is created on client and objectCreated is called. 
      */
+    /**
+     * Map tracking GUIDs of OAObjects that exist on the client.
+     * <p>
+     * The value indicates whether the object has been fully sent with all references.
+     * </p>
+     */
     protected final Map<Long, Boolean> hmGuid;
     
     
+    /**
+     * Map tracking objects locked by this client session.
+     */
 	protected final ConcurrentHashMap<OAObject, OAObject> hashLock = new ConcurrentHashMap<OAObject, OAObject>();
-    protected final ConcurrentHashMap<Long, OAObject> hmObjectsWithoutHubs = new ConcurrentHashMap<>();
 
+	/**
+	 * Map of objects that are referenced by the client but are not currently
+	 * reachable through any hub, preventing server-side garbage collection.
+	 */
+	protected final ConcurrentHashMap<Long, OAObject> hmObjectsWithoutHubs = new ConcurrentHashMap<>();
+
+	/**
+	 * Creates a new remote session for a client.
+	 *
+	 * @param sessionId the unique session identifier
+	 * @param hmGuid map used to track object GUIDs present on the client
+	 */
 	public RemoteSessionImpl(int sessionId, Map<Long, Boolean> hmGuid) {
 		this.sessionId = sessionId;
 		this.hmGuid = hmGuid;
@@ -91,7 +114,9 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 
 
 	/**
-	 * Add to guid to cache, to know what objects are on client.
+	 * Records that a new object has been created on the client.
+	 *
+	 * @param guid the GUID of the newly created object
 	 */
     @Override
     public void objectCreated(long guid) {
@@ -100,7 +125,9 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
     
     
     /**
-     * Called by client side OAObject.finalize, to remove the guids from hmGuid/Cache.
+     * Removes finalized objects from client tracking and cache structures.
+     *
+     * @param guids array of object GUIDs that have been finalized on the client
      */
     @Override
     public void objectsFinalized(long[] guids) {
@@ -113,7 +140,15 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	
     
     /**
-     * Used to manage OAObject on client to make sure that they are not GCd on Server. 
+     * Updates tracking for objects that are not currently in any hub.
+     * <p>
+     * Ensures such objects are retained server-side while still referenced
+     * by the client.
+     * </p>
+     *
+     * @param c the class of the object
+     * @param ok the object key
+     * @param bIsInHub {@code true} if the object is in a hub, {@code false} otherwise
      */
     @Override
 	public void updateObjectsWithoutHubs(Class c, OAObjectKey ok, boolean bIsInHub) {
@@ -134,7 +169,12 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
         }
 	}
  
-	// called by server to save any client cached objects
+    /**
+     * Saves all cached objects retained for this client session.
+     *
+     * @param cascade cascade behavior used during save
+     * @param iCascadeRule cascade rule applied when saving objects
+     */
 	public void saveCache(OACascade cascade, int iCascadeRule) {
 		LOG.fine("sessionId=" + sessionId + ", cache size=" + hmObjectsWithoutHubs.size());
 		for (Map.Entry<Long, OAObject> entry : hmObjectsWithoutHubs.entrySet()) {
@@ -145,7 +185,9 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 		}
 	}
 
-	// called by server when client is disconnected
+	/**
+	 * Clears all server-side caches associated with this client session.
+	 */
 	public void clearCaches() {
 	    hmObjectsWithoutHubs.clear();
 		if (hmGuid != null) hmGuid.clear();
@@ -153,6 +195,14 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	}
 
 	
+	/**
+	 * Sets or clears a lock on an object for this client session.
+	 *
+	 * @param objectClass the class of the object to lock or unlock
+	 * @param objectKey the key identifying the object
+	 * @param bLock {@code true} to lock, {@code false} to unlock
+	 * @return {@code true} if the object was found, otherwise {@code false}
+	 */
 	@Override
 	public boolean setLock(Class objectClass, OAObjectKey objectKey, boolean bLock) {
 		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, objectKey);
@@ -163,6 +213,12 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 		return true;
 	}
 
+	/**
+	 * Sets or clears a lock on the specified object for this client session.
+	 *
+	 * @param obj the object to lock or unlock
+	 * @param bLock {@code true} to lock, {@code false} to unlock
+	 */
 	public void setLock(OAObject obj, boolean bLock) {
 		if (bLock) {
 			hashLock.put(obj, obj);
@@ -172,7 +228,9 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 		LOG.fine("sessionId=" + sessionId + ", cache size=" + hashLock.size() + ", obj=" + obj + ", locked=" + bLock);
 	}
 
-	// this is used at disconnect
+	/**
+	 * Clears all locks held by this client session.
+	 */
 	public void clearLocks() {
 		for (Map.Entry<OAObject, OAObject> entry : hashLock.entrySet()) {
 			OAObject obj = entry.getKey();
@@ -183,6 +241,12 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 
 	// not used	
 	// @Override
+	/**
+	 * Creates a new object instance on the server for this client session.
+	 *
+	 * @param clazz the class of the object to create
+	 * @return the newly created object
+	 */
 	public OAObject createNewObject(Class clazz) {
 		OAObject obj = (OAObject) OAObjectReflectDelegate.createNewObject(clazz);
         objectCreated(obj.getGuid());
@@ -190,6 +254,13 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 		return obj;
 	}
 	
+	/**
+	 * Determines whether an object is locked by this client session.
+	 *
+	 * @param objectClass the class of the object
+	 * @param objectKey the key identifying the object
+	 * @return {@code true} if locked by this client, otherwise {@code false}
+	 */
 	@Override
 	public boolean isLockedByThisClient(Class objectClass, OAObjectKey objectKey) {
 		Object obj = OAObjectCacheDelegate.get(objectClass, objectKey);
@@ -199,24 +270,60 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 		return (hashLock.get(obj) != null);
 	}
 
+	/**
+	 * Echoes a ping message for session liveness checking.
+	 *
+	 * @param msg the ping message
+	 * @return the same message that was received
+	 */
 	@Override
 	public String ping(String msg) {
 		return msg;
 	}
 
+	/**
+	 * Receives a ping message with no return value.
+	 *
+	 * @param msg the ping message
+	 */
 	@Override
 	public void ping2(String msg) {
 	}
 
+	/**
+	 * Determines whether an object is locked by any client.
+	 *
+	 * @param objectClass the class of the object
+	 * @param objectKey the key identifying the object
+	 * @return {@code true} if the object is locked, otherwise {@code false}
+	 */
 	@Override
 	public abstract boolean isLocked(Class objectClass, OAObjectKey objectKey);
 
+	/**
+	 * Determines whether an object is locked by another client session.
+	 *
+	 * @param objectClass the class of the object
+	 * @param objectKey the key identifying the object
+	 * @return {@code true} if locked by another client, otherwise {@code false}
+	 */
 	@Override
 	public abstract boolean isLockedByAnotherClient(Class objectClass, OAObjectKey objectKey);
 
+	/**
+	 * Sends an exception notification to the client.
+	 *
+	 * @param msg a message describing the exception
+	 * @param ex the exception to report
+	 */
 	@Override
 	public abstract void sendException(String msg, Throwable ex);
 
+	/**
+	 * Updates this session with new client information.
+	 *
+	 * @param ci the client information to apply
+	 */
 	@Override
 	public void update(ClientInfo ci) {
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,18 @@ import javax.xml.transform.stream.StreamSource;
  * whitespace and line breaks.
  */
 public class OAXMLFormatter {
+	
+	/**
+	 * Formats the supplied XML text using indentation and line breaks.
+	 * <p>
+	 * A {@link Transformer} is created to output indented XML and the result
+	 * is returned as a trimmed string.
+	 *
+	 * @param input the XML text to format
+	 * @param indent the number of spaces to use for indentation
+	 * @return the formatted XML string
+	 * @throws Exception if an error occurs while transforming the XML
+	 */
     public String formatXML(String input, int indent) throws Exception {
         Source xmlInput = new StreamSource(new StringReader(input));
         StringWriter stringWriter = new StringWriter();

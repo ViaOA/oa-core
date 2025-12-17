@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,62 +102,183 @@ import com.viaoa.util.OAString;
  * fully compatible with OA's modern object graph and metadata system.
  */
 public class OAXMLReader1 extends DefaultHandler {
+	
+	/**
+	 * Name of the XML file currently being parsed.
+	 */
 	private String fileName;
+	
+	/**
+	 * Accumulates character data read within the current XML element.
+	 */
 	String value;
+	
+	/**
+	 * Current nesting depth of XML elements during parsing.
+	 */
 	int indent;
+	
+	/**
+	 * Holds the current class name being processed during parsing.
+	 */
 	String className;
+	
+	/**
+	 * Counter used to track total elements or objects processed.
+	 */
 	int total;
+	
+	/**
+	 * Flag indicating whether the parser is currently within an XML element.
+	 */
 	boolean bWithinTag;
+	
+	/**
+	 * Stack used to track parsing state, objects, properties, and hubs.
+	 */
 	Object[] stack = new Object[10];
+	
+	/**
+	 * Optional decode key used to decrypt encoded XML values.
+	 */
 	private String decodeMessage;
+	
+	/**
+	 * Flag indicating that a reference value should be used instead of a literal value.
+	 */
 	protected boolean bUseRef;
+	
+	/**
+	 * Holds a referenced object or key value during reference resolution.
+	 */
 	protected Object refValue;
+	
+	/**
+	 * The first root-level object encountered during parsing.
+	 */
 	protected Object firstObject;
+	
+	/**
+	 * Sentinel object used to distinguish an explicit null root object.
+	 */
 	private Object nullObject = new Object();
+	
+	/**
+	 * Internal key used to store class name information from XML.
+	 */
 	private static final String XML_CLASS = "XML_CLASS";
+	
+	/**
+	 * Internal key indicating that an XML element represents a key-only reference.
+	 */
 	private static final String XML_KEYONLY = "XML_KEYONLY";
+	
+	/**
+	 * Internal key used to store the instantiated OAObject for an element.
+	 */
 	private static final String XML_OBJECT = "XML_OBJECT";
+	
+	/**
+	 * Internal key used to store GUID values from XML attributes.
+	 */
 	private static final String XML_GUID = "XML_GUID";
+	
+	/**
+	 * Target class used when converting string values to typed property values.
+	 */
 	protected Class conversionClass; // type of class that value needs to be converted to
+	
+	/**
+	 * Vectors holding incomplete objects and root-level objects during parsing.
+	 */
 	protected Vector vecIncomplete, vecRoot;
+	
+	/**
+	 * Map of GUID strings to OAObject instances for reference resolution.
+	 */
 	protected HashMap hashGuid;
+	
+	/**
+	 * Map used to track objects matched by class and object key during import
+	 * matching operations.
+	 */
 	protected HashMap<Class, HashMap<OAObjectKey, OAObject>> hmMatch = new HashMap<Class, HashMap<OAObjectKey, OAObject>>();
+	
+	/**
+	 * Flag indicating whether import matching rules are enabled during parsing.
+	 */
 	private boolean bImportMatching = true;
 
-	// flag to know if OAXMLWriter wrote the object, which adds an additonal tag for the start of each object.
+	/**
+	 * Detected OAXML document version used to control parsing behavior.
+	 */
 	private int versionOAXML;
 
 	// objects that have been removed from a Hub and might not have been saved
 	//   these objects will then be checked and saved at the end of the import
+	/**
+	 * Collection of objects removed from hubs during import that may require
+	 * post-processing or saving.
+	 */
 	protected Vector vecRemoved = new Vector();
 
+	/**
+	 * Creates a new legacy XML reader instance.
+	 */
 	public OAXMLReader1() {
 	}
 
+	/**
+	 * Creates a new legacy XML reader instance and sets the XML file name.
+	 *
+	 * @param fileName the XML file to read
+	 */
 	public OAXMLReader1(String fileName) {
 		setFileName(fileName);
 	}
 
+	/**
+	 * Sets the name of the XML file to be parsed.
+	 *
+	 * @param fileName the XML file name
+	 */
 	public void setFileName(String fileName) {
 		this.fileName = fileName;
 	}
 
+	/**
+	 * Returns the name of the XML file being parsed.
+	 *
+	 * @return the XML file name
+	 */
 	public String getFileName() {
 		return this.fileName;
 	}
 
+	/**
+	 * Enables or disables import matching during object loading.
+	 *
+	 * @param b {@code true} to enable import matching; {@code false} to disable
+	 */
 	public void setImportMatching(boolean b) {
 		this.bImportMatching = b;
 	}
 
+	/**
+	 * Returns whether import matching is enabled.
+	 *
+	 * @return {@code true} if import matching is enabled
+	 */
 	public boolean getImportMatching() {
 		return this.bImportMatching;
 	}
 
 	/**
-	 * Used to parse and create OAObjects from an XML file.
+	 * Parses an XML file and creates OAObjects from its contents.
 	 *
-	 * @return topmost object from XML file.
+	 * @param fileName the XML file to read
+	 * @return the top-level object created from the XML
+	 * @throws Exception if parsing or object creation fails
 	 */
 	public Object read(String fileName) throws Exception {
 		setFileName(fileName);
@@ -165,18 +286,21 @@ public class OAXMLReader1 extends DefaultHandler {
 	}
 
 	/**
-	 * Used to parse and create OAObjects from an XML file.
+	 * Parses the configured XML file and creates OAObjects from its contents.
 	 *
-	 * @return topmost object from XML file.
+	 * @return the top-level object created from the XML
+	 * @throws Exception if parsing or object creation fails
 	 */
 	public Object read() throws Exception {
 		return parse(this.fileName);
 	}
 
 	/**
-	 * Used to parse and create OAObjects from an XML file.
+	 * Parses the configured XML file and completes post-processing of removed
+	 * objects.
 	 *
-	 * @return topmost object from XML file.
+	 * @return the top-level object created from the XML
+	 * @throws Exception if parsing or object processing fails
 	 */
 	public Object parse() throws Exception {
 		reset();
@@ -198,6 +322,9 @@ public class OAXMLReader1 extends DefaultHandler {
 		return obj;
 	}
 
+	/**
+	 * Resets all internal parsing state prior to a new parse operation.
+	 */
 	protected void reset() {
 		indent = 0;
 		total = 0;
@@ -210,9 +337,11 @@ public class OAXMLReader1 extends DefaultHandler {
 	}
 
 	/**
-	 * Used to parse and create OAObjects from an XML file.
+	 * Parses the specified XML file and creates OAObjects from its contents.
 	 *
-	 * @return topmost object from XML file.
+	 * @param fileName the XML file to parse
+	 * @return the top-level object created from the XML
+	 * @throws Exception if parsing or object creation fails
 	 */
 	public Object parse(String fileName) throws Exception {
 		if (fileName == null) {
@@ -244,9 +373,11 @@ public class OAXMLReader1 extends DefaultHandler {
 	}
 
 	/**
-	 * Used to parse and create OAObjects from an XML string.
+	 * Parses XML data from a string and creates OAObjects from its contents.
 	 *
-	 * @return topmost object from XML file.
+	 * @param xmlData the XML text to parse
+	 * @return the top-level object created from the XML
+	 * @throws Exception if parsing or object creation fails
 	 */
 	public Object parseString(String xmlData) throws Exception {
 		if (xmlData == null) {
@@ -269,7 +400,9 @@ public class OAXMLReader1 extends DefaultHandler {
 	}
 
 	/**
-	 * Returns all root objects from last call to parse.
+	 * Returns all root-level objects created during the last parse operation.
+	 *
+	 * @return an array of root objects
 	 */
 	public Object[] getRootObjects() {
 		int x = vecRoot == null ? 0 : vecRoot.size();
@@ -280,6 +413,12 @@ public class OAXMLReader1 extends DefaultHandler {
 		return objects;
 	}
 
+	/**
+	 * Replaces a root-level object with another instance.
+	 *
+	 * @param oldValue the existing root object
+	 * @param newValue the replacement object
+	 */
 	private void replaceRootObject(Object oldValue, Object newValue) {
 		if (vecRoot == null) {
 			return;
@@ -291,9 +430,10 @@ public class OAXMLReader1 extends DefaultHandler {
 	}
 
 	/**
-	 * Used to unencrypt an XML file created by OAXMLWriter that used an encryption code.
+	 * Sets the decode message used to decrypt encoded XML values.
 	 *
-	 * @see OAXMLWriter#setEncodeMessage(String)
+	 * @param msg the decode message
+	 * @throws IllegalArgumentException if the message is an empty string
 	 */
 	public void setDecodeMessage(String msg) {
 		if (msg != null && msg.length() == 0) {
@@ -302,12 +442,23 @@ public class OAXMLReader1 extends DefaultHandler {
 		decodeMessage = msg;
 	}
 
+	/**
+	 * Returns the decode message used for decrypting XML values.
+	 *
+	 * @return the decode message, or {@code null} if not set
+	 */
 	public String getDecodeMessage() {
 		return decodeMessage;
 	}
 
 	/**
-	 * SAXParser callback method.
+	 * SAX callback invoked at the start of an XML element.
+	 *
+	 * @param namespaceURI the namespace URI
+	 * @param sName the local element name
+	 * @param qName the qualified element name
+	 * @param attrs the element attributes
+	 * @throws SAXException if a parsing error occurs
 	 */
 	public void startElement(String namespaceURI, String sName, String qName, Attributes attrs) throws SAXException {
 		value = "";
@@ -498,7 +649,10 @@ public class OAXMLReader1 extends DefaultHandler {
 		}
 	}
 
-	// 20150730
+	/**
+	 * Internal holder used to temporarily store a class and object key pair
+	 * for deferred reference resolution.
+	 */
 	class Holder {
 		Class c;
 		OAObjectKey key;
@@ -510,7 +664,12 @@ public class OAXMLReader1 extends DefaultHandler {
 	}
 
 	/**
-	 * SAXParser callback method.
+	 * SAX callback invoked at the end of an XML element.
+	 *
+	 * @param namespaceURI the namespace URI
+	 * @param sName the local element name
+	 * @param qName the qualified element name
+	 * @throws SAXException if a parsing error occurs
 	 */
 	public void endElement(String namespaceURI, String sName, String qName) throws SAXException {
 		bWithinTag = false;
@@ -782,6 +941,14 @@ public class OAXMLReader1 extends DefaultHandler {
 		p("/" + eName);
 	}
 
+	/**
+	 * Processes and stores a property value for the current object being parsed.
+	 *
+	 * @param eName the property name
+	 * @param value the string value
+	 * @param conversionClass optional class used for type conversion
+	 * @param hash the hash table holding parsed values
+	 */
 	protected void processProperty(String eName, String value, Class conversionClass, Hashtable hash) {
 		Object objValue = value;
 
@@ -799,11 +966,24 @@ public class OAXMLReader1 extends DefaultHandler {
 		}
 	}
 
-	// return null to ignore property
+	/**
+	 * Returns the property name to use when setting a value on an object.
+	 *
+	 * @param obj the target object
+	 * @param propName the property name from XML
+	 * @return the resolved property name, or {@code null} to ignore the property
+	 */
 	protected String getPropertyName(OAObject obj, String propName) {
 		return propName;
 	}
 
+	/**
+	 * Processes all stored properties and applies them to the specified object.
+	 *
+	 * @param object the target object
+	 * @param hash the hash table containing parsed property values
+	 * @return {@code true} if all properties were processed successfully
+	 */
 	protected boolean processProperties(OAObject object, Hashtable hash) {
 		Class c = (Class) hash.get(XML_CLASS);
 		Object objx = hash.remove(XML_OBJECT);
@@ -820,6 +1000,13 @@ public class OAXMLReader1 extends DefaultHandler {
 		return b;
 	}
 
+	/**
+	 * Internal method that applies parsed property values to an object.
+	 *
+	 * @param object the target object
+	 * @param hash the hash table containing parsed property values
+	 * @return {@code true} if all properties were processed successfully
+	 */
 	private boolean _processProperties(final OAObject object, Hashtable hash) {
 		if (object == null) {
 			return false;
@@ -993,7 +1180,12 @@ public class OAXMLReader1 extends DefaultHandler {
 	}
 
 	/**
-	 * SAXParser callback method.
+	 * SAX callback invoked when character data is encountered within an element.
+	 *
+	 * @param buf the character buffer
+	 * @param offset the start offset in the buffer
+	 * @param len the number of characters
+	 * @throws SAXException if a parsing error occurs
 	 */
 	public void characters(char buf[], int offset, int len) throws SAXException {
 		if (bWithinTag && value != null) {
@@ -1005,6 +1197,11 @@ public class OAXMLReader1 extends DefaultHandler {
 	private int holdIndent;
 	private String sIndent = "";
 
+	/**
+	 * Outputs debug information for XML parsing with indentation.
+	 *
+	 * @param s the message to output
+	 */
 	void p(String s) {
 		if (true) {
 			return;
@@ -1022,47 +1219,65 @@ public class OAXMLReader1 extends DefaultHandler {
 	// ============== These methods can be overwritten to get status of parsing ================
 
 	/**
-	 * Method that can be used to replace the value of an element/attribute.
+	 * Returns the value to use when assigning a property to an object.
+	 *
+	 * @param obj the target object
+	 * @param name the property name
+	 * @param value the parsed value
+	 * @return the value to assign
 	 */
 	public Object getValue(OAObject obj, String name, Object value) {
 		return value;
 	}
 
 	/**
-	 * Method that can be overwritten by subclass to provide status of reader.
+	 * Callback invoked when a Hub element is started.
+	 *
+	 * @param className the object class name for the hub
+	 * @param total the expected number of elements in the hub
 	 */
 	public void startHub(String className, int total) {
 	}
 
 	/**
-	 * Method that can be overwritten by subclass when an object is completed.
+	 * Callback invoked when an object has completed parsing.
+	 *
+	 * @param obj the completed object
+	 * @param hasParent {@code true} if the object has a parent
 	 */
 	public void endObject(OAObject obj, boolean hasParent) {
 	}
 
 	/**
-	 * SAXParser callback method.
+	 * SAX callback invoked at the start of the XML document.
 	 */
 	public void startDocument() throws SAXException {
 	}
 
 	/**
-	 * SAXParser callback method.
+	 * SAX callback invoked at the end of the XML document.
 	 */
 	public void endDocument() throws SAXException {
 	}
 
 	/**
-	 * Method that can be overwritten by subclass to create a new Object for a specific Class.
+	 * Creates a new instance of the specified OAObject class.
+	 *
+	 * @param c the class to instantiate
+	 * @return a new OAObject instance
+	 * @throws Exception if object creation fails
 	 */
 	public OAObject createNewObject(Class c) throws Exception {
 		return (OAObject) c.newInstance();
 	}
 
 	/**
-	 * Convert from String to correct type. param clazz type of object to convert value to
+	 * Converts a string value to the specified property type.
 	 *
-	 * @return null to skip property.
+	 * @param propertyName the property name
+	 * @param value the string value
+	 * @param propertyClass the target class for conversion
+	 * @return the converted value, or {@code null} to skip assignment
 	 */
 	public Object convertToObject(String propertyName, String value, Class propertyClass) {
 		if (propertyClass == null) {
@@ -1078,8 +1293,10 @@ public class OAXMLReader1 extends DefaultHandler {
 	}
 
 	/**
-	 * By default, this will check to see if object already exists in OAObjectCache and return that object. Otherwise this object is
-	 * returned.
+	 * Returns the resolved object instance to use after loading.
+	 *
+	 * @param object the loaded object
+	 * @return the resolved object instance
 	 */
 	protected Object getRealObject(OAObject object) {
 		Object obj = OAObjectCacheDelegate.getObject(object.getClass(), OAObjectKeyDelegate.getKey(object));
@@ -1089,6 +1306,12 @@ public class OAXMLReader1 extends DefaultHandler {
 		return object;
 	}
 
+	/**
+	 * Resolves or transforms a class name found in XML before object creation.
+	 *
+	 * @param className the class name from XML
+	 * @return the resolved class name
+	 */
 	protected String resolveClassName(String className) {
 		return className;
 	}
