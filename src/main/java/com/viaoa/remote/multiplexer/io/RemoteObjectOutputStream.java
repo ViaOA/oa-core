@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,15 +52,53 @@ import com.viaoa.comm.multiplexer.io.VirtualSocket;
  * @author vvia
  */
 public class RemoteObjectOutputStream extends ObjectOutputStream {
+	
+	/**
+	 * Cache mapping fully qualified class names to assigned integer
+	 * class-descriptor identifiers.
+	 * <p>
+	 * Used to avoid repeatedly transmitting full {@link ObjectStreamClass}
+	 * metadata over the stream.
+	 * </p>
+	 */
     private ConcurrentHashMap<String, Integer> hmClassDesc;
+    
+    /**
+     * Atomic counter used to generate new class-descriptor identifiers.
+     */
     private AtomicInteger aiClassDesc;
+    
+    /**
+     * Temporary cache for newly assigned class-descriptor identifiers.
+     * <p>
+     * Entries are promoted to the main cache only after the stream is flushed,
+     * preventing race conditions.
+     * </p>
+     */
     private HashMap<String, Integer> hmTemp; 
 
+    /**
+     * Creates a {@code RemoteObjectOutputStream} using a virtual socket.
+     *
+     * @param socket the virtual socket providing the output stream
+     * @throws IOException if an I/O error occurs
+     */
     public RemoteObjectOutputStream(VirtualSocket socket) throws IOException {
         this(socket, null, null);
     }
 
-    // 20141121 used by OAObjectSerializer to embed compressed objects and share the outer remoteObjectStream
+    /**
+     * Creates a {@code RemoteObjectOutputStream} using an existing output stream.
+     * <p>
+     * If a parent {@code RemoteObjectOutputStream} is provided, its class-descriptor
+     * caches and counters are reused.
+     * </p>
+     *
+     * @param os the output stream to write to
+     * @param ros an existing {@code RemoteObjectOutputStream} whose caches are reused,
+     *        or {@code null}
+     * @throws IOException if an I/O error occurs
+     */
     public RemoteObjectOutputStream(OutputStream os, RemoteObjectOutputStream ros) throws IOException {
         super(new RemoteBufferedOutputStream(os));
         if (ros != null) {
@@ -70,6 +108,17 @@ public class RemoteObjectOutputStream extends ObjectOutputStream {
         }
     }
     
+    /**
+     * Creates a {@code RemoteObjectOutputStream} with explicit class-descriptor caches.
+     * <p>
+     * Uses a {@link RemoteBufferedOutputStream} for high-performance writes.
+     * </p>
+     *
+     * @param socket the virtual socket providing the output stream
+     * @param hmClassDesc shared map of class names to descriptor identifiers
+     * @param aiClassDesc shared atomic counter for descriptor identifiers
+     * @throws IOException if an I/O error occurs
+     */
     public RemoteObjectOutputStream(
             VirtualSocket socket, 
             ConcurrentHashMap<String, Integer> hmClassDesc, 
@@ -87,11 +136,29 @@ public class RemoteObjectOutputStream extends ObjectOutputStream {
         this.aiClassDesc = aiClassDesc;
     }
     
+    /**
+     * Overrides the default stream-header writer.
+     * <p>
+     * This implementation intentionally writes no stream header.
+     * </p>
+     *
+     * @throws IOException if an I/O error occurs
+     * @throws StreamCorruptedException if the stream is corrupted
+     */
     @Override
     protected void writeStreamHeader() throws IOException, StreamCorruptedException {
         // do nothing
     }
 
+    /**
+     * Flushes the stream and finalizes any newly written class descriptors.
+     * <p>
+     * Promotes temporary class-descriptor identifiers to the shared cache
+     * after all objects have been fully written.
+     * </p>
+     *
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     public void flush() throws IOException {
         super.flush();
@@ -105,6 +172,16 @@ public class RemoteObjectOutputStream extends ObjectOutputStream {
         hmTemp.clear();
     }
     
+    /**
+     * Writes a class descriptor using an integer identifier protocol.
+     * <p>
+     * Sends the full descriptor only once and assigns a small integer identifier
+     * for subsequent occurrences.
+     * </p>
+     *
+     * @param desc the class descriptor to write
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     protected void writeClassDescriptor(ObjectStreamClass desc) throws IOException {
         String s = desc.getName();
@@ -138,6 +215,17 @@ public class RemoteObjectOutputStream extends ObjectOutputStream {
         }
     }
     
+    /**
+     * Writes an ASCII-encoded string to the stream.
+     * <p>
+     * The string length is written as a short value, followed by the raw bytes.
+     * A {@code null} value is written as a zero length.
+     * </p>
+     *
+     * @param s the ASCII string to write, or {@code null}
+     * @throws IOException if an I/O error occurs
+     * @throws StreamCorruptedException if the stream is corrupted
+     */
     public void writeAsciiString(String s) throws IOException, StreamCorruptedException {
         if (s == null) {
             writeShort(0);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,8 +47,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author vvia
  */
 public class RemoteObjectInputStream extends ObjectInputStream {
+	
+	/**
+	 * Cache mapping integer class identifiers to their corresponding
+	 * {@link ObjectStreamClass} instances.
+	 * <p>
+	 * This map is shared between client and server to avoid repeatedly
+	 * transmitting full class descriptors.
+	 * </p>
+	 */
     private ConcurrentHashMap<Integer, ObjectStreamClass> hmClassDesc;
 
+    /**
+     * Creates a {@code RemoteObjectInputStream} using a socket input stream.
+     * <p>
+     * Initializes the stream from the socket and assigns the shared
+     * class-descriptor cache.
+     * </p>
+     *
+     * @param socket the socket providing the input stream
+     * @param hmClassDesc shared map of class descriptor identifiers
+     * @throws IOException if an I/O error occurs
+     */
     public RemoteObjectInputStream(Socket socket, 
             ConcurrentHashMap<Integer, ObjectStreamClass> hmClassDesc) throws IOException {
         super(socket.getInputStream());
@@ -56,7 +76,18 @@ public class RemoteObjectInputStream extends ObjectInputStream {
         this.hmClassDesc = hmClassDesc;
     }
     
-    // 20141121 used by OAObjectSerializer to embed compressed objects
+    /**
+     * Creates a {@code RemoteObjectInputStream} using an existing input stream.
+     * <p>
+     * If a parent {@code RemoteObjectInputStream} is provided, its class-descriptor
+     * cache is reused.
+     * </p>
+     *
+     * @param is the input stream to read from
+     * @param rois an existing {@code RemoteObjectInputStream} whose cache is reused,
+     *        or {@code null}
+     * @throws IOException if an I/O error occurs
+     */
     public RemoteObjectInputStream(InputStream is, RemoteObjectInputStream rois) throws IOException {
         super(is);
         if (rois != null) {
@@ -65,10 +96,32 @@ public class RemoteObjectInputStream extends ObjectInputStream {
     }
     
     
+    /**
+     * Overrides the default stream-header reader.
+     * <p>
+     * This implementation intentionally does nothing, eliminating the standard
+     * Java serialization stream header.
+     * </p>
+     *
+     * @throws IOException if an I/O error occurs
+     * @throws StreamCorruptedException if the stream is corrupted
+     */
     @Override
     protected void readStreamHeader() throws IOException, StreamCorruptedException {
     }
 
+    /**
+     * Reads a class descriptor using an integer identifier protocol.
+     * <p>
+     * If the identifier is non-negative, the descriptor is retrieved from the
+     * shared cache. Otherwise, the descriptor is read from the stream and
+     * optionally cached.
+     * </p>
+     *
+     * @return the resolved {@link ObjectStreamClass}
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if the class cannot be resolved
+     */
     @Override
     protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
         ObjectStreamClass osc;
@@ -87,6 +140,16 @@ public class RemoteObjectInputStream extends ObjectInputStream {
     }
 
     // faster then using readUTF
+    /**
+     * Reads an ASCII-encoded string from the stream.
+     * <p>
+     * The string length is read as a short value, followed by the raw bytes.
+     * A length of zero returns {@code null}.
+     * </p>
+     *
+     * @return the decoded ASCII string, or {@code null} if length is zero
+     * @throws IOException if an I/O error occurs
+     */
     public String readAsciiString() throws IOException {
         short x = readShort();
         if (x == 0) return null;

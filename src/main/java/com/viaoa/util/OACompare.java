@@ -49,9 +49,7 @@ import com.viaoa.object.OAObjectKeyDelegate;
  * OACompare.isBetween(5.2, 5.0, 6.0);     // true
  * OACompare.isLike("John Smith", "Jo*");  // true
  * </pre>
- *
- * @author Vince Via
- */
+*/
 public class OACompare {
 
 	/**

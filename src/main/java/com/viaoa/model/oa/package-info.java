@@ -13,18 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.viaoa.image;
+/**
+ * Helper wrapper classes.    
+ * Creates OAObject classes (observable wrappers) for generic classes.
+ */
+package com.viaoa.model.oa;
 
-import java.awt.Color;
-
-public class OAColorIcon extends ColorIcon {
-
-    public OAColorIcon() {
-    }
-    
-    public OAColorIcon(Color c) {
-        super(c);
-    }
-
-    
-}

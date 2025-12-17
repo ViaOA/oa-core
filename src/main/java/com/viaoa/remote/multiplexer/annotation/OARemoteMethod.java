@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,31 +50,52 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OARemoteMethod {
     
-    // true if the return value should be compressed when it is transmitted
+	/**
+	 * Specifies whether the return value should be compressed when transmitted.
+	 *
+	 * @return {@code true} to compress the return value, otherwise {@code false}
+	 */
     boolean compressedReturnValue() default false;
 
-    // true if return value should not be returned
+    /**
+     * Specifies whether the method should not return a value.
+     *
+     * @return {@code true} if no return value should be sent, otherwise {@code false}
+     */
     boolean noReturnValue() default false;
     
+    /**
+     * Specifies the timeout, in seconds, for the remote method invocation.
+     *
+     * @return the timeout value in seconds, or {@code 0} for no timeout
+     */
     int timeoutSeconds() default 0;
     
     /**
-     * if true, then it will not use a queue for the return value (even if parent uses a msg queue)
+     * Specifies whether the return value should bypass the message queue.
+     *
+     * @return {@code true} to bypass the queue for the return value, otherwise {@code false}
      */
     boolean dontUseQueueForReturnValue() default false;
     
     /**
-     * Do not use queue (even if parent uses a msg queue).
+     * Specifies whether the method invocation should bypass the message queue.
+     *
+     * @return {@code true} to bypass the queue, otherwise {@code false}
      */
     boolean dontUseQueue() default false;
     
     /**
-     * send return value using the socket that writes queued messages from the server to the client
+     * Specifies whether the return value should be sent using the queue socket.
+     *
+     * @return {@code true} to send the return value on the queue socket, otherwise {@code false}
      */
     boolean returnOnQueueSocket() default false;
     
     /**
-     * Server side broadcast option to have the server runn the method using an OARemoteThread.
+     * Specifies whether the server should execute the method in an {@code OARemoteThread}.
+     *
+     * @return {@code true} to execute in a remote thread, otherwise {@code false}
      */
     boolean runInRemoteThread() default false; 
 }

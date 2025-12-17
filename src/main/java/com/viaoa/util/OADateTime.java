@@ -62,8 +62,6 @@ import java.util.Vector;
  * <h3>Known behavior</h3> Arithmetic methods (e.g., {@code addDays},
  * {@code addMonths}) operate on the instant and allow DST transitions to shift
  * wall-clock times as defined by {@link Calendar}.
- *
- * @author Vince Via
  */
 public class OADateTime implements java.io.Serializable, Comparable {
 	private static final long serialVersionUID = 1L;

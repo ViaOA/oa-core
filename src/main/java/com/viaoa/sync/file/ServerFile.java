@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,18 +75,51 @@ import com.viaoa.util.OAFile;
 public class ServerFile {
     private static Logger LOG = Logger.getLogger(ServerFile.class.getName());
     
+    /**
+     * Multiplexer socket name used for file upload operations.
+     */
     public static final String FileUpload = "fileUpload";
+    
+    /**
+     * Multiplexer socket name used for file download operations.
+     */
     public static final String FileDownload = "fileDownload";
     
+    /**
+     * Base directory on the server used for all file upload and download operations.
+     */
     private final String directory;
+    
+    /**
+     * Server socket used to accept file upload connections.
+     */
     private ServerSocket ssUpload;
+    
+    /**
+     * Server socket used to accept file download connections.
+     */
     private ServerSocket ssDownload;
     
+    /**
+     * Creates a new server-side file transfer service.
+     *
+     * @param directory the base directory used to store and retrieve files
+     */
     public ServerFile(String directory) {
         this.directory = directory;
     }
 
-    private final AtomicBoolean abStart = new AtomicBoolean(); 
+    /**
+     * Flag used to control startup and shutdown of the file transfer service.
+     */
+    private final AtomicBoolean abStart = new AtomicBoolean();
+    
+    /**
+     * Starts the server-side file transfer service.
+     * <p>
+     * Launches dedicated daemon threads for upload and download server sockets.
+     * </p>
+     */
     public void start() {
         if (!abStart.compareAndSet(false, true)) return;
         LOG.fine("Starting");
@@ -122,6 +155,12 @@ public class ServerFile {
         LOG.fine("start completed, started 2 threads");
     }
     
+    /**
+     * Stops the server-side file transfer service.
+     * <p>
+     * Closes server sockets and prevents further connections.
+     * </p>
+     */
     public void stop() {
         if (!abStart.compareAndSet(true, false)) return;
         try {
@@ -135,6 +174,14 @@ public class ServerFile {
     }
     
     
+    /**
+     * Starts the download server socket loop.
+     * <p>
+     * Accepts incoming download connections and processes each on a worker thread.
+     * </p>
+     *
+     * @throws Exception if the server socket cannot be created
+     */
     protected void startDownloadServerSocket() throws Exception {
         LOG.fine("Starting");
         ssDownload = OASync.getSyncServer().getMultiplexerServer().createServerSocket(FileDownload);
@@ -154,7 +201,14 @@ public class ServerFile {
     }
 
     /**
-     * download (send) a server file to client
+     * Sends a server-side file to a connected client.
+     * <p>
+     * Validates the requested filename, writes a status code, and streams
+     * the file contents to the client using length-prefixed blocks.
+     * </p>
+     *
+     * @param socket the client socket requesting the file
+     * @throws Exception if an I/O or protocol error occurs
      */
     public void downloadFile(Socket socket) throws Exception {
         DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -202,6 +256,14 @@ public class ServerFile {
     }
     
 
+    /**
+     * Starts the upload server socket loop.
+     * <p>
+     * Accepts incoming upload connections and processes each on a worker thread.
+     * </p>
+     *
+     * @throws Exception if the server socket cannot be created
+     */
     protected void startUploadServerSocket() throws Exception {
         LOG.fine("Starting");
         ssUpload = OASync.getSyncServer().getMultiplexerServer().createServerSocket(FileUpload);
@@ -220,8 +282,16 @@ public class ServerFile {
             }, "UploadFileSocket").start();
         }
     }
-    /** 
-     * save file from client to server.
+
+    /**
+     * Receives a file from a client and saves it to the server directory.
+     * <p>
+     * Validates the filename, ensures directories exist, and streams
+     * the uploaded file contents from the client.
+     * </p>
+     *
+     * @param socket the client socket uploading the file
+     * @throws Exception if an I/O or protocol error occurs
      */
     public void uploadFile(Socket socket) throws Exception {
         DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,18 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME) 
 public @interface OARemoteParameter {
     
-    // true if the param should be compressed when it is transmitted
+	/**
+	 * Specifies whether this parameter should be compressed when transmitted.
+	 *
+	 * @return {@code true} to compress the parameter, otherwise {@code false}
+	 */
     boolean compressed() default false;
     
-    // if true and this param is a remote object, then it will not use a queue when messaging (even if parent uses a msg queue)
+    /**
+     * Specifies whether calls routed through this parameter should bypass
+     * asynchronous queuing when the parameter represents a remote object.
+     *
+     * @return {@code true} to bypass the queue, otherwise {@code false}
+     */
     boolean dontUseQueue() default false;
 }

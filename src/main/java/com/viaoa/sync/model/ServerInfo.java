@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,70 +48,170 @@ import com.viaoa.util.OADateTime;
 public class ServerInfo implements Serializable{
     private static final long serialVersionUID = 1L;
      
-    /** created time */
+    /**
+     * Timestamp indicating when the server instance was created.
+     */
     protected OADateTime created;
     
-    /** server information */
+    /**
+     * Host name of the server.
+     */
     protected String hostName;
+
+    /**
+     * IP address of the server.
+     */
     protected String ipAddress;
+    
+    /**
+     * Version string of the server software.
+     */
     protected String version;
+    
+    /**
+     * Flag indicating whether server discovery is enabled.
+     */
     protected boolean discoveryEnabled;
     
-    /** flag to know when the start method was called. */
+    /**
+     * Flag indicating whether the server has been started.
+     */
     private volatile boolean started;
 
-    /** flag to know if server has been suspended. */
+    /**
+     * Flag indicating whether the server is currently suspended.
+     */
     private volatile boolean suspended;
 
     
+    /**
+     * Creates a new {@code ServerInfo} instance.
+     */
     public ServerInfo() {
     }
 
-    
+    /**
+     * Returns the server creation timestamp.
+     *
+     * @return the {@code created} timestamp
+     */
     public OADateTime getCreated() {
         return created;
     }
+
+    /**
+     * Sets the server creation timestamp.
+     *
+     * @param newValue the creation timestamp to set
+     */
     public void setCreated(OADateTime newValue) {
         this.created = newValue;
     }
     
+    /**
+     * Returns the server IP address.
+     *
+     * @return the server IP address
+     */
     public String getIpAddress() {
         return ipAddress;
     }
+
+    /**
+     * Sets the server IP address.
+     *
+     * @param newValue the IP address to set
+     */
     public void setIpAddress(String newValue) {
         this.ipAddress = newValue;
     }
     
+    /**
+     * Returns the server host name.
+     *
+     * @return the server host name
+     */
     public String getHostName() {
         return hostName;
     }
+
+    /**
+     * Sets the server host name.
+     *
+     * @param newValue the host name to set
+     */
     public void setHostName(String newValue) {
         this.hostName = newValue;
     }
     
+    /**
+     * Returns the server version string.
+     *
+     * @return the version string
+     */
     public String getVersion() {
         return version;
     }
+
+    /**
+     * Sets the server version string.
+     *
+     * @param newValue the version string to set
+     */
     public void setVersion(String newValue) {
         this.version = newValue;
     }
     
+    /**
+     * Returns whether the server has been started.
+     *
+     * @return {@code true} if the server has started, otherwise {@code false}
+     */
     public boolean isStarted() {
         return started;
     }
+
+    /**
+     * Sets whether the server has been started.
+     *
+     * @param started {@code true} to mark the server as started
+     */
     public void setStarted(boolean started) {
         this.started = started;
     }
+
+    /**
+     * Returns whether the server is currently suspended.
+     *
+     * @return {@code true} if the server is suspended, otherwise {@code false}
+     */
     public boolean isSuspended() {
         return suspended;
     }
+
+    /**
+     * Sets whether the server is currently suspended.
+     *
+     * @param suspended {@code true} to suspend the server, {@code false} to resume it
+     */
     public void setSuspended(boolean suspended) {
         this.suspended = suspended;
     }
     
+    /**
+     * Returns whether server discovery is enabled.
+     *
+     * @return {@code true} if discovery is enabled, otherwise {@code false}
+     */
     public boolean isDiscoveryEnabled() {
         return discoveryEnabled;
     }
+
+    /**
+     * Sets whether server discovery is enabled.
+     *
+     * @param b {@code true} to enable discovery, {@code false} to disable it
+     */
     public void setDiscoveryEnabled(boolean b) {
         this.discoveryEnabled = b;
     }

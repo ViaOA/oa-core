@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,17 @@ public class ClientFile {
     private static Logger LOG = Logger.getLogger(ClientFile.class.getName());
  
     /**
-     * Download file from server and save to file.
+     * Downloads a file from the server and saves it to a local file.
+     * <p>
+     * Opens a dedicated multiplexer socket, requests the named file,
+     * receives length-prefixed data blocks, and writes them to the
+     * destination file while reporting progress.
+     * </p>
+     *
+     * @param fname the name of the file to download from the server
+     * @param fileSaveAs the local file to save the downloaded contents to
+     * @return {@code true} if the file was successfully downloaded, otherwise {@code false}
+     * @throws Exception if an I/O or protocol error occurs
      */
     public boolean download(String fname, File fileSaveAs) throws Exception {
         LOG.fine("download fname="+fname+", save as file="+fileSaveAs);
@@ -126,6 +136,19 @@ public class ClientFile {
     }
     
     
+    /**
+     * Uploads a local file to the server.
+     * <p>
+     * Opens a dedicated multiplexer socket, sends the target filename,
+     * and streams the local file to the server using length-prefixed
+     * data blocks while reporting progress.
+     * </p>
+     *
+     * @param fname the target filename on the server
+     * @param fileOpen the local file to upload
+     * @return {@code true} if the file was successfully uploaded, otherwise {@code false}
+     * @throws IOException if an I/O error occurs
+     */
     public boolean upload(String fname, File fileOpen) throws IOException {
         LOG.fine("upload to fname="+fname+", from file="+fileOpen);
         if (OAString.isEmpty(fname) || fileOpen == null) return false;
@@ -166,6 +189,15 @@ public class ClientFile {
         return bValid;
     }
     
+    /**
+     * Reports progress during upload or download operations.
+     * <p>
+     * This method is called with the cumulative number of bytes
+     * transferred and may be overridden to provide progress feedback.
+     * </p>
+     *
+     * @param x the total number of bytes transferred so far
+     */
     protected void status(int x) {
     }
 }

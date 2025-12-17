@@ -1,5 +1,5 @@
 /*
- * Copyright 1999–2025 Vince Via (vvia@viaoa.com)
+ * Copyright 1999–2025 ViaOA (info@viaoa.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,25 +43,66 @@ import java.io.OutputStream;
  * @author vvia
  */
 public class RemoteBufferedOutputStream extends FilterOutputStream {
-    private static final int TotalBuffers = 32;
-    private static final int BufferSize = 8 * 1024;
-    protected byte[] bsBuffer;
-    protected int count;
-    protected boolean bOwnedBuffer;  // true if the bsBuffer is not from the pool
+  
+	/**
+	 * Total number of pooled byte buffers available for reuse.
+	 */
+	private static final int TotalBuffers = 32;
+    
+	/**
+	 * Base size, in bytes, used to create pooled buffers.
+	 */
+	private static final int BufferSize = 8 * 1024;
+    
+	/**
+	 * Active byte buffer currently used to accumulate output data.
+	 */
+	protected byte[] bsBuffer;
+    
+	/**
+	 * Number of bytes currently written into {@link #bsBuffer}.
+	 */
+	protected int count;
+    
+	/**
+	 * Flag indicating whether the current buffer is privately owned
+	 * and not part of the shared buffer pool.
+	 */
+	protected boolean bOwnedBuffer;  // true if the bsBuffer is not from the pool
 
-    /**
-     * Creates a new buffered output stream to write data to the specified underlying output stream with
-     * the specified buffer size.
-     */
+	/**
+	 * Creates a new buffered output stream that writes to the specified
+	 * underlying output stream.
+	 *
+	 * @param out the underlying output stream
+	 */
     public RemoteBufferedOutputStream(OutputStream out) {
         super(out);
     }
 
-    // create a pool of available buffers
+    /**
+     * Tracks which pooled buffers are currently in use.
+     */
     static boolean[] isUsed = new boolean[TotalBuffers];
+
+    /**
+     * Shared pool of reusable byte buffers.
+     */
     static byte[][] buffers = new byte[TotalBuffers][];
+    
+    /**
+     * Lock object used to synchronize access to the buffer pool.
+     */
     static final Object Lock = new Object();
 
+    /**
+     * Retrieves an available buffer from the shared pool.
+     * <p>
+     * Marks the buffer as in use and lazily allocates it if needed.
+     * </p>
+     *
+     * @return a pooled byte buffer, or {@code null} if none are available
+     */
     protected static byte[] getPoolBuffer() {
         synchronized (Lock) {
             for (int i = 0; i < TotalBuffers; i++) {
@@ -81,6 +122,12 @@ public class RemoteBufferedOutputStream extends FilterOutputStream {
         }
         return null;
     }
+    
+    /**
+     * Releases a pooled buffer back to the shared pool.
+     *
+     * @param bs the buffer to release
+     */
     protected static void releasePoolBuffer(byte[] bs) {
         if (bs == null) return;
         synchronized (Lock) {
@@ -92,6 +139,16 @@ public class RemoteBufferedOutputStream extends FilterOutputStream {
             }
         }
     }
+    
+    /**
+     * Obtains a buffer for writing.
+     * <p>
+     * Attempts to retrieve a pooled buffer and falls back to a privately
+     * owned buffer if none are available.
+     * </p>
+     *
+     * @return a byte buffer for writing
+     */
     protected byte[] getBuffer() {
         byte[] bs = getPoolBuffer();
         if (bs == null) {
@@ -101,6 +158,12 @@ public class RemoteBufferedOutputStream extends FilterOutputStream {
         return bs;
     }
 
+    /**
+     * Frees the current buffer.
+     * <p>
+     * Returns pooled buffers to the shared pool and clears the reference.
+     * </p>
+     */
     private void freeBuffer() {
         if (!bOwnedBuffer && bsBuffer != null) {
             releasePoolBuffer(bsBuffer);
@@ -108,19 +171,37 @@ public class RemoteBufferedOutputStream extends FilterOutputStream {
         }
     }
     
+    /**
+     * Closes this stream.
+     * <p>
+     * Frees any allocated buffer and then closes the underlying output stream.
+     * </p>
+     *
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     public void close() throws IOException {
         freeBuffer();
         super.close();
     }
 
+    /**
+     * Ensures that any allocated buffer is released before garbage collection.
+     *
+     * @throws Throwable if an error occurs during finalization
+     */
     @Override
     protected void finalize() throws Throwable {
         freeBuffer();
         super.finalize();
     }
     
-    /** writes the internal buffer to output, and resets position to 0 */
+    /**
+     * Writes the contents of the internal buffer to the underlying output stream
+     * and resets the buffer position.
+     *
+     * @throws IOException if an I/O error occurs
+     */
     private void writeBuffer() throws IOException {
         if (count > 0 && bsBuffer != null) {
             out.write(bsBuffer, 0, count);
@@ -128,6 +209,12 @@ public class RemoteBufferedOutputStream extends FilterOutputStream {
         }
     }
 
+    /**
+     * Writes a single byte to this output stream.
+     *
+     * @param b the byte to write
+     * @throws IOException if an I/O error occurs
+     */
     public void write(int b) throws IOException {
         if (bsBuffer == null) {
             bsBuffer = getBuffer();
@@ -138,6 +225,14 @@ public class RemoteBufferedOutputStream extends FilterOutputStream {
         bsBuffer[count++] = (byte) b;
     }
 
+    /**
+     * Writes a portion of a byte array to this output stream.
+     *
+     * @param b the source byte array
+     * @param off the start offset in the array
+     * @param len the number of bytes to write
+     * @throws IOException if an I/O error occurs
+     */
     public void write(byte b[], int off, int len) throws IOException {
         if (bsBuffer == null) {
             bsBuffer = getBuffer();
@@ -157,7 +252,13 @@ public class RemoteBufferedOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Overwritten to include freeing the byte[] buffer from the shared pool.
+     * Flushes this output stream.
+     * <p>
+     * Writes any buffered data to the underlying stream, flushes it,
+     * and releases the buffer back to the pool.
+     * </p>
+     *
+     * @throws IOException if an I/O error occurs
      */
     public void flush() throws IOException {
         writeBuffer();

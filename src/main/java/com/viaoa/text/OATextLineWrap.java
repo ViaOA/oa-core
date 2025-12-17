@@ -97,7 +97,6 @@ import java.util.List;
  *     <li>Dashboard panels, tooltips, summaries</li>
  * </ul>
  *
- * @author Vince Via
  */
 public class OATextLineWrap {
     

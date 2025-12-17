@@ -42,7 +42,6 @@ package com.viaoa.util;
  * {@code OAConverter}; it is simply a more concise, developer-friendly alias.
  * </p>
  *
- * @author Vince Via
  * @see OAConverter
  */
 public class OAConv extends OAConverter {

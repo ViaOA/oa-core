@@ -495,7 +495,6 @@ public class OAObjectTest extends OAUnitTest {
  * OAObjectCallback can be used to query the object and properties.<br>
  *
  * @see OAObjectCallback
- * @author Vince Via
  * @see Hub for observable collection class that has "linkage" features for automatically managing relationships. see OAHtmlSelect for
  *      datasource independent queries based on object and property paths.
  */

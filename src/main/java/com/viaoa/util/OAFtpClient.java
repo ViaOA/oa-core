@@ -333,7 +333,7 @@ public class OAFtpClient {
             ftp.login("vince", "via83");
             // String s = ftp.get("", "test");
             // System.out.println("==> "+s);
-            // ftp.put("", "xx", "Vince Via test");
+            // ftp.put("", "xx", "John Smith test");
             ftp.put("", "OAFtp.java", new File("util\\OAFtp.java"));
         }
         catch (Exception e) {
