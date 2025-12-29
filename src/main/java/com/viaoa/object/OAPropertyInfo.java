@@ -1266,4 +1266,15 @@ public class OAPropertyInfo implements java.io.Serializable {
 	public void setPojoKeyPos(int pojoKeyPos) {
 		this.pojoKeyPos = pojoKeyPos;
 	}
+
+	/**
+	 * Friend level access to package protected properties.
+	 */
+	public static final class FriendAccess {
+	}
+	private final static FriendAccess friendAccess = new FriendAccess(); 
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
+
 }

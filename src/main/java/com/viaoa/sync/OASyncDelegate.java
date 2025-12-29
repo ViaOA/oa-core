@@ -1329,7 +1329,7 @@ public class OASyncDelegate {
 			p = ObjectPackage;
 		}
 		if (isServer(p)) {
-			return OAObjectDelegate.getNextGuid();
+			return OAObjectDelegate.getNextGuid(p);
 		}
 		long x;
 		synchronized (NextGuidLock) {

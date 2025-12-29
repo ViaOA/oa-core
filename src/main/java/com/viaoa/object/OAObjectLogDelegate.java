@@ -17,9 +17,12 @@ package com.viaoa.object;
 
 import java.util.logging.*;
 
+import com.viaoa.graph.OAGraph;
+
 //import sun.util.LocaleServiceProviderPool.LocalizedObjectGetter;
 
 import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLWriter;
@@ -49,12 +52,21 @@ import com.viaoa.xml.OAXMLWriter;
 public class OAObjectLogDelegate {
     private static Logger LOG = Logger.getLogger(OAObjectLogDelegate.class.getName());
     
-    /**
-     * The active XML writer used for recording {@link OALogRecord} entries.
-     * Declared volatile so that changes to the active writer are visible
-     * across threads. A value of {@code null} indicates that logging is
-     * currently disabled or the log file is closed.
-     */
+	/*
+	OAGraph g = getGraph(null, oaObj);
+	if (g == null) return;
+	g.objects().getOAObjectLockService().??(oaObj);
+    */
+	
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+    
     private static volatile OAXMLWriter writerXml;
 
     /**
@@ -77,6 +89,7 @@ public class OAObjectLogDelegate {
      *              to close the current log
      */
     public static void createXMLLogFile(String fname) {
+    	//qqqqqqqqqqqqqqq no path to Service
         if (writerXml != null) {
             writerXml.close();
             writerXml = null;
@@ -114,6 +127,7 @@ public class OAObjectLogDelegate {
      * argument.
      */
     public static void closeXMLLogFile() {
+    	//qqqqqqqqqqqqqqq no path to Service
         createXMLLogFile(null);
     }
     
@@ -131,15 +145,11 @@ public class OAObjectLogDelegate {
      * @param oaObj the object being logged
      * @param bSave true to log a SAVE command, false to log a DELETE
      */
-    protected static void logToXmlFile(OAObject oaObj, boolean bSave) {
-        if (writerXml == null) return;
-        OALogRecord rec = new OALogRecord();
-        rec.setObject(oaObj);
-        rec.setCommand(bSave ? OALogRecord.COMMAND_SAVE : OALogRecord.COMMAND_DELETE);
-        synchronized (writerXml) {
-            writerXml.write(rec);
-            writerXml.flush();
-        }
+     public static void logToXmlFile(OAObject oaObj, boolean bSave) {
+    	//qqqqqqqq method was protected
+    	OAGraph g = getGraph(null, oaObj);
+    	if (g == null) return;
+    	g.objects().getOAObjectLogService().logToXmlFile(oaObj, bSave);
     }
     
     /**
@@ -162,6 +172,7 @@ public class OAObjectLogDelegate {
      * @throws Exception if an error occurs during XML reading
      */
     public static void restoreXMLLogFile(String fname) throws Exception {
+    	//qqqqqqqqqq no path to Service
         if(fname == null) return;
         fname = OAString.convertFileName(fname);
         OAXMLReader reader = new OAXMLReader() {

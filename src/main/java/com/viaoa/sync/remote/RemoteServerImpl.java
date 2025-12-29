@@ -68,6 +68,14 @@ import com.viaoa.sync.model.ClientInfo;
 public abstract class RemoteServerImpl implements RemoteServerInterface {
 	private static Logger LOG = Logger.getLogger(RemoteServerImpl.class.getName());
 
+	private Package packageThis;
+	
+	// 20251223
+	public RemoteServerImpl(Package packageThis) {
+		this.packageThis = packageThis;
+	}
+	
+	
 	/**
 	 * Echoes a ping message.
 	 *
@@ -133,7 +141,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public long getNextFiftyObjectGuids() {
-		return OAObjectDelegate.getNextFiftyGuids();
+		return OAObjectDelegate.getNextFiftyGuids(packageThis);
 	}
 
 	/**

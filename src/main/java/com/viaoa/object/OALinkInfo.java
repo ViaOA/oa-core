@@ -773,6 +773,14 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return this.bPrivateMethod;
 	}
 
+	public boolean getNotUsed() {
+		return this.bNotUsed;
+	}
+	public void setNotUsed(boolean b) {
+		this.bNotUsed = b;
+	}
+
+	
 	/**
 	 * Returns whether save operations should cascade through this link.
 	 *
@@ -1735,5 +1743,16 @@ public class OALinkInfo { //implements java.io.Serializable {
 			alFkeyInfo = new ArrayList<OAFkeyInfo>();
 		}
 		return alFkeyInfo;
+	}
+
+
+	/**
+	 * Friend level access to package protected properties.
+	 */
+	public static final class FriendAccess {
+	}
+	private final static FriendAccess friendAccess = new FriendAccess(); 
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
 	}
 }

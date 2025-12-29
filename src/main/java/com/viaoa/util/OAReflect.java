@@ -844,6 +844,12 @@ public class OAReflect {
 		return response;
 	}
 
+
+	@Deprecated
+	public static String[] getClasses(String packageName) throws ClassNotFoundException, IOException {
+		return getOAObjectClasses(packageName);
+	}
+	
 	/**
 	 * Get name of all classes in a package. Example: String[] cs = getClasses("com.viaoa.scheduler.oa"); output: Item SalesOrder Customer
 	 * etc ...
@@ -853,7 +859,7 @@ public class OAReflect {
 	 * @throws ClassNotFoundException
 	 * @throws IOException
 	 */
-	public static String[] getClasses(String packageName) throws ClassNotFoundException, IOException {
+	public static String[] getOAObjectClasses(String packageName) throws ClassNotFoundException, IOException {
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		if (classLoader == null) {
 			throw new ClassNotFoundException("classloader not found");

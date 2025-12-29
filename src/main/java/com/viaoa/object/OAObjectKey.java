@@ -274,4 +274,15 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	public String toString() {
 		return "guid=" + guid + ", ids=" + Arrays.toString(objectIds);		
 	}
+
+	/**
+	 * Friend level access to package protected properties.
+	 */
+	public static final class FriendAccess {
+	}
+	private final static FriendAccess friendAccess = new FriendAccess(); 
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
+
 }

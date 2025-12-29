@@ -235,7 +235,7 @@ public class OATransaction {
 	 * Internal key/value store used by listeners to associate temporary data with
 	 * the lifespan of this transaction.
 	 */
-	private HashMap hm = new HashMap();
+	private HashMap<Object, Object> hm = new HashMap();
 
 	/**
 	 * Stores a key/value pair in the transaction's internal map.

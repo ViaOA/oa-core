@@ -31,6 +31,7 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubEventDelegate;
+import com.viaoa.object.OAObjectInfo.FriendAccess;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
@@ -3918,4 +3919,66 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	public Hub<String> getDisplayNameValues(String propertyName) {
 		return OAObjectEnumDelegate.getDisplayNameValues(this.getClass(), propertyName);
 	}
+	
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+		
+	    public long getGuid(OAObject obj) {
+	        return obj.guid;
+	    }
+
+	    public void setGuid(OAObject obj, long guid) {
+	        obj.guid = guid;
+	    }
+
+	    public boolean isNew(OAObject obj) {
+	        return obj.newFlag;
+	    }
+	    public boolean getNewFlag(OAObject obj) {
+	        return obj.newFlag;
+	    }
+
+	    public boolean getDeleteFlag(OAObject obj) {
+	        return obj.deletedFlag;
+	    }
+	    public void setDeletedFlag(OAObject obj, boolean b) {
+	        obj.deletedFlag = b;
+	    }
+	    
+	    public void setNew(OAObject obj, boolean b) {
+	        obj.newFlag = b;
+	    }
+
+	    public byte[] getNulls(OAObject obj) {
+	    	return obj.nulls;
+	    }
+
+	    public void setNulls(OAObject obj, byte[] bs) {
+	    	obj.nulls = bs;
+	    }
+
+
+		public boolean getChangedFlag(OAObject obj) {
+			return obj.changedFlag;
+		}
+		public void setChangedFlag(OAObject obj, boolean b) {
+			obj.changedFlag = b;;
+		}
+
+		public WeakReference<Hub<?>>[] getWeakHubs(OAObject obj) {
+			return obj.weakhubs;
+		}
+		public void setWeakHubs(OAObject obj, WeakReference<Hub<?>>[] refs) {
+			obj.weakhubs = refs;
+		}
+
+		
+
+	}
+	private final static FriendAccess friendAccess = new FriendAccess(); 
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
+
 }

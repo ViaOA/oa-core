@@ -20,6 +20,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectDSService;
+import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Low-level delegate that connects {@link OAObject} lifecycle operations
@@ -63,7 +67,22 @@ import com.viaoa.datasource.OADataSource;
 public class OAObjectDSDelegate {
 	private static final Logger LOG = Logger.getLogger(OAObjectDSDelegate.class.getName());
 
-    static private final ConcurrentHashMap<Long, Long> hmAssigningId = new ConcurrentHashMap<Long, Long>(17, 0.75F);
+	/*
+	OAGraph g = getGraph(null, oaObj);
+	if (g == null) return;
+	g.objects().getOAObjectDSService().delete(oaObj);
+*/
+	
+	
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+	
 	
     /**
      * Assigns a primary key value to the specified object using the
@@ -75,19 +94,9 @@ public class OAObjectDSDelegate {
      *              ignored if {@code null}
      */
 	public static void assignId(OAObject oaObj) {
-		if (oaObj == null) {
-			return;
-		}
-		// OADataSource is set up to check isLoading() so that it does not initialize the objects that it is creating
-		OADataSource ds = getDataSource(oaObj);
-		if (ds != null) {
-			try {
-				setAssigningId(oaObj, true);
-				ds.assignId(oaObj); // datasource might need to set Id property
-			} finally {
-				setAssigningId(oaObj, false);
-			}
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectDSService().assignId(oaObj);
 	}
 
 	/**
@@ -97,7 +106,7 @@ public class OAObjectDSDelegate {
 	 * @return the assigning-ID tracking map
 	 */
     public static Map<Long, Long> getAssigningIdMap() {
-        return hmAssigningId;
+        return OAObjectDSService.getAssigningIdMap();  //qqqqqqqq
     }
 	
     /**
@@ -110,15 +119,9 @@ public class OAObjectDSDelegate {
      *          {@code false} to clear the flag
      */
 	public static void setAssigningId(OAObject obj, boolean b) {
-		if (obj == null) {
-			return;
-		}
-		long g = OAObjectDelegate.getGuid(obj);
-		if (b) {
-			OAObjectDSDelegate.getAssigningIdMap().put(g, g);
-		} else {
-			OAObjectDSDelegate.getAssigningIdMap().remove(g);
-		}
+		OAGraph g = getGraph(null, obj);
+		if (g == null) return;
+		g.objects().getOAObjectDSService().setAssigningId(obj, b);
 	}
 
 	/**
@@ -130,9 +133,9 @@ public class OAObjectDSDelegate {
 	 *         assigning-ID map; otherwise {@code false}
 	 */
 	public static boolean isAssigningId(OAObject obj) {
-		if (obj == null) return false;
-		long g = OAObjectDelegate.getGuid(obj);
-		return OAObjectDSDelegate.getAssigningIdMap().containsKey(g);
+		OAGraph g = getGraph(null, obj);
+		if (g == null) return false;
+		return g.objects().getOAObjectDSService().isAssigningId(obj);
 	}
 
 	/**
@@ -144,15 +147,9 @@ public class OAObjectDSDelegate {
 	 *         otherwise {@code false}
 	 */
 	public static boolean getAssignIdOnCreate(OAObject oaObj) {
-		if (oaObj == null) {
-			return false;
-		}
-		// OADataSource is set up to check isLoading() so that it does not initialize the objects that it is creating
-		OADataSource ds = getDataSource(oaObj);
-		if (ds == null) {
-			return false;
-		}
-		return ds.getAssignIdOnCreate();
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return false;
+		return g.objects().getOAObjectDSService().getAssignIdOnCreate(oaObj);
 	}
 
 	/**
@@ -184,7 +181,9 @@ public class OAObjectDSDelegate {
 	 * @return {@code true} if a DataSource is registered; otherwise {@code false}
 	 */
 	protected static boolean hasDataSource(Class c) {
-		return OADataSource.getDataSource(c) != null;
+		OAGraph g = OARuntime.get().graph(c);
+		if (g == null) return false;
+		return g.objects().getOAObjectDSService().hasDataSource(c);
 	}
 
 	/**
@@ -196,8 +195,9 @@ public class OAObjectDSDelegate {
 	 *         otherwise {@code false}
 	 */
 	protected static boolean supportsStorage(Class clazz) {
-		OADataSource ds = OADataSource.getDataSource(clazz);
-		return (ds != null && ds.supportsStorage());
+		OAGraph g = OARuntime.get().graph(clazz);
+		if (g == null) return false;
+		return g.objects().getOAObjectDSService().supportsStorage(clazz);
 	}
 
 	/**
@@ -211,18 +211,9 @@ public class OAObjectDSDelegate {
 	 *         DataSource is available
 	 */
 	public static OAObject getObject(Class clazz, Object key) {
-		if (clazz == null || key == null) {
-			return null;
-		}
-		OADataSource ds = OADataSource.getDataSource(clazz);
-		OAObject oaObj = null;
-		if (ds != null) {
-			if (!(key instanceof OAObjectKey)) {
-				key = OAObjectKeyDelegate.createObjectKey(clazz, key);
-			}
-			oaObj = (OAObject) ds.getObject(clazz, key);
-		}
-		return oaObj;
+		OAGraph g = OARuntime.get().graph(clazz);
+		if (g == null) return null;
+		return g.objects().getOAObjectDSService().getObject(clazz, key);
 	}
 
 	/**
@@ -233,16 +224,9 @@ public class OAObjectDSDelegate {
 	 * @param obj the object to refresh; ignored if {@code null}
 	 */
 	public static void refreshObject(OAObject obj) {
-		if (obj == null) {
-			return;
-		}
-		Class clazz = obj.getClass();
-		OADataSource ds = OADataSource.getDataSource(clazz);
-		if (ds != null) {
-			OAObjectKey key = OAObjectKeyDelegate.getKey(obj);
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-			ds.getObject(oi, clazz, key, true); // true=reload all props
-		}
+		OAGraph g = getGraph(null, obj);
+		if (g == null) return;
+		g.objects().getOAObjectDSService().refreshObject(obj);
 	}
 
 	/**
@@ -254,7 +238,9 @@ public class OAObjectDSDelegate {
 	 * @return the retrieved object, or {@code null} if none exists
 	 */
 	protected static Object getObject(Class clazz, OAObjectKey key) {
-		return OADataSource.getObject(clazz, key);
+		OAGraph g = OARuntime.get().graph(clazz);
+		if (g == null) return null;
+		return g.objects().getOAObjectDSService().getObject(clazz, key);
 	}
 
 	/**
@@ -267,11 +253,9 @@ public class OAObjectDSDelegate {
 	 * @return the retrieved object, or {@code null} if no DataSource exists
 	 */
 	protected static Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key) {
-		OADataSource ds = OADataSource.getDataSource(clazz);
-		if (ds == null) {
-			return null;
-		}
-		return ds.getObject(oi, clazz, key, false);
+		OAGraph g = OARuntime.get().graph(clazz);
+		if (g == null) return null;
+		return g.objects().getOAObjectDSService().getObject(oi, clazz, key);
 	}
 
 	/**
@@ -283,13 +267,9 @@ public class OAObjectDSDelegate {
 	 * @return the blob's value, or {@code null} if unavailable
 	 */
 	protected static Object getBlob(OAObject obj, String propName) {
-		if (obj == null || propName == null) {
-			return null;
-		}
-		Class clazz = obj.getClass();
-		OADataSource ds = OADataSource.getDataSource(clazz);
-		if (ds == null) return null;
-		return ds.getPropertyBlobValue(obj, propName);
+		OAGraph g = getGraph(null, obj);
+		if (g == null) return false;
+		return g.objects().getOAObjectDSService().getBlob(obj, propName);
 	}
 
 	/**
@@ -299,14 +279,9 @@ public class OAObjectDSDelegate {
 	 * @param oaObj the object to save
 	 */
 	protected static void save(OAObject oaObj) {
-		OADataSource dataSource = getDataSource(oaObj);
-		if (dataSource != null) {
-			if (oaObj.getNew()) {
-				dataSource.insert(oaObj);
-			} else {
-				dataSource.update(oaObj);
-			}
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectDSService().save(oaObj);
 	}
 
 	/**
@@ -317,14 +292,9 @@ public class OAObjectDSDelegate {
 	 * @param oaObj the object to save without references
 	 */
 	protected static void saveWithoutReferences(OAObject oaObj) {
-		OADataSource dataSource = getDataSource(oaObj);
-		if (dataSource != null) {
-			if (oaObj.getNew()) {
-				dataSource.insertWithoutReferences(oaObj);
-			} else {
-				// error, should only be used by new objects
-			}
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectDSService().saveWithoutReferences(oaObj);
 	}
 
 	/**
@@ -336,15 +306,9 @@ public class OAObjectDSDelegate {
 	 * @param li the link information describing the reference property
 	 */
 	public static void removeReference(OAObject oaObj, OALinkInfo li) {
-		if (li == null) {
-			return;
-		}
-		OADataSource dataSource = getDataSource(oaObj);
-		if (dataSource != null) {
-			if (!oaObj.getNew()) {
-				dataSource.update(oaObj, new String[] { li.getName() }, null); // only update the link property name (which is null)
-			}
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectDSService().removeReference(oaObj, li);
 	}
 
 	/**
@@ -355,14 +319,9 @@ public class OAObjectDSDelegate {
 	 *                {@code false} to perform an update
 	 */
 	public static void save(OAObject obj, boolean bInsert) {
-		OADataSource dataSource = getDataSource(obj);
-		if (dataSource != null) {
-			if (bInsert) {
-				dataSource.insert(obj);
-			} else {
-				dataSource.update(obj);
-			}
-		}
+		OAGraph g = getGraph(null, obj);
+		if (g == null) return;
+		g.objects().getOAObjectDSService().save(obj,bInsert);
 	}
 
 	/**
@@ -372,13 +331,9 @@ public class OAObjectDSDelegate {
 	 * @param obj the object to delete; ignored if {@code null}
 	 */
 	public static void delete(OAObject obj) {
-		if (obj == null) {
-			return;
-		}
-		OADataSource ds = OADataSource.getDataSource(obj.getClass());
-		if (ds != null) {
-			ds.delete(obj);
-		}
+		OAGraph g = getGraph(null, obj);
+		if (g == null) return;
+		g.objects().getOAObjectDSService().delete(obj);
 	}
 
 	/**
@@ -390,8 +345,9 @@ public class OAObjectDSDelegate {
 	 *         DataSource exists; otherwise {@code false}
 	 */
 	public static boolean allowIdChange(Class c) {
-		OADataSource ds = OADataSource.getDataSource(c);
-		return (ds == null || ds.getAllowIdChange());
+		OAGraph g = OARuntime.get().graph(c);
+		if (g == null) return false;
+		return g.objects().getOAObjectDSService().allowIdChange(c);
 	}
 
 	/**
@@ -403,8 +359,8 @@ public class OAObjectDSDelegate {
 	 * @return the object retrieved from the DataSource, or {@code null}
 	 */
 	public static Object getObject(OAObject oaObj) {
-		OADataSource ds = OADataSource.getDataSource(oaObj.getClass());
-		// todo: check this out: if (ds == null || ds.isAssigningId(oaObj)) return null;  // datasource could be assigning the Id to a unique value
-		return ds.getObject(oaObj.getClass(), OAObjectKeyDelegate.getKey(oaObj));
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return null;
+		return g.objects().getOAObjectDSService().getObject(oaObj);
 	}
 }

@@ -53,25 +53,25 @@ public class OAThreadLocal {
 	 * The name of the thread that owns this context instance. Assigned at
 	 * construction time and used for diagnostic and logging purposes.
 	 */
-	protected String threadName;
+	private String threadName;
 	
 	/**
 	 * Optional status message associated with the thread’s current OA activity.
 	 * Used for debugging, performance tracing, or monitoring long-running tasks.
 	 */
-	protected String status;
+	private String status;
 	
 	/**
 	 * Time value used for tracking duration of thread-scoped operations. Its
 	 * specific interpretation depends on the OA subsystem using it.
 	 */
-	protected long time;
+	private long time;
 
 	/**
 	 * Stack-like array used to track objects currently in the process of being
 	 * deleted. Prevents cyclic delete cascades and suppresses redundant events.
 	 */
-	protected Object[] deleting;
+	private Object[] deleting;
 
 	// current mode for used by OAObjectCache
 	// see: OAObjectCacheDelegate for list of mode
@@ -79,7 +79,7 @@ public class OAThreadLocal {
 	 * Controls how OAObjectCacheDelegate adds objects to the cache. A value of
 	 * {@code 0} means the delegate will fall back to its default add mode.
 	 */
-	protected int cacheAddMode; // 0 means that it has not been set and will use OAObjectCacheDelegate.DefaultAddMode
+	private int cacheAddMode; // 0 means that it has not been set and will use OAObjectCacheDelegate.DefaultAddMode
 
 	/**
 	 * The active transaction for this thread. Used to group object changes,
@@ -91,7 +91,7 @@ public class OAThreadLocal {
 	 * The serializer currently active on this thread. Used when serializing
 	 * objects for remote calls, sync messages, or internal wrappers.
 	 */
-	protected OAObjectSerializer objectSerializer;
+	private OAObjectSerializer objectSerializer;
 
 	// flag to know if hub events can be ignored, since hubMerger is doing an internal operation.
 	//      Otherwise, there would be a lot of extra unneeded events.
@@ -100,7 +100,7 @@ public class OAThreadLocal {
 	 * Counter used to suppress Hub events while HubMerger performs internal
 	 * operations. Prevents recursive or duplicate event propagation.
 	 */
-	protected int hubMergerChangingCount;
+	private int hubMergerChangingCount;
 
 	/**
 	 * Counter indicating that HubEventDelegate is actively dispatching an
@@ -112,13 +112,13 @@ public class OAThreadLocal {
 	 * Tracks how deeply HubListenerTree processing is nested on this thread.
 	 * Used to avoid reentrant listener traversal and redundant notifications.
 	 */
-	protected int hubListenerTreeCount; // tracks how deep listeners are for a single listener
+	private int hubListenerTreeCount; // tracks how deep listeners are for a single listener
 
 	/**
 	 * When set, identifies a property whose tree-listener callbacks should be
 	 * temporarily ignored. Used during complex merge and update operations.
 	 */
-	protected String ignoreTreeListenerProperty;
+	private String ignoreTreeListenerProperty;
 
 	/**
 	 * Counter indicating that objects are currently being loaded from a
@@ -144,51 +144,235 @@ public class OAThreadLocal {
 	 * The set of object-level locks held by this thread. Accessed only through
 	 * OAThreadLocalDelegate, which applies the appropriate read/write locking.
 	 */
-	protected volatile Object[] locks;
+	private volatile Object[] locks;
 
 	/**
 	 * Indicates whether this thread is currently blocked while attempting to
 	 * acquire the final lock in its lock chain.
 	 */
-	protected boolean bIsWaitingOnLock; // used on last lock - which is the only one that this could be waiting on.
+	private boolean bIsWaitingOnLock; // used on last lock - which is the only one that this could be waiting on.
 
 	/**
 	 * Marks this thread as a sync-processing thread, used to modify behavior
 	 * of event dispatching, object updates, or remote callback handling.
 	 */
-	protected boolean bIsSyncThread;
+	private boolean bIsSyncThread;
 
 	/**
 	 * Generic array of thread-scoped flags used internally by OA subsystems to
 	 * store lightweight state without allocating dedicated fields.
 	 */
-	protected Object[] flags;
+	private Object[] flags;
 
 	/**
 	 * Indicates whether property changes performed on this thread should be
 	 * captured as undoable operations by OAUndoableManager.
 	 */
-	protected boolean createUndoablePropertyChanges;
+	private boolean createUndoablePropertyChanges;
 
 	/**
 	 * Optional name assigned to a compound undoable operation, grouping a
 	 * sequence of property changes under a single undoable entry.
 	 */
-	protected String compoundUndoableName;
+	private String compoundUndoableName;
 	
 	/**
 	 * Array of pending calc-property event descriptors. These are queued while
 	 * changes are being processed and dispatched once calc-event suppression
 	 * rules allow them.
 	 */
-	protected Tuple3<Hub, OAObject, String>[] calcPropertyEvents;
+	private Tuple3<Hub, OAObject, String>[] calcPropertyEvents;
 
 	/**
 	 * Creates a new thread-local context instance and initializes the
 	 * threadName field using the current thread's name.
 	 */
 	public OAThreadLocal() {
-		this.threadName = Thread.currentThread().getName();
+		this.setThreadName(Thread.currentThread().getName());
+	}
+
+	public long getTime() {
+		return time;
+	}
+
+	public void setTime(long time) {
+		this.time = time;
+	}
+
+	public OATransaction getTransaction() {
+		return transaction;
+	}
+
+	public void setTransaction(OATransaction transaction) {
+		this.transaction = transaction;
+	}
+
+	public int getLoading() {
+		return loading;
+	}
+
+	public void setLoading(int loading) {
+		this.loading = loading;
+	}
+
+	public int getCacheAddMode() {
+		return cacheAddMode;
+	}
+
+	public void setCacheAddMode(int cacheAddMode) {
+		this.cacheAddMode = cacheAddMode;
+	}
+
+	public OAObjectSerializer getObjectSerializer() {
+		return objectSerializer;
+	}
+
+	public void setObjectSerializer(OAObjectSerializer objectSerializer) {
+		this.objectSerializer = objectSerializer;
+	}
+
+	public int getSuppressCSMessages() {
+		return suppressCSMessages;
+	}
+
+	public void setSuppressCSMessages(int suppressCSMessages) {
+		this.suppressCSMessages = suppressCSMessages;
+	}
+
+	public Object[] getDeleting() {
+		return deleting;
+	}
+
+	public void setDeleting(Object[] deleting) {
+		this.deleting = deleting;
+	}
+
+	public Object[] getFlags() {
+		return flags;
+	}
+
+	public void setFlags(Object[] flags) {
+		this.flags = flags;
+	}
+
+	public Object[] getLocks() {
+		return locks;
+	}
+
+	public void setLocks(Object[] locks) {
+		this.locks = locks;
+	}
+
+	public boolean getWaitingOnLock() {
+		return bIsWaitingOnLock;
+	}
+
+	public void setWaitingOnLock(boolean bIsWaitingOnLock) {
+		this.bIsWaitingOnLock = bIsWaitingOnLock;
+	}
+
+	public String getThreadName() {
+		return threadName;
+	}
+
+	public void setThreadName(String threadName) {
+		this.threadName = threadName;
+	}
+
+	public int getHubMergerChangingCount() {
+		return hubMergerChangingCount;
+	}
+
+	public void setHubMergerChangingCount(int hubMergerChangingCount) {
+		this.hubMergerChangingCount = hubMergerChangingCount;
+	}
+
+	public String getCompoundUndoableName() {
+		return compoundUndoableName;
+	}
+
+	public void setCompoundUndoableName(String compoundUndoableName) {
+		this.compoundUndoableName = compoundUndoableName;
+	}
+
+	public boolean isCreateUndoablePropertyChanges() {
+		return createUndoablePropertyChanges;
+	}
+
+	public void setCreateUndoablePropertyChanges(boolean createUndoablePropertyChanges) {
+		this.createUndoablePropertyChanges = createUndoablePropertyChanges;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public RequestInfo getRequestInfo() {
+		return requestInfo;
+	}
+
+	public void setRequestInfo(RequestInfo requestInfo) {
+		this.requestInfo = requestInfo;
+	}
+
+	public Object getNotifyObject() {
+		return notifyObject;
+	}
+
+	public void setNotifyObject(Object notifyObject) {
+		this.notifyObject = notifyObject;
+	}
+
+	public int getRecursiveTriggerCount() {
+		return recursiveTriggerCount;
+	}
+
+	public void setRecursiveTriggerCount(int recursiveTriggerCount) {
+		this.recursiveTriggerCount = recursiveTriggerCount;
+	}
+
+	public int getHubListenerTreeCount() {
+		return hubListenerTreeCount;
+	}
+
+	public void setHubListenerTreeCount(int hubListenerTreeCount) {
+		this.hubListenerTreeCount = hubListenerTreeCount;
+	}
+
+	public String getIgnoreTreeListenerProperty() {
+		return ignoreTreeListenerProperty;
+	}
+
+	public void setIgnoreTreeListenerProperty(String ignoreTreeListenerProperty) {
+		this.ignoreTreeListenerProperty = ignoreTreeListenerProperty;
+	}
+
+	public Tuple3<Hub, OAObject, String>[] getCalcPropertyEvents() {
+		return calcPropertyEvents;
+	}
+
+	public void setCalcPropertyEvents(Tuple3<Hub, OAObject, String>[] calcPropertyEvents) {
+		this.calcPropertyEvents = calcPropertyEvents;
+	}
+
+	public boolean isSyncThread() {
+		return bIsSyncThread;
+	}
+
+	public void setIsSyncThread(boolean bIsSyncThread) {
+		this.bIsSyncThread = bIsSyncThread;
+	}
+
+	public int getRefreshing() {
+		return refreshing;
+	}
+
+	public void setRefreshing(int refreshing) {
+		this.refreshing = refreshing;
 	}
 
 	// 20140121
@@ -197,7 +381,7 @@ public class OAThreadLocal {
 	 * Used by remote invocation layers to track request context and
 	 * propagate caller/session information during execution.
 	 */
-	protected RequestInfo requestInfo;
+	private RequestInfo requestInfo;
 
 	// 20160121
 	/**
@@ -205,7 +389,7 @@ public class OAThreadLocal {
 	 * Its specific meaning depends on the subsystem interacting with the
 	 * thread’s execution state.
 	 */
-	protected Object notifyObject;
+	private Object notifyObject;
 
 	// 20160625
 	/**
@@ -213,7 +397,7 @@ public class OAThreadLocal {
 	 * Incremented when entering trigger logic and decremented upon exit
 	 * to avoid infinite event loops.
 	 */
-	protected int recursiveTriggerCount;
+	private int recursiveTriggerCount;
 
 	// 20180223
 	/**
@@ -272,7 +456,7 @@ public class OAThreadLocal {
 	 * While non-zero, queries use “dirty mode” to avoid interference
 	 * from in-flight refresh operations.
 	 */
-	protected int refreshing; 
+	private int refreshing; 
 	
 	/**
 	 * Identifies a Hub currently undergoing fast-loading. When the

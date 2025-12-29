@@ -290,13 +290,13 @@ public class OADataSourceAuto extends OADataSource {
 			return null;
 		}
 
-		if (hmIgnoreClass.contains(clazz)) {
+		if (hmIgnoreClass.containsKey(clazz)) {
 			return null;
 		}
 
 		synchronized (LOCK) {
 			nn = hmIgnoreClass.get(clazz);
-			if (nn != null || hmIgnoreClass.contains(clazz)) {
+			if (nn != null || hmIgnoreClass.containsKey(clazz)) {
 				return nn;
 			}
 

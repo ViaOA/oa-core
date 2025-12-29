@@ -15,7 +15,9 @@
  */
 package com.viaoa.object;
 
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Utility delegate that exposes enumeration (name/value) metadata
@@ -27,6 +29,21 @@ import com.viaoa.hub.Hub;
  */
 public class OAObjectEnumDelegate {
 
+	/*
+	OAGraph g = getGraph(null, oaObj);
+	if (g == null) return;
+	g.objects().getOAObjectEnumService().??(oaObj);
+    */
+	
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+	
 	/**
 	 * Retrieves the enumeration name/value pairs defined for the specified
 	 * property of the given class. The enumeration metadata is obtained
@@ -38,12 +55,9 @@ public class OAObjectEnumDelegate {
 	 *         if the property does not define enumeration metadata
 	 */
 	public static Hub<String> getNameValues(Class clazz, String propertyName) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
-		if (pi == null) {
-			return null;
-		}
-		return pi.getNameValues();
+		OAGraph g = OARuntime.get().graph(clazz);
+		if (g == null) return null;
+		return g.objects().getOAObjectEnumService().getNameValues(clazz, propertyName);
 	}
 
 	/**
@@ -58,12 +72,9 @@ public class OAObjectEnumDelegate {
 	 *         if the property does not define enumeration metadata
 	 */
 	public static Hub<String> getDisplayNameValues(Class clazz, String propertyName) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
-		if (pi == null) {
-			return null;
-		}
-		return pi.getDisplayNameValues();
+		OAGraph g = OARuntime.get().graph(clazz);
+		if (g == null) return null;
+		return g.objects().getOAObjectEnumService().getDisplayNameValues(clazz, propertyName);
 	}
 
 }

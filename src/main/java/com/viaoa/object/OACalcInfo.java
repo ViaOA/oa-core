@@ -576,5 +576,14 @@ public class OACalcInfo implements java.io.Serializable {
         return objectCallbackMethod;
     }
 
+	/**
+	 * Friend level access to package protected properties.
+	 */
+	public static final class FriendAccess {
+	}
+	private final static FriendAccess friendAccess = new FriendAccess(); 
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
 }
 

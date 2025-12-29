@@ -211,7 +211,7 @@ import java.util.logging.Logger;
 	 * @return {@code true} if the object already existed in the cache,
 	 *         otherwise {@code false}
 	 */
-	protected <T extends OAObject> boolean updateObject(final T obj, final OAObjectKey ok, final Class<T> clazz) {
+	public <T extends OAObject> boolean updateObject(final T obj, final OAObjectKey ok, final Class<T> clazz) {
 		if (obj == null || ok == null) return false;
 		final ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
 		

@@ -196,7 +196,7 @@ public class OAXMLReader1 extends DefaultHandler {
 	/**
 	 * Map of GUID strings to OAObject instances for reference resolution.
 	 */
-	protected HashMap hashGuid;
+	protected HashMap<String, OAObject> hashGuid;
 	
 	/**
 	 * Map used to track objects matched by class and object key during import

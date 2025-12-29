@@ -17,6 +17,9 @@ package com.viaoa.object;
 
 import java.lang.reflect.Method;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.scheduler.OAScheduler;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAPropertyPath;
@@ -43,6 +46,25 @@ import com.viaoa.util.OAString;
  */
 public class OAObjectSchedulerDelegate {
 
+	/*
+	OAGraph g = getGraph(null, oaObj);
+	if (g == null) return;
+	g.objects().getOAObjectSchedulerService().??(oaObj);
+
+	OAGraph g = OARuntime.get().graph(c);
+	if (g == null) return;
+	g.objects().getOAObjectSchedulerService().??(oaObj);
+    */
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+	
+	
 	/**
 	 * Delegates to {@link #getScheduler(OAObject, String, OAObject, OADate)} using a
 	 * {@code null} search object. This provides a convenience overload for retrieving
@@ -55,7 +77,9 @@ public class OAObjectSchedulerDelegate {
 	 * @return the created scheduler, or {@code null} if required arguments are missing
 	 */
     public static OAScheduler getScheduler(OAObject objThis, String property, OADate date) {
-        return getScheduler(objThis, property, null, date);
+    	OAGraph g = getGraph(null, objThis);
+    	if (g == null) return null;
+    	return g.objects().getOAObjectSchedulerService().getScheduler(objThis, property, date);
     }
     
     /**
@@ -83,31 +107,9 @@ public class OAObjectSchedulerDelegate {
      * @return the populated scheduler, or {@code null} if any required metadata is not found
      */
     public static OAScheduler getScheduler(OAObject objThis, String property, OAObject objSearch, OADate date) {
-        if (objThis == null || OAString.isEmpty(property)) return null;
-
-        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(objThis);
-        if (oi == null) return null;
-        OALinkInfo li = oi.getLinkInfo(property);
-        if (li == null) {
-            if (property.indexOf(".") < 0) return null;
-            OAPropertyPath pp = new OAPropertyPath(objThis.getClass(), property);
-            OALinkInfo[] lis = pp.getLinkInfos();
-            if (lis == null || lis.length == 0) return null;
-            li = lis[0];
-        }
-        
-        Method method = li.getSchedulerMethod();
-        if (method == null) return null;
-        
-        OAScheduler scheduler = new OAScheduler(objSearch, date, date);
-        
-        try {
-            method.invoke(objThis, new Object[] {scheduler});
-        }
-        catch (Exception e) {
-            throw new RuntimeException("exception while invoking scheduler callback method="+method+", for object="+objThis, e);
-        }
-        return scheduler;
+    	OAGraph g = getGraph(null, objThis);
+    	if (g == null) return null;
+    	return g.objects().getOAObjectSchedulerService().getScheduler(objThis, property, objSearch, date);
     }
     
     /**
@@ -129,21 +131,8 @@ public class OAObjectSchedulerDelegate {
      * @param property  the property identifying which scheduler callback to execute
      */
     public static void invokeCallback(OAScheduler scheduler, OAObject objThis, String property) {
-        if (scheduler == null || objThis == null || OAString.isEmpty(property)) return;
-
-        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(objThis);
-        if (oi == null) return;
-        OALinkInfo li = oi.getLinkInfo(property);
-        if (li == null) return;
-        
-        Method method = li.getSchedulerMethod();
-        if (method == null) return;
-        
-        try {
-            method.invoke(objThis, new Object[] {scheduler});
-        }
-        catch (Exception e) {
-            throw new RuntimeException("exception while invoking scheduler callback method="+method+", for object="+objThis, e);
-        }
+    	OAGraph g = getGraph(null, objThis);
+    	if (g == null) return;
+    	g.objects().getOAObjectSchedulerService().invokeCallback(scheduler, objThis, property);
     }
 }

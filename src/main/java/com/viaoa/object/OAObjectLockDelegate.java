@@ -16,6 +16,10 @@
 package com.viaoa.object;
 
 import java.util.*;
+
+import com.viaoa.graph.OAGraph;
+import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteSessionInterface;
@@ -42,13 +46,21 @@ import com.viaoa.sync.remote.RemoteSessionInterface;
  */
 public class OAObjectLockDelegate {
     
-	/**
-	 * Shared in-JVM lock map that tracks active locks for OAObject instances.
-	 * Each locked object is stored as a key mapped to an OALock instance,
-	 * enabling local, non-distributed locking when no remote sync session
-	 * is active.
-	 */
-    private static final Map<Object, Object> hmLock = new HashMap<>(11, 0.75F);
+	/*
+	OAGraph g = getGraph(null, oaObj);
+	if (g == null) return;
+	g.objects().getOAObjectLockService().??(oaObj);
+    */
+	
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+
 	
 	
     /**
@@ -71,28 +83,9 @@ public class OAObjectLockDelegate {
      * @throws IllegalArgumentException if {@code object} is {@code null}
      */
 	public static void lock(OAObject object) {
-	    if (object == null) throw new IllegalArgumentException("object can not be null");
-	
-	    RemoteSessionInterface rc = OASync.getRemoteSession(object.getClass());
-	    if (rc != null) {
-	        rc.setLock(object.getClass(), object.getObjectKey(), true);
-	    	return;
-	    }
-	            
-	    OALock newLock = new OALock(object, null, null);
-	    synchronized (OAObjectLockDelegate.hmLock) {
-	        for (;;) {
-	            OALock lock = (OALock) OAObjectLockDelegate.hmLock.get(object);
-	            if (lock == null) break;
-	            try {
-	                lock.waitCnt++;
-	                OAObjectLockDelegate.hmLock.wait();
-	            }
-	            catch (InterruptedException e) {
-	            }
-	        }
-	        OAObjectLockDelegate.hmLock.put(object, newLock);
-	    }
+		OAGraph g = getGraph(null, object);
+		if (g == null) return;
+		g.objects().getOAObjectLockService().lock(object);
 	}
 	
 	/**
@@ -113,18 +106,9 @@ public class OAObjectLockDelegate {
 	 *               {@code null}
 	 */
 	public static void unlock(OAObject object) {
-	    if (object == null) return;
-
-        RemoteSessionInterface rc = OASync.getRemoteSession(object.getClass());
-        if (rc != null) {
-            rc.setLock(object.getClass(), object.getObjectKey(), false);
-            return;
-        }
-	    
-	    synchronized (OAObjectLockDelegate.hmLock) {
-	    	OAObjectLockDelegate.hmLock.remove(object);
-	    	OAObjectLockDelegate.hmLock.notifyAll();
-	    }
+		OAGraph g = getGraph(null, object);
+		if (g == null) return;
+		g.objects().getOAObjectLockService().unlock(object);
 	}
 	
 	/**
@@ -142,15 +126,8 @@ public class OAObjectLockDelegate {
 	 *         locally; otherwise {@code false}
 	 */
 	public static boolean isLocked(OAObject object) {
-	    if (object == null) return false;
-
-        RemoteSessionInterface rc = OASyncDelegate.getRemoteSession(object.getClass());
-        if (rc != null) {
-            return rc.isLocked(object.getClass(), object.getObjectKey());
-        }
-        synchronized (OAObjectLockDelegate.hmLock) {
-            return (OAObjectLockDelegate.hmLock.get(object) != null);
-        }
-        
+		OAGraph g = getGraph(null, object);
+		if (g == null) return false;
+		return g.objects().getOAObjectLockService().isLocked(object);
 	}
 }

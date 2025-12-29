@@ -412,6 +412,10 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	public Class getForClass() {
 		return thisClass;
 	}
+	
+	public void setForClass(Class c) {
+		thisClass = c;
+	}
 
 	/**
 	 * Initializes the metadata with a single identifier property.
@@ -1008,6 +1012,10 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return primitiveProps;
 	}
 
+	public void setPrimitiveProperties(String[] pps) {
+		this.primitiveProps = pps;
+	}
+	
 	// 20180325  20180403 removed, not used
 	/**
 	 * used to set which primitive properties should be set to null for new instances. boolean props will not be set to null.
@@ -2417,5 +2425,34 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 */
 	public void setNoPojo(boolean b) {
 		this.noPojo = b;
+	}
+
+	
+	/**
+	 * Friend level access to package protected properties.
+	 */
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+		
+		public void setName(OAObjectInfo oi, String name) {
+            oi.setName(name);
+        }
+
+		public void setPropertyIds(OAObjectInfo oi, String[] ss) {
+			oi.idProperties = ss;
+		}
+		
+		public void setImportMatchPropertyNames(OAObjectInfo oi, String[] ss) {
+			oi.importMatchPropertyNames = ss;
+		}
+		
+		public static void setImportMatchPropertyPaths(OAObjectInfo oi, String[] ss) {
+			oi.importMatchPropertyPaths = ss;
+		}
+	}
+	private final static FriendAccess friendAccess = new FriendAccess(); 
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
 	}
 }

@@ -23,12 +23,16 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import com.viaoa.context.OAContext;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAString;
+
+//qqqqqqqqq PHASE 3: moved to OAObjectService, OAObjectInitializeService, OAObjectGuidService
 
 /**
  * Provides core operational utilities for {@link OAObject} that are not specific
@@ -139,11 +143,6 @@ public class OAObjectDelegate {
 	 */
 	protected static boolean bFinalizeSave = false;
 
-	/**
-	 * Tracks OAObjects for which automatic reverse-link insertion is disabled.
-	 * Presence of a GUID in this map indicates auto-add is turned off.
-	 */
-	private static final ConcurrentHashMap<Long, Long> hmAutoAdd = new ConcurrentHashMap<Long, Long>();
 
 	/**
 	 * Initializes the specified {@link OAObject} by assigning a GUID, allocating its
@@ -175,27 +174,9 @@ public class OAObjectDelegate {
 		if (oaObj == null) {
 			return false;
 		}
-		assignGuid(oaObj); // must get a guid before calling setInConstructor, so that it will have a valid hash key
-
-		/**
-		 * set OAObject.nulls to know if a primitive property is null or not. All "bits" are flagged/set to 1. Ordering and positions are
-		 * set by the position of uppercase/sorted property in array. See: OAObjectInfoDelegate.initialize()
-		 */
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-
-		String[] ps = oi.getPrimitiveProperties();
-		int x = (ps == null) ? 0 : ((int) Math.ceil(ps.length / 8.0d));
-		oaObj.nulls = new byte[x];
-
-		if (OAThreadLocalDelegate.isLoading()) {
-			return false; // dont initialize. Whatever is loading should call initialize below directly
-		}
-
-		boolean bInitializeWithCS = !oi.getLocalOnly() && OASync.isClient(oaObj.getClass());
-
-		// 20200910 useDataSource needs to be true ... since other DS (ex: autonumber) might be used
-		initialize(oaObj, oi, oi.getInitializeNewObjects(), true, oi.getAddToCache(), bInitializeWithCS, true);
-		//was: initialize(oaObj, oi, oi.getInitializeNewObjects(), oi.getUseDataSource(), oi.getAddToCache(), bInitializeWithCS, true);
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return false;
+		og.objects().getOAObjectInitializeService().initialize(oaObj);
 		return true;
 	}
 
@@ -285,101 +266,11 @@ public class OAObjectDelegate {
 	        boolean bInitializeWithCS,
 	        boolean bSetChangedToFalse) {
 		final boolean bWasLoading = OAThreadLocalDelegate.setLoading(true);
-		try {
-			if (oi == null) {
-				oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-			}
 
-			if (bInitializeNulls) {
-				/* 20180325 20180403 removed,not used
-				byte[] bsMask = oi.getPrimitiveMask();
-				for (int i=0; i<oaObj.nulls.length; i++) {
-				    oaObj.nulls[i] |= (byte) bsMask[i];
-				}
-				*/
-				// put this back
-				for (int i = 0; i < oaObj.nulls.length; i++) {
-					oaObj.nulls[i] = (byte) ~oaObj.nulls[i];
-				}
-			}
-
-			if (!bWasLoading) {
-				for (OALinkInfo li : oi.getLinkInfos()) {
-					if (li.getCalculated()) {
-						continue;
-					}
-					if (li.getPrivateMethod()) {
-						continue;
-					}
-					if (!li.getUsed()) {
-						continue;
-					}
-					if (li.getMatchProperty() != null) {
-						// dont set to null, so that it will have to call oaObject.getHub(), which will then create hubAutoMatch
-						continue;
-					}
-					// 20140409 added check for 1to1, in which case one side will not have an
-					//    fkey, since it uses it's own pkey as the fkey
-
-					// 20190205 set default linkOne
-					if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultContextPropertyPath())) {
-						OAObject objx = OAContext.getContextObject();
-						if (objx != null) {
-							if (!li.getDefaultContextPropertyPath().equals(".")) {
-								OAFinder hf = new OAFinder(li.getDefaultContextPropertyPath());
-								objx = hf.findFirst(objx);
-							}
-							OAObjectPropertyDelegate.unsafeAddProperty(oaObj, li.getName(), objx);
-						}
-					} else {
-						if (!OAObjectInfoDelegate.isOne2One(li)) {
-							OAObjectPropertyDelegate.unsafeAddProperty(oaObj, li.getName(), null);
-						}
-					}
-				}
-			}
-
-			if (bAddToCache) { // needs to run before any property could be set, so that OACS changes will find this new object.
-				OAObjectCacheDelegate.add(oaObj, false, false); // 20090525, was true,true:  dont add to selectAllHub until after loadingObject is false
-			}
-
-			if (bInitializeWithCS) {
-				// must be before DS init, since it could add to local client cache
-				OAObjectCSDelegate.objectCreated(oaObj);
-			}
-			if (!bWasLoading && bInitializeWithDS) {
-				if (OAObjectDSDelegate.getAssignIdOnCreate(oaObj)) {
-					OAThreadLocalDelegate.setLoading(false);
-					try {
-						OAObjectDSDelegate.assignId(oaObj);
-					} finally {
-						OAThreadLocalDelegate.setLoading(true);
-					}
-				}
-			}
-			if (bSetChangedToFalse) {
-				oaObj.setChanged(false);
-			}
-			/*
-			OAObjectKey key = OAObjectKeyDelegate.getKey(oaObj);
-			String s = String.format("New, class=%s, id=%s",
-			        OAString.getClassName(oaObj.getClass()),
-			        key.toString()
-			);
-			if (oi.bUseDataSource) {
-			    OAObject.OALOG.fine(s);
-			}
-			*/
-		} finally {
-			// note: this has to be false, not bWasLoading, since it also increments a counter in threadLocalDelegate
-			OAThreadLocalDelegate.setLoading(false);
-		}
-		if (!bWasLoading) {
-			OAObjectCacheDelegate.fireAfterLoadEvent(oaObj);
-		}
-		if (bAddToCache) { // 20090525 needs to run after setLoadingObject(false), so that add event is handled correctly.
-			OAObjectCacheDelegate.addToSelectAllHubs(oaObj);
-		}
+		if (oaObj == null) return;
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().getOAObjectInitializeService().initialize(oaObj, oi, bInitializeNulls, bInitializeWithDS, bAddToCache, bInitializeWithCS, bSetChangedToFalse);
 	}
 
 	/**
@@ -457,20 +348,12 @@ public class OAObjectDelegate {
 		if (obj.guid != 0) {
 			return;
 		}
-		if (OAObjectInfoDelegate.getOAObjectInfo(obj).getLocalOnly()) {
-			obj.guid = localGuidCounter.decrementAndGet();
-		} else {
-			if (!OASyncDelegate.isServer(obj)) {
-				obj.guid = OAObjectCSDelegate.getGuidFromServer(obj);
-				if (obj.guid == 0) {
-					obj.guid = getNextGuid();
-				}
-			} else {
-				obj.guid = getNextGuid();
-			}
-		}
-	}
 
+		OAGraph og = OARuntime.get().graph(obj);
+		if (og == null) return;
+		
+		og.objects().getOAObjectGuidService().assignGuid(obj);
+	}
 	
 	/**
 	 * Convenience method that reinitializes the specified {@link OAObject} so it
@@ -480,16 +363,15 @@ public class OAObjectDelegate {
 	 * @param oaObj the object to reinitialize; may be {@code null}.
 	 */
 	public static void setAsNewObject(final OAObject oaObj) {
-		if (oaObj == null) {
-			return;
-		}
-		long guid = OAObjectCSDelegate.getGuidFromServer(oaObj);
-		if (oaObj.guid == 0) {
-			oaObj.guid = getNextGuid();
-		}
+		if (oaObj == null) return;
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().getOAObjectGuidService().assignNewGuid(oaObj);
+
+		long guid = og.objects().getOAObjectGuidService().getGuid(oaObj);
 		setAsNewObject(oaObj, guid);
 	}
-
+	
 	/**
 	 * Reinitializes the specified {@link OAObject} so it behaves as a newly created
 	 * instance. This resets identity, lifecycle flags, and primary-key fields while
@@ -509,34 +391,10 @@ public class OAObjectDelegate {
 	 * @param guid  the GUID to assign.
 	 */
 	public static void setAsNewObject(final OAObject oaObj, long guid) {
-		if (oaObj == null) {
-			return;
-		}
-		oaObj.newFlag = true;
-//qqqqqq was:		oaObj.objectKey = null;
-		oaObj.guid = guid;
-
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
-		String[] ids = oi.getIdProperties();
-		if (ids == null) {
-			return;
-		}
-
-		OAThreadLocalDelegate.setLoading(true);
-		try {
-			for (String id : ids) {
-				OAObjectReflectDelegate.setProperty(oaObj, id, null, null);
-			}
-		} finally {
-			OAThreadLocalDelegate.setLoading(false);
-		}
-
-		//OAObjectCSDelegate.initialize(oaObj);
-		if (OAObjectDSDelegate.getAssignIdOnCreate(oaObj)) {
-			OAObjectDSDelegate.assignId(oaObj);
-		}
-
-		oaObj.getObjectKey();
+		if (oaObj == null) return;
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().getOAObjectInitializeService().setAsNewObject(oaObj, guid);
 	}
 
 	/**
@@ -556,10 +414,11 @@ public class OAObjectDelegate {
 	 * @param obj the object whose GUID is being restored; may be {@code null}.
 	 * @param origKey the key containing the original GUID to apply; must not be {@code null}.
 	 */
-	public static void reassignGuid(OAObject obj, OAObjectKey origKey) {
-		if (obj != null && origKey != null) {
-			obj.guid = origKey.getGuid();
-		}
+	public static void reassignGuid(OAObject oaObj, OAObjectKey origKey) {
+		if (oaObj == null) return;
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().getOAObjectInitializeService().reassignGuid(oaObj, origKey);
 	}
 
 	/**
@@ -574,8 +433,11 @@ public class OAObjectDelegate {
 	 *
 	 * @return the next positive GUID value.
 	 */
-	public static long getNextGuid() {
-		return guidCounter.incrementAndGet(); // cant be 0
+	public static long getNextGuid(Package p) {
+		if (p == null) return 0l;
+		OAGraph og = OARuntime.get().graph(p);
+		if (og == null) return 0l;
+		return og.objects().getOAObjectGuidService().getNextGuid();
 	}
 
 	
@@ -594,8 +456,11 @@ public class OAObjectDelegate {
 	 *
 	 * @return the first GUID in the next reserved block of fifty GUIDs.
 	 */
-	public static long getNextFiftyGuids() {
-		return guidCounter.getAndAdd(50) + 1;
+	public static long getNextFiftyGuids(Package pkg) {
+		if (pkg == null) return 0l;
+		OAGraph og = OARuntime.get().graph(pkg);
+		if (og == null) return 0l;
+		return og.objects().getOAObjectGuidService().getNextFiftyGuids();
 	}
 
 	/**
@@ -612,8 +477,11 @@ public class OAObjectDelegate {
 	 *
 	 * @param x the new value of the global GUID counter.
 	 */
-	public static void setNextGuid(long x) {
-		guidCounter.set(x);
+	public static void setNextGuid(Package pkg, long x) {
+		if (pkg == null) return;
+		OAGraph og = OARuntime.get().graph(pkg);
+		if (og == null) return;
+		og.objects().getOAObjectGuidService().setNextGuid(x);
 	}
 
 	/**
@@ -629,16 +497,11 @@ public class OAObjectDelegate {
 	 *
 	 * @param guid the GUID value that the global counter must reach or exceed.
 	 */
-	protected static void updateGuid(long guid) {
-		for (;;) {
-			long g = guidCounter.get();
-			if (g >= guid) {
-				break;
-			}
-			if (guidCounter.compareAndSet(g, guid)) {
-				break;
-			}
-		}
+	static void updateGuid(Package pkg, long guid) {
+		if (pkg == null) return;
+		OAGraph og = OARuntime.get().graph(pkg);
+		if (og == null) return;
+		og.objects().getOAObjectGuidService().updateGuid(guid);
 	}
 	
 	/**
@@ -711,14 +574,12 @@ public class OAObjectDelegate {
 	 *         changed; otherwise {@code false}.
 	 */
 	public static boolean getChanged(OAObject oaObj, int iCascadeRule) {
-		if (iCascadeRule == OAObject.CASCADE_NONE) {
-			return (oaObj.changedFlag || oaObj.newFlag);
-		}
-		OACascade cascade = new OACascade();
-		boolean b = getChanged(oaObj, iCascadeRule, cascade);
-		return b;
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return false;
+		return og.objects().getChanged(oaObj, iCascadeRule);
 	}
 
+	
 	/**
 	 * Determines whether the specified {@link OAObject} is considered changed based
 	 * on the supplied cascade rule and {@link OACascade} context. This variant is
@@ -760,81 +621,9 @@ public class OAObjectDelegate {
 	 *         according to the rule; {@code false} otherwise.
 	 */
 	public static boolean getChanged(final OAObject oaObj, int iCascadeRule, OACascade cascade) {
-		if (oaObj.changedFlag || oaObj.newFlag) {
-			return true;
-		}
-		if (iCascadeRule == oaObj.CASCADE_NONE) {
-			return false;
-		}
-		if (cascade.wasCascaded(oaObj, true)) {
-			return false;
-		}
-
-		if (oaObj.properties == null) {
-			return false;
-		}
-
-		// check link cascade objects
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-		List al = oi.getLinkInfos();
-		for (int i = 0; i < al.size(); i++) {
-			OALinkInfo li = (OALinkInfo) al.get(i);
-			String prop = li.getName();
-			if (prop == null || prop.length() < 1) {
-				continue;
-			}
-			if (li.getCalculated()) {
-				continue;
-			}
-			if (li.getPrivateMethod()) {
-				continue;
-			}
-			if (!li.getUsed()) {
-				continue;
-			}
-
-			// same as OAObjectSaveDelegate.cascadeSave()
-			if (OAObjectReflectDelegate.isReferenceNullOrNotLoaded(oaObj, prop)) {
-				continue;
-			}
-
-			boolean bValidCascade = false;
-			if (iCascadeRule == OAObject.CASCADE_LINK_RULES && li.cascadeSave) {
-				bValidCascade = true;
-			} else if (iCascadeRule == OAObject.CASCADE_OWNED_LINKS && li.getOwner()) {
-				bValidCascade = true;
-			} else if (iCascadeRule == OAObject.CASCADE_ALL_LINKS) {
-				bValidCascade = true;
-			}
-
-			if (OAObjectInfoDelegate.isMany2Many(li)) {
-				Hub hub = (Hub) OAObjectReflectDelegate.getRawReference(oaObj, prop);
-				if (HubDelegate.getChanged(hub, OAObject.CASCADE_NONE, cascade)) {
-					return true;
-				}
-			}
-			if (!bValidCascade) {
-				continue;
-			}
-
-			Object obj = OAObjectReflectDelegate.getProperty(oaObj, li.name); // if Hub with Keys, then this will load the correct objects to check
-			if (obj == null) {
-				continue;
-			}
-
-			if (obj instanceof Hub) {
-				if (OAObjectHubDelegate.getChanged((Hub) obj, iCascadeRule, cascade)) {
-					return true; //  if there have been adds/removes to hub
-				}
-			} else {
-				if (obj instanceof OAObject) { // 20110420 could be OANullObject
-					if (getChanged((OAObject) obj, iCascadeRule, cascade)) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return false;
+		return og.objects().getChanged(oaObj, iCascadeRule, cascade);
 	}
 
 	/**
@@ -851,8 +640,9 @@ public class OAObjectDelegate {
 	 * @param callback the callback invoked for each visited object; must not be {@code null}.
 	 */
 	public static void recurse(OAObject oaObj, OACallback callback) {
-		OACascade cascade = new OACascade();
-		recurse(oaObj, callback, cascade);
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().recurse(oaObj, callback);
 	}
 
 	/**
@@ -886,63 +676,9 @@ public class OAObjectDelegate {
 	 *                 revisiting or infinite recursion; must not be {@code null}.
 	 */
 	public static void recurse(OAObject oaObj, OACallback callback, OACascade cascade) {
-		if (cascade.wasCascaded(oaObj, true)) {
-			return;
-		}
-
-		if (callback != null) {
-			callback.updateObject(oaObj);
-		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-
-		List al = oi.getLinkInfos();
-		for (int i = 0; i < al.size(); i++) {
-			OALinkInfo li = (OALinkInfo) al.get(i);
-			if (li.getCalculated()) {
-				continue;
-			}
-			if (li.getPrivateMethod()) {
-				continue;
-			}
-			if (!li.getUsed()) {
-				continue;
-			}
-			String prop = li.name;
-
-			Object obj = OAObjectReflectDelegate.getProperty(oaObj, li.name); // select all
-			if (obj == null) {
-				continue;
-			}
-
-			if (obj instanceof Hub) {
-				Hub h = (Hub) obj;
-				for (int j = 0;; j++) {
-					Object o = h.elementAt(j);
-					if (o == null) {
-						break;
-					}
-					if (o instanceof OAObject) {
-						recurse((OAObject) o, callback, cascade);
-					} else {
-						if (callback != null) {
-							callback.updateObject(o);
-						}
-					}
-					Object o2 = h.elementAt(j);
-					if (o != o2) {
-						j--;
-					}
-				}
-			} else {
-				if (obj instanceof OAObject) {
-					recurse((OAObject) obj, callback, cascade);
-				} else {
-					if (callback != null) {
-						callback.updateObject(obj);
-					}
-				}
-			}
-		}
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().recurse(oaObj, callback, cascade);
 	}
 
 	/**
@@ -999,71 +735,9 @@ public class OAObjectDelegate {
 	 * @return an array containing matched values (or objects), never {@code null}.
 	 */
 	protected static Object[] find(OAObject base, String propertyPath, Object findValue, boolean bFindAll) {
-		if (propertyPath == null || propertyPath.length() == 0) {
-			return null;
-		}
-		StringTokenizer st = new StringTokenizer(propertyPath, ".");
-		Object result = base;
-		for (; st.hasMoreTokens();) {
-			String s = st.nextToken();
-			base = (OAObject) result; // previous object
-			result = base.getProperty(s);
-
-			if (!st.hasMoreTokens()) {
-				// last property, check against findValue
-				if (result == findValue || (result != null && OACompare.compare(result, findValue) == 0)) {
-					Object[] objs = new Object[] { base };
-					return objs;
-				}
-				return null;
-			}
-
-			if (result == null) {
-				return null;
-			}
-
-			if (result instanceof Hub) {
-				String pp = null;
-				for (; st.hasMoreTokens();) {
-					s = st.nextToken();
-					if (pp == null) {
-						pp = s;
-					} else {
-						pp += "." + s;
-					}
-				}
-				ArrayList al = null;
-				Hub h = (Hub) result;
-				for (int ii = 0;; ii++) {
-					Object obj = h.elementAt(ii);
-					if (obj == null) {
-						break;
-					}
-					Object[] objs = find((OAObject) obj, pp, findValue, bFindAll);
-					if (objs != null) {
-						if (!bFindAll) {
-							return objs;
-						}
-						if (al == null) {
-							al = new ArrayList(10);
-						}
-						for (int i3 = 0; i3 < objs.length; i3++) {
-							al.add(objs[i3]);
-						}
-					}
-				}
-				if (al == null) {
-					return null;
-				}
-				Object[] objs = new Object[al.size()];
-				objs = al.toArray(objs);
-				return objs;
-			}
-			if (!(result instanceof OAObject)) {
-				return null;
-			}
-		}
-		return null;
+		OAGraph og = OARuntime.get().graph(base);
+		if (og == null) return null;
+		return og.objects().find(base, propertyPath, findValue, bFindAll);
 	}
 
 	/**
@@ -1101,11 +775,13 @@ public class OAObjectDelegate {
 	 * @param obj the object whose GUID is requested; may be {@code null}.
 	 * @return the object's GUID, or {@code 0} if the object is {@code null}.
 	 */
-	public static long getGuid(OAObject obj) {
-		if (obj == null) {
+	public static long getGuid(OAObject oaObj) {
+		if (oaObj == null) {
 			return -1;
 		}
-		return obj.guid;
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return -1;
+		return og.objects().getOAObjectGuidService().getGuid(oaObj);
 	}
 
 	/**
@@ -1131,64 +807,9 @@ public class OAObjectDelegate {
 		if (oaObj == null) {
 			return;
 		}
-		if (!bEnabled && !oaObj.isNew()) {
-			return;
-		}
-
-		boolean bOld = !hmAutoAdd.containsKey(oaObj.guid);
-		if (bOld == bEnabled) {
-			return;
-		}
-
-		if (!bEnabled) {
-			hmAutoAdd.put(oaObj.guid, oaObj.guid);
-		} else {
-			hmAutoAdd.remove(oaObj.guid);
-		}
-		OAObjectEventDelegate.firePropertyChange(oaObj, WORD_AutoAdd, bOld ? TRUE : FALSE, bEnabled ? TRUE : FALSE, false, false);
-
-		if (!bEnabled || oaObj.deletedFlag) {
-			return;
-		}
-
-		try {
-			OAThreadLocalDelegate.setSuppressCSMessages(true);
-			// need to see if object should be put into linkOne/masterObject hub(s)
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-			for (OALinkInfo li : oi.getLinkInfos()) {
-				if (!li.getUsed()) {
-					continue;
-				}
-				if (li.getType() != li.ONE) {
-					continue;
-				}
-				Object objx = OAObjectReflectDelegate.getRawReference(oaObj, li.getName());
-				if (!(objx instanceof OAObject)) {
-					continue;
-				}
-
-				OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
-				if (liRev == null) {
-					continue;
-				}
-				if (!liRev.getUsed()) {
-					continue;
-				}
-				if (liRev.getType() != li.MANY) {
-					continue;
-				}
-				if (liRev.getPrivateMethod()) {
-					continue;
-				}
-
-				Object objz = OAObjectReflectDelegate.getProperty((OAObject) objx, liRev.getName());
-				if (objz instanceof Hub) {
-					((Hub) objz).add(oaObj);
-				}
-			}
-		} finally {
-			OAThreadLocalDelegate.setSuppressCSMessages(false);
-		}
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().setAutoAdd(oaObj, bEnabled);
 	}
 
 	/**
@@ -1209,7 +830,9 @@ public class OAObjectDelegate {
 		if (oaObj == null) {
 			return false;
 		}
-		return !hmAutoAdd.containsKey(oaObj.guid);
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return false;
+		return og.objects().getAutoAdd(oaObj);
 	}
 	
 	/**
@@ -1229,7 +852,11 @@ public class OAObjectDelegate {
 	 * @return an array of ID values, or {@code null} if {@code obj} is {@code null}.
 	 */
 	public static Object[] getPropertyIdValues(OAObject obj) {
-		if (obj == null) return null;
-		return OAObjectInfoDelegate.getPropertyIdValues(obj);
+		if (obj == null) {
+			return null;
+		}
+		OAGraph og = OARuntime.get().graph(obj);
+		if (og == null) return null;
+		return og.objects().getPropertyIdValues(obj);
 	}
 }

@@ -23,6 +23,9 @@ import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OADateTime;
 
@@ -48,21 +51,20 @@ import com.viaoa.util.OADateTime;
 public class OAObjectEmptyHubDelegate {
     private static Logger LOG = Logger.getLogger(OAObjectEmptyHubDelegate.class.getName());
 
-    /**
-     * In-memory structure storing empty-hub metadata.
-     *
-     * The outer map is keyed by class name.
-     * The inner map is keyed by integer primary-key values and contains
-     * arrays of property names representing reference hubs that were
-     * recorded as loaded and empty.
-     */
-    private static HashMap<String, HashMap<Integer, String[]>> map;    
-
-    /**
-     * Flag indicating whether empty-hub tracking is enabled.
-     * When disabled, no metadata is saved or restored.
-     */
-    private static boolean bEnabled;
+	/*
+	OAGraph g = getGraph(null, oaObj);
+	if (g == null) return;
+	g.objects().getOAObjectDSService().delete(oaObj);
+    */
+	
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
     
     /**
      * Initializes any reference hubs on the specified object that were
@@ -73,30 +75,9 @@ public class OAObjectEmptyHubDelegate {
      *            ignored if {@code null} or no metadata exists
      */
     public static void initialize(OAObject obj) {
-        if (map == null) return;
-        if (obj == null) return;
-        
-        Class clazz = obj.getClass();
-
-        HashMap<Integer, String[]> hm = map.get(clazz.getName());
-        if (hm == null) return;
-        
-        OAObjectKey key = OAObjectKeyDelegate.getKey(obj);
-        if (key == null) return;
-        
-        Object[] keys = key.getObjectIds();
-        if (keys == null || keys.length != 1 || !(keys[0] instanceof Integer)) return;
-            
-        int x = (Integer) keys[0];
-        
-        Object objx = hm.get(x);
-        if (objx == null) return;
-
-        hm.remove(x);
-        
-        for (String s : (String[]) objx) {
-            OAObjectPropertyDelegate.setProperty(obj, s, null);
-        }
+    	OAGraph g = getGraph(null, obj);
+    	if (g == null) return;
+    	g.objects().getOAObjectEmptyHubService().initialize(obj);
     }
  
     /**
@@ -108,20 +89,7 @@ public class OAObjectEmptyHubDelegate {
      * @throws Exception if the file cannot be read or deserialized
      */
     public static void load(File file) throws Exception {
-        if (file == null || !file.exists()) {
-            LOG.fine("file does not exist");
-            return;
-        }
-        FileInputStream fis = new FileInputStream(file);
-
-        ObjectInputStream ois = new ObjectInputStream(fis);
-        
-        OADateTime dt = (OADateTime) ois.readObject();
-        
-        map = (HashMap<String, HashMap<Integer, String[]>>) ois.readObject();
-        
-        ois.close();
-        fis.close();
+    	// qqqqqqqqqq
     }
     
     /**
@@ -133,56 +101,6 @@ public class OAObjectEmptyHubDelegate {
      * @throws Exception if writing or serialization fails
      */
     public static void save(File file) throws Exception {
-        LOG.fine("saving all null properties");
-
-        FileOutputStream fos = new FileOutputStream(file);
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(new OADateTime());
-        
-        final HashMap<String, HashMap<Integer, String[]>> mapx = new HashMap<String, HashMap<Integer,String[]>>();
-        
-        OAObjectCacheDelegate.callback(new OACallback() {
-            int cnt = 0;
-            @Override
-            public boolean updateObject(Object obj) {
-                if (!(obj instanceof OAObject)) return true;
-                cnt++;
-                if (cnt % 250 == 0) {
-                    LOG.fine(cnt+") saving "+obj);
-                }
-                
-                String[] ssNew = null;
-                String[] ss = OAObjectPropertyDelegate.getPropertyNames((OAObject) obj);
-                if (ss != null) { 
-                    for (String s : ss) {
-                        if (OAObjectReflectDelegate.isReferenceHubLoadedAndEmpty((OAObject) obj, s)) {
-                            ssNew = (String[]) OAArray.add(String.class, ssNew, s);
-                        }
-                    }
-                }
-                if (ssNew == null) return true;
-                
-                OAObjectKey key = OAObjectKeyDelegate.getKey((OAObject)obj);
-                if (key == null) return true;
-                
-                Object[] keys = key.getObjectIds();
-                if (keys == null || keys.length != 1 || !(keys[0] instanceof Integer)) return true;
-                    
-                int keyId = (Integer) keys[0];
-                
-                Class clazz = obj.getClass();
-                HashMap<Integer, String[]> hm = mapx.get(clazz.getName());
-                if (hm == null) {
-                    hm = new HashMap<Integer, String[]>();
-                    mapx.put(clazz.getName(), hm);
-                }
-                hm.put(keyId, ssNew);
-                return true;
-            }
-        });
-        
-        oos.writeObject(mapx);
-        oos.close();
+    	// qqqqqqqqqq
     }
-    
 }

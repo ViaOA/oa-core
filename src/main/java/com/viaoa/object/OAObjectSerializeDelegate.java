@@ -153,7 +153,7 @@ public class OAObjectSerializeDelegate {
 			}
 			OAObjectPropertyDelegate.unsafeSetPropertyIfEmpty(oaObj, key, value); // HubSerializeDelegate._readResolve could have set this first (as weakref)
 		}
-		OAObjectDelegate.updateGuid(oaObj.guid);
+		OAObjectDelegate.updateGuid(oaObj.getClass().getPackage(), oaObj.guid);
 	}
 
 	/**

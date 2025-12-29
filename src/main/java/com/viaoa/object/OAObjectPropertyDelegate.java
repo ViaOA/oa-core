@@ -21,8 +21,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OANotExist;
 
@@ -60,6 +62,21 @@ import com.viaoa.util.OANotExist;
 public class OAObjectPropertyDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectPropertyDelegate.class.getName());
 
+	/*
+	OAGraph g = getGraph(null, oaObj);
+	if (g == null) return;
+	g.objects().getOAObjectPropertyService().??(oaObj);
+    */
+	
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+
 	/**
 	 * Returns whether the specified property has already been loaded for the
 	 * given object. A property is considered loaded when its stored value is
@@ -79,36 +96,9 @@ public class OAObjectPropertyDelegate {
 	 *         false if it is missing, unresolved, or not yet loaded
 	 */
 	public static boolean isPropertyLoaded(OAObject oaObj, String name) {
-		if (oaObj == null || name == null) {
-			return false;
-		}
-		Object[] props = oaObj.properties;
-		if (props == null) {
-			return false;
-		}
-
-		for (int i = 0; i < props.length; i += 2) {
-			if (props[i] == null || !name.equalsIgnoreCase((String) props[i])) {
-				continue;
-			}
-
-			Object objx = props[i + 1];
-			if (objx instanceof WeakReference) {
-				objx = ((WeakReference) objx).get();
-				if (objx == null) {
-					return false;
-				}
-			} else if (objx instanceof OAObjectKey) {
-				OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oaObj.getClass(), name);
-				if (li == null) {
-					return false;
-				}
-				Object objz = OAObjectCacheDelegate.get(li.getToClass(), (OAObjectKey) objx);
-				return (objz != null);
-			}
-			return true; // real value is null (/does not exist)
-		}
-		return false;
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return false;
+		return g.objects().getOAObjectPropertyService().isPropertyLoaded(oaObj, name);
 	}
 
 	/**
@@ -122,21 +112,9 @@ public class OAObjectPropertyDelegate {
 	 *         false if the property exists (regardless of its value)
 	 */
 	public static boolean isReferenceNull(OAObject oaObj, String name) {
-		if (oaObj == null || name == null) {
-			return false;
-		}
-		Object[] props = oaObj.properties;
-		if (props == null) {
-			return false;
-		}
-
-		for (int i = 0; i < props.length; i += 2) {
-			if (props[i] == null || !name.equalsIgnoreCase((String) props[i])) {
-				continue;
-			}
-			return false;
-		}
-		return true;
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return false;
+		return g.objects().getOAObjectPropertyService().isReferenceNull(oaObj, name);
 	}
 
 	/**
@@ -148,26 +126,9 @@ public class OAObjectPropertyDelegate {
 	 *         properties defined
 	 */
 	public static String[] getPropertyNames(OAObject oaObj) {
-		Object[] props = oaObj.properties;
-		if (props == null) {
-			return null;
-		}
-		String[] ss;
-
-		int cnt = 0;
-		for (int i = 0; i < props.length; i += 2) {
-			if (props[i] != null) {
-				cnt++;
-			}
-		}
-		ss = new String[cnt];
-		int j = 0;
-		for (int i = 0; i < props.length; i += 2) {
-			if (props[i] != null) {
-				ss[j++] = (String) props[i];
-			}
-		}
-		return ss;
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return null;
+		return g.objects().getOAObjectPropertyService().getPropertyNames(oaObj);
 	}
 
 	/**
@@ -180,7 +141,9 @@ public class OAObjectPropertyDelegate {
 	 * @param value the value to store
 	 */
 	static void unsafeAddProperty(OAObject oaObj, String name, Object value) {
-		unsafeSetProperty(oaObj, name, value, false, false);
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectPropertyService().unsafeAddProperty(oaObj, name, value);
 	}
 
 	/**
@@ -193,7 +156,9 @@ public class OAObjectPropertyDelegate {
 	 * @param value the value to assign
 	 */
 	public static void unsafeSetProperty(OAObject oaObj, String name, Object value) {
-		unsafeSetProperty(oaObj, name, value, true, false);
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectPropertyService().unsafeSetProperty(oaObj, name, value);
 	}
 
 	/**
@@ -205,65 +170,11 @@ public class OAObjectPropertyDelegate {
 	 * @param value the value to assign if the property is not already defined
 	 */
 	static void unsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value) {
-		unsafeSetProperty(oaObj, name, value, true, true);
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectPropertyService().unsafeSetPropertyIfEmpty(oaObj, name, value);
 	}
 
-	/**
-	 * Core implementation for setting a property without firing change events
-	 * or performing validation. Depending on the supplied flags, this method
-	 * can either overwrite existing entries or only insert a new value when
-	 * no matching property name is found.
-	 *
-	 * <p>When a Hub value is assigned, its master object is automatically
-	 * initialized if necessary.</p>
-	 *
-	 * @param oaObj           the target object
-	 * @param name            the property name
-	 * @param value           the value to store
-	 * @param bCheckFirst     if true, existing entries are checked for reuse
-	 * @param bOnlyIfNotFound if true, the value is stored only when the
-	 *                        property does not already exist
-	 */
-	private static void unsafeSetProperty(OAObject oaObj, String name, Object value, boolean bCheckFirst, boolean bOnlyIfNotFound) {
-		int pos;
-		if (oaObj.properties == null) {
-			oaObj.properties = new Object[2];
-			pos = 0;
-		} else {
-			pos = -1;
-			if (bCheckFirst || bOnlyIfNotFound) {
-				for (int i = 0; i < oaObj.properties.length; i += 2) {
-					if (pos == -1 && oaObj.properties[i] == null) {
-						pos = i;
-					} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
-						if (bOnlyIfNotFound) {
-							return;
-						}
-						pos = i;
-						break;
-					}
-				}
-			}
-			if (pos < 0) {
-				pos = oaObj.properties.length;
-				oaObj.properties = Arrays.copyOf(oaObj.properties, pos + 2);
-			}
-		}
-		oaObj.properties[pos] = name;
-		oaObj.properties[pos + 1] = value;
-
-		// in case Hub.datam.masterObject is not set
-		Object objx = value;
-		if (objx instanceof WeakReference) {
-			objx = ((WeakReference) objx).get();
-		}
-		if (objx instanceof Hub) {
-			Hub hub = (Hub) objx;
-			if (hub.getMasterObject() == null) {
-				OAObjectHubDelegate.setMasterObject((Hub) objx, oaObj, name);
-			}
-		}
-	}
 
 	/**
 	 * Removes the specified property from the object. The internal property
@@ -276,29 +187,9 @@ public class OAObjectPropertyDelegate {
 	 *                            removal, false to suppress event generation
 	 */
 	public static void removeProperty(OAObject oaObj, String name, boolean bFirePropertyChange) {
-		if (oaObj.properties == null || name == null) {
-			return;
-		}
-		Object value = null;
-		boolean bResize = false;
-		synchronized (oaObj) {
-			for (int i = 0; i < oaObj.properties.length; i += 2) {
-				if (oaObj.properties[i] == null) {
-					bResize = true;
-				} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
-					value = oaObj.properties[i + 1];
-					oaObj.properties[i] = null;
-					oaObj.properties[i + 1] = null;
-					if (bResize) {
-						resizeProperties(oaObj);
-					}
-					break;
-				}
-			}
-		}
-		if (bFirePropertyChange) {
-			oaObj.firePropertyChange(name, value, null);
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectPropertyService().removeProperty(oaObj, name, bFirePropertyChange);
 	}
 
 	/**
@@ -315,58 +206,11 @@ public class OAObjectPropertyDelegate {
 	 *         non-null
 	 */
 	public static boolean removePropertyIfNull(OAObject oaObj, String name, boolean bFirePropertyChange) {
-		if (oaObj == null || oaObj.properties == null || name == null) {
-			return false;
-		}
-		Object value = null;
-		boolean bResize = false;
-		synchronized (oaObj) {
-			for (int i = 0; i < oaObj.properties.length; i += 2) {
-				if (oaObj.properties[i] == null) {
-					bResize = true;
-				} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
-					value = oaObj.properties[i + 1];
-					if (value != null) {
-						return false;
-					}
-
-					oaObj.properties[i] = null;
-					oaObj.properties[i + 1] = null;
-					if (bResize) {
-						resizeProperties(oaObj);
-					}
-					break;
-				}
-			}
-		}
-		if (bFirePropertyChange) {
-			oaObj.firePropertyChange(name, value, null);
-		}
-		return true;
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return false;
+		return g.objects().getOAObjectPropertyService().removePropertyIfNull(oaObj, name, bFirePropertyChange);
 	}
 
-	/**
-	 * Compacts the internal property array by removing null entries and
-	 * resizing the array to contain only active name/value pairs.
-	 *
-	 * @param oaObj the object whose property array should be resized
-	 */
-	private static void resizeProperties(OAObject oaObj) {
-		int newSize = 0;
-		for (int i = 0; i < oaObj.properties.length; i += 2) {
-			if (oaObj.properties[i] != null) {
-				newSize += 2;
-			}
-		}
-		Object[] objs = new Object[newSize];
-		for (int i = 0, j = 0; i < oaObj.properties.length; i += 2) {
-			if (oaObj.properties[i] != null) {
-				objs[j++] = oaObj.properties[i];
-				objs[j++] = oaObj.properties[i + 1];
-			}
-		}
-		oaObj.properties = objs;
-	}
 
 	/**
 	 * Sets or updates the specified property on the object. The internal
@@ -378,45 +222,9 @@ public class OAObjectPropertyDelegate {
 	 * @param value the value to assign
 	 */
 	public static void setProperty(OAObject oaObj, String name, Object value) {
-		if (oaObj == null || name == null) {
-			return;
-		}
-
-		synchronized (oaObj) {
-			int pos;
-			if (oaObj.properties == null) {
-				oaObj.properties = new Object[2];
-				pos = 0;
-			} else {
-				pos = -1;
-				for (int i = 0; i < oaObj.properties.length; i += 2) {
-					if (pos == -1 && oaObj.properties[i] == null) {
-						pos = i;
-					} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
-						pos = i;
-						break;
-					}
-				}
-				if (pos < 0) {
-					pos = oaObj.properties.length;
-					oaObj.properties = Arrays.copyOf(oaObj.properties, pos + 2);
-				}
-			}
-			oaObj.properties[pos] = name;
-			oaObj.properties[pos + 1] = value;
-		}
-
-		// in case Hub.datam.masterObject is not set
-		Object objx = value;
-		if (objx instanceof WeakReference) {
-			objx = ((WeakReference) objx).get();
-		}
-		if (objx instanceof Hub) {
-			Hub hub = (Hub) objx;
-			if (hub.getMasterObject() == null) {
-				OAObjectHubDelegate.setMasterObject((Hub) objx, oaObj, name);
-			}
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectPropertyService().setProperty(oaObj, name, value);
 	}
 
 	/**
@@ -433,64 +241,9 @@ public class OAObjectPropertyDelegate {
 	 * @param value the value to assign if the property is not already set
 	 */
 	public static void setPropertyHubIfNotSet(OAObject oaObj, String name, Object value) {
-		if (oaObj == null || name == null) {
-			return;
-		}
-
-		Object[] props = oaObj.properties;
-		if (props != null) {
-			for (int i = 0; i < props.length; i += 2) {
-				if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
-					if (props[i + 1] != null) {
-						if (!(props[i + 1] instanceof WeakReference)) {
-							return;
-						}
-						if (((WeakReference) props[i + 1]).get() != null) {
-							return;
-						}
-					}
-				}
-			}
-		}
-
-		synchronized (oaObj) {
-			int pos;
-			if (oaObj.properties == null) {
-				oaObj.properties = new Object[2];
-				pos = 0;
-			} else {
-				pos = -1;
-				for (int i = 0; i < oaObj.properties.length; i += 2) {
-					if (pos == -1 && oaObj.properties[i] == null) {
-						pos = i;
-					} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
-						pos = i;
-						break;
-					}
-				}
-				if (pos < 0) {
-					pos = oaObj.properties.length;
-					oaObj.properties = Arrays.copyOf(oaObj.properties, pos + 2);
-				}
-			}
-			if (oaObj.properties[pos + 1] == null || ((oaObj.properties[pos + 1] instanceof WeakReference)
-					&& (((WeakReference) oaObj.properties[pos + 1]).get() == null))) {
-				oaObj.properties[pos + 1] = value;
-				oaObj.properties[pos] = name;
-			}
-		}
-
-		// in case Hub.datam.masterObject is not set
-		Object objx = value;
-		if (objx instanceof WeakReference) {
-			objx = ((WeakReference) objx).get();
-		}
-		if (objx instanceof Hub) {
-			Hub hub = (Hub) objx;
-			if (hub.getMasterObject() == null) {
-				OAObjectHubDelegate.setMasterObject((Hub) objx, oaObj, name);
-			}
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectPropertyService().setPropertyHubIfNotSet(oaObj, name, value);
 	}
 
 	/**
@@ -505,7 +258,9 @@ public class OAObjectPropertyDelegate {
 	 * @return the resulting stored value
 	 */
 	public static Object setPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue) {
-		return setPropertyCAS(oaObj, name, newValue, matchValue, false, false);
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return null;
+		return g.objects().getOAObjectPropertyService().setPropertyCAS(oaObj, name, newValue, matchValue);
 	}
 
 	/**
@@ -530,104 +285,9 @@ public class OAObjectPropertyDelegate {
 	 */
 	public static Object setPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist,
 			boolean bReturnNotExist) {
-		if (oaObj == null || name == null) {
-			return null;
-		}
-		synchronized (oaObj) {
-			int pos;
-			if (oaObj.properties == null) {
-				if (!bMustNotExist) {
-					if (matchValue != null) {
-						if (bReturnNotExist) {
-							return OANotExist.instance;
-						}
-						return null;
-					}
-				}
-				oaObj.properties = new Object[2];
-				pos = 0;
-			} else {
-				pos = -1;
-				for (int i = 0; i < oaObj.properties.length; i += 2) {
-					if (pos == -1 && oaObj.properties[i] == null) {
-						pos = i;
-						continue;
-					}
-					if (!name.equalsIgnoreCase((String) oaObj.properties[i])) {
-						continue;
-					}
-
-					if (bMustNotExist) {
-						return oaObj.properties[i + 1];
-					}
-
-					if (matchValue != oaObj.properties[i + 1]) {
-						if (oaObj.properties[i + 1] instanceof WeakReference) {
-							Object objx = ((WeakReference) oaObj.properties[i + 1]).get();
-							if (matchValue == objx) {
-								pos = i;
-							}
-							break;
-						}
-
-						if (matchValue == null) {
-							return oaObj.properties[i + 1];
-						}
-						if (!matchValue.equals(oaObj.properties[i + 1])) {
-							if (!(matchValue instanceof OAObjectKey) || !(newValue instanceof OAObject)) {
-								return oaObj.properties[i + 1];
-							}
-							OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) newValue);
-							if (!OAObjectKeyDelegate.isForSameOAObject(null, (OAObjectKey)matchValue, k)) {
-								return oaObj.properties[i + 1];
-							}
-						}
-					}
-					pos = i;
-					break;
-				}
-				if (pos < 0) {
-					if (!bMustNotExist) {
-						if (matchValue != null) {
-							if (bReturnNotExist) {
-								return OANotExist.instance;
-							}
-							return null;
-						}
-					}
-
-					pos = oaObj.properties.length;
-					oaObj.properties = Arrays.copyOf(oaObj.properties, pos + 2);
-				} else if (oaObj.properties[pos] == null) {
-					if (!bMustNotExist) {
-						if (matchValue != null) {
-							if (bReturnNotExist) {
-								return OANotExist.instance;
-							}
-							return null;
-						}
-					}
-				}
-			}
-			oaObj.properties[pos] = name;
-
-			if (newValue != null || !(oaObj.properties[pos + 1] instanceof Hub)) { // 20120827 dont set an existing Hub to null (sent that way if size is 0)
-				oaObj.properties[pos + 1] = newValue;
-			}
-
-			// in case Hub.datam.masterObject is not set
-			Object objx = newValue;
-			if (objx instanceof WeakReference) {
-				objx = ((WeakReference) objx).get();
-			}
-			if (objx instanceof Hub) {
-				Hub hub = (Hub) objx;
-				if (hub.getMasterObject() == null) {
-					OAObjectHubDelegate.setMasterObject((Hub) objx, oaObj, name);
-				}
-			}
-		}
-		return newValue;
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return null;
+		return g.objects().getOAObjectPropertyService().setPropertyCAS(oaObj, name, newValue, matchValue, bMustNotExist, bReturnNotExist);
 	}
 
 	/**
@@ -662,53 +322,11 @@ public class OAObjectPropertyDelegate {
 	 *         or null depending on the parameters and property state
 	 */
 	public static Object getProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
-		if (oaObj == null || name == null) {
-			return null;
-		}
-
-		Object[] objs = oaObj.properties;
-		if (objs == null) {
-			if (bReturnNotExist) {
-				return OANotExist.instance;
-			}
-			return null;
-		}
-		for (int i = 0; i < objs.length; i += 2) {
-			if (objs[i] == null || !name.equalsIgnoreCase((String) objs[i])) {
-				continue;
-			}
-			Object objx = objs[i + 1];
-			if (bConvertWeakRef && objx instanceof WeakReference) {
-				objx = ((WeakReference) objx).get();
-				if (objx == null) {
-					if (bReturnNotExist) {
-						return OANotExist.instance;
-					}
-					return null;
-				}
-			}
-			return objx;
-		}
-		if (bReturnNotExist) {
-			return OANotExist.instance;
-		}
-		return null;
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return null;
+		return g.objects().getOAObjectPropertyService().getProperty(oaObj, name, bReturnNotExist, bConvertWeakRef);
 	}
 
-	// property locking
-	private static final ConcurrentHashMap<String, PropertyLock> hmLock = new ConcurrentHashMap<String, PropertyLock>();
-	private static final ConcurrentHashMap<Thread, Thread> hmLockedThread = new ConcurrentHashMap<Thread, Thread>();
-
-	private static class PropertyLock {
-		final Thread thread;
-		boolean done;
-		boolean hasWait;
-
-		public PropertyLock(Thread thread) {
-			this.thread = thread;
-		}
-
-	}
 
 	/**
 	 * Attempts to acquire an exclusive lock for the specified property.  
@@ -719,7 +337,9 @@ public class OAObjectPropertyDelegate {
 	 * @return true if the lock is successfully acquired; false otherwise
 	 */
 	public static boolean setPropertyLock(OAObject oaObj, String name) {
-		return _setPropertyLock(oaObj, name, true, false);
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return false;
+		return g.objects().getOAObjectPropertyService().setPropertyLock(oaObj, name);
 	}
 
 	/**
@@ -733,101 +353,11 @@ public class OAObjectPropertyDelegate {
 	 * @return true if the lock is acquired; false if it is already held
 	 */
 	public static boolean attemptPropertyLock(OAObject oaObj, String name) {
-		return _setPropertyLock(oaObj, name, false, true);
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return false;
+		return g.objects().getOAObjectPropertyService().attemptPropertyLock(oaObj, name);
 	}
 
-	/**
-	 * Core implementation for acquiring a property-level lock.  
-	 * Creates or reuses a lock entry and manages waiting behavior, deadlock
-	 * detection, and re-entry checks depending on the supplied flags.
-	 *
-	 * @param oaObj              the target object
-	 * @param name               the property name to lock
-	 * @param bWaitIfNeeded      true to wait until the lock becomes available;
-	 *                           false to return immediately if locked
-	 * @param bCheckIfThisThread true to return true only when the current
-	 *                           thread already owns the lock
-	 * @return true if the lock is acquired according to the requested rules;
-	 *         false otherwise
-	 */
-	private static boolean _setPropertyLock(final OAObject oaObj, final String name, final boolean bWaitIfNeeded,
-			final boolean bCheckIfThisThread) {
-		if (oaObj == null || name == null) {
-			return false;
-		}
-		String key = OAObjectDelegate.getGuid(oaObj) + "." + name.toUpperCase();
-		PropertyLock lock;
-		final Thread threadThis = Thread.currentThread();
-		
-		
-		lock = hmLock.computeIfAbsent(key, k -> new PropertyLock(threadThis));
-		if (lock.thread == threadThis) {
-			return true;
-		}
-
-		hmLockedThread.put(threadThis, lock.thread);
-		try {
-			OARemoteThreadDelegate.startNextThread();
-			synchronized (lock) {
-				if (lock.thread == Thread.currentThread()) {
-					return bCheckIfThisThread;
-				}
-				if (!bWaitIfNeeded) {
-					return false;
-				}
-				long ms = 0;
-				for (int i = 0;; i++) {
-					if (i > 3) {
-
-						// see if the thread that thisThread is waiting on is waiting on another thread
-						Thread tx = hmLockedThread.get(lock.thread);
-						if (tx != null) {
-							if (OAObject.getDebugMode()) {
-								String s = oaObj.getObjectKey().toString();
-								s = "thread with lock is waiting on a lock, obj=" + oaObj + ", key=" + s + ", prop=" + name
-										+ ", this.Thread=" + Thread.currentThread().getName() + ", waiting on Thread="
-										+ lock.thread.getName() + " (see next stacktrace), will continue";
-								LOG.log(Level.WARNING, s, new Exception("fyi: avoiding deadlock, will continue"));
-								StackTraceElement[] stes = lock.thread.getStackTrace();
-								Exception ex = new Exception();
-								ex.setStackTrace(stes);
-								LOG.log(Level.WARNING, "... waiting on this Thread=" + lock.thread.getName(), ex);
-							}
-							break;
-						}
-
-						if (ms == 0) {
-							ms = System.currentTimeMillis();
-						} else if (System.currentTimeMillis() - ms > 60000) {
-							if (OAObject.getDebugMode()) {
-								String s = oaObj.getObjectKey().toString();
-								s = "wait time exceeded for lock, obj=" + oaObj + ", key=" + s + ", prop=" + name + ", this.Thread="
-										+ Thread.currentThread().getName() + ", waiting on Thread=" + lock.thread.getName()
-										+ " (see next stacktrace), will continue";
-								LOG.log(Level.WARNING, s, new Exception("fyi: wait time exceeded, will continue"));
-								StackTraceElement[] stes = lock.thread.getStackTrace();
-								Exception ex = new Exception();
-								ex.setStackTrace(stes);
-								LOG.log(Level.WARNING, "... waiting on this Thread=" + lock.thread.getName(), ex);
-							}
-							return false; // bail out, ouch
-						}
-					}
-					if (lock.done) {
-						break;
-					}
-					lock.hasWait = true;
-					try {
-						lock.wait(100);
-					} catch (Exception e) {
-					}
-				}
-			}
-		} finally {
-			hmLockedThread.remove(threadThis);
-		}
-		return _setPropertyLock(oaObj, name, bWaitIfNeeded, bCheckIfThisThread); // create a new one
-	}
 
 	/**
 	 * Releases the lock associated with the specified property, if one exists.
@@ -838,22 +368,9 @@ public class OAObjectPropertyDelegate {
 	 * @param name  the property name whose lock should be released
 	 */
 	public static void releasePropertyLock(OAObject oaObj, String name) {
-		if (oaObj == null || name == null) {
-			return;
-		}
-		String key = OAObjectDelegate.getGuid(oaObj) + "." + name.toUpperCase();
-		PropertyLock lock;
-		synchronized (oaObj) {
-			lock = hmLock.remove(key);
-		}
-		if (lock != null) {
-			synchronized (lock) {
-				lock.done = true;
-				if (lock.hasWait) {
-					lock.notifyAll();
-				}
-			}
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectPropertyService().releasePropertyLock(oaObj, name);
 	}
 
 	/**
@@ -864,11 +381,9 @@ public class OAObjectPropertyDelegate {
 	 * @return true if the property is currently locked; false otherwise
 	 */
 	public static boolean isPropertyLocked(OAObject oaObj, String name) {
-		if (oaObj == null || name == null) {
-			return false;
-		}
-		String key = OAObjectKeyDelegate.getKey(oaObj).getGuid() + "." + name.toUpperCase();
-		return (hmLock.get(key) != null);
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return false;
+		return g.objects().getOAObjectPropertyService().isPropertyLocked(oaObj, name);
 	}
 
 	/**
@@ -889,43 +404,9 @@ public class OAObjectPropertyDelegate {
 	 * @return true if the stored value was changed; false otherwise
 	 */
 	public static boolean setPropertyWeakRef(OAObject oaObj, String name, boolean bToWeakRef, Object value) {
-		if (name == null || oaObj == null || oaObj.properties == null) {
-			return false;
-		}
-
-		boolean b = false;
-		synchronized (oaObj) {
-			for (int i = 0; i < oaObj.properties.length; i += 2) {
-				if (!name.equalsIgnoreCase((String) oaObj.properties[i])) {
-					continue;
-				}
-				Object val = oaObj.properties[i + 1];
-				if (val == null) {
-					break;
-				}
-				if (bToWeakRef) {
-					if (!(val instanceof WeakReference)) {
-						oaObj.properties[i + 1] = new WeakReference(val);
-						b = true;
-					}
-				} else {
-					if (val instanceof WeakReference) {
-						b = true;
-						val = ((WeakReference) val).get();
-						if (val == null) {
-							val = value;
-						}
-						if (val == null) {
-							removePropertyIfNull(oaObj, name, false);
-						} else {
-							oaObj.properties[i + 1] = val;
-						}
-					}
-				}
-				break;
-			}
-		}
-		return b;
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return false;
+		return g.objects().getOAObjectPropertyService().setPropertyWeakRef(oaObj, name, bToWeakRef, value);
 	}
 
 	/**
@@ -942,100 +423,11 @@ public class OAObjectPropertyDelegate {
 	 *                       weak references
 	 */
 	public static void setReferenceable(OAObject obj, boolean bReferenceable) {
-		setReferenceable(obj, bReferenceable, null);
+		OAGraph g = getGraph(null, obj);
+		if (g == null) return;
+		g.objects().getOAObjectPropertyService().setReferenceable(obj, bReferenceable);
 	}
 
-	/**
-	 * Internal recursive implementation used to apply strong or weak reference
-	 * rules to an object and its parent objects.  
-	 *
-	 * <p>The method walks one-to-many reverse links, ensuring that referenced
-	 * Hubs are converted to strong or weak references as needed, and prevents
-	 * repeated processing through the supplied cascade tracker.</p>
-	 *
-	 * @param obj            the object to process
-	 * @param bReferenceable true to enforce strong references; false to allow
-	 *                       weak references
-	 * @param cascade        tracker used to avoid repeated processing of the
-	 *                       same objects during recursion
-	 */
-	private static void setReferenceable(final OAObject obj, boolean bReferenceable, OACascade cascade) {
-		if (obj == null) {
-			return;
-		}
-		if (!OASync.isServer(obj.getClass())) {
-			return;
-		}
-		if (cascade != null && cascade.wasCascaded(obj, true)) {
-			return;
-		}
-
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj);
-		if (!OAObjectInfoDelegate.isWeakReferenceable(oi)) {
-			return;
-		}
-
-		boolean bSupportStorage = oi.getSupportsStorage();
-
-		for (OALinkInfo li : oi.getLinkInfos()) {
-			if (li.getType() != OALinkInfo.ONE) {
-				continue;
-			}
-			if (li.getPrivateMethod()) {
-				continue;
-			}
-			if (!li.getUsed()) {
-				continue;
-			}
-			OALinkInfo liRev = li.getReverseLinkInfo();
-			if (liRev == null) {
-				continue;
-			}
-			if (liRev.getType() != OALinkInfo.MANY) {
-				continue;
-			}
-			if (liRev.getTransient()) {
-				continue;
-			}
-			if (!OAObjectPropertyDelegate.isPropertyLoaded(obj, li.getName())) {
-				continue;
-			}
-
-			Object parent = li.getValue(obj); // parent
-			if (!(parent instanceof OAObject)) {
-				continue;
-			}
-
-			if (!OAObjectPropertyDelegate.isPropertyLoaded((OAObject) parent, liRev.getName())) {
-				continue;
-			}
-
-			if (liRev.getCacheSize() > 0) {
-				Object objx = OAObjectPropertyDelegate.getProperty((OAObject) parent, liRev.getName(), true, false);
-				if (objx instanceof OANotExist) {
-					continue;
-				}
-
-				if (objx instanceof WeakReference) {
-					objx = ((WeakReference) objx).get();
-				}
-				if (!(objx instanceof Hub)) {
-					continue;
-				}
-				boolean b = OAObjectPropertyDelegate.setPropertyWeakRef((OAObject) parent, liRev.getName(), !bReferenceable, (Hub) objx);
-				if (!b) {
-					break; // already changed, dont need to continue
-				}
-			}
-			if (bReferenceable) {
-				if (cascade == null) {
-					cascade = new OACascade();
-				}
-				cascade.wasCascaded(obj, true);
-				setReferenceable((OAObject) parent, bReferenceable, cascade);
-			}
-		}
-	}
 
 	/**
 	 * Clears all stored properties on the given object by removing its internal
@@ -1044,9 +436,9 @@ public class OAObjectPropertyDelegate {
 	 * @param oaObj the object whose properties should be cleared
 	 */
 	public static void clearProperties(OAObject oaObj) {
-		if (oaObj != null) {
-			oaObj.properties = null;
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectPropertyService().clearProperties(oaObj);
 	}
 
 }
