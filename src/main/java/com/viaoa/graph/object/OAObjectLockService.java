@@ -7,6 +7,7 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.object.OALock;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectLockDelegate;
+import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 
@@ -68,11 +69,12 @@ public class OAObjectLockService {
 	    OALock newLock = new OALock(object, null, null);
 	    synchronized (hmLock) {
 	        for (;;) {
-	            OALock lock = (OALock) OAObjectLockDelegate.hmLock.get(object);
+	            OALock lock = (OALock) hmLock.get(object);
 	            if (lock == null) break;
 	            try {
-	                lock.waitCnt++;
-	                OAObjectLockDelegate.hmLock.wait();
+	                int x = lock.getWaitCount();
+	                lock.setWaitCount(x + 1);
+	                hmLock.wait();
 	            }
 	            catch (InterruptedException e) {
 	            }

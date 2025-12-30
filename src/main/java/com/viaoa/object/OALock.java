@@ -73,7 +73,8 @@ public class OALock implements java.io.Serializable {
      * @param miscObject an optional metadata object stored with the lock
      * @throws IllegalArgumentException if {@code object} is {@code null}
      */
-    protected OALock(Object object, Object refObject, Object miscObject) {
+    public OALock(Object object, Object refObject, Object miscObject) {
+		//qqqqqqq method was protected
         if (object == null) throw new IllegalArgumentException("object can not be null");
         this.object = object;
         if (refObject != null) ref = new WeakReference(refObject);
@@ -110,6 +111,19 @@ public class OALock implements java.io.Serializable {
     public Object getMiscObject() {
         return miscObject;
     }
+
+    //qqqqqqqqq created, move to FA??
+    public int getWaitCount() {
+    	return this.waitCnt;
+    }
+    
+    public void setWaitCount(int x) {
+    	this.waitCnt = x;
+    }
+    
 }
+
+
+
 
 

@@ -252,7 +252,8 @@ public class OAObjectDSDelegate {
 	 * @param key the object's key
 	 * @return the retrieved object, or {@code null} if no DataSource exists
 	 */
-	protected static Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key) {
+	public static Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key) {
+		//qqqqqqq method was protected
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectDSService().getObject(oi, clazz, key);
@@ -266,7 +267,8 @@ public class OAObjectDSDelegate {
 	 * @param propName the name of the blob property
 	 * @return the blob's value, or {@code null} if unavailable
 	 */
-	protected static Object getBlob(OAObject obj, String propName) {
+	public static Object getBlob(OAObject obj, String propName) {
+		//qqqqqqq method was protected
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectDSService().getBlob(obj, propName);
@@ -278,7 +280,8 @@ public class OAObjectDSDelegate {
 	 *
 	 * @param oaObj the object to save
 	 */
-	protected static void save(OAObject oaObj) {
+	public static void save(OAObject oaObj) {
+    	//qqqqqqqqq method was protected
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectDSService().save(oaObj);
@@ -291,7 +294,8 @@ public class OAObjectDSDelegate {
 	 *
 	 * @param oaObj the object to save without references
 	 */
-	protected static void saveWithoutReferences(OAObject oaObj) {
+	public static void saveWithoutReferences(OAObject oaObj) {
+		//qqqqqqqqq method was protected
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectDSService().saveWithoutReferences(oaObj);

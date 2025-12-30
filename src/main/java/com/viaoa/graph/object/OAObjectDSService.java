@@ -153,7 +153,8 @@ public class OAObjectDSService {
 	 * @param c the class to evaluate
 	 * @return {@code true} if a DataSource is registered; otherwise {@code false}
 	 */
-	protected static boolean hasDataSource(Class c) {
+	public static boolean hasDataSource(Class c) {
+		//qqqqqqq method was protected
 		return OADataSource.getDataSource(c) != null;
 	}
 	
@@ -165,7 +166,8 @@ public class OAObjectDSService {
 	 * @return {@code true} if the DataSource exists and supports storage,
 	 *         otherwise {@code false}
 	 */
-	protected boolean supportsStorage(Class clazz) {
+	public boolean supportsStorage(Class clazz) {
+		//qqqqqqq method was protected
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		return (ds != null && ds.supportsStorage());
 	}
@@ -236,7 +238,8 @@ public class OAObjectDSService {
 	 * @param key the object's key
 	 * @return the retrieved object, or {@code null} if no DataSource exists
 	 */
-	protected Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key) {
+	public Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key) {
+		//qqqqqqq method was protected
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		if (ds == null) {
 			return null;
@@ -252,7 +255,8 @@ public class OAObjectDSService {
 	 * @param propName the name of the blob property
 	 * @return the blob's value, or {@code null} if unavailable
 	 */
-	protected Object getBlob(OAObject obj, String propName) {
+	public Object getBlob(OAObject obj, String propName) {
+		//qqqqqqq method was protected
 		if (obj == null || propName == null) {
 			return null;
 		}
@@ -268,7 +272,8 @@ public class OAObjectDSService {
 	 *
 	 * @param oaObj the object to save
 	 */
-	protected void save(OAObject oaObj) {
+	public void save(OAObject oaObj) {
+		//qqqqqqq method was protected
 		OADataSource dataSource = getDataSource(oaObj);
 		if (dataSource != null) {
 			if (oaObj.getNew()) {
@@ -286,7 +291,8 @@ public class OAObjectDSService {
 	 *
 	 * @param oaObj the object to save without references
 	 */
-	protected void saveWithoutReferences(OAObject oaObj) {
+	public void saveWithoutReferences(OAObject oaObj) {
+		//qqqqqqq method was protected
 		OADataSource dataSource = getDataSource(oaObj);
 		if (dataSource != null) {
 			if (oaObj.getNew()) {

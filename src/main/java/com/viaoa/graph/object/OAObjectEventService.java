@@ -445,8 +445,9 @@ public class OAObjectEventService {
 	 * @param bSetChanged    if true, allows flagging the object as changed
 	 * @param bUnknownValues if true, skips some equality and load-state checks
 	 */
-	protected void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
+	public void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged, boolean bUnknownValues) {
+    	//qqqqqqqqqq method was protected
 		firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged, bUnknownValues, false);
 	}
 
@@ -466,8 +467,9 @@ public class OAObjectEventService {
 	 * @param bUnknownValues  if true, skips some old-value validation
 	 * @param bIsCheckingRef  internal flag used during recursive reference updates
 	 */
-	protected void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
+	public void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			final boolean bLocalOnly, final boolean bSetChanged, final boolean bUnknownValues, final boolean bIsCheckingRef) {
+    	//qqqqqqqqqq method was protected
 		if (oaObj == null || propertyName == null) {
 			return;
 		}
@@ -758,7 +760,8 @@ public class OAObjectEventService {
 	 * @param oldObj       previous value
 	 * @param newObj       new value
 	 */
-	protected void sendHubBeforePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj) {
+	public void sendHubBeforePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj) {
+    	//qqqqqqqqqq method was protected
 		Hub[] hubs = OAObjectHubDelegate.getHubReferences(oaObj);
 		if (hubs == null) {
 			return;
@@ -1194,7 +1197,8 @@ public class OAObjectEventService {
 	 *
 	 * @param oaObj object that has just completed loading
 	 */
-	protected void fireAfterLoadEvent(OAObject oaObj) {
+	public void fireAfterLoadEvent(OAObject oaObj) {
+    	//qqqqqqqqqq method was protected
 		Hub[] hubs = OAObjectHubDelegate.getHubReferences(oaObj);
 		if (hubs == null) {
 			return;

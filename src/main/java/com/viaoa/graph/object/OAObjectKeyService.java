@@ -16,7 +16,6 @@ import com.viaoa.object.OAObjectCSDelegate;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDSDelegate;
 import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.object.OAObjectFriendAccess;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
@@ -36,14 +35,18 @@ public class OAObjectKeyService {
 
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
+	private final OAObjectInfo.FriendAccess faObjectInfo;
 
-	public OAObjectKeyService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+	public OAObjectKeyService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OAObjectInfo.FriendAccess faObjectInfo) {
 		if (srvcObject == null)
 			throw new IllegalArgumentException("OAObjectService can not be null");
 		this.srvcObject = srvcObject;
 		if (oaObjectFriendAccess == null)
 			throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
 		this.faObject = oaObjectFriendAccess;
+		if (faObjectInfo == null)
+			throw new IllegalArgumentException("OAObjectInfoFriendAccess can not be null");
+		this.faObjectInfo = faObjectInfo;
 	}
 
 	public OAObjectService getObjectService() {
@@ -124,7 +127,7 @@ public class OAObjectKeyService {
 	 */
 	public OAObjectKey createObjectKey(OAObjectInfo oi, Object[] ids, long guid) {
 		if (oi != null && ids != null && ids.length > 0) {
-			String[] idProperties = oi.idProperties;
+			String[] idProperties = oi.getIdProperties();
 			if (idProperties != null && idProperties.length == ids.length) {
 				for (int i = 0; i < idProperties.length; i++) {
 					if (ids[i] instanceof OAObjectKey) {

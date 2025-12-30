@@ -158,7 +158,8 @@ public class OAObjectCSDelegate {
      * @return the copied object created on the server, or {@code null} if
      *         no remote client is available
      */
-     protected static OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
+     public static OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
+    	//qqqqqqqqqq method was protected
      	OAGraph g = getGraph(null, oaObj);
      	if (g == null) return null;
      	return g.objects().getOAObjectCSService().createCopy(oaObj, excludeProperties);
@@ -199,7 +200,8 @@ public class OAObjectCSDelegate {
       * @return {@code true} if the object was saved on the server;
       *         otherwise {@code false}
       */
-    protected static boolean save(OAObject oaObj, int iCascadeRule) {
+    public static boolean save(OAObject oaObj, int iCascadeRule) {
+    	//qqqqqqqqqq method was protected
       	OAGraph g = getGraph(null, oaObj);
       	if (g == null) return false;
       	return g.objects().getOAObjectCSService().save(oaObj, iCascadeRule);
@@ -257,7 +259,8 @@ public class OAObjectCSDelegate {
 	 * @param linkPropertyName the link property name
 	 * @return the blob bytes if available; otherwise {@code null}
 	 */
-    protected static byte[] getServerReferenceBlob(OAObject oaObj, String linkPropertyName) {
+    public static byte[] getServerReferenceBlob(OAObject oaObj, String linkPropertyName) {
+		//qqqqqq method was protected
       	OAGraph g = getGraph(null, oaObj);
       	if (g == null) return null;
       	return g.objects().getOAObjectCSService().getServerReferenceBlob(oaObj, linkPropertyName);
@@ -271,7 +274,8 @@ public class OAObjectCSDelegate {
      * @param linkPropertyName the link property name
      * @return the reference value, or {@code null} if unavailable
      */
-    protected static Object getServerReference(OAObject oaObj, String linkPropertyName) {
+    public static Object getServerReference(OAObject oaObj, String linkPropertyName) {
+		//qqqqqq method was protected
       	OAGraph g = getGraph(null, oaObj);
       	if (g == null) return null;
       	return g.objects().getOAObjectCSService().getServerReference(oaObj, linkPropertyName);
@@ -300,7 +304,8 @@ public class OAObjectCSDelegate {
 	 * @param select optional select used when loading data
 	 * @return {@code true} if executed on the server; otherwise {@code false}
 	 */
-	protected static boolean loadReferenceHubDataOnServer(Hub thisHub, OASelect select) {
+	public static boolean loadReferenceHubDataOnServer(Hub thisHub, OASelect select) {
+		//qqqqqq method was protected
       	OAGraph g = getGraph(thisHub, null);
       	if (g == null) return false;
       	return g.objects().getOAObjectCSService().loadReferenceHubDataOnServer(thisHub, select);

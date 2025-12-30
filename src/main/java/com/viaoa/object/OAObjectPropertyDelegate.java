@@ -16,17 +16,11 @@
 package com.viaoa.object;
 
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
-import com.viaoa.util.OANotExist;
 
 /**
  * Internal delegate responsible for storing and managing property values on

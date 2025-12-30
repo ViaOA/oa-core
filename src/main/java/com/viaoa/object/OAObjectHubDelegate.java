@@ -193,7 +193,8 @@ public class OAObjectHubDelegate {
     	return g.objects().getOAObjectHubService().getChanged(thisHub, changedRule, cascade);
     }
 
-    protected static void saveAll(Hub hub, int iCascadeRule, OACascade cascade) {
+    public static void saveAll(Hub hub, int iCascadeRule, OACascade cascade) {
+    	//qqqqqqqqq method was protected
     	OAGraph g = getGraph(hub, null);
     	if (g == null) return;
     	g.objects().getOAObjectHubService().saveAll(hub, iCascadeRule, cascade);
@@ -203,7 +204,7 @@ public class OAObjectHubDelegate {
     	//qqqqqqqqq method was protected
     	OAGraph g = getGraph(hub, null);
     	if (g == null) return;
-    	g.objects().getOAObjectHubService().saveAll(hub, cascade);
+    	g.objects().getOAObjectHubService().deleteAll(hub, cascade);
     }
 
     public static void setMasterObject(Hub hub, OAObject oaObj, OALinkInfo liDetailToMaster) {

@@ -257,7 +257,7 @@ public class OAObjectDelegate {
 	 * @param bInitializeWithCS whether client-sync initialization should run.
 	 * @param bSetChangedToFalse whether the object's changed flag should be cleared.
 	 */
-	protected static void initialize(
+	public static void initialize(
 	        OAObject oaObj,
 	        OAObjectInfo oi,
 	        boolean bInitializeNulls,
@@ -265,6 +265,7 @@ public class OAObjectDelegate {
 	        boolean bAddToCache,
 	        boolean bInitializeWithCS,
 	        boolean bSetChangedToFalse) {
+		//qqqqqq method was protected
 		final boolean bWasLoading = OAThreadLocalDelegate.setLoading(true);
 
 		if (oaObj == null) return;

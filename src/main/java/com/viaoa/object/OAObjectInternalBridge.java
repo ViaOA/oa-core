@@ -5,6 +5,7 @@ package com.viaoa.object;
 public class OAObjectInternalBridge {
 
 	private final OAObject.FriendAccess faObject = OAObject.getFriendAccess();
+	
 	private final OAObjectInfo.FriendAccess faObjectInfo = OAObjectInfo.getFriendAccess();
 	private final OAPropertyInfo.FriendAccess faPropertyInfo = OAPropertyInfo.getFriendAccess();
 	private final OALinkInfo.FriendAccess faLinkInfo = OALinkInfo.getFriendAccess();

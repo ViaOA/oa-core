@@ -867,9 +867,11 @@ public class OASyncCombinedClient {
                 Mapper m = getMapper(session, c);
                 OAObjectKey k2 = mapper.hmClientToServer.get(k);
                 if (keyServer == null) {
+/*qqqqqqqqqqqq 20251229 todo:  getNextGuid needs packagex                  	
                     k2 = new OAObjectKey(null, OAObjectDelegate.getNextGuid());
                     mapper.hmClientToServer.put(k, k2);
                     mapper.hmServerToClient.put(k2, k);
+qqqqqqqqqqqqq */                    
                 }
                 OAObjectPropertyDelegate.setProperty(objServer, prop, k2);
                 

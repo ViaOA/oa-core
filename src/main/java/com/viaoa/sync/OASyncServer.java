@@ -258,7 +258,7 @@ public class OASyncServer {
 	 */
 	public RemoteServerImpl getRemoteServer() {
 		if (remoteServer == null) {
-			remoteServer = new RemoteServerImpl() {
+			remoteServer = new RemoteServerImpl(packagex) {
 				@Override
 				public RemoteSessionInterface getRemoteSession(ClientInfo ci, RemoteClientCallbackInterface callback) {
 					RemoteSessionInterface rsi = OASyncServer.this.getRemoteSession(ci, callback);

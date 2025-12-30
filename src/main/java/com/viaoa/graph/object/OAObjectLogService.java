@@ -15,6 +15,7 @@ import com.viaoa.object.OAObjectLockDelegate;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.util.OAString;
+import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLWriter;
 
 public class OAObjectLogService {
@@ -118,7 +119,8 @@ public class OAObjectLogService {
      * @param oaObj the object being logged
      * @param bSave true to log a SAVE command, false to log a DELETE
      */
-    protected void logToXmlFile(OAObject oaObj, boolean bSave) {
+     public void logToXmlFile(OAObject oaObj, boolean bSave) {
+    	//qqqqqqqqqq method was protected
         if (writerXml == null) return;
         OALogRecord rec = new OALogRecord();
         rec.setObject(oaObj);

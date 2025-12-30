@@ -4,17 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 import com.viaoa.graph.object.*;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubDelegate;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInternalBridge;
 import com.viaoa.object.OAObjectEventDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
@@ -22,6 +21,7 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OACompare;
 
 public class OAObjectService {
+	private static final Logger LOG = Logger.getLogger(OAObjectService.class.getName());
 
 	private final OAGraph graph;
 
@@ -30,7 +30,7 @@ public class OAObjectService {
     private final OAObjectCacheService srvcCache = new OAObjectCacheService(this, faBridge.getObjectFriendAccess());
     private final OAObjectInitializeService srvcOAObjectInitialize = new OAObjectInitializeService(this, faBridge.getObjectFriendAccess()); 
     private final OAObjectGuidService srvcGuid = new OAObjectGuidService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectInfoService srvcOAObjectInfo = new OAObjectInfoService(this, faBridge.getObjectFriendAccess()); 
+    private final OAObjectInfoService srvcOAObjectInfo = new OAObjectInfoService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectInfoFriendAccess()); 
     private final OAObjectPropertyService srvcOAObjectProperty = new OAObjectPropertyService(this, faBridge.getObjectFriendAccess());
     private final OAObjectDSService srvcOAObjectDS = new OAObjectDSService(this, faBridge.getObjectFriendAccess());
     private final OAObjectReflectService srvcOAObjectReflect = new OAObjectReflectService(this, faBridge.getObjectFriendAccess());
@@ -44,7 +44,7 @@ public class OAObjectService {
     private final OAObjectEnumService srvcOAObjectEnum = new OAObjectEnumService(this, faBridge.getObjectFriendAccess());
     private final OAObjectEventService srvcOAObjectEvent = new OAObjectEventService(this, faBridge.getObjectFriendAccess());
     private final OAObjectImportMatchService srvcOAObjectImportMatch = new OAObjectImportMatchService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectKeyService srvcOAObjectKey = new OAObjectKeyService(this, faBridge.getObjectFriendAccess());
+    private final OAObjectKeyService srvcOAObjectKey = new OAObjectKeyService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectInfoFriendAccess());
     private final OAObjectLockService srvcOAObjectLock = new OAObjectLockService(this, faBridge.getObjectFriendAccess());
     private final OAObjectLogService srvcOAObjectLog = new OAObjectLogService(this, faBridge.getObjectFriendAccess());
     private final OAObjectSaveService srvcOAObjectSave = new OAObjectSaveService(this, faBridge.getObjectFriendAccess());
@@ -692,21 +692,6 @@ public class OAObjectService {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 }
-
-
-
-
-
 
 

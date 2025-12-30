@@ -516,12 +516,14 @@ public class OAObjectHubService {
         return HubDelegate.getChanged(thisHub, changedRule, cascade);
     }
 
-    protected void saveAll(Hub hub, int iCascadeRule, OACascade cascade) {
+    public void saveAll(Hub hub, int iCascadeRule, OACascade cascade) {
+    	//qqqqqqqqqq method was protected
         if (hub == null) return; 
         HubSaveDelegate.saveAll(hub, iCascadeRule, cascade); // cascade save and update M2M links
     }
 
-    protected void deleteAll(Hub hub, OACascade cascade) {
+    public void deleteAll(Hub hub, OACascade cascade) {
+    	//qqqqqqqqqq method was protected
         HubDeleteDelegate.deleteAll(hub, cascade); // cascade delete and update M2M links
     }
 

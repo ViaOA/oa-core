@@ -244,7 +244,7 @@ public class OAObjectInfoDelegate {
 		if (c == null) return null;
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
-		return g.objects().getOAObjectInfoService().setRootHub(thisOI);
+		return g.objects().getOAObjectInfoService().getRootHub(thisOI);
 	}
 
 	/**
@@ -511,11 +511,11 @@ public class OAObjectInfoDelegate {
 	 * @param oi the OAObjectInfo to inspect.
 	 * @return array of owned-link infos.
 	 */
-	public static OALinkInfo[] getOwndedLinkInfos(OAObjectInfo oi) {
+	public static OALinkInfo[] getOwnedLinkInfos(OAObjectInfo oi) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
-		return g.objects().getOAObjectInfoService().getOwnedLinkInfo(oi);
+		return g.objects().getOAObjectInfoService().getOwnedLinkInfos(oi);
 	}
 
 	// linkinfo that this object owns
@@ -526,10 +526,10 @@ public class OAObjectInfoDelegate {
 	 * @param obj the OAObject whose owned links are requested.
 	 * @return array of owned-link infos.
 	 */
-	public static OALinkInfo[] getOwndedLinkInfos(OAObject obj) {
+	public static OALinkInfo[] getOwnedLinkInfos(OAObject obj) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
-		return g.objects().getOAObjectInfoService().getOwndedLinkInfos(obj);
+		return g.objects().getOAObjectInfoService().getOwnedLinkInfos(obj);
 	}
 
 	/**

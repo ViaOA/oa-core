@@ -3972,8 +3972,17 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		public void setWeakHubs(OAObject obj, WeakReference<Hub<?>>[] refs) {
 			obj.weakhubs = refs;
 		}
-
 		
+		public Object[] getProperties(OAObject obj) {
+			return obj.properties;
+		}
+		public void setProperties(OAObject obj, Object[] props) {
+			obj.properties = props;
+		}
+
+		public void firePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj) {		
+			oaObj.firePropertyChange(propertyName, oldObj, newObj);
+		}
 
 	}
 	private final static FriendAccess friendAccess = new FriendAccess(); 

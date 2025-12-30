@@ -11,7 +11,6 @@ import com.viaoa.graph.object.OAObjectInitializeService;
 import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectFriendAccess;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAReflect;
 

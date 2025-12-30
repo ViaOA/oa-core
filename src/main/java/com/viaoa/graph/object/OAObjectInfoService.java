@@ -15,13 +15,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OAClass;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAAnnotationDelegate;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectFriendAccess;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
@@ -36,12 +36,15 @@ public class OAObjectInfoService {
 
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
+	private final OAObjectInfo.FriendAccess faObjectInfo;
 	
-    public OAObjectInfoService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+    public OAObjectInfoService(OAObjectService srvcObject, OAObject.FriendAccess faObject, OAObjectInfo.FriendAccess faObjectInfo) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService cant be null");
     	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-    	this.faObject = oaObjectFriendAccess;
+    	if (faObject == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
+    	this.faObject = faObject;
+    	if (faObjectInfo == null) throw new IllegalArgumentException("OAObjectInfoFriendAccess can not be null");
+    	this.faObjectInfo = faObjectInfo;
     }
 	
     public OAObjectService getObjectService() {
@@ -391,18 +394,21 @@ public class OAObjectInfoService {
 			}
 			thisOI.getPropertyInfos().add(pi);
 		}
-		thisOI.resetPropertyInfo();
+		faObjectInfo.resetPropertyInfo(thisOI);
 
 		// this must be sorted, so that they will be in the same order used by OAObject.nulls, and created the same on all other computers
 		Collections.sort(alPrimitive);
-		thisOI.primitiveProps = new String[alPrimitive.size()];
-		alPrimitive.toArray(thisOI.primitiveProps);
+		String[] ss = new String[alPrimitive.size()];
+		alPrimitive.toArray(ss);
+		faObjectInfo.setPrimitiveProps(thisOI, ss);
 
 		// 20120827 track empty hubs
 		// this must be sorted, so that they will be in the same order used by OAObject.nulls, and created the same on all other computers
 		Collections.sort(alHub);
-		thisOI.hubProps = new String[alHub.size()];
-		alHub.toArray(thisOI.hubProps);
+		ss = new String[alHub.size()];
+		alHub.toArray(ss);
+		faObjectInfo.setHubProps(thisOI, ss);
+		
 	}
 
 	/**
@@ -627,8 +633,9 @@ public class OAObjectInfoService {
 			alPrimitive.add(s);
 		}
 		Collections.sort(alPrimitive);
-		thisOI.primitiveProps = new String[alPrimitive.size()];
-		alPrimitive.toArray(thisOI.primitiveProps);
+		String[] ss = new String[alPrimitive.size()];
+		alPrimitive.toArray(ss);
+		faObjectInfo.setPrimitiveProps(thisOI, ss);
 
 		// combine LinkInfos
 		alThis = thisOI.getLinkInfos();
@@ -680,11 +687,14 @@ public class OAObjectInfoService {
 		}
 
 		// 20120827
-		String[] s1 = child.hubProps;
-		String[] s2 = parent.hubProps;
-		thisOI.hubProps = new String[s1.length + s2.length];
-		System.arraycopy(s1, 0, thisOI.hubProps, 0, s1.length);
-		System.arraycopy(s2, 0, thisOI.hubProps, s1.length, s2.length);
+		String[] s1 = faObjectInfo.getHubProps(child);
+		String[] s2 = faObjectInfo.getHubProps(parent);
+
+		ss = new String[s1.length + s2.length];
+		System.arraycopy(s1, 0, ss, 0, s1.length);
+		System.arraycopy(s2, 0, ss, s1.length, s2.length);
+		
+		faObjectInfo.setHubProps(thisOI, ss);
 
 		return thisOI;
 	}
@@ -757,12 +767,12 @@ public class OAObjectInfoService {
 	 * @return the recursive link info, or null if none exists.
 	 */
 	public OALinkInfo getRecursiveLinkInfo(OAObjectInfo thisOI, int type) {
-		boolean b = thisOI.bSetRecursive;
+		boolean b = faObjectInfo.getSetRecursive(thisOI);
 		try {
 			return _getRecursiveLinkInfo(thisOI, type);
 		} finally {
 			if (!b) {
-				thisOI.bSetRecursive = true;
+				faObjectInfo.setSetRecursive(thisOI, true);
 			}
 		}
 	}
@@ -781,15 +791,15 @@ public class OAObjectInfoService {
 		if (thisOI == null) {
 			return null;
 		}
-		if (thisOI.bSetRecursive) {
+		if (faObjectInfo.getSetRecursive(thisOI)) {
 			if (type == OALinkInfo.ONE) {
-				return thisOI.liRecursiveOne;
+				return faObjectInfo.getRecursiveOneLinkInfo(thisOI);
 			} else {
-				return thisOI.liRecursiveMany;
+				return faObjectInfo.getRecursiveManyLinkInfo(thisOI);
 			}
 		}
 
-		if (thisOI.thisClass == null) {
+		if (thisOI.getForClass() == null) {
 			return null;
 		}
 
@@ -797,29 +807,29 @@ public class OAObjectInfoService {
 			if (!li.getUsed()) {
 				continue;
 			}
-			if (li.bCalculated) {
+			if (li.getCalculated()) {
 				continue;
 			}
-			if (!li.bRecursive) {
+			if (!li.getRecursive()) {
 				continue; // 20131009
 			}
-			if (li.toClass != null && li.toClass.equals(thisOI.thisClass)) {
+			if (li.getToClass() != null && li.getToClass().equals(thisOI.getForClass())) {
 				if (li.getType() == OALinkInfo.MANY) {
-					thisOI.liRecursiveMany = li;
-					if (thisOI.liRecursiveOne == null) {
-						thisOI.liRecursiveOne = getReverseLinkInfo(thisOI.liRecursiveMany); // 20131010 type=One are not annotated as recursive
+					faObjectInfo.setRecursiveManyLinkInfo(thisOI, li);
+					if (faObjectInfo.getRecursiveOneLinkInfo(thisOI) == null) {
+						faObjectInfo.setRecursiveOneLinkInfo(thisOI, getReverseLinkInfo(li)); // 20131010 type=One are not annotated as recursive
 					}
 					break;
 				} else {
-					thisOI.liRecursiveOne = li;
+					faObjectInfo.setRecursiveOneLinkInfo(thisOI, li);
 				}
 			}
 		}
 
 		if (type == OALinkInfo.ONE) {
-			return thisOI.liRecursiveOne;
+			return faObjectInfo.getRecursiveOneLinkInfo(thisOI);
 		}
-		return thisOI.liRecursiveMany;
+		return faObjectInfo.getRecursiveManyLinkInfo(thisOI);
 	}
 
 	/**
@@ -835,8 +845,8 @@ public class OAObjectInfoService {
 		if (thisOI == null) {
 			return null;
 		}
-		if (thisOI.bSetLinkToOwner) {
-			return thisOI.liLinkToOwner;
+		if (faObjectInfo.getSetLinkToOwner(thisOI)) {
+			return faObjectInfo.getLinkToOwner(thisOI);
 		}
 
 		for (OALinkInfo li : thisOI.getLinkInfos()) {
@@ -848,14 +858,14 @@ public class OAObjectInfoService {
 				continue;
 			}
 			if (liRev.getOwner()) {
-				if (!li.toClass.equals(thisOI.thisClass)) { // make sure that it is not also a recursive link.
-					thisOI.liLinkToOwner = li;
+				if (!li.getToClass().equals(thisOI.getForClass())) { // make sure that it is not also a recursive link.
+					faObjectInfo.setLinkToOwner(thisOI, li);
 					break;
 				}
 			}
 		}
-		thisOI.bSetLinkToOwner = true;
-		return thisOI.liLinkToOwner;
+		faObjectInfo.setSetLinkToOwner(thisOI, true);
+		return faObjectInfo.getLinkToOwner(thisOI);
 	}
 
 	/**
@@ -902,13 +912,13 @@ public class OAObjectInfoService {
 	 * @return true if the Hub was cached; false otherwise.
 	 */
 	public boolean cacheHub(OALinkInfo li, final Hub hub) {
-		if (li == null || hub == null || li.cacheSize < 1) {
+		if (li == null || hub == null || li.getCacheSize() < 1) {
 			return false;
 		}
 
 		ReentrantReadWriteLock rwLock = hmLinkInfoCacheLock.computeIfAbsent(li,  k -> new ReentrantReadWriteLock());
-		List alCache = hmLinkInfoCacheList.computeIfAbsent(li, k -> new ArrayList(li.cacheSize + 1));
-		Set hsCache = hmLinkInfoCacheSet.computeIfAbsent(li, k -> new HashSet(li.cacheSize + 3, .85f)); 
+		List alCache = hmLinkInfoCacheList.computeIfAbsent(li, k -> new ArrayList(li.getCacheSize() + 1));
+		Set hsCache = hmLinkInfoCacheSet.computeIfAbsent(li, k -> new HashSet(li.getCacheSize() + 3, .85f)); 
 
 		try {
 			rwLock.writeLock().lock();
@@ -948,7 +958,7 @@ public class OAObjectInfoService {
 		hsCache.add(hub);
 
 		int x = alCache.size();
-		if (x > li.cacheSize) {
+		if (x > li.getCacheSize()) {
 			hsCache.remove(alCache.remove(0));
 		}
 		return true;
@@ -964,11 +974,11 @@ public class OAObjectInfoService {
 	 * @param hub the Hub instance to check.
 	 * @return true if cached; false otherwise.
 	 */
-	public static boolean isCached(OALinkInfo li, Hub hub) {
+	public boolean isCached(OALinkInfo li, Hub hub) {
 		if (li == null || hub == null) {
 			return false;
 		}
-		ReentrantReadWriteLock rwLock = OAObjectInfoDelegate.hmLinkInfoCacheLock.get(li);
+		ReentrantReadWriteLock rwLock = hmLinkInfoCacheLock.get(li);
 		if (rwLock == null) {
 			return false;
 		}
@@ -976,7 +986,7 @@ public class OAObjectInfoService {
 		try {
 			rwLock.readLock().lock();
 
-			Set hs = OAObjectInfoDelegate.hmLinkInfoCacheSet.get(li);
+			Set hs = hmLinkInfoCacheSet.get(li);
 			return hs != null && hs.contains(hub);
 		} finally {
 			rwLock.readLock().unlock();
@@ -1006,7 +1016,7 @@ public class OAObjectInfoService {
 	 */
 	public boolean isMany2Many(OALinkInfo thisLi) {
 		OALinkInfo rli = getReverseLinkInfo(thisLi);
-		return (rli != null && thisLi.type == OALinkInfo.MANY && rli.type == OALinkInfo.MANY);
+		return (rli != null && thisLi.getType() == OALinkInfo.MANY && rli.getType() == OALinkInfo.MANY);
 	}
 	/**
 	 * Returns true if the supplied link and its reverse link both have
@@ -1017,7 +1027,7 @@ public class OAObjectInfoService {
 	 */
 	public boolean isOne2One(OALinkInfo thisLi) {
 		OALinkInfo rli = getReverseLinkInfo(thisLi);
-		return (rli != null && thisLi.type == OALinkInfo.ONE && rli.type == OALinkInfo.ONE);
+		return (rli != null && thisLi.getType() == OALinkInfo.ONE && rli.getType() == OALinkInfo.ONE);
 	}
 
 	/**
@@ -1051,8 +1061,8 @@ public class OAObjectInfoService {
 			return null;
 		}
 
-		OAObjectInfo oi = getOAObjectInfo(liRev.toClass); // this will load up the methods
-		return getMethod(oi, "get" + li.name, 0);
+		OAObjectInfo oi = getOAObjectInfo(liRev.getToClass()); // this will load up the methods
+		return getMethod(oi, "get" + li.getName(), 0);
 	}
 
 	/**
@@ -1083,14 +1093,14 @@ public class OAObjectInfoService {
 			return null;
 		}
 		methodName = methodName.toUpperCase();
-		final Class clazz = oi.thisClass;
-		Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
+		final Class clazz = oi.getForClass();
+		Map<String, Method> map = getClassMethodMap(clazz);
 		Method method = map.get(methodName);
 		if (method != null && argumentCount < 0) {
 			return method;
 		}
 		if (method == null) {
-			Set<String> set = OAObjectInfoDelegate.getClassMethodNotFoundMap(clazz);
+			Set<String> set = getClassMethodNotFoundMap(clazz);
 			if (set.contains(methodName)) {
 				return null;
 			}
@@ -1108,7 +1118,7 @@ public class OAObjectInfoService {
 			method = OAReflect.getMethod(clazz, methodName, argumentCount);
 			if (method == null) {
 				if (!bRecalc) {
-					OAObjectInfoDelegate.getClassMethodNotFoundMap(clazz).add(methodName);
+					getClassMethodNotFoundMap(clazz).add(methodName);
 				}
 				return null;
 			}
@@ -1133,8 +1143,8 @@ public class OAObjectInfoService {
 			return null;
 		}
 		methodName = methodName.toUpperCase();
-		Class clazz = oi.thisClass;
-		final Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
+		Class clazz = oi.getForClass();
+		final Map<String, Method> map = getClassMethodMap(clazz);
 		Method method = map.get(methodName);
 		if (method != null) {
 			Class[] cs = method.getParameterTypes();
@@ -1156,8 +1166,9 @@ public class OAObjectInfoService {
 	 * @param clazz  the class whose cache is updated.
 	 * @param method the method to store.
 	 */
-	protected void storeMethod(Class clazz, Method method) {
-		Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
+	public void storeMethod(Class clazz, Method method) {
+		//qqqqqqqq method was protected
+		Map<String, Method> map = getClassMethodMap(clazz);
 		method.setAccessible(true); // 20130131
 		map.put(method.getName().toUpperCase(), method);
 	}
@@ -1171,8 +1182,8 @@ public class OAObjectInfoService {
 	 * @return array of all cached methods.
 	 */
 	public Method[] getAllMethods(OAObjectInfo oi) {
-		Class clazz = oi.thisClass;
-		Map<String, Method> map = OAObjectInfoDelegate.getClassMethodMap(clazz);
+		Class clazz = oi.getForClass();
+		Map<String, Method> map = getClassMethodMap(clazz);
 		Method[] ms = new Method[map.size()];
 		int i = 0;
 		for (Method mx : map.values()) {
@@ -1225,7 +1236,7 @@ public class OAObjectInfoService {
 	public Class getHubPropertyClass(Class clazz, String propertyName) {
 		OALinkInfo li = getLinkInfo(clazz, propertyName);
 		if (li != null) {
-			return li.toClass;
+			return li.getToClass();
 		}
 		return null;
 	}
@@ -1264,7 +1275,7 @@ public class OAObjectInfoService {
 	 * @param oi the OAObjectInfo to inspect.
 	 * @return array of owned-link infos.
 	 */
-	public OALinkInfo[] getOwndedLinkInfos(OAObjectInfo oi) {
+	public OALinkInfo[] getOwnedLinkInfos(OAObjectInfo oi) {
 		return oi.getOwnedLinkInfos();
 	}
 
@@ -1275,7 +1286,7 @@ public class OAObjectInfoService {
 	 * @param obj the OAObject whose owned links are requested.
 	 * @return array of owned-link infos.
 	 */
-	public OALinkInfo[] getOwndedLinkInfos(OAObject obj) {
+	public OALinkInfo[] getOwnedLinkInfos(OAObject obj) {
 		OAObjectInfo oi = getOAObjectInfo(obj);
 		return oi.getOwnedLinkInfos();
 	}
@@ -1362,8 +1373,10 @@ public class OAObjectInfoService {
 	 * @return true if the property is an ID property.
 	 */
 	public boolean isIdProperty(OAObjectInfo oi, String propertyName) {
-		for (int i = 0; oi.idProperties != null && i < oi.idProperties.length; i++) {
-			if (oi.idProperties[i] != null && oi.idProperties[i].equalsIgnoreCase(propertyName)) {
+		
+		String[] ss = oi.getIdProperties();
+		for (int i = 0; ss != null && i < ss.length; i++) {
+			if (ss[i] != null && ss[i].equalsIgnoreCase(propertyName)) {
 				return true;
 			}
 		}
@@ -1407,7 +1420,7 @@ public class OAObjectInfoService {
 	 * @return true if the property is a Hub property.
 	 */
 	public boolean isHubProperty(OAObjectInfo oi, String propertyName) {
-		Method m = getMethod(oi.thisClass, "get" + propertyName);
+		Method m = getMethod(oi.getForClass(), "get" + propertyName);
 		if (m == null) return false;
 		
 		Class c = m.getReturnType();
@@ -1428,7 +1441,7 @@ public class OAObjectInfoService {
 			return null;
 		}
 		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
-		String[] ids = oi.idProperties;
+		String[] ids = oi.getIdProperties();
 		if (ids == null) return new Object[0];
 		Object[] objs = new Object[ids.length];
 		for (int i = 0; i < ids.length; i++) {
@@ -1445,11 +1458,11 @@ public class OAObjectInfoService {
 	 * @param oaObj the OAObject to inspect.
 	 * @return the object's null-bitmask array, or null.
 	 */
-	public static byte[] getNullBitMask(OAObject oaObj) {
+	public byte[] getNullBitMask(OAObject oaObj) {
 		if (oaObj == null) {
 			return null;
 		}
-		return oaObj.nulls;
+		return faObject.getNulls(oaObj);
 	}
 
 	/**
@@ -1491,10 +1504,12 @@ public class OAObjectInfoService {
 
 			int posByte = (i / 8);
 			int posBit = 7 - (i % 8);
-			if (posByte >= oaObj.nulls.length) {
+			
+			byte[] bs = faObject.getNulls(oaObj);
+			if (posByte >= bs.length) {
 				break;
 			}
-			byte b = oaObj.nulls[posByte];
+			byte b = bs[posByte];
 
 			byte b2 = 1;
 			b2 = (byte) (b2 << posBit);
@@ -1552,10 +1567,11 @@ public class OAObjectInfoService {
 			}
 			int posByte = (i / 8);
 			int posBit = 7 - (i % 8);
-			if (posByte >= oaObj.nulls.length) {
+			byte[] bs = faObject.getNulls(oaObj);
+			if (posByte >= bs.length) {
 				return false;
 			}
-			byte b = oaObj.nulls[posByte];
+			byte b = bs[posByte];
 
 			byte b2 = 1;
 			b2 = (byte) (b2 << posBit);
@@ -1593,12 +1609,13 @@ public class OAObjectInfoService {
 				continue;
 			}
 
+			byte[] bs = faObject.getNulls(oaObj);
 			int posByte = (i / 8);
-			if (posByte >= oaObj.nulls.length) {
+			if (posByte >= bs.length) {
 				continue;
 			}
 
-			byte b = oaObj.nulls[posByte];
+			byte b = bs[posByte];
 			int posBit = 7 - (i % 8);
 
 			byte b2 = (byte) 1;
@@ -1608,7 +1625,7 @@ public class OAObjectInfoService {
 			} else {
 				b &= ~b2;
 			}
-			oaObj.nulls[posByte] = b;
+			bs[posByte] = b;
 			break;
 		}
 	}
@@ -1724,12 +1741,14 @@ public class OAObjectInfoService {
 	 * @param hsVisited  set of already-visited OAObjectInfos.
 	 * @return true if weak-referenceable.
 	 */
-	private boolean isWeakReferenceable(OAObjectInfo oi, HashSet<OAObjectInfo> hsVisited) {
+	private boolean isWeakReferenceable(final OAObjectInfo oi, HashSet<OAObjectInfo> hsVisited) {
 		if (oi == null) {
 			return false;
 		}
-		if (oi.weakReferenceable != -1) {
-			return (oi.weakReferenceable == 1);
+		
+		int x = faObjectInfo.getWeakReferenceable(oi);
+		if (x != -1) {
+			return (x == 1);
 		}
 		if (hsVisited != null && hsVisited.contains(oi)) {
 			return false;
@@ -1756,7 +1775,7 @@ public class OAObjectInfoService {
 			if (liRev.getType() != liRev.MANY) {
 				continue;
 			}
-			if (liRev.cacheSize > 0) {
+			if (liRev.getCacheSize() > 0) {
 				b = true;
 				break;
 			}
@@ -1771,7 +1790,7 @@ public class OAObjectInfoService {
 				break;
 			}
 		}
-		oi.weakReferenceable = b ? 1 : 0;
+		faObjectInfo.setWeakReferenceable(oi, b ? 1 : 0);
 		return b;
 	}
 
@@ -1829,7 +1848,8 @@ public class OAObjectInfoService {
 	 * @param clazz the class whose method cache is requested.
 	 * @return the method cache map.
 	 */
-	protected Map<String, Method> getClassMethodMap(Class clazz) {
+	public Map<String, Method> getClassMethodMap(Class clazz) {
+    	//qqqqqqqqqq method was protected
 		Map<String, Method> map = hmClassMethod.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
     	return map;
 	}
@@ -1842,7 +1862,8 @@ public class OAObjectInfoService {
 	 * @param clazz the class whose not-found map is requested.
 	 * @return the not-found method-name set.
 	 */
-    protected Set<String> getClassMethodNotFoundMap(Class clazz) {
+    public Set<String> getClassMethodNotFoundMap(Class clazz) {
+    	//qqqqqqqqqq method was protected
         Set<String> map = hmClassMethodNotFound.computeIfAbsent(clazz, k -> new HashSet<String>(3, .75f));
         return map;
     }

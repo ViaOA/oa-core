@@ -3,40 +3,43 @@ package com.viaoa.graph.object;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
+import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectHubDelegate;
+import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
-import com.viaoa.object.PropertyLock;
+import com.viaoa.object.OAObjectPropertyDelegate;
+import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.sync.OASync;
 import com.viaoa.util.OANotExist;
 
 public class OAObjectPropertyService {
+	private static final Logger LOG = Logger.getLogger(OAObjectPropertyService.class.getName());
+
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
 	
-    public OAObjectPropertyService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+    public OAObjectPropertyService(OAObjectService srvcObject, OAObject.FriendAccess faObject) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
     	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-    	this.faObject = oaObjectFriendAccess;
+    	if (faObject == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
+    	this.faObject = faObject;
     }
 	
     public OAObjectService getObjectService() {
     	return srvcObject;
     }
 
-	public void unsafeAddProperty(OAObject oaObj, String name, OAObject objx) {
-		// TODO Auto-generated method stub
-		//qqqqqqqqqqqqqqqqqqq
-	}
-    
 	/**
 	 * Returns whether the specified property has already been loaded for the
 	 * given object. A property is considered loaded when its stored value is
@@ -59,7 +62,7 @@ public class OAObjectPropertyService {
 		if (oaObj == null || name == null) {
 			return false;
 		}
-		Object[] props = oaObj.properties;
+		Object[] props = faObject.getProperties(oaObj);
 		if (props == null) {
 			return false;
 		}
@@ -102,7 +105,7 @@ public class OAObjectPropertyService {
 		if (oaObj == null || name == null) {
 			return false;
 		}
-		Object[] props = oaObj.properties;
+		Object[] props = faObject.getProperties(oaObj);
 		if (props == null) {
 			return false;
 		}
@@ -125,7 +128,7 @@ public class OAObjectPropertyService {
 	 *         properties defined
 	 */
 	public String[] getPropertyNames(OAObject oaObj) {
-		Object[] props = oaObj.properties;
+		Object[] props = faObject.getProperties(oaObj);
 		if (props == null) {
 			return null;
 		}
@@ -156,7 +159,8 @@ public class OAObjectPropertyService {
 	 * @param name  the property name
 	 * @param value the value to store
 	 */
-	void unsafeAddProperty(OAObject oaObj, String name, Object value) {
+	public void unsafeAddProperty(OAObject oaObj, String name, Object value) {
+		//qqqqqqqq method was protected
 		unsafeSetProperty(oaObj, name, value, false, false);
 	}
 	
@@ -170,6 +174,7 @@ public class OAObjectPropertyService {
 	 * @param value the value to assign
 	 */
 	public void unsafeSetProperty(OAObject oaObj, String name, Object value) {
+		//qqqqqqqq method was protected
 		unsafeSetProperty(oaObj, name, value, true, false);
 	}
 
@@ -181,7 +186,8 @@ public class OAObjectPropertyService {
 	 * @param name  the property name
 	 * @param value the value to assign if the property is not already defined
 	 */
-	void unsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value) {
+	public void unsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value) {
+		//qqqqqqqq method was protected
 		unsafeSetProperty(oaObj, name, value, true, true);
 	}
 
@@ -203,16 +209,18 @@ public class OAObjectPropertyService {
 	 */
 	private void unsafeSetProperty(OAObject oaObj, String name, Object value, boolean bCheckFirst, boolean bOnlyIfNotFound) {
 		int pos;
-		if (oaObj.properties == null) {
-			oaObj.properties = new Object[2];
+		Object[] properties = faObject.getProperties(oaObj);
+		if (properties == null) {
+			properties = new Object[2];
+			faObject.setProperties(oaObj, properties);
 			pos = 0;
 		} else {
 			pos = -1;
 			if (bCheckFirst || bOnlyIfNotFound) {
-				for (int i = 0; i < oaObj.properties.length; i += 2) {
-					if (pos == -1 && oaObj.properties[i] == null) {
+				for (int i = 0; i < properties.length; i += 2) {
+					if (pos == -1 && properties[i] == null) {
 						pos = i;
-					} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
+					} else if (name.equalsIgnoreCase((String) properties[i])) {
 						if (bOnlyIfNotFound) {
 							return;
 						}
@@ -222,12 +230,13 @@ public class OAObjectPropertyService {
 				}
 			}
 			if (pos < 0) {
-				pos = oaObj.properties.length;
-				oaObj.properties = Arrays.copyOf(oaObj.properties, pos + 2);
+				pos = properties.length;
+				properties = Arrays.copyOf(properties, pos + 2);
+				faObject.setProperties(oaObj, properties);
 			}
 		}
-		oaObj.properties[pos] = name;
-		oaObj.properties[pos + 1] = value;
+		properties[pos] = name;
+		properties[pos + 1] = value;
 
 		// in case Hub.datam.masterObject is not set
 		Object objx = value;
@@ -253,19 +262,20 @@ public class OAObjectPropertyService {
 	 *                            removal, false to suppress event generation
 	 */
 	public void removeProperty(OAObject oaObj, String name, boolean bFirePropertyChange) {
-		if (oaObj.properties == null || name == null) {
+		Object[] properties = faObject.getProperties(oaObj);
+		if (properties == null || name == null) {
 			return;
 		}
 		Object value = null;
 		boolean bResize = false;
 		synchronized (oaObj) {
-			for (int i = 0; i < oaObj.properties.length; i += 2) {
-				if (oaObj.properties[i] == null) {
+			for (int i = 0; i < properties.length; i += 2) {
+				if (properties[i] == null) {
 					bResize = true;
-				} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
-					value = oaObj.properties[i + 1];
-					oaObj.properties[i] = null;
-					oaObj.properties[i + 1] = null;
+				} else if (name.equalsIgnoreCase((String) properties[i])) {
+					value = properties[i + 1];
+					properties[i] = null;
+					properties[i + 1] = null;
 					if (bResize) {
 						resizeProperties(oaObj);
 					}
@@ -274,7 +284,7 @@ public class OAObjectPropertyService {
 			}
 		}
 		if (bFirePropertyChange) {
-			oaObj.firePropertyChange(name, value, null);
+			faObject.firePropertyChange(oaObj, name, value, null);
 		}
 	}
 
@@ -292,23 +302,24 @@ public class OAObjectPropertyService {
 	 *         non-null
 	 */
 	public boolean removePropertyIfNull(OAObject oaObj, String name, boolean bFirePropertyChange) {
-		if (oaObj == null || oaObj.properties == null || name == null) {
+		Object[] properties = faObject.getProperties(oaObj);
+		if (oaObj == null || properties == null || name == null) {
 			return false;
 		}
 		Object value = null;
 		boolean bResize = false;
 		synchronized (oaObj) {
-			for (int i = 0; i < oaObj.properties.length; i += 2) {
-				if (oaObj.properties[i] == null) {
+			for (int i = 0; i < properties.length; i += 2) {
+				if (properties[i] == null) {
 					bResize = true;
-				} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
-					value = oaObj.properties[i + 1];
+				} else if (name.equalsIgnoreCase((String) properties[i])) {
+					value = properties[i + 1];
 					if (value != null) {
 						return false;
 					}
 
-					oaObj.properties[i] = null;
-					oaObj.properties[i + 1] = null;
+					properties[i] = null;
+					properties[i + 1] = null;
 					if (bResize) {
 						resizeProperties(oaObj);
 					}
@@ -317,7 +328,7 @@ public class OAObjectPropertyService {
 			}
 		}
 		if (bFirePropertyChange) {
-			oaObj.firePropertyChange(name, value, null);
+			faObject.firePropertyChange(oaObj, name, value, null);
 		}
 		return true;
 	}
@@ -328,21 +339,22 @@ public class OAObjectPropertyService {
 	 *
 	 * @param oaObj the object whose property array should be resized
 	 */
-	private static void resizeProperties(OAObject oaObj) {
+	private void resizeProperties(OAObject oaObj) {
+		Object[] properties = faObject.getProperties(oaObj);
 		int newSize = 0;
-		for (int i = 0; i < oaObj.properties.length; i += 2) {
-			if (oaObj.properties[i] != null) {
+		for (int i = 0; i < properties.length; i += 2) {
+			if (properties[i] != null) {
 				newSize += 2;
 			}
 		}
 		Object[] objs = new Object[newSize];
-		for (int i = 0, j = 0; i < oaObj.properties.length; i += 2) {
-			if (oaObj.properties[i] != null) {
-				objs[j++] = oaObj.properties[i];
-				objs[j++] = oaObj.properties[i + 1];
+		for (int i = 0, j = 0; i < properties.length; i += 2) {
+			if (properties[i] != null) {
+				objs[j++] = properties[i];
+				objs[j++] = properties[i + 1];
 			}
 		}
-		oaObj.properties = objs;
+		faObject.setProperties(oaObj, objs);
 	}
 
 	/**
@@ -360,27 +372,30 @@ public class OAObjectPropertyService {
 		}
 
 		synchronized (oaObj) {
+			Object[] properties = faObject.getProperties(oaObj);
 			int pos;
-			if (oaObj.properties == null) {
-				oaObj.properties = new Object[2];
+			if (properties == null) {
+				properties = new Object[2];
+				faObject.setProperties(oaObj, properties);
 				pos = 0;
 			} else {
 				pos = -1;
-				for (int i = 0; i < oaObj.properties.length; i += 2) {
-					if (pos == -1 && oaObj.properties[i] == null) {
+				for (int i = 0; i < properties.length; i += 2) {
+					if (pos == -1 && properties[i] == null) {
 						pos = i;
-					} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
+					} else if (name.equalsIgnoreCase((String) properties[i])) {
 						pos = i;
 						break;
 					}
 				}
 				if (pos < 0) {
-					pos = oaObj.properties.length;
-					oaObj.properties = Arrays.copyOf(oaObj.properties, pos + 2);
+					pos = properties.length;
+					properties = Arrays.copyOf(properties, pos + 2);
+					faObject.setProperties(oaObj, properties);
 				}
 			}
-			oaObj.properties[pos] = name;
-			oaObj.properties[pos + 1] = value;
+			properties[pos] = name;
+			properties[pos + 1] = value;
 		}
 
 		// in case Hub.datam.masterObject is not set
@@ -414,15 +429,15 @@ public class OAObjectPropertyService {
 			return;
 		}
 
-		Object[] props = oaObj.properties;
-		if (props != null) {
-			for (int i = 0; i < props.length; i += 2) {
-				if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
-					if (props[i + 1] != null) {
-						if (!(props[i + 1] instanceof WeakReference)) {
+		Object[] properties = faObject.getProperties(oaObj);
+		if (properties != null) {
+			for (int i = 0; i < properties.length; i += 2) {
+				if (name.equalsIgnoreCase((String) properties[i])) {
+					if (properties[i + 1] != null) {
+						if (!(properties[i + 1] instanceof WeakReference)) {
 							return;
 						}
-						if (((WeakReference) props[i + 1]).get() != null) {
+						if (((WeakReference) properties[i + 1]).get() != null) {
 							return;
 						}
 					}
@@ -431,29 +446,32 @@ public class OAObjectPropertyService {
 		}
 
 		synchronized (oaObj) {
+			properties = faObject.getProperties(oaObj);
 			int pos;
-			if (oaObj.properties == null) {
-				oaObj.properties = new Object[2];
+			if (properties == null) {
+				properties = new Object[2];
+				faObject.setProperties(oaObj, properties);
 				pos = 0;
 			} else {
 				pos = -1;
-				for (int i = 0; i < oaObj.properties.length; i += 2) {
-					if (pos == -1 && oaObj.properties[i] == null) {
+				for (int i = 0; i < properties.length; i += 2) {
+					if (pos == -1 && properties[i] == null) {
 						pos = i;
-					} else if (name.equalsIgnoreCase((String) oaObj.properties[i])) {
+					} else if (name.equalsIgnoreCase((String) properties[i])) {
 						pos = i;
 						break;
 					}
 				}
 				if (pos < 0) {
-					pos = oaObj.properties.length;
-					oaObj.properties = Arrays.copyOf(oaObj.properties, pos + 2);
+					pos = properties.length;
+					properties = Arrays.copyOf(properties, pos + 2);
+					faObject.setProperties(oaObj, properties);
 				}
 			}
-			if (oaObj.properties[pos + 1] == null || ((oaObj.properties[pos + 1] instanceof WeakReference)
-					&& (((WeakReference) oaObj.properties[pos + 1]).get() == null))) {
-				oaObj.properties[pos + 1] = value;
-				oaObj.properties[pos] = name;
+			if (properties[pos + 1] == null || ((properties[pos + 1] instanceof WeakReference)
+					&& (((WeakReference) properties[pos + 1]).get() == null))) {
+				properties[pos + 1] = value;
+				properties[pos] = name;
 			}
 		}
 
@@ -511,8 +529,9 @@ public class OAObjectPropertyService {
 			return null;
 		}
 		synchronized (oaObj) {
+			Object[] properties = faObject.getProperties(oaObj);
 			int pos;
-			if (oaObj.properties == null) {
+			if (properties == null) {
 				if (!bMustNotExist) {
 					if (matchValue != null) {
 						if (bReturnNotExist) {
@@ -521,26 +540,27 @@ public class OAObjectPropertyService {
 						return null;
 					}
 				}
-				oaObj.properties = new Object[2];
+				properties = new Object[2];
+				faObject.setProperties(oaObj, properties);
 				pos = 0;
 			} else {
 				pos = -1;
-				for (int i = 0; i < oaObj.properties.length; i += 2) {
-					if (pos == -1 && oaObj.properties[i] == null) {
+				for (int i = 0; i < properties.length; i += 2) {
+					if (pos == -1 && properties[i] == null) {
 						pos = i;
 						continue;
 					}
-					if (!name.equalsIgnoreCase((String) oaObj.properties[i])) {
+					if (!name.equalsIgnoreCase((String) properties[i])) {
 						continue;
 					}
 
 					if (bMustNotExist) {
-						return oaObj.properties[i + 1];
+						return properties[i + 1];
 					}
 
-					if (matchValue != oaObj.properties[i + 1]) {
-						if (oaObj.properties[i + 1] instanceof WeakReference) {
-							Object objx = ((WeakReference) oaObj.properties[i + 1]).get();
+					if (matchValue != properties[i + 1]) {
+						if (properties[i + 1] instanceof WeakReference) {
+							Object objx = ((WeakReference) properties[i + 1]).get();
 							if (matchValue == objx) {
 								pos = i;
 							}
@@ -548,15 +568,15 @@ public class OAObjectPropertyService {
 						}
 
 						if (matchValue == null) {
-							return oaObj.properties[i + 1];
+							return properties[i + 1];
 						}
-						if (!matchValue.equals(oaObj.properties[i + 1])) {
+						if (!matchValue.equals(properties[i + 1])) {
 							if (!(matchValue instanceof OAObjectKey) || !(newValue instanceof OAObject)) {
-								return oaObj.properties[i + 1];
+								return properties[i + 1];
 							}
 							OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) newValue);
 							if (!OAObjectKeyDelegate.isForSameOAObject(null, (OAObjectKey)matchValue, k)) {
-								return oaObj.properties[i + 1];
+								return properties[i + 1];
 							}
 						}
 					}
@@ -572,10 +592,10 @@ public class OAObjectPropertyService {
 							return null;
 						}
 					}
-
-					pos = oaObj.properties.length;
-					oaObj.properties = Arrays.copyOf(oaObj.properties, pos + 2);
-				} else if (oaObj.properties[pos] == null) {
+					pos = properties.length;
+					properties = Arrays.copyOf(properties, pos + 2);
+					faObject.setProperties(oaObj, properties);
+				} else if (properties[pos] == null) {
 					if (!bMustNotExist) {
 						if (matchValue != null) {
 							if (bReturnNotExist) {
@@ -586,10 +606,10 @@ public class OAObjectPropertyService {
 					}
 				}
 			}
-			oaObj.properties[pos] = name;
+			properties[pos] = name;
 
-			if (newValue != null || !(oaObj.properties[pos + 1] instanceof Hub)) { // 20120827 dont set an existing Hub to null (sent that way if size is 0)
-				oaObj.properties[pos + 1] = newValue;
+			if (newValue != null || !(properties[pos + 1] instanceof Hub)) { // 20120827 dont set an existing Hub to null (sent that way if size is 0)
+				properties[pos + 1] = newValue;
 			}
 
 			// in case Hub.datam.masterObject is not set
@@ -644,7 +664,7 @@ public class OAObjectPropertyService {
 			return null;
 		}
 
-		Object[] objs = oaObj.properties;
+		Object[] objs = faObject.getProperties(oaObj);
 		if (objs == null) {
 			if (bReturnNotExist) {
 				return OANotExist.instance;
@@ -868,23 +888,26 @@ public class OAObjectPropertyService {
 	 * @return true if the stored value was changed; false otherwise
 	 */
 	public boolean setPropertyWeakRef(OAObject oaObj, String name, boolean bToWeakRef, Object value) {
-		if (name == null || oaObj == null || oaObj.properties == null) {
+		if (name == null || oaObj == null) {
 			return false;
 		}
 
 		boolean b = false;
 		synchronized (oaObj) {
-			for (int i = 0; i < oaObj.properties.length; i += 2) {
-				if (!name.equalsIgnoreCase((String) oaObj.properties[i])) {
+			Object[] properties = faObject.getProperties(oaObj);
+			if (properties == null) return false;
+
+			for (int i = 0; i < properties.length; i += 2) {
+				if (!name.equalsIgnoreCase((String) properties[i])) {
 					continue;
 				}
-				Object val = oaObj.properties[i + 1];
+				Object val = properties[i + 1];
 				if (val == null) {
 					break;
 				}
 				if (bToWeakRef) {
 					if (!(val instanceof WeakReference)) {
-						oaObj.properties[i + 1] = new WeakReference(val);
+						properties[i + 1] = new WeakReference(val);
 						b = true;
 					}
 				} else {
@@ -897,7 +920,7 @@ public class OAObjectPropertyService {
 						if (val == null) {
 							removePropertyIfNull(oaObj, name, false);
 						} else {
-							oaObj.properties[i + 1] = val;
+							properties[i + 1] = val;
 						}
 					}
 				}
@@ -1024,7 +1047,9 @@ public class OAObjectPropertyService {
 	 */
 	public void clearProperties(OAObject oaObj) {
 		if (oaObj != null) {
-			oaObj.properties = null;
+			synchronized (oaObj) {
+				faObject.setProperties(oaObj, null);
+			}
 		}
 	}
 

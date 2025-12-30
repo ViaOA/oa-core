@@ -2446,10 +2446,75 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		public void setImportMatchPropertyNames(OAObjectInfo oi, String[] ss) {
 			oi.importMatchPropertyNames = ss;
 		}
-		
+
 		public static void setImportMatchPropertyPaths(OAObjectInfo oi, String[] ss) {
 			oi.importMatchPropertyPaths = ss;
 		}
+		
+		public void resetPropertyInfo(OAObjectInfo oi) {
+			oi.resetPropertyInfo();
+		}
+		
+		public String[] getPrimitiveProps(OAObjectInfo oi) {
+			return oi.getPrimitiveProperties();
+		}
+		public void setPrimitiveProps(OAObjectInfo oi, String[] props) {
+			oi.primitiveProps = props;
+		}
+
+		public String[] getHubProps(OAObjectInfo oi) {
+			return oi.getHubProperties();
+		}
+		public void setHubProps(OAObjectInfo oi, String[] props) {
+			oi.hubProps = props;
+		}
+		
+		public boolean getSetRecursive(OAObjectInfo oi) {
+			return oi.bSetRecursive;
+		}
+		public void setSetRecursive(OAObjectInfo oi, boolean b) {
+			oi.bSetRecursive = b;;
+		}
+
+		public OALinkInfo getRecursiveOneLinkInfo(OAObjectInfo oi) {
+			return oi.liRecursiveOne;
+		}
+		public void setRecursiveOneLinkInfo(OAObjectInfo oi, OALinkInfo li) {
+			oi.liRecursiveOne = li;
+		}
+
+
+		public OALinkInfo getRecursiveManyLinkInfo(OAObjectInfo oi) {
+			return oi.liRecursiveMany;
+		}
+		public void setRecursiveManyLinkInfo(OAObjectInfo oi, OALinkInfo li) {
+			oi.liRecursiveMany = li;
+		}
+		
+		public boolean getSetLinkToOwner(OAObjectInfo oi) {
+			return oi.bSetLinkToOwner;
+		}
+		public void setSetLinkToOwner(OAObjectInfo oi, boolean b) {
+			oi.bSetLinkToOwner = b;
+		}
+		
+		public OALinkInfo getLinkToOwner(OAObjectInfo oi) {
+			return oi.liLinkToOwner;
+		}
+		public void setLinkToOwner(OAObjectInfo oi, OALinkInfo li) {
+			oi.liLinkToOwner = li;
+		}
+
+		public int getWeakReferenceable(OAObjectInfo oi) {
+			return oi.weakReferenceable;
+		}
+		public void setWeakReferenceable(OAObjectInfo oi, int x) {
+			oi.weakReferenceable = x;
+		}
+		
+		
+		
+		
 	}
 	private final static FriendAccess friendAccess = new FriendAccess(); 
 	static FriendAccess getFriendAccess() {

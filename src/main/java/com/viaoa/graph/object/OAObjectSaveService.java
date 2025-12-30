@@ -31,7 +31,8 @@ public class OAObjectSaveService {
 		return srvcObject;
 	}
 
-	protected void save(OAObject oaObj, int iCascadeRule) {
+	public void save(OAObject oaObj, int iCascadeRule) {
+    	//qqqqqqqqqq method was protected
 		if (oaObj == null) {
 			return;
 		}
@@ -65,7 +66,7 @@ public class OAObjectSaveService {
 		}
 		cascade.depthAdd();
 
-		boolean b = (oaObj.newFlag || oaObj.changedFlag || bIsFirst);
+		boolean b = (faObject.getNewFlag(oaObj) || faObject.getChangedFlag(oaObj) || bIsFirst);
 		_save(oaObj, true, iCascadeRule, cascade); // "ONE" relationships
 		// cascadeSave() will check hash to see if object has already been checked
 		if (b) {
@@ -156,7 +157,7 @@ public class OAObjectSaveService {
 		for (int i = 0; i < al.size(); i++) {
 			OALinkInfo li = (OALinkInfo) al.get(i);
 
-			if (bOne != (li.type == OALinkInfo.ONE)) {
+			if (bOne != (li.getType() == OALinkInfo.ONE)) {
 				continue;
 			}
 
@@ -182,7 +183,7 @@ public class OAObjectSaveService {
 			}
 
 			boolean bValidCascade = false;
-			if (iCascadeRule == OAObject.CASCADE_LINK_RULES && li.cascadeSave) {
+			if (iCascadeRule == OAObject.CASCADE_LINK_RULES && li.getCascadeSave()) {
 				bValidCascade = true;
 			} else if (iCascadeRule == OAObject.CASCADE_OWNED_LINKS && li.getOwner()) {
 				bValidCascade = true;
@@ -192,7 +193,7 @@ public class OAObjectSaveService {
 
 			// Note: if (iCascadeRule == OAObject.CASCADE_NONE) then only save ONE links that are new objects - so ref integrity is maintained.
 
-			if (li.type == OALinkInfo.ONE) {
+			if (li.getType() == OALinkInfo.ONE) {
 				Object obj = OAObjectReflectDelegate.getProperty(oaObj, li.getName());
 				if ((obj instanceof OAObject)) {
 					OAObject oaRef = (OAObject) obj;
@@ -204,9 +205,9 @@ public class OAObjectSaveService {
 									if (!oaRef.getNew()) {
 										break;
 									}
-									Thread t = hmSaveNewLock.get(Long.valueOf(oaRef.guid));
+									Thread t = hmSaveNewLock.get(Long.valueOf(oaRef.getGuid()));
 									if (t == null) {
-										hmSaveNewLock.put(Long.valueOf(oaRef.guid), Thread.currentThread());
+										hmSaveNewLock.put(Long.valueOf(oaRef.getGuid()), Thread.currentThread());
 										bSave = true;
 										break;
 									}
@@ -230,10 +231,10 @@ public class OAObjectSaveService {
 									ex = e;
 								}
 								OAObjectDelegate.setNew(oaRef, false);
-								oaRef.changedFlag = true; // so that it will be save/updated
+								faObject.setChangedFlag(oaRef, true); // so that it will be save/updated
 
 								synchronized (hmSaveNewLock) {
-									hmSaveNewLock.remove(Long.valueOf(oaRef.guid));
+									hmSaveNewLock.remove(Long.valueOf(oaRef.getGuid()));
 									hmSaveNewLock.notifyAll();
 								}
 
@@ -280,7 +281,8 @@ public class OAObjectSaveService {
 	/**
 
 	*/
-	protected boolean onSave(OAObject oaObj) {
+	public boolean onSave(OAObject oaObj) {
+    	//qqqqqqqqqq method was protected
 		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
 
 		//LOG.fine(oaObj.getClass().getSimpleName()+", isNew="+oaObj.isNew());        
@@ -292,12 +294,12 @@ public class OAObjectSaveService {
 					if (!oaObj.isNew()) {
 						return true; // already saved
 					}
-					Thread t = hmSaveNewLock.get(Long.valueOf(oaObj.guid));
+					Thread t = hmSaveNewLock.get(Long.valueOf(oaObj.getGuid()));
 					if (t == null) {
 						if (i > 0) {
 							return true; // already saved
 						}
-						hmSaveNewLock.put(Long.valueOf(oaObj.guid), Thread.currentThread());
+						hmSaveNewLock.put(Long.valueOf(oaObj.getGuid()), Thread.currentThread());
 						break;
 					}
 					try {
@@ -335,7 +337,7 @@ public class OAObjectSaveService {
 		} finally {
 			if (bIsNew) {
 				synchronized (hmSaveNewLock) {
-					hmSaveNewLock.remove((Object) (Long.valueOf(oaObj.guid))); // needs to use Object instead of primitive
+					hmSaveNewLock.remove((Object) (Long.valueOf(oaObj.getGuid()))); // needs to use Object instead of primitive
 					hmSaveNewLock.notifyAll();
 				}
 			}
