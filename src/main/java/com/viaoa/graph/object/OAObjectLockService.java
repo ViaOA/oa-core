@@ -6,7 +6,6 @@ import java.util.logging.Logger;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.object.OALock;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectLockDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteSessionInterface;

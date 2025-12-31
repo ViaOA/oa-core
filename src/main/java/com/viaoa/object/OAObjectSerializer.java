@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Stack;
@@ -34,6 +35,7 @@ import java.util.zip.InflaterInputStream;
 
 import com.viaoa.comm.io.IODummy;
 import com.viaoa.hub.Hub;
+import com.viaoa.object.OAObject.FriendAccess;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.util.Tuple;
@@ -1000,16 +1002,10 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * @throws ClassNotFoundException if an embedded object type is unknown
 	 */
 	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-		int xDup = OAObjectSerializeDelegate.cntDup;
-		int xNew = OAObjectSerializeDelegate.cntNew;
-		try {
-			_readObject(stream);
-		} finally {
-			newCount = OAObjectSerializeDelegate.cntNew - xNew;
-			dupCount = OAObjectSerializeDelegate.cntDup - xDup;
-		}
+		_readObject(stream);
 	}
 
+	// updated by OAObjectSerializeService
 	public transient int newCount;
 	public transient int dupCount;
 
@@ -1192,4 +1188,23 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	    return this.callback;
 	}
 
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+		public void beforeSerialize(OAObject obj, OAObjectSerializer os) {
+			os.beforeSerialize(obj);
+		}
+		public void afterSerialize(OAObject obj, OAObjectSerializer os) {
+			os.afterSerialize(obj);
+		}
+		public boolean shouldSerializeReference(OAObjectSerializer os, OAObject oaObj, String propertyName, Object obj, OALinkInfo linkInfo) {
+			return os.shouldSerializeReference(oaObj, propertyName, obj, linkInfo);
+		}
+
+	}
+	
+	private final static FriendAccess friendAccess = new FriendAccess(); 
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
 }

@@ -12,14 +12,8 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCSDelegate;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDSDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -63,7 +57,7 @@ public class OAObjectKeyService {
 	 */
 	public OAObjectKey createObjectKey(OAObject obj) {
 		if (obj == null) return null;
-		OAObjectKey key = new OAObjectKey(OAObjectDelegate.getPropertyIdValues(obj), obj.getGuid());
+		OAObjectKey key = new OAObjectKey(srvcObject.getPropertyIdValues(obj), obj.getGuid());
 		return key;
 	}
 
@@ -109,7 +103,7 @@ public class OAObjectKeyService {
 				return getObjectKey((OAObject) ids[0]);
 			}
 		}
-		OAObjectInfo oi = c == null ? null : OAObjectInfoDelegate.getObjectInfo(c);
+		OAObjectInfo oi = c == null ? null : srvcObject.getOAObjectInfoService().getObjectInfo(c);
 		return createObjectKey(oi, ids, guid);
 	}
 	
@@ -134,7 +128,7 @@ public class OAObjectKeyService {
 						continue;
 					}
 					else if (!(ids[i] instanceof OAObject)) { // note: OAObjectKey constructor will handle id values that are OAObject
-						Class c = OAObjectInfoDelegate.getPropertyClass(oi, idProperties[i]);
+						Class c = srvcObject.getOAObjectInfoService().getPropertyClass(oi, idProperties[i]);
 						ids[i] = OAConverter.convert(c, ids[i], null);
 					}
 				}
@@ -214,13 +208,13 @@ public class OAObjectKeyService {
 		// one could have guid and the other objectIds
 		if (clazz != null) {
 			if ((g != 0 && ids == null) && (g2 == 0 && ids2 != null)) {
-				OAObject obj = OAObjectCacheDelegate.get(clazz, key);
+				OAObject obj = srvcObject.getOAObjectCacheService().get(clazz, key);
 				if (obj == null) return false;
 				OAObjectKey okx = obj.getObjectKey();
 				return Arrays.equals(okx.getObjectIds(), ids2);	    
 			}
 			else if ((g == 0 && ids != null) && (g2 != 0 && ids2 == null)) {
-				OAObject obj = OAObjectCacheDelegate.get(clazz, key2);
+				OAObject obj = srvcObject.getOAObjectCacheService().get(clazz, key2);
 				if (obj == null) return false;
 				OAObjectKey okx = obj.getObjectKey();
 				return Arrays.equals(okx.getObjectIds(), ids);	    
@@ -241,7 +235,7 @@ public class OAObjectKeyService {
 	 */
 	public <T extends OAObject> OAObject getOAObject(Class<T> c, OAObjectKey key) {
 		if (c == null || key == null) return null;
-		OAObject obj = OAObjectCacheDelegate.get(c, key);
+		OAObject obj = srvcObject.getOAObjectCacheService().get(c, key);
 		if (obj != null) return obj;
 		obj = (OAObject) OADataSource.getObject(c, key);
 		return obj;
@@ -296,7 +290,7 @@ public class OAObjectKeyService {
 			return null;
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 		String[] ids = oi.getKeyProperties();
 
 		Object[] objsCurrent = null;
@@ -344,11 +338,11 @@ public class OAObjectKeyService {
 		final OAObjectKey okNew = createObjectKey(oaObj);
 		
 		if (bVerify) {
-			if (OAObjectCSDelegate.isRemoteThread()) {
+			if (srvcObject.getOAObjectCSService().isRemoteThread()) {
 				bVerify = false;
 			}
 			if (bVerify) {
-				if (OAObjectDSDelegate.isAssigningId(oaObj)) {
+				if (srvcObject.getOAObjectDSService().isAssigningId(oaObj)) {
 					bVerify = false;
 				} else if (OAThreadLocalDelegate.isLoading()) {
 					bVerify = false;
@@ -365,10 +359,10 @@ public class OAObjectKeyService {
 		}
 
 		// update cache indexes
-		OAObjectCacheDelegate.propertyKeyValueChanged(oaObj);
+		srvcObject.getOAObjectCacheService().propertyKeyValueChanged(oaObj);
 
 		// need to recalc keys for all children that have this object as part of their object key
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 		List al = oi.getLinkInfos();
 		for (int i = 0; al != null && i < al.size(); i++) {
 			OALinkInfo li = (OALinkInfo) al.get(i);
@@ -378,7 +372,7 @@ public class OAObjectKeyService {
 			if (!li.getUsed()) {
 				continue;
 			}
-			if (!OAObjectReflectDelegate.isReferenceObjectLoadedAndNotEmpty(oaObj, li.getName())) {
+			if (!srvcObject.getOAObjectReflectService().isReferenceObjectLoadedAndNotEmpty(oaObj, li.getName())) {
 				continue;
 			}
 
@@ -386,13 +380,13 @@ public class OAObjectKeyService {
 			if (revProp == null || revProp.length() == 0) {
 				continue;
 			}
-			OAObjectInfo oiRev = OAObjectInfoDelegate.getOAObjectInfo(li.getToClass());
+			OAObjectInfo oiRev = srvcObject.getOAObjectInfoService().getOAObjectInfo(li.getToClass());
 
-			if (!OAObjectInfoDelegate.isIdProperty(oiRev, revProp)) {
+			if (!srvcObject.getOAObjectInfoService().isIdProperty(oiRev, revProp)) {
 				continue;
 			}
 
-			Object obj = OAObjectReflectDelegate.getProperty(oaObj, li.getName());
+			Object obj = srvcObject.getOAObjectReflectService().getProperty(oaObj, li.getName());
 			if (obj instanceof Hub) {
 				Hub h = (Hub) obj;
 				if (h.isOAObject()) {
@@ -401,11 +395,11 @@ public class OAObjectKeyService {
 						if (oa == null) {
 							break;
 						}
-						OAObjectCacheDelegate.propertyKeyValueChanged(oa);
+						srvcObject.getOAObjectCacheService().propertyKeyValueChanged(oa);
 					}
 				}
 			} else if (obj instanceof OAObject) {
-				OAObjectCacheDelegate.propertyKeyValueChanged((OAObject) obj);
+				srvcObject.getOAObjectCacheService().propertyKeyValueChanged((OAObject) obj);
 			}
 		}
 		return true;
@@ -426,32 +420,32 @@ public class OAObjectKeyService {
 		OAObjectInfo oi = null;
 		if (!oaObj.getNew() && !oaObj.getDeleted()) {
 			if (oi == null) {
-				oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+				oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 			}
-			if (!OAObjectDSDelegate.allowIdChange(oaObj.getClass())) {
+			if (!srvcObject.getOAObjectDSService().allowIdChange(oaObj.getClass())) {
 				return ("ID property can not be changed if " + oaObj.getClass().getSimpleName() + " has been saved");
 			}
 		}
 
-		OAObject objInCache = OAObjectCacheDelegate.get(oaObj.getClass(), newObjectKey);
+		OAObject objInCache = srvcObject.getOAObjectCacheService().get(oaObj.getClass(), newObjectKey);
 		if ((objInCache == null || objInCache == oaObj)) {
 			if (oi == null) {
-				oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+				oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 			}
-			if (!oi.getLocalOnly() && OAObjectCSDelegate.isWorkstation(oaObj)) {
+			if (!oi.getLocalOnly() && srvcObject.getOAObjectCSService().isWorkstation(oaObj)) {
 				// check on server.  If server has same object as this, resolve() will return this object
-				objInCache = OAObjectCSDelegate.getServerObject(oaObj.getClass(), newObjectKey);
+				objInCache = srvcObject.getOAObjectCSService().getServerObject(oaObj.getClass(), newObjectKey);
 			}
 		}
 
 		if (objInCache != null && objInCache != oaObj && objInCache.getDeleted()) {
-			OAObjectCacheDelegate.removeObject((OAObject) objInCache);
+			srvcObject.getOAObjectCacheService().removeObject((OAObject) objInCache);
 			objInCache = null;
 		}
 
 		if (objInCache != oaObj) {
 			if (objInCache != null) {
-				if (OAThreadLocalDelegate.getObjectCacheAddMode() == OAObjectCacheDelegate.NO_DUPS) {
+				if (OAThreadLocalDelegate.getObjectCacheAddMode() == srvcObject.getOAObjectCacheService().NO_DUPS) {
 					// id already used
 
 					Object[] ids = newObjectKey.getObjectIds();
@@ -472,10 +466,10 @@ public class OAObjectKeyService {
 				if (!OAThreadLocalDelegate.isLoading()) {
 					// make sure object does not already exist in datasource
 					if (oi == null) {
-						oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+						oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 					}
 					if (oi.getUseDataSource()) {
-						objInCache = (OAObject) OAObjectDSDelegate.getObject(oi, oaObj.getClass(), newObjectKey);
+						objInCache = (OAObject) srvcObject.getOAObjectDSService().getObject(oi, oaObj.getClass(), newObjectKey);
 						if (objInCache != oaObj && objInCache != null) {
 							Object[] ids = newObjectKey.getObjectIds();
 							// Object[] ids = OAObjectInfoDelegate.getPropertyIdValues(oaObj);
@@ -512,7 +506,7 @@ public class OAObjectKeyService {
 			return null;
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 		String[] ids = oi.getKeyProperties();
 		if (ids == null || ids.length == 0) {
 			return null;

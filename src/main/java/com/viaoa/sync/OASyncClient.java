@@ -32,11 +32,13 @@ import java.util.logging.Logger;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.file.ClientFile;
 import com.viaoa.sync.model.ClientInfo;
 import com.viaoa.sync.remote.RemoteClientCallbackInterface;
@@ -388,8 +390,8 @@ public class OASyncClient {
 
 			if (OARemoteThreadDelegate.isRemoteThread()) {
 				// use annotated version that does not use the msg queue
-				cntDup = OAObjectSerializeDelegate.cntDup;
-				cntNew = OAObjectSerializeDelegate.cntNew;
+				//qqqqq cntDup = OAObjectSerializeDelegate.cntDup;
+				//qqqqq cntNew = OAObjectSerializeDelegate.cntNew;
 				result = getRemoteClient().getDetailNow(cntx, masterObject.getClass(), masterObject.getObjectKey(), propertyName,
 														additionalMasterProperties, siblingKeys, bHasSiblingHelper);
 			} else {
@@ -427,8 +429,8 @@ public class OASyncClient {
 				additionalMasterProperties = OAObjectReflectDelegate.getUnloadedReferences(masterObject, false, propertyName, false);
 
 				try {
-					cntDup = OAObjectSerializeDelegate.cntDup;
-					cntNew = OAObjectSerializeDelegate.cntNew;
+					//qqqqq cntDup = OAObjectSerializeDelegate.cntDup;
+					//qqqqq cntNew = OAObjectSerializeDelegate.cntNew;
 					result = getRemoteClient().getDetailNow(cntx, masterObject.getClass(), masterObject.getObjectKey(), propertyName,
 															additionalMasterProperties, siblingKeys, bHasSiblingHelper);
 				} finally {
@@ -489,8 +491,8 @@ public class OASyncClient {
 				}
 			}
 		} else {
-			cntDup = OAObjectSerializeDelegate.cntDup - cntDup;
-			cntNew = OAObjectSerializeDelegate.cntNew - cntNew;
+			//qqqqq cntDup = OAObjectSerializeDelegate.cntDup - cntDup;
+			//qqqqq cntNew = OAObjectSerializeDelegate.cntNew - cntNew;
 		}
 
 		if (result instanceof Hub) {
@@ -505,7 +507,8 @@ public class OASyncClient {
 			}
 		}
 
-		if (true || OAObjectSerializeDelegate.cntNew - cntNew > 25 || cntx % 100 == 0) {
+		if (false) {
+		//qqqqq if (true || OAObjectSerializeDelegate.cntNew - cntNew > 25 || cntx % 100 == 0) {
 
 			ts = System.currentTimeMillis() - ts;
 			String s = "";
@@ -531,8 +534,10 @@ public class OASyncClient {
 								additionalMasterProperties == null ? 0 : additionalMasterProperties.length,
 								cntNew,
 								cntDup,
-								OAObjectSerializeDelegate.cntNew,
-								OAObjectSerializeDelegate.cntDup,
+								0,
+								//OAObjectSerializeDelegate.cntNew,
+								0,
+								//OAObjectSerializeDelegate.cntDup,
 								ts,
 								s);
 			OAPerformance.LOG.fine(s);

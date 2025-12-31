@@ -14,13 +14,7 @@ import com.viaoa.hub.HubSaveDelegate;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCSDelegate;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectEventDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectKeyDelegate;
-import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAArray;
@@ -63,8 +57,10 @@ public class OAObjectHubService {
          * if (bRefreshFlag || thisHub.getSize() < 2) { updateMasterObjectEmptyHubFlag(thisHub, prop,
          * (OAObject)objMaster, true); }
          */
-        OAObjectEventDelegate.sendHubPropertyChange((OAObject) objMaster, prop, thisHub, thisHub, null);
-        OAObjectCacheDelegate.fireAfterPropertyChange((OAObject) objMaster, OAObjectKeyDelegate.getKey((OAObject) objMaster), prop, thisHub, thisHub, true, true);
+        srvcObject.getOAObjectEventService().sendHubPropertyChange((OAObject) objMaster, prop, thisHub, thisHub, null);
+        srvcObject.getOAObjectCacheService().fireAfterPropertyChange((OAObject) objMaster, 
+        		srvcObject.getOAObjectKeyService().getKey((OAObject) objMaster), 
+        		prop, thisHub, thisHub, true, true);
     }
 
     public boolean isInHub(OAObject oaObj) {
@@ -201,15 +197,15 @@ public class OAObjectHubService {
                         // 20150827 dont cache if one2one and owned, and it is assigned to owner
                         // which means that the owner will "hold on to it"
                         boolean b = true;
-                        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+                        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
                         if (oi.isOwnedAndNoReverseMany()) {
                             OALinkInfo li = oi.getOwnedByOne();
-                            if (li != null && OAObjectPropertyDelegate.getProperty(oaObj, li.getName()) != null) {
+                            if (li != null && srvcObject.getOAObjectPropertyService().getProperty(oaObj, li.getName()) != null) {
                                 b = false;
                             }
                         }
                         
-                        if (b) OAObjectCSDelegate.updateObjectsWithoutHubs(oaObj);
+                        if (b) srvcObject.getOAObjectCSService().updateObjectsWithoutHubs(oaObj);
                     }
                 }
             }
@@ -267,7 +263,7 @@ public class OAObjectHubService {
         if (!bAlwaysAddIfM2M) {
             OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
             if (li != null && li.getPrivateMethod()) {
-                if (OAObjectInfoDelegate.isMany2Many(li)) {
+                if (srvcObject.getOAObjectInfoService().isMany2Many(li)) {
                     return false;
                 }
             }
@@ -422,7 +418,7 @@ public class OAObjectHubService {
         if (bReused) aiReuseWeakRefArray.incrementAndGet();
 
         if (bRemoveFromServerCache && OASyncDelegate.isClient(oaObj.getClass()) && OARemoteThreadDelegate.shouldSendMessages()) {
-            OAObjectCSDelegate.updateObjectsWithoutHubs(oaObj);
+        	srvcObject.getOAObjectCSService().updateObjectsWithoutHubs(oaObj);
         }
         return true;
     }
@@ -491,7 +487,7 @@ public class OAObjectHubService {
         // ex: VJ jobCategories M2M Jobs, where jobCategory objects dont have weakhub for
         // all of the Job.jobCategories Hubs that exist
         if (li.getPrivateMethod()) { // if hub method is off
-            if (OAObjectInfoDelegate.isMany2Many(li)) { // m2m objects do not have Hub in weakRef[]
+            if (srvcObject.getOAObjectInfoService().isMany2Many(li)) { // m2m objects do not have Hub in weakRef[]
                 return HubDataDelegate.containsDirect(hubFind, oaObj);
             }
         }
@@ -540,11 +536,11 @@ public class OAObjectHubService {
             return;  // already set
         }
 
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
         
         OALinkInfo li = oi.getLinkInfo(nameFromMasterToDetail);
         if (li == null) return;
-        li = OAObjectInfoDelegate.getReverseLinkInfo(li);
+        li = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
         HubDetailDelegate.setMasterObject(hub, oaObj, li);
     }
 }

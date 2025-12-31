@@ -171,9 +171,6 @@ public class OAObjectDelegate {
 	 *         initialization was skipped.
 	 */
 	protected static boolean initialize(OAObject oaObj) {
-		if (oaObj == null) {
-			return false;
-		}
 		OAGraph og = OARuntime.get().graph(oaObj);
 		if (og == null) return false;
 		og.objects().getOAObjectInitializeService().initialize(oaObj);
@@ -189,7 +186,9 @@ public class OAObjectDelegate {
 	 * @param oaObj the object to initialize; may be {@code null}.
 	 */
 	public static void initializeAfterLoading(OAObject oaObj) {
-		initializeAfterLoading(oaObj, false, false, false);
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().getOAObjectInitializeService().initializeAfterLoading(oaObj);
 	}
 	
 	/**
@@ -214,14 +213,9 @@ public class OAObjectDelegate {
 	 * @param bSetChangedToFalse whether the object's changed flag should be cleared.
 	 */
 	public static void initializeAfterLoading(OAObject oaObj, boolean bAssignNewId, boolean bInitializeNulls, boolean bSetChangedToFalse) {
-		if (oaObj == null) {
-			return;
-		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-
-		boolean bInitializeWithCS = !oi.getLocalOnly() && OASync.isClient(oaObj.getClass());
-
-		initialize(oaObj, oi, bInitializeNulls, bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().getOAObjectInitializeService().initializeAfterLoading(oaObj, bAssignNewId, bInitializeNulls, bSetChangedToFalse);
 	}
 
 	
@@ -299,18 +293,9 @@ public class OAObjectDelegate {
 	 *          {@code false} to clear the new-state flag.
 	 */
 	public static void setNew(final OAObject oaObj, final boolean b) {
-		if (b == oaObj.newFlag) {
-			return;
-		}
-		boolean old = oaObj.newFlag;
-		OAObjectEventDelegate.fireBeforePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
-
-		oaObj.newFlag = b;
-		
-		OAObjectEventDelegate.firePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
-		if (!b) {
-			setAutoAdd(oaObj, true);
-		}
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().setNew(oaObj, b);
 	}
 
 	/**
@@ -343,16 +328,8 @@ public class OAObjectDelegate {
 	 * @param obj the object requiring GUID assignment; may be {@code null}.
 	 */
 	protected static void assignGuid(OAObject obj) {
-		if (obj == null) {
-			return;
-		}
-		if (obj.guid != 0) {
-			return;
-		}
-
 		OAGraph og = OARuntime.get().graph(obj);
 		if (og == null) return;
-		
 		og.objects().getOAObjectGuidService().assignGuid(obj);
 	}
 	
@@ -364,13 +341,9 @@ public class OAObjectDelegate {
 	 * @param oaObj the object to reinitialize; may be {@code null}.
 	 */
 	public static void setAsNewObject(final OAObject oaObj) {
-		if (oaObj == null) return;
 		OAGraph og = OARuntime.get().graph(oaObj);
 		if (og == null) return;
-		og.objects().getOAObjectGuidService().assignNewGuid(oaObj);
-
-		long guid = og.objects().getOAObjectGuidService().getGuid(oaObj);
-		setAsNewObject(oaObj, guid);
+		og.objects().getOAObjectInitializeService().setAsNewObject(oaObj);
 	}
 	
 	/**
@@ -506,22 +479,13 @@ public class OAObjectDelegate {
 	}
 	
 	/**
-	 * Deprecated no-op method retained for backward compatibility.
-	 *
-	 * <p>This method previously prevented an {@link OAObject} instance from being
-	 * finalized by the garbage collector. It no longer performs any operation and
-	 * is maintained solely to preserve binary compatibility with older OA versions
-	 * that may still invoke it.</p>
-	 *
-	 * @param obj the object referenced by the legacy call; ignored.
-	 *
-	 * @deprecated no longer required; method performs no action.
+	 * This method prevents an {@link OAObject} instance from being
+	 * cleaned up, by changing the guid to 0. 
 	 */
-	@Deprecated
 	protected static void dontFinalize(OAObject obj) {
-		if (obj != null) {
-			obj.guid = 0; // flag so that OAObject.finalize should ignore this object.
-		}
+		OAGraph og = OARuntime.get().graph(obj);
+		if (og == null) return;
+		og.objects().dontFinalize(obj);
 	}
 
 

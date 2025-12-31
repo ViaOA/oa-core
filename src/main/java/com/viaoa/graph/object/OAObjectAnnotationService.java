@@ -23,7 +23,6 @@ import com.viaoa.annotation.OATriggerMethod;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.object.OAAnnotationDelegate;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
@@ -31,9 +30,7 @@ import com.viaoa.object.OAMethodInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectModel;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OATriggerDelegate;
 import com.viaoa.object.OATriggerListener;
@@ -368,7 +365,7 @@ public class OAObjectAnnotationService {
 						}
 					}
 				} catch (Exception e) {
-					System.out.println("OAAnnotationDelegate exception loading enum names for class.property " + clazz.getSimpleName() + "."
+					System.out.println("OAAnnotationService exception loading enum names for class.property " + clazz.getSimpleName() + "."
 							+ pi.getName() + ", exception: " + e + ", will continue");
 					// e.printStackTrace();
 				}
@@ -447,7 +444,7 @@ public class OAObjectAnnotationService {
 			}
 			hs.add("calc." + name);
 
-			OACalcInfo ci = OAObjectInfoDelegate.getOACalcInfo(oi, name);
+			OACalcInfo ci = srvcObject.getOAObjectInfoService().getOACalcInfo(oi, name);
 			if (ci == null) {
 				ci = new OACalcInfo(name, annotation.properties(), bHub);
 				oi.addCalcInfo(ci);
@@ -495,7 +492,7 @@ public class OAObjectAnnotationService {
 			}
 			hs.add("link." + name);
 
-			OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, name);
+			OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, name);
 			if (li == null) {
 				li = new OALinkInfo(name, m.getReturnType(), OALinkInfo.ONE);
 				oi.addLinkInfo(li);
@@ -582,9 +579,9 @@ public class OAObjectAnnotationService {
 
 			String name = getPropertyName(m.getName(), false);
 
-			OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, name);
+			OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, name);
 			OAMany annotation = (OAMany) m.getAnnotation(OAMany.class);
-			Class cx = OAAnnotationDelegate.getHubObjectClass(annotation, m);
+			Class cx = srvcObject.getOAObjectAnnotationService().getHubObjectClass(annotation, m);
 
 			if (li == null) {
 				li = new OALinkInfo(name, cx, OALinkInfo.MANY);
@@ -1079,7 +1076,7 @@ public class OAObjectAnnotationService {
 	 * @return the class of objects stored in the hub, or {@code null} if unresolved
 	 */
 	public Class getHubObjectClass(OAMany annotation, Method method) {
-		Class cx = OAObjectReflectDelegate.getHubObjectClass(method);
+		Class cx = srvcObject.getOAObjectReflectService().getHubObjectClass(method);
 		if (cx == null && annotation != null) {
 			Class cz = annotation.toClass();
 			if (cz != null && !cz.equals(Object.class)) {

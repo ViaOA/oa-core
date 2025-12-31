@@ -39,18 +39,8 @@ import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAHierFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCSDelegate;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDSDelegate;
-import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.object.OAObjectEventDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OASiblingHelperDelegate;
@@ -109,7 +99,7 @@ public class OAObjectReflectService {
 	 * @throws RuntimeException if construction fails for any reason
 	 */
 	private Object _createNewObject(Class clazz) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 		Object obj = null;
 
 		/**
@@ -249,9 +239,9 @@ public class OAObjectReflectService {
 	private Object _getProperty(Hub hubLast, OAObject oaObj, String propName) {
 		OAObjectInfo oi;
 		if (hubLast != null) {
-			oi = OAObjectInfoDelegate.getOAObjectInfo(hubLast.getObjectClass());
+			oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(hubLast.getObjectClass());
 		} else {
-			oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 		}
 
 		Method m;
@@ -259,7 +249,7 @@ public class OAObjectReflectService {
 			if (hubLast == null) {
 				return null;
 			}
-			m = OAObjectInfoDelegate.getMethod(oi, "get" + propName, 1);
+			m = srvcObject.getOAObjectInfoService().getMethod(oi, "get" + propName, 1);
 			try {
 				return m.invoke(oaObj, hubLast);
 			} catch (InvocationTargetException e) {
@@ -273,9 +263,9 @@ public class OAObjectReflectService {
 			if (oaObj == null) {
 				return null;
 			}
-			m = OAObjectInfoDelegate.getMethod(oi, "get" + propName, 0);
+			m = srvcObject.getOAObjectInfoService().getMethod(oi, "get" + propName, 0);
 			if (m == null) {
-				m = OAObjectInfoDelegate.getMethod(oi, "is" + propName, 0);
+				m = srvcObject.getOAObjectInfoService().getMethod(oi, "is" + propName, 0);
 			}
 			if (m != null && (m.getModifiers() & Modifier.PRIVATE) == 0) {
 				Class c = m.getReturnType();
@@ -307,7 +297,7 @@ public class OAObjectReflectService {
 		}
 
 		// check to see if it is in the oaObj.properties
-		Object objx = OAObjectPropertyDelegate.getProperty(oaObj, propName, false, true);
+		Object objx = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propName, false, true);
 		return objx;
 	}
 
@@ -344,14 +334,14 @@ public class OAObjectReflectService {
 		final boolean bIsLoading = OAThreadLocalDelegate.isLoading();
 
 		String propNameU = propName.toUpperCase();
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 
 		Method m = null;
 		if (value != null) {
-			m = OAObjectInfoDelegate.getMethod(oi, "SET" + propNameU, value.getClass());
+			m = srvcObject.getOAObjectInfoService().getMethod(oi, "SET" + propNameU, value.getClass());
 		}
 		if (m == null) {
-			m = OAObjectInfoDelegate.getMethod(oi, "SET" + propNameU, 1);
+			m = srvcObject.getOAObjectInfoService().getMethod(oi, "SET" + propNameU, 1);
 		}
 
 		Class clazz = null;
@@ -363,7 +353,7 @@ public class OAObjectReflectService {
 
 		if (clazz == null) {
 			// See if this is for a Hub.  OAXMLReader uses setProperty to set MANY references using Object Id value
-			m = OAObjectInfoDelegate.getMethod(oi, "GET" + propNameU, 0);
+			m = srvcObject.getOAObjectInfoService().getMethod(oi, "GET" + propNameU, 0);
 			if (m != null) {
 				clazz = m.getReturnType();
 				if (clazz != null && clazz.equals(Hub.class)) {
@@ -376,11 +366,11 @@ public class OAObjectReflectService {
 			}
 
 			if (!bIsLoading) {
-				OAObjectEventDelegate.fireBeforePropertyChange(oaObj, propName, previousValue, value, oi.getLocalOnly(), true);
+				srvcObject.getOAObjectEventService().fireBeforePropertyChange(oaObj, propName, previousValue, value, oi.getLocalOnly(), true);
 			}
-			OAObjectPropertyDelegate.setProperty(oaObj, propName, value);
+			srvcObject.getOAObjectPropertyService().setProperty(oaObj, propName, value);
 			if (!bIsLoading) {
-				OAObjectEventDelegate.firePropertyChange(oaObj, propName, previousValue, value, oi.getLocalOnly(), true);
+				srvcObject.getOAObjectEventService().firePropertyChange(oaObj, propName, previousValue, value, oi.getLocalOnly(), true);
 			}
 			return;
 		}
@@ -388,23 +378,23 @@ public class OAObjectReflectService {
 		if (value instanceof OANullObject) {
 			value = null;
 		}
-		OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, propNameU);
+		OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, propNameU);
 
 		if (li != null) {
 			if (bIsLoading) {
 				if (value == null) {
 					// 20110315 allow null to be set
-					OAObjectPropertyDelegate.setProperty(oaObj, propName, value);
-					//was: OAObjectPropertyDelegate.removeProperty(oaObj, propName, true);
+					srvcObject.getOAObjectPropertyService().setProperty(oaObj, propName, value);
+					//was: srvcObject.getOAObjectPropertyService().removeProperty(oaObj, propName, true);
 				} else {
 					if (!(value instanceof OAObject) && !(value instanceof OAObjectKey)) {
-						value = OAObjectKeyDelegate.createObjectKey(li.getToClass(), value);
+						value = srvcObject.getOAObjectKeyService().createObjectKey(li.getToClass(), value);
 					}
-					OAObjectPropertyDelegate.setProperty(oaObj, propName, value);
+					srvcObject.getOAObjectPropertyService().setProperty(oaObj, propName, value);
 				}
 				return;
 			}
-			previousValue = OAObjectPropertyDelegate.getProperty(oaObj, propName, false, true); // get previous value
+			previousValue = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propName, false, true); // get previous value
 		}
 
 		boolean bPrimitiveNull = false; // a primitive type that needs to be set to null value
@@ -423,22 +413,22 @@ public class OAObjectReflectService {
 				return;
 			}
 			if (previousValue instanceof OAObjectKey) {
-				OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) value);
-				if (OAObjectKeyDelegate.isForSameOAObject(null, k, (OAObjectKey) previousValue)) {
-					OAObjectPropertyDelegate.setProperty(oaObj, propName, value);
+				OAObjectKey k = srvcObject.getOAObjectKeyService().getKey((OAObject) value);
+				if (srvcObject.getOAObjectKeyService().isForSameOAObject(null, k, (OAObjectKey) previousValue)) {
+					srvcObject.getOAObjectPropertyService().setProperty(oaObj, propName, value);
 					return; // no change; was storing key; now storing oaObject
 				}
 			}
 		} else { //  (value NOT instanceof OAObject) either OAObjectKey or value of key
 			if (!(value instanceof OAObjectKey)) {
-				value = OAObjectKeyDelegate.createObjectKey(li.getToClass(), value);
+				value = srvcObject.getOAObjectKeyService().createObjectKey(li.getToClass(), value);
 			}
 			if (value.equals(previousValue)) {
 				return; // no change
 			}
 			if (previousValue instanceof OAObject) {
-				OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) previousValue);
-				if (OAObjectKeyDelegate.isForSameOAObject(null, k, (OAObjectKey) value)) {
+				OAObjectKey k = srvcObject.getOAObjectKeyService().getKey((OAObject) previousValue);
+				if (srvcObject.getOAObjectKeyService().isForSameOAObject(null, k, (OAObjectKey) value)) {
 					return; // no change
 				}
 			}
@@ -479,7 +469,7 @@ public class OAObjectReflectService {
 			if (bPrimitiveNull) {
 				// 20131101 calling firePropetyChange will call setPrimitiveNull
 				// setPrimitiveNull(oaObj, propNameU);
-				OAObjectEventDelegate.firePropertyChange(oaObj, propName, previousValue, null, oi.getLocalOnly(), true); // setting to null
+				srvcObject.getOAObjectEventService().firePropertyChange(oaObj, propName, previousValue, null, oi.getLocalOnly(), true); // setting to null
 			}
 		}
 	}
@@ -496,13 +486,13 @@ public class OAObjectReflectService {
 	 */
 	public void storeLinkValue(OAObject oaObj, String propertyName, Object value) {
 		if (!(value instanceof OAObject) && !(value instanceof OAObjectKey)) {
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 			OALinkInfo li = oi.getLinkInfo(propertyName);
 			if (li != null && li.getType() == li.ONE) {
-				value = OAObjectKeyDelegate.createObjectKey(li.getToClass(), value);
+				value = srvcObject.getOAObjectKeyService().createObjectKey(li.getToClass(), value);
 			}
 		}
-		OAObjectPropertyDelegate.setProperty(oaObj, propertyName, value);
+		srvcObject.getOAObjectPropertyService().setProperty(oaObj, propertyName, value);
 	}
 
 	/**
@@ -540,7 +530,7 @@ public class OAObjectReflectService {
 				return false;
 			}
 
-			return OAObjectInfoDelegate.isPrimitiveNull(oaObj, propertyName);
+			return srvcObject.getOAObjectInfoService().isPrimitiveNull(oaObj, propertyName);
 		}
 	}
 
@@ -574,7 +564,7 @@ public class OAObjectReflectService {
 			return;
 		}
 		synchronized (oaObj) {
-			OAObjectInfoDelegate.setPrimitiveNull(oaObj, propertyName, true);
+			srvcObject.getOAObjectInfoService().setPrimitiveNull(oaObj, propertyName, true);
 		}
 	}
 
@@ -595,7 +585,7 @@ public class OAObjectReflectService {
 			return;
 		}
 		synchronized (oaObj) {
-			OAObjectInfoDelegate.setPrimitiveNull(oaObj, propertyName, false);
+			srvcObject.getOAObjectInfoService().setPrimitiveNull(oaObj, propertyName, false);
 		}
 	}
 
@@ -619,14 +609,14 @@ public class OAObjectReflectService {
 		}
 
 		Hub hub;
-		Object objOrig = OAObjectPropertyDelegate.getProperty(oaObj, propName, false, true);
+		Object objOrig = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propName, false, true);
 
 		if (value instanceof Hub) {
-			OAObjectPropertyDelegate.setPropertyCAS(oaObj, propName, value, objOrig);
+			srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObj, propName, value, objOrig);
 			return;
 		}
 
-		OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, propNameU);
+		OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, propNameU);
 		if (li == null) {
 			return;
 		}
@@ -638,7 +628,7 @@ public class OAObjectReflectService {
 			hub = (Hub) objOrig;
 		} else {
 			hub = new Hub(OAObjectKey.class);
-			OAObjectPropertyDelegate.setProperty(oaObj, propName, hub);
+			srvcObject.getOAObjectPropertyService().setProperty(oaObj, propName, hub);
 		}
 
 		Class c = hub.getObjectClass();
@@ -649,13 +639,13 @@ public class OAObjectReflectService {
 				if (value instanceof Hub) {
 					throw new RuntimeException("cant not set the Hub for " + propName);
 				}
-				value = OAObjectKeyDelegate.createObjectKey(li.getToClass(), value);
+				value = srvcObject.getOAObjectKeyService().createObjectKey(li.getToClass(), value);
 			}
 		}
 
 		if (bKeyOnly) {
 			if (value instanceof OAObject) {
-				value = OAObjectKeyDelegate.getKey((OAObject) value);
+				value = srvcObject.getOAObjectKeyService().getKey((OAObject) value);
 			}
 		} else {
 			if (value instanceof OAObjectKey) {
@@ -680,7 +670,7 @@ public class OAObjectReflectService {
 		if (clazz == null || key == null) {
 			return null;
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 		return getObject(clazz, key, oi);
 	}
 
@@ -700,15 +690,15 @@ public class OAObjectReflectService {
 		}
 
 		if (!(key instanceof OAObjectKey)) {
-			key = OAObjectKeyDelegate.createObjectKey(clazz, key);
+			key = srvcObject.getOAObjectKeyService().createObjectKey(clazz, key);
 		}
 
-		OAObject oaObj = (OAObject) OAObjectCacheDelegate.get(clazz, (OAObjectKey) key);
+		OAObject oaObj = (OAObject) srvcObject.getOAObjectCacheService().get(clazz, (OAObjectKey) key);
 		if (oaObj == null) {
 			if (OASync.isClient(clazz) && (oi == null || !oi.getLocalOnly())) {
-				oaObj = (OAObject) OAObjectCSDelegate.getServerObject(clazz, (OAObjectKey) key);
+				oaObj = (OAObject) srvcObject.getOAObjectCSService().getServerObject(clazz, (OAObjectKey) key);
 			} else {
-				oaObj = (OAObject) OAObjectDSDelegate.getObject(clazz, (OAObjectKey) key);
+				oaObj = (OAObject) srvcObject.getOAObjectDSService().getObject(clazz, (OAObjectKey) key);
 			}
 		}
 		return oaObj;
@@ -746,10 +736,10 @@ public class OAObjectReflectService {
 		OASiblingHelperDelegate.onGetObjectReference(oaObj, linkPropertyName);
 
 		Hub hub = null;
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-		final OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, linkPropertyName);
+		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
+		final OALinkInfo linkInfo = srvcObject.getOAObjectInfoService().getLinkInfo(oi, linkPropertyName);
 
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, linkPropertyName, false, true);
 
 		if (obj instanceof Hub) {
 			// 20141215 could be server side, that deserialized the object+references without setting up.
@@ -784,7 +774,7 @@ public class OAObjectReflectService {
 
 			if (OASync.isServer(oaObj)) {
 				// 20150130 the same thread that is loading it could be accessing it again. (ex: matching and hubmerger during getReferenceHub(..))
-				if (OAObjectPropertyDelegate.isPropertyLocked(oaObj, linkPropertyName)) {
+				if (srvcObject.getOAObjectPropertyService().isPropertyLocked(oaObj, linkPropertyName)) {
 					return hub;
 				}
 
@@ -796,8 +786,8 @@ public class OAObjectReflectService {
 							if (hubMatch == null) {
 								String matchHubPropPath = linkInfo.getMatchHub();
 								if (matchHubPropPath != null && matchHubPropPath.length() > 0) {
-									OAObjectInfo oix = OAObjectInfoDelegate.getOAObjectInfo(linkInfo.getToClass());
-									OALinkInfo linkInfox = OAObjectInfoDelegate.getLinkInfo(oix, matchProperty);
+									OAObjectInfo oix = srvcObject.getOAObjectInfoService().getOAObjectInfo(linkInfo.getToClass());
+									OALinkInfo linkInfox = srvcObject.getOAObjectInfoService().getLinkInfo(oix, matchProperty);
 									if (linkInfox != null) {
 										if (!OAThreadLocalDelegate.isDeleting()) {
 											hubMatch = new Hub(linkInfox.getToClass());
@@ -857,9 +847,9 @@ public class OAObjectReflectService {
 		} else {
 			boolean b = false;
 			try {
-				b = OAObjectPropertyDelegate.setPropertyLock(oaObj, linkPropertyName);
+				b = srvcObject.getOAObjectPropertyService().setPropertyLock(oaObj, linkPropertyName);
 
-				obj = OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, true);
+				obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, linkPropertyName, false, true);
 				if (obj instanceof Hub) {
 					return (Hub) obj;
 				}
@@ -867,7 +857,7 @@ public class OAObjectReflectService {
 				hub = _getReferenceHub(oaObj, linkPropertyName, sortOrder, bSequence, hubMatch, oi, linkInfo);
 			} finally {
 				if (b) {
-					OAObjectPropertyDelegate.releasePropertyLock(oaObj, linkPropertyName);
+					srvcObject.getOAObjectPropertyService().releasePropertyLock(oaObj, linkPropertyName);
 				}
 			}
 		}
@@ -902,8 +892,8 @@ public class OAObjectReflectService {
 	private Hub _getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder,
 			boolean bSequence, Hub hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo) {
 
-		Object propertyValue = OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, true, true);
-		final boolean bThisIsServer = OAObjectCSDelegate.isServer(oaObj);
+		Object propertyValue = srvcObject.getOAObjectPropertyService().getProperty(oaObj, linkPropertyName, true, true);
+		final boolean bThisIsServer = srvcObject.getOAObjectCSService().isServer(oaObj);
 		// dont get calcs from server, calcs are maintained locally, events are not sent
 		boolean bIsCalc = (linkInfo != null && linkInfo.getCalculated());
 		boolean bIsServerSideCalc = (linkInfo != null && linkInfo.getServerSideCalc());
@@ -941,11 +931,11 @@ public class OAObjectReflectService {
 			//   by OAObjectSerializeDelegate._writeObject
 			if (linkInfo == null) {
 				hub = new Hub();
-				OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, hub);
+				srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, hub);
 				return hub;
 			}
 			// create an empty hub
-			hub = new Hub(linkInfo.getToClass(), oaObj, OAObjectInfoDelegate.getReverseLinkInfo(linkInfo), false);
+			hub = new Hub(linkInfo.getToClass(), oaObj, srvcObject.getOAObjectInfoService().getReverseLinkInfo(linkInfo), false);
 		} else if (propertyValue == OANotExist.instance) {
 			propertyValue = null;
 		}
@@ -974,10 +964,10 @@ public class OAObjectReflectService {
 						}
 					}
 				}
-				if (OAObjectInfoDelegate.cacheHub(linkInfo, hub)) {
-					OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, new WeakReference(hub));
+				if (srvcObject.getOAObjectInfoService().cacheHub(linkInfo, hub)) {
+					srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, new WeakReference(hub));
 				} else {
-					OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, hub);
+					srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, hub);
 				}
 				return hub;
 			}
@@ -988,7 +978,7 @@ public class OAObjectReflectService {
 				return null;
 			}
 			Class linkClass = linkInfo.getToClass();
-			Hub hubNew = new Hub(linkClass, oaObj, OAObjectInfoDelegate.getReverseLinkInfo(linkInfo), false);
+			Hub hubNew = new Hub(linkClass, oaObj, srvcObject.getOAObjectInfoService().getReverseLinkInfo(linkInfo), false);
 			try {
 				OAThreadLocalDelegate.setSuppressCSMessages(true);
 				for (int i = 0;; i++) {
@@ -1006,10 +996,10 @@ public class OAObjectReflectService {
 			} finally {
 				OAThreadLocalDelegate.setSuppressCSMessages(false);
 			}
-			if (OAObjectInfoDelegate.cacheHub(linkInfo, hub)) {
-				OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, new WeakReference(hub));
+			if (srvcObject.getOAObjectInfoService().cacheHub(linkInfo, hub)) {
+				srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, new WeakReference(hub));
 			} else {
-				OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, hub);
+				srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, hub);
 			}
 			return hub;
 		}
@@ -1026,14 +1016,14 @@ public class OAObjectReflectService {
 		} else if (!bThisIsServer && !oi.getLocalOnly() && (!bIsCalc || bIsServerSideCalc)
 				&& OASync.getSyncClient().isObjectOnServer(oaObj)) {
 			// request from server
-			hub = OAObjectCSDelegate.getServerReferenceHub(oaObj, linkPropertyName);
+			hub = srvcObject.getOAObjectCSService().getServerReferenceHub(oaObj, linkPropertyName);
 			if (hub == null) {
 				// master not on the Server, might have been GCd, create empty Hub
 				if (linkInfo == null) {
 					return null;
 				}
 				Class linkClass = linkInfo.getToClass();
-				hub = new Hub(linkClass, oaObj, OAObjectInfoDelegate.getReverseLinkInfo(linkInfo), false);
+				hub = new Hub(linkClass, oaObj, srvcObject.getOAObjectInfoService().getReverseLinkInfo(linkInfo), false);
 				// throw new RuntimeException("getHub from Server failed, this.oaObj="+oaObj+", linkPropertyName="+linkPropertyName);
 			}
 
@@ -1043,7 +1033,7 @@ public class OAObjectReflectService {
 						return null;
 					}
 					Class linkClass = linkInfo.getToClass();
-					hub = new Hub(linkClass, oaObj, OAObjectInfoDelegate.getReverseLinkInfo(linkInfo), false);
+					hub = new Hub(linkClass, oaObj, srvcObject.getOAObjectInfoService().getReverseLinkInfo(linkInfo), false);
 				}
 			}
 		} else { // hub is null, create now
@@ -1051,7 +1041,7 @@ public class OAObjectReflectService {
 				return null;
 			}
 			Class linkClass = linkInfo.getToClass();
-			OALinkInfo liReverse = OAObjectInfoDelegate.getReverseLinkInfo(linkInfo);
+			OALinkInfo liReverse = srvcObject.getOAObjectInfoService().getReverseLinkInfo(linkInfo);
 			if (liReverse != null) {
 
 				// 20141109
@@ -1085,11 +1075,11 @@ public class OAObjectReflectService {
 						alOk.add(oaObj.getObjectKey());
 
 						for (OAObjectKey keyx : siblingKeys) {
-							OAObject objx = OAObjectCacheDelegate.get(oaObj.getClass(), keyx);
+							OAObject objx = srvcObject.getOAObjectCacheService().get(oaObj.getClass(), keyx);
 							if (objx == null) {
 								continue;
 							}
-							if (!OAObjectPropertyDelegate.attemptPropertyLock(objx, linkPropertyName)) {
+							if (!srvcObject.getOAObjectPropertyService().attemptPropertyLock(objx, linkPropertyName)) {
 								continue;
 							}
 							alOk.add(keyx);
@@ -1114,15 +1104,15 @@ public class OAObjectReflectService {
 				 * root hub when owner is changed/assigned. */
 				/*
 				 * 20130919 recurse does not have to be owner */
-				//was: if (!OAObjectInfoDelegate.isMany2Many(linkInfo) && (bThisIsServer || bIsCalc) && linkInfo.isOwner()) {
+				//was: if (!srvcObject.getOAObjectInfoService().isMany2Many(linkInfo) && (bThisIsServer || bIsCalc) && linkInfo.isOwner()) {
 
 				// 20131009 new LinkProperty recursive flag.  If owned+recursive, then select root
 				if (bThisIsServer && !bIsCalc) {
 					if (linkInfo.getOwner() && linkInfo.getRecursive()) {
-						OAObjectInfo oi2 = OAObjectInfoDelegate.getOAObjectInfo(linkInfo.getToClass());
-						OALinkInfo li2 = OAObjectInfoDelegate.getRecursiveLinkInfo(oi2, OALinkInfo.ONE);
+						OAObjectInfo oi2 = srvcObject.getOAObjectInfoService().getOAObjectInfo(linkInfo.getToClass());
+						OALinkInfo li2 = srvcObject.getOAObjectInfoService().getRecursiveLinkInfo(oi2, OALinkInfo.ONE);
 						if (li2 != null) {
-							OALinkInfo li3 = OAObjectInfoDelegate.getReverseLinkInfo(li2);
+							OALinkInfo li3 = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li2);
 							if (li3 != linkInfo) {
 								if (select != null) {
 									select.setWhere(li2.getName() + " == null");
@@ -1134,9 +1124,9 @@ public class OAObjectReflectService {
 					}
 				}
 				/*was
-				if (!OAObjectInfoDelegate.isMany2Many(linkInfo) && (bThisIsServer || bIsCalc)) {
-				    OAObjectInfo oi2 = OAObjectInfoDelegate.getOAObjectInfo(linkInfo.getToClass());
-				    OALinkInfo li2 = OAObjectInfoDelegate.getRecursiveLinkInfo(oi2, OALinkInfo.ONE);
+				if (!srvcObject.getOAObjectInfoService().isMany2Many(linkInfo) && (bThisIsServer || bIsCalc)) {
+				    OAObjectInfo oi2 = srvcObject.getOAObjectInfoService().getOAObjectInfo(linkInfo.getToClass());
+				    OALinkInfo li2 = srvcObject.getOAObjectInfoService().getRecursiveLinkInfo(oi2, OALinkInfo.ONE);
 				    if (li2 != null && li2 != liReverse) { // recursive
 				        hub.setSelectWhere(li2.getName() + " == null");
 				        // was: hub.setSelectRequiredWhere(li2.getName() + " == null");
@@ -1153,13 +1143,13 @@ public class OAObjectReflectService {
 		
 		    // 20141204 added check to see if property is now there, in case it was deserialized and then
 		    //    the property was set by HubSerializeDelegate._readResolve
-		    if (bThisIsServer || OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, false) == null) {
+		    if (bThisIsServer || srvcObject.getOAObjectPropertyService().getProperty(oaObj, linkPropertyName, false, false) == null) {
 		        // set property
-		        if (OAObjectInfoDelegate.cacheHub(linkInfo, hub)) {
-		            OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, new WeakReference(hub));
+		        if (srvcObject.getOAObjectInfoService().cacheHub(linkInfo, hub)) {
+		            srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, new WeakReference(hub));
 		        }
 		        else {
-		            OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, hub);
+		            srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, hub);
 		        }
 		    }
 		 */
@@ -1183,7 +1173,7 @@ public class OAObjectReflectService {
 					for (; select.hasMore();) {
 						OAObject objx = select.next();
 						// find masterObj to put it in
-						Object valx = OAObjectPropertyDelegate.getProperty(objx, rli.getName(), false, false);
+						Object valx = srvcObject.getOAObjectPropertyService().getProperty(objx, rli.getName(), false, false);
 						if (valx instanceof OAObject) {
 							valx = ((OAObject) valx).getObjectKey();
 						}
@@ -1191,7 +1181,7 @@ public class OAObjectReflectService {
 							continue;
 						}
 						OAObjectKey okx = (OAObjectKey) valx;
-						if (OAObjectKeyDelegate.isForSameOAObject(null, okx, oaObj.getObjectKey())) {
+						if (srvcObject.getOAObjectKeyService().isForSameOAObject(null, okx, oaObj.getObjectKey())) {
 							hub.add(objx);
 						} else if (hmSiblingHub != null) {
 							Hub hx = hmSiblingHub.get(okx);
@@ -1207,7 +1197,7 @@ public class OAObjectReflectService {
 					OAThreadLocalDelegate.setSuppressCSMessages(false);
 				}
 			} else {
-				if (!OAObjectCSDelegate.loadReferenceHubDataOnServer(hub, select)) { // load all data before passing to client
+				if (!srvcObject.getOAObjectCSService().loadReferenceHubDataOnServer(hub, select)) { // load all data before passing to client
 					HubSelectDelegate.loadAllData(hub, select);
 				}
 			}
@@ -1254,8 +1244,8 @@ public class OAObjectReflectService {
 				if (hubMatch == null) {
 					String matchHubProperty = linkInfo.getMatchHub();
 					if (matchHubProperty != null && matchHubProperty.length() > 0) {
-						OAObjectInfo oix = OAObjectInfoDelegate.getOAObjectInfo(linkInfo.getToClass());
-						OALinkInfo linkInfox = OAObjectInfoDelegate.getLinkInfo(oix, matchProperty);
+						OAObjectInfo oix = srvcObject.getOAObjectInfoService().getOAObjectInfo(linkInfo.getToClass());
+						OALinkInfo linkInfox = srvcObject.getOAObjectInfoService().getLinkInfo(oix, matchProperty);
 						if (linkInfox != null) {
 							hubMatch = new Hub(linkInfox.getToClass());
 							HubMerger hm = new HubMerger(oaObj, hubMatch, matchHubProperty);
@@ -1288,12 +1278,12 @@ public class OAObjectReflectService {
 		}
 
 		// 20171108 moved here from above
-		if (bThisIsServer || OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, false, false) == null) {
+		if (bThisIsServer || srvcObject.getOAObjectPropertyService().getProperty(oaObj, linkPropertyName, false, false) == null) {
 			// set property
-			if (OAObjectInfoDelegate.cacheHub(linkInfo, hub)) {
-				OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, new WeakReference(hub));
+			if (srvcObject.getOAObjectInfoService().cacheHub(linkInfo, hub)) {
+				srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, new WeakReference(hub));
 			} else {
-				OAObjectPropertyDelegate.setProperty(oaObj, linkPropertyName, hub);
+				srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, hub);
 			}
 		}
 		// 20171113 moved from above
@@ -1316,17 +1306,17 @@ public class OAObjectReflectService {
 			// need to loop thru and set Hubs for siblings
 			for (Entry<OAObjectKey, Hub> entry : hmSiblingHub.entrySet()) {
 				OAObjectKey ok = entry.getKey();
-				OAObject obj = OAObjectCacheDelegate.get(oaObj.getClass(), ok);
+				OAObject obj = srvcObject.getOAObjectCacheService().get(oaObj.getClass(), ok);
 				if (obj == null) {
 					continue;
 				}
 				Hub hx = entry.getValue();
-				if (OAObjectInfoDelegate.cacheHub(linkInfo, hx)) {
-					OAObjectPropertyDelegate.setPropertyHubIfNotSet(obj, linkPropertyName, new WeakReference(hx));
+				if (srvcObject.getOAObjectInfoService().cacheHub(linkInfo, hx)) {
+					srvcObject.getOAObjectPropertyService().setPropertyHubIfNotSet(obj, linkPropertyName, new WeakReference(hx));
 				} else {
-					OAObjectPropertyDelegate.setPropertyHubIfNotSet(obj, linkPropertyName, hx);
+					srvcObject.getOAObjectPropertyService().setPropertyHubIfNotSet(obj, linkPropertyName, hx);
 				}
-				OAObjectPropertyDelegate.releasePropertyLock(obj, linkPropertyName);
+				srvcObject.getOAObjectPropertyService().releasePropertyLock(obj, linkPropertyName);
 			}
 		}
 		if (siblingKeys != null) {
@@ -1348,7 +1338,7 @@ public class OAObjectReflectService {
 	 * @return the raw stored value
 	 */
 	public Object getRawReference(OAObject oaObj, String name) {
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, name, false, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, name, false, true);
 		return obj;
 	}
 
@@ -1364,7 +1354,7 @@ public class OAObjectReflectService {
 		if (oaObj == null) {
 			return false;
 		}
-		OAObjectInfo io = OAObjectInfoDelegate.getObjectInfo(oaObj.getClass());
+		OAObjectInfo io = srvcObject.getOAObjectInfoService().getObjectInfo(oaObj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
 		for (OALinkInfo li : al) {
 			if (!li.getUsed()) {
@@ -1380,7 +1370,7 @@ public class OAObjectReflectService {
 			}
 
 			if (obj instanceof OAObjectKey) {
-				obj = OAObjectCacheDelegate.get(li.getToClass(), (OAObjectKey) obj);
+				obj = srvcObject.getOAObjectCacheService().get(li.getToClass(), (OAObjectKey) obj);
 			}
 
 			if (obj instanceof OAObject) {
@@ -1434,7 +1424,7 @@ public class OAObjectReflectService {
 		if (obj == null) {
 			return null;
 		}
-		OAObjectInfo io = OAObjectInfoDelegate.getObjectInfo(obj.getClass());
+		OAObjectInfo io = srvcObject.getOAObjectInfoService().getObjectInfo(obj.getClass());
 		ArrayList<String> al = null;
 		List<OALinkInfo> alLinkInfo = io.getLinkInfos();
 		for (OALinkInfo li : alLinkInfo) {
@@ -1458,14 +1448,14 @@ public class OAObjectReflectService {
 
 			Object value = getRawReference((OAObject) obj, property);
 			if (value == null) {
-				if (!OAObjectPropertyDelegate.isPropertyLoaded((OAObject) obj, property)) {
+				if (!srvcObject.getOAObjectPropertyService().isPropertyLoaded((OAObject) obj, property)) {
 					if (al == null) {
 						al = new ArrayList<String>();
 					}
 					al.add(property);
 				}
 			} else if (value instanceof OAObjectKey) {
-				if (OAObjectCacheDelegate.get(li.getToClass(), value) == null) {
+				if (srvcObject.getOAObjectCacheService().get(li.getToClass(), value) == null) {
 					if (al == null) {
 						al = new ArrayList<String>();
 					}
@@ -1545,7 +1535,7 @@ public class OAObjectReflectService {
 	 * @param max          maximum number of references to load
 	 */
 	public void loadReferences(OAObject obj, boolean bIncludeCalc, int max) {
-		OAObjectInfo io = OAObjectInfoDelegate.getObjectInfo(obj.getClass());
+		OAObjectInfo io = srvcObject.getOAObjectInfoService().getObjectInfo(obj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
 		int cnt = 0;
 		for (OALinkInfo li : al) {
@@ -1561,7 +1551,7 @@ public class OAObjectReflectService {
 
 			String name = li.getName();
 			if (max > 0) {
-				Object objx = OAObjectPropertyDelegate.getProperty(obj, name, true, true);
+				Object objx = srvcObject.getOAObjectPropertyService().getProperty(obj, name, true, true);
 				if (objx == null) {
 					continue;
 				}
@@ -1592,7 +1582,7 @@ public class OAObjectReflectService {
 		if (obj == null) {
 			return false;
 		}
-		OAObjectInfo io = OAObjectInfoDelegate.getObjectInfo(obj.getClass());
+		OAObjectInfo io = srvcObject.getOAObjectInfoService().getObjectInfo(obj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
 		boolean bIsServer = OASyncDelegate.isServer(obj);
 		for (OALinkInfo li : al) {
@@ -1610,7 +1600,7 @@ public class OAObjectReflectService {
 			}
 			String name = li.getName();
 
-			Object val = OAObjectPropertyDelegate.getProperty(obj, name, true, true);
+			Object val = srvcObject.getOAObjectPropertyService().getProperty(obj, name, true, true);
 			if (val == OANotExist.instance) {
 				return false;
 			}
@@ -1642,7 +1632,7 @@ public class OAObjectReflectService {
 	 * @return number of loaded references
 	 */
 	public int loadAllReferences(OAObject obj, boolean bOne, boolean bMany, boolean bIncludeCalc) {
-		OAObjectInfo io = OAObjectInfoDelegate.getObjectInfo(obj.getClass());
+		OAObjectInfo io = srvcObject.getOAObjectInfoService().getObjectInfo(obj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
 		int cnt = 0;
 		for (OALinkInfo li : al) {
@@ -2183,7 +2173,7 @@ public class OAObjectReflectService {
 
 		boolean bOwnedOnly = (levelsLoaded >= maxLevelsToLoad);
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
 		for (OALinkInfo li : oi.getLinkInfos()) {
 			if (maxEndTime > 0 && System.currentTimeMillis() > maxEndTime) {
 				break;
@@ -2202,14 +2192,14 @@ public class OAObjectReflectService {
 			}
 			boolean bIsMany = li.getType() == OALinkInfo.TYPE_MANY;
 
-			Object objx = OAObjectPropertyDelegate.getProperty(obj, li.getName(), true, true);
+			Object objx = srvcObject.getOAObjectPropertyService().getProperty(obj, li.getName(), true, true);
 
 			if (objx instanceof OANotExist) { // not loaded from ds
 				if (bIsMany) {
 					currentRefsLoaded++;
 				}
 			} else if (objx instanceof OAObjectKey) { // not loaded from ds
-				if (OAObjectCacheDelegate.get(li.getToClass(), (OAObjectKey) objx) == null) {
+				if (srvcObject.getOAObjectCacheService().get(li.getToClass(), (OAObjectKey) objx) == null) {
 					currentRefsLoaded++;
 				}
 			}
@@ -2272,9 +2262,9 @@ public class OAObjectReflectService {
 		}
 
 		try {
-			OAObjectPropertyDelegate.setPropertyLock(oaObj, propertyName);
+			srvcObject.getOAObjectPropertyService().setPropertyLock(oaObj, propertyName);
 
-			Object val = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, true, true);
+			Object val = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName, true, true);
 			if (val instanceof byte[]) {
 				return (byte[]) val;
 			}
@@ -2283,7 +2273,7 @@ public class OAObjectReflectService {
 			}
 
 			if (!OASyncDelegate.isServer(oaObj)) {
-				val = OAObjectCSDelegate.getServerReferenceBlob(oaObj, propertyName);
+				val = srvcObject.getOAObjectCSService().getServerReferenceBlob(oaObj, propertyName);
 			} else {
 				OADataSource ds = OADataSource.getDataSource(oaObj.getClass());
 				if (ds != null) {
@@ -2291,13 +2281,13 @@ public class OAObjectReflectService {
 				}
 			}
 
-			val = OAObjectPropertyDelegate.setPropertyCAS(oaObj, propertyName, val, null, true, false);
+			val = srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObj, propertyName, val, null, true, false);
 			if (val instanceof byte[]) {
 				return (byte[]) val;
 			}
 
 		} finally {
-			OAObjectPropertyDelegate.releasePropertyLock(oaObj, propertyName);
+			srvcObject.getOAObjectPropertyService().releasePropertyLock(oaObj, propertyName);
 		}
 		return null;
 	}
@@ -2316,10 +2306,10 @@ public class OAObjectReflectService {
 	public Object getReferenceObject(final OAObject oaObj, final String linkPropertyName) {
 		OASiblingHelperDelegate.onGetObjectReference(oaObj, linkPropertyName);
 
-		Object objOriginal = OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, true, true);
+		Object objOriginal = srvcObject.getOAObjectPropertyService().getProperty(oaObj, linkPropertyName, true, true);
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-		OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, linkPropertyName);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
+		OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, linkPropertyName);
 
 		if (objOriginal == null) { // else !null or notExist
 			// it is stored as null value
@@ -2338,13 +2328,13 @@ public class OAObjectReflectService {
 
 		Object result = null;
 		try {
-			OAObjectPropertyDelegate.setPropertyLock(oaObj, linkPropertyName);
+			srvcObject.getOAObjectPropertyService().setPropertyLock(oaObj, linkPropertyName);
 			result = _getReferenceObject(oaObj, linkPropertyName, oi, li);
 			if (result != null || objOriginal == null) {
-				OAObjectPropertyDelegate.setPropertyCAS(oaObj, linkPropertyName, result, objOriginal, bDidNotExist, false);
+				srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObj, linkPropertyName, result, objOriginal, bDidNotExist, false);
 			}
 		} finally {
-			OAObjectPropertyDelegate.releasePropertyLock(oaObj, linkPropertyName);
+			srvcObject.getOAObjectPropertyService().releasePropertyLock(oaObj, linkPropertyName);
 			if (result instanceof OAObjectKey) {
 				result = getReferenceObject(oaObj, linkPropertyName);
 			}
@@ -2375,7 +2365,7 @@ public class OAObjectReflectService {
 		final boolean bIsCalc = li != null && li.getCalculated();
 
 		Object ref = null;
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, linkPropertyName, true, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, linkPropertyName, true, true);
 
 		if (!(obj instanceof OAObjectKey)) {
 			if (obj == OANotExist.instance || obj == null) {
@@ -2389,14 +2379,14 @@ public class OAObjectReflectService {
 						OAHierFinder hf = new OAHierFinder(linkPropertyName, pps, false);
 						obj = hf.findFirst(oaObj);
 						if (obj != null) {
-							OAObjectPropertyDelegate.setPropertyCAS(oaObj, linkPropertyName, obj, null);
+							srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObj, linkPropertyName, obj, null);
 							return obj;
 						}
 					} else {
 						OAFinder hf = new OAFinder(pps);
 						obj = hf.findFirst(oaObj);
 						if (obj != null) {
-							OAObjectPropertyDelegate.setPropertyCAS(oaObj, linkPropertyName, obj, null);
+							srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObj, linkPropertyName, obj, null);
 							return obj;
 						}
 					}
@@ -2410,7 +2400,7 @@ public class OAObjectReflectService {
 
 				// must be null
 				if (li.getAutoCreateNew()) {
-					if (OAObjectInfoDelegate.isOne2One(li)) { // will only be "null" if it was deleted, else it will be oaNotExist
+					if (srvcObject.getOAObjectInfoService().isOne2One(li)) { // will only be "null" if it was deleted, else it will be oaNotExist
 						return null;
 					}
 				} else {
@@ -2424,15 +2414,15 @@ public class OAObjectReflectService {
 			if (li == null) {
 				return null;
 			}
-			if (OAObjectInfoDelegate.isOne2One(li)) {
+			if (srvcObject.getOAObjectInfoService().isOne2One(li)) {
 				if (!oaObj.isNew()) {
-					OALinkInfo liReverse = OAObjectInfoDelegate.getReverseLinkInfo(li);
+					OALinkInfo liReverse = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 					if (!bIsServer && !bIsCalc) {
 						if (oaObj.isDeleted()) {
 							return null;
 						}
 						if (liReverse != null && !liReverse.getPrivateMethod()) {
-							ref = OAObjectCSDelegate.getServerReference(oaObj, linkPropertyName);
+							ref = srvcObject.getOAObjectCSService().getServerReference(oaObj, linkPropertyName);
 						} else {
 							ref = null;
 						}
@@ -2450,7 +2440,7 @@ public class OAObjectReflectService {
 			} else {
 				// first check to see if it is in the hub for the link
 				if (li.getPrivateMethod()) {
-					Hub hubx = OAObjectHubDelegate.getHub(oaObj, li);
+					Hub hubx = srvcObject.getOAObjectHubService().getHub(oaObj, li);
 					if (hubx != null) {
 						ref = HubDelegate.getMasterObject(hubx);
 					}
@@ -2463,9 +2453,9 @@ public class OAObjectReflectService {
 							if (oaObj.isDeleted()) {
 								return null;
 							}
-							ref = OAObjectCSDelegate.getServerReference(oaObj, linkPropertyName);
+							ref = srvcObject.getOAObjectCSService().getServerReference(oaObj, linkPropertyName);
 						} else {
-							OALinkInfo liReverse = OAObjectInfoDelegate.getReverseLinkInfo(li);
+							OALinkInfo liReverse = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 							if (liReverse != null) {
 								OASelect sel = new OASelect(li.getToClass());
 								sel.setWhere(liReverse.getName() + " = ?");
@@ -2485,11 +2475,11 @@ public class OAObjectReflectService {
 				return null;
 			}
 
-			ref = OAObjectCacheDelegate.get(li.getToClass(), key);
+			ref = srvcObject.getOAObjectCacheService().get(li.getToClass(), key);
 
 			if (ref == null) {
 				if (!bIsServer && !bIsCalc && !oi.getLocalOnly()) {
-					ref = OAObjectCSDelegate.getServerReference(oaObj, linkPropertyName);
+					ref = srvcObject.getOAObjectCSService().getServerReference(oaObj, linkPropertyName);
 				} else {
 					OAObjectKey[] siblingKeys;
 					if (OAThreadLocalDelegate.isDeleting()) {
@@ -2503,17 +2493,17 @@ public class OAObjectReflectService {
 						alOk.add(key);
 
 						for (OAObjectKey keyx : siblingKeys) {
-							OAObject objx = OAObjectCacheDelegate.get(oaObj.getClass(), keyx);
+							OAObject objx = srvcObject.getOAObjectCacheService().get(oaObj.getClass(), keyx);
 							if (objx == null) {
 								continue;
 							}
 
-							Object val = OAObjectPropertyDelegate.getProperty(objx, linkPropertyName, false, false);
+							Object val = srvcObject.getOAObjectPropertyService().getProperty(objx, linkPropertyName, false, false);
 							if (!(val instanceof OAObjectKey)) {
 								continue;
 							}
 
-							if (OAObjectPropertyDelegate.isPropertyLocked(objx, linkPropertyName)) {
+							if (srvcObject.getOAObjectPropertyService().isPropertyLocked(objx, linkPropertyName)) {
 								continue;
 							}
 
@@ -2541,7 +2531,7 @@ public class OAObjectReflectService {
 						sel.select();
 						for (; sel.hasMore();) {
 							OAObject refx = sel.next(); // this will load into objCache w/weakRef
-							if (OAObjectKeyDelegate.isForSameOAObject(null, refx.getObjectKey(), key)) {
+							if (srvcObject.getOAObjectKeyService().isForSameOAObject(null, refx.getObjectKey(), key)) {
 								ref = refx;
 							}
 						}
@@ -2549,25 +2539,25 @@ public class OAObjectReflectService {
 							hmIgnoreSibling.remove(ok.getGuid());
 						}
 					} else {
-						ref = (OAObject) OAObjectDSDelegate.getObject(oi, li.getToClass(), (OAObjectKey) obj);
+						ref = (OAObject) srvcObject.getOAObjectDSService().getObject(oi, li.getToClass(), (OAObjectKey) obj);
 					}
 				}
 			}
 		}
 
 		if (ref == null && li.getAutoCreateNew() && !bIsCalc) {
-			boolean b = OAObjectInfoDelegate.isOne2One(li);
+			boolean b = srvcObject.getOAObjectInfoService().isOne2One(li);
 			if (b && oaObj.isDeleted() && !bIsServer) {
 				// 20151117 dont autocreate new if this is deleted
 			} else {
 				if (!bIsServer && OASync.getSyncClient().isObjectOnServer(oaObj)) {
-					ref = OAObjectCSDelegate.getServerReference(oaObj, linkPropertyName);
+					ref = srvcObject.getOAObjectCSService().getServerReference(oaObj, linkPropertyName);
 				} else {
 					ref = createNewObject(li.getToClass());
 
 					// 20190322
 					if (((OAObject) ref).isLoading()) {
-						OAObjectDelegate.initialize((OAObject) ref, OAObjectInfoDelegate.getOAObjectInfo(li.getToClass()), true, true, true,
+						srvcObject.getOAObjectInitializeService().initialize((OAObject) ref, srvcObject.getOAObjectInfoService().getOAObjectInfo(li.getToClass()), true, true, true,
 													false, true);
 					}
 
@@ -2582,7 +2572,7 @@ public class OAObjectReflectService {
                         OAPropertyPath pp = new OAPropertyPath(oaObj.getClass(), s);
                         final OAObject matchValue = (OAObject) pp.getValue(oaObj);
                         
-                        final OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+                        final OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
                         s = liRev.getEqualPropertyPath();
                         if (matchValue != null && OAString.isNotEmpty(s)) {
                             if (s.indexOf('.') < 0) {
@@ -2623,7 +2613,7 @@ public class OAObjectReflectService {
 		if (property == null) {
 			return null;
 		}
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, property, false, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, property, false, true);
 		if (obj == null) {
 			return null;
 		}
@@ -2631,7 +2621,7 @@ public class OAObjectReflectService {
 			return (OAObjectKey) obj;
 		}
 		if (obj instanceof OAObject) {
-			return OAObjectKeyDelegate.getKey((OAObject) obj);
+			return srvcObject.getOAObjectKeyService().getKey((OAObject) obj);
 		}
 		return null;
 	}
@@ -2651,7 +2641,7 @@ public class OAObjectReflectService {
 		if (propertyName == null) {
 			return false;
 		}
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, true, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName, true, true);
 		if (obj == null) {
 			return true;
 		}
@@ -2671,14 +2661,14 @@ public class OAObjectReflectService {
 		}
 		if (obj instanceof OAObjectKey) {
 			// use Key to see if object is in memory
-			OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oaObj.getClass(), propertyName);
+			OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oaObj.getClass(), propertyName);
 			if (li == null) {
 				return true;
 			}
 
-			Object objFound = OAObjectCacheDelegate.get(li.getToClass(), (OAObjectKey) obj);
+			Object objFound = srvcObject.getOAObjectCacheService().get(li.getToClass(), (OAObjectKey) obj);
 			if (objFound != null) {
-				OAObjectPropertyDelegate.setPropertyCAS(oaObj, propertyName, objFound, obj);
+				srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObj, propertyName, objFound, obj);
 				return true;
 			}
 		}
@@ -2698,7 +2688,7 @@ public class OAObjectReflectService {
 		if (oaObj == null || propertyName == null) {
 			return false;
 		}
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, true, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName, true, true);
 		if (obj == null) {
 			return true; // the ref is null, dont need to load it
 		}
@@ -2722,7 +2712,7 @@ public class OAObjectReflectService {
 		if (propertyName == null) {
 			return false;
 		}
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, true, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName, true, true);
 		if (obj == null) {
 			return false; // the ref is null, dont need to load it
 		}
@@ -2735,14 +2725,14 @@ public class OAObjectReflectService {
 
 		if (obj instanceof OAObjectKey) {
 			// use Key to see if object is in memory
-			OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oaObj.getClass(), propertyName);
+			OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oaObj.getClass(), propertyName);
 			if (li == null) {
 				return true;
 			}
 
-			Object objFound = OAObjectCacheDelegate.get(li.getToClass(), (OAObjectKey) obj);
+			Object objFound = srvcObject.getOAObjectCacheService().get(li.getToClass(), (OAObjectKey) obj);
 			if (objFound != null) {
-				OAObjectPropertyDelegate.setPropertyCAS(oaObj, propertyName, objFound, obj);
+				srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObj, propertyName, objFound, obj);
 				return true;
 			}
 		}
@@ -2762,7 +2752,7 @@ public class OAObjectReflectService {
 		if (propertyName == null) {
 			return false;
 		}
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, true, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName, true, true);
 		if (obj == null) {
 			return true; // not loaded
 		}
@@ -2798,7 +2788,7 @@ public class OAObjectReflectService {
 		if (propertyName == null) {
 			return false;
 		}
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, true, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName, true, true);
 		if (obj == null) {
 			return true; // not loaded
 		}
@@ -2834,7 +2824,7 @@ public class OAObjectReflectService {
 		if (propertyName == null) {
 			return false;
 		}
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, true, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName, true, true);
 
 		if (obj instanceof OANotExist) {
 			return false;
@@ -2847,7 +2837,7 @@ public class OAObjectReflectService {
 			return true;
 		}
 
-		OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oaObj.getClass(), propertyName);
+		OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oaObj.getClass(), propertyName);
 		if (li == null || li.getType() != li.MANY) {
 			return false;
 		}
@@ -2868,7 +2858,7 @@ public class OAObjectReflectService {
 		if (propertyName == null) {
 			return false;
 		}
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, true, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName, true, true);
 		if (obj == null) {
 			return true;
 		}
@@ -2880,7 +2870,7 @@ public class OAObjectReflectService {
 			return ((Hub) obj).getSize() == 0;
 		}
 
-		OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oaObj.getClass(), propertyName);
+		OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oaObj.getClass(), propertyName);
 		if (li == null || li.getType() != li.MANY) {
 			return false;
 		}
@@ -2901,7 +2891,7 @@ public class OAObjectReflectService {
 		if (propertyName == null) {
 			return false;
 		}
-		Object obj = OAObjectPropertyDelegate.getProperty(oaObj, propertyName, false, true);
+		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName, false, true);
 		if (obj == null) {
 			return false;
 		}
@@ -3085,17 +3075,17 @@ public class OAObjectReflectService {
 			return null;
 		}
 
-		OAObject newObject = (OAObject) hmNew.get(OAObjectDelegate.getGuid(oaObj));
+		OAObject newObject = (OAObject) hmNew.get(srvcObject.getOAObjectGuidService().getGuid(oaObj));
 		if (newObject != null) {
 			return newObject;
 		}
 
 		// run on server only - otherwise objects can not be updated, since setLoadingObject is true
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
 		if (!oi.getLocalOnly()) {
 			if (!OASyncDelegate.isServer(oaObj)) {
 				// 20130505 needs to be put in msg queue
-				newObject = OAObjectCSDelegate.createCopy(oaObj, excludeProperties);
+				newObject = srvcObject.getOAObjectCSService().createCopy(oaObj, excludeProperties);
 				return newObject;
 			}
 		}
@@ -3105,7 +3095,7 @@ public class OAObjectReflectService {
 			OAThreadLocalDelegate.setSuppressCSMessages(true);
 
 			newObject = (OAObject) createNewObject(oaObj.getClass());
-			OAObjectDelegate.initialize(newObject, oi, true, true, false, false, true);
+			srvcObject.getOAObjectInitializeService().initialize(newObject, oi, true, true, false, false, true);
 
 			_copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 
@@ -3113,7 +3103,7 @@ public class OAObjectReflectService {
 			OAThreadLocalDelegate.setSuppressCSMessages(false);
 			OAThreadLocalDelegate.setLoading(false);
 		}
-		OAObjectCacheDelegate.add(newObject);
+		srvcObject.getOAObjectCacheService().add(newObject);
 		return newObject;
 	}
 
@@ -3183,11 +3173,11 @@ public class OAObjectReflectService {
 		if (oaObj == null || newObject == null) {
 			return;
 		}
-		hmNew.put(OAObjectDelegate.getGuid(oaObj), newObject);
+		hmNew.put(srvcObject.getOAObjectGuidService().getGuid(oaObj), newObject);
 		if (!(oaObj.getClass().isInstance(newObject))) {
 			throw new IllegalArgumentException("OAObject.copyInto() object is not same class");
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
 			if (excludeProperties != null) {
 				int j = 0;
@@ -3260,7 +3250,7 @@ public class OAObjectReflectService {
 					continue;
 				}
 
-				Object objx = hmNew.get(OAObjectDelegate.getGuid((OAObject) obj));
+				Object objx = hmNew.get(srvcObject.getOAObjectGuidService().getGuid((OAObject) obj));
 
 				if (objx == null) {
 					if (copyCallback != null) {
@@ -3275,11 +3265,11 @@ public class OAObjectReflectService {
 				}
 				if (objx != null) {
 					if (obj != objx) {
-						hmNew.put(OAObjectDelegate.getGuid(obj), objx);
+						hmNew.put(srvcObject.getOAObjectGuidService().getGuid(obj), objx);
 					}
 					hubNew.add(objx);
 					// assign parentProperty
-					OAObjectPropertyDelegate.unsafeSetProperty(	(OAObject) objx, HubDetailDelegate.getPropertyFromDetailToMaster(hubNew),
+					srvcObject.getOAObjectPropertyService().unsafeSetProperty(	(OAObject) objx, HubDetailDelegate.getPropertyFromDetailToMaster(hubNew),
 																newObject);
 				}
 			}
@@ -3315,9 +3305,9 @@ public class OAObjectReflectService {
 
 			Object obj = getProperty(oaObj, li.getName());
 
-			OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+			OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 			if (liRev != null && liRev.isOwner() && !li.getAutoCreateNew()) {
-				Object newObj = hmNew.get(OAObjectDelegate.getGuid((OAObject) obj)); // this is the new/replacement one to use
+				Object newObj = hmNew.get(srvcObject.getOAObjectGuidService().getGuid((OAObject) obj)); // this is the new/replacement one to use
 				if (newObj != null) {
 					if (copyCallback != null) {
 						newObj = copyCallback.getPropertyValue(oaObj, li.getName(), newObj);
@@ -3336,7 +3326,7 @@ public class OAObjectReflectService {
 			} else {
 				boolean b = false;
 				if (obj != null) {
-					Object objx = hmNew.get(OAObjectDelegate.getGuid((OAObject) obj));
+					Object objx = hmNew.get(srvcObject.getOAObjectGuidService().getGuid((OAObject) obj));
 					if (objx != null) {
 						b = true; // object is already a copy
 						obj = objx;
@@ -3350,7 +3340,7 @@ public class OAObjectReflectService {
 						if (shouldMakeACopy((OAObject) obj, excludeProperties, copyCallback, hmNew, 0, null)) {
 							Object objx = _createCopy((OAObject) obj, excludeProperties, copyCallback, hmNew);
 							if (objx != obj && objx != null) {
-								hmNew.put(OAObjectDelegate.getGuid((OAObject) obj), objx);
+								hmNew.put(srvcObject.getOAObjectGuidService().getGuid((OAObject) obj), objx);
 								obj = objx;
 							}
 						}
@@ -3385,12 +3375,12 @@ public class OAObjectReflectService {
 		}
 		if (hsVisitor == null) {
 			hsVisitor = new HashSet<Long>(101, .75f);
-		} else if (hsVisitor.contains(OAObjectDelegate.getGuid(oaObj))) {
+		} else if (hsVisitor.contains(srvcObject.getOAObjectGuidService().getGuid(oaObj))) {
 			return false;
 		}
-		hsVisitor.add(OAObjectDelegate.getGuid(oaObj));
+		hsVisitor.add(srvcObject.getOAObjectGuidService().getGuid(oaObj));
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
 		List<OALinkInfo> alLinkInfo = oi.getLinkInfos();
 		for (OALinkInfo li : alLinkInfo) {
 			if (li.getCalculated()) {
@@ -3426,7 +3416,7 @@ public class OAObjectReflectService {
 					if (obj == null) {
 						break;
 					}
-					Object objx = hmNew.get(OAObjectDelegate.getGuid((OAObject) obj));
+					Object objx = hmNew.get(srvcObject.getOAObjectGuidService().getGuid((OAObject) obj));
 					if (objx != null) {
 						return true;
 					}
@@ -3440,7 +3430,7 @@ public class OAObjectReflectService {
 			} else {
 				Object obj = getProperty(oaObj, li.getName());
 				if (obj != null) {
-					Object objx = hmNew.get(OAObjectDelegate.getGuid((OAObject) obj));
+					Object objx = hmNew.get(srvcObject.getOAObjectGuidService().getGuid((OAObject) obj));
 					if (objx != null) {
 						return true;
 					}
@@ -3509,7 +3499,7 @@ public class OAObjectReflectService {
 			return null;
 		}
 
-		Hub[] hubs = OAObjectHubDelegate.getHubReferences(obj1);
+		Hub[] hubs = srvcObject.getOAObjectHubService().getHubReferences(obj1);
 		for (int i = 0; hubs != null && i < hubs.length; i++) {
 			Hub nextHub = hubs[i];
 			if (nextHub == null) {
@@ -3566,7 +3556,7 @@ public class OAObjectReflectService {
 			return -1;
 		}
 
-		Hub[] hubs = OAObjectHubDelegate.getHubReferences(fromObj);
+		Hub[] hubs = srvcObject.getOAObjectHubService().getHubReferences(fromObj);
 		for (int i = 0; hubs != null && i < hubs.length; i++) {
 			Hub hub = hubs[i];
 			if (hub == null) {
@@ -3903,7 +3893,7 @@ public class OAObjectReflectService {
 		if (li == null) {
 			return null;
 		}
-		li = OAObjectInfoDelegate.getReverseLinkInfo(li);
+		li = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 		if (li == null) {
 			return null;
 		}

@@ -49,6 +49,9 @@ public class OAObjectService {
     private final OAObjectLogService srvcOAObjectLog = new OAObjectLogService(this, faBridge.getObjectFriendAccess());
     private final OAObjectSaveService srvcOAObjectSave = new OAObjectSaveService(this, faBridge.getObjectFriendAccess());
     private final OAObjectSchedulerService srvcOAObjectScheduler = new OAObjectSchedulerService(this, faBridge.getObjectFriendAccess());
+    private final OAObjectUniqueService srvcOAObjectUnique = new OAObjectUniqueService(this, faBridge.getObjectFriendAccess());
+    private final OAObjectSerializeService srvcOAObjectSerialize = new OAObjectSerializeService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectSerializerFriendAccess());
+    private final OAObjectSiblingService srvcOAObjectSibling = new OAObjectSiblingService(this, faBridge.getObjectFriendAccess());
     
 	/**
 	 * Reserved property name representing an object's "new" lifecycle state.
@@ -183,6 +186,57 @@ public class OAObjectService {
     	return srvcOAObjectScheduler;
     }
 
+    public OAObjectUniqueService getOAObjectUniqueService() {
+    	return srvcOAObjectUnique;
+    }
+
+    public OAObjectSerializeService getOAObjectSerializeService() {
+    	return srvcOAObjectSerialize;
+    }
+    
+    public OAObjectSiblingService getOAObjectSiblingService() {
+    	return srvcOAObjectSibling;
+    }
+    
+	/**
+	 * Updates the {@code newFlag} of the specified {@link OAObject} and fires the
+	 * corresponding before/after property-change events for the reserved property
+	 * name {@code "NEW"}.
+	 *
+	 * <p>This method controls the object's lifecycle state with respect to creation
+	 * and persistence. When the flag transitions from {@code true} to {@code false},
+	 * automatic reverse-link insertion is enabled so that the object can be added to
+	 * owning Hub relationships when applicable.</p>
+	 *
+	 * <h3>Behavior</h3>
+	 * <ul>
+	 *   <li>Ignores the call if the requested value equals the current value.</li>
+	 *   <li>Fires a {@code beforePropertyChange} event with the old and new values.</li>
+	 *   <li>Updates the internal {@code newFlag} field.</li>
+	 *   <li>Fires an {@code afterPropertyChange} event.</li>
+	 *   <li>If switching from new → not-new, invokes {@link #setAutoAdd(OAObject, boolean)}
+	 *       to enable automatic reverse-link population.</li>
+	 * </ul>
+	 *
+	 * @param oaObj the object whose new-state is being modified; may be {@code null}.
+	 * @param b {@code true} to mark the object as newly created,
+	 *          {@code false} to clear the new-state flag.
+	 */
+	public void setNew(final OAObject oaObj, final boolean b) {
+		boolean old = faBridge.getObjectFriendAccess().getNewFlag(oaObj);
+		if (b == old) {
+			return;
+		}
+		OAObjectEventDelegate.fireBeforePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
+
+		faBridge.getObjectFriendAccess().setNew(oaObj, b);
+		
+		OAObjectEventDelegate.firePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
+		if (!b) {
+			setAutoAdd(oaObj, true);
+		}
+	}
+    
 	/**
 	 * Convenience method that determines whether the specified {@link OAObject} is
 	 * considered changed according to the supplied rule. This method allocates a
@@ -688,9 +742,20 @@ public class OAObjectService {
 		return OAObjectInfoDelegate.getPropertyIdValues(obj);
 	}
 
+	//qqqqqqqqq this was created/added ... needs to be more protected ?? 
+	public Object[] getProperties(OAObject obj) {
+		if (obj == null) return null;
+		return faBridge.getObjectFriendAccess().getProperties(obj);
+	}
 	
-	
-	
+	// flag so that OAObject.finalize should ignore this object.	
+	//qqqqqqqqqqqq make sure other code looks for guid=0, and ignore default cleanup (cached, etc)
+	public void dontFinalize(OAObject obj) {
+		if (obj != null) {
+			getOAObjectGuidService().setGuid(obj, 0L);
+		}
+	}
+
 	
 }
 

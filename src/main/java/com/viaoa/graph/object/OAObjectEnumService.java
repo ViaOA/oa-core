@@ -6,7 +6,6 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
 
 public class OAObjectEnumService {
@@ -37,7 +36,7 @@ public class OAObjectEnumService {
 	 *         if the property does not define enumeration metadata
 	 */
 	public Hub<String> getNameValues(Class clazz, String propertyName) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
 		if (pi == null) {
 			return null;
@@ -57,7 +56,7 @@ public class OAObjectEnumService {
 	 *         if the property does not define enumeration metadata
 	 */
 	public Hub<String> getDisplayNameValues(Class clazz, String propertyName) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
 		if (pi == null) {
 			return null;

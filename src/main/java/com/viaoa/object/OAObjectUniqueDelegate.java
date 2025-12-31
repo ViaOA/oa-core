@@ -16,11 +16,11 @@
 package com.viaoa.object;
 
 import com.viaoa.datasource.OASelect;
-import com.viaoa.sync.OASync;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteServerInterface;
-import com.viaoa.util.OAString;
 
 /**
  * Provides a concurrency-safe mechanism for finding or creating an {@link OAObject}
@@ -67,8 +67,26 @@ import com.viaoa.util.OAString;
  */
 public class OAObjectUniqueDelegate {
 
+	/*
+	OAGraph g = getGraph(null, oaObj);
+	if (g == null) return;
+	g.objects().getOAObjectPropertyService().??(oaObj);
+    */
+	
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+	
+	
     private static final Object Lock = new Object();
 
+    
+    
     /**
      * Finds or creates an {@link OAObject} instance with the specified unique
      * property value. The method performs the lookup using several layers of
@@ -99,53 +117,9 @@ public class OAObjectUniqueDelegate {
      *         not found and auto-creation is disabled
      */
     public static OAObject getUnique(final Class<? extends OAObject> clazz, final String propertyName, final Object uniqueKey, final boolean bAutoCreate) {
+		OAGraph g = OARuntime.get().graph(clazz);
+    	if (g == null) return null;
+    	return g.objects().getOAObjectUniqueService().getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
         
-        if (clazz == null) return null;
-        if (uniqueKey == null) return null;
-        if (OAString.isEmpty(propertyName)) return null;
-        
-        OAObject oaObj = (OAObject) OAObjectCacheDelegate.find(clazz, propertyName, uniqueKey);
-        if (oaObj != null) return oaObj;
-        
-        // not found
-        if (OASyncDelegate.isClient(clazz)) {
-            OASyncClient sc = OASync.getSyncClient();
-            RemoteServerInterface rs;
-            try {
-                rs = sc.getRemoteServer();
-
-                if (rs != null) {
-                    oaObj = rs.getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
-                    return oaObj;
-                }
-            }
-            catch (Exception e) {
-                throw new RuntimeException("getUnique() getRemoteServer() exception", e);
-            }
-        }
-        
-        OASelect select = new OASelect(clazz);
-        select.setWhere(propertyName+" = ?", new Object[] {uniqueKey});
-        oaObj = select.next();
-        if (oaObj != null) {
-            return oaObj;
-        }
-        if (!bAutoCreate) return null;
-
-        // need to create new, this needs to be synchronized
-        synchronized (Lock) {
-            oaObj = getUnique(clazz, propertyName, uniqueKey, false);
-            if (oaObj != null) return oaObj;
-            oaObj = (OAObject) OAObjectReflectDelegate.createNewObject(clazz);
-            try {
-                OAThreadLocalDelegate.setLoading(true);
-                oaObj.setProperty(propertyName, uniqueKey);
-            }
-            finally {
-                OAThreadLocalDelegate.setLoading(false);
-            }
-        }
-        
-        return oaObj;
     }
 }

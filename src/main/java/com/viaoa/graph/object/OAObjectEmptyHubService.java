@@ -13,11 +13,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OADateTime;
 
@@ -72,7 +68,7 @@ public class OAObjectEmptyHubService {
         HashMap<Integer, String[]> hm = map.get(clazz.getName());
         if (hm == null) return;
         
-        OAObjectKey key = OAObjectKeyDelegate.getKey(obj);
+        OAObjectKey key = srvcObject.getOAObjectKeyService().getKey(obj);
         if (key == null) return;
         
         Object[] keys = key.getObjectIds();
@@ -86,7 +82,7 @@ public class OAObjectEmptyHubService {
         hm.remove(x);
         
         for (String s : (String[]) objx) {
-            OAObjectPropertyDelegate.setProperty(obj, s, null);
+        	srvcObject.getOAObjectPropertyService().setProperty(obj, s, null);
         }
     }
 
@@ -132,7 +128,7 @@ public class OAObjectEmptyHubService {
         
         final HashMap<String, HashMap<Integer, String[]>> mapx = new HashMap<String, HashMap<Integer,String[]>>();
         
-        OAObjectCacheDelegate.callback(new OACallback() {
+        srvcObject.getOAObjectCacheService().callback(new OACallback() {
             int cnt = 0;
             @Override
             public boolean updateObject(Object obj) {
@@ -143,17 +139,17 @@ public class OAObjectEmptyHubService {
                 }
                 
                 String[] ssNew = null;
-                String[] ss = OAObjectPropertyDelegate.getPropertyNames((OAObject) obj);
+                String[] ss = srvcObject.getOAObjectPropertyService().getPropertyNames((OAObject) obj);
                 if (ss != null) { 
                     for (String s : ss) {
-                        if (OAObjectReflectDelegate.isReferenceHubLoadedAndEmpty((OAObject) obj, s)) {
+                        if (srvcObject.getOAObjectReflectService().isReferenceHubLoadedAndEmpty((OAObject) obj, s)) {
                             ssNew = (String[]) OAArray.add(String.class, ssNew, s);
                         }
                     }
                 }
                 if (ssNew == null) return true;
                 
-                OAObjectKey key = OAObjectKeyDelegate.getKey((OAObject)obj);
+                OAObjectKey key = srvcObject.getOAObjectKeyService().getKey((OAObject)obj);
                 if (key == null) return true;
                 
                 Object[] keys = key.getObjectIds();

@@ -11,14 +11,8 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
-import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OANotExist;
@@ -79,11 +73,11 @@ public class OAObjectPropertyService {
 					return false;
 				}
 			} else if (objx instanceof OAObjectKey) {
-				OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oaObj.getClass(), name);
+				OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oaObj.getClass(), name);
 				if (li == null) {
 					return false;
 				}
-				Object objz = OAObjectCacheDelegate.get(li.getToClass(), (OAObjectKey) objx);
+				Object objz = srvcObject.getOAObjectCacheService().get(li.getToClass(), (OAObjectKey) objx);
 				return (objz != null);
 			}
 			return true; // real value is null (/does not exist)
@@ -246,7 +240,7 @@ public class OAObjectPropertyService {
 		if (objx instanceof Hub) {
 			Hub hub = (Hub) objx;
 			if (hub.getMasterObject() == null) {
-				OAObjectHubDelegate.setMasterObject((Hub) objx, oaObj, name);
+				srvcObject.getOAObjectHubService().setMasterObject((Hub) objx, oaObj, name);
 			}
 		}
 	}
@@ -406,7 +400,7 @@ public class OAObjectPropertyService {
 		if (objx instanceof Hub) {
 			Hub hub = (Hub) objx;
 			if (hub.getMasterObject() == null) {
-				OAObjectHubDelegate.setMasterObject((Hub) objx, oaObj, name);
+				srvcObject.getOAObjectHubService().setMasterObject((Hub) objx, oaObj, name);
 			}
 		}
 	}
@@ -483,7 +477,7 @@ public class OAObjectPropertyService {
 		if (objx instanceof Hub) {
 			Hub hub = (Hub) objx;
 			if (hub.getMasterObject() == null) {
-				OAObjectHubDelegate.setMasterObject((Hub) objx, oaObj, name);
+				srvcObject.getOAObjectHubService().setMasterObject((Hub) objx, oaObj, name);
 			}
 		}
 	}
@@ -574,8 +568,8 @@ public class OAObjectPropertyService {
 							if (!(matchValue instanceof OAObjectKey) || !(newValue instanceof OAObject)) {
 								return properties[i + 1];
 							}
-							OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) newValue);
-							if (!OAObjectKeyDelegate.isForSameOAObject(null, (OAObjectKey)matchValue, k)) {
+							OAObjectKey k = srvcObject.getOAObjectKeyService().getKey((OAObject) newValue);
+							if (!srvcObject.getOAObjectKeyService().isForSameOAObject(null, (OAObjectKey)matchValue, k)) {
 								return properties[i + 1];
 							}
 						}
@@ -620,7 +614,7 @@ public class OAObjectPropertyService {
 			if (objx instanceof Hub) {
 				Hub hub = (Hub) objx;
 				if (hub.getMasterObject() == null) {
-					OAObjectHubDelegate.setMasterObject((Hub) objx, oaObj, name);
+					srvcObject.getOAObjectHubService().setMasterObject((Hub) objx, oaObj, name);
 				}
 			}
 		}
@@ -754,7 +748,7 @@ public class OAObjectPropertyService {
 		if (oaObj == null || name == null) {
 			return false;
 		}
-		String key = OAObjectDelegate.getGuid(oaObj) + "." + name.toUpperCase();
+		String key = srvcObject.getOAObjectGuidService().getGuid(oaObj) + "." + name.toUpperCase();
 		PropertyLock lock;
 		final Thread threadThis = Thread.currentThread();
 		
@@ -840,7 +834,7 @@ public class OAObjectPropertyService {
 		if (oaObj == null || name == null) {
 			return;
 		}
-		String key = OAObjectDelegate.getGuid(oaObj) + "." + name.toUpperCase();
+		String key = srvcObject.getOAObjectGuidService().getGuid(oaObj) + "." + name.toUpperCase();
 		PropertyLock lock;
 		synchronized (oaObj) {
 			lock = hmLock.remove(key);
@@ -866,7 +860,7 @@ public class OAObjectPropertyService {
 		if (oaObj == null || name == null) {
 			return false;
 		}
-		String key = OAObjectKeyDelegate.getKey(oaObj).getGuid() + "." + name.toUpperCase();
+		String key = srvcObject.getOAObjectKeyService().getKey(oaObj).getGuid() + "." + name.toUpperCase();
 		return (hmLock.get(key) != null);
 	}
 	
@@ -972,8 +966,8 @@ public class OAObjectPropertyService {
 			return;
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj);
-		if (!OAObjectInfoDelegate.isWeakReferenceable(oi)) {
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
+		if (!srvcObject.getOAObjectInfoService().isWeakReferenceable(oi)) {
 			return;
 		}
 
@@ -999,7 +993,7 @@ public class OAObjectPropertyService {
 			if (liRev.getTransient()) {
 				continue;
 			}
-			if (!OAObjectPropertyDelegate.isPropertyLoaded(obj, li.getName())) {
+			if (!srvcObject.getOAObjectPropertyService().isPropertyLoaded(obj, li.getName())) {
 				continue;
 			}
 
@@ -1008,12 +1002,12 @@ public class OAObjectPropertyService {
 				continue;
 			}
 
-			if (!OAObjectPropertyDelegate.isPropertyLoaded((OAObject) parent, liRev.getName())) {
+			if (!srvcObject.getOAObjectPropertyService().isPropertyLoaded((OAObject) parent, liRev.getName())) {
 				continue;
 			}
 
 			if (liRev.getCacheSize() > 0) {
-				Object objx = OAObjectPropertyDelegate.getProperty((OAObject) parent, liRev.getName(), true, false);
+				Object objx = srvcObject.getOAObjectPropertyService().getProperty((OAObject) parent, liRev.getName(), true, false);
 				if (objx instanceof OANotExist) {
 					continue;
 				}
@@ -1024,7 +1018,7 @@ public class OAObjectPropertyService {
 				if (!(objx instanceof Hub)) {
 					continue;
 				}
-				boolean b = OAObjectPropertyDelegate.setPropertyWeakRef((OAObject) parent, liRev.getName(), !bReferenceable, (Hub) objx);
+				boolean b = srvcObject.getOAObjectPropertyService().setPropertyWeakRef((OAObject) parent, liRev.getName(), !bReferenceable, (Hub) objx);
 				if (!b) {
 					break; // already changed, dont need to continue
 				}

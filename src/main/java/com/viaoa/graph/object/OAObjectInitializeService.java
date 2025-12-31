@@ -84,6 +84,19 @@ public class OAObjectInitializeService {
 		return true;
 	}
 
+	
+	/**
+	 * Convenience method that performs after-load initialization using default
+	 * settings. This method delegates to
+	 * {@link #initializeAfterLoading(OAObject, boolean, boolean, boolean)} with
+	 * all flags set to {@code false}.
+	 *
+	 * @param oaObj the object to initialize; may be {@code null}.
+	 */
+	public void initializeAfterLoading(OAObject oaObj) {
+		initializeAfterLoading(oaObj, false, false, false);
+	}
+	
 	/**
 	 * Performs after-load initialization for the specified {@link OAObject}. This
 	 * method finalizes the object's state after it has been populated, preparing it
@@ -239,6 +252,25 @@ public class OAObjectInitializeService {
 		}
 	}
 
+	
+	/**
+	 * Convenience method that reinitializes the specified {@link OAObject} so it
+	 * behaves as a newly created instance. This method simply allocates a new GUID
+	 * and delegates to {@link #setAsNewObject(OAObject, long)}.
+	 *
+	 * @param oaObj the object to reinitialize; may be {@code null}.
+	 */
+	public void setAsNewObject(final OAObject oaObj) {
+		if (oaObj == null) return;
+		OAGraph og = OARuntime.get().graph(oaObj);
+		if (og == null) return;
+		og.objects().getOAObjectGuidService().assignNewGuid(oaObj);
+
+		long guid = og.objects().getOAObjectGuidService().getGuid(oaObj);
+		setAsNewObject(oaObj, guid);
+	}
+	
+	
 	/**
 	 * Reinitializes the specified {@link OAObject} so it behaves as a newly created
 	 * instance. This resets identity, lifecycle flags, and primary-key fields while

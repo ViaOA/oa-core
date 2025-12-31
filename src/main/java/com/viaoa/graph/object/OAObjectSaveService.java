@@ -9,8 +9,6 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.object.*;
-import com.viaoa.sync.OASyncDelegate;
-import com.viaoa.sync.remote.RemoteSessionInterface;
 
 public class OAObjectSaveService {
 	private final Logger LOG = Logger.getLogger(OAObjectSaveService.class.getName());

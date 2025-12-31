@@ -10,7 +10,6 @@ import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
@@ -242,7 +241,7 @@ public class OAObjectCSService {
         RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(obj.getClass());
         if (rs == null) return true;
 
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());
+        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return true; 
         
         if (OASyncDelegate.isServer(obj.getClass())) { 
@@ -278,7 +277,7 @@ public class OAObjectCSService {
         
         if (OAThreadLocalDelegate.isSuppressCSMessages()) return;
         
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());
+        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return; 
         
         rs.clientDelete(obj.getClass(), obj.getObjectKey());
@@ -428,13 +427,13 @@ public class OAObjectCSService {
         if (OAThreadLocalDelegate.isLoading()) return;
         if (OAThreadLocalDelegate.isSuppressCSMessages()) return;
 
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj);
+        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
         if (oi.getLocalOnly()) return;
 
         // LOG.finer("properyName="+propertyName+", obj="+obj+", newValue="+newValue);
         
         // 20130319 dont send out calc prop changes
-        OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
+        OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, propertyName);
         if (li != null && li.getCalculated()) return;
         // LOG.finer("object="+obj+", key="+origKey+", prop="+propertyName+", newValue="+newValue+", oldValue="+oldValue);
 
@@ -446,7 +445,7 @@ public class OAObjectCSService {
         if (newValue != null && newValue instanceof byte[]) {
             byte[] bs = (byte[]) newValue;
             if (bs.length > 400) {
-                OAPropertyInfo pi = OAObjectInfoDelegate.getPropertyInfo(oi, propertyName);
+                OAPropertyInfo pi = srvcObject.getOAObjectInfoService().getPropertyInfo(oi, propertyName);
                 if (pi.isBlob()) {
                     bIsBlob = true;
                 }

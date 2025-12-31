@@ -20,20 +20,8 @@ import com.viaoa.object.OACascade;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCSDelegate;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDSDelegate;
-import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.object.OAObjectDeleteDelegate;
-import com.viaoa.object.OAObjectEventDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
-import com.viaoa.object.OAObjectLogDelegate;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -80,7 +68,7 @@ public class OAObjectDeleteService {
 		if (oaObj == null) {
 			return;
 		}
-		boolean b = OAObjectCSDelegate.delete(oaObj);
+		boolean b = srvcObject.getOAObjectCSService().delete(oaObj);
 		if (!b) {
 			return;
 		}
@@ -126,23 +114,23 @@ public class OAObjectDeleteService {
 	public void setDeleted(OAObject oaObj, final boolean tf) {
 		final boolean bOld = faObject.getDeleteFlag(oaObj);
 		if (bOld != tf) {
-			OAObjectEventDelegate.fireBeforePropertyChange(	oaObj, OAObjectDelegate.WORD_Deleted,
-															bOld ? OAObjectDelegate.TRUE : OAObjectDelegate.FALSE,
-															tf ? OAObjectDelegate.TRUE : OAObjectDelegate.FALSE, false, true);
+			srvcObject.getOAObjectEventService().fireBeforePropertyChange(	oaObj, OAObjectService.WORD_Deleted,
+															bOld ? OAObjectService.TRUE : OAObjectService.FALSE,
+															tf ? OAObjectService.TRUE : OAObjectService.FALSE, false, true);
 			faObject.setDeletedFlag(oaObj, tf);
 
-			OAObjectEventDelegate.firePropertyChange(	oaObj, OAObjectDelegate.WORD_Deleted,
-														bOld ? OAObjectDelegate.TRUE : OAObjectDelegate.FALSE,
-														tf ? OAObjectDelegate.TRUE : OAObjectDelegate.FALSE, false, false);
+			srvcObject.getOAObjectEventService().firePropertyChange(	oaObj, OAObjectService.WORD_Deleted,
+														bOld ? OAObjectService.TRUE : OAObjectService.FALSE,
+														tf ? OAObjectService.TRUE : OAObjectService.FALSE, false, false);
 
 			// need to reverify the key to make sure that another one was not created with the same Id
 			if (!tf) {
-				String s = OAObjectKeyDelegate.verifyKeyChange(oaObj, oaObj.getObjectKey());
+				String s = srvcObject.getOAObjectKeyService().verifyKeyChange(oaObj, oaObj.getObjectKey());
 				if (s != null) {
 					throw new RuntimeException(s);
 				} else {
 					// make sure it is in the ObjectCache
-					OAObjectCacheDelegate.add(oaObj, false, false);
+					srvcObject.getOAObjectCacheService().add(oaObj, false, false);
 				}
 			}
 		}
@@ -167,7 +155,7 @@ public class OAObjectDeleteService {
 		
 		final boolean bIsSyncClient = OASync.isClient(oaObj);
 
-		final Hub[] hubs = OAObjectHubDelegate.getHubReferences(oaObj);
+		final Hub[] hubs = srvcObject.getOAObjectHubService().getHubReferences(oaObj);
 		if (!bIsSyncClient && hubs != null) {
 			for (Hub h : hubs) {
 				if (h == null) {
@@ -195,7 +183,7 @@ public class OAObjectDeleteService {
 
 			oaObj.setDeleted(true);
 			// 20120702 if m2m and private, then need to find any hub that is not in oaobj.getHubs()
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+			OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
 			
 	        // doesn't store hub if M2M&Private: reverse linkInfo does not have a method.
 	        //   since this could have a lot of references (ex: VetJobs JobCategory has m2m Jobs)
@@ -258,10 +246,10 @@ public class OAObjectDeleteService {
                         f.find(oaObj);
                     }
                     else {
-        				OAObjectCacheDelegate.callback(new OACallback() {
+                    	srvcObject.getOAObjectCacheService().callback(new OACallback() {
         					@Override
         					public boolean updateObject(Object obj) {
-        						if (OAObjectReflectDelegate.isReferenceNullOrNotLoadedOrEmptyHub((OAObject) obj, liRev.getName())) {
+        						if (srvcObject.getOAObjectReflectService().isReferenceNullOrNotLoadedOrEmptyHub((OAObject) obj, liRev.getName())) {
         							return true;
         						}
         						Object objx = liRev.getValue(obj);
@@ -351,10 +339,10 @@ public class OAObjectDeleteService {
                             protected boolean isUsed(OAObject obj) {
                                 Object objx = liRev.getValue(obj);
                                 if (objx instanceof OAObjectKey) {
-                                    if (!OAObjectKeyDelegate.isForSameOAObject(null, (OAObjectKey) objx, oaObj.getObjectKey())) {
+                                    if (!srvcObject.getOAObjectKeyService().isForSameOAObject(null, (OAObjectKey) objx, oaObj.getObjectKey())) {
                                         return false;
                                     }
-                                    OAObjectPropertyDelegate.removeProperty((OAObject) obj, liRev.getName(), false);
+                                    srvcObject.getOAObjectPropertyService().removeProperty((OAObject) obj, liRev.getName(), false);
                                     return false;
                                 } else {
                                     if (objx != oaObj) {
@@ -369,15 +357,15 @@ public class OAObjectDeleteService {
                         f.find(oaObj);
                     }
                     else {
-        				OAObjectCacheDelegate.callback(new OACallback() {
+                    	srvcObject.getOAObjectCacheService().callback(new OACallback() {
         					@Override
         					public boolean updateObject(Object obj) {
-        						Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, liRev.getName(), false, false);
+        						Object objx = srvcObject.getOAObjectPropertyService().getProperty((OAObject) obj, liRev.getName(), false, false);
         						if (objx instanceof OAObjectKey) {
         							if (!objx.equals(oaObj.getObjectKey())) {
         								return true;
         							}
-        							OAObjectPropertyDelegate.removeProperty((OAObject) obj, liRev.getName(), false);
+        							srvcObject.getOAObjectPropertyService().removeProperty((OAObject) obj, liRev.getName(), false);
         							return true;
         						} else {
         							if (objx != oaObj) {
@@ -402,12 +390,12 @@ public class OAObjectDeleteService {
             }
 			
 			oaObj.setChanged(false);
-			OAObjectDelegate.setNew(oaObj, true);
+			srvcObject.setNew(oaObj, true);
 		} finally {
 			OAThreadLocalDelegate.setDeleting(oaObj, false);
 		}
 
-        if (!bIsSyncClient) OAObjectCSDelegate.sendDeleteToClients(oaObj);
+        if (!bIsSyncClient) srvcObject.getOAObjectCSService().sendDeleteToClients(oaObj);
 		
 		if (hubs != null) {
 			for (Hub h : hubs) {
@@ -429,7 +417,7 @@ public class OAObjectDeleteService {
 	 * @return {@code true} if all required links are empty; otherwise {@code false}
 	 */
 	public boolean canDelete(OAObject oaObj) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 		List al = oi.getLinkInfos();
 		for (int i = 0; i < al.size(); i++) {
 			OALinkInfo li = (OALinkInfo) al.get(i);
@@ -448,7 +436,7 @@ public class OAObjectDeleteService {
 			if (prop == null || prop.length() < 1) {
 				continue;
 			}
-			Object obj = OAObjectReflectDelegate.getProperty(oaObj, prop);
+			Object obj = srvcObject.getOAObjectReflectService().getProperty(oaObj, prop);
 			if (obj == null) {
 				continue;
 			}
@@ -474,7 +462,7 @@ public class OAObjectDeleteService {
 	 *         if none exist
 	 */
 	public OALinkInfo[] getMustBeEmptyBeforeDelete(OAObject oaObj) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 		List al = oi.getLinkInfos();
 		OALinkInfo[] lis = null;
 		for (int i = 0; i < al.size(); i++) {
@@ -490,7 +478,7 @@ public class OAObjectDeleteService {
 			if (prop == null || prop.length() < 1) {
 				continue;
 			}
-			Object obj = OAObjectReflectDelegate.getProperty(oaObj, prop);
+			Object obj = srvcObject.getOAObjectReflectService().getProperty(oaObj, prop);
 			if (obj == null) {
 				continue;
 			}
@@ -515,7 +503,7 @@ public class OAObjectDeleteService {
 	 * @param cascade the cascade tracker used to prevent reprocessing
 	 */
 	private void deleteChildren(OAObject oaObj, OACascade cascade) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 		List al = oi.getLinkInfos();
 		boolean bIsNew = oaObj.isNew();
 		for (int i = 0; i < al.size(); i++) {
@@ -533,18 +521,18 @@ public class OAObjectDeleteService {
 			}
 
 			// 20160120
-			if (bIsNew && OAObjectPropertyDelegate.getProperty(oaObj, prop, true, false) == OANotExist.instance) {
+			if (bIsNew && srvcObject.getOAObjectPropertyService().getProperty(oaObj, prop, true, false) == OANotExist.instance) {
 				continue;
 			}
 
-			final OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+			final OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 			if (liRev == null || !liRev.getUsed()) {
 				continue;
 			}
 
 			if (li.getType() == OALinkInfo.ONE) {
 				if ((li.getOwner() || li.getCascadeDelete()) && !li.getPrivateMethod()) {
-					Object obj = OAObjectReflectDelegate.getProperty(oaObj, prop);
+					Object obj = srvcObject.getOAObjectReflectService().getProperty(oaObj, prop);
 					if (obj instanceof OAObject) {
 						delete((OAObject) obj, cascade);
 					}
@@ -554,9 +542,9 @@ public class OAObjectDeleteService {
 				if (liRev.getType() == OALinkInfo.ONE) { // 1to1
 					Object obj;
 					if (li.getPrivateMethod()) {
-						obj = OAObjectReflectDelegate.getReferenceObject(oaObj, li.getName());
+						obj = srvcObject.getOAObjectReflectService().getReferenceObject(oaObj, li.getName());
 					} else {
-						obj = OAObjectReflectDelegate.getProperty(oaObj, prop);
+						obj = srvcObject.getOAObjectReflectService().getProperty(oaObj, prop);
 					}
 					if (obj == null) {
 						continue;
@@ -564,8 +552,8 @@ public class OAObjectDeleteService {
 
 					// this object is being deleted, remove its reference from reference object
 					if (obj instanceof OAObject) {
-						OAObjectReflectDelegate.setProperty((OAObject) obj, liRev.getName(), null, null);
-						OAObjectDSDelegate.removeReference((OAObject) obj, liRev);
+						srvcObject.getOAObjectReflectService().setProperty((OAObject) obj, liRev.getName(), null, null);
+						srvcObject.getOAObjectDSService().removeReference((OAObject) obj, liRev);
 						oaObj.removeProperty(li.getName());
 					}
 					continue;
@@ -578,14 +566,14 @@ public class OAObjectDeleteService {
 				//  it uses a LinkTable. Need to remove from liRev Hub and remove from link table
 
 				OAObject masterObj;
-				Hub hubx = OAObjectHubDelegate.getHub(oaObj, li);
+				Hub hubx = srvcObject.getOAObjectHubService().getHub(oaObj, li);
 				if (hubx != null) {
 					masterObj = HubDelegate.getMasterObject(hubx);
 				} else {
-					Object objx = OAObjectReflectDelegate.getReferenceObject(oaObj, li.getName());
+					Object objx = srvcObject.getOAObjectReflectService().getReferenceObject(oaObj, li.getName());
 					if (objx instanceof OAObject) {
 						masterObj = (OAObject) objx;
-						objx = OAObjectPropertyDelegate.getProperty(masterObj, liRev.getName());
+						objx = srvcObject.getOAObjectPropertyService().getProperty(masterObj, liRev.getName());
 						if (objx instanceof Hub) {
 							hubx = (Hub) objx;
 						}
@@ -612,10 +600,10 @@ public class OAObjectDeleteService {
 			// Many
 			Object obj;
 			if (!li.getPrivateMethod()) {
-				obj = OAObjectReflectDelegate.getProperty(oaObj, prop);
+				obj = srvcObject.getOAObjectReflectService().getProperty(oaObj, prop);
 			} else {
 				//  need to get Hub directly.  Ex: a one2many where the one is used as a lookup and does not have a reference to the many.
-				obj = OAObjectReflectDelegate.getReferenceHub(oaObj, prop, null, false, null);
+				obj = srvcObject.getOAObjectReflectService().getReferenceHub(oaObj, prop, null, false, null);
 			}
 
 			if (!(obj instanceof Hub)) {
@@ -625,7 +613,7 @@ public class OAObjectDeleteService {
 			hub.loadAllData();
 
 			// 20120612 need to remove link table records
-			boolean bIsM2m = OAObjectInfoDelegate.isMany2Many(li);
+			boolean bIsM2m = srvcObject.getOAObjectInfoService().isMany2Many(li);
 
 			//20180615
 			if (hub.getMasterObject() != oaObj) {
@@ -649,7 +637,7 @@ public class OAObjectDeleteService {
 							obj = hub.elementAt(x);
 							hub.remove(x); // hub will set property for references master to null.
 							if (!bIsM2m) {
-								OAObjectDSDelegate.removeReference((OAObject) obj, liRev); // update DB so that fkey violation is not thrown
+								srvcObject.getOAObjectDSService().removeReference((OAObject) obj, liRev); // update DB so that fkey violation is not thrown
 							}
 						}
 					} else {
@@ -659,7 +647,7 @@ public class OAObjectDeleteService {
 					}
 				}
 			} else {
-				OAObjectHubDelegate.deleteAll(hub, cascade);
+				srvcObject.getOAObjectHubService().deleteAll(hub, cascade);
 			}
 			if (bIsM2m) {
 				// 20120612 need to remove link table records
@@ -684,9 +672,9 @@ public class OAObjectDeleteService {
 			return;
 		}
 		if (OASyncDelegate.isServer(oaObj)) {
-			OAObjectLogDelegate.logToXmlFile(oaObj, false);
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
-			OAObjectDSDelegate.delete(oaObj);
+			srvcObject.getOAObjectLogService().logToXmlFile(oaObj, false);
+			OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
+			srvcObject.getOAObjectDSService().delete(oaObj);
 		}
 		oaObj.afterDelete();
 	}

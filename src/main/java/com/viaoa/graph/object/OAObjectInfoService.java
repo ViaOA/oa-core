@@ -23,8 +23,6 @@ import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAArray;
@@ -195,7 +193,7 @@ public class OAObjectInfoService {
 			if (li.getType() != li.MANY) {
 				continue;
 			}
-			OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+			OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 			if (liRev != null) {
 				continue;
 			}
@@ -284,7 +282,7 @@ public class OAObjectInfoService {
 					if (li.getPrivateMethod()) {
 						continue;
 					}
-					Method method = OAObjectInfoDelegate.getMethod(oi, "get" + li.getName(), 0);
+					Method method = srvcObject.getOAObjectInfoService().getMethod(oi, "get" + li.getName(), 0);
 					if (method == null) {
 						li.setPrivateMethod(true);
 					}
@@ -949,7 +947,7 @@ public class OAObjectInfoService {
 		if (bIsServer) {
 			// dont cache on server if there is not storage
 			//   by returning false, it will not be stored as a weakRef
-			if (!OAObjectInfoDelegate.getOAObjectInfo(li.getToClass()).getSupportsStorage()) {
+			if (!srvcObject.getOAObjectInfoService().getOAObjectInfo(li.getToClass()).getSupportsStorage()) {
 				return false;
 			}
 		}
@@ -1308,7 +1306,7 @@ public class OAObjectInfoService {
 			}
 			String s = li.getName();
 
-			Object objx = OAObjectReflectDelegate.getRawReference(fromObject, s);
+			Object objx = srvcObject.getOAObjectReflectService().getRawReference(fromObject, s);
 			if (objx == hub) {
 				return li;
 			}
@@ -1445,7 +1443,7 @@ public class OAObjectInfoService {
 		if (ids == null) return new Object[0];
 		Object[] objs = new Object[ids.length];
 		for (int i = 0; i < ids.length; i++) {
-			objs[i] = OAObjectReflectDelegate.getProperty(oaObj, ids[i]);
+			objs[i] = srvcObject.getOAObjectReflectService().getProperty(oaObj, ids[i]);
 		}
 		return objs;
 	}
@@ -1477,7 +1475,7 @@ public class OAObjectInfoService {
 		if (clazz == null) {
 			return null;
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 
 		String[] ss = oi.getPrimitiveProperties();
 		return Arrays.asList(ss);
@@ -1495,7 +1493,7 @@ public class OAObjectInfoService {
 		if (oaObj == null) {
 			return null;
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
 
 		List<String> al = new ArrayList<>();
 
@@ -1548,7 +1546,7 @@ public class OAObjectInfoService {
 		if (oaObj == null || propertyName == null) {
 			return false;
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
 
 		propertyName = propertyName.toUpperCase();
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
@@ -1597,7 +1595,7 @@ public class OAObjectInfoService {
 			return;
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
 		propertyName = propertyName.toUpperCase();
 		String[] ss = oi.getPrimitiveProperties();
 		for (int i = 0; i < ss.length; i++) {
@@ -1666,11 +1664,11 @@ public class OAObjectInfoService {
 		for (int i = 0; st.hasMoreTokens(); i++) {
 			String value = st.nextToken();
 
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+			OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 
 			boolean bFound = false;
 			for (OALinkInfo li : oi.getLinkInfos()) {
-				OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+				OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 				if (liRev == null) continue;
 				if (value.equalsIgnoreCase(liRev.getName())) {
 					if (clazz.equals(liRev.getToClass())) {
@@ -1689,7 +1687,7 @@ public class OAObjectInfoService {
 			}
 
 			if (i == 0) { // could be a property, which is discarded
-				if (OAObjectInfoDelegate.getPropertyInfo(oi, value) != null) {
+				if (srvcObject.getOAObjectInfoService().getPropertyInfo(oi, value) != null) {
 					continue;
 				}
 			}

@@ -31,11 +31,8 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCache;
 import com.viaoa.object.OAObjectCacheListener;
-import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAFilter;
@@ -813,7 +810,7 @@ public class OAObjectCacheService {
 	 */
 	private OAObject _add(final OAObject obj, final boolean bErrorIfExists, boolean bAddToSelectAll,
 			final boolean bSendAddEventInAnotherThread) {
-		final OAObjectKey key = OAObjectKeyDelegate.createObjectKey(obj);
+		final OAObjectKey key = srvcObject.getOAObjectKeyService().createObjectKey(obj);
 		OAObject objResult;
 
 		objResult = _add2(obj, key, bErrorIfExists, bAddToSelectAll, bSendAddEventInAnotherThread);
@@ -862,7 +859,7 @@ public class OAObjectCacheService {
 		else {
 			if (obj != objFound && mode == NO_DUPS) {
 				if (bErrorIfExists) {
-					throw new RuntimeException("OAObjectCacheDelegate.add() object already exists " + obj);
+					throw new RuntimeException("OAObjectCacheService.add() object already exists " + obj);
 				}
 			}
 			else {
@@ -1028,9 +1025,9 @@ public class OAObjectCacheService {
 	public <T extends OAObject> T get(Class<T> clazz, Object key) {
 		if (!(key instanceof OAObjectKey)) {
 			if (key instanceof OAObject) {
-				key = OAObjectKeyDelegate.getKey((OAObject) key);
+				key = srvcObject.getOAObjectKeyService().getKey((OAObject) key);
 			} else {
-				key = OAObjectKeyDelegate.createObjectKey(clazz, key);
+				key = srvcObject.getOAObjectKeyService().createObjectKey(clazz, key);
 			}
 		}
 		OAObject obj = null;
@@ -1095,7 +1092,7 @@ public class OAObjectCacheService {
 		if (obj == null) {
 			return null;
 		}
-		return get(obj.getClass(), OAObjectKeyDelegate.getKey((OAObject) obj));
+		return get(obj.getClass(), srvcObject.getOAObjectKeyService().getKey((OAObject) obj));
 	}
 
 	/**
@@ -1450,7 +1447,7 @@ public class OAObjectCacheService {
 			return;
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 
 		OADataSourceObjectCache dsCache = new OADataSourceObjectCache(false);
 		Iterator it = dsCache.select(clazz);
@@ -1459,7 +1456,7 @@ public class OAObjectCacheService {
 		int cntAlone = 0;
 		for (; it.hasNext(); cntTotal++) {
 			OAObject obj = (OAObject) it.next();
-			Hub[] hubs = OAObjectHubDelegate.getHubReferences(obj);
+			Hub[] hubs = srvcObject.getOAObjectHubService().getHubReferences(obj);
 
 			boolean bNeedsRefreshed = true;
 			if (hubs != null) {
@@ -1490,7 +1487,7 @@ public class OAObjectCacheService {
 			}
 
 			if (bNeedsRefreshed) {
-				OAObjectKey key = OAObjectKeyDelegate.getKey(obj);
+				OAObjectKey key = srvcObject.getOAObjectKeyService().getKey(obj);
 				ds.getObject(oi, clazz, key, true);
 				cntAlone++;
 				continue;

@@ -9,12 +9,8 @@ import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectDSDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
 
 public class OAObjectDSService {
 	private static final Logger LOG = Logger.getLogger(OAObjectDSService.class.getName());
@@ -83,11 +79,11 @@ public class OAObjectDSService {
 		if (obj == null) {
 			return;
 		}
-		long g = OAObjectDelegate.getGuid(obj);
+		long g = srvcObject.getOAObjectGuidService().getGuid(obj);
 		if (b) {
-			OAObjectDSDelegate.getAssigningIdMap().put(g, g);
+			srvcObject.getOAObjectDSService().getAssigningIdMap().put(g, g);
 		} else {
-			OAObjectDSDelegate.getAssigningIdMap().remove(g);
+			srvcObject.getOAObjectDSService().getAssigningIdMap().remove(g);
 		}
 	}
 
@@ -101,8 +97,8 @@ public class OAObjectDSService {
 	 */
 	public boolean isAssigningId(OAObject obj) {
 		if (obj == null) return false;
-		long g = OAObjectDelegate.getGuid(obj);
-		return OAObjectDSDelegate.getAssigningIdMap().containsKey(g);
+		long g = srvcObject.getOAObjectGuidService().getGuid(obj);
+		return srvcObject.getOAObjectDSService().getAssigningIdMap().containsKey(g);
 	}
     
 	/**
@@ -190,7 +186,7 @@ public class OAObjectDSService {
 		OAObject oaObj = null;
 		if (ds != null) {
 			if (!(key instanceof OAObjectKey)) {
-				key = OAObjectKeyDelegate.createObjectKey(clazz, key);
+				key = srvcObject.getOAObjectKeyService().createObjectKey(clazz, key);
 			}
 			oaObj = (OAObject) ds.getObject(clazz, key);
 		}
@@ -211,8 +207,8 @@ public class OAObjectDSService {
 		Class clazz = obj.getClass();
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		if (ds != null) {
-			OAObjectKey key = OAObjectKeyDelegate.getKey(obj);
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+			OAObjectKey key = srvcObject.getOAObjectKeyService().getKey(obj);
+			OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 			ds.getObject(oi, clazz, key, true); // true=reload all props
 		}
 	}
@@ -381,7 +377,7 @@ public class OAObjectDSService {
 	public Object getObject(OAObject oaObj) {
 		OADataSource ds = OADataSource.getDataSource(oaObj.getClass());
 		// todo: check this out: if (ds == null || ds.isAssigningId(oaObj)) return null;  // datasource could be assigning the Id to a unique value
-		return ds.getObject(oaObj.getClass(), OAObjectKeyDelegate.getKey(oaObj));
+		return ds.getObject(oaObj.getClass(), srvcObject.getOAObjectKeyService().getKey(oaObj));
 	}
 
 }

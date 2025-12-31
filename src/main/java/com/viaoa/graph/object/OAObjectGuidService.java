@@ -3,11 +3,8 @@ package com.viaoa.graph.object;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
-
 
 public class OAObjectGuidService {
 	private static final Logger LOG = Logger.getLogger(OAObjectGuidService.class.getName());
@@ -79,7 +76,7 @@ public class OAObjectGuidService {
 		long guid = faObject.getGuid(obj);
 		if (guid != 0) return;
 
-		if (OAObjectInfoDelegate.getOAObjectInfo(obj).getLocalOnly()) {
+		if (srvcObject.getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) {
 			guid = localGuidCounter.decrementAndGet();
 		} else {
 			if (srvcObject.graph().sync().getClient() != null) {
@@ -161,6 +158,10 @@ public class OAObjectGuidService {
 		return guid;
 	}
 
+	public void setGuid(OAObject oaObj, long guid) {
+		faObject.setGuid(oaObj, guid);
+	}
+	
 	public void setNextGuid(long x) {
 		guidCounter.set(x);
 	}

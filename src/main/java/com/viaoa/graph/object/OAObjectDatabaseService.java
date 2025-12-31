@@ -10,7 +10,6 @@ import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.*;
 
@@ -164,7 +163,7 @@ public class OAObjectDatabaseService {
 
 			String[] fkcols = new String[0];
 			if (oaone != null && oalt == null) {
-				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+				OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 				for (OAFkey fk : oaone.fkeys()) {
 					OAPropertyInfo pi = oi.getPropertyInfo(fk.fromProperty());
 					if (pi == null) {

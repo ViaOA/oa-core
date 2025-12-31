@@ -21,11 +21,13 @@ import java.lang.ref.WeakReference;
 import java.util.logging.Logger;
 
 import com.viaoa.comm.io.IODummy;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDelegate;
 import com.viaoa.hub.HubSerializeDelegate;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.*;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
@@ -56,6 +58,22 @@ import com.viaoa.util.OANullObject;
  */
 public class OAObjectSerializeDelegate {
 	private static final Logger LOG = Logger.getLogger(OAObjectSerializeDelegate.class.getName());
+
+	/*
+	OAGraph g = getGraph(null, oaObj);
+	if (g == null) return;
+	g.objects().getOAObjectPropertyService().??(oaObj);
+    */
+	
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+	
 
 	/**
 	 * Reads serialized data into the supplied {@link OAObject}. This method handles
@@ -93,67 +111,9 @@ public class OAObjectSerializeDelegate {
 	 * @throws ClassNotFoundException if a property value refers to an unknown type
 	 */
 	protected static void _readObject(OAObject oaObj, java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		// client only needs to send the key to the server
-		if (in instanceof RemoteObjectInputStream) {
-			byte bx = in.readByte();
-			if (bx == 1) {
-				OAObjectKey ok = (OAObjectKey) in.readObject();
-				oaObj.guid = ok.getGuid();
-				cntDup--;
-				return;
-			} else if (bx == 2) {
-			}
-		}
-		in.defaultReadObject();
-
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
-		final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
-
-		// read properties
-		for (;;) {
-			Object obj = in.readObject();
-			if (!(obj instanceof String)) {
-				break; // flag to end
-			}
-
-			String key = (String) obj;
-			Object value = in.readObject();
-
-			if (value instanceof OANullObject) {
-				value = null;
-			}
-
-			if (bIsServer) {
-				// 20160206 dont read calcProps if server, they need to be recalc'ed 
-				OALinkInfo li = oi.getLinkInfo(key);
-				if (li != null && li.bCalculated) {
-					continue;
-				}
-
-				if (value instanceof IODummy) {
-					value = null;
-				}
-				if (value instanceof Hub) {
-					Hub hx = (Hub) value;
-					if (hx.getObjectClass().equals(IODummy.class)) {
-						value = null;
-					}
-				}
-
-			}
-
-			// 20200102 include blobs
-			if (value instanceof byte[] && oi.getHasBlobProperty()) {
-				OAPropertyInfo pi = oi.getPropertyInfo(key);
-				if (pi != null && pi.isBlob()) {
-					byte[] bs = (byte[]) value;
-					oaObj.setProperty(key, bs);
-					continue;
-				}
-			}
-			OAObjectPropertyDelegate.unsafeSetPropertyIfEmpty(oaObj, key, value); // HubSerializeDelegate._readResolve could have set this first (as weakref)
-		}
-		OAObjectDelegate.updateGuid(oaObj.getClass().getPackage(), oaObj.guid);
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectSerializeService()._readObject(oaObj, in);
 	}
 
 	/**
@@ -184,191 +144,11 @@ public class OAObjectSerializeDelegate {
 	 * @throws ObjectStreamException if resolution fails
 	 */
 	protected static Object _readResolve(final OAObject oaObjRead) throws ObjectStreamException {
-		OAObject oaObjUse;
-
-		/* 20151029 on hold
-		OASyncCombinedClient cc = OASyncDelegate.getSyncCombinedClient();
-		if (cc != null) {
-		    oaObjNew = cc.resolveObject(oaObjOrig);
-		    if (oaObjNew != null) return oaObjNew;
-		}
-		*/
-
-		boolean bDup;
-		if (oaObjRead.guid == 0) {
-			LOG.warning("received object with guid=0, obj=" + oaObjRead + ", reassigning a new guid");
-			OAObjectDelegate.assignGuid(oaObjRead);
-		}
-
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObjRead);
-		if (oi.bAddToCache) {
-
-			// todo? need to also check guid 		    
-
-			oaObjUse = OAObjectCacheDelegate.add(oaObjRead, false, false, true);
-			bDup = (oaObjRead != oaObjUse);
-		} else {
-			oaObjUse = oaObjRead;
-			bDup = false;
-		}
-
-		if (!bDup) {
-			cntNew++;
-			return oaObjUse;
-		}
-		cntDup++;
-
-		final Object[] objs = oaObjRead.properties;
-
-		// check to see if references are needed or not
-		for (int i = 0; objs != null && i < objs.length; i += 2) {
-			String key = (String) objs[i];
-			if (key == null) {
-				continue;
-			}
-			Object value = objs[i + 1];
-
-			Object localValue = OAObjectPropertyDelegate.getProperty(oaObjUse, key, true, true);
-
-			if (localValue != OANotExist.instance) {
-				if (localValue instanceof OAObjectKey && (value instanceof OAObject)) {
-					OAObjectKey k1 = (OAObjectKey) localValue;
-					OAObjectKey k2 = OAObjectKeyDelegate.getKey((OAObject) value);
-					if (OAObjectKeyDelegate.isForSameOAObject(null, k1, k2)) {
-						OAObjectPropertyDelegate.setPropertyCAS(oaObjUse, key, value, localValue);
-					}
-					continue;
-				} else if (localValue == null && value instanceof Hub) {
-					// fall through and store the oaObjNew Hub value
-				} else {
-					continue; // note: any other value could be from a propertyChange that happened on the server, that is in the msg que for this client
-				}
-			}
-
-			OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, key);
-
-			// need to replace any references to oaObjOrig with oaObjNew
-			boolean b = replaceReferences(oaObjRead, oaObjUse, linkInfo, value);
-			if (b) {
-				if (value == null && linkInfo.getType() == linkInfo.MANY) {
-					// 20150826 skip if prop is locked by another
-					try {
-						b = OAObjectPropertyDelegate.attemptPropertyLock(oaObjUse, key);
-						if (b) {
-							OAObjectPropertyDelegate.setPropertyCAS(oaObjUse, key, value, localValue, (localValue == OANotExist.instance),
-																	false);
-						}
-					} finally {
-						if (b) {
-							OAObjectPropertyDelegate.releasePropertyLock(oaObjUse, linkInfo.getName());
-						}
-					}
-				} else {
-					if (value instanceof Hub && linkInfo.cacheSize > 0) {
-						Hub hub = (Hub) value;
-						if (OAObjectInfoDelegate.cacheHub(linkInfo, hub)) {
-							value = new WeakReference(hub);
-						}
-					}
-					OAObjectPropertyDelegate.setPropertyCAS(oaObjUse, key, value, localValue, (localValue == OANotExist.instance), false);
-				}
-			}
-		}
-		OAObjectDelegate.dontFinalize(oaObjRead);
-
-		return oaObjUse;
+		OAGraph g = getGraph(null, oaObjRead);
+		if (g == null) return null;
+		return g.objects().getOAObjectSerializeService()._readResolve(oaObjRead);
 	}
 
-	public static volatile int cntDup;
-	public static volatile int cntNew;
-	public static volatile int cntSkip;
-
-	/**
-	 * Rewrites reverse relationships so that references pointing to {@code oaObjFrom}
-	 * now reference {@code oaObjTo}. This is used when merging a deserialized
-	 * duplicate object into an existing cached instance.
-	 *
-	 * <p>Behavior depends on the type of {@code value}:</p>
-	 * <ul>
-	 *   <li>{@link Hub}: replaces master-object references, iterates through elements,
-	 *       and updates reverse properties or nested hubs accordingly.</li>
-	 *   <li>{@link OAObject}: updates single-object reverse relationships based on the
-	 *       link's reverse name.</li>
-	 *   <li>{@link WeakReference}: dereferenced before processing.</li>
-	 * </ul>
-	 *
-	 * <p>If {@code linkInfo} is {@code null}, no action is taken.</p>
-	 *
-	 * @param oaObjFrom the obsolete object instance being replaced
-	 * @param oaObjTo the authoritative instance to redirect references to
-	 * @param linkInfo metadata describing the relationship being updated
-	 * @param value the relationship value being inspected or rewritten
-	 * @return {@code true} if reference replacement should continue; {@code false} otherwise
-	 */
-	private static boolean replaceReferences(final OAObject oaObjFrom, final OAObject oaObjTo, final OALinkInfo linkInfo, Object value) {
-		if (linkInfo == null) {
-			return false;
-		}
-
-		if (value == null) {
-			return true;
-		}
-
-		String revName = linkInfo.getReverseName();
-		if (revName != null) {
-			revName = revName.toUpperCase();
-		}
-
-		Object origValue = value;
-		if (value instanceof WeakReference) {
-			value = ((WeakReference) value).get();
-		}
-
-		if (value instanceof Hub) {
-			// handles M-1, M-M
-			Hub hub = (Hub) value;
-			if (!HubSerializeDelegate.isResolved(hub)) {
-				// not fully loaded
-				return false;
-			}
-
-			// this will only replace if current masterObj = oaObjOrig
-			HubSerializeDelegate.replaceMasterObject((Hub) value, oaObjFrom, oaObjTo);
-
-			for (int i = 0; revName != null; i++) {
-				OAObject objx = (OAObject) hub.getAt(i);
-				if (objx == null) {
-					break;
-				}
-				Object ref = OAObjectPropertyDelegate.getProperty(objx, revName, false, true);
-				if (ref == null) {
-				} else if (ref == oaObjFrom || ref instanceof OAObjectKey) {
-					OAObjectPropertyDelegate.setPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
-				} else if (ref instanceof Hub) {
-					HubSerializeDelegate.replaceObject((Hub) ref, oaObjFrom, oaObjTo);
-				}
-			}
-		} else if (value instanceof OAObject && revName != null) {
-			// handles 1-1, 1-Many
-			OAObject objx = (OAObject) value;
-
-			Object ref = OAObjectPropertyDelegate.getProperty(objx, revName, false, true);
-			if (ref == null) {
-				return true;
-			}
-			if (ref == oaObjFrom || ( (ref instanceof OAObjectKey) && OAObjectKeyDelegate.isForSameOAObject(null, (OAObjectKey)ref, OAObjectKeyDelegate.getKey(oaObjFrom))) )  {
-				OAObjectPropertyDelegate.setPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
-			} else {
-				if (ref instanceof WeakReference) {
-					ref = ((WeakReference) ref).get();
-				}
-				if (ref instanceof Hub) {
-					HubSerializeDelegate.replaceObject((Hub) ref, oaObjFrom, oaObjTo);
-				}
-			}
-		}
-		return true;
-	}
 
 	/**
 	 * Serializes the supplied {@link OAObject} into the given output stream. Handles
@@ -395,65 +175,9 @@ public class OAObjectSerializeDelegate {
 	 * @throws IOException if the object cannot be written
 	 */
 	protected static void _writeObject(final OAObject oaObj, java.io.ObjectOutputStream stream) throws IOException {
-		//if (xxx % 1000 == 0) System.out.println((xxx)+") writeObject "+oaObj);
-		if (oaObj == null) {
-			return;
-		}
-		final OAObjectSerializer serializer = OAThreadLocalDelegate.getObjectSerializer();
-		if (serializer != null) {
-			serializer.beforeSerialize(oaObj);
-		}
-		
-		final OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(oaObj.getClass());
-		final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
-		final boolean bIsObjectOnServer = bIsServer || OASync.getSyncClient().isObjectOnServer(oaObj);
-
-		
-		if (stream instanceof RemoteObjectOutputStream) {
-			if (!bIsObjectOnServer) {
-				stream.writeByte((byte) 2);
-			} else if (!OASyncDelegate.isServer(oaObj.getClass())) {
-				// only need to send key to the server
-				stream.writeByte((byte) 1);
-				stream.writeObject(oaObj.getObjectKey());
-				if (serializer != null) {
-					serializer.afterSerialize(oaObj);
-				}
-				return;
-			} else {
-				stream.writeByte((byte) 0);
-			}
-		}
-
-		stream.defaultWriteObject(); // does not write references (transient)
-
-		_writeProperties(oi, bIsServer, oaObj, stream, serializer, bIsObjectOnServer); // this will write transient properties
-
-		// 20200102 include blobs
-		if (serializer != null && serializer.getIncludeBlobs()) {
-			if (oi.getHasBlobProperty()) {
-				for (OAPropertyInfo pi : oi.getPropertyInfos()) {
-					if (pi.isBlob()) {
-						byte[] bs = (byte[]) oaObj.getProperty(pi.getName());
-						if (bs != null) {
-							stream.writeObject(pi.getName());
-							stream.writeObject(bs);
-						}
-					}
-				}
-			}
-		}
-
-		stream.writeObject(OAObjectDelegate.FALSE); // end of property list
-
-		if (!bIsObjectOnServer) {
-	        OASync.getSyncClient().objectSentToServer(oaObj);
-		}
-
-		// 20141124
-		if (serializer != null) {
-			serializer.afterSerialize(oaObj);
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectSerializeService()._writeObject(oaObj, stream);
 	}
 
 	/**
@@ -490,120 +214,8 @@ public class OAObjectSerializeDelegate {
 	protected static void _writeProperties(final OAObjectInfo oi, final boolean bIsServer, final OAObject oaObj,
 			final java.io.ObjectOutputStream stream, final OAObjectSerializer serializer, final boolean bIsObjectSentOnServer)
 			throws IOException {
-		// this method can not support synchronized blocks, since multiple threads could be calling it and then cause deadlock
-		// default way for OAServer to send objects.  Clients always send objectKeys.
-		//   this way, only the object properties are sent, no reference objects or Hubs
-		if (oaObj == null) {
-			return;
-		}
-		Object[] objs = oaObj.properties;
-		if (objs == null) {
-			return;
-		}
-
-		/*
-		final OAObjectInfo oi = OAObjectHashDelegate.hashObjectInfo.get(oaObj.getClass());
-		final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
-		*/
-
-		for (int i = 0; i < objs.length; i += 2) {
-			String key = (String) objs[i];
-			if (key == null) {
-				continue;
-			}
-			OALinkInfo li = oi.getLinkInfo(key);
-
-			if (li != null && li.bCalculated) {
-				if (!bIsServer || !li.bServerSideCalc) {
-					continue;
-				}
-			}
-
-			Object obj = objs[i + 1];
-
-			if (obj instanceof IODummy) {
-				continue;
-			}
-
-			if (obj instanceof WeakReference) {
-				obj = ((WeakReference) obj).get();
-				if (obj == null) {
-					continue;
-				}
-			}
-
-			if (obj instanceof Hub) {
-				if (((Hub) obj).getObjectClass().equals(IODummy.class)) {
-					continue;
-				}
-			}
-
-			if (obj != null && !(obj instanceof OAObject) && !(obj instanceof OAObjectKey) && !(obj instanceof Hub)
-					&& !(obj instanceof byte[])) {
-				stream.writeObject(key);
-				stream.writeObject(obj);
-				continue;
-			}
-
-			boolean bShouldSerialize = !bIsObjectSentOnServer;
-			if (serializer != null && obj != null && !(obj instanceof byte[])) {
-			    bShouldSerialize = serializer.shouldSerializeReference(oaObj, (String) key, obj, li);
-			}
-
-			if (bShouldSerialize) {
-				if (serializer != null && obj instanceof OAObject) {
-					// option to dont send oaobj if it is already on the client
-					obj = serializer.getReferenceValueToSend(obj);
-				}
-			} else {
-				// see if something can be sent
-				if (obj instanceof OAObject) {
-					// always send OAObjectKey to reference objects
-					if (bIsServer) {
-						obj = OAObjectKeyDelegate.getKey((OAObject) obj);
-					}
-					bShouldSerialize = true;
-				} else if (obj == null || obj instanceof OAObjectKey) {
-				    bShouldSerialize = true;
-				} else if (obj instanceof Hub) {
-					// see if a hub.size=0 can be sent
-
-					Hub hubx = (Hub) obj;
-					if (!bIsObjectSentOnServer) {
-					    bShouldSerialize = true; // this is when the client is sending an object that the server does not have
-					} else if (hubx.size() > 0 || hubx.getSharedHub() != null) {
-					    bShouldSerialize = false; // dont send
-					} else {
-						// if hx.size=0
-						if (!bIsServer || li == null) {
-							obj = null;
-							bShouldSerialize = true;
-						} else {
-							// server. need to make sure that autoMatch (if needed) was set up.
-							String matchProperty = li.getMatchProperty();
-							if (matchProperty != null && matchProperty.length() > 0) {
-								if (HubDelegate.getAutoMatch(hubx) != null) {
-									obj = null;
-									bShouldSerialize = true;
-								}
-								// otherwise, need to call oaObj.getHub(..), so that it's created with an autoMatch  
-							} else {
-								// 20150826 this was missing (not sure why), needs to send a null for empty hub
-								obj = null;
-								bShouldSerialize = true;
-							}
-						}
-					}
-				}
-			}
-
-			if (bShouldSerialize) {
-				stream.writeObject(key);
-				if (obj == null) {
-					obj = OANullObject.instance;
-				}
-				stream.writeObject(obj);
-			}
-		}
+		OAGraph g = getGraph(null, oaObj);
+		if (g == null) return;
+		g.objects().getOAObjectSerializeService()._writeProperties(oi, bIsServer, oaObj, stream, serializer, bIsObjectSentOnServer);
 	}
 }

@@ -12,10 +12,7 @@ import com.viaoa.json.OAJson;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAPropertyPath;
@@ -169,7 +166,7 @@ public class OAObjectImportMatchService {
 			return; // already exists
 		}
 
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(importMatch.fromObject);
+		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(importMatch.fromObject);
 
 		String sql = "";
 		Object[] params = new Object[] {};
@@ -261,15 +258,15 @@ public class OAObjectImportMatchService {
 				OAQueryFilter filter = new OAQueryFilter(importMatch.liTo.getToClass(), sql, params);
 				finder.addFilter(filter);
 
-				obj = (OAObject) OAObjectCacheDelegate.find(importMatch.liTo.getToClass(), finder);
+				obj = (OAObject) srvcObject.getOAObjectCacheService().find(importMatch.liTo.getToClass(), finder);
 			}
 		}
 
 		if (obj == null) {
-			obj = (OAObject) OAObjectReflectDelegate.createNewObject(importMatch.liTo.getToClass());
+			obj = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(importMatch.liTo.getToClass());
 
 			for (ImportMatchDetail detail : importMatch.importMatchDetails) {
-				createHierObjects(obj, OAObjectInfoDelegate.getOAObjectInfo(obj), detail.propertyPath, detail.value);
+				createHierObjects(obj, srvcObject.getOAObjectInfoService().getOAObjectInfo(obj), detail.propertyPath, detail.value);
 			}
 
 			if (objOwner != null) {
@@ -320,7 +317,7 @@ public class OAObjectImportMatchService {
 			OAFinder finder = new OAFinder();
 			OAQueryFilter filter = new OAQueryFilter(oiNext.getForClass(), sql, params);
 			finder.addFilter(filter);
-			objNext = (OAObject) OAObjectCacheDelegate.find(oiNext.getForClass(), finder);
+			objNext = (OAObject) srvcObject.getOAObjectCacheService().find(oiNext.getForClass(), finder);
 		}
 
 		if (objNext == null) {
@@ -329,7 +326,7 @@ public class OAObjectImportMatchService {
 				OAThreadLocalDelegate.setLoading(false);
 			}
 
-			objNext = (OAObject) OAObjectReflectDelegate.createNewObject(oiNext.getForClass());
+			objNext = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(oiNext.getForClass());
 
 			if (b) {
 				OAThreadLocalDelegate.setLoading(true);

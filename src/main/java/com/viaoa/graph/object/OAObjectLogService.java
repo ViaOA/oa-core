@@ -1,19 +1,13 @@
 package com.viaoa.graph.object;
 
-import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OALock;
 import com.viaoa.object.OALogRecord;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectLockDelegate;
-import com.viaoa.sync.OASyncDelegate;
-import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.util.OAString;
 import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLWriter;
@@ -78,11 +72,11 @@ public class OAObjectLogService {
                     if (value instanceof OAObject) return OAXMLWriter.WRITE_KEYONLY;
                     if (!(value instanceof Hub)) return OAXMLWriter.WRITE_YES;
                     
-                    OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());
-                    OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
+                    OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj.getClass());
+                    OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, propertyName);
                     if (li != null && li.getType() == OALinkInfo.MANY) {
-                        li = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
-                        li = OAObjectInfoDelegate.getReverseLinkInfo(li);
+                        li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, propertyName);
+                        li = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
                         if (li != null && li.getType() == OALinkInfo.MANY) {
                             // M2M dont write any new object, since it does not exist when this file is restored.
                             //        the restore will update/complete the M2M link tables when the other object

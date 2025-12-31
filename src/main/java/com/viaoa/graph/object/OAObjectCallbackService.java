@@ -21,12 +21,8 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAMethodInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectModel;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAObjectCallback.Type;
 import com.viaoa.sync.OASync;
@@ -354,7 +350,7 @@ public class OAObjectCallbackService {
 		em.setObject(obj);
 		callObjectCallbackMethod(em, null, em);
 
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());
+		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj.getClass());
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
 			if (OAString.isNotEmpty(pi.getEnumPropertyName())) continue;
 			Object val = obj.getProperty(pi.getName());
@@ -775,7 +771,7 @@ public class OAObjectCallbackService {
 		if (clazz == null) {
 			return null;
 		}
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 
 		int ct = (OAObjectCallback.CHECK_Processed | OAObjectCallback.CHECK_UserEnabledProperty);
 		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowNew, ct, null, clazz, null, null, null);
@@ -1048,7 +1044,7 @@ public class OAObjectCallbackService {
 		if (clazz == null) {
 			return null;
 		}
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 
 		int ct = (OAObjectCallback.CHECK_Processed | OAObjectCallback.CHECK_UserEnabledProperty);
 		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowDelete, ct, null, clazz, null, null, objDelete);
@@ -1427,11 +1423,11 @@ public class OAObjectCallbackService {
 		final boolean bCheckCallbackMethod = (objectCallback.getCheckType() & OAObjectCallback.CHECK_CallbackMethod) != 0;
 		final boolean bCheckIncludeMaster = (objectCallback.getCheckType() & OAObjectCallback.CHECK_IncludeMaster) != 0;
 
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 
 		if (bCheckProcessedCheck) {
 			if (objectCallback.getType() == Type.AllowDelete && value != null && OAString.isEmpty(propertyName)) {
-				OAObjectInfo oix = OAObjectInfoDelegate.getOAObjectInfo(value.getClass());
+				OAObjectInfo oix = srvcObject.getOAObjectInfoService().getOAObjectInfo(value.getClass());
 				if (oix.getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
@@ -1510,12 +1506,12 @@ public class OAObjectCallbackService {
 				&& oi.getHasOneAndOnlyOneLink()) {
 			OALinkInfo li = oi.getLinkInfo(propertyName);
 			if (li != null && li.getOneAndOnlyOne()) {
-				if (OAObjectPropertyDelegate.getProperty(oaObj, propertyName) == null) {
+				if (srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName) == null) {
 					for (OALinkInfo lix : oi.getLinkInfos()) {
 						if (lix == li || !lix.getOneAndOnlyOne()) {
 							continue;
 						}
-						if (OAObjectPropertyDelegate.getProperty(oaObj, lix.getName()) != null) {
+						if (srvcObject.getOAObjectPropertyService().getProperty(oaObj, lix.getName()) != null) {
 							objectCallback.setAllowed(false);
 						}
 					}
@@ -1552,7 +1548,7 @@ public class OAObjectCallbackService {
 			}
 			final boolean bHadVisibleProperty = (oaObj != null && OAString.isNotEmpty(sx));
 			if (bHadVisibleProperty) {
-				Object valx = OAObjectReflectDelegate.getProperty(oaObj, sx);
+				Object valx = srvcObject.getOAObjectReflectService().getProperty(oaObj, sx);
 				objectCallback.setAllowed(bx == OAConv.toBoolean(valx));
 				if (!objectCallback.getAllowed() && OAString.isEmpty(objectCallback.getResponse())) {
 					objectCallback.setAllowed(false);
@@ -1593,7 +1589,7 @@ public class OAObjectCallbackService {
 						objectCallback.setAllowed(false);
 					}
 				} else {
-					Object valx = OAObjectReflectDelegate.getProperty(user, sx);
+					Object valx = srvcObject.getOAObjectReflectService().getProperty(user, sx);
 					objectCallback.setAllowed(bx == OAConv.toBoolean(valx));
 				}
 				if (!objectCallback.getAllowed() && OAString.isEmpty(objectCallback.getResponse())) {
@@ -1644,7 +1640,7 @@ public class OAObjectCallbackService {
 
 			final boolean bHadEnabledProperty = (objectCallback.getAllowed() && OAString.isNotEmpty(enabledName));
 			if (bHadEnabledProperty && bCheckEnabledProperty) {
-				Object valx = OAObjectReflectDelegate.getProperty(oaObj, enabledName);
+				Object valx = srvcObject.getOAObjectReflectService().getProperty(oaObj, enabledName);
 				objectCallback.setAllowed(enabledValue == OAConv.toBoolean(valx));
 				if (!objectCallback.getAllowed() && OAString.isEmpty(objectCallback.getResponse())) {
 					objectCallback.setAllowed(false);
@@ -1697,7 +1693,7 @@ public class OAObjectCallbackService {
 		if (oaObj == null) {
 			return;
 		}
-		Hub[] hubs = OAObjectHubDelegate.getHubReferences(oaObj);
+		Hub[] hubs = srvcObject.getOAObjectHubService().getHubReferences(oaObj);
 
 		// call the callback method, this can override eq.allowed
 		if (OAString.isNotEmpty(propertyName) && objectCallback.getType().isCheckEnabledFirst()) {
@@ -1771,7 +1767,7 @@ public class OAObjectCallbackService {
 			return;
 		}
 		// recursive, goto top owner first
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 
 		OALinkInfo lix = oi.getOwnedByOne();
 		if (lix != null) {
@@ -1792,7 +1788,7 @@ public class OAObjectCallbackService {
 			pp = oi.getVisibleProperty();
 			if (bPassed && OAString.isNotEmpty(pp)) {
 				b = oi.getVisibleValue();
-				valx = OAObjectReflectDelegate.getProperty(oaObj, pp);
+				valx = srvcObject.getOAObjectReflectService().getProperty(oaObj, pp);
 				bPassed = (b == OAConv.toBoolean(valx));
 				if (!bPassed) {
 					objectCallback.setAllowed(false);
@@ -1809,7 +1805,7 @@ public class OAObjectCallbackService {
 						bPassed = false;
 					}
 				} else {
-					valx = OAObjectReflectDelegate.getProperty(user, pp);
+					valx = srvcObject.getOAObjectReflectService().getProperty(user, pp);
 					bPassed = (b == OAConv.toBoolean(valx));
 				}
 				if (!bPassed) {
@@ -1836,7 +1832,7 @@ public class OAObjectCallbackService {
 				pp = li.getVisibleProperty();
 				if (OAString.isNotEmpty(pp)) {
 					b = li.getVisibleValue();
-					valx = OAObjectReflectDelegate.getProperty(oaObj, pp);
+					valx = srvcObject.getOAObjectReflectService().getProperty(oaObj, pp);
 					bPassed = (b == OAConv.toBoolean(valx));
 					if (!bPassed) {
 						objectCallback.setAllowed(false);
@@ -1856,7 +1852,7 @@ public class OAObjectCallbackService {
 							bPassed = false;
 						}
 					} else {
-						valx = OAObjectReflectDelegate.getProperty(user, pp);
+						valx = srvcObject.getOAObjectReflectService().getProperty(user, pp);
 						bPassed = (b == OAConv.toBoolean(valx));
 					}
 					if (!bPassed) {
@@ -1894,7 +1890,7 @@ public class OAObjectCallbackService {
 				pp = oi.getEnabledProperty();
 				if (OAString.isNotEmpty(pp) && bCheckEnabledProperty) {
 					b = oi.getEnabledValue();
-					valx = OAObjectReflectDelegate.getProperty(oaObj, pp);
+					valx = srvcObject.getOAObjectReflectService().getProperty(oaObj, pp);
 					bPassed = (b == OAConv.toBoolean(valx));
 					if (!bPassed) {
 						objectCallback.setAllowed(false);
@@ -1937,7 +1933,7 @@ public class OAObjectCallbackService {
 				pp = li.getEnabledProperty();
 				if (OAString.isNotEmpty(pp) && bCheckEnabledProperty) {
 					b = li.getEnabledValue();
-					valx = OAObjectReflectDelegate.getProperty(oaObj, pp);
+					valx = srvcObject.getOAObjectReflectService().getProperty(oaObj, pp);
 					bPassed = (b == OAConv.toBoolean(valx));
 					if (!bPassed) {
 						objectCallback.setAllowed(false);
@@ -2159,7 +2155,7 @@ public class OAObjectCallbackService {
 		if (object == null) {
 			return;
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(object.getClass());
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(object.getClass());
 
 		if (propertyName == null) {
 			propertyName = ""; // blank will be method for class level:   onObjectCallback(..)  or callback(OAObjectCallback)
@@ -2194,11 +2190,11 @@ public class OAObjectCallbackService {
 		if (clazz == null || OAString.isEmpty(property) || model == null) {
 			return;
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 		Method m;
-		m = OAObjectInfoDelegate.getMethod(oi, property + "ModelCallback", OAObjectModel.class);
+		m = srvcObject.getOAObjectInfoService().getMethod(oi, property + "ModelCallback", OAObjectModel.class);
 		if (m == null) {
-			m = OAObjectInfoDelegate.getMethod(oi, "onObjectCallback" + property + "Model", 1);
+			m = srvcObject.getOAObjectInfoService().getMethod(oi, "onObjectCallback" + property + "Model", 1);
 		}
 		if (m != null) {
 			Class[] cs = m.getParameterTypes();
@@ -2230,7 +2226,7 @@ public class OAObjectCallbackService {
 		if (ppPrefix == null) {
 			ppPrefix = "";
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(cz);
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getObjectInfo(cz);
 		String s;
 
 		if (bEnabled) {
