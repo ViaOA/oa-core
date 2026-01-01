@@ -59,7 +59,8 @@ public class HubSelectDelegate {
 	 * @param thisHub the Hub whose select results are being extended
 	 * @return number of objects loaded during this fetch
 	 */
-	protected static int fetchMore(Hub thisHub) {
+	public static int fetchMore(Hub thisHub) {
+		//qqqqqqqqq method was protected
 		int x = fetchMore(thisHub, HubSelectDelegate.getSelect(thisHub));
 		return x;
 	}
@@ -504,7 +505,8 @@ public class HubSelectDelegate {
 	 * @param thisHub       the Hub whose select is being canceled
 	 * @param bRemoveSelect true to clear the Hub’s select reference
 	 */
-	protected static void cancelSelect(Hub thisHub, boolean bRemoveSelect) {
+	public static void cancelSelect(Hub thisHub, boolean bRemoveSelect) {
+		//qqqqqqqqqqq method was protected
 		OASelect sel = thisHub.data.getSelect();
 		boolean bHasMoreData;
 		if (sel != null) {

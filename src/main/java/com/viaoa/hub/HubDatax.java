@@ -20,6 +20,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.hub.HubData.FriendAccess;
 import com.viaoa.object.OAObjectInfo;
 
 /**
@@ -243,4 +244,14 @@ public class HubDatax implements java.io.Serializable {
 	 * related objects are navigated for select filtering.
 	 */
 	protected transient String selectWhereHubPropertyPath;
+
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+	}
+
+	private final static FriendAccess friendAccess = new FriendAccess();
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
 }

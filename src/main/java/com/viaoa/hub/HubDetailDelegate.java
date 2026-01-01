@@ -146,7 +146,8 @@ public class HubDetailDelegate {
 	 * @param bUpdateLink  whether linked hubs should update link properties
 	 * @return true if the master hub's active object was adjusted, otherwise false
 	 */
-	protected static boolean setMasterHubActiveObject(Hub thisHub, Object detailObject, boolean bUpdateLink) {
+	public static boolean setMasterHubActiveObject(Hub thisHub, Object detailObject, boolean bUpdateLink) {
+		//qqqqqqqqqq method was protected
 		// make sure none of these have a linkHub
 		// and find the sharedHub that has a masterHub
 		HubDataMaster dm = getDataMaster(thisHub);
@@ -190,7 +191,8 @@ public class HubDetailDelegate {
 	 * @param detailObject the detail object to update
 	 * @param objMaster    the master object used for reference assignment
 	 */
-	protected static void setPropertyToMasterHub(Hub thisHub, Object detailObject, Object objMaster) {
+	public static void setPropertyToMasterHub(Hub thisHub, Object detailObject, Object objMaster) {
+		//qqqqqqqqq method was protected
 		if (thisHub == null || detailObject == null) {
 			return;
 		}
@@ -672,7 +674,8 @@ public class HubDetailDelegate {
 	 * @param bIncludedFilteredHub  whether filtered shared hubs should be considered
 	 * @return the resolved {@code HubDataMaster}
 	 */
-	protected static HubDataMaster getDataMaster(final Hub thisHub, boolean bIncludedFilteredHub) {
+	public static HubDataMaster getDataMaster(final Hub thisHub, boolean bIncludedFilteredHub) {
+		//qqqqqqq method was protected
 		return getDataMaster(thisHub, null, bIncludedFilteredHub);
 	}
 

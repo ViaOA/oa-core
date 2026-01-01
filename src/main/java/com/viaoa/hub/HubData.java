@@ -798,4 +798,42 @@ public class HubData implements java.io.Serializable {
             getHubDatax().selectWhereHubPropertyPath = pp;
         }
     }
+
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+		public Class getObjClass(Hub hub) {
+			return hub.data.objClass;
+		}
+		public Vector getVector(Hub hub) {
+			return hub.data.vector;
+		}
+		public void setVector(Hub hub, Vector v) {
+			hub.data.vector = v;
+		}
+		public HubDatax getHubDatax(Hub hub) {
+			return hub.data.hubDatax;
+		}
+		public void setHubDataxNull(Hub hub) {
+			hub.data.hubDatax = null;
+		}
+		public boolean getChanged(Hub hub) {
+			return hub.data.changed;
+		}
+		public void setChanged(Hub hub, boolean b) {
+			hub.data.changed = b;
+		}
+		public int getChangeCount(Hub hub) {
+			return hub.data.changeCount;
+		}
+		public void incrementChangeCount(Hub hub) {
+			hub.data.changeCount++;
+		}
+	}
+
+	private final static FriendAccess friendAccess = new FriendAccess();
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
+	
 }

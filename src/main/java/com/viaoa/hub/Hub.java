@@ -31,6 +31,7 @@ import java.util.Vector;
 import java.util.stream.Stream;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.hub.HubData.FriendAccess;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -1426,6 +1427,10 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return master Hub or null
 	 */
 	public Hub getMasterHub() {
+		
+//qqqqqqqqqqqqq Important note: this is different then just using datam.masterHub, it will check shared hubs.
+		//  use datam.masterHub to get thisHub's value
+		
 		return HubDetailDelegate.getMasterHub(this);
 	}
 
@@ -1435,6 +1440,11 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return master object
 	 */
 	public OAObject getMasterObject() {
+
+//qqqqqqqqqqqqq Important note: this is different then just using datam.masterHub, it will check shared hubs.
+  	//  use datam.masterHub to get thisHub's value
+				
+		
 		return HubDetailDelegate.getMasterObject(this);
 	}
 
@@ -2324,7 +2334,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return OAObjectInfo for this Hub’s object class
 	 */
 	public OAObjectInfo getOAObjectInfo() {
-		return OAObjectInfoDelegate.getOAObjectInfo(getObjectClass());
+		return data.getObjectInfo();
+		//was: return OAObjectInfoDelegate.getOAObjectInfo(getObjectClass());
 	}
 
 	/**
@@ -3033,4 +3044,30 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void refresh() {
 		HubSelectDelegate.refresh(this);
 	}
+
+
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+		public HubData getHubData(Hub hub) {
+			return hub.data;
+		}
+		public HubDataActive getHubDataActive(Hub hub) {
+			return hub.dataa;
+		}
+		public HubDataUnique getHubDataUnique(Hub hub) {
+			return hub.datau;
+		}
+		public HubDataMaster getHubDataMaster(Hub hub) {
+			return hub.datam;
+		}
+	}
+
+	private final static FriendAccess friendAccess = new FriendAccess();
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
+
+
+
 }

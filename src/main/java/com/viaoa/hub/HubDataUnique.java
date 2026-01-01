@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.hub.HubData.FriendAccess;
 import com.viaoa.object.*;
 
 /**
@@ -39,7 +40,7 @@ import com.viaoa.object.*;
  * <p>Each Hub has one {@link HubDataUnique}; shared Hubs maintain independent
  * instances for AO, listener, and linkage tracking.</p>
  */
-class HubDataUnique implements java.io.Serializable {
+public class HubDataUnique implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
 	private static Logger LOG = Logger.getLogger(HubDataUnique.class.getName());
 
@@ -446,4 +447,15 @@ class HubDataUnique implements java.io.Serializable {
             getHubDataUniquex().bAutoCreateAllowDups = bAutoCreateAllowDups;
         }
     }
+
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+		
+	}
+
+	private final static FriendAccess friendAccess = new FriendAccess();
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
 }

@@ -315,4 +315,8 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
             }
         }
     }
+    
+    public Comparator getComparator() {
+    	return comparator;
+    }
 }

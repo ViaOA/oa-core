@@ -526,7 +526,8 @@ public class HubShareDelegate {
 	 *
 	 * @param thisHub the Hub where the remove-all occurred
 	 */
-	protected static void setSharedHubsAfterRemoveAll(Hub thisHub) {
+	public static void setSharedHubsAfterRemoveAll(Hub thisHub) {
+		//qqqqqqqq method was protected
 		thisHub.dataa.activeObject = null;
 		HubAODelegate.setActiveObject(thisHub, -1, false, false, false); // bUpdateLink, bForce, bCalledByShareHub
 
@@ -553,7 +554,8 @@ public class HubShareDelegate {
 	 * @param objRemoved  the object removed
 	 * @param posRemoved  its position within the Hub
 	 */
-	protected static void setSharedHubsAfterRemove(Hub thisHub, Object objRemoved, int posRemoved) {
+	public static void setSharedHubsAfterRemove(Hub thisHub, Object objRemoved, int posRemoved) {
+    	//qqqqqqqqqq method was protected
 		if (thisHub.dataa.activeObject == objRemoved) {
 			/* this must be set to null. Otherwise, setActiveObject
 			   could fail when it sends out event.
@@ -638,7 +640,8 @@ public class HubShareDelegate {
 	 * @param shareActiveObject true to share active-object state
 	 * @param newLinkValue      optional pending link-value used during AO updates
 	 */
-	protected static void setSharedHub(Hub thisHub, Hub sharedMasterHub, boolean shareActiveObject, Object newLinkValue) {
+	public static void setSharedHub(Hub thisHub, Hub sharedMasterHub, boolean shareActiveObject, Object newLinkValue) {
+		//qqqqqqq method was protected
 		_setSharedHub(thisHub, sharedMasterHub, shareActiveObject, newLinkValue);
 		// 20181030 update temp listener cache
 		HubEventDelegate.clearGetAllListenerCache(thisHub);

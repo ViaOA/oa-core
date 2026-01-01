@@ -74,7 +74,7 @@ public class OAObjectCacheService {
 	public OAObjectCacheService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
     	if (srvcObject == null) throw new IllegalArgumentException("ObjectService can not be null");
     	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
+    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObject.FriendAccess can not be null");
 		this.faObject = oaObjectFriendAccess;
 	}
 

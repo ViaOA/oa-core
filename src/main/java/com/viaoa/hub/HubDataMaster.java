@@ -18,6 +18,7 @@ package com.viaoa.hub;
 import java.lang.reflect.Method;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.hub.HubData.FriendAccess;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfoDelegate;
@@ -30,7 +31,8 @@ import com.viaoa.object.OAObjectInfoDelegate;
  * Example: a Hub of Employee Objects can "come" from a Department Object by calling department.getEmployees() method. For this, the
  * masterObject for the employee Hub will be set to the Department Object.
  */
-class HubDataMaster implements java.io.Serializable {
+public class HubDataMaster implements java.io.Serializable {
+	//qqqqqqqqq calss was package protected
 	static final long serialVersionUID = 2L; // used for object serialization
 
 	/**
@@ -241,5 +243,15 @@ class HubDataMaster implements java.io.Serializable {
 	private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
 		s.defaultReadObject();
 		byte bx = s.readByte();
+	}
+
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+	}
+
+	private final static FriendAccess friendAccess = new FriendAccess();
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
 	}
 }

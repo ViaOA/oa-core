@@ -253,7 +253,17 @@ class HubDetail implements java.io.Serializable {
                 }
             }
         });
-        
     }
+
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+	}
+
+	private final static FriendAccess friendAccess = new FriendAccess();
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
+
 }
 	

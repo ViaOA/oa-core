@@ -15,6 +15,8 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.hub.HubData.FriendAccess;
+
 /**
  * Lightweight structure holding the current Active Object (AO) for a Hub.
  * Shared Hubs that share the same AO reuse the same {@code HubDataActive}.
@@ -22,7 +24,8 @@ package com.viaoa.hub;
  * <p>Cleared when a Hub is detached or a shared Hub that does not share
  * its AO resets to null.</p>
  */
-class HubDataActive implements java.io.Serializable {
+public class HubDataActive implements java.io.Serializable {
+//qqqqqqqq class was package protected	
 	/**
 	 * Serialization identifier used to maintain version compatibility when
 	 * HubDataActive instances are serialized.
@@ -51,5 +54,15 @@ class HubDataActive implements java.io.Serializable {
 	public void clear() {
         activeObject = null;
     }
+
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+	}
+
+	private final static FriendAccess friendAccess = new FriendAccess();
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
 }
 

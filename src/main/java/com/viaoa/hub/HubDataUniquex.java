@@ -19,6 +19,8 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import com.viaoa.hub.HubData.FriendAccess;
+
 /**
  * Extended unique-state container referenced by {@link HubDataUnique}.
  * 
@@ -170,4 +172,14 @@ class HubDataUniquex implements java.io.Serializable {
      * in the link-to Hub.
      */
     protected transient boolean bAutoCreateAllowDups;
+
+	public static final class FriendAccess {
+		private FriendAccess() {
+		}
+	}
+
+	private final static FriendAccess friendAccess = new FriendAccess();
+	static FriendAccess getFriendAccess() {
+		return friendAccess;
+	}
 }

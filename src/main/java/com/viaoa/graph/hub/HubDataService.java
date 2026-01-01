@@ -1,51 +1,31 @@
-/*
- * Copyright 1999–2025 ViaOA (info@viaoa.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package com.viaoa.hub;
+package com.viaoa.graph.hub;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.HubService;
+import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.sync.OASync;
 
-/**
- * Core delegate for internal Hub data operations.
- * <p>
- * Directly manipulates the underlying {@code HubData.vector} and change-tracking
- * structures. Provides thread-safe add/remove/insert operations and maintains
- * Hub-level change counters.
- *
- * <p><b>Responsibilities</b>
- * <ul>
- *   <li>Manage object storage within the Hub’s {@code Vector}.</li>
- *   <li>Track added and removed objects for persistence and synchronization.</li>
- *   <li>Coordinate with {@link HubCSDelegate} and {@link HubAddRemoveDelegate}
- *       for client/server propagation.</li>
- *   <li>Maintain Hub change counters and dirty-state flags.</li>
- * </ul>
- *
- * <p>Called by most other Hub delegates; low-level changes should only be made
- * through these internal APIs to guarantee event and cache consistency.
- */
-public class HubDataDelegate {
+public class HubDataService {
+	private final Logger LOG = Logger.getLogger(HubDataService.class.getName());
+
+	private final HubService srvcHub;
+	private final Hub.FriendAccess faHub;
+	private final HubData.FriendAccess faHubData;
 	
-    private static Logger LOG = Logger.getLogger(HubDataDelegate.class.getName());
-    
+	public HubDataService(HubService srvcHub, Hub.FriendAccess faHub, HubData.FriendAccess faHubData) {
+    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+    	this.srvcHub = srvcHub;
+    	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
+    	this.faHub = faHub;
+    	if (faHubData == null) throw new IllegalArgumentException("HubData.FriendAccess can not be null");
+    	this.faHubData = faHubData;
+	}
+
     /**
      * Clears all internal Hub data structures and resets tracking state.
      * Removes all elements from the Hub’s vector and clears add/remove
@@ -55,19 +35,25 @@ public class HubDataDelegate {
      *
      * @param thisHub the hub whose internal state is being reset
      */
-	protected static void clearAllAndReset(Hub thisHub) {
-    	synchronized (thisHub.data) {
-            if (thisHub.data.getVecAdd() != null) thisHub.data.getVecAdd().removeAllElements();
-    		if (thisHub.data.getVecRemove() != null) thisHub.data.getVecRemove().removeAllElements();
-    		thisHub.data.vector.removeAllElements();
+	protected void clearAllAndReset(Hub thisHub) {
+		
+		
+    	synchronized (faHub.getHubData(thisHub)) {
+    		Vector v = faHub.getHubData(thisHub).getVecAdd();
+            if (v != null) v.removeAllElements();
+            
+    		v = faHub.getHubData(thisHub).getVecRemove();
+    		if (v != null) v.removeAllElements();
+    		
+    		faHubData.getVector(thisHub).removeAllElements();
     	
             // 20160407
-            if (thisHub.data.hubDatax != null) {
-                if (!thisHub.data.hubDatax.isNeeded()) thisHub.data.hubDatax = null;
+            if (faHubData.getHubDatax(thisHub) != null) {
+                if (!faHubData.getHubDatax(thisHub).isNeeded()) faHubData.setHubDataxNull(thisHub);
             }
     	}
-        thisHub.data.changed = false;
-		thisHub.data.changeCount++;
+    	faHubData.setChanged(thisHub, false);
+    	faHubData.incrementChangeCount(thisHub);
 	}
 	
 	/**
@@ -77,8 +63,8 @@ public class HubDataDelegate {
 	 * @param thisHub the hub whose vector capacity is being checked
 	 * @param size    the minimum capacity required
 	 */
-	protected static void ensureCapacity(Hub thisHub, int size) {
-		thisHub.data.vector.ensureCapacity(size);
+	protected void ensureCapacity(Hub thisHub, int size) {
+		faHubData.getVector(thisHub).ensureCapacity(size);
 	}
 	
 	/**
@@ -87,9 +73,10 @@ public class HubDataDelegate {
 	 *
 	 * @param thisHub the hub whose vector should be trimmed
 	 */
-	public static void resizeToFit(Hub thisHub) {
-		if (thisHub.data.vector == null) return; // could be called during serialization
-		thisHub.data.vector.trimToSize();
+	public void resizeToFit(Hub thisHub) {
+		Vector v = faHubData.getVector(thisHub);
+		if (v == null) return; // could be called during serialization
+		v.trimToSize();
 	}
 
 	/**
@@ -101,13 +88,12 @@ public class HubDataDelegate {
 	 * @param thisHub   the hub whose changed state is being updated
 	 * @param bChanged  the new changed value
 	 */
-	public static void setChanged(Hub thisHub, boolean bChanged) {
-		//qqqqqqqq method was protected
+	protected void setChanged(Hub thisHub, boolean bChanged) {
 	    if (thisHub == null) return;
-        boolean old = thisHub.data.changed;
+        boolean old = faHubData.getChanged(thisHub);
         if (bChanged == old) return;
-        thisHub.data.changed = bChanged;
-        if (bChanged != old) thisHub.data.changeCount++;
+        faHubData.setChanged(thisHub, bChanged);
+        if (bChanged != old) faHubData.incrementChangeCount(thisHub);
         if (!bChanged) {
             clearHubChanges(thisHub);
         }
@@ -135,34 +121,37 @@ public class HubDataDelegate {
 	 *
 	 * @param thisHub the hub whose change tracking is being cleared
 	 */
-	public static void clearHubChanges(Hub thisHub) {
+	public void clearHubChanges(Hub thisHub) {
 	    if (thisHub == null) return;
         boolean bSendEvent = false;
-        synchronized (thisHub.data) {
-            Vector v = thisHub.data.getVecAdd(); 
+        synchronized (faHub.getHubData(thisHub)) {
+            Vector v = faHub.getHubData(thisHub).getVecAdd(); 
             if (v != null) {
                 bSendEvent = v.size() > 0;
                 v.removeAllElements();
             }
-            v = thisHub.data.getVecRemove(); 
+            v = faHub.getHubData(thisHub).getVecRemove(); 
             if (v != null) {
                 bSendEvent = bSendEvent || v.size() > 0;
                 v.removeAllElements();
             }
             
-            if (thisHub.data.hubDatax != null) {
-                if (!thisHub.data.hubDatax.isNeeded()) {
-                    thisHub.data.hubDatax = null;
+            
+            if (faHubData.getHubDatax(thisHub) != null) {
+                if (!faHubData.getHubDatax(thisHub).isNeeded()) {
+                	faHubData.setHubDataxNull(thisHub);
                 }
-                if (thisHub.data.changed) {
-                    boolean b = (thisHub.data.hubDatax == null);
+                if (faHubData.getChanged(thisHub)) {
+                    boolean b = (faHubData.getHubDatax(thisHub) == null);
                     if (!b) {
-                        b = (thisHub.data.hubDatax.vecAdd == null || thisHub.data.hubDatax.vecAdd.size() == 0);
-                        b &= (thisHub.data.hubDatax.vecRemove == null || thisHub.data.hubDatax.vecRemove.size() == 0);
+                    	v = faHub.getHubData(thisHub).getVecAdd();
+                        b = (v == null || v.size() == 0);
+                    	v = faHub.getHubData(thisHub).getVecRemove();
+                        b &= (v == null || v.size() == 0);
                     }
                     if (b) {
-                        thisHub.data.changed = false;
-                        thisHub.data.changeCount++;
+                    	faHubData.setChanged(thisHub, false);
+                    	faHubData.incrementChangeCount(thisHub);
                     }
                 }
             }
@@ -179,9 +168,9 @@ public class HubDataDelegate {
 	 * @param thisHub the hub whose elements are being copied
 	 * @param anArray the destination array
 	 */
-    protected static void copyInto(Hub thisHub, Object anArray[]) {
-        synchronized (thisHub.data) {
-            thisHub.data.vector.copyInto(anArray);
+    protected void copyInto(Hub thisHub, Object anArray[]) {
+        synchronized (faHub.getHubData(thisHub)) {
+        	faHubData.getVector(thisHub).copyInto(anArray);
         }
     }
 
@@ -193,14 +182,14 @@ public class HubDataDelegate {
      * @param thisHub the hub whose elements are being converted to an array
      * @return an array containing the Hub’s elements
      */
-	public static Object[] toArray(Hub thisHub) {
+	public Object[] toArray(Hub thisHub) {
 	    thisHub.getSize(); // call before sync, in case it needs to load
         Object[] objs;
         for (int i=0;;i++) {
-            synchronized (thisHub.data) {
+            synchronized (faHub.getHubData(thisHub)) {
                 objs = new Object[thisHub.getSize()];
                 try {
-                    thisHub.data.vector.copyInto(objs);
+                	faHubData.getVector(thisHub).copyInto(objs);
                     break;
                 }
                 catch (Exception e) {
@@ -217,8 +206,8 @@ public class HubDataDelegate {
 	 * @param thisHub the hub whose size is being retrieved
 	 * @return the number of elements in the Hub
 	 */
-    public static int getCurrentSize(Hub thisHub) {
-        return thisHub.data.vector.size();
+    public int getCurrentSize(Hub thisHub) {
+        return faHubData.getVector(thisHub).size();
     }
 	
 
@@ -229,8 +218,9 @@ public class HubDataDelegate {
      * @param thisHub the source hub
      * @param newHub  the destination hub
      */
-    public static void _clone(Hub thisHub, Hub newHub) {
-    	newHub.data.vector = (Vector) thisHub.data.vector.clone();
+    public void _clone(Hub thisHub, Hub newHub) {
+    	Vector v = (Vector) faHubData.getVector(thisHub).clone();
+        faHubData.setVector(newHub, v);
     }
     
     /**
@@ -244,8 +234,7 @@ public class HubDataDelegate {
      * @param bIsRemovingAll whether the entire Hub is being cleared
      * @return the position from which the object was removed, or -1
      */
-    public static int _remove(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
-    	//qqqqqqqqqq method was protected
+    protected int _remove(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
         int pos = 0;
         try {
             OAThreadLocalDelegate.lock(thisHub);
@@ -273,7 +262,7 @@ public class HubDataDelegate {
      * @param bIsRemovingAll whether the entire Hub is being cleared
      * @return the position from which the object was removed, or -1
      */
-    private static int _remove2(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
+    private int _remove2(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
         int pos;
         if (bIsRemovingAll) {
             pos = -1;
@@ -281,19 +270,19 @@ public class HubDataDelegate {
         else {
 	        pos = thisHub.getPos(obj);
 	        if (pos >= 0) {
-	            thisHub.data.vector.removeElementAt(pos);
+	        	faHubData.getVector(thisHub).removeElementAt(pos);
 	        }
         }
 
 	    if (pos >= 0) {
 	        boolean b = (obj instanceof OAObject);	        
             if (b) {
-                b = ((thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()));
+                b = (faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges());
                 if (!b && OASync.isServer()) {
                     if ( ((OAObject) obj).isChanged()) {
-                        if (thisHub.datam.getMasterObject() != null) {
+                        if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
                             // could be ServerRoot
-                            OALinkInfo li = thisHub.datam.liDetailToMaster;
+                            OALinkInfo li = faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo();
                             if (li != null && !li.getCalculated()) {
                                 li = li.getReverseLinkInfo();
                                 if (li != null && !li.getCalculated()) {
@@ -307,7 +296,8 @@ public class HubDataDelegate {
             
 	        
 	    	if (b) {
-	            if (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().removeElement(obj)) {
+	    		Vector v = faHub.getHubData(thisHub).getVecAdd();
+	            if (v != null && v.removeElement(obj)) {
 	                // no-op
 	            }
 	            else {
@@ -316,7 +306,9 @@ public class HubDataDelegate {
                     	if (!vec.contains(obj)) vec.addElement(obj);
 	                }
 	            }
-		        thisHub.setChanged( (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().size() > 0) || (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().size() > 0) );
+	    		v = faHub.getHubData(thisHub).getVecAdd();
+	    		Vector v2 = faHub.getHubData(thisHub).getVecRemove();
+		        thisHub.setChanged( (v != null && v.size() > 0) || (v2 != null && v2.size() > 0) );
 		    }
 		    else {
 		    	setChanged(thisHub, true);
@@ -338,8 +330,7 @@ public class HubDataDelegate {
      * @param bCheckContains whether to skip the add if the object is already present
      * @return {@code true} if the object was added; otherwise {@code false}
      */
-    public static boolean _add(Hub thisHub, Object obj, boolean bHasLock, boolean bCheckContains) {
-    	//qqqqqqqq method was protected
+    protected boolean _add(Hub thisHub, Object obj, boolean bHasLock, boolean bCheckContains) {
         boolean b = false;
         try {
             if (!bHasLock) OAThreadLocalDelegate.lock(thisHub);
@@ -364,12 +355,12 @@ public class HubDataDelegate {
      * @param bCheckContains whether to skip if the object already exists
      * @return {@code true} if the object was added; otherwise {@code false}
      */
-    private static boolean _add2(Hub thisHub, Object obj, final boolean bCheckContains) {
+    private boolean _add2(Hub thisHub, Object obj, final boolean bCheckContains) {
         if (bCheckContains && thisHub.contains(obj)) return false;
-    	thisHub.data.vector.addElement(obj);
+        faHubData.getVector(thisHub).addElement(obj);
         
-        int xx = thisHub.data.vector.size();
-        if (xx > 499 && thisHub.datam.getMasterObject() != null && (xx%100)==0) {
+        int xx = faHubData.getVector(thisHub).size();
+        if (xx > 499 && faHub.getHubDataMaster(thisHub).getMasterObject() != null && (xx%100)==0) {
             if (xx < 1000 || (xx%1000)==0) LOG.fine("large Hub with masterObject, Hub="+thisHub);
             if ((xx%10000)==0) {
                 LOG.fine("large Hub with masterObject, Hub="+thisHub);
@@ -377,20 +368,23 @@ public class HubDataDelegate {
         }
 
         if (!OAThreadLocalDelegate.isLoading()) {
-            if ((thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()) && (obj instanceof OAObject)) {
-                if (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().contains(obj)) {
-            		thisHub.data.getVecRemove().removeElement(obj);
+        	
+            if ((faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && (obj instanceof OAObject)) {
+                Vector v  = faHub.getHubData(thisHub).getVecRemove();
+            	if (v != null && v.contains(obj)) {
+            		v.removeElement(obj);
                 }
                 else {
                     createVecAdd(thisHub).addElement(obj);
                 }
-                thisHub.setChanged( (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().size() > 0) || (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().size() > 0) );
+                Vector v2  = faHub.getHubData(thisHub).getVecAdd();
+                thisHub.setChanged( (v2 != null && v2.size() > 0) || (v != null && v.size() > 0) );
             }
             else {
                 thisHub.setChanged(true);
             }
         }
-        thisHub.data.changeCount++;
+        faHubData.incrementChangeCount(thisHub);
 	    return true;
 	}
 
@@ -406,8 +400,7 @@ public class HubDataDelegate {
      * @param bIsLocked whether the calling thread already holds the lock
      * @return {@code true} if the object was inserted
      */
-    public static boolean _insert(Hub thisHub, Object obj, int pos, boolean bIsLocked) {
-    	//qqqqqqqq method was protected
+    protected boolean _insert(Hub thisHub, Object obj, int pos, boolean bIsLocked) {
         boolean b = false;
         try {
             if (!bIsLocked) OAThreadLocalDelegate.lock(thisHub);
@@ -433,25 +426,25 @@ public class HubDataDelegate {
      * @param pos     the position at which to insert the object
      * @return {@code true} if the insert completed
      */
-	private static boolean _insert2(Hub thisHub, Object obj, int pos) {
+	private boolean _insert2(Hub thisHub, Object obj, int pos) {
         boolean b = OAThreadLocalDelegate.isLoading();
 
-    	thisHub.data.vector.insertElementAt(obj, pos);
-
+        faHubData.getVector(thisHub).insertElementAt(obj, pos);
     	if (!b) {
-        	if ((thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()) && (obj instanceof OAObject)) {
-                if (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().contains(obj)) {
-            		thisHub.data.getVecRemove().removeElement(obj);
+            if ((faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && (obj instanceof OAObject)) {
+                Vector v  = faHub.getHubData(thisHub).getVecRemove();
+            	if (v != null && v.contains(obj)) {
+            		v.removeElement(obj);
                 }
                 else {
                     createVecAdd(thisHub).addElement(obj);
                 }
-                thisHub.setChanged( (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().size() > 0) || (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().size() > 0) );
-    	    }
+                Vector v2  = faHub.getHubData(thisHub).getVecAdd();
+                thisHub.setChanged( (v2 != null && v2.size() > 0) || (v != null && v.size() > 0) );
+            }
     	    else thisHub.setChanged(true);
     	}
-		
-	    thisHub.data.changeCount++;
+        faHubData.incrementChangeCount(thisHub);
 	    return true;
 	}
 
@@ -465,13 +458,14 @@ public class HubDataDelegate {
 	 * @param posFrom the original index
 	 * @param posTo   the destination index
 	 */
-	public static void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
-		//qqqqqqqq method was protected
+	protected void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
         try {
             OAThreadLocalDelegate.lock(thisHub);
-            thisHub.data.changeCount++;
-            thisHub.data.vector.removeElementAt(posFrom);
-            thisHub.data.vector.insertElementAt(obj, posTo);
+            faHubData.incrementChangeCount(thisHub);
+            
+            Vector v = faHubData.getVector(thisHub);
+            v.removeElementAt(posFrom);
+            v.insertElementAt(obj, posTo);
         }
         finally {
             OAThreadLocalDelegate.unlock(thisHub);
@@ -485,11 +479,11 @@ public class HubDataDelegate {
 	 *
 	 * @param thisHub the hub whose contents are being tracked as added
 	 */
-	public static void addAllToAddVector(Hub thisHub) {
+	public void addAllToAddVector(Hub thisHub) {
 	    if (thisHub == null) return;
         createVecAdd(thisHub);
 	    for (Object objx :  thisHub) {
-	        thisHub.data.getVecAdd().add(objx);	        
+	    	faHub.getHubData(thisHub).getVecAdd().add(objx);	        
 	    }
 	}
 	
@@ -500,13 +494,15 @@ public class HubDataDelegate {
 	 * @param thisHub the hub whose add-tracking vector is being created
 	 * @return the add-tracking vector
 	 */
-	protected static Vector createVecAdd(Hub thisHub) {
-        if (thisHub.data.getVecAdd() == null) {
-	        synchronized (thisHub.data) {
-	            if (thisHub.data.getVecAdd() == null) thisHub.data.setVecAdd(new Vector(10, 10));
+	protected Vector createVecAdd(Hub thisHub) {
+        if (faHub.getHubData(thisHub).getVecAdd() == null) {
+	        synchronized (faHub.getHubData(thisHub)) {
+	            if (faHub.getHubData(thisHub).getVecAdd() == null) {
+	            	faHub.getHubData(thisHub).setVecAdd(new Vector(10, 10));
+	            }
 	        }
         }
-        return thisHub.data.getVecAdd();
+        return faHub.getHubData(thisHub).getVecAdd();
 	}
 	
 	/**
@@ -516,14 +512,15 @@ public class HubDataDelegate {
 	 * @param thisHub the hub whose remove-tracking vector is being created
 	 * @return the remove-tracking vector
 	 */
-	public static Vector createVecRemove(Hub thisHub) {
-		//qqqqqqqqq method was protected
-		if (thisHub.data.getVecRemove() == null) {
-	        synchronized (thisHub.data) {
-	            if (thisHub.data.getVecRemove() == null) thisHub.data.setVecRemove(new Vector(10,10));
+	protected Vector createVecRemove(Hub thisHub) {
+        if (faHub.getHubData(thisHub).getVecRemove() == null) {
+	        synchronized (faHub.getHubData(thisHub)) {
+	            if (faHub.getHubData(thisHub).getVecRemove() == null) {
+	            	faHub.getHubData(thisHub).setVecRemove(new Vector(10, 10));
+	            }
 	        }
 		}
-        return thisHub.data.getVecRemove();
+        return faHub.getHubData(thisHub).getVecRemove();
 	}
 	
 	/**
@@ -537,10 +534,10 @@ public class HubDataDelegate {
 	 * @return an array of added {@link OAObject} instances, or {@code null} if none
 	 *         have been recorded
 	 */
-	public static OAObject[] getAddedObjects(Hub thisHub) {
-        Vector v = thisHub.data.getVecAdd();
+	public OAObject[] getAddedObjects(Hub thisHub) {
+        Vector v = faHub.getHubData(thisHub).getVecAdd();
         if (v == null || v.size() == 0) return null;
-        synchronized (thisHub.data) {
+        synchronized (faHub.getHubData(thisHub)) {
      		OAObject[] objs;
 			int x = (v == null) ? 0 : v.size();
 			objs = new OAObject[x];
@@ -561,10 +558,10 @@ public class HubDataDelegate {
 	 * @return an array of removed {@link OAObject} instances, or {@code null} if
 	 *         none have been recorded
 	 */
-	public static OAObject[] getRemovedObjects(Hub thisHub) {
-        Vector v = thisHub.data.getVecRemove();
+	public OAObject[] getRemovedObjects(Hub thisHub) {
+        Vector v = faHub.getHubData(thisHub).getVecRemove();
         if (v == null || v.size() == 0) return null;
-        synchronized (thisHub.data) {
+        synchronized (faHub.getHubData(thisHub)) {
 			OAObject[] objs;
 			int x = (v == null) ? 0 : v.size();
 			objs = new OAObject[x];
@@ -579,8 +576,8 @@ public class HubDataDelegate {
 	 * @param thisHub the Hub to check
 	 * @return {@code true} if the Hub is marked as changed, otherwise {@code false}
 	 */
-	public static boolean getChanged(Hub thisHub) {
-	    return (thisHub.data.changed);
+	public boolean getChanged(Hub thisHub) {
+		return faHubData.getChanged(thisHub);
 	}
 	
 	/**
@@ -594,7 +591,7 @@ public class HubDataDelegate {
 	 * @param key the key or object used to identify the desired element
 	 * @return the matching object, or {@code null} if not found
 	 */
-	public static Object getObject(final Hub thisHub, Object key) {
+	public Object getObject(final Hub thisHub, Object key) {
 		if (thisHub == null || key == null) return null;
 	    if (!(key instanceof OAObjectKey)) {
 	    	if (key instanceof OAObject) key = OAObjectKeyDelegate.getKey((OAObject) key);
@@ -624,15 +621,17 @@ public class HubDataDelegate {
 	 * @param pos the index to retrieve
 	 * @return the object at the position, or {@code null} if not available
 	 */
-	protected static Object getObjectAt(Hub thisHub, int pos) {
+	protected Object getObjectAt(Hub thisHub, int pos) {
 	    Object ho;
 	    if (pos < 0) return null;
 	    
-	    int size = thisHub.data.vector.size();
+	    final Vector v = faHubData.getVector(thisHub);
+	    
+	    int size = v.size();
 	    if (pos < size) {
 	        Object obj = null;
 	        try {
-	        	obj = thisHub.data.vector.elementAt(pos);
+	        	obj = v.elementAt(pos);
 	        }
 	        catch (Exception e) {
 	        	obj = null;  // hub could have changed, and pos is not valid anymore
@@ -641,10 +640,10 @@ public class HubDataDelegate {
             	obj = OAObjectReflectDelegate.getObject(thisHub.getObjectClass(), obj);
                 if (obj != null) {
 	                OAObjectHubDelegate.addHub((OAObject)obj, thisHub);
-	                thisHub.data.vector.setElementAt(obj, pos);
-	                if (thisHub.datam.getMasterObject() != null) {
+	                v.setElementAt(obj, pos);
+	                if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
 		                // need to set property to MasterHub
-	                	HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.getMasterObject());
+	                	HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, faHub.getHubDataMaster(thisHub).getMasterObject());
 	                }
                 }
 	        }
@@ -656,10 +655,10 @@ public class HubDataDelegate {
 	    }
 	
 	    // fetch more records from data source
-	    for ( ; pos >= thisHub.data.vector.size() && HubSelectDelegate.isMoreData(thisHub) ; ) {
+	    for ( ; pos >= v.size() && HubSelectDelegate.isMoreData(thisHub) ; ) {
 	    	HubSelectDelegate.fetchMore(thisHub);
 	    }
-	    ho = HubDataDelegate.getObjectAt(thisHub, pos);
+	    ho = getObjectAt(thisHub, pos);
 	    return ho;
 	}
 	
@@ -675,7 +674,7 @@ public class HubDataDelegate {
 	 * @param bUpdateLink whether to update link relationships during the search
 	 * @return the position of the object, or {@code -1} if not found
 	 */
-	public static int getPos(final Hub thisHub, Object object, final boolean adjustMaster, final boolean bUpdateLink) {
+	public int getPos(final Hub thisHub, Object object, final boolean adjustMaster, final boolean bUpdateLink) {
 	    int pos;
 	    if (object == null || thisHub == null) return -1;
 
@@ -687,19 +686,20 @@ public class HubDataDelegate {
 	    pos = -1;
 	    if (object != null) {
 	        for ( ;; ) {
-	            pos = thisHub.data.vector.indexOf(object);
+	            pos = faHubData.getVector(thisHub).indexOf(object);
 	            if (pos >= 0) return pos;
 	            if (!HubSelectDelegate.isMoreData(thisHub)) break;
                 HubSelectDelegate.fetchMore(thisHub);
 	        }
 	    }
 
-        if (pos < 0 && adjustMaster && (thisHub.datau.getSharedHub() != null || thisHub.datam.getMasterHub() != null)) {
-            OALinkInfo liRecursiveOne = OAObjectInfoDelegate.getRecursiveLinkInfo(thisHub.data.getObjectInfo(), OALinkInfo.ONE);
+	    
+        if (pos < 0 && adjustMaster && (faHub.getHubDataUnique(thisHub).getSharedHub() != null || faHub.getHubDataMaster(thisHub).getMasterHub() != null)) {
+            OALinkInfo liRecursiveOne = OAObjectInfoDelegate.getRecursiveLinkInfo(thisHub.getOAObjectInfo(), OALinkInfo.ONE);
 
             // need to verify that this hub is recursive with masterObject
             if (liRecursiveOne != null) {  
-                OALinkInfo li = thisHub.datam.liDetailToMaster;
+                OALinkInfo li = faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo();
                 if (li != null) {
                     li = OAObjectInfoDelegate.getReverseLinkInfo(li);
                     if (li == null || !li.getRecursive()) {
@@ -723,7 +723,7 @@ public class HubDataDelegate {
                 Object parent = OAObjectReflectDelegate.getProperty((OAObject)object, liRecursiveOne.getName());
                 if (parent == null) {  // might be in root hub
                     Hub h = thisHub.getRootHub();  // could be owner of hub
-                    if (h != null && h != thisHub && thisHub.datau.getSharedHub() != h) {
+                    if (h != null && h != thisHub && faHub.getHubDataUnique(thisHub).getSharedHub() != h) {
                         HubShareDelegate.setSharedHub(thisHub, h, false);
                         pos = getPos(h, object, adjustMaster, bUpdateLink);
                     }
@@ -735,8 +735,8 @@ public class HubDataDelegate {
                 	OALinkInfo liMany = OAObjectInfoDelegate.getReverseLinkInfo(liRecursiveOne);
                 	if (liMany != null) {
                         hashRecursiveHubDetail.computeIfAbsent(thisHub, k -> {
-                            HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
-                            if (dm.liDetailToMaster != null) return dm.liDetailToMaster;
+                            HubDataMaster dm = faHub.getHubDataMaster(thisHub);
+                            if (dm.getDetailToMasterLinkInfo() != null) return dm.getDetailToMasterLinkInfo();
                         	return null;
                         });
                     	Object val = OAObjectReflectDelegate.getProperty((OAObject)parent, liMany.getName());
@@ -748,15 +748,15 @@ public class HubDataDelegate {
             }
 
             if (bUseMaster) {
-                if (thisHub.datam.getMasterHub() != null && thisHub.datam.liDetailToMaster != null) {  
+                if (faHub.getHubDataMaster(thisHub).getMasterHub() != null && faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo() != null) {  
                     // only do this if a masterHub, since a hub that has a masterObject (w/o hub) should not do this adjustment
-                    Object parent = OAObjectReflectDelegate.getProperty((OAObject)object, thisHub.datam.liDetailToMaster.getName());
+                    Object parent = OAObjectReflectDelegate.getProperty((OAObject)object, faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo().getName());
                     if (parent != null) {
-                        OALinkInfo li = OAObjectInfoDelegate.getReverseLinkInfo(thisHub.datam.liDetailToMaster);
+                        OALinkInfo li = OAObjectInfoDelegate.getReverseLinkInfo(faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo());
                         if (li != null) {
                             hashRecursiveHubDetail.computeIfAbsent(thisHub, k -> {
-                                HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
-                                if (dm.liDetailToMaster != null) return  dm.liDetailToMaster;
+                                HubDataMaster dm = faHub.getHubDataMaster(thisHub);
+                                if (dm.getDetailToMasterLinkInfo() != null) return  dm.getDetailToMasterLinkInfo();
                                 return null;
                             });
                             Object val = OAObjectReflectDelegate.getProperty((OAObject)parent, li.getName());
@@ -792,7 +792,7 @@ public class HubDataDelegate {
     /**
      * Used by HubDataDelegate.getPos(..) when finding the object for recursive links
      */
-    static private final Map<Hub, OALinkInfo> hashRecursiveHubDetail = new ConcurrentHashMap<Hub, OALinkInfo>(11, 0.75F);
+    private final Map<Hub, OALinkInfo> hashRecursiveHubDetail = new ConcurrentHashMap<Hub, OALinkInfo>(11, 0.75F);
     
     /**
      * Removes the given object from the Hub’s change-tracking “added” list.
@@ -803,24 +803,27 @@ public class HubDataDelegate {
      * @param thisHub the Hub whose added list is modified
      * @param obj the object to remove from the added list
      */
-	protected static void removeFromAddedList(Hub thisHub, Object obj) {
-	    synchronized (thisHub.data) {
-            if (thisHub.data.hubDatax == null) return;
-	    	Vector v = thisHub.data.getVecAdd();
+	protected void removeFromAddedList(Hub thisHub, Object obj) {
+	    synchronized (faHub.getHubData(thisHub)) {
+            if (faHubData.getHubDatax(thisHub) == null) return;
+	    	Vector v = faHub.getHubData(thisHub).getVecAdd();
 	    	if (v != null) v.remove(obj);
-            if (thisHub.data.hubDatax != null) {
-                if (!thisHub.data.hubDatax.isNeeded()) {
-                    thisHub.data.hubDatax = null;
+
+            if (faHubData.getHubDatax(thisHub) != null) {
+                if (!faHubData.getHubDatax(thisHub).isNeeded()) {
+                	faHubData.setHubDataxNull(thisHub);
                 }
-                if (thisHub.data.changed) {
-                    boolean b = (thisHub.data.hubDatax == null);
+                if (faHubData.getChanged(thisHub)) {
+                    boolean b = (faHubData.getHubDatax(thisHub) == null);
                     if (!b) {
-                        b = (thisHub.data.hubDatax.vecAdd == null || thisHub.data.hubDatax.vecAdd.size() == 0);
-                        b &= (thisHub.data.hubDatax.vecRemove == null || thisHub.data.hubDatax.vecRemove.size() == 0);
+                    	v = faHub.getHubData(thisHub).getVecAdd();
+                        b = (v == null || v.size() == 0);
+                    	v = faHub.getHubData(thisHub).getVecRemove();
+                        b &= (v == null || v.size() == 0);
                     }
                     if (b) {
-                        thisHub.data.changed = false;
-                        thisHub.data.changeCount++;
+                    	faHubData.setChanged(thisHub, false);
+                    	faHubData.incrementChangeCount(thisHub);
                     }
                 }
             }
@@ -836,24 +839,27 @@ public class HubDataDelegate {
 	 * @param thisHub the Hub whose removed list is modified
 	 * @param obj the object to remove from the removed list
 	 */
-	public static void removeFromRemovedList(Hub thisHub, Object obj) {
-        if (thisHub.data.hubDatax == null) return;
-	    synchronized (thisHub.data) {
-	    	Vector v = thisHub.data.getVecRemove();
+	public void removeFromRemovedList(Hub thisHub, Object obj) {
+        if (faHubData.getHubDatax(thisHub) == null) return;
+	    synchronized (faHub.getHubData(thisHub)) {
+	    	Vector v = faHub.getHubData(thisHub).getVecRemove();
 	    	if (v != null) v.remove(obj);
-            if (thisHub.data.hubDatax != null) {
-                if (!thisHub.data.hubDatax.isNeeded()) {
-                    thisHub.data.hubDatax = null;
+	    	
+            if (faHubData.getHubDatax(thisHub) != null) {
+                if (!faHubData.getHubDatax(thisHub).isNeeded()) {
+                	faHubData.setHubDataxNull(thisHub);
                 }
-                if (thisHub.data.changed) {
-                    boolean b = (thisHub.data.hubDatax == null);
+                if (faHubData.getChanged(thisHub)) {
+                    boolean b = (faHubData.getHubDatax(thisHub) == null);
                     if (!b) {
-                        b = (thisHub.data.hubDatax.vecAdd == null || thisHub.data.hubDatax.vecAdd.size() == 0);
-                        b &= (thisHub.data.hubDatax.vecRemove == null || thisHub.data.hubDatax.vecRemove.size() == 0);
+                    	v = faHub.getHubData(thisHub).getVecAdd();
+                        b = (v == null || v.size() == 0);
+                    	v = faHub.getHubData(thisHub).getVecRemove();
+                        b &= (v == null || v.size() == 0);
                     }
                     if (b) {
-                        thisHub.data.changed = false;
-                        thisHub.data.changeCount++;
+                    	faHubData.setChanged(thisHub, false);
+                    	faHubData.incrementChangeCount(thisHub);
                     }
                 }
             }
@@ -866,8 +872,8 @@ public class HubDataDelegate {
 	 * @param thisHub the Hub whose change count is requested
 	 * @return the current change count
 	 */
-	public static int getChangeCount(Hub thisHub) {
-	    return thisHub.data.changeCount;
+	public int getChangeCount(Hub thisHub) {
+    	return faHubData.getChangeCount(thisHub);
 	}
 	
 	/**
@@ -875,8 +881,8 @@ public class HubDataDelegate {
 	 *
 	 * @param thisHub the Hub whose counter is incremented
 	 */
-	protected static void incChangeCount(Hub thisHub) {
-		thisHub.data.changeCount++;
+	protected void incChangeCount(Hub thisHub) {
+    	faHubData.incrementChangeCount(thisHub);
 	}
 
 	/**
@@ -889,7 +895,7 @@ public class HubDataDelegate {
 	 * @param obj the object to look for
 	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
 	 */
-	public static boolean contains(Hub hub, Object obj) {
+	public boolean contains(Hub hub, Object obj) {
 		return contains(hub, obj, false);
 	}
 	
@@ -905,15 +911,15 @@ public class HubDataDelegate {
 	 * @param bJustAdded if {@code true}, only checks the most recently added items
 	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
 	 */
-	public static boolean contains(Hub hub, Object obj, final boolean bJustAdded) {
+	public boolean contains(Hub hub, Object obj, final boolean bJustAdded) {
         if (hub == null || obj == null) return false;
         
-        final int size = hub.data.vector.size();
+        final int size = faHubData.getVector(hub).size();
         if (size == 0) return false;
 
         if (bJustAdded) {
             for (int i=1; i<3; i++) {
-                if (hub.data.vector.elementAt(size-i) == obj) {
+                if (faHubData.getVector(hub).elementAt(size-i) == obj) {
                     return true;
                 }
             }
@@ -927,7 +933,7 @@ public class HubDataDelegate {
         }
         
         if (!(obj instanceof OAObject)) {
-            if (!hub.data.isOAObjectFlag()) {
+            if (!faHub.getHubData(hub).isOAObjectFlag()) {
                 return containsDirect(hub, obj);
             }
             // oaObjectKey, or Id value
@@ -935,7 +941,7 @@ public class HubDataDelegate {
             if (obj == null) return false;
         }        
         
-        if (!hub.data.isOAObjectFlag()) {
+        if (!faHub.getHubData(hub).isOAObjectFlag()) {
             return containsDirect(hub, obj);
         }
         
@@ -952,12 +958,12 @@ public class HubDataDelegate {
 	 * @param obj the object to check for
 	 * @return {@code true} if the object is present, otherwise {@code false}
 	 */
-    public static boolean containsDirect(Hub hub, Object obj) {
+    public boolean containsDirect(Hub hub, Object obj) {
         if (hub == null || obj == null) return false;
-        int x = hub.data.vector.size();
+        int x = faHubData.getVector(hub).size();
         if (x == 0) return false;
         if (x > 125) {
-            if (hub.data.getSortListener() != null) {
+            if (faHub.getHubData(hub).getSortListener() != null) {
                 x = findUsingQuickSort(hub, obj);
                 if (x == 1) return true;
                 if (x == 2) return false;
@@ -965,7 +971,7 @@ public class HubDataDelegate {
                 if (x == -3) return false;
             }
         }
-        return hub.data.vector.contains(obj);
+        return faHubData.getVector(hub).contains(obj);
     }
     
     /**
@@ -975,16 +981,16 @@ public class HubDataDelegate {
      * @param obj the object to check
      * @return status code indicating match, mismatch, or invalid conditions
      */
-    private static int findUsingQuickSort(final Hub thisHub, final Object obj) {
+    private int findUsingQuickSort(final Hub thisHub, final Object obj) {
         if (thisHub == null || obj == null) return -1;
         
-        HubSortListener hsl = thisHub.data.getSortListener(); 
+        HubSortListener hsl = faHub.getHubData(thisHub).getSortListener(); 
         if (hsl == null) return -2;
         Class cx = thisHub.getObjectClass();
         if (cx == null || !cx.equals(obj.getClass())) return -3;
         
         int head = -1;
-        int tail = thisHub.data.vector.size();
+        int tail = faHubData.getVector(thisHub).size();
         for ( ;; ) {
             if (head+1 >= tail) {
                 break;
@@ -998,7 +1004,7 @@ public class HubDataDelegate {
             
             Object cobj = thisHub.elementAt(i);
             if (obj == cobj || obj.equals(cobj)) return 1;
-            int c = hsl.comparator.compare(obj, cobj);
+            int c = hsl.getComparator().compare(obj, cobj);
 
             if (c == 0) {
                 int iHold = i;
@@ -1007,13 +1013,13 @@ public class HubDataDelegate {
                     cobj = thisHub.elementAt(i);
                     if (cobj == null) continue;
                     if (obj == cobj || obj.equals(cobj)) return 1;
-                    if (hsl.comparator.compare(obj, cobj) != 0) break;
+                    if (hsl.getComparator().compare(obj, cobj) != 0) break;
                 }
                 for (i=iHold+1; i < tail;i++) {
                     cobj = thisHub.elementAt(i);
                     if (cobj == null) continue;
                     if (obj == cobj || obj.equals(cobj)) return 1;
-                    if (hsl.comparator.compare(obj, cobj) != 0) break;
+                    if (hsl.getComparator().compare(obj, cobj) != 0) break;
                 }
                 break;
             }
@@ -1033,10 +1039,10 @@ public class HubDataDelegate {
      * @param thisHub the Hub to check
      * @return {@code true} if this Hub is used recursively, otherwise {@code false}
      */
-    public static boolean isHubBeingUsedAsRecursive(Hub thisHub) {
+    public boolean isHubBeingUsedAsRecursive(Hub thisHub) {
         if (thisHub == null) return false;
 
-        OALinkInfo li = thisHub.datam.liDetailToMaster;
+        OALinkInfo li = faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo();
         if (li == null) {
             return (thisHub == thisHub.getRootHub());
         }
@@ -1049,8 +1055,8 @@ public class HubDataDelegate {
      * @param thisHub the Hub to update
      * @param b the new track-changes state
      */
-    public static void setTrackChanges(Hub thisHub, boolean b) {
-        thisHub.data.setTrackChanges(b);        
+    public void setTrackChanges(Hub thisHub, boolean b) {
+    	faHub.getHubData(thisHub).setTrackChanges(b);        
     }
 
     /**
@@ -1059,8 +1065,8 @@ public class HubDataDelegate {
      * @param thisHub the Hub to query
      * @return {@code true} if track changes is enabled, otherwise {@code false}
      */
-    public static boolean getTrackChanges(Hub thisHub) {
-        return thisHub != null && thisHub.data.getTrackChanges();        
+    public boolean getTrackChanges(Hub thisHub) {
+    	return faHub.getHubData(thisHub).getTrackChanges();        
     }
     
     /**
@@ -1069,11 +1075,11 @@ public class HubDataDelegate {
      * @param thisHub the Hub to check
      * @return {@code true} if loading all data, otherwise {@code false}
      */
-    public static boolean isLoadingAllData(Hub thisHub) {
+    public boolean isLoadingAllData(Hub thisHub) {
         if (thisHub == null) return false;
         boolean b;
-        synchronized (thisHub.data) {
-            b = (thisHub != null && thisHub.data.isLoadingAllData());
+        synchronized (faHub.getHubData(thisHub)) {
+            b = (thisHub != null && faHub.getHubData(thisHub).isLoadingAllData());
         }
         return b;
     }
@@ -1085,11 +1091,11 @@ public class HubDataDelegate {
      * @param b the new load-all-data state
      * @return the previous state
      */
-    public static boolean setLoadingAllData(Hub thisHub, boolean b) {
+    public boolean setLoadingAllData(Hub thisHub, boolean b) {
         boolean bx = false;
         if (thisHub != null) {
-            synchronized (thisHub.data) {
-                bx = thisHub.data.setLoadingAllData(b);
+            synchronized (faHub.getHubData(thisHub)) {
+                bx = faHub.getHubData(thisHub).setLoadingAllData(b);
             }
         }
         return bx;
@@ -1103,13 +1109,15 @@ public class HubDataDelegate {
      * @param thread the thread to associate with the load-all flag
      * @return the previous state
      */
-    public static boolean setLoadingAllData(Hub thisHub, boolean b, Thread thread) {
+    public boolean setLoadingAllData(Hub thisHub, boolean b, Thread thread) {
         boolean bx = false;
         if (thisHub != null) {
-            synchronized (thisHub.data) {
-                bx = thisHub.data.setLoadingAllData(b, thread);
+            synchronized (faHub.getHubData(thisHub)) {
+                bx = faHub.getHubData(thisHub).setLoadingAllData(b, thread);
             }
         }
         return bx;
     }
+
+	
 }

@@ -3983,10 +3983,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		public void firePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj) {		
 			oaObj.firePropertyChange(propertyName, oldObj, newObj);
 		}
-
-
-		
-		
 	}
 	
 	private final static FriendAccess friendAccess = new FriendAccess(); 

@@ -230,7 +230,8 @@ public class HubDelegate {
 	 * @return the resolved object instance, or the original value if no resolution
 	 *         occurs
 	 */
-	protected static Object getRealObject(Hub hub, Object object) {
+	public static Object getRealObject(Hub hub, Object object) {
+		//qqqqqqqq method was protected
 		if (object != null && !object.getClass().equals(hub.getObjectClass())) {
 			Object objx = OAObjectCacheDelegate.get(hub.getObjectClass(), object);
 			if (objx != null) {
