@@ -57,7 +57,8 @@ public class HubDSDelegate {
 	 * @param removes        objects to remove from the link table
 	 * @param propFromMaster the name of the master-side property for the link
 	 */
-	protected static void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
+	public static void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
+		//qqqqqqqqqq method was protected
 		OADataSource ds = OADataSource.getDataSource(masterObject.getClass());
 		if (ds != null) ds.updateMany2ManyLinks(masterObject, adds, removes, propFromMaster);
 	}

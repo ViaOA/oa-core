@@ -65,7 +65,7 @@ import com.viaoa.object.*;
  *       call {@link Hub#getDetail(String)} instead.</li>
  * </ul>
  */
-class HubDetail implements java.io.Serializable {
+public class HubDetail implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
 
     /**
@@ -145,6 +145,8 @@ class HubDetail implements java.io.Serializable {
      * reflects its related objects.
      */
     protected Hub hubDetail;
+
+    boolean bIgnoreUpdate;
     
 	/**
 	 * Constructs a new HubDetail instance linking a master hub to its
@@ -177,14 +179,13 @@ class HubDetail implements java.io.Serializable {
      * @param path      the property path used by the merger
      * @param hubDetail the detail hub produced by the merger
      */
-    HubDetail(String path, Hub hubDetail) {
+    public HubDetail(String path, Hub hubDetail) {
         this.hubDetail = hubDetail;
         this.path = path;
         this.type = HUBMERGER;
         this.referenceCount = 0;
     }
     
-    boolean bIgnoreUpdate;
 
     /**
      * Installs recursive master/detail correction logic when the relationship
@@ -255,15 +256,80 @@ class HubDetail implements java.io.Serializable {
         });
     }
 
-	public static final class FriendAccess {
-		private FriendAccess() {
-		}
+    
+	public Hub getDetailHub() {
+		return hubDetail;
 	}
 
-	private final static FriendAccess friendAccess = new FriendAccess();
-	static FriendAccess getFriendAccess() {
-		return friendAccess;
+	public int getType() {
+		return type;
 	}
 
+	public void setType(int type) {
+		this.type = type;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
+
+	public boolean getShareActiveObject() {
+		return bShareActiveObject;
+	}
+
+	public void setShareActiveObject(boolean bShareActiveObject) {
+		this.bShareActiveObject = bShareActiveObject;
+	}
+
+	public int getReferenceCount() {
+		return referenceCount;
+	}
+	public void incrementReferenceCount() {
+		referenceCount++;
+	}
+	public void decrementReferenceCount() {
+		referenceCount--;
+	}
+
+	public void setReferenceCount(int referenceCount) {
+		this.referenceCount = referenceCount;
+	}
+
+	public OALinkInfo getMasterToDetailLinkInfo() {
+		return liMasterToDetail;
+	}
+
+	public void setMasterToDetailLinkInfo(OALinkInfo liMasterToDetail) {
+		this.liMasterToDetail = liMasterToDetail;
+	}
+
+	public Hub getHubMaster() {
+		return hubMaster;
+	}
+
+	public void setHubMaster(Hub hubMaster) {
+		this.hubMaster = hubMaster;
+	}
+
+	public Hub getHubDetail() {
+		return hubDetail;
+	}
+
+	public void setHubDetail(Hub hubDetail) {
+		this.hubDetail = hubDetail;
+	}
+
+	public boolean getIgnoreUpdate() {
+		return bIgnoreUpdate;
+	}
+
+	public void setIgnoreUpdate(boolean bIgnoreUpdate) {
+		this.bIgnoreUpdate = bIgnoreUpdate;
+	}
+	
 }
 	

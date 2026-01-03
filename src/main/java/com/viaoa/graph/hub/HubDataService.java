@@ -35,9 +35,8 @@ public class HubDataService {
      *
      * @param thisHub the hub whose internal state is being reset
      */
-	protected void clearAllAndReset(Hub thisHub) {
-		
-		
+	public void clearAllAndReset(Hub thisHub) {
+		//qqqqqqqq method was protected
     	synchronized (faHub.getHubData(thisHub)) {
     		Vector v = faHub.getHubData(thisHub).getVecAdd();
             if (v != null) v.removeAllElements();
@@ -63,7 +62,8 @@ public class HubDataService {
 	 * @param thisHub the hub whose vector capacity is being checked
 	 * @param size    the minimum capacity required
 	 */
-	protected void ensureCapacity(Hub thisHub, int size) {
+	public void ensureCapacity(Hub thisHub, int size) {
+		//qqqqqq method was protected
 		faHubData.getVector(thisHub).ensureCapacity(size);
 	}
 	
@@ -88,7 +88,8 @@ public class HubDataService {
 	 * @param thisHub   the hub whose changed state is being updated
 	 * @param bChanged  the new changed value
 	 */
-	protected void setChanged(Hub thisHub, boolean bChanged) {
+	public void setChanged(Hub thisHub, boolean bChanged) {
+		//qqqqqqq method was proteced
 	    if (thisHub == null) return;
         boolean old = faHubData.getChanged(thisHub);
         if (bChanged == old) return;
@@ -168,7 +169,8 @@ public class HubDataService {
 	 * @param thisHub the hub whose elements are being copied
 	 * @param anArray the destination array
 	 */
-    protected void copyInto(Hub thisHub, Object anArray[]) {
+    public void copyInto(Hub thisHub, Object anArray[]) {
+    	//qqqqqqqq method was protected
         synchronized (faHub.getHubData(thisHub)) {
         	faHubData.getVector(thisHub).copyInto(anArray);
         }
@@ -234,7 +236,8 @@ public class HubDataService {
      * @param bIsRemovingAll whether the entire Hub is being cleared
      * @return the position from which the object was removed, or -1
      */
-    protected int _remove(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
+    public int _remove(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
+    	//qqqqqqqq method was protected
         int pos = 0;
         try {
             OAThreadLocalDelegate.lock(thisHub);
@@ -330,7 +333,8 @@ public class HubDataService {
      * @param bCheckContains whether to skip the add if the object is already present
      * @return {@code true} if the object was added; otherwise {@code false}
      */
-    protected boolean _add(Hub thisHub, Object obj, boolean bHasLock, boolean bCheckContains) {
+    public boolean _add(Hub thisHub, Object obj, boolean bHasLock, boolean bCheckContains) {
+    	//qqqqqqqq method was protected
         boolean b = false;
         try {
             if (!bHasLock) OAThreadLocalDelegate.lock(thisHub);
@@ -400,7 +404,8 @@ public class HubDataService {
      * @param bIsLocked whether the calling thread already holds the lock
      * @return {@code true} if the object was inserted
      */
-    protected boolean _insert(Hub thisHub, Object obj, int pos, boolean bIsLocked) {
+    public boolean _insert(Hub thisHub, Object obj, int pos, boolean bIsLocked) {
+    	//qqqqqqqqq method was protected
         boolean b = false;
         try {
             if (!bIsLocked) OAThreadLocalDelegate.lock(thisHub);
@@ -458,7 +463,8 @@ public class HubDataService {
 	 * @param posFrom the original index
 	 * @param posTo   the destination index
 	 */
-	protected void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
+	public void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
+		//qqqqqqqq method was protected
         try {
             OAThreadLocalDelegate.lock(thisHub);
             faHubData.incrementChangeCount(thisHub);
@@ -494,7 +500,8 @@ public class HubDataService {
 	 * @param thisHub the hub whose add-tracking vector is being created
 	 * @return the add-tracking vector
 	 */
-	protected Vector createVecAdd(Hub thisHub) {
+	public Vector createVecAdd(Hub thisHub) {
+		//qqqqqqqq method was protected
         if (faHub.getHubData(thisHub).getVecAdd() == null) {
 	        synchronized (faHub.getHubData(thisHub)) {
 	            if (faHub.getHubData(thisHub).getVecAdd() == null) {
@@ -512,7 +519,8 @@ public class HubDataService {
 	 * @param thisHub the hub whose remove-tracking vector is being created
 	 * @return the remove-tracking vector
 	 */
-	protected Vector createVecRemove(Hub thisHub) {
+	public Vector createVecRemove(Hub thisHub) {
+		//qqqqqqqqq method was protected
         if (faHub.getHubData(thisHub).getVecRemove() == null) {
 	        synchronized (faHub.getHubData(thisHub)) {
 	            if (faHub.getHubData(thisHub).getVecRemove() == null) {
@@ -621,7 +629,7 @@ public class HubDataService {
 	 * @param pos the index to retrieve
 	 * @return the object at the position, or {@code null} if not available
 	 */
-	protected Object getObjectAt(Hub thisHub, int pos) {
+	public Object getObjectAt(Hub thisHub, int pos) {
 	    Object ho;
 	    if (pos < 0) return null;
 	    
@@ -803,7 +811,7 @@ public class HubDataService {
      * @param thisHub the Hub whose added list is modified
      * @param obj the object to remove from the added list
      */
-	protected void removeFromAddedList(Hub thisHub, Object obj) {
+	public void removeFromAddedList(Hub thisHub, Object obj) {
 	    synchronized (faHub.getHubData(thisHub)) {
             if (faHubData.getHubDatax(thisHub) == null) return;
 	    	Vector v = faHub.getHubData(thisHub).getVecAdd();
@@ -881,7 +889,7 @@ public class HubDataService {
 	 *
 	 * @param thisHub the Hub whose counter is incremented
 	 */
-	protected void incChangeCount(Hub thisHub) {
+	public void incChangeCount(Hub thisHub) {
     	faHubData.incrementChangeCount(thisHub);
 	}
 

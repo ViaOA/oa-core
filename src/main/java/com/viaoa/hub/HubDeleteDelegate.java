@@ -20,8 +20,10 @@ import java.lang.reflect.Modifier;
 import java.util.Vector;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.*;
 
 /**
@@ -41,6 +43,24 @@ import com.viaoa.sync.*;
  */
 public class HubDeleteDelegate {
 
+	/*
+	OAGraph g = getGraph(hub, null);
+	if (g == null) return;
+	g.hubs().getHubDeleteService().?(?);
+
+	OAGraph g = OARuntime.get().graph(c);
+	if (g == null) return;
+	g.hubs().getHubDeleteService().?(?);
+    */
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+	
 	/**
 	 * Deletes all objects in the hub. If running in client/server mode and the
 	 * delete must occur on the server, the request is delegated to the server and
@@ -51,48 +71,9 @@ public class HubDeleteDelegate {
 	 * @param thisHub the hub whose contents will be deleted
 	 */
     public static void deleteAll(Hub thisHub) {
-        // 20150206 send to server
-        if (thisHub.getSize() == 0) return;
-        if (!HubCSDelegate.deleteAll(thisHub)) {
-            return; // sent to server to be done.
-        }
-
-        try {
-            OAThreadLocalDelegate.setDeleting(thisHub, true);
-            OARemoteThreadDelegate.sendMessages(true);
-            _runDeleteAll(thisHub);
-        }
-        finally {
-            OARemoteThreadDelegate.sendMessages(false);
-            OAThreadLocalDelegate.setDeleting(thisHub, false);
-        }
-    }
-
-    /**
-     * Server-side implementation that performs a complete deletion of all hub
-     * objects. Change tracking is cleared, and all objects are removed using a
-     * single bulk event. Each OAObject is deleted using a shared cascade, and then
-     * explicitly removed from the hub for synchronization with listeners.
-     *
-     * @param thisHub the hub whose contents are being deleted
-     */
-    private static void _runDeleteAll(Hub thisHub) {
-        Object[] objs;
-        if (thisHub.isOAObject()) objs = thisHub.toArray();
-        else objs = null;
-
-        HubAddRemoveDelegate.clear(thisHub); // single event to remove all from hub (sent to clients)
-        HubDataDelegate.clearHubChanges(thisHub);
-
-        if (objs != null) {
-            OACascade cascade = new OACascade();
-            for (Object obj : objs) {
-                OAObjectDeleteDelegate.delete((OAObject) obj, cascade);
-            }
-            for (Object obj : objs) {
-                HubAddRemoveDelegate.remove(thisHub, obj, false, false, true, false, false, true);
-            }
-        }
+    	OAGraph g = getGraph(thisHub, null);
+    	if (g == null) return;
+    	g.hubs().getHubDeleteService().deleteAll(thisHub);
     }
 
     /**
@@ -103,7 +84,9 @@ public class HubDeleteDelegate {
      * @return {@code true} if the hub is currently deleting all objects
      */
     public static boolean isDeletingAll(Hub thisHub) {
-        return OAThreadLocalDelegate.isDeleting(thisHub);
+    	OAGraph g = getGraph(thisHub, null);
+    	if (g == null) return false;
+    	return g.hubs().getHubDeleteService().isDeletingAll(thisHub);
     }
 
     /**
@@ -116,97 +99,9 @@ public class HubDeleteDelegate {
      * @param cascade the cascade tracker used to avoid repeated processing
      */
     public static void deleteAll(Hub thisHub, OACascade cascade) {
-        if (thisHub.size() == 0) return;
-        if (cascade.wasCascaded(thisHub, true)) return;
-        try {
-            OAThreadLocalDelegate.setDeleting(thisHub, true);
-            OAThreadLocalDelegate.lock(thisHub);
-            _deleteAll(thisHub, cascade);
-        }
-        finally {
-            OAThreadLocalDelegate.unlock(thisHub);
-            OAThreadLocalDelegate.setDeleting(thisHub, false);
-        }
+    	OAGraph g = getGraph(thisHub, null);
+    	if (g == null) return;
+    	g.hubs().getHubDeleteService().deleteAll(thisHub, cascade);
     }
 
-    /**
-     * Internal deletion routine that removes all objects from the hub, updates
-     * change-tracking lists, and deletes each OAObject using the provided cascade.
-     * Handles special cases for one-to-many link tables, many-to-many link cleanup,
-     * master/detail updates, and ensures HubAddRemoveDelegate receives removal
-     * events for each object.
-     *
-     * @param thisHub the hub being cleared
-     * @param cascade the cascade used for recursive delete operations
-     */
-    private static void _deleteAll(Hub thisHub, OACascade cascade) {
-        final boolean bIsOa = thisHub.isOAObject();
-        Object objLast = null;
-
-        // 20121005 need to check to see if a link table was used for a 1toM, where createMethod for One is false
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
-        OALinkInfo liRev = null;
-        OAObject masterObj = null;
-        OADataSource dataSource = null;
-        if (bIsOa && li != null && li.getType() == li.ONE) {
-            if (li.getPrivateMethod()) {
-                // uses a link table, need to delete from link table first
-                liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
-
-                masterObj = HubDetailDelegate.getMasterObject(thisHub);
-                if (masterObj != null) dataSource = OADataSource.getDataSource(masterObj.getClass());
-            }
-        }
-
-        // 20160615
-        final Object[] objs = thisHub.toArray();
-        thisHub.data.vector.removeAllElements();
-
-        if ((thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()) && thisHub.isOAObject()) {
-            Vector vecRemove = thisHub.data.getVecRemove();
-            int x = vecRemove == null ? 0 : vecRemove.size();
-            for (Object obj : objs) {
-                if (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().removeElement(obj)) {
-                    // no-op
-                }
-                else {
-                    boolean b = false;
-                    for (int i = 0; i < x; i++) {
-                        if (obj == vecRemove.elementAt(i)) {
-                            b = true;
-                            break;
-                        }
-                    }
-                    if (!b) {
-                        if (vecRemove == null) vecRemove = HubDataDelegate.createVecRemove(thisHub);
-                        vecRemove.addElement(obj);
-                    }
-                }
-            }
-            HubDataDelegate.setChanged(thisHub,
-                (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().size() > 0) || (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().size() > 0));
-        }
-        else {
-            HubDataDelegate.setChanged(thisHub, true);
-        }
-
-        for (Object obj : objs) {
-            // 20240125
-            // since thisHub.data.vector.removeAllElements was called (above), need to call remove for thisHub
-            HubAddRemoveDelegate.remove(thisHub, obj, false, true, true, true, true, true);
-
-            if (dataSource != null) {
-                dataSource.updateMany2ManyLinks(masterObj, null, new OAObject[] { (OAObject) obj }, liRev.getName());
-            }
-
-            if (bIsOa) {
-                OAObjectDeleteDelegate.delete((OAObject) obj, cascade);
-            }
-
-        }
-
-        HubDelegate._updateHubAddsAndRemoves(thisHub, -1, cascade, false);
-
-        thisHub.setChanged(false); // removes all vecAdd, vecRemove objects
-    }
 }

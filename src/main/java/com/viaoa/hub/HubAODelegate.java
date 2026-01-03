@@ -19,12 +19,14 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.OAGroupBy;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 
 /**
@@ -45,6 +47,25 @@ import com.viaoa.util.OAFilter;
 public class HubAODelegate {
 	private static Logger LOG = Logger.getLogger(HubAODelegate.class.getName());
 
+	/*
+	OAGraph g = getGraph(hub, null);
+	if (g == null) return;
+	g.hubs().getHubAOService().?(?);
+
+	OAGraph g = OARuntime.get().graph(c);
+	if (g == null) return;
+	g.hubs().getHubAOService().?(?);
+    */
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+	
+	
 	/**
 	 * Sets the active object based on the specified position. If the position is
 	 * outside the valid range, the active object is set to {@code null}. Delegates
@@ -55,7 +76,9 @@ public class HubAODelegate {
 	 * @return the object at the specified position, or {@code null} if none
 	 */
 	public static Object setActiveObject(Hub thisHub, int pos) {
-		return setActiveObject(thisHub, pos, true, false, false); //bUpdateLink,bForce,bCalledByShareHub
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubAOService().setActiveObject(thisHub, pos);
 	}
 
 	/**
@@ -67,16 +90,9 @@ public class HubAODelegate {
 	 * @param object  the object to make active, or {@code null} to clear
 	 */
 	public static void setActiveObject(Hub thisHub, Object object) {
-		if (object != null) {
-			/* not needed, used for debugging 20150920
-			if (object instanceof Hub) {
-			    LOG.warning("trying to set active object using a AO=hub, thisHub="+thisHub+", AO="+object);
-			    return;
-			}
-			*/
-			object = HubDelegate.getRealObject(thisHub, object);
-		}
-		setActiveObject(thisHub, object, true, true, false);
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().setActiveObject(thisHub, object);
 	}
 
 	/**
@@ -87,10 +103,9 @@ public class HubAODelegate {
 	 * @param object  the object to force as active, or {@code null} to clear
 	 */
 	public static void setActiveObjectForce(Hub thisHub, Object object) {
-		if (object != null) {
-			object = HubDelegate.getRealObject(thisHub, object);
-		}
-		setActiveObject(thisHub, object, true, true, true);
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().setActiveObjectForce(thisHub, object);
 	}
 
 	/**
@@ -103,10 +118,9 @@ public class HubAODelegate {
 	 * @param adjustMaster whether to adjust the master hub if the object is not found
 	 */
 	public static void setActiveObject(Hub thisHub, Object object, boolean adjustMaster) {
-		if (object != null) {
-			object = HubDelegate.getRealObject(thisHub, object);
-		}
-		setActiveObject(thisHub, object, adjustMaster, true, false); // adjMaster, updateLink, force
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().setActiveObject(thisHub, object, adjustMaster);
 	}
 
 	/**
@@ -121,31 +135,9 @@ public class HubAODelegate {
 	 * @param bForce       whether to force the update even if unchanged
 	 */
 	public static void setActiveObject(Hub thisHub, Object object, boolean adjustMaster, boolean bUpdateLink, boolean bForce) {
-		// for detailHub where link.type=ONE
-		OALinkInfo li = thisHub.datam.liDetailToMaster;
-		OALinkInfo liRev;
-		if (li != null) {
-			liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
-		} else {
-			liRev = HubDetailDelegate.getLinkInfoFromMasterObjectToDetail(thisHub);
-		}
-		if (liRev != null) {
-			if (liRev.getType() == li.ONE && bUpdateLink) { // 20171117
-				//was: if (liRev.getType() == li.ONE) {
-				Object objMaster = HubDetailDelegate.getMasterObject(thisHub);
-				if (objMaster != null) {
-					Object value = OAObjectReflectDelegate.getProperty((OAObject) objMaster, liRev.getName());
-					if (value != object) {
-						if (objMaster != null) {
-							OAObjectReflectDelegate.setProperty((OAObject) objMaster, liRev.getName(), object, null);
-						}
-					}
-				}
-			}
-		}
-
-		int pos = HubDataDelegate.getPos(thisHub, object, adjustMaster, bUpdateLink);
-		setActiveObject(thisHub, (pos < 0 ? null : object), pos, bUpdateLink, bForce, false);
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().setActiveObject(thisHub, object, adjustMaster, bUpdateLink, bForce);
 	}
 
 	/**
@@ -157,7 +149,9 @@ public class HubAODelegate {
 	 * @param pos     the position of the object in the hub
 	 */
 	public static void setActiveObject(Hub thisHub, Object object, int pos) {
-		setActiveObject(thisHub, object, pos, true, false, false); // bUpdateLink,bForce
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().setActiveObject(thisHub, object, pos);
 	}
 
 	/**
@@ -173,19 +167,9 @@ public class HubAODelegate {
 	 * @return the object at the specified position, or {@code null} if none
 	 */
 	protected static Object setActiveObject(Hub thisHub, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub) {
-		Object ho;
-		if (pos < 0) {
-			ho = null;
-		} else {
-			ho = HubDataDelegate.getObjectAt(thisHub, pos);
-		}
-
-		if (ho == null) {
-			setActiveObject(thisHub, null, -1, bUpdateLink, bForce, bCalledByShareHub);
-		} else {
-			setActiveObject(thisHub, ho, pos, bUpdateLink, bForce, bCalledByShareHub);
-		}
-		return ho;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubAOService().setActiveObject(thisHub, pos, bUpdateLink, bForce, bCalledByShareHub);
 	}
 
 	/**
@@ -199,12 +183,13 @@ public class HubAODelegate {
 	 * @param bForce            whether to force the update
 	 * @param bCalledByShareHub whether this call originated from a shared hub
 	 */
-	protected static void setActiveObject(final Hub thisHub, Object object, int pos, boolean bUpdateLink, boolean bForce,
+	public static void setActiveObject(final Hub thisHub, Object object, int pos, boolean bUpdateLink, boolean bForce,
 			boolean bCalledByShareHub) {
-		setActiveObject(thisHub, object, pos, bUpdateLink, bForce, bCalledByShareHub, true);
+		//qqqqqqqqq method was protected
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().setActiveObject(thisHub, object, pos, bUpdateLink, bForce, bCalledByShareHub);
 	}
-
-	protected static final HashSet<Hub> hsWarnOnSettingAO = new HashSet<>();
 
 	/**
 	 * Registers the hub to emit warnings when its active object is set directly.
@@ -214,15 +199,9 @@ public class HubAODelegate {
 	 * @param thisHub the hub that should warn on active-object updates
 	 */
 	public static void warnOnSettingAO(Hub thisHub) {
-		if (thisHub == null) {
-			return;
-		}
-		if (thisHub.datam.getMasterObject() != null) {
-			if (thisHub.datam.getMasterHub() == null) {
-				return; // already will warn if AO is set
-			}
-		}
-		hsWarnOnSettingAO.add(thisHub);
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().warnOnSettingAO(thisHub);
 	}
 
 	/**
@@ -241,94 +220,9 @@ public class HubAODelegate {
 	 */
 	public static void setActiveObject(final Hub thisHub, Object object, final int pos, final boolean bUpdateLink, final boolean bForce,
 			final boolean bCalledByShareHub, final boolean bUpdateSharedHubDetail) {
-		if (thisHub == null) {
-			return;
-		}
-
-		if (thisHub.dataa.activeObject == object && !bForce) {
-			return;
-		}
-		if (thisHub.datau.isUpdatingActiveObject()) {
-			return;
-		}
-
-		// 20180328 check to see if thisHub has masterObject and no masterHub, which is the real hub and should not setAO on it since other "users" could be doing the same
-		if (OAObject.getDebugMode()) {
-			if (thisHub.datam.getMasterObject() != null && thisHub.getSharedHub() == null) {
-				if (thisHub.datam.getMasterHub() == null) {
-					if (!thisHub.getOAObjectInfo().getLocalOnly()) {
-						if (thisHub.dataa.activeObject != object || !bForce) {
-							if (!(thisHub.datam.getMasterObject() instanceof OAGroupBy)) {
-								LOG.log(Level.WARNING,
-										"Note/FYI only: should not setAO on thisHub=" + thisHub + " (use sharedHub), will continue",
-										new Exception("showing thread stack"));
-							}
-						}
-					}
-				}
-			}
-			if (hsWarnOnSettingAO.contains(thisHub) && thisHub.getSharedHub() == null) {
-				if (thisHub.dataa.activeObject != object || !bForce) {
-					LOG.log(Level.WARNING, "Note/FYI only: should not setAO on thisHub=" + thisHub + " (use sharedHub), will continue",
-							new Exception("showing thread stack"));
-				}
-			}
-		}
-
-		OAThreadLocalDelegate.lock(thisHub);
-		Object origActiveObject = thisHub.dataa.activeObject;
-		thisHub.dataa.activeObject = object;
-		OAThreadLocalDelegate.unlock(thisHub);
-
-		thisHub.datau.setUpdatingActiveObject(true);
-
-		HubDetailDelegate.updateAllDetail(thisHub, bUpdateLink);
-
-		if (bUpdateLink) {
-			HubLinkDelegate.updateLinkProperty(thisHub, object, pos);
-		}
-		thisHub.datau.setUpdatingActiveObject(false);
-
-		// Now call for all sharedHubs with same "dataa"
-		OAFilter<Hub> filter = new OAFilter<Hub>() {
-			@Override
-			public boolean isUsed(Hub h) {
-				return h.dataa == thisHub.dataa;
-			}
-		};
-
-		final Hub[] hubs = HubShareDelegate.getAllSharedHubs(thisHub, filter);
-
-		for (int i = 0; i < hubs.length; i++) {
-			Hub h = hubs[i];
-			if (h != thisHub && h.dataa == thisHub.dataa) {
-				h.datau.setUpdatingActiveObject(true);
-
-				if (bUpdateSharedHubDetail) {
-					HubDetailDelegate.updateAllDetail(h, bUpdateLink);
-				}
-				if (bUpdateLink) {
-					HubLinkDelegate.updateLinkProperty(h, object, pos);
-				}
-				h.datau.setUpdatingActiveObject(false);
-			}
-		}
-
-		// must send event After updateAllDetail()
-		// this will send event to all sharedHubs with same "dataa" only
-		HubEventDelegate.fireAfterChangeActiveObjectEvent(thisHub, object, pos, !bCalledByShareHub);
-
-		for (int i = 0; object != null && i < hubs.length; i++) {
-			Hub h = hubs[i];
-			if (h.dataa == thisHub.dataa) {
-				if (h.datau.getAddHub() != null) {
-					if (h.datau.getAddHub().getObject(object) == null) {
-						h.datau.getAddHub().add(object);
-					}
-					setActiveObject(h.datau.getAddHub(), object);
-				}
-			}
-		}
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().setActiveObject(thisHub, object, pos, bUpdateLink, bForce, bCalledByShareHub, bUpdateSharedHubDetail);
 	}
 
 	/**
@@ -339,28 +233,9 @@ public class HubAODelegate {
 	 * @param thisHub the hub whose detail hubs should be updated
 	 */
 	public static void updateDetailHubs(final Hub thisHub) {
-		if (thisHub == null) {
-			return;
-		}
-
-		// Now call for all sharedHubs with same "dataa"
-		OAFilter<Hub> filter = new OAFilter<Hub>() {
-			@Override
-			public boolean isUsed(Hub h) {
-				return h.dataa == thisHub.dataa;
-			}
-		};
-
-		Hub[] hubs = HubShareDelegate.getAllSharedHubs(thisHub, filter);
-
-		for (int i = 0; i < hubs.length; i++) {
-			Hub h = hubs[i];
-			if (h != thisHub && h.dataa == thisHub.dataa) {
-				h.datau.setUpdatingActiveObject(true);
-				HubDetailDelegate.updateAllDetail(h, true);
-				h.datau.setUpdatingActiveObject(false);
-			}
-		}
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().updateDetailHubs(thisHub);
 	}
 
 	/**
@@ -371,45 +246,9 @@ public class HubAODelegate {
 	 * @param thisHub the hub whose active object should always be the first object
 	 */
 	public static void keepActiveObject(final Hub thisHub) {
-		if (thisHub == null) {
-			return;
-		}
-		thisHub.addHubListener(new HubListenerAdapter() {
-			@Override
-			public void afterChangeActiveObject(HubEvent e) {
-				update();
-			}
-
-			@Override
-			public void afterNewList(HubEvent e) {
-				update();
-			}
-
-			@Override
-			public void afterAdd(HubEvent e) {
-				update();
-			}
-
-			@Override
-			public void afterRemove(HubEvent e) {
-				update();
-			}
-
-			@Override
-			public void afterInsert(HubEvent e) {
-				update();
-			}
-
-			@Override
-			public void afterRemoveAll(HubEvent e) {
-				update();
-			}
-
-			void update() {
-				thisHub.setPos(0);
-			}
-		});
-		thisHub.setPos(0);
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubAOService().keepActiveObject(thisHub);
 	}
 
 }

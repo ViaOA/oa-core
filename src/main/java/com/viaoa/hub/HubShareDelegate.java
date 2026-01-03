@@ -489,8 +489,9 @@ public class HubShareDelegate {
 	 * @param daNew              new HubDataActive instance
 	 * @param bUpdateLink        whether link-based AO adjustments should occur
 	 */
-	protected static void syncSharedHubs(Hub thisHub, boolean bShareActiveObject, HubDataActive daOld, HubDataActive daNew,
+	public static void syncSharedHubs(Hub thisHub, boolean bShareActiveObject, HubDataActive daOld, HubDataActive daNew,
 			boolean bUpdateLink) {
+		//qqqqqqqqqq method was protected
 		// all shared hubs need to use same data
 		Hub[] hubs = getAllSharedHubs(thisHub, true); // 201809123 added "true" so that other details using core hub would not be changed
 		for (int i = 0; i < hubs.length; i++) {
@@ -1078,8 +1079,9 @@ public class HubShareDelegate {
 	 * @param sharedHub the Hub whose shared list is being updated
 	 * @param hub       the Hub to remove
 	 */
-	protected static void removeSharedHub(Hub sharedHub, Hub hub) {
+	public static void removeSharedHub(Hub sharedHub, Hub hub) {
 		_removeSharedHub(sharedHub, hub);
+		//qqqqqqqqq method was protected
 		// 20181030 update temp listener cache
 		HubEventDelegate.clearGetAllListenerCache(hub); // will clear both hubs
 	}

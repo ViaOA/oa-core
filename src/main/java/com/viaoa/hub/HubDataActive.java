@@ -55,8 +55,24 @@ public class HubDataActive implements java.io.Serializable {
         activeObject = null;
     }
 
+	public Object getActiveObject() {
+		return activeObject;
+	}
+	public void setActiveObject(Object obj) {
+		activeObject = obj;
+	}
+	
+	
+	
 	public static final class FriendAccess {
 		private FriendAccess() {
+		}
+
+		public Object getActiveObject(Hub hub) {
+			return hub.dataa.activeObject;
+		}
+		public void setActiveObject(Hub hub, Object object) {
+			hub.dataa.activeObject = object;
 		}
 	}
 

@@ -98,6 +98,11 @@ public class HubDataMaster implements java.io.Serializable {
 		return liDetailToMaster;
 	}
 
+	public void setDetailToMasterLinkInfo(OALinkInfo li) {
+		liDetailToMaster = li;;
+	}
+	
+	
 	/**
 	 * Returns the unique property name associated with the reverse link of the
 	 * detail-to-master relationship.
@@ -232,6 +237,7 @@ public class HubDataMaster implements java.io.Serializable {
 		s.writeByte(0);
 	}
 
+	
 	/**
 	 * Custom deserialization method that restores default fields and reads
 	 * a placeholder byte written during serialization.

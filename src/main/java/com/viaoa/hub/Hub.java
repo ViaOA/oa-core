@@ -31,7 +31,6 @@ import java.util.Vector;
 import java.util.stream.Stream;
 
 import com.viaoa.datasource.OASelect;
-import com.viaoa.hub.HubData.FriendAccess;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -40,7 +39,6 @@ import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.object.OATrigger;
 import com.viaoa.object.OATriggerDelegate;
@@ -3052,14 +3050,25 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		public HubData getHubData(Hub hub) {
 			return hub.data;
 		}
+		public void setHubData(Hub hub, HubData data) {
+			hub.data = data;
+		}
+
 		public HubDataActive getHubDataActive(Hub hub) {
 			return hub.dataa;
 		}
+		public void setHubDataActive(Hub hub, HubDataActive dataa) {
+			hub.dataa = dataa;
+		}
+
 		public HubDataUnique getHubDataUnique(Hub hub) {
 			return hub.datau;
 		}
 		public HubDataMaster getHubDataMaster(Hub hub) {
 			return hub.datam;
+		}
+		public void setHubDataMaster(Hub hub, HubDataMaster dm) {
+			hub.datam = dm;
 		}
 	}
 

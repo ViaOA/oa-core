@@ -89,7 +89,7 @@ public class HubAddRemoveService {
 	 * @param bForce  whether to force removal
 	 * @return the removed object, or {@code null} if removal failed
 	 */
-	protected Object remove(final Hub thisHub, final int pos, final boolean bForce) {
+	public Object remove(final Hub thisHub, final int pos, final boolean bForce) {
 		Object obj = srvcHub.getHubDataService().getObjectAt(thisHub, pos);
 		if (!remove(thisHub, obj, bForce, true, false, true, true, false)) {
 			obj = null;
@@ -429,7 +429,6 @@ public class HubAddRemoveService {
 
 		// 20160615
 		Object[] objs = thisHub.toArray();
-		faHub.getHubData(thisHub);
 		faHubData.getVector(thisHub).removeAllElements();
 		
 		boolean bIsDeleting = OAThreadLocalDelegate.isDeleting(thisHub);
@@ -826,7 +825,7 @@ public class HubAddRemoveService {
 	 * @param bCheckContains whether to check for existing membership
 	 * @return {@code true} if the object was added
 	 */
-	protected boolean internalAdd(final Hub thisHub, final Object obj, final boolean bHasLock, final boolean bCheckContains) {
+	public boolean internalAdd(final Hub thisHub, final Object obj, final boolean bHasLock, final boolean bCheckContains) {
 		if (obj == null) {
 			return false;
 		}
@@ -850,7 +849,7 @@ public class HubAddRemoveService {
 	 * @param thisHub the hub containing the object
 	 * @param obj     the object to reposition
 	 */
-	protected void sortMove(final Hub thisHub, final Object obj) {
+	public void sortMove(final Hub thisHub, final Object obj) {
 		for (int i = 0; i < 5; i++) {
 			try {
 				int pos = thisHub.getPos(obj);
@@ -870,7 +869,7 @@ public class HubAddRemoveService {
 	 * @param posFrom the original position of the object
 	 * @param posTo   the target position for the object
 	 */
-	protected void move(final Hub thisHub, final int posFrom, int posTo) {
+	public void move(final Hub thisHub, final int posFrom, int posTo) {
 		if (posFrom == posTo) {
 			if (faHub.getHubData(thisHub).getSortListener() == null) {
 				return;

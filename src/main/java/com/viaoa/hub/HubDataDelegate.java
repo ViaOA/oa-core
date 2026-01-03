@@ -19,8 +19,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 
 /**
@@ -46,6 +48,26 @@ public class HubDataDelegate {
 	
     private static Logger LOG = Logger.getLogger(HubDataDelegate.class.getName());
     
+	/*
+	OAGraph g = getGraph(hub, null);
+	if (g == null) return;
+	g.hubs().getHubDataService().?(?);
+
+	OAGraph g = OARuntime.get().graph(c);
+	if (g == null) return;
+	g.hubs().getHubDataService().?(?);
+    */
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+    
+    
+    
     /**
      * Clears all internal Hub data structures and resets tracking state.
      * Removes all elements from the Hub’s vector and clears add/remove
@@ -56,18 +78,9 @@ public class HubDataDelegate {
      * @param thisHub the hub whose internal state is being reset
      */
 	protected static void clearAllAndReset(Hub thisHub) {
-    	synchronized (thisHub.data) {
-            if (thisHub.data.getVecAdd() != null) thisHub.data.getVecAdd().removeAllElements();
-    		if (thisHub.data.getVecRemove() != null) thisHub.data.getVecRemove().removeAllElements();
-    		thisHub.data.vector.removeAllElements();
-    	
-            // 20160407
-            if (thisHub.data.hubDatax != null) {
-                if (!thisHub.data.hubDatax.isNeeded()) thisHub.data.hubDatax = null;
-            }
-    	}
-        thisHub.data.changed = false;
-		thisHub.data.changeCount++;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().clearAllAndReset(thisHub);
 	}
 	
 	/**
@@ -78,7 +91,9 @@ public class HubDataDelegate {
 	 * @param size    the minimum capacity required
 	 */
 	protected static void ensureCapacity(Hub thisHub, int size) {
-		thisHub.data.vector.ensureCapacity(size);
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().ensureCapacity(thisHub, size);
 	}
 	
 	/**
@@ -88,8 +103,9 @@ public class HubDataDelegate {
 	 * @param thisHub the hub whose vector should be trimmed
 	 */
 	public static void resizeToFit(Hub thisHub) {
-		if (thisHub.data.vector == null) return; // could be called during serialization
-		thisHub.data.vector.trimToSize();
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().resizeToFit(thisHub);
 	}
 
 	/**
@@ -102,29 +118,9 @@ public class HubDataDelegate {
 	 * @param bChanged  the new changed value
 	 */
 	public static void setChanged(Hub thisHub, boolean bChanged) {
-		//qqqqqqqq method was protected
-	    if (thisHub == null) return;
-        boolean old = thisHub.data.changed;
-        if (bChanged == old) return;
-        thisHub.data.changed = bChanged;
-        if (bChanged != old) thisHub.data.changeCount++;
-        if (!bChanged) {
-            clearHubChanges(thisHub);
-        }
-        else {  // 20180529 if changed, then masterObject needs to be flagged as changed
-            OAObject obj = thisHub.getMasterObject();
-            if (obj != null) {
-                OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterHubToDetail(thisHub);
-                if (li != null && (li.getType() == li.MANY)) {
-                    boolean bx = (li.getOwner() || li.getCascadeSave());
-                    if (!bx) { 
-                        OALinkInfo rli = li.getReverseLinkInfo();
-                        bx = (rli != null && rli.getType() == li.MANY);
-                    }
-                    if (bx) obj.setChanged(true);
-                }
-            }
-        }
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().setChanged(thisHub, bChanged);
     }
 	
 	/**
@@ -136,40 +132,9 @@ public class HubDataDelegate {
 	 * @param thisHub the hub whose change tracking is being cleared
 	 */
 	public static void clearHubChanges(Hub thisHub) {
-	    if (thisHub == null) return;
-        boolean bSendEvent = false;
-        synchronized (thisHub.data) {
-            Vector v = thisHub.data.getVecAdd(); 
-            if (v != null) {
-                bSendEvent = v.size() > 0;
-                v.removeAllElements();
-            }
-            v = thisHub.data.getVecRemove(); 
-            if (v != null) {
-                bSendEvent = bSendEvent || v.size() > 0;
-                v.removeAllElements();
-            }
-            
-            if (thisHub.data.hubDatax != null) {
-                if (!thisHub.data.hubDatax.isNeeded()) {
-                    thisHub.data.hubDatax = null;
-                }
-                if (thisHub.data.changed) {
-                    boolean b = (thisHub.data.hubDatax == null);
-                    if (!b) {
-                        b = (thisHub.data.hubDatax.vecAdd == null || thisHub.data.hubDatax.vecAdd.size() == 0);
-                        b &= (thisHub.data.hubDatax.vecRemove == null || thisHub.data.hubDatax.vecRemove.size() == 0);
-                    }
-                    if (b) {
-                        thisHub.data.changed = false;
-                        thisHub.data.changeCount++;
-                    }
-                }
-            }
-        }
-        if (bSendEvent) {
-            HubCSDelegate.clearHubChanges(thisHub);
-        }
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().clearHubChanges(thisHub);
 	}
 	
 	/**
@@ -180,9 +145,9 @@ public class HubDataDelegate {
 	 * @param anArray the destination array
 	 */
     protected static void copyInto(Hub thisHub, Object anArray[]) {
-        synchronized (thisHub.data) {
-            thisHub.data.vector.copyInto(anArray);
-        }
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().copyInto(thisHub, anArray);
     }
 
     /**
@@ -194,21 +159,9 @@ public class HubDataDelegate {
      * @return an array containing the Hub’s elements
      */
 	public static Object[] toArray(Hub thisHub) {
-	    thisHub.getSize(); // call before sync, in case it needs to load
-        Object[] objs;
-        for (int i=0;;i++) {
-            synchronized (thisHub.data) {
-                objs = new Object[thisHub.getSize()];
-                try {
-                    thisHub.data.vector.copyInto(objs);
-                    break;
-                }
-                catch (Exception e) {
-                    // if exception, then try again
-                }
-            }
-        }
-	    return objs;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubDataService().toArray(thisHub);
 	}
 
 	/**
@@ -218,7 +171,9 @@ public class HubDataDelegate {
 	 * @return the number of elements in the Hub
 	 */
     public static int getCurrentSize(Hub thisHub) {
-        return thisHub.data.vector.size();
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return 0;
+		return g.hubs().getHubDataService().getCurrentSize(thisHub);
     }
 	
 
@@ -230,7 +185,9 @@ public class HubDataDelegate {
      * @param newHub  the destination hub
      */
     public static void _clone(Hub thisHub, Hub newHub) {
-    	newHub.data.vector = (Vector) thisHub.data.vector.clone();
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService()._clone(thisHub, newHub);
     }
     
     /**
@@ -245,87 +202,11 @@ public class HubDataDelegate {
      * @return the position from which the object was removed, or -1
      */
     public static int _remove(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
-    	//qqqqqqqqqq method was protected
-        int pos = 0;
-        try {
-            OAThreadLocalDelegate.lock(thisHub);
-            pos = _remove2(thisHub, obj, bDeleting, bIsRemovingAll);
-        }
-        finally {
-            OAThreadLocalDelegate.unlock(thisHub);
-        }
-        if (!bIsRemovingAll) {
-            OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
-        }
-        return pos;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return 0;
+		return g.hubs().getHubDataService()._remove(thisHub, obj, bDeleting, bIsRemovingAll);
     }
     
-    /**
-     * Performs the core remove operation without acquiring locks.
-     * Removes the object from the Hub's vector when applicable and
-     * updates add/remove tracking lists based on deletion rules,
-     * tracking mode, and server state. Updates the Hub’s changed flag
-     * and change counter as needed.
-     *
-     * @param thisHub        the hub from which the object is being removed
-     * @param obj            the object being removed
-     * @param bDeleting      whether the object is being permanently deleted
-     * @param bIsRemovingAll whether the entire Hub is being cleared
-     * @return the position from which the object was removed, or -1
-     */
-    private static int _remove2(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
-        int pos;
-        if (bIsRemovingAll) {
-            pos = -1;
-        }
-        else {
-	        pos = thisHub.getPos(obj);
-	        if (pos >= 0) {
-	            thisHub.data.vector.removeElementAt(pos);
-	        }
-        }
-
-	    if (pos >= 0) {
-	        boolean b = (obj instanceof OAObject);	        
-            if (b) {
-                b = ((thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()));
-                if (!b && OASync.isServer()) {
-                    if ( ((OAObject) obj).isChanged()) {
-                        if (thisHub.datam.getMasterObject() != null) {
-                            // could be ServerRoot
-                            OALinkInfo li = thisHub.datam.liDetailToMaster;
-                            if (li != null && !li.getCalculated()) {
-                                li = li.getReverseLinkInfo();
-                                if (li != null && !li.getCalculated()) {
-                                    b = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-	        
-	    	if (b) {
-	            if (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().removeElement(obj)) {
-	                // no-op
-	            }
-	            else {
-	                if (!bDeleting) {
-                    	Vector vec = createVecRemove(thisHub);
-                    	if (!vec.contains(obj)) vec.addElement(obj);
-	                }
-	            }
-		        thisHub.setChanged( (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().size() > 0) || (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().size() > 0) );
-		    }
-		    else {
-		    	setChanged(thisHub, true);
-		    }
-	    }	    
-	    return pos;
-	}
-
-	
     /**
      * Adds an object to the Hub's vector, optionally acquiring a lock
      * unless already held. Delegates to the internal add method and
@@ -340,61 +221,11 @@ public class HubDataDelegate {
      */
     public static boolean _add(Hub thisHub, Object obj, boolean bHasLock, boolean bCheckContains) {
     	//qqqqqqqq method was protected
-        boolean b = false;
-        try {
-            if (!bHasLock) OAThreadLocalDelegate.lock(thisHub);
-            b = _add2(thisHub, obj, bCheckContains);
-        }
-        finally {
-            if (!bHasLock ) OAThreadLocalDelegate.unlock(thisHub);
-        }
-        OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
-        return b;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService()._add(thisHub, obj, bHasLock, bCheckContains);
     }
     
-    /**
-     * Performs the core add operation without acquiring locks.
-     * Adds the object to the Hub's vector, updates tracking lists
-     * when required, sets the Hub’s changed flag, and increments
-     * the change counter. Skips addition when instructed and
-     * the object is already present.
-     *
-     * @param thisHub        the hub receiving the object
-     * @param obj            the object to add
-     * @param bCheckContains whether to skip if the object already exists
-     * @return {@code true} if the object was added; otherwise {@code false}
-     */
-    private static boolean _add2(Hub thisHub, Object obj, final boolean bCheckContains) {
-        if (bCheckContains && thisHub.contains(obj)) return false;
-    	thisHub.data.vector.addElement(obj);
-        
-        int xx = thisHub.data.vector.size();
-        if (xx > 499 && thisHub.datam.getMasterObject() != null && (xx%100)==0) {
-            if (xx < 1000 || (xx%1000)==0) LOG.fine("large Hub with masterObject, Hub="+thisHub);
-            if ((xx%10000)==0) {
-                LOG.fine("large Hub with masterObject, Hub="+thisHub);
-            }
-        }
-
-        if (!OAThreadLocalDelegate.isLoading()) {
-            if ((thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()) && (obj instanceof OAObject)) {
-                if (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().contains(obj)) {
-            		thisHub.data.getVecRemove().removeElement(obj);
-                }
-                else {
-                    createVecAdd(thisHub).addElement(obj);
-                }
-                thisHub.setChanged( (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().size() > 0) || (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().size() > 0) );
-            }
-            else {
-                thisHub.setChanged(true);
-            }
-        }
-        thisHub.data.changeCount++;
-	    return true;
-	}
-
-
     /**
      * Inserts an object at the specified position in the Hub's vector,
      * optionally acquiring a lock when not already held. Delegates to
@@ -407,54 +238,11 @@ public class HubDataDelegate {
      * @return {@code true} if the object was inserted
      */
     public static boolean _insert(Hub thisHub, Object obj, int pos, boolean bIsLocked) {
-    	//qqqqqqqq method was protected
-        boolean b = false;
-        try {
-            if (!bIsLocked) OAThreadLocalDelegate.lock(thisHub);
-            //was b = _insert2(thisHub, key, obj, pos, bLock);
-            b = _insert2(thisHub, obj, pos);
-        }
-        finally {
-            if (!bIsLocked) OAThreadLocalDelegate.unlock(thisHub);
-        }
-        
-        OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
-        return b;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService()._insert(thisHub, obj, pos, bIsLocked);
     }
    
-    /**
-     * Performs the core insert operation without acquiring locks.
-     * Inserts the object into the Hub’s vector at the specified
-     * position, updates tracking lists when enabled, sets the
-     * changed flag, and increments the change counter.
-     *
-     * @param thisHub the hub receiving the object
-     * @param obj     the object to insert
-     * @param pos     the position at which to insert the object
-     * @return {@code true} if the insert completed
-     */
-	private static boolean _insert2(Hub thisHub, Object obj, int pos) {
-        boolean b = OAThreadLocalDelegate.isLoading();
-
-    	thisHub.data.vector.insertElementAt(obj, pos);
-
-    	if (!b) {
-        	if ((thisHub.datam.getTrackChanges() || thisHub.data.getTrackChanges()) && (obj instanceof OAObject)) {
-                if (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().contains(obj)) {
-            		thisHub.data.getVecRemove().removeElement(obj);
-                }
-                else {
-                    createVecAdd(thisHub).addElement(obj);
-                }
-                thisHub.setChanged( (thisHub.data.getVecAdd() != null && thisHub.data.getVecAdd().size() > 0) || (thisHub.data.getVecRemove() != null && thisHub.data.getVecRemove().size() > 0) );
-    	    }
-    	    else thisHub.setChanged(true);
-    	}
-		
-	    thisHub.data.changeCount++;
-	    return true;
-	}
-
 	/**
 	 * Moves an object within the Hub from one index to another.
 	 * Performs the vector operations under lock, increments the
@@ -466,17 +254,9 @@ public class HubDataDelegate {
 	 * @param posTo   the destination index
 	 */
 	public static void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
-		//qqqqqqqq method was protected
-        try {
-            OAThreadLocalDelegate.lock(thisHub);
-            thisHub.data.changeCount++;
-            thisHub.data.vector.removeElementAt(posFrom);
-            thisHub.data.vector.insertElementAt(obj, posTo);
-        }
-        finally {
-            OAThreadLocalDelegate.unlock(thisHub);
-        }
-        OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService()._move(thisHub, obj, posFrom, posTo);
 	}
 	
 	/**
@@ -486,11 +266,9 @@ public class HubDataDelegate {
 	 * @param thisHub the hub whose contents are being tracked as added
 	 */
 	public static void addAllToAddVector(Hub thisHub) {
-	    if (thisHub == null) return;
-        createVecAdd(thisHub);
-	    for (Object objx :  thisHub) {
-	        thisHub.data.getVecAdd().add(objx);	        
-	    }
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().addAllToAddVector(thisHub);
 	}
 	
 	/**
@@ -501,12 +279,9 @@ public class HubDataDelegate {
 	 * @return the add-tracking vector
 	 */
 	protected static Vector createVecAdd(Hub thisHub) {
-        if (thisHub.data.getVecAdd() == null) {
-	        synchronized (thisHub.data) {
-	            if (thisHub.data.getVecAdd() == null) thisHub.data.setVecAdd(new Vector(10, 10));
-	        }
-        }
-        return thisHub.data.getVecAdd();
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubDataService().createVecAdd(thisHub);
 	}
 	
 	/**
@@ -517,13 +292,9 @@ public class HubDataDelegate {
 	 * @return the remove-tracking vector
 	 */
 	public static Vector createVecRemove(Hub thisHub) {
-		//qqqqqqqqq method was protected
-		if (thisHub.data.getVecRemove() == null) {
-	        synchronized (thisHub.data) {
-	            if (thisHub.data.getVecRemove() == null) thisHub.data.setVecRemove(new Vector(10,10));
-	        }
-		}
-        return thisHub.data.getVecRemove();
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubDataService().createVecRemove(thisHub);
 	}
 	
 	/**
@@ -538,15 +309,9 @@ public class HubDataDelegate {
 	 *         have been recorded
 	 */
 	public static OAObject[] getAddedObjects(Hub thisHub) {
-        Vector v = thisHub.data.getVecAdd();
-        if (v == null || v.size() == 0) return null;
-        synchronized (thisHub.data) {
-     		OAObject[] objs;
-			int x = (v == null) ? 0 : v.size();
-			objs = new OAObject[x];
-			if (x > 0) v.copyInto(objs);
-			return objs;
-        }
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubDataService().getAddedObjects(thisHub);
 	}
 
 	/**
@@ -562,15 +327,9 @@ public class HubDataDelegate {
 	 *         none have been recorded
 	 */
 	public static OAObject[] getRemovedObjects(Hub thisHub) {
-        Vector v = thisHub.data.getVecRemove();
-        if (v == null || v.size() == 0) return null;
-        synchronized (thisHub.data) {
-			OAObject[] objs;
-			int x = (v == null) ? 0 : v.size();
-			objs = new OAObject[x];
-			if (x > 0) v.copyInto(objs);
-			return objs;
-        }
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubDataService().getRemovedObjects(thisHub);
 	}
 
 	/**
@@ -580,7 +339,9 @@ public class HubDataDelegate {
 	 * @return {@code true} if the Hub is marked as changed, otherwise {@code false}
 	 */
 	public static boolean getChanged(Hub thisHub) {
-	    return (thisHub.data.changed);
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService().getChanged(thisHub);
 	}
 	
 	/**
@@ -595,22 +356,9 @@ public class HubDataDelegate {
 	 * @return the matching object, or {@code null} if not found
 	 */
 	public static Object getObject(final Hub thisHub, Object key) {
-		if (thisHub == null || key == null) return null;
-	    if (!(key instanceof OAObjectKey)) {
-	    	if (key instanceof OAObject) key = OAObjectKeyDelegate.getKey((OAObject) key);
-	    	else key = OAObjectKeyDelegate.createObjectKey(thisHub.getObjectClass(), key);
-	    }
-		for (int i=0; ; i++) {
-			Object obj = getObjectAt(thisHub, i);
-			if (obj == null) break;
-			if (obj == key) return obj;
-			if (obj instanceof OAObject) {
-				OAObjectKey k = OAObjectKeyDelegate.getKey((OAObject) obj);
-				// note: dont send class to isForSameOAObject: dont want it to do a cache lookup
-				if (OAObjectKeyDelegate.isForSameOAObject(null, k, (OAObjectKey) key)) return obj;
-			}
-		}
-		return null;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubDataService().getObject(thisHub, key);
 	}
 	
 	/**
@@ -624,43 +372,10 @@ public class HubDataDelegate {
 	 * @param pos the index to retrieve
 	 * @return the object at the position, or {@code null} if not available
 	 */
-	protected static Object getObjectAt(Hub thisHub, int pos) {
-	    Object ho;
-	    if (pos < 0) return null;
-	    
-	    int size = thisHub.data.vector.size();
-	    if (pos < size) {
-	        Object obj = null;
-	        try {
-	        	obj = thisHub.data.vector.elementAt(pos);
-	        }
-	        catch (Exception e) {
-	        	obj = null;  // hub could have changed, and pos is not valid anymore
-	        }
-	        if (obj instanceof OAObjectKey && thisHub.isOAObject()) {
-            	obj = OAObjectReflectDelegate.getObject(thisHub.getObjectClass(), obj);
-                if (obj != null) {
-	                OAObjectHubDelegate.addHub((OAObject)obj, thisHub);
-	                thisHub.data.vector.setElementAt(obj, pos);
-	                if (thisHub.datam.getMasterObject() != null) {
-		                // need to set property to MasterHub
-	                	HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, thisHub.datam.getMasterObject());
-	                }
-                }
-	        }
-	        if (obj != null) return obj;
-	    }
-	
-	    if (!HubSelectDelegate.isMoreData(thisHub)) {
-	        return null;
-	    }
-	
-	    // fetch more records from data source
-	    for ( ; pos >= thisHub.data.vector.size() && HubSelectDelegate.isMoreData(thisHub) ; ) {
-	    	HubSelectDelegate.fetchMore(thisHub);
-	    }
-	    ho = HubDataDelegate.getObjectAt(thisHub, pos);
-	    return ho;
+	public static Object getObjectAt(Hub thisHub, int pos) {
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubDataService().getObjectAt(thisHub, pos);
 	}
 	
 	/**
@@ -676,124 +391,11 @@ public class HubDataDelegate {
 	 * @return the position of the object, or {@code -1} if not found
 	 */
 	public static int getPos(final Hub thisHub, Object object, final boolean adjustMaster, final boolean bUpdateLink) {
-	    int pos;
-	    if (object == null || thisHub == null) return -1;
-
-	    if (!(object instanceof OAObject)) {
-	        if (OAObject.class.isAssignableFrom(object.getClass())) {  // could be hub of strings
-	            object = HubDelegate.getRealObject(thisHub, object);
-	        }
-	    }
-	    pos = -1;
-	    if (object != null) {
-	        for ( ;; ) {
-	            pos = thisHub.data.vector.indexOf(object);
-	            if (pos >= 0) return pos;
-	            if (!HubSelectDelegate.isMoreData(thisHub)) break;
-                HubSelectDelegate.fetchMore(thisHub);
-	        }
-	    }
-
-        if (pos < 0 && adjustMaster && (thisHub.datau.getSharedHub() != null || thisHub.datam.getMasterHub() != null)) {
-            OALinkInfo liRecursiveOne = OAObjectInfoDelegate.getRecursiveLinkInfo(thisHub.data.getObjectInfo(), OALinkInfo.ONE);
-
-            // need to verify that this hub is recursive with masterObject
-            if (liRecursiveOne != null) {  
-                OALinkInfo li = thisHub.datam.liDetailToMaster;
-                if (li != null) {
-                    li = OAObjectInfoDelegate.getReverseLinkInfo(li);
-                    if (li == null || !li.getRecursive()) {
-                        liRecursiveOne = null;
-                    }
-                }
-                else {
-                    // 20171123
-                    Hub rh = thisHub.getRootHub();
-                    boolean b = (rh != null && (thisHub == rh || thisHub.getSharedHub() == rh));
-                    if (!b) {
-                        // dont treat as recursive. This is when there are a collection of objects not used for recursion
-                        //   ex: a Hub with only one location in it (no masterHub)
-                        liRecursiveOne = null; 
-                    }
-                }
-            }
-
-            boolean bUseMaster = false;
-            if (liRecursiveOne != null) {  // if recursive
-                Object parent = OAObjectReflectDelegate.getProperty((OAObject)object, liRecursiveOne.getName());
-                if (parent == null) {  // might be in root hub
-                    Hub h = thisHub.getRootHub();  // could be owner of hub
-                    if (h != null && h != thisHub && thisHub.datau.getSharedHub() != h) {
-                        HubShareDelegate.setSharedHub(thisHub, h, false);
-                        pos = getPos(h, object, adjustMaster, bUpdateLink);
-                    }
-                    if (pos < 0) {
-                        bUseMaster = true;  // adjust master/owner for this recursive hub
-                    }
-                }
-                else {
-                	OALinkInfo liMany = OAObjectInfoDelegate.getReverseLinkInfo(liRecursiveOne);
-                	if (liMany != null) {
-                        hashRecursiveHubDetail.computeIfAbsent(thisHub, k -> {
-                            HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
-                            if (dm.liDetailToMaster != null) return dm.liDetailToMaster;
-                        	return null;
-                        });
-                    	Object val = OAObjectReflectDelegate.getProperty((OAObject)parent, liMany.getName());
-                    	// reassign the sharedHub to correct recursive hub in the hierarchy
-                    	HubShareDelegate.setSharedHub(thisHub, (Hub) val, false, object);
-                        pos = getPos((Hub)val, object, adjustMaster, bUpdateLink);
-                	}
-                }
-            }
-
-            if (bUseMaster) {
-                if (thisHub.datam.getMasterHub() != null && thisHub.datam.liDetailToMaster != null) {  
-                    // only do this if a masterHub, since a hub that has a masterObject (w/o hub) should not do this adjustment
-                    Object parent = OAObjectReflectDelegate.getProperty((OAObject)object, thisHub.datam.liDetailToMaster.getName());
-                    if (parent != null) {
-                        OALinkInfo li = OAObjectInfoDelegate.getReverseLinkInfo(thisHub.datam.liDetailToMaster);
-                        if (li != null) {
-                            hashRecursiveHubDetail.computeIfAbsent(thisHub, k -> {
-                                HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
-                                if (dm.liDetailToMaster != null) return  dm.liDetailToMaster;
-                                return null;
-                            });
-                            Object val = OAObjectReflectDelegate.getProperty((OAObject)parent, li.getName());
-                            HubShareDelegate.setSharedHub(thisHub, (Hub) val, false, object);
-                            pos = getPos((Hub)val, object, adjustMaster, bUpdateLink);
-                        }
-                    }
-                }
-                else {
-                    // see if it was a master/detail that was reassigned (shared) to a child hub that is recursive
-                    OALinkInfo li = hashRecursiveHubDetail.get(thisHub);
-                    if (li != null) {
-                        Object parent = OAObjectReflectDelegate.getProperty((OAObject)object, li.getName());
-                        if (parent != null) {
-                            Object val = OAObjectReflectDelegate.getProperty((OAObject)parent, li.getReverseName());
-                            HubShareDelegate.setSharedHub(thisHub, (Hub) val, false, object);
-                            pos = getPos((Hub)val, object, adjustMaster, bUpdateLink);
-                        }
-                    }
-                }
-            }
-        }
-        
-
-        if (pos < 0 && adjustMaster) {
-            if (HubDetailDelegate.setMasterHubActiveObject(thisHub, object, bUpdateLink)) {
-                pos = getPos(thisHub, object, false, false);
-            }
-        }
-	    return pos;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return 0;
+		return g.hubs().getHubDataService().getPos(thisHub, object, adjustMaster, bUpdateLink);
 	}
 	
-    /**
-     * Used by HubDataDelegate.getPos(..) when finding the object for recursive links
-     */
-    static private final Map<Hub, OALinkInfo> hashRecursiveHubDetail = new ConcurrentHashMap<Hub, OALinkInfo>(11, 0.75F);
-    
     /**
      * Removes the given object from the Hub’s change-tracking “added” list.
      *
@@ -803,28 +405,11 @@ public class HubDataDelegate {
      * @param thisHub the Hub whose added list is modified
      * @param obj the object to remove from the added list
      */
-	protected static void removeFromAddedList(Hub thisHub, Object obj) {
-	    synchronized (thisHub.data) {
-            if (thisHub.data.hubDatax == null) return;
-	    	Vector v = thisHub.data.getVecAdd();
-	    	if (v != null) v.remove(obj);
-            if (thisHub.data.hubDatax != null) {
-                if (!thisHub.data.hubDatax.isNeeded()) {
-                    thisHub.data.hubDatax = null;
-                }
-                if (thisHub.data.changed) {
-                    boolean b = (thisHub.data.hubDatax == null);
-                    if (!b) {
-                        b = (thisHub.data.hubDatax.vecAdd == null || thisHub.data.hubDatax.vecAdd.size() == 0);
-                        b &= (thisHub.data.hubDatax.vecRemove == null || thisHub.data.hubDatax.vecRemove.size() == 0);
-                    }
-                    if (b) {
-                        thisHub.data.changed = false;
-                        thisHub.data.changeCount++;
-                    }
-                }
-            }
-	    }
+	public static void removeFromAddedList(Hub thisHub, Object obj) {
+		//qqqqq method was protected
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().removeFromAddedList(thisHub, obj);
 	}
 	
 	/**
@@ -837,27 +422,9 @@ public class HubDataDelegate {
 	 * @param obj the object to remove from the removed list
 	 */
 	public static void removeFromRemovedList(Hub thisHub, Object obj) {
-        if (thisHub.data.hubDatax == null) return;
-	    synchronized (thisHub.data) {
-	    	Vector v = thisHub.data.getVecRemove();
-	    	if (v != null) v.remove(obj);
-            if (thisHub.data.hubDatax != null) {
-                if (!thisHub.data.hubDatax.isNeeded()) {
-                    thisHub.data.hubDatax = null;
-                }
-                if (thisHub.data.changed) {
-                    boolean b = (thisHub.data.hubDatax == null);
-                    if (!b) {
-                        b = (thisHub.data.hubDatax.vecAdd == null || thisHub.data.hubDatax.vecAdd.size() == 0);
-                        b &= (thisHub.data.hubDatax.vecRemove == null || thisHub.data.hubDatax.vecRemove.size() == 0);
-                    }
-                    if (b) {
-                        thisHub.data.changed = false;
-                        thisHub.data.changeCount++;
-                    }
-                }
-            }
-	    }
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().removeFromRemovedList(thisHub, obj);
 	}
 
 	/**
@@ -867,7 +434,9 @@ public class HubDataDelegate {
 	 * @return the current change count
 	 */
 	public static int getChangeCount(Hub thisHub) {
-	    return thisHub.data.changeCount;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return 0;
+		return g.hubs().getHubDataService().getChangeCount(thisHub);
 	}
 	
 	/**
@@ -875,8 +444,11 @@ public class HubDataDelegate {
 	 *
 	 * @param thisHub the Hub whose counter is incremented
 	 */
-	protected static void incChangeCount(Hub thisHub) {
-		thisHub.data.changeCount++;
+	public static void incChangeCount(Hub thisHub) {
+		//qqqqqqq metod was protected
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().incChangeCount(thisHub);
 	}
 
 	/**
@@ -890,7 +462,9 @@ public class HubDataDelegate {
 	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
 	 */
 	public static boolean contains(Hub hub, Object obj) {
-		return contains(hub, obj, false);
+		OAGraph g = getGraph(hub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService().contains(hub, obj);
 	}
 	
 	/**
@@ -906,41 +480,9 @@ public class HubDataDelegate {
 	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
 	 */
 	public static boolean contains(Hub hub, Object obj, final boolean bJustAdded) {
-        if (hub == null || obj == null) return false;
-        
-        final int size = hub.data.vector.size();
-        if (size == 0) return false;
-
-        if (bJustAdded) {
-            for (int i=1; i<3; i++) {
-                if (hub.data.vector.elementAt(size-i) == obj) {
-                    return true;
-                }
-            }
-        }
-        
-        if (size < 35) {
-            if (size == 0) return false;
-            boolean b = containsDirect(hub, obj);
-            if (b) return true;
-            if (obj.getClass().equals(hub.getObjectClass())) return false;
-        }
-        
-        if (!(obj instanceof OAObject)) {
-            if (!hub.data.isOAObjectFlag()) {
-                return containsDirect(hub, obj);
-            }
-            // oaObjectKey, or Id value
-            obj = OAObjectCacheDelegate.get(hub.getObjectClass(), obj);
-            if (obj == null) return false;
-        }        
-        
-        if (!hub.data.isOAObjectFlag()) {
-            return containsDirect(hub, obj);
-        }
-        
-        boolean b = OAObjectHubDelegate.isAlreadyInHub((OAObject) obj, hub);
-        return b;
+		OAGraph g = getGraph(hub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService().contains(hub, obj, bJustAdded);
     }
 	
 	/**
@@ -953,80 +495,11 @@ public class HubDataDelegate {
 	 * @return {@code true} if the object is present, otherwise {@code false}
 	 */
     public static boolean containsDirect(Hub hub, Object obj) {
-        if (hub == null || obj == null) return false;
-        int x = hub.data.vector.size();
-        if (x == 0) return false;
-        if (x > 125) {
-            if (hub.data.getSortListener() != null) {
-                x = findUsingQuickSort(hub, obj);
-                if (x == 1) return true;
-                if (x == 2) return false;
-                if (x == -1) return false;
-                if (x == -3) return false;
-            }
-        }
-        return hub.data.vector.contains(obj);
+		OAGraph g = getGraph(hub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService().containsDirect(hub, obj);
     }
     
-    /**
-     * Performs a binary search on a sorted Hub to determine whether it contains the object.
-     *
-     * @param thisHub the Hub to search
-     * @param obj the object to check
-     * @return status code indicating match, mismatch, or invalid conditions
-     */
-    private static int findUsingQuickSort(final Hub thisHub, final Object obj) {
-        if (thisHub == null || obj == null) return -1;
-        
-        HubSortListener hsl = thisHub.data.getSortListener(); 
-        if (hsl == null) return -2;
-        Class cx = thisHub.getObjectClass();
-        if (cx == null || !cx.equals(obj.getClass())) return -3;
-        
-        int head = -1;
-        int tail = thisHub.data.vector.size();
-        for ( ;; ) {
-            if (head+1 >= tail) {
-                break;
-            }
-            
-            int i = ((tail - head) / 2);
-            i += head;
-
-            if (i == head) i++;
-            else if (i == tail) i--;
-            
-            Object cobj = thisHub.elementAt(i);
-            if (obj == cobj || obj.equals(cobj)) return 1;
-            int c = hsl.comparator.compare(obj, cobj);
-
-            if (c == 0) {
-                int iHold = i;
-                // see if it's already in the list
-                for ( ; i>head; i--) {
-                    cobj = thisHub.elementAt(i);
-                    if (cobj == null) continue;
-                    if (obj == cobj || obj.equals(cobj)) return 1;
-                    if (hsl.comparator.compare(obj, cobj) != 0) break;
-                }
-                for (i=iHold+1; i < tail;i++) {
-                    cobj = thisHub.elementAt(i);
-                    if (cobj == null) continue;
-                    if (obj == cobj || obj.equals(cobj)) return 1;
-                    if (hsl.comparator.compare(obj, cobj) != 0) break;
-                }
-                break;
-            }
-            else if (c < 0) {
-                tail = i;
-            }
-            else {
-                head = i;
-            }
-        }
-        return 2;
-    }
-
     /**
      * Determines whether the Hub participates in a recursive link structure.
      *
@@ -1034,13 +507,9 @@ public class HubDataDelegate {
      * @return {@code true} if this Hub is used recursively, otherwise {@code false}
      */
     public static boolean isHubBeingUsedAsRecursive(Hub thisHub) {
-        if (thisHub == null) return false;
-
-        OALinkInfo li = thisHub.datam.liDetailToMaster;
-        if (li == null) {
-            return (thisHub == thisHub.getRootHub());
-        }
-        return li.getReverseLinkInfo().getRecursive();
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService().isHubBeingUsedAsRecursive(thisHub);
     }
     
     /**
@@ -1050,7 +519,9 @@ public class HubDataDelegate {
      * @param b the new track-changes state
      */
     public static void setTrackChanges(Hub thisHub, boolean b) {
-        thisHub.data.setTrackChanges(b);        
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return;
+		g.hubs().getHubDataService().setTrackChanges(thisHub, b);
     }
 
     /**
@@ -1060,7 +531,9 @@ public class HubDataDelegate {
      * @return {@code true} if track changes is enabled, otherwise {@code false}
      */
     public static boolean getTrackChanges(Hub thisHub) {
-        return thisHub != null && thisHub.data.getTrackChanges();        
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService().getTrackChanges(thisHub);
     }
     
     /**
@@ -1070,12 +543,9 @@ public class HubDataDelegate {
      * @return {@code true} if loading all data, otherwise {@code false}
      */
     public static boolean isLoadingAllData(Hub thisHub) {
-        if (thisHub == null) return false;
-        boolean b;
-        synchronized (thisHub.data) {
-            b = (thisHub != null && thisHub.data.isLoadingAllData());
-        }
-        return b;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService().isLoadingAllData(thisHub);
     }
     
     /**
@@ -1086,13 +556,9 @@ public class HubDataDelegate {
      * @return the previous state
      */
     public static boolean setLoadingAllData(Hub thisHub, boolean b) {
-        boolean bx = false;
-        if (thisHub != null) {
-            synchronized (thisHub.data) {
-                bx = thisHub.data.setLoadingAllData(b);
-            }
-        }
-        return bx;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService().setLoadingAllData(thisHub, b);
     }
     
     /**
@@ -1104,12 +570,8 @@ public class HubDataDelegate {
      * @return the previous state
      */
     public static boolean setLoadingAllData(Hub thisHub, boolean b, Thread thread) {
-        boolean bx = false;
-        if (thisHub != null) {
-            synchronized (thisHub.data) {
-                bx = thisHub.data.setLoadingAllData(b, thread);
-            }
-        }
-        return bx;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDataService().setLoadingAllData(thisHub, b, thread);
     }
 }

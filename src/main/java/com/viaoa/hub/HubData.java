@@ -139,6 +139,12 @@ public class HubData implements java.io.Serializable {
         }
         return hubDatax;
     }
+
+    //qqqqqq add javadoc
+    public Vector getVector() {
+        return vector;
+    }
+    
     
     /**
      * Returns the vector that tracks added objects, or {@code null} if
@@ -786,6 +792,15 @@ public class HubData implements java.io.Serializable {
         if (hdx == null) return null;
         return hdx.selectWhereHubPropertyPath;
     }
+
+	public Class getObjClass() {
+		return objClass;
+	}
+	public void setObjClass(Class c) {
+		objClass = c;
+	}
+    
+    
     
     /**
      * Sets the property path used for select-where filtering. Initializes
@@ -804,6 +819,9 @@ public class HubData implements java.io.Serializable {
 		}
 		public Class getObjClass(Hub hub) {
 			return hub.data.objClass;
+		}
+		public void setObjClass(Hub hub, Class c) {
+			hub.data.objClass = c;
 		}
 		public Vector getVector(Hub hub) {
 			return hub.data.vector;
