@@ -16,8 +16,10 @@
 package com.viaoa.hub;
 
 import com.viaoa.filter.OALikeFilter;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Delegate for performing property-based searches within a {@link Hub}.
@@ -33,6 +35,26 @@ import com.viaoa.object.OAObject;
  * <p>Used internally by Hub’s {@code findFirst} and related lookup methods.
  */
 public class HubFindDelegate {
+
+	/*
+	OAGraph g = getGraph(hub, null);
+	if (g == null) return;
+	g.hubs().getHubFindService().?(?);
+
+	OAGraph g = OARuntime.get().graph(c);
+	if (g == null) return;
+	g.hubs().getHubFindService().?(?);
+    */
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+	
+	
 	/**
 	 * Finds the first object in the specified {@code Hub} whose property located by
 	 * {@code propertyPath} matches the supplied {@code findValue} using a
@@ -49,14 +71,9 @@ public class HubFindDelegate {
 	 * @return the first matching object, or {@code null} if none found
 	 */
     public static Object findFirst(Hub thisHub, String propertyPath, final Object findValue, final boolean bSetAO, OAObject lastFoundObject) {
-        if (thisHub == null) return null;
-        
-        OAFinder finder = new OAFinder();
-        finder.addFilter(new OALikeFilter(propertyPath, findValue));
-        Object foundObj = finder.findNext(thisHub, (OAObject) lastFoundObject);
-        
-        if (bSetAO) thisHub.setAO(foundObj);
-        return foundObj;
+    	OAGraph g = getGraph(thisHub, null);
+    	if (g == null) return null;
+    	return g.hubs().getHubFindService().findFirst(thisHub, propertyPath, findValue, bSetAO, lastFoundObject);
 	}
 }
 

@@ -129,7 +129,7 @@ public class HubData implements java.io.Serializable {
 	 *
 	 * @return the HubDatax extension object
 	 */
-    private HubDatax getHubDatax() {
+    public HubDatax getHubDatax() {
         if (hubDatax == null) {
             synchronized (this) {
                 if (hubDatax == null) {
@@ -145,6 +145,10 @@ public class HubData implements java.io.Serializable {
         return vector;
     }
     
+    //qqqqqq add javadoc
+	public void setVector(Vector v) {
+		vector = v;
+	}
     
     /**
      * Returns the vector that tracks added objects, or {@code null} if
@@ -814,44 +818,26 @@ public class HubData implements java.io.Serializable {
         }
     }
 
-	public static final class FriendAccess {
-		private FriendAccess() {
-		}
-		public Class getObjClass(Hub hub) {
-			return hub.data.objClass;
-		}
-		public void setObjClass(Hub hub, Class c) {
-			hub.data.objClass = c;
-		}
-		public Vector getVector(Hub hub) {
-			return hub.data.vector;
-		}
-		public void setVector(Hub hub, Vector v) {
-			hub.data.vector = v;
-		}
-		public HubDatax getHubDatax(Hub hub) {
-			return hub.data.hubDatax;
-		}
-		public void setHubDataxNull(Hub hub) {
-			hub.data.hubDatax = null;
-		}
-		public boolean getChanged(Hub hub) {
-			return hub.data.changed;
-		}
-		public void setChanged(Hub hub, boolean b) {
-			hub.data.changed = b;
-		}
-		public int getChangeCount(Hub hub) {
-			return hub.data.changeCount;
-		}
-		public void incrementChangeCount(Hub hub) {
-			hub.data.changeCount++;
-		}
-	}
+    public boolean getChanged() {
+    	return this.changed;
+    }
+    public void setChanged(boolean b) {
+    	this.changed = b;
+    }
 
-	private final static FriendAccess friendAccess = new FriendAccess();
-	static FriendAccess getFriendAccess() {
-		return friendAccess;
+    public int getChangeCount() {
+    	return this.changeCount;
+    }
+    public void setChangeCount(int x) {
+    	this.changeCount = x;
+    }
+    public void incrementChangeCount() {
+    	this.changeCount++;
+    }
+    
+
+	public void setHubDataxNull() {
+		hubDatax = null;
 	}
 	
 }

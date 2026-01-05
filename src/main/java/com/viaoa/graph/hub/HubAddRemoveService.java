@@ -36,22 +36,14 @@ public class HubAddRemoveService {
 
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
-	private final HubData.FriendAccess faHubData;
-	private final HubDataUnique.FriendAccess faHubDataUnique;
 	
 	public HubAddRemoveService(HubService srvcHub, 
-			Hub.FriendAccess faHub,
-			HubData.FriendAccess faHubData,
-			HubDataUnique.FriendAccess faHubDataUnique
+			Hub.FriendAccess faHub
 			) {
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
-    	if (faHubData == null) throw new IllegalArgumentException("HubData.FriendAccess can not be null");
-    	this.faHubData = faHubData;
-    	if (faHubDataUnique == null) throw new IllegalArgumentException("HubDataUnique.FriendAccess can not be null");
-    	this.faHubDataUnique = faHubDataUnique;
 	}
 
 	/**
@@ -429,7 +421,7 @@ public class HubAddRemoveService {
 
 		// 20160615
 		Object[] objs = thisHub.toArray();
-		faHubData.getVector(thisHub).removeAllElements();
+		faHub.getHubData(thisHub).getVector().removeAllElements();
 		
 		boolean bIsDeleting = OAThreadLocalDelegate.isDeleting(thisHub);
 		if (!bIsDeleting && (faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && thisHub.isOAObject()) {
@@ -568,10 +560,10 @@ public class HubAddRemoveService {
 		if (obj != null) {
 			final Class c = obj.getClass();
 			
-			if (faHubData.getObjClass(thisHub) == null) {
+			if (faHub.getHubData(thisHub).getObjClass() == null) {
 				HubDelegate.setObjectClass(thisHub, c);
 			}
-			if (!faHubData.getObjClass(thisHub).isAssignableFrom(c)) {
+			if (!faHub.getHubData(thisHub).getObjClass().isAssignableFrom(c)) {
 				return "class not assignable, class=" + c.getSimpleName();
 			}
 		}
@@ -1007,7 +999,7 @@ public class HubAddRemoveService {
 		    
 			// 20170608 quicksort
 			int head = -1;
-			int tail = faHubData.getVector(thisHub).size();
+			int tail = faHub.getHubData(thisHub).getVector().size();
 			for (;;) {
 				if (head + 1 >= tail) {
 					pos = tail;
@@ -1279,7 +1271,7 @@ public class HubAddRemoveService {
 	 * @param list the objects to add
 	 */
 	public void unsafeAddAll(Hub hub, List list) {
-		faHubData.getVector(hub).addAll(list);
+		faHub.getHubData(hub).getVector().addAll(list);
 	}
 
 	/**
@@ -1294,12 +1286,12 @@ public class HubAddRemoveService {
 		for (OAObject objx : (Hub<OAObject>) hub) {
 			OAObjectHubDelegate.removeHub(objx, hub, false);
 		}
-		faHubData.getVector(hub).clear();
+		faHub.getHubData(hub).getVector().clear();
 		
 		faHub.getHubDataActive(hubNew).clear();
 
 		for (OAObject objx : (Hub<OAObject>) hubNew) {
-			faHubData.getVector(hub).add(objx);
+			faHub.getHubData(hub).getVector().add(objx);
 			OAObjectHubDelegate.addHub(objx, hub);
 		}
 		HubEventDelegate.fireOnNewListEvent(hub, true);

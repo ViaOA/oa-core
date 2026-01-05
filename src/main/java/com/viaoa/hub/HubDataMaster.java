@@ -18,7 +18,6 @@ package com.viaoa.hub;
 import java.lang.reflect.Method;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.hub.HubData.FriendAccess;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfoDelegate;
@@ -251,13 +250,4 @@ public class HubDataMaster implements java.io.Serializable {
 		byte bx = s.readByte();
 	}
 
-	public static final class FriendAccess {
-		private FriendAccess() {
-		}
-	}
-
-	private final static FriendAccess friendAccess = new FriendAccess();
-	static FriendAccess getFriendAccess() {
-		return friendAccess;
-	}
 }

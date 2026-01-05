@@ -21,7 +21,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.hub.HubData.FriendAccess;
 import com.viaoa.object.*;
 
 /**
@@ -448,14 +447,4 @@ public class HubDataUnique implements java.io.Serializable {
         }
     }
 
-	public static final class FriendAccess {
-		private FriendAccess() {
-		}
-		
-	}
-
-	private final static FriendAccess friendAccess = new FriendAccess();
-	static FriendAccess getFriendAccess() {
-		return friendAccess;
-	}
 }

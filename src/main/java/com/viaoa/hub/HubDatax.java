@@ -20,7 +20,6 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import com.viaoa.datasource.OASelect;
-import com.viaoa.hub.HubData.FriendAccess;
 import com.viaoa.object.OAObjectInfo;
 
 /**

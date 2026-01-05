@@ -49,7 +49,7 @@ import com.viaoa.object.*;
  *       serialized with its parent Hub graph.</li>
  * </ul>
  */
-class HubLinkEventListener extends HubListenerAdapter implements java.io.Serializable {
+public class HubLinkEventListener extends HubListenerAdapter implements java.io.Serializable {
 	
 	/**
 	 * The Hub that this listener is monitoring for active-object and property changes.

@@ -16,9 +16,11 @@
 package com.viaoa.hub;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfoDelegate;
+import com.viaoa.runtime.OARuntime;
 
 
 /**
@@ -36,6 +38,25 @@ import com.viaoa.object.OAObjectInfoDelegate;
  */
 public class HubDSDelegate {
 
+	/*
+	OAGraph g = getGraph(hub, null);
+	if (g == null) return;
+	g.hubs().getHubDetailService().?(?);
+
+	OAGraph g = OARuntime.get().graph(c);
+	if (g == null) return;
+	g.hubs().getHubDetailService().?(?);
+    */
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+	
+	
 	/**
 	 * Returns the {@link OADataSource} associated with the specified class.
 	 * Delegates directly to {@link OADataSource#getDataSource(Class)}.
@@ -44,7 +65,9 @@ public class HubDSDelegate {
 	 * @return the data source for the class, or null if none exists
 	 */
 	protected static OADataSource getDataSource(Class c) {
-	    return OADataSource.getDataSource(c);
+		OAGraph g = OARuntime.get().graph(c);
+		if (g == null) return null;
+		return g.hubs().getHubDSService().getDataSource(c);
 	}
     
 	/**
@@ -58,9 +81,9 @@ public class HubDSDelegate {
 	 * @param propFromMaster the name of the master-side property for the link
 	 */
 	public static void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
-		//qqqqqqqqqq method was protected
-		OADataSource ds = OADataSource.getDataSource(masterObject.getClass());
-		if (ds != null) ds.updateMany2ManyLinks(masterObject, adds, removes, propFromMaster);
+		OAGraph g = getGraph(null, masterObject);
+		if (g == null) return;
+		g.hubs().getHubDSService().updateMany2ManyLinks(masterObject, adds, removes, propFromMaster);
 	}
 
 	/**
@@ -71,25 +94,9 @@ public class HubDSDelegate {
 	 * @param hub the hub whose removed objects should have link records deleted
 	 */
     public static void removeMany2ManyLinks(Hub hub) {
-        if (hub == null) return;
-        Object objMaster = hub.getMasterObject();
-        if (objMaster == null) return;
-        if (!OAObject.class.isAssignableFrom(hub.getObjectClass())) {
-            return;
-        }
-        OALinkInfo link = hub.datam.liDetailToMaster;
-        if (link == null) return;
-        if (!OAObjectInfoDelegate.isMany2Many(link)) return;
-        
-        String propFromMaster = OAObjectInfoDelegate.getReverseLinkInfo(link).getName();
-
-        OAObject[] objs = HubAddRemoveDelegate.getRemovedObjects(hub);
-        if (objs == null || objs.length == 0) return;
-       
-        OADataSource ds = OADataSource.getDataSource(objMaster.getClass());
-        if (ds == null) return;
-        
-        ds.updateMany2ManyLinks((OAObject)objMaster, null, objs, propFromMaster);
+		OAGraph g = getGraph(hub, null);
+		if (g == null) return;
+		g.hubs().getHubDSService().removeMany2ManyLinks(hub);
     }
 
 }

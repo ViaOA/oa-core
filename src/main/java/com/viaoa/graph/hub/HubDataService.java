@@ -15,15 +15,12 @@ public class HubDataService {
 
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
-	private final HubData.FriendAccess faHubData;
 	
-	public HubDataService(HubService srvcHub, Hub.FriendAccess faHub, HubData.FriendAccess faHubData) {
+	public HubDataService(HubService srvcHub, Hub.FriendAccess faHub) {
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
-    	if (faHubData == null) throw new IllegalArgumentException("HubData.FriendAccess can not be null");
-    	this.faHubData = faHubData;
 	}
 
     /**
@@ -44,15 +41,15 @@ public class HubDataService {
     		v = faHub.getHubData(thisHub).getVecRemove();
     		if (v != null) v.removeAllElements();
     		
-    		faHubData.getVector(thisHub).removeAllElements();
+    		faHub.getHubData(thisHub).getVector().removeAllElements();
     	
             // 20160407
-            if (faHubData.getHubDatax(thisHub) != null) {
-                if (!faHubData.getHubDatax(thisHub).isNeeded()) faHubData.setHubDataxNull(thisHub);
+            if (faHub.getHubData(thisHub).getHubDatax() != null) {
+                if (!faHub.getHubData(thisHub).getHubDatax().isNeeded()) faHub.getHubData(thisHub).setHubDataxNull();
             }
     	}
-    	faHubData.setChanged(thisHub, false);
-    	faHubData.incrementChangeCount(thisHub);
+    	faHub.getHubData(thisHub).setChanged(false);
+    	faHub.getHubData(thisHub).incrementChangeCount();
 	}
 	
 	/**
@@ -64,7 +61,7 @@ public class HubDataService {
 	 */
 	public void ensureCapacity(Hub thisHub, int size) {
 		//qqqqqq method was protected
-		faHubData.getVector(thisHub).ensureCapacity(size);
+		faHub.getHubData(thisHub).getVector().ensureCapacity(size);
 	}
 	
 	/**
@@ -74,7 +71,7 @@ public class HubDataService {
 	 * @param thisHub the hub whose vector should be trimmed
 	 */
 	public void resizeToFit(Hub thisHub) {
-		Vector v = faHubData.getVector(thisHub);
+		Vector v = faHub.getHubData(thisHub).getVector();
 		if (v == null) return; // could be called during serialization
 		v.trimToSize();
 	}
@@ -91,10 +88,10 @@ public class HubDataService {
 	public void setChanged(Hub thisHub, boolean bChanged) {
 		//qqqqqqq method was proteced
 	    if (thisHub == null) return;
-        boolean old = faHubData.getChanged(thisHub);
+        boolean old = faHub.getHubData(thisHub).getChanged();
         if (bChanged == old) return;
-        faHubData.setChanged(thisHub, bChanged);
-        if (bChanged != old) faHubData.incrementChangeCount(thisHub);
+        faHub.getHubData(thisHub).setChanged( bChanged);
+        if (bChanged != old) faHub.getHubData(thisHub).incrementChangeCount();
         if (!bChanged) {
             clearHubChanges(thisHub);
         }
@@ -138,12 +135,12 @@ public class HubDataService {
             }
             
             
-            if (faHubData.getHubDatax(thisHub) != null) {
-                if (!faHubData.getHubDatax(thisHub).isNeeded()) {
-                	faHubData.setHubDataxNull(thisHub);
+            if (faHub.getHubData(thisHub).getHubDatax() != null) {
+                if (!faHub.getHubData(thisHub).getHubDatax().isNeeded()) {
+                	faHub.getHubData(thisHub).setHubDataxNull();
                 }
-                if (faHubData.getChanged(thisHub)) {
-                    boolean b = (faHubData.getHubDatax(thisHub) == null);
+                if (faHub.getHubData(thisHub).getChanged()) {
+                    boolean b = (faHub.getHubData(thisHub).getHubDatax() == null);
                     if (!b) {
                     	v = faHub.getHubData(thisHub).getVecAdd();
                         b = (v == null || v.size() == 0);
@@ -151,8 +148,8 @@ public class HubDataService {
                         b &= (v == null || v.size() == 0);
                     }
                     if (b) {
-                    	faHubData.setChanged(thisHub, false);
-                    	faHubData.incrementChangeCount(thisHub);
+                    	faHub.getHubData(thisHub).setChanged(false);
+                    	faHub.getHubData(thisHub).incrementChangeCount();
                     }
                 }
             }
@@ -172,7 +169,7 @@ public class HubDataService {
     public void copyInto(Hub thisHub, Object anArray[]) {
     	//qqqqqqqq method was protected
         synchronized (faHub.getHubData(thisHub)) {
-        	faHubData.getVector(thisHub).copyInto(anArray);
+        	faHub.getHubData(thisHub).getVector().copyInto(anArray);
         }
     }
 
@@ -191,7 +188,7 @@ public class HubDataService {
             synchronized (faHub.getHubData(thisHub)) {
                 objs = new Object[thisHub.getSize()];
                 try {
-                	faHubData.getVector(thisHub).copyInto(objs);
+                	faHub.getHubData(thisHub).getVector().copyInto(objs);
                     break;
                 }
                 catch (Exception e) {
@@ -209,7 +206,7 @@ public class HubDataService {
 	 * @return the number of elements in the Hub
 	 */
     public int getCurrentSize(Hub thisHub) {
-        return faHubData.getVector(thisHub).size();
+        return faHub.getHubData(thisHub).getVector().size();
     }
 	
 
@@ -221,8 +218,8 @@ public class HubDataService {
      * @param newHub  the destination hub
      */
     public void _clone(Hub thisHub, Hub newHub) {
-    	Vector v = (Vector) faHubData.getVector(thisHub).clone();
-        faHubData.setVector(newHub, v);
+    	Vector v = (Vector) faHub.getHubData(thisHub).getVector().clone();
+        faHub.getHubData(newHub).setVector(v);
     }
     
     /**
@@ -273,7 +270,7 @@ public class HubDataService {
         else {
 	        pos = thisHub.getPos(obj);
 	        if (pos >= 0) {
-	        	faHubData.getVector(thisHub).removeElementAt(pos);
+	        	faHub.getHubData(thisHub).getVector().removeElementAt(pos);
 	        }
         }
 
@@ -361,9 +358,9 @@ public class HubDataService {
      */
     private boolean _add2(Hub thisHub, Object obj, final boolean bCheckContains) {
         if (bCheckContains && thisHub.contains(obj)) return false;
-        faHubData.getVector(thisHub).addElement(obj);
+        faHub.getHubData(thisHub).getVector().addElement(obj);
         
-        int xx = faHubData.getVector(thisHub).size();
+        int xx = faHub.getHubData(thisHub).getVector().size();
         if (xx > 499 && faHub.getHubDataMaster(thisHub).getMasterObject() != null && (xx%100)==0) {
             if (xx < 1000 || (xx%1000)==0) LOG.fine("large Hub with masterObject, Hub="+thisHub);
             if ((xx%10000)==0) {
@@ -388,7 +385,7 @@ public class HubDataService {
                 thisHub.setChanged(true);
             }
         }
-        faHubData.incrementChangeCount(thisHub);
+        faHub.getHubData(thisHub).incrementChangeCount();
 	    return true;
 	}
 
@@ -434,7 +431,7 @@ public class HubDataService {
 	private boolean _insert2(Hub thisHub, Object obj, int pos) {
         boolean b = OAThreadLocalDelegate.isLoading();
 
-        faHubData.getVector(thisHub).insertElementAt(obj, pos);
+        faHub.getHubData(thisHub).getVector().insertElementAt(obj, pos);
     	if (!b) {
             if ((faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && (obj instanceof OAObject)) {
                 Vector v  = faHub.getHubData(thisHub).getVecRemove();
@@ -449,7 +446,7 @@ public class HubDataService {
             }
     	    else thisHub.setChanged(true);
     	}
-        faHubData.incrementChangeCount(thisHub);
+        faHub.getHubData(thisHub).incrementChangeCount();
 	    return true;
 	}
 
@@ -467,9 +464,9 @@ public class HubDataService {
 		//qqqqqqqq method was protected
         try {
             OAThreadLocalDelegate.lock(thisHub);
-            faHubData.incrementChangeCount(thisHub);
+            faHub.getHubData(thisHub).incrementChangeCount();
             
-            Vector v = faHubData.getVector(thisHub);
+            Vector v = faHub.getHubData(thisHub).getVector();
             v.removeElementAt(posFrom);
             v.insertElementAt(obj, posTo);
         }
@@ -585,7 +582,7 @@ public class HubDataService {
 	 * @return {@code true} if the Hub is marked as changed, otherwise {@code false}
 	 */
 	public boolean getChanged(Hub thisHub) {
-		return faHubData.getChanged(thisHub);
+		return faHub.getHubData(thisHub).getChanged();
 	}
 	
 	/**
@@ -633,7 +630,7 @@ public class HubDataService {
 	    Object ho;
 	    if (pos < 0) return null;
 	    
-	    final Vector v = faHubData.getVector(thisHub);
+	    final Vector v = faHub.getHubData(thisHub).getVector();
 	    
 	    int size = v.size();
 	    if (pos < size) {
@@ -694,7 +691,7 @@ public class HubDataService {
 	    pos = -1;
 	    if (object != null) {
 	        for ( ;; ) {
-	            pos = faHubData.getVector(thisHub).indexOf(object);
+	            pos = faHub.getHubData(thisHub).getVector().indexOf(object);
 	            if (pos >= 0) return pos;
 	            if (!HubSelectDelegate.isMoreData(thisHub)) break;
                 HubSelectDelegate.fetchMore(thisHub);
@@ -813,16 +810,16 @@ public class HubDataService {
      */
 	public void removeFromAddedList(Hub thisHub, Object obj) {
 	    synchronized (faHub.getHubData(thisHub)) {
-            if (faHubData.getHubDatax(thisHub) == null) return;
+            if (faHub.getHubData(thisHub).getHubDatax() == null) return;
 	    	Vector v = faHub.getHubData(thisHub).getVecAdd();
 	    	if (v != null) v.remove(obj);
 
-            if (faHubData.getHubDatax(thisHub) != null) {
-                if (!faHubData.getHubDatax(thisHub).isNeeded()) {
-                	faHubData.setHubDataxNull(thisHub);
+            if (faHub.getHubData(thisHub).getHubDatax() != null) {
+                if (!faHub.getHubData(thisHub).getHubDatax().isNeeded()) {
+                	faHub.getHubData(thisHub).setHubDataxNull();
                 }
-                if (faHubData.getChanged(thisHub)) {
-                    boolean b = (faHubData.getHubDatax(thisHub) == null);
+                if (faHub.getHubData(thisHub).getChanged()) {
+                    boolean b = (faHub.getHubData(thisHub).getHubDatax() == null);
                     if (!b) {
                     	v = faHub.getHubData(thisHub).getVecAdd();
                         b = (v == null || v.size() == 0);
@@ -830,8 +827,8 @@ public class HubDataService {
                         b &= (v == null || v.size() == 0);
                     }
                     if (b) {
-                    	faHubData.setChanged(thisHub, false);
-                    	faHubData.incrementChangeCount(thisHub);
+                    	faHub.getHubData(thisHub).setChanged(false);
+                    	faHub.getHubData(thisHub).incrementChangeCount();
                     }
                 }
             }
@@ -848,17 +845,17 @@ public class HubDataService {
 	 * @param obj the object to remove from the removed list
 	 */
 	public void removeFromRemovedList(Hub thisHub, Object obj) {
-        if (faHubData.getHubDatax(thisHub) == null) return;
+        if (faHub.getHubData(thisHub).getHubDatax() == null) return;
 	    synchronized (faHub.getHubData(thisHub)) {
 	    	Vector v = faHub.getHubData(thisHub).getVecRemove();
 	    	if (v != null) v.remove(obj);
 	    	
-            if (faHubData.getHubDatax(thisHub) != null) {
-                if (!faHubData.getHubDatax(thisHub).isNeeded()) {
-                	faHubData.setHubDataxNull(thisHub);
+            if (faHub.getHubData(thisHub).getHubDatax() != null) {
+                if (!faHub.getHubData(thisHub).getHubDatax().isNeeded()) {
+                	faHub.getHubData(thisHub).setHubDataxNull();
                 }
-                if (faHubData.getChanged(thisHub)) {
-                    boolean b = (faHubData.getHubDatax(thisHub) == null);
+                if (faHub.getHubData(thisHub).getChanged()) {
+                    boolean b = (faHub.getHubData(thisHub).getHubDatax() == null);
                     if (!b) {
                     	v = faHub.getHubData(thisHub).getVecAdd();
                         b = (v == null || v.size() == 0);
@@ -866,8 +863,8 @@ public class HubDataService {
                         b &= (v == null || v.size() == 0);
                     }
                     if (b) {
-                    	faHubData.setChanged(thisHub, false);
-                    	faHubData.incrementChangeCount(thisHub);
+                    	faHub.getHubData(thisHub).setChanged(false);
+                    	faHub.getHubData(thisHub).incrementChangeCount();
                     }
                 }
             }
@@ -881,7 +878,7 @@ public class HubDataService {
 	 * @return the current change count
 	 */
 	public int getChangeCount(Hub thisHub) {
-    	return faHubData.getChangeCount(thisHub);
+    	return faHub.getHubData(thisHub).getChangeCount();
 	}
 	
 	/**
@@ -890,7 +887,7 @@ public class HubDataService {
 	 * @param thisHub the Hub whose counter is incremented
 	 */
 	public void incChangeCount(Hub thisHub) {
-    	faHubData.incrementChangeCount(thisHub);
+    	faHub.getHubData(thisHub).incrementChangeCount();
 	}
 
 	/**
@@ -922,12 +919,12 @@ public class HubDataService {
 	public boolean contains(Hub hub, Object obj, final boolean bJustAdded) {
         if (hub == null || obj == null) return false;
         
-        final int size = faHubData.getVector(hub).size();
+        final int size = faHub.getHubData(hub).getVector().size();
         if (size == 0) return false;
 
         if (bJustAdded) {
             for (int i=1; i<3; i++) {
-                if (faHubData.getVector(hub).elementAt(size-i) == obj) {
+                if (faHub.getHubData(hub).getVector().elementAt(size-i) == obj) {
                     return true;
                 }
             }
@@ -968,7 +965,7 @@ public class HubDataService {
 	 */
     public boolean containsDirect(Hub hub, Object obj) {
         if (hub == null || obj == null) return false;
-        int x = faHubData.getVector(hub).size();
+        int x = faHub.getHubData(hub).getVector().size();
         if (x == 0) return false;
         if (x > 125) {
             if (faHub.getHubData(hub).getSortListener() != null) {
@@ -979,7 +976,7 @@ public class HubDataService {
                 if (x == -3) return false;
             }
         }
-        return faHubData.getVector(hub).contains(obj);
+        return faHub.getHubData(hub).getVector().contains(obj);
     }
     
     /**
@@ -998,7 +995,7 @@ public class HubDataService {
         if (cx == null || !cx.equals(obj.getClass())) return -3;
         
         int head = -1;
-        int tail = faHubData.getVector(thisHub).size();
+        int tail = faHub.getHubData(thisHub).getVector().size();
         for ( ;; ) {
             if (head+1 >= tail) {
                 break;

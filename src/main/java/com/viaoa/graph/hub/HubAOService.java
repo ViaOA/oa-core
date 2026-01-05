@@ -43,27 +43,12 @@ public class HubAOService {
 
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
-	private final HubData.FriendAccess faHubData;
-	private final HubDataUnique.FriendAccess faHubDataUnique;
-	private final HubDataActive.FriendAccess faHubDataActive;
 	
-	
-	public HubAOService(HubService srvcHub, 
-			Hub.FriendAccess faHub,
-			HubData.FriendAccess faHubData,
-			HubDataUnique.FriendAccess faHubDataUnique,
-			HubDataActive.FriendAccess faHubDataActive
-			) {
+	public HubAOService(HubService srvcHub, Hub.FriendAccess faHub) {
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
-    	if (faHubData == null) throw new IllegalArgumentException("HubData.FriendAccess can not be null");
-    	this.faHubData = faHubData;
-    	if (faHubDataUnique == null) throw new IllegalArgumentException("HubDataUnique.FriendAccess can not be null");
-    	this.faHubDataUnique = faHubDataUnique;
-    	if (faHubDataActive == null) throw new IllegalArgumentException("HubDataActive.FriendAccess can not be null");
-    	this.faHubDataActive = faHubDataActive;
 	}
 
 	
@@ -267,7 +252,7 @@ public class HubAOService {
 			return;
 		}
 
-		if (faHubDataActive.getActiveObject(thisHub) == object && !bForce) {
+		if (faHub.getHubDataActive(thisHub).getActiveObject() == object && !bForce) {
 			return;
 		}
 		if (faHub.getHubDataUnique(thisHub).isUpdatingActiveObject()) {
@@ -279,7 +264,7 @@ public class HubAOService {
 			if (faHub.getHubDataMaster(thisHub).getMasterObject() != null && thisHub.getSharedHub() == null) {
 				if (faHub.getHubDataMaster(thisHub).getMasterHub() == null) {
 					if (!thisHub.getOAObjectInfo().getLocalOnly()) {
-						if (faHubDataActive.getActiveObject(thisHub) != object || !bForce) {
+						if (faHub.getHubDataActive(thisHub).getActiveObject() != object || !bForce) {
 							if (!(faHub.getHubDataMaster(thisHub).getMasterObject() instanceof OAGroupBy)) {
 								LOG.log(Level.WARNING,
 										"Note/FYI only: should not setAO on thisHub=" + thisHub + " (use sharedHub), will continue",
@@ -290,7 +275,7 @@ public class HubAOService {
 				}
 			}
 			if (hsWarnOnSettingAO.contains(thisHub) && thisHub.getSharedHub() == null) {
-				if (faHubDataActive.getActiveObject((thisHub)) != object || !bForce) {
+				if (faHub.getHubDataActive(thisHub).getActiveObject() != object || !bForce) {
 					LOG.log(Level.WARNING, "Note/FYI only: should not setAO on thisHub=" + thisHub + " (use sharedHub), will continue",
 							new Exception("showing thread stack"));
 				}
@@ -298,8 +283,8 @@ public class HubAOService {
 		}
 
 		OAThreadLocalDelegate.lock(thisHub);
-		Object origActiveObject = faHubDataActive.getActiveObject((thisHub));
-		faHubDataActive.setActiveObject(thisHub, object);
+		Object origActiveObject = faHub.getHubDataActive(thisHub).getActiveObject();
+		faHub.getHubDataActive(thisHub).setActiveObject(object);
 		OAThreadLocalDelegate.unlock(thisHub);
 
 		faHub.getHubDataUnique(thisHub).setUpdatingActiveObject(true);

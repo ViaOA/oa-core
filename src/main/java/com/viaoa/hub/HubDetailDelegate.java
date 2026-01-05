@@ -199,7 +199,8 @@ public class HubDetailDelegate {
 	 * @param detailHub   the hub being updated
 	 * @param bUpdateLink whether link-based updates should be propagated
 	 */
-	protected static void updateDetail(final Hub thisHub, final HubDetail detail, final Hub detailHub, final boolean bUpdateLink) {
+	public static void updateDetail(final Hub thisHub, final HubDetail detail, final Hub detailHub, final boolean bUpdateLink) {
+		// qqqqqq method was protected
 		OAGraph g = getGraph(thisHub, null);
 		if (g == null) return;
 		g.hubs().getHubDetailService().updateDetail(thisHub, detail, detailHub, bUpdateLink);
@@ -607,8 +608,6 @@ public class HubDetailDelegate {
 		return g.hubs().getHubDetailService().getPropertyPathToMasters(thisHub); 
 	}
 
-//qqqqqqqqqqqqqqqqqqqqqqqqq	
-	
 	/**
 	 * Returns the property name on the detail object that refers to the
 	 * master object, based on the hub’s detail-to-master link information.
@@ -617,18 +616,9 @@ public class HubDetailDelegate {
 	 * @return the detail-to-master property name, or null if unavailable
 	 */
 	public static String getPropertyFromDetailToMaster(Hub thisHub) {
-		Hub h = getHubWithMasterHub(thisHub);
-		if (h == null) {
-			h = getHubWithMasterObject(thisHub);
-			if (h == null) {
-				return null;
-			}
-		}
-		thisHub = h;
-		if (thisHub.datam.liDetailToMaster != null) {
-			return thisHub.datam.liDetailToMaster.getName();
-		}
-		return null;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubDetailService().getPropertyFromDetailToMaster(thisHub); 
 	}
 
 	/**
@@ -639,22 +629,9 @@ public class HubDetailDelegate {
 	 * @return true if the detail objects are owned by the master, otherwise false
 	 */
 	public static boolean isOwned(Hub thisHub) {
-		Hub h = getHubWithMasterHub(thisHub);
-		if (h == null) {
-			h = getHubWithMasterObject(thisHub);
-			if (h == null) {
-				return false;
-			}
-		}
-		thisHub = h;
-		HubDataMaster dm = thisHub.datam;
-		if (dm.getMasterObject() != null && dm.liDetailToMaster != null) {
-			OALinkInfo li = OAObjectInfoDelegate.getReverseLinkInfo(dm.liDetailToMaster);
-			if (li != null) {
-				return li.getOwner();
-			}
-		}
-		return false;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDetailService().isOwned(thisHub); 
 	}
 
 	/**
@@ -666,20 +643,9 @@ public class HubDetailDelegate {
 	 * @return the appropriate hub instance
 	 */
 	public static Hub getRealHub(Hub thisHub) {
-		Hub hubMaster = HubDetailDelegate.getMasterHub(thisHub);
-		if (hubMaster == null) {
-			return thisHub;
-		}
-
-		Hub h = thisHub;
-		OAObject o = HubDetailDelegate.getMasterObject(thisHub);
-		if (o != null && o != hubMaster.getAO()) {
-			h = (Hub) OAObjectReflectDelegate.getProperty(o, getPropertyFromMasterToDetail(hubMaster));
-			if (h == null) {
-				h = thisHub; // should not happen
-			}
-		}
-		return h;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return null;
+		return g.hubs().getHubDetailService().getRealHub(thisHub); 
 	}
 
 	/*20180305 was:   not sure why this was
@@ -716,10 +682,9 @@ public class HubDetailDelegate {
 	 * @return true if detail hubs are present, otherwise false
 	 */
 	public static boolean hasDetailHubs(Hub thisHub) {
-		if (thisHub == null || thisHub.datau == null) {
-			return false;
-		}
-		return thisHub.datau.getVecHubDetail() != null && thisHub.datau.getVecHubDetail().size() > 0;
+		OAGraph g = getGraph(thisHub, null);
+		if (g == null) return false;
+		return g.hubs().getHubDetailService().hasDetailHubs(thisHub); 
 	}
 
 	/**

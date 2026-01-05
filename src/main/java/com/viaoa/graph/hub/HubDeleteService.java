@@ -42,27 +42,13 @@ public class HubDeleteService {
 
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
-	private final HubData.FriendAccess faHubData;
-	private final HubDataUnique.FriendAccess faHubDataUnique;
-	private final HubDataActive.FriendAccess faHubDataActive;
 	
 	
-	public HubDeleteService(HubService srvcHub, 
-			Hub.FriendAccess faHub,
-			HubData.FriendAccess faHubData,
-			HubDataUnique.FriendAccess faHubDataUnique,
-			HubDataActive.FriendAccess faHubDataActive
-			) {
+	public HubDeleteService(HubService srvcHub, Hub.FriendAccess faHub) {
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
-    	if (faHubData == null) throw new IllegalArgumentException("HubData.FriendAccess can not be null");
-    	this.faHubData = faHubData;
-    	if (faHubDataUnique == null) throw new IllegalArgumentException("HubDataUnique.FriendAccess can not be null");
-    	this.faHubDataUnique = faHubDataUnique;
-    	if (faHubDataActive == null) throw new IllegalArgumentException("HubDataActive.FriendAccess can not be null");
-    	this.faHubDataActive = faHubDataActive;
 	}
 
 
@@ -186,7 +172,7 @@ public class HubDeleteService {
         // 20160615
         final Object[] objs = thisHub.toArray();
         
-        faHubData.getVector(thisHub).removeAllElements();
+        faHub.getHubData(thisHub).getVector().removeAllElements();
 
         if ((faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && thisHub.isOAObject()) {
             Vector vecRemove = faHub.getHubData(thisHub).getVecRemove();

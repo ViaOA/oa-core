@@ -15,7 +15,6 @@
  */
 package com.viaoa.hub;
 
-import com.viaoa.hub.HubData.FriendAccess;
 
 /**
  * Lightweight structure holding the current Active Object (AO) for a Hub.
@@ -63,22 +62,5 @@ public class HubDataActive implements java.io.Serializable {
 	}
 	
 	
-	
-	public static final class FriendAccess {
-		private FriendAccess() {
-		}
-
-		public Object getActiveObject(Hub hub) {
-			return hub.dataa.activeObject;
-		}
-		public void setActiveObject(Hub hub, Object object) {
-			hub.dataa.activeObject = object;
-		}
-	}
-
-	private final static FriendAccess friendAccess = new FriendAccess();
-	static FriendAccess getFriendAccess() {
-		return friendAccess;
-	}
 }
 

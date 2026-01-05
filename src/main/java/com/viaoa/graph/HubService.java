@@ -12,9 +12,20 @@ import java.util.logging.Logger;
 import com.viaoa.graph.hub.HubAOService;
 import com.viaoa.graph.hub.HubAddRemoveService;
 import com.viaoa.graph.hub.HubCSService;
+import com.viaoa.graph.hub.HubDSService;
 import com.viaoa.graph.hub.HubDataService;
 import com.viaoa.graph.hub.HubDeleteService;
 import com.viaoa.graph.hub.HubDetailService;
+import com.viaoa.graph.hub.HubEventService;
+import com.viaoa.graph.hub.HubFindService;
+import com.viaoa.graph.hub.HubLinkService;
+import com.viaoa.graph.hub.HubRootService;
+import com.viaoa.graph.hub.HubSaveService;
+import com.viaoa.graph.hub.HubSelectService;
+import com.viaoa.graph.hub.HubSerializeService;
+import com.viaoa.graph.hub.HubShareService;
+import com.viaoa.graph.hub.HubSortService;
+import com.viaoa.graph.hub.HubXMLService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubAddRemoveDelegate;
 import com.viaoa.hub.HubAutoMatch;
@@ -67,14 +78,24 @@ public class HubService {
 	
 	private final Hub.FriendAccess faHub;
 	
-
-	private final HubAddRemoveService srvcHubAddRemove = new HubAddRemoveService(this, faBridge.getHubFriendAccess(), faBridge.getHubDataFriendAccess(), faBridge.getHubDataUniqueFriendAccess());
-	private final HubAOService srvcHubAO = new HubAOService(this, faBridge.getHubFriendAccess(), faBridge.getHubDataFriendAccess(), faBridge.getHubDataUniqueFriendAccess(), faBridge.getHubDataActiveFriendAccess());
-	private final HubCSService srvcHubCS = new HubCSService(this, faBridge.getHubFriendAccess(), faBridge.getHubDataFriendAccess(), faBridge.getHubDataUniqueFriendAccess(), faBridge.getHubDataActiveFriendAccess());
-	private final HubDataService srvcHubData = new HubDataService(this, faBridge.getHubFriendAccess(), faBridge.getHubDataFriendAccess());
-	private final HubDeleteService srvcHubDelete = new HubDeleteService(this, faBridge.getHubFriendAccess(), faBridge.getHubDataFriendAccess(), faBridge.getHubDataUniqueFriendAccess(), faBridge.getHubDataActiveFriendAccess());
+	private final HubAddRemoveService srvcHubAddRemove = new HubAddRemoveService(this, faBridge.getHubFriendAccess());
+	private final HubAOService srvcHubAO = new HubAOService(this, faBridge.getHubFriendAccess());
+	private final HubCSService srvcHubCS = new HubCSService(this, faBridge.getHubFriendAccess());
+	private final HubDataService srvcHubData = new HubDataService(this, faBridge.getHubFriendAccess());
+	private final HubDeleteService srvcHubDelete = new HubDeleteService(this, faBridge.getHubFriendAccess());
 	private final HubDetailService srvcHubDetail = new HubDetailService(this, faBridge.getHubFriendAccess());
-
+	private final HubDSService srvcHubDS = new HubDSService(this, faBridge.getHubFriendAccess());
+	private final HubEventService srvcHubEvent = new HubEventService(this, faBridge.getHubFriendAccess());
+	private final HubFindService srvcHubFind = new HubFindService(this, faBridge.getHubFriendAccess());
+	private final HubLinkService srvcHubLink = new HubLinkService(this, faBridge.getHubFriendAccess());
+	private final HubRootService srvcHubRoot = new HubRootService(this, faBridge.getHubFriendAccess());
+	private final HubSaveService srvcHubSave = new HubSaveService(this, faBridge.getHubFriendAccess());
+	private final HubSelectService srvcHubSelect = new HubSelectService(this, faBridge.getHubFriendAccess());
+	private final HubSerializeService srvcHubSerialize = new HubSerializeService(this, faBridge.getHubFriendAccess());
+	private final HubShareService srvcHubShare = new HubShareService(this, faBridge.getHubFriendAccess());
+	private final HubSortService srvcHubSort = new HubSortService(this, faBridge.getHubFriendAccess());
+	private final HubXMLService srvcHubXML = new HubXMLService(this, faBridge.getHubFriendAccess());
+	
 	
 	public HubService(OAGraph graph) {
     	if (graph == null) throw new IllegalArgumentException("graph can not be null");
@@ -106,10 +127,49 @@ public class HubService {
 		return srvcHubDetail;
 	}
 	
+	public HubDSService getHubDSService() {
+		return srvcHubDS;
+	}
 	
+	public HubEventService getHubEventService() {
+		return srvcHubEvent;
+	}
 	
+	public HubFindService getHubFindService() {
+		return srvcHubFind;
+	}
 	
+	public HubLinkService getHubLinkService() {
+		return srvcHubLink;
+	}
 	
+	public HubRootService getHubRootService() {
+		return srvcHubRoot;
+	}
+
+	public HubSaveService getHubSaveService() {
+		return srvcHubSave;
+	}
+	
+	public HubSelectService getHubSelectService() {
+		return srvcHubSelect;
+	}
+
+	public HubSerializeService getHubSerializeService() {
+		return srvcHubSerialize;
+	}
+
+	public HubShareService getHubShareService() {
+		return srvcHubShare;
+	}
+
+	public HubSortService getHubSortService() {
+		return srvcHubSort;
+	}
+
+	public HubXMLService getHubXMLService() {
+		return srvcHubXML;
+	}
 	
 	public static final Boolean TRUE = Boolean.valueOf(true);
 	public static final Boolean FALSE = Boolean.valueOf(false);
@@ -393,7 +453,7 @@ public class HubService {
 		final HubDataMaster hdm = faBridge.getHubFriendAccess().getHubDataMaster(thisHub);
 		final HubDataUnique hdu = faBridge.getHubFriendAccess().getHubDataUnique(thisHub);
 		
-		Class cx = faBridge.getHubDataFriendAccess().getObjClass(thisHub);
+		Class cx = faBridge.getHubFriendAccess().getHubData(thisHub).getObjClass();
 		
 		if (cx != null && !cx.equals(objClass) && !cx.equals(OAObject.class)) {
 			if (HubDataDelegate.getCurrentSize(thisHub) > 0
@@ -409,7 +469,7 @@ public class HubService {
 		}
 		// 20141111 removed since the select could be valid
 		// HubSelectDelegate.cancelSelect(thisHub, true);
-		faBridge.getHubDataFriendAccess().setObjClass(thisHub, objClass);
+		faBridge.getHubFriendAccess().getHubData(thisHub).setObjClass(objClass);
 
 		/* 20141111 not needed here
 		if (objClass != null) {
@@ -448,7 +508,7 @@ public class HubService {
 					return false;
 				}
 				
-				if (faBridge.getHubDataActiveFriendAccess().getActiveObject(hx) == null) {
+				if (faBridge.getHubFriendAccess().getHubDataActive(hx).getActiveObject() == null) {
 					if (!faBridge.getHubFriendAccess().getHubDataUnique(h).isAutoCreate()) {
 						return false;
 					}

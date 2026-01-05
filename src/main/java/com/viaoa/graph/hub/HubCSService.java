@@ -52,27 +52,14 @@ public class HubCSService {
 
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
-	private final HubData.FriendAccess faHubData;
-	private final HubDataUnique.FriendAccess faHubDataUnique;
-	private final HubDataActive.FriendAccess faHubDataActive;
-	
 	
 	public HubCSService(HubService srvcHub, 
-			Hub.FriendAccess faHub,
-			HubData.FriendAccess faHubData,
-			HubDataUnique.FriendAccess faHubDataUnique,
-			HubDataActive.FriendAccess faHubDataActive
+			Hub.FriendAccess faHub
 			) {
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
-    	if (faHubData == null) throw new IllegalArgumentException("HubData.FriendAccess can not be null");
-    	this.faHubData = faHubData;
-    	if (faHubDataUnique == null) throw new IllegalArgumentException("HubDataUnique.FriendAccess can not be null");
-    	this.faHubDataUnique = faHubDataUnique;
-    	if (faHubDataActive == null) throw new IllegalArgumentException("HubDataActive.FriendAccess can not be null");
-    	this.faHubDataActive = faHubDataActive;
 	}
 
     /**

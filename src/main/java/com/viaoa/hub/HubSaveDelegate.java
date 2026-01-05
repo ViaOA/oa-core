@@ -15,7 +15,9 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Handles persistence of Hub contents through {@link OAObjectSaveDelegate}.
@@ -33,6 +35,24 @@ import com.viaoa.object.*;
  */
 public class HubSaveDelegate {
 
+	/*
+	OAGraph g = getGraph(hub, null);
+	if (g == null) return;
+	g.hubs().getHubSavetService().?(?);
+
+	OAGraph g = OARuntime.get().graph(c);
+	if (g == null) return;
+	g.hubs().getHubSaveService().?(?);
+    */
+	static OAGraph getGraph(Hub hub, OAObject obj) {
+		Class c = null;
+		if (hub != null) c = hub.getObjectClass();
+		if (c == null && obj != null) c = obj.getClass();
+		if (c == null) return null;
+		OAGraph g = OARuntime.get().graph(c);
+		return g;
+	}
+
 	/**
 	 * Saves all objects in the specified Hub using the given cascade rule.
 	 *
@@ -43,8 +63,9 @@ public class HubSaveDelegate {
 	 * @param cascadeRule  the cascade behavior to apply during persistence
 	 */
     public static void saveAll(Hub thisHub, int cascadeRule) {
-        OACascade cascade = new OACascade(); 
-        HubSaveDelegate.saveAll(thisHub, cascadeRule, cascade);
+    	OAGraph g = getGraph(thisHub, null);
+    	if (g == null) return;
+    	g.hubs().getHubSaveService().saveAll(thisHub, cascadeRule);
     }
 	
     /*
@@ -80,45 +101,9 @@ public class HubSaveDelegate {
      * @param cascade      the cascade tracker preventing repeat processing
      */
     public static void saveAll(Hub thisHub, int iCascadeRule, OACascade cascade) {
-        if (thisHub == null) return; //qq need to log this
-        if (cascade.wasCascaded(thisHub, true)) return;
-
-        boolean bM2M = false;
-        if (iCascadeRule != OAObject.CASCADE_NONE) {
-	        boolean b = thisHub.isOAObject();
-	        int x = thisHub.getCurrentSize(); // only check the objects that are loaded
-	        for (int i=0; i<x ; i++) {
-	            Object obj = thisHub.elementAt(i);
-	            if (obj == null) break;
-	            if (b) {
-	            	OAObjectSaveDelegate.save((OAObject)obj, iCascadeRule, cascade);
-	            }
-	            else {
-	            	// OAObjectDSDelegate.save(obj, true);  // true=insert.  Could be update?
-	            	//todo: qqqqqqqq 
-	            }
-	        }
-        }
-        else {
-	        // if Many2Many, then save all Added objects that are New, so that a valid DB record exists before calling updateHubAddsAndRemoves()
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
-	        bM2M = dm.liDetailToMaster != null && OAObjectInfoDelegate.isMany2Many(dm.liDetailToMaster);
-	        
-	        if (bM2M) {
-		        OAObject[] objAdds = HubDataDelegate.getAddedObjects(thisHub);
-	        	for (int i=0; objAdds!=null && i<objAdds.length; i++) {
-	        		OAObject obj = objAdds[i];
-	        		if (obj != null && ((OAObject)obj).getNew()) {
-			            OAObjectSaveDelegate._saveObjectOnly((OAObject) obj, cascade);
-	        		}
-	        	}
-	        }
-        }
-        
-    	HubDelegate._updateHubAddsAndRemoves(thisHub, iCascadeRule, cascade, true);
-    	thisHub.setChanged(false); // removes all vecAdd, vecRemove objects
-    	
-        HubDelegate.setReferenceable(thisHub, false);
+    	OAGraph g = getGraph(thisHub, null);
+    	if (g == null) return;
+    	g.hubs().getHubSaveService().saveAll(thisHub, iCascadeRule, cascade);
     }
 
 	

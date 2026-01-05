@@ -77,7 +77,8 @@ public class HubDataDelegate {
      *
      * @param thisHub the hub whose internal state is being reset
      */
-	protected static void clearAllAndReset(Hub thisHub) {
+	public static void clearAllAndReset(Hub thisHub) {
+		//qqqqqq method was protected
 		OAGraph g = getGraph(thisHub, null);
 		if (g == null) return;
 		g.hubs().getHubDataService().clearAllAndReset(thisHub);
@@ -90,7 +91,8 @@ public class HubDataDelegate {
 	 * @param thisHub the hub whose vector capacity is being checked
 	 * @param size    the minimum capacity required
 	 */
-	protected static void ensureCapacity(Hub thisHub, int size) {
+	public static void ensureCapacity(Hub thisHub, int size) {
+		//qqqqqqqqqqq method was protected
 		OAGraph g = getGraph(thisHub, null);
 		if (g == null) return;
 		g.hubs().getHubDataService().ensureCapacity(thisHub, size);
