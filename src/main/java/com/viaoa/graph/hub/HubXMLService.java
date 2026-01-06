@@ -1,54 +1,28 @@
 package com.viaoa.graph.hub;
 
-
-import java.io.IOException;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.ConcurrentModificationException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectSaveDelegate;
 import com.viaoa.object.OAObjectXMLDelegate;
-import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.remote.OARemoteThreadDelegate;
-import com.viaoa.sync.OASync;
-import com.viaoa.util.OAComparator;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
 import com.viaoa.xml.OAXMLWriter;
 
 public class HubXMLService {
 	private final Logger LOG = Logger.getLogger(HubXMLService.class.getName());
 
+	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 
-	public HubXMLService(HubService srvcHub, Hub.FriendAccess faHub) {
-		if (srvcHub == null)
-			throw new IllegalArgumentException("HubService can not be null");
+	public HubXMLService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub) {
+    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
+    	this.srvcObject = srvcObject;
+		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
 		this.srvcHub = srvcHub;
-		if (faHub == null)
-			throw new IllegalArgumentException("Hub.FriendAccess can not be null");
+		if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
 		this.faHub = faHub;
 	}
 
@@ -132,7 +106,7 @@ public class HubXMLService {
 	        	if (((OAObject) obj).getNew()) continue;
 	        }
 	        String name = thisHub.getObjectClass().getSimpleName();
-	        if (obj instanceof OAObject) OAObjectXMLDelegate.write((OAObject)obj, ow, name, bKeyOnly, cascade);
+	        if (obj instanceof OAObject) srvcObject.getOAObjectXMLService().write((OAObject)obj, ow, name, bKeyOnly, cascade);
 	    }
 	    ow.indent--;
 	    ow.indent();

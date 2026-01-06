@@ -1,30 +1,24 @@
 package com.viaoa.graph.hub;
 
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
-import com.viaoa.remote.OARemoteThreadDelegate;
-import com.viaoa.sync.OASync;
-import com.viaoa.sync.OASyncDelegate;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
 
 public class HubDSService {
 	private final Logger LOG = Logger.getLogger(HubDSService.class.getName());
 
+	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 	
-	public HubDSService(HubService srvcHub, Hub.FriendAccess faHub ) {
+	public HubDSService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
+    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
+    	this.srvcObject = srvcObject;
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
@@ -75,11 +69,11 @@ public class HubDSService {
         }
         OALinkInfo link = faHub.getHubDataMaster(hub).getDetailToMasterLinkInfo();
         if (link == null) return;
-        if (!OAObjectInfoDelegate.isMany2Many(link)) return;
+        if (!srvcObject.getOAObjectInfoService().isMany2Many(link)) return;
         
-        String propFromMaster = OAObjectInfoDelegate.getReverseLinkInfo(link).getName();
+        String propFromMaster = srvcObject.getOAObjectInfoService().getReverseLinkInfo(link).getName();
 
-        OAObject[] objs = HubAddRemoveDelegate.getRemovedObjects(hub);
+        OAObject[] objs = srvcHub.getHubAddRemoveService().getRemovedObjects(hub);
         if (objs == null || objs.length == 0) return;
        
         OADataSource ds = OADataSource.getDataSource(objMaster.getClass());

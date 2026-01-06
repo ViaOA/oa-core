@@ -13,7 +13,7 @@ import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -321,18 +321,18 @@ public class OAObjectImportMatchService {
 		}
 
 		if (objNext == null) {
-			boolean b = OAThreadLocalDelegate.isLoading();
+			boolean b = OARuntime.get().threadService().isLoading();
 			if (b) {
-				OAThreadLocalDelegate.setLoading(false);
+				OARuntime.get().threadService().setLoading(false);
 			}
 
 			objNext = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(oiNext.getForClass());
 
 			if (b) {
-				OAThreadLocalDelegate.setLoading(true);
+				OARuntime.get().threadService().setLoading(true);
 			}
 
-			final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
+			final OAJson oaj = OARuntime.get().threadService().getOAJackson();
 
 			createHierObjects(objNext, oiNext, propertyPathNext, value);
 		}

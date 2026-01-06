@@ -7,6 +7,7 @@ import javax.swing.JLabel;
 
 import com.viaoa.context.OAContext;
 import com.viaoa.context.OAUserAccess;
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
@@ -25,6 +26,7 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectModel;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAObjectCallback.Type;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
@@ -81,13 +83,13 @@ public class OAObjectCallbackService {
 	private static final Logger LOG = Logger.getLogger(OAObjectCallbackService.class.getName());
 
 	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
+	private final HubService srvcHub;
 
-	public OAObjectCallbackService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+	public OAObjectCallbackService(OAObjectService srvcObject, HubService srvcHub) {
     	if (srvcObject == null) throw new IllegalArgumentException("ObjectService can not be null");
     	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-		this.faObject = oaObjectFriendAccess;
+    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+    	this.srvcHub = srvcHub;
 	}
 
     public OAObjectService getObjectService() {
@@ -518,7 +520,7 @@ public class OAObjectCallbackService {
 		}
 		if (oaObj == null) {
 			if (name == null) {
-				name = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+				name = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(hub);
 				oaObj = hub.getMasterObject();
 			} else {
 				oaObj = (OAObject) hub.getAO();
@@ -547,7 +549,7 @@ public class OAObjectCallbackService {
 		}
 		if (oaObj == null) {
 			if (name == null) {
-				name = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+				name = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(hub);
 				oaObj = hub.getMasterObject();
 			} else {
 				oaObj = (OAObject) hub.getAO();
@@ -574,7 +576,7 @@ public class OAObjectCallbackService {
 		if (objMaster == null) {
 			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
 		} else {
-			String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+			String propertyName = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(hub);
 			objectCallback.setPropertyName(propertyName);
 			objectCallback.setObject(objMaster);
 			processObjectCallback(objectCallback);
@@ -697,7 +699,7 @@ public class OAObjectCallbackService {
 			return null;
 		}
 
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -738,7 +740,7 @@ public class OAObjectCallbackService {
 			return null;
 		}
 
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 		OAObjectCallback objectCallback = null;
 
@@ -811,7 +813,7 @@ public class OAObjectCallbackService {
 			return null;
 		}
 
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -848,7 +850,7 @@ public class OAObjectCallbackService {
 			return null;
 		}
 
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -889,7 +891,7 @@ public class OAObjectCallbackService {
 			return null;
 		}
 
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -930,7 +932,7 @@ public class OAObjectCallbackService {
 			return null;
 		}
 
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -971,7 +973,7 @@ public class OAObjectCallbackService {
 			return null;
 		}
 
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -1086,7 +1088,7 @@ public class OAObjectCallbackService {
 			return null;
 		}
 
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -1122,7 +1124,7 @@ public class OAObjectCallbackService {
 	public OAObjectCallback getVerifyDeleteObjectCallback(final Hub hub, final OAObject objDelete, final int checkType) {
 		OAObjectCallback objectCallback = null;
 		if (hub != null) {
-			OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+			OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 			OAObject objMaster = hub.getMasterObject();
 
 			if (li == null || (li.getPrivateMethod() && objMaster == null)) {
@@ -1273,7 +1275,7 @@ public class OAObjectCallbackService {
 		OAObjectCallback objectCallback;
 		OAObject objMaster = hub.getMasterObject();
 		if (objMaster != null) {
-			String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+			String propertyName = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(hub);
 			objectCallback = new OAObjectCallback(Type.SetConfirmForRemove, OAObjectCallback.CHECK_ALL, hub, null, oaObj, propertyName,
 					null);
 			objectCallback.setConfirmMessage(confirmMessage);
@@ -1303,7 +1305,7 @@ public class OAObjectCallbackService {
         OAObjectCallback objectCallback;
         OAObject objMaster = hub.getMasterObject();
         if (objMaster != null) {
-            String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+            String propertyName = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(hub);
                 objectCallback = new OAObjectCallback(Type.SetConfirmForRemoveAll, OAObjectCallback.CHECK_ALL, 
                     hub, null, null, propertyName, null);
             objectCallback.setConfirmMessage(confirmMessage);
@@ -1335,7 +1337,7 @@ public class OAObjectCallbackService {
 		OAObjectCallback objectCallback;
 		OAObject objMaster = hub.getMasterObject();
 		if (objMaster != null) {
-			String propertyName = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+			String propertyName = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(hub);
 			objectCallback = new OAObjectCallback(Type.SetConfirmForAdd, OAObjectCallback.CHECK_ALL, hub, null, oaObj, propertyName, null);
 			objectCallback.setConfirmMessage(confirmMessage);
 			objectCallback.setConfirmTitle(confirmTitle);
@@ -1464,7 +1466,7 @@ public class OAObjectCallbackService {
 		if (bCheckIncludeMaster && hubThis != null
 				&& (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()
 						|| objectCallback.getType() == Type.AllowVisible)) {
-			OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterHubToDetail(hubThis);
+			OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail(hubThis);
 			if (li != null && !li.getOwner()) {
 				OAObject objx = hubThis.getMasterObject();
 				if (objx != null) {
@@ -1879,7 +1881,7 @@ public class OAObjectCallbackService {
 				}
 			}
 		} else if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()) {
-			//was:  else if ( (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) && !(OASync.isServer() && OAThreadLocalDelegate.getContext() == null)) {
+			//was:  else if ( (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) && !(OASync.isServer() && OARuntime.get().threadService().getContext() == null)) {
 
 			// final boolean bCheckProcessedCheck = (objectCallback.getCheckType() & OAObjectCallback.CHECK_Processed) != 0;
 			final boolean bCheckEnabledProperty = (objectCallback.getCheckType() & OAObjectCallback.CHECK_EnabledProperty) != 0;
@@ -2019,7 +2021,8 @@ public class OAObjectCallbackService {
 	 */
 	protected void _processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
-		HubListener[] hl = HubEventDelegate.getAllListeners(hub);
+		
+		HubListener[] hl = srvcHub.getHubEventService().getAllListeners(hub);
 		if (hl == null) {
 			return;
 		}

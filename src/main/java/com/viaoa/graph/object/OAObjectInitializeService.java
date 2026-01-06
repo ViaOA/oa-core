@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import com.viaoa.context.OAContext;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
+import com.viaoa.graph.OASyncService;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -18,13 +19,16 @@ public class OAObjectInitializeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectInitializeService.class.getName());
 
 	private final OAObjectService srvcObject;
+	private final OASyncService srvcSync;
 	private final OAObject.FriendAccess faObject;
 
-	public OAObjectInitializeService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+	public OAObjectInitializeService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OASyncService srvcSync) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
     	this.srvcObject = srvcObject;
     	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = oaObjectFriendAccess;
+    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
+    	this.srvcSync = srvcSync;
 	}
 
     public OAObjectService getObjectService() {
@@ -70,12 +74,12 @@ public class OAObjectInitializeService {
 		
 		faObject.setNulls(oaObj, new byte[x]);
 
-		if (srvcObject.graph().runtime().threadService().isLoading()) {
+		if (OARuntime.get().threadService().isLoading()) {
 			return false; // dont initialize. Whatever is loading should call initialize below directly
 		}
 
 		
-		boolean bInitializeWithCS = !oi.getLocalOnly() && srvcObject.graph().sync().isClient();
+		boolean bInitializeWithCS = !oi.getLocalOnly() && srvcSync.isClient();
 		
 
 		// useDataSource needs to be true ... since other DS (ex: autonumber) might be used
@@ -170,7 +174,7 @@ public class OAObjectInitializeService {
 	        boolean bAddToCache,
 	        boolean bInitializeWithCS,
 	        boolean bSetChangedToFalse) {
-		final boolean bWasLoading = srvcObject.graph().runtime().threads().setLoading(true);
+		final boolean bWasLoading = OARuntime.get().threads().setLoading(true);
 		try {
 			if (oi == null) {
 				oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
@@ -225,7 +229,7 @@ public class OAObjectInitializeService {
 
 			if (bInitializeWithCS) {
 				// must be before DS init, since it could add to local client cache
-				srvcObject.graph().sync().getClient().objectCreated(oaObj);
+				srvcSync.getClient().objectCreated(oaObj);
 			}
 			if (!bWasLoading && bInitializeWithDS) {
 				if (srvcObject.getOAObjectDSService().getAssignIdOnCreate(oaObj)) {

@@ -17,41 +17,43 @@ import com.viaoa.object.OAObjectEventDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
-import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OACompare;
 
 public class OAObjectService {
 	private static final Logger LOG = Logger.getLogger(OAObjectService.class.getName());
 
-	private final OAGraph graph;
-
+	private HubService srvcHub;
+	private OASyncService srvcSync;
+	
 	private final OAObjectInternalBridge faBridge = new OAObjectInternalBridge();
 	
-    private final OAObjectCacheService srvcCache = new OAObjectCacheService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectInitializeService srvcOAObjectInitialize = new OAObjectInitializeService(this, faBridge.getObjectFriendAccess()); 
-    private final OAObjectGuidService srvcGuid = new OAObjectGuidService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectInfoService srvcOAObjectInfo = new OAObjectInfoService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectInfoFriendAccess()); 
-    private final OAObjectPropertyService srvcOAObjectProperty = new OAObjectPropertyService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectDSService srvcOAObjectDS = new OAObjectDSService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectReflectService srvcOAObjectReflect = new OAObjectReflectService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectHubService srvcOAObjectHub = new OAObjectHubService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectAnnotationService srvcOAObjectAnnotation = new OAObjectAnnotationService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectInfoFriendAccess());
-    private final OAObjectDatabaseService srvcOAObjectDatabase = new OAObjectDatabaseService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectCallbackService srvcOAObjectCallback = new OAObjectCallbackService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectCSService srvcOAObjectCS = new OAObjectCSService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectDeleteService srvcOAObjectDelete = new OAObjectDeleteService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectEmptyHubService srvcOAObjectEmptyHub = new OAObjectEmptyHubService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectEnumService srvcOAObjectEnum = new OAObjectEnumService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectEventService srvcOAObjectEvent = new OAObjectEventService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectImportMatchService srvcOAObjectImportMatch = new OAObjectImportMatchService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectKeyService srvcOAObjectKey = new OAObjectKeyService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectInfoFriendAccess());
-    private final OAObjectLockService srvcOAObjectLock = new OAObjectLockService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectLogService srvcOAObjectLog = new OAObjectLogService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectSaveService srvcOAObjectSave = new OAObjectSaveService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectSchedulerService srvcOAObjectScheduler = new OAObjectSchedulerService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectUniqueService srvcOAObjectUnique = new OAObjectUniqueService(this, faBridge.getObjectFriendAccess());
-    private final OAObjectSerializeService srvcOAObjectSerialize = new OAObjectSerializeService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectSerializerFriendAccess());
-    private final OAObjectSiblingService srvcOAObjectSibling = new OAObjectSiblingService(this, faBridge.getObjectFriendAccess());
+    private OAObjectAnnotationService srvcOAObjectAnnotation;
+    private OAObjectCacheService srvcCache;
+    private OAObjectCallbackService srvcOAObjectCallback;
+    private OAObjectCSService srvcOAObjectCS;
+    private OAObjectDatabaseService srvcOAObjectDatabase;
+    private OAObjectDeleteService srvcOAObjectDelete;
+    private OAObjectDSService srvcOAObjectDS;
+    private OAObjectEmptyHubService srvcOAObjectEmptyHub;
+    private OAObjectEnumService srvcOAObjectEnum;
+    private OAObjectEventService srvcOAObjectEvent;
+    private OAObjectGuidService srvcGuid;
+    private OAObjectHubService srvcOAObjectHub;
+    private OAObjectImportMatchService srvcOAObjectImportMatch;
+    private OAObjectInfoService srvcOAObjectInfo; 
+    private OAObjectInitializeService srvcOAObjectInitialize; 
+    private OAObjectKeyService srvcOAObjectKey;
+    private OAObjectLockService srvcOAObjectLock;
+    private OAObjectLogService srvcOAObjectLog;
+    private OAObjectPropertyService srvcOAObjectProperty;
+    private OAObjectReflectService srvcOAObjectReflect;
+    private OAObjectSaveService srvcOAObjectSave;
+    private OAObjectSchedulerService srvcOAObjectScheduler;
+    private OAObjectSerializeService srvcOAObjectSerialize;
+    private OAObjectSiblingService srvcOAObjectSibling;
+    private OAObjectUniqueService srvcOAObjectUnique;
+    private OAObjectXMLService srvcOAObjectXML;
     
 	/**
 	 * Reserved property name representing an object's "new" lifecycle state.
@@ -86,16 +88,52 @@ public class OAObjectService {
 	 */
 	public static final Boolean FALSE = Boolean.FALSE;
     
+	
     
-	public OAObjectService(OAGraph graph) {
-    	if (graph == null) throw new IllegalArgumentException("graph can not be null");
-    	this.graph = graph;
+	public OAObjectService() {
+    }
+	
+	public HubService getHubService() {
+		return this.srvcHub;
+	}
+
+	private boolean bInitialized;
+	public void initialize(HubService srvcHub, OASyncService srvcSync) {
+		if (bInitialized) return;
+		this.srvcHub = srvcHub;
+		this.srvcSync = srvcSync;
+		if (srvcHub == null) return;
+		bInitialized = true;
+		
+		srvcOAObjectAnnotation = new OAObjectAnnotationService(this, faBridge.getObjectInfoFriendAccess(), srvcHub);
+    	srvcCache = new OAObjectCacheService(this, getHubService());
+        srvcOAObjectCallback = new OAObjectCallbackService(this, srvcHub);
+        srvcOAObjectCS = new OAObjectCSService(this, faBridge.getObjectFriendAccess(), srvcHub, srvcSync);
+        srvcOAObjectDatabase = new OAObjectDatabaseService(this, faBridge.getObjectFriendAccess());
+        srvcOAObjectDelete = new OAObjectDeleteService(this, faBridge.getObjectFriendAccess(), srvcHub,srvcSync);
+        srvcOAObjectDS = new OAObjectDSService(this, faBridge.getObjectFriendAccess());
+        srvcOAObjectEmptyHub = new OAObjectEmptyHubService(this, faBridge.getObjectFriendAccess());
+        srvcOAObjectEnum = new OAObjectEnumService(this, faBridge.getObjectFriendAccess());
+        srvcOAObjectEvent = new OAObjectEventService(this, faBridge.getObjectFriendAccess(), srvcHub, srvcSync);
+    	srvcGuid = new OAObjectGuidService(this, faBridge.getObjectFriendAccess(), srvcSync);
+    	srvcOAObjectHub = new OAObjectHubService(this, faBridge.getObjectFriendAccess(), srvcHub, srvcSync);
+    	srvcOAObjectImportMatch = new OAObjectImportMatchService(this, faBridge.getObjectFriendAccess());
+    	srvcOAObjectInfo = new OAObjectInfoService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectInfoFriendAccess());
+    	srvcOAObjectInitialize = new OAObjectInitializeService(this, faBridge.getObjectFriendAccess(), srvcSync);
+    	srvcOAObjectKey = new OAObjectKeyService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectInfoFriendAccess());
+    	srvcOAObjectLock = new OAObjectLockService(this, faBridge.getObjectFriendAccess(), srvcSync);
+    	srvcOAObjectLog = new OAObjectLogService(this, faBridge.getObjectFriendAccess());
+    	srvcOAObjectProperty = new OAObjectPropertyService(this, faBridge.getObjectFriendAccess());
+    	srvcOAObjectReflect = new OAObjectReflectService(this, faBridge.getObjectFriendAccess(), srvcHub, srvcSync);
+    	srvcOAObjectSave = new OAObjectSaveService(this, faBridge.getObjectFriendAccess(), srvcHub);
+    	srvcOAObjectScheduler = new OAObjectSchedulerService(this, faBridge.getObjectFriendAccess());
+    	srvcOAObjectSerialize = new OAObjectSerializeService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectSerializerFriendAccess(), srvcHub, srvcSync);
+    	srvcOAObjectSibling = new OAObjectSiblingService(this, faBridge.getObjectFriendAccess(), srvcHub);
+    	srvcOAObjectUnique = new OAObjectUniqueService(this, faBridge.getObjectFriendAccess(), srvcSync);
+    	srvcOAObjectXML = new OAObjectXMLService(this, faBridge.getObjectFriendAccess(), srvcHub);
 	}
 	
-    public OAGraph graph() {
-    	return graph;
-    }
-
+	
     public OAObjectInitializeService getOAObjectInitializeService() {
     	return srvcOAObjectInitialize;
     }
@@ -107,8 +145,6 @@ public class OAObjectService {
     public OAObjectCacheService getOAObjectCacheService() { 
     	return srvcCache; 
     }
-
-    
 
     public OAObjectInfoService getOAObjectInfoService() {
     	return srvcOAObjectInfo;
@@ -196,6 +232,10 @@ public class OAObjectService {
     
     public OAObjectSiblingService getOAObjectSiblingService() {
     	return srvcOAObjectSibling;
+    }
+    
+    public OAObjectXMLService getOAObjectXMLService() {
+    	return srvcOAObjectXML;
     }
     
 	/**
@@ -349,9 +389,10 @@ public class OAObjectService {
 				bValidCascade = true;
 			}
 
-			if (OAObjectInfoDelegate.isMany2Many(li)) {
+			
+			if (getOAObjectInfoService().isMany2Many(li)) {
 				Hub hub = (Hub) getOAObjectReflectService().getRawReference(oaObj, prop);
-				if (graph.hubs().getChanged(hub, OAObject.CASCADE_NONE, cascade)) {
+				if (getHubService().getChanged(hub, OAObject.CASCADE_NONE, cascade)) {
 					return true;
 				}
 			}
@@ -436,7 +477,7 @@ public class OAObjectService {
 		if (callback != null) {
 			callback.updateObject(oaObj);
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		OAObjectInfo oi = getOAObjectInfoService().getOAObjectInfo(oaObj);
 
 		List al = oi.getLinkInfos();
 		for (int i = 0; i < al.size(); i++) {
@@ -661,9 +702,9 @@ public class OAObjectService {
 		}
 
 		try {
-			OAThreadLocalDelegate.setSuppressCSMessages(true);
+			OARuntime.get().threadService().setSuppressCSMessages(true);
 			// need to see if object should be put into linkOne/masterObject hub(s)
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			OAObjectInfo oi = getOAObjectInfoService().getOAObjectInfo(oaObj);
 			for (OALinkInfo li : oi.getLinkInfos()) {
 				if (!li.getUsed()) {
 					continue;
@@ -676,7 +717,7 @@ public class OAObjectService {
 					continue;
 				}
 
-				OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+				OALinkInfo liRev = getOAObjectInfoService().getReverseLinkInfo(li);
 				if (liRev == null) {
 					continue;
 				}
@@ -696,7 +737,7 @@ public class OAObjectService {
 				}
 			}
 		} finally {
-			OAThreadLocalDelegate.setSuppressCSMessages(false);
+			OARuntime.get().threadService().setSuppressCSMessages(false);
 		}
 	}
 
@@ -739,7 +780,7 @@ public class OAObjectService {
 	 */
 	public Object[] getPropertyIdValues(OAObject obj) {
 		if (obj == null) return null;
-		return OAObjectInfoDelegate.getPropertyIdValues(obj);
+		return getOAObjectInfoService().getPropertyIdValues(obj);
 	}
 
 	//qqqqqqqqq this was created/added ... needs to be more protected ?? 

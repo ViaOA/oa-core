@@ -1,6 +1,5 @@
 package com.viaoa.graph.object;
 
-
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -22,16 +21,11 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAObjectService;
+import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubDataDelegate;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
-import com.viaoa.hub.HubLinkDelegate;
 import com.viaoa.hub.HubMerger;
-import com.viaoa.hub.HubSelectDelegate;
-import com.viaoa.hub.HubShareDelegate;
-import com.viaoa.hub.HubSortDelegate;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OACopyCallback;
@@ -43,8 +37,7 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OASiblingHelperDelegate;
-import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAArray;
@@ -60,13 +53,19 @@ public class OAObjectReflectService {
 	private static final Logger LOG = Logger.getLogger(OAObjectReflectService.class.getName());
 
 	private final OAObjectService srvcObject;
+	private final HubService srvcHub;
 	private final OAObject.FriendAccess faobject;
-	
-    public OAObjectReflectService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+	private final OASyncService srvcSync;
+		
+    public OAObjectReflectService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, HubService srvcHub, OASyncService srvcSync) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService cant be null");
     	this.srvcObject = srvcObject;
     	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faobject = oaObjectFriendAccess;
+    	if (srvcHub == null) throw new IllegalArgumentException("HubService cant be null");
+    	this.srvcHub = srvcHub;
+    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService cant be null");
+    	this.srvcSync = srvcSync;
     }
 	
     public OAObjectService getObjectService() {
@@ -331,7 +330,7 @@ public class OAObjectReflectService {
 			return;
 		}
 
-		final boolean bIsLoading = OAThreadLocalDelegate.isLoading();
+		final boolean bIsLoading = OARuntime.get().threadService().isLoading();
 
 		String propNameU = propName.toUpperCase();
 		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
@@ -733,7 +732,7 @@ public class OAObjectReflectService {
 		if (linkPropertyName == null) {
 			return null;
 		}
-		OASiblingHelperDelegate.onGetObjectReference(oaObj, linkPropertyName);
+		srvcObject.getOAObjectSiblingService().onGetObjectReference(oaObj, linkPropertyName);
 
 		Hub hub = null;
 		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
@@ -779,7 +778,7 @@ public class OAObjectReflectService {
 				}
 
 				// check to see if there needs to be an autoMatch set up
-				if (HubDelegate.getAutoMatch(hub) == null) {
+				if (srvcHub.getAutoMatch(hub) == null) {
 					if (linkInfo != null) {
 						String matchProperty = linkInfo.getMatchProperty();
 						if (matchProperty != null && matchProperty.length() > 0) {
@@ -789,7 +788,7 @@ public class OAObjectReflectService {
 									OAObjectInfo oix = srvcObject.getOAObjectInfoService().getOAObjectInfo(linkInfo.getToClass());
 									OALinkInfo linkInfox = srvcObject.getOAObjectInfoService().getLinkInfo(oix, matchProperty);
 									if (linkInfox != null) {
-										if (!OAThreadLocalDelegate.isDeleting()) {
+										if (!OARuntime.get().threadService().isDeleting()) {
 											hubMatch = new Hub(linkInfox.getToClass());
 											HubMerger hm = new HubMerger(oaObj, hubMatch, matchHubPropPath);
 											hm.setServerSideOnly(true);
@@ -812,29 +811,29 @@ public class OAObjectReflectService {
 				}
 
 				if (bSequence) {
-					if (HubDelegate.getAutoSequence(hub) == null) {
+					if (srvcHub.getAutoSequence(hub) == null) {
 						hub.setAutoSequence(seqProperty, 0, false); // server will keep autoSequence property updated - clients dont need autoSeq (server side managed)
 					}
-				} else if (OAString.notEmpty(sortOrder) && HubSortDelegate.getSortListener(hub) == null) {
+				} else if (OAString.notEmpty(sortOrder) && srvcHub.getHubSortService().getSortListener(hub) == null) {
 					// keep the hub sorted on server only
-					HubSortDelegate.sort(hub, sortOrder, bSortAsc, null, true);// dont sort, or send out sort msg (since no other client has this hub yet)
+					srvcHub.getHubSortService().sort(hub, sortOrder, bSortAsc, null, true);// dont sort, or send out sort msg (since no other client has this hub yet)
 				}
 			} else {
 				// client might need a sort listener
 				if (!bSequence) {
 					boolean bAsc = true;
-					String s = HubSortDelegate.getSortProperty(hub); // use sort order from orig hub
+					String s = srvcHub.getHubSortService().getSortProperty(hub); // use sort order from orig hub
 					if (OAString.isEmpty(s)) {
 						s = sortOrder;
 					} else {
-						bAsc = HubSortDelegate.getSortAsc(hub);
+						bAsc = srvcHub.getHubSortService().getSortAsc(hub);
 					}
-					if (OAString.isNotEmpty(s) && !HubSortDelegate.isSorted(hub)) {
+					if (OAString.isNotEmpty(s) && !srvcHub.getHubSortService().isSorted(hub)) {
 						// client recvd hub that has sorted property, without sortListener, etc.
 						// note: serialized hubs do not have sortListener created - must be manually done
 						//      this is done here (after checking first), for cases where references are serialized in a CS call.
 						//      - or during below, when it is directly called.
-						HubSortDelegate.sort(hub, s, bAsc, null, true);// dont sort, or send out sort msg
+						srvcHub.getHubSortService().sort(hub, s, bAsc, null, true);// dont sort, or send out sort msg
 						/* not needed, already resorted on server
 						OAPropertyInfo pi = oi.getPropertyInfo(s);
 						if (pi == null || String.class.equals(pi.getClassType())) {
@@ -946,18 +945,18 @@ public class OAObjectReflectService {
 			if (!OAObjectKey.class.equals(c)) {
 				if (!bThisIsServer) {
 					boolean bAsc = true;
-					String s = HubSortDelegate.getSortProperty(hub); // use sort order from orig hub
+					String s = srvcHub.getHubSortService().getSortProperty(hub); // use sort order from orig hub
 					if (OAString.isEmpty(s)) {
 						s = sortOrder;
 					} else {
-						bAsc = HubSortDelegate.getSortAsc(hub);
+						bAsc = srvcHub.getHubSortService().getSortAsc(hub);
 					}
-					if (!bSequence && !OAString.isEmpty(s) && !HubSortDelegate.isSorted(hub)) {
+					if (!bSequence && !OAString.isEmpty(s) && !srvcHub.getHubSortService().isSorted(hub)) {
 						// client recvd hub that has sorted property, without sortListener, etc.
 						// note: serialized hubs do not have sortListener created - must be manually done
 						//      this is done here (after checking first), for cases where references are serialized in a CS call.
 						//      - or during below, when it is directly called.
-						HubSortDelegate.sort(hub, s, bAsc, null, true);// dont sort, or send out sort msg
+						srvcHub.getHubSortService().sort(hub, s, bAsc, null, true);// dont sort, or send out sort msg
 						OAPropertyInfo pi = oi.getPropertyInfo(s);
 						if (pi == null || String.class.equals(pi.getClassType())) {
 							hub.resort(); // this will not send out event
@@ -980,7 +979,7 @@ public class OAObjectReflectService {
 			Class linkClass = linkInfo.getToClass();
 			Hub hubNew = new Hub(linkClass, oaObj, srvcObject.getOAObjectInfoService().getReverseLinkInfo(linkInfo), false);
 			try {
-				OAThreadLocalDelegate.setSuppressCSMessages(true);
+				OARuntime.get().threadService().setSuppressCSMessages(true);
 				for (int i = 0;; i++) {
 					OAObjectKey key = (OAObjectKey) hub.elementAt(i);
 					if (key == null) {
@@ -994,7 +993,7 @@ public class OAObjectReflectService {
 				hub = hubNew;
 				hub.setChanged(false);
 			} finally {
-				OAThreadLocalDelegate.setSuppressCSMessages(false);
+				OARuntime.get().threadService().setSuppressCSMessages(false);
 			}
 			if (srvcObject.getOAObjectInfoService().cacheHub(linkInfo, hub)) {
 				srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, new WeakReference(hub));
@@ -1027,7 +1026,7 @@ public class OAObjectReflectService {
 				// throw new RuntimeException("getHub from Server failed, this.oaObj="+oaObj+", linkPropertyName="+linkPropertyName);
 			}
 
-			if (HubDelegate.getMasterObject(hub) == null) {
+			if (srvcHub.getMasterObject(hub) == null) {
 				if (hub.getSize() == 0 && hub.getObjectClass() == null) {
 					if (linkInfo == null) {
 						return null;
@@ -1061,10 +1060,10 @@ public class OAObjectReflectService {
 						} else {
 							x = 25;
 						}
-						if (OAThreadLocalDelegate.isDeleting()) {
+						if (OARuntime.get().threadService().isDeleting()) {
 							siblingKeys = null;
 						} else {
-							siblingKeys = OASiblingHelperDelegate.getSiblings(oaObj, linkPropertyName, x, hmIgnoreSibling);
+							siblingKeys = srvcObject.getOAObjectSiblingService().getSiblings(oaObj, linkPropertyName, x, hmIgnoreSibling);
 						}
 					}
 
@@ -1168,8 +1167,8 @@ public class OAObjectReflectService {
 			if (siblingKeys != null && siblingKeys.length > 0) {
 				OALinkInfo rli = linkInfo.getReverseLinkInfo();
 				try {
-					OAThreadLocalDelegate.setSuppressCSMessages(true);
-					OAThreadLocalDelegate.setLoading(true);
+					OARuntime.get().threadService().setSuppressCSMessages(true);
+					OARuntime.get().threadService().setLoading(true);
 					for (; select.hasMore();) {
 						OAObject objx = select.next();
 						// find masterObj to put it in
@@ -1193,24 +1192,24 @@ public class OAObjectReflectService {
 						}
 					}
 				} finally {
-					OAThreadLocalDelegate.setLoading(false);
-					OAThreadLocalDelegate.setSuppressCSMessages(false);
+					OARuntime.get().threadService().setLoading(false);
+					OARuntime.get().threadService().setSuppressCSMessages(false);
 				}
 			} else {
 				if (!srvcObject.getOAObjectCSService().loadReferenceHubDataOnServer(hub, select)) { // load all data before passing to client
-					HubSelectDelegate.loadAllData(hub, select);
+					srvcHub.getHubSelectService().loadAllData(hub, select);
 				}
 			}
 
 			hub.cancelSelect();
 			if (select != null) {
 				select.cancel();
-				HubDataDelegate.resizeToFit(hub);
+				srvcHub.getHubDataService().resizeToFit(hub);
 			}
 
 			if (bThisIsServer) {
 				if (bSequence) {
-					if (HubDelegate.getAutoSequence(hub) == null) {
+					if (srvcHub.getAutoSequence(hub) == null) {
 						hub.setAutoSequence(seqProperty); // server will keep autoSequence property updated - clients dont need autoSeq (server side managed)
 						if (hmSiblingHub != null) {
 							// need to loop thru and set Hubs for siblings
@@ -1220,9 +1219,9 @@ public class OAObjectReflectService {
 							}
 						}
 					}
-				} else if (OAString.notEmpty(sortOrder) && HubSortDelegate.getSortListener(hub) == null) {
+				} else if (OAString.notEmpty(sortOrder) && srvcHub.getHubSortService().getSortListener(hub) == null) {
 					// keep the hub sorted on server only
-					HubSortDelegate.sort(hub, sortOrder, bSortAsc, null, true);// dont sort, or send out sort msg (since no other client has this hub yet)
+					srvcHub.getHubSortService().sort(hub, sortOrder, bSortAsc, null, true);// dont sort, or send out sort msg (since no other client has this hub yet)
 					final OAPropertyInfo pi = oi.getPropertyInfo(sortOrder);
 					
 					if (pi == null || String.class.equals(pi.getClassType())) {
@@ -1233,7 +1232,7 @@ public class OAObjectReflectService {
 						// need to loop thru and set Hubs for siblings
 						for (Entry<OAObjectKey, Hub> entry : hmSiblingHub.entrySet()) {
 							Hub hx = entry.getValue();
-							HubSortDelegate.sort(hx, sortOrder, bSortAsc, null, true);
+							srvcHub.getHubSortService().sort(hx, sortOrder, bSortAsc, null, true);
 						}
 					}
 				}
@@ -1265,14 +1264,14 @@ public class OAObjectReflectService {
 			if (!bSequence) {
 				// create sorter for client
 				boolean bAsc = true;
-				String s = HubSortDelegate.getSortProperty(hub); // use sort order from orig hub
+				String s = srvcHub.getHubSortService().getSortProperty(hub); // use sort order from orig hub
 				if (OAString.isEmpty(s)) {
 					s = sortOrder;
 				} else {
-					bAsc = HubSortDelegate.getSortAsc(hub);
+					bAsc = srvcHub.getHubSortService().getSortAsc(hub);
 				}
 				if (!OAString.isEmpty(s)) {
-					HubSortDelegate.sort(hub, s, bAsc, null, true);// dont sort, or send out sort msg (since no other client has this hub yet)
+					srvcHub.getHubSortService().sort(hub, s, bAsc, null, true);// dont sort, or send out sort msg (since no other client has this hub yet)
 				}
 			}
 		}
@@ -1502,7 +1501,7 @@ public class OAObjectReflectService {
 	 */
 	public void loadAllReferences(Hub hub, boolean bIncludeCalc) {
 		OASiblingHelper siblingHelper = new OASiblingHelper(hub);
-		OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+		OARuntime.get().threadService().addSiblingHelper(siblingHelper);
 		try {
 			for (Object obj : hub) {
 				if (obj instanceof OAObject) {
@@ -1510,7 +1509,7 @@ public class OAObjectReflectService {
 				}
 			}
 		} finally {
-			OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+			OARuntime.get().threadService().removeSiblingHelper(siblingHelper);
 		}
 	}
 
@@ -1584,7 +1583,7 @@ public class OAObjectReflectService {
 		}
 		OAObjectInfo io = srvcObject.getOAObjectInfoService().getObjectInfo(obj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
-		boolean bIsServer = OASyncDelegate.isServer(obj);
+		boolean bIsServer = srvcSync.isServer();
 		for (OALinkInfo li : al) {
 			if (al == null) {
 				continue;
@@ -1612,7 +1611,7 @@ public class OAObjectReflectService {
 				// see if autoMatch (if used) is set up
 				String matchProperty = li.getMatchProperty();
 				if (matchProperty != null && matchProperty.length() > 0) {
-					if (HubDelegate.getAutoMatch(hubx) == null) {
+					if (srvcHub.getAutoMatch(hubx) == null) {
 						return false;
 					}
 				}
@@ -1916,12 +1915,12 @@ public class OAObjectReflectService {
 		int cnt = 0;
 
 		final OASiblingHelper siblingHelper = new OASiblingHelper(hub);
-		OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+		OARuntime.get().threadService().addSiblingHelper(siblingHelper);
 		try {
 			cnt = _loadAllReferences(	0, hub, levelsLoaded, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, cascade,
 										0);
 		} finally {
-			OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+			OARuntime.get().threadService().removeSiblingHelper(siblingHelper);
 		}
 		return cnt;
 	}
@@ -1947,12 +1946,12 @@ public class OAObjectReflectService {
 		int cnt = 0;
 
 		final OASiblingHelper siblingHelper = new OASiblingHelper(hub);
-		OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+		OARuntime.get().threadService().addSiblingHelper(siblingHelper);
 		try {
 			cnt = _loadAllReferences(	0, hub, levelsLoaded, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, cascade,
 										maxRefsToLoad);
 		} finally {
-			OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+			OARuntime.get().threadService().removeSiblingHelper(siblingHelper);
 		}
 		return cnt;
 	}
@@ -2220,7 +2219,7 @@ public class OAObjectReflectService {
 
 			if (objx instanceof Hub) {
 				final OASiblingHelper siblingHelper = new OASiblingHelper((Hub) objx);
-				OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+				OARuntime.get().threadService().addSiblingHelper(siblingHelper);
 				try {
 					for (Object objz : (Hub) objx) {
 						currentRefsLoaded = _loadAllReferences(	currentRefsLoaded, (OAObject) objz, levelsLoaded + 1, maxLevelsToLoad,
@@ -2231,7 +2230,7 @@ public class OAObjectReflectService {
 						}
 					}
 				} finally {
-					OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+					OARuntime.get().threadService().removeSiblingHelper(siblingHelper);
 				}
 			} else if (objx instanceof OAObject) {
 				currentRefsLoaded = _loadAllReferences(	currentRefsLoaded, (OAObject) objx, levelsLoaded + 1, maxLevelsToLoad,
@@ -2272,7 +2271,7 @@ public class OAObjectReflectService {
 				return null;
 			}
 
-			if (!OASyncDelegate.isServer(oaObj)) {
+			if (!srvcSync.isServer()) {
 				val = srvcObject.getOAObjectCSService().getServerReferenceBlob(oaObj, propertyName);
 			} else {
 				OADataSource ds = OADataSource.getDataSource(oaObj.getClass());
@@ -2304,7 +2303,7 @@ public class OAObjectReflectService {
 	 * @return the referenced OAObject or null
 	 */
 	public Object getReferenceObject(final OAObject oaObj, final String linkPropertyName) {
-		OASiblingHelperDelegate.onGetObjectReference(oaObj, linkPropertyName);
+		srvcObject.getOAObjectSiblingService().onGetObjectReference(oaObj, linkPropertyName);
 
 		Object objOriginal = srvcObject.getOAObjectPropertyService().getProperty(oaObj, linkPropertyName, true, true);
 
@@ -2361,7 +2360,7 @@ public class OAObjectReflectService {
 			return null;
 		}
 
-		final boolean bIsServer = OASyncDelegate.isServer(oaObj);
+		final boolean bIsServer = srvcSync.isServer();
 		final boolean bIsCalc = li != null && li.getCalculated();
 
 		Object ref = null;
@@ -2442,7 +2441,7 @@ public class OAObjectReflectService {
 				if (li.getPrivateMethod()) {
 					Hub hubx = srvcObject.getOAObjectHubService().getHub(oaObj, li);
 					if (hubx != null) {
-						ref = HubDelegate.getMasterObject(hubx);
+						ref = srvcHub.getMasterObject(hubx);
 					}
 				}
 
@@ -2482,10 +2481,10 @@ public class OAObjectReflectService {
 					ref = srvcObject.getOAObjectCSService().getServerReference(oaObj, linkPropertyName);
 				} else {
 					OAObjectKey[] siblingKeys;
-					if (OAThreadLocalDelegate.isDeleting()) {
+					if (OARuntime.get().threadService().isDeleting()) {
 						siblingKeys = null;
 					} else {
-						siblingKeys = OASiblingHelperDelegate.getSiblings(oaObj, linkPropertyName, 75, hmIgnoreSibling);
+						siblingKeys = srvcObject.getOAObjectSiblingService().getSiblings(oaObj, linkPropertyName, 75, hmIgnoreSibling);
 					}
 
 					if (siblingKeys != null && siblingKeys.length > 0) {
@@ -3091,8 +3090,8 @@ public class OAObjectReflectService {
 		}
 
 		try {
-			OAThreadLocalDelegate.setLoading(true);
-			OAThreadLocalDelegate.setSuppressCSMessages(true);
+			OARuntime.get().threadService().setLoading(true);
+			OARuntime.get().threadService().setSuppressCSMessages(true);
 
 			newObject = (OAObject) createNewObject(oaObj.getClass());
 			srvcObject.getOAObjectInitializeService().initialize(newObject, oi, true, true, false, false, true);
@@ -3100,8 +3099,8 @@ public class OAObjectReflectService {
 			_copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 
 		} finally {
-			OAThreadLocalDelegate.setSuppressCSMessages(false);
-			OAThreadLocalDelegate.setLoading(false);
+			OARuntime.get().threadService().setSuppressCSMessages(false);
+			OARuntime.get().threadService().setLoading(false);
 		}
 		srvcObject.getOAObjectCacheService().add(newObject);
 		return newObject;
@@ -3143,13 +3142,13 @@ public class OAObjectReflectService {
 	public void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
 			HashMap<Long, Object> hmNew) {
 		try {
-			OAThreadLocalDelegate.setLoading(true);
-			OAThreadLocalDelegate.setSuppressCSMessages(true);
+			OARuntime.get().threadService().setLoading(true);
+			OARuntime.get().threadService().setSuppressCSMessages(true);
 
 			_copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 		} finally {
-			OAThreadLocalDelegate.setLoading(false);
-			OAThreadLocalDelegate.setSuppressCSMessages(false);
+			OARuntime.get().threadService().setLoading(false);
+			OARuntime.get().threadService().setSuppressCSMessages(false);
 		}
 	}
 
@@ -3269,7 +3268,7 @@ public class OAObjectReflectService {
 					}
 					hubNew.add(objx);
 					// assign parentProperty
-					srvcObject.getOAObjectPropertyService().unsafeSetProperty(	(OAObject) objx, HubDetailDelegate.getPropertyFromDetailToMaster(hubNew),
+					srvcObject.getOAObjectPropertyService().unsafeSetProperty(	(OAObject) objx, srvcHub.getHubDetailService().getPropertyFromDetailToMaster(hubNew),
 																newObject);
 				}
 			}
@@ -3595,11 +3594,11 @@ public class OAObjectReflectService {
 		String pathFromParent = null;
 
 		boolean b = false;
-		if (HubLinkDelegate.getLinkedOnPos(hubChild, true)) {
+		if (srvcHub.getHubLinkService().getLinkedOnPos(hubChild, true)) {
 			//String s = HubLinkDelegate.getLinkToProperty(hubChild, true);
 			b = true;
 		}
-		String fromProp = HubLinkDelegate.getLinkFromProperty(hubChild, true);
+		String fromProp = srvcHub.getHubLinkService().getLinkFromProperty(hubChild, true);
 		if (fromProp != null) {
 			b = true;
 			//return fromProp;
@@ -3609,22 +3608,22 @@ public class OAObjectReflectService {
 		pathFromParent = null;
 		Hub h = hubChild;
 		for (; !b;) {
-			Hub hx = HubLinkDelegate.getLinkToHub(h, true);
+			Hub hx = srvcHub.getHubLinkService().getLinkToHub(h, true);
 			if (hx == null) {
 				pathFromParent = null;
 				break;
 			}
 
 			if (pathFromParent == null) {
-				pathFromParent = HubLinkDelegate.getLinkHubPath(h, true);
+				pathFromParent = srvcHub.getHubLinkService().getLinkHubPath(h, true);
 			} else {
-				pathFromParent = HubLinkDelegate.getLinkHubPath(h, true) + "." + pathFromParent;
+				pathFromParent = srvcHub.getHubLinkService().getLinkHubPath(h, true) + "." + pathFromParent;
 			}
 
 			if (hx == hubParent) {
 				return pathFromParent;
 			}
-			if (HubShareDelegate.isUsingSameSharedAO(hubParent, hx, true)) {
+			if (srvcHub.getHubShareService().isUsingSameSharedAO(hubParent, hx, true)) {
 				return pathFromParent;
 			}
 			if (hubParent.getMasterHub() == null) { // 20131109 could be a hub copy
@@ -3642,15 +3641,15 @@ public class OAObjectReflectService {
 				return null;
 			}
 			if (pathFromParent == null) {
-				pathFromParent = HubDetailDelegate.getPropertyFromMasterToDetail(h);
+				pathFromParent = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(h);
 			} else {
-				pathFromParent = HubDetailDelegate.getPropertyFromMasterToDetail(h) + "." + pathFromParent;
+				pathFromParent = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(h) + "." + pathFromParent;
 			}
 
 			if (hx == hubParent) {
 				return pathFromParent;
 			}
-			if (HubShareDelegate.isUsingSameSharedAO(hubParent, hx, true)) {
+			if (srvcHub.getHubShareService().isUsingSameSharedAO(hubParent, hx, true)) {
 				return pathFromParent;
 			}
 			if (hubParent.getMasterHub() == null) { // 20131109 could be a hub copy
@@ -3683,11 +3682,11 @@ public class OAObjectReflectService {
 		final Class parentClass = objParent.getClass();
 
 		boolean b = false;
-		if (HubLinkDelegate.getLinkedOnPos(hubChild, true)) {
+		if (srvcHub.getHubLinkService().getLinkedOnPos(hubChild, true)) {
 			//String s = HubLinkDelegate.getLinkToProperty(hubChild, true);
 			b = true;
 		}
-		String fromProp = HubLinkDelegate.getLinkFromProperty(hubChild, true);
+		String fromProp = srvcHub.getHubLinkService().getLinkFromProperty(hubChild, true);
 		if (fromProp != null) {
 			b = true;
 			//return fromProp;
@@ -3697,16 +3696,16 @@ public class OAObjectReflectService {
 		pathFromParent = null;
 		Hub h = hubChild;
 		for (; !b;) {
-			Hub hx = HubLinkDelegate.getLinkToHub(h, true);
+			Hub hx = srvcHub.getHubLinkService().getLinkToHub(h, true);
 			if (hx == null) {
 				pathFromParent = null;
 				break;
 			}
 
 			if (pathFromParent == null) {
-				pathFromParent = HubLinkDelegate.getLinkHubPath(h, true);
+				pathFromParent = srvcHub.getHubLinkService().getLinkHubPath(h, true);
 			} else {
-				pathFromParent = HubLinkDelegate.getLinkHubPath(h, true) + "." + pathFromParent;
+				pathFromParent = srvcHub.getHubLinkService().getLinkHubPath(h, true) + "." + pathFromParent;
 			}
 
 			if (parentClass.equals(hx.getObjectClass())) {
@@ -3723,9 +3722,9 @@ public class OAObjectReflectService {
 				return null;
 			}
 			if (pathFromParent == null) {
-				pathFromParent = HubDetailDelegate.getPropertyFromMasterToDetail(h);
+				pathFromParent = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(h);
 			} else {
-				pathFromParent = HubDetailDelegate.getPropertyFromMasterToDetail(h) + "." + pathFromParent;
+				pathFromParent = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(h) + "." + pathFromParent;
 			}
 			if (parentClass.equals(hx.getObjectClass())) {
 				return pathFromParent;
@@ -3756,11 +3755,11 @@ public class OAObjectReflectService {
 			return null;
 		}
 
-		if (!HubLinkDelegate.getLinkedOnPos(hubChild, true)) {
+		if (!srvcHub.getHubLinkService().getLinkedOnPos(hubChild, true)) {
 			return fromObject;
 		}
 
-		Hub hubPosValue = HubLinkDelegate.getLinkToHub(hubChild, false);
+		Hub hubPosValue = srvcHub.getHubLinkService().getLinkToHub(hubChild, false);
 		if (hubPosValue == null) {
 			return fromObject;
 		}
@@ -3769,22 +3768,22 @@ public class OAObjectReflectService {
 		String pathFromParent = null;
 		Hub h = hubPosValue;
 		for (;;) {
-			Hub hx = HubLinkDelegate.getLinkToHub(h, true);
+			Hub hx = srvcHub.getHubLinkService().getLinkToHub(h, true);
 			if (hx == null) {
 				pathFromParent = null;
 				break;
 			}
 
 			if (pathFromParent == null) {
-				pathFromParent = HubLinkDelegate.getLinkHubPath(h, true);
+				pathFromParent = srvcHub.getHubLinkService().getLinkHubPath(h, true);
 			} else {
-				pathFromParent = HubLinkDelegate.getLinkHubPath(h, true) + "." + pathFromParent;
+				pathFromParent = srvcHub.getHubLinkService().getLinkHubPath(h, true) + "." + pathFromParent;
 			}
 
 			if (hx == hubFrom) {
 				break;
 			}
-			if (HubShareDelegate.isUsingSameSharedAO(hubFrom, hx, true)) {
+			if (srvcHub.getHubShareService().isUsingSameSharedAO(hubFrom, hx, true)) {
 				break;
 			}
 			if (hubFrom.getMasterHub() == null) { // 20131109 could be a hub copy
@@ -3806,7 +3805,7 @@ public class OAObjectReflectService {
 			return fromObject;
 		}
 
-		String fromProp = HubLinkDelegate.getLinkToProperty(hubChild);
+		String fromProp = srvcHub.getHubLinkService().getLinkToProperty(hubChild);
 		if (fromProp == null) {
 			return fromObject;
 		}
@@ -3851,18 +3850,18 @@ public class OAObjectReflectService {
 			return null;
 		}
 
-		if (HubShareDelegate.isUsingSameSharedHub(hubParent, hubChild)) {
+		if (srvcHub.getHubShareService().isUsingSameSharedHub(hubParent, hubChild)) {
 			return null;
 		}
 
 		Hub hx;
 		if (bCheckLink) {
-			hx = HubLinkDelegate.getLinkToHub(hubChild, true);
+			hx = srvcHub.getHubLinkService().getLinkToHub(hubChild, true);
 			if (hx != null) {
-				boolean b = HubLinkDelegate.getLinkedOnPos(hubChild, true);
+				boolean b = srvcHub.getHubLinkService().getLinkedOnPos(hubChild, true);
 				String s;
 				if (!b) {
-					s = HubLinkDelegate.getLinkHubPath(hubChild, true);
+					s = srvcHub.getHubLinkService().getLinkHubPath(hubChild, true);
 					if (propPath != null) {
 						s = propPath + "." + s;
 					}
@@ -3873,7 +3872,7 @@ public class OAObjectReflectService {
 				if (hx == hubParent) {
 					return s;
 				}
-				if (HubShareDelegate.isUsingSameSharedAO(hubParent, hx, true)) {
+				if (srvcHub.getHubShareService().isUsingSameSharedAO(hubParent, hx, true)) {
 					return s;
 				}
 				s = getPropertyPathBetweenHubs(s, hubParent, hx, true);
@@ -3889,7 +3888,7 @@ public class OAObjectReflectService {
 		}
 
 		// links must be type=one from master to detail.
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hubChild);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hubChild);
 		if (li == null) {
 			return null;
 		}
@@ -3901,7 +3900,7 @@ public class OAObjectReflectService {
 			return null;
 		}
 
-		String pathFromParent = HubDetailDelegate.getPropertyFromMasterToDetail(hubChild);
+		String pathFromParent = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(hubChild);
 		if (pathFromParent == null) {
 			return null;
 		}
@@ -3912,7 +3911,7 @@ public class OAObjectReflectService {
 		if (hx == hubParent) {
 			return pathFromParent;
 		}
-		if (HubShareDelegate.isUsingSameSharedAO(hubParent, hx, true)) {
+		if (srvcHub.getHubShareService().isUsingSameSharedAO(hubParent, hx, true)) {
 			return pathFromParent;
 		}
 		if (hubChild.getMasterHub() == null) { // could be a hub copy

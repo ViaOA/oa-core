@@ -5,16 +5,11 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
+import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAddRemoveDelegate;
-import com.viaoa.hub.HubCSDelegate;
-import com.viaoa.hub.HubDSDelegate;
-import com.viaoa.hub.HubDataDelegate;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubEventDelegate;
-import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAFinder;
@@ -23,8 +18,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncDelegate;
@@ -41,14 +36,18 @@ public class OAObjectDeleteService {
 
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
+	private final HubService srvcHub;
+	private final OASyncService srvcSync;
 
-	public OAObjectDeleteService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
-		if (srvcObject == null)
-			throw new IllegalArgumentException("OAObjectService can not be null");
+	public OAObjectDeleteService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, HubService srvcHub, OASyncService srvcSync) {
+		if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
 		this.srvcObject = srvcObject;
-		if (oaObjectFriendAccess == null)
-			throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
+		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
 		this.faObject = oaObjectFriendAccess;
+		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+		this.srvcHub = srvcHub;
+		if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
+		this.srvcSync = srvcSync;
 	}
 
 	public OAObjectService getObjectService() {
@@ -161,11 +160,11 @@ public class OAObjectDeleteService {
 				if (h == null) {
 					continue;
 				}
-				HubEventDelegate.fireBeforeDeleteEvent(h, oaObj);
+				srvcHub.getHubEventService().fireBeforeDeleteEvent(h, oaObj);
 			}
 		}
 		try {
-			OAThreadLocalDelegate.setDeleting(oaObj, true);
+			OARuntime.get().threadService().setDeleting(oaObj, true);
 
 			if (!bIsSyncClient) {
 			    deleteChildren(oaObj, cascade); // delete children first
@@ -384,7 +383,7 @@ public class OAObjectDeleteService {
             if (hubs != null) {
                 for (Hub h : hubs) {
                     if (h != null) {
-                        HubAddRemoveDelegate.remove(h, oaObj, true, true, true, true, true, false); // force, send, deleting, setAO
+                        srvcHub.getHubAddRemoveService().remove(h, oaObj, true, true, true, true, true, false); // force, send, deleting, setAO
                     }
                 }
             }
@@ -392,7 +391,7 @@ public class OAObjectDeleteService {
 			oaObj.setChanged(false);
 			srvcObject.setNew(oaObj, true);
 		} finally {
-			OAThreadLocalDelegate.setDeleting(oaObj, false);
+			OARuntime.get().threadService().setDeleting(oaObj, false);
 		}
 
         if (!bIsSyncClient) srvcObject.getOAObjectCSService().sendDeleteToClients(oaObj);
@@ -400,7 +399,7 @@ public class OAObjectDeleteService {
 		if (hubs != null) {
 			for (Hub h : hubs) {
 				if (h != null) {
-					HubEventDelegate.fireAfterDeleteEvent(h, oaObj);
+					srvcHub.getHubEventService().fireAfterDeleteEvent(h, oaObj);
 				}
 			}
 		}
@@ -568,7 +567,7 @@ public class OAObjectDeleteService {
 				OAObject masterObj;
 				Hub hubx = srvcObject.getOAObjectHubService().getHub(oaObj, li);
 				if (hubx != null) {
-					masterObj = HubDelegate.getMasterObject(hubx);
+					masterObj = srvcHub.getMasterObject(hubx);
 				} else {
 					Object objx = srvcObject.getOAObjectReflectService().getReferenceObject(oaObj, li.getName());
 					if (objx instanceof OAObject) {
@@ -590,7 +589,7 @@ public class OAObjectDeleteService {
 				}
 				if (hubx != null) {
 					hubx.remove(oaObj);
-					HubDataDelegate.removeFromRemovedList(hubx, oaObj);
+					srvcHub.getHubDataService().removeFromRemovedList(hubx, oaObj);
 				}
 				oaObj.removeProperty(li.getName());
 
@@ -642,7 +641,7 @@ public class OAObjectDeleteService {
 						}
 					} else {
 						if (OASync.isServer()) {
-							HubCSDelegate.removeAllFromHub(hub);
+							srvcHub.getHubCSService().removeAllFromHub(hub);
 						}
 					}
 				}
@@ -651,7 +650,7 @@ public class OAObjectDeleteService {
 			}
 			if (bIsM2m) {
 				// 20120612 need to remove link table records
-				HubDSDelegate.removeMany2ManyLinks(hub);
+				srvcHub.getHubDSService().removeMany2ManyLinks(hub);
 			}
 		}
 	}
@@ -671,7 +670,7 @@ public class OAObjectDeleteService {
 		if (oaObj == null) {
 			return;
 		}
-		if (OASyncDelegate.isServer(oaObj)) {
+		if (srvcSync.isServer()) {
 			srvcObject.getOAObjectLogService().logToXmlFile(oaObj, false);
 			OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
 			srvcObject.getOAObjectDSService().delete(oaObj);

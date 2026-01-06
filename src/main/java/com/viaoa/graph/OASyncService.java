@@ -5,27 +5,23 @@ import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.OASyncServer;
 
 public class OASyncService {
-	private final OAGraph graph;
+	
+	private final Package packageThis;
 
 	private OASyncServer syncServer;
     private OASyncClient syncClient;
 
-	public OASyncService(OAGraph graph) {
-    	if (graph == null) throw new IllegalArgumentException("graph can not be null");
-    	this.graph = graph;
+	public OASyncService(Package packagex) {
+    	this.packageThis = packagex;
 	}
 
-    public OAGraph graph() {
-    	return graph;
-    }
-	
     public void createServer(int port) throws Exception {
     	stopServer();
-        syncServer = new OASyncServer(graph.getPackage(), port);
+        syncServer = new OASyncServer(packageThis, port);
         syncServer.setInvalidConnectionMessage("qqqqqqqq"); //qqqqqq
         syncServer.start();
         //qqqqq temp qqqqqqqqqq
-		OASyncDelegate.setSyncServer(graph.getPackage(), syncServer);
+		OASyncDelegate.setSyncServer(packageThis, syncServer);
     }
     
     public void stopServer() throws Exception {
@@ -41,9 +37,9 @@ public class OASyncService {
     
     public void createClient(String serverName, int port) throws Exception {
     	stopClient();
-    	syncClient = new OASyncClient(graph.getPackage(), serverName, port);
+    	syncClient = new OASyncClient(packageThis, serverName, port);
         syncClient.start();
-        OASyncDelegate.setSyncClient(graph.getPackage(), syncClient);
+        OASyncDelegate.setSyncClient(packageThis, syncClient);
     }
     
     public void stopClient() throws Exception {
@@ -61,5 +57,11 @@ public class OASyncService {
 		OASyncServer ss = getServer();
 		OASyncClient sc = getClient();
 		return (ss == null && sc != null);
+	}
+
+	public boolean isServer() {
+		OASyncServer ss = getServer();
+		OASyncClient sc = getClient();
+		return (ss != null || sc == null);
 	}
 }

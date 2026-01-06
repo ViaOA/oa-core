@@ -6,15 +6,12 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
+import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAODelegate;
-import com.viaoa.hub.HubAddRemoveDelegate;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubEventDelegate;
-import com.viaoa.hub.HubShareDelegate;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -22,8 +19,8 @@ import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncDelegate;
@@ -44,12 +41,18 @@ public class OAObjectEventService {
 
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
+	private final HubService srvcHub;
+	private final OASyncService srvcSync;
 	
-    public OAObjectEventService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+    public OAObjectEventService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, HubService srvcHub, OASyncService srvcSync) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
     	this.srvcObject = srvcObject;
     	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = oaObjectFriendAccess;
+    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+    	this.srvcHub = srvcHub;
+    	if (srvcSync == null) throw new IllegalArgumentException("HubSync can not be null");
+    	this.srvcSync = srvcSync;
     }
 	
     public OAObjectService getObjectService() {
@@ -123,11 +126,11 @@ public class OAObjectEventService {
 			}
 		}
 
-		final boolean bIsLoading = OAThreadLocalDelegate.isLoading();
+		final boolean bIsLoading = OARuntime.get().threadService().isLoading();
 		if (bIsLoading) {
 			if (!srvcObject.getOAObjectHubService().isInHub(oaObj)) { // 20110719: could be in the OAObjectCache.SelectAllHubs
 				// no listeners, need to load quick as possible
-				if (OASyncDelegate.isServer(oaObj)) { // 20150604 if client, then it needs to send prop change to server
+				if (srvcSync.isServer()) { // 20150604 if client, then it needs to send prop change to server
 					return;
 				}
 				OASyncClient sc = OASync.getSyncClient(); 
@@ -281,7 +284,7 @@ public class OAObjectEventService {
 				&& linkInfo.getType() == OALinkInfo.ONE && !linkInfo.getCalculated()) {
 			OALinkInfo rev = linkInfo.getReverseLinkInfo();
 		    if (rev != null && rev.getOwner()) {		    
-    			if (!OAThreadLocalDelegate.isDeleting() && OASync.isServer()) {
+    			if (!OARuntime.get().threadService().isDeleting() && OASync.isServer()) {
     				OAObjectInfo oix = srvcObject.getOAObjectInfoService().getOAObjectInfo((OAObject) oldObj);
     				if (!oix.getLookup() && !oix.getPreSelect()) {
     					cntSetOwnerNull++;
@@ -533,7 +536,7 @@ public class OAObjectEventService {
 			}
 		}
 
-		final boolean bIsLoading = OAThreadLocalDelegate.isLoading();
+		final boolean bIsLoading = OARuntime.get().threadService().isLoading();
 
 		OAObjectKey origKey;
 		if (propInfo != null && propInfo.getId()) {
@@ -577,7 +580,7 @@ public class OAObjectEventService {
 		if (!bIsLoading) {
 			// 20110603 added support for creating undoable events if oaThreadLocal.createUndoablePropertyChanges=true
 			//      default=false, which means that the individual UI components are controlling this
-			if (OAThreadLocalDelegate.getCreateUndoablePropertyChanges()) {
+			if (OARuntime.get().threadService().getCreateUndoablePropertyChanges()) {
 				if (!bIsChangeProp && OAUndoManager.getUndoManager() != null) {
 					OAUndoableEdit ue = OAUndoableEdit.createUndoablePropertyChange(null, oaObj, propertyName, oldObj, newObj,
 																					bChangeHold);
@@ -617,11 +620,11 @@ public class OAObjectEventService {
 		    if (oi.getHasTriggers()) {
 		        HubEvent hubEvent = new HubEvent(oaObj, propertyName, oldObj, newObj);
 		        try {
-		            OAThreadLocalDelegate.addHubEvent(hubEvent);
+		            OARuntime.get().threadService().addHubEvent(hubEvent);
 		            oi.onChange(oaObj, propertyName, hubEvent);
 		        }
 		        finally {
-		            OAThreadLocalDelegate.removeHubEvent(hubEvent);
+		            OARuntime.get().threadService().removeHubEvent(hubEvent);
 		        }
 		    }
 		}
@@ -632,10 +635,10 @@ public class OAObjectEventService {
 			if (!oaObj.isChanged()) {
 				if (linkInfo == null || !linkInfo.getCalculated()) { // 20120429
 					try {
-						OAThreadLocalDelegate.setSuppressCSMessages(true); // the client will setChanged when it gets the propertyChange message
+						OARuntime.get().threadService().setSuppressCSMessages(true); // the client will setChanged when it gets the propertyChange message
 						oaObj.setChanged(true);
 					} finally {
-						OAThreadLocalDelegate.setSuppressCSMessages(false);
+						OARuntime.get().threadService().setSuppressCSMessages(false);
 					}
 				}
 			}
@@ -650,10 +653,10 @@ public class OAObjectEventService {
 			if (oi.getHasTriggers()) {
 				HubEvent hubEvent = new HubEvent(oaObj, propertyName, oldObj, newObj);
 				try {
-					OAThreadLocalDelegate.addHubEvent(hubEvent);
+					OARuntime.get().threadService().addHubEvent(hubEvent);
 					oi.onChange(oaObj, propertyName, hubEvent);
 				} finally {
-					OAThreadLocalDelegate.removeHubEvent(hubEvent);
+					OARuntime.get().threadService().removeHubEvent(hubEvent);
 				}
 			}
 		}
@@ -757,7 +760,7 @@ public class OAObjectEventService {
 		}
 		for (Hub h : hubs) {
 			if (h != null) {
-				HubEventDelegate.fireBeforePropertyChange(h, oaObj, propertyName, oldObj, newObj);
+				srvcHub.getHubEventService().fireBeforePropertyChange(h, oaObj, propertyName, oldObj, newObj);
 			}
 		}
 	}
@@ -786,7 +789,7 @@ public class OAObjectEventService {
 		}
 		for (Hub h : hubs) {
 			if (h != null) {
-				HubEventDelegate.fireAfterPropertyChange(h, oaObj, propertyName, oldObj, newObj, linkInfo);
+				srvcHub.getHubEventService().fireAfterPropertyChange(h, oaObj, propertyName, oldObj, newObj, linkInfo);
 			}
 		}
 
@@ -936,9 +939,9 @@ public class OAObjectEventService {
 							return (h.getAO() == oaObj);
 						}
 					};
-					Hub[] hubss = HubShareDelegate.getAllSharedHubs(h, filter);
+					Hub[] hubss = srvcHub.getHubShareService().getAllSharedHubs(h, filter);
 
-					//was:Hub[] hubss = HubShareDelegate.getAllSharedHubs(h);
+					//was:Hub[] hubss = srvcHub.getHubShareService().getAllSharedHubs(h);
 					for (int ii = 0; ii < hubss.length; ii++) {
 						hub = hubss[ii];
 						if (hub.getAO() == oaObj) {
@@ -1040,7 +1043,7 @@ public class OAObjectEventService {
 						if (newObj == null) { // parentSection = null
 							// if being set to null, then add to root hub.
 							// if it was removed from old hub, then dont add to root hub
-							boolean bAdd = !OAThreadLocalDelegate.isDeleting(oaObj);
+							boolean bAdd = !OARuntime.get().threadService().isDeleting(oaObj);
 
 							if (bAdd && !bOldIsKeyOnly
 									&& srvcObject.getOAObjectReflectService().isReferenceHubLoadedAndNotEmpty((OAObject) oldObj, revLinkInfo.getName())) {
@@ -1080,7 +1083,7 @@ public class OAObjectEventService {
 												"OAObject.updateLink() method for recursive link owner not returning a Hub.");
 									}
 									hub = (Hub) obj; // catalog.catalogSections
-									HubAddRemoveDelegate.remove(hub, oaObj, false, true, false, true, false, false);
+									srvcHub.getHubAddRemoveService().remove(hub, oaObj, false, true, false, true, false, false);
 								}
 							}
 						}
@@ -1123,7 +1126,7 @@ public class OAObjectEventService {
 					if (obj instanceof Hub) {
 						Hub h = (Hub) obj;
 						if (h.contains(oaObj)) {
-							HubAddRemoveDelegate.remove(h, oaObj, false, true, false, true, false, false);
+							srvcHub.getHubAddRemoveService().remove(h, oaObj, false, true, false, true, false, false);
 							hubRemovedFrom = h;
 						}
 					}
@@ -1167,14 +1170,14 @@ public class OAObjectEventService {
 				hub = (Hub) alUpdateHub.get(i);
 				// 20110805 dont allow adjusting master if hub is not shared, or if it does not have a masterHub
 				boolean bAllowAdjustMaster = (newObj != null)
-						&& (hub.getSharedHub() != null && HubDetailDelegate.getHubWithMasterHub(hub) != null);
+						&& (hub.getSharedHub() != null && srvcHub.getHubDetailService().getHubWithMasterHub(hub) != null);
 				
                 // 20230804 dont allow master AO change on hub where object was removed
 				if (bAllowAdjustMaster && hubRemovedFrom != null && hub.getRealHub() == hubRemovedFrom) {
 				    bAllowAdjustMaster = false; 
 				}
 				
-				HubAODelegate.setActiveObject(hub, oaObj, bAllowAdjustMaster, false, false); // adjMaster, updateLink, force
+				srvcHub.getHubAOService().setActiveObject(hub, oaObj, bAllowAdjustMaster, false, false); // adjMaster, updateLink, force
 				//was: HubAODelegate.setActiveObject(hub, oaObj, (newObj != null), false, false); // adjMaster, updateLink, force
 			}
 		}
@@ -1194,7 +1197,7 @@ public class OAObjectEventService {
 		}
 		for (Hub h : hubs) {
 			if (h != null) {
-				HubEventDelegate.fireAfterLoadEvent(h, oaObj);
+				srvcHub.getHubEventService().fireAfterLoadEvent(h, oaObj);
 			}
 		}
 	}

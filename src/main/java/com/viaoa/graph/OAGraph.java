@@ -3,14 +3,7 @@ package com.viaoa.graph;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.object.OAObjectCacheService;
-import com.viaoa.graph.object.OAObjectDSService;
-import com.viaoa.graph.object.OAObjectGuidService;
-import com.viaoa.graph.object.OAObjectInfoService;
-import com.viaoa.graph.object.OAObjectInitializeService;
-import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAReflect;
 
@@ -22,15 +15,22 @@ public class OAGraph {
 	private boolean bInitCalled;
 	private boolean bInitCompleted;
 
-	private final OAObjectService srvcObject = new OAObjectService(this);
-	private final HubService srvcHub = new HubService(this);
-    private final OASyncService srvcSync = new OASyncService(this);
+	private final OAObjectService srvcObject;
+	private final HubService srvcHub;
+    private final OASyncService srvcSync;
     
 	public OAGraph(OARuntime rt, Package pkg) {
 		if (rt == null) throw new IllegalArgumentException("OARuntime can not be null");
 		this.runtime = rt;
 		if (pkg == null) throw new IllegalArgumentException("package can not be null");
 		this.packageThis = pkg;
+		
+		srvcObject = new OAObjectService();
+		srvcHub = new HubService();
+	    srvcSync = new OASyncService(getPackage());
+	    
+	    srvcObject.initialize(srvcHub, srvcSync);
+	    srvcHub.initialize(srvcObject);
 	}
 
 	public synchronized void init() throws ClassNotFoundException, IOException {
@@ -41,7 +41,7 @@ public class OAGraph {
 		for (String cn : classNames) {
 			Class<?> c = Class.forName(pn + "." + cn);
 			if (OAObject.class.isAssignableFrom(c)) {
-				OAObjectInfoDelegate.getObjectInfo(c);
+				srvcObject.getOAObjectInfoService().getObjectInfo(c);
 			}
 		}
 		bInitCompleted = true;
@@ -64,28 +64,21 @@ public class OAGraph {
     
 	// verb for OAObjectService
 	public OAObjectService objects() {
+//qqqqqqq create a new OAObjectAPI service 		
 		return srvcObject;
 	}
 
 	public HubService hubs() {
+//qqqqqqq create a new OAHubAPI service		
 		return srvcHub;
 	}
 	
 	// verb for OASyncService
     public OASyncService sync() {
+//qqqqqqq create a new OASyncAPI service		
     	return srvcSync;
     }
     
-    
- // NEXT qqqqqqqqqqqqqqqqqq	
-// graph.objects().initialize(oaobj)    
-// guids need to be unique to OAGraph ... needs to assign OAObject.guid based on graph, not runtime static guidCntr 
-// metadata
-// ObjectCache
-// OASync, Remoting	
-// locking, transactions
-// Eventing / hub wiring / listener tree
-	
 	
 }
 

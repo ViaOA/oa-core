@@ -5,23 +5,13 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.datasource.OASelect;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.remote.OARemoteThreadDelegate;
-import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.OASyncDelegate;
-import com.viaoa.sync.remote.RemoteClientInterface;
-import com.viaoa.sync.remote.RemoteServerInterface;
-import com.viaoa.sync.remote.RemoteSyncInterface;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAConverter;
 
 public class OAObjectKeyService {
@@ -344,7 +334,7 @@ public class OAObjectKeyService {
 			if (bVerify) {
 				if (srvcObject.getOAObjectDSService().isAssigningId(oaObj)) {
 					bVerify = false;
-				} else if (OAThreadLocalDelegate.isLoading()) {
+				} else if (OARuntime.get().threadService().isLoading()) {
 					bVerify = false;
 				}
 			}
@@ -445,11 +435,11 @@ public class OAObjectKeyService {
 
 		if (objInCache != oaObj) {
 			if (objInCache != null) {
-				if (OAThreadLocalDelegate.getObjectCacheAddMode() == srvcObject.getOAObjectCacheService().NO_DUPS) {
+				if (OARuntime.get().threadService().getObjectCacheAddMode() == srvcObject.getOAObjectCacheService().NO_DUPS) {
 					// id already used
 
 					Object[] ids = newObjectKey.getObjectIds();
-					//was: Object[] ids = OAObjectInfoDelegate.getPropertyIdValues(oaObj);
+					//was: Object[] ids = srvcObject.getOAObjectInfoService().getPropertyIdValues(oaObj);
 
 					String s = "";
 					for (int i = 0; i < ids.length; i++) {
@@ -463,7 +453,7 @@ public class OAObjectKeyService {
 					return ("ObjectId \"" + s + "\" already used.");// by another object - "+oaObj.getClass());
 				}
 			} else {
-				if (!OAThreadLocalDelegate.isLoading()) {
+				if (!OARuntime.get().threadService().isLoading()) {
 					// make sure object does not already exist in datasource
 					if (oi == null) {
 						oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
@@ -472,7 +462,7 @@ public class OAObjectKeyService {
 						objInCache = (OAObject) srvcObject.getOAObjectDSService().getObject(oi, oaObj.getClass(), newObjectKey);
 						if (objInCache != oaObj && objInCache != null) {
 							Object[] ids = newObjectKey.getObjectIds();
-							// Object[] ids = OAObjectInfoDelegate.getPropertyIdValues(oaObj);
+							// Object[] ids = srvcObject.getOAObjectInfoService().getPropertyIdValues(oaObj);
 							String s = "";
 							for (int i = 0; i < ids.length; i++) {
 								if (i > 0) {

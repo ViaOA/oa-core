@@ -4,16 +4,20 @@ import java.util.logging.Logger;
 
 import com.viaoa.filter.*;
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 
 public class HubFindService {
 	private final Logger LOG = Logger.getLogger(HubFindService.class.getName());
 
+	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 	
-	public HubFindService(HubService srvcHub, Hub.FriendAccess faHub ) {
+	public HubFindService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
+    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
+    	this.srvcObject = srvcObject;
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");

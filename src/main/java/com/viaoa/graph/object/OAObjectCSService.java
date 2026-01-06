@@ -3,17 +3,18 @@ package com.viaoa.graph.object;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
+import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteClientInterface;
@@ -25,14 +26,18 @@ public class OAObjectCSService {
 
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
+	private final HubService srvcHub;
+	private final OASyncService srvcSync;
 
-	public OAObjectCSService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
-		if (srvcObject == null)
-			throw new IllegalArgumentException("OAObjectService can not be null");
+	public OAObjectCSService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, HubService srvcHub, OASyncService srvcSync) {
+		if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
 		this.srvcObject = srvcObject;
-		if (oaObjectFriendAccess == null)
-			throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
+		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
 		this.faObject = oaObjectFriendAccess;
+		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+		this.srvcHub = srvcHub;
+		if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
+		this.srvcSync = srvcSync;
 	}
 
 	public OAObjectService getObjectService() {
@@ -252,7 +257,7 @@ public class OAObjectCSService {
 
         // this is running as OAClient
         if (!OARemoteThreadDelegate.shouldSendMessages()) return true;
-        if (OAThreadLocalDelegate.isSuppressCSMessages()) return true;
+        if (OARuntime.get().threadService().isSuppressCSMessages()) return true;
         
         rs.serverDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
         
@@ -275,7 +280,7 @@ public class OAObjectCSService {
         if (!OASyncDelegate.isServer(obj.getClass())) return;
         // needs to send these to client if on RemoteThread        
         
-        if (OAThreadLocalDelegate.isSuppressCSMessages()) return;
+        if (OARuntime.get().threadService().isSuppressCSMessages()) return;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return; 
@@ -396,11 +401,11 @@ public class OAObjectCSService {
             // load all data without sending messages
             // even though Hub.writeObject does this, this data could be used on server application
         	try {
-        		OAThreadLocalDelegate.setSuppressCSMessages(true);
-        		HubSelectDelegate.loadAllData(thisHub, select);
+        		OARuntime.get().threadService().setSuppressCSMessages(true);
+        		srvcHub.getHubSelectService().loadAllData(thisHub, select);
         	}
         	finally {
-        		OAThreadLocalDelegate.setSuppressCSMessages(false);        	
+        		OARuntime.get().threadService().setSuppressCSMessages(false);        	
         	}
         }
         else bResult = false;
@@ -420,12 +425,13 @@ public class OAObjectCSService {
     public void fireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
         if (obj == null) return;
         RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(obj.getClass());
+        
         if (rs == null) return;
         
         if (!OARemoteThreadDelegate.shouldSendMessages()) return;
         
-        if (OAThreadLocalDelegate.isLoading()) return;
-        if (OAThreadLocalDelegate.isSuppressCSMessages()) return;
+        if (OARuntime.get().threadService().isLoading()) return;
+        if (OARuntime.get().threadService().isSuppressCSMessages()) return;
 
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
         if (oi.getLocalOnly()) return;

@@ -4,11 +4,13 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAObjectService;
+import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncDelegate;
@@ -20,12 +22,15 @@ public class OAObjectUniqueService {
 
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
+	private final OASyncService srvcSync;
 	
-    public OAObjectUniqueService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+    public OAObjectUniqueService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OASyncService srvcSync) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
     	this.srvcObject = srvcObject;
     	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = oaObjectFriendAccess;
+    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
+    	this.srvcSync = srvcSync;
     }
 
     
@@ -71,7 +76,7 @@ public class OAObjectUniqueService {
         if (oaObj != null) return oaObj;
         
         // not found
-        if (OASyncDelegate.isClient(clazz)) {
+        if (srvcSync.isClient()) {
             OASyncClient sc = OASync.getSyncClient();
             RemoteServerInterface rs;
             try {
@@ -101,11 +106,11 @@ public class OAObjectUniqueService {
             if (oaObj != null) return oaObj;
             oaObj = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(clazz);
             try {
-                OAThreadLocalDelegate.setLoading(true);
+            	OARuntime.get().threadService().setLoading(true);
                 oaObj.setProperty(propertyName, uniqueKey);
             }
             finally {
-                OAThreadLocalDelegate.setLoading(false);
+            	OARuntime.get().threadService().setLoading(false);
             }
         }
         

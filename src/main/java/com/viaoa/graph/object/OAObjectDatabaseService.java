@@ -5,9 +5,6 @@ import java.lang.reflect.Method;
 import com.viaoa.annotation.*;
 import com.viaoa.datasource.jdbc.db.*;
 import com.viaoa.graph.OAObjectService;
-import com.viaoa.object.OAAnnotationDelegate;
-import com.viaoa.object.OAFkeyInfo;
-import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
@@ -306,7 +303,7 @@ public class OAObjectDatabaseService {
 					}
 					poss = OAArray.add(poss, i);
 				}
-				Class c = OAAnnotationDelegate.getHubObjectClass(oamany, m);
+				Class c = srvcObject.getOAObjectAnnotationService().getHubObjectClass(oamany, m);
 				Table tt = database.getTable(c);
 				if (tt != null) {
 					table.addLink(getPropertyName(m.getName()), tt, oamany.reverseName(), poss);

@@ -20,6 +20,7 @@ import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATriggerMethod;
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -43,16 +44,17 @@ public class OAObjectAnnotationService {
 	private static final Logger LOG = Logger.getLogger(OAObjectAnnotationService.class.getName());
 
 	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
 	private final OAObjectInfo.FriendAccess faObjectInfo;
+	private final HubService srvcHub;
 	
-    public OAObjectAnnotationService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OAObjectInfo.FriendAccess oaObjectInfoFriendAccess) {
+	
+    public OAObjectAnnotationService(OAObjectService srvcObject, OAObjectInfo.FriendAccess faObjectInfo, HubService srvcHub) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService cant be null");
     	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-    	this.faObject = oaObjectFriendAccess;
-    	if (oaObjectInfoFriendAccess == null) throw new IllegalArgumentException("OAObjectInfoFriendAccess can not be null");
-    	this.faObjectInfo = oaObjectInfoFriendAccess;
+    	if (faObjectInfo == null) throw new IllegalArgumentException("OAObjectInfo.FriendAccess can not be null");
+    	this.faObjectInfo = faObjectInfo;
+    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+    	this.srvcHub = srvcHub;
     }
 	
     public OAObjectService getObjectService() {

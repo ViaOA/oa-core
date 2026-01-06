@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAAnnotationDelegate;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -185,7 +184,7 @@ public class OAObjectInfoService {
 		}
 
 		// must be ran after oi is created and stored (in hash), since it will create propPaths, which will load other ObjectInfos
-		OAAnnotationDelegate.update2(oi, clazz);
+		srvcObject.getOAObjectAnnotationService().update2(oi, clazz);
 
 		// make sure that reverse linkInfos are created.
 		//   ex: ServerRoot.users, the User.class needs to have LinkInfo to serveRoot
@@ -215,10 +214,10 @@ public class OAObjectInfoService {
 		}
 
 		// 20220503 load importMatch propertyPaths
-		OAAnnotationDelegate.updateImportMatches(oi);
+		srvcObject.getOAObjectAnnotationService().updateImportMatches(oi);
 
 		// 20220918 load fkey
-		OAAnnotationDelegate.updateLinkFkeys(oi);
+		srvcObject.getOAObjectAnnotationService().updateLinkFkeys(oi);
 
 		return oi;
 	}
@@ -259,7 +258,7 @@ public class OAObjectInfoService {
 						oi = (OAObjectInfo) m.invoke(null, (Object[]) null);
 					}
 				} catch (Exception e) {
-					//System.out.println("OAObjectInfoDelegate.getOAObjectInfo "+e);
+					//System.out.println("srvcObject.getOAObjectInfoService().getOAObjectInfo "+e);
 					//e.printStackTrace();
 					oi = null;
 				}
@@ -276,7 +275,7 @@ public class OAObjectInfoService {
 					oi.setForClass(clazz);
 				}
 
-				OAAnnotationDelegate.update(oi, clazz);
+				srvcObject.getOAObjectAnnotationService().update(oi, clazz);
 
 				for (OALinkInfo li : oi.getLinkInfos()) {
 					if (li.getPrivateMethod()) {

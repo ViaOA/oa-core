@@ -1,52 +1,34 @@
 package com.viaoa.graph.hub;
 
-
-import java.io.IOException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectSaveDelegate;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAComparator;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
 public class HubSortService {
 	private final Logger LOG = Logger.getLogger(HubSortService.class.getName());
 
+	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 
-	public HubSortService(HubService srvcHub, Hub.FriendAccess faHub) {
-		if (srvcHub == null)
-			throw new IllegalArgumentException("HubService can not be null");
+	public HubSortService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub) {
+    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
+    	this.srvcObject = srvcObject;
+		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
 		this.srvcHub = srvcHub;
-		if (faHub == null)
-			throw new IllegalArgumentException("Hub.FriendAccess can not be null");
+		if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
 		this.faHub = faHub;
 	}
 
@@ -93,11 +75,11 @@ public class HubSortService {
         if (thisHub == null) return;
         boolean b = false;
         try {
-            OAThreadLocalDelegate.lock(thisHub);
+            OARuntime.get().threadService().lock(thisHub);
             b = _sort(thisHub, propertyPaths, bAscending, comp, bAlreadySortedAndLocalOnly);
         }
         finally {
-            OAThreadLocalDelegate.unlock(thisHub);
+            OARuntime.get().threadService().unlock(thisHub);
         }
         if (b) afterPerformSort(thisHub); // outside of lock
     }
@@ -181,7 +163,7 @@ public class HubSortService {
             if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
                 // 20171028 need to send if sort is cancelled
                 //was: if (propertyPaths != null || comp != null) { // otherwise it was a cancel
-                    HubCSDelegate.sort(thisHub, propertyPaths, bAscending, comp);
+            	srvcHub.getHubCSService().sort(thisHub, propertyPaths, bAscending, comp);
                 //}
             }
         }
@@ -208,11 +190,11 @@ public class HubSortService {
         if (thisHub == null) return;
 
         try {
-            OAThreadLocalDelegate.lock(thisHub);
+            OARuntime.get().threadService().lock(thisHub);
             _performSort(thisHub);
         }
         finally {
-            OAThreadLocalDelegate.unlock(thisHub);
+            OARuntime.get().threadService().unlock(thisHub);
         }
         afterPerformSort(thisHub); // outside of lock
 	}
@@ -237,11 +219,11 @@ public class HubSortService {
             }
         }        
         try {
-            OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+            OARuntime.get().threadService().addSiblingHelper(siblingHelper);
             _performSortX(thisHub);
         }
         finally {
-            OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+            OARuntime.get().threadService().removeSiblingHelper(siblingHelper);
         }
     }
 	
@@ -254,7 +236,7 @@ public class HubSortService {
      */
 	private void _performSortX(Hub thisHub) {
 		if (faHub.getHubData(thisHub).getSortListener() == null) return;
-		HubSelectDelegate.loadAllData(thisHub);
+		srvcHub.getHubSelectService().loadAllData(thisHub);
 	    faHub.getHubData(thisHub).incrementChangeCount();
 	    
 	    for (int i=0; i<5; i++) {
@@ -273,7 +255,7 @@ public class HubSortService {
 	 * @param thisHub the Hub that was sorted
 	 */
     private void afterPerformSort(Hub thisHub) {
-        HubEventDelegate.fireAfterSortEvent(thisHub);
+    	srvcHub.getHubEventService().fireAfterSortEvent(thisHub);
     }
 	
     /**
@@ -301,8 +283,8 @@ public class HubSortService {
 	        return;
 	    }
 	    if (faHub.getHubData(thisHub).getSortListener() != null) return;
-	    if (HubSelectDelegate.getSelect(thisHub) == null) return;
-	    String s = HubSelectDelegate.getSelect(thisHub).getOrder();
+	    if (srvcHub.getHubSelectService().getSelect(thisHub) == null) return;
+	    String s = srvcHub.getHubSelectService().getSelect(thisHub).getOrder();
 	    if (s == null || s.length() == 0) return;
 	    sort(thisHub, s, true, null, true);
 	}

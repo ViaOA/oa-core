@@ -2,41 +2,27 @@ package com.viaoa.graph.hub;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectSaveDelegate;
-import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.runtime.OARuntime;
 
 public class HubSerializeService {
 	private final Logger LOG = Logger.getLogger(HubSerializeService.class.getName());
 
+	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 
-	public HubSerializeService(HubService srvcHub, Hub.FriendAccess faHub) {
-		if (srvcHub == null)
-			throw new IllegalArgumentException("HubService can not be null");
+	public HubSerializeService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub) {
+    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
+    	this.srvcObject = srvcObject;
+		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
 		this.srvcHub = srvcHub;
-		if (faHub == null)
-			throw new IllegalArgumentException("Hub.FriendAccess can not be null");
+		if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
 		this.faHub = faHub;
 	}
 
@@ -44,12 +30,12 @@ public class HubSerializeService {
 	 * Used by serialization to store Hub.
 	 */
 	public void _writeObject(Hub thisHub, java.io.ObjectOutputStream stream) throws IOException {
-		if (HubSelectDelegate.isMoreData(thisHub)) {
+		if (srvcHub.getHubSelectService().isMoreData(thisHub)) {
 			try {
-				OAThreadLocalDelegate.setSuppressCSMessages(true);
-				HubSelectDelegate.loadAllData(thisHub); // otherwise, client will not have the correct datasource
+				OARuntime.get().threadService().setSuppressCSMessages(true);
+				srvcHub.getHubSelectService().loadAllData(thisHub); // otherwise, client will not have the correct datasource
 			} finally {
-				OAThreadLocalDelegate.setSuppressCSMessages(false);
+				OARuntime.get().threadService().setSuppressCSMessages(false);
 			}
 		}
 		stream.defaultWriteObject();
@@ -98,12 +84,12 @@ public class HubSerializeService {
 					// dont initialize this hub if the master object is a duplicate.
 					// check by looking to see if this object already belongs to a hub that has the
 					// same masterObject/linkinfo
-					if (OAObjectHubDelegate.isAlreadyInHub((OAObject) obj, faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo())) {
+					if (srvcObject.getOAObjectHubService().isAlreadyInHub((OAObject) obj, faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo())) {
 						break; // this hub is a dup and wont be used
 					}
 				}
 			}
-			OAObjectHubDelegate.addHub((OAObject) obj, thisHub);
+			srvcObject.getOAObjectHubService().addHub((OAObject) obj, thisHub);
 		}
 		return thisHub;
 	}

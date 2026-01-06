@@ -5,41 +5,31 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCSDelegate;
-import com.viaoa.hub.HubData;
-import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.hub.HubDataMaster;
-import com.viaoa.hub.HubDataUnique;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
-import com.viaoa.hub.HubEventDelegate;
-import com.viaoa.hub.HubSelectDelegate;
-import com.viaoa.hub.HubShareDelegate;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectCallbackDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 
 public class HubAddRemoveService {
 	private final Logger LOG = Logger.getLogger(HubAddRemoveService.class.getName());
 
+	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 	
-	public HubAddRemoveService(HubService srvcHub, 
-			Hub.FriendAccess faHub
-			) {
+	public HubAddRemoveService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub) {
+    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
+    	this.srvcObject = srvcObject;
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
@@ -128,24 +118,24 @@ public class HubAddRemoveService {
 		if (!bIsRemovingAll && !OARemoteThreadDelegate.isRemoteThread()) {
 			if (!thisHub.getAllowRemove(OAObjectCallback.CHECK_CallbackMethod, obj)) {
 				//was: if (!canRemove(thisHub, obj)) {
-				if (!OAThreadLocalDelegate.isDeleting(obj)) {
+				if (!OARuntime.get().threadService().isDeleting(obj)) {
 					throw new RuntimeException("Cant remove object, "+obj.getClass().getSimpleName()+", Hub can remove returned false");
 				}
 			}
 		}
 		if (!bIsRemovingAll) {
-			obj = HubDelegate.getRealObject(thisHub, obj);
+			obj = srvcHub.getRealObject(thisHub, obj);
 			if (obj == null) {
 				return false;
 			}
 
 			// check to see if this hub is a detail with LinkInfo.Type.ONE
-			OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
+			OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(thisHub);
 			
 			if (faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo() != null && li != null) {
-				li = OAObjectInfoDelegate.getReverseLinkInfo(li);
+				li = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 				if (li != null && li.getType() == OALinkInfo.ONE) {
-					if (!OAThreadLocalDelegate.isDeleting(obj)) {
+					if (!OARuntime.get().threadService().isDeleting(obj)) {
 						if (!OARemoteThreadDelegate.isRemoteThread()) {
 							throw new RuntimeException("Cant remove object from Hub that is based on a LinkInfo.ONE, hub=" + thisHub);
 						}
@@ -156,30 +146,30 @@ public class HubAddRemoveService {
 
 		int pos = 0;
 		if (!bIsRemovingAll || bSendEvent) {
-			pos = HubDataDelegate.getPos(thisHub, obj, false, false); // dont adjust master or update link when finding the position of the object.
+			pos = srvcHub.getHubDataService().getPos(thisHub, obj, false, false); // dont adjust master or update link when finding the position of the object.
 			if (pos < 0) {
 				// Hub might be changing, wait until _remove is called
 				// return;
 			}
 			if (bSendEvent) {
-				HubEventDelegate.fireBeforeRemoveEvent(thisHub, obj, pos);
+				srvcHub.getHubEventService().fireBeforeRemoveEvent(thisHub, obj, pos);
 			}
 		}
 		// send message to OAServer
-		// OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(thisHub.getObjectClass());
+		// OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
 		if (bSendEvent && !bIsRemovingAll && thisHub.isOAObject()) {
-			HubCSDelegate.removeFromHub(thisHub, (OAObject) obj, pos);
+			srvcHub.getHubCSService().removeFromHub(thisHub, (OAObject) obj, pos);
 		}
 
 		// this will lock, sync(data), and startNextThread
-		pos = HubDataDelegate._remove(thisHub, obj, bDeleting, bIsRemovingAll);
+		pos = srvcHub.getHubDataService()._remove(thisHub, obj, bDeleting, bIsRemovingAll);
 		if (!bIsRemovingAll && pos < 0) {
 			LOG.finer("object not removed, obj=" + obj);
 			return false;
 		}
 
 		if (bSetAO) {
-			HubShareDelegate.setSharedHubsAfterRemove(thisHub, obj, pos);
+			srvcHub.getHubShareService().setSharedHubsAfterRemove(thisHub, obj, pos);
 		}
 
 		/* 20110439 need to do this before sending event, since
@@ -187,7 +177,7 @@ public class HubAddRemoveService {
 		    20130726 moved before setPropertyToMaster
 		*/
 		if (thisHub.isOAObject()) {
-			OAObjectHubDelegate.removeHub((OAObject) obj, thisHub, false);
+			srvcObject.getOAObjectHubService().removeHub((OAObject) obj, thisHub, false);
 		}
 
 		if (bSetPropToMaster) {
@@ -202,7 +192,7 @@ public class HubAddRemoveService {
 						b |= fki.getFromPropertyInfo() != null && fki.getFromPropertyInfo().getKey();
 					}
 					if (!b) {
-						HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, null);
+						srvcHub.getHubDetailService().setPropertyToMasterHub(thisHub, obj, null);
 					}
 				} else if (lix.getType() == OALinkInfo.MANY) {
 					// 20210326 M2M
@@ -216,9 +206,9 @@ public class HubAddRemoveService {
 
 		// this must be after bSetAO, so that the active object is updated.
 		if (bSendEvent) {
-			HubEventDelegate.fireAfterRemoveEvent(thisHub, obj, pos);
+			srvcHub.getHubEventService().fireAfterRemoveEvent(thisHub, obj, pos);
 		}
-		HubDelegate.setReferenceable(thisHub, true);
+		srvcHub.setReferenceable(thisHub, true);
 		return true;
 	}
 
@@ -244,7 +234,7 @@ public class HubAddRemoveService {
 			final Class c = obj.getClass();
 			
 			if (thisHub.getObjectClass() == null) {
-				HubDelegate.setObjectClass(thisHub, c);
+				srvcHub.setObjectClass(thisHub, c);
 			}
 			if (!thisHub.getObjectClass().isAssignableFrom(c)) {
 				return "class not assignable, class=" + c.getSimpleName();
@@ -254,14 +244,14 @@ public class HubAddRemoveService {
 		// if there is a masterHub, then make sure that this Hub is active/valid
 		
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() == null && thisHub.getCurrentSize() == 0) {
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
+			HubDataMaster dm = srvcHub.getHubDetailService().getDataMaster(thisHub, true);
 			if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
 				return "has masterHub, but masterObject is null";
 			}
 		}
 
 		if (checkType > 0) {
-			OAObjectCallback eq = OAObjectCallbackDelegate.getAllowRemoveObjectCallback(thisHub, (OAObject) obj, checkType);
+			OAObjectCallback eq = srvcObject.getOAObjectCallbackService().getAllowRemoveObjectCallback(thisHub, (OAObject) obj, checkType);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
@@ -269,7 +259,7 @@ public class HubAddRemoveService {
 			}
 
 			if (obj instanceof OAObject) {
-				eq = OAObjectCallbackDelegate.getVerifyRemoveObjectCallback(thisHub, (OAObject) obj, checkType);
+				eq = srvcObject.getOAObjectCallbackService().getVerifyRemoveObjectCallback(thisHub, (OAObject) obj, checkType);
 				if (eq != null && !eq.getAllowed()) {
 					String s = eq.getResponse();
 					s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
@@ -303,20 +293,20 @@ public class HubAddRemoveService {
 
 		// if there is a masterHub, then make sure that this Hub is active/valid
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() == null && thisHub.getCurrentSize() == 0) {
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
+			HubDataMaster dm = srvcHub.getHubDetailService().getDataMaster(thisHub, true);
 			if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
 				return "has masterHub, but masterObject is null";
 			}
 		}
 
 		if (checkType > 0) {
-			OAObjectCallback eq = OAObjectCallbackDelegate.getAllowRemoveAllObjectCallback(thisHub, checkType);
+			OAObjectCallback eq = srvcObject.getOAObjectCallbackService().getAllowRemoveAllObjectCallback(thisHub, checkType);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
 				return "ObjectCallback.allowRemoveAll is false, msg: " + s;
 			}
-			eq = OAObjectCallbackDelegate.getVerifyRemoveAllObjectCallback(thisHub, checkType);
+			eq = srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback(thisHub, checkType);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
@@ -351,7 +341,7 @@ public class HubAddRemoveService {
 	 */
 	public void clear(final Hub thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
 		if (!OARemoteThreadDelegate.isRemoteThread() && bSendNewList) {
-			OAObjectCallback eq = OAObjectCallbackDelegate.getVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
+			OAObjectCallback eq = srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
 			if (!eq.getAllowed()) {
 				String s = eq.getResponse();
 				if (OAString.isEmpty(s)) {
@@ -365,10 +355,10 @@ public class HubAddRemoveService {
 			return;
 		}
 		try {
-			OAThreadLocalDelegate.lock(thisHub);
+			OARuntime.get().threadService().lock(thisHub);
 			b = _clear(thisHub, bSetAOtoNull, bSendNewList);
 		} finally {
-			OAThreadLocalDelegate.unlock(thisHub);
+			OARuntime.get().threadService().unlock(thisHub);
 		}
 		if (b) {
 			OARemoteThreadDelegate.startNextThread(); // if this is RemoteThread, then start the next one
@@ -404,11 +394,11 @@ public class HubAddRemoveService {
 		if (bSetAOtoNull) {
 			thisHub.setAO(null);
 		}
-		HubSelectDelegate.cancelSelect(thisHub, false);
+		srvcHub.getHubSelectService().cancelSelect(thisHub, false);
 
 		// 20140616 moved this here since other objects (ex: HubMerger) uses the
 		//   to fire new events, etc.
-		HubEventDelegate.fireBeforeRemoveAllEvent(thisHub);
+		srvcHub.getHubEventService().fireBeforeRemoveAllEvent(thisHub);
 
 		//int x = HubDataDelegate.getCurrentSize(thisHub);
 
@@ -416,14 +406,14 @@ public class HubAddRemoveService {
 		boolean bSendEvent = faHub.getHubDataMaster(thisHub).getMasterObject() != null;
 
 		if (thisHub.isOAObject() && bSendEvent) {
-			HubCSDelegate.removeAllFromHub(thisHub);
+			srvcHub.getHubCSService().removeAllFromHub(thisHub);
 		}
 
 		// 20160615
 		Object[] objs = thisHub.toArray();
 		faHub.getHubData(thisHub).getVector().removeAllElements();
 		
-		boolean bIsDeleting = OAThreadLocalDelegate.isDeleting(thisHub);
+		boolean bIsDeleting = OARuntime.get().threadService().isDeleting(thisHub);
 		if (!bIsDeleting && (faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && thisHub.isOAObject()) {
 			Vector vecRemove = faHub.getHubData(thisHub).getVecRemove();
 			final boolean bWasEmpty = vecRemove == null ? true : vecRemove.size() == 0;
@@ -433,17 +423,17 @@ public class HubAddRemoveService {
 					// no-op
 				} else {
 					if (vecRemove == null) {
-						vecRemove = HubDataDelegate.createVecRemove(thisHub);
+						vecRemove = srvcHub.getHubDataService().createVecRemove(thisHub);
 					}
 					if (bWasEmpty || vecRemove.indexOf(obj) < 0) {
 						vecRemove.addElement(obj);
 					}
 				}
 			}
-			HubDataDelegate.setChanged(thisHub, (faHub.getHubData(thisHub).getVecAdd() != null && faHub.getHubData(thisHub).getVecAdd().size() > 0)
+			srvcHub.getHubDataService().setChanged(thisHub, (faHub.getHubData(thisHub).getVecAdd() != null && faHub.getHubData(thisHub).getVecAdd().size() > 0)
 					|| (faHub.getHubData(thisHub).getVecRemove() != null && faHub.getHubData(thisHub).getVecRemove().size() > 0));
 		} else {
-			HubDataDelegate.setChanged(thisHub, true);
+			srvcHub.getHubDataService().setChanged(thisHub, true);
 		}
 
 		// if this is OAClientThread, so that OAClientMessageHandler can continue with next message
@@ -494,13 +484,13 @@ public class HubAddRemoveService {
 	private void _afterClear(final Hub thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
 		// 20140501
 		if (bSetAOtoNull) {
-			HubShareDelegate.setSharedHubsAfterRemoveAll(thisHub);
+			srvcHub.getHubShareService().setSharedHubsAfterRemoveAll(thisHub);
 		}
 
 		if (bSendNewList) {
-			HubEventDelegate.fireOnNewListEvent(thisHub, true);
+			srvcHub.getHubEventService().fireOnNewListEvent(thisHub, true);
 		}
-		HubEventDelegate.fireAfterRemoveAllEvent(thisHub);
+		srvcHub.getHubEventService().fireAfterRemoveAllEvent(thisHub);
 	}
 
 	/**
@@ -561,7 +551,7 @@ public class HubAddRemoveService {
 			final Class c = obj.getClass();
 			
 			if (faHub.getHubData(thisHub).getObjClass() == null) {
-				HubDelegate.setObjectClass(thisHub, c);
+				srvcHub.setObjectClass(thisHub, c);
 			}
 			if (!faHub.getHubData(thisHub).getObjClass().isAssignableFrom(c)) {
 				return "class not assignable, class=" + c.getSimpleName();
@@ -570,14 +560,14 @@ public class HubAddRemoveService {
 
 		// if there is a masterHub, then make sure that this Hub is active/valid
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() == null && thisHub.getCurrentSize() == 0) {
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
+			HubDataMaster dm = srvcHub.getHubDetailService().getDataMaster(thisHub, true);
 			if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
 				return "has masterHub, but masterObject is null";
 			}
 		}
 
 		OAObject oaObj = (obj instanceof OAObject) ? (OAObject) obj : null;
-		OAObjectCallback eq = OAObjectCallbackDelegate.getAllowAddObjectCallback(thisHub, oaObj, OAObjectCallback.CHECK_CallbackMethod);
+		OAObjectCallback eq = srvcObject.getOAObjectCallbackService().getAllowAddObjectCallback(thisHub, oaObj, OAObjectCallback.CHECK_CallbackMethod);
 		if (eq != null && !eq.getAllowed()) {
 			String s = eq.getResponse();
 			s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
@@ -585,7 +575,7 @@ public class HubAddRemoveService {
 		}
 
 		if (obj instanceof OAObject) {
-			eq = OAObjectCallbackDelegate.getVerifyAddObjectCallback(thisHub, (OAObject) obj, OAObjectCallback.CHECK_CallbackMethod);
+			eq = srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback(thisHub, (OAObject) obj, OAObjectCallback.CHECK_CallbackMethod);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
@@ -598,24 +588,24 @@ public class HubAddRemoveService {
 		}
 
 		if (obj != null && (faHub.getHubData(thisHub).getUniqueProperty() != null || faHub.getHubDataMaster(thisHub).getUniqueProperty() != null)) {
-			if (!HubDelegate.verifyUniqueProperty(thisHub, obj)) {
+			if (!srvcHub.verifyUniqueProperty(thisHub, obj)) {
 				return "verifyUniqueProperty returned false for property " + faHub.getHubDataMaster(thisHub).getUniqueProperty();
 			}
 		}
 
 		// 20140731 recursive hub check
-		if (obj != null && HubDetailDelegate.isRecursiveMasterDetail(thisHub)) {
+		if (obj != null && srvcHub.getHubDetailService().isRecursiveMasterDetail(thisHub)) {
 			final Class c = obj.getClass();
 			// cant add a recursive object to its children Hub
 			// cant make a recursive object have one of its children as the parent
 
 			// was:
-			// OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(c);
+			// OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(c);
 			// OALinkInfo li = oi.getRecursiveLinkInfo(OALinkInfo.ONE);
 
 			OALinkInfo li = faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo();
 			if (li != null) {
-				Object master = HubDetailDelegate.getMasterObject(thisHub);
+				Object master = srvcHub.getHubDetailService().getMasterObject(thisHub);
 				if (master != null && master.getClass().equals(c)) {
 					for (; master != null;) {
 						if (master == obj) {
@@ -660,7 +650,7 @@ public class HubAddRemoveService {
 			}
 		}
 
-		final boolean bIsLoading = OAThreadLocalDelegate.isLoading();
+		final boolean bIsLoading = OARuntime.get().threadService().isLoading();
 		if (!bIsLoading && faHub.getHubData(thisHub).getSortListener() != null) {
 			// use getCurrentSize to "guess" that it will go at the end, in
 			//  cases where this is loaded in order.
@@ -679,12 +669,12 @@ public class HubAddRemoveService {
 		boolean b = false;
 		try {
 			if (!bIsLoading) {
-				OAThreadLocalDelegate.lock(thisHub);
+				OARuntime.get().threadService().lock(thisHub);
 			}
 			b = _add(thisHub, obj, bIsLoading, bAlreadyCalledContains);
 		} finally {
 			if (!bIsLoading) {
-				OAThreadLocalDelegate.unlock(thisHub);
+				OARuntime.get().threadService().unlock(thisHub);
 			}
 		}
 		if (b) {
@@ -713,7 +703,7 @@ public class HubAddRemoveService {
 		if (thisHub.getObjectClass() == null || thisHub.getObjectClass().equals(OAObject.class)) {
 			Class c = obj.getClass();
 			if (thisHub.getObjectClass() == null || !c.equals(OAObject.class)) {
-				HubDelegate.setObjectClass(thisHub, c);
+				srvcHub.setObjectClass(thisHub, c);
 			}
 		}
 
@@ -725,11 +715,11 @@ public class HubAddRemoveService {
 		}
 
 		if (!bIsLoading) {
-			HubEventDelegate.fireBeforeAddEvent(thisHub, obj, thisHub.getCurrentSize());
+			srvcHub.getHubEventService().fireBeforeAddEvent(thisHub, obj, thisHub.getCurrentSize());
 		}
 
 		if (thisHub.isOAObject()) {
-			HubCSDelegate.addToHub(thisHub, (OAObject) obj); // use OAThreadLocalDelegate.setSuppressCSMessages(true) to not have add sent to other clients/server
+			srvcHub.getHubCSService().addToHub(thisHub, (OAObject) obj); // use OARuntime.get().threadService().setSuppressCSMessages(true) to not have add sent to other clients/server
 		}
 		if (!internalAdd(thisHub, obj, true, false)) {
 			//LOG.warning(" NOT ADDED <<<<<");
@@ -737,7 +727,7 @@ public class HubAddRemoveService {
 		}
 
 		if (obj instanceof OAObject) {
-			if (HubDataDelegate.contains(thisHub, obj, true)) {
+			if (srvcHub.getHubDataService().contains(thisHub, obj, true)) {
 				// this code has been moved before the listeners are notified.  Else listeners could ask for more objects
 
 				if (!bIsLoading) {
@@ -745,7 +735,7 @@ public class HubAddRemoveService {
 						OALinkInfo lix = faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo();
 						if (lix != null) {
 							if (lix.getType() == OALinkInfo.ONE) {
-								HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, faHub.getHubDataMaster(thisHub).getMasterObject());
+								srvcHub.getHubDetailService().setPropertyToMasterHub(thisHub, obj, faHub.getHubDataMaster(thisHub).getMasterObject());
 							} else if (lix.getType() == OALinkInfo.MANY) {
 								// 20210326 M2M
 								Hub hubx = (Hub) lix.getValue(obj);
@@ -755,11 +745,11 @@ public class HubAddRemoveService {
 							}
 						}
 					} else if (((OAObject) obj).isNew()) {
-						Hub hubx = HubSelectDelegate.getSelectWhereHub(thisHub);
+						Hub hubx = srvcHub.getHubSelectService().getSelectWhereHub(thisHub);
 						if (hubx != null) {
 							Object objx = hubx.getAO();
 							if (objx != null) {
-								String ppx = HubSelectDelegate.getSelectWhereHubPropertyPath(thisHub);
+								String ppx = srvcHub.getHubSelectService().getSelectWhereHubPropertyPath(thisHub);
 								OALinkInfo lix = hubx.getOAObjectInfo().getLinkInfo(ppx);
 								if (lix != null) {
 									lix = lix.getReverseLinkInfo();
@@ -777,9 +767,9 @@ public class HubAddRemoveService {
 					Hub rootHub = thisHub.getRootHub();
 					if (rootHub != null) {
 						if (rootHub == thisHub) {
-							OALinkInfo liRecursive = OAObjectInfoDelegate.getRecursiveLinkInfo(	thisHub.getOAObjectInfo(), OALinkInfo.ONE);
+							OALinkInfo liRecursive = srvcObject.getOAObjectInfoService().getRecursiveLinkInfo(	thisHub.getOAObjectInfo(), OALinkInfo.ONE);
 							if (liRecursive != null) {
-								OAObjectReflectDelegate.setProperty((OAObject) obj, liRecursive.getName(), null, null);
+								srvcObject.getOAObjectReflectService().setProperty((OAObject) obj, liRecursive.getName(), null, null);
 							}
 						}
 					}
@@ -797,9 +787,9 @@ public class HubAddRemoveService {
 	 * @param obj     the object that was added
 	 */
 	private void _afterAdd(final Hub thisHub, final Object obj) {
-		HubEventDelegate.fireAfterAddEvent(thisHub, obj, thisHub.getCurrentSize() - 1);
-		if (!OAThreadLocalDelegate.isLoading()) {
-			HubDelegate.setReferenceable(thisHub, true);
+		srvcHub.getHubEventService().fireAfterAddEvent(thisHub, obj, thisHub.getCurrentSize() - 1);
+		if (!OARuntime.get().threadService().isLoading()) {
+			srvcHub.setReferenceable(thisHub, true);
 		} else { // 20120425 need to send ObjectCache event
 					// 20130518 dont send if bInFetch (too much noise)
 					// 201512 not needed, too noisy
@@ -823,12 +813,12 @@ public class HubAddRemoveService {
 		}
 
 		// this will lock, sync(data), and startNextThread
-		if (!HubDataDelegate._add(thisHub, obj, bHasLock, bCheckContains)) {
+		if (!srvcHub.getHubDataService()._add(thisHub, obj, bHasLock, bCheckContains)) {
 			return false;
 		}
 
 		if (obj instanceof OAObject) {
-			OAObjectHubDelegate.addHub((OAObject) obj, thisHub);
+			srvcObject.getOAObjectHubService().addHub((OAObject) obj, thisHub);
 		}
 
 		return true;
@@ -914,15 +904,15 @@ public class HubAddRemoveService {
 			posTo = (max - 1);
 		}
 
-		HubEventDelegate.fireBeforeMoveEvent(thisHub, posFrom, posTo);
+		srvcHub.getHubEventService().fireBeforeMoveEvent(thisHub, posFrom, posTo);
 
 		//  OAClient must send message to OAServer before continuing
-		HubCSDelegate.moveObjectInHub(thisHub, posFrom, posTo);
+		srvcHub.getHubCSService().moveObjectInHub(thisHub, posFrom, posTo);
 
 		// this will lock
-		HubDataDelegate._move(thisHub, objFrom, posFrom, posTo);
+		srvcHub.getHubDataService()._move(thisHub, objFrom, posFrom, posTo);
 
-		HubEventDelegate.fireAfterMoveEvent(thisHub, posFrom, posTo);
+		srvcHub.getHubEventService().fireAfterMoveEvent(thisHub, posFrom, posTo);
 		// dont reset activeObject, since it will reset detailHubs
 	}
 
@@ -944,7 +934,7 @@ public class HubAddRemoveService {
 			return insert(faHub.getHubDataUnique(thisHub).getSharedHub(), obj, pos);
 		}
 
-		if (!OAThreadLocalDelegate.isLoading()) {
+		if (!OARuntime.get().threadService().isLoading()) {
 			if (!OARemoteThreadDelegate.isRemoteThread()) {
 				String s = canAddMsg(thisHub, obj);
 				if (s != null) {
@@ -955,10 +945,10 @@ public class HubAddRemoveService {
 		}
 		int newPos = pos;
 		try {
-			OAThreadLocalDelegate.lock(thisHub);
+			OARuntime.get().threadService().lock(thisHub);
 			newPos = _insert(thisHub, obj, pos);
 		} finally {
-			OAThreadLocalDelegate.unlock(thisHub);
+			OARuntime.get().threadService().unlock(thisHub);
 		}
 		boolean bResult = newPos >= 0;
 		if (bResult) {
@@ -986,7 +976,7 @@ public class HubAddRemoveService {
 		if (thisHub.getObjectClass() == null || thisHub.getObjectClass().equals(OAObject.class)) {
 			Class c = obj.getClass();
 			if (thisHub.getObjectClass() == null || !c.equals(OAObject.class)) {
-				HubDelegate.setObjectClass(thisHub, c);
+				srvcHub.setObjectClass(thisHub, c);
 			}
 		}
 		
@@ -1067,12 +1057,12 @@ public class HubAddRemoveService {
 			pos = x;
 		}
 
-		HubEventDelegate.fireBeforeInsertEvent(thisHub, obj, pos);
+		srvcHub.getHubEventService().fireBeforeInsertEvent(thisHub, obj, pos);
 
 		// send message to OAServer
 		//  OAClient must send message to OAServer before continuing
 		if (thisHub.isOAObject()) {
-			if (HubCSDelegate.insertInHub(thisHub, (OAObject) obj, pos)) {
+			if (srvcHub.getHubCSService().insertInHub(thisHub, (OAObject) obj, pos)) {
 				if (thisHub.contains(obj)) {
 					return -1; // already loaded (another thread)
 				}
@@ -1083,7 +1073,7 @@ public class HubAddRemoveService {
 
 		// this will lock, sync(data), and startNextThread
 		//was: boolean b = HubDataDelegate._insert(thisHub, key, obj, pos, false);  // false=dont lock, since this method is locked
-		boolean b = HubDataDelegate._insert(thisHub, obj, pos, true);
+		boolean b = srvcHub.getHubDataService()._insert(thisHub, obj, pos, true);
 		if (!b) {
 			return -1;
 		}
@@ -1092,13 +1082,13 @@ public class HubAddRemoveService {
 		 * hub.contains(obj) will return true.
 		 */
 		if (thisHub.isOAObject()) {
-			OAObjectHubDelegate.addHub((OAObject) obj, thisHub);
+			srvcObject.getOAObjectHubService().addHub((OAObject) obj, thisHub);
 		}
 
 		// moved before listeners are notified.  Else listeners could ask for it.
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
 			if (faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo().getType() == OALinkInfo.ONE) {
-				HubDetailDelegate.setPropertyToMasterHub(thisHub, obj, faHub.getHubDataMaster(thisHub).getMasterObject());
+				srvcHub.getHubDetailService().setPropertyToMasterHub(thisHub, obj, faHub.getHubDataMaster(thisHub).getMasterObject());
 			} else if (faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo().getType() == OALinkInfo.MANY) {
 				// 20210326 M2M
 				Hub hubx = (Hub) faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo().getValue(obj);
@@ -1108,11 +1098,11 @@ public class HubAddRemoveService {
 			}
 		} else if (obj instanceof OAObject && ((OAObject) obj).isNew()) {
 			// 20201212
-			Hub hubx = HubSelectDelegate.getSelectWhereHub(thisHub);
+			Hub hubx = srvcHub.getHubSelectService().getSelectWhereHub(thisHub);
 			if (hubx != null) {
 				Object objx = hubx.getAO();
 				if (objx != null) {
-					String ppx = HubSelectDelegate.getSelectWhereHubPropertyPath(thisHub);
+					String ppx = srvcHub.getHubSelectService().getSelectWhereHubPropertyPath(thisHub);
 					OALinkInfo lix = hubx.getOAObjectInfo().getLinkInfo(ppx);
 					if (lix != null) {
 						lix = lix.getReverseLinkInfo();
@@ -1130,19 +1120,19 @@ public class HubAddRemoveService {
 		Hub rootHub = thisHub.getRootHub();
 		if (rootHub != null) {
 			if (rootHub == thisHub) {
-				OALinkInfo liRecursive = OAObjectInfoDelegate.getRecursiveLinkInfo(	 thisHub.getOAObjectInfo(),
+				OALinkInfo liRecursive = srvcObject.getOAObjectInfoService().getRecursiveLinkInfo(	 thisHub.getOAObjectInfo(),
 																					OALinkInfo.ONE);
 				if (liRecursive != null) {
-					OAObjectReflectDelegate.setProperty((OAObject) obj, liRecursive.getName(), null, null);
+					srvcObject.getOAObjectReflectService().setProperty((OAObject) obj, liRecursive.getName(), null, null);
 				}
 			}
 		}
 
 		// if recursive and this is the root hub, then need to set parent to null (since object is now in root, it has no parent)
 		if (thisHub.getRootHub() == thisHub) {
-			OALinkInfo liRecursive = OAObjectInfoDelegate.getRecursiveLinkInfo(thisHub.getOAObjectInfo(), OALinkInfo.ONE);
+			OALinkInfo liRecursive = srvcObject.getOAObjectInfoService().getRecursiveLinkInfo(thisHub.getOAObjectInfo(), OALinkInfo.ONE);
 			if (liRecursive != null) {
-				OAObjectReflectDelegate.setProperty((OAObject) obj, liRecursive.getName(), null, null);
+				srvcObject.getOAObjectReflectService().setProperty((OAObject) obj, liRecursive.getName(), null, null);
 			}
 		}
 
@@ -1158,9 +1148,9 @@ public class HubAddRemoveService {
 	 * @param pos     the position of the inserted object
 	 */
 	private void _afterInsert(final Hub thisHub, final Object obj, final int pos) {
-		HubEventDelegate.fireAfterInsertEvent(thisHub, obj, pos);
-		if (!OAThreadLocalDelegate.isLoading()) {
-			HubDelegate.setReferenceable(thisHub, true);
+		srvcHub.getHubEventService().fireAfterInsertEvent(thisHub, obj, pos);
+		if (!OARuntime.get().threadService().isLoading()) {
+			srvcHub.setReferenceable(thisHub, true);
 		}
 	}
 
@@ -1204,7 +1194,7 @@ public class HubAddRemoveService {
 	 * @return an array of added {@link OAObject} instances
 	 */
 	public OAObject[] getAddedObjects(Hub thisHub) {
-		return HubDataDelegate.getAddedObjects(thisHub);
+		return srvcHub.getHubDataService().getAddedObjects(thisHub);
 	}
 
 	/**
@@ -1214,7 +1204,7 @@ public class HubAddRemoveService {
 	 * @return an array of removed {@link OAObject} instances
 	 */
 	public OAObject[] getRemovedObjects(Hub thisHub) {
-		return HubDataDelegate.getRemovedObjects(thisHub);
+		return srvcHub.getHubDataService().getRemovedObjects(thisHub);
 	}
 
 	/**
@@ -1248,7 +1238,7 @@ public class HubAddRemoveService {
 		}
 
 		// see if fkeys is also pkey
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
+		OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(thisHub);
 		if (li == null || li.getType() != li.TYPE_ONE) {
 			return true;
 		}
@@ -1284,7 +1274,7 @@ public class HubAddRemoveService {
 	 */
 	public void refresh(Hub hub, Hub hubNew) {
 		for (OAObject objx : (Hub<OAObject>) hub) {
-			OAObjectHubDelegate.removeHub(objx, hub, false);
+			srvcObject.getOAObjectHubService().removeHub(objx, hub, false);
 		}
 		faHub.getHubData(hub).getVector().clear();
 		
@@ -1292,9 +1282,9 @@ public class HubAddRemoveService {
 
 		for (OAObject objx : (Hub<OAObject>) hubNew) {
 			faHub.getHubData(hub).getVector().add(objx);
-			OAObjectHubDelegate.addHub(objx, hub);
+			srvcObject.getOAObjectHubService().addHub(objx, hub);
 		}
-		HubEventDelegate.fireOnNewListEvent(hub, true);
+		srvcHub.getHubEventService().fireOnNewListEvent(hub, true);
 	}
 
 	

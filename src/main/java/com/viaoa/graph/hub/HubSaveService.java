@@ -1,22 +1,24 @@
 package com.viaoa.graph.hub;
 
-
 import java.util.logging.Logger;
 
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectSaveDelegate;
 
 public class HubSaveService {
 	private final Logger LOG = Logger.getLogger(HubSaveService.class.getName());
 
+	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 	
-	public HubSaveService(HubService srvcHub, Hub.FriendAccess faHub ) {
+	public HubSaveService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
+    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
+    	this.srvcObject = srvcObject;
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
@@ -34,7 +36,7 @@ public class HubSaveService {
 	 */
     public void saveAll(Hub thisHub, int cascadeRule) {
         OACascade cascade = new OACascade(); 
-        HubSaveDelegate.saveAll(thisHub, cascadeRule, cascade);
+        srvcHub.getHubSaveService().saveAll(thisHub, cascadeRule, cascade);
     }
 	
     /*
@@ -81,34 +83,34 @@ public class HubSaveService {
 	            Object obj = thisHub.elementAt(i);
 	            if (obj == null) break;
 	            if (b) {
-	            	OAObjectSaveDelegate.save((OAObject)obj, iCascadeRule, cascade);
+	            	srvcObject.getOAObjectSaveService().save((OAObject)obj, iCascadeRule, cascade);
 	            }
 	            else {
-	            	// OAObjectDSDelegate.save(obj, true);  // true=insert.  Could be update?
+	            	// srvcObject.getOAObjectDSService().save(obj, true);  // true=insert.  Could be update?
 	            	//todo: qqqqqqqq 
 	            }
 	        }
         }
         else {
 	        // if Many2Many, then save all Added objects that are New, so that a valid DB record exists before calling updateHubAddsAndRemoves()
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
-	        bM2M = dm.getDetailToMasterLinkInfo() != null && OAObjectInfoDelegate.isMany2Many(dm.getDetailToMasterLinkInfo());
+			HubDataMaster dm = srvcHub.getHubDetailService().getDataMaster(thisHub);
+	        bM2M = dm.getDetailToMasterLinkInfo() != null && srvcObject.getOAObjectInfoService().isMany2Many(dm.getDetailToMasterLinkInfo());
 	        
 	        if (bM2M) {
-		        OAObject[] objAdds = HubDataDelegate.getAddedObjects(thisHub);
+		        OAObject[] objAdds = srvcHub.getHubDataService().getAddedObjects(thisHub);
 	        	for (int i=0; objAdds!=null && i<objAdds.length; i++) {
 	        		OAObject obj = objAdds[i];
 	        		if (obj != null && ((OAObject)obj).getNew()) {
-			            OAObjectSaveDelegate._saveObjectOnly((OAObject) obj, cascade);
+	        			srvcObject.getOAObjectSaveService()._saveObjectOnly((OAObject) obj, cascade);
 	        		}
 	        	}
 	        }
         }
         
-    	HubDelegate._updateHubAddsAndRemoves(thisHub, iCascadeRule, cascade, true);
+        srvcHub._updateHubAddsAndRemoves(thisHub, iCascadeRule, cascade, true);
     	thisHub.setChanged(false); // removes all vecAdd, vecRemove objects
     	
-        HubDelegate.setReferenceable(thisHub, false);
+    	srvcHub.setReferenceable(thisHub, false);
     }
 
 	

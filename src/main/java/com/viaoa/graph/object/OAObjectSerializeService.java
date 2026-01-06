@@ -7,10 +7,11 @@ import java.util.logging.Logger;
 
 import com.viaoa.comm.io.IODummy;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAObjectService;
+import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubSerializeDelegate;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -20,6 +21,7 @@ import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncDelegate;
@@ -34,14 +36,20 @@ public class OAObjectSerializeService {
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
 	private final OAObjectSerializer.FriendAccess faObjectSerializer;
+	private final HubService srvcHub;
+	private final OASyncService srvcSync;
 	
-    public OAObjectSerializeService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OAObjectSerializer.FriendAccess oaObjectSerializerFriendAccess) {
+    public OAObjectSerializeService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OAObjectSerializer.FriendAccess oaObjectSerializerFriendAccess, HubService srvcHub, OASyncService srvcSync) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
     	this.srvcObject = srvcObject;
     	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = oaObjectFriendAccess;
     	if (oaObjectSerializerFriendAccess == null) throw new IllegalArgumentException("OAObjectSerializerFriendAccess can not be null");
     	this.faObjectSerializer = oaObjectSerializerFriendAccess;
+    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+    	this.srvcHub = srvcHub;
+    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
+    	this.srvcSync = srvcSync;
     }
 
 	/**
@@ -88,7 +96,7 @@ public class OAObjectSerializeService {
 				OAObjectKey ok = (OAObjectKey) in.readObject();
 				srvcObject.getOAObjectGuidService().setGuid(oaObj, ok.getGuid());
 
-				final OAObjectSerializer serializer = OAThreadLocalDelegate.getObjectSerializer();
+				final OAObjectSerializer serializer = OARuntime.get().threadService().getObjectSerializer();
 				if (serializer != null) serializer.dupCount--;
 				return;
 			} else if (bx == 2) {
@@ -97,7 +105,7 @@ public class OAObjectSerializeService {
 		in.defaultReadObject();
 		
 		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
-		final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
+		final boolean bIsServer = srvcSync.isServer();
 
 		// read properties
 		for (;;) {
@@ -202,7 +210,7 @@ public class OAObjectSerializeService {
 			bDup = false;
 		}
 
-		final OAObjectSerializer serializer = OAThreadLocalDelegate.getObjectSerializer();
+		final OAObjectSerializer serializer = OARuntime.get().threadService().getObjectSerializer();
 		if (!bDup) {
 			if (serializer != null) serializer.newCount++;
 			return oaObjUse;
@@ -322,13 +330,13 @@ public class OAObjectSerializeService {
 		if (value instanceof Hub) {
 			// handles M-1, M-M
 			Hub hub = (Hub) value;
-			if (!HubSerializeDelegate.isResolved(hub)) {
+			if (!srvcHub.getHubSerializeService().isResolved(hub)) {
 				// not fully loaded
 				return false;
 			}
 
 			// this will only replace if current masterObj = oaObjOrig
-			HubSerializeDelegate.replaceMasterObject((Hub) value, oaObjFrom, oaObjTo);
+			srvcHub.getHubSerializeService().replaceMasterObject((Hub) value, oaObjFrom, oaObjTo);
 
 			for (int i = 0; revName != null; i++) {
 				OAObject objx = (OAObject) hub.getAt(i);
@@ -340,7 +348,7 @@ public class OAObjectSerializeService {
 				} else if (ref == oaObjFrom || ref instanceof OAObjectKey) {
 					srvcObject.getOAObjectPropertyService().setPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
 				} else if (ref instanceof Hub) {
-					HubSerializeDelegate.replaceObject((Hub) ref, oaObjFrom, oaObjTo);
+					srvcHub.getHubSerializeService().replaceObject((Hub) ref, oaObjFrom, oaObjTo);
 				}
 			}
 		} else if (value instanceof OAObject && revName != null) {
@@ -358,7 +366,7 @@ public class OAObjectSerializeService {
 					ref = ((WeakReference) ref).get();
 				}
 				if (ref instanceof Hub) {
-					HubSerializeDelegate.replaceObject((Hub) ref, oaObjFrom, oaObjTo);
+					srvcHub.getHubSerializeService().replaceObject((Hub) ref, oaObjFrom, oaObjTo);
 				}
 			}
 		}
@@ -395,7 +403,7 @@ public class OAObjectSerializeService {
 		if (oaObj == null) {
 			return;
 		}
-		final OAObjectSerializer serializer = OAThreadLocalDelegate.getObjectSerializer();
+		final OAObjectSerializer serializer = OARuntime.get().threadService().getObjectSerializer();
 		if (serializer != null) {
 			faObjectSerializer.beforeSerialize(oaObj, serializer);
 		}
@@ -408,7 +416,7 @@ public class OAObjectSerializeService {
 		if (stream instanceof RemoteObjectOutputStream) {
 			if (!bIsObjectOnServer) {
 				stream.writeByte((byte) 2);
-			} else if (!OASyncDelegate.isServer(oaObj.getClass())) {
+			} else if (!srvcSync.isServer()) {
 				// only need to send key to the server
 				stream.writeByte((byte) 1);
 				stream.writeObject(oaObj.getObjectKey());
@@ -580,7 +588,7 @@ public class OAObjectSerializeService {
 							// server. need to make sure that autoMatch (if needed) was set up.
 							String matchProperty = li.getMatchProperty();
 							if (matchProperty != null && matchProperty.length() > 0) {
-								if (HubDelegate.getAutoMatch(hubx) != null) {
+								if (srvcHub.getAutoMatch(hubx) != null) {
 									obj = null;
 									bShouldSerialize = true;
 								}

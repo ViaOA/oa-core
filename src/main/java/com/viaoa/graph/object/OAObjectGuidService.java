@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAObjectService;
+import com.viaoa.graph.OASyncService;
 import com.viaoa.object.OAObject;
 
 public class OAObjectGuidService {
@@ -11,6 +12,7 @@ public class OAObjectGuidService {
 
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
+	private final OASyncService srvcSync;
 
 	private volatile long nextGuid; 
 	private volatile long maxNextGuid; 
@@ -27,11 +29,13 @@ public class OAObjectGuidService {
 	 */
 	private final AtomicLong localGuidCounter = new AtomicLong();
 	
-	public OAObjectGuidService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+	public OAObjectGuidService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OASyncService srvcSync) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
     	this.srvcObject = srvcObject;
     	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = oaObjectFriendAccess;
+    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
+    	this.srvcSync = srvcSync;
 	}
 
     public OAObjectService getObjectService() {
@@ -79,10 +83,10 @@ public class OAObjectGuidService {
 		if (srvcObject.getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) {
 			guid = localGuidCounter.decrementAndGet();
 		} else {
-			if (srvcObject.graph().sync().getClient() != null) {
+			if (srvcSync.getClient() != null) {
 				if (nextGuid == maxNextGuid) {
 					try {
-						nextGuid = srvcObject.graph().sync().getClient().getRemoteServer().getNextFiftyObjectGuids();
+						nextGuid = srvcSync.getClient().getRemoteServer().getNextFiftyObjectGuids();
 					}
 					catch (Exception e) {
 						throw new RuntimeException("Error calling assignGuid for obj=" + obj, e);

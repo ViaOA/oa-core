@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -27,14 +27,15 @@ public class OAObjectSiblingService {
 
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
+	private final HubService srvcHub;
 
-	public OAObjectSiblingService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
-		if (srvcObject == null)
-			throw new IllegalArgumentException("OAObjectService can not be null");
+	public OAObjectSiblingService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, HubService srvcHub) {
+		if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
 		this.srvcObject = srvcObject;
-		if (oaObjectFriendAccess == null)
-			throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
+		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
 		this.faObject = oaObjectFriendAccess;
+		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+		this.srvcHub = srvcHub;
 	}
 
 	public OAObjectService getObjectService() {
@@ -63,7 +64,7 @@ public class OAObjectSiblingService {
 	 * @param linkPropertyName  the accessed link-property name
 	 */
 	public void onGetObjectReference(final OAObject obj, final String linkPropertyName) {
-		ArrayList<OASiblingHelper> al = OAThreadLocalDelegate.getSiblingHelpers();
+		ArrayList<OASiblingHelper> al = OARuntime.get().threadService().getSiblingHelpers();
 		if (al == null) {
 			return;
 		}
@@ -201,7 +202,7 @@ public class OAObjectSiblingService {
 		OAPropertyPath ppGetDetailPropertyPath = null;
 
 		// 20180704
-		ArrayList<OASiblingHelper> al = OAThreadLocalDelegate.getSiblingHelpers();
+		ArrayList<OASiblingHelper> al = OARuntime.get().threadService().getSiblingHelpers();
 
 		// 20180807 find all pp to use, instead of just the first one.
 		ArrayList<DetailInfo> alDetailInfo = new ArrayList<>();
@@ -347,7 +348,7 @@ public class OAObjectSiblingService {
 				hub = findBestSiblingHub(mainObject, lix);
 				bCalledFindBestSiblingHub = true;
 				ppPrefix = null;
-				if (hub == null || HubDetailDelegate.getLinkInfoFromDetailToMaster(hub) != lix) {
+				if (hub == null || srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub) != lix) {
 					ppReverse = null;
 				}
 			} else if (getDetailHub != null) {
@@ -426,7 +427,7 @@ public class OAObjectSiblingService {
 
 					// find next hub to use
 
-					final OALinkInfo lix = HubDetailDelegate.getLinkInfoFromMasterHubToDetail(hub);
+					final OALinkInfo lix = srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail(hub);
 					if (lix == null || lix.getToClass() == null) {
 						//bDone = true;
 						break; // could be using GroupBy as hub
@@ -449,7 +450,7 @@ public class OAObjectSiblingService {
 							hubx = findBestSiblingHub(objInHub, liz);
 							if (hubx == null) {
 								ppReverse = null;
-							} else if (HubDetailDelegate.getLinkInfoFromMasterToDetail(hubx) != liz.getReverseLinkInfo()) {
+							} else if (srvcHub.getHubDetailService().getLinkInfoFromMasterToDetail(hubx) != liz.getReverseLinkInfo()) {
 								ppReverse = null;
 							}
 							hub = hubx;
@@ -608,7 +609,7 @@ public class OAObjectSiblingService {
 				continue;
 			}
 
-			if (liToMaster != null && HubDetailDelegate.getLinkInfoFromDetailToMaster(hub) == liToMaster) {
+			if (liToMaster != null && srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub) == liToMaster) {
 				siblingHub = hub;
 				break;
 			}

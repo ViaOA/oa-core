@@ -19,11 +19,11 @@ import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAFilterDelegate;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
-import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.hub.HubTemp;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OAFinder;
@@ -69,13 +69,13 @@ public class OAObjectCacheService {
 	private static final Logger LOG = Logger.getLogger(OAObjectCacheService.class.getName());
 
 	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
+	private final HubService srvcHub;
 
-	public OAObjectCacheService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
+	public OAObjectCacheService(OAObjectService srvcObject, HubService srvcHub) {
     	if (srvcObject == null) throw new IllegalArgumentException("ObjectService can not be null");
     	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObject.FriendAccess can not be null");
-		this.faObject = oaObjectFriendAccess;
+    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+    	this.srvcHub = srvcHub;
 	}
 
     public OAObjectService getObjectService() {
@@ -1468,7 +1468,7 @@ public class OAObjectCacheService {
 						if (h.getMasterObject() == null) {
 							continue;
 						}
-						OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(h);
+						OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(h);
 						if (li != null) {
 							li = li.getReverseLinkInfo();
 							if (li == null || li.getCalculated()) {
@@ -1497,7 +1497,7 @@ public class OAObjectCacheService {
 		int cntHubs = 0;
 		int cntInHubs = 0;
 		for (Hub h : hsHub) {
-			HubSelectDelegate.refreshSelect(h);
+			srvcHub.getHubSelectService().refreshSelect(h);
 			cntHubs++;
 			cntInHubs += h.getSize();
 		}

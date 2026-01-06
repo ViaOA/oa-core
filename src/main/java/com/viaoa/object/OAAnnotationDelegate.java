@@ -15,42 +15,14 @@
  */
 package com.viaoa.object;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.viaoa.annotation.OACalculatedProperty;
-import com.viaoa.annotation.OAClass;
-import com.viaoa.annotation.OAColumn;
-import com.viaoa.annotation.OAFkey;
-import com.viaoa.annotation.OAId;
-import com.viaoa.annotation.OAIndex;
-import com.viaoa.annotation.OAIndexColumn;
-import com.viaoa.annotation.OALinkTable;
 import com.viaoa.annotation.OAMany;
-import com.viaoa.annotation.OAMethod;
-import com.viaoa.annotation.OAObjCallback;
-import com.viaoa.annotation.OAOne;
-import com.viaoa.annotation.OAProperty;
-import com.viaoa.annotation.OATable;
 import com.viaoa.annotation.OATriggerMethod;
-import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.Database;
-import com.viaoa.datasource.jdbc.db.Index;
-import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubEvent;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.*;
-
-//qqqqqqqqq PHASE 3: moved to OAObjectAnnotationService, OAObjectDatabaseService
-
 
 /**
  * Internal delegate responsible for processing OA-specific annotations on

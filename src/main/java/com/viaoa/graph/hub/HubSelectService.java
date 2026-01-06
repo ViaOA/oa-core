@@ -1,6 +1,5 @@
 package com.viaoa.graph.hub;
 
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -10,16 +9,13 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
-import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectSaveDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -27,10 +23,13 @@ import com.viaoa.util.OAString;
 public class HubSelectService {
 	private final Logger LOG = Logger.getLogger(HubSelectService.class.getName());
 
+	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 	
-	public HubSelectService(HubService srvcHub, Hub.FriendAccess faHub ) {
+	public HubSelectService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
+    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
+    	this.srvcObject = srvcObject;
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
@@ -45,7 +44,7 @@ public class HubSelectService {
 	 * @return number of objects loaded during this fetch
 	 */
 	public int fetchMore(Hub thisHub) {
-		int x = fetchMore(thisHub, HubSelectDelegate.getSelect(thisHub));
+		int x = fetchMore(thisHub, srvcHub.getHubSelectService().getSelect(thisHub));
 		return x;
 	}
 
@@ -77,7 +76,7 @@ public class HubSelectService {
 	 * @return number of objects fetched
 	 */
 	public int fetchMore(Hub thisHub, int famt) {
-		int x = fetchMore(thisHub, HubSelectDelegate.getSelect(thisHub), famt);
+		int x = fetchMore(thisHub, srvcHub.getHubSelectService().getSelect(thisHub), famt);
 		return x;
 	}
 
@@ -172,10 +171,10 @@ public class HubSelectService {
 
 			for (; cnt < fa || fa == 0;) {
 				Object obj;
-				if (!HubSelectDelegate.isMoreData(sel)) {
+				if (!srvcHub.getHubSelectService().isMoreData(sel)) {
 					boolean bRemoveSelectFromHub;
 					if (thisHub.getMasterObject() != null) {
-						OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
+						OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(thisHub);
 						if (li.getType() == OALinkInfo.ONE && li.getPrivateMethod()) {
 							bRemoveSelectFromHub = false;
 						} else {
@@ -196,19 +195,19 @@ public class HubSelectService {
 					if (size == (capacity - 1)) { // resize Vector according to select
 						/*
 						if (faHub.getHubData(thisHub).loadingAllData) {
-							capacity = HubSelectDelegate.getCount(thisHub);
+							capacity = srvcHub.getHubSelectService().getCount(thisHub);
 							if (capacity <= 0) capacity = size+1;
 						}
 						*/
 						capacity += (capacity > 250) ? 75 : capacity; // this will override the default behavior of how the Vector grows itself (which is to double in size)
 						//LOG.config("resizing, from:"+size+", to:"+capacity+", hub:"+thisHub);
-						HubDataDelegate.ensureCapacity(thisHub, capacity);
+						srvcHub.getHubDataService().ensureCapacity(thisHub, capacity);
 					}
 					try {
-						OAThreadLocalDelegate.setLoading(true);
-						HubAddRemoveDelegate.add(thisHub, obj);
+						OARuntime.get().threadService().setLoading(true);
+						srvcHub.getHubAddRemoveService().add(thisHub, obj);
 					} finally {
-						OAThreadLocalDelegate.setLoading(false);
+						OARuntime.get().threadService().setLoading(false);
 					}
 					size++;
 					cnt++;
@@ -404,7 +403,7 @@ public class HubSelectService {
 		}
 
 		select.setSelectClass(thisHub.getObjectClass());
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(thisHub.getObjectClass());
+		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
 
 		// 20200302
 		Hub hx = faHub.getHubData(thisHub).getSelectWhereHub();
@@ -415,7 +414,7 @@ public class HubSelectService {
 			}
 		}
 
-		HubEventDelegate.fireBeforeSelectEvent(thisHub);
+		srvcHub.getHubEventService().fireBeforeSelectEvent(thisHub);
 
 		boolean bRunSelect;
 		bRunSelect = oi.getUseDataSource() || select.getDataSource() != null;
@@ -424,20 +423,20 @@ public class HubSelectService {
 		bRunSelect = (bRunSelect && (select.getDataSource() != null || select.getFinder() != null));
 		//was: bRunSelect = (bRunSelect && select.getDataSource() != null);
 
-		HubDataDelegate.incChangeCount(thisHub);
+		srvcHub.getHubDataService().incChangeCount(thisHub);
 
 		if (select.getAppend()) {
 			faHub.getHubData(thisHub).setSelect(select);
 		} else {
 			thisHub.setAO(null); // 20100507
 			if (thisHub.isOAObject()) {
-				int z = HubDataDelegate.getCurrentSize(thisHub);
+				int z = srvcHub.getHubDataService().getCurrentSize(thisHub);
 				for (int i = 0; i < z; i++) {
-					OAObject oa = (OAObject) HubDataDelegate.getObjectAt(thisHub, i);
-					OAObjectHubDelegate.removeHub(oa, thisHub, false);
+					OAObject oa = (OAObject) srvcHub.getHubDataService().getObjectAt(thisHub, i);
+					srvcObject.getOAObjectHubService().removeHub(oa, thisHub, false);
 				}
 			}
-			HubDataDelegate.clearAllAndReset(thisHub);
+			srvcHub.getHubDataService().clearAllAndReset(thisHub);
 			faHub.getHubData(thisHub).setSelect(select);
 
 			if (select.getRewind()) {
@@ -454,7 +453,7 @@ public class HubSelectService {
 						return false;
 					}
 				};
-				Hub[] hubs = HubShareDelegate.getAllSharedHubs(thisHub, filter);
+				Hub[] hubs = srvcHub.getHubShareService().getAllSharedHubs(thisHub, filter);
 
 				for (int i = 0; i < hubs.length; i++) {
 					if (hubs[i] != thisHub && faHub.getHubDataActive(hubs[i]) != faHub.getHubDataActive(thisHub)) {
@@ -473,14 +472,14 @@ public class HubSelectService {
 
 		if (select.isSelectAll()) {
 			faHub.getHubData(thisHub).setSelectAllHub(true);
-			OAObjectCacheDelegate.setSelectAllHub(thisHub);
+			srvcObject.getOAObjectCacheService().setSelectAllHub(thisHub);
 		} else {
 			faHub.getHubData(thisHub).setSelectAllHub(false);
-			OAObjectCacheDelegate.removeSelectAllHub(thisHub);
+			srvcObject.getOAObjectCacheService().removeSelectAllHub(thisHub);
 		}
 
 		if (!select.getAppend()) {
-			HubEventDelegate.fireOnNewListEvent(thisHub, true);
+			srvcHub.getHubEventService().fireOnNewListEvent(thisHub, true);
 		}
 	}
 
@@ -504,14 +503,14 @@ public class HubSelectService {
 			if (bRemoveSelect) {
 				faHub.getHubData(thisHub).setSelect(null);
 			}
-			HubDataDelegate.resizeToFit(thisHub);
+			srvcHub.getHubDataService().resizeToFit(thisHub);
 		} else {
 			bHasMoreData = false;
 		}
 
 		if (faHub.getHubData(thisHub).isSelectAllHub() && bHasMoreData) {
 			faHub.getHubData(thisHub).setSelectAllHub(false);
-			OAObjectCacheDelegate.removeSelectAllHub(thisHub);
+			srvcObject.getOAObjectCacheService().removeSelectAllHub(thisHub);
 		}
 	}
 
@@ -807,11 +806,11 @@ public class HubSelectService {
 		if (OAString.isEmpty(propName)) {
 			return false;
 		}
-		final Hub hubSelectWhere = HubSelectDelegate.getSelectWhereHub(hubFrom);
+		final Hub hubSelectWhere = srvcHub.getHubSelectService().getSelectWhereHub(hubFrom);
 		if (hubSelectWhere == null) {
 			return false;
 		}
-		final String pp = HubSelectDelegate.getSelectWhereHubPropertyPath(hubFrom);
+		final String pp = srvcHub.getHubSelectService().getSelectWhereHubPropertyPath(hubFrom);
 		if (OAString.isEmpty(pp)) {
 			return false;
 		}
@@ -841,12 +840,12 @@ public class HubSelectService {
 
 		boolean b = false;
 
-		OAThreadLocalDelegate.setRefreshing(true);
+		OARuntime.get().threadService().setRefreshing(true);
 		try {
-			HubEventDelegate.fireBeforeRefreshEvent(thisHub);
+			srvcHub.getHubEventService().fireBeforeRefreshEvent(thisHub);
 			b = _refresh(thisHub);
 		} finally {
-			OAThreadLocalDelegate.setRefreshing(false);
+			OARuntime.get().threadService().setRefreshing(false);
 		}
 
 		return b;
@@ -873,9 +872,9 @@ public class HubSelectService {
 
 		OASelect sel = thisHub.getSelect();
 		if (sel == null) {
-			OAObject obj = HubDetailDelegate.getMasterObject(thisHub);
+			OAObject obj = srvcHub.getHubDetailService().getMasterObject(thisHub);
 			if (obj != null) {
-				String s = HubDetailDelegate.getPropertyFromMasterToDetail(thisHub);
+				String s = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
 				obj.refresh(s);
 				return true;
 			}
@@ -946,7 +945,7 @@ public class HubSelectService {
 			OAObject obj = thisHub.getMasterObject();
 			if (obj == null) return false;
 
-			OALinkInfo linkInfo = HubDetailDelegate.getLinkInfoFromDetailToMaster(thisHub);
+			OALinkInfo linkInfo = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(thisHub);
 			if (linkInfo == null) {
 				return false;
 			}

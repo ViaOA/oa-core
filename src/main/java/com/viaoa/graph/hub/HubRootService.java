@@ -3,6 +3,7 @@ package com.viaoa.graph.hub;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.util.OAFilter;
@@ -10,10 +11,13 @@ import com.viaoa.util.OAFilter;
 public class HubRootService {
 	private final Logger LOG = Logger.getLogger(HubRootService.class.getName());
 
+	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 	
-	public HubRootService(HubService srvcHub, Hub.FriendAccess faHub ) {
+	public HubRootService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
+    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
+    	this.srvcObject = srvcObject;
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	this.srvcHub = srvcHub;
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
@@ -42,14 +46,14 @@ public class HubRootService {
 		if (thisHub == null) {
 			return null;
 		}
-		OALinkInfo liRecursive = OAObjectInfoDelegate.getRecursiveLinkInfo(faHub.getHubData(thisHub).getObjectInfo(), OALinkInfo.ONE);
+		OALinkInfo liRecursive = srvcObject.getOAObjectInfoService().getRecursiveLinkInfo(faHub.getHubData(thisHub).getObjectInfo(), OALinkInfo.ONE);
 		// 1: must be recursive
 		if (liRecursive == null) {
 			return null;
 		}
 
 		// 2: check for root hub
-		Hub h = OAObjectInfoDelegate.getRootHub(faHub.getHubData(thisHub).getObjectInfo());
+		Hub h = srvcObject.getOAObjectInfoService().getRootHub(faHub.getHubData(thisHub).getObjectInfo());
 		if (h != null) {
 			return h;
 		}
@@ -62,14 +66,14 @@ public class HubRootService {
 				return (faHub.getHubDataMaster(hx).getMasterHub() != null);
 			}
 		};
-		Hub[] hubs = HubShareDelegate.getAllSharedHubs(thisHub, filter);
+		Hub[] hubs = srvcHub.getHubShareService().getAllSharedHubs(thisHub, filter);
 		HubDataMaster dm = null;
 		for (int i = 0; hubs != null && i < hubs.length; i++, dm = null) {
 			dm = faHub.getHubDataMaster(hubs[i]);
 			if (dm.getDetailToMasterLinkInfo() == null) {
 				continue;
 			}
-			OALinkInfo rev = OAObjectInfoDelegate.getReverseLinkInfo(faHub.getHubDataMaster(hubs[i]).getDetailToMasterLinkInfo());
+			OALinkInfo rev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(faHub.getHubDataMaster(hubs[i]).getDetailToMasterLinkInfo());
 			if (rev != null && rev.isOwner()) {
 				if (rev.getType() == OALinkInfo.TYPE_MANY && rev.getToClass().equals(thisHub.getObjectClass())) {
 					break;
@@ -78,15 +82,15 @@ public class HubRootService {
 		}
 		if (dm == null) {
 			dm = faHub.getHubDataMaster(thisHub);
-			// was: HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+			// was: HubDataMaster dm = srvcHub.getHubDetailService().getDataMaster(thisHub);
 		}
 
 		// 20120304 added other cases on how to find the root hub
 		if (dm.getDetailToMasterLinkInfo() == null) {
-			return OAObjectInfoDelegate.getRootHub(faHub.getHubData(thisHub).getObjectInfo());
+			return srvcObject.getOAObjectInfoService().getRootHub(faHub.getHubData(thisHub).getObjectInfo());
 		}
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() == null && faHub.getHubDataMaster(thisHub).getMasterHub() == null) {
-			return OAObjectInfoDelegate.getRootHub(faHub.getHubData(thisHub).getObjectInfo());
+			return srvcObject.getOAObjectInfoService().getRootHub(faHub.getHubData(thisHub).getObjectInfo());
 		}
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) {
 			if (faHub.getHubDataMaster(thisHub).getMasterHub() != null) {
@@ -99,13 +103,13 @@ public class HubRootService {
 						}
 					} else {
 						// could be owner / master Hub
-						if (OAObjectInfoDelegate.getReverseLinkInfo(dm.getDetailToMasterLinkInfo()).getOwner()) {
+						if (srvcObject.getOAObjectInfoService().getReverseLinkInfo(dm.getDetailToMasterLinkInfo()).getOwner()) {
 							return thisHub; // thisHub is a detail from the owner.  When the owner hub AO is changed, then thisHub will have root
 						}
 					}
 				}
 			}
-			return OAObjectInfoDelegate.getRootHub(faHub.getHubData(thisHub).getObjectInfo());
+			return srvcObject.getOAObjectInfoService().getRootHub(faHub.getHubData(thisHub).getObjectInfo());
 		}
 		// End 20120304
 
@@ -115,14 +119,14 @@ public class HubRootService {
 		    // does not belong to a owner or master object.
 		    // The root hub needs to be manually set by calling Hub.setRootHub,
 		    //     since the recursive hub does not have an owner object
-		    return OAObjectInfoDelegate.getRootHub(thisHub.datau.objectInfo);
+		    return srvcObject.getOAObjectInfoService().getRootHub(thisHub.datau.objectInfo);
 		}
 		*/
 
 		// 5: if parent is not recursive - if the LinkInfos are different
-		if (dm.getDetailToMasterLinkInfo() != OAObjectInfoDelegate.getRecursiveLinkInfo(faHub.getHubData(thisHub).getObjectInfo(), OALinkInfo.ONE)) {
+		if (dm.getDetailToMasterLinkInfo() != srvcObject.getOAObjectInfoService().getRecursiveLinkInfo(faHub.getHubData(thisHub).getObjectInfo(), OALinkInfo.ONE)) {
 			// if dm.masterObject is owner, then it is owner
-			OALinkInfo rli = OAObjectInfoDelegate.getReverseLinkInfo(dm.getDetailToMasterLinkInfo());
+			OALinkInfo rli = srvcObject.getOAObjectInfoService().getReverseLinkInfo(dm.getDetailToMasterLinkInfo());
 			if (rli == null) {
 				LOG.warning("cant find reverse linkInfo, hub=" + thisHub);
 			}
@@ -132,27 +136,27 @@ public class HubRootService {
 				// cant use the masterHub, need to get the "real" detail hub of master object
 				//   For recursive hubs that are linked, the master (owner) might not be using the root hub.
 				//   By getting the hub value of the masterObject, it will call its hub getMethod, which will be the root hub
-				return (Hub) OAObjectReflectDelegate.getProperty(	(OAObject) dm.getMasterObject(),
-																	OAObjectInfoDelegate.getReverseLinkInfo(dm.getDetailToMasterLinkInfo()).getName());
+				return (Hub) srvcObject.getOAObjectReflectService().getProperty(	(OAObject) dm.getMasterObject(),
+																	srvcObject.getOAObjectInfoService().getReverseLinkInfo(dm.getDetailToMasterLinkInfo()).getName());
 			}
 
 			// the linkInfo for the parent is not the owner or a recursive parent
 			// The root hub needs to be manually set by calling Hub.setRootHub,
 			//     since the recursive hub does not have an owner object
-			return OAObjectInfoDelegate.getRootHub(faHub.getHubData(thisHub).getObjectInfo());
+			return srvcObject.getOAObjectInfoService().getRootHub(faHub.getHubData(thisHub).getObjectInfo());
 		}
 
 		// 6: dm.masterObject is the same as this class - recursive parent hub
 		//    use it to get the owner object and then the root hub (from owner object)
 		// find owner link
-		OALinkInfo linkOwner = OAObjectInfoDelegate.getLinkToOwner(faHub.getHubData(thisHub).getObjectInfo());
+		OALinkInfo linkOwner = srvcObject.getOAObjectInfoService().getLinkToOwner(faHub.getHubData(thisHub).getObjectInfo());
 		if (linkOwner != null) {
-			OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(linkOwner);
+			OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(linkOwner);
 			if (liRev != null && liRev.getType() == OALinkInfo.MANY) {
 				// get owner object:
-				Object owner = OAObjectReflectDelegate.getProperty((OAObject) dm.getMasterObject(), linkOwner.getName());
+				Object owner = srvcObject.getOAObjectReflectService().getProperty((OAObject) dm.getMasterObject(), linkOwner.getName());
 				if (owner != null) {
-					Object root = OAObjectReflectDelegate.getProperty((OAObject) owner, liRev.getName());
+					Object root = srvcObject.getOAObjectReflectService().getProperty((OAObject) owner, liRev.getName());
 					if (!(root instanceof Hub)) {
 						throw new RuntimeException("Hub.getRootHub() method from owner object not returning a Hub.");
 					}
@@ -179,7 +183,7 @@ public class HubRootService {
 	 * @param b       {@code true} to set thisHub as root, {@code false} to remove it
 	 */
 	public void setRootHub(Hub thisHub, boolean b) {
-		OAObjectInfoDelegate.setRootHub(faHub.getHubData(thisHub).getObjectInfo(), b ? thisHub : null);
+		srvcObject.getOAObjectInfoService().setRootHub(faHub.getHubData(thisHub).getObjectInfo(), b ? thisHub : null);
 	}
 
 

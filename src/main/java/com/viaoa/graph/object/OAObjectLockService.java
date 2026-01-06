@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAObjectService;
+import com.viaoa.graph.OASyncService;
 import com.viaoa.object.OALock;
 import com.viaoa.object.OAObject;
 import com.viaoa.sync.OASync;
@@ -15,14 +16,15 @@ public class OAObjectLockService {
 
 	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
+	private final OASyncService srvcSync;
 
-	public OAObjectLockService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
-		if (srvcObject == null)
-			throw new IllegalArgumentException("OAObjectService can not be null");
+	public OAObjectLockService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OASyncService srvcSync) {
+		if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
 		this.srvcObject = srvcObject;
-		if (oaObjectFriendAccess == null)
-			throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
+		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
 		this.faObject = oaObjectFriendAccess;
+		if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
+		this.srvcSync = srvcSync;
 	}
 
 	public OAObjectService getObjectService() {

@@ -72,7 +72,7 @@ public class OAObjectSchedulerService {
     public OAScheduler getScheduler(OAObject objThis, String property, OAObject objSearch, OADate date) {
         if (objThis == null || OAString.isEmpty(property)) return null;
 
-        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(objThis);
+        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getObjectInfo(objThis);
         if (oi == null) return null;
         OALinkInfo li = oi.getLinkInfo(property);
         if (li == null) {
@@ -118,7 +118,7 @@ public class OAObjectSchedulerService {
     public void invokeCallback(OAScheduler scheduler, OAObject objThis, String property) {
         if (scheduler == null || objThis == null || OAString.isEmpty(property)) return;
 
-        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(objThis);
+        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getObjectInfo(objThis);
         if (oi == null) return;
         OALinkInfo li = oi.getLinkInfo(property);
         if (li == null) return;
