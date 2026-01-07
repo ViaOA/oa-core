@@ -96,7 +96,7 @@ public class OAObjectSerializeService {
 				OAObjectKey ok = (OAObjectKey) in.readObject();
 				srvcObject.getOAObjectGuidService().setGuid(oaObj, ok.getGuid());
 
-				final OAObjectSerializer serializer = OARuntime.get().threadService().getObjectSerializer();
+				final OAObjectSerializer serializer = OARuntime.get().threadLocalService().getObjectSerializer();
 				if (serializer != null) serializer.dupCount--;
 				return;
 			} else if (bx == 2) {
@@ -210,7 +210,7 @@ public class OAObjectSerializeService {
 			bDup = false;
 		}
 
-		final OAObjectSerializer serializer = OARuntime.get().threadService().getObjectSerializer();
+		final OAObjectSerializer serializer = OARuntime.get().threadLocalService().getObjectSerializer();
 		if (!bDup) {
 			if (serializer != null) serializer.newCount++;
 			return oaObjUse;
@@ -403,7 +403,7 @@ public class OAObjectSerializeService {
 		if (oaObj == null) {
 			return;
 		}
-		final OAObjectSerializer serializer = OARuntime.get().threadService().getObjectSerializer();
+		final OAObjectSerializer serializer = OARuntime.get().threadLocalService().getObjectSerializer();
 		if (serializer != null) {
 			faObjectSerializer.beforeSerialize(oaObj, serializer);
 		}

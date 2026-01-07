@@ -1,53 +1,46 @@
-/*
- * Copyright 1999–2025 ViaOA (info@viaoa.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package com.viaoa.remote;
+package com.viaoa.runtime;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Logger;
+
+import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubEvent;
+import com.viaoa.hub.HubEventDelegate;
+import com.viaoa.hub.HubShareDelegate;
+import com.viaoa.json.OAJson;
+import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectCacheDelegate;
+import com.viaoa.object.OAObjectSerializer;
+import com.viaoa.object.OASiblingHelper;
+import com.viaoa.object.OAThreadLocal;
+import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.object.OAThreadLocalHubMergerCallback;
+import com.viaoa.process.OAProcess;
+import com.viaoa.remote.OARemoteThread;
+import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
-import com.viaoa.runtime.OARuntime;
+import com.viaoa.transaction.OATransaction;
+import com.viaoa.undo.OAUndoManager;
+import com.viaoa.util.OAArray;
+import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAString;
+import com.viaoa.util.Tuple3;
 
-/**
- * Static helper methods used to interact with the execution context of
- * {@link OARemoteThread}. This class hides the internal details of remote
- * thread management and provides a simple, safe API for:
- *
- * <ul>
- *   <li>detecting whether the current thread is a remote-processing thread,</li>
- *   <li>determining whether it is safe to invoke additional remote methods,</li>
- *   <li>controlling whether events generated inside a remote thread should be
- *       broadcast to other clients,</li>
- *   <li>signaling that the current thread has passed its primary execution
- *       point and another remote thread may begin processing the next
- *       message,</li>
- *   <li>optionally queueing background runnables for execution by remote
- *       worker threads.</li>
- * </ul>
- *
- * <p>
- * These methods are used throughout OA's remote messaging layer to coordinate
- * correct sequencing and to avoid ripple effects when multiple clients process
- * the same message concurrently.
- * </p>
- *
- * <p>
- * Methods that enable or disable message broadcasting return the previous
- * state so callers may temporarily override the setting in a
- * try/finally pattern.
- * </p>
- */
-public class OARemoteThreadDelegate {
+
+public class OARemoteThreadService {
+	private Logger LOG = Logger.getLogger(OARemoteThreadService.class.getName());
+
+	private final OARuntime runtime;
+
+	OARemoteThreadService(OARuntime runtime) {
+		this.runtime = runtime;
+	}
 
 	/**
 	 * Determines whether the current thread is an {@link OARemoteThread}. The
@@ -56,8 +49,9 @@ public class OARemoteThreadDelegate {
 	 *
 	 * @return true if the current thread is an OARemoteThread, otherwise false
 	 */
-    public static boolean isRemoteThread() {
-    	return OARuntime.get().remoteThreads().isRemoteThread();
+    public boolean isRemoteThread() {
+        Thread t = Thread.currentThread();
+        return (t instanceof OARemoteThread);
     }
 
     /**
@@ -68,8 +62,12 @@ public class OARemoteThreadDelegate {
      *
      * @return true if it is safe to call a remote method, otherwise false
      */
-    public static boolean isSafeToCallRemoteMethod() {
-    	return OARuntime.get().remoteThreads().isSafeToCallRemoteMethod();
+    public boolean isSafeToCallRemoteMethod() {
+        Thread t = Thread.currentThread();
+        if (!(t instanceof OARemoteThread)) return true;
+        OARemoteThread rt = (OARemoteThread) t;
+        if (rt.startedNextThread) return true;
+        return false;
     }
     
     /**
@@ -80,8 +78,10 @@ public class OARemoteThreadDelegate {
      *
      * @return true if messages should be sent, otherwise false
      */
-    public static boolean shouldSendMessages() {
-    	return OARuntime.get().remoteThreads().shouldSendMessages();
+    public boolean shouldSendMessages() {
+        Thread t = Thread.currentThread();
+        if (!(t instanceof OARemoteThread)) return true;
+        return ((OARemoteThread) t).getSendMessages();
     }
 
     /**
@@ -91,8 +91,14 @@ public class OARemoteThreadDelegate {
      * started the next thread, its {@code startNextThread()} method is invoked.
      * Afterward, any thread waiting in {@code OAThreadLocalDelegate} is notified.
      */
-    public static void startNextThread() {
-    	OARuntime.get().remoteThreads().startNextThread();
+    public void startNextThread() {
+        Thread t = Thread.currentThread();
+        if (t instanceof OARemoteThread) {
+            OARemoteThread rt = (OARemoteThread) t;
+            if (rt.startedNextThread) return;
+            rt.startNextThread();
+        }
+        OAThreadLocalDelegate.notifyWaitingThread();
     }
     
     /**
@@ -102,8 +108,13 @@ public class OARemoteThreadDelegate {
      *
      * @return true if the next thread has been started, otherwise false
      */
-    public static boolean startedNextThread() {
-    	return OARuntime.get().remoteThreads().startedNextThread();
+    public boolean startedNextThread() {
+        Thread t = Thread.currentThread();
+        if (t instanceof OARemoteThread) {
+            OARemoteThread rt = (OARemoteThread) t;
+            return rt.startedNextThread();
+        }
+        return true;
     }
 
     /**
@@ -112,8 +123,13 @@ public class OARemoteThreadDelegate {
      *
      * @return the RequestInfo for the current remote thread, or null if not a remote thread
      */
-    public static RequestInfo getRequestInfo() {
-    	return OARuntime.get().remoteThreads().getRequestInfo();
+    public RequestInfo getRequestInfo() {
+        Thread t = Thread.currentThread();
+        if (t instanceof OARemoteThread) {
+            OARemoteThread rt = (OARemoteThread) t;
+            return rt.requestInfo;
+        }
+        return null;
     }
     
     /**
@@ -122,8 +138,8 @@ public class OARemoteThreadDelegate {
      *
      * @return the previous send-messages state for the current thread
      */
-    public static boolean sendMessages() {
-    	return OARuntime.get().remoteThreads().sendMessages();
+    public boolean sendMessages() {
+        return sendMessages(true);
     }
     
     /**
@@ -135,8 +151,12 @@ public class OARemoteThreadDelegate {
      * @param b true to enable message sending, false to disable it
      * @return the previous send-messages state
      */
-    public static boolean sendMessages(boolean b) {
-    	return OARuntime.get().remoteThreads().sendMessages(b);
+    public boolean sendMessages(boolean b) {
+        Thread t = Thread.currentThread();
+        if (!(t instanceof OARemoteThread)) return true;
+        boolean bx = ((OARemoteThread) t).getSendMessages();
+        ((OARemoteThread) t).setSendMessages(b);
+        return bx;
     }
 
     /**
@@ -145,8 +165,11 @@ public class OARemoteThreadDelegate {
      *
      * @return true if the remote thread is sending messages, otherwise false
      */
-    public static boolean isRemoteThreadSendingMessages() {
-    	return OARuntime.get().remoteThreads().isRemoteThreadSendingMessages();
+    public boolean isRemoteThreadSendingMessages() {
+        Thread t = Thread.currentThread();
+        if (!(t instanceof OARemoteThread)) return false;
+        boolean bx = ((OARemoteThread) t).getSendMessages();
+        return bx;
     }
     
     /**
@@ -156,8 +179,11 @@ public class OARemoteThreadDelegate {
      *
      * @return true if events should be queued, otherwise false
      */
-    public static boolean shouldEventsBeQueued() {
-    	return OARuntime.get().remoteThreads().shouldEventsBeQueued();
+    public boolean shouldEventsBeQueued() {
+        Thread t = Thread.currentThread();
+        if (!(t instanceof OARemoteThread)) return false;
+        OARemoteThread rt = (OARemoteThread) t;
+        return rt.getAllowRunnable();
     }
     
     /**
@@ -170,7 +196,14 @@ public class OARemoteThreadDelegate {
      * @param r the runnable to process
      * @return true if the runnable was queued and executed, otherwise false
      */
-    public static boolean queueEvent(Runnable r) {
-    	return OARuntime.get().remoteThreads().queueEvent(r);
+    public boolean queueEvent(Runnable r) {
+        Thread t = Thread.currentThread();
+        if (!(t instanceof OARemoteThread)) return false;
+        OARemoteThread rt = (OARemoteThread) t;
+        if (!rt.getAllowRunnable()) return false;
+
+        rt.addRunnable(r);
+        return true;
     }
+	
 }

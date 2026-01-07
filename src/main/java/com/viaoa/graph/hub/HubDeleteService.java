@@ -51,13 +51,13 @@ public class HubDeleteService {
         }
 
         try {
-            OARuntime.get().threadService().setDeleting(thisHub, true);
+            OARuntime.get().threadLocalService().setDeleting(thisHub, true);
             OARemoteThreadDelegate.sendMessages(true);
             _runDeleteAll(thisHub);
         }
         finally {
             OARemoteThreadDelegate.sendMessages(false);
-            OARuntime.get().threadService().setDeleting(thisHub, false);
+            OARuntime.get().threadLocalService().setDeleting(thisHub, false);
         }
     }
 
@@ -96,7 +96,7 @@ public class HubDeleteService {
      * @return {@code true} if the hub is currently deleting all objects
      */
     public boolean isDeletingAll(Hub thisHub) {
-        return OARuntime.get().threadService().isDeleting(thisHub);
+        return OARuntime.get().threadLocalService().isDeleting(thisHub);
     }
 
     /**
@@ -112,13 +112,13 @@ public class HubDeleteService {
         if (thisHub.size() == 0) return;
         if (cascade.wasCascaded(thisHub, true)) return;
         try {
-            OARuntime.get().threadService().setDeleting(thisHub, true);
-            OARuntime.get().threadService().lock(thisHub);
+            OARuntime.get().threadLocalService().setDeleting(thisHub, true);
+            OARuntime.get().threadLocalService().lock(thisHub);
             _deleteAll(thisHub, cascade);
         }
         finally {
-            OARuntime.get().threadService().unlock(thisHub);
-            OARuntime.get().threadService().setDeleting(thisHub, false);
+            OARuntime.get().threadLocalService().unlock(thisHub);
+            OARuntime.get().threadLocalService().setDeleting(thisHub, false);
         }
     }
 

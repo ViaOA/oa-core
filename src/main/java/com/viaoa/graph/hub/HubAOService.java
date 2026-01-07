@@ -264,10 +264,10 @@ public class HubAOService {
 			}
 		}
 
-		OARuntime.get().threadService().lock(thisHub);
+		OARuntime.get().threadLocalService().lock(thisHub);
 		Object origActiveObject = faHub.getHubDataActive(thisHub).getActiveObject();
 		faHub.getHubDataActive(thisHub).setActiveObject(object);
-		OARuntime.get().threadService().unlock(thisHub);
+		OARuntime.get().threadLocalService().unlock(thisHub);
 
 		faHub.getHubDataUnique(thisHub).setUpdatingActiveObject(true);
 

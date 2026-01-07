@@ -57,7 +57,7 @@ public class OAObjectSaveService {
 			}
 			return;
 		}
-		if (OARuntime.get().threadService().isDeleting(oaObj)) {
+		if (OARuntime.get().threadLocalService().isDeleting(oaObj)) {
 			return;
 		}
 

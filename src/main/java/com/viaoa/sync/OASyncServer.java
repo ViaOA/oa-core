@@ -316,7 +316,7 @@ public class OASyncServer {
 	 *
 	 * @return the server’s {@link RemoteSessionInterface}
 	 */
-	protected RemoteSessionInterface getRemoteSessionForServer() {
+	public RemoteSessionInterface getRemoteSessionForServer() {
 		if (remoteSessionServer == null) {
 			remoteSessionServer = getRemoteSession(getClientInfo(), null);
 			OASyncDelegate.setRemoteSession(packagex, remoteSessionServer);
@@ -331,7 +331,7 @@ public class OASyncServer {
 	 *
 	 * @return the server’s {@link RemoteClientInterface}
 	 */
-	protected RemoteClientInterface getRemoteClientForServer() {
+	public RemoteClientInterface getRemoteClientForServer() {
 		if (remoteClientForServer == null) {
 			remoteClientForServer = getRemoteClient(getClientInfo());
 			OASyncDelegate.setRemoteClient(packagex, remoteClientForServer);

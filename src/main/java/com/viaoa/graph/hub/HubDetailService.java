@@ -138,7 +138,7 @@ public class HubDetailService {
 					//  if it does, then dont allow it to adjustMaster
 				}
 
-				if (OARuntime.get().threadService().getCanAdjustHub(dm.getMasterHub())) {
+				if (OARuntime.get().threadLocalService().getCanAdjustHub(dm.getMasterHub())) {
 					srvcHub.getHubAOService().setActiveObject(dm.getMasterHub(), obj, true, bUpdateLink, false); // adjustMaster, updateLink, force
 					result = true;
 				}

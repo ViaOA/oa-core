@@ -32,10 +32,10 @@ public class HubSerializeService {
 	public void _writeObject(Hub thisHub, java.io.ObjectOutputStream stream) throws IOException {
 		if (srvcHub.getHubSelectService().isMoreData(thisHub)) {
 			try {
-				OARuntime.get().threadService().setSuppressCSMessages(true);
+				OARuntime.get().threadLocalService().setSuppressCSMessages(true);
 				srvcHub.getHubSelectService().loadAllData(thisHub); // otherwise, client will not have the correct datasource
 			} finally {
-				OARuntime.get().threadService().setSuppressCSMessages(false);
+				OARuntime.get().threadLocalService().setSuppressCSMessages(false);
 			}
 		}
 		stream.defaultWriteObject();

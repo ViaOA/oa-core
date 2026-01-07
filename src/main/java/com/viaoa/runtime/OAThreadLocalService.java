@@ -58,8 +58,8 @@ import com.viaoa.util.Tuple3;
  *
  * @see OAThreadLocal
  */
-public class OAThreadService {
-	private static Logger LOG = Logger.getLogger(OAThreadService.class.getName());
+public class OAThreadLocalService {
+	private static Logger LOG = Logger.getLogger(OAThreadLocalService.class.getName());
 
 	private final OARuntime runtime;
 
@@ -225,7 +225,7 @@ public class OAThreadService {
 	private final ThreadLocal<OAThreadLocal> threadLocal = new ThreadLocal<OAThreadLocal>();
 	
 	
-	OAThreadService(OARuntime runtime) {
+	OAThreadLocalService(OARuntime runtime) {
 		this.runtime = runtime;
 	}
 

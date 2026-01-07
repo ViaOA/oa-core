@@ -849,7 +849,7 @@ public class OAObjectCacheService {
 		final OAObject objFound = objectCache.getObject(clazz, guid);
 
 		boolean bSendAddEvent = false;
-		final int mode = OARuntime.get().threadService().getObjectCacheAddMode();
+		final int mode = OARuntime.get().threadLocalService().getObjectCacheAddMode();
 		if (objFound == null) {
 			if (mode != IGNORE_ALL) {
 				objectCache.updateObject(obj, key, clazz);

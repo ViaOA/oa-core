@@ -257,7 +257,7 @@ public class OAObjectCSService {
 
         // this is running as OAClient
         if (!OARemoteThreadDelegate.shouldSendMessages()) return true;
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return true;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return true;
         
         rs.serverDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
         
@@ -280,7 +280,7 @@ public class OAObjectCSService {
         if (!OASyncDelegate.isServer(obj.getClass())) return;
         // needs to send these to client if on RemoteThread        
         
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return; 
@@ -401,11 +401,11 @@ public class OAObjectCSService {
             // load all data without sending messages
             // even though Hub.writeObject does this, this data could be used on server application
         	try {
-        		OARuntime.get().threadService().setSuppressCSMessages(true);
+        		OARuntime.get().threadLocalService().setSuppressCSMessages(true);
         		srvcHub.getHubSelectService().loadAllData(thisHub, select);
         	}
         	finally {
-        		OARuntime.get().threadService().setSuppressCSMessages(false);        	
+        		OARuntime.get().threadLocalService().setSuppressCSMessages(false);        	
         	}
         }
         else bResult = false;
@@ -430,8 +430,8 @@ public class OAObjectCSService {
         
         if (!OARemoteThreadDelegate.shouldSendMessages()) return;
         
-        if (OARuntime.get().threadService().isLoading()) return;
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return;
+        if (OARuntime.get().threadLocalService().isLoading()) return;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
 
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
         if (oi.getLocalOnly()) return;

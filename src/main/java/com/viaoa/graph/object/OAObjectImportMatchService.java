@@ -321,18 +321,18 @@ public class OAObjectImportMatchService {
 		}
 
 		if (objNext == null) {
-			boolean b = OARuntime.get().threadService().isLoading();
+			boolean b = OARuntime.get().threadLocalService().isLoading();
 			if (b) {
-				OARuntime.get().threadService().setLoading(false);
+				OARuntime.get().threadLocalService().setLoading(false);
 			}
 
 			objNext = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(oiNext.getForClass());
 
 			if (b) {
-				OARuntime.get().threadService().setLoading(true);
+				OARuntime.get().threadLocalService().setLoading(true);
 			}
 
-			final OAJson oaj = OARuntime.get().threadService().getOAJackson();
+			final OAJson oaj = OARuntime.get().threadLocalService().getOAJackson();
 
 			createHierObjects(objNext, oiNext, propertyPathNext, value);
 		}

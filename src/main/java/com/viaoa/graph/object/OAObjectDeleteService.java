@@ -164,7 +164,7 @@ public class OAObjectDeleteService {
 			}
 		}
 		try {
-			OARuntime.get().threadService().setDeleting(oaObj, true);
+			OARuntime.get().threadLocalService().setDeleting(oaObj, true);
 
 			if (!bIsSyncClient) {
 			    deleteChildren(oaObj, cascade); // delete children first
@@ -391,7 +391,7 @@ public class OAObjectDeleteService {
 			oaObj.setChanged(false);
 			srvcObject.setNew(oaObj, true);
 		} finally {
-			OARuntime.get().threadService().setDeleting(oaObj, false);
+			OARuntime.get().threadLocalService().setDeleting(oaObj, false);
 		}
 
         if (!bIsSyncClient) srvcObject.getOAObjectCSService().sendDeleteToClients(oaObj);

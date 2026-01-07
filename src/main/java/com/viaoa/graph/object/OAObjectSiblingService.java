@@ -64,7 +64,7 @@ public class OAObjectSiblingService {
 	 * @param linkPropertyName  the accessed link-property name
 	 */
 	public void onGetObjectReference(final OAObject obj, final String linkPropertyName) {
-		ArrayList<OASiblingHelper> al = OARuntime.get().threadService().getSiblingHelpers();
+		ArrayList<OASiblingHelper> al = OARuntime.get().threadLocalService().getSiblingHelpers();
 		if (al == null) {
 			return;
 		}
@@ -102,7 +102,7 @@ public class OAObjectSiblingService {
 	public OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount,
 			ConcurrentHashMap<Long, Boolean> hmIgnore) {
 		
-		OAThreadLocal tl = OARuntime.get().threadService().getOAThreadLocal();
+		OAThreadLocal tl = OARuntime.get().threadLocalService().getOAThreadLocal();
 		
 		if (tl.cntGetSiblingCalled++ > 0) {
 			return new OAObjectKey[0];
@@ -202,7 +202,7 @@ public class OAObjectSiblingService {
 		OAPropertyPath ppGetDetailPropertyPath = null;
 
 		// 20180704
-		ArrayList<OASiblingHelper> al = OARuntime.get().threadService().getSiblingHelpers();
+		ArrayList<OASiblingHelper> al = OARuntime.get().threadLocalService().getSiblingHelpers();
 
 		// 20180807 find all pp to use, instead of just the first one.
 		ArrayList<DetailInfo> alDetailInfo = new ArrayList<>();

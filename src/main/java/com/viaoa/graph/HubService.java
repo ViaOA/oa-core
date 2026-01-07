@@ -257,7 +257,7 @@ public class HubService {
 		}
 
 		if (object instanceof OAObject) {
-			if (OARuntime.get().threadService().isLoading()) {
+			if (OARuntime.get().threadLocalService().isLoading()) {
 				return true;
 			}
 		}
@@ -747,7 +747,7 @@ public class HubService {
 			HubCurrentStateEnum hcs = _getCurrentState(hubx, null, null, hmHub);
 
 			if (hcs == HubCurrentStateEnum.InSync) {
-				if (!OARuntime.get().threadService().isHubMergerChanging() && !hubMerger.isLoadingCombinedHub()) {
+				if (!OARuntime.get().threadLocalService().isHubMergerChanging() && !hubMerger.isLoadingCombinedHub()) {
 					return hcs;
 				}
 			}

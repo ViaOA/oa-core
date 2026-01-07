@@ -242,11 +242,11 @@ public class HubDataService {
     	//qqqqqqqq method was protected
         int pos = 0;
         try {
-            OARuntime.get().threadService().lock(thisHub);
+            OARuntime.get().threadLocalService().lock(thisHub);
             pos = _remove2(thisHub, obj, bDeleting, bIsRemovingAll);
         }
         finally {
-            OARuntime.get().threadService().unlock(thisHub);
+            OARuntime.get().threadLocalService().unlock(thisHub);
         }
         if (!bIsRemovingAll) {
             OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
@@ -339,11 +339,11 @@ public class HubDataService {
     	//qqqqqqqq method was protected
         boolean b = false;
         try {
-            if (!bHasLock) OARuntime.get().threadService().lock(thisHub);
+            if (!bHasLock) OARuntime.get().threadLocalService().lock(thisHub);
             b = _add2(thisHub, obj, bCheckContains);
         }
         finally {
-            if (!bHasLock ) OARuntime.get().threadService().unlock(thisHub);
+            if (!bHasLock ) OARuntime.get().threadLocalService().unlock(thisHub);
         }
         OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
         return b;
@@ -373,7 +373,7 @@ public class HubDataService {
             }
         }
 
-        if (!OARuntime.get().threadService().isLoading()) {
+        if (!OARuntime.get().threadLocalService().isLoading()) {
         	
             if ((faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && (obj instanceof OAObject)) {
                 Vector v  = faHub.getHubData(thisHub).getVecRemove();
@@ -410,12 +410,12 @@ public class HubDataService {
     	//qqqqqqqqq method was protected
         boolean b = false;
         try {
-            if (!bIsLocked) OARuntime.get().threadService().lock(thisHub);
+            if (!bIsLocked) OARuntime.get().threadLocalService().lock(thisHub);
             //was b = _insert2(thisHub, key, obj, pos, bLock);
             b = _insert2(thisHub, obj, pos);
         }
         finally {
-            if (!bIsLocked) OARuntime.get().threadService().unlock(thisHub);
+            if (!bIsLocked) OARuntime.get().threadLocalService().unlock(thisHub);
         }
         
         OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
@@ -434,7 +434,7 @@ public class HubDataService {
      * @return {@code true} if the insert completed
      */
 	private boolean _insert2(Hub thisHub, Object obj, int pos) {
-        boolean b = OARuntime.get().threadService().isLoading();
+        boolean b = OARuntime.get().threadLocalService().isLoading();
 
         faHub.getHubData(thisHub).getVector().insertElementAt(obj, pos);
     	if (!b) {
@@ -468,7 +468,7 @@ public class HubDataService {
 	public void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
 		//qqqqqqqq method was protected
         try {
-            OARuntime.get().threadService().lock(thisHub);
+            OARuntime.get().threadLocalService().lock(thisHub);
             faHub.getHubData(thisHub).incrementChangeCount();
             
             Vector v = faHub.getHubData(thisHub).getVector();
@@ -476,7 +476,7 @@ public class HubDataService {
             v.insertElementAt(obj, posTo);
         }
         finally {
-            OARuntime.get().threadService().unlock(thisHub);
+            OARuntime.get().threadLocalService().unlock(thisHub);
         }
         OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
 	}

@@ -106,11 +106,11 @@ public class OAObjectUniqueService {
             if (oaObj != null) return oaObj;
             oaObj = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(clazz);
             try {
-            	OARuntime.get().threadService().setLoading(true);
+            	OARuntime.get().threadLocalService().setLoading(true);
                 oaObj.setProperty(propertyName, uniqueKey);
             }
             finally {
-            	OARuntime.get().threadService().setLoading(false);
+            	OARuntime.get().threadLocalService().setLoading(false);
             }
         }
         

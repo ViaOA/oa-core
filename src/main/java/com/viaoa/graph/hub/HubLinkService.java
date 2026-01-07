@@ -815,11 +815,11 @@ public class HubLinkService {
 			if (obj != null && faHub.getHubDataUnique(fromHub).getLinkFromGetMethod() == null) {
 
 				// 20200121
-				OARuntime.get().threadService().addDontAdjustHub(linkToHub);
+				OARuntime.get().threadLocalService().addDontAdjustHub(linkToHub);
 				try {
 					srvcHub.getHubDataService().getPos(fromHub, obj, true, false); // adjust master, bUpdateLink
 				} finally {
-					OARuntime.get().threadService().removeDontAdjustHub(linkToHub);
+					OARuntime.get().threadLocalService().removeDontAdjustHub(linkToHub);
 				}
 			} else {
 				if (changedPropName == null) {

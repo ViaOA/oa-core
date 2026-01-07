@@ -126,7 +126,7 @@ public class OAObjectEventService {
 			}
 		}
 
-		final boolean bIsLoading = OARuntime.get().threadService().isLoading();
+		final boolean bIsLoading = OARuntime.get().threadLocalService().isLoading();
 		if (bIsLoading) {
 			if (!srvcObject.getOAObjectHubService().isInHub(oaObj)) { // 20110719: could be in the OAObjectCache.SelectAllHubs
 				// no listeners, need to load quick as possible
@@ -284,7 +284,7 @@ public class OAObjectEventService {
 				&& linkInfo.getType() == OALinkInfo.ONE && !linkInfo.getCalculated()) {
 			OALinkInfo rev = linkInfo.getReverseLinkInfo();
 		    if (rev != null && rev.getOwner()) {		    
-    			if (!OARuntime.get().threadService().isDeleting() && OASync.isServer()) {
+    			if (!OARuntime.get().threadLocalService().isDeleting() && OASync.isServer()) {
     				OAObjectInfo oix = srvcObject.getOAObjectInfoService().getOAObjectInfo((OAObject) oldObj);
     				if (!oix.getLookup() && !oix.getPreSelect()) {
     					cntSetOwnerNull++;
@@ -536,7 +536,7 @@ public class OAObjectEventService {
 			}
 		}
 
-		final boolean bIsLoading = OARuntime.get().threadService().isLoading();
+		final boolean bIsLoading = OARuntime.get().threadLocalService().isLoading();
 
 		OAObjectKey origKey;
 		if (propInfo != null && propInfo.getId()) {
@@ -580,7 +580,7 @@ public class OAObjectEventService {
 		if (!bIsLoading) {
 			// 20110603 added support for creating undoable events if oaThreadLocal.createUndoablePropertyChanges=true
 			//      default=false, which means that the individual UI components are controlling this
-			if (OARuntime.get().threadService().getCreateUndoablePropertyChanges()) {
+			if (OARuntime.get().threadLocalService().getCreateUndoablePropertyChanges()) {
 				if (!bIsChangeProp && OAUndoManager.getUndoManager() != null) {
 					OAUndoableEdit ue = OAUndoableEdit.createUndoablePropertyChange(null, oaObj, propertyName, oldObj, newObj,
 																					bChangeHold);
@@ -635,10 +635,10 @@ public class OAObjectEventService {
 			if (!oaObj.isChanged()) {
 				if (linkInfo == null || !linkInfo.getCalculated()) { // 20120429
 					try {
-						OARuntime.get().threadService().setSuppressCSMessages(true); // the client will setChanged when it gets the propertyChange message
+						OARuntime.get().threadLocalService().setSuppressCSMessages(true); // the client will setChanged when it gets the propertyChange message
 						oaObj.setChanged(true);
 					} finally {
-						OARuntime.get().threadService().setSuppressCSMessages(false);
+						OARuntime.get().threadLocalService().setSuppressCSMessages(false);
 					}
 				}
 			}
@@ -653,10 +653,10 @@ public class OAObjectEventService {
 			if (oi.getHasTriggers()) {
 				HubEvent hubEvent = new HubEvent(oaObj, propertyName, oldObj, newObj);
 				try {
-					OARuntime.get().threadService().addHubEvent(hubEvent);
+					OARuntime.get().threadLocalService().addHubEvent(hubEvent);
 					oi.onChange(oaObj, propertyName, hubEvent);
 				} finally {
-					OARuntime.get().threadService().removeHubEvent(hubEvent);
+					OARuntime.get().threadLocalService().removeHubEvent(hubEvent);
 				}
 			}
 		}
@@ -1043,7 +1043,7 @@ public class OAObjectEventService {
 						if (newObj == null) { // parentSection = null
 							// if being set to null, then add to root hub.
 							// if it was removed from old hub, then dont add to root hub
-							boolean bAdd = !OARuntime.get().threadService().isDeleting(oaObj);
+							boolean bAdd = !OARuntime.get().threadLocalService().isDeleting(oaObj);
 
 							if (bAdd && !bOldIsKeyOnly
 									&& srvcObject.getOAObjectReflectService().isReferenceHubLoadedAndNotEmpty((OAObject) oldObj, revLinkInfo.getName())) {

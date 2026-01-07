@@ -702,7 +702,7 @@ public class OAObjectService {
 		}
 
 		try {
-			OARuntime.get().threadService().setSuppressCSMessages(true);
+			OARuntime.get().threadLocalService().setSuppressCSMessages(true);
 			// need to see if object should be put into linkOne/masterObject hub(s)
 			OAObjectInfo oi = getOAObjectInfoService().getOAObjectInfo(oaObj);
 			for (OALinkInfo li : oi.getLinkInfos()) {
@@ -737,7 +737,7 @@ public class OAObjectService {
 				}
 			}
 		} finally {
-			OARuntime.get().threadService().setSuppressCSMessages(false);
+			OARuntime.get().threadLocalService().setSuppressCSMessages(false);
 		}
 	}
 

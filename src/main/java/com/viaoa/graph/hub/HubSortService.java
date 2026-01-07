@@ -75,11 +75,11 @@ public class HubSortService {
         if (thisHub == null) return;
         boolean b = false;
         try {
-            OARuntime.get().threadService().lock(thisHub);
+            OARuntime.get().threadLocalService().lock(thisHub);
             b = _sort(thisHub, propertyPaths, bAscending, comp, bAlreadySortedAndLocalOnly);
         }
         finally {
-            OARuntime.get().threadService().unlock(thisHub);
+            OARuntime.get().threadLocalService().unlock(thisHub);
         }
         if (b) afterPerformSort(thisHub); // outside of lock
     }
@@ -190,11 +190,11 @@ public class HubSortService {
         if (thisHub == null) return;
 
         try {
-            OARuntime.get().threadService().lock(thisHub);
+            OARuntime.get().threadLocalService().lock(thisHub);
             _performSort(thisHub);
         }
         finally {
-            OARuntime.get().threadService().unlock(thisHub);
+            OARuntime.get().threadLocalService().unlock(thisHub);
         }
         afterPerformSort(thisHub); // outside of lock
 	}
@@ -219,11 +219,11 @@ public class HubSortService {
             }
         }        
         try {
-            OARuntime.get().threadService().addSiblingHelper(siblingHelper);
+            OARuntime.get().threadLocalService().addSiblingHelper(siblingHelper);
             _performSortX(thisHub);
         }
         finally {
-            OARuntime.get().threadService().removeSiblingHelper(siblingHelper);
+            OARuntime.get().threadLocalService().removeSiblingHelper(siblingHelper);
         }
     }
 	

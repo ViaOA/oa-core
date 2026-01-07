@@ -50,7 +50,7 @@ public class HubCSService {
         
         
         if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) return;
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
         if (!OARemoteThreadDelegate.shouldSendMessages()) {
             return;
         }
@@ -88,7 +88,7 @@ public class HubCSService {
 	public void removeFromHub(Hub thisHub, OAObject obj, int pos) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
         if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) return;
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
         if (!OARemoteThreadDelegate.shouldSendMessages()) {
             return;
         }
@@ -131,7 +131,7 @@ public class HubCSService {
 	public void addToHub(final Hub thisHub, final OAObject thisObj) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
         if (!OARemoteThreadDelegate.shouldSendMessages()) return;
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
         
 	    OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisObj);
 	    if (oi.getLocalOnly()) return;
@@ -165,7 +165,7 @@ public class HubCSService {
         }
 
         // 20160630
-        final boolean bIsLoading = OARuntime.get().threadService().isLoading(); 
+        final boolean bIsLoading = OARuntime.get().threadLocalService().isLoading(); 
         if (bIsLoading) {
             if (!srvcObject.getOAObjectHubService().isInHub(master)) {
                 if (OASyncDelegate.isServer(master)) {
@@ -235,7 +235,7 @@ public class HubCSService {
 	public boolean insertInHub(Hub thisHub, OAObject obj, int pos) {
         if (OASyncDelegate.isSingleUser(thisHub)) return false;
         if (!OARemoteThreadDelegate.shouldSendMessages()) return  false;
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return false;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return false;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
         if (oi.getLocalOnly()) return false;
@@ -280,7 +280,7 @@ public class HubCSService {
 	public void moveObjectInHub(Hub thisHub, int posFrom, int posTo) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
         if (!OARemoteThreadDelegate.shouldSendMessages()) return;
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
         
 	    OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
 	    if (oi.getLocalOnly()) return; 
@@ -341,7 +341,7 @@ public class HubCSService {
 	public void sort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp) {
         if (OASyncDelegate.isSingleUser(thisHub)) return;
         if (!OARemoteThreadDelegate.shouldSendMessages()) return;
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
 
         OAObject objMaster = faHub.getHubDataMaster(thisHub).getMasterObject();
         if (objMaster == null) return;
@@ -375,7 +375,7 @@ public class HubCSService {
         LOG.fine("hub="+thisHub);
         
         if (!OARemoteThreadDelegate.shouldSendMessages()) return true;
-        if (OARuntime.get().threadService().isSuppressCSMessages()) return true;
+        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return true;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
         if (oi.getLocalOnly()) return true; 

@@ -204,10 +204,10 @@ public class HubSelectService {
 						srvcHub.getHubDataService().ensureCapacity(thisHub, capacity);
 					}
 					try {
-						OARuntime.get().threadService().setLoading(true);
+						OARuntime.get().threadLocalService().setLoading(true);
 						srvcHub.getHubAddRemoveService().add(thisHub, obj);
 					} finally {
-						OARuntime.get().threadService().setLoading(false);
+						OARuntime.get().threadLocalService().setLoading(false);
 					}
 					size++;
 					cnt++;
@@ -840,12 +840,12 @@ public class HubSelectService {
 
 		boolean b = false;
 
-		OARuntime.get().threadService().setRefreshing(true);
+		OARuntime.get().threadLocalService().setRefreshing(true);
 		try {
 			srvcHub.getHubEventService().fireBeforeRefreshEvent(thisHub);
 			b = _refresh(thisHub);
 		} finally {
-			OARuntime.get().threadService().setRefreshing(false);
+			OARuntime.get().threadLocalService().setRefreshing(false);
 		}
 
 		return b;

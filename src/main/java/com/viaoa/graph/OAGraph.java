@@ -31,6 +31,7 @@ public class OAGraph {
 	    
 	    srvcObject.initialize(srvcHub, srvcSync);
 	    srvcHub.initialize(srvcObject);
+	    srvcSync.initialize();
 	}
 
 	public synchronized void init() throws ClassNotFoundException, IOException {

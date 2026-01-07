@@ -15,8 +15,6 @@
  */
 package com.viaoa.datasource;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
 
 import com.viaoa.object.OAObject;
@@ -25,6 +23,7 @@ import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAFilter;
 
@@ -60,11 +59,6 @@ import com.viaoa.util.OAFilter;
  */
 public abstract class OADataSource implements OADataSourceInterface {
 
-	/**
-	 * List of all registered OADataSource instances. Used for global lookup,
-	 * ordering, and management.
-	 */
-	private static List<OADataSource> alDataSource = new ArrayList();
 	
 	/** Optional name assigned to this DataSource. */
 	protected String name;
@@ -98,30 +92,13 @@ public abstract class OADataSource implements OADataSourceInterface {
 	private boolean bIgnoreWrites;
 
 	/**
-	 * Cached array of all registered data sources. Rebuilt when registration
-	 * changes.
-	 */
-	private static volatile OADataSource[] dsAll;
-
-	//-------- static methods -------------------------------
-
-	/**
 	 * Returns all registered DataSources. Results are cached in {@link #dsAll}
 	 * until the registration changes.
 	 *
 	 * @return array of DataSource instances
 	 */
 	public static OADataSource[] getDataSources() {
-		if (dsAll == null) {
-			synchronized (alDataSource) {
-				if (dsAll == null) {
-					int x = alDataSource.size();
-					dsAll = new OADataSource[x];
-					alDataSource.toArray(dsAll);
-				}
-			}
-		}
-		return dsAll;
+		return OARuntime.get().dataSources().getDataSources();
 	}
 
 	/**
@@ -131,7 +108,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return supporting DataSource or null
 	 */
 	public static OADataSource getDataSource(Class clazz) {
-		return getDataSource(clazz, (OAFilter) null);
+		return OARuntime.get().dataSources().getDataSource(clazz);
 	}
 
 	/**
@@ -143,31 +120,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return matching DataSource or null
 	 */
 	public static OADataSource getDataSource(Class clazz, OAFilter filter) {
-		OADataSource[] ds = getDataSources();
-		if (ds == null) {
-			return null;
-		}
-		int x = ds.length;
-		OADataSource dsFound = null;
-		for (int i = 0; ds != null && i < x; i++) {
-			if (ds[i] == null) {
-				continue;
-			}
-			if (!ds[i].bEnabled) {
-				continue;
-			}
-
-			if (dsFound == null || (dsFound.bLast && !ds[i].bLast)) {
-				if (!ds[i].isClassSupported(clazz, filter)) {
-					continue;
-				}
-				dsFound = ds[i];
-				if (!dsFound.bLast) {
-					break;
-				}
-			}
-		}
-		return dsFound;
+		return OARuntime.get().dataSources().getDataSource(clazz, filter);
 	}
 
 	/**
@@ -373,26 +326,17 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	public OADataSource(boolean bRegister) {
 		if (bRegister) {
-			synchronized (alDataSource) {
-				dsAll = null;
-				alDataSource.add(this);
-				dataSourceChangeCnter++;
-			}
+			OARuntime.get().dataSources().register(this);
 		}
 	}
 
-	/**
-	 * Incremented whenever DataSource registration changes, allowing observers to
-	 * detect configuration updates.
-	 */
-	protected static int dataSourceChangeCnter;
 
 	/**
 	 * Returns the global change counter, incremented when DataSource registration
 	 * changes.
 	 */
 	public static int getChangeCounter() {
-		return dataSourceChangeCnter;
+		return OARuntime.get().dataSources().getChangeCounter();
 	}
 
 	/**
@@ -405,14 +349,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 
 	/** Closes all registered data sources and clears the global list. */
 	public static void closeAll() {
-		synchronized (alDataSource) {
-			dataSourceChangeCnter++;
-			while (alDataSource.size() > 0) {
-				((OADataSource) alDataSource.get(0)).close();
-			}
-			alDataSource.clear();
-			dsAll = null;
-		}
+		OARuntime.get().dataSources().closeAll();
 	}
 
 	/** Closes this DataSource and removes it from the global list. */
@@ -423,11 +360,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 
 	/** Removes this DataSource from the global registry. */
 	public void removeFromList() {
-		synchronized (alDataSource) {
-			alDataSource.remove(this);
-			dataSourceChangeCnter++;
-			dsAll = null;
-		}
+		OARuntime.get().dataSources().removeFromList(this);
 	}
 
 	/**
@@ -437,15 +370,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	@Override
 	public void reopen(int pos) {
-		synchronized (alDataSource) {
-			if (!alDataSource.contains(this)) {
-				int x = alDataSource.size();
-				pos = Math.max(0, Math.min(x, pos));
-				alDataSource.add(pos, this);
-				dataSourceChangeCnter++;
-				dsAll = null;
-			}
-		}
+		OARuntime.get().dataSources().reopen(pos, this);
 	}
 
 	/**
@@ -457,32 +382,17 @@ public abstract class OADataSource implements OADataSourceInterface {
 		bLast = b;
 	}
 
+	public boolean getLast() {
+		return bLast;
+	}
+	
 	/**
 	 * Moves this DataSource to the specified position in the global list.
 	 *
 	 * @param pos target index
 	 */
 	public void setPosition(int pos) {
-		synchronized (alDataSource) {
-			if (pos < 0) {
-				pos = 0;
-			}
-			int x = alDataSource.indexOf(this);
-			if (x < 0) {
-				return;
-			}
-			if (x == pos) {
-				return;
-			}
-			dataSourceChangeCnter++;
-			alDataSource.remove(x);
-			x = alDataSource.size();
-			if (pos > x) {
-				pos = x;
-			}
-			alDataSource.add(pos, this);
-			dsAll = null;
-		}
+		OARuntime.get().dataSources().setPosition(pos, this);
 	}
 
 	/**
@@ -491,7 +401,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return position or -1 if not registered
 	 */
 	public int getPosition() {
-		return alDataSource.indexOf(this);
+		return OARuntime.get().dataSources().getPosition(this);
 	}
 
 	/** Sets the name of this DataSource. */

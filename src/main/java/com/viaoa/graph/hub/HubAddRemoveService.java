@@ -118,7 +118,7 @@ public class HubAddRemoveService {
 		if (!bIsRemovingAll && !OARemoteThreadDelegate.isRemoteThread()) {
 			if (!thisHub.getAllowRemove(OAObjectCallback.CHECK_CallbackMethod, obj)) {
 				//was: if (!canRemove(thisHub, obj)) {
-				if (!OARuntime.get().threadService().isDeleting(obj)) {
+				if (!OARuntime.get().threadLocalService().isDeleting(obj)) {
 					throw new RuntimeException("Cant remove object, "+obj.getClass().getSimpleName()+", Hub can remove returned false");
 				}
 			}
@@ -135,7 +135,7 @@ public class HubAddRemoveService {
 			if (faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo() != null && li != null) {
 				li = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 				if (li != null && li.getType() == OALinkInfo.ONE) {
-					if (!OARuntime.get().threadService().isDeleting(obj)) {
+					if (!OARuntime.get().threadLocalService().isDeleting(obj)) {
 						if (!OARemoteThreadDelegate.isRemoteThread()) {
 							throw new RuntimeException("Cant remove object from Hub that is based on a LinkInfo.ONE, hub=" + thisHub);
 						}
@@ -355,10 +355,10 @@ public class HubAddRemoveService {
 			return;
 		}
 		try {
-			OARuntime.get().threadService().lock(thisHub);
+			OARuntime.get().threadLocalService().lock(thisHub);
 			b = _clear(thisHub, bSetAOtoNull, bSendNewList);
 		} finally {
-			OARuntime.get().threadService().unlock(thisHub);
+			OARuntime.get().threadLocalService().unlock(thisHub);
 		}
 		if (b) {
 			OARemoteThreadDelegate.startNextThread(); // if this is RemoteThread, then start the next one
@@ -413,7 +413,7 @@ public class HubAddRemoveService {
 		Object[] objs = thisHub.toArray();
 		faHub.getHubData(thisHub).getVector().removeAllElements();
 		
-		boolean bIsDeleting = OARuntime.get().threadService().isDeleting(thisHub);
+		boolean bIsDeleting = OARuntime.get().threadLocalService().isDeleting(thisHub);
 		if (!bIsDeleting && (faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && thisHub.isOAObject()) {
 			Vector vecRemove = faHub.getHubData(thisHub).getVecRemove();
 			final boolean bWasEmpty = vecRemove == null ? true : vecRemove.size() == 0;
@@ -650,7 +650,7 @@ public class HubAddRemoveService {
 			}
 		}
 
-		final boolean bIsLoading = OARuntime.get().threadService().isLoading();
+		final boolean bIsLoading = OARuntime.get().threadLocalService().isLoading();
 		if (!bIsLoading && faHub.getHubData(thisHub).getSortListener() != null) {
 			// use getCurrentSize to "guess" that it will go at the end, in
 			//  cases where this is loaded in order.
@@ -669,12 +669,12 @@ public class HubAddRemoveService {
 		boolean b = false;
 		try {
 			if (!bIsLoading) {
-				OARuntime.get().threadService().lock(thisHub);
+				OARuntime.get().threadLocalService().lock(thisHub);
 			}
 			b = _add(thisHub, obj, bIsLoading, bAlreadyCalledContains);
 		} finally {
 			if (!bIsLoading) {
-				OARuntime.get().threadService().unlock(thisHub);
+				OARuntime.get().threadLocalService().unlock(thisHub);
 			}
 		}
 		if (b) {
@@ -788,7 +788,7 @@ public class HubAddRemoveService {
 	 */
 	private void _afterAdd(final Hub thisHub, final Object obj) {
 		srvcHub.getHubEventService().fireAfterAddEvent(thisHub, obj, thisHub.getCurrentSize() - 1);
-		if (!OARuntime.get().threadService().isLoading()) {
+		if (!OARuntime.get().threadLocalService().isLoading()) {
 			srvcHub.setReferenceable(thisHub, true);
 		} else { // 20120425 need to send ObjectCache event
 					// 20130518 dont send if bInFetch (too much noise)
@@ -934,7 +934,7 @@ public class HubAddRemoveService {
 			return insert(faHub.getHubDataUnique(thisHub).getSharedHub(), obj, pos);
 		}
 
-		if (!OARuntime.get().threadService().isLoading()) {
+		if (!OARuntime.get().threadLocalService().isLoading()) {
 			if (!OARemoteThreadDelegate.isRemoteThread()) {
 				String s = canAddMsg(thisHub, obj);
 				if (s != null) {
@@ -945,10 +945,10 @@ public class HubAddRemoveService {
 		}
 		int newPos = pos;
 		try {
-			OARuntime.get().threadService().lock(thisHub);
+			OARuntime.get().threadLocalService().lock(thisHub);
 			newPos = _insert(thisHub, obj, pos);
 		} finally {
-			OARuntime.get().threadService().unlock(thisHub);
+			OARuntime.get().threadLocalService().unlock(thisHub);
 		}
 		boolean bResult = newPos >= 0;
 		if (bResult) {
@@ -1149,7 +1149,7 @@ public class HubAddRemoveService {
 	 */
 	private void _afterInsert(final Hub thisHub, final Object obj, final int pos) {
 		srvcHub.getHubEventService().fireAfterInsertEvent(thisHub, obj, pos);
-		if (!OARuntime.get().threadService().isLoading()) {
+		if (!OARuntime.get().threadLocalService().isLoading()) {
 			srvcHub.setReferenceable(thisHub, true);
 		}
 	}

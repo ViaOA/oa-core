@@ -12,13 +12,17 @@ public final class OARuntime {
 	private static Logger LOG = Logger.getLogger(OARuntime.class.getName());
 
 	private static OARuntime runtime = new OARuntime();
-	private final OAThreadService threadService;
+	private final OAThreadLocalService threadLocalService;
+	private final OARemoteThreadService remoteThreadService;
+	private final OADataSourceService dataSourceService;
 	
 	private final Map<String, OAGraph> hmPackageGraph = new ConcurrentHashMap<>();
 	private final Map<String, RuntimeException> hmRuntimeException = new ConcurrentHashMap<>();
 	
 	private OARuntime() {
-		this.threadService = new OAThreadService(this);
+		this.threadLocalService = new OAThreadLocalService(this);
+		this.remoteThreadService = new OARemoteThreadService(this);
+		this.dataSourceService = new OADataSourceService(this);
 	}
 	
 	public static OARuntime get() {
@@ -59,11 +63,25 @@ public final class OARuntime {
 		return og;
 	}
 	
-	public OAThreadService threadService() {
-		return threadService;
+	public OAThreadLocalService threadLocalService() {
+		return threadLocalService;
 	}
-	public OAThreadService threads() {
-		return threadService;
+	public OAThreadLocalService threadLocals() {
+		return threadLocalService;
+	}
+
+	public OARemoteThreadService remoteThreadService() {
+		return remoteThreadService;
+	}
+	public OARemoteThreadService remoteThreads() {
+		return remoteThreadService;
+	}
+
+	public OADataSourceService dataSourceService() {
+		return dataSourceService;
+	}
+	public OADataSourceService dataSources() {
+		return dataSourceService;
 	}
 	
 	

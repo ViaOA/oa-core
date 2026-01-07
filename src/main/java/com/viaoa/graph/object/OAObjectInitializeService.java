@@ -74,7 +74,7 @@ public class OAObjectInitializeService {
 		
 		faObject.setNulls(oaObj, new byte[x]);
 
-		if (OARuntime.get().threadService().isLoading()) {
+		if (OARuntime.get().threadLocalService().isLoading()) {
 			return false; // dont initialize. Whatever is loading should call initialize below directly
 		}
 
@@ -174,7 +174,7 @@ public class OAObjectInitializeService {
 	        boolean bAddToCache,
 	        boolean bInitializeWithCS,
 	        boolean bSetChangedToFalse) {
-		final boolean bWasLoading = OARuntime.get().threads().setLoading(true);
+		final boolean bWasLoading = OARuntime.get().threadLocals().setLoading(true);
 		try {
 			if (oi == null) {
 				oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
@@ -233,11 +233,11 @@ public class OAObjectInitializeService {
 			}
 			if (!bWasLoading && bInitializeWithDS) {
 				if (srvcObject.getOAObjectDSService().getAssignIdOnCreate(oaObj)) {
-					OARuntime.get().threads().setLoading(false);
+					OARuntime.get().threadLocals().setLoading(false);
 					try {
 						srvcObject.getOAObjectDSService().assignId(oaObj);
 					} finally {
-						OARuntime.get().threadService().setLoading(true);
+						OARuntime.get().threadLocalService().setLoading(true);
 					}
 				}
 			}
@@ -246,7 +246,7 @@ public class OAObjectInitializeService {
 			}
 		} finally {
 			// note: this has to be false, not bWasLoading, since it also increments a counter in threadLocalDelegate
-			OARuntime.get().threadService().setLoading(false);
+			OARuntime.get().threadLocalService().setLoading(false);
 		}
 		if (!bWasLoading) {
 			srvcObject.getOAObjectCacheService().fireAfterLoadEvent(oaObj);
@@ -306,13 +306,13 @@ public class OAObjectInitializeService {
 			return;
 		}
 
-		OARuntime.get().threads().setLoading(true);
+		OARuntime.get().threadLocals().setLoading(true);
 		try {
 			for (String id : ids) {
 				srvcObject.getOAObjectReflectService().setProperty(oaObj, id, null, null);
 			}
 		} finally {
-			OARuntime.get().threads().setLoading(false);
+			OARuntime.get().threadLocals().setLoading(false);
 		}
 		if (srvcObject.getOAObjectDSService().getAssignIdOnCreate(oaObj)) {
 			srvcObject.getOAObjectDSService().assignId(oaObj);

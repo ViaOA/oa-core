@@ -334,7 +334,7 @@ public class OAObjectKeyService {
 			if (bVerify) {
 				if (srvcObject.getOAObjectDSService().isAssigningId(oaObj)) {
 					bVerify = false;
-				} else if (OARuntime.get().threadService().isLoading()) {
+				} else if (OARuntime.get().threadLocalService().isLoading()) {
 					bVerify = false;
 				}
 			}
@@ -435,7 +435,7 @@ public class OAObjectKeyService {
 
 		if (objInCache != oaObj) {
 			if (objInCache != null) {
-				if (OARuntime.get().threadService().getObjectCacheAddMode() == srvcObject.getOAObjectCacheService().NO_DUPS) {
+				if (OARuntime.get().threadLocalService().getObjectCacheAddMode() == srvcObject.getOAObjectCacheService().NO_DUPS) {
 					// id already used
 
 					Object[] ids = newObjectKey.getObjectIds();
@@ -453,7 +453,7 @@ public class OAObjectKeyService {
 					return ("ObjectId \"" + s + "\" already used.");// by another object - "+oaObj.getClass());
 				}
 			} else {
-				if (!OARuntime.get().threadService().isLoading()) {
+				if (!OARuntime.get().threadLocalService().isLoading()) {
 					// make sure object does not already exist in datasource
 					if (oi == null) {
 						oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
