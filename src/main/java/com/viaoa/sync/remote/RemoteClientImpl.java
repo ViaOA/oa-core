@@ -92,7 +92,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 * The value indicates whether the object has been fully sent with all references.
 	 * </p>
 	 */
-	private final Map<Long, Boolean> hmGuid;
+	private final Map<UUID, Boolean> hmGuid;
 
 	/**
 	 * Creates a new remote client instance for a given session.
@@ -104,7 +104,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 * @param sessionId the unique session identifier
 	 * @param hmGuid map used to track object GUIDs sent to the client
 	 */
-	public RemoteClientImpl(int sessionId, Map<Long, Boolean> hmGuid) {
+	public RemoteClientImpl(int sessionId, Map<UUID, Boolean> hmGuid) {
 		this.sessionId = sessionId;
 		this.hmGuid = hmGuid;
 		clientGetDetail = new ClientGetDetail(sessionId, hmGuid) {
@@ -225,7 +225,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 						@Override
 						public void setCached(OAObject obj) {
                             if (hmGuid != null) {
-                                long guid = obj.getGuid();
+                                UUID guid = obj.getGuid();
                                 hmGuid.putIfAbsent(guid, false);
                             }
 							RemoteClientImpl.this.updateObjectCache(obj);

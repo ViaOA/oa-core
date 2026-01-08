@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -871,7 +872,7 @@ public class OAObjectReflectService {
 	}
 
 	// keeps track of siblings that are "in flight"
-	private final ConcurrentHashMap<Long, Boolean> hmIgnoreSibling = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<UUID, Boolean> hmIgnoreSibling = new ConcurrentHashMap<>();
 
 	/**
 	 * Internal implementation for retrieving the Hub associated with a
@@ -3050,7 +3051,7 @@ public class OAObjectReflectService {
 	 * @return the newly created copied object
 	 */
 	public OAObject createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback) {
-		HashMap<Long, Object> hmNew = new HashMap<Long, Object>();
+		HashMap<UUID, Object> hmNew = new HashMap();
 		OAObject obj = _createCopy(oaObj, excludeProperties, copyCallback, hmNew);
 		return obj;
 	}
@@ -3069,7 +3070,7 @@ public class OAObjectReflectService {
 	 * @return the newly created copied object
 	 */
 	public OAObject _createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
-			Map<Long, Object> hmNew) {
+			Map<UUID, Object> hmNew) {
 		if (oaObj == null) {
 			return null;
 		}
@@ -3120,7 +3121,7 @@ public class OAObjectReflectService {
 	 * @param copyCallback     optional callback to customize copy behavior
 	 */
 	public void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback) {
-		HashMap<Long, Object> hmNew = new HashMap<Long, Object>();
+		HashMap<UUID, Object> hmNew = new HashMap();
 		copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 	}
 
@@ -3140,7 +3141,7 @@ public class OAObjectReflectService {
 	 * @param hmNew            map tracking objects already copied
 	 */
 	public void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
-			HashMap<Long, Object> hmNew) {
+			HashMap<UUID, Object> hmNew) {
 		try {
 			OARuntime.get().threadLocalService().setLoading(true);
 			OARuntime.get().threadLocalService().setSuppressCSMessages(true);
@@ -3168,7 +3169,7 @@ public class OAObjectReflectService {
 	 * @param hmNew            map tracking already-copied objects
 	 */
 	public void _copyInto(final OAObject oaObj, final OAObject newObject, final String[] excludeProperties,
-			final OACopyCallback copyCallback, final Map<Long, Object> hmNew) {
+			final OACopyCallback copyCallback, final Map<UUID, Object> hmNew) {
 		if (oaObj == null || newObject == null) {
 			return;
 		}
@@ -3368,12 +3369,12 @@ public class OAObjectReflectService {
 	 * @return true if a new copy should be created, false otherwise
 	 */
 	private boolean shouldMakeACopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
-			Map<Long, Object> hmNew, int cnt, Set<Long> hsVisitor) {
+			Map<UUID, Object> hmNew, int cnt, Set<UUID> hsVisitor) {
 		if (oaObj == null) {
 			return false;
 		}
 		if (hsVisitor == null) {
-			hsVisitor = new HashSet<Long>(101, .75f);
+			hsVisitor = new HashSet<UUID>(101, .75f);
 		} else if (hsVisitor.contains(srvcObject.getOAObjectGuidService().getGuid(oaObj))) {
 			return false;
 		}

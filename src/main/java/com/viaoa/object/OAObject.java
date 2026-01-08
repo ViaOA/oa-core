@@ -20,6 +20,7 @@ import java.io.ObjectStreamException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -257,7 +258,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Globally unique identifier for this OAObject instance. Used to enforce
 	 * single-instance identity across the Object Graph.
 	 */
-	protected long guid; // global identifier for this object
+	protected UUID guid; // global identifier for this object
 	
 //	protected volatile OAObjectKey objectKey; // Object identifier
 
@@ -1278,8 +1279,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (obj == null) return false;
 		if (obj == this) return true;
 		if (!(obj instanceof OAObject)) return false;
-		long otherGuid = ((OAObject) obj).getGuid();
-		return (this.guid == otherGuid);
+		if (this.guid == null) return false;
+		return this.guid.equals( ((OAObject) obj).getGuid() );
 	}
 
 	/**
@@ -1296,7 +1297,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	@Override
 	public int hashCode() {
-		return Long.hashCode(guid);
+		return this.guid.hashCode();
 	}
 
 	/**
@@ -1326,8 +1327,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (obj == null) return 1;
 		if (obj == this) return 0;
         if (obj instanceof OAObject) {
-    		long otherGuid = ((OAObject) obj).getGuid();
-    		return Long.compare(this.guid, otherGuid);
+    		UUID otherGuid = ((OAObject) obj).getGuid();
+    		return this.guid.compareTo(otherGuid);
 		}
     	return this.getClass().getName().compareTo(obj.getClass().getName());
 	}
@@ -2754,7 +2755,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *
 	 * @return the GUID value for this object
 	 */
-	public long getGuid() {
+	public UUID getGuid() {
 		return guid;
 	}
 
@@ -3924,11 +3925,11 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		private FriendAccess() {
 		}
 		
-	    public long getGuid(OAObject obj) {
+	    public UUID getGuid(OAObject obj) {
 	        return obj.guid;
 	    }
 
-	    public void setGuid(OAObject obj, long guid) {
+	    public void setGuid(OAObject obj, UUID guid) {
 	        obj.guid = guid;
 	    }
 

@@ -23,6 +23,7 @@ import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -191,21 +192,21 @@ public class OASyncClient {
      * sibling sets for detail loading, allowing {@code OASiblingHelperDelegate}
      * to avoid re-requesting the same siblings.
      */
-    private final ConcurrentHashMap<Long, Boolean> hmIgnoreSibling = new ConcurrentHashMap<Long, Boolean>();
+    private final ConcurrentHashMap<UUID, Boolean> hmIgnoreSibling = new ConcurrentHashMap();
 
     /**
      * Map of object GUIDs that should be temporarily ignored when calculating
      * sibling sets for detail loading, allowing {@code OASiblingHelperDelegate}
      * to avoid re-requesting the same siblings.
      */
-    private static final ConcurrentHashMap<Long, Long> hmNewObjectsNotYetSent = new ConcurrentHashMap<Long, Long>(31, .75f);
+    private static final ConcurrentHashMap<UUID, Long> hmNewObjectsNotYetSent = new ConcurrentHashMap<UUID, Long>(31, .75f);
 
     /**
      * Global map of object GUIDs for objects that currently do not belong to
      * any hub with a master object, indicating that they may be eligible to
      * be garbage collected on the server.
      */
-    private static final ConcurrentHashMap<Long, Long> hmObjectsWithoutHubs = new ConcurrentHashMap<Long, Long>(31, .75f);
+    private static final ConcurrentHashMap<UUID, Long> hmObjectsWithoutHubs = new ConcurrentHashMap<UUID, Long>(31, .75f);
 
     /**
      * Queue of objects whose hub-membership status has changed and that need
@@ -1006,10 +1007,10 @@ public class OASyncClient {
 	 */
     public void objectCreated(OAObject obj) {
         if (obj == null) return;
-        long guid = obj.getGuid();
-        if (guid < 0) return;
+        UUID guid = obj.getGuid();
+        if (OARuntime.get().graph(obj).objects().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
         
-        hmNewObjectsNotYetSent.put(guid, guid);
+        hmNewObjectsNotYetSent.put(guid, 0L);
         try {
             RemoteSessionInterface rs = getRemoteSession();
             rs.objectCreated(guid);
@@ -1027,8 +1028,7 @@ public class OASyncClient {
     public void objectSentToServer(OAObject obj) {
         // called by OAObjectSerializer
         if (obj == null) return;
-        long guid = obj.getGuid();
-        if (guid < 0) return;
+        UUID guid = obj.getGuid();
         hmNewObjectsNotYetSent.remove(guid);
     }
     
@@ -1041,8 +1041,7 @@ public class OASyncClient {
      */
     public boolean isObjectOnServer(OAObject obj) {
         if (obj == null) return false;
-        long guid = obj.getGuid();
-        if (guid < 0) return false;
+        UUID guid = obj.getGuid();
         return hmNewObjectsNotYetSent.get(guid) == null;
     }
 
@@ -1054,8 +1053,8 @@ public class OASyncClient {
      *
      * @param guid the GUID of the finalized object
      */
-	public void objectFinalized(long guid) {
-	    if (guid < 0) return;
+	public void objectFinalized(UUID guid) {
+	    if (guid == null) return;
 		try {
 			if (bUpdateSyncDelegate) {
 				if (queObjectsFinalized != null) {
@@ -1070,7 +1069,7 @@ public class OASyncClient {
 	 * Queue holding GUIDs of finalized objects awaiting processing by the
 	 * distributed GC background thread.
 	 */
-	private volatile LinkedBlockingQueue<Long> queObjectsFinalized;
+	private volatile LinkedBlockingQueue<UUID> queObjectsFinalized;
 
 	/**
 	 * Background thread responsible for sending batches of finalized GUIDs
@@ -1088,18 +1087,18 @@ public class OASyncClient {
 		if (queObjectsFinalized != null) {
 			return;
 		}
-		queObjectsFinalized = new LinkedBlockingQueue<Long>();
+		queObjectsFinalized = new LinkedBlockingQueue<UUID>();
 		threadDistributedGC = new Thread(new Runnable() {
 			long msLastError;
 			int cntError;
-			long[] guids = new long[150];
+			UUID[] guids = new UUID[150];
 
 			@Override
 			public void run() {
 				RemoteSessionInterface rsi = null;
 				for (int guidPos = 0;;) {
 					try {
-						long guid = queObjectsFinalized.take();
+						UUID guid = queObjectsFinalized.take();
 						guids[guidPos++ % 150] = guid;
 						if (guidPos % 150 == 0) {
 							if (rsi == null) {
@@ -1140,8 +1139,10 @@ public class OASyncClient {
 	 * @param obj the object whose hub membership status changed
 	 */
 	public void updateObjectsWithoutHubs(OAObject obj) {
-        final long guid = obj.getGuid();
-        if (guid < 0) return;
+		if (obj == null) return;
+        final UUID guid = obj.getGuid();
+        
+        if (OARuntime.get().graph(obj).objects().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
 	    
         final boolean b = OAObjectHubDelegate.isInHubWithMaster(obj);
         if (b) {
@@ -1150,7 +1151,7 @@ public class OASyncClient {
         }
         else {
             if (hmObjectsWithoutHubs.get(guid) != null) return;
-            hmObjectsWithoutHubs.put(guid, guid);
+            hmObjectsWithoutHubs.put(guid, 0L);
         }
 	    
 		try {

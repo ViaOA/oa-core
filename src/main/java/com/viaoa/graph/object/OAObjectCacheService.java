@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,10 +21,8 @@ import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAFilterDelegate;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
 import com.viaoa.graph.HubService;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubTemp;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OAFinder;
@@ -841,9 +840,9 @@ public class OAObjectCacheService {
 		}
 		
 		final Class clazz = obj.getClass();
-		final long guid = key.getGuid();
-		if (guid == 0L) {
-			throw new RuntimeException("Adding to object cache without a valid key (guid!=0), key="+key); 
+		final UUID guid = key.getGuid();
+		if (guid == null) {
+			throw new RuntimeException("Adding to object cache without a guid, key="+key); 
 		}
 		
 		final OAObject objFound = objectCache.getObject(clazz, guid);
@@ -1059,7 +1058,7 @@ public class OAObjectCacheService {
 	 * @param guid  the globally unique identifier of the object
 	 * @return the cached object matching the GUID, or {@code null} if not found
 	 */
-	public <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, long guid) {
+	public <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, UUID guid) {
 		Object obj = objectCache.getObject((Class<OAObject>) clazz, guid); 
 		return (T) obj;
 	}
@@ -1072,7 +1071,7 @@ public class OAObjectCacheService {
 	 * @param guid  the globally unique identifier of the object
 	 * @return the cached object matching the GUID, or {@code null} if not found
 	 */
-	public <T extends OAObject> T getUsingGuid(Class<T> clazz, long guid) {
+	public <T extends OAObject> T getUsingGuid(Class<T> clazz, UUID guid) {
 		Object obj = objectCache.getObject(clazz, guid); 
 		return (T) obj;
 	}

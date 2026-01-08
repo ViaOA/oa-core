@@ -18,6 +18,7 @@ package com.viaoa.object;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -364,7 +365,7 @@ public class OAObjectDelegate {
 	 * @param oaObj the object to reset; may be {@code null}.
 	 * @param guid  the GUID to assign.
 	 */
-	public static void setAsNewObject(final OAObject oaObj, long guid) {
+	public static void setAsNewObject(final OAObject oaObj, UUID guid) {
 		if (oaObj == null) return;
 		OAGraph og = OARuntime.get().graph(oaObj);
 		if (og == null) return;
@@ -407,12 +408,14 @@ public class OAObjectDelegate {
 	 *
 	 * @return the next positive GUID value.
 	 */
+	/*qqqqqqqqqqqqqqq
 	public static long getNextGuid(Package p) {
 		if (p == null) return 0l;
 		OAGraph og = OARuntime.get().graph(p);
 		if (og == null) return 0l;
 		return og.objects().getOAObjectGuidService().getNextGuid();
 	}
+	*/
 
 	
 	/**
@@ -430,12 +433,14 @@ public class OAObjectDelegate {
 	 *
 	 * @return the first GUID in the next reserved block of fifty GUIDs.
 	 */
+	/*qqqqqqqqqqqqqqq
 	public static long getNextFiftyGuids(Package pkg) {
 		if (pkg == null) return 0l;
 		OAGraph og = OARuntime.get().graph(pkg);
 		if (og == null) return 0l;
 		return og.objects().getOAObjectGuidService().getNextFiftyGuids();
 	}
+	*/
 
 	/**
 	 * Sets the global GUID counter to the specified value.
@@ -451,12 +456,14 @@ public class OAObjectDelegate {
 	 *
 	 * @param x the new value of the global GUID counter.
 	 */
+	/*qqqqqqqqqqqqqqq
 	public static void setNextGuid(Package pkg, long x) {
 		if (pkg == null) return;
 		OAGraph og = OARuntime.get().graph(pkg);
 		if (og == null) return;
 		og.objects().getOAObjectGuidService().setNextGuid(x);
 	}
+	*/
 
 	/**
 	 * Ensures that the global GUID counter is at least as large as the specified
@@ -471,12 +478,14 @@ public class OAObjectDelegate {
 	 *
 	 * @param guid the GUID value that the global counter must reach or exceed.
 	 */
+	/*qqqqqqqqqqqqqqq
 	static void updateGuid(Package pkg, long guid) {
 		if (pkg == null) return;
 		OAGraph og = OARuntime.get().graph(pkg);
 		if (og == null) return;
 		og.objects().getOAObjectGuidService().updateGuid(guid);
 	}
+	*/
 	
 	/**
 	 * This method prevents an {@link OAObject} instance from being
@@ -740,12 +749,10 @@ public class OAObjectDelegate {
 	 * @param obj the object whose GUID is requested; may be {@code null}.
 	 * @return the object's GUID, or {@code 0} if the object is {@code null}.
 	 */
-	public static long getGuid(OAObject oaObj) {
-		if (oaObj == null) {
-			return -1;
-		}
+	public static UUID getGuid(OAObject oaObj) {
+		if (oaObj == null) return null;
 		OAGraph og = OARuntime.get().graph(oaObj);
-		if (og == null) return -1;
+		if (og == null) return null;
 		return og.objects().getOAObjectGuidService().getGuid(oaObj);
 	}
 

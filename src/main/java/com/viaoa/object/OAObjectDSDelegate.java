@@ -16,6 +16,7 @@
 package com.viaoa.object;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -105,8 +106,8 @@ public class OAObjectDSDelegate {
 	 *
 	 * @return the assigning-ID tracking map
 	 */
-    public static Map<Long, Long> getAssigningIdMap() {
-        return OAObjectDSService.getAssigningIdMap();  //qqqqqqqq
+    public static Map<UUID, Long> getAssigningIdMap() {
+        return OAObjectDSService.getAssigningIdMap();  
     }
 	
     /**

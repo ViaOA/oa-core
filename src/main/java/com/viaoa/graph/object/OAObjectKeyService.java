@@ -2,6 +2,8 @@ package com.viaoa.graph.object;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
@@ -58,7 +60,7 @@ public class OAObjectKeyService {
 	 * @param guid the GUID to associate with the key
 	 * @return a new {@link OAObjectKey} instance
 	 */
-	public OAObjectKey createObjectKey(Object[] ids, long guid) {
+	public OAObjectKey createObjectKey(Object[] ids, UUID guid) {
 		return createObjectKey((OAObjectInfo) null, ids, guid);
 	}
 
@@ -72,7 +74,7 @@ public class OAObjectKeyService {
 	 * @return a newly created {@link OAObjectKey}, or {@code null} if no IDs are provided
 	 */
 	public OAObjectKey createObjectKey(final Class c, final Object ...ids) {
-		return createObjectKey(c, 0L, ids);
+		return createObjectKey(c, (UUID) null, ids);
 	}
 
 	/**
@@ -87,7 +89,7 @@ public class OAObjectKeyService {
 	 * @param ids  the ID values or an {@link OAObject} reference
 	 * @return the resulting {@link OAObjectKey}
 	 */
-	public OAObjectKey createObjectKey(final Class<? extends OAObject> c, final long guid, final Object ...ids) {
+	public OAObjectKey createObjectKey(final Class<? extends OAObject> c, final UUID guid, final Object ...ids) {
 		if (ids != null && ids.length == 1) {
 			if (ids[0] instanceof OAObject) {
 				return getObjectKey((OAObject) ids[0]);
@@ -109,7 +111,7 @@ public class OAObjectKeyService {
 	 * @param guid the GUID to associate with the key
 	 * @return a new {@link OAObjectKey} instance
 	 */
-	public OAObjectKey createObjectKey(OAObjectInfo oi, Object[] ids, long guid) {
+	public OAObjectKey createObjectKey(OAObjectInfo oi, Object[] ids, UUID guid) {
 		if (oi != null && ids != null && ids.length > 0) {
 			String[] idProperties = oi.getIdProperties();
 			if (idProperties != null && idProperties.length == ids.length) {
@@ -141,8 +143,14 @@ public class OAObjectKeyService {
 		if (id == null) return null;
 		if (id instanceof OAObjectKey) return (OAObjectKey) id;
 		if (id instanceof OAObject) return createObjectKey((OAObject) id);
-		if (id.getClass().isArray()) return createObjectKey((OAObjectInfo) null, (Object[]) id, 0L);
-		return createObjectKey((OAObjectInfo) null, new Object[] {id}, 0L);
+		if (id instanceof UUID) return createObjectKey(null, null, (UUID) id);
+		if (id.getClass().isArray()) return createObjectKey((OAObjectInfo) null, (Object[]) id, (UUID) null);
+		return createObjectKey((OAObjectInfo) null, new Object[] {id}, (UUID) null);
+	}
+
+	public OAObjectKey createObjectKey(UUID guid) {
+		if (guid == null) return null;
+		return createObjectKey(null, null, guid);
 	}
 
 	/**
@@ -156,7 +164,7 @@ public class OAObjectKeyService {
 	 */
 	public OAObjectKey createObjectKey(Object... ids) {
 		if (ids == null || ids.length == 0) return null;
-		return createObjectKey((OAObjectInfo) null, (Object[]) ids, 0L);
+		return createObjectKey((OAObjectInfo) null, (Object[]) ids, (UUID) null);
 	}
 
 	/**
@@ -172,45 +180,18 @@ public class OAObjectKeyService {
 	 * </ul>
 	 *
 	 * @param clazz the object class used for cache lookup when resolving mixed key formats
-	 * @param key   the first key to compare
-	 * @param key2  the second key to compare
+	 * @param ok1   the first key to compare
+	 * @param ok2  the second key to compare
 	 * @return {@code true} if both keys refer to the same object; otherwise {@code false}
 	 */
-	public boolean isForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey key, final OAObjectKey key2) {
-		if (key == null || key2 == null) return false;
-		
-		if (key.equals(key2)) return true;
-		
-		long g = key.getGuid();
-		long g2 = key2.getGuid();
-		Object[] ids = key.getObjectIds(); 
-		Object[] ids2 = key2.getObjectIds();
-		
-		if (g != 0L && g2 != 0L) {
-			if (g != g2) return false;
-			if (ids == null || ids2 == null) return true;
+	public boolean isForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2) {
+		if (ok1 == null || ok2 == null) return false;
+		UUID g1 = ok1.getGuid();
+		UUID g2 = ok2.getGuid();
+		if (g1 != null || g2 != null) {
+	        return Objects.equals(g1, g2);  
 		}
-
-		if (ids != null && ids2 != null) {
-			return Arrays.equals(ids, ids2);	    
-		}
-
-		// one could have guid and the other objectIds
-		if (clazz != null) {
-			if ((g != 0 && ids == null) && (g2 == 0 && ids2 != null)) {
-				OAObject obj = srvcObject.getOAObjectCacheService().get(clazz, key);
-				if (obj == null) return false;
-				OAObjectKey okx = obj.getObjectKey();
-				return Arrays.equals(okx.getObjectIds(), ids2);	    
-			}
-			else if ((g == 0 && ids != null) && (g2 != 0 && ids2 == null)) {
-				OAObject obj = srvcObject.getOAObjectCacheService().get(clazz, key2);
-				if (obj == null) return false;
-				OAObjectKey okx = obj.getObjectKey();
-				return Arrays.equals(okx.getObjectIds(), ids);	    
-			}
-		}
-		return false;
+		return Arrays.equals(ok1.getObjectIds(), ok2.getObjectIds());	    
 	}
 
 	/**
@@ -257,8 +238,8 @@ public class OAObjectKeyService {
 	 * @param oaObj the object whose GUID is requested
 	 * @return the object's GUID, or {@code 0} if the object is {@code null}
 	 */
-	public long getGuid(OAObject oaObj) {
-		if (oaObj == null) return 0;
+	public UUID getGuid(OAObject oaObj) {
+		if (oaObj == null) return null;
 		return oaObj.getGuid();
 	}
 
@@ -406,7 +387,7 @@ public class OAObjectKeyService {
 	 * @param newObjectKey  the newly generated key
 	 * @return a descriptive error message if the new key is already used; otherwise {@code null}
 	 */
-	public String verifyKeyChange(final OAObject oaObj, OAObjectKey newObjectKey) {
+	public String verifyKeyChange(final OAObject oaObj, final OAObjectKey newObjectKey) {
 		OAObjectInfo oi = null;
 		if (!oaObj.getNew() && !oaObj.getDeleted()) {
 			if (oi == null) {
@@ -416,15 +397,15 @@ public class OAObjectKeyService {
 				return ("ID property can not be changed if " + oaObj.getClass().getSimpleName() + " has been saved");
 			}
 		}
-
-		OAObject objInCache = srvcObject.getOAObjectCacheService().get(oaObj.getClass(), newObjectKey);
+		
+		OAObject objInCache = srvcObject.getOAObjectCacheService().get(oaObj.getClass(), newObjectKey.getObjectIds());
 		if ((objInCache == null || objInCache == oaObj)) {
 			if (oi == null) {
 				oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 			}
 			if (!oi.getLocalOnly() && srvcObject.getOAObjectCSService().isWorkstation(oaObj)) {
 				// check on server.  If server has same object as this, resolve() will return this object
-				objInCache = srvcObject.getOAObjectCSService().getServerObject(oaObj.getClass(), newObjectKey);
+				objInCache = srvcObject.getOAObjectCSService().getServerObjectUsingPkey(oaObj.getClass(), newObjectKey);
 			}
 		}
 

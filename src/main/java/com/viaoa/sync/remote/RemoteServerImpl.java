@@ -139,10 +139,12 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 *
 	 * @return the starting GUID for the next block of fifty GUIDs
 	 */
+	/*qqqqqqqqqqqq
 	@Override
 	public long getNextFiftyObjectGuids() {
 		return OAObjectDelegate.getNextFiftyGuids(packageThis);
 	}
+	*/
 
 	/**
 	 * Retrieves an object by key from cache or datasource.
@@ -162,6 +164,17 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		return obj;
 	}
 
+	@Override
+	public OAObject getObjectUsingPkey(Class objectClass, OAObjectKey objectKey) {
+		OAObject obj = (OAObject) OAObjectCacheDelegate.getObject(objectClass, objectKey.getObjectIds());
+		if (obj == null) {
+			if (OASyncDelegate.isServer(objectClass)) {
+				obj = (OAObject) OADataSource.getObject(objectClass, objectKey);
+			}
+		}
+		return obj;
+	}
+	
 	/**
 	 * Invokes an instance method on a server-side object using reflection.
 	 *

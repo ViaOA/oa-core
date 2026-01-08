@@ -3,6 +3,7 @@ package com.viaoa.graph.object;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -100,7 +101,7 @@ public class OAObjectSiblingService {
 	 * @return an array of sibling object keys
 	 */
 	public OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount,
-			ConcurrentHashMap<Long, Boolean> hmIgnore) {
+			ConcurrentHashMap<UUID, Boolean> hmIgnore) {
 		
 		OAThreadLocal tl = OARuntime.get().threadLocalService().getOAThreadLocal();
 		
@@ -185,7 +186,7 @@ public class OAObjectSiblingService {
 	 * @return an array of sibling object keys, or null if invalid input
 	 */
 	private OAObjectKey[] _getSiblings(final OAObject mainObject, final String property, final int maxAmount,
-			ConcurrentHashMap<Long, Boolean> hmIgnore, final long msStarted) {
+			ConcurrentHashMap<UUID, Boolean> hmIgnore, final long msStarted) {
 		if (mainObject == null || OAString.isEmpty(property) || maxAmount < 1) {
 			return null;
 		}
@@ -506,7 +507,7 @@ public class OAObjectSiblingService {
 			final OALinkInfo linkInfo,
 			final OAObject mainObject,
 			final HashMap<OAObjectKey, OAObject> hmTypeOneObjKey, // for calling thread, refobjs already looked at
-			final ConcurrentHashMap<Long, Boolean> hmIgnore, // for all threads
+			final ConcurrentHashMap<UUID, Boolean> hmIgnore, // for all threads
 			final int maxAmount,
 			final long msStarted,
 			final int runCount) {

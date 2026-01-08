@@ -1966,7 +1966,7 @@ public class OARemoteMultiplexerServer {
          * Tracks GUIDs of OAObjects serialized for this session. The Boolean
          * value indicates whether all references for that object have been sent.
          */
-        private final ConcurrentHashMap<Long, Boolean> hmGuid = new ConcurrentHashMap<Long, Boolean>(); 
+        private final ConcurrentHashMap<UUID, Boolean> hmGuid = new ConcurrentHashMap(); 
 
         /**
          * Serializer instance configured for this session to manage OAObject
@@ -1978,7 +1978,7 @@ public class OARemoteMultiplexerServer {
             oaObjectSerializer = new OAObjectSerializer(null, false, new OAObjectSerializerCallback() {
                 @Override
                 protected void beforeSerialize(OAObject obj) {
-                    long x = obj.getGuid();
+                    UUID x = obj.getGuid();
                     hmGuid.putIfAbsent(x, false);
                 }
                 @Override
@@ -1994,7 +1994,7 @@ public class OARemoteMultiplexerServer {
          *
          * @return map of GUIDs to serialization-completion flags
          */
-        public ConcurrentHashMap<Long, Boolean> getGuidHashMap() {
+        public ConcurrentHashMap<UUID, Boolean> getGuidHashMap() {
             return hmGuid;
         }
         
@@ -2664,7 +2664,7 @@ public class OARemoteMultiplexerServer {
     /**
      * Used to filter out broadcast msgs that get sent to clients.
      */
-    protected boolean shouldSendSyncMessageToClient(RequestInfo ri, ConcurrentHashMap<Long, Boolean> hmGuid) {
+    protected boolean shouldSendSyncMessageToClient(RequestInfo ri, ConcurrentHashMap<UUID, Boolean> hmGuid) {
         return true;
     }
     

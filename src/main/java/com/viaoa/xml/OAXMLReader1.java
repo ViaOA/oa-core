@@ -23,6 +23,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.UUID;
 import java.util.Vector;
 
 import javax.xml.parsers.SAXParser;
@@ -707,7 +708,7 @@ public class OAXMLReader1 extends DefaultHandler {
 				}
 				hash.remove(id);
 			}
-			final OAObjectKey key = new OAObjectKey(values, OAConv.toLong(guid));
+			final OAObjectKey key = new OAObjectKey(values, UUID.fromString(guid));
 			final String[] matchProps = getImportMatching() ? oi.getImportMatchPropertyNames() : null;
 			final String[] matchPropPaths = getImportMatching() ? oi.getImportMatchPropertyPaths() : null;
 			List<Object> al = new ArrayList<>();

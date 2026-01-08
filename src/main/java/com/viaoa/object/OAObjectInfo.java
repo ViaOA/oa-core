@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1803,7 +1804,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		// 2 = data not found
 
 		OAFinder finder = new OAFinder(ti.ppToRootClass) {
-			HashSet<Long> hs = new HashSet<Long>();
+			HashSet<UUID> hs = new HashSet();
 
 			@Override
 			protected void onFound(OAObject objRoot) {
@@ -1811,7 +1812,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 					return;
 				}
 
-				long g = OAObjectKeyDelegate.getKey(objRoot).getGuid();
+				UUID g = OAObjectKeyDelegate.getKey(objRoot).getGuid();
 				if (hs.contains(g)) {
 					return;
 				}

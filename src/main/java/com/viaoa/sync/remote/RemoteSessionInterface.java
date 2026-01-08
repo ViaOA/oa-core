@@ -15,6 +15,8 @@
  */
 package com.viaoa.sync.remote;
 
+import java.util.UUID;
+
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
@@ -56,7 +58,7 @@ public interface RemoteSessionInterface {
 	 * @param guid the GUID of the newly created object
 	 */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
-    void objectCreated(long guid);
+    void objectCreated(UUID guid);
 
     /**
      * Notifies the server session that client-side objects have been finalized.
@@ -64,7 +66,7 @@ public interface RemoteSessionInterface {
      * @param guids array of GUIDs for objects that were finalized on the client
      */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
-    void objectsFinalized(long[] guids);
+    void objectsFinalized(UUID[] guids);
 
     /**
      * Updates server-side tracking for objects that are no longer in any hub.

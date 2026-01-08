@@ -162,7 +162,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 		}
 
 		if (bNullId && !oaj.getWriteAsPojo()) {
-			gen.writeNumberField("guid", oaObj.getGuid());
+			gen.writeStringField("guid", oaObj.getGuid().toString());
 		}
 
 		// write (non-id) props

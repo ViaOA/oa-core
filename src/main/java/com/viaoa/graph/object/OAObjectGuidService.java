@@ -1,5 +1,6 @@
 package com.viaoa.graph.object;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -14,20 +15,6 @@ public class OAObjectGuidService {
 	private final OAObject.FriendAccess faObject;
 	private final OASyncService srvcSync;
 
-	private volatile long nextGuid; 
-	private volatile long maxNextGuid; 
-
-	/**
-	 * Global positive GUID generator used for locally created objects. Ensures
-	 * unique, monotonically increasing identifiers.
-	 */
-	private final AtomicLong guidCounter = new AtomicLong(); // unique identifier needed for objects past from client/server
-
-	/**
-	 * Global negative GUID generator used for local-only classes to avoid
-	 * collisions with server-issued GUIDs.
-	 */
-	private final AtomicLong localGuidCounter = new AtomicLong();
 	
 	public OAObjectGuidService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OASyncService srvcSync) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
@@ -73,38 +60,18 @@ public class OAObjectGuidService {
 	 * @throws Exception 
 	 */
 	public synchronized void assignGuid(OAObject obj) {
-		if (obj == null) {
-			return;
-		}
+		if (obj == null) return;
 		
-		long guid = faObject.getGuid(obj);
-		if (guid != 0) return;
-
-		if (srvcObject.getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) {
-			guid = localGuidCounter.decrementAndGet();
-		} else {
-			if (srvcSync.getClient() != null) {
-				if (nextGuid == maxNextGuid) {
-					try {
-						nextGuid = srvcSync.getClient().getRemoteServer().getNextFiftyObjectGuids();
-					}
-					catch (Exception e) {
-						throw new RuntimeException("Error calling assignGuid for obj=" + obj, e);
-					}
-					maxNextGuid = nextGuid + 50;
-				}
-				guid = nextGuid++;
-			}
-			else {
-				guid = getNextGuid();
-			}
-		}
+		UUID guid = faObject.getGuid(obj);
+		if (guid != null) return;
+		
+		guid = UUID.randomUUID();
 		faObject.setGuid(obj, guid);
 	}
 
 	public synchronized void assignNewGuid(OAObject obj) {
 		if (obj == null) return;
-		faObject.setGuid(obj, 0l);
+		faObject.setGuid(obj, null);
 		assignGuid(obj);
 	}
 
@@ -121,8 +88,9 @@ public class OAObjectGuidService {
 	 *
 	 * @return the next positive GUID value.
 	 */
-	public long getNextGuid() {
-		return guidCounter.incrementAndGet(); // cant be 0
+	public long getNextGuid_NOTUSED() {
+		//return guidCounter.incrementAndGet(); // cant be 0
+		return -1;
 	}
 
 	
@@ -141,8 +109,9 @@ public class OAObjectGuidService {
 	 *
 	 * @return the first GUID in the next reserved block of fifty GUIDs.
 	 */
-	public long getNextFiftyGuids() {
-		return guidCounter.getAndAdd(50) + 1;
+	public long getNextFiftyGuids_NOTUSED() {
+		//return guidCounter.getAndAdd(50) + 1;
+		return -1;
 	}
 
 	/**
@@ -157,20 +126,21 @@ public class OAObjectGuidService {
 	 * @param obj the object whose GUID is requested; may be {@code null}.
 	 * @return the object's GUID, or {@code 0} if the object is {@code null}.
 	 */
-	public long getGuid(OAObject oaObj) {
-		long guid = faObject.getGuid(oaObj);
+	public UUID getGuid(OAObject oaObj) {
+		UUID guid = faObject.getGuid(oaObj);
 		return guid;
 	}
 
-	public void setGuid(OAObject oaObj, long guid) {
+	public void setGuid(OAObject oaObj, UUID guid) {
 		faObject.setGuid(oaObj, guid);
 	}
 	
-	public void setNextGuid(long x) {
-		guidCounter.set(x);
+	public void setNextGuid_NOTUSEd(long x) {
+		// guidCounter.set(x);
 	}
 
-	public void updateGuid(long guid) {
+	public void updateGuid_NOTUSED(long guid) {
+		/*
 		for (;;) {
 			long g = guidCounter.get();
 			if (g >= guid) {
@@ -180,6 +150,7 @@ public class OAObjectGuidService {
 				break;
 			}
 		}
+		*/
 	}
 
 	

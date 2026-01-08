@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -506,9 +507,10 @@ public class OAXMLReader {
 				}
 				hm.remove(id);
 			}
-			long iguid = 0;
+			UUID iguid = null;
 			if (guid != null && guid.length() > 1) {
-				iguid = OAConv.toLong(guid.substring(1));
+				//was: iguid = OAConv.toLong(guid.substring(1));
+				iguid = UUID.fromString(guid.substring(1));
 			}
 			final OAObjectKey key = new OAObjectKey(values, iguid);
 

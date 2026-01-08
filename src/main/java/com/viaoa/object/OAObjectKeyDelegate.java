@@ -17,6 +17,8 @@ package com.viaoa.object;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
+
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
@@ -248,9 +250,9 @@ public class OAObjectKeyDelegate {
 	 * @param oaObj the object whose GUID is requested
 	 * @return the object's GUID, or {@code 0} if the object is {@code null}
 	 */
-	public static long getGuid(OAObject oaObj) {
+	public static UUID getGuid(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
-		if (g == null) return 0;
+		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().getGuid(oaObj);
 	}
 

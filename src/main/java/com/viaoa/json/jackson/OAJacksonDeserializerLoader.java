@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -414,7 +415,7 @@ public class OAJacksonDeserializerLoader {
 		if (!bUsesPojo) {
 			JsonNode jn = stackItem.node.get("guid");
 			if (jn != null) {
-				long guid = jn.asLong();
+				UUID guid = UUID.fromString(jn.asText());				
 				if (oajson != null) {
 					oajson.getGuidMap().put(guid, stackItem.obj);
 				}
@@ -1021,7 +1022,7 @@ public class OAJacksonDeserializerLoader {
 			if (stackItem.node.isTextual()) {
 				String s = stackItem.node.asText();
 				if (s != null && s.startsWith("guid.")) {
-					OAObject objx = oajson.getGuidMap().get(s.substring(5));
+					OAObject objx = oajson.getGuidMap().get(UUID.fromString(s.substring(5)));
 					stackItem.obj = objx;
 					return;
 				}

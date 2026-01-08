@@ -132,7 +132,7 @@ public class OAObjectCSDelegate {
     protected static void objectFinalized(OAObject obj) {
     	OAGraph g = getGraph(null, obj);
     	if (g == null) return;
-    	g.objects().getOAObjectCSService().objectFinalized(obj);
+    	g.objects().getOAObjectCSService().objectFinalized(obj.getGuid());
     }
 
     /**
@@ -172,11 +172,13 @@ public class OAObjectCSDelegate {
       * @param obj the object whose class determines the GUID source
       * @return the GUID supplied by the server
       */
+     /*qqqqqqq
      protected static long getGuidFromServer(OAObject obj) {
       	OAGraph g = getGraph(null, obj);
       	if (g == null) return 0L;
       	return g.objects().getOAObjectCSService().getGuidFromServer(obj);
      }
+     */
      
      /**
       * Requests a new GUID from the server for the given class.
@@ -185,11 +187,13 @@ public class OAObjectCSDelegate {
       *              {@code Object.class} if {@code null}
       * @return the GUID supplied by the server
       */
+     /*qqqqqqqqqq
      protected static long getGuidFromServer(Class clazz) {
  		OAGraph g = OARuntime.get().graph(clazz);
  		if (g == null) return 0l;
       	return g.objects().getOAObjectCSService().getGuidFromServer(clazz);
     }
+    */
 
      /**
       * Saves the specified object on the server using the provided cascade

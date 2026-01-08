@@ -151,7 +151,7 @@ public class OAObjectSerializeService {
 			}
 			srvcObject.getOAObjectPropertyService().unsafeSetPropertyIfEmpty(oaObj, key, value); // HubSerializeDelegate._readResolve could have set this first (as weakref)
 		}
-		srvcObject.getOAObjectGuidService().updateGuid(srvcObject.getOAObjectGuidService().getGuid(oaObj));
+		//was:  srvcObject.getOAObjectGuidService().updateGuid(srvcObject.getOAObjectGuidService().getGuid(oaObj));
 	}
 
 	/**
@@ -194,8 +194,8 @@ public class OAObjectSerializeService {
 		*/
 
 		boolean bDup;
-		if (srvcObject.getOAObjectGuidService().getGuid(oaObjRead) == 0) {
-			LOG.warning("received object with guid=0, obj=" + oaObjRead + ", reassigning a new guid");
+		if (srvcObject.getOAObjectGuidService().getGuid(oaObjRead) == null) {
+			LOG.warning("received object with guid=null, obj=" + oaObjRead + ", reassigning a new guid");
 			srvcObject.getOAObjectGuidService().assignGuid(oaObjRead);
 		}
 
@@ -274,7 +274,7 @@ public class OAObjectSerializeService {
 			}
 		}
 		//qqqqqqqqqqqq make sure other code looks for guid=0, and ignore default cleanup (cached, etc)
-		srvcObject.getOAObjectGuidService().setGuid(oaObjRead, 0L);
+		srvcObject.getOAObjectGuidService().setGuid(oaObjRead, null);
 		//qqqqqqqq was: OAObjectDelegate.dontFinalize(oaObjRead);
 
 		return oaObjUse;

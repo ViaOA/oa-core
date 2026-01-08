@@ -17,6 +17,7 @@ package com.viaoa.object;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
@@ -769,7 +770,7 @@ public class OAObjectCacheDelegate {
 	 * @param guid  the globally unique identifier of the object
 	 * @return the cached object matching the GUID, or {@code null} if not found
 	 */
-	public static <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, long guid) {
+	public static <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, UUID guid) {
 		Class<T> c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -785,7 +786,7 @@ public class OAObjectCacheDelegate {
 	 * @param guid  the globally unique identifier of the object
 	 * @return the cached object matching the GUID, or {@code null} if not found
 	 */
-	public static <T extends OAObject> T getUsingGuid(Class<T> clazz, long guid) {
+	public static <T extends OAObject> T getUsingGuid(Class<T> clazz, UUID guid) {
 		Class<T> c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);

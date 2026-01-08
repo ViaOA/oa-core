@@ -22,6 +22,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.HashSet;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -570,7 +571,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 	 * Tracks which objects were newly loaded during iteration so their
 	 * afterLoad() method can be invoked once they are returned.
 	 */
-	private HashSet<Long> hsObjectWasLoaded;
+	private HashSet<UUID> hsObjectWasLoaded;
 	
 	/**
 	 * Helper used to support sibling processing when objects are retrieved

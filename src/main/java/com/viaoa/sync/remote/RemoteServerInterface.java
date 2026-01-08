@@ -79,6 +79,9 @@ public interface RemoteServerInterface {
     @OARemoteMethod(returnOnQueueSocket = true)
 	OAObject getObject(Class objectClass, OAObjectKey objectKey);
 
+    @OARemoteMethod(returnOnQueueSocket = true)
+	OAObject getObjectUsingPkey(Class objectClass, OAObjectKey objectKey);
+    
     /**
      * Creates or retrieves a remote session for a client.
      *
@@ -123,6 +126,8 @@ public interface RemoteServerInterface {
 	@OARemoteMethod(dontUseQueue = true)
 	String getDisplayMessage();
 
+	
+//qqqqqqqqqqqq no longer needed qqqqqqqqqqqqqqqqqqq	
 	/**
 	 * Retrieves the next block of object GUIDs.
 	 *

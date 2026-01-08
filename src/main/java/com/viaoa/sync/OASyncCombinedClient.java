@@ -17,6 +17,7 @@ package com.viaoa.sync;
 
 import java.util.Comparator;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -384,7 +385,7 @@ public class OASyncCombinedClient {
                                     
                                     // need to change key 
                                     OAObjectCacheDelegate.removeObject(objValue);
-                                    OAObjectDelegate.setAsNewObject(objValue, clientSession.getNextGuid());
+                                    OAObjectDelegate.setAsNewObject(objValue, UUID.randomUUID());
                                     
                                     // need to add it to mapper
                                     OAObjectKey k2 = objValue.getObjectKey();

@@ -3,6 +3,7 @@ package com.viaoa.graph;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -654,7 +655,7 @@ public class OAObjectService {
 	 * Tracks OAObjects for which automatic reverse-link insertion is disabled.
 	 * Presence of a GUID in this map indicates auto-add is turned off.
 	 */
-	private static final ConcurrentHashMap<Long, Long> hmAutoAdd = new ConcurrentHashMap<Long, Long>();
+	private static final ConcurrentHashMap<UUID, Long> hmAutoAdd = new ConcurrentHashMap();
 	
 	/**
 	 * Enables or disables automatic reverse-link insertion for the specified
@@ -689,9 +690,9 @@ public class OAObjectService {
 			return;
 		}
 
-		long guid = fa.getGuid(oaObj);
+		UUID guid = fa.getGuid(oaObj);
 		if (!bEnabled) {
-			hmAutoAdd.put(guid, guid);
+			hmAutoAdd.put(guid, 0L);
 		} else {
 			hmAutoAdd.remove(guid);
 		}
@@ -793,7 +794,7 @@ public class OAObjectService {
 	//qqqqqqqqqqqq make sure other code looks for guid=0, and ignore default cleanup (cached, etc)
 	public void dontFinalize(OAObject obj) {
 		if (obj != null) {
-			getOAObjectGuidService().setGuid(obj, 0L);
+			getOAObjectGuidService().setGuid(obj, null);
 		}
 	}
 

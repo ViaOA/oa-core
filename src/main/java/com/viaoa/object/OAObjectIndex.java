@@ -15,6 +15,7 @@
  */
 package com.viaoa.object;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.viaoa.util.OAArray;
@@ -47,7 +48,7 @@ public class OAObjectIndex {
 	 * Entries are updated by OAObjectCache when identity properties change
 	 * and cleared automatically when objects are garbage collected.</p>
 	 */
-	private final ConcurrentHashMap<Class<? extends OAObject>, ConcurrentHashMap<OAObjectIndexKey, Long>> hmGuidByIndexKey = new ConcurrentHashMap<>(151, 0.75F);
+	private final ConcurrentHashMap<Class<? extends OAObject>, ConcurrentHashMap<OAObjectIndexKey, UUID>> hmGuidByIndexKey = new ConcurrentHashMap<>(151, 0.75F);
 
 	/**
 	 * Adds the object's primary/business key to the index. Retrieves
@@ -90,9 +91,9 @@ public class OAObjectIndex {
 	 * @param guid  GUID of the object.
 	 * @return true if the entry was successfully added.
 	 */
-	protected boolean addToIndex(final Class<? extends OAObject> c, OAObjectIndexKey ik, long guid) {
-		if (c == null || ik == null || guid == 0 || !ik.hasValidIds()) return false;
-		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.computeIfAbsent(c, k -> new ConcurrentHashMap<>());
+	protected boolean addToIndex(final Class<? extends OAObject> c, OAObjectIndexKey ik, UUID guid) {
+		if (c == null || ik == null || guid == null || !ik.hasValidIds()) return false;
+		ConcurrentHashMap<OAObjectIndexKey, UUID> hm = hmGuidByIndexKey.computeIfAbsent(c, k -> new ConcurrentHashMap<>());
 		hm.put(ik, guid);
 		return true;
 	}
@@ -107,8 +108,8 @@ public class OAObjectIndex {
 	 * @param ids the identifier values.
 	 * @return the resolved GUID, or 0 if not found.
 	 */
-	public long lookupGuid(Class<? extends OAObject> c, Object[] ids) {
-		if (c == null) return 0L;
+	public UUID lookupGuid(Class<? extends OAObject> c, Object[] ids) {
+		if (c == null) return null;
 		OAObjectIndexKey ik = new OAObjectIndexKey(ids);
 		return lookupGuid(c, ik);
 	}
@@ -122,9 +123,9 @@ public class OAObjectIndex {
 	 * @param ok the object key.
 	 * @return the resolved GUID, or 0 if missing.
 	 */
-	public long lookupGuid(final Class<? extends OAObject> c, final OAObjectKey ok) {
-		if (c == null) return 0L;
-		if (ok == null) return 0L;
+	public UUID lookupGuid(final Class<? extends OAObject> c, final OAObjectKey ok) {
+		if (c == null) return null;
+		if (ok == null) return null;
 		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
 		return lookupGuid(c, ik);
 	}
@@ -138,13 +139,12 @@ public class OAObjectIndex {
 	 * @param ik the index key.
 	 * @return the matching GUID, or 0 if not found.
 	 */
-	protected long lookupGuid(final Class<? extends OAObject> c, final OAObjectIndexKey ik) {
-		if (c == null || ik == null || !ik.hasValidIds()) return 0L;
-		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.get(c);
-		if (hm == null) return 0;
-		Long lx = hm.get(ik);
-		if (lx == null) return 0L;
-		return lx.longValue();
+	protected UUID lookupGuid(final Class<? extends OAObject> c, final OAObjectIndexKey ik) {
+		if (c == null || ik == null || !ik.hasValidIds()) return null;
+		ConcurrentHashMap<OAObjectIndexKey, UUID> hm = hmGuidByIndexKey.get(c);
+		if (hm == null) return null;
+		UUID guidx = hm.get(ik);
+		return guidx;
 	}
 	
 	/**
@@ -189,7 +189,7 @@ public class OAObjectIndex {
 	 */
 	protected boolean removeFromIndex(final Class<? extends OAObject> c, OAObjectIndexKey ik) {
 		if (c == null || ik == null || !ik.hasValidIds()) return false;
-		ConcurrentHashMap<OAObjectIndexKey, Long> hm = hmGuidByIndexKey.computeIfAbsent(c, k -> new ConcurrentHashMap<>());
+		ConcurrentHashMap<OAObjectIndexKey, UUID> hm = hmGuidByIndexKey.computeIfAbsent(c, k -> new ConcurrentHashMap<>());
 		if (hm == null) return false;
 		return (hm.remove(ik) != null);
 	}

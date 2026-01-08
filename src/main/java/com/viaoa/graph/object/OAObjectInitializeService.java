@@ -1,5 +1,6 @@
 package com.viaoa.graph.object;
 
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.viaoa.context.OAContext;
@@ -65,7 +66,7 @@ public class OAObjectInitializeService {
 		if (oaObj == null) {
 			return false;
 		}
-		srvcObject.getOAObjectGuidService().assignGuid(oaObj);
+		//20260108 was:  srvcObject.getOAObjectGuidService().assignGuid(oaObj);
 
 		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 
@@ -180,6 +181,11 @@ public class OAObjectInitializeService {
 				oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 			}
 
+			// 20260108
+			if (srvcObject.getOAObjectGuidService().getGuid(oaObj) == null) {
+				srvcObject.getOAObjectGuidService().assignGuid(oaObj);
+			}
+			
 			if (bInitializeNulls) {
 				byte[] bs = faObject.getNulls(oaObj);
 				for (int i = 0; i < bs.length; i++) {
@@ -270,7 +276,7 @@ public class OAObjectInitializeService {
 		if (og == null) return;
 		og.objects().getOAObjectGuidService().assignNewGuid(oaObj);
 
-		long guid = og.objects().getOAObjectGuidService().getGuid(oaObj);
+		UUID guid = og.objects().getOAObjectGuidService().getGuid(oaObj);
 		setAsNewObject(oaObj, guid);
 	}
 	
@@ -293,7 +299,7 @@ public class OAObjectInitializeService {
 	 * @param oaObj the object to reset; may be {@code null}.
 	 * @param guid  the GUID to assign.
 	 */
-	public void setAsNewObject(final OAObject oaObj, long guid) {
+	public void setAsNewObject(final OAObject oaObj, UUID guid) {
 		if (oaObj == null) {
 			return;
 		}

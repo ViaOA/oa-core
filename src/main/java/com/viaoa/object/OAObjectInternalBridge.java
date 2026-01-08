@@ -10,7 +10,6 @@ public class OAObjectInternalBridge {
 	private final OAPropertyInfo.FriendAccess faPropertyInfo = OAPropertyInfo.getFriendAccess();
 	private final OALinkInfo.FriendAccess faLinkInfo = OALinkInfo.getFriendAccess();
 	private final OACalcInfo.FriendAccess faCalcInfo = OACalcInfo.getFriendAccess();
-	private final OAObjectKey.FriendAccess faObjectKey = OAObjectKey.getFriendAccess();
 	private final OAObjectSerializer.FriendAccess faObjectSerializer = OAObjectSerializer.getFriendAccess();
 	
 	public OAObjectInternalBridge() {
@@ -34,10 +33,6 @@ public class OAObjectInternalBridge {
 
 	public OACalcInfo.FriendAccess getCalcInfoFriendAccess() {
 		return faCalcInfo;
-	}
-
-	public OAObjectKey.FriendAccess getObjectKeyFriendAccess() {
-		return faObjectKey;
 	}
 
 	public OAObjectSerializer.FriendAccess getObjectSerializerFriendAccess() {

@@ -241,7 +241,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
      * Tracks GUIDs of objects already included in search results, preventing
      * duplicates when multiple paths or templates produce the same object.
      */
-    private final HashSet<Long> hsGuid = new HashSet<>();
+    private final HashSet<UUID> hsGuid = new HashSet<>();
     
     /**
      * Optional template string used to derive the match value for comparison.

@@ -17,6 +17,8 @@ package com.viaoa.object;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Lightweight identity holder for OAObject instances. An OAObjectKey represents
@@ -56,7 +58,7 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	 * runtime identity of the underlying OAObject and takes precedence
 	 * over business ID values for equality and ordering.
 	 */
-	private final long guid; 
+	private final UUID guid; 
 
 	/**
 	 * Creates a new {@link OAObjectKey} using the provided ID values and GUID.
@@ -67,7 +69,7 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	 * @param ids  the ID values to include in the key (may contain {@link OAObject})
 	 * @param guid the GUID assigned to this key
 	 */
-    public OAObjectKey(Object[] ids, long guid) {
+    public OAObjectKey(Object[] ids, UUID guid) {
         this.guid = guid;
         this.objectIds = normalize(ids);
     }
@@ -78,7 +80,7 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
      * @param ids the ID values to include in the key
      */
     public OAObjectKey(Object[] ids) {
-        this(ids, 0);
+        this(ids, null);
     }
 
     /**
@@ -88,7 +90,7 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
      * @param id the integer ID value
      */
     public OAObjectKey(int id) {
-    	this( new Object[] {id}, 0L);
+    	this( new Object[] {id}, null);
     }
 
     /**
@@ -98,7 +100,7 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
      * @param id the long ID value
      */
     public OAObjectKey(long id) {
-    	this( new Object[] {id}, 0L);
+    	this( new Object[] {id}, null);
     }
     
     /**
@@ -108,7 +110,7 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
      * @param id the ID value to include in the key
      */
     public OAObjectKey(Object id) {
-    	this( new Object[] {id}, 0L);
+    	this( new Object[] {id}, null);
     }
     
     
@@ -140,15 +142,16 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
      * @return the ID value array, or {@code null} if none were provided
      */
 	public Object[] getObjectIds() {
-		return this.objectIds;
+	    return objectIds == null ? null : objectIds.clone();
 	}
+	
 	
 	/**
 	 * Returns the GUID assigned to this key.
 	 *
 	 * @return the GUID value
 	 */
-	public long getGuid() {
+	public UUID getGuid() {
 		return guid;
 	}
 	
@@ -184,8 +187,10 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	    if (!(obj instanceof OAObjectKey)) return false;
 	    OAObjectKey other = (OAObjectKey) obj;
 	    
-	    if (this.guid != other.guid) return false; 
-	    
+	    if (this.guid != null || other.guid != null) {
+	    	return Objects.equals(this.guid, other.guid);
+	    }
+
 	    if (this.objectIds == other.objectIds) return true;
 	    if (this.objectIds == null || other.objectIds == null) return false;
 	    
@@ -199,10 +204,8 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	 */
 	@Override
 	public int hashCode() {
-	    int hash = Long.hashCode(guid);
-//qqqqqqqqqqq only cache on guid	    
-//	    hash = 31 * hash + Arrays.hashCode(objectIds);
-	    return hash;
+		if (guid != null) return guid.hashCode();
+		return Arrays.hashCode(objectIds);
 	}
 	
 	/**
@@ -228,16 +231,20 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	    if (!(obj instanceof OAObjectKey)) return 1;
 
 	    OAObjectKey other = (OAObjectKey) obj;
-	    
-	    if (this.guid != 0 && other.guid != 0) {
-	    	return Long.compare(this.guid, other.guid);
+	    if (this.guid != null || other.guid != null) {
+	    	if (this.guid == null) return -1;
+	    	if (other.guid == null) return 1;
+	    	return this.guid.compareTo(other.guid);
 	    }
 	    
         if (this.objectIds == null && other.objectIds == null) {
-	    	return Long.compare(this.guid, other.guid);
+	    	return 0;
         }
-        if (this.objectIds == null || other.objectIds == null) {
-	    	return Long.compare(this.guid, other.guid);
+        if (this.objectIds == null) {
+        	return -1;
+        }
+        if (other.objectIds == null) {
+        	return 1;
         }
 
     	final int x = Math.min(this.objectIds.length, other.objectIds.length);
@@ -262,7 +269,7 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
     	}
     	if (this.objectIds.length > x) return 1;
     	if (other.objectIds.length > x) return -1;
-    	return Long.compare(this.guid, other.guid);
+    	return 0;
 	}	
 	
 	/**
@@ -273,16 +280,6 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	@Override
 	public String toString() {
 		return "guid=" + guid + ", ids=" + Arrays.toString(objectIds);		
-	}
-
-	/**
-	 * Friend level access to package protected properties.
-	 */
-	public static final class FriendAccess {
-	}
-	private final static FriendAccess friendAccess = new FriendAccess(); 
-	static FriendAccess getFriendAccess() {
-		return friendAccess;
 	}
 
 }

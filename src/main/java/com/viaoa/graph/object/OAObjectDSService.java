@@ -1,6 +1,7 @@
 package com.viaoa.graph.object;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -54,7 +55,7 @@ public class OAObjectDSService {
 		}
 	}
     
-    private static final ConcurrentHashMap<Long, Long> hmAssigningId = new ConcurrentHashMap<Long, Long>(17, 0.75F);
+    private static final ConcurrentHashMap<UUID, Long> hmAssigningId = new ConcurrentHashMap<UUID, Long>(17, 0.75F);
 	
 	/**
 	 * Returns the internal map tracking GUIDs of objects currently
@@ -62,7 +63,7 @@ public class OAObjectDSService {
 	 *
 	 * @return the assigning-ID tracking map
 	 */
-    public static Map<Long, Long> getAssigningIdMap() {
+    public static Map<UUID, Long> getAssigningIdMap() {
         return hmAssigningId;
     }
 
@@ -79,9 +80,9 @@ public class OAObjectDSService {
 		if (obj == null) {
 			return;
 		}
-		long g = srvcObject.getOAObjectGuidService().getGuid(obj);
+		UUID g = srvcObject.getOAObjectGuidService().getGuid(obj);
 		if (b) {
-			srvcObject.getOAObjectDSService().getAssigningIdMap().put(g, g);
+			srvcObject.getOAObjectDSService().getAssigningIdMap().put(g, 0l);
 		} else {
 			srvcObject.getOAObjectDSService().getAssigningIdMap().remove(g);
 		}
@@ -97,7 +98,7 @@ public class OAObjectDSService {
 	 */
 	public boolean isAssigningId(OAObject obj) {
 		if (obj == null) return false;
-		long g = srvcObject.getOAObjectGuidService().getGuid(obj);
+		UUID g = srvcObject.getOAObjectGuidService().getGuid(obj);
 		return srvcObject.getOAObjectDSService().getAssigningIdMap().containsKey(g);
 	}
     

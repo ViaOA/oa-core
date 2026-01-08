@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1169,7 +1170,7 @@ public class OAObjectReflectDelegate {
 	 * @return the newly created copied object
 	 */
 	public static OAObject _createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
-			Map<Long, Object> hmNew) {
+			Map<UUID, Object> hmNew) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService()._createCopy(oaObj, excludeProperties, copyCallback, hmNew);
@@ -1210,7 +1211,7 @@ public class OAObjectReflectDelegate {
 	 * @param hmNew            map tracking objects already copied
 	 */
 	public static void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
-			HashMap<Long, Object> hmNew) {
+			HashMap<UUID, Object> hmNew) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
@@ -1232,7 +1233,7 @@ public class OAObjectReflectDelegate {
 	 * @param hmNew            map tracking already-copied objects
 	 */
 	public static void _copyInto(final OAObject oaObj, final OAObject newObject, final String[] excludeProperties,
-			final OACopyCallback copyCallback, final Map<Long, Object> hmNew) {
+			final OACopyCallback copyCallback, final Map<UUID, Object> hmNew) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService()._copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);

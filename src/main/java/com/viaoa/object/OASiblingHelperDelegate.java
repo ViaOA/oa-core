@@ -17,6 +17,7 @@ package com.viaoa.object;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.viaoa.graph.OAGraph;
@@ -102,7 +103,7 @@ public class OASiblingHelperDelegate {
 	 * @return an array of sibling object keys
 	 */
 	public static OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount,
-			ConcurrentHashMap<Long, Boolean> hmIgnore) {
+			ConcurrentHashMap<UUID, Boolean> hmIgnore) {
 		OAGraph g = getGraph(null, mainObject);
 		if (g == null) return null;
 		return g.objects().getOAObjectSiblingService().getSiblings(mainObject, property, maxAmount, hmIgnore);
@@ -133,7 +134,7 @@ public class OASiblingHelperDelegate {
 			final OALinkInfo linkInfo,
 			final OAObject mainObject,
 			final HashMap<OAObjectKey, OAObject> hmTypeOneObjKey, // for calling thread, refobjs already looked at
-			final ConcurrentHashMap<Long, Boolean> hmIgnore, // for all threads
+			final ConcurrentHashMap<UUID, Boolean> hmIgnore, // for all threads
 			final int maxAmount,
 			final long msStarted,
 			final int runCount) {

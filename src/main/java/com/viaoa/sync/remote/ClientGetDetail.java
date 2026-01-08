@@ -90,7 +90,7 @@ public class ClientGetDetail {
 	 * references.
 	 * </p>
 	 */
-	private final Map<Long, Boolean> hmGuid;
+	private final Map<UUID, Boolean> hmGuid;
 
 	
 	/**
@@ -99,7 +99,7 @@ public class ClientGetDetail {
 	 * @param clientId the client identifier
 	 * @param hmGuid map used to track object GUIDs sent to the client
 	 */
-	public ClientGetDetail(int clientId, Map<Long, Boolean> hmGuid) {
+	public ClientGetDetail(int clientId, Map<UUID, Boolean> hmGuid) {
 		this.clientId = clientId;
 		this.hmGuid = hmGuid;
 	}
@@ -118,7 +118,7 @@ public class ClientGetDetail {
 	 *
 	 * @param guid the object GUID to add
 	 */
-	public void addGuid(long guid) {
+	public void addGuid(UUID guid) {
 	    hmGuid.put(guid, false);
 	}
 
@@ -428,11 +428,11 @@ public class ClientGetDetail {
 		OAObjectSerializerCallback callback = new OAObjectSerializerCallback() {
 			boolean bMasterSent;
 			// keep track of which objects are being sent to client in this serialization
-			HashSet<Long> hsSendingGuid = new HashSet<Long>();
+			HashSet<UUID> hsSendingGuid = new HashSet();
 
 			@Override
 			protected void afterSerialize(OAObject obj) {
-				long guid = OAObjectKeyDelegate.getKey(obj).getGuid();
+				UUID guid = OAObjectKeyDelegate.getKey(obj).getGuid();
 				boolean bx = hsSendingGuid.remove(guid);
 				// update tree of sent objects
                 hmGuid.put(guid, bx);
@@ -691,7 +691,7 @@ public class ClientGetDetail {
 					return false; // extra data does not send it's references
 				}
 
-				long guid = key.getGuid();
+				UUID guid = key.getGuid();
 				
 				Object objx = hmGuid.get(guid);
 				boolean b = objx != null && ((Boolean) objx).booleanValue();
@@ -720,7 +720,7 @@ public class ClientGetDetail {
 			return false;
 		}
 		
-		long guid = ((OAObject) obj).getObjectKey().getGuid();
+		UUID guid = ((OAObject) obj).getObjectKey().getGuid();
 		return hmGuid.containsKey(guid);
 	}
 
@@ -735,7 +735,7 @@ public class ClientGetDetail {
 			return false;
 		}
 		
-        long guid = ((OAObject) obj).getObjectKey().getGuid();
+        UUID guid = ((OAObject) obj).getObjectKey().getGuid();
 		Boolean bx = hmGuid.get(guid);
 		if (bx == null) return false;
 		return bx.booleanValue();

@@ -18,6 +18,7 @@ package com.viaoa.object;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
@@ -48,7 +49,7 @@ public class OACascade {
 	 * Tracks GUIDs of OAObjects that have already been visited during a cascade
 	 * operation, preventing redundant processing and infinite recursion.
 	 */
-	private TreeSet<Long> treeObject;
+	private TreeSet<UUID> treeObject;
 
 	/**
 	 * Tracks Hub instances encountered during cascading, ensuring each Hub is
@@ -227,7 +228,7 @@ public class OACascade {
 			if (rwLock != null) {
 				rwLock.writeLock().lock();
 			}
-			treeObject = new TreeSet<Long>();
+			treeObject = new TreeSet<UUID>();
 			if (rwLock != null) {
 				rwLock.writeLock().unlock();
 			}

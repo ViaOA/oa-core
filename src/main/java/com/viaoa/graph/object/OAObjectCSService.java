@@ -1,5 +1,6 @@
 package com.viaoa.graph.object;
 
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OASelect;
@@ -118,24 +119,14 @@ public class OAObjectCSService {
 			sc.objectCreated(obj);
 	}
 
-	/**
-	 * Notifies the synchronization client that an object has been finalized or
-	 * removed on a client JVM.
-	 *
-	 * <p>
-	 * Called by {@code OAObject.finalize()}.
-	 * </p>
-	 *
-	 * @param obj the object being finalized; ignored if {@code null}
-	 */
-	public void objectFinalized(OAObject obj) {
-		if (obj == null)
-			return;
-		OASyncClient sc = OASyncDelegate.getSyncClient(obj.getClass());
-		if (sc != null)
-			sc.objectFinalized(obj.getGuid());
+
+	public void objectFinalized(UUID guid) {
+		if (guid == null) return;
+		OASyncClient sc = srvcSync.getSyncClient();
+		if (sc != null) srvcSync.getSyncClient().objectFinalized(guid);
 	}
 
+	
 	/**
 	 * Requests that the synchronization client update any objects whose state is
 	 * not managed through hubs, based on the supplied object.
@@ -144,12 +135,8 @@ public class OAObjectCSService {
 	 *            its GUID is invalid
 	 */
 	public void updateObjectsWithoutHubs(OAObject obj) {
-		if (obj == null)
-			return;
-		long guid = obj.getGuid();
-		if (guid < 0)
-			return;
-
+		if (obj == null) return;
+        if (OARuntime.get().graph(obj).objects().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
 		OASyncClient sc = OASyncDelegate.getSyncClient(obj.getClass());
 		if (sc != null)
 			sc.updateObjectsWithoutHubs(obj);
@@ -183,6 +170,7 @@ public class OAObjectCSService {
 	 * @param obj the object whose class determines the GUID source
 	 * @return the GUID supplied by the server
 	 */
+	/*qqqqqqqqq
 	public long getGuidFromServer(OAObject obj) {
 		Class c;
 		if (obj == null)
@@ -191,6 +179,7 @@ public class OAObjectCSService {
 			c = obj.getClass();
 		return getGuidFromServer(c);
 	}
+	*/
 
 	/**
 	 * Requests a new GUID from the server for the given class.
@@ -199,12 +188,14 @@ public class OAObjectCSService {
 	 *              {@code Object.class} if {@code null}
 	 * @return the GUID supplied by the server
 	 */
+	/*qqqqqqqqqq
 	public long getGuidFromServer(Class clazz) {
 		if (clazz == null)
 			clazz = Object.class;
 		long guid = OASyncDelegate.getGuidFromServer(clazz);
 		return guid;
 	}
+	*/
 
 	/**
 	 * Saves the specified object on the server using the provided cascade rule, if
@@ -306,6 +297,17 @@ public class OAObjectCSService {
         return result;
 	}    
 
+	public OAObject getServerObjectUsingPkey(Class clazz, OAObjectKey key) {
+	    if (clazz == null || key == null) return null;
+        RemoteServerInterface rs = OASyncDelegate.getRemoteServer(clazz);
+        OAObject result;
+        if (rs != null) {
+            result = rs.getObjectUsingPkey(clazz, key);
+        }       
+        else result = null;
+        return result;
+	}    
+	
 	/**
 	 * Retrieves a blob value for a reference link property from the server
 	 * using the synchronization client.

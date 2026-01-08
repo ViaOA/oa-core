@@ -16,6 +16,7 @@
 package com.viaoa.sync.remote;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -87,7 +88,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
      * The value indicates whether the object has been fully sent with all references.
      * </p>
      */
-    protected final Map<Long, Boolean> hmGuid;
+    protected final Map<UUID, Boolean> hmGuid;
     
     
     /**
@@ -99,7 +100,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 * Map of objects that are referenced by the client but are not currently
 	 * reachable through any hub, preventing server-side garbage collection.
 	 */
-	protected final ConcurrentHashMap<Long, OAObject> hmObjectsWithoutHubs = new ConcurrentHashMap<>();
+	protected final ConcurrentHashMap<UUID, OAObject> hmObjectsWithoutHubs = new ConcurrentHashMap<>();
 
 	/**
 	 * Creates a new remote session for a client.
@@ -107,7 +108,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 * @param sessionId the unique session identifier
 	 * @param hmGuid map used to track object GUIDs present on the client
 	 */
-	public RemoteSessionImpl(int sessionId, Map<Long, Boolean> hmGuid) {
+	public RemoteSessionImpl(int sessionId, Map<UUID, Boolean> hmGuid) {
 		this.sessionId = sessionId;
 		this.hmGuid = hmGuid;
 	}
@@ -119,7 +120,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 * @param guid the GUID of the newly created object
 	 */
     @Override
-    public void objectCreated(long guid) {
+    public void objectCreated(UUID guid) {
         hmGuid.putIfAbsent(guid, false);
     }
     
@@ -130,9 +131,9 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
      * @param guids array of object GUIDs that have been finalized on the client
      */
     @Override
-    public void objectsFinalized(long[] guids) {
+    public void objectsFinalized(UUID[] guids) {
         if (guids == null) return;
-        for (long guid : guids) {
+        for (UUID guid : guids) {
             hmGuid.remove(guid);
             hmObjectsWithoutHubs.remove(guid);
         }
@@ -159,7 +160,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	    else {
     	    OAObject obj = (OAObject) OAObjectCacheDelegate.get(c, ok);
     	    if (obj != null) {
-                long guid = ok.getGuid();
+                UUID guid = ok.getGuid();
                 hmObjectsWithoutHubs.put(guid, obj);
     	    }
 	    }
@@ -177,7 +178,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
      */
 	public void saveCache(OACascade cascade, int iCascadeRule) {
 		LOG.fine("sessionId=" + sessionId + ", cache size=" + hmObjectsWithoutHubs.size());
-		for (Map.Entry<Long, OAObject> entry : hmObjectsWithoutHubs.entrySet()) {
+		for (Map.Entry<UUID, OAObject> entry : hmObjectsWithoutHubs.entrySet()) {
 			OAObject obj = entry.getValue();
 			if (!obj.wasDeleted()) {
 				OAObjectSaveDelegate.save(obj, iCascadeRule, cascade);

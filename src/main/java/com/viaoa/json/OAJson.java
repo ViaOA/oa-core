@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.*;
@@ -255,7 +256,7 @@ public class OAJson {
 	 * OAObject instances, allowing refId entries in JSON to be reattached to the
 	 * correct objects.
 	 */
-	private Map<Long, OAObject> hmGuidObject;
+	private Map<UUID, OAObject> hmGuidObject;
 
 	/**
 	 * Cascade state used when writing OAObjects so that reference reuse, duplicate
@@ -812,7 +813,7 @@ public class OAJson {
 		cascade = null;
 
 		hmGuidObject = null;
-		Map<Long, OAObject> hmGuidMap = getGuidMap();
+		Map<UUID, OAObject> hmGuidMap = getGuidMap();
 
 		T obj;
 		try {
@@ -864,7 +865,7 @@ public class OAJson {
 		ObjectMapper om = getObjectMapper();
 
 		hmGuidObject = null;
-		Map<Long, OAObject> hmGuidMap = getGuidMap();
+		Map<UUID, OAObject> hmGuidMap = getGuidMap();
 
 		T obj;
 		try {
@@ -1108,9 +1109,9 @@ public class OAJson {
 	 *
 	 * @return GUID-to-object map
 	 */
-	public Map<Long, OAObject> getGuidMap() {
+	public Map<UUID, OAObject> getGuidMap() {
 		if (hmGuidObject == null) {
-			hmGuidObject = new HashMap();
+			hmGuidObject = new HashMap<>();
 		}
 		return hmGuidObject;
 	}
@@ -1207,7 +1208,7 @@ public class OAJson {
 		this.readObjectClass = hub.getObjectClass();
 
 		hmGuidObject = null;
-		Map<Long, OAObject> hmGuidMap = getGuidMap();
+		Map<UUID, OAObject> hmGuidMap = getGuidMap();
 
 		try {
 			OAThreadLocalDelegate.setOAJackson(this);

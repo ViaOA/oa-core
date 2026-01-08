@@ -15,6 +15,7 @@
  */
 package com.viaoa.sync;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -701,6 +702,7 @@ public class OASyncDelegate {
 	 * @param c the class whose package determines the sync context
 	 * @return the next GUID value
 	 */
+	/*qqqqqqqqq
 	public static long getGuidFromServer(Class c) {
 		if (c == null) {
 			return getGuidFromServer((Package) null);
@@ -708,12 +710,13 @@ public class OASyncDelegate {
 		return getGuidFromServer(getPackage(c));
 	}
 
-	public static long getGuidFromServer(Package p) {
+	public static UUID getGuidFromServer(Package p) {
 		if (p == null) p = ObjectPackage;
 		OAGraph g = OARuntime.get().graph(p);
 		if (g == null) return 0;
 		return g.sync().getGuidFromServer();
 	}
+	*/
 
 	/*
 	 * If the currentThread is an OARemoteThead, then this is used to have sync changes (OAObject/Hub) sent to other computers. By default,

@@ -19,8 +19,12 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+
+import com.viaoa.graph.OAGraph;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Weak reference object cache used to maintain a single instance of each
@@ -56,7 +60,7 @@ import java.util.logging.Logger;
 	 */
 	private final ConcurrentHashMap<
 	    Class<? extends OAObject>,
-	    ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>>> 
+	    ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>>> 
 	    hmOAObjectByGuid = new ConcurrentHashMap<>(151, 0.75F);	
 	
 	/**
@@ -102,7 +106,7 @@ import java.util.logging.Logger;
 	 * @return the number of cached objects for the class, or {@code 0} if none exist
 	 */
 	public int getTotal(Class<? extends OAObject> clazz) {
-		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return 0;
 		return hm.size();
 	}
@@ -114,7 +118,7 @@ import java.util.logging.Logger;
 	 * @param clazz the OAObject class whose cache entry should be cleared
 	 */
 	public void clearCache(Class<? extends OAObject> clazz) {
-		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return;
 		hm.clear();
 	}
@@ -139,8 +143,8 @@ import java.util.logging.Logger;
 	 * @return the cached object instance, or {@code null} if not found or reclaimed
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends OAObject> T getObject(Class<T> c, long guid) {
-		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(c);
+	public <T extends OAObject> T getObject(Class<T> c, UUID guid) {
+		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(c);
 		if (hm == null) return null;
 		OAWeakRef<? extends OAObject> wr = hm.get(guid);
 		if ((++cntGetObject % 100) == 0) checkReferenceQueue();
@@ -175,11 +179,11 @@ import java.util.logging.Logger;
 	 */
 	public <T extends OAObject> T getObject(Class<T> clazz, OAObjectKey ok) {
 		if (clazz == null || ok == null) return null;
-		long guid = ok.getGuid();
-		if (guid == 0) {
+		UUID guid = ok.getGuid();
+		if (guid == null) {
 			guid = objectIndex.lookupGuid(clazz, ok);
+			if (guid == null) return null;
 		}
-		if (guid == 0) return null;
 		return getObject(clazz, guid);
 	}
 	
@@ -214,7 +218,7 @@ import java.util.logging.Logger;
 	 */
 	public <T extends OAObject> boolean updateObject(final T obj, final OAObjectKey ok, final Class<T> clazz) {
 		if (obj == null || ok == null) return false;
-		final ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
+		final ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
 		
 		boolean[] bsWasFound = new boolean[] {true};
 
@@ -250,7 +254,7 @@ import java.util.logging.Logger;
 		final OAObjectKey ok = OAObjectKeyDelegate.createObjectKey((OAObject) obj);
 		final Class<T> clazz = (Class<T>) obj.getClass();
 		
-		final ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+		final ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return false;
 		
 		OAWeakRef<? extends OAObject> wrOld = hm.remove(ok.getGuid());
@@ -272,9 +276,14 @@ import java.util.logging.Logger;
 			OAWeakRef<? extends OAObject> wr = (OAWeakRef<? extends OAObject>) refQueue.poll();
 			if (wr == null) break;
 			++cntGCd;
-			ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(wr.clazz);
+			ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(wr.clazz);
 			if (hm != null) hm.remove(wr.key.getGuid());
 			objectIndex.removeFromIndex(wr.clazz, wr.key);
+			
+			OAGraph og = OARuntime.get().graph(wr.clazz);
+	        if (og != null && !og.objects().getOAObjectInfoService().getOAObjectInfo(wr.clazz).getLocalOnly()) {
+	        	og.objects().getOAObjectCSService().objectFinalized(wr.key.getGuid());
+	        }
 		}
 	}
 	
@@ -300,7 +309,7 @@ import java.util.logging.Logger;
 	 * @param callback the callback invoked for each object
 	 */
 	public void visit(Class<? extends OAObject> clazz, OACallback callback) {
-		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return;
 		for (OAWeakRef<? extends OAObject> wr : hm.values()) {
 			OAObject obj = wr.get();
@@ -331,7 +340,7 @@ import java.util.logging.Logger;
 	public Object find(final Object fromObject, final Class<? extends OAObject> clazz, final OAFinder finder,
 		boolean bSkipNew, int fetchAmount, final List<OAObject> alResults) 
 	{
-		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) {
 			return null;
 		}
@@ -360,7 +369,7 @@ import java.util.logging.Logger;
 	}
 
 	public OAObject getRandom(Class<? extends OAObject> clazz, int max) {
-		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return null;
 		
 		int size = hm.size();

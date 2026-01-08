@@ -276,6 +276,7 @@ public class OASyncService {
 	 * @return the next GUID value
 	 * @throws RuntimeException if the remote request fails
 	 */
+	/*qqqqqqqqqqqqq 
 	public long getGuidFromServer() {
 		if (isServer()) {
 	    	Package packageThis = Package.getPackage(pkgName);
@@ -296,6 +297,7 @@ public class OASyncService {
 		}
 		return x;
 	}
+	*/
 
 	/*
 	 * If the currentThread is an OARemoteThead, then this is used to have sync changes (OAObject/Hub) sent to other computers. By default,
