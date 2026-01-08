@@ -1529,8 +1529,10 @@ public class OAObjectCacheService {
 		bDisableCache = b;
 		//qqqqqq not fully used
 	}
+
 	
-	
-	
+	public OAObject getRandom(Class<? extends OAObject> clazz, int max) {
+		return objectCache.getRandom(clazz, max);
+	}	
 
 }

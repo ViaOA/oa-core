@@ -217,6 +217,11 @@ public class OAString {
 	public static Map<String, String> getHtmlAttributeMap(String htmlTag) {
 		return OATextEscape.getHtmlAttributeMap(htmlTag);
 	}
+
+	@Deprecated // use getHtmlAttributeMap
+	public static Map<String, String> getHTMLAttributeMap(String htmlTag) {
+		return OATextEscape.getHtmlAttributeMap(htmlTag);
+	}
 	
 	/**
 	 * Converts text to an XML-escaped representation.
@@ -443,6 +448,11 @@ public class OAString {
 		return OATextFormat.convertToHungarian(value);
 	}
 
+	@Deprecated // use convertToHungarian
+	public static String convertHungarian(String value) {
+		return OATextFormat.convertToHungarian(value);
+	}
+	
 	/**
 	 * Converts text to Hungarian notation using custom separator characters.
 	 *
@@ -594,6 +604,11 @@ public class OAString {
 	public static String getTitle(String s) {
 		return OATextGrammar.getTitle(s);
 	}
+	
+	public static String getTitle(String s, String basedOn) {
+		return OATextGrammar.getTitle(s, basedOn);
+	}
+
 	
 	/**
 	 * Delegates to {@link #getTitle(String)}.
@@ -1937,6 +1952,11 @@ public class OAString {
 		return OATextTokenizer.getCssMap(style);
 	}
 
+	@Deprecated  // use getCssMap
+	public static Map<String, String> getCSSMap(String style) {
+		return OATextTokenizer.getCssMap(style);
+	}
+	
 	/**
 	 * Parses an integer value from a string.
 	 *
@@ -1979,6 +1999,10 @@ public class OAString {
 		return OATextSanitize.getNonNull(str);
 	}
 
+	public static String nonNull(String str) {
+		return OATextSanitize.getNonNull(str);
+	}
+	
 	/**
 	 * Returns a non-null string, using a default value if the source is null.
 	 *
@@ -2112,6 +2136,12 @@ public class OAString {
 		return OATextUtil.makeJavaIdentifier(txt);
 	}
 
+	@Deprecated // use makeJavaIdentifier (spelling fix)
+	public static String makeJavaIndentifier(String txt) {
+		return OATextUtil.makeJavaIdentifier(txt);
+	}
+	
+	
 	/**
 	 * Delegates to {@link #makeJavaIdentifier(String)}.
 	 *
@@ -2395,6 +2425,10 @@ public class OAString {
 		return OATextEscape.escapeJson(s);
 	}
 
+	public static String escapeJSON(String s) {
+		return OATextEscape.escapeJson(s);
+	}
+	
 	/**
 	 * Appends the JSON-escaped form of {@code s} into the supplied {@link StringBuffer}.
 	 *

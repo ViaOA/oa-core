@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 
 public final class OARuntime {
@@ -19,49 +20,85 @@ public final class OARuntime {
 	private final Map<String, OAGraph> hmPackageGraph = new ConcurrentHashMap<>();
 	private final Map<String, RuntimeException> hmRuntimeException = new ConcurrentHashMap<>();
 	
+	private final OAGraph graphDefault;
+	
 	private OARuntime() {
 		this.threadLocalService = new OAThreadLocalService(this);
 		this.remoteThreadService = new OARemoteThreadService(this);
 		this.dataSourceService = new OADataSourceService(this);
+		
+		graphDefault = new OAGraph(this, null);
+		try {
+			graphDefault.init();
+		}
+		catch (Exception e) {}
 	}
 	
 	public static OARuntime get() {
 		return runtime;
 	}
 	
-	public OAGraph graph(final Package pkg) {
+	public OAGraph createGraph(final Package pkg) {
 		if (pkg == null) return null;
-		String pn = pkg.getName();
-		
-		RuntimeException exRt = hmRuntimeException.get(pn);
+		final String pn = pkg.getName();
+		return createGraph(pn);
+	}	
+	
+	public OAGraph createGraph(final String pkgName) {
+		if (pkgName == null) return null;
+
+		OAGraph og = hmPackageGraph.get(pkgName);
+		if (og != null) return og;
+
+		RuntimeException exRt = hmRuntimeException.get(pkgName);
 		if (exRt != null) throw exRt;
 		
-		OAGraph og = hmPackageGraph.computeIfAbsent(pn, keyPn -> {
-			OAGraph g = new OAGraph(this, pkg);
-			try {
-				g.init();
-			} catch (ClassNotFoundException | IOException e) {
-				RuntimeException ex = new RuntimeException("Could not initialize OAGraph, package name is " + keyPn, e);
-				hmRuntimeException.put(keyPn, ex);
-				throw ex;
-			}
-			return g;
-		});
+		og = new OAGraph(this, pkgName);
+		hmPackageGraph.put(pkgName, og);
+			
+		try {
+			og.init();
+		} catch (ClassNotFoundException | IOException e) {
+			RuntimeException ex = new RuntimeException("Could not initialize OAGraph, package name is " + pkgName, e);
+			hmPackageGraph.remove(pkgName, og);
+			hmRuntimeException.put(pkgName, ex);
+			throw ex;
+		}
 		return og;
 	}
 
+	
 	public OAGraph graph(final OAObject obj) {
-//qqqqqqq might want to always return a graph, ... have a catch all ??		
-		if (obj == null) return null;
-		OAGraph og = graph(obj.getClass().getPackage());
-		return og;
+		Class c = obj == null ? null : obj.getClass();
+		return graph(c);
 	}
 
-	public OAGraph graph(final Class<?> c) {
-		if (c == null) return null;
-		OAGraph og = graph(c.getPackage());
-		return og;
+	public OAGraph graph(final Hub hub) {
+		Class c = hub == null ? null : hub.getObjectClass();
+		return graph(c);
 	}
+	
+	public OAGraph graph(final Class<?> c) {
+		String pn = c == null ? null : c.getPackage().getName();
+		return graph(pn);
+	}
+	
+	public OAGraph graph(final Package pkg) {
+		String pn = pkg == null ? null : pkg.getName();
+		return graph(pn);
+	}	
+	
+	public OAGraph graph(final String pkgName) {
+		if (pkgName != null) {
+			OAGraph og = hmPackageGraph.get(pkgName);
+			if (og != null) return og;
+			RuntimeException exRt = hmRuntimeException.get(pkgName);
+			if (exRt != null) throw exRt;
+		}
+		return graphDefault;
+	}	
+	
+	
 	
 	public OAThreadLocalService threadLocalService() {
 		return threadLocalService;

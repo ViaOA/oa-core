@@ -18,6 +18,7 @@ package com.viaoa.object;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -356,6 +357,26 @@ import java.util.logging.Logger;
 			}
 		}
 		return null;
+	}
+
+	public OAObject getRandom(Class<? extends OAObject> clazz, int max) {
+		ConcurrentHashMap<Long, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+		if (hm == null) return null;
+		
+		int size = hm.size();
+	    if (size == 0) return null;
+	    
+	    max = Math.min(max, size);
+	    int pos = (int) (Math.random() * max);
+
+	    int i = 0;
+	    for (OAWeakRef wr : hm.values()) {
+	        if (i++ >= pos) {
+	        	OAObject objx = (OAObject) wr.get();
+	        	if (objx != null) return objx;
+	        }
+	    }
+	    return null;
 	}
 }
 

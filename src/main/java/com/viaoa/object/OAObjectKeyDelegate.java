@@ -140,7 +140,7 @@ public class OAObjectKeyDelegate {
 	 * @return a new {@link OAObjectKey} instance
 	 */
 	public static OAObjectKey createObjectKey(OAObjectInfo oi, Object[] ids, long guid) {
-		Class c = oi.getForClass();
+		Class c = oi == null ? null : oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().createObjectKey(oi, ids, guid);
@@ -157,7 +157,7 @@ public class OAObjectKeyDelegate {
 	 * @return a corresponding {@link OAObjectKey}, or {@code null} if {@code id} is {@code null}
 	 */
 	public static OAObjectKey createObjectKey(Object id) {
-		//qqqqqq cant get to Service
+		//qqqqqq cant get to specific graph *Service
 		if (id == null) return null;
 		if (id instanceof OAObjectKey) return (OAObjectKey) id;
 		if (id instanceof OAObject) return createObjectKey((OAObject) id);

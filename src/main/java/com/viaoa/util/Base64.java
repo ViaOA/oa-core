@@ -164,9 +164,8 @@ public class Base64 {
 	 * This character set follows the standard Base64 specification
 	 * and is used to map 6-bit values to encoded characters.
 	 */
-	static private char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-			.toCharArray();
-
+	static private char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
+	
 	/**
 	 * Lookup table for decoding Base64 characters into their numeric values.
 	 * <p>

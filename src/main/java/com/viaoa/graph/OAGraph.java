@@ -11,56 +11,52 @@ public class OAGraph {
 	private static Logger LOG = Logger.getLogger(OAGraph.class.getName());
 
 	private final OARuntime runtime;
-	private final Package packageThis;
-	private boolean bInitCalled;
-	private boolean bInitCompleted;
+	private final String pkgName;
+	private volatile boolean bInit;
 
 	private final OAObjectService srvcObject;
 	private final HubService srvcHub;
     private final OASyncService srvcSync;
     
-	public OAGraph(OARuntime rt, Package pkg) {
+    //qqqqqqqq must call init() to load
+	public OAGraph(OARuntime rt, String pkgName) {
 		if (rt == null) throw new IllegalArgumentException("OARuntime can not be null");
 		this.runtime = rt;
-		if (pkg == null) throw new IllegalArgumentException("package can not be null");
-		this.packageThis = pkg;
+		this.pkgName = pkgName;
 		
 		srvcObject = new OAObjectService();
 		srvcHub = new HubService();
-	    srvcSync = new OASyncService(getPackage());
+	    srvcSync = new OASyncService(pkgName);
 	    
 	    srvcObject.initialize(srvcHub, srvcSync);
 	    srvcHub.initialize(srvcObject);
 	    srvcSync.initialize();
 	}
 
-	public synchronized void init() throws ClassNotFoundException, IOException {
-		if (bInitCalled) return;
-		bInitCalled = true;
-		String pn = packageThis.getName();
-		String[] classNames = OAReflect.getOAObjectClasses(pn);
-		for (String cn : classNames) {
-			Class<?> c = Class.forName(pn + "." + cn);
-			if (OAObject.class.isAssignableFrom(c)) {
-				srvcObject.getOAObjectInfoService().getObjectInfo(c);
+	public void init() throws ClassNotFoundException, IOException {
+		if (bInit) return;
+		bInit = true;
+		if (pkgName != null) {
+			String[] classNames = OAReflect.getOAObjectClasses(pkgName);
+			for (String cn : classNames) {
+				Class<?> c = Class.forName(pkgName + "." + cn);
+				if (OAObject.class.isAssignableFrom(c)) {
+					srvcObject.getOAObjectInfoService().getObjectInfo(c);
+				}
 			}
 		}
-		bInitCompleted = true;
 	}
 
 	public OARuntime runtime() {
 		return runtime;
 	}
 	
-	public Package getPackage() {
-		return packageThis;
+	public String getPackageName() {
+		return pkgName;
 	}
 
 	public boolean wasInitCalled() {
-		return bInitCalled;
-	}
-	public boolean wasInitCompleted() {
-		return bInitCompleted;
+		return bInit;
 	}
     
 	// verb for OAObjectService

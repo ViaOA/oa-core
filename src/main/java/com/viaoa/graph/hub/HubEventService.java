@@ -1206,8 +1206,8 @@ public class HubEventService {
 		Hub h = thisHub;
 
 		// go to beginning of shared hub chain
-		if (type < 2) {
-			for (; faHub.getHubDataUnique(h) != null;) {
+		if (type < 2 && type != 3) {
+			for (; faHub.getHubDataUnique(h).getSharedHub() != null;) {
 				h = faHub.getHubDataUnique(h).getSharedHub();
 			}
 		}

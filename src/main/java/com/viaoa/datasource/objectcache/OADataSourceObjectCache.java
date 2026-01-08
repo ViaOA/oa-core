@@ -32,8 +32,10 @@ import com.viaoa.datasource.autonumber.OADataSourceAuto;
 import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAQueryFilter;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 
 /**
@@ -553,12 +555,22 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         Inflater inflater = new Inflater();
         InflaterInputStream inflaterInputStream = new InflaterInputStream(fis, inflater, 32 * 1024);
 
-        OAObjectInputStream ois = new OAObjectInputStream(inflaterInputStream);
+
+        final Set<Class<?>> hsClasses = new HashSet();
+        OAObjectInputStream ois = new OAObjectInputStream(inflaterInputStream) {
+        	@Override
+        	protected Object resolveObject(Object obj) throws IOException {
+        		if (obj instanceof OAObject) {
+        			hsClasses.add(obj.getClass());
+        		}
+        		return super.resolveObject(obj);
+        	}
+        };
         
         boolean bResult = false;
         try {
             lock.writeLock().lock();
-            bResult = _loadFromStorageFile(file, ois);
+            bResult = _loadFromStorageFile(file, ois, hsClasses);
         }
         finally {
             ois.close();
@@ -580,7 +592,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
      * @return true if any objects or extra data were loaded
      * @throws Exception if deserialization fails
      */
-    protected boolean _loadFromStorageFile(final File file, OAObjectInputStream ois) throws Exception {
+    protected boolean _loadFromStorageFile(final File file, OAObjectInputStream ois, final Set<Class<?>> hsClasses) throws Exception {
         int cnt = 0;
         
         boolean b = ois.readBoolean();
@@ -589,8 +601,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             Object extra = wrap.getObject();
             cnt++;
         }
-        
-        for (final Class c : OAObjectCacheDelegate.getClasses()) {
+
+        for (final Class c : hsClasses) {
             final Set hs = getSet(c);
             OAObjectCacheDelegate.callback(c, new OACallback() {
                 @Override

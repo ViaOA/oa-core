@@ -111,7 +111,10 @@ public class HubDetailDelegate {
 	 */
 	public static void setMasterHub(Hub thisHub, Hub masterHub, String path, boolean bShared, String selectOrder) {
 		OAGraph g = getGraph(thisHub, null);
-		if (g == null) return;
+		if (g == null) {
+			g = getGraph(masterHub, null);
+			if (g == null) return;
+		}
 		g.hubs().getHubDetailService().setMasterHub(thisHub, masterHub, path, bShared, selectOrder);
 	}
 

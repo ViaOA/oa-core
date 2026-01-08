@@ -1133,6 +1133,14 @@ public class OAObjectCacheDelegate {
 		
 		return null;//qqqqqqqqqqqqqqqqqqqqqqqq
 	}
+
+
+	public static Object getRandom(Class<? extends OAObject> clazz, int i) {
+		Class c = clazz;
+		OAGraph og = OARuntime.get().graph(c);
+		if (og == null) return null;
+		return og.objects().getOAObjectCacheService().getRandom(clazz, i);
+	}
 	
 }
 

@@ -16,7 +16,7 @@ import com.viaoa.sync.remote.*;
 public class OASyncService {
 	private static final Logger LOG = Logger.getLogger(OASyncService.class.getName());
 	
-	private final Package packageThis;
+	private final String pkgName;
 
 	
 	/**
@@ -52,8 +52,8 @@ public class OASyncService {
 	private long maxNextGuid;
 
 	
-	public OASyncService(Package packagex) {
-    	this.packageThis = packagex;
+	public OASyncService(String pkgName) {
+    	this.pkgName = pkgName;
 	}
 
 	public void initialize() {
@@ -61,6 +61,7 @@ public class OASyncService {
 	
     public void createServer(int port) throws Exception {
     	stopServer();
+    	Package packageThis = Package.getPackage(pkgName);
         syncServer = new OASyncServer(packageThis, port);
         syncServer.setInvalidConnectionMessage("qqqqqqqq"); //qqqqqq
         syncServer.start();
@@ -75,6 +76,7 @@ public class OASyncService {
     
     public void createClient(String serverName, int port) throws Exception {
     	stopClient();
+    	Package packageThis = Package.getPackage(pkgName);
     	syncClient = new OASyncClient(packageThis, serverName, port);
         syncClient.start();
     }
@@ -276,7 +278,8 @@ public class OASyncService {
 	 */
 	public long getGuidFromServer() {
 		if (isServer()) {
-			return OAObjectDelegate.getNextGuid(this.packageThis);
+	    	Package packageThis = Package.getPackage(pkgName);
+			return OAObjectDelegate.getNextGuid(packageThis);
 		}
 		long x;
 		synchronized (NextGuidLock) {
