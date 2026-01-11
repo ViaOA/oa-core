@@ -398,6 +398,15 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private boolean bJsonUsesCapital; // JSON properties are titled (begin with capital letter)
 	
 	/**
+	 * Indicates where the guid (UUID) from OAObject.guid is stored to datasource.
+	 * Otherwise, it is generated  in the OAObject constructor.
+	 */
+	private boolean bGuidIsStored; 
+	
+	protected boolean bPreSelect;
+
+	
+	/**
 	 * Default constructor that initializes the metadata instance with
 	 * an empty identifier property list.
 	 */
@@ -1918,7 +1927,14 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		this.bJsonUsesCapital = b;
 	}
 
-	protected boolean bPreSelect;
+	public boolean getGuidIsStored() {
+		return bGuidIsStored;
+	}
+	
+	public void setGuidIsStored(boolean b) {
+		this.bGuidIsStored = b;
+	}
+	
 
 	/**
 	 * Enables or disables pre-select behavior used during object

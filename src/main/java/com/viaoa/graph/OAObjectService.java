@@ -30,7 +30,7 @@ public class OAObjectService {
 	private final OAObjectInternalBridge faBridge = new OAObjectInternalBridge();
 	
     private OAObjectAnnotationService srvcOAObjectAnnotation;
-    private OAObjectCacheService srvcCache;
+    private OAObjectCacheService srvcOAObjectCache;
     private OAObjectCallbackService srvcOAObjectCallback;
     private OAObjectCSService srvcOAObjectCS;
     private OAObjectDatabaseService srvcOAObjectDatabase;
@@ -107,7 +107,7 @@ public class OAObjectService {
 		bInitialized = true;
 		
 		srvcOAObjectAnnotation = new OAObjectAnnotationService(this, faBridge.getObjectInfoFriendAccess(), srvcHub);
-    	srvcCache = new OAObjectCacheService(this, getHubService());
+    	srvcOAObjectCache = new OAObjectCacheService(this, getHubService());
         srvcOAObjectCallback = new OAObjectCallbackService(this, srvcHub);
         srvcOAObjectCS = new OAObjectCSService(this, faBridge.getObjectFriendAccess(), srvcHub, srvcSync);
         srvcOAObjectDatabase = new OAObjectDatabaseService(this, faBridge.getObjectFriendAccess());
@@ -144,7 +144,7 @@ public class OAObjectService {
     }
     
     public OAObjectCacheService getOAObjectCacheService() { 
-    	return srvcCache; 
+    	return srvcOAObjectCache; 
     }
 
     public OAObjectInfoService getOAObjectInfoService() {

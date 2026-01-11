@@ -556,7 +556,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         InflaterInputStream inflaterInputStream = new InflaterInputStream(fis, inflater, 32 * 1024);
 
 
-        final Set<Class<?>> hsClasses = new HashSet();
+        final Set<Class<?>> hsClasses = new HashSet<>();
         OAObjectInputStream ois = new OAObjectInputStream(inflaterInputStream) {
         	@Override
         	protected Object resolveObject(Object obj) throws IOException {

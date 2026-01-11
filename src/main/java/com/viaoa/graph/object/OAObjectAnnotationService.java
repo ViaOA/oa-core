@@ -6,6 +6,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -305,6 +306,12 @@ public class OAObjectAnnotationService {
 				pi.setAutoAssign(oaid.autoAssign());
 			}
 
+//qqqqqqqq 20260110			
+			if (pi.getClassType() == UUID.class && name.equalsIgnoreCase("guid")) {
+				oi.setGuidIsStored(true);
+			}
+			
+			
 			boolean b = oaprop.isBlob();
 			if (b) {
 				b = false;

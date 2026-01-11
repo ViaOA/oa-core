@@ -18,6 +18,7 @@ package com.viaoa.object;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 
 /**
@@ -206,9 +207,6 @@ public class OAObjectIndex {
 	public void updateIndex(final OAObject obj, OAObjectKey okNew, OAObjectKey okOld) {
 		if (obj == null) return;
 
-		Class c = obj.getClass();
-		if (okNew != null && okNew.equals(okOld)) return;
-		
 		if (okNew != null) {
 			addToIndex(obj, okNew);
 		}

@@ -194,6 +194,24 @@ public class OAObjectKeyService {
 		return Arrays.equals(ok1.getObjectIds(), ok2.getObjectIds());	    
 	}
 
+	public boolean hasSameGuid(final OAObjectKey a, final OAObjectKey b) {
+	    return a != null && b != null && Objects.equals(a.getGuid(), b.getGuid());
+	}
+
+	public boolean hasSameIds(final OAObjectKey a, final OAObjectKey b) {
+	    return a != null && b != null && Arrays.equals(a.getObjectIds(), b.getObjectIds());
+	}
+
+	public boolean guidMatchesButIdsDiffer(final OAObjectKey a, final OAObjectKey b) {
+	    if (a == null || b == null) return false;
+	    UUID g1 = a.getGuid(), g2 = b.getGuid();
+	    if (g1 == null || g2 == null) return false;
+	    if (!g1.equals(g2)) return false;
+	    return !Arrays.equals(a.getObjectIds(), b.getObjectIds());
+	}
+	
+	
+	
 	/**
 	 * Retrieves an {@link OAObject} for the given class and key.
 	 * <p>

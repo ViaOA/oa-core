@@ -845,8 +845,19 @@ public class OAObjectCacheService {
 			throw new RuntimeException("Adding to object cache without a guid, key="+key); 
 		}
 		
-		final OAObject objFound = objectCache.getObject(clazz, guid);
-
+		OAObject objFound = objectCache.getObject(clazz, guid);
+		
+//qqqqqqqqqqqqqqqqqqqqqqqq
+		if (objFound == null) {
+			if (key.hasValidObjectIds()) {
+				OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
+				if (!oi.getGuidIsStored()) {
+					objFound = objectCache.getObject(clazz, key.getObjectIds());
+				}
+			}
+		}
+		
+		
 		boolean bSendAddEvent = false;
 		final int mode = OARuntime.get().threadLocalService().getObjectCacheAddMode();
 		if (objFound == null) {

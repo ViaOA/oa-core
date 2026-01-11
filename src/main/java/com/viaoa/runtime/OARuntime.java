@@ -18,7 +18,9 @@ public final class OARuntime {
 	private final OADataSourceService dataSourceService;
 	
 	private final Map<String, OAGraph> hmPackageGraph = new ConcurrentHashMap<>();
+	private final Map<String, OAGraph> hmPackageGraph2 = new ConcurrentHashMap<>();
 	private final Map<String, RuntimeException> hmRuntimeException = new ConcurrentHashMap<>();
+	private final Map<Class<?>, Class<?>> hmClass = new ConcurrentHashMap<>();
 	
 	private final OAGraph graphDefault;
 	
@@ -55,6 +57,7 @@ public final class OARuntime {
 		
 		og = new OAGraph(this, pkgName);
 		hmPackageGraph.put(pkgName, og);
+		hmPackageGraph2.clear();
 			
 		try {
 			og.init();
@@ -78,10 +81,38 @@ public final class OARuntime {
 		return graph(c);
 	}
 	
-	public OAGraph graph(final Class<?> c) {
-		String pn = c == null ? null : c.getPackage().getName();
-		return graph(pn);
+	public OAGraph graph(final Class<?> clazz) {
+	    Class<?> classFound = clazz;
+
+	    Class<?> classSuper = (classFound == null) ? null : classFound.getSuperclass();
+	    if (classSuper != null && classSuper != OAObject.class) {
+	        Class<?> cx = hmClass.get(clazz);
+	        if (cx != null) {
+	            classFound = cx;
+	        }
+	        else {
+	            for (;;) {
+	                classSuper = classFound.getSuperclass();
+	                if (classSuper == null) { 
+	                	classFound = clazz; 
+		                hmClass.put(clazz, clazz);
+	                	break; 
+	                }
+	                if (classSuper == OAObject.class) break;
+	                classFound = classSuper;
+	            }
+	            if (classFound != clazz) {
+	                hmClass.put(clazz, classFound);
+	            }
+	        }
+	    }
+
+	    String pn = (classFound == null) ? null : classFound.getPackage().getName();
+	    return graph(pn);
 	}
+	
+	
+	
 	
 	public OAGraph graph(final Package pkg) {
 		String pn = pkg == null ? null : pkg.getName();
@@ -92,8 +123,27 @@ public final class OARuntime {
 		if (pkgName != null) {
 			OAGraph og = hmPackageGraph.get(pkgName);
 			if (og != null) return og;
+			
+			og = hmPackageGraph2.get(pkgName);
+			if (og != null) return og;
+			
 			RuntimeException exRt = hmRuntimeException.get(pkgName);
 			if (exRt != null) throw exRt;
+			
+			String fnd = null;
+			for (String s : hmPackageGraph.keySet()) {
+				if (pkgName.equals(s) || pkgName.startsWith(s + ".")) {
+					if (fnd == null || s.length() > fnd.length()) fnd = s;
+				}
+			}
+			if (fnd != null) {
+				og = hmPackageGraph.get(fnd);
+				hmPackageGraph2.put(pkgName, og);
+				return og;
+			}
+			else {
+				hmPackageGraph2.put(pkgName, graphDefault);
+			}
 		}
 		return graphDefault;
 	}	

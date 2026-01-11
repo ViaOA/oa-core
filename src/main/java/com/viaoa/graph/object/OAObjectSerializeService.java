@@ -201,7 +201,12 @@ public class OAObjectSerializeService {
 
 		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObjRead);
 		if (oi.getAddToCache()) {
-			// todo? need to also check guid 		    
+
+if (oaObjRead.getClass().getName().indexOf("ServerRoot") >= 0) {
+	int xxx = 4;
+	xxx++;
+//qqqqqqqqqqqqqqqqq	
+}
 
 			oaObjUse = srvcObject.getOAObjectCacheService().add(oaObjRead, false, false, true);
 			bDup = (oaObjRead != oaObjUse);

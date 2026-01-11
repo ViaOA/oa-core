@@ -36,12 +36,14 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
+import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAConv;
@@ -182,6 +184,8 @@ public class OAXMLReader {
 	 */
 	private int versionOAXML;
 
+	
+	
 	/**
 	 * Creates a new XML reader instance.
 	 */
@@ -509,10 +513,14 @@ public class OAXMLReader {
 			}
 			UUID iguid = null;
 			if (guid != null && guid.length() > 1) {
-				//was: iguid = OAConv.toLong(guid.substring(1));
-				iguid = UUID.fromString(guid.substring(1));
+// qqqqqqqq 20260110				
+				if (guid.length() < 8) {
+					iguid = UUID.randomUUID();
+				}
+				else {
+					iguid = UUID.fromString(guid.substring(1));
+				}
 			}
-			final OAObjectKey key = new OAObjectKey(values, iguid);
 
 			// try to find using matching props
 			final String[] matchProps = getImportMatching() ? oi.getImportMatchPropertyNames() : null;
@@ -562,6 +570,7 @@ public class OAXMLReader {
 				sel.close();
 			} else {
 				if (ids != null && ids.length > 0) {
+					final OAObjectKey key = new OAObjectKey(values, iguid);
 					objNew = OAObjectCacheDelegate.get(toClass, key);
 				}
 			}
@@ -570,6 +579,12 @@ public class OAXMLReader {
 				OAThreadLocalDelegate.setLoading(true);
 				try {
 					objNew = createNewObject(toClass);
+//qqqqqqqqqqqqqq 20260111
+					if (objNew.getGuid() == null) {
+						OARuntime.get().graph(toClass).objects().getOAObjectGuidService().setGuid(objNew, iguid);
+					}
+					
+					
 					// set property ids
 					if (matchProps == null || matchProps.length == 0) {
 						for (int i = 0; ids != null && i < ids.length; i++) {
@@ -580,8 +595,11 @@ public class OAXMLReader {
 				} finally {
 					OAThreadLocalDelegate.setLoading(false);
 				}
+//qqqqqqqqqqqqqq 20260111
+				OARuntime.get().graph(toClass).objects().getOAObjectInitializeService().initializeAfterLoading(objNew);
+				
 				// 20181115
-				OAObjectCacheDelegate.add(objNew);
+//qqqqqq 20260111 was:	OAObjectCacheDelegate.add(objNew);
 			}
 			if (guid != null && objNew != null) {
 				hashGuid.put(guid, objNew);
