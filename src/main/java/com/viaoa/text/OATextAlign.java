@@ -47,11 +47,11 @@ public final class OATextAlign {
      * as the default padding.
      *
      * @param value the text to be padded; {@code null} is treated as an empty string
-     * @param width the target width of the result
+     * @param amount number of spaces to prepend.
      * @return the padded string with leading spaces added as needed
      */
-    public static String padStart(String value, int width) {
-        return padStart(value, width, ' ');
+    public static String padStart(String value, int amount) {
+        return padStart(value, amount, ' ');
     }
 
     /**
@@ -59,12 +59,13 @@ public final class OATextAlign {
      * until the requested width is reached.
      *
      * @param value   the text to be padded; {@code null} is treated as an empty string
-     * @param width   the target width of the result
+     * @param amount number of padChars to prepend
      * @param padChar the character used to fill leading positions
      * @return the padded string with the original text right aligned
      */
-    public static String padStart(String value, int width, char padChar) {
-        return alignRight(value, width, padChar);
+    public static String padStart(String value, int amount, char padChar) {
+    	int x = amount + (value == null ? 0 : value.length());
+        return alignRight(value, x, padChar);
     }
 
     /**
@@ -72,11 +73,11 @@ public final class OATextAlign {
      * as the default padding.
      *
      * @param value the text to be padded; {@code null} is treated as an empty string
-     * @param width the target width of the result
+     * @param amount number of spaces to append 
      * @return the padded string with trailing spaces added as needed
      */
-    public static String padEnd(String value, int width) {
-        return padEnd(value, width, ' ');
+    public static String padEnd(String value, int amount) {
+        return padEnd(value, amount, ' ');
     }
 
     /**
@@ -84,12 +85,13 @@ public final class OATextAlign {
      * until the requested width is reached.
      *
      * @param value   the text to be padded; {@code null} is treated as an empty string
-     * @param width   the target width of the result
+     * @param amount the number of padChars to end to value
      * @param padChar the character used to fill trailing positions
      * @return the padded string with the original text left aligned
      */
-    public static String padEnd(String value, int width, char padChar) {
-        return alignLeft(value, width, padChar);
+    public static String padEnd(String value, int amount, char padChar) {
+    	int x = amount + (value == null ? 0 : value.length());
+        return alignLeft(value, x, padChar);
     }
 
     // Alignment core with optional ellipsis

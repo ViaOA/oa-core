@@ -103,7 +103,7 @@ public class OAObjectEventDelegate {
 		Class c = null;
 		if (hub != null) c = hub.getObjectClass();
 		if (c == null && obj != null) c = obj.getClass();
-		if (c == null) return null;
+		// if (c == null) return null;
 		OAGraph g = OARuntime.get().graph(c);
 		return g;
 	}

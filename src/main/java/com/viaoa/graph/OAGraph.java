@@ -36,7 +36,7 @@ public class OAGraph {
 	public void init() throws ClassNotFoundException, IOException {
 		if (bInit) return;
 		bInit = true;
-		if (pkgName != null) {
+		if (pkgName != null && !pkgName.isEmpty()) {
 			String[] classNames = OAReflect.getOAObjectClasses(pkgName);
 			for (String cn : classNames) {
 				Class<?> c = Class.forName(pkgName + "." + cn);

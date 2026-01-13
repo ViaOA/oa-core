@@ -39,6 +39,9 @@ public final class OARuntime {
 	public static OARuntime get() {
 		return runtime;
 	}
+
+	
+	
 	
 	public OAGraph createGraph(final Package pkg) {
 		if (pkg == null) return null;
@@ -119,36 +122,43 @@ public final class OARuntime {
 		return graph(pn);
 	}	
 	
-	public OAGraph graph(final String pkgName) {
-		if (pkgName != null) {
-			OAGraph og = hmPackageGraph.get(pkgName);
-			if (og != null) return og;
-			
-			og = hmPackageGraph2.get(pkgName);
-			if (og != null) return og;
-			
-			RuntimeException exRt = hmRuntimeException.get(pkgName);
-			if (exRt != null) throw exRt;
-			
-			String fnd = null;
-			for (String s : hmPackageGraph.keySet()) {
-				if (pkgName.equals(s) || pkgName.startsWith(s + ".")) {
-					if (fnd == null || s.length() > fnd.length()) fnd = s;
-				}
-			}
-			if (fnd != null) {
-				og = hmPackageGraph.get(fnd);
-				hmPackageGraph2.put(pkgName, og);
-				return og;
-			}
-			else {
-				hmPackageGraph2.put(pkgName, graphDefault);
+	public OAGraph graph(String pkgName) {
+		if (pkgName == null) pkgName = "";
+
+		OAGraph og = hmPackageGraph.get(pkgName);
+		if (og != null) return og;
+		
+		og = hmPackageGraph2.get(pkgName);
+		if (og != null) return og;
+		
+		RuntimeException exRt = hmRuntimeException.get(pkgName);
+		if (exRt != null) throw exRt;
+		
+		String fnd = null;
+		for (String s : hmPackageGraph.keySet()) {
+			if (pkgName.equals(s) || pkgName.startsWith(s + ".")) {
+				if (fnd == null || s.length() > fnd.length()) fnd = s;
 			}
 		}
+		if (fnd != null) {
+			og = hmPackageGraph.get(fnd);
+			hmPackageGraph2.put(pkgName, og);
+			return og;
+		}
+		else {
+			hmPackageGraph2.put(pkgName, graphDefault);
+		}
+
 		return graphDefault;
 	}	
 	
-	
+	public void assignGraph(String pkgName, OAGraph graph) {
+		if (pkgName == null) pkgName = "";
+		
+		if (graph == null) hmPackageGraph.remove(pkgName);
+		else hmPackageGraph.put(pkgName, graph);
+		hmPackageGraph2.clear();
+	}
 	
 	public OAThreadLocalService threadLocalService() {
 		return threadLocalService;

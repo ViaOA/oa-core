@@ -51,7 +51,7 @@ public class HubAddRemoveDelegate {
 	if (g == null) return;
 	g.hubs().getHubAddRemoveService().?(?);
     */
-	static OAGraph getGraph(Hub hub, OAObject obj) {
+	static OAGraph getGraph(Hub hub, Object obj) {
 		Class c = null;
 		if (hub != null) c = hub.getObjectClass();
 		if (c == null && obj != null) c = obj.getClass();
@@ -71,7 +71,7 @@ public class HubAddRemoveDelegate {
 	 * @return {@code true} if the object was removed, otherwise {@code false}
 	 */
 	public static boolean remove(final Hub thisHub, final Object obj) {
-		OAGraph g = getGraph(thisHub, null);
+		OAGraph g = getGraph(thisHub, obj);
 		if (g == null) return false;
 		return g.hubs().getHubAddRemoveService().remove(thisHub, obj);
 	}
@@ -195,7 +195,7 @@ public class HubAddRemoveDelegate {
 	 * @return {@code true} if the object can be added, otherwise {@code false}
 	 */
 	public static boolean canAdd(final Hub thisHub, final Object obj) {
-		OAGraph g = getGraph(thisHub, null);
+		OAGraph g = getGraph(thisHub, obj);
 		if (g == null) return false;
 		return g.hubs().getHubAddRemoveService().canAdd(thisHub, obj);
 	}
@@ -250,7 +250,7 @@ public class HubAddRemoveDelegate {
 	 * @return {@code true} if the object was added, otherwise {@code false}
 	 */
     public static boolean add(final Hub thisHub, final Object obj) {
-		OAGraph g = getGraph(thisHub, null);
+		OAGraph g = getGraph(thisHub, obj);
 		if (g == null) return false;
 		return g.hubs().getHubAddRemoveService().add(thisHub, obj);
     }
@@ -265,7 +265,7 @@ public class HubAddRemoveDelegate {
      * @return {@code true} if the object was added
      */
     public static boolean add(final Hub thisHub, final Object obj, final boolean bAlreadyCalledContains) {
-		OAGraph g = getGraph(thisHub, null);
+		OAGraph g = getGraph(thisHub, obj);
 		if (g == null) return false;
 		return g.hubs().getHubAddRemoveService().add(thisHub, obj, bAlreadyCalledContains);
 	}
@@ -282,7 +282,7 @@ public class HubAddRemoveDelegate {
 	 */
 	public static boolean internalAdd(final Hub thisHub, final Object obj, final boolean bHasLock, final boolean bCheckContains) {
 		//qqqqqq method was protected
-		OAGraph g = getGraph(thisHub, null);
+		OAGraph g = getGraph(thisHub, obj);
 		if (g == null) return false;
 		return g.hubs().getHubAddRemoveService().internalAdd(thisHub, obj, bHasLock, bCheckContains);
 	}
@@ -295,7 +295,7 @@ public class HubAddRemoveDelegate {
 	 * @param obj     the object to reposition
 	 */
 	protected static void sortMove(final Hub thisHub, final Object obj) {
-		OAGraph g = getGraph(thisHub, null);
+		OAGraph g = getGraph(thisHub, obj);
 		if (g == null) return;
 		g.hubs().getHubAddRemoveService().sortMove(thisHub, obj);
 	}
@@ -326,7 +326,7 @@ public class HubAddRemoveDelegate {
 	 * @return {@code true} if insertion succeeded, otherwise {@code false}
 	 */
 	public static boolean insert(final Hub thisHub, final Object obj, final int pos) {
-		OAGraph g = getGraph(thisHub, null);
+		OAGraph g = getGraph(thisHub, obj);
 		if (g == null) return false;
 		return g.hubs().getHubAddRemoveService().insert(thisHub, obj, pos);
 	}

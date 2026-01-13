@@ -197,7 +197,8 @@ public class OASyncDelegate {
 	 * @return the sync client instance, or {@code null} if not registered
 	 */
 	public static OASyncClient getSyncClient() {
-		return getSyncClient(getPackage(null));
+		OASyncClient cs = getSyncClient(getPackage(null));
+		return cs;
 	}
 
 	/**
