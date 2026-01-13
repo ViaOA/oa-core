@@ -71,8 +71,9 @@ import com.viaoa.sync.remote.RemoteSyncInterface;
 public class OASyncDelegate {
 	private static Logger LOG = Logger.getLogger(OASyncDelegate.class.getName());
 
-	public static final Package ObjectPackage = Object.class.getPackage();
+//	public static final Package ObjectPackage = Object.class.getPackage();
 
+public static final Package ObjectPackage = null;
 	
 	/**
 	 * Cache mapping classes to their owning package, used to determine the
