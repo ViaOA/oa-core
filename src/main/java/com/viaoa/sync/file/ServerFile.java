@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.comm.multiplexer.OAMultiplexerServer;
+import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAFile;
 
@@ -120,14 +122,14 @@ public class ServerFile {
      * Launches dedicated daemon threads for upload and download server sockets.
      * </p>
      */
-    public void start() {
+    public void start(final OAMultiplexerServer ms) {
         if (!abStart.compareAndSet(false, true)) return;
         LOG.fine("Starting");
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    startUploadServerSocket();
+                    startUploadServerSocket(ms);
                 }
                 catch (Exception e) {
                     LOG.log(Level.WARNING, "exception in ServerFile.uploadServerSocket", e);
@@ -142,7 +144,7 @@ public class ServerFile {
             @Override
             public void run() {
                 try {
-                    startDownloadServerSocket();
+                    startDownloadServerSocket(ms);
                 }
                 catch (Exception e) {
                     LOG.log(Level.WARNING, "exception in ServerFile.downloadServerSocket", e);
@@ -182,9 +184,9 @@ public class ServerFile {
      *
      * @throws Exception if the server socket cannot be created
      */
-    protected void startDownloadServerSocket() throws Exception {
+    protected void startDownloadServerSocket(final OAMultiplexerServer ms) throws Exception {
         LOG.fine("Starting");
-        ssDownload = OASync.getSyncServer().getMultiplexerServer().createServerSocket(FileDownload);
+        ssDownload = ms.createServerSocket(FileDownload);
         for ( ; abStart.get(); ) {
             final Socket socket = ssDownload.accept();
             new Thread(new Runnable() {
@@ -264,9 +266,9 @@ public class ServerFile {
      *
      * @throws Exception if the server socket cannot be created
      */
-    protected void startUploadServerSocket() throws Exception {
+    protected void startUploadServerSocket(final OAMultiplexerServer ms) throws Exception {
         LOG.fine("Starting");
-        ssUpload = OASync.getSyncServer().getMultiplexerServer().createServerSocket(FileUpload);
+        ssUpload = ms.createServerSocket(FileUpload);
         for ( ; abStart.get(); ) {
             final Socket socket = ssUpload.accept();
             new Thread(new Runnable() {

@@ -562,7 +562,7 @@ public class OASyncClient {
 		if (remoteServerInterface == null) {
 			remoteServerInterface = (RemoteServerInterface) getRemoteMultiplexerClient().lookup(ServerLookupName);
 			if (bUpdateSyncDelegate) {
-				OASyncDelegate.setRemoteServer(packagex, remoteServerInterface);
+				//qqqqqqqqqq not needed: OASyncDelegate.setRemoteServer(packagex, remoteServerInterface);
 			}
 		}
 		return remoteServerInterface;
@@ -580,7 +580,7 @@ public class OASyncClient {
 		if (remoteSyncInterface == null) {
 			remoteSyncInterface = (RemoteSyncInterface) getRemoteMultiplexerClient().lookupBroadcast(SyncLookupName, getRemoteSyncImpl());
 			if (bUpdateSyncDelegate) {
-				OASyncDelegate.setRemoteSync(packagex, remoteSyncInterface);
+				//qqqqqqqqq not needed: OASyncDelegate.setRemoteSync(packagex, remoteSyncInterface);
 			}
 		}
 		return remoteSyncInterface;
@@ -612,7 +612,7 @@ public class OASyncClient {
 		if (remoteSessionInterface == null) {
 			remoteSessionInterface = getRemoteServer().getRemoteSession(getClientInfo(), getRemoteClientCallback());
 			if (bUpdateSyncDelegate) {
-				OASyncDelegate.setRemoteSession(packagex, remoteSessionInterface);
+				//qqqqqqqqqq not needed: OASyncDelegate.setRemoteSession(packagex, remoteSessionInterface);
 			}
 		}
 		return remoteSessionInterface;
@@ -663,7 +663,7 @@ public class OASyncClient {
 		if (remoteClientSyncInterface == null) {
 			remoteClientSyncInterface = getRemoteServer().getRemoteClient(getClientInfo());
 			if (bUpdateSyncDelegate) {
-				OASyncDelegate.setRemoteClient(packagex, remoteClientSyncInterface);
+				//qqqqqq not needed: OASyncDelegate.setRemoteClient(packagex, remoteClientSyncInterface);
 			}
 		}
 		return remoteClientSyncInterface;
@@ -774,10 +774,10 @@ public class OASyncClient {
 
 		if (bUpdateSyncDelegate) {
 			OASyncDelegate.setSyncClient(packagex, null);
-			OASyncDelegate.setRemoteServer(packagex, null);
-			OASyncDelegate.setRemoteSync(packagex, null);
-			OASyncDelegate.setRemoteSession(packagex, null);
-			OASyncDelegate.setRemoteClient(packagex, null);
+			//qqqqqq not needed: OASyncDelegate.setRemoteServer(packagex, null);
+			//qqqqqq not needed: OASyncDelegate.setRemoteSync(packagex, null);
+			//qqqqqq not needed: OASyncDelegate.setRemoteSession(packagex, null);
+			//qqqqqq not needed: OASyncDelegate.setRemoteClient(packagex, null);
 			OADataSource ds = getOADataSourceClient();
 			if (ds != null) {
 				ds.close();
@@ -1223,7 +1223,7 @@ public class OASyncClient {
 	 */
 	public boolean uploadFile(String toFileName, File file) throws Exception {
 		ClientFile cf = new ClientFile();
-		boolean b = cf.upload(toFileName, file);
+		boolean b = cf.upload(toFileName, file, getMultiplexerClient());
 		return b;
 	}
 
@@ -1237,7 +1237,7 @@ public class OASyncClient {
 	 */
 	public boolean downloadFile(String fromFileName, File file) throws Exception {
 		ClientFile cf = new ClientFile();
-		boolean b = cf.download(fromFileName, file);
+		boolean b = cf.download(fromFileName, file, getMultiplexerClient());
 		return b;
 	}
 

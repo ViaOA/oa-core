@@ -1014,7 +1014,7 @@ public class OAObjectReflectService {
 		if (hub != null) {
 			// no-op
 		} else if (!bThisIsServer && !oi.getLocalOnly() && (!bIsCalc || bIsServerSideCalc)
-				&& OASync.getSyncClient().isObjectOnServer(oaObj)) {
+				&& OASync.getSyncClient(oaObj).isObjectOnServer(oaObj)) {
 			// request from server
 			hub = srvcObject.getOAObjectCSService().getServerReferenceHub(oaObj, linkPropertyName);
 			if (hub == null) {
@@ -2550,7 +2550,7 @@ public class OAObjectReflectService {
 			if (b && oaObj.isDeleted() && !bIsServer) {
 				// 20151117 dont autocreate new if this is deleted
 			} else {
-				if (!bIsServer && OASync.getSyncClient().isObjectOnServer(oaObj)) {
+				if (!bIsServer && OASync.getSyncClient(oaObj).isObjectOnServer(oaObj)) {
 					ref = srvcObject.getOAObjectCSService().getServerReference(oaObj, linkPropertyName);
 				} else {
 					ref = createNewObject(li.getToClass());

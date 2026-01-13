@@ -145,8 +145,14 @@ public class OASyncServer {
 	 * Lazily created implementation of the {@link RemoteSyncInterface} used to
 	 * broadcast synchronization messages to connected clients.
 	 */
-	private RemoteSyncImpl remoteSync;
+	private RemoteSyncImpl remoteSyncImpl;
 
+	/**
+	 * used by server to use as Client to Sync.
+	 */
+	private RemoteSyncInterface remoteSyncInterface;
+	
+	
 	/**
 	 * Lazily created implementation of the {@link RemoteServerInterface} that
 	 * provides server-side services such as session creation and cache control to
@@ -241,13 +247,18 @@ public class OASyncServer {
 	 *
 	 * @return the {@link RemoteSyncImpl} used for sync broadcasts
 	 */
-	public RemoteSyncImpl getRemoteSync() {
-		if (remoteSync == null) {
-			remoteSync = new RemoteSyncImpl();
+	public RemoteSyncImpl getRemoteSyncImpl() {
+		if (remoteSyncImpl == null) {
+			remoteSyncImpl = new RemoteSyncImpl();
 		}
-		return remoteSync;
+		return remoteSyncImpl;
 	}
 
+	public RemoteSyncInterface getRemoteSyncInterface() {
+		return remoteSyncInterface;
+	}
+
+	
 	/**
 	 * Returns the lazily created {@link RemoteServerImpl} instance that provides
 	 * remote server functionality to clients. On first access, this method creates
@@ -294,7 +305,7 @@ public class OASyncServer {
 					return 0;
 				}
 			};
-			OASyncDelegate.setRemoteServer(packagex, remoteServer);
+			//qqqqqqq not needed: OASyncDelegate.setRemoteServer(packagex, remoteServer);
 			getRemoteSessionForServer();
 		}
 		return remoteServer;
@@ -326,7 +337,7 @@ public class OASyncServer {
 	public RemoteSessionInterface getRemoteSessionForServer() {
 		if (remoteSessionServer == null) {
 			remoteSessionServer = getRemoteSession(getClientInfo(), null);
-			OASyncDelegate.setRemoteSession(packagex, remoteSessionServer);
+			//qqqqqq not needed: OASyncDelegate.setRemoteSession(packagex, remoteSessionServer);
 		}
 		return remoteSessionServer;
 	}
@@ -341,7 +352,7 @@ public class OASyncServer {
 	public RemoteClientInterface getRemoteClientForServer() {
 		if (remoteClientForServer == null) {
 			remoteClientForServer = getRemoteClient(getClientInfo());
-			OASyncDelegate.setRemoteClient(packagex, remoteClientForServer);
+			//qqqqqq not needed: OASyncDelegate.setRemoteClient(packagex, remoteClientForServer);
 		}
 		return remoteClientForServer;
 	}
@@ -873,9 +884,12 @@ public class OASyncServer {
 			remoteMultiplexerServer.createLookup(	ServerLookupName, getRemoteServer(), RemoteServerInterface.class, SyncQueueName,
 													QueueSize);
 
-			RemoteSyncInterface rsi = (RemoteSyncInterface) remoteMultiplexerServer
-					.createBroadcast(SyncLookupName, getRemoteSync(), RemoteSyncInterface.class, SyncQueueName, QueueSize);
-			OASyncDelegate.setRemoteSync(packagex, rsi);
+			// create proxy so that server can also send msgs (as a Client)
+			remoteSyncInterface = (RemoteSyncInterface) remoteMultiplexerServer
+					.createBroadcast(SyncLookupName, getRemoteSyncImpl(), RemoteSyncInterface.class, SyncQueueName, QueueSize);
+			
+			// this is so that the server will use a proxy and not the impl
+			//was: OASyncDelegate.setRemoteSync(packagex, rsi);
 
 			// have RemoteClient objects use sync queue
 			// remoteMultiplexerServer.registerClassWithQueue(RemoteClientInterface.class, SyncQueueName, QueueSize);            
@@ -1206,7 +1220,7 @@ public class OASyncServer {
 		getServerInfo();
 		getMultiplexerServer().start();
 		getRemoteMultiplexerServer().start();
-		getServerFile().start();
+		getServerFile().start(getMultiplexerServer());
 		startLoadDataInBackgroundThread();
 	}
 

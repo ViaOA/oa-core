@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.logging.Logger;
+
+import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAString;
 
@@ -86,10 +88,10 @@ public class ClientFile {
      * @return {@code true} if the file was successfully downloaded, otherwise {@code false}
      * @throws Exception if an I/O or protocol error occurs
      */
-    public boolean download(String fname, File fileSaveAs) throws Exception {
+    public boolean download(String fname, File fileSaveAs, final OAMultiplexerClient mc) throws Exception {
         LOG.fine("download fname="+fname+", save as file="+fileSaveAs);
         if (OAString.isEmpty(fname) || fileSaveAs == null) return false;
-        final Socket socket = OASync.getSyncClient().getRemoteMultiplexerClient().getMultiplexerClient().createSocket(ServerFile.FileDownload);
+        final Socket socket = mc.createSocket(ServerFile.FileDownload);
         
         DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
@@ -149,10 +151,10 @@ public class ClientFile {
      * @return {@code true} if the file was successfully uploaded, otherwise {@code false}
      * @throws IOException if an I/O error occurs
      */
-    public boolean upload(String fname, File fileOpen) throws IOException {
+    public boolean upload(String fname, File fileOpen, final OAMultiplexerClient mc) throws IOException {
         LOG.fine("upload to fname="+fname+", from file="+fileOpen);
         if (OAString.isEmpty(fname) || fileOpen == null) return false;
-        Socket socket = OASync.getSyncClient().getRemoteMultiplexerClient().getMultiplexerClient().createSocket(ServerFile.FileUpload);
+        Socket socket = mc.createSocket(ServerFile.FileUpload);
 
         DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));

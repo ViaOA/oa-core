@@ -207,7 +207,7 @@ public class OASyncService {
 	 * @return the remote sync interface or {@code null}
 	 */
 	public RemoteSyncInterface getRemoteSync() {
-		if (syncServer != null) return syncServer.getRemoteSync();
+		if (syncServer != null) return syncServer.getRemoteSyncInterface();
 		if (syncClient == null) return null;
 		try {
 			return syncClient.getRemoteSync();
