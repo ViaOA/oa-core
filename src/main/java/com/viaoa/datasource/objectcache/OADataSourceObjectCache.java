@@ -33,6 +33,7 @@ import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
@@ -425,7 +426,9 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             return true;
         }
 
-        if (OAObjectCacheDelegate.getSelectAllHub(clazz) != null) {
+		final OAGraph og = OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+        if (srvcObjectCache.getSelectAllHub(clazz) != null) {
             return true;
         }
         return false;
@@ -604,7 +607,9 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 
         for (final Class c : hsClasses) {
             final Set hs = getSet(c);
-            OAObjectCacheDelegate.callback(c, new OACallback() {
+    		final OAGraph og = OARuntime.get().graph(c);
+        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+        	srvcObjectCache.callback(c, new OACallback() {
                 @Override
                 public boolean updateObject(Object obj) {
                     hs.add(obj);
@@ -720,7 +725,9 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 lock.writeLock().unlock();
             }
         }
-        OAObjectCacheDelegate.removeAllObjects(c);
+		final OAGraph og = OARuntime.get().graph(c);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    	srvcObjectCache.removeAllObjects(c);
     }
 
 }

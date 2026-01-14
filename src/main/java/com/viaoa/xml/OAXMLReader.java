@@ -32,6 +32,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -571,7 +573,9 @@ public class OAXMLReader {
 			} else {
 				if (ids != null && ids.length > 0) {
 					final OAObjectKey key = new OAObjectKey(values, iguid);
-					objNew = OAObjectCacheDelegate.get(toClass, key);
+					final OAGraph og = OARuntime.get().graph(toClass);
+			    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+					objNew = srvcObjectCache.get(toClass, key);
 				}
 			}
 
@@ -811,7 +815,9 @@ public class OAXMLReader {
 							if (object == null) {
 								return object;
 							}
-							OAObject obj = OAObjectCacheDelegate.getObject(object.getClass(), OAObjectKeyDelegate.getKey(object));
+							final OAGraph og = OARuntime.get().graph(object.getClass());
+					    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+							OAObject obj = srvcObjectCache.getObject(object.getClass(), OAObjectKeyDelegate.getKey(object));
 							if (obj != null) {
 								object = obj;
 							}

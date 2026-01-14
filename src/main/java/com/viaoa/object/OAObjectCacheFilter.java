@@ -19,12 +19,15 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.process.OAChangeRefresher;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 
@@ -148,6 +151,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         if (hub == null) throw new RuntimeException("hub can not be null");
         clazz = hub.getObjectClass();
         wrHub = new WeakReference<Hub<T>>(hub);
+    	final OAGraph og = OARuntime.get().graph(clazz);
 
         final boolean bEmptyHub = (hub.getSize() == 0);
         
@@ -184,7 +188,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                 afterAdd(obj);
             }
         };        
-        OAObjectCacheDelegate.addListener(clazz, cacheListener);
+
+        og.objects().getOAObjectCacheService().addListener(clazz, cacheListener);
         
         if (bEmptyHub) {
             reselectAndRefresh();            
@@ -410,9 +415,13 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         
         if (bSetLoading) hub.setLoading(true);
         boolean b = HubDataDelegate.setLoadingAllData(hub, true);
+        
+    	final OAGraph og = OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    	
         try {
             // need to check loaded objects 
-            OAObjectCacheDelegate.visit(clazz, new OACallback() {
+        	srvcObjectCache.visit(clazz, new OACallback() {
                 @SuppressWarnings("unchecked")
                 @Override
                 public boolean updateObject(Object obj) {
@@ -481,7 +490,10 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         if (bServerSideOnly) { 
             OARemoteThreadDelegate.sendMessages(true);
         }
-        OAObjectCacheDelegate.visit(clazz, new OACallback() {
+        
+    	final OAGraph og = OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    	srvcObjectCache.visit(clazz, new OACallback() {
             @Override
             public boolean updateObject(Object obj) {
                 if (isUsed((T) obj)) hub.add((T) obj);
@@ -637,7 +649,10 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             trigger = null;
         }
         if (cacheListener == null) {
-            OAObjectCacheDelegate.removeListener(clazz, cacheListener);
+        	final OAGraph og = OARuntime.get().graph(clazz);
+        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+        	        	
+        	srvcObjectCache.removeListener(clazz, cacheListener);
             cacheListener = null;
         }
     }

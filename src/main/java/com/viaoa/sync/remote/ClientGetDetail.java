@@ -19,6 +19,8 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -31,6 +33,7 @@ import com.viaoa.object.OAObjectSerializerCallback;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OANotExist;
 
 /**
@@ -177,8 +180,11 @@ public class ClientGetDetail {
 		Hub hubHold = new Hub(masterClass);
 		hubHold.add(masterObject);
 		if (siblingKeys != null) {
+	    	final OAGraph og = OARuntime.get().graph(masterClass);
+	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+
 			for (OAObjectKey key : siblingKeys) {
-				OAObject obj = (OAObject) OAObjectCacheDelegate.get(masterClass, key);
+				OAObject obj = (OAObject) srvcObjectCache.get(masterClass, key);
 				if (obj != null) {
 					hubHold.add(obj);
 				}
@@ -321,8 +327,13 @@ public class ClientGetDetail {
 			// send back a lightweight hashmap (oaObjKey, value)
 			Class clazz = masterObject.getClass();
 			boolean bLoad = true;
+			
+	    	final OAGraph og = OARuntime.get().graph(clazz);
+	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+
+
 			for (OAObjectKey key : siblingKeys) {
-				OAObject obj = (OAObject) OAObjectCacheDelegate.get(clazz, key);
+				OAObject obj = (OAObject) srvcObjectCache.get(clazz, key);
 				if (obj == null) {
 					continue;
 				}

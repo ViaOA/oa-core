@@ -22,6 +22,8 @@ import java.util.Map;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.objectcache.ObjectCacheIterator;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCSDelegate;
@@ -30,6 +32,7 @@ import com.viaoa.object.OAObjectHubDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.object.OASiblingHelper;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.*;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.util.OAFilter;
@@ -410,7 +413,9 @@ public class OADataSourceClient extends OADataSource {
 		}
 
 		if (filter != null) {
-			if (OAObjectCacheDelegate.getSelectAllHub(clazz) != null) {
+        	final OAGraph og = OARuntime.get().graph(clazz);
+        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+        	if (srvcObjectCache.getSelectAllHub(clazz) != null) {
 				return true;
 			}
 		}
@@ -621,7 +626,10 @@ public class OADataSourceClient extends OADataSource {
 			OAObject whereObject, String propertyFromWhereObject, String extraWhere,
 			int max, OAFilter filter, boolean bDirty) {
 		if (filter != null) {
-			if (OAObjectCacheDelegate.getSelectAllHub(selectClass) != null) {
+        	final OAGraph og = OARuntime.get().graph(selectClass);
+        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			
+			if (srvcObjectCache.getSelectAllHub(selectClass) != null) {
 				ObjectCacheIterator it = new ObjectCacheIterator(selectClass, filter);
 				it.setMax(max);
 				return it;
@@ -669,7 +677,11 @@ public class OADataSourceClient extends OADataSource {
 			String queryWhere, String queryOrder,
 			int max, OAFilter filter, boolean bDirty) {
 		if (filter != null) {
-			if (OAObjectCacheDelegate.getSelectAllHub(selectClass) != null) {
+			
+        	final OAGraph og = OARuntime.get().graph(selectClass);
+        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			
+			if (srvcObjectCache.getSelectAllHub(selectClass) != null) {
 				ObjectCacheIterator it = new ObjectCacheIterator(selectClass, filter);
 				it.setMax(max);
 				return it;
@@ -894,7 +906,9 @@ public class OADataSourceClient extends OADataSource {
 			}
 			Object obj = null;
 			if (key != null) {
-				obj = OAObjectCacheDelegate.get(clazz, key);
+	        	final OAGraph og = OARuntime.get().graph(clazz);
+	        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+				obj = srvcObjectCache.get(clazz, key);
 				if (obj == null) {
 					// not on this system, need to get from server
 					OASyncDelegate.getRemoteServer(packagex).getObject(clazz, key);

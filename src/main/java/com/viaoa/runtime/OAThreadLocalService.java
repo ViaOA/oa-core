@@ -9,6 +9,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubEventDelegate;
@@ -375,7 +377,7 @@ public class OAThreadLocalService {
 	public int getObjectCacheAddMode() {
 		int mode;
 		if (aiTotalObjectCacheAddMode.get() == 0) {
-			mode = OAObjectCacheDelegate.getDefaultAddMode();
+			mode = getObjectCacheAddMode(null);
 		} else {
 			mode = getObjectCacheAddMode(getThreadLocal(false));
 		}
@@ -391,12 +393,13 @@ public class OAThreadLocalService {
 	 */
 	protected int getObjectCacheAddMode(OAThreadLocal ti) {
 		if (ti == null) {
-			return OAObjectCacheDelegate.getDefaultAddMode();
+			return 0;  // not set in threadLocal, check in OAObjectCacheService
 		}
-		if (ti.getCacheAddMode() == 0) {
-			return OAObjectCacheDelegate.getDefaultAddMode();
+		int x = ti.getCacheAddMode();
+		if (x <= 0) {
+			return 0;  // not set in threadLocal, check in OAObjectCacheService
 		}
-		return ti.getCacheAddMode();
+		return x;
 	}
 	
 	/**
@@ -407,9 +410,8 @@ public class OAThreadLocalService {
 	 */
 	public void setObjectCacheAddMode(int mode) {
 		// LOG.finer("mode="+mode);
-		if (mode == OAObjectCacheDelegate.getDefaultAddMode()) {
-			mode = 0;
-		}
+		
+		if (mode < 0) mode = 0;
 		OAThreadLocal ti = getThreadLocal(mode != 0);
 		if (ti == null) {
 			return;

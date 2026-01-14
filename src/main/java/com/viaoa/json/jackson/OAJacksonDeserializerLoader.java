@@ -31,6 +31,8 @@ import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.filter.OAQueryFilter;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.json.OAJson.StackItem;
@@ -52,6 +54,7 @@ import com.viaoa.pojo.PojoLinkOne;
 import com.viaoa.pojo.PojoLinkOneDelegate;
 import com.viaoa.pojo.PojoLinkUnique;
 import com.viaoa.pojo.PojoProperty;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
@@ -676,7 +679,9 @@ public class OAJacksonDeserializerLoader {
 			if (bHasNull) {
 				obj = null;
 			} else {
-				obj = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), ok);
+    			final OAGraph og = OARuntime.get().graph(li.getToClass());
+    	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+				obj = (OAObject) srvcObjectCache.get(li.getToClass(), ok);
 				if (obj == null) {
 					obj = (OAObject) OADataSource.getObject(li.getToClass(), ok);
 				}
@@ -785,7 +790,9 @@ public class OAJacksonDeserializerLoader {
 
 		OAObject obj = null;
 		if (ok != null) {
-			obj = (OAObject) OAObjectCacheDelegate.get(li.getToClass(), ok);
+			final OAGraph og = OARuntime.get().graph(li.getToClass());
+	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			obj = (OAObject) srvcObjectCache.get(li.getToClass(), ok);
 			if (obj == null) {
 				obj = (OAObject) OADataSource.getObject(li.getToClass(), ok);
 			}
@@ -850,7 +857,9 @@ public class OAJacksonDeserializerLoader {
 		OAFinder finder = new OAFinder();
 		OAQueryFilter filter = new OAQueryFilter(li.getToClass(), sql, values);
 		finder.addFilter(filter);
-		OAObject objNew = (OAObject) OAObjectCacheDelegate.find(li.getToClass(), finder);
+		final OAGraph og = OARuntime.get().graph(li.getToClass());
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject objNew = (OAObject) srvcObjectCache.find(li.getToClass(), finder);
 
 		if (objNew == null) {
 			OASelect sel = new OASelect(li.getToClass(), sql, values, "");
@@ -928,7 +937,9 @@ public class OAJacksonDeserializerLoader {
 			OAFinder finder = new OAFinder();
 			OAQueryFilter filter = new OAQueryFilter(li.getToClass(), sql, values);
 			finder.addFilter(filter);
-			OAObject objNew = (OAObject) OAObjectCacheDelegate.find(li.getToClass(), finder);
+			final OAGraph og = OARuntime.get().graph(li.getToClass());
+	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			OAObject objNew = (OAObject) srvcObjectCache.find(li.getToClass(), finder);
 
 			if (objNew == null) {
 				OASelect sel = new OASelect(li.getToClass(), sql, values, "");

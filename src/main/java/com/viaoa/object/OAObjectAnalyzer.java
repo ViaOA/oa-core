@@ -17,7 +17,10 @@ package com.viaoa.object;
 
 import java.util.HashSet;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Diagnostic utility that traverses all cached {@link OAObject}s and
@@ -52,9 +55,12 @@ public class OAObjectAnalyzer {
      * maintained for summary inspection.</p>
      */
     public void load() {
-
-        for (Class cs : OAObjectCacheDelegate.getClasses()) {
-            System.out.println("Starting class="+cs.getSimpleName()+", total="+OAObjectCacheDelegate.getTotal(cs));
+    	final OAGraph og = OARuntime.get().graph((Class) null);
+    	final OAObjectCacheService ocs = og.objects().getOAObjectCacheService();
+    	
+    	
+        for (Class cs : og.objects().getOAObjectCacheService().getClasses()) {
+            System.out.println("Starting class="+cs.getSimpleName()+", total="+ocs.getTotal(cs));
             
             OACallback cb = new OACallback() {
                 @Override
@@ -74,7 +80,7 @@ public class OAObjectAnalyzer {
                     return true;
                 }
             };
-            OAObjectCacheDelegate.callback(cs, cb);
+            og.objects().getOAObjectCacheService().callback(cs, cb);
         }    
         int xx = hsHub.size();
         xx++;

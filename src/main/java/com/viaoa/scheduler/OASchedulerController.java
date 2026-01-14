@@ -18,6 +18,8 @@ package com.viaoa.scheduler;
 import java.util.ArrayList;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
@@ -25,6 +27,7 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAObjectSchedulerDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.scheduler.OAScheduler;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
@@ -337,7 +340,9 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
                     if (ppDateTo != null) finder.addEqualFilter(ppDateTo, new OADate(dtTo));
                     if (ppTimeTo != null) finder.addEqualFilter(ppTimeTo, new OATime(dtTo));
                 }
-                objSchedule = (OAObject) OAObjectCacheDelegate.find(hubDetail.getObjectClass(), finder);
+    			final OAGraph og = OARuntime.get().graph(hubDetail.getObjectClass());
+    	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+                objSchedule = (OAObject) srvcObjectCache.find(hubDetail.getObjectClass(), finder);
                 
                 if (objSchedule == null) {
                     // need to check datasource

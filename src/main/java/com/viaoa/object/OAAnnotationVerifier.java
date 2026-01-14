@@ -39,7 +39,10 @@ import com.viaoa.datasource.jdbc.db.Database;
 import com.viaoa.datasource.jdbc.db.Index;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectAnnotationService;
 import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 
 /**
@@ -93,7 +96,8 @@ public class OAAnnotationVerifier {
 	 */
 	public boolean verify(OAObjectInfo oi) throws Exception {
 		Class clazz = oi.getForClass();
-
+		OAGraph og = OARuntime.get().graph(clazz);
+		final OAObjectAnnotationService srvcObjectAnnotation = og.objects().getOAObjectAnnotationService();
 		String s;
 
 		OAClass oaclass = (OAClass) clazz.getAnnotation(OAClass.class);
@@ -130,7 +134,7 @@ public class OAAnnotationVerifier {
 			if (oaid == null) {
 				continue;
 			}
-			s = OAAnnotationDelegate.getPropertyName(m.getName());
+			s = srvcObjectAnnotation.getPropertyName(m.getName());
 
 			int x = OAArray.indexOf(ids, s, true);
 			if (x >= 0) {
@@ -159,7 +163,7 @@ public class OAAnnotationVerifier {
 			if (oaprop == null) {
 				continue;
 			}
-			String name = OAAnnotationDelegate.getPropertyName(m.getName());
+			String name = srvcObjectAnnotation.getPropertyName(m.getName());
 
 			int x = 0;
 			for (OAPropertyInfo pi : al) {
@@ -215,7 +219,7 @@ public class OAAnnotationVerifier {
 				continue;
 			}
 
-			String name = OAAnnotationDelegate.getPropertyName(m.getName());
+			String name = srvcObjectAnnotation.getPropertyName(m.getName());
 
 			OACalcInfo ci = OAObjectInfoDelegate.getOACalcInfo(oi, name);
 			if (ci == null) {
@@ -270,7 +274,7 @@ public class OAAnnotationVerifier {
 				bResult = false;
 			}
 
-			String name = OAAnnotationDelegate.getPropertyName(m.getName());
+			String name = srvcObjectAnnotation.getPropertyName(m.getName());
 
 			OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, name);
 			if (li == null) {
@@ -324,7 +328,7 @@ public class OAAnnotationVerifier {
 				bResult = false;
 			}
 
-			String name = OAAnnotationDelegate.getPropertyName(m.getName());
+			String name = srvcObjectAnnotation.getPropertyName(m.getName());
 
 			OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, name);
 			if (li == null) {
@@ -387,6 +391,8 @@ public class OAAnnotationVerifier {
 		boolean[] bs = null;
 		int i;
 		String s;
+		OAGraph og = OARuntime.get().graph(clazz);
+		final OAObjectAnnotationService srvcObjectAnnotation = og.objects().getOAObjectAnnotationService();
 
 		Method[] methods = clazz.getDeclaredMethods(); // need to get all access types, since some could be private. qqqqqq does not get superclass methods
 
@@ -413,7 +419,7 @@ public class OAAnnotationVerifier {
 			if (col != null) {
 				String name = col.name();
 				if (name == null || name.length() == 0) {
-					name = OAAnnotationDelegate.getPropertyName(m.getName());
+					name = srvcObjectAnnotation.getPropertyName(m.getName());
 				}
 
 				boolean b = false;
@@ -426,7 +432,7 @@ public class OAAnnotationVerifier {
 							p("column sql type mismatch");
 							bResult = false;
 						}
-						s = OAAnnotationDelegate.getPropertyName(m.getName());
+						s = srvcObjectAnnotation.getPropertyName(m.getName());
 						if (!s.equalsIgnoreCase(columns[i].propertyName)) {
 							p("column prop name mismatch");
 							bResult = false;

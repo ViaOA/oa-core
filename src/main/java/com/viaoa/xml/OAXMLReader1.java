@@ -35,6 +35,8 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -45,6 +47,7 @@ import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAConv;
@@ -768,7 +771,9 @@ public class OAXMLReader1 extends DefaultHandler {
 				}
 			} else {
 				if (ids != null && ids.length > 0) {
-					object = (OAObject) OAObjectCacheDelegate.get(c, key);
+					final OAGraph og = OARuntime.get().graph(c);
+			    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+					object = (OAObject) srvcObjectCache.get(c, key);
 				}
 			}
 			if (object == null && guid != null) {
@@ -1148,7 +1153,9 @@ public class OAXMLReader1 extends DefaultHandler {
 				} else if (v instanceof OAObjectKey) {
 					// try to find "real" object
 					Class cx = OAObjectInfoDelegate.getPropertyClass(c, (String) k);
-					v = OAObjectCacheDelegate.get(cx, (OAObjectKey) v);
+					final OAGraph og = OARuntime.get().graph(cx);
+			    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+					v = srvcObjectCache.get(cx, (OAObjectKey) v);
 					if (v == null) {
 						bResult = false;
 					} else {
@@ -1300,7 +1307,9 @@ public class OAXMLReader1 extends DefaultHandler {
 	 * @return the resolved object instance
 	 */
 	protected Object getRealObject(OAObject object) {
-		Object obj = OAObjectCacheDelegate.getObject(object.getClass(), OAObjectKeyDelegate.getKey(object));
+		final OAGraph og = OARuntime.get().graph(object.getClass());
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		Object obj = srvcObjectCache.getObject(object.getClass(), OAObjectKeyDelegate.getKey(object));
 		if (obj != null) {
 			return obj;
 		}

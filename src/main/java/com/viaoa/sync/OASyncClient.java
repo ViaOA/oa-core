@@ -34,6 +34,7 @@ import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -472,7 +473,9 @@ public class OASyncClient {
 						continue;
 					}
 
-					OAObject obj = OAObjectCacheDelegate.getObject(masterObject.getClass(), entry.getKey());
+					final OAGraph og = OARuntime.get().graph(masterObject.getClass());
+			    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+					OAObject obj = srvcObjectCache.getObject(masterObject.getClass(), entry.getKey());
 					if (obj == null) {
 						continue;
 					}

@@ -22,6 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -32,6 +34,7 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.remote.multiplexer.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
 /**
@@ -384,7 +387,9 @@ public class OASyncCombinedClient {
                                     OAObjectKey k1 = objValue.getObjectKey();
                                     
                                     // need to change key 
-                                    OAObjectCacheDelegate.removeObject(objValue);
+                					final OAGraph og = OARuntime.get().graph(objValue);
+                			    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+                			    	srvcObjectCache.removeObject(objValue);
                                     OAObjectDelegate.setAsNewObject(objValue, UUID.randomUUID());
                                     
                                     // need to add it to mapper
@@ -882,7 +887,9 @@ qqqqqqqqqqqqq */
             
         }
         else {
-            objServer = OAObjectCacheDelegate.get(objClient.getClass(), keyServer);
+			final OAGraph og = OARuntime.get().graph(objClient.getClass());
+	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+            objServer = srvcObjectCache.get(objClient.getClass(), keyServer);
             if (objServer == null) {
                 // get from original server
 //qqqqqqqqq                

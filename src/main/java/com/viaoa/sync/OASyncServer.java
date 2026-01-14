@@ -30,10 +30,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.file.ServerFile;
 import com.viaoa.sync.model.ClientInfo;
 import com.viaoa.sync.model.ServerInfo;
@@ -290,7 +293,9 @@ public class OASyncServer {
 
 				@Override
 				public void refreshCache(Class clazz) {
-					OAObjectCacheDelegate.refresh(clazz);
+					final OAGraph og = OARuntime.get().graph(clazz);
+			    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			    	srvcObjectCache.refresh(clazz);
 				}
 
 				@Override
@@ -817,7 +822,9 @@ public class OASyncServer {
 			            
 			            //see if this client has the hub loaded by looking at an object in it
 			            Class c = (Class) ri.args[0];
-			            OAObject obj = (OAObject) OAObjectCacheDelegate.get(c, ok);
+						final OAGraph og = OARuntime.get().graph(c);
+				    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			            OAObject obj = (OAObject) srvcObjectCache.get(c, ok);
 			            Object objx = OAObjectPropertyDelegate.getProperty(obj, (String) ri.args[2]);
 			            if (objx instanceof Hub) {
 			                Hub hub = (Hub) objx;
@@ -847,7 +854,9 @@ public class OASyncServer {
 			            
 			            //see if this client has the hub loaded by looking at an object in it
 			            Class c = (Class) ri.args[0];
-			            OAObject obj = (OAObject) OAObjectCacheDelegate.get(c, ok);
+						final OAGraph og = OARuntime.get().graph(c);
+				    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			            OAObject obj = (OAObject) srvcObjectCache.get(c, ok);
 			            Object objx = OAObjectPropertyDelegate.getProperty(obj, (String) ri.args[2]);
 			            if (objx instanceof Hub) {
 			                Hub hub = (Hub) objx;

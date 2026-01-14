@@ -15,10 +15,13 @@
  */
 package com.viaoa.util;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectCacheListener;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Utility for monitoring property changes on all {@link OAObject} instances of
@@ -112,7 +115,10 @@ public class OACacheListenerUtil {
             public void afterLoad(OAObject obj) {
             }
         };
-        OAObjectCacheDelegate.addListener(clazz, listener);
+
+		final OAGraph og = OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    	srvcObjectCache.addListener(clazz, listener);
     }
     
     /**
@@ -123,7 +129,9 @@ public class OACacheListenerUtil {
      * preventing further cache events from being received.
      */
     public void close() {
-        OAObjectCacheDelegate.removeListener(clazz, listener);
+		final OAGraph og = OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    	srvcObjectCache.removeListener(clazz, listener);
         listener = null;
     }
 

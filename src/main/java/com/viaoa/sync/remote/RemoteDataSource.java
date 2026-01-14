@@ -23,11 +23,14 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 
 /**
@@ -392,7 +395,9 @@ public abstract class RemoteDataSource {
 
 		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(objectClass, obj);
 
-		OAObject objNew = (OAObject) OAObjectCacheDelegate.get(objectClass, key);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject objNew = (OAObject) srvcObjectCache.get(objectClass, key);
 		if (objNew == null) {
 			objNew = (OAObject) OADataSource.getObject(objectClass, key);
 		}

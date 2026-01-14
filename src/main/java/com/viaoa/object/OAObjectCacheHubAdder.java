@@ -16,7 +16,11 @@
 package com.viaoa.object;
 
 import java.lang.ref.WeakReference;
+
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Helper class used by {@link OAObjectCacheDelegate} to populate
@@ -63,11 +67,14 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
         if (hub == null) throw new IllegalArgumentException("hub can not be null");
         clazz = hub.getObjectClass();
         wfHub = new WeakReference(hub);
-        
-        OAObjectCacheDelegate.addListener(clazz, this);
+
+    	final OAGraph og = OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+                
+    	srvcObjectCache.addListener(clazz, this);
         
         // need to get objects that are already loaded 
-        OAObjectCacheDelegate.callback(clazz, new OACallback() {
+        srvcObjectCache.callback(clazz, new OACallback() {
             @Override
             public boolean updateObject(Object obj) {
                 Hub<T> h = wfHub.get();
@@ -91,7 +98,9 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
      * </p>
      */
     public void close() {
-    	OAObjectCacheDelegate.removeListener(clazz, this);
+    	final OAGraph og = OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    	srvcObjectCache.removeListener(clazz, this);
     }
 
     /**

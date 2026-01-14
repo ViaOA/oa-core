@@ -19,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -26,6 +28,7 @@ import com.viaoa.object.OAObjectDSDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 
 /**
@@ -359,7 +362,9 @@ public class OADataSourceAuto extends OADataSource {
 				nn.setNext(id + 1);
 			}
 			// 20141201
-			Object test = OAObjectCacheDelegate.getObject(oaObj.getClass(), id);
+	    	final OAGraph og = OARuntime.get().graph(oaObj.getClass());
+	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			Object test = srvcObjectCache.getObject(oaObj.getClass(), id);
 			//was: Object test = OAObjectReflectDelegate.getObject(oaObj.getClass(), id);
 			if (test == null) {
 				break;

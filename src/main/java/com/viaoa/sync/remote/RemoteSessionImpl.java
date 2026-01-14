@@ -20,7 +20,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.model.ClientInfo;
 
 /**
@@ -158,7 +161,9 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	        hmObjectsWithoutHubs.remove(ok.getGuid());
 	    }
 	    else {
-    	    OAObject obj = (OAObject) OAObjectCacheDelegate.get(c, ok);
+	    	final OAGraph og = OARuntime.get().graph(c);
+	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    	    OAObject obj = (OAObject) srvcObjectCache.get(c, ok);
     	    if (obj != null) {
                 UUID guid = ok.getGuid();
                 hmObjectsWithoutHubs.put(guid, obj);
@@ -206,7 +211,9 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 */
 	@Override
 	public boolean setLock(Class objectClass, OAObjectKey objectKey, boolean bLock) {
-		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, objectKey);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, objectKey);
 		if (obj == null) {
 			return false;
 		}
@@ -264,7 +271,9 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 */
 	@Override
 	public boolean isLockedByThisClient(Class objectClass, OAObjectKey objectKey) {
-		Object obj = OAObjectCacheDelegate.get(objectClass, objectKey);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		Object obj = srvcObjectCache.get(objectClass, objectKey);
 		if (obj == null) {
 			return false;
 		}

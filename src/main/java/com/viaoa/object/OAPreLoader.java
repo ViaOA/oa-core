@@ -23,7 +23,10 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.ManyToMany;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
@@ -253,9 +256,14 @@ public class OAPreLoader {
 			return;
 		}
 
+    	OAGraph og = OARuntime.get().graph(classA);
+    	final OAObjectCacheService srvcObjectCacheA = og.objects().getOAObjectCacheService();
+    	og = OARuntime.get().graph(classB);
+    	final OAObjectCacheService srvcObjectCacheB = og.objects().getOAObjectCacheService();
+		
 		for (ManyToMany mm : alManyToMany) {
-			Object objA = OAObjectCacheDelegate.get(classA, mm.ok1);
-			Object objB = OAObjectCacheDelegate.get(classB, mm.ok2);
+			Object objA = srvcObjectCacheA.get(classA, mm.ok1);
+			Object objB = srvcObjectCacheB.get(classB, mm.ok2);
 			if (objA == null || objB == null) {
 				continue;
 			}

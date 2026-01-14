@@ -19,8 +19,11 @@ import java.lang.reflect.Method;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAString;
 
 /**
@@ -120,7 +123,10 @@ public class OATriggerMethodListener implements OATriggerListener {
         };
         finder.setUseOnlyLoadedData(bOnlyUseLoadedData);
 
-        Hub h = OAObjectCacheDelegate.getSelectAllHub(clazz);
+    	final OAGraph og = OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+        
+        Hub h = srvcObjectCache.getSelectAllHub(clazz);
         if (h != null && bOnlyUseLoadedData) {
             for (Object objx : h) {
                 if (finder.findFirst((OAObject) objx) == null) continue;
@@ -133,7 +139,7 @@ public class OATriggerMethodListener implements OATriggerListener {
         OADataSource ds = OADataSource.getDataSource(clazz);
         
         if (bOnlyUseLoadedData || ds == null || !ds.supportsStorage()) {
-            OAObjectCacheDelegate.visit(clazz, new OACallback() {
+        	srvcObjectCache.visit(clazz, new OACallback() {
                 @Override
                 public boolean updateObject(Object obj) {
                     if (finder.findFirst((OAObject) obj) == null) return true;

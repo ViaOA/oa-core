@@ -22,6 +22,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAMany;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectAnnotationService;
 import com.viaoa.object.OAAnnotationDelegate;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFinder;
@@ -34,6 +36,7 @@ import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAPropertyPath;
@@ -701,7 +704,9 @@ public class HubListenerTree {
 					if (Hub.class.equals(hubClass)) {
 						OAMany om = m.getAnnotation(OAMany.class);
 						if (om != null) {
-							hubClass = OAAnnotationDelegate.getHubObjectClass(om, m);
+							OAGraph og = OARuntime.get().graph(hubClass);
+							final OAObjectAnnotationService srvcObjectAnnotation = og.objects().getOAObjectAnnotationService();
+							hubClass = srvcObjectAnnotation.getHubObjectClass(om, m);
 						} else {
 							String s = ("getAnnotation OAMany=null for prop method=get" + property + ", hub=" + hub + ", prop="
 									+ origPropertyName + ", dependendProp=" + dependentPropertyNames[i]);

@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -27,6 +29,7 @@ import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncDelegate;
 /**
  * Base server-side implementation of {@link RemoteClientInterface}. Each
@@ -349,7 +352,9 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	@Override
 	public OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties) {
-		OAObject obj = (OAObject) OAObjectCacheDelegate.getObject(objectClass, objectKey);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
 		if (obj == null) {
 			return null;
 		}
@@ -409,7 +414,9 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 * @return the resolved object, or {@code null} if not found
 	 */
 	private OAObject getObject(Class objectClass, OAObjectKey origKey) {
-		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, origKey);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, origKey);
 		if (obj == null && OASyncDelegate.isServer(objectClass)) {
 			obj = (OAObject) OADataSource.getObject(objectClass, origKey);
 			if (obj != null) {
@@ -468,7 +475,9 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey) {
-		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, objectKey);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh();
 		}
@@ -483,7 +492,9 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey, String propertyName) {
-		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, objectKey);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh(propertyName);
 		}

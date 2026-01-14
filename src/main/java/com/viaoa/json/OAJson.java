@@ -41,6 +41,8 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectImportMatchService.ImportMatch;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.jackson.OAJacksonModule;
@@ -53,6 +55,7 @@ import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
@@ -1230,7 +1233,9 @@ public class OAJson {
 						// key
 						OAObjectKey ok = OAJson.convertNumberToObjectKey(getReadObjectClass(), node.asInt());
 
-						OAObject objNew = (OAObject) OAObjectCacheDelegate.get(getReadObjectClass(), ok);
+						final OAGraph og = OARuntime.get().graph(getReadObjectClass());
+				    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+						OAObject objNew = (OAObject) srvcObjectCache.get(getReadObjectClass(), ok);
 						if (objNew != null) {
 							hub.add((T) objNew);
 						} else {
@@ -1247,7 +1252,9 @@ public class OAJson {
 							// convert multipart key to OAObjectKey
 							OAObjectKey ok = OAJson.convertJsonSinglePartIdToObjectKey(getReadObjectClass(), s);
 
-							OAObject objNew = (OAObject) OAObjectCacheDelegate.get(getReadObjectClass(), ok);
+							final OAGraph og = OARuntime.get().graph(getReadObjectClass());
+					    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+							OAObject objNew = (OAObject) srvcObjectCache.get(getReadObjectClass(), ok);
 							if (objNew != null) {
 								hub.add((T) objNew);
 							} else {

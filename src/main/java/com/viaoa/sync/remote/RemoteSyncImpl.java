@@ -19,10 +19,13 @@ import java.util.Comparator;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubAddRemoveDelegate;
 import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAThrottle;
@@ -334,7 +337,9 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (origKey == null) {
 			return null;
 		}
-		OAObject obj = (OAObject) OAObjectCacheDelegate.get(objectClass, origKey);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, origKey);
 
 		if (obj == null && OASyncDelegate.isServer(objectClass)) {
 			obj = (OAObject) OADataSource.getObject(objectClass, origKey);

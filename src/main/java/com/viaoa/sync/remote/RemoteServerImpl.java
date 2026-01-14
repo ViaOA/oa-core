@@ -19,6 +19,8 @@ import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -27,6 +29,7 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.model.ClientInfo;
 
@@ -121,7 +124,9 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	@Override
 	public boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule) {
 		boolean bPrev = OAThreadLocalDelegate.setSendMessages(true);
-		OAObject obj = (OAObject) OAObjectCacheDelegate.getObject(objectClass, objectKey);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
 		boolean bResult;
 		if (obj != null) {
 			obj.save(iCascadeRule);
@@ -155,7 +160,9 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public OAObject getObject(Class objectClass, OAObjectKey objectKey) {
-		OAObject obj = (OAObject) OAObjectCacheDelegate.getObject(objectClass, objectKey);
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
 		if (obj == null) {
 			if (OASyncDelegate.isServer(objectClass)) {
 				obj = (OAObject) OADataSource.getObject(objectClass, objectKey);
@@ -166,7 +173,9 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 
 	@Override
 	public OAObject getObjectUsingPkey(Class objectClass, OAObjectKey objectKey) {
-		OAObject obj = (OAObject) OAObjectCacheDelegate.getObject(objectClass, objectKey.getObjectIds());
+    	final OAGraph og = OARuntime.get().graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey.getObjectIds());
 		if (obj == null) {
 			if (OASyncDelegate.isServer(objectClass)) {
 				obj = (OAObject) OADataSource.getObject(objectClass, objectKey);

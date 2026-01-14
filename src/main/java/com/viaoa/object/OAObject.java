@@ -29,11 +29,14 @@ import javax.xml.bind.annotation.XmlTransient;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectAnnotationService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.object.OAObjectInfo.FriendAccess;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncDelegate;
@@ -2726,9 +2729,10 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * initialization or custom logic.
 	 */
 	public void afterLoad() {
+		final OAGraph og = OARuntime.get().graph(this);
 		OAObjectEmptyHubDelegate.initialize(this);
 		OAObjectEventDelegate.fireAfterLoadEvent(this);
-		OAObjectCacheDelegate.fireAfterLoadEvent(this);
+		og.objects().getOAObjectCacheService().fireAfterLoadEvent(this);
 	}
 
 	/**
