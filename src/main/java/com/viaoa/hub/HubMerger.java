@@ -429,22 +429,22 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         long ts = System.currentTimeMillis();
 
         final OASiblingHelper sh = getSiblingHelper();
-        final boolean bx = OAThreadLocalDelegate.addSiblingHelper(sh);
+        final boolean bx = OARuntime.get().threadLocals().addSiblingHelper(sh);
         final boolean bz = bServerSideOnly;
         try {
             // 20120624 hubCombined could be a detail hub.
-            OAThreadLocalDelegate.setSuppressCSMessages(true);
+            OARuntime.get().threadLocals().setSuppressCSMessages(true);
             if (!bz) {
                 aiLoadingCombinedHub.incrementAndGet();
             }
             _init();
         } finally {
-            OAThreadLocalDelegate.setSuppressCSMessages(false);
+            OARuntime.get().threadLocals().setSuppressCSMessages(false);
             if (!bz) {
                 aiLoadingCombinedHub.decrementAndGet();
             }
             if (bx) {
-                OAThreadLocalDelegate.removeSiblingHelper(sh);
+                OARuntime.get().threadLocals().removeSiblingHelper(sh);
             }
         }
         ts = System.currentTimeMillis() - ts;
@@ -1456,7 +1456,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 if (bUseAll || this.node != nodeRoot && nodeRoot != null) {
                     OAThreadLocal tl;
                     Hub hubx = null;
-                    //if (!bCreatedFromOneObject) hubx = OAThreadLocalDelegate.setGetDetailHub(hub);
+                    //if (!bCreatedFromOneObject) hubx = OARuntime.get().threadLocals().setGetDetailHub(hub);
                     try {
                         if (OASync.isClient(HubMerger.this.getRootHub().getObjectClass())) {
                             // preload, so that any getDetail will be more efficient
@@ -1486,7 +1486,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                             createChild(obj);
                         }
                     } finally {
-                        //    if (!bCreatedFromOneObject) OAThreadLocalDelegate.resetGetDetailHub(hubx);
+                        //    if (!bCreatedFromOneObject) OARuntime.get().threadLocals().resetGetDetailHub(hubx);
                     }
                 } else {
                     OAObject obj = (OAObject) hub.getAO();
@@ -1641,12 +1641,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     final boolean bx = aiLoadingCombinedHub.get() > 0;
                     try {
                         if (bx) {
-                            OAThreadLocalDelegate.setLoading(true);
+                            OARuntime.get().threadLocals().setLoading(true);
                         }
                         hubCombined.add(parent);
                     } finally {
                         if (bx) {
-                            OAThreadLocalDelegate.setLoading(false);
+                            OARuntime.get().threadLocals().setLoading(false);
                         }
                     }
                 }
@@ -1657,12 +1657,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     final boolean bx = aiLoadingCombinedHub.get() > 0;
                     try {
                         if (bx) {
-                            OAThreadLocalDelegate.setLoading(true);
+                            OARuntime.get().threadLocals().setLoading(true);
                         }
                         hubCombined.add(parent);
                     } finally {
                         if (bx) {
-                            OAThreadLocalDelegate.setLoading(false);
+                            OARuntime.get().threadLocals().setLoading(false);
                         }
                     }
                 }
@@ -1882,7 +1882,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                             return; // might have already been removed
                         }
                     }
-                    if (OAThreadLocalDelegate.isHubMergerChanging()) { // 20120102
+                    if (OARuntime.get().threadLocals().isHubMergerChanging()) { // 20120102
                         // 20120612 dont send event, unless there is a recursive prop, which needs to
                         // have recursives nodes updated
                         HubAddRemoveDelegate.remove(hubCombined, obj, false, bIsRecusive, false, false, false, false);
@@ -1903,7 +1903,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             // 20131209
             if (node == nodeRoot && bIncludeRootHub) {
                 if (!isUsed(obj)) {
-                    if (OAThreadLocalDelegate.isHubMergerChanging()) {
+                    if (OARuntime.get().threadLocals().isHubMergerChanging()) {
                         HubAddRemoveDelegate.remove(hubCombined, obj, false, bIsRecusive, false, false, false, false);
                     } else {
                         if (hubCombined != null) {
@@ -1956,7 +1956,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     }
                     if (ref != null) {
                         if (!isUsed(ref, child.node)) {
-                            if (OAThreadLocalDelegate.isHubMergerChanging()) { // 20120102
+                            if (OARuntime.get().threadLocals().isHubMergerChanging()) { // 20120102
                                 HubAddRemoveDelegate.remove(child.hub, ref, false, false, false, false, false, false);
                             } else {
                                 child.hub.remove(ref);
@@ -2055,12 +2055,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             final boolean b = (hub == hubRoot);
             try {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(true);
+                    OARuntime.get().threadLocals().setHubMergerChanging(true);
                 }
                 _beforeRemoveAll(e);
             } finally {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(false);
+                    OARuntime.get().threadLocals().setHubMergerChanging(false);
                 }
             }
         }
@@ -2208,13 +2208,13 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             long ts = System.currentTimeMillis();
             final boolean b = bServerSideOnly;
             try {
-                OAThreadLocalDelegate.setHubMergerChanging(true);
+                OARuntime.get().threadLocals().setHubMergerChanging(true);
                 if (!b) {
                     aiLoadingCombinedHub.incrementAndGet();
                 }
                 _onNewList2();
             } finally {
-                OAThreadLocalDelegate.setHubMergerChanging(false);
+                OARuntime.get().threadLocals().setHubMergerChanging(false);
                 if (!b) {
                     aiLoadingCombinedHub.decrementAndGet();
                     if (!shouldQuit()) {
@@ -2281,22 +2281,22 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          */
         private void _onNewList3() {
             final OASiblingHelper sh = getSiblingHelper();
-            boolean bx = OAThreadLocalDelegate.addSiblingHelper(sh);
+            boolean bx = OARuntime.get().threadLocals().addSiblingHelper(sh);
             try {
                 if (bServerSideOnly) {
                     OARemoteThreadDelegate.sendMessages(true);
                 } else {
-                    OAThreadLocalDelegate.setSuppressCSMessages(true);
+                    OARuntime.get().threadLocals().setSuppressCSMessages(true);
                 }
                 _onNewList4();
             } finally {
                 if (bServerSideOnly) {
                     OARemoteThreadDelegate.sendMessages(false);
                 } else {
-                    OAThreadLocalDelegate.setSuppressCSMessages(false);
+                    OARuntime.get().threadLocals().setSuppressCSMessages(false);
                 }
                 if (bx) {
-                    OAThreadLocalDelegate.removeSiblingHelper(sh);
+                    OARuntime.get().threadLocals().removeSiblingHelper(sh);
                 }
             }
         }
@@ -2338,7 +2338,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (node.child != null && node.child.liFromParentToChild.getType() == OALinkInfo.ONE) {
 
                 // dont call close on Node.data. This will instead call remove()
-                // not used: final boolean bIsMergerChanging = OAThreadLocalDelegate.isHubMergerChanging();
+                // not used: final boolean bIsMergerChanging = OARuntime.get().threadLocals().isHubMergerChanging();
                 for (; node.child.data != null && node.child.data.hub != null;) {
                     Object obj = node.child.data.hub.getAt(0);
                     if (obj == null) {
@@ -2423,7 +2423,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             final boolean b = (hub == hubRoot);
             try {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(true);
+                    OARuntime.get().threadLocals().setHubMergerChanging(true);
                 }
                 if (obj != null) {
                     //20150622
@@ -2439,7 +2439,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 }
             } finally {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(false);
+                    OARuntime.get().threadLocals().setHubMergerChanging(false);
                 }
             }
         }
@@ -2476,10 +2476,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
             try {
                 // 20120903 removed/commented this, and need to have hub event sent out for remove
-                // if (hub == hubRoot) OAThreadLocalDelegate.setHubMergerIsChanging(true);
+                // if (hub == hubRoot) OARuntime.get().threadLocals().setHubMergerIsChanging(true);
                 remove(obj);
             } finally {
-                // if (hub == hubRoot) OAThreadLocalDelegate.setHubMergerIsChanging(false);
+                // if (hub == hubRoot) OARuntime.get().threadLocals().setHubMergerIsChanging(false);
             }
         }
 
@@ -2494,7 +2494,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             final boolean b = (hub == hubRoot);
             try {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(true);
+                    OARuntime.get().threadLocals().setHubMergerChanging(true);
                 }
                 Object obj = e.getObject();
                 if (obj != null) {
@@ -2511,7 +2511,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 }
             } finally {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(false);
+                    OARuntime.get().threadLocals().setHubMergerChanging(false);
                 }
             }
         }
@@ -2526,7 +2526,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             final boolean b = (hub == hubRoot);
             try {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(true);
+                    OARuntime.get().threadLocals().setHubMergerChanging(true);
                 }
                 Object obj = e.getObject();
                 if (obj != null) {
@@ -2548,7 +2548,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 // ignore
             } finally {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(false);
+                    OARuntime.get().threadLocals().setHubMergerChanging(false);
                 }
             }
         }
@@ -2586,7 +2586,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             final boolean b = (hub == hubRoot);
             try {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(true);
+                    OARuntime.get().threadLocals().setHubMergerChanging(true);
                 }
                 Object obj = e.getObject();
                 if (obj != null) {
@@ -2603,7 +2603,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 }
             } finally {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(false);
+                    OARuntime.get().threadLocals().setHubMergerChanging(false);
                 }
             }
         }
@@ -2619,7 +2619,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             final boolean b = (hub == hubRoot);
             try {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(true);
+                    OARuntime.get().threadLocals().setHubMergerChanging(true);
                 }
                 Object obj = e.getObject();
                 if (obj != null) {
@@ -2637,7 +2637,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 afterAdd2(e);
             } finally {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(false);
+                    OARuntime.get().threadLocals().setHubMergerChanging(false);
                 }
             }
         }
@@ -2742,12 +2742,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 if (!node.child.data.hub.contains(ref)) {
                     // 20200407 added siblingHelper
                     final OASiblingHelper sh = getSiblingHelper();
-                    boolean bx = OAThreadLocalDelegate.addSiblingHelper(sh);
+                    boolean bx = OARuntime.get().threadLocals().addSiblingHelper(sh);
                     try {
                         node.child.data.hub.add(ref);
                     } finally {
                         if (bx) {
-                            OAThreadLocalDelegate.removeSiblingHelper(sh);
+                            OARuntime.get().threadLocals().removeSiblingHelper(sh);
                         }
                     }
                 }
@@ -2826,14 +2826,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             final boolean b = (hub == hubRoot);
             try {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(true);
+                    OARuntime.get().threadLocals().setHubMergerChanging(true);
                 }
                 OAObject obj = (OAObject) e.getObject();
                 remove(obj);
                 createChild(obj);
             } finally {
                 if (b) {
-                    OAThreadLocalDelegate.setHubMergerChanging(false);
+                    OARuntime.get().threadLocals().setHubMergerChanging(false);
                 }
             }
         }

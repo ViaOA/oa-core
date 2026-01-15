@@ -124,7 +124,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule) {
-		boolean bPrev = OAThreadLocalDelegate.setSendMessages(true);
+		boolean bPrev = OARuntime.get().threadLocals().setSendMessages(true);
     	final OAGraph og = OARuntime.get().graph(objectClass);
     	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
 		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
@@ -136,7 +136,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 			bResult = false;
 		}
 
-		OAThreadLocalDelegate.setSendMessages(bPrev);
+		OARuntime.get().threadLocals().setSendMessages(bPrev);
 		return bResult;
 	}
 
@@ -326,7 +326,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public String performThreadDump(String msg) {
-		String s = OAThreadLocalDelegate.getAllStackTraces();
+		String s = OARuntime.get().threadLocals().getAllStackTraces();
 		LOG.warning(msg + "\n" + s);
 		return s;
 	}

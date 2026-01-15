@@ -615,12 +615,12 @@ public class ResultSetIterator implements OADataSourceIterator {
 			if (siblingHelper == null) {
 				siblingHelper = new OASiblingHelper(this.hubReadAhead);
 			}
-			boolean bx = OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+			boolean bx = OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
 			try {
 				obj.afterLoad();
 			} finally {
 				if (bx) {
-					OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+					OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
 				}
 			}
 		}
@@ -712,10 +712,10 @@ public class ResultSetIterator implements OADataSourceIterator {
 			}
 
 			// 20221219 so that validation checks are not done (ex: unique values)
-			OAThreadLocalDelegate.setLoading(true);
+			OARuntime.get().threadLocals().setLoading(true);
 			/* was
 			if (!bDirty) {
-				OAThreadLocalDelegate.setLoading(true);
+				OARuntime.get().threadLocals().setLoading(true);
 			} else {
 				bDataSourceLoadingObject = false;
 			}
@@ -842,7 +842,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 			++cnter;
 
 			if (bDataSourceLoadingObject) {
-				OAThreadLocalDelegate.setLoading(false);
+				OARuntime.get().threadLocals().setLoading(false);
 				bDataSourceLoadingObject = false;
 			}
 
@@ -872,7 +872,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 				oaObject.setChanged(false);
 			}
 			if (bDataSourceLoadingObject) {
-				OAThreadLocalDelegate.setLoading(false);
+				OARuntime.get().threadLocals().setLoading(false);
 			}
 		}
 	}

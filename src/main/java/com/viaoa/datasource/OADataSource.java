@@ -1250,7 +1250,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return true if batch updates are allowed
 	 */
 	public boolean isAllowingBatch() {
-		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+		final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
 		final boolean bIsForBatch = tran != null && tran.getUseBatch();
 		return bIsForBatch;
 	}
@@ -1262,7 +1262,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return true if in an active transaction
 	 */
 	public boolean isInTransaction() {
-		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+		final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
 		return (tran != null);
 	}
 
@@ -1304,7 +1304,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	public boolean getIgnoreWrites() {
 		if (bIgnoreWrites) {
-			final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+			final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
 			if (tran != null && tran.getAllowWritesIfDsIsReadonly()) {
 				return false;
 			}

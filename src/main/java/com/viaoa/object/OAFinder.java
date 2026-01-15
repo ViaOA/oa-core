@@ -19,8 +19,10 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import com.viaoa.filter.*;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectSiblingService;
 import com.viaoa.hub.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
@@ -619,13 +621,13 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		if (!bUseOnlyLoadedData) {
 			siblingHelper = new OASiblingHelper<F>(hubRoot);
 			siblingHelper.add(strPropertyPath);
-			OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+			OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
 		}
 		try {
 			al = _find(hubRoot, objectLastUsed);
 		} finally {
 			if (siblingHelper != null) {
-				OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+				OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
 			}
 		}
 		return al;
@@ -1215,7 +1217,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 						if (objx instanceof Hub) {
 							Hub h = (Hub) objx;
 							if (HubSortDelegate.getSortListener(h) == null && HubDelegate.getAutoSequence(h) == null) {
-								OAThreadLocal tl = OAThreadLocalDelegate.getThreadLocal(true);
+								OAThreadLocal tl = OARuntime.get().threadLocals().getThreadLocal(true);
 								if (tl.cntGetSiblingCalled > 1) {
 									b = false;
 								}

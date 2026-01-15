@@ -30,7 +30,6 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.object.OAObjectAnnotationService;
 import com.viaoa.graph.object.OAObjectCallbackService;
 import com.viaoa.graph.object.OAObjectDeleteService;
 import com.viaoa.graph.object.OAObjectEmptyHubService;
@@ -43,10 +42,11 @@ import com.viaoa.graph.object.OAObjectLockService;
 import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.graph.object.OAObjectSaveService;
+import com.viaoa.graph.object.OAObjectSerializeService;
+import com.viaoa.graph.object.OAObjectUniqueService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubEventDelegate;
-import com.viaoa.object.OAObjectInfo.FriendAccess;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
@@ -398,7 +398,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * No application code should call this method directly.
 	 */
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		OAObjectSerializeDelegate._readObject(this, in);
+        OAGraph g = OARuntime.get().graph(this);
+        OAObjectSerializeService srvcObjectSerialize = g.objects().getOAObjectSerializeService();
+        srvcObjectSerialize._readObject(this, in);
 	}
 
 	/**
@@ -420,7 +422,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the canonical {@code OAObject} instance for this GUID
 	 */
 	protected Object readResolve() throws ObjectStreamException {
-		Object obj = OAObjectSerializeDelegate._readResolve(this);
+        OAGraph g = OARuntime.get().graph(this);
+        OAObjectSerializeService srvcObjectSerialize = g.objects().getOAObjectSerializeService();
+		Object obj = srvcObjectSerialize._readResolve(this);
 		return obj;
 	}
 
@@ -443,7 +447,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Java serialization workflow.
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-		OAObjectSerializeDelegate._writeObject(this, stream);
+        OAGraph g = OARuntime.get().graph(this);
+        OAObjectSerializeService srvcObjectSerialize = g.objects().getOAObjectSerializeService();
+        srvcObjectSerialize._writeObject(this, stream);
 	}
 
 	/**
@@ -1706,7 +1712,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code false} otherwise
 	 */
 	public boolean isLoading() {
-		return OAThreadLocalDelegate.isLoading();
+		return OARuntime.get().threadLocals().isLoading();
 	}
 
 	/**
@@ -2402,11 +2408,11 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * previous admin flag is restored.
 	 */
 	public void save() {
-		boolean b3 = OAThreadLocalDelegate.setAdmin(true);
+		boolean b3 = OARuntime.get().threadLocals().setAdmin(true);
 		try {
 			this.save(CASCADE_LINK_RULES);
 		} finally {
-			OAThreadLocalDelegate.setAdmin(b3);
+			OARuntime.get().threadLocals().setAdmin(b3);
 		}
 	}
 
@@ -3140,7 +3146,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code false} otherwise
 	 */
 	public boolean isUnique(String property, Object value) {
-		OAObject obj = OAObjectUniqueDelegate.getUnique(getClass(), property, value, false);
+        OAGraph g = OARuntime.get().graph(this);
+        OAObjectUniqueService srvcObjectUnique = g.objects().getOAObjectUniqueService();
+		OAObject obj = srvcObjectUnique.getUnique(getClass(), property, value, false);
 		return (obj != null);
 	}
 
@@ -3163,7 +3171,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public static OAObject getUniqueInstance(final Class<? extends OAObject> clazz, final String propertyName, final Object uniqueKey,
 			final boolean bAutoCreate) {
-		OAObject obj = OAObjectUniqueDelegate.getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
+        OAGraph g = OARuntime.get().graph(clazz);
+        OAObjectUniqueService srvcObjectUnique = g.objects().getOAObjectUniqueService();
+		OAObject obj = srvcObjectUnique.getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
 		return obj;
 	}
 

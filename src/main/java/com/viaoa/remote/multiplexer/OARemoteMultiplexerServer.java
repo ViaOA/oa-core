@@ -40,6 +40,7 @@ import com.viaoa.remote.info.BindInfo;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OACircularQueue;
 import com.viaoa.util.OACompressWrapper;
 import com.viaoa.util.OAReflect;
@@ -507,11 +508,11 @@ public class OARemoteMultiplexerServer {
             }
 
             try {
-                OAThreadLocalDelegate.setObjectSerializer(session.oaObjectSerializer);
+                OARuntime.get().threadLocals().setObjectSerializer(session.oaObjectSerializer);
                 oos.writeObject(resp);
             }
             finally {
-                OAThreadLocalDelegate.setObjectSerializer(null);
+                OARuntime.get().threadLocals().setObjectSerializer(null);
             }
             oos.flush();
             oos.close(); // 20250318
@@ -837,11 +838,11 @@ public class OARemoteMultiplexerServer {
             oos.writeAsciiString(ri.methodInfo.methodNameSignature);
             
             try {
-                OAThreadLocalDelegate.setObjectSerializer(session.oaObjectSerializer);
+                OARuntime.get().threadLocals().setObjectSerializer(session.oaObjectSerializer);
                 oos.writeObject(ri.args);
             }
             finally {
-                OAThreadLocalDelegate.setObjectSerializer(null);
+                OARuntime.get().threadLocals().setObjectSerializer(null);
             }
             oos.flush();
             oos.close(); // 20250318
@@ -1267,7 +1268,7 @@ public class OARemoteMultiplexerServer {
 
         // 20180225
         if (ri.bind.isOASync) {
-            OAThreadLocalDelegate.incrOASyncEventCount();
+            OARuntime.get().threadLocals().incrOASyncEventCount();
         }
         
         if (ri.methodInfo == null) {
@@ -1281,7 +1282,7 @@ public class OARemoteMultiplexerServer {
                 }
                 else {
                     try {
-                        OAThreadLocalDelegate.setRemoteRequestInfo(ri);
+                        OARuntime.get().threadLocals().setRemoteRequestInfo(ri);
                         ri.response = ri.method.invoke(stuntObject, ri.args);
                     }
                     catch (InvocationTargetException e) {
@@ -1296,7 +1297,7 @@ public class OARemoteMultiplexerServer {
                             ri.exception = ex;
                         }
                     }
-                    OAThreadLocalDelegate.setRemoteRequestInfo(null);
+                    OARuntime.get().threadLocals().setRemoteRequestInfo(null);
                 }
             }
             else ri.exceptionMessage = "Method  not found";
@@ -1575,15 +1576,15 @@ public class OARemoteMultiplexerServer {
         processCtoSArguments(ri, session);
         
         try {
-            OAThreadLocalDelegate.setRemoteRequestInfo(ri);
+            OARuntime.get().threadLocals().setRemoteRequestInfo(ri);
             if (!ri.bind.isBroadcast) {
                 OARemoteThreadDelegate.sendMessages(true);
             }
 
             // 20180225 added code for threadlocal.oasynceventcount
-            int x = OAThreadLocalDelegate.getOASyncEventCount();
+            int x = OARuntime.get().threadLocals().getOASyncEventCount();
             ri.response = ri.method.invoke(ri.bind.getObject(), ri.args);
-            int x2 = OAThreadLocalDelegate.getOASyncEventCount();
+            int x2 = OARuntime.get().threadLocals().getOASyncEventCount();
             ri.bHadOASyncEvent = (x != x2);
         }
         catch (InvocationTargetException e) {
@@ -1606,7 +1607,7 @@ public class OARemoteMultiplexerServer {
                 OARemoteThreadDelegate.sendMessages(false);
             }
         }
-        OAThreadLocalDelegate.setRemoteRequestInfo(null);
+        OARuntime.get().threadLocals().setRemoteRequestInfo(null);
         processCtoSReturnValue(ri, session);
         ri.nsEnd = System.nanoTime();
 
@@ -2205,11 +2206,11 @@ public class OARemoteMultiplexerServer {
          */
         public void writeOnQueueSocket(final RequestInfo ri) throws Exception {
             try {
-                OAThreadLocalDelegate.setObjectSerializer(oaObjectSerializer);
+                OARuntime.get().threadLocals().setObjectSerializer(oaObjectSerializer);
                 _writeOnQueueSocketX(ri);
             }
             finally {
-                OAThreadLocalDelegate.setObjectSerializer(null);
+                OARuntime.get().threadLocals().setObjectSerializer(null);
             }
         }
         
@@ -2330,11 +2331,11 @@ public class OARemoteMultiplexerServer {
             hmAsyncQueueSocket.put(asyncQueueName, vsi);
 
             try {
-                OAThreadLocalDelegate.setObjectSerializer(oaObjectSerializer);
+                OARuntime.get().threadLocals().setObjectSerializer(oaObjectSerializer);
                 _writeQueueMessages(cque, vsi, startQuePos);
             }
             finally {
-                OAThreadLocalDelegate.setObjectSerializer(null);
+                OARuntime.get().threadLocals().setObjectSerializer(null);
                 cque.unregisterSession(connectionId);
                 releaseSocketForStoC(vsocket);
             }

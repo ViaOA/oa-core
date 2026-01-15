@@ -77,7 +77,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 	@Override
 	public void serialize(final OAObject value, final JsonGenerator gen, final SerializerProvider serializers) throws IOException {
 
-		final OAJson oaj = OAThreadLocalDelegate.getOAJackson();
+		final OAJson oaj = OARuntime.get().threadLocals().getOAJackson();
 
 		final OAObject oaObj = (OAObject) value;
 

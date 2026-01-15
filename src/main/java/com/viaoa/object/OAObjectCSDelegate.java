@@ -351,8 +351,8 @@ public class OAObjectCSDelegate {
         //LOG.finer("properyName="+propertyName+", obj="+obj+", newValue="+newValue);
         if (!OARemoteThreadDelegate.shouldSendMessages()) return;
         
-        if (OAThreadLocalDelegate.isLoading()) return;
-        if (OAThreadLocalDelegate.isSuppressCSMessages()) return;
+        if (OARuntime.get().threadLocals().isLoading()) return;
+        if (OARuntime.get().threadLocals().isSuppressCSMessages()) return;
 
 		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(obj).objects().getOAObjectInfoService();
         OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(obj);

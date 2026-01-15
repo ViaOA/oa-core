@@ -137,8 +137,8 @@ public class OATriggerDelegate {
 		 */
 		public TriggerRunnable(Runnable runnable) {
 			this.runnable = runnable;
-			this.bIsLoading = OAThreadLocalDelegate.isLoading();
-			this.context = OAThreadLocalDelegate.getContext();
+			this.bIsLoading = OARuntime.get().threadLocals().isLoading();
+			this.context = OARuntime.get().threadLocals().getContext();
 		}
 
 		/**
@@ -148,14 +148,14 @@ public class OATriggerDelegate {
 		@Override
 		public void run() {
 			try {
-				OAThreadLocalDelegate.setContext(context);
+				OARuntime.get().threadLocals().setContext(context);
 				if (bIsLoading) {
-					OAThreadLocalDelegate.setLoading(true);
+					OARuntime.get().threadLocals().setLoading(true);
 				}
 				runnable.run();
 			} finally {
 				if (bIsLoading) {
-					OAThreadLocalDelegate.setLoading(false);
+					OARuntime.get().threadLocals().setLoading(false);
 				}
 			}
 		}

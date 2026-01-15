@@ -98,7 +98,7 @@ public class OARemoteThreadService {
             if (rt.startedNextThread) return;
             rt.startNextThread();
         }
-        OAThreadLocalDelegate.notifyWaitingThread();
+        OARuntime.get().threadLocals().notifyWaitingThread();
     }
     
     /**

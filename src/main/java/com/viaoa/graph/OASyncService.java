@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.remote.*;
@@ -344,7 +345,7 @@ public class OASyncService {
 		if (OARemoteThreadDelegate.isRemoteThread()) {
 			return true;
 		}
-		return OAThreadLocalDelegate.isSyncThread();
+		return OARuntime.get().threadLocals().isSyncThread();
 	}
 
 	/*
@@ -370,7 +371,7 @@ public class OASyncService {
 	 * @param b whether to suppress CS messages
 	 */
 	public void setSuppressCSMessages(boolean b) {
-		OAThreadLocalDelegate.setSuppressCSMessages(b);
+		OARuntime.get().threadLocals().setSuppressCSMessages(b);
 	}
 
 	/**
@@ -381,7 +382,7 @@ public class OASyncService {
 	 * @return {@code true} if CS messages are suppressed
 	 */
 	public boolean getSuppressCSMessages() {
-		return OAThreadLocalDelegate.isSuppressCSMessages();
+		return OARuntime.get().threadLocals().isSuppressCSMessages();
 	}
 
 	/**
@@ -415,7 +416,7 @@ public class OASyncService {
 	 * the thread-local loading flag to {@code true}.
 	 */
 	public void setLoading() {
-		OAThreadLocalDelegate.setLoading(true);
+		OARuntime.get().threadLocals().setLoading(true);
 	}
 
 	/**
@@ -425,7 +426,7 @@ public class OASyncService {
 	 * @param b {@code true} to mark as loading, {@code false} otherwise
 	 */
 	public void setLoading(boolean b) {
-		OAThreadLocalDelegate.setLoading(b);
+		OARuntime.get().threadLocals().setLoading(b);
 	}
 
 	public boolean isClient() {

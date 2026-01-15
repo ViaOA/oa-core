@@ -568,15 +568,15 @@ public class HubListenerTree {
 			return;
 		}
 		try {
-			OAThreadLocalDelegate.setHubListenerTree(true);
+			OARuntime.get().threadLocals().setHubListenerTree(true);
 			addListener(hl, property, bActiveObjectOnly); // this will check for dependent calcProps
 			// now add the additional dependent properties
 			if (dependentPropertyPaths != null && dependentPropertyPaths.length > 0) {
 				addDependentListeners(property, hl, dependentPropertyPaths, bActiveObjectOnly, bAllowBackgroundThread);
 			}
 		} finally {
-			OAThreadLocalDelegate.setHubListenerTree(false);
-			OAThreadLocalDelegate.setIgnoreTreeListenerProperty(null);
+			OARuntime.get().threadLocals().setHubListenerTree(false);
+			OARuntime.get().threadLocals().setIgnoreTreeListenerProperty(null);
 		}
 	}
 
@@ -587,7 +587,7 @@ public class HubListenerTree {
 	private void addListenerMain(HubListener hl, final String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly,
 			final boolean bAllowBackgroundThread) {
 		try {
-			OAThreadLocalDelegate.setHubListenerTree(true);
+			OARuntime.get().threadLocals().setHubListenerTree(true);
 			this.addListener(hl);
 
 			if (dependentPropertyPaths != null && dependentPropertyPaths.length > 0) {
@@ -596,8 +596,8 @@ public class HubListenerTree {
 				}
 			}
 		} finally {
-			OAThreadLocalDelegate.setHubListenerTree(false);
-			OAThreadLocalDelegate.setIgnoreTreeListenerProperty(null);
+			OARuntime.get().threadLocals().setHubListenerTree(false);
+			OARuntime.get().threadLocals().setIgnoreTreeListenerProperty(null);
 		}
 	}
 
@@ -606,14 +606,14 @@ public class HubListenerTree {
 		//LOG.finer("Hub="+root.hub+", property="+origPropertyName);
 
 		// 20120826 check for endless loops
-		if (OAThreadLocalDelegate.getHubListenerTreeCount() > 25) {
+		if (OARuntime.get().threadLocals().getHubListenerTreeCount() > 25) {
 			// need to bail out, before stackoverflow
-			LOG.log(Level.WARNING, "OAThreadLocalDelegate.getHubListenerTreeCount() > 25, will not continue to add listeners. PropertyName="
+			LOG.log(Level.WARNING, "OARuntime.get().threadLocals().getHubListenerTreeCount() > 25, will not continue to add listeners. PropertyName="
 					+ origPropertyName, new Exception("detected possible overflow, will continue"));
 			return;
 		}
 
-		String ignore = OAThreadLocalDelegate.getIgnoreTreeListenerProperty();
+		String ignore = OARuntime.get().threadLocals().getIgnoreTreeListenerProperty();
 		for (int i = 0; i < dependentPropertyNames.length; i++) {
 			if (dependentPropertyNames[i] == null) {
 				continue;
@@ -631,7 +631,7 @@ public class HubListenerTree {
 				continue;
 			}
 			if (dependentPropertyNames[i].indexOf('.') > 0) {
-				OAThreadLocalDelegate.setIgnoreTreeListenerProperty(dependentPropertyNames[i]);
+				OARuntime.get().threadLocals().setIgnoreTreeListenerProperty(dependentPropertyNames[i]);
 			}
 
 			HubListenerTreeNode node = root;
@@ -951,7 +951,7 @@ public class HubListenerTree {
 						hl = new HubListenerAdapter() {
 							@Override
 							public void afterAdd(HubEvent e) {
-								if (!OAThreadLocalDelegate.isHubMergerChanging()) {
+								if (!OARuntime.get().threadLocals().isHubMergerChanging()) {
 									Hub h = HubListenerTree.this.root.hub;
 									if (bUseAll) {
 										onEvent(nodeThis.getRootValues(e.getObject()));
@@ -989,7 +989,7 @@ public class HubListenerTree {
 							@Override
 							public void afterRemove(HubEvent e) {
 								// ignore if masterHub is adding, removing (newList, clear)
-								if (!OAThreadLocalDelegate.isHubMergerChanging()) {
+								if (!OARuntime.get().threadLocals().isHubMergerChanging()) {
 									if (bUseAll) {
 										onEvent(nodeThis.getRootValues(e.getObject()));
 									} else {
@@ -1006,7 +1006,7 @@ public class HubListenerTree {
 
 							@Override // 20140423
 							public void afterRemoveAll(HubEvent e) {
-								if (!OAThreadLocalDelegate.isHubMergerChanging()) {
+								if (!OARuntime.get().threadLocals().isHubMergerChanging()) {
 									HubEventDelegate.fireCalcPropertyChange(root.hub, null, origPropertyName);
 								}
 							}

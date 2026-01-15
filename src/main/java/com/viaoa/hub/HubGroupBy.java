@@ -1505,15 +1505,15 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		// this will tell the OASyncClient.getDetail which hub objects are being used
 		final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(this.hubFrom);
 		siblingHelper.add(this.propertyPath);
-		OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+		OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
 		try {
-			OAThreadLocalDelegate.setSuppressCSMessages(true);
+			OARuntime.get().threadLocals().setSuppressCSMessages(true);
 			for (F bx : hubFrom) {
 				add(bx);
 			}
 		} finally {
-			OAThreadLocalDelegate.setSuppressCSMessages(false);
-			OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+			OARuntime.get().threadLocals().setSuppressCSMessages(false);
+			OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
 		}
 	}
 

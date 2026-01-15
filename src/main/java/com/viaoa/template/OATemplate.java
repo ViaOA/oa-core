@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import com.viaoa.hub.Hub;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 
 /**
@@ -1036,11 +1037,11 @@ public class OATemplate<F extends OAObject> {
 			if (hub != null) {
 				siblingHelper = new OASiblingHelper(hub);
 			}
-			OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+			OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
 			b = _generate(node, obj, hub, sb, props, cntStop);
 		} finally {
 			if (siblingHelper != null) {
-				OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+				OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
 			}
 		}
 		return b;

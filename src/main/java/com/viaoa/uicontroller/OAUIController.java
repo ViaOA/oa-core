@@ -1783,7 +1783,7 @@ public abstract class OAUIController extends HubListenerAdapter {
     protected void _update() {
         if (bIgnoreUpdate) return;
 
-        final HubEvent he = OAThreadLocalDelegate.getCurrentHubEvent();
+        final HubEvent he = OARuntime.get().threadLocals().getCurrentHubEvent();
         if (heLastUpdate != null && (he == heLastUpdate)) {
             return;
         }

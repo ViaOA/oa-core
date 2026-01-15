@@ -1653,13 +1653,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			return;
 		}
 
-		final int x = OAThreadLocalDelegate.getRecursiveTriggerCount();
+		final int x = OARuntime.get().threadLocals().getRecursiveTriggerCount();
 		if (x > 25) {
 			throw new RuntimeException("onChange for Triggers has caused a loop over 25");
 		}
 
 		try {
-			OAThreadLocalDelegate.setRecursiveTriggerCount(x + 1);
+			OARuntime.get().threadLocals().setRecursiveTriggerCount(x + 1);
 
 			CopyOnWriteArrayList<TriggerInfo> al = hmTriggerInfo.get(prop.toUpperCase());
 			if (al == null) {
@@ -1670,7 +1670,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				_onChange(fromObject, prop, ti, hubEvent);
 			}
 		} finally {
-			OAThreadLocalDelegate.setRecursiveTriggerCount(x);
+			OARuntime.get().threadLocals().setRecursiveTriggerCount(x);
 		}
 	}
 

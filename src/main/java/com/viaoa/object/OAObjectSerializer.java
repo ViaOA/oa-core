@@ -38,6 +38,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject.FriendAccess;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.Tuple;
 
 /**
@@ -823,9 +824,9 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
 	    
-	    this.holdOAObjectSerializer = OAThreadLocalDelegate.getObjectSerializer();
+	    this.holdOAObjectSerializer = OARuntime.get().threadLocals().getObjectSerializer();
         try {
-            OAThreadLocalDelegate.setObjectSerializer(this);
+            OARuntime.get().threadLocals().setObjectSerializer(this);
             _writeObject(stream);
         } 
         catch (Throwable e) {
@@ -834,7 +835,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
             throw new IOException("OAObjectSerializer.writeObject exception", e);
         }
         finally {
-            OAThreadLocalDelegate.setObjectSerializer(this.holdOAObjectSerializer);
+            OARuntime.get().threadLocals().setObjectSerializer(this.holdOAObjectSerializer);
             this.holdOAObjectSerializer = null;
         }
 	}

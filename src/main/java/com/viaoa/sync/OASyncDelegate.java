@@ -769,7 +769,7 @@ public static final Package ObjectPackage = null;
 		if (OARemoteThreadDelegate.isRemoteThread()) {
 			return true;
 		}
-		return OAThreadLocalDelegate.isSyncThread();
+		return OARuntime.get().threadLocals().isSyncThread();
 	}
 
 	/*
@@ -795,7 +795,7 @@ public static final Package ObjectPackage = null;
 	 * @param b whether to suppress CS messages
 	 */
 	public static void setSuppressCSMessages(boolean b) {
-		OAThreadLocalDelegate.setSuppressCSMessages(b);
+		OARuntime.get().threadLocals().setSuppressCSMessages(b);
 	}
 
 	/**
@@ -806,7 +806,7 @@ public static final Package ObjectPackage = null;
 	 * @return {@code true} if CS messages are suppressed
 	 */
 	public static boolean getSuppressCSMessages() {
-		return OAThreadLocalDelegate.isSuppressCSMessages();
+		return OARuntime.get().threadLocals().isSuppressCSMessages();
 	}
 
 	/**
@@ -863,7 +863,7 @@ public static final Package ObjectPackage = null;
 	 * the thread-local loading flag to {@code true}.
 	 */
 	public static void setLoading() {
-		OAThreadLocalDelegate.setLoading(true);
+		OARuntime.get().threadLocals().setLoading(true);
 	}
 
 	/**
@@ -873,6 +873,6 @@ public static final Package ObjectPackage = null;
 	 * @param b {@code true} to mark as loading, {@code false} otherwise
 	 */
 	public static void setLoading(boolean b) {
-		OAThreadLocalDelegate.setLoading(b);
+		OARuntime.get().threadLocals().setLoading(b);
 	}
 }

@@ -117,10 +117,10 @@ public class OAPreLoader {
 		}
 		ArrayList al = null;
 		try {
-			OAThreadLocalDelegate.setLoading(true);
+			OARuntime.get().threadLocals().setLoading(true);
 			al = _load(linkInfos);
 		} finally {
-			OAThreadLocalDelegate.setLoading(false);
+			OARuntime.get().threadLocals().setLoading(false);
 		}
 		return al;
 	}

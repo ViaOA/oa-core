@@ -21,6 +21,7 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.object.OAObjectSchedulerService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
@@ -266,7 +267,11 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
      */
     public OAScheduler getSchedulerCallback(OADate date) {
         F obj = hubFrom.getAO();
-        OAScheduler sch = OAObjectSchedulerDelegate.getScheduler(obj, ppSchedule, date);
+        
+        OAGraph g = OARuntime.get().graph(obj);
+        OAObjectSchedulerService srvcOAObjectScheduler = g.objects().getOAObjectSchedulerService();
+        
+        OAScheduler sch = srvcOAObjectScheduler.getScheduler(obj, ppSchedule, date);
         return sch;
     }
     

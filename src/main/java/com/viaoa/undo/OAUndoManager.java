@@ -27,6 +27,7 @@ import javax.swing.undo.UndoableEdit;
 
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncDelegate;
 
 /**
@@ -206,9 +207,9 @@ public class OAUndoManager extends UndoManager {
 	 * @param presentationName the name displayed for the compound undo operation
 	 */
 	public static void startCompoundEditForPropertyChanges(final String presentationName) {
-		OAThreadLocalDelegate.startUndoable(presentationName);
+		OARuntime.get().threadLocals().startUndoable(presentationName);
 		//startCompoundEdit(presentationName);
-		//OAThreadLocalDelegate.setCreateUndoablePropertyChanges(true);
+		//OARuntime.get().threadLocals().setCreateUndoablePropertyChanges(true);
 	}
 
 	/**
@@ -218,9 +219,9 @@ public class OAUndoManager extends UndoManager {
 	 * {@link #startCompoundEditForPropertyChanges(String)}.
 	 */
 	public static void endCompoundEditForPropertyChanges() {
-		OAThreadLocalDelegate.endUndoable();
+		OARuntime.get().threadLocals().endUndoable();
 		//endCompoundEdit();
-		//OAThreadLocalDelegate.setCreateUndoablePropertyChanges(false);
+		//OARuntime.get().threadLocals().setCreateUndoablePropertyChanges(false);
 	}
 
 	/**

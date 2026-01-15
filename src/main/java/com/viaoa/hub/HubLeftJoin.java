@@ -18,6 +18,7 @@ package com.viaoa.hub;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAString;
 
@@ -238,7 +239,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 			@Override
 			public void onNewList(HubEvent e) {
 				HubAddRemoveDelegate.clear(hubCombined, false, false); // 20240403 dont send newList event
-				OAThreadLocalDelegate.setLoading(true);
+				OARuntime.get().threadLocals().setLoading(true);
 				try {
     				for (A a : hubA) {
     					hubCombined.add(new OALeftJoin(a, null));
@@ -248,7 +249,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
     				}
 				}
 				finally {
-	                OAThreadLocalDelegate.setLoading(false);
+	                OARuntime.get().threadLocals().setLoading(false);
                     hubCombined.setActiveObject(null);
 	                HubEventDelegate.fireOnNewListEvent(hubCombined, true);
 				}

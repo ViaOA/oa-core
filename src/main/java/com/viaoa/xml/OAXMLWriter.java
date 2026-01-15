@@ -21,8 +21,11 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Stack;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectXMLService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubXMLDelegate;
 import com.viaoa.object.OACascade;
@@ -139,7 +142,9 @@ public class OAXMLWriter {
 		if (cascade == null) {
 			cascade = new OACascade();
 		}
-		OAObjectXMLDelegate.write(obj, this, null, false, cascade);
+		final OAGraph og = OARuntime.get().graph(obj);
+    	final OAObjectXMLService srvcObjectCache = og.objects().getOAObjectXMLService();
+    	srvcObjectCache.write(obj, this, null, false, cascade);
 	}
 
 	/** saves Hub as XML */

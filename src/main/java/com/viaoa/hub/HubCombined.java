@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAString;
 
 /**
@@ -290,7 +291,7 @@ public class HubCombined<T> {
 			public void onNewList(HubEvent<T> e) {
 				try {
 					bUpdatingMasterHub = true;
-					OAThreadLocalDelegate.setLoading(true);
+					OARuntime.get().threadLocals().setLoading(true);
 					for (Object obj : hubMaster) {
 						boolean bUsed = false;
 						for (Hub<T> hx : alHub) {
@@ -308,7 +309,7 @@ public class HubCombined<T> {
 					}
 				} finally {
 					bUpdatingMasterHub = false;
-					OAThreadLocalDelegate.setLoading(false);
+					OARuntime.get().threadLocals().setLoading(false);
 				}
 				HubEventDelegate.fireOnNewListEvent(hubMaster, true);
 			}

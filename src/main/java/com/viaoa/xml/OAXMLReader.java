@@ -583,7 +583,7 @@ public class OAXMLReader {
 			}
 
 			if (objNew == null) {
-				OAThreadLocalDelegate.setLoading(true);
+				OARuntime.get().threadLocals().setLoading(true);
 				try {
 					objNew = createNewObject(toClass);
 //qqqqqqqqqqqqqq 20260111
@@ -600,7 +600,7 @@ public class OAXMLReader {
 						}
 					}
 				} finally {
-					OAThreadLocalDelegate.setLoading(false);
+					OARuntime.get().threadLocals().setLoading(false);
 				}
 //qqqqqqqqqqqqqq 20260111
 				OARuntime.get().graph(toClass).objects().getOAObjectInitializeService().initializeAfterLoading(objNew);
@@ -616,7 +616,7 @@ public class OAXMLReader {
 
 		final boolean bLoadingNew = objNew.getNew() && !bIsPreloading;
 		if (bLoadingNew) {
-			OAThreadLocalDelegate.setLoading(true);
+			OARuntime.get().threadLocals().setLoading(true);
 		}
 
 		if (!bIsPreloading) {
@@ -698,12 +698,12 @@ public class OAXMLReader {
 					Object objx = null;
 					try {
 						if (bLoadingNew) {
-							OAThreadLocalDelegate.setLoading(false);
+							OARuntime.get().threadLocals().setLoading(false);
 						}
 						objx = _processChildren(hmx, li == null ? OAObject.class : li.getToClass(), bIsPreloading, level + 1);
 					} finally {
 						if (bLoadingNew) {
-							OAThreadLocalDelegate.setLoading(true);
+							OARuntime.get().threadLocals().setLoading(true);
 						}
 					}
 
@@ -720,11 +720,11 @@ public class OAXMLReader {
 				HashMap<String, Object> hmx = (HashMap<String, Object>) v;
 				Class c = li == null ? OAObject.class : li.getToClass();
 				if (bLoadingNew) {
-					OAThreadLocalDelegate.setLoading(false);
+					OARuntime.get().threadLocals().setLoading(false);
 				}
 				Object objx = _processChildren(hmx, c, bIsPreloading, level + 1);
 				if (bLoadingNew) {
-					OAThreadLocalDelegate.setLoading(true);
+					OARuntime.get().threadLocals().setLoading(true);
 				}
 				if (!bIsPreloading) {
 					objNew.setProperty(k, objx);
@@ -732,7 +732,7 @@ public class OAXMLReader {
 			}
 		}
 		if (bLoadingNew) {
-			OAThreadLocalDelegate.setLoading(false);
+			OARuntime.get().threadLocals().setLoading(false);
 		}
 		if (!bIsPreloading) {
 			objNew = getRealObject(objNew);

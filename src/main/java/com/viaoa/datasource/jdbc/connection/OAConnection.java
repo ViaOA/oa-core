@@ -28,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.transaction.OATransaction;
 
 /**
@@ -138,7 +139,7 @@ public class OAConnection {
 	 * @return {@code true} if batch operations are allowed
 	 */
 	public boolean isAllowingBatch() {
-		final OATransaction tran = OAThreadLocalDelegate.getTransaction();
+		final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
 		final boolean bIsForBatch = tran != null && tran.getUseBatch();
 		return bIsForBatch;
 	}

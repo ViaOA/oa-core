@@ -31,6 +31,7 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAComparator;
 import com.viaoa.util.OAFilter;
@@ -1071,7 +1072,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		//qqqqqqq
 		// 20221209
 		if (!bDirty && !bDirtyWasSet) {
-			bDirty = OAThreadLocalDelegate.isRefreshing();
+			bDirty = OARuntime.get().threadLocals().isRefreshing();
 		}
 
 		if (hubSearch != null && finder == null) {
@@ -1250,14 +1251,14 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 
 			// 20190130
 			OASiblingHelper siblingHelper = query == null ? null : query.getSiblingHelper();
-			boolean bx = ((siblingHelper != null) && OAThreadLocalDelegate.addSiblingHelper(siblingHelper));
+			boolean bx = ((siblingHelper != null) && OARuntime.get().threadLocals().addSiblingHelper(siblingHelper));
 			try {
 				if (oaFilter.isUsed(obj)) {
 					break;
 				}
 			} finally {
 				if (bx) {
-					OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+					OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
 				}
 			}
 		}

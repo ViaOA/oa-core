@@ -16,6 +16,7 @@
 package com.viaoa.concurrent;
 
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OADateTime;
 
 /**
@@ -52,7 +53,7 @@ public class OAThread extends Thread {
 	 * @param runnable the task to execute in this thread
 	 */
 	public OAThread(Runnable runnable) {
-		context = OAThreadLocalDelegate.getContext();
+		context = OARuntime.get().threadLocals().getContext();
 		this.runnable = runnable;
 	}
 
@@ -63,11 +64,11 @@ public class OAThread extends Thread {
 	@Override
 	public void run() {
 		if (context != null) {
-			OAThreadLocalDelegate.setContext(context);
+			OARuntime.get().threadLocals().setContext(context);
 		}
 		runnable.run();
 		if (context != null) {
-			OAThreadLocalDelegate.setContext(null);
+			OARuntime.get().threadLocals().setContext(null);
 		}
 	}
 

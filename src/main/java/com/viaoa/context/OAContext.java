@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
@@ -132,7 +133,7 @@ public class OAContext {
 	 * @return true if permitted; false otherwise
 	 */
 	public static boolean getAllowEditProcessed() {
-		Object context = OAThreadLocalDelegate.getContext();
+		Object context = OARuntime.get().threadLocals().getContext();
 		return getAllowEditProcessed(context);
 	}
 
@@ -198,7 +199,7 @@ public class OAContext {
 	 * @return true if admin; false otherwise
 	 */
 	public static boolean isAdmin() {
-		Object context = OAThreadLocalDelegate.getContext();
+		Object context = OARuntime.get().threadLocals().getContext();
 		return isAdmin(context);
 	}
 
@@ -214,7 +215,7 @@ public class OAContext {
 			context = NullContext;
 		}
 
-		if (OAThreadLocalDelegate.isAdmin()) {
+		if (OARuntime.get().threadLocals().isAdmin()) {
 			return true;
 		}
 
@@ -267,7 +268,7 @@ public class OAContext {
 	 * @return true if super-admin; false otherwise
 	 */
 	public static boolean isSuperAdmin() {
-		Object context = OAThreadLocalDelegate.getContext();
+		Object context = OARuntime.get().threadLocals().getContext();
 		return isSuperAdmin(context);
 	}
 
@@ -304,7 +305,7 @@ public class OAContext {
 	 * @return true if property equals bEqualTo; false otherwise
 	 */
 	public static boolean isEnabled(final String pp, final boolean bEqualTo) {
-		Object context = OAThreadLocalDelegate.getContext();
+		Object context = OARuntime.get().threadLocals().getContext();
 		return isEnabled(context, pp, bEqualTo);
 	}
 
@@ -386,7 +387,7 @@ public class OAContext {
 	 * @return associated OAObject or null
 	 */
 	public static OAObject getContextObject() {
-		Object context = OAThreadLocalDelegate.getContext();
+		Object context = OARuntime.get().threadLocals().getContext();
 		return getContextObject(context);
 	}
 
@@ -467,7 +468,7 @@ public class OAContext {
 	 * @return associated Hub, or null
 	 */
 	public static Hub<? extends OAObject> getContextHub() {
-		Object context = OAThreadLocalDelegate.getContext();
+		Object context = OARuntime.get().threadLocals().getContext();
 		return getContextHub(context);
 	}
 
@@ -512,7 +513,7 @@ public class OAContext {
 	 * @return OAUserAccess or null
 	 */
 	public static OAUserAccess getContextUserAccess() {
-		Object context = OAThreadLocalDelegate.getContext();
+		Object context = OARuntime.get().threadLocals().getContext();
 		return getContextUserAccess(context);
 	}
 

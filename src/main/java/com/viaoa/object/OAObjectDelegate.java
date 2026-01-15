@@ -261,7 +261,7 @@ public class OAObjectDelegate {
 	        boolean bInitializeWithCS,
 	        boolean bSetChangedToFalse) {
 		//qqqqqq method was protected
-		final boolean bWasLoading = OAThreadLocalDelegate.setLoading(true);
+		final boolean bWasLoading = OARuntime.get().threadLocals().setLoading(true);
 
 		if (oaObj == null) return;
 		OAGraph og = OARuntime.get().graph(oaObj);

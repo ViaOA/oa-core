@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 
 /**
@@ -306,12 +307,12 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
         if (s != null && s.equalsIgnoreCase(sortPropertyName)) {
             try {
                 bCallingSortMove = true;
-                OAThreadLocalDelegate.setSuppressCSMessages(true);  // each client will handle it's own sorting
+                OARuntime.get().threadLocals().setSuppressCSMessages(true);  // each client will handle it's own sorting
                 HubAddRemoveDelegate.sortMove(hub, e.getObject());
             }
             finally {
                 bCallingSortMove = false;
-                OAThreadLocalDelegate.setSuppressCSMessages(false);
+                OARuntime.get().threadLocals().setSuppressCSMessages(false);
             }
         }
     }

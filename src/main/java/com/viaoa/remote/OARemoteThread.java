@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * A specialized thread used by OA's remote messaging framework to process
@@ -253,7 +254,7 @@ public class OARemoteThread extends Thread {
 		msStartNextThread = 0l;
 
 		// reset thread local
-		OAThreadLocalDelegate.setContext(null);
-		OAThreadLocalDelegate.setAdmin(false);
+		OARuntime.get().threadLocals().setContext(null);
+		OARuntime.get().threadLocals().setAdmin(false);
 	}
 }

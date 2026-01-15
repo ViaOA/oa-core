@@ -25,6 +25,7 @@ import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Manages the shared {@link java.io.DataInputStream} for a single physical
@@ -279,7 +280,7 @@ public abstract class MultiplexerInputStreamController {
                                     LOG.warning("Connection="+_connectionId+", VSocket id=" + vs._id + ", name=" + vs.getServerSocketName() + ", has been timed out, will disconnect socket and continue");
                                     long ms = System.currentTimeMillis();
                                     if (msLastStackDump + 30000 < ms) {
-                                        LOG.warning(OAThreadLocalDelegate.getAllStackTraces());
+                                        LOG.warning(OARuntime.get().threadLocals().getAllStackTraces());
                                         msLastStackDump = ms;
                                     }
                                     synchronized (vs._lockObject) {

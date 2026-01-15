@@ -35,6 +35,8 @@ import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectHubService;
 import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.object.OAObjectSerializeService;
+import com.viaoa.graph.object.OAObjectUniqueService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.info.RequestInfo;
@@ -303,7 +305,11 @@ public class OASyncServer {
 
 				@Override
 				public OAObject getUnique(Class<? extends OAObject> clazz, String propertyName, Object uniqueKey, boolean bAutoCreate) {
-					OAObject oaObj = OAObjectUniqueDelegate.getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
+					
+			        OAGraph g = OARuntime.get().graph(clazz);
+			        OAObjectUniqueService srvcObjectUnique = g.objects().getOAObjectUniqueService();
+					
+					OAObject oaObj = srvcObjectUnique.getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
 					return oaObj;
 				}
 

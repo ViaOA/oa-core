@@ -1075,12 +1075,12 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 				final boolean bx = bServerSideOnly;
 				try {
 					if (!bx) {
-						OAThreadLocalDelegate.setLoading(true);
+						OARuntime.get().threadLocals().setLoading(true);
 					}
 					bCompleted = _initialize(cnt);
 				} finally {
 					if (!bx) {
-						OAThreadLocalDelegate.setLoading(false);
+						OARuntime.get().threadLocals().setLoading(false);
 					}
 				}
 				if (hub != null && bCompleted) {

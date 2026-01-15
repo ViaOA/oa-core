@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Thread-local transaction mechanism used by OA datasources and other
@@ -166,7 +167,7 @@ public class OATransaction {
 	 * context for the calling thread.
 	 */
 	public void start() {
-		OAThreadLocalDelegate.setTransaction(this);
+		OARuntime.get().threadLocals().setTransaction(this);
 	}
 
 	/**
@@ -177,7 +178,7 @@ public class OATransaction {
 	 *         false.
 	 */
 	public boolean isStarted() {
-		return OAThreadLocalDelegate.getTransaction() == this;
+		return OARuntime.get().threadLocals().getTransaction() == this;
 	}
 
 	/**
@@ -191,7 +192,7 @@ public class OATransaction {
 				tl.rollback(this);
 			}
 		} finally {
-			OAThreadLocalDelegate.setTransaction(null);
+			OARuntime.get().threadLocals().setTransaction(null);
 		}
 	}
 
@@ -206,7 +207,7 @@ public class OATransaction {
 				tl.commit(this);
 			}
 		} finally {
-			OAThreadLocalDelegate.setTransaction(null);
+			OARuntime.get().threadLocals().setTransaction(null);
 		}
 	}
 

@@ -346,7 +346,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
     				return;
     			}
     			if (hubMaster != null && HubDelegate.getCurrentState(hubMaster, null, null) != HubDelegate.HubCurrentStateEnum.InSync) {
-    			    OAThreadLocalDelegate.addHubMergerCallback(new OAThreadLocalHubMergerCallback() {
+    			    OARuntime.get().threadLocals().addHubMergerCallback(new OAThreadLocalHubMergerCallback() {
                         @Override
                         public void callback() {
                             _update(false);
@@ -376,7 +376,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 */
 	private void _update1() {
 		if (hub != null) {
-			if (OAThreadLocalDelegate.isDeleting(hub.getMasterObject())) {
+			if (OARuntime.get().threadLocals().isDeleting(hub.getMasterObject())) {
 				return;
 			}
 		}
@@ -559,8 +559,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 * @param e the hub event associated with the insert
 	 */
 	public @Override void afterInsert(HubEvent e) {
-		if (!OAThreadLocalDelegate.isLoading()) {
-			if (!OAThreadLocalDelegate.isHubMergerChanging()) { // else wait for newList
+		if (!OARuntime.get().threadLocals().isLoading()) {
+			if (!OARuntime.get().threadLocals().isHubMergerChanging()) { // else wait for newList
 				update();
 			}
 		}
@@ -573,8 +573,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 * @param e the hub event associated with the add
 	 */
 	public @Override void afterAdd(HubEvent e) {
-		if (!OAThreadLocalDelegate.isLoading()) {
-			if (!OAThreadLocalDelegate.isHubMergerChanging()) { // else wait for newList
+		if (!OARuntime.get().threadLocals().isLoading()) {
+			if (!OARuntime.get().threadLocals().isHubMergerChanging()) { // else wait for newList
 				update();
 			}
 		}
@@ -587,7 +587,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 * @param e the hub event associated with the removal
 	 */
 	public @Override void afterRemove(HubEvent e) {
-		if (OAThreadLocalDelegate.isHubMergerChanging()) {
+		if (OARuntime.get().threadLocals().isHubMergerChanging()) {
 			return; // else wait for newList
 		}
 
@@ -601,7 +601,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 * @param e the hub event associated with the new list
 	 */
 	public @Override void onNewList(HubEvent e) {
-		if (OAThreadLocalDelegate.isHubMergerChanging()) { // else wait for newList after merger is done
+		if (OARuntime.get().threadLocals().isHubMergerChanging()) { // else wait for newList after merger is done
 			return;
 		}
 		update();

@@ -39,6 +39,8 @@ import com.viaoa.graph.object.OAObjectHubService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.object.OAObjectSiblingService;
+import com.viaoa.graph.object.OAObjectXMLService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -392,7 +394,7 @@ public class OASyncClient {
 		OALinkInfo li = null;
 		try {
 			// both Hub && pp are set by HubMerger, HubGroupBy
-			final boolean bHasSiblingHelper = OAThreadLocalDelegate.hasSiblingHelpers();
+			final boolean bHasSiblingHelper = OARuntime.get().threadLocals().hasSiblingHelpers();
 
 			if (OARemoteThreadDelegate.isRemoteThread()) {
 				// use annotated version that does not use the msg queue
@@ -423,7 +425,11 @@ public class OASyncClient {
 				if (bHasSiblingHelper) {
 					max *= 3;
 				}
-				siblingKeys = OASiblingHelperDelegate.getSiblings(masterObject, propertyName, max, hmIgnoreSibling);
+
+				final OAGraph og = OARuntime.get().graph(masterObject);
+		    	final OAObjectSiblingService srvcObjectSibling = og.objects().getOAObjectSiblingService();
+				
+				siblingKeys = srvcObjectSibling.getSiblings(masterObject, propertyName, max, hmIgnoreSibling);
 
 				/* testing
 				if (siblingKeys == null || siblingKeys.length == 0) {
@@ -655,7 +661,7 @@ public class OASyncClient {
 
 				@Override
 				public String performThreadDump(String msg) {
-					String s = OAThreadLocalDelegate.getAllStackTraces();
+					String s = OARuntime.get().threadLocals().getAllStackTraces();
 					LOG.warning(msg + "\n" + s);
 					return s;
 				}

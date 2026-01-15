@@ -834,7 +834,7 @@ public class OAXMLReader1 extends DefaultHandler {
 
 				if (object == null) {
 					try {
-						OAThreadLocalDelegate.setLoading(true);
+						OARuntime.get().threadLocals().setLoading(true);
 						object = createNewObject(c);
 						// set property ids
 						if (matchProps == null || matchProps.length == 0) {
@@ -854,7 +854,7 @@ public class OAXMLReader1 extends DefaultHandler {
 					} catch (Exception e) {
 						throw new SAXException("cant create object for class " + c.getName() + " Error:" + e, e);
 					} finally {
-						OAThreadLocalDelegate.setLoading(false);
+						OARuntime.get().threadLocals().setLoading(false);
 					}
 				} else {
 				}
@@ -1029,11 +1029,11 @@ public class OAXMLReader1 extends DefaultHandler {
 		try {
 			if (object.getNew()) {
 				bLoadingObject = true;
-				OAThreadLocalDelegate.setLoading(true);
+				OARuntime.get().threadLocals().setLoading(true);
 
 				final OAObjectCSService srvcObjectCS = OARuntime.get().graph(object).objects().getOAObjectCSService();
 				if (srvcObjectCS.isServer(object)) {
-					OAThreadLocalDelegate.setSuppressCSMessages(true);
+					OARuntime.get().threadLocals().setSuppressCSMessages(true);
 					// no, needs to have OAObjectEventDelegate.firePropertyChange() process property changes
 					//   since it has already created the object w/o setLoading(true), which means that there are null primitive properties
 					//     that would not be "unset" if firePropertyChange() was not ran.
@@ -1188,10 +1188,10 @@ public class OAXMLReader1 extends DefaultHandler {
 				if (bResult) {
 					object.afterLoad();
 				}
-				OAThreadLocalDelegate.setLoading(false);
+				OARuntime.get().threadLocals().setLoading(false);
 				final OAObjectCSService srvcObjectCS = OARuntime.get().graph(object).objects().getOAObjectCSService();
 				if (srvcObjectCS.isServer(object)) {
-					OAThreadLocalDelegate.setSuppressCSMessages(false);
+					OARuntime.get().threadLocals().setSuppressCSMessages(false);
 				}
 			}
 		}

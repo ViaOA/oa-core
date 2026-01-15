@@ -646,11 +646,11 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * rules. Aborts if any save operation fails.
 	 */
 	public void saveAll() {
-		boolean b3 = OAThreadLocalDelegate.setAdmin(true);
+		boolean b3 = OARuntime.get().threadLocals().setAdmin(true);
 		try {
 			HubSaveDelegate.saveAll(this, OAObject.CASCADE_LINK_RULES);
 		} finally {
-			OAThreadLocalDelegate.setAdmin(b3);
+			OARuntime.get().threadLocals().setAdmin(b3);
 		}
 	}
 
@@ -1013,7 +1013,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		
 		boolean b = (getSize() == 0);
 		if (b) {
-			OAThreadLocalDelegate.setLoading(true);
+			OARuntime.get().threadLocals().setLoading(true);
 		}
 		*/
 		try {
@@ -1023,7 +1023,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		} finally {
 			/*
 			if (b) {
-				OAThreadLocalDelegate.setLoading(false);
+				OARuntime.get().threadLocals().setLoading(false);
 				HubEventDelegate.fireOnNewListEvent(this, true);
 			}
 			*/
@@ -2523,22 +2523,22 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	}
 	
 	/**
-	 * Sets the loading flag by delegating to OAThreadLocalDelegate.setLoading.
+	 * Sets the loading flag by delegating to OARuntime.get().threadLocals().setLoading.
 	 *
 	 * @param b true to enable loading mode
 	 */
 	public void setLoading(boolean b) {
-		OAThreadLocalDelegate.setLoading(b);
+		OARuntime.get().threadLocals().setLoading(b);
 	}
 
 	/**
 	 * Returns whether the current thread is marked as loading by delegating to
-	 * OAThreadLocalDelegate.isLoading().
+	 * OARuntime.get().threadLocals().isLoading().
 	 *
 	 * @return true if loading mode is enabled
 	 */
 	public boolean isLoading() {
-		return OAThreadLocalDelegate.isLoading();
+		return OARuntime.get().threadLocals().isLoading();
 	}
 
 	/**

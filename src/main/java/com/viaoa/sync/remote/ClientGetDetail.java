@@ -197,12 +197,12 @@ public class ClientGetDetail {
 		}
 
 		final OASiblingHelper siblingHelper = new OASiblingHelper(hubHold);
-		OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
+		OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
 		Object detailValue = null;
 		try {
 			detailValue = srvcOAObjectReflect.getProperty((OAObject) masterObject, property);
 		} finally {
-			OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
+			OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
 		}
 		hubHold.clear();
 		hubHold = null;

@@ -273,12 +273,12 @@ public class OAJacksonDeserializerLoader {
 
 		boolean bNeedsAssignedId = loadObjectIdProperties(stackItem);
 
-		if (OAThreadLocalDelegate.isLoading()) {
-			OAThreadLocalDelegate.setLoading(false);
+		if (OARuntime.get().threadLocals().isLoading()) {
+			OARuntime.get().threadLocals().setLoading(false);
 			try {
 				OAObjectDelegate.initializeAfterLoading((OAObject) stackItem.obj, bNeedsAssignedId, false, false);
 			} finally {
-				OAThreadLocalDelegate.setLoading(true);
+				OARuntime.get().threadLocals().setLoading(true);
 			}
 		}
 	}
