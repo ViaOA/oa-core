@@ -22,6 +22,8 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -358,7 +360,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		if (obj == null) {
 			return null;
 		}
-		OAObject objx = OAObjectReflectDelegate.createCopy(obj, excludeProperties);
+		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(obj).objects().getOAObjectReflectService();
+		OAObject objx = srvcOAObjectReflect.createCopy(obj, excludeProperties);
 		return objx;
 	}
 
@@ -393,7 +396,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		if (h == null) {
 			// store null so that it can be an empty hub if needed (and wont have to get from server)
 			if (!OASyncDelegate.isServer(objectClass)) {
-				OAObjectPropertyDelegate.setPropertyCAS(obj, hubPropertyName, null, null, true, false);
+                final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(objectClass).objects().getOAObjectPropertyService();
+                srvcOAObjectProperty.setPropertyCAS(obj, hubPropertyName, null, null, true, false);
 			}
 			return false;
 		}
@@ -442,11 +446,12 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		if (obj == null) {
 			return null;
 		}
-		boolean bWasLoaded = OAObjectReflectDelegate.isReferenceHubLoaded(obj, hubPropertyName);
+		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(obj).objects().getOAObjectReflectService();
+		boolean bWasLoaded = srvcOAObjectReflect.isReferenceHubLoaded(obj, hubPropertyName);
 		if (!bWasLoaded && !OASyncDelegate.isServer(obj.getClass())) {
 			return null;
 		}
-		Object objx = OAObjectReflectDelegate.getProperty(obj, hubPropertyName);
+		Object objx = srvcOAObjectReflect.getProperty(obj, hubPropertyName);
 		if (!(objx instanceof Hub)) {
 			return null;
 		}

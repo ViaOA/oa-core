@@ -17,12 +17,15 @@ package com.viaoa.hub;
 
 import java.util.logging.Logger;
 
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectReflectDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OALogger;
 
 /**
@@ -286,11 +289,13 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 		Object oldObj = super.getOldValue();
 		boolean bError = false;
 		if (oldObj instanceof OAObjectKey && object instanceof OAObject) {
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo((OAObject) object);
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph((OAObject) object).objects().getOAObjectInfoService();
+			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo((OAObject) object);
 			if (oi != null) {
-				OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, getPropertyName());
+				OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, getPropertyName());
 				if (li != null) {
-					oldObj = OAObjectReflectDelegate.getObject(li.getToClass(), (OAObjectKey) oldObj);
+					final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(li.getToClass()).objects().getOAObjectReflectService();
+					oldObj = srvcOAObjectReflect.getObject(li.getToClass(), (OAObjectKey) oldObj);
 					oldValue2 = oldObj;
 				} else {
 					bError = true;// else error qqqqqqq

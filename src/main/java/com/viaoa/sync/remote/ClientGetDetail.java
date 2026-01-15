@@ -21,6 +21,10 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectKeyService;
+import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -163,7 +167,8 @@ public class ClientGetDetail {
 		}
 		final long msStart = System.currentTimeMillis();
 
-		OAObject masterObject = OAObjectReflectDelegate.getObject(masterClass, masterObjectKey);
+		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(masterClass).objects().getOAObjectReflectService();
+		OAObject masterObject = srvcOAObjectReflect.getObject(masterClass, masterObjectKey);
 		if (masterObject == null) {
 			// get from datasource
 			masterObject = (OAObject) OADataSource.getObject(masterClass, masterObjectKey);
@@ -195,7 +200,7 @@ public class ClientGetDetail {
 		OAThreadLocalDelegate.addSiblingHelper(siblingHelper);
 		Object detailValue = null;
 		try {
-			detailValue = OAObjectReflectDelegate.getProperty((OAObject) masterObject, property);
+			detailValue = srvcOAObjectReflect.getProperty((OAObject) masterObject, property);
 		} finally {
 			OAThreadLocalDelegate.removeSiblingHelper(siblingHelper);
 		}
@@ -311,14 +316,16 @@ public class ClientGetDetail {
 					if (wasFullySentToClient(obj)) {
 						continue;
 					}
-					if (OAObjectReflectDelegate.areAllReferencesLoaded((OAObject) obj, false)) {
+					final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) obj).objects().getOAObjectReflectService();
+					if (srvcOAObjectReflect.areAllReferencesLoaded((OAObject) obj, false)) {
 						continue;
 					}
-					OAObjectReflectDelegate.loadAllReferences((OAObject) obj, 1, 0, false, 2, msStart + 40);
+					srvcOAObjectReflect.loadAllReferences((OAObject) obj, 1, 0, false, 2, msStart + 40);
 				}
 			}
 		} else if ((detailObject instanceof OAObject) && !wasFullySentToClient(detailObject)) {
-			OAObjectReflectDelegate.loadAllReferences((OAObject) detailObject, 1, 0, false, 5, msStart + 40);
+			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) detailObject).objects().getOAObjectReflectService();
+			srvcOAObjectReflect.loadAllReferences((OAObject) detailObject, 1, 0, false, 5, msStart + 40);
 		}
 
 		HashMap<OAObjectKey, Object> hmExtraData = null;
@@ -338,7 +345,9 @@ public class ClientGetDetail {
 					continue;
 				}
 
-				Object value = OAObjectPropertyDelegate.getProperty(obj, propFromMaster, true, true);
+                final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(obj).objects().getOAObjectPropertyService();
+				
+				Object value = srvcOAObjectProperty.getProperty(obj, propFromMaster, true, true);
 				if (value instanceof OANotExist || value instanceof OAObjectKey) { // not loaded from ds
 					if (bLoad) {
 						bLoad = ((System.currentTimeMillis() - msStart) < (bForHubMerger ? 225 : 85));
@@ -350,7 +359,8 @@ public class ClientGetDetail {
 				}
 
 				if (bLoad) {
-					value = OAObjectReflectDelegate.getProperty(obj, propFromMaster); // load from DS
+					final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(obj).objects().getOAObjectReflectService();
+					value = srvcOAObjectReflect.getProperty(obj, propFromMaster); // load from DS
 				} else if (value instanceof OAObjectKey) {
 					continue;
 				}
@@ -443,7 +453,8 @@ public class ClientGetDetail {
 
 			@Override
 			protected void afterSerialize(OAObject obj) {
-				UUID guid = OAObjectKeyDelegate.getKey(obj).getGuid();
+		    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+				UUID guid = srvcObjectKey.getKey(obj).getGuid();
 				boolean bx = hsSendingGuid.remove(guid);
 				// update tree of sent objects
                 hmGuid.put(guid, bx);
@@ -466,7 +477,8 @@ public class ClientGetDetail {
 
 					if (masterProperties == null || masterProperties.length == 0) {
 						if (!os.hasReachedMax()) {
-							hsSendingGuid.add(OAObjectKeyDelegate.getKey(obj).getGuid()); // flag that all masterObject props have been sent to client
+					    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+							hsSendingGuid.add(srvcObjectKey.getKey(obj).getGuid()); // flag that all masterObject props have been sent to client
 						}
 						includeAllProperties();
 					} else {
@@ -484,7 +496,8 @@ public class ClientGetDetail {
 					} else if (wasFullySentToClient(obj)) {
 						excludeAllProperties(); // already sent
 					} else {
-						boolean b = OAObjectReflectDelegate.areAllReferencesLoaded(obj, false);
+						final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(obj).objects().getOAObjectReflectService();
+						boolean b = srvcOAObjectReflect.areAllReferencesLoaded(obj, false);
 						if (b) {
 							if (!os.hasReachedMax()) {
 								hsSendingGuid.add(obj.getObjectKey().getGuid());
@@ -511,14 +524,17 @@ public class ClientGetDetail {
 						// this Object is a Hub - will send all references (all that are been loaded)
 						if (wasFullySentToClient(obj)) {
 							if (!os.hasReachedMax()) {
-								hsSendingGuid.add(OAObjectKeyDelegate.getKey(obj).getGuid());
+						    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+								hsSendingGuid.add(srvcObjectKey.getKey(obj).getGuid());
 							}
 							excludeAllProperties(); // client has it all
 						} else {
-							b = OAObjectReflectDelegate.areAllReferencesLoaded(obj, false);
+							final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(obj).objects().getOAObjectReflectService();
+							b = srvcOAObjectReflect.areAllReferencesLoaded(obj, false);
 							if (b) {
 								if (!os.hasReachedMax()) {
-									hsSendingGuid.add(OAObjectKeyDelegate.getKey(obj).getGuid());
+							    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+									hsSendingGuid.add(srvcObjectKey.getKey(obj).getGuid());
 								}
 							}
 							includeAllProperties();
@@ -549,10 +565,12 @@ public class ClientGetDetail {
 						excludeAllProperties(); // client already has it, might not be all of it
 					} else {
 						// client does not have it, send whatever is loaded
-						b = OAObjectReflectDelegate.areAllReferencesLoaded(obj, false);
+						final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(obj).objects().getOAObjectReflectService();
+						b = srvcOAObjectReflect.areAllReferencesLoaded(obj, false);
 						if (b) {
 							if (!os.hasReachedMax()) {
-								hsSendingGuid.add(OAObjectKeyDelegate.getKey(obj).getGuid());
+						    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+								hsSendingGuid.add(srvcObjectKey.getKey(obj).getGuid());
 							}
 						}
 						includeAllProperties(); // will send whatever is loaded
@@ -624,7 +642,8 @@ public class ClientGetDetail {
 					return !wasFullySentToClient(referenceValue);
 				}
 
-				OAObjectKey key = OAObjectKeyDelegate.getKey(oaObj);
+		    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(oaObj).objects().getOAObjectKeyService();
+				OAObjectKey key = srvcObjectKey.getKey(oaObj);
 				if (hmExtraData != null) {
 					if (oaObj.getClass().equals(masterObject.getClass())) {
 						if (hmExtraData.get(key) != null) {

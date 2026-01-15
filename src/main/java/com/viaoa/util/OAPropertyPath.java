@@ -23,6 +23,7 @@ import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.hub.CustomHubFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubMerger;
@@ -32,6 +33,7 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.runtime.OARuntime;
 
 
 /**
@@ -317,7 +319,8 @@ public class OAPropertyPath<F> {
 		String pp = "";
 		for (int i = 0; i < linkInfos.length; i++) {
 			OALinkInfo li = linkInfos[i];
-			OALinkInfo liRev = OAObjectInfoDelegate.getReverseLinkInfo(li);
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(li.getToClass()).objects().getOAObjectInfoService();
+			OALinkInfo liRev = srvcObjectInfo.getReverseLinkInfo(li);
 			if (!bAllowPrivateLinks && liRev.getPrivateMethod()) {
 				return null;
 			}
@@ -973,16 +976,22 @@ public class OAPropertyPath<F> {
 				clazz = substituteClass;
 			}
 
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-			final OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
+			final OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, propertyName);
 			if (li != null) {
 				endLinkInfo = li;
 				endPropertyInfo = null;
 				endCalcInfo = null;
 				linkInfos = (OALinkInfo[]) OAArray.add(OALinkInfo.class, linkInfos, li);
 			} else {
-				endPropertyInfo = OAObjectInfoDelegate.getPropertyInfo(oi, propertyName);
-				endCalcInfo = endPropertyInfo != null ? null : OAObjectInfoDelegate.getOACalcInfo(oi, propertyName);
+				endPropertyInfo = srvcObjectInfo.getPropertyInfo(oi, propertyName);
+				
+				if (endPropertyInfo != null) endCalcInfo = null;
+				else {
+					endCalcInfo = srvcObjectInfo.getOACalcInfo(oi, propertyName);
+				}
+				//was: endCalcInfo = endPropertyInfo != null ? null : OAObjectInfoDelegate.getOACalcInfo(oi, propertyName);
 				endLinkInfo = null;
 			}
 
@@ -998,7 +1007,7 @@ public class OAPropertyPath<F> {
 			this.properties = (String[]) OAArray.add(String.class, this.properties, propertyName);
 
 			// 20240131
-            Method method = OAObjectInfoDelegate.getMethod(oi, mname, 0);
+            Method method = srvcObjectInfo.getMethod(oi, mname, 0);
             //was: Method method = OAReflect.getMethod(clazz, mname, 0);
 			
 			bLastMethodHasHubParam = false;
@@ -1043,7 +1052,7 @@ public class OAPropertyPath<F> {
 
 			if (clazz != null && clazz.equals(Hub.class) && castName == null) {
 				// try to find the ObjectClass for Hub
-				Class c = OAObjectInfoDelegate.getHubPropertyClass(classLast, propertyName);
+				Class c = srvcObjectInfo.getHubPropertyClass(classLast, propertyName);
 				if (c != null) {
 					clazz = c;
 				}
@@ -1229,13 +1238,14 @@ public class OAPropertyPath<F> {
 				if (li == null || !li.getRecursive()) {
 					continue;
 				}
-				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(li.getToClass());
+				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(li.getToClass()).objects().getOAObjectInfoService();
+				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(li.getToClass());
 
 				OALinkInfo lix;
 				if (li.getType() == OALinkInfo.MANY) {
-					lix = OAObjectInfoDelegate.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
+					lix = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
 				} else {
-					lix = OAObjectInfoDelegate.getRecursiveLinkInfo(oi, OALinkInfo.ONE);
+					lix = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.ONE);
 				}
 				recursiveLinkInfos[j - 1] = lix;
 			}

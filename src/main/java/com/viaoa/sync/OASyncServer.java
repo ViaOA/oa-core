@@ -32,6 +32,9 @@ import java.util.logging.Logger;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectHubService;
+import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.info.RequestInfo;
@@ -514,7 +517,8 @@ public class OASyncServer {
 			 */
 			@Override
 			public void updateObjectCache(OAObject obj) {
-				cx.remoteSession.updateObjectsWithoutHubs( obj.getClass(), obj.getObjectKey(), OAObjectHubDelegate.isInHubWithMaster(obj) );
+				final OAObjectHubService srvcObjectHub = OARuntime.get().graph(obj).objects().getOAObjectHubService();
+				cx.remoteSession.updateObjectsWithoutHubs( obj.getClass(), obj.getObjectKey(), srvcObjectHub.isInHubWithMaster(obj) );
 			}
 
 			@Override
@@ -825,7 +829,8 @@ public class OASyncServer {
 						final OAGraph og = OARuntime.get().graph(c);
 				    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
 			            OAObject obj = (OAObject) srvcObjectCache.get(c, ok);
-			            Object objx = OAObjectPropertyDelegate.getProperty(obj, (String) ri.args[2]);
+			            final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(obj).objects().getOAObjectPropertyService();
+			            Object objx = srvcOAObjectProperty.getProperty(obj, (String) ri.args[2]);
 			            if (objx instanceof Hub) {
 			                Hub hub = (Hub) objx;
 			                if (hub.size() > 1) {
@@ -857,7 +862,8 @@ public class OASyncServer {
 						final OAGraph og = OARuntime.get().graph(c);
 				    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
 			            OAObject obj = (OAObject) srvcObjectCache.get(c, ok);
-			            Object objx = OAObjectPropertyDelegate.getProperty(obj, (String) ri.args[2]);
+			            final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(obj).objects().getOAObjectPropertyService();
+			            Object objx = srvcOAObjectProperty.getProperty(obj, (String) ri.args[2]);
 			            if (objx instanceof Hub) {
 			                Hub hub = (Hub) objx;
 			                if (hub.size() > 1) {
@@ -1353,11 +1359,13 @@ public class OASyncServer {
 				}
 				LOG.finer("loading obj=" + ls.obj.getClass().getSimpleName() + ", prop=" + ls.property);
 
-				if (OAObjectPropertyDelegate.isPropertyLocked(ls.obj, ls.property)) {
+	            final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(ls.obj).objects().getOAObjectPropertyService();
+				if (srvcOAObjectProperty.isPropertyLocked(ls.obj, ls.property)) {
 					continue;
 				}
 
-				OAObjectReflectDelegate.getProperty(ls.obj, ls.property); // load from DS
+				final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(ls.obj).objects().getOAObjectReflectService();
+				srvcOAObjectReflect.getProperty(ls.obj, ls.property); // load from DS
 			} catch (Exception e) {
 				if (msNow > (msLastError + 5000)) {
 					LOG.log(Level.WARNING, "Exception in LoadSibling thread", e);

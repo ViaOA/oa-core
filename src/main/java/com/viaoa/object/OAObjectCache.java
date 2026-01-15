@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.runtime.OARuntime;
 
 /**
@@ -199,7 +200,8 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean updateObject(final T obj) {
 		if (obj == null) return false;
-		final OAObjectKey ok = OAObjectKeyDelegate.createObjectKey((OAObject) obj);
+		final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+		final OAObjectKey ok = srvcObjectKey.createObjectKey((OAObject) obj);
 		final Class<T> clazz = (Class<T>) obj.getClass();
 		return updateObject(obj, ok, clazz);
 	}	
@@ -251,7 +253,8 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean removeObject(final T obj) {
 		if (obj == null) return false;
-		final OAObjectKey ok = OAObjectKeyDelegate.createObjectKey((OAObject) obj);
+		final OAObjectKeyService srvcObjectKey = OARuntime.get().graph((OAObject) obj).objects().getOAObjectKeyService();
+		final OAObjectKey ok = srvcObjectKey.createObjectKey((OAObject) obj);
 		final Class<T> clazz = (Class<T>) obj.getClass();
 		
 		final ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);

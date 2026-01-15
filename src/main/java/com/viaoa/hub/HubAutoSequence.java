@@ -20,8 +20,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.lang.reflect.*;
 
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Automatically maintains a numeric sequence property on every object in a {@link Hub},
@@ -275,7 +277,8 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         Class c = hub.getObjectClass();
         if (c == null) return;
         
-        Method met = OAObjectInfoDelegate.getMethod(c, "set" + propertyName);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+        Method met = srvcObjectInfo.getMethod(c, "set" + propertyName);
         //was: Method met = OAReflect.getMethod(c, "set"+propertyName);
         if (met == null) {
             throw new RuntimeException("setter method not found for property "+propertyName+", class="+c);

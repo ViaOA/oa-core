@@ -32,6 +32,7 @@ import com.viaoa.filter.OALikeFilter;
 import com.viaoa.filter.OANotEqualFilter;
 import com.viaoa.filter.OANotLikeFilter;
 import com.viaoa.filter.OATrueFilter;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
@@ -40,6 +41,7 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
@@ -619,7 +621,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		if (calcDependentPropertyName == null) {
 			boolean b = (prop.indexOf(".") >= 0);
 			if (!b) {
-				OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(hubMaster.getObjectClass());
+				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(hubMaster.getObjectClass()).objects().getOAObjectInfoService();
+				OAObjectInfo oi = srvcObjectInfo.getObjectInfo(hubMaster.getObjectClass());
 				String[] calcProps = null;
 				for (OACalcInfo ci : oi.getCalcInfos()) {
 					if (ci.getName().equalsIgnoreCase(prop)) {

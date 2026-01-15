@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
 
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -39,6 +40,7 @@ import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocal;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAPropertyPath;
 
@@ -847,8 +849,9 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         OALinkInfo lastLinkInfo = null; // 20131009
 
         for (int i = 0;; i++) {
-            OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
-            OALinkInfo recursiveLinkInfo = OAObjectInfoDelegate.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+            OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
+            OALinkInfo recursiveLinkInfo = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
             Node recursiveNode = null;
 
             // 20131009 check to see if link is recursive
@@ -869,7 +872,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
             String prop = pps[i];
 
-            OALinkInfo linkInfo = OAObjectInfoDelegate.getLinkInfo(oi, prop);
+            OALinkInfo linkInfo = srvcObjectInfo.getLinkInfo(oi, prop);
             if (linkInfo == null) {
                 throw new IllegalArgumentException("Cant find " + prop + " for PropertyPath \"" + propertyPath + "\" starting with Class "
                         + hubRoot.getObjectClass().getName());

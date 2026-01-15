@@ -15,7 +15,10 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.graph.object.OAObjectHubService;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Internal listener created by {@link HubLinkDelegate} to keep two linked {@link Hub}s
@@ -82,7 +85,8 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	    // 20130708
         OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(linkToHub);
         if (li != null && li.getPrivateMethod()) {
-            if (OAObjectInfoDelegate.isMany2Many(li)) {
+    		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(li.getToClass()).objects().getOAObjectInfoService();
+            if (srvcObjectInfo.isMany2Many(li)) {
                 bUpdateWeakHub = true;
             }
         }
@@ -128,7 +132,8 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	    if (bUpdateWeakHub) {
     	    for (Object objx : linkToHub) {
     	        OAObject oaObj = (OAObject) objx;
-    	        if (!OAObjectHubDelegate.addHub(oaObj, linkToHub, true)) {
+				final OAObjectHubService srvcObjectHub = OARuntime.get().graph(oaObj).objects().getOAObjectHubService();
+    	        if (!srvcObjectHub.addHub(oaObj, linkToHub, true)) {
     	            break;
     	        }
             }

@@ -26,6 +26,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -37,6 +38,7 @@ import com.viaoa.remote.rest.annotation.OARestMethod.MethodType;
 import com.viaoa.remote.rest.annotation.OARestParam;
 import com.viaoa.remote.rest.annotation.OARestParam.ParamType;
 import com.viaoa.remote.rest.info.OARestParamInfo.ClassType;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.template.OATemplate;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAHttpUtil;
@@ -1954,7 +1956,8 @@ public class OARestMethodInfo {
 			} else {
 				derivedUrlPath = "/" + OAString.mfcl(this.origReturnClass.getSimpleName());
 				derivedUrlPath += "/<%=$ID%>";
-				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.origReturnClass);
+				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(this.origReturnClass).objects().getOAObjectInfoService();
+				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(this.origReturnClass);
 				int cnt = 0;
 				for (String s : oi.getKeyProperties()) {
 					cnt++;
@@ -1997,7 +2000,8 @@ public class OARestMethodInfo {
 					alErrors.add(msgPrefix + s);
 				}
 			} else {
-				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(this.returnClass);
+				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(this.returnClass).objects().getOAObjectInfoService();
+				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(this.returnClass);
 				derivedUrlPath = "/" + OAString.mfcl(oi.getPluralName());
 			}
 		} else if (methodType == MethodType.OARemote) {
@@ -2223,7 +2227,8 @@ public class OARestMethodInfo {
 				pos++;
 				if (pi.paramType == ParamType.MethodReturnClass) {
 					if (args[pos] instanceof Class) {
-						OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo((Class) args[pos]);
+						final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph((Class) args[pos]).objects().getOAObjectInfoService();
+						OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo((Class) args[pos]);
 						urlPathTemplate.setProperty("PluralClass", OAString.mfcl(oi.getPluralName()));
 					} else {
 						throw new OARestClientException(

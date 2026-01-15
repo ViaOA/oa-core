@@ -54,7 +54,7 @@ public class OAObjectEnumDelegate {
 	 * @return a hub containing the name/value entries, or {@code null}
 	 *         if the property does not define enumeration metadata
 	 */
-	public static Hub<String> getNameValues(Class clazz, String propertyName) {
+	private static Hub<String> getNameValues(Class clazz, String propertyName) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectEnumService().getNameValues(clazz, propertyName);
@@ -71,7 +71,7 @@ public class OAObjectEnumDelegate {
 	 * @return a hub containing display-name entries, or {@code null}
 	 *         if the property does not define enumeration metadata
 	 */
-	public static Hub<String> getDisplayNameValues(Class clazz, String propertyName) {
+	private static Hub<String> getDisplayNameValues(Class clazz, String propertyName) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectEnumService().getDisplayNameValues(clazz, propertyName);

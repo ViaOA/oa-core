@@ -19,7 +19,10 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import com.viaoa.filter.*;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.hub.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 
 /**
@@ -1027,7 +1030,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			cascades[i] = new OACascade();
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(c);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(c);
 		liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 
 		if (liRecursiveRoot != null && linkInfos != null && linkInfos.length > 0) {
@@ -1205,7 +1209,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 						if (linkInfos[pos].getCalculated()) {
 							objx = linkInfos[pos].getValue((OAObject) obj);
 						} else {
-							objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, linkInfos[pos].getName());
+							OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) obj).objects().getOAObjectPropertyService();
+							objx = srvcOAObjectProperty.getProperty((OAObject) obj, linkInfos[pos].getName());
 						}
 						if (objx instanceof Hub) {
 							Hub h = (Hub) objx;
@@ -1253,7 +1258,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		if (li.getCalculated()) {
 			hx = (Hub) li.getValue((OAObject) obj);
 		} else {
-			hx = (Hub) OAObjectPropertyDelegate.getProperty((OAObject) obj, li.name, false, true);
+			OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) obj).objects().getOAObjectPropertyService();
+			hx = (Hub) srvcOAObjectProperty.getProperty((OAObject) obj, li.name, false, true);
 		}
 		if (hx == null || (HubSortDelegate.getSortListener(hx) == null && HubDelegate.getAutoSequence(hx) == null)) {
 			return true;

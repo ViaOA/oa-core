@@ -15,12 +15,14 @@
  */
 package com.viaoa.uicontroller;
 
+import com.viaoa.graph.object.OAObjectCallbackService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAEncryption;
 import com.viaoa.util.OAStr;
@@ -109,7 +111,8 @@ public class OAUIPropertyController extends OAUIBaseController {
         if (!super.isEnabled()) return false;
         if (obj == null) return false;
         
-        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getPropertyName());
+		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(obj).objects().getOAObjectCallbackService();
+        OAObjectCallback eq = srvcObjectCallback.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getPropertyName());
         return eq.getAllowed();
     }
         
@@ -120,7 +123,8 @@ public class OAUIPropertyController extends OAUIBaseController {
     public boolean isVisible(OAObject obj) {
         if (!super.isVisible()) return false;
         
-        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(getHub(), obj, getPropertyName());
+		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(getHub(), obj).objects().getOAObjectCallbackService();
+        OAObjectCallback eq = srvcObjectCallback.getAllowVisibleObjectCallback(getHub(), obj, getPropertyName());
         return eq.getAllowed();
     }
     
@@ -187,9 +191,11 @@ public class OAUIPropertyController extends OAUIBaseController {
             }
             newValue = text;
         }        
+
+		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(getHub(), obj).objects().getOAObjectCallbackService();
         
         // 1: confirm
-        cb = OAObjectCallbackDelegate.getConfirmPropertyChangeObjectCallback(obj, getPropertyName(), newValue, getConfirmMessage(), getTitle());
+        cb = srvcObjectCallback.getConfirmPropertyChangeObjectCallback(obj, getPropertyName(), newValue, getConfirmMessage(), getTitle());
         s = cb.getConfirmMessage();
         if (OAStr.isNotEmpty(s)) {
             if (!onConfirm(s, OAStr.notEmpty(cb.getConfirmTitle(), getTitle()) )) {
@@ -198,7 +204,7 @@ public class OAUIPropertyController extends OAUIBaseController {
         }
         
         // 2: verify
-        cb = OAObjectCallbackDelegate.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, obj, getPropertyName(), null, newValue); 
+        cb = srvcObjectCallback.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, obj, getPropertyName(), null, newValue); 
         if (!cb.getAllowed()) {
             onError(cb.getResponse(), cb.getDisplayResponse());
             return false;

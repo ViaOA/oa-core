@@ -114,7 +114,7 @@ public class OAObjectReflectDelegate {
 	 * @return a new instance of the class, or a primitive wrapper/empty
 	 *         primitive placeholder when applicable
 	 */
-	public static Object createNewObject(Class clazz) {
+	private static Object createNewObject(Class clazz) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().createNewObject(clazz);
@@ -130,7 +130,7 @@ public class OAObjectReflectDelegate {
 	 * @param propPath the property name or path to evaluate
 	 * @return the resolved property value or {@code null}
 	 */
-	public static Object getProperty(Hub hub, String propPath) {
+	private static Object getProperty(Hub hub, String propPath) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getProperty(hub, propPath);
@@ -145,7 +145,7 @@ public class OAObjectReflectDelegate {
 	 * @param propPath the property name or dotted path
 	 * @return the value resolved from the path, or {@code null}
 	 */
-	public static Object getProperty(OAObject oaObj, String propPath) {
+	private static Object getProperty(OAObject oaObj, String propPath) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getProperty(oaObj, propPath);
@@ -163,7 +163,7 @@ public class OAObjectReflectDelegate {
 	 * @param propPath the property or dotted path to evaluate
 	 * @return the final resolved value or {@code null} if unavailable
 	 */
-	public static Object getProperty(Hub hubLast, OAObject oaObj, String propPath) {
+	private static Object getProperty(Hub hubLast, OAObject oaObj, String propPath) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getProperty(hubLast, oaObj, propPath);
@@ -181,7 +181,7 @@ public class OAObjectReflectDelegate {
 	 * @param value    the new value (may be OAObject, OAObjectKey, or raw)
 	 * @param fmt      optional formatter used for type conversion
 	 */
-	public static void setProperty(final OAObject oaObj, String propName, Object value, final String fmt) {
+	private static void setProperty(final OAObject oaObj, String propName, Object value, final String fmt) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().setProperty(oaObj, propName, value, fmt);
@@ -197,7 +197,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the name of the link property
 	 * @param value        the raw value or key to store
 	 */
-	public static void storeLinkValue(OAObject oaObj, String propertyName, Object value) {
+	private static void storeLinkValue(OAObject oaObj, String propertyName, Object value) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().storeLinkValue(oaObj, propertyName, value);
@@ -213,7 +213,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the property name
 	 * @return {@code true} if the property represents a null primitive
 	 */
-	public static boolean getPrimitiveNull(OAObject oaObj, String propertyName) {
+	private static boolean getPrimitiveNull(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().getPrimitiveNull(oaObj, propertyName);
@@ -228,7 +228,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the primitive property name
 	 * @param bNull        {@code true} to set null, {@code false} to clear
 	 */
-	public static void setPrimitiveNull(OAObject oaObj, String propertyName, boolean bNull) {
+	private static void setPrimitiveNull(OAObject oaObj, String propertyName, boolean bNull) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().setPrimitiveNull(oaObj, propertyName, bNull);
@@ -244,7 +244,7 @@ public class OAObjectReflectDelegate {
 	 * @param key   a key value or {@link OAObjectKey}
 	 * @return the resolved object or {@code null} if not found
 	 */
-	public static OAObject getObject(Class clazz, Object key) {
+	private static OAObject getObject(Class clazz, Object key) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getObject(clazz, key);
@@ -260,7 +260,7 @@ public class OAObjectReflectDelegate {
 	 * @param oi    metadata associated with the class
 	 * @return the located {@link OAObject} or {@code null}
 	 */
-	public static OAObject getObject(Class clazz, Object key, OAObjectInfo oi) {
+	private static OAObject getObject(Class clazz, Object key, OAObjectInfo oi) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getObject(clazz, key, oi);
@@ -279,7 +279,7 @@ public class OAObjectReflectDelegate {
 	 * @param hubMatch         optional Hub for autoMatch
 	 * @return the reference Hub, possibly empty but never {@code null}
 	 */
-	public static Hub getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence,
+	private static Hub getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence,
 			Hub hubMatch) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
@@ -297,7 +297,7 @@ public class OAObjectReflectDelegate {
 	 * @param name  the link property name
 	 * @return the raw stored value
 	 */
-	public static Object getRawReference(OAObject oaObj, String name) {
+	private static Object getRawReference(OAObject oaObj, String name) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getRawReference(oaObj, name);
@@ -311,7 +311,7 @@ public class OAObjectReflectDelegate {
 	 * @param oaObj the object to inspect
 	 * @return {@code true} if it is referenced, otherwise {@code false}
 	 */
-	public static boolean hasReference(OAObject oaObj) {
+	private static boolean hasReference(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().hasReference(oaObj);
@@ -326,7 +326,7 @@ public class OAObjectReflectDelegate {
 	 * @param bIncludeCalc true to include calculated links
 	 * @return array of unloaded link property names, or {@code null}
 	 */
-	public static String[] getUnloadedReferences(OAObject obj, boolean bIncludeCalc) {
+	private static String[] getUnloadedReferences(OAObject obj, boolean bIncludeCalc) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getUnloadedReferences(obj, bIncludeCalc);
@@ -341,7 +341,7 @@ public class OAObjectReflectDelegate {
 	 * @param exceptPropertyName property name to exclude
 	 * @return array of unloaded link names, or {@code null}
 	 */
-	public static String[] getUnloadedReferences(OAObject obj, boolean bIncludeCalc, String exceptPropertyName) {
+	private static String[] getUnloadedReferences(OAObject obj, boolean bIncludeCalc, String exceptPropertyName) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getUnloadedReferences(obj, bIncludeCalc, exceptPropertyName);
@@ -357,7 +357,7 @@ public class OAObjectReflectDelegate {
 	 * @param bIncludeLarge      include large links if true
 	 * @return array of unloaded reference names, or {@code null}
 	 */
-	public static String[] getUnloadedReferences(OAObject obj, boolean bIncludeCalc, String exceptPropertyName, boolean bIncludeLarge) {
+	private static String[] getUnloadedReferences(OAObject obj, boolean bIncludeCalc, String exceptPropertyName, boolean bIncludeLarge) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getUnloadedReferences(obj, bIncludeCalc, exceptPropertyName, bIncludeLarge);
@@ -369,7 +369,7 @@ public class OAObjectReflectDelegate {
 	 *
 	 * @param obj the object whose references will be loaded
 	 */
-	public static void loadAllReferences(OAObject obj) {
+	private static void loadAllReferences(OAObject obj) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().loadAllReferences(obj);
@@ -382,7 +382,7 @@ public class OAObjectReflectDelegate {
 	 *
 	 * @param hub the Hub whose objects will have references loaded
 	 */
-	public static void loadAllReferences(Hub hub) {
+	private static void loadAllReferences(Hub hub) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().loadAllReferences(hub);
@@ -395,7 +395,7 @@ public class OAObjectReflectDelegate {
 	 * @param hub          Hub containing objects to load
 	 * @param bIncludeCalc true to include calculated links
 	 */
-	public static void loadAllReferences(Hub hub, boolean bIncludeCalc) {
+	private static void loadAllReferences(Hub hub, boolean bIncludeCalc) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().loadAllReferences(hub, bIncludeCalc);
@@ -408,7 +408,7 @@ public class OAObjectReflectDelegate {
 	 * @param obj          the object to load
 	 * @param bIncludeCalc include calculated links if true
 	 */
-	public static void loadAllReferences(OAObject obj, boolean bIncludeCalc) {
+	private static void loadAllReferences(OAObject obj, boolean bIncludeCalc) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().loadAllReferences(obj, bIncludeCalc);
@@ -423,7 +423,7 @@ public class OAObjectReflectDelegate {
 	 * @param bIncludeCalc include calculated links if true
 	 * @param max          maximum number of references to load
 	 */
-	public static void loadReferences(OAObject obj, boolean bIncludeCalc, int max) {
+	private static void loadReferences(OAObject obj, boolean bIncludeCalc, int max) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().loadReferences(obj, bIncludeCalc, max);
@@ -438,7 +438,7 @@ public class OAObjectReflectDelegate {
 	 * @param bIncludeCalc include calculated links if true
 	 * @return {@code true} if all references are loaded
 	 */
-	public static boolean areAllReferencesLoaded(OAObject obj, boolean bIncludeCalc) {
+	private static boolean areAllReferencesLoaded(OAObject obj, boolean bIncludeCalc) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().areAllReferencesLoaded(obj, bIncludeCalc);
@@ -454,7 +454,7 @@ public class OAObjectReflectDelegate {
 	 * @param bIncludeCalc include calculated links if true
 	 * @return number of loaded references
 	 */
-	public static int loadAllReferences(OAObject obj, boolean bOne, boolean bMany, boolean bIncludeCalc) {
+	private static int loadAllReferences(OAObject obj, boolean bOne, boolean bMany, boolean bIncludeCalc) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
 		return g.objects().getOAObjectReflectService().loadAllReferences(obj, bOne, bMany, bIncludeCalc);
@@ -467,7 +467,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxLevelsToLoad  maximum recursive depth
 	 * @return count of loaded references
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad) {
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
 		return g.objects().getOAObjectReflectService().loadAllReferences(obj, maxLevelsToLoad);
@@ -484,7 +484,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxLevelsToLoad  the maximum depth of recursive loading
 	 * @return the total number of references loaded
 	 */
-	public static int loadAllReferences(Hub hub, int maxLevelsToLoad) {
+	private static int loadAllReferences(Hub hub, int maxLevelsToLoad) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
 		return g.objects().getOAObjectReflectService().loadAllReferences(hub, maxLevelsToLoad);
@@ -501,7 +501,7 @@ public class OAObjectReflectDelegate {
 	 * @param additionalOwnedLevelsToLoad additional owned-reference depth
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad) {
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
 		return g.objects().getOAObjectReflectService().loadAllReferences(obj, maxLevelsToLoad, additionalOwnedLevelsToLoad);
@@ -518,7 +518,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, int maxRefsToLoad) {
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, int maxRefsToLoad) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
 		return g.objects().getOAObjectReflectService().loadAllReferences(obj, maxLevelsToLoad, additionalOwnedLevelsToLoad, maxRefsToLoad);
@@ -535,7 +535,7 @@ public class OAObjectReflectDelegate {
 	 * @param additionalOwnedLevelsToLoad additional owned-reference depth
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad) {
+	private static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
 		return g.objects().getOAObjectReflectService().loadAllReferences(hub, maxLevelsToLoad, additionalOwnedLevelsToLoad);
@@ -552,7 +552,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, int maxRefsToLoad) {
+	private static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, int maxRefsToLoad) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
 		return g.objects().getOAObjectReflectService().loadAllReferences(hub, maxLevelsToLoad, additionalOwnedLevelsToLoad, maxRefsToLoad);
@@ -568,7 +568,7 @@ public class OAObjectReflectDelegate {
 	 * @param bIncludeCalc               include calculated links if true
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc) {
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
 		return g.objects().getOAObjectReflectService().loadAllReferences(obj, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc);
@@ -586,7 +586,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of loaded references
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			int maxRefsToLoad) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
@@ -607,7 +607,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxEndTime                 time limit in milliseconds
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			int maxRefsToLoad, long maxEndTime) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
@@ -626,7 +626,7 @@ public class OAObjectReflectDelegate {
 	 * @param bIncludeCalc               include calculated links if true
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc) {
+	private static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
 		return g.objects().getOAObjectReflectService().loadAllReferences(hub, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc);
@@ -644,7 +644,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of loaded references
 	 */
-	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			int maxRefsToLoad) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
@@ -664,7 +664,7 @@ public class OAObjectReflectDelegate {
 	 * @param callback                   invoked before loading references
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
@@ -686,7 +686,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              maximum number of references to load
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback, int maxRefsToLoad) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
@@ -706,7 +706,7 @@ public class OAObjectReflectDelegate {
 	 * @param callback                   invoked before loading each object
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
@@ -727,7 +727,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback, int maxRefsToLoad) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
@@ -750,7 +750,7 @@ public class OAObjectReflectDelegate {
 	 * @param cascade                    cascade manager used during loading
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(final Hub hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
+	private static int loadAllReferences(final Hub hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
@@ -774,7 +774,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(final Hub hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
+	private static int loadAllReferences(final Hub hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade, int maxRefsToLoad) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
@@ -794,7 +794,7 @@ public class OAObjectReflectDelegate {
 	 * @param cascade                    cascade handler
 	 * @return number of loaded references
 	 */
-	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
@@ -815,7 +815,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of loaded references
 	 */
-	public static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade, int maxRefsToLoad) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return 0;
@@ -835,7 +835,7 @@ public class OAObjectReflectDelegate {
 	 * @param callback                   invoked before loading each object
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
@@ -856,7 +856,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	private static int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade, int maxRefsToLoad) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
@@ -875,7 +875,7 @@ public class OAObjectReflectDelegate {
 	 * @param callback                   invoked before loading
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
+	private static int loadAllReferences(OAObject obj, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
@@ -900,7 +900,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxRefsToLoad              total max references allowed
 	 * @return number of references loaded
 	 */
-	public static int loadAllReferences(OAObject obj, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
+	private static int loadAllReferences(OAObject obj, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade, final int maxRefsToLoad) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return 0;
@@ -920,7 +920,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the name of the reference property
 	 * @return the blob as a byte array, or null if unavailable
 	 */
-	public static byte[] getReferenceBlob(OAObject oaObj, String propertyName) {
+	private static byte[] getReferenceBlob(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getReferenceBlob(oaObj, propertyName);
@@ -937,7 +937,7 @@ public class OAObjectReflectDelegate {
 	 * @param linkPropertyName the link property name
 	 * @return the referenced OAObject or null
 	 */
-	public static Object getReferenceObject(final OAObject oaObj, final String linkPropertyName) {
+	private static Object getReferenceObject(final OAObject oaObj, final String linkPropertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getReferenceObject(oaObj, linkPropertyName);
@@ -954,7 +954,7 @@ public class OAObjectReflectDelegate {
 	 * @param property the reference property name
 	 * @return the stored OAObjectKey, a derived key from an OAObject, or null
 	 */
-	public static OAObjectKey getPropertyObjectKey(OAObject oaObj, String property) {
+	private static OAObjectKey getPropertyObjectKey(OAObject oaObj, String property) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getPropertyObjectKey(oaObj, property);
@@ -971,7 +971,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the reference property name
 	 * @return true if the reference is loaded or resolved, false otherwise
 	 */
-	public static boolean hasReferenceObjectBeenLoaded(OAObject oaObj, String propertyName) {
+	private static boolean hasReferenceObjectBeenLoaded(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().hasReferenceObjectBeenLoaded(oaObj, propertyName);
@@ -986,7 +986,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the reference property name
 	 * @return true if the property is null or OANotExist, false otherwise
 	 */
-	public static boolean isReferenceObjectNullOrEmpty(OAObject oaObj, String propertyName) {
+	private static boolean isReferenceObjectNullOrEmpty(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().isReferenceObjectNullOrEmpty(oaObj, propertyName);
@@ -1002,7 +1002,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the reference property name
 	 * @return true if loaded and non-empty
 	 */
-	public static boolean isReferenceObjectLoadedAndNotEmpty(OAObject oaObj, String propertyName) {
+	private static boolean isReferenceObjectLoadedAndNotEmpty(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().isReferenceObjectLoadedAndNotEmpty(oaObj, propertyName);
@@ -1017,7 +1017,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the reference property
 	 * @return true if null or not loaded
 	 */
-	public static boolean isReferenceNullOrNotLoaded(OAObject oaObj, String propertyName) {
+	private static boolean isReferenceNullOrNotLoaded(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().isReferenceNullOrNotLoaded(oaObj, propertyName);
@@ -1033,7 +1033,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the reference property name
 	 * @return true if the reference is null, not loaded, or an empty Hub
 	 */
-	public static boolean isReferenceNullOrNotLoadedOrEmptyHub(OAObject oaObj, String propertyName) {
+	private static boolean isReferenceNullOrNotLoadedOrEmptyHub(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().isReferenceNullOrNotLoadedOrEmptyHub(oaObj, propertyName);
@@ -1049,7 +1049,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the MANY link property name
 	 * @return true if the Hub exists and is fully loaded
 	 */
-	public static boolean isReferenceHubLoaded(OAObject oaObj, String propertyName) {
+	private static boolean isReferenceHubLoaded(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().isReferenceHubLoaded(oaObj, propertyName);
@@ -1065,7 +1065,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the MANY link property name
 	 * @return true if the Hub is loaded and empty
 	 */
-	public static boolean isReferenceHubLoadedAndEmpty(OAObject oaObj, String propertyName) {
+	private static boolean isReferenceHubLoadedAndEmpty(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().isReferenceHubLoadedAndEmpty(oaObj, propertyName);
@@ -1081,7 +1081,7 @@ public class OAObjectReflectDelegate {
 	 * @param propertyName the MANY link property name
 	 * @return true if the Hub is loaded and contains data
 	 */
-	public static boolean isReferenceHubLoadedAndNotEmpty(OAObject oaObj, String propertyName) {
+	private static boolean isReferenceHubLoadedAndNotEmpty(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectReflectService().isReferenceHubLoadedAndNotEmpty(oaObj, propertyName);
@@ -1096,7 +1096,7 @@ public class OAObjectReflectDelegate {
 	 * @param oaObj         the object whose properties are to be loaded
 	 * @param propertyPaths one or more property names or dotted paths
 	 */
-	public static void loadProperties(OAObject oaObj, String... propertyPaths) {
+	private static void loadProperties(OAObject oaObj, String... propertyPaths) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().loadProperties(oaObj, propertyPaths);
@@ -1112,7 +1112,7 @@ public class OAObjectReflectDelegate {
 	 * @param hub           the Hub whose objects will have properties loaded
 	 * @param propertyPaths one or more property names or dotted paths
 	 */
-	public static void loadProperties(Hub hub, String... propertyPaths) {
+	private static void loadProperties(Hub hub, String... propertyPaths) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().loadProperties(hub, propertyPaths);
@@ -1131,7 +1131,7 @@ public class OAObjectReflectDelegate {
 	 * @param excludeProperties property names to exclude from copying
 	 * @return the newly created copied object
 	 */
-	public static OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
+	private static OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().createCopy(oaObj, excludeProperties);
@@ -1150,7 +1150,7 @@ public class OAObjectReflectDelegate {
 	 * @param copyCallback     optional callback to customize copying
 	 * @return the newly created copied object
 	 */
-	public static OAObject createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback) {
+	private static OAObject createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().createCopy(oaObj, excludeProperties, copyCallback);
@@ -1169,7 +1169,7 @@ public class OAObjectReflectDelegate {
 	 * @param hmNew            map used to track created copies
 	 * @return the newly created copied object
 	 */
-	public static OAObject _createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
+	private static OAObject _createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
 			Map<UUID, Object> hmNew) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
@@ -1189,7 +1189,7 @@ public class OAObjectReflectDelegate {
 	 * @param excludeProperties property names to exclude from copying
 	 * @param copyCallback     optional callback to customize copy behavior
 	 */
-	public static void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback) {
+	private static void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService().copyInto(oaObj, newObject, excludeProperties, copyCallback);
@@ -1210,7 +1210,7 @@ public class OAObjectReflectDelegate {
 	 * @param copyCallback     optional callback invoked during copying
 	 * @param hmNew            map tracking objects already copied
 	 */
-	public static void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
+	private static void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
 			HashMap<UUID, Object> hmNew) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
@@ -1232,14 +1232,14 @@ public class OAObjectReflectDelegate {
 	 * @param copyCallback     optional callback invoked during copying
 	 * @param hmNew            map tracking already-copied objects
 	 */
-	public static void _copyInto(final OAObject oaObj, final OAObject newObject, final String[] excludeProperties,
+	private static void _copyInto(final OAObject oaObj, final OAObject newObject, final String[] excludeProperties,
 			final OACopyCallback copyCallback, final Map<UUID, Object> hmNew) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectReflectService()._copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 	}
 
-	public static Class getHubObjectClass(Method method) {
+	private static Class getHubObjectClass(Method method) {
 		Class cx = null;
 		Type rt = method.getGenericReturnType();
 		if (rt instanceof ParameterizedType) {
@@ -1266,7 +1266,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxLevelsToCheck maximum number of parent levels to traverse
 	 * @return the first common Hub found, or null if none exists
 	 */
-	public static Hub findCommonHierarchyHub(OAObject obj1, OAObject obj2, int maxLevelsToCheck) {
+	private static Hub findCommonHierarchyHub(OAObject obj1, OAObject obj2, int maxLevelsToCheck) {
 		OAGraph g = getGraph(null, obj1);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().findCommonHierarchyHub(obj1, obj2, maxLevelsToCheck);
@@ -1285,7 +1285,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxLevelsToCheck maximum allowed recursion depth
 	 * @return the common Hub if found, otherwise null
 	 */
-	protected static Hub findCommonHierarchyHub(OAObject obj1, OAObject obj2, int currentLevel, int maxLevelsToCheck) {
+	private static Hub findCommonHierarchyHub(OAObject obj1, OAObject obj2, int currentLevel, int maxLevelsToCheck) {
 		OAGraph g = getGraph(null, obj1);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().findCommonHierarchyHub(obj1, obj2, currentLevel, maxLevelsToCheck);
@@ -1303,7 +1303,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxLevelsToCheck the maximum number of parent levels to traverse
 	 * @return the number of levels to reach the Hub, or -1 if not found
 	 */
-	public static int getHierarchyLevelsToHub(Hub findHub, OAObject fromObj, int maxLevelsToCheck) {
+	private static int getHierarchyLevelsToHub(Hub findHub, OAObject fromObj, int maxLevelsToCheck) {
 		OAGraph g = getGraph(null, fromObj);
 		if (g == null) return -1;
 		return g.objects().getOAObjectReflectService().getHierarchyLevelsToHub(findHub, fromObj, maxLevelsToCheck);
@@ -1321,7 +1321,7 @@ public class OAObjectReflectDelegate {
 	 * @param maxLevelsToCheck the maximum number of levels allowed
 	 * @return the number of levels to reach the Hub, or -1 if not found
 	 */
-	protected static int getHierarchyLevelsToHub(Hub findHub, OAObject fromObj, int currentLevel, int maxLevelsToCheck) {
+	private static int getHierarchyLevelsToHub(Hub findHub, OAObject fromObj, int currentLevel, int maxLevelsToCheck) {
 		OAGraph g = getGraph(null, fromObj);
 		if (g == null) return -1;
 		return g.objects().getOAObjectReflectService().getHierarchyLevelsToHub(findHub, fromObj, currentLevel, maxLevelsToCheck);
@@ -1338,7 +1338,7 @@ public class OAObjectReflectDelegate {
 	 * @param hubChild  the child Hub
 	 * @return the property path from the parent to the Hub, or null if none exists
 	 */
-	public static String getPropertyPathFromMaster(final OAObject objParent, final Hub hubChild) {
+	private static String getPropertyPathFromMaster(final OAObject objParent, final Hub hubChild) {
 		OAGraph g = getGraph(null, objParent);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getPropertyPathFromMaster(objParent, hubChild);
@@ -1355,7 +1355,7 @@ public class OAObjectReflectDelegate {
 	 * @param hubChild   the child Hub whose display object is needed
 	 * @return the object to display in the child Hub, or null if none applies
 	 */
-	public static Object getObjectToDisplay(final Hub hubFrom, Object fromObject, final Hub hubChild) {
+	private static Object getObjectToDisplay(final Hub hubFrom, Object fromObject, final Hub hubChild) {
 		OAGraph g = getGraph(hubFrom, null);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getObjectToDisplay(hubFrom, fromObject, hubChild);
@@ -1371,7 +1371,7 @@ public class OAObjectReflectDelegate {
 	 * @param hubChild  the child Hub
 	 * @return the property path between the two Hubs, or null if none exists
 	 */
-	public static String getPropertyPathBetweenHubs(final Hub hubParent, final Hub hubChild) {
+	private static String getPropertyPathBetweenHubs(final Hub hubParent, final Hub hubChild) {
 		OAGraph g = getGraph(hubParent, null);
 		if (g == null) return null;
 		return g.objects().getOAObjectReflectService().getPropertyPathBetweenHubs(hubParent, hubChild);

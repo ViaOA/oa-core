@@ -25,6 +25,8 @@ import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.ManyToMany;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAPropertyPath;
@@ -207,12 +209,13 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			Object objOneHub = OAObjectPropertyDelegate.getProperty((OAObject) objOne, liMany.getName(), false, true);
+			OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) objOne).objects().getOAObjectPropertyService();
+			Object objOneHub = srvcOAObjectProperty.getProperty((OAObject) objOne, liMany.getName(), false, true);
 			if (objOneHub instanceof Hub) {
 				hub = (Hub) objOneHub;
 			} else {
 				hub = new Hub(liMany.getToClass());
-				OAObjectPropertyDelegate.setProperty((OAObject) objOne, liMany.getName(), hub);
+				srvcOAObjectProperty.setProperty((OAObject) objOne, liMany.getName(), hub);
 			}
 			hub.add(objFromMany);
 		}
@@ -270,24 +273,26 @@ public class OAPreLoader {
 
 			if (!liA.getPrivateMethod()) {
 				Hub hub;
-				Object objx = OAObjectPropertyDelegate.getProperty((OAObject) objA, liA.getName(), false, true);
+				OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) objA).objects().getOAObjectPropertyService();
+				Object objx = srvcOAObjectProperty.getProperty((OAObject) objA, liA.getName(), false, true);
 				if (objx instanceof Hub) {
 					hub = (Hub) objx;
 				} else {
 					hub = new Hub(classB);
-					OAObjectPropertyDelegate.setProperty((OAObject) objA, liA.getName(), hub);
+					srvcOAObjectProperty.setProperty((OAObject) objA, liA.getName(), hub);
 				}
 				hub.add(objB);
 			}
 
 			if (!liB.getPrivateMethod()) {
 				Hub hub;
-				Object objx = OAObjectPropertyDelegate.getProperty((OAObject) objB, liB.getName(), false, true);
+				OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) objB).objects().getOAObjectPropertyService();
+				Object objx = srvcOAObjectProperty.getProperty((OAObject) objB, liB.getName(), false, true);
 				if (objx instanceof Hub) {
 					hub = (Hub) objx;
 				} else {
 					hub = new Hub(classA);
-					OAObjectPropertyDelegate.setProperty((OAObject) objB, liB.getName(), hub);
+					srvcOAObjectProperty.setProperty((OAObject) objB, liB.getName(), hub);
 				}
 				hub.add(objA);
 			}
@@ -314,8 +319,9 @@ public class OAPreLoader {
 	 */
 	protected ArrayList load(Class clazz, final OALinkInfo linkInfo) {
 		OASelect sel = new OASelect<>(clazz);
-		OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(clazz);
-		OALinkInfo liRecursive = OAObjectInfoDelegate.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
+		OALinkInfo liRecursive = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
 
 		String sortOrder = null;
 		if (liRecursive != null) {
@@ -398,12 +404,13 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			Object objx = OAObjectPropertyDelegate.getProperty((OAObject) fParent, liMany.getName(), false, true);
+			OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) fParent).objects().getOAObjectPropertyService();
+			Object objx = srvcOAObjectProperty.getProperty((OAObject) fParent, liMany.getName(), false, true);
 			if (objx instanceof Hub) {
 				hub = (Hub) objx;
 			} else {
 				hub = new Hub(clazz);
-				OAObjectPropertyDelegate.setProperty((OAObject) fParent, liMany.getName(), hub);
+				srvcOAObjectProperty.setProperty((OAObject) fParent, liMany.getName(), hub);
 			}
 			hub.add(f);
 		}

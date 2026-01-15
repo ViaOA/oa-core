@@ -83,6 +83,15 @@ public final class OARuntime {
 		Class c = hub == null ? null : hub.getObjectClass();
 		return graph(c);
 	}
+
+	public OAGraph graph(final Hub hub, final OAObject obj) {
+		Class c = hub == null ? null : hub.getObjectClass();
+		if (c == null && obj != null) {
+			c = obj.getClass();
+		}
+		return graph(c);
+	}
+	
 	
 	public OAGraph graph(final Class<?> clazz) {
 	    Class<?> classFound = clazz;

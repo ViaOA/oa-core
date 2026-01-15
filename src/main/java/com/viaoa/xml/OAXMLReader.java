@@ -34,6 +34,8 @@ import org.xml.sax.helpers.DefaultHandler;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -494,7 +496,8 @@ public class OAXMLReader {
 			}
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(toClass);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(toClass).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(toClass);
 
 		if (objNew == null) {
 			objNew = getObject(toClass, hm);
@@ -506,7 +509,7 @@ public class OAXMLReader {
 			Object[] values = new Object[ids == null ? 0 : ids.length];
 			for (int i = 0; i < ids.length; i++) {
 				String id = ids[i].toUpperCase();
-				Class c2 = OAObjectInfoDelegate.getPropertyClass(toClass, id);
+				Class c2 = srvcObjectInfo.getPropertyClass(toClass, id);
 				values[i] = hm.get(id);
 				if (values[i] instanceof String) {
 					values[i] = OAConverter.convert(c2, values[i]);
@@ -534,7 +537,7 @@ public class OAXMLReader {
 						continue;
 					}
 					String id = matchProps[i].toUpperCase();
-					Class c2 = OAObjectInfoDelegate.getPropertyClass(toClass, id);
+					Class c2 = srvcObjectInfo.getPropertyClass(toClass, id);
 
 					Object val = hm.get(id);
 
@@ -817,7 +820,9 @@ public class OAXMLReader {
 							}
 							final OAGraph og = OARuntime.get().graph(object.getClass());
 					    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
-							OAObject obj = srvcObjectCache.getObject(object.getClass(), OAObjectKeyDelegate.getKey(object));
+							final OAObjectKeyService srvcObjectKey = og.objects().getOAObjectKeyService();
+					    	
+							OAObject obj = srvcObjectCache.getObject(object.getClass(), srvcObjectKey.getKey(object));
 							if (obj != null) {
 								object = obj;
 							}

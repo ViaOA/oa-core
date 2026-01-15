@@ -24,8 +24,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectPropertyDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.Tuple;
 
 /**
@@ -136,7 +138,8 @@ public class OAObjectInputStream extends ObjectInputStream {
     protected Object resolveObject(Object obj) throws IOException {
         obj = super.resolveObject(obj);
         if (obj instanceof IODummy) {
-            OAObjectPropertyDelegate.clearProperties((OAObject) obj);
+            final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) obj).objects().getOAObjectPropertyService();
+            srvcOAObjectProperty.clearProperties((OAObject) obj);
         }
         return obj;
     }

@@ -32,10 +32,13 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Central reflection utility for OA: resolves property paths, invokes methods,
@@ -282,7 +285,8 @@ public class OAReflect {
 			clazz = method.getReturnType();
 			if (clazz != null && clazz.equals(Hub.class)) {
 				// try to find the ObjectClass for Hub
-				Class c = OAObjectInfoDelegate.getHubPropertyClass(classLast, name.substring(3));
+				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(classLast).objects().getOAObjectInfoService();
+				Class c = srvcObjectInfo.getHubPropertyClass(classLast, name.substring(3));
 				if (c != null) {
 					// this needs to then get the activeObject out of the Hub object
 					method = OAReflect.getMethod(clazz, "getActiveObject", 0);
@@ -566,7 +570,8 @@ public class OAReflect {
 				} else if (s.startsWith("is")) {
 					s = s.substring(2);
 				}
-				if (OAObjectReflectDelegate.getPrimitiveNull((OAObject) object, s)) {
+	    		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) object).objects().getOAObjectReflectService();
+				if (srvcOAObjectReflect.getPrimitiveNull((OAObject) object, s)) {
 					return null;
 				}
 			}

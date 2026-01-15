@@ -21,6 +21,8 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectLockService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -303,7 +305,8 @@ public class OADataSourceAuto extends OADataSource {
 				return nn;
 			}
 
-			final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+	    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+			final OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
 			final String[] props = oi.getIdProperties();
 
 			if (NextNumber.class.equals(clazz)) {

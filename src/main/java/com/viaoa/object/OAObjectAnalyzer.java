@@ -19,6 +19,7 @@ import java.util.HashSet;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectHubService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
 
@@ -62,11 +63,12 @@ public class OAObjectAnalyzer {
         for (Class cs : og.objects().getOAObjectCacheService().getClasses()) {
             System.out.println("Starting class="+cs.getSimpleName()+", total="+ocs.getTotal(cs));
             
+			final OAObjectHubService srvcObjectHub = OARuntime.get().graph(cs).objects().getOAObjectHubService();
             OACallback cb = new OACallback() {
                 @Override
                 public boolean updateObject(Object object) {
                     OAObject obj = (OAObject) object;
-                    Hub[] hubs = OAObjectHubDelegate.getHubReferences(obj);
+                    Hub[] hubs = srvcObjectHub.getHubReferences(obj);
                     if (hubs == null) return true;
                     int cnt = 0;
                     for (Hub h : hubs) {

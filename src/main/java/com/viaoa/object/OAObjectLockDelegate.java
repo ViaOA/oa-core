@@ -82,7 +82,7 @@ public class OAObjectLockDelegate {
      * @param object the object to lock; must not be {@code null}
      * @throws IllegalArgumentException if {@code object} is {@code null}
      */
-	public static void lock(OAObject object) {
+	private static void lock(OAObject object) {
 		OAGraph g = getGraph(null, object);
 		if (g == null) return;
 		g.objects().getOAObjectLockService().lock(object);
@@ -105,7 +105,7 @@ public class OAObjectLockDelegate {
 	 * @param object the object whose lock is to be released; ignored if
 	 *               {@code null}
 	 */
-	public static void unlock(OAObject object) {
+	private static void unlock(OAObject object) {
 		OAGraph g = getGraph(null, object);
 		if (g == null) return;
 		g.objects().getOAObjectLockService().unlock(object);
@@ -125,7 +125,7 @@ public class OAObjectLockDelegate {
 	 * @return {@code true} if the object is locked either remotely or
 	 *         locally; otherwise {@code false}
 	 */
-	public static boolean isLocked(OAObject object) {
+	private static boolean isLocked(OAObject object) {
 		OAGraph g = getGraph(null, object);
 		if (g == null) return false;
 		return g.objects().getOAObjectLockService().isLocked(object);

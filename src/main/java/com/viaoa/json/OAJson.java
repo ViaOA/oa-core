@@ -43,6 +43,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectImportMatchService.ImportMatch;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.jackson.OAJacksonModule;
@@ -1288,7 +1289,8 @@ public class OAJson {
 	 * @return constructed OAObjectKey
 	 */
 	public static OAObjectKey convertJsonSinglePartIdToObjectKey(final Class<? extends OAObject> clazz, final String strSinglePartId) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
 
 		String[] ids = strSinglePartId.split("/-");
 		Object[] ids2 = new Object[ids.length];
@@ -1312,7 +1314,8 @@ public class OAJson {
 	 * @return OAObjectKey containing the converted ID
 	 */
 	public static OAObjectKey convertNumberToObjectKey(final Class<? extends OAObject> clazz, final int id) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
 
 		Object[] ids2 = new Object[1];
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {

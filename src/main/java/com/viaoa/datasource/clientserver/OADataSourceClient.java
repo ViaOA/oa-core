@@ -23,7 +23,10 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.objectcache.ObjectCacheIterator;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCSService;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCSDelegate;
@@ -535,7 +538,8 @@ public class OADataSourceClient extends OADataSource {
 		OAObjectKey whereKey = null;
 		if (whereObject != null) {
 			whereClass = whereObject.getClass();
-			whereKey = OAObjectKeyDelegate.getKey(whereObject);
+	    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(whereObject).objects().getOAObjectKeyService();
+			whereKey = srvcObjectKey.getKey(whereObject);
 		}
 
 		Object[] objs = new Object[] { selectClass, queryWhere, params, whereClass, whereKey, propertyFromWhereObject, extraWhere, max };
@@ -640,7 +644,8 @@ public class OADataSourceClient extends OADataSource {
 		OAObjectKey whereKey = null;
 		if (whereObject != null) {
 			whereClass = whereObject.getClass();
-			whereKey = OAObjectKeyDelegate.getKey(whereObject);
+	    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(whereObject).objects().getOAObjectKeyService();
+			whereKey = srvcObjectKey.getKey(whereObject);
 		}
 
 		Object[] objs = new Object[] {
@@ -883,7 +888,8 @@ public class OADataSourceClient extends OADataSource {
 				if (obj == null) {
 					break;
 				}
-			    OAObjectCSDelegate.updateObjectsWithoutHubs((OAObject) obj);
+				OAObjectCSService srvcObjectCS = OARuntime.get().graph((OAObject) obj).objects().getOAObjectCSService();
+				srvcObjectCS.updateObjectsWithoutHubs((OAObject) obj);
                 hubReadAhead.add(obj);
 			}
 		}
@@ -989,8 +995,9 @@ public class OADataSourceClient extends OADataSource {
 	 * @param propertyNameFromMaster  the property representing the relationship
 	 */
 	public @Override void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propertyNameFromMaster) {
+    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(masterObject).objects().getOAObjectKeyService();
 		getRemoteClient().datasource(UPDATE_MANY2MANY_LINKS, new Object[] { masterObject.getClass(),
-				OAObjectKeyDelegate.getKey(masterObject), adds, removes, propertyNameFromMaster });
+				srvcObjectKey.getKey(masterObject), adds, removes, propertyNameFromMaster });
 	}
 
 	/**
@@ -1003,8 +1010,9 @@ public class OADataSourceClient extends OADataSource {
 	 */
 	@Override
 	public byte[] getPropertyBlobValue(OAObject obj, String propertyName) {
+    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
 		Object objx = getRemoteClient().datasource(	GET_PROPERTY,
-													new Object[] { obj.getClass(), OAObjectKeyDelegate.getKey(obj), propertyName });
+													new Object[] { obj.getClass(), srvcObjectKey.getKey(obj), propertyName });
 		if (objx instanceof byte[]) {
 			return (byte[]) objx;
 		}

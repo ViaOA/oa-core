@@ -15,9 +15,12 @@
  */
 package com.viaoa.uicontroller;
 
+import com.viaoa.graph.object.OAObjectCallbackService;
 import com.viaoa.hub.Hub;
+import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectCallbackDelegate;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Controller for UI components that support multiple selection from a
@@ -54,7 +57,8 @@ public class OAUIMultiSelectController extends OAUIBaseController {
     @Override
     public boolean isEnabled() {
         if (!super.isEnabled()) return false;
-        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(getHub());
+		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+        OAObjectCallback eq = srvcObjectCallback.getAllowEnabledObjectCallback(getHub());
         return eq.getAllowed();
     }
     
@@ -68,7 +72,8 @@ public class OAUIMultiSelectController extends OAUIBaseController {
     @Override
     public boolean isVisible() {
         if (!super.isVisible()) return false;
-        OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(getHub());
+		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(getHub()).objects().getOAObjectCallbackService();
+        OAObjectCallback eq = srvcObjectCallback.getAllowVisibleObjectCallback(getHub());
         return eq.getAllowed();
     }
 

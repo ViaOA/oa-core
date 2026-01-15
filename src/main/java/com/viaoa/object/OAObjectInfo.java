@@ -30,10 +30,13 @@ import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.pojo.OAObjectPojoLoader;
 import com.viaoa.pojo.Pojo;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASync;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;
@@ -1255,7 +1258,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @return recursive link definition, or null.
 	 */
 	public OALinkInfo getRecursiveLinkInfo(int type) {
-		return OAObjectInfoDelegate.getRecursiveLinkInfo(this, type);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(thisClass).objects().getOAObjectInfoService();
+		return srvcObjectInfo.getRecursiveLinkInfo(this, type);
 	}
 
 	/**
@@ -1375,6 +1379,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			OAPerformance.LOG.fine(s);
 		}
 
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(thisClass).objects().getOAObjectInfoService();
 		for (String triggerPropPath : trigger.propertyPaths) {
 			if (OAString.isEmpty(triggerPropPath)) {
 				continue;
@@ -1412,7 +1417,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				revPropPath = li.getReverseName() + revPropPath;
 
 				// todo: reverse path might not work (if it has a private method)
-				oix = OAObjectInfoDelegate.getOAObjectInfo(li.getToClass());
+				oix = srvcObjectInfo.getOAObjectInfo(li.getToClass());
 			}
 
 			if (pp.getEndLinkInfo() == null) {
@@ -1539,13 +1544,14 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			return;
 		}
 
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(thisClass).objects().getOAObjectInfoService();
 		for (String spp : trigger.propertyPaths) {
 			OAPropertyPath pp = new OAPropertyPath(thisClass, spp);
 
 			OAObjectInfo oix = this;
 			for (int i = 0; i < pp.getLinkInfos().length; i++) {
 				OALinkInfo li = pp.getLinkInfos()[i];
-				oix = OAObjectInfoDelegate.getOAObjectInfo(li.getToClass());
+				oix = srvcObjectInfo.getOAObjectInfo(li.getToClass());
 				oix._removeTrigger(trigger);
 			}
 		}
@@ -1555,7 +1561,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		// close any child/calc triggers
 		for (OATrigger t : trigger.dependentTriggers) {
-			OAObjectInfo oix = OAObjectInfoDelegate.getOAObjectInfo(t.rootClass);
+			OAObjectInfo oix = srvcObjectInfo.getOAObjectInfo(t.rootClass);
 			oix.removeTrigger(t);
 		}
 	}
@@ -1821,7 +1827,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 					return;
 				}
 
-				UUID g = OAObjectKeyDelegate.getKey(objRoot).getGuid();
+				final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(objRoot).objects().getOAObjectKeyService();
+				UUID g = srvcObjectKey.getKey(objRoot).getGuid();
 				if (hs.contains(g)) {
 					return;
 				}

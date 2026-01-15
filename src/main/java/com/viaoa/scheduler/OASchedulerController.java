@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
@@ -391,7 +392,8 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         
         boolean bNew = false;
         if (objSchedule == null) {
-            objSchedule = (OAObject) OAObjectReflectDelegate.createNewObject(hubDetail.getObjectClass());
+    		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(hubDetail).objects().getOAObjectReflectService();
+            objSchedule = (OAObject) srvcOAObjectReflect.createNewObject(hubDetail.getObjectClass());
             bNew = true;
         }
         
@@ -419,7 +421,8 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         else if (type == 3 || type == 4) {
             OAPropertyPath pp = new OAPropertyPath(hubFrom.getObjectClass(), ppSchedule);
             Hub hubx = (Hub) obj.getProperty(pp.getProperties()[0]);
-            objx = (OAObject) OAObjectReflectDelegate.createNewObject(hubx.getObjectClass());
+    		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(hubx).objects().getOAObjectReflectService();
+            objx = (OAObject) srvcOAObjectReflect.createNewObject(hubx.getObjectClass());
             objx.setProperty(pp.getProperties()[1], objSchedule);
             hubx.add(objx);
             if (hubLink != null) hubLink.setAO(objx);

@@ -87,13 +87,13 @@ public class OAObjectSaveDelegate {
 		return g;
 	}
 	
-	protected static void save(OAObject oaObj, int iCascadeRule) {
+	private static void save(OAObject oaObj, int iCascadeRule) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectSaveService().save(oaObj, iCascadeRule);
 	}
 
-	public static void save(OAObject oaObj, int iCascadeRule, OACascade cascade) {
+	private static void save(OAObject oaObj, int iCascadeRule, OACascade cascade) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectSaveService().save(oaObj, iCascadeRule, cascade);
@@ -103,7 +103,7 @@ public class OAObjectSaveDelegate {
 	/**
 	 * Called by HubSaveDelegate.saveAll() to save all New Many2Many added objects.
 	 */
-	public static void _saveObjectOnly(OAObject oaObj, OACascade cascade) {
+	private static void _saveObjectOnly(OAObject oaObj, OACascade cascade) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectSaveService()._saveObjectOnly(oaObj, cascade);
@@ -112,7 +112,7 @@ public class OAObjectSaveDelegate {
 	/**
 
 	*/
-	protected static boolean onSave(OAObject oaObj) {
+	private static boolean onSave(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectSaveService().onSave(oaObj);

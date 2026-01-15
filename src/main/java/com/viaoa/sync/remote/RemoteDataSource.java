@@ -25,6 +25,7 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
@@ -393,10 +394,12 @@ public abstract class RemoteDataSource {
 			return (OAObject) obj;
 		}
 
-		OAObjectKey key = OAObjectKeyDelegate.createObjectKey(objectClass, obj);
-
     	final OAGraph og = OARuntime.get().graph(objectClass);
     	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    	final OAObjectKeyService srvcObjectKey = og.objects().getOAObjectKeyService();
+		
+		OAObjectKey key = srvcObjectKey.createObjectKey(objectClass, obj);
+
 		OAObject objNew = (OAObject) srvcObjectCache.get(objectClass, key);
 		if (objNew == null) {
 			objNew = (OAObject) OADataSource.getObject(objectClass, key);

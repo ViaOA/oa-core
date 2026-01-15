@@ -94,7 +94,7 @@ public class OAObjectCallbackDelegate {
 	 * @param name the property or link name, or {@code null}
 	 * @return {@code true} if visibility is allowed; otherwise {@code false}
 	 */
-	public static boolean getAllowVisible(Hub hub, OAObject obj, String name) {
+	private static boolean getAllowVisible(Hub hub, OAObject obj, String name) {
 		OAGraph g = getGraph(hub, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getAllowVisible(hub, obj, name);
@@ -112,7 +112,7 @@ public class OAObjectCallbackDelegate {
 	 * @param name      the property, link, or method name, or {@code null}
 	 * @return {@code true} if the action is enabled; otherwise {@code false}
 	 */
-	public static boolean getAllowEnabled(int checkType, Hub hub, OAObject obj, String name) {
+	private static boolean getAllowEnabled(int checkType, Hub hub, OAObject obj, String name) {
 		OAGraph g = getGraph(hub, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getAllowEnabled(checkType, hub, obj, name);
@@ -126,7 +126,7 @@ public class OAObjectCallbackDelegate {
 	 * @param oaObj the object to evaluate
 	 * @return {@code true} if copying is allowed; otherwise {@code false}
 	 */
-	public static boolean getAllowCopy(OAObject oaObj) {
+	private static boolean getAllowCopy(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getAllowCopy(oaObj);
@@ -140,13 +140,13 @@ public class OAObjectCallbackDelegate {
 	 * @param oaObj the source object to copy
 	 * @return the copied object, or {@code null} if copying is not allowed
 	 */
-	public static OAObject getCopy(OAObject oaObj) {
+	private static OAObject getCopy(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getCopy(oaObj);
 	}
 	/*
-	public static void afterCopy(OAObject oaObj, OAObject oaObjCopy) {
+	private static void afterCopy(OAObject oaObj, OAObject oaObjCopy) {
 	    if (oaObj == null || oaObjCopy == null) return;
 	    getAfterCopyObjectCallback(oaObj, oaObjCopy);
 	}
@@ -163,7 +163,7 @@ public class OAObjectCallbackDelegate {
 	 * @param newValue     the proposed new value
 	 * @return {@code true} if the property change is allowed; otherwise {@code false}
 	 */
-	public static boolean getVerifyPropertyChange(int checkType, OAObject obj, String propertyName, Object oldValue, Object newValue) {
+	private static boolean getVerifyPropertyChange(int checkType, OAObject obj, String propertyName, Object oldValue, Object newValue) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getVerifyPropertyChange(checkType, obj, propertyName, oldValue, newValue);
@@ -178,7 +178,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if the add operation is allowed; otherwise {@code false}
 	 */
-	public static boolean getAllowAdd(Hub hub, OAObject obj, int checkType) {
+	private static boolean getAllowAdd(Hub hub, OAObject obj, int checkType) {
 		OAGraph g = getGraph(hub, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getAllowAdd(hub, obj, checkType);
@@ -193,7 +193,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public static boolean getVerifyAdd(Hub hub, OAObject obj, int checkType) {
+	private static boolean getVerifyAdd(Hub hub, OAObject obj, int checkType) {
 		OAGraph g = getGraph(hub, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getVerifyAdd(hub, obj, checkType);
@@ -208,7 +208,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if the remove operation is allowed; otherwise {@code false}
 	 */
-	public static boolean getAllowRemove(Hub hub, OAObject obj, int checkType) {
+	private static boolean getAllowRemove(Hub hub, OAObject obj, int checkType) {
 		OAGraph g = getGraph(hub, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getAllowRemove(hub, obj, checkType);
@@ -223,7 +223,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public static boolean getVerifyRemove(Hub hub, OAObject obj, int checkType) {
+	private static boolean getVerifyRemove(Hub hub, OAObject obj, int checkType) {
 		OAGraph g = getGraph(hub, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getVerifyRemove(hub, obj, checkType);
@@ -237,7 +237,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if removing all objects is allowed; otherwise {@code false}
 	 */
-	public static boolean getAllowRemoveAll(Hub hub, int checkType) {
+	private static boolean getAllowRemoveAll(Hub hub, int checkType) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getAllowRemoveAll(hub, checkType);
@@ -251,7 +251,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public static boolean getVerifyRemoveAll(Hub hub, int checkType) {
+	private static boolean getVerifyRemoveAll(Hub hub, int checkType) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getVerifyRemoveAll(hub, checkType);
@@ -265,7 +265,7 @@ public class OAObjectCallbackDelegate {
 	 * @param obj the object to delete
 	 * @return {@code true} if deletion is allowed; otherwise {@code false}
 	 */
-	public static boolean getAllowDelete(Hub hub, OAObject obj) {
+	private static boolean getAllowDelete(Hub hub, OAObject obj) {
 		OAGraph g = getGraph(hub, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getAllowDelete(hub, obj);
@@ -280,7 +280,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public static boolean getVerifyDelete(Hub hub, OAObject obj, int checkType) {
+	private static boolean getVerifyDelete(Hub hub, OAObject obj, int checkType) {
 		OAGraph g = getGraph(hub, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getVerifyDelete(hub, obj, checkType);
@@ -294,7 +294,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if saving is allowed; otherwise {@code false}
 	 */
-	public static boolean getAllowSave(OAObject obj, int checkType) {
+	private static boolean getAllowSave(OAObject obj, int checkType) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getAllowSave(obj, checkType);
@@ -308,7 +308,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public static boolean getVerifySave(OAObject obj, int checkType) {
+	private static boolean getVerifySave(OAObject obj, int checkType) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return false;
 		return g.objects().getOAObjectCallbackService().getVerifySave(obj, checkType);
@@ -323,7 +323,7 @@ public class OAObjectCallbackDelegate {
 	 * @param obj the object to evaluate
 	 * @return the resulting callback, or {@code null} if the object is {@code null}
 	 */
-	public static OAObjectCallback getAllowSubmitObjectCallback(OAObject obj) {
+	private static OAObjectCallback getAllowSubmitObjectCallback(OAObject obj) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowSubmitObjectCallback(obj);
@@ -341,7 +341,7 @@ public class OAObjectCallbackDelegate {
 	 * @param defaultFormat the initial format value
 	 * @return the resulting format string
 	 */
-	public static String getFormat(OAObject obj, String propertyName, String defaultFormat) {
+	private static String getFormat(OAObject obj, String propertyName, String defaultFormat) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getFormat(obj, propertyName, defaultFormat);
@@ -359,7 +359,7 @@ public class OAObjectCallbackDelegate {
 	 * @param defaultToolTip the initial tooltip value
 	 * @return the resulting tooltip text
 	 */
-	public static String getToolTip(OAObject obj, String propertyName, String defaultToolTip) {
+	private static String getToolTip(OAObject obj, String propertyName, String defaultToolTip) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getToolTip(obj, propertyName, defaultToolTip);
@@ -374,7 +374,7 @@ public class OAObjectCallbackDelegate {
 	 * @param propertyName the property associated with the label
 	 * @param label        the label to be updated
 	 */
-	public static void renderLabel(OAObject obj, String propertyName, JLabel label) {
+	private static void renderLabel(OAObject obj, String propertyName, JLabel label) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return;
 		g.objects().getOAObjectCallbackService().renderLabel(obj, propertyName, label);
@@ -388,7 +388,7 @@ public class OAObjectCallbackDelegate {
 	 * @param propertyName the property associated with the label
 	 * @param label        the label to update
 	 */
-	public static void updateLabel(OAObject obj, String propertyName, JLabel label) {
+	private static void updateLabel(OAObject obj, String propertyName, JLabel label) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return;
 		g.objects().getOAObjectCallbackService().updateLabel(obj, propertyName, label);
@@ -402,7 +402,7 @@ public class OAObjectCallbackDelegate {
 	 * @param hub the hub providing visibility context
 	 * @return the resulting callback
 	 */
-    public static OAObjectCallback getAllowVisibleObjectCallback(Hub hub) {
+    private static OAObjectCallback getAllowVisibleObjectCallback(Hub hub) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowVisibleObjectCallback(hub);
@@ -419,7 +419,7 @@ public class OAObjectCallbackDelegate {
      * @param name  the property or link name, or {@code null}
      * @return the resulting callback, or {@code null} if hub and object are both null
      */
-	public static OAObjectCallback getAllowVisibleObjectCallback(Hub hub, OAObject oaObj, String name) {
+	private static OAObjectCallback getAllowVisibleObjectCallback(Hub hub, OAObject oaObj, String name) {
 		OAGraph g = getGraph(hub, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowVisibleObjectCallback(hub, oaObj, name);
@@ -437,7 +437,7 @@ public class OAObjectCallbackDelegate {
 	 * @param name      the property, link, or method name, or {@code null}
 	 * @return the resulting callback, or {@code null} if hub and object are both null
 	 */
-	public static OAObjectCallback getAllowEnabledObjectCallback(final int checkType, final Hub hub, OAObject oaObj, String name) {
+	private static OAObjectCallback getAllowEnabledObjectCallback(final int checkType, final Hub hub, OAObject oaObj, String name) {
 		OAGraph g = getGraph(hub, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowEnabledObjectCallback(checkType, hub, oaObj, name);
@@ -452,7 +452,7 @@ public class OAObjectCallbackDelegate {
 	 * @param hub the hub providing contextual rules
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getAllowEnabledObjectCallback(Hub hub) {
+	private static OAObjectCallback getAllowEnabledObjectCallback(Hub hub) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowEnabledObjectCallback(hub);
@@ -465,7 +465,7 @@ public class OAObjectCallbackDelegate {
 	 * @param oaObj the object being copied
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getAllowCopyObjectCallback(final OAObject oaObj) {
+	private static OAObjectCallback getAllowCopyObjectCallback(final OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowCopyObjectCallback(oaObj);
@@ -479,7 +479,7 @@ public class OAObjectCallbackDelegate {
 	 * @param oaObj the object to copy
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getCopyObjectCallback(final OAObject oaObj) {
+	private static OAObjectCallback getCopyObjectCallback(final OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getCopyObjectCallback(oaObj);
@@ -493,7 +493,7 @@ public class OAObjectCallbackDelegate {
 	 * @param oaObjCopy the copied object
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getAfterCopyObjectCallback(final OAObject oaObj, final OAObject oaObjCopy) {
+	private static OAObjectCallback getAfterCopyObjectCallback(final OAObject oaObj, final OAObject oaObjCopy) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAfterCopyObjectCallback(oaObj, oaObjCopy);
@@ -511,7 +511,7 @@ public class OAObjectCallbackDelegate {
 	 * @param newValue     the proposed new value
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getVerifyPropertyChangeObjectCallback(final int checkType, final OAObject oaObj,
+	private static OAObjectCallback getVerifyPropertyChangeObjectCallback(final int checkType, final OAObject oaObj,
 			final String propertyName,
 			final Object oldValue, final Object newValue) {
 		OAGraph g = getGraph(null, oaObj);
@@ -528,7 +528,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType  the bitmask of checking options
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getVerifyCommandObjectCallback(final OAObject oaObj, final String methodName, int checkType) {
+	private static OAObjectCallback getVerifyCommandObjectCallback(final OAObject oaObj, final String methodName, int checkType) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getVerifyCommandObjectCallback(oaObj, methodName, checkType);
@@ -540,7 +540,7 @@ public class OAObjectCallbackDelegate {
 	 *
 	 * @param objectCallback the callback to update
 	 */
-	public static void updateEditProcessed(OAObjectCallback objectCallback) {
+	private static void updateEditProcessed(OAObjectCallback objectCallback) {
 		if (objectCallback == null) {
 			return;
 		}
@@ -560,7 +560,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public static OAObjectCallback getAllowAddObjectCallback(final Hub hub, OAObject objAdd, final int checkType) {
+	private static OAObjectCallback getAllowAddObjectCallback(final Hub hub, OAObject objAdd, final int checkType) {
 		OAGraph g = getGraph(hub, objAdd);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowAddObjectCallback(hub, objAdd, checkType);
@@ -577,7 +577,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public static OAObjectCallback getVerifyAddObjectCallback(final Hub hub, final OAObject oaObj, final int checkType) {
+	private static OAObjectCallback getVerifyAddObjectCallback(final Hub hub, final OAObject oaObj, final int checkType) {
 		OAGraph g = getGraph(hub, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getVerifyAddObjectCallback(hub, oaObj, checkType);
@@ -591,7 +591,7 @@ public class OAObjectCallbackDelegate {
 	 * @param clazz the class to evaluate
 	 * @return the resulting callback, or {@code null} if the class is {@code null}
 	 */
-	public static OAObjectCallback getAllowNewObjectCallback(final Class clazz) {
+	private static OAObjectCallback getAllowNewObjectCallback(final Class clazz) {
 		if (clazz == null) return null;
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
@@ -606,7 +606,7 @@ public class OAObjectCallbackDelegate {
 	 * @param hub the hub providing contextual rules
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public static OAObjectCallback getAllowNewObjectCallback(final Hub hub) {
+	private static OAObjectCallback getAllowNewObjectCallback(final Hub hub) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowNewObjectCallback(hub);
@@ -623,7 +623,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public static OAObjectCallback getAllowRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType) {
+	private static OAObjectCallback getAllowRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType) {
 		OAGraph g = getGraph(hub, objRemove);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowRemoveObjectCallback(hub, objRemove, checkType);
@@ -639,7 +639,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public static OAObjectCallback getVerifyRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType) {
+	private static OAObjectCallback getVerifyRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType) {
 		OAGraph g = getGraph(hub, objRemove);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getVerifyRemoveObjectCallback(hub, objRemove, checkType);
@@ -655,7 +655,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public static OAObjectCallback getAllowRemoveAllObjectCallback(final Hub hub, final int checkType) {
+	private static OAObjectCallback getAllowRemoveAllObjectCallback(final Hub hub, final int checkType) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowRemoveAllObjectCallback(hub, checkType);
@@ -671,7 +671,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public static OAObjectCallback getVerifyRemoveAllObjectCallback(final Hub hub, final int checkType) {
+	private static OAObjectCallback getVerifyRemoveAllObjectCallback(final Hub hub, final int checkType) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getVerifyRemoveAllObjectCallback(hub, checkType);
@@ -686,7 +686,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getAllowSaveObjectCallback(final OAObject oaObj, final int checkType) {
+	private static OAObjectCallback getAllowSaveObjectCallback(final OAObject oaObj, final int checkType) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowSaveObjectCallback(oaObj, checkType);
@@ -701,7 +701,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getVerifySaveObjectCallback(final OAObject oaObj, final int checkType) {
+	private static OAObjectCallback getVerifySaveObjectCallback(final OAObject oaObj, final int checkType) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getVerifySaveObjectCallback(oaObj, checkType);
@@ -716,7 +716,7 @@ public class OAObjectCallbackDelegate {
 	 * @param objDelete the object to delete
 	 * @return the resulting callback, or {@code null} if the object or its class is null
 	 */
-	public static OAObjectCallback getAllowDeleteObjectCallback(final OAObject objDelete) {
+	private static OAObjectCallback getAllowDeleteObjectCallback(final OAObject objDelete) {
 		OAGraph g = getGraph(null, objDelete);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowDeleteObjectCallback(objDelete);
@@ -732,7 +732,7 @@ public class OAObjectCallbackDelegate {
 	 * @param objDelete the object to delete
 	 * @return the resulting callback, or {@code null} if the hub or object is {@code null}
 	 */
-	public static OAObjectCallback getAllowDeleteObjectCallback(final Hub hub, final OAObject objDelete) {
+	private static OAObjectCallback getAllowDeleteObjectCallback(final Hub hub, final OAObject objDelete) {
 		OAGraph g = getGraph(hub, objDelete);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getAllowDeleteObjectCallback(hub, objDelete);
@@ -749,7 +749,7 @@ public class OAObjectCallbackDelegate {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getVerifyDeleteObjectCallback(final Hub hub, final OAObject objDelete, final int checkType) {
+	private static OAObjectCallback getVerifyDeleteObjectCallback(final Hub hub, final OAObject objDelete, final int checkType) {
 		OAGraph g = getGraph(hub, objDelete);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getVerifyDeleteObjectCallback(hub, objDelete, checkType);
@@ -768,7 +768,7 @@ public class OAObjectCallbackDelegate {
 	 * @param confirmTitle   the title to present for confirmation
 	 * @return the resulting callback
 	 */
-    public static OAObjectCallback getPreConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, 
+    private static OAObjectCallback getPreConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, 
             String confirmMessage, String confirmTitle) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
@@ -787,7 +787,7 @@ public class OAObjectCallbackDelegate {
      * @param confirmTitle   the title to present for confirmation
      * @return the resulting callback
      */
-    public static OAObjectCallback getConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, Object newValue,
+    private static OAObjectCallback getConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, Object newValue,
 			String confirmMessage, String confirmTitle) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
@@ -805,7 +805,7 @@ public class OAObjectCallbackDelegate {
      * @param confirmTitle   the confirmation title
      * @return the resulting callback
      */
-	public static OAObjectCallback getConfirmCommandObjectCallback(final OAObject oaObj, String methodName, String confirmMessage,
+	private static OAObjectCallback getConfirmCommandObjectCallback(final OAObject oaObj, String methodName, String confirmMessage,
 			String confirmTitle) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
@@ -823,7 +823,7 @@ public class OAObjectCallbackDelegate {
 	 * @param confirmTitle   the confirmation title to assign
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getConfirmSaveObjectCallback(final OAObject oaObj, String confirmMessage, String confirmTitle) {
+	private static OAObjectCallback getConfirmSaveObjectCallback(final OAObject oaObj, String confirmMessage, String confirmTitle) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getConfirmSaveObjectCallback(oaObj, confirmMessage, confirmTitle);
@@ -840,7 +840,7 @@ public class OAObjectCallbackDelegate {
 	 * @param confirmTitle   the confirmation title to assign
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getConfirmDeleteObjectCallback(final OAObject oaObj, String confirmMessage, String confirmTitle) {
+	private static OAObjectCallback getConfirmDeleteObjectCallback(final OAObject oaObj, String confirmMessage, String confirmTitle) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectCallbackService().getConfirmDeleteObjectCallback(oaObj, confirmMessage, confirmTitle);
@@ -858,7 +858,7 @@ public class OAObjectCallbackDelegate {
 	 * @param confirmTitle   the confirmation title to assign
 	 * @return the resulting callback
 	 */
-	public static OAObjectCallback getConfirmRemoveObjectCallback(final Hub hub, final OAObject oaObj, String confirmMessage,
+	private static OAObjectCallback getConfirmRemoveObjectCallback(final Hub hub, final OAObject oaObj, String confirmMessage,
 			String confirmTitle) {
 		OAGraph g = getGraph(hub, oaObj);
 		if (g == null) return null;
@@ -877,7 +877,7 @@ public class OAObjectCallbackDelegate {
 	 * @param confirmTitle   the confirmation title to assign
 	 * @return the resulting callback
 	 */
-    public static OAObjectCallback getConfirmRemoveAllObjectCallback(final Hub hub, String confirmMessage,
+    private static OAObjectCallback getConfirmRemoveAllObjectCallback(final Hub hub, String confirmMessage,
             String confirmTitle) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return null;
@@ -897,7 +897,7 @@ public class OAObjectCallbackDelegate {
      * @param confirmTitle   the confirmation title to assign
      * @return the resulting callback
      */
-	public static OAObjectCallback getConfirmAddObjectCallback(final Hub hub, final OAObject oaObj, String confirmMessage,
+	private static OAObjectCallback getConfirmAddObjectCallback(final Hub hub, final OAObject oaObj, String confirmMessage,
 			String confirmTitle) {
 		OAGraph g = getGraph(hub, oaObj);
 		if (g == null) return null;
@@ -905,10 +905,10 @@ public class OAObjectCallbackDelegate {
 	}
 
 	/*qqqqqqq
-	protected static void processObjectCallback(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue) {
+	private static void processObjectCallback(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue) {
 	    processObjectCallback(objectCallback, null, null, oaObj, propertyName, oldValue, newValue, false);
 	}
-	protected static void processObjectCallback(OAObjectCallback objectCallback, final Class<? extends OAObject> clazz, final String propertyName, final Object oldValue, final Object newValue) {
+	private static void processObjectCallback(OAObjectCallback objectCallback, final Class<? extends OAObject> clazz, final String propertyName, final Object oldValue, final Object newValue) {
 	    processObjectCallback(objectCallback, null, clazz, null, propertyName, oldValue, newValue, false);
 	}
 	*/
@@ -922,7 +922,7 @@ public class OAObjectCallbackDelegate {
 	 *
 	 * @param objectCallback the callback to process
 	 */
-	protected static void processObjectCallbackXX(OAObjectCallback objectCallback) {
+	private static void processObjectCallbackXX(OAObjectCallback objectCallback) {
 		//_processObjectCallback(objectCallback);
 		OAGraph g = getGraph(objectCallback.getHub(), objectCallback.getObject());
 		if (g == null) return;
@@ -943,7 +943,7 @@ public class OAObjectCallbackDelegate {
 	 *
 	 * @param b {@code true} to allow all callbacks to pass; otherwise {@code false}
 	 */
-	public static void demoAllowAllToPass(boolean b) {
+	private static void demoAllowAllToPass(boolean b) {
 		OAObjectCallbackDelegate.DEMO_AllowAllToPass = b;
 	}
 
@@ -956,7 +956,7 @@ public class OAObjectCallbackDelegate {
 	 *
 	 * @param objectCallback the callback being evaluated
 	 */
-	protected static void _processObjectCallbackXX(final OAObjectCallback objectCallback) {
+	private static void _processObjectCallbackXX(final OAObjectCallback objectCallback) {
 		OAGraph g = getGraph(objectCallback.getHub(), objectCallback.getObject());
 		if (g == null) return;
 		// g.objects().getOAObjectCallbackService()._processObjectCallback(objectCallback);
@@ -971,7 +971,7 @@ public class OAObjectCallbackDelegate {
 	 * @param oaObj          the target object
 	 * @param propertyName   the property or link name associated with the callback
 	 */
-	protected static void ownerHierProcessXX(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName) {
+	private static void ownerHierProcessXX(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName) {
 		//_ownerHierProcess(objectCallback, oaObj, propertyName, null, 0);
 	}
 
@@ -988,7 +988,7 @@ public class OAObjectCallbackDelegate {
 	 * @param li             the link used when navigating the owner hierarchy
 	 * @param cnter          the recursion depth counter
 	 */
-	protected static void _ownerHierProcessXX(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName,
+	private static void _ownerHierProcessXX(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName,
 			final OALinkInfo li, final int cnter) {
 		OAGraph g = getGraph(objectCallback.getHub(), oaObj);
 		if (g == null) return;
@@ -1010,7 +1010,7 @@ public class OAObjectCallbackDelegate {
 	 * @param oldValue       the previous value for property-change callbacks
 	 * @param newValue       the new value for property-change callbacks
 	 */
-	protected static void processObjectCallbackForHubListenersXX(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
+	private static void processObjectCallbackForHubListenersXX(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
 		OAGraph g = getGraph(hub, oaObj);
 		if (g == null) return;
@@ -1031,7 +1031,7 @@ public class OAObjectCallbackDelegate {
 	 * @param oldValue       the previous property value
 	 * @param newValue       the new property value
 	 */
-	protected static void _processObjectCallbackForHubListenersXX(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
+	private static void _processObjectCallbackForHubListenersXX(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
 		OAGraph g = getGraph(hub, oaObj);
 		if (g == null) return;
@@ -1046,7 +1046,7 @@ public class OAObjectCallbackDelegate {
 	 *
 	 * @param em the callback whose associated object method is invoked
 	 */
-	protected static void callObjectCallbackMethodXX(final OAObjectCallback em) {
+	private static void callObjectCallbackMethodXX(final OAObjectCallback em) {
 		OAGraph g = getGraph(em.getHub(), em.getObject());
 		if (g == null) return;
 		// g.objects().getOAObjectCallbackService().callObjectCallbackMethod(em);
@@ -1062,7 +1062,7 @@ public class OAObjectCallbackDelegate {
 	 * @param propertyName  the property whose callback method is requested
 	 * @param em            the callback instance passed to the invoked method
 	 */
-	protected static void callObjectCallbackMethodXX(final Object object, String propertyName, final OAObjectCallback em) {
+	private static void callObjectCallbackMethodXX(final Object object, String propertyName, final OAObjectCallback em) {
 		OAGraph g = getGraph(em.getHub(), em.getObject());
 		if (g == null) return;
 		//g.objects().getOAObjectCallbackService().callObjectCallbackMethod(object, propertyName, em);
@@ -1078,7 +1078,7 @@ public class OAObjectCallbackDelegate {
 	 * @param property the property name used to locate the callback method
 	 * @param model    the model instance passed to the callback
 	 */
-	public static void onObjectCallbackModel(Class clazz, String property, OAObjectModel model) {
+	private static void onObjectCallbackModel(Class clazz, String property, OAObjectModel model) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return;
 		g.objects().getOAObjectCallbackService().onObjectCallbackModel(clazz, property, model);
@@ -1097,7 +1097,7 @@ public class OAObjectCallbackDelegate {
 	 * @param changeListener the listener to register dependencies with
 	 * @param bEnabled       true to use enabled dependencies; false for visible
 	 */
-	public static void addObjectCallbackChangeListeners(final Hub hub, final Class cz, final String prop, String ppPrefix,
+	private static void addObjectCallbackChangeListeners(final Hub hub, final Class cz, final String prop, String ppPrefix,
 			final HubChangeListener changeListener, final boolean bEnabled) {
 		OAGraph g = OARuntime.get().graph(cz);
 		if (g == null) return;
@@ -1116,7 +1116,7 @@ public class OAObjectCallbackDelegate {
 	 * @param bProcessed                true to include processed-dependent properties
 	 * @param changeListener            the listener that receives dependent paths
 	 */
-	protected static void addDependentPropsXX(Hub hub, String prefix, String[] viewDependentProperties, String[] contextDependentProperties,
+	private static void addDependentPropsXX(Hub hub, String prefix, String[] viewDependentProperties, String[] contextDependentProperties,
 			boolean bProcessed, HubChangeListener changeListener) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return;

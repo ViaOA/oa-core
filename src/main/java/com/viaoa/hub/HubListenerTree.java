@@ -24,6 +24,9 @@ import java.util.logging.Logger;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectAnnotationService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.OAAnnotationDelegate;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFinder;
@@ -196,8 +199,9 @@ public class HubListenerTree {
 				// 20180531
 				if (tn.liReverse == null) {
 					Class c = tn.parent.hub.getObjectClass();
-					OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(c, tn.property);
-					tn.liReverse = OAObjectInfoDelegate.getReverseLinkInfo(li);
+		    		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+					OALinkInfo li = srvcObjectInfo.getLinkInfo(c, tn.property);
+					tn.liReverse = srvcObjectInfo.getReverseLinkInfo(li);
 				}
 				if (tn.liReverse == null || tn.liReverse.getReverseLinkInfo() == null) {
 					spp = null;
@@ -252,7 +256,8 @@ public class HubListenerTree {
 							if (lis[0].getCalculated()) {
 								objz = lis[0].getValue((OAObject) obja);
 							} else {
-								objz = OAObjectPropertyDelegate.getProperty((OAObject) obja, lis[0].getName());
+								OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) obja).objects().getOAObjectPropertyService();
+								objz = srvcOAObjectProperty.getProperty((OAObject) obja, lis[0].getName());
 							}
 							if (OACompare.isEqual(obj, objz)) {
 								al.add(obja);
@@ -348,8 +353,9 @@ public class HubListenerTree {
 
 			if (liReverse == null) {
 				Class c = parent.hub.getObjectClass();
-				OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(c, property);
-				liReverse = OAObjectInfoDelegate.getReverseLinkInfo(li);
+	    		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+				OALinkInfo li = srvcObjectInfo.getLinkInfo(c, property);
+				liReverse = srvcObjectInfo.getReverseLinkInfo(li);
 			}
 
 			ArrayList<Object> alNewObjects = new ArrayList<Object>();
@@ -361,8 +367,9 @@ public class HubListenerTree {
 				String propName = null;
 				if (liReverse != null) {
 					propName = liReverse.getName();
-					OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
-					m = OAObjectInfoDelegate.getMethod(oi, "get" + propName, 0);
+		    		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(oaObj).objects().getOAObjectInfoService();
+					OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj);
+					m = srvcObjectInfo.getMethod(oi, "get" + propName, 0);
 				}
 
 				if (oaObj == lastRemoveObject && lastRemoveMasterObject != null) {
@@ -377,7 +384,8 @@ public class HubListenerTree {
 					// need to go up to parent to find all objects that have a reference to "obj"
 
 					for (Object objx : parent.hub) {
-						Object objz = OAObjectReflectDelegate.getProperty((OAObject) objx, this.property);
+						final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) objx).objects().getOAObjectReflectService();
+						Object objz = srvcOAObjectReflect.getProperty((OAObject) objx, this.property);
 						if (objz == obj || lastRemoveObject == obj) {
 							// found a parent object that has a reference to child
 							if (alNewObjects.indexOf(objx) < 0) {
@@ -503,7 +511,8 @@ public class HubListenerTree {
 		if (hl == null) {
 			return;
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(root.hub.getObjectClass());
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(root.hub.getObjectClass()).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(root.hub.getObjectClass());
 		String[] calcProps = null;
 		for (OACalcInfo ci : oi.getCalcInfos()) {
 			if (ci.getName().equalsIgnoreCase(property)) {

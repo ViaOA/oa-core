@@ -25,6 +25,10 @@ import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectKeyService;
+import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
@@ -32,6 +36,7 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OANotExist;
 
 /**
@@ -231,10 +236,12 @@ public class UpdateDelegate {
 
 			// 20130318 check for blob
 			if (column.type == java.sql.Types.BLOB) {
-				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(oaObj).objects().getOAObjectInfoService();
+				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj);
 				OAPropertyInfo pi = oi.getPropertyInfo(column.propertyName);
 				if (pi != null && pi.isBlob()) {
-					Object obj = OAObjectPropertyDelegate.getProperty(oaObj, column.propertyName, true, true);
+					OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(oaObj).objects().getOAObjectPropertyService();
+					Object obj = srvcOAObjectProperty.getProperty(oaObj, column.propertyName, true, true);
 					if (obj == OANotExist.instance) {
 						continue; // not loaded, no change to it
 					}
@@ -346,7 +353,8 @@ public class UpdateDelegate {
     				}
     			}
     
-    			OAObjectKey key = OAObjectReflectDelegate.getPropertyObjectKey(oaObj, links[i].propertyName);
+    			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(oaObj).objects().getOAObjectReflectService();
+    			OAObjectKey key = srvcOAObjectReflect.getPropertyObjectKey(oaObj, links[i].propertyName);
     			Object[] ids;
     			if (key != null) {
     				ids = key.getObjectIds();

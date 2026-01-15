@@ -16,34 +16,11 @@
 package com.viaoa.object;
 
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAODelegate;
-import com.viaoa.hub.HubAddRemoveDelegate;
-import com.viaoa.hub.HubDetailDelegate;
-import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubEventDelegate;
-import com.viaoa.hub.HubShareDelegate;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.*;
-import com.viaoa.undo.OAUndoManager;
-import com.viaoa.undo.OAUndoableEdit;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OANotExist;
-import com.viaoa.util.OANullObject;
-import com.viaoa.util.OAReflect;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OAThrottle;
 
 /**
  * Centralized event router for property changes on {@link OAObject}.
@@ -121,7 +98,7 @@ public class OAObjectEventDelegate {
 	 * @param bLocalOnly   if true, suppresses cross-computer sync
 	 * @param bSetChanged  if true, allows downstream logic to mark the object as changed
 	 */
-	public static void fireBeforePropertyChange(final OAObject oaObj, final String propertyName,
+	private static void fireBeforePropertyChange(final OAObject oaObj, final String propertyName,
 			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged) {
 		//qqqqqqqq method was protected
 		OAGraph g = getGraph(null, oaObj);
@@ -143,7 +120,7 @@ public class OAObjectEventDelegate {
 	 * @param bLocalOnly   if true, suppresses cross-computer sync
 	 * @param bSetChanged  if true, allows flagging the object as changed
 	 */
-	public static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
+	private static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged) {
 		//qqqqqqqq method was protected
 		OAGraph g = getGraph(null, oaObj);
@@ -163,7 +140,7 @@ public class OAObjectEventDelegate {
 	 * @param bSetChanged    if true, allows flagging the object as changed
 	 * @param bUnknownValues if true, skips some equality and load-state checks
 	 */
-	protected static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
+	private static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged, boolean bUnknownValues) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
@@ -186,7 +163,7 @@ public class OAObjectEventDelegate {
 	 * @param bUnknownValues  if true, skips some old-value validation
 	 * @param bIsCheckingRef  internal flag used during recursive reference updates
 	 */
-	protected static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
+	private static void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			final boolean bLocalOnly, final boolean bSetChanged, final boolean bUnknownValues, final boolean bIsCheckingRef) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
@@ -202,7 +179,7 @@ public class OAObjectEventDelegate {
 	 * @param oldObj       previous value
 	 * @param newObj       new value
 	 */
-	protected static void sendHubBeforePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj) {
+	private static void sendHubBeforePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectEventService().sendHubBeforePropertyChange(oaObj, propertyName, oldObj, newObj);
@@ -220,7 +197,7 @@ public class OAObjectEventDelegate {
 	 * @param oldObj    prior reference value (may be OAObjectKey)
 	 * @param newObj    new reference value
 	 */
-	public static void sendHubPropertyChange(final OAObject oaObj, final String propertyName, final Object oldObj, final Object newObj,
+	private static void sendHubPropertyChange(final OAObject oaObj, final String propertyName, final Object oldObj, final Object newObj,
 			final OALinkInfo linkInfo) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
@@ -234,7 +211,7 @@ public class OAObjectEventDelegate {
 	 *
 	 * @param oaObj object that has just completed loading
 	 */
-	protected static void fireAfterLoadEvent(OAObject oaObj) {
+	private static void fireAfterLoadEvent(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectEventService().fireAfterLoadEvent(oaObj);

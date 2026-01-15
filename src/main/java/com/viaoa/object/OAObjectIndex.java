@@ -18,6 +18,7 @@ package com.viaoa.object;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 
@@ -61,7 +62,8 @@ public class OAObjectIndex {
 	 */
 	public boolean addToIndex(final OAObject obj) {
 		if (obj == null) return false;
-		OAObjectKey ok = OAObjectKeyDelegate.getKey(obj);
+		final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+		OAObjectKey ok = srvcObjectKey.getKey(obj);
 		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
 		Class<? extends OAObject> c = obj.getClass();
 		return addToIndex(c, ik, obj.getGuid());
@@ -159,7 +161,8 @@ public class OAObjectIndex {
 	public boolean removeFromIndex(OAObject obj) {
 		if (obj == null) return false;
 		Class<? extends OAObject> c = obj.getClass();
-		OAObjectKey ok = OAObjectKeyDelegate.createObjectKey(obj);
+		final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+		OAObjectKey ok = srvcObjectKey.createObjectKey(obj);
 		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
 		return removeFromIndex(c, ik);
 	}

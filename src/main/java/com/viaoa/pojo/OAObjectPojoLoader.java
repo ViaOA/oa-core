@@ -17,11 +17,13 @@ package com.viaoa.pojo;
 
 import java.io.Serializable;
 
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
@@ -475,7 +477,8 @@ public class OAObjectPojoLoader implements Serializable {
 				continue;
 			}
 
-			if (!OAObjectInfoDelegate.isPojoSingleton(li.getToObjectInfo())) {
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(li.getToClass()).objects().getOAObjectInfoService();
+			if (!srvcObjectInfo.isPojoSingleton(li.getToObjectInfo())) {
 				continue;
 			}
 

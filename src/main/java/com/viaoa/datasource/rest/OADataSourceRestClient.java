@@ -24,6 +24,7 @@ import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.objectcache.ObjectCacheIterator;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
@@ -511,7 +512,8 @@ public class OADataSourceRestClient extends OADataSource {
 
 		OAObjectKey okx = objx.getObjectKey();
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());
+    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(obj).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(obj.getClass());
 
 		Object[] ids = okx.getObjectIds();
 

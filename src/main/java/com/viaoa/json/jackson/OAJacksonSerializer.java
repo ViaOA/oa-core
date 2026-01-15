@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.json.OAJson.StackItem;
@@ -42,6 +45,7 @@ import com.viaoa.pojo.PojoLinkOne;
 import com.viaoa.pojo.PojoLinkOneReference;
 import com.viaoa.pojo.PojoLinkUnique;
 import com.viaoa.pojo.PojoProperty;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
@@ -77,7 +81,8 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
 		final OAObject oaObj = (OAObject) value;
 
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj.getClass());
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(oaObj.getClass()).objects().getOAObjectInfoService();
+		final OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj.getClass());
 
 		gen.writeStartObject();
 
@@ -247,7 +252,8 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
 			if (!bSerialized) {
 				OAObjectKey key = null;
-				Object obj = OAObjectPropertyDelegate.getProperty(oaObj, li.getName(), false, true);
+				OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(oaObj).objects().getOAObjectPropertyService();
+				Object obj = srvcOAObjectProperty.getProperty(oaObj, li.getName(), false, true);
 
 				obj = oaj.getPropertyValueCallback(oaObj, li.getLowerName(), obj);
 
@@ -336,7 +342,8 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				}
 			} else {
 				// if hub is loaded and it is empty, then send empty array (for convenience only)
-				Object obj = OAObjectPropertyDelegate.getProperty(oaObj, li.getName(), false, true);
+				OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(oaObj).objects().getOAObjectPropertyService();
+				Object obj = srvcOAObjectProperty.getProperty(oaObj, li.getName(), false, true);
 				if (obj instanceof Hub) {
 					if (((Hub) obj).isEmpty()) {
 						gen.writeArrayFieldStart(li.getLowerName());
@@ -535,7 +542,8 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 
 		if (bCheckValue) {
 			value = pi.getValue(oaObj);
-			if (pi.getIsPrimitive() && pi.getTrackPrimitiveNull() && OAObjectReflectDelegate.getPrimitiveNull(oaObj, lowerName)) {
+			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(oaObj).objects().getOAObjectReflectService();
+			if (pi.getIsPrimitive() && pi.getTrackPrimitiveNull() && srvcOAObjectReflect.getPrimitiveNull(oaObj, lowerName)) {
 				value = null;
 			}
 		}

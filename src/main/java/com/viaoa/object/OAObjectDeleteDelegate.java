@@ -134,7 +134,7 @@ public class OAObjectDeleteDelegate {
 	 *
 	 * @param oaObj the object to delete; ignored if {@code null}
 	 */
-	public static void delete(OAObject oaObj) {
+	private static void delete(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectDeleteService().delete(oaObj);
@@ -147,7 +147,7 @@ public class OAObjectDeleteDelegate {
 	 *
 	 * @param oaObj the object to delete
 	 */
-    public static void syncServerDelete(OAObject oaObj) {
+    private static void syncServerDelete(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectDeleteService().syncServerDelete(oaObj);
@@ -160,7 +160,7 @@ public class OAObjectDeleteDelegate {
      *
      * @param oaObj the object to delete
      */
-	public static void syncClientDelete(OAObject oaObj) {
+	private static void syncClientDelete(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectDeleteService().syncClientDelete(oaObj);
@@ -177,7 +177,7 @@ public class OAObjectDeleteDelegate {
 	 * @throws RuntimeException if key verification fails when
 	 *                          clearing the deleted flag
 	 */
-	public static void setDeleted(OAObject oaObj, boolean tf) {
+	private static void setDeleted(OAObject oaObj, boolean tf) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectDeleteService().setDeleted(oaObj, tf);
@@ -192,7 +192,7 @@ public class OAObjectDeleteDelegate {
 	 * @param cascade the cascade-tracking object used to prevent
 	 *                re-entrant deletions
 	 */
-	public static void delete(final OAObject oaObj, OACascade cascade) {
+	private static void delete(final OAObject oaObj, OACascade cascade) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectDeleteService().delete(oaObj, cascade);
@@ -206,7 +206,7 @@ public class OAObjectDeleteDelegate {
 	 * @param oaObj the object being evaluated
 	 * @return {@code true} if all required links are empty; otherwise {@code false}
 	 */
-	public static boolean canDelete(OAObject oaObj) {
+	private static boolean canDelete(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectDeleteService().canDelete(oaObj);
@@ -221,7 +221,7 @@ public class OAObjectDeleteDelegate {
 	 * @return an array of required-empty link definitions, or {@code null}
 	 *         if none exist
 	 */
-	public static OALinkInfo[] getMustBeEmptyBeforeDelete(OAObject oaObj) {
+	private static OALinkInfo[] getMustBeEmptyBeforeDelete(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectDeleteService().getMustBeEmptyBeforeDelete(oaObj);

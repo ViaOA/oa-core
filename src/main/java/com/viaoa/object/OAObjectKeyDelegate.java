@@ -77,7 +77,7 @@ public class OAObjectKeyDelegate {
 	 * @param obj the source object, or {@code null}
 	 * @return a new {@link OAObjectKey} for the object, or {@code null} if the object is {@code null}
 	 */
-	public static OAObjectKey createObjectKey(OAObject obj) {
+	private static OAObjectKey createObjectKey(OAObject obj) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().createObjectKey(obj);
@@ -91,7 +91,7 @@ public class OAObjectKeyDelegate {
 	 * @param guid the GUID to associate with the key
 	 * @return a new {@link OAObjectKey} instance
 	 */
-	public static OAObjectKey createObjectKey(Object[] ids, long guid) {
+	private static OAObjectKey createObjectKey(Object[] ids, long guid) {
 		//qqqqqq cant get to Service
 		return createObjectKey((OAObjectInfo) null, ids, guid);
 	}
@@ -105,7 +105,7 @@ public class OAObjectKeyDelegate {
 	 * @param ids the ID values or an {@link OAObject} whose key should be returned
 	 * @return a newly created {@link OAObjectKey}, or {@code null} if no IDs are provided
 	 */
-	public static OAObjectKey createObjectKey(final Class c, final Object ...ids) {
+	private static OAObjectKey createObjectKey(final Class c, final Object ...ids) {
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().createObjectKey(c, ids);
@@ -123,7 +123,7 @@ public class OAObjectKeyDelegate {
 	 * @param ids  the ID values or an {@link OAObject} reference
 	 * @return the resulting {@link OAObjectKey}
 	 */
-	public static OAObjectKey createObjectKey(final Class<? extends OAObject> c, final long guid, final Object ...ids) {
+	private static OAObjectKey createObjectKey(final Class<? extends OAObject> c, final long guid, final Object ...ids) {
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().createObjectKey(c, guid, ids);
@@ -141,7 +141,7 @@ public class OAObjectKeyDelegate {
 	 * @param guid the GUID to associate with the key
 	 * @return a new {@link OAObjectKey} instance
 	 */
-	public static OAObjectKey createObjectKey(OAObjectInfo oi, Object[] ids, long guid) {
+	private static OAObjectKey createObjectKey(OAObjectInfo oi, Object[] ids, long guid) {
 		Class c = oi == null ? null : oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -158,7 +158,7 @@ public class OAObjectKeyDelegate {
 	 * @param id the ID value, array of IDs, {@link OAObject}, or {@link OAObjectKey}
 	 * @return a corresponding {@link OAObjectKey}, or {@code null} if {@code id} is {@code null}
 	 */
-	public static OAObjectKey createObjectKey(Object id) {
+	private static OAObjectKey createObjectKey(Object id) {
 		//qqqqqq cant get to specific graph *Service
 		if (id == null) return null;
 		if (id instanceof OAObjectKey) return (OAObjectKey) id;
@@ -176,7 +176,7 @@ public class OAObjectKeyDelegate {
 	 * @param ids the ID values used to build the key
 	 * @return a new {@link OAObjectKey}, or {@code null} if no IDs are supplied
 	 */
-	public static OAObjectKey createObjectKey(Object... ids) {
+	private static OAObjectKey createObjectKey(Object... ids) {
 		if (ids == null || ids.length == 0) return null;
 		return createObjectKey((OAObjectInfo) null, (Object[]) ids, 0L);
 	}
@@ -199,7 +199,7 @@ public class OAObjectKeyDelegate {
 	 * @param key2  the second key to compare
 	 * @return {@code true} if both keys refer to the same object; otherwise {@code false}
 	 */
-	public static boolean isForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey key, final OAObjectKey key2) {
+	private static boolean isForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey key, final OAObjectKey key2) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return false;
 		return g.objects().getOAObjectKeyService().isForSameOAObject(clazz, key, key2);
@@ -215,7 +215,7 @@ public class OAObjectKeyDelegate {
 	 * @param key the object key to locate
 	 * @return the matching object, or {@code null} if none is found
 	 */
-	public static <T extends OAObject> OAObject getOAObject(Class<T> c, OAObjectKey key) {
+	private static <T extends OAObject> OAObject getOAObject(Class<T> c, OAObjectKey key) {
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().getOAObject(c, key);
@@ -228,7 +228,7 @@ public class OAObjectKeyDelegate {
 	 * @param oaObj the source object
 	 * @return the object's {@link OAObjectKey}
 	 */
-	public static OAObjectKey getKey(OAObject oaObj) {
+	private static OAObjectKey getKey(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().getKey(oaObj);
@@ -240,7 +240,7 @@ public class OAObjectKeyDelegate {
 	 * @param oaObj the source object
 	 * @return the object's {@link OAObjectKey}
 	 */
-	public static OAObjectKey getObjectKey(OAObject oaObj) {
+	private static OAObjectKey getObjectKey(OAObject oaObj) {
 		return createObjectKey(oaObj);		
 	}
 
@@ -250,7 +250,7 @@ public class OAObjectKeyDelegate {
 	 * @param oaObj the object whose GUID is requested
 	 * @return the object's GUID, or {@code 0} if the object is {@code null}
 	 */
-	public static UUID getGuid(OAObject oaObj) {
+	private static UUID getGuid(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().getGuid(oaObj);
@@ -269,7 +269,7 @@ public class OAObjectKeyDelegate {
 	 * @param newValue     the new value for the changed property
 	 * @return a new {@link OAObjectKey} containing the updated ID values
 	 */
-	public static OAObjectKey createChangedObjectKey(Class<? extends OAObject> clazz, OAObjectKey objKey, String propertyName, Object newValue) {
+	private static OAObjectKey createChangedObjectKey(Class<? extends OAObject> clazz, OAObjectKey objKey, String propertyName, Object newValue) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().createChangedObjectKey(clazz, objKey, propertyName, newValue);
@@ -289,7 +289,7 @@ public class OAObjectKeyDelegate {
 	 * @param bVerify whether to verify that the new key does not conflict with another object
 	 * @return {@code true} after processing the key change
 	 */
-	public static boolean afterChangedObjectKeyProperty(final OAObject oaObj, final OAObjectKey okOrig, boolean bVerify) {
+	private static boolean afterChangedObjectKeyProperty(final OAObject oaObj, final OAObjectKey okOrig, boolean bVerify) {
 		//qqqq method was protected
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
@@ -307,7 +307,7 @@ public class OAObjectKeyDelegate {
 	 * @param newObjectKey  the newly generated key
 	 * @return a descriptive error message if the new key is already used; otherwise {@code null}
 	 */
-	public static String verifyKeyChange(final OAObject oaObj, OAObjectKey newObjectKey) {
+	private static String verifyKeyChange(final OAObject oaObj, OAObjectKey newObjectKey) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().verifyKeyChange(oaObj, newObjectKey);
@@ -326,7 +326,7 @@ public class OAObjectKeyDelegate {
 	 * @param propertyName  the name of the ID property to retrieve
 	 * @return the matching ID value, or {@code null} if not found
 	 */
-	public static Object getProperty(final Class<? extends OAObject> clazz, final OAObjectKey objectKey, final String propertyName) {
+	private static Object getProperty(final Class<? extends OAObject> clazz, final OAObjectKey objectKey, final String propertyName) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectKeyService().getProperty(clazz, objectKey, propertyName);

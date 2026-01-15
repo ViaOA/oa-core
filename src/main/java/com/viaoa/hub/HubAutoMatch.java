@@ -19,8 +19,11 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.viaoa.graph.object.OAObjectEnumService;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAStr;
 
@@ -264,7 +267,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			c = hub.getObjectClass();
 			if (!hubMaster.getObjectClass().equals(c)) {
 				// find property to use
-				OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(c);
+				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(c);
 				List al = oi.getLinkInfos();
 				for (int i = 0; i < al.size(); i++) {
 					OALinkInfo li = (OALinkInfo) al.get(i);
@@ -278,12 +282,13 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			}
 		}
 		if (property != null) {
-		    getMethod = OAObjectInfoDelegate.getMethod(hub.getObjectClass(), "get" + property);
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(hub.getObjectClass()).objects().getOAObjectInfoService();
+		    getMethod = srvcObjectInfo.getMethod(hub.getObjectClass(), "get" + property);
 			//was: getMethod = OAReflect.getMethod(hub.getObjectClass(), "get" + property);
 			if (getMethod == null) {
 				throw new RuntimeException("getMethod for property \"" + property + "\" in class " + hub.getObjectClass());
 			}
-            setMethod = OAObjectInfoDelegate.getMethod(hub.getObjectClass(), "set" + property);
+            setMethod = srvcObjectInfo.getMethod(hub.getObjectClass(), "set" + property);
 			//was: setMethod = OAReflect.getMethod(hub.getObjectClass(), "set" + property);
 			if (setMethod == null) {
 				throw new RuntimeException("setMethod for property \"" + property + "\" in class " + hub.getObjectClass());
@@ -477,7 +482,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
 		Class cz = hub.getObjectClass();
 
-		Hub<String> hubEnumValues = OAObjectEnumDelegate.getDisplayNameValues(cz, property);
+		final OAObjectEnumService srvcObjectEnum = OARuntime.get().graph(cz).objects().getOAObjectEnumService();
+		Hub<String> hubEnumValues = srvcObjectEnum.getDisplayNameValues(cz, property);
 		int max = hubEnumValues.size();
 		
 		

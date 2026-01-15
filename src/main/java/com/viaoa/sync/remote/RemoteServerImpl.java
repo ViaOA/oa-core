@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -200,13 +201,14 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		if (obj == null) {
 			throw new RuntimeException("Object could not be found, class=" + clazz + ", objKey=" + objKey);
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(clazz);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
 
 		int x = 0;
 		if (args != null && args.length > 0) {
 			x += args.length;
 		}
-		Method method = OAObjectInfoDelegate.getMethod(oi, methodName, x);
+		Method method = srvcObjectInfo.getMethod(oi, methodName, x);
 
 		if (method == null) {
 			throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());
@@ -234,13 +236,14 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
     @Override
     public Object runRemoteMethod2(OAObject obj, String methodName, Object[] args) {
         Class clazz = obj.getClass();
-        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(clazz);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+        OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
 
         int x = 0;
         if (args != null && args.length > 0) {
             x += args.length;
         }
-        Method method = OAObjectInfoDelegate.getMethod(oi, methodName, x);
+        Method method = srvcObjectInfo.getMethod(oi, methodName, x);
 
         if (method == null) {
             throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());
@@ -270,13 +273,14 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 			return null;
 		}
 		Class clazz = hub.getObjectClass();
-		OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(clazz);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
 
 		int x = 1;
 		if (args != null && args.length > 0) {
 			x += args.length;
 		}
-		Method method = OAObjectInfoDelegate.getMethod(oi, methodName, x);
+		Method method = srvcObjectInfo.getMethod(oi, methodName, x);
 
 		if (method == null) {
 			throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());

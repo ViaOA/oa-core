@@ -81,7 +81,7 @@ public class OAObjectImportMatchDelegate {
 	 *        and match property values used to locate or create the
 	 *        target object.
 	 */
-	public static void process(final ImportMatch importMatch) {
+	private static void process(final ImportMatch importMatch) {
 		if (importMatch == null) return;
 		OAGraph g = getGraph(null, importMatch.fromObject);
 		if (g == null) return;

@@ -19,10 +19,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OALogger;
 
 /**
@@ -106,7 +108,8 @@ public class HubRoot {
 		}
 
 		Class clazz = hub.getObjectClass();
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
 		OALinkInfo li = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 		if (li == null) {
 			hubRoot.setSharedHub(hub, true);
@@ -115,7 +118,7 @@ public class HubRoot {
 
 		li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
 		if (li != null) {
-			li = OAObjectInfoDelegate.getReverseLinkInfo(li);
+			li = srvcObjectInfo.getReverseLinkInfo(li);
 		}
 		if (li == null || !li.getRecursive()) {
 			hubRoot.setSharedHub(hub, false);

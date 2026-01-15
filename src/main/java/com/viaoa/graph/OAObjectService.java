@@ -268,11 +268,11 @@ public class OAObjectService {
 		if (b == old) {
 			return;
 		}
-		OAObjectEventDelegate.fireBeforePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
+		getOAObjectEventService().fireBeforePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
 
 		faBridge.getObjectFriendAccess().setNew(oaObj, b);
 		
-		OAObjectEventDelegate.firePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
+		getOAObjectEventService().firePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
 		if (!b) {
 			setAutoAdd(oaObj, true);
 		}
@@ -494,7 +494,8 @@ public class OAObjectService {
 			}
 			String prop = li.getName();
 
-			Object obj = OAObjectReflectDelegate.getProperty(oaObj, li.getName()); // select all
+			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(oaObj).objects().getOAObjectReflectService();
+			Object obj = srvcOAObjectReflect.getProperty(oaObj, li.getName()); // select all
 			if (obj == null) {
 				continue;
 			}
@@ -696,7 +697,7 @@ public class OAObjectService {
 		} else {
 			hmAutoAdd.remove(guid);
 		}
-		OAObjectEventDelegate.firePropertyChange(oaObj, WORD_AutoAdd, bOld ? TRUE : FALSE, bEnabled ? TRUE : FALSE, false, false);
+		getOAObjectEventService().firePropertyChange(oaObj, WORD_AutoAdd, bOld ? TRUE : FALSE, bEnabled ? TRUE : FALSE, false, false);
 
 		if (!bEnabled || faBridge.getObjectFriendAccess().getDeleteFlag(oaObj)) {
 			return;
@@ -713,7 +714,8 @@ public class OAObjectService {
 				if (li.getType() != li.ONE) {
 					continue;
 				}
-				Object objx = OAObjectReflectDelegate.getRawReference(oaObj, li.getName());
+				final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(oaObj).objects().getOAObjectReflectService();
+				Object objx = srvcOAObjectReflect.getRawReference(oaObj, li.getName());
 				if (!(objx instanceof OAObject)) {
 					continue;
 				}
@@ -732,7 +734,7 @@ public class OAObjectService {
 					continue;
 				}
 
-				Object objz = OAObjectReflectDelegate.getProperty((OAObject) objx, liRev.getName());
+				Object objz = srvcOAObjectReflect.getProperty((OAObject) objx, liRev.getName());
 				if (objz instanceof Hub) {
 					((Hub) objz).add(oaObj);
 				}

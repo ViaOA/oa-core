@@ -22,6 +22,7 @@ import com.viaoa.annotation.OATriggerMethod;
 import com.viaoa.datasource.jdbc.db.Database;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectDatabaseService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
 
@@ -94,7 +95,8 @@ public class OAAnnotationDelegate {
 	 * @return the class of objects stored in the hub, or {@code null} if unresolved
 	 */
 	private static Class getHubObjectClass(OAMany annotation, Method method) {
-		Class cx = OAObjectReflectDelegate.getHubObjectClass(method);
+		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((Package) null).objects().getOAObjectReflectService();
+		Class cx = srvcOAObjectReflect.getHubObjectClass(method);
 		if (cx == null && annotation != null) {
 			Class cz = annotation.toClass();
 			if (cz != null && !cz.equals(Object.class)) {

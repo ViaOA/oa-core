@@ -22,6 +22,8 @@ import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.object.OAObjectSaveService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.model.ClientInfo;
@@ -186,7 +188,8 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 		for (Map.Entry<UUID, OAObject> entry : hmObjectsWithoutHubs.entrySet()) {
 			OAObject obj = entry.getValue();
 			if (!obj.wasDeleted()) {
-				OAObjectSaveDelegate.save(obj, iCascadeRule, cascade);
+				OAObjectSaveService srvcOAObjectSave = OARuntime.get().graph(obj).objects().getOAObjectSaveService();
+				srvcOAObjectSave.save(obj, iCascadeRule, cascade);
 			}
 		}
 	}
@@ -256,7 +259,8 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 * @return the newly created object
 	 */
 	public OAObject createNewObject(Class clazz) {
-		OAObject obj = (OAObject) OAObjectReflectDelegate.createNewObject(clazz);
+		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(clazz).objects().getOAObjectReflectService();
+		OAObject obj = (OAObject) srvcOAObjectReflect.createNewObject(clazz);
         objectCreated(obj.getGuid());
 		updateObjectsWithoutHubs(clazz, obj.getObjectKey(),  false);
 		return obj;

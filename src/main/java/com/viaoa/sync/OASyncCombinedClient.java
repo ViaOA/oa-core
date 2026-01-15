@@ -24,6 +24,8 @@ import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -353,7 +355,8 @@ public class OASyncCombinedClient {
                         OAObjectKey clientKey = mapper.hmServerToClient.get(origServerKey);
                         if (clientKey == null) return false;
 
-                        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(objectClass);
+            			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(objectClass).objects().getOAObjectInfoService();
+                        final OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(objectClass);
                         if (oi == null) return false;
                         
                         if (oi.isIdProperty(propertyName)) {
@@ -862,9 +865,11 @@ public class OASyncCombinedClient {
             
             
             // qqqqqq remap all of the props that are objkeys
-            OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(objServer.getClass());
-            for (String prop : OAObjectPropertyDelegate.getPropertyNames(objServer)) {
-                Object objx = OAObjectPropertyDelegate.getProperty(objServer, prop);
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(objServer.getClass()).objects().getOAObjectInfoService();
+            final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(objServer).objects().getOAObjectPropertyService();
+            OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(objServer.getClass());
+            for (String prop : srvcOAObjectProperty.getPropertyNames(objServer)) {
+                Object objx = srvcOAObjectProperty.getProperty(objServer, prop);
                 if (!(objx instanceof OAObjectKey)) continue;
                 OAObjectKey k = (OAObjectKey) objx;
                 OALinkInfo li = oi.getLinkInfo(prop);
@@ -879,8 +884,7 @@ public class OASyncCombinedClient {
                     mapper.hmServerToClient.put(k2, k);
 qqqqqqqqqqqqq */                    
                 }
-                OAObjectPropertyDelegate.setProperty(objServer, prop, k2);
-                
+	            srvcOAObjectProperty.setProperty(objServer, prop, k2);
             }
             
             

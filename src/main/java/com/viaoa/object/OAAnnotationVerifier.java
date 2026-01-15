@@ -41,6 +41,8 @@ import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectAnnotationService;
+import com.viaoa.graph.object.OAObjectHubService;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
@@ -95,7 +97,7 @@ public class OAAnnotationVerifier {
 	 * @throws Exception if reflection access errors occur during verification
 	 */
 	public boolean verify(OAObjectInfo oi) throws Exception {
-		Class clazz = oi.getForClass();
+		final Class clazz = oi.getForClass();
 		OAGraph og = OARuntime.get().graph(clazz);
 		final OAObjectAnnotationService srvcObjectAnnotation = og.objects().getOAObjectAnnotationService();
 		String s;
@@ -210,6 +212,8 @@ public class OAAnnotationVerifier {
 			}
 		}
 
+		final OAObjectInfoService srvcObjectHub = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		
 		// Verify calcProperties
 		ArrayList<OACalcInfo> alCalc = oi.getCalcInfos();
 		bs = new boolean[alCalc.size()];
@@ -221,7 +225,7 @@ public class OAAnnotationVerifier {
 
 			String name = srvcObjectAnnotation.getPropertyName(m.getName());
 
-			OACalcInfo ci = OAObjectInfoDelegate.getOACalcInfo(oi, name);
+			OACalcInfo ci = srvcObjectHub.getOACalcInfo(oi, name);
 			if (ci == null) {
 				p("calcinfo not in objectInfo");
 				bResult = false;
@@ -276,7 +280,7 @@ public class OAAnnotationVerifier {
 
 			String name = srvcObjectAnnotation.getPropertyName(m.getName());
 
-			OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, name);
+			OALinkInfo li = srvcObjectHub.getLinkInfo(oi, name);
 			if (li == null) {
 				p("link does not exist");
 				bResult = false;
@@ -330,7 +334,7 @@ public class OAAnnotationVerifier {
 
 			String name = srvcObjectAnnotation.getPropertyName(m.getName());
 
-			OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, name);
+			OALinkInfo li = srvcObjectHub.getLinkInfo(oi, name);
 			if (li == null) {
 				p("link does not exist");
 				bResult = false;

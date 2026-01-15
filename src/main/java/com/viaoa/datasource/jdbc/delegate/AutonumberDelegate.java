@@ -26,9 +26,12 @@ import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.object.OAObjectSaveService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectDSDelegate;
 import com.viaoa.object.OAObjectReflectDelegate;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Assigns and tracks auto-numbered primary key values for JDBC-backed entities.
@@ -81,7 +84,8 @@ public class AutonumberDelegate {
 
 		try {
 			OAObjectDSDelegate.setAssigningId(object, true);
-			OAObjectReflectDelegate.setProperty(object, column.propertyName, value, null);
+			OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(object).objects().getOAObjectReflectService();
+			srvcOAObjectReflect.setProperty(object, column.propertyName, value, null);
 		} finally {
 			OAObjectDSDelegate.setAssigningId(object, false);
 		}

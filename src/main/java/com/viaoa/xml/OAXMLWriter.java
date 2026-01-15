@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Stack;
 
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubXMLDelegate;
 import com.viaoa.object.OACascade;
@@ -30,6 +32,7 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectXMLDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
@@ -163,7 +166,8 @@ public class OAXMLWriter {
 	public int shouldWriteProperty(Object obj, String propertyName, Object value) {
 		if (bIncludeOnlyImportMatchProperties && obj instanceof OAObject) {
 			OAObject oaObj = (OAObject) obj;
-			OAObjectInfo io = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(oaObj).objects().getOAObjectInfoService();
+			OAObjectInfo io = srvcObjectInfo.getOAObjectInfo(oaObj);
 			if (!io.hasImportMatchProperties()) {
 				return WRITE_NO;
 			}
@@ -196,13 +200,15 @@ public class OAXMLWriter {
 			return true;
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(oaObj).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj);
 		OALinkInfo li = oi.getOwnedByOne();
 		if (li == null) {
 			return false;
 		}
 
-		Object objx = OAObjectPropertyDelegate.getProperty(oaObj, li.getName(), false, true);
+        final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(oaObj).objects().getOAObjectPropertyService();
+		Object objx = srvcOAObjectProperty.getProperty(oaObj, li.getName(), false, true);
 		if (objx == null) {
 			return false;
 		}
@@ -228,13 +234,15 @@ public class OAXMLWriter {
 			return false;
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(oaObj);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(oaObj).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj);
 		OALinkInfo li = oi.getOwnedByOne();
 		if (li == null) {
 			return false;
 		}
 
-		Object objx = OAObjectPropertyDelegate.getProperty(oaObj, li.getName(), false, true);
+        final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(oaObj).objects().getOAObjectPropertyService();
+		Object objx = srvcOAObjectProperty.getProperty(oaObj, li.getName(), false, true);
 		if (objx == null) {
 			return false;
 		}

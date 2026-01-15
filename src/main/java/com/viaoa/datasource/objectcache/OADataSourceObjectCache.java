@@ -34,6 +34,9 @@ import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectKeyService;
+import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
@@ -187,7 +190,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 
         if (whereObject != null && OAStr.isNotEmpty(propertyFromWhereObject)) {
             // 20240123
-            OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(whereObject.getClass());
+        	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(whereObject).objects().getOAObjectInfoService();
+            OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(whereObject.getClass());
             OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
 
             if (li == null) {
@@ -240,7 +244,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             
             
             // 20250407 use reference object from oaobj.properties[]
-            Object objx = OAObjectPropertyDelegate.getProperty(whereObject, propertyFromWhereObject);
+			OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(whereObject).objects().getOAObjectPropertyService();
+            Object objx = srvcOAObjectProperty.getProperty(whereObject, propertyFromWhereObject);
             final List al = new ArrayList();
             if (!(objx instanceof Hub)) {
                 if (objx instanceof OAObject && (filterx == null || filterx.isUsed(objx))) al.add(objx);

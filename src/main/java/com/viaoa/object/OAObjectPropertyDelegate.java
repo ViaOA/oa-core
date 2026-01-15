@@ -89,7 +89,7 @@ public class OAObjectPropertyDelegate {
 	 * @return true if the property value is fully loaded and available;
 	 *         false if it is missing, unresolved, or not yet loaded
 	 */
-	public static boolean isPropertyLoaded(OAObject oaObj, String name) {
+	private static boolean isPropertyLoaded(OAObject oaObj, String name) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectPropertyService().isPropertyLoaded(oaObj, name);
@@ -105,7 +105,7 @@ public class OAObjectPropertyDelegate {
 	 * @return true if the property name is not present in the stored properties;
 	 *         false if the property exists (regardless of its value)
 	 */
-	public static boolean isReferenceNull(OAObject oaObj, String name) {
+	private static boolean isReferenceNull(OAObject oaObj, String name) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectPropertyService().isReferenceNull(oaObj, name);
@@ -119,7 +119,7 @@ public class OAObjectPropertyDelegate {
 	 * @return an array of property names, or null if the object has no
 	 *         properties defined
 	 */
-	public static String[] getPropertyNames(OAObject oaObj) {
+	private static String[] getPropertyNames(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectPropertyService().getPropertyNames(oaObj);
@@ -149,7 +149,7 @@ public class OAObjectPropertyDelegate {
 	 * @param name  the property name
 	 * @param value the value to assign
 	 */
-	public static void unsafeSetProperty(OAObject oaObj, String name, Object value) {
+	private static void unsafeSetProperty(OAObject oaObj, String name, Object value) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectPropertyService().unsafeSetProperty(oaObj, name, value);
@@ -180,7 +180,7 @@ public class OAObjectPropertyDelegate {
 	 * @param bFirePropertyChange true to fire a property change event after
 	 *                            removal, false to suppress event generation
 	 */
-	public static void removeProperty(OAObject oaObj, String name, boolean bFirePropertyChange) {
+	private static void removeProperty(OAObject oaObj, String name, boolean bFirePropertyChange) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectPropertyService().removeProperty(oaObj, name, bFirePropertyChange);
@@ -199,7 +199,7 @@ public class OAObjectPropertyDelegate {
 	 *         was null; false if the property did not exist or its value was
 	 *         non-null
 	 */
-	public static boolean removePropertyIfNull(OAObject oaObj, String name, boolean bFirePropertyChange) {
+	private static boolean removePropertyIfNull(OAObject oaObj, String name, boolean bFirePropertyChange) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectPropertyService().removePropertyIfNull(oaObj, name, bFirePropertyChange);
@@ -215,7 +215,7 @@ public class OAObjectPropertyDelegate {
 	 * @param name  the property name, case-insensitive
 	 * @param value the value to assign
 	 */
-	public static void setProperty(OAObject oaObj, String name, Object value) {
+	private static void setProperty(OAObject oaObj, String name, Object value) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectPropertyService().setProperty(oaObj, name, value);
@@ -234,7 +234,7 @@ public class OAObjectPropertyDelegate {
 	 * @param name  the property name, case-insensitive
 	 * @param value the value to assign if the property is not already set
 	 */
-	public static void setPropertyHubIfNotSet(OAObject oaObj, String name, Object value) {
+	private static void setPropertyHubIfNotSet(OAObject oaObj, String name, Object value) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectPropertyService().setPropertyHubIfNotSet(oaObj, name, value);
@@ -251,7 +251,7 @@ public class OAObjectPropertyDelegate {
 	 * @param matchValue the expected current value
 	 * @return the resulting stored value
 	 */
-	public static Object setPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue) {
+	private static Object setPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectPropertyService().setPropertyCAS(oaObj, name, newValue, matchValue);
@@ -277,7 +277,7 @@ public class OAObjectPropertyDelegate {
 	 * @return the value stored after the operation, or the existing value
 	 *         when the match fails
 	 */
-	public static Object setPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist,
+	private static Object setPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist,
 			boolean bReturnNotExist) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
@@ -293,7 +293,7 @@ public class OAObjectPropertyDelegate {
 	 * @param name  the property name, case-insensitive
 	 * @return the stored value, or null if the property is not found
 	 */
-	public static Object getProperty(OAObject oaObj, String name) {
+	private static Object getProperty(OAObject oaObj, String name) {
 		return getProperty(oaObj, name, false, false);
 	}
 
@@ -315,7 +315,7 @@ public class OAObjectPropertyDelegate {
 	 * @return the stored value, a resolved referent, {@code OANotExist.instance},
 	 *         or null depending on the parameters and property state
 	 */
-	public static Object getProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
+	private static Object getProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectPropertyService().getProperty(oaObj, name, bReturnNotExist, bConvertWeakRef);
@@ -330,7 +330,7 @@ public class OAObjectPropertyDelegate {
 	 * @param name  the property name to lock
 	 * @return true if the lock is successfully acquired; false otherwise
 	 */
-	public static boolean setPropertyLock(OAObject oaObj, String name) {
+	private static boolean setPropertyLock(OAObject oaObj, String name) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectPropertyService().setPropertyLock(oaObj, name);
@@ -346,7 +346,7 @@ public class OAObjectPropertyDelegate {
 	 * @param name  the property name to lock
 	 * @return true if the lock is acquired; false if it is already held
 	 */
-	public static boolean attemptPropertyLock(OAObject oaObj, String name) {
+	private static boolean attemptPropertyLock(OAObject oaObj, String name) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectPropertyService().attemptPropertyLock(oaObj, name);
@@ -361,7 +361,7 @@ public class OAObjectPropertyDelegate {
 	 * @param oaObj the target object
 	 * @param name  the property name whose lock should be released
 	 */
-	public static void releasePropertyLock(OAObject oaObj, String name) {
+	private static void releasePropertyLock(OAObject oaObj, String name) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectPropertyService().releasePropertyLock(oaObj, name);
@@ -374,7 +374,7 @@ public class OAObjectPropertyDelegate {
 	 * @param name  the property name to check
 	 * @return true if the property is currently locked; false otherwise
 	 */
-	public static boolean isPropertyLocked(OAObject oaObj, String name) {
+	private static boolean isPropertyLocked(OAObject oaObj, String name) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectPropertyService().isPropertyLocked(oaObj, name);
@@ -397,7 +397,7 @@ public class OAObjectPropertyDelegate {
 	 *                   WeakReference
 	 * @return true if the stored value was changed; false otherwise
 	 */
-	public static boolean setPropertyWeakRef(OAObject oaObj, String name, boolean bToWeakRef, Object value) {
+	private static boolean setPropertyWeakRef(OAObject oaObj, String name, boolean bToWeakRef, Object value) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectPropertyService().setPropertyWeakRef(oaObj, name, bToWeakRef, value);
@@ -416,7 +416,7 @@ public class OAObjectPropertyDelegate {
 	 * @param bReferenceable true to enforce strong references; false to allow
 	 *                       weak references
 	 */
-	public static void setReferenceable(OAObject obj, boolean bReferenceable) {
+	private static void setReferenceable(OAObject obj, boolean bReferenceable) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return;
 		g.objects().getOAObjectPropertyService().setReferenceable(obj, bReferenceable);
@@ -429,7 +429,7 @@ public class OAObjectPropertyDelegate {
 	 *
 	 * @param oaObj the object whose properties should be cleared
 	 */
-	public static void clearProperties(OAObject oaObj) {
+	private static void clearProperties(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectPropertyService().clearProperties(oaObj);

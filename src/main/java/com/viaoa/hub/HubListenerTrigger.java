@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAGroupBy;
@@ -32,6 +33,7 @@ import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OATrigger;
 import com.viaoa.object.OATriggerDelegate;
 import com.viaoa.object.OATriggerListener;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAPropertyPath;
 
@@ -243,7 +245,8 @@ public class HubListenerTrigger<T> {
 
 		boolean bWasAdded = addListener(hl);
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(hub.getObjectClass());
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(hub.getObjectClass()).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(hub.getObjectClass());
 		String[] calcProps = null;
 		for (OACalcInfo ci : oi.getCalcInfos()) {
 			if (ci.getName().equalsIgnoreCase(propertyName)) {
@@ -468,7 +471,8 @@ public class HubListenerTrigger<T> {
 
 			if (lis.length == 0) {
 				// could be a calcProp
-				OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(hub.getObjectClass());
+				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(hub.getObjectClass()).objects().getOAObjectInfoService();
+				OAObjectInfo oi = srvcObjectInfo.getObjectInfo(hub.getObjectClass());
 				String[] calcProps = null;
 				for (OACalcInfo ci : oi.getCalcInfos()) {
 					if (ci.getName().equalsIgnoreCase(props[0])) {

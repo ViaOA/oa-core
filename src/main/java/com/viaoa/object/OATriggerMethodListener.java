@@ -21,6 +21,7 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.runtime.OARuntime;
@@ -88,7 +89,8 @@ public class OATriggerMethodListener implements OATriggerListener {
         this.clazz = clazz;
         this.method = method;
         this.bOnlyUseLoadedData = bOnlyUseLoadedData;
-        oi = OAObjectInfoDelegate.getObjectInfo(clazz);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+        oi = srvcObjectInfo.getObjectInfo(clazz);
     }
     
     /**

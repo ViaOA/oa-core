@@ -19,7 +19,9 @@ import java.lang.reflect.Method;
 
 import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAString;
 
 /**
@@ -1131,7 +1133,8 @@ public class OAPropertyInfo implements java.io.Serializable {
 	 * to OAObjectReflectDelegate.getProperty using the stored property name.
 	 */
 	public Object getValue(Object obj) {
-		return OAObjectReflectDelegate.getProperty((OAObject) obj, name);
+		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) obj).objects().getOAObjectReflectService();
+		return srvcOAObjectReflect.getProperty((OAObject) obj, name);
 	}
 
 	/**

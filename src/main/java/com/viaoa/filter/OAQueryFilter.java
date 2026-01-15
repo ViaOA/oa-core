@@ -23,10 +23,12 @@ import java.util.Vector;
 import com.viaoa.datasource.query.OAQueryToken;
 import com.viaoa.datasource.query.OAQueryTokenType;
 import com.viaoa.datasource.query.OAQueryTokenizer;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
@@ -714,7 +716,8 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 		OAFilter f = null;
 		ArrayList<OAFilter> alFilter = null;
 
-		final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		final OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
 
 		for (int i = 0;; i++) {
 			nextToken = nextToken();

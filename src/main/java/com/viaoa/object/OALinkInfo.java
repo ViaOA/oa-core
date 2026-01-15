@@ -21,6 +21,10 @@ import java.util.List;
 
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAString;
 
 /**
@@ -883,7 +887,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 * @return the linked value for the object
 	 */
 	public Object getValue(Object obj) {
-		return OAObjectReflectDelegate.getProperty((OAObject) obj, name);
+		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) obj).objects().getOAObjectReflectService();
+		return srvcOAObjectReflect.getProperty((OAObject) obj, name);
 	}
 
 	/**
@@ -899,7 +904,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 			return true;
 		}
 		OAObject oaObj = (OAObject) obj;
-		return OAObjectPropertyDelegate.isPropertyLoaded(oaObj, name);
+		OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(oaObj).objects().getOAObjectPropertyService();
+		return srvcOAObjectProperty.isPropertyLoaded(oaObj, name);
 	}
 
 	/**
@@ -915,7 +921,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 			return true;
 		}
 		OAObject oaObj = (OAObject) obj;
-		return OAObjectPropertyDelegate.isPropertyLocked(oaObj, name);
+		OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(oaObj).objects().getOAObjectPropertyService();
+		return srvcOAObjectProperty.isPropertyLocked(oaObj, name);
 	}
 
 	/**
@@ -1042,7 +1049,9 @@ public class OALinkInfo { //implements java.io.Serializable {
 		if (uniqueProperty == null) {
 			return null;
 		}
-		uniquePropertyGetMethod = OAObjectInfoDelegate.getMethod(getToObjectInfo(), "get" + uniqueProperty);
+
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(toClass).objects().getOAObjectInfoService();
+		uniquePropertyGetMethod = srvcObjectInfo.getMethod(getToObjectInfo(), "get" + uniqueProperty);
 		return uniquePropertyGetMethod;
 	}
 
@@ -1104,7 +1113,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 */
 	public OAObjectInfo getToObjectInfo() {
 		if (oi == null) {
-			oi = OAObjectInfoDelegate.getOAObjectInfo(toClass);
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(toClass).objects().getOAObjectInfoService();
+			oi = srvcObjectInfo.getOAObjectInfo(toClass);
 		}
 		return oi;
 	}

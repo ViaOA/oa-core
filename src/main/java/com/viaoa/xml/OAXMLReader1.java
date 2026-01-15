@@ -36,7 +36,11 @@ import org.xml.sax.helpers.DefaultHandler;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectCSService;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectKeyService;
+import com.viaoa.graph.object.OAObjectLockService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -533,11 +537,12 @@ public class OAXMLReader1 extends DefaultHandler {
 							Class cx = (Class) ((Hashtable) stack[i]).get(XML_CLASS);
 							// find className of property
 							String prop = (String) stack[i + 1];
-							OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(cx);
-							cx = OAObjectInfoDelegate.getPropertyClass(oi, prop);
+							final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(cx).objects().getOAObjectInfoService();
+							OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(cx);
+							cx = srvcObjectInfo.getPropertyClass(oi, prop);
 
 							if (Hub.class.equals(cx)) {
-								OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, prop);
+								OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, prop);
 								if (li != null) {
 									cx = li.getToClass();
 								}
@@ -571,11 +576,12 @@ public class OAXMLReader1 extends DefaultHandler {
 							Class cx = (Class) ((Hashtable) stack[i]).get(XML_CLASS);
 							// find className of property
 							String prop = (String) stack[i + 1];
-							OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(cx);
-							cx = OAObjectInfoDelegate.getPropertyClass(oi, prop);
+							final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(cx).objects().getOAObjectInfoService();
+							OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(cx);
+							cx = srvcObjectInfo.getPropertyClass(oi, prop);
 
 							if (Hub.class.equals(cx)) {
-								OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, prop);
+								OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, prop);
 								if (li != null) {
 									cx = li.getToClass();
 								}
@@ -698,13 +704,14 @@ public class OAXMLReader1 extends DefaultHandler {
 			final String guid = (String) hash.remove(XML_GUID);
 
 			final Class c = (Class) hash.get(XML_CLASS);
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(c);
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(c);
 			String[] ids = oi.getIdProperties();
 			Object[] values = new Object[ids == null ? 0 : ids.length];
 
 			for (int i = 0; i < ids.length; i++) {
 				String id = ids[i].toUpperCase();
-				Class c2 = OAObjectInfoDelegate.getPropertyClass(c, id);
+				Class c2 = srvcObjectInfo.getPropertyClass(c, id);
 				values[i] = hash.get(id);
 				if (values[i] instanceof String) {
 					values[i] = OAConverter.convert(c2, values[i]);
@@ -721,7 +728,7 @@ public class OAXMLReader1 extends DefaultHandler {
 						continue;
 					}
 					String id = matchProps[i].toUpperCase();
-					Class c2 = OAObjectInfoDelegate.getPropertyClass(c, id);
+					Class c2 = srvcObjectInfo.getPropertyClass(c, id);
 					Object val = hash.get(id);
 					if (val instanceof String) {
 						val = OAConverter.convert(c2, val);
@@ -1023,7 +1030,9 @@ public class OAXMLReader1 extends DefaultHandler {
 			if (object.getNew()) {
 				bLoadingObject = true;
 				OAThreadLocalDelegate.setLoading(true);
-				if (OAObjectCSDelegate.isServer(object)) {
+
+				final OAObjectCSService srvcObjectCS = OARuntime.get().graph(object).objects().getOAObjectCSService();
+				if (srvcObjectCS.isServer(object)) {
 					OAThreadLocalDelegate.setSuppressCSMessages(true);
 					// no, needs to have OAObjectEventDelegate.firePropertyChange() process property changes
 					//   since it has already created the object w/o setLoading(true), which means that there are null primitive properties
@@ -1031,8 +1040,9 @@ public class OAXMLReader1 extends DefaultHandler {
 				}
 			}
 			final Class c = (Class) hash.remove(XML_CLASS);
-			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(c);
-
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(c);
+			
 			Enumeration enumx = hash.keys();
 
 			for (; enumx.hasMoreElements();) {
@@ -1138,7 +1148,7 @@ public class OAXMLReader1 extends DefaultHandler {
 							}
 						}
 					}
-				} else if (OAObjectInfoDelegate.isHubProperty(oi, (String) k)) {
+				} else if (srvcObjectInfo.isHubProperty(oi, (String) k)) {
 					// empty hub, otherwise "v" would have been a Vector
 				} else if (v != null && (v instanceof String) && ((String) v).startsWith(XML_GUID)) {
 					String guid = ((String) v).substring(XML_GUID.length());
@@ -1152,7 +1162,7 @@ public class OAXMLReader1 extends DefaultHandler {
 					}
 				} else if (v instanceof OAObjectKey) {
 					// try to find "real" object
-					Class cx = OAObjectInfoDelegate.getPropertyClass(c, (String) k);
+					Class cx = srvcObjectInfo.getPropertyClass(c, (String) k);
 					final OAGraph og = OARuntime.get().graph(cx);
 			    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
 					v = srvcObjectCache.get(cx, (OAObjectKey) v);
@@ -1164,7 +1174,7 @@ public class OAXMLReader1 extends DefaultHandler {
 					}
 				} else {
 					if (v instanceof String) {
-						Class cx = OAObjectInfoDelegate.getPropertyClass(c, (String) k);
+						Class cx = srvcObjectInfo.getPropertyClass(c, (String) k);
 						if (cx != null && !cx.equals(String.class)) {
 							v = convertToObject((String) k, (String) v, cx);
 						}
@@ -1179,7 +1189,8 @@ public class OAXMLReader1 extends DefaultHandler {
 					object.afterLoad();
 				}
 				OAThreadLocalDelegate.setLoading(false);
-				if (OAObjectCSDelegate.isServer(object)) {
+				final OAObjectCSService srvcObjectCS = OARuntime.get().graph(object).objects().getOAObjectCSService();
+				if (srvcObjectCS.isServer(object)) {
 					OAThreadLocalDelegate.setSuppressCSMessages(false);
 				}
 			}
@@ -1309,7 +1320,8 @@ public class OAXMLReader1 extends DefaultHandler {
 	protected Object getRealObject(OAObject object) {
 		final OAGraph og = OARuntime.get().graph(object.getClass());
     	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
-		Object obj = srvcObjectCache.getObject(object.getClass(), OAObjectKeyDelegate.getKey(object));
+		final OAObjectKeyService srvcObjectKey = og.objects().getOAObjectKeyService();
+		Object obj = srvcObjectCache.getObject(object.getClass(), srvcObjectKey.getKey(object));
 		if (obj != null) {
 			return obj;
 		}

@@ -33,6 +33,8 @@ import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.DataAccessObject;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -465,7 +467,8 @@ public class ResultSetIterator implements OADataSourceIterator {
 		//        transaction = new OATransaction(Connection.TRANSACTION_READ_COMMITTED);
 		//        transaction.start();
 
-		this.oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		this.oi = srvcObjectInfo.getOAObjectInfo(clazz);
 
 		DBMetaData dbmd = ds.getDBMetaData();
 		this.bDatesIncludeTime = dbmd.getDatesIncludeTime();
@@ -772,7 +775,8 @@ public class ResultSetIterator implements OADataSourceIterator {
 					boolean bNew;
 					if (oaObject == null) {
 						bNew = true;
-						oaObject = (OAObject) OAObjectReflectDelegate.createNewObject(clazz);
+		    			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(clazz).objects().getOAObjectReflectService();
+						oaObject = (OAObject) srvcOAObjectReflect.createNewObject(clazz);
 					} else {
 						bNew = false;
 					}

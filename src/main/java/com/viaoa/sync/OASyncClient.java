@@ -35,6 +35,10 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectHubService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -400,7 +404,8 @@ public class OASyncClient {
 				// this will "ask" for additional data "around" the requested property
 				bGetSibs = true;
 				// send siblings to return back with same prop
-				li = OAObjectInfoDelegate.getLinkInfo(masterObject.getClass(), propertyName);
+				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(masterObject.getClass()).objects().getOAObjectInfoService();
+				li = srvcObjectInfo.getLinkInfo(masterObject.getClass(), propertyName);
 
 				int max;
 				if (li == null) {
@@ -428,7 +433,8 @@ public class OASyncClient {
 				}
 				*/
 
-				additionalMasterProperties = OAObjectReflectDelegate.getUnloadedReferences(masterObject, false, propertyName, false);
+				final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(masterObject).objects().getOAObjectReflectService();
+				additionalMasterProperties = srvcOAObjectReflect.getUnloadedReferences(masterObject, false, propertyName, false);
 
 				try {
 					//qqqqq cntDup = OAObjectSerializeDelegate.cntDup;
@@ -482,16 +488,18 @@ public class OASyncClient {
 
 					if (value instanceof Hub) {
 						Hub hub = (Hub) value;
+						final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(masterObject.getClass()).objects().getOAObjectInfoService();
 						if (li == null) {
-							li = OAObjectInfoDelegate.getLinkInfo(masterObject.getClass(), propertyName);
+							li = srvcObjectInfo.getLinkInfo(masterObject.getClass(), propertyName);
 						}
 						if (li != null) {
-							if (OAObjectInfoDelegate.cacheHub(li, hub)) {
+							if (srvcObjectInfo.cacheHub(li, hub)) {
 								value = new WeakReference(hub);
 							}
 						}
 					}
-					OAObjectPropertyDelegate.setProperty(obj, propertyName, value); // this will also set the hub.masterObj+li
+	                final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(obj).objects().getOAObjectPropertyService();
+	                srvcOAObjectProperty.setProperty(obj, propertyName, value); // this will also set the hub.masterObj+li
 				}
 			}
 		} else {
@@ -501,13 +509,15 @@ public class OASyncClient {
 
 		if (result instanceof Hub) {
 			Hub hub = (Hub) result;
+			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(masterObject.getClass()).objects().getOAObjectInfoService();
 			if (li == null) {
-				li = OAObjectInfoDelegate.getLinkInfo(masterObject.getClass(), propertyName);
+				li = srvcObjectInfo.getLinkInfo(masterObject.getClass(), propertyName);
 			}
-			if (OAObjectInfoDelegate.cacheHub(li, hub)) {
-				OAObjectPropertyDelegate.setProperty(masterObject, propertyName, new WeakReference(hub));
+            final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(masterObject).objects().getOAObjectPropertyService();
+			if (srvcObjectInfo.cacheHub(li, hub)) {
+				srvcOAObjectProperty.setProperty(masterObject, propertyName, new WeakReference(hub));
 			} else {
-				OAObjectPropertyDelegate.setProperty(masterObject, propertyName, hub); // this will also set the hub.masterObj+li
+				srvcOAObjectProperty.setProperty(masterObject, propertyName, hub); // this will also set the hub.masterObj+li
 			}
 		}
 
@@ -1147,7 +1157,8 @@ public class OASyncClient {
         
         if (OARuntime.get().graph(obj).objects().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
 	    
-        final boolean b = OAObjectHubDelegate.isInHubWithMaster(obj);
+		final OAObjectHubService srvcObjectHub = OARuntime.get().graph(obj).objects().getOAObjectHubService();
+        final boolean b = srvcObjectHub.isInHubWithMaster(obj);
         if (b) {
             if (hmObjectsWithoutHubs.get(guid) == null) return;
             hmObjectsWithoutHubs.remove(guid);
@@ -1192,7 +1203,8 @@ public class OASyncClient {
 							rsi = OASyncClient.this.getRemoteSession();
 						}
 						if (rsi != null) {
-						    boolean b = OAObjectHubDelegate.isInHubWithMaster(obj);
+							final OAObjectHubService srvcObjectHub = OARuntime.get().graph(obj).objects().getOAObjectHubService();
+						    boolean b = srvcObjectHub.isInHubWithMaster(obj);
 						    rsi.updateObjectsWithoutHubs(obj.getClass(), obj.getObjectKey(), b);
 						}
 					} catch (Exception e) {

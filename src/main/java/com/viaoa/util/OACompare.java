@@ -20,10 +20,13 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectKeyDelegate;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Utility class that performs flexible comparisons between values of arbitrary types.
@@ -785,14 +788,22 @@ public class OACompare {
         }
 
         if (value instanceof OAObject || value instanceof OAObjectKey || matchValue instanceof OAObject || matchValue instanceof OAObjectKey) {
-    	    OAObjectKey ka = OAObjectKeyDelegate.createObjectKey(value);
-    	    OAObjectKey kb = OAObjectKeyDelegate.createObjectKey(matchValue);
+        	Class c;
+        	if (value instanceof OAObject) c = value.getClass();
+        	else if (matchValue instanceof OAObject) c = matchValue.getClass();
+        	else c = null;
+        	
+        	final OAGraph og = OARuntime.get().graph(c);
+			final OAObjectKeyService srvcObjectKey = og.objects().getOAObjectKeyService();
+        	
+        	OAObjectKey ka = srvcObjectKey.createObjectKey(value);
+    	    OAObjectKey kb = srvcObjectKey.createObjectKey(matchValue);
     	  
     	    if (ka == kb) return 0;
     	    if (ka == null) return -1;
     	    if (kb == null) return 1;
     	    
-    	    if (OAObjectKeyDelegate.isForSameOAObject(null, ka, kb)) return 0;
+    	    if (srvcObjectKey.isForSameOAObject(null, ka, kb)) return 0;
     	    return ka.compareTo(kb);
     	}        
         

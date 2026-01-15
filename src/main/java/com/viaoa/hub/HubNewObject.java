@@ -15,12 +15,14 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectDSDelegate;
 import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Manages the creation and staging of new {@link OAObject OAObjects} before they
@@ -248,7 +250,8 @@ public class HubNewObject<F extends OAObject> {
 		try {
 			OAThreadLocalDelegate.setLoading(true);
 			Class<F> clazz = hubMain.getObjectClass();
-			obj = (F) OAObjectReflectDelegate.createNewObject(clazz);
+			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(clazz).objects().getOAObjectReflectService();
+			obj = (F) srvcOAObjectReflect.createNewObject(clazz);
 		} finally {
 			OAThreadLocalDelegate.setLoading(false);
 		}

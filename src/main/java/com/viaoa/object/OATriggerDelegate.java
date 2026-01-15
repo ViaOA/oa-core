@@ -22,6 +22,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.runtime.OARuntime;
+
 /**
  * Factory and manager for {@link OATrigger} instances.
  * <p>
@@ -97,7 +100,8 @@ public class OATriggerDelegate {
 		if (trigger == null) {
 			return;
 		}
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(trigger.rootClass);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(trigger.rootClass).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(trigger.rootClass);
 		oi.createTrigger(trigger, bSkipFirstNonManyProperty);
 	}
 
@@ -113,7 +117,8 @@ public class OATriggerDelegate {
 			return false;
 		}
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(trigger.rootClass);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(trigger.rootClass).objects().getOAObjectInfoService();
+		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(trigger.rootClass);
 		oi.removeTrigger(trigger);
 
 		return true;

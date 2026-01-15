@@ -31,6 +31,11 @@ import java.util.Vector;
 import java.util.stream.Stream;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.object.OAObjectCSService;
+import com.viaoa.graph.object.OAObjectCallbackService;
+import com.viaoa.graph.object.OAObjectEventService;
+import com.viaoa.graph.object.OAObjectHubService;
+import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -43,6 +48,7 @@ import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.object.OATrigger;
 import com.viaoa.object.OATriggerDelegate;
 import com.viaoa.object.OATriggerListener;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
@@ -567,7 +573,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 					for (int i = 0; i < x; i++) {
 						Object obj = vec.get(i);
 						if (obj instanceof OAObject) {
-							OAObjectHubDelegate.removeHub((OAObject) obj, this, true);
+							final OAObjectHubService srvcObjectHub = OARuntime.get().graph(this).objects().getOAObjectHubService();
+							srvcObjectHub.removeHub((OAObject) obj, this, true);
 						}
 					}
 				} catch (Exception e) {
@@ -1033,7 +1040,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (data.isDisabled()) {
 			return false;
 		}
-		return OAObjectCallbackDelegate.getAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, this, null, null);
+		OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(this).objects().getOAObjectCallbackService();
+		return srvcObjectCallback.getAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, this, null, null);
 	}
 
 	/**
@@ -2322,7 +2330,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return OAObjectInfo for the class
 	 */
 	public static OAObjectInfo getOAObjectInfo(Class c) {
-		return OAObjectInfoDelegate.getOAObjectInfo(c);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+		return srvcObjectInfo.getOAObjectInfo(c);
 	}
 
 	/**
@@ -2464,7 +2473,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		return OAObjectCallbackDelegate.getAllowAdd(this, (OAObject) obj, checkType);
+		OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(this).objects().getOAObjectCallbackService();
+		return srvcObjectCallback.getAllowAdd(this, (OAObject) obj, checkType);
 	}
 
 	/**
@@ -2479,7 +2489,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		return OAObjectCallbackDelegate.getAllowRemove(this, (OAObject) obj, checkType);
+		OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(this).objects().getOAObjectCallbackService();
+		return srvcObjectCallback.getAllowRemove(this, (OAObject) obj, checkType);
 	}
 
 	/**
@@ -2494,7 +2505,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		return OAObjectCallbackDelegate.getVerifyRemove(this, (OAObject) obj, checkType);
+		OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(this).objects().getOAObjectCallbackService();
+		return srvcObjectCallback.getVerifyRemove(this, (OAObject) obj, checkType);
 	}
 
 	/**

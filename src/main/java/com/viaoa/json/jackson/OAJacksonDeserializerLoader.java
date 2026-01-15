@@ -33,6 +33,9 @@ import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.json.OAJson.StackItem;
@@ -185,7 +188,8 @@ public class OAJacksonDeserializerLoader {
 			clazz = (Class<T>) root.getClass();
 		}
 		OAJson.StackItem stackItem = new OAJson.StackItem();
-		stackItem.oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		stackItem.oi = srvcObjectInfo.getOAObjectInfo(clazz);
 		stackItem.obj = root;
 		stackItem.node = node;
 
@@ -264,7 +268,8 @@ public class OAJacksonDeserializerLoader {
 		debug2(stackItem, "createObject");
 
 		oajson.beforeReadCallback(stackItem.node);
-		stackItem.obj = (OAObject) OAObjectReflectDelegate.createNewObject(clazz);
+		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(clazz).objects().getOAObjectReflectService();
+		stackItem.obj = (OAObject) srvcOAObjectReflect.createNewObject(clazz);
 
 		boolean bNeedsAssignedId = loadObjectIdProperties(stackItem);
 
@@ -308,7 +313,8 @@ public class OAJacksonDeserializerLoader {
 
 				JsonNode jn = stackItem.node.get(propertyName);
 
-				OAPropertyInfo pi = OAObjectInfoDelegate.getPropertyInfo(stackItem.oi, propertyName);
+				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(stackItem.oi.getForClass()).objects().getOAObjectInfoService();
+				OAPropertyInfo pi = srvcObjectInfo.getPropertyInfo(stackItem.oi, propertyName);
 				if (pi == null) {
 					continue;
 				}
@@ -688,7 +694,8 @@ public class OAJacksonDeserializerLoader {
 			}
 			
 			if (obj == null && ok != null) {
-				OAObjectPropertyDelegate.setProperty(stackItem.obj, li.getName(), ok);
+				OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(stackItem.obj).objects().getOAObjectPropertyService();
+				srvcOAObjectProperty.setProperty(stackItem.obj, li.getName(), ok);
 			} else {
 				stackItem.obj.setProperty(li.getName(), obj);
 			}
@@ -798,7 +805,8 @@ public class OAJacksonDeserializerLoader {
 			}
 		}
 		if (obj == null && ok != null) {
-			OAObjectPropertyDelegate.setProperty(stackItem.obj, li.getName(), ok);
+			OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(stackItem.obj).objects().getOAObjectPropertyService();
+			srvcOAObjectProperty.setProperty(stackItem.obj, li.getName(), ok);
 		} else {
 			stackItem.obj.setProperty(li.getName(), obj);
 		}

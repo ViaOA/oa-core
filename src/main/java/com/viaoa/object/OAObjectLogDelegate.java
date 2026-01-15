@@ -18,6 +18,7 @@ package com.viaoa.object;
 import java.util.logging.*;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.object.OAObjectInfoService;
 
 //import sun.util.LocaleServiceProviderPool.LocalizedObjectGetter;
 
@@ -95,6 +96,7 @@ public class OAObjectLogDelegate {
             writerXml = null;
         }
         if (fname != null) {
+        	
             fname = OAString.convertFileName(fname);
             writerXml = new OAXMLWriter(fname) {
                 public int writeProperty(Object obj, String propertyName, Object value) {
@@ -103,11 +105,13 @@ public class OAObjectLogDelegate {
                     if (value instanceof OAObject) return OAXMLWriter.WRITE_KEYONLY;
                     if (!(value instanceof Hub)) return OAXMLWriter.WRITE_YES;
                     
-                    OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(obj.getClass());
-                    OALinkInfo li = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
+                    final OAObjectInfoService srvcOAObjectInfo = OARuntime.get().graph(obj.getClass()).objects().getOAObjectInfoService();
+
+                    OAObjectInfo oi = srvcOAObjectInfo.getOAObjectInfo(obj.getClass());
+                    OALinkInfo li = srvcOAObjectInfo.getLinkInfo(oi, propertyName);
                     if (li != null && li.getType() == OALinkInfo.MANY) {
-                        li = OAObjectInfoDelegate.getLinkInfo(oi, propertyName);
-                        li = OAObjectInfoDelegate.getReverseLinkInfo(li);
+                        li = srvcOAObjectInfo.getLinkInfo(oi, propertyName);
+                        li = srvcOAObjectInfo.getReverseLinkInfo(li);
                         if (li != null && li.getType() == OALinkInfo.MANY) {
                             // M2M dont write any new object, since it does not exist when this file is restored.
                             //        the restore will update/complete the M2M link tables when the other object

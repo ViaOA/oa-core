@@ -15,7 +15,10 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Internal class that defines the link between a master {@link Hub}
@@ -211,7 +214,8 @@ public class HubDetail implements java.io.Serializable {
         if (hubDetail == null) return;
         if (liMasterToDetail == null) return;
         
-        final OALinkInfo liRecursive = OAObjectInfoDelegate.getRecursiveLinkInfo(hubDetail.data.getObjectInfo(), OALinkInfo.ONE);
+		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(hubDetail.data.getObjectInfo().getForClass()).objects().getOAObjectInfoService();
+        final OALinkInfo liRecursive = srvcObjectInfo.getRecursiveLinkInfo(hubDetail.data.getObjectInfo(), OALinkInfo.ONE);
         if (liRecursive == null) return;
         if (liRecursive == liMasterToDetail) return;
 
@@ -230,7 +234,8 @@ public class HubDetail implements java.io.Serializable {
 
                 Object parent = null;
                 for (;;) {
-                    Object objx = OAObjectReflectDelegate.getProperty((OAObject)obj, liDetailToMaster.getName());
+        			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject)obj).objects().getOAObjectReflectService();
+                    Object objx = srvcOAObjectReflect.getProperty((OAObject)obj, liDetailToMaster.getName());
                     if (objx == null) break;
                     parent = objx;
                     if (!(parent instanceof OAObject)) {

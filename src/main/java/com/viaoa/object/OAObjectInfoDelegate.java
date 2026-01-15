@@ -87,7 +87,7 @@ public class OAObjectInfoDelegate {
      * @param obj the OAObject whose metadata is requested.
      * @return the OAObjectInfo for the object's class.
      */
-	public static OAObjectInfo getOAObjectInfo(OAObject obj) {
+	private static OAObjectInfo getOAObjectInfo(OAObject obj) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getOAObjectInfo(obj);
@@ -99,7 +99,7 @@ public class OAObjectInfoDelegate {
 	 * @param obj the OAObject whose metadata is requested.
 	 * @return the OAObjectInfo for the object's class.
 	 */
-	public static OAObjectInfo getObjectInfo(OAObject obj) {
+	private static OAObjectInfo getObjectInfo(OAObject obj) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getOAObjectInfo(obj);
@@ -114,7 +114,7 @@ public class OAObjectInfoDelegate {
 	 * @param clazz the class to retrieve metadata for.
 	 * @return the corresponding OAObjectInfo instance.
 	 */
-	public static OAObjectInfo getOAObjectInfo(Class clazz) {
+	private static OAObjectInfo getOAObjectInfo(Class clazz) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getOAObjectInfo(clazz);
@@ -128,7 +128,7 @@ public class OAObjectInfoDelegate {
 	 * @param clazz the class whose metadata is requested.
 	 * @return the OAObjectInfo for the class.
 	 */
-	public static OAObjectInfo getObjectInfo(Class clazz) {
+	private static OAObjectInfo getObjectInfo(Class clazz) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getOAObjectInfo(clazz);
@@ -142,7 +142,7 @@ public class OAObjectInfoDelegate {
 	 * @param thisOI the OAObjectInfo to update.
 	 * @param li     the link info to add.
 	 */
-	public static void addLinkInfo(OAObjectInfo thisOI, OALinkInfo li) {
+	private static void addLinkInfo(OAObjectInfo thisOI, OALinkInfo li) {
 		Class c = thisOI.getForClass();
 		if (c == null) return;
 		OAGraph g = OARuntime.get().graph(c);
@@ -157,7 +157,7 @@ public class OAObjectInfoDelegate {
 	 * @param thisOI the OAObjectInfo to update.
 	 * @param ci     the calculated-property info to add.
 	 */
-	protected static void addCalcInfo(OAObjectInfo thisOI, OACalcInfo ci) {
+	private static void addCalcInfo(OAObjectInfo thisOI, OACalcInfo ci) {
 		Class c = thisOI.getForClass();
 		if (c == null) return;
 		OAGraph g = OARuntime.get().graph(c);
@@ -173,7 +173,7 @@ public class OAObjectInfoDelegate {
 	 * @param name   the calculated property name.
 	 * @return the matching OACalcInfo, or null if not found.
 	 */
-	public static OACalcInfo getOACalcInfo(OAObjectInfo thisOI, String name) {
+	private static OACalcInfo getOACalcInfo(OAObjectInfo thisOI, String name) {
 		Class c = thisOI.getForClass();
 		if (c == null) return null;
 		OAGraph g = OARuntime.get().graph(c);
@@ -190,7 +190,7 @@ public class OAObjectInfoDelegate {
 	 * @param type   link type constant from OALinkInfo.
 	 * @return the recursive link info, or null if none exists.
 	 */
-	public static OALinkInfo getRecursiveLinkInfo(OAObjectInfo thisOI, int type) {
+	private static OALinkInfo getRecursiveLinkInfo(OAObjectInfo thisOI, int type) {
 		Class c = thisOI.getForClass();
 		if (c == null) return null;
 		OAGraph g = OARuntime.get().graph(c);
@@ -208,7 +208,7 @@ public class OAObjectInfoDelegate {
 	 * @param thisOI the OAObjectInfo to examine.
 	 * @return the owner link info, or null if none.
 	 */
-	public static OALinkInfo getLinkToOwner(OAObjectInfo thisOI) {
+	private static OALinkInfo getLinkToOwner(OAObjectInfo thisOI) {
 		Class c = thisOI.getForClass();
 		if (c == null) return null;
 		OAGraph g = OARuntime.get().graph(c);
@@ -224,7 +224,7 @@ public class OAObjectInfoDelegate {
 	 * @param thisOI the OAObjectInfo to update.
 	 * @param h      the root Hub to assign, or null to remove.
 	 */
-	public static void setRootHub(OAObjectInfo thisOI, Hub h) {
+	private static void setRootHub(OAObjectInfo thisOI, Hub h) {
 		Class c = thisOI.getForClass();
 		if (c == null) return;
 		OAGraph g = OARuntime.get().graph(c);
@@ -239,7 +239,7 @@ public class OAObjectInfoDelegate {
 	 * @param thisOI the OAObjectInfo whose root Hub is requested.
 	 * @return the root Hub or null.
 	 */
-	public static Hub getRootHub(OAObjectInfo thisOI) {
+	private static Hub getRootHub(OAObjectInfo thisOI) {
 		Class c = thisOI.getForClass();
 		if (c == null) return null;
 		OAGraph g = OARuntime.get().graph(c);
@@ -257,7 +257,7 @@ public class OAObjectInfoDelegate {
 	 * @param hub the Hub instance to cache.
 	 * @return true if the Hub was cached; false otherwise.
 	 */
-	public static boolean cacheHub(OALinkInfo li, final Hub hub) {
+	private static boolean cacheHub(OALinkInfo li, final Hub hub) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return false;
 		return g.objects().getOAObjectInfoService().cacheHub(li, hub);
@@ -274,7 +274,7 @@ public class OAObjectInfoDelegate {
 	 * @param hub the Hub instance to check.
 	 * @return true if cached; false otherwise.
 	 */
-	public static boolean isCached(OALinkInfo li, Hub hub) {
+	private static boolean isCached(OALinkInfo li, Hub hub) {
 		OAGraph g = getGraph(hub, null);
 		if (g == null) return false;
 		return g.objects().getOAObjectInfoService().isCached(li, hub);
@@ -287,7 +287,7 @@ public class OAObjectInfoDelegate {
 	 * @param thisLi the link info.
 	 * @return the reverse link info, or null.
 	 */
-	public static OALinkInfo getReverseLinkInfo(OALinkInfo thisLi) {
+	private static OALinkInfo getReverseLinkInfo(OALinkInfo thisLi) {
 		Class c = thisLi.getToClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -301,7 +301,7 @@ public class OAObjectInfoDelegate {
 	 * @param thisLi the link info to evaluate.
 	 * @return true if many-to-many.
 	 */
-	public static boolean isMany2Many(OALinkInfo thisLi) {
+	private static boolean isMany2Many(OALinkInfo thisLi) {
 		Class c = thisLi.getToClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return false;
@@ -315,7 +315,7 @@ public class OAObjectInfoDelegate {
 	 * @param thisLi the link info to evaluate.
 	 * @return true if one-to-one.
 	 */
-	public static boolean isOne2One(OALinkInfo thisLi) {
+	private static boolean isOne2One(OALinkInfo thisLi) {
 		Class c = thisLi.getToClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return false;
@@ -331,7 +331,7 @@ public class OAObjectInfoDelegate {
 	 * @param methodName the method name.
 	 * @return the matching Method, or null if not found.
 	 */
-	public static Method getMethod(Class clazz, String methodName) {
+	private static Method getMethod(Class clazz, String methodName) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getMethod(clazz, methodName);
@@ -345,7 +345,7 @@ public class OAObjectInfoDelegate {
 	 * @param li the link info.
 	 * @return the getter Method, or null.
 	 */
-	public static Method getMethod(OALinkInfo li) {
+	private static Method getMethod(OALinkInfo li) {
 		Class c = li.getToClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -361,7 +361,7 @@ public class OAObjectInfoDelegate {
 	 * @param methodName the method name to resolve.
 	 * @return the matching Method, or null.
 	 */
-	public static Method getMethod(OAObjectInfo oi, String methodName) {
+	private static Method getMethod(OAObjectInfo oi, String methodName) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -378,7 +378,7 @@ public class OAObjectInfoDelegate {
 	 * @param argumentCount expected number of parameters, or -1 for any.
 	 * @return the matching Method, or null.
 	 */
-	public static Method getMethod(OAObjectInfo oi, String methodName, int argumentCount) {
+	private static Method getMethod(OAObjectInfo oi, String methodName, int argumentCount) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -395,7 +395,7 @@ public class OAObjectInfoDelegate {
 	 * @param classParam the expected parameter type.
 	 * @return the matching Method, or null.
 	 */
-	public static Method getMethod(OAObjectInfo oi, String methodName, final Class classParam) {
+	private static Method getMethod(OAObjectInfo oi, String methodName, final Class classParam) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -409,7 +409,7 @@ public class OAObjectInfoDelegate {
 	 * @param clazz  the class whose cache is updated.
 	 * @param method the method to store.
 	 */
-	protected static void storeMethod(Class clazz, Method method) {
+	private static void storeMethod(Class clazz, Method method) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return;
 		g.objects().getOAObjectInfoService().storeMethod(clazz, method);
@@ -423,7 +423,7 @@ public class OAObjectInfoDelegate {
 	 * @param oi the OAObjectInfo whose methods are requested.
 	 * @return array of all cached methods.
 	 */
-	public static Method[] getAllMethods(OAObjectInfo oi) {
+	private static Method[] getAllMethods(OAObjectInfo oi) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -439,7 +439,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the property name.
 	 * @return the property’s class type, or null.
 	 */
-	public static Class getPropertyClass(OAObjectInfo oi, String propertyName) {
+	private static Class getPropertyClass(OAObjectInfo oi, String propertyName) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -454,7 +454,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the property name.
 	 * @return the property’s class type, or null.
 	 */
-	public static Class getPropertyClass(Class clazz, String propertyName) {
+	private static Class getPropertyClass(Class clazz, String propertyName) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getPropertyClass(clazz, propertyName);
@@ -468,7 +468,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the hub-property name.
 	 * @return the target class for the hub, or null.
 	 */
-	public static Class getHubPropertyClass(Class clazz, String propertyName) {
+	private static Class getHubPropertyClass(Class clazz, String propertyName) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getHubPropertyClass(clazz, propertyName);
@@ -483,7 +483,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the link-property name.
 	 * @return the matching OALinkInfo, or null.
 	 */
-	public static OALinkInfo getLinkInfo(Class clazz, String propertyName) {
+	private static OALinkInfo getLinkInfo(Class clazz, String propertyName) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getLinkInfo(clazz, propertyName);
@@ -497,7 +497,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the link-property name.
 	 * @return the matching OALinkInfo, or null.
 	 */
-	public static OALinkInfo getLinkInfo(OAObjectInfo oi, String propertyName) {
+	private static OALinkInfo getLinkInfo(OAObjectInfo oi, String propertyName) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -511,7 +511,7 @@ public class OAObjectInfoDelegate {
 	 * @param oi the OAObjectInfo to inspect.
 	 * @return array of owned-link infos.
 	 */
-	public static OALinkInfo[] getOwnedLinkInfos(OAObjectInfo oi) {
+	private static OALinkInfo[] getOwnedLinkInfos(OAObjectInfo oi) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -526,7 +526,7 @@ public class OAObjectInfoDelegate {
 	 * @param obj the OAObject whose owned links are requested.
 	 * @return array of owned-link infos.
 	 */
-	public static OALinkInfo[] getOwnedLinkInfos(OAObject obj) {
+	private static OALinkInfo[] getOwnedLinkInfos(OAObject obj) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getOwnedLinkInfos(obj);
@@ -542,7 +542,7 @@ public class OAObjectInfoDelegate {
 	 * @param hub        the Hub instance to match.
 	 * @return the associated link info, or null.
 	 */
-	public static OALinkInfo getLinkInfo(OAObjectInfo oi, OAObject fromObject, Hub hub) {
+	private static OALinkInfo getLinkInfo(OAObjectInfo oi, OAObject fromObject, Hub hub) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -558,7 +558,7 @@ public class OAObjectInfoDelegate {
 	 * @param toClass   the target class.
 	 * @return the matching link info, or null.
 	 */
-	public static OALinkInfo getLinkInfo(Class fromClass, Class toClass) {
+	private static OALinkInfo getLinkInfo(Class fromClass, Class toClass) {
 		Class c = fromClass;
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -573,7 +573,7 @@ public class OAObjectInfoDelegate {
 	 * @param toClass the target class.
 	 * @return the matching link info, or null.
 	 */
-	public static OALinkInfo getLinkInfo(OAObjectInfo oi, Class toClass) {
+	private static OALinkInfo getLinkInfo(OAObjectInfo oi, Class toClass) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -588,7 +588,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the property name.
 	 * @return the property info, or null.
 	 */
-	public static OAPropertyInfo getPropertyInfo(OAObjectInfo oi, String propertyName) {
+	private static OAPropertyInfo getPropertyInfo(OAObjectInfo oi, String propertyName) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return null;
@@ -603,7 +603,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the property name.
 	 * @return true if the property is an ID property.
 	 */
-	public static boolean isIdProperty(OAObjectInfo oi, String propertyName) {
+	private static boolean isIdProperty(OAObjectInfo oi, String propertyName) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return false;
@@ -617,7 +617,7 @@ public class OAObjectInfoDelegate {
 	 * @param pi the property info.
 	 * @return true if the property is primitive.
 	 */
-	public static boolean isPrimitive(OAPropertyInfo pi) {
+	private static boolean isPrimitive(OAPropertyInfo pi) {
 		return (pi != null && pi.getClassType() != null && pi.getClassType().isPrimitive());
 	}
 
@@ -629,7 +629,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the property name.
 	 * @return true if the property is primitive.
 	 */
-	public static boolean isPrimitiveProperty(OAObjectInfo oi, String propertyName) {
+	private static boolean isPrimitiveProperty(OAObjectInfo oi, String propertyName) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return false;
@@ -644,7 +644,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the property name.
 	 * @return true if the property is a Hub property.
 	 */
-	public static boolean isHubProperty(OAObjectInfo oi, String propertyName) {
+	private static boolean isHubProperty(OAObjectInfo oi, String propertyName) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return false;
@@ -659,7 +659,7 @@ public class OAObjectInfoDelegate {
 	 * @param oaObj the OAObject whose ID values are requested.
 	 * @return array of ID values; empty array if none; null if object is null.
 	 */
-	public static Object[] getPropertyIdValues(OAObject oaObj) {
+	private static Object[] getPropertyIdValues(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getPropertyIdValues(oaObj);
@@ -673,7 +673,7 @@ public class OAObjectInfoDelegate {
 	 * @param oaObj the OAObject to inspect.
 	 * @return the object's null-bitmask array, or null.
 	 */
-	public static byte[] getNullBitMask(OAObject oaObj) {
+	private static byte[] getNullBitMask(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getNullBitMask(oaObj);
@@ -687,7 +687,7 @@ public class OAObjectInfoDelegate {
 	 * @param clazz the OAObject class to inspect.
 	 * @return list of primitive property names, or null if class is null.
 	 */
-	public static List<String> getPrimitiveNullPropertyNames(Class<? extends OAObject> clazz) {
+	private static List<String> getPrimitiveNullPropertyNames(Class<? extends OAObject> clazz) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getPrimitiveNullPropertyNames(clazz);
@@ -701,7 +701,7 @@ public class OAObjectInfoDelegate {
 	 * @param oaObj the OAObject to inspect.
 	 * @return list of primitive property names marked as null, or null.
 	 */
-	public static List<String> getPrimitiveNullProperties(OAObject oaObj) {
+	private static List<String> getPrimitiveNullProperties(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getPrimitiveNullProperties(oaObj);
@@ -715,7 +715,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the property name.
 	 * @return true if the primitive property is null.
 	 */
-	public static boolean getPrimitiveNull(OAObject oaObj, String propertyName) {
+	private static boolean getPrimitiveNull(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectInfoService().getPrimitiveNull(oaObj, propertyName);
@@ -730,7 +730,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the property name (case-insensitive).
 	 * @return true if the primitive property is null; false otherwise.
 	 */
-	public static boolean isPrimitiveNull(OAObject oaObj, String propertyName) {
+	private static boolean isPrimitiveNull(OAObject oaObj, String propertyName) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectInfoService().isPrimitiveNull(oaObj, propertyName);
@@ -746,7 +746,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyName the property name (case-insensitive).
 	 * @param bSetToNull   true to mark the property as null; false to clear.
 	 */
-	public static void setPrimitiveNull(OAObject oaObj, String propertyName, boolean bSetToNull) {
+	private static void setPrimitiveNull(OAObject oaObj, String propertyName, boolean bSetToNull) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectInfoService().setPrimitiveNull(oaObj, propertyName, bSetToNull);
@@ -771,7 +771,7 @@ public class OAObjectInfoDelegate {
 	 * @param propertyPath the forward property path.
 	 * @return the reversed property path, or null.
 	 */
-	public static String reversePath(Class clazz, String propertyPath) {
+	private static String reversePath(Class clazz, String propertyPath) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().reversePath(clazz, propertyPath);
@@ -784,7 +784,7 @@ public class OAObjectInfoDelegate {
 	 * @param oaObj the OAObject to check.
 	 * @return true if weak-referenceable.
 	 */
-	public static boolean isWeakReferenceable(OAObject oaObj) {
+	private static boolean isWeakReferenceable(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectInfoService().isWeakReferenceable(oaObj);
@@ -798,7 +798,7 @@ public class OAObjectInfoDelegate {
 	 * @param oi the OAObjectInfo to check.
 	 * @return true if weak-referenceable.
 	 */
-	public static boolean isWeakReferenceable(OAObjectInfo oi) {
+	private static boolean isWeakReferenceable(OAObjectInfo oi) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return false;
@@ -813,7 +813,7 @@ public class OAObjectInfoDelegate {
 	 * @param oi the OAObjectInfo to inspect.
 	 * @return true if the type uses a singleton Pojo.
 	 */
-	public static boolean isPojoSingleton(final OAObjectInfo oi) {
+	private static boolean isPojoSingleton(final OAObjectInfo oi) {
 		Class c = oi.getForClass();
 		OAGraph g = OARuntime.get().graph(c);
 		if (g == null) return false;
@@ -828,7 +828,7 @@ public class OAObjectInfoDelegate {
 	 * @param clazz the class whose method cache is requested.
 	 * @return the method cache map.
 	 */
-	protected static Map<String, Method> getClassMethodMap(Class clazz) {
+	private static Map<String, Method> getClassMethodMap(Class clazz) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getClassMethodMap(clazz);
@@ -842,7 +842,7 @@ public class OAObjectInfoDelegate {
 	 * @param clazz the class whose not-found map is requested.
 	 * @return the not-found method-name set.
 	 */
-    protected static Set<String> getClassMethodNotFoundMap(Class clazz) {
+    private static Set<String> getClassMethodNotFoundMap(Class clazz) {
 		OAGraph g = OARuntime.get().graph(clazz);
 		if (g == null) return null;
 		return g.objects().getOAObjectInfoService().getClassMethodNotFoundMap(clazz);
@@ -855,7 +855,7 @@ public class OAObjectInfoDelegate {
      *
      * @return the Class-to-OAObjectInfo map.
      */
-    public static Map<Class, OAObjectInfo> getObjectInfoMap_XXX() {
+    private static Map<Class, OAObjectInfo> getObjectInfoMap_XXX() {
     	// qqqqqqqqqqqqq cant get to OAObjectInfoService qqqqqqqqqqqqqq
     	//return hmObjectInfo;
     	return null;
