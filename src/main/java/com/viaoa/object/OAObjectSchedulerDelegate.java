@@ -76,7 +76,7 @@ public class OAObjectSchedulerDelegate {
 	 * @param date the date used to initialize the scheduler range
 	 * @return the created scheduler, or {@code null} if required arguments are missing
 	 */
-    private static OAScheduler getScheduler(OAObject objThis, String property, OADate date) {
+    public static OAScheduler getScheduler(OAObject objThis, String property, OADate date) {
     	OAGraph g = getGraph(null, objThis);
     	if (g == null) return null;
     	return g.objects().getOAObjectSchedulerService().getScheduler(objThis, property, date);
@@ -106,7 +106,7 @@ public class OAObjectSchedulerDelegate {
      * @param date       the date used to initialize the scheduler instance
      * @return the populated scheduler, or {@code null} if any required metadata is not found
      */
-    private static OAScheduler getScheduler(OAObject objThis, String property, OAObject objSearch, OADate date) {
+    public static OAScheduler getScheduler(OAObject objThis, String property, OAObject objSearch, OADate date) {
     	OAGraph g = getGraph(null, objThis);
     	if (g == null) return null;
     	return g.objects().getOAObjectSchedulerService().getScheduler(objThis, property, objSearch, date);
@@ -130,7 +130,7 @@ public class OAObjectSchedulerDelegate {
      * @param objThis   the object whose callback method should be invoked
      * @param property  the property identifying which scheduler callback to execute
      */
-    private static void invokeCallback(OAScheduler scheduler, OAObject objThis, String property) {
+    public static void invokeCallback(OAScheduler scheduler, OAObject objThis, String property) {
     	OAGraph g = getGraph(null, objThis);
     	if (g == null) return;
     	g.objects().getOAObjectSchedulerService().invokeCallback(scheduler, objThis, property);

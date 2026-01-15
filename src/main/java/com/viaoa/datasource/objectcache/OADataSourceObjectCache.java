@@ -34,6 +34,7 @@ import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.object.OAObjectGuidService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.graph.object.OAObjectPropertyService;
@@ -612,11 +613,16 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 
         for (final Class c : hsClasses) {
             final Set hs = getSet(c);
+            if (!OAObject.class.isAssignableFrom(c)) {
+            	continue;
+            }
     		final OAGraph og = OARuntime.get().graph(c);
         	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+        	final OAObjectGuidService srvcObjectGuid = og.objects().getOAObjectGuidService();
         	srvcObjectCache.callback(c, new OACallback() {
                 @Override
                 public boolean updateObject(Object obj) {
+                	UUID guid = srvcObjectGuid.getGuid((OAObject) obj);
                     hs.add(obj);
                     return true;
                 }

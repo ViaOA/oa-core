@@ -55,7 +55,7 @@ import com.viaoa.util.OAFilter;
  * @see OAObjectKeyDelegate
  */
 public class OAObjectCacheDelegate {
-	private static final Logger LOG = Logger.getLogger(OAObjectCacheDelegate.class.getName());
+	public static final Logger LOG = Logger.getLogger(OAObjectCacheDelegate.class.getName());
 
 
 	/**
@@ -92,7 +92,7 @@ public class OAObjectCacheDelegate {
 	 * @param clazz the class whose select-all Hubs are requested
 	 * @return an array of matching Hubs, or {@code null} if none exist
 	 */
-	private static Hub[] getSelectAllHubs(Class clazz) {
+	public static Hub[] getSelectAllHubs(Class clazz) {
 		if (clazz == null) return null;
 		return OARuntime.get().graph(clazz).objects().getOAObjectCacheService().getSelectAllHubs(clazz);
 	}
@@ -105,12 +105,12 @@ public class OAObjectCacheDelegate {
 	 * @param clazz the class whose first select-all Hub is requested
 	 * @return the first matching Hub, or {@code null} if none exist
 	 */
-	private static Hub getSelectAllHub(Class clazz) {
+	public static Hub getSelectAllHub(Class clazz) {
 		if (clazz == null) return null;
 		return OARuntime.get().graph(clazz).objects().getOAObjectCacheService().getSelectAllHub(clazz);
 	}
 
-	private static Class classSample;
+	public static Class classSample;
 	
 	/**
 	 * Registers the specified Hub as a “select all” Hub for its object class.
@@ -120,7 +120,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param hub the Hub to register as a select-all Hub
 	 */
-	private static void setSelectAllHub(Hub hub) {
+	public static void setSelectAllHub(Hub hub) {
 		if (hub == null) {
 			return;
 		}
@@ -138,7 +138,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param hub the Hub to remove from the select-all list
 	 */
-	private static void removeSelectAllHub(Hub hub) {
+	public static void removeSelectAllHub(Hub hub) {
 		if (hub == null) {
 			return;
 		}
@@ -152,7 +152,7 @@ public class OAObjectCacheDelegate {
 	 * Removes all registered “select all” Hubs across all classes. The
 	 * underlying map is cleared, removing all weak references to Hubs.
 	 */
-	private static void removeAllSelectAllHubs() {
+	public static void removeAllSelectAllHubs() {
 		// find one
 		if (classSample == null) return;
 		OAGraph og = OARuntime.get().graph(classSample);
@@ -187,7 +187,7 @@ public class OAObjectCacheDelegate {
 	 * @param name the name of the Hub to retrieve (case-insensitive)
 	 * @return the Hub associated with the name, or {@code null} if not found
 	 */
-	private static Hub getNamedHub(String name) {
+	public static Hub getNamedHub(String name) {
 		if (name == null) return null;
 		if (classSample == null) return null;
 		OAGraph og = OARuntime.get().graph(classSample);
@@ -204,7 +204,7 @@ public class OAObjectCacheDelegate {
 	 * @param clazz the class whose events the listener should receive
 	 * @param l     the listener to register
 	 */
-	private static <T extends OAObject> void addListener(final Class<T> clazz, final OAObjectCacheListener<T> l) {
+	public static <T extends OAObject> void addListener(final Class<T> clazz, final OAObjectCacheListener<T> l) {
 		if (clazz == null || l == null) return;
 		OAGraph og = OARuntime.get().graph(clazz);
 		if (og != null) og.objects().getOAObjectCacheService().addListener(clazz, l);
@@ -217,7 +217,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param b {@code true} to enable unit test mode, {@code false} to disable it
 	 */
-	private static void setUnitTestMode(boolean b) {
+	public static void setUnitTestMode(boolean b) {
 		 OARuntime.get().setUnitTestMode(b);
 	}
 
@@ -228,7 +228,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @throws RuntimeException if unit test mode is not enabled
 	 */
-	private static void resetCache() {
+	public static void resetCache() {
 		OARuntime.get().unitTestReset();
 	}
 
@@ -239,7 +239,7 @@ public class OAObjectCacheDelegate {
 	 * @param clazz the class whose listener list should be modified
 	 * @param l     the listener to remove
 	 */
-	private static void removeListener(Class clazz, OAObjectCacheListener l) {
+	public static void removeListener(Class clazz, OAObjectCacheListener l) {
 		if (clazz == null || l == null) return;
 		OAGraph og = OARuntime.get().graph(clazz);
 		if (og != null) og.objects().getOAObjectCacheService().removeListener(clazz, l);
@@ -255,7 +255,7 @@ public class OAObjectCacheDelegate {
 	 * @return an array of listeners for the class, or {@code null} if none exist
 	 */
 	@SuppressWarnings("unchecked")
-	private static <T extends OAObject> OAObjectCacheListener<T>[] getListeners(final Class<T> c) {
+	public static <T extends OAObject> OAObjectCacheListener<T>[] getListeners(final Class<T> c) {
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
 		if (og == null) return null;
@@ -276,7 +276,7 @@ public class OAObjectCacheDelegate {
 	 * @param bLocalOnly   unused indicator for local-only routing
 	 * @param bSendEvent   whether to dispatch the event to listeners
 	 */
-	private static void fireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue,
+	public static void fireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue,
 			boolean bLocalOnly, boolean bSendEvent) {
 		//qqqqqqqqq method was protected
 		if (obj == null) return;
@@ -293,7 +293,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param obj the object that has just been loaded
 	 */
-	private static <T extends OAObject> void fireAfterLoadEvent(T obj) {
+	public static <T extends OAObject> void fireAfterLoadEvent(T obj) {
 		if (obj == null) return;
 		Class c = obj.getClass();
 		OAGraph og = OARuntime.get().graph(c);
@@ -309,7 +309,7 @@ public class OAObjectCacheDelegate {
 	 * @param hub the Hub to which the object was added
 	 * @param obj the object that was added
 	 */
-	private static <T extends OAObject> void fireAfterAddEvent(Hub<T> hub, T obj) {
+	public static <T extends OAObject> void fireAfterAddEvent(Hub<T> hub, T obj) {
 		if (obj == null) return;
 		Class c = obj.getClass();
 		OAGraph og = OARuntime.get().graph(c);
@@ -325,7 +325,7 @@ public class OAObjectCacheDelegate {
 	 * @param hub the Hub from which the object was removed
 	 * @param obj the object that was removed
 	 */
-	private static <T extends OAObject> void fireAfterRemoveEvent(Hub<T> hub, T obj) {
+	public static <T extends OAObject> void fireAfterRemoveEvent(Hub<T> hub, T obj) {
 		if (obj == null) return;
 		Class c = obj.getClass();
 		OAGraph og = OARuntime.get().graph(c);
@@ -340,7 +340,7 @@ public class OAObjectCacheDelegate {
 	 * Each class registered in the cache is cleared in turn. This does not
 	 * affect listeners or select-all/named Hub registrations.
 	 */
-	private static void removeAllObjects() {
+	public static void removeAllObjects() {
 		Class c = classSample;
 		if (c == null) return;
 		OAGraph og = OARuntime.get().graph(c);
@@ -355,7 +355,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param c the class whose cached objects should be removed
 	 */
-	private static void removeAllObjects(Class c) {
+	public static void removeAllObjects(Class c) {
 		if (c == null) return;
 		OAGraph og = OARuntime.get().graph(c);
 		if (og == null) return;
@@ -369,7 +369,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param callback the callback to be invoked for each cached object
 	 */
-	private static void callback(OACallback callback) {
+	public static void callback(OACallback callback) {
 		visit(callback);
 	}
 
@@ -380,7 +380,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param callback the callback invoked for each cached object
 	 */
-	private static void visit(OACallback callback) {
+	public static void visit(OACallback callback) {
 		Class c = classSample;
 		if (c == null) return;
 		OAGraph og = OARuntime.get().graph(c);
@@ -396,7 +396,7 @@ public class OAObjectCacheDelegate {
 	 * @param clazz    the OAObject class whose cached instances should be processed
 	 * @param callback the callback to invoke for each object
 	 */
-	private static void callback(Class<? extends OAObject> clazz, OACallback callback) {
+	public static void callback(Class<? extends OAObject> clazz, OACallback callback) {
 		visit(clazz, callback);
 	}
 
@@ -408,7 +408,7 @@ public class OAObjectCacheDelegate {
 	 * @param clazz    the OAObject class to visit
 	 * @param callback the callback invoked for each object
 	 */
-	private static void visit(Class clazz, OACallback callback) {
+	public static void visit(Class clazz, OACallback callback) {
 		Class c = clazz;
 		if (c == null) return;
 		OAGraph og = OARuntime.get().graph(c);
@@ -424,7 +424,7 @@ public class OAObjectCacheDelegate {
 	 * @param callback the callback to invoke for each cached object
 	 * @param clazz    the OAObject class whose objects should be visited
 	 */
-	private static void callback(OACallback callback, Class clazz) {
+	public static void callback(OACallback callback, Class clazz) {
 		Class c = clazz;
 		if (c == null) return;
 		OAGraph og = OARuntime.get().graph(c);
@@ -441,7 +441,7 @@ public class OAObjectCacheDelegate {
 	 * @param callback the callback invoked for each cached object
 	 * @param clazz    the OAObject class whose cached instances should be visited
 	 */
-	private static void visit(OACallback callback, Class clazz) {
+	public static void visit(OACallback callback, Class clazz) {
 		Class c = clazz;
 		if (c == null) return;
 		OAGraph og = OARuntime.get().graph(c);
@@ -461,7 +461,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param al the list to which cache information entries are added
 	 */
-	private static void getInfo(List al) {
+	public static void getInfo(List al) {
 		Class c = classSample;
 		if (c == null) return;
 		OAGraph og = OARuntime.get().graph(c);
@@ -476,7 +476,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @return an array of OAObject classes known to the cache
 	 */
-	private static Class[] getClasses() {
+	public static Class[] getClasses() {
 		Class c = classSample;
 		// if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -491,7 +491,7 @@ public class OAObjectCacheDelegate {
 	 * @param clazz the class whose cached object count is requested
 	 * @return the number of cached objects for the class
 	 */
-	private static int getTotal(Class clazz) {
+	public static int getTotal(Class clazz) {
 		Class c = clazz;
 		if (c == null) return 0;
 		OAGraph og = OARuntime.get().graph(c);
@@ -507,7 +507,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @return a list containing cache summary information
 	 */
-	private static List getInfo() {
+	public static List getInfo() {
 		Class c = classSample;
 		if (c == null) return new ArrayList<>();
 		OAGraph og = OARuntime.get().graph(c);
@@ -557,7 +557,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param clazz the class whose cached objects should be cleared
 	 */
-	private static void clearCache(Class clazz) {
+	public static void clearCache(Class clazz) {
 		Class c = clazz;
 		if (c == null) return;
 		OAGraph og = OARuntime.get().graph(c);
@@ -575,7 +575,7 @@ public class OAObjectCacheDelegate {
 	 * @param obj the object to add to the cache
 	 * @return the existing cached object if one matches, otherwise the supplied object
 	 */
-	private static OAObject add(OAObject obj) {
+	public static OAObject add(OAObject obj) {
 		if (obj == null) return null;
 		Class c = obj.getClass();
 		OAGraph og = OARuntime.get().graph(c);
@@ -594,7 +594,7 @@ public class OAObjectCacheDelegate {
 	 * @param bAddToSelectAll   whether the object should be added to all select-all Hubs
 	 * @return the existing cached object if one matches, otherwise the supplied object
 	 */
-	private static OAObject add(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll) {
+	public static OAObject add(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll) {
 		if (obj == null) return null;
 		Class c = obj.getClass();
 		OAGraph og = OARuntime.get().graph(c);
@@ -614,7 +614,7 @@ public class OAObjectCacheDelegate {
 	 * @param bSendAddEventInAnotherThread    whether after-add events should be queued for asynchronous dispatch
 	 * @return the existing cached object if one matches, otherwise the supplied object
 	 */
-	private static OAObject add(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread) {
+	public static OAObject add(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread) {
 		if (obj == null) return null;
 		Class c = obj.getClass();
 		OAGraph og = OARuntime.get().graph(c);
@@ -635,7 +635,7 @@ public class OAObjectCacheDelegate {
 	 * @param obj                             the object that was added to the cache
 	 * @param bSendAddEventInAnotherThread    whether to dispatch events asynchronously
 	 */
-	private static <T extends OAObject> void fireAfterAddEvent(T obj, boolean bSendAddEventInAnotherThread) {
+	public static <T extends OAObject> void fireAfterAddEvent(T obj, boolean bSendAddEventInAnotherThread) {
 		if (obj == null) return;
 		Class c = obj.getClass();
 		OAGraph og = OARuntime.get().graph(c);
@@ -651,7 +651,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param obj the object to add to all select-all Hubs
 	 */
-	private static void addToSelectAllHubs(OAObject obj) {
+	public static void addToSelectAllHubs(OAObject obj) {
 		if (obj == null) return;
 		Class c = obj.getClass();
 		OAGraph og = OARuntime.get().graph(c);
@@ -667,7 +667,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param obj the object whose key property has changed
 	 */
-	private static void propertyKeyValueChanged(OAObject obj) {
+	public static void propertyKeyValueChanged(OAObject obj) {
 		//qqqqqq method was protected
 		if (obj == null) return;
 		Class c = obj.getClass();
@@ -702,7 +702,7 @@ public class OAObjectCacheDelegate {
 	 * @see OAObjectKey#OAObjectKey
 	 * @see OAObject#equals
 	 */
-	private static <T extends OAObject> T getObject(Class<T> clazz, Object key) {
+	public static <T extends OAObject> T getObject(Class<T> clazz, Object key) {
 		Class<T> c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -719,7 +719,7 @@ public class OAObjectCacheDelegate {
 	 * @param id    the integer ID of the object
 	 * @return the cached object matching the ID, or {@code null} if not found
 	 */
-	private static <T extends OAObject> T get(Class<T> clazz, int id) {
+	public static <T extends OAObject> T get(Class<T> clazz, int id) {
 		Class<T> c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -736,7 +736,7 @@ public class OAObjectCacheDelegate {
 	 * @param key   the object, key value, array of key values, or {@link OAObjectKey}
 	 * @return the cached object matching the key, or {@code null} if not found
 	 */
-	private static <T extends OAObject> T get(Class<T> clazz, Object key) {
+	public static <T extends OAObject> T get(Class<T> clazz, Object key) {
 		Class<T> c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -753,7 +753,7 @@ public class OAObjectCacheDelegate {
 	 * @param ok    the {@link OAObjectKey} representing the object's identity
 	 * @return the cached object matching the key, or {@code null} if not found
 	 */
-	private static <T extends OAObject> T get(Class<T> clazz, OAObjectKey ok) {
+	public static <T extends OAObject> T get(Class<T> clazz, OAObjectKey ok) {
 		Class<T> c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -770,7 +770,7 @@ public class OAObjectCacheDelegate {
 	 * @param guid  the globally unique identifier of the object
 	 * @return the cached object matching the GUID, or {@code null} if not found
 	 */
-	private static <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, UUID guid) {
+	public static <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, UUID guid) {
 		Class<T> c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -786,7 +786,7 @@ public class OAObjectCacheDelegate {
 	 * @param guid  the globally unique identifier of the object
 	 * @return the cached object matching the GUID, or {@code null} if not found
 	 */
-	private static <T extends OAObject> T getUsingGuid(Class<T> clazz, UUID guid) {
+	public static <T extends OAObject> T getUsingGuid(Class<T> clazz, UUID guid) {
 		Class<T> c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -802,7 +802,7 @@ public class OAObjectCacheDelegate {
 	 * @param obj the object whose cached instance is requested
 	 * @return the cached object matching the key, or {@code null} if not found or caching is disabled
 	 */
-	private static Object get(OAObject obj) {
+	public static Object get(OAObject obj) {
 		if (obj == null) return null;
 		Class c = obj.getClass();
 		OAGraph og = OARuntime.get().graph(c);
@@ -818,7 +818,7 @@ public class OAObjectCacheDelegate {
 	 * @param fromObject the object from which to start the search; if null, search starts at the beginning
 	 * @return the next object in the cache, or {@code null} if none found
 	 */
-	private static Object findNext(Object fromObject) {
+	public static Object findNext(Object fromObject) {
 		Object obj = fromObject;
 		if (obj == null) return null;
 		Class c = obj.getClass();
@@ -838,7 +838,7 @@ public class OAObjectCacheDelegate {
 	 * @param findObject   the value to compare against
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
-	private static Object findNext(Object fromObject, String propertyPath, Object findObject) {
+	public static Object findNext(Object fromObject, String propertyPath, Object findObject) {
 		Object obj = fromObject;
 		if (obj == null) return null;
 		Class c = obj.getClass();
@@ -860,7 +860,7 @@ public class OAObjectCacheDelegate {
 	 * @param bThrowException whether to throw an exception if no matching object is found
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
-	private static Object findNext(Object fromObject, String propertyPath, Object findObject, boolean bSkipNew, boolean bThrowException) {
+	public static Object findNext(Object fromObject, String propertyPath, Object findObject, boolean bSkipNew, boolean bThrowException) {
 		Object obj = fromObject;
 		if (obj == null) return null;
 		Class c = obj.getClass();
@@ -881,7 +881,7 @@ public class OAObjectCacheDelegate {
 	 * @param findObject   the value to compare against
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
-	private static Object findNext(Object fromObject, Class fromClass, String propertyPath, Object findObject) {
+	public static Object findNext(Object fromObject, Class fromClass, String propertyPath, Object findObject) {
 		Object obj = fromObject;
 		if (obj == null) return null;
 		Class c = obj.getClass();
@@ -898,7 +898,7 @@ public class OAObjectCacheDelegate {
 	 * @param clazz the class of objects to search
 	 * @return the first matching object in the cache, or {@code null} if none found
 	 */
-	private static Object find(Class clazz) {
+	public static Object find(Class clazz) {
 		Class c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -916,7 +916,7 @@ public class OAObjectCacheDelegate {
 	 * @param finder the finder specifying the search criteria
 	 * @return the first matching object in the cache, or {@code null} if none found
 	 */
-	private static Object find(Class clazz, OAFinder finder) {
+	public static Object find(Class clazz, OAFinder finder) {
 		Class c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -935,7 +935,7 @@ public class OAObjectCacheDelegate {
 	 * @param findObject   the value to compare against
 	 * @return the first matching object in the cache, or {@code null} if none found
 	 */
-	private static Object find(Class clazz, String propertyPath, Object findObject) {
+	public static Object find(Class clazz, String propertyPath, Object findObject) {
 		Class c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -957,7 +957,7 @@ public class OAObjectCacheDelegate {
 	 * @param bThrowException whether to throw an exception if no match is found
 	 * @return the first matching object in the cache, or {@code null} if none found
 	 */
-	private static Object find(Class clazz, String propertyPath, Object findObject, boolean bSkipNew, boolean bThrowException) {
+	public static Object find(Class clazz, String propertyPath, Object findObject, boolean bSkipNew, boolean bThrowException) {
 		Class c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -977,7 +977,7 @@ public class OAObjectCacheDelegate {
 	 * @param bThrowException whether to throw an exception if no match is found
 	 * @return the first matching object in the cache, or {@code null} if none found
 	 */
-	private static Object find(Class clazz, OAFinder finder, boolean bSkipNew, boolean bThrowException) {
+	public static Object find(Class clazz, OAFinder finder, boolean bSkipNew, boolean bThrowException) {
 		Class c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -1000,7 +1000,7 @@ public class OAObjectCacheDelegate {
 	 * @param bThrowException whether to throw an exception if no match is found
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
-	private static Object _find(Object fromObject, Class clazz, String propertyPath, Object findObject, boolean bSkipNew,
+	public static Object _find(Object fromObject, Class clazz, String propertyPath, Object findObject, boolean bSkipNew,
 			boolean bThrowException) {
 		Class c = clazz;
 		if (c == null) return null;
@@ -1022,7 +1022,7 @@ public class OAObjectCacheDelegate {
 	 * @param bThrowException whether to throw an exception if no match is found
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
-	private static Object _find(Object fromObject, Class clazz, OAFinder finder, boolean bSkipNew, boolean bThrowException) {
+	public static Object _find(Object fromObject, Class clazz, OAFinder finder, boolean bSkipNew, boolean bThrowException) {
 		Class c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -1030,7 +1030,7 @@ public class OAObjectCacheDelegate {
 		return og.objects().getOAObjectCacheService()._find(fromObject, clazz, finder, bSkipNew, bThrowException);
 	}
 
-	private static Object find(Object fromObject, Class clazz, OAFinder finder, boolean bSkipNew, boolean bThrowException, int fetchAmount,
+	public static Object find(Object fromObject, Class clazz, OAFinder finder, boolean bSkipNew, boolean bThrowException, int fetchAmount,
 			List<OAObject> alResults) {
 		Class c = clazz;
 		if (c == null) return null;
@@ -1053,7 +1053,7 @@ public class OAObjectCacheDelegate {
 	 * @param alResults       list to accumulate found objects; may be null
 	 * @return the last matching object found, or {@code null} if none
 	 */
-	private static Object find(Object fromObject, Class clazz, OAFilter filter, boolean bSkipNew, boolean bThrowException, int fetchAmount,
+	public static Object find(Object fromObject, Class clazz, OAFilter filter, boolean bSkipNew, boolean bThrowException, int fetchAmount,
 			List<OAObject> alResults) {
 		Class c = clazz;
 		if (c == null) return null;
@@ -1074,7 +1074,7 @@ public class OAObjectCacheDelegate {
 	 * @param alResults   list to accumulate found objects; may be null
 	 * @return the last object found, or {@code null} if none
 	 */
-	private static Object find(Object fromObject, Class clazz, int fetchAmount, List<OAObject> alResults) {
+	public static Object find(Object fromObject, Class clazz, int fetchAmount, List<OAObject> alResults) {
 		Class c = clazz;
 		if (c == null) return null;
 		OAGraph og = OARuntime.get().graph(c);
@@ -1092,7 +1092,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param clazz the class of objects to refresh; if null, no action is taken
 	 */
-	private static void refresh(Class clazz) {
+	public static void refresh(Class clazz) {
 		Class c = clazz;
 		if (c == null) return;
 		OAGraph og = OARuntime.get().graph(c);
@@ -1101,7 +1101,7 @@ public class OAObjectCacheDelegate {
 	}
 
 	/*
-	private static void updateClientInfo(OAClientInfo ci) {
+	public static void updateClientInfo(OAClientInfo ci) {
 		// LOG.fine("called");
 		for (Class c : getOAObjectCache().getClasses()) {
 	    	ci.getCacheHashMap().put(c, getOAObjectCache().getTotal(c));
@@ -1118,7 +1118,7 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @param b {@code true} to disable caching, {@code false} to enable it
 	 */
-	private static void setDisableCache(boolean b) {
+	public static void setDisableCache(boolean b) {
 //qqqqqqqqqqqqqqqqqqq		
 //		bDisableCache = b;
 	}
@@ -1129,14 +1129,14 @@ public class OAObjectCacheDelegate {
 	 *
 	 * @return the global {@link OAObjectCache} instance
 	 */
-	private static OAObjectCache getOAObjectCache() {
+	public static OAObjectCache getOAObjectCache() {
 //		return objectCache;
 		
 		return null;//qqqqqqqqqqqqqqqqqqqqqqqq
 	}
 
 
-	private static Object getRandom(Class<? extends OAObject> clazz, int i) {
+	public static Object getRandom(Class<? extends OAObject> clazz, int i) {
 		Class c = clazz;
 		OAGraph og = OARuntime.get().graph(c);
 		if (og == null) return null;

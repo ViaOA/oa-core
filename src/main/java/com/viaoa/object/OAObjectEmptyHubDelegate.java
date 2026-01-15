@@ -49,7 +49,7 @@ import com.viaoa.util.OADateTime;
  * </ul>
  */
 public class OAObjectEmptyHubDelegate {
-    private static Logger LOG = Logger.getLogger(OAObjectEmptyHubDelegate.class.getName());
+    public static Logger LOG = Logger.getLogger(OAObjectEmptyHubDelegate.class.getName());
 
 	/*
 	OAGraph g = getGraph(null, oaObj);
@@ -74,7 +74,7 @@ public class OAObjectEmptyHubDelegate {
      * @param obj the object whose empty reference hubs should be initialized;
      *            ignored if {@code null} or no metadata exists
      */
-    private static void initialize(OAObject obj) {
+    public static void initialize(OAObject obj) {
     	OAGraph g = getGraph(null, obj);
     	if (g == null) return;
     	g.objects().getOAObjectEmptyHubService().initialize(obj);
@@ -88,7 +88,7 @@ public class OAObjectEmptyHubDelegate {
      * @param file the file containing the serialized metadata
      * @throws Exception if the file cannot be read or deserialized
      */
-    private static void load(File file) throws Exception {
+    public static void load(File file) throws Exception {
     	// qqqqqqqqqq
     }
     
@@ -100,7 +100,7 @@ public class OAObjectEmptyHubDelegate {
      * @param file the file to which the metadata is written
      * @throws Exception if writing or serialization fails
      */
-    private static void save(File file) throws Exception {
+    public static void save(File file) throws Exception {
     	// qqqqqqqqqq
     }
 }

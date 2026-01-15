@@ -51,7 +51,7 @@ import com.viaoa.xml.OAXMLWriter;
  * when appropriate, avoiding duplication during replay.</p>
  */
 public class OAObjectLogDelegate {
-    private static Logger LOG = Logger.getLogger(OAObjectLogDelegate.class.getName());
+    public static Logger LOG = Logger.getLogger(OAObjectLogDelegate.class.getName());
     
 	/*
 	OAGraph g = getGraph(null, oaObj);
@@ -68,7 +68,7 @@ public class OAObjectLogDelegate {
 		return g;
 	}
     
-    private static volatile OAXMLWriter writerXml;
+    public static volatile OAXMLWriter writerXml;
 
     /**
      * Opens a new XML log file for recording {@link OALogRecord} entries.

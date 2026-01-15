@@ -67,7 +67,7 @@ import com.viaoa.runtime.OARuntime;
  * @see com.viaoa.hub.HubEventDelegate
  */
 public class OAObjectSaveDelegate {
-	private static Logger LOG = Logger.getLogger(OAObjectSaveDelegate.class.getName());
+	public static Logger LOG = Logger.getLogger(OAObjectSaveDelegate.class.getName());
 
 	/*
 	OAGraph g = getGraph(null, oaObj);
@@ -87,13 +87,13 @@ public class OAObjectSaveDelegate {
 		return g;
 	}
 	
-	private static void save(OAObject oaObj, int iCascadeRule) {
+	public static void save(OAObject oaObj, int iCascadeRule) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectSaveService().save(oaObj, iCascadeRule);
 	}
 
-	private static void save(OAObject oaObj, int iCascadeRule, OACascade cascade) {
+	public static void save(OAObject oaObj, int iCascadeRule, OACascade cascade) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectSaveService().save(oaObj, iCascadeRule, cascade);
@@ -103,7 +103,7 @@ public class OAObjectSaveDelegate {
 	/**
 	 * Called by HubSaveDelegate.saveAll() to save all New Many2Many added objects.
 	 */
-	private static void _saveObjectOnly(OAObject oaObj, OACascade cascade) {
+	public static void _saveObjectOnly(OAObject oaObj, OACascade cascade) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectSaveService()._saveObjectOnly(oaObj, cascade);
@@ -112,7 +112,7 @@ public class OAObjectSaveDelegate {
 	/**
 
 	*/
-	private static boolean onSave(OAObject oaObj) {
+	public static boolean onSave(OAObject oaObj) {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return false;
 		return g.objects().getOAObjectSaveService().onSave(oaObj);

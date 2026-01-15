@@ -846,8 +846,8 @@ public class OAObjectCacheService {
 		}
 		
 		OAObject objFound = objectCache.getObject(clazz, guid);
+		boolean bGuidFound = objFound != null;
 		
-//qqqqqqqqqqqqqqqqqqqqqqqq
 		if (objFound == null) {
 			if (key.hasValidObjectIds()) {
 				OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
@@ -873,6 +873,7 @@ public class OAObjectCacheService {
 				}
 			}
 			else {
+				if (!bGuidFound) objectCache.removeObject(objFound);
 				objectCache.updateObject(obj, key, clazz);
 			}
 			bAddToSelectAll = false;

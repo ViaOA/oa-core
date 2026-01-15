@@ -173,7 +173,7 @@ public class OATriggerDelegate {
 		getExecutorService().submit(rx);
 	}
 
-	private static volatile ThreadPoolExecutor executorService;
+	public static volatile ThreadPoolExecutor executorService;
 	
 	/**
 	 * Returns the shared executor service used for asynchronous trigger
@@ -185,10 +185,10 @@ public class OATriggerDelegate {
 	    return Holder.INSTANCE;
 	}
 
-	private static class Holder {
+	public static class Holder {
 	    static final ExecutorService INSTANCE = createExecutor();
 
-	    private static ExecutorService createExecutor() {
+	    public static ExecutorService createExecutor() {
 	        ThreadFactory tf = new ThreadFactory() {
 	            private final AtomicInteger ai = new AtomicInteger();
 	            @Override

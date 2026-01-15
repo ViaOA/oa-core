@@ -57,7 +57,7 @@ import com.viaoa.util.OANullObject;
  * @see OAObjectInfo
  */
 public class OAObjectSerializeDelegate {
-	private static final Logger LOG = Logger.getLogger(OAObjectSerializeDelegate.class.getName());
+	public static final Logger LOG = Logger.getLogger(OAObjectSerializeDelegate.class.getName());
 
 	/*
 	OAGraph g = getGraph(null, oaObj);
@@ -110,7 +110,7 @@ public class OAObjectSerializeDelegate {
 	 * @throws IOException if the stream cannot be read
 	 * @throws ClassNotFoundException if a property value refers to an unknown type
 	 */
-	private static void _readObject(OAObject oaObj, java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+	public static void _readObject(OAObject oaObj, java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectSerializeService()._readObject(oaObj, in);
@@ -143,7 +143,7 @@ public class OAObjectSerializeDelegate {
 	 * @return the resolved object to use within the application
 	 * @throws ObjectStreamException if resolution fails
 	 */
-	private static Object _readResolve(final OAObject oaObjRead) throws ObjectStreamException {
+	public static Object _readResolve(final OAObject oaObjRead) throws ObjectStreamException {
 		OAGraph g = getGraph(null, oaObjRead);
 		if (g == null) return null;
 		return g.objects().getOAObjectSerializeService()._readResolve(oaObjRead);
@@ -174,7 +174,7 @@ public class OAObjectSerializeDelegate {
 	 * @param stream the output stream receiving serialized data
 	 * @throws IOException if the object cannot be written
 	 */
-	private static void _writeObject(final OAObject oaObj, java.io.ObjectOutputStream stream) throws IOException {
+	public static void _writeObject(final OAObject oaObj, java.io.ObjectOutputStream stream) throws IOException {
 		OAGraph g = getGraph(null, oaObj);
 		if (g == null) return;
 		g.objects().getOAObjectSerializeService()._writeObject(oaObj, stream);
@@ -211,7 +211,7 @@ public class OAObjectSerializeDelegate {
 	 * @param bIsObjectSentOnServer whether the object was already sent by the server
 	 * @throws IOException if any property fails to serialize
 	 */
-	private static void _writeProperties(final OAObjectInfo oi, final boolean bIsServer, final OAObject oaObj,
+	public static void _writeProperties(final OAObjectInfo oi, final boolean bIsServer, final OAObject oaObj,
 			final java.io.ObjectOutputStream stream, final OAObjectSerializer serializer, final boolean bIsObjectSentOnServer)
 			throws IOException {
 		OAGraph g = getGraph(null, oaObj);

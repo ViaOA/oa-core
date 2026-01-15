@@ -54,7 +54,7 @@ import com.viaoa.transaction.OATransaction;
  */
 public class OAThreadLocalDelegate {
 
-	private static Logger LOG = Logger.getLogger(OAThreadLocalDelegate.class.getName());
+	public static Logger LOG = Logger.getLogger(OAThreadLocalDelegate.class.getName());
 
 
 	// qqqqqqqqq remove this and fix code that calls it	
@@ -66,7 +66,7 @@ public class OAThreadLocalDelegate {
 	 * @return the thread-local instance, or null if none exists and creation is disabled
 	 */
 	@Deprecated
-	private static OAThreadLocal getThreadLocal(boolean bCreateIfNull) {
+	public static OAThreadLocal getThreadLocal(boolean bCreateIfNull) {
 		OAThreadLocal ti = OARuntime.get().threadLocalService().getThreadLocal(bCreateIfNull);
 		return ti;
 	}
@@ -77,7 +77,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param t the transaction to assign, or null to clear it
 	 */
-	private static void setTransaction(OATransaction t) {
+	public static void setTransaction(OATransaction t) {
 		OARuntime.get().threadLocalService().setTransaction(t);
 	}
 
@@ -87,7 +87,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the current transaction or null
 	 */
-	private static OATransaction getTransaction() {
+	public static OATransaction getTransaction() {
 		return OARuntime.get().threadLocalService().getTransaction();
 	}
 
@@ -97,7 +97,7 @@ public class OAThreadLocalDelegate {
 	 * @param ti the thread-local instance
 	 * @return true if loading is greater than zero
 	 */
-	private static boolean isLoading() {
+	public static boolean isLoading() {
 		return OARuntime.get().threadLocalService().isLoading();
 	}
 
@@ -109,7 +109,7 @@ public class OAThreadLocalDelegate {
 	 * @param b true to increase the loading count, false to decrease it
 	 * @return previous loading flag before the update
 	 */
-	private static boolean setLoading(boolean b) {
+	public static boolean setLoading(boolean b) {
 		return OARuntime.get().threadLocalService().setLoading(b);
 	}
 
@@ -119,7 +119,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the current add mode
 	 */
-	private static int getObjectCacheAddMode() {
+	public static int getObjectCacheAddMode() {
 		return OARuntime.get().threadLocalService().getObjectCacheAddMode();
 	}
 
@@ -130,7 +130,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param mode the add mode to assign
 	 */
-	private static void setObjectCacheAddMode(int mode) {
+	public static void setObjectCacheAddMode(int mode) {
 		OARuntime.get().threadLocalService().setObjectCacheAddMode(mode);
 	}
 
@@ -144,7 +144,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the serializer or null
 	 */
-	private static OAObjectSerializer getObjectSerializer() {
+	public static OAObjectSerializer getObjectSerializer() {
 		return OARuntime.get().threadLocalService().getObjectSerializer();
 	}
 
@@ -154,7 +154,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param si the serializer to assign, or null to clear it
 	 */
-	private static void setObjectSerializer(OAObjectSerializer si) {
+	public static void setObjectSerializer(OAObjectSerializer si) {
 		// LOG.finer("OAObjectSerializer="+(si != null));
 		OARuntime.get().threadLocalService().setObjectSerializer(si);
 	}
@@ -166,7 +166,7 @@ public class OAThreadLocalDelegate {
 	 * @param ti the thread-local instance
 	 * @return true if suppressed, otherwise false
 	 */
-	private static boolean isSuppressCSMessages() {
+	public static boolean isSuppressCSMessages() {
 		return OARuntime.get().threadLocalService().isSuppressCSMessages();
 	}
 
@@ -176,7 +176,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param b true to enable suppression, false to disable
 	 */
-	private static void setSuppressCSMessages(boolean b) {
+	public static void setSuppressCSMessages(boolean b) {
 		OARuntime.get().threadLocalService().setSuppressCSMessages(b);
 	}
 
@@ -185,7 +185,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if deleting is active for this thread
 	 */
-	private static boolean isDeleting() {
+	public static boolean isDeleting() {
 		return OARuntime.get().threadLocalService().isDeleting();
 	}
 
@@ -195,7 +195,7 @@ public class OAThreadLocalDelegate {
 	 * @param obj the object to check
 	 * @return true if this thread is deleting the object
 	 */
-	private static boolean isDeleting(Object obj) {
+	public static boolean isDeleting(Object obj) {
 		return OARuntime.get().threadLocalService().isDeleting(obj);
 	}
 
@@ -207,7 +207,7 @@ public class OAThreadLocalDelegate {
 	 * @param obj the object to check
 	 * @return true if the instance is deleting the object
 	 */
-	private static boolean isThreadDeleting(Object obj) {
+	public static boolean isThreadDeleting(Object obj) {
 		return OARuntime.get().threadLocalService().isThreadDeleting(obj);
 	}
 
@@ -219,7 +219,7 @@ public class OAThreadLocalDelegate {
 	 * @param obj the object to update
 	 * @param b   true to mark as deleting, false to unmark
 	 */
-	private static void setDeleting(Object obj, boolean b) {
+	public static void setDeleting(Object obj, boolean b) {
 		OARuntime.get().threadLocalService().setDeleting(obj, b);
 	}
 
@@ -230,7 +230,7 @@ public class OAThreadLocalDelegate {
 	 * @param obj the flag object
 	 * @return true if present
 	 */
-	private static boolean isFlag(Object obj) {
+	public static boolean isFlag(Object obj) {
 		return OARuntime.get().threadLocalService().isFlag(obj);
 	}
 	
@@ -239,7 +239,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param obj the flag object to add
 	 */
-	private static void setFlag(Object obj) {
+	public static void setFlag(Object obj) {
 		OARuntime.get().threadLocalService().setFlag(obj);
 	}
 
@@ -248,7 +248,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param obj the flag to remove
 	 */
-	private static void removeFlag(Object obj) {
+	public static void removeFlag(Object obj) {
 		OARuntime.get().threadLocalService().removeFlag(obj);
 	}
 
@@ -259,7 +259,7 @@ public class OAThreadLocalDelegate {
 	 * @param object        the object to lock
 	 * @param maxWaitTries  maximum wait attempts before taking the lock
 	 */
-	private static void lock(Object object, int maxWaitTries) {
+	public static void lock(Object object, int maxWaitTries) {
 		OARuntime.get().threadLocalService().lock(object, maxWaitTries);
 	}
 
@@ -269,7 +269,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param object the object to lock
 	 */
-	private static void lock(Object object) {
+	public static void lock(Object object) {
 		OARuntime.get().threadLocalService().lock(object);
 	}
 
@@ -278,7 +278,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if one or more locks are held
 	 */
-	private static boolean hasLock() {
+	public static boolean hasLock() {
 		return OARuntime.get().threadLocalService().hasLock();
 	}
 
@@ -288,7 +288,7 @@ public class OAThreadLocalDelegate {
 	 * @param obj the object to check
 	 * @return true if the lock is held
 	 */
-	private static boolean hasLock(Object obj) {
+	public static boolean hasLock(Object obj) {
 		return OARuntime.get().threadLocalService().hasLock(obj);
 	}
 
@@ -297,7 +297,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return an array of locked objects, or null if none
 	 */
-	private static Object[] getLocks() {
+	public static Object[] getLocks() {
 		return OARuntime.get().threadLocalService().getLocks();	
 	}
 
@@ -307,7 +307,7 @@ public class OAThreadLocalDelegate {
 	 * @param object the object to check
 	 * @return true if locked by any thread
 	 */
-	private static boolean isLocked(Object object) {
+	public static boolean isLocked(Object object) {
 		return OARuntime.get().threadLocalService().isLocked(object);
 	}
 
@@ -318,7 +318,7 @@ public class OAThreadLocalDelegate {
 	 * @param object the object to check
 	 * @return true if the current thread owns the lock
 	 */
-	private static boolean isLockOwner(Object object) {
+	public static boolean isLockOwner(Object object) {
 		return OARuntime.get().threadLocalService().isLockOwner(object);
 	}
 
@@ -328,7 +328,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the thread-local instance
 	 */
-	private static OAThreadLocal getOAThreadLocal() {
+	public static OAThreadLocal getOAThreadLocal() {
 		return OARuntime.get().threadLocalService().getThreadLocal(true);
 	}
 
@@ -338,7 +338,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the deadlock count
 	 */
-	private static int getDeadlockCount() {
+	public static int getDeadlockCount() {
 		return OARuntime.get().threadLocalService().getDeadlockCount();
 	}
 
@@ -346,7 +346,7 @@ public class OAThreadLocalDelegate {
 	 * Releases all locks currently held by the thread-local instance for the
 	 * current thread.
 	 */
-	private static void releaseAllLocks() {
+	public static void releaseAllLocks() {
 		OARuntime.get().threadLocalService().releaseAllLocks();
 	}
 
@@ -355,7 +355,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param object the object to unlock
 	 */
-	private static void unlock(Object object) {
+	public static void unlock(Object object) {
 		OARuntime.get().threadLocalService().unlock(object);
 	}
 
@@ -365,7 +365,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if hub-merger updates are active
 	 */
-	private static boolean isHubMergerChanging() {
+	public static boolean isHubMergerChanging() {
 		return OARuntime.get().threadLocalService().isHubMergerChanging();
 	}
 
@@ -374,7 +374,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param b true to enable, false to disable
 	 */
-	private static void setHubMergerChanging(boolean b) {
+	public static void setHubMergerChanging(boolean b) {
 		OARuntime.get().threadLocalService().setHubMergerChanging(b);
 	}
 
@@ -385,7 +385,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param cb the callback to register
 	 */
-    private static void addHubMergerCallback(OAThreadLocalHubMergerCallback cb) {
+    public static void addHubMergerCallback(OAThreadLocalHubMergerCallback cb) {
 		OARuntime.get().threadLocalService().addHubMergerCallback(cb);
     }
     
@@ -395,7 +395,7 @@ public class OAThreadLocalDelegate {
      *
      * @param b true to enable, false to disable
      */
-	private static void setCreateUndoablePropertyChanges(boolean b) {
+	public static void setCreateUndoablePropertyChanges(boolean b) {
 		OARuntime.get().threadLocalService().setCreateUndoablePropertyChanges(b);
 	}
 
@@ -405,7 +405,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if active
 	 */
-	private static boolean getCreateUndoablePropertyChanges() {
+	public static boolean getCreateUndoablePropertyChanges() {
 		return OARuntime.get().threadLocalService().getCreateUndoablePropertyChanges();
 	}
 
@@ -415,14 +415,14 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param compoundName the descriptive name for the compound edit
 	 */
-	private static void startUndoable(String compoundName) {
+	public static void startUndoable(String compoundName) {
 		OARuntime.get().threadLocalService().startUndoable(compoundName);
 	}
 
 	/**
 	 * Completes the current compound undoable sequence for the thread.
 	 */
-	private static void endUndoable() {
+	public static void endUndoable() {
 		OARuntime.get().threadLocalService().endUndoable();
 	}
 
@@ -432,11 +432,11 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param compoundName the compound edit name
 	 */
-	private static void startCompoundUndoable(String compoundName) {
+	public static void startCompoundUndoable(String compoundName) {
 		OARuntime.get().threadLocalService().startCompoundUndoable(compoundName);
 	}
 
-	private static boolean isCreatingCompoundUndoable() {
+	public static boolean isCreatingCompoundUndoable() {
 		return OARuntime.get().threadLocalService().isCreatingCompoundUndoable();
 	}
 	
@@ -444,7 +444,7 @@ public class OAThreadLocalDelegate {
 	 * Convenience wrapper that ends the current compound undoable sequence
 	 * for the thread.
 	 */
-	private static void endCompoundUndoable() {
+	public static void endCompoundUndoable() {
 		OARuntime.get().threadLocalService().endCompoundUndoable();
 	}
 
@@ -454,7 +454,7 @@ public class OAThreadLocalDelegate {
 	 * @param sh the sibling helper
 	 * @return true if added, false if already present
 	 */
-	private static boolean addSiblingHelper(OASiblingHelper sh) {
+	public static boolean addSiblingHelper(OASiblingHelper sh) {
 		return OARuntime.get().threadLocalService().addSiblingHelper(sh);
 	}
 
@@ -463,7 +463,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param sh the sibling helper to remove
 	 */
-	private static void removeSiblingHelper(OASiblingHelper sh) {
+	public static void removeSiblingHelper(OASiblingHelper sh) {
 		OARuntime.get().threadLocalService().removeSiblingHelper(sh);
 	}
 
@@ -473,7 +473,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the list of sibling helpers, or null
 	 */
-	private static ArrayList<OASiblingHelper> getSiblingHelpers() {
+	public static ArrayList<OASiblingHelper> getSiblingHelpers() {
 		return OARuntime.get().threadLocalService().getSiblingHelpers();
 	}
 
@@ -482,14 +482,14 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if one or more sibling helpers exist
 	 */
-	private static boolean hasSiblingHelpers() {
+	public static boolean hasSiblingHelpers() {
 		return OARuntime.get().threadLocalService().hasSiblingHelpers();
 	}
 
 	/**
 	 * Removes all sibling helpers from the current thread.
 	 */
-	private static void clearSiblingHelpers() {
+	public static void clearSiblingHelpers() {
 		OARuntime.get().threadLocalService().clearSiblingHelpers();
 	}
 
@@ -501,7 +501,7 @@ public class OAThreadLocalDelegate {
 	 * @param msLast the timestamp of the previous logged message
 	 * @return the updated timestamp
 	 */
-	private static long throttleLOG(String msg, long msLast) {
+	public static long throttleLOG(String msg, long msLast) {
 		return OARuntime.get().threadLocalService().throttleLOG(msg, msLast);
 	}
 
@@ -510,7 +510,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the formatted stack trace dump
 	 */
-	private static String getAllStackTraces() {
+	public static String getAllStackTraces() {
 		return OARuntime.get().threadLocalService().getAllStackTraces();
 	}
 
@@ -519,7 +519,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the stack trace for the current thread
 	 */
-	private static String getThreadDump() {
+	public static String getThreadDump() {
 		return OARuntime.get().threadLocalService().getThreadDump();
 	}
 
@@ -528,7 +528,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param msg the status message
 	 */
-	private static void setStatus(String msg) {
+	public static void setStatus(String msg) {
 		OARuntime.get().threadLocalService().setStatus(msg);
 	}
 
@@ -537,7 +537,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param ri the request information
 	 */
-	private static void setRemoteRequestInfo(RequestInfo ri) {
+	public static void setRemoteRequestInfo(RequestInfo ri) {
 		OARuntime.get().threadLocalService().setRemoteRequestInfo(ri);
 	}
 
@@ -546,7 +546,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the RequestInfo instance, or null if none exists
 	 */
-	private static RequestInfo getRemoteRequestInfo() {
+	public static RequestInfo getRemoteRequestInfo() {
 		return OARuntime.get().threadLocalService().getRemoteRequestInfo();
 	}
 
@@ -556,7 +556,7 @@ public class OAThreadLocalDelegate {
 	 * @param b true to enable sending, false to disable
 	 * @return the previous send-messages state
 	 */
-	private static boolean setSendMessages(boolean b) {
+	public static boolean setSendMessages(boolean b) {
 		return OARuntime.get().threadLocalService().setSendMessages(b);
 	}
 
@@ -566,7 +566,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param obj the object to assign, or null to clear
 	 */
-	private static void setNotifyObject(Object obj) {
+	public static void setNotifyObject(Object obj) {
 		OARuntime.get().threadLocalService().setNotifyObject(obj);
 	}
 
@@ -574,7 +574,7 @@ public class OAThreadLocalDelegate {
 	 * Notifies the thread waiting on the thread-local notify object, if one
 	 * exists, and clears the notify reference.
 	 */
-	private static void notifyWaitingThread() {
+	public static void notifyWaitingThread() {
 		OARuntime.get().threadLocalService().notifyWaitingThread();
 	}
 
@@ -583,7 +583,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the trigger count
 	 */
-	private static int getRecursiveTriggerCount() {
+	public static int getRecursiveTriggerCount() {
 		return OARuntime.get().threadLocalService().getRecursiveTriggerCount();
 	}
 
@@ -593,7 +593,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param x the trigger count to assign
 	 */
-	private static void setRecursiveTriggerCount(int x) {
+	public static void setRecursiveTriggerCount(int x) {
 		OARuntime.get().threadLocalService().setRecursiveTriggerCount(x);
 	}
 
@@ -603,7 +603,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the hub-listener tree count
 	 */
-	private static int getHubListenerTreeCount() {
+	public static int getHubListenerTreeCount() {
 		return OARuntime.get().threadLocalService().getHubListenerTreeCount();
 	}
 
@@ -613,7 +613,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param b true to increment, false to decrement
 	 */
-	private static void setHubListenerTree(boolean b) {
+	public static void setHubListenerTree(boolean b) {
 		OARuntime.get().threadLocalService().setHubListenerTree(b);
 	}
 
@@ -623,7 +623,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param prop the property name to ignore
 	 */
-	private static void setIgnoreTreeListenerProperty(String prop) {
+	public static void setIgnoreTreeListenerProperty(String prop) {
 		OARuntime.get().threadLocalService().setIgnoreTreeListenerProperty(prop);
 	}
 
@@ -633,7 +633,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the ignored property name
 	 */
-	private static String getIgnoreTreeListenerProperty() {
+	public static String getIgnoreTreeListenerProperty() {
 		return OARuntime.get().threadLocalService().getIgnoreTreeListenerProperty();
 	}
 
@@ -642,14 +642,14 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the sync event count
 	 */
-	private static int getOASyncEventCount() {
+	public static int getOASyncEventCount() {
 		return OARuntime.get().threadLocalService().getOASyncEventCount();
 	}
 
 	/**
 	 * Increments the OA sync event count for the current thread.
 	 */
-	private static void incrOASyncEventCount() {
+	public static void incrOASyncEventCount() {
 		OARuntime.get().threadLocalService().incrOASyncEventCount();
 	}
 
@@ -659,7 +659,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the latest HubEvent or null
 	 */
-	private static HubEvent getCurrentHubEvent() {
+	public static HubEvent getCurrentHubEvent() {
 		return OARuntime.get().threadLocalService().getCurrentHubEvent();
 	}
 
@@ -669,7 +669,7 @@ public class OAThreadLocalDelegate {
 	 * @param he the HubEvent to check
 	 * @return true if the event is active
 	 */
-	private static boolean isOpenHubEvent(HubEvent he) {
+	public static boolean isOpenHubEvent(HubEvent he) {
 		return OARuntime.get().threadLocalService().isOpenHubEvent(he);
 	}
 
@@ -679,7 +679,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the earliest HubEvent or null
 	 */
-	private static HubEvent getOldestHubEvent() {
+	public static HubEvent getOldestHubEvent() {
 		return OARuntime.get().threadLocalService().getOldestHubEvent();
 	}
 
@@ -688,7 +688,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param he the HubEvent to add
 	 */
-	private static void addHubEvent(HubEvent he) {
+	public static void addHubEvent(HubEvent he) {
 		OARuntime.get().threadLocalService().addHubEvent(he);
 	}
 
@@ -698,7 +698,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param he the HubEvent to remove
 	 */
-	private static void removeHubEvent(HubEvent he) {
+	public static void removeHubEvent(HubEvent he) {
 		OARuntime.get().threadLocalService().removeHubEvent(he);
 	}
 
@@ -708,7 +708,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if event sending is active
 	 */
-	private static boolean isSendingEvent() {
+	public static boolean isSendingEvent() {
 		return OARuntime.get().threadLocalService().isSendingEvent();
 	}
 
@@ -722,7 +722,7 @@ public class OAThreadLocalDelegate {
 	 * @param propertyName the property name
 	 * @return true if the event has been previously recorded
 	 */
-	private static boolean hasSentCalcPropertyChange(Hub thisHub, OAObject thisObj, String propertyName) {
+	public static boolean hasSentCalcPropertyChange(Hub thisHub, OAObject thisObj, String propertyName) {
 		return OARuntime.get().threadLocalService().hasSentCalcPropertyChange(thisHub, thisObj, propertyName);
 	}
 
@@ -731,7 +731,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the context object
 	 */
-	private static Object getContext() {
+	public static Object getContext() {
 		return OARuntime.get().threadLocalService().getContext();
 	}
 
@@ -740,7 +740,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param context the context to assign
 	 */
-	private static void setContext(Object context) {
+	public static void setContext(Object context) {
 		OARuntime.get().threadLocalService().setContext(context);
 	}
 
@@ -752,7 +752,7 @@ public class OAThreadLocalDelegate {
 	 * @param b true to enable admin mode, false to disable
 	 * @return the previous admin flag value
 	 */
-	private static boolean setAdmin(boolean b) {
+	public static boolean setAdmin(boolean b) {
 		return OARuntime.get().threadLocalService().setAdmin(b);
 	}
 
@@ -763,7 +763,7 @@ public class OAThreadLocalDelegate {
 	 * @param b true to enable admin mode
 	 * @return the previous admin flag value
 	 */
-	private static boolean setIsAdmin(boolean b) {
+	public static boolean setIsAdmin(boolean b) {
 		return OARuntime.get().threadLocalService().setIsAdmin(b);
 	}
 
@@ -773,7 +773,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if admin mode is enabled
 	 */
-	private static boolean isAdmin() {
+	public static boolean isAdmin() {
 		return getIsAdmin();
 	}
 
@@ -782,7 +782,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if admin mode is enabled
 	 */
-	private static boolean getIsAdmin() {
+	public static boolean getIsAdmin() {
 		return OARuntime.get().threadLocalService().getIsAdmin();
 	}
 
@@ -793,7 +793,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param tl the thread-local instance to copy from
 	 */
-	private static void initialize(OAThreadLocal tl) {
+	public static void initialize(OAThreadLocal tl) {
 		OARuntime.get().threadLocalService().initialize(tl);
 	}
 
@@ -804,7 +804,7 @@ public class OAThreadLocalDelegate {
 	 * @param jackson the new OAJson instance or null
 	 * @return the previous OAJson instance
 	 */
-	private static OAJson getOAJackson() {
+	public static OAJson getOAJackson() {
 		return OARuntime.get().threadLocalService().getOAJackson();
 	}
 
@@ -815,7 +815,7 @@ public class OAThreadLocalDelegate {
 	 * @param jackson the new OAJson instance or null
 	 * @return the previous OAJson instance
 	 */
-	private static OAJson setOAJackson(OAJson jackson) {
+	public static OAJson setOAJackson(OAJson jackson) {
 		return OARuntime.get().threadLocalService().setOAJackson(jackson);
 	}
 	
@@ -825,7 +825,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param hub the hub to register
 	 */
-	private static void addDontAdjustHub(Hub hub) {
+	public static void addDontAdjustHub(Hub hub) {
 		OARuntime.get().threadLocalService().addDontAdjustHub(hub);
 	}
 
@@ -834,7 +834,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param hub the hub to remove
 	 */
-	private static void removeDontAdjustHub(Hub hub) {
+	public static void removeDontAdjustHub(Hub hub) {
 		OARuntime.get().threadLocalService().removeDontAdjustHub(hub);
 	}
 
@@ -846,7 +846,7 @@ public class OAThreadLocalDelegate {
 	 * @param hub the hub to check
 	 * @return true if auto-adjustment is allowed
 	 */
-	private static boolean getCanAdjustHub(Hub hub) {
+	public static boolean getCanAdjustHub(Hub hub) {
 		return OARuntime.get().threadLocalService().getCanAdjustHub(hub);
 	}
 
@@ -856,7 +856,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if sync-thread mode is enabled
 	 */
-	private static boolean isSyncThread() {
+	public static boolean isSyncThread() {
 		return OARuntime.get().threadLocalService().isSyncThread();
 	}
 
@@ -867,7 +867,7 @@ public class OAThreadLocalDelegate {
 	 * @param b true to enable, false to disable
 	 * @return the previous sync-thread flag value
 	 */
-	private static boolean setSyncThread(boolean b) {
+	public static boolean setSyncThread(boolean b) {
 		return OARuntime.get().threadLocalService().setSyncThread(b);
 	}
 	
@@ -878,7 +878,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return true if refreshing
 	 */
-	private static boolean isRefreshing() {
+	public static boolean isRefreshing() {
 		return OARuntime.get().threadLocalService().isRefreshing();
 	}
 
@@ -888,7 +888,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param b true to increment, false to decrement
 	 */
-	private static void setRefreshing(boolean b) {
+	public static void setRefreshing(boolean b) {
 		OARuntime.get().threadLocalService().setRefreshing(b);
 	}
 
@@ -899,7 +899,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the fast-loading hub or null
 	 */
-	private static Hub getFastLoadingHub() {
+	public static Hub getFastLoadingHub() {
 		return OARuntime.get().threadLocalService().getFastLoadingHub();
 	}
 
@@ -911,7 +911,7 @@ public class OAThreadLocalDelegate {
 	 * @param h the hub to inspect
 	 * @return true if the hub reports fast-loading enabled, otherwise false
 	 */
-	private static boolean isFastLoadingHub(Hub h) {
+	public static boolean isFastLoadingHub(Hub h) {
 		return OARuntime.get().threadLocalService().isFastLoadingHub(h);
 	}
 	
@@ -920,7 +920,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param hub the hub to assign or null to clear
 	 */
-	private static void setFastLoadingHub(Hub hub) {
+	public static void setFastLoadingHub(Hub hub) {
 		OARuntime.get().threadLocalService().setFastLoadingHub(hub);
 	}
 
@@ -929,7 +929,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @return the process for the current thread, or null if none is set
 	 */
-	private static OAProcess getProcess() {
+	public static OAProcess getProcess() {
 		return OARuntime.get().threadLocalService().getProcess();
 	}
 
@@ -938,7 +938,7 @@ public class OAThreadLocalDelegate {
 	 *
 	 * @param process the process to assign
 	 */
-	private static void setProcess(OAProcess process) {
+	public static void setProcess(OAProcess process) {
 		OARuntime.get().threadLocalService().setProcess(process);
 	}
 }

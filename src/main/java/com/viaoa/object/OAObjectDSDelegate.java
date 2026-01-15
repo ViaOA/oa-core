@@ -66,7 +66,7 @@ import com.viaoa.runtime.OARuntime;
  * @see OAObjectKeyDelegate
  */
 public class OAObjectDSDelegate {
-	private static final Logger LOG = Logger.getLogger(OAObjectDSDelegate.class.getName());
+	public static final Logger LOG = Logger.getLogger(OAObjectDSDelegate.class.getName());
 
 	/*
 	OAGraph g = getGraph(null, oaObj);

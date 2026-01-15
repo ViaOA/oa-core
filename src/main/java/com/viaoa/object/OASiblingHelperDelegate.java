@@ -70,7 +70,7 @@ public class OASiblingHelperDelegate {
 	 * @param obj               the object whose reference was accessed
 	 * @param linkPropertyName  the accessed link-property name
 	 */
-	private static void onGetObjectReference(final OAObject obj, final String linkPropertyName) {
+	public static void onGetObjectReference(final OAObject obj, final String linkPropertyName) {
 		OAGraph g = getGraph(null, obj);
 		if (g == null) return;
 		g.objects().getOAObjectSiblingService().onGetObjectReference(obj, linkPropertyName);
@@ -85,7 +85,7 @@ public class OASiblingHelperDelegate {
 	 * @param maxAmount  maximum number of siblings to return
 	 * @return an array of sibling object keys
 	 */
-	private static OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount) {
+	public static OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount) {
 		OAGraph g = getGraph(null, mainObject);
 		if (g == null) return null;
 		return g.objects().getOAObjectSiblingService().getSiblings(mainObject, property, maxAmount);
@@ -102,7 +102,7 @@ public class OASiblingHelperDelegate {
 	 * @param hmIgnore   keys already being processed by concurrent requests
 	 * @return an array of sibling object keys
 	 */
-	private static OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount,
+	public static OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount,
 			ConcurrentHashMap<UUID, Boolean> hmIgnore) {
 		OAGraph g = getGraph(null, mainObject);
 		if (g == null) return null;
@@ -128,7 +128,7 @@ public class OASiblingHelperDelegate {
 	 * @param msStarted        start time for enforcing time limits
 	 * @param runCount         recursion/iteration counter
 	 */
-	private static void findSiblings(
+	public static void findSiblings(
 			final ArrayList<OAObjectKey> alFoundObjectKey,
 			final Hub hubRoot, final int startPosHubRoot, final String finderPropertyPath, final String origProperty,
 			final OALinkInfo linkInfo,
@@ -153,7 +153,7 @@ public class OASiblingHelperDelegate {
 	 * @param liToMaster   optional link-restriction for selecting the hub
 	 * @return the hub best suited for sibling evaluation, or null if none match
 	 */
-	private static Hub findBestSiblingHub(OAObject masterObject, OALinkInfo liToMaster) {
+	public static Hub findBestSiblingHub(OAObject masterObject, OALinkInfo liToMaster) {
 		OAGraph g = getGraph(null, masterObject);
 		if (g == null) return null;
 		return g.objects().getOAObjectSiblingService().findBestSiblingHub(masterObject, liToMaster);

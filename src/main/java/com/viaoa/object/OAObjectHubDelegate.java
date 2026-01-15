@@ -56,7 +56,7 @@ import com.viaoa.util.OAArray;
  */
 public class OAObjectHubDelegate {
 
-    private static Logger LOG = Logger.getLogger(OAObjectHubDelegate.class.getName());
+    public static Logger LOG = Logger.getLogger(OAObjectHubDelegate.class.getName());
 
 	/*
 	OAGraph g = getGraph(null, oaObj);
@@ -77,25 +77,25 @@ public class OAObjectHubDelegate {
     // 20120827 might be used later
     // send event to master object when a change is made to one of its reference hubs
     // called by HubEventDelegate when a change happens to a hub
-    private static void fireMasterObjectHubChangeEvent(Hub thisHub, boolean bRefreshFlag) {
+    public static void fireMasterObjectHubChangeEvent(Hub thisHub, boolean bRefreshFlag) {
     	OAGraph g = getGraph(thisHub, null);
     	if (g == null) return;
     	g.objects().getOAObjectHubService().fireMasterObjectHubChangeEvent(thisHub, bRefreshFlag);
     }
 
-    private static boolean isInHub(OAObject oaObj) {
+    public static boolean isInHub(OAObject oaObj) {
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return false;
     	return g.objects().getOAObjectHubService().isInHub(oaObj);
     }
     
-    private static boolean isInHubWithMaster(OAObject oaObj) {
+    public static boolean isInHubWithMaster(OAObject oaObj) {
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return false;
     	return g.objects().getOAObjectHubService().isInHubWithMaster(oaObj);
     }
     
-    private static boolean isInHubWithMaster(OAObject oaObj, Hub hubToIgnore) {
+    public static boolean isInHubWithMaster(OAObject oaObj, Hub hubToIgnore) {
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return false;
     	return g.objects().getOAObjectHubService().isInHubWithMaster(oaObj, hubToIgnore);
@@ -104,7 +104,7 @@ public class OAObjectHubDelegate {
     /**
      * Called by Hub when an OAObject is removed from a Hub.
      */
-    private static void removeHub(final OAObject oaObj, Hub hub, boolean bIsOnHubFinalize) {
+    public static void removeHub(final OAObject oaObj, Hub hub, boolean bIsOnHubFinalize) {
     	OAGraph g = getGraph(hub, oaObj);
     	if (g == null) return;
     	g.objects().getOAObjectHubService().removeHub(oaObj, hub, bIsOnHubFinalize);
@@ -113,13 +113,13 @@ public class OAObjectHubDelegate {
     /**
      * Return all Hubs that this object is a member of. Note: could have null values
      */
-    private static Hub[] getHubReferences(OAObject oaObj) { // Note: this needs to be public
+    public static Hub[] getHubReferences(OAObject oaObj) { // Note: this needs to be public
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return null;
     	return g.objects().getOAObjectHubService().getHubReferences(oaObj);
     }
 
-    private static WeakReference<Hub<?>>[] getHubReferencesNoCopy(OAObject oaObj) { // Note: this needs to be public
+    public static WeakReference<Hub<?>>[] getHubReferencesNoCopy(OAObject oaObj) { // Note: this needs to be public
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return null;
     	return g.objects().getOAObjectHubService().getHubReferencesNoCopy(oaObj);
@@ -127,7 +127,7 @@ public class OAObjectHubDelegate {
     
     /** removed 20180613
     // note:  need to use HubDataDelegate.contains(..) instead, since a certain type of hub wont be stored in obj.weakrefs
-    private static boolean isInHub(OAObject oaObj, Hub hub) {
+    public static boolean isInHub(OAObject oaObj, Hub hub) {
         if (oaObj == null || hub == null) return false;
         WeakReference<Hub<?>>[] refs = oaObj.weakhubs;
         int cnt = 0;
@@ -139,13 +139,13 @@ public class OAObjectHubDelegate {
     }
     **/
     
-    private static int getHubReferenceCount(OAObject oaObj) {
+    public static int getHubReferenceCount(OAObject oaObj) {
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return 0;
     	return g.objects().getOAObjectHubService().getHubReferenceCount(oaObj);
     }
 
-    private static boolean addHub(OAObject oaObj, Hub hub) {
+    public static boolean addHub(OAObject oaObj, Hub hub) {
     	OAGraph g = getGraph(hub, oaObj);
     	if (g == null) return false;
     	return g.objects().getOAObjectHubService().addHub(oaObj, hub);
@@ -154,7 +154,7 @@ public class OAObjectHubDelegate {
     /**
      * Called by Hub when an OAObject is added to a Hub.
      */
-    private static boolean addHub(final OAObject oaObj, final Hub hubOrig, final boolean bAlwaysAddIfM2M) {
+    public static boolean addHub(final OAObject oaObj, final Hub hubOrig, final boolean bAlwaysAddIfM2M) {
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return false;
     	return g.objects().getOAObjectHubService().addHub(oaObj, hubOrig, bAlwaysAddIfM2M);
@@ -165,13 +165,13 @@ public class OAObjectHubDelegate {
      * Used by Hub to read serialized objects. Check to see if this object is already loaded in a hub
      * with same LinkInfo.
      */
-    private static boolean isAlreadyInHub(OAObject oaObj, OALinkInfo li) {
+    public static boolean isAlreadyInHub(OAObject oaObj, OALinkInfo li) {
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return false;
     	return g.objects().getOAObjectHubService().isAlreadyInHub(oaObj, li);
     }
 
-    private static Hub getHub(OAObject oaObj, OALinkInfo li) {
+    public static Hub getHub(OAObject oaObj, OALinkInfo li) {
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return null;
     	return g.objects().getOAObjectHubService().getHub(oaObj, li);
@@ -180,40 +180,40 @@ public class OAObjectHubDelegate {
     /**
      * Used by Hub.add() before adding, quicker then checking array
      */
-    private static boolean isAlreadyInHub(OAObject oaObj, Hub hubFind) {
+    public static boolean isAlreadyInHub(OAObject oaObj, Hub hubFind) {
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return false;
     	return g.objects().getOAObjectHubService().isAlreadyInHub(oaObj, hubFind);
     }
 
 
-    private static boolean getChanged(Hub thisHub, int changedRule, OACascade cascade) {
+    public static boolean getChanged(Hub thisHub, int changedRule, OACascade cascade) {
     	OAGraph g = getGraph(thisHub, null);
     	if (g == null) return false;
     	return g.objects().getOAObjectHubService().getChanged(thisHub, changedRule, cascade);
     }
 
-    private static void saveAll(Hub hub, int iCascadeRule, OACascade cascade) {
+    public static void saveAll(Hub hub, int iCascadeRule, OACascade cascade) {
     	//qqqqqqqqq method was protected
     	OAGraph g = getGraph(hub, null);
     	if (g == null) return;
     	g.objects().getOAObjectHubService().saveAll(hub, iCascadeRule, cascade);
     }
 
-    private static void deleteAll(Hub hub, OACascade cascade) {
+    public static void deleteAll(Hub hub, OACascade cascade) {
     	//qqqqqqqqq method was protected
     	OAGraph g = getGraph(hub, null);
     	if (g == null) return;
     	g.objects().getOAObjectHubService().deleteAll(hub, cascade);
     }
 
-    private static void setMasterObject(Hub hub, OAObject oaObj, OALinkInfo liDetailToMaster) {
+    public static void setMasterObject(Hub hub, OAObject oaObj, OALinkInfo liDetailToMaster) {
     	OAGraph g = getGraph(null, oaObj);
     	if (g == null) return;
     	g.objects().getOAObjectHubService().setMasterObject(hub, oaObj, liDetailToMaster);
     }
 
-    private static void setMasterObject(Hub hub, OAObject oaObj, String nameFromMasterToDetail) {
+    public static void setMasterObject(Hub hub, OAObject oaObj, String nameFromMasterToDetail) {
     	OAGraph g = getGraph(hub, oaObj);
     	if (g == null) return;
     	g.objects().getOAObjectHubService().setMasterObject(hub, oaObj, nameFromMasterToDetail);

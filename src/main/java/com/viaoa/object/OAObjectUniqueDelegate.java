@@ -83,7 +83,7 @@ public class OAObjectUniqueDelegate {
 	}
 	
 	
-    private static final Object Lock = new Object();
+    public static final Object Lock = new Object();
 
     
     
@@ -116,7 +116,7 @@ public class OAObjectUniqueDelegate {
      * @return the matching or newly created {@link OAObject}, or {@code null} if
      *         not found and auto-creation is disabled
      */
-    private static OAObject getUnique(final Class<? extends OAObject> clazz, final String propertyName, final Object uniqueKey, final boolean bAutoCreate) {
+    public static OAObject getUnique(final Class<? extends OAObject> clazz, final String propertyName, final Object uniqueKey, final boolean bAutoCreate) {
 		OAGraph g = OARuntime.get().graph(clazz);
     	if (g == null) return null;
     	return g.objects().getOAObjectUniqueService().getUnique(clazz, propertyName, uniqueKey, bAutoCreate);

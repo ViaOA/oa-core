@@ -49,7 +49,7 @@ import com.viaoa.runtime.OARuntime;
  * OA applications passes through this delegate.</p>
  */
 public class OAObjectCSDelegate {
-	private static Logger LOG = Logger.getLogger(OAObjectCSDelegate.class.getName());
+	public static Logger LOG = Logger.getLogger(OAObjectCSDelegate.class.getName());
 
 	static OAGraph getGraph(Hub hub, OAObject obj) {
 		Class c = null;
@@ -74,7 +74,7 @@ public class OAObjectCSDelegate {
 	 * @return {@code true} if the current thread is a remote execution
 	 *         thread, otherwise {@code false}
 	 */
-    private static boolean isRemoteThread() {
+    public static boolean isRemoteThread() {
     	return OARemoteThreadDelegate.isRemoteThread(); 
     }
 
@@ -88,7 +88,7 @@ public class OAObjectCSDelegate {
      * @return {@code true} if running as a server or standalone runtime;
      *         {@code false} if running as a client
      */
-    private static boolean isServer(OAObject obj) {
+    public static boolean isServer(OAObject obj) {
     	OAGraph g = getGraph(null, obj);
     	if (g == null) return false;
     	return g.objects().getOAObjectCSService().isServer(obj);
@@ -103,7 +103,7 @@ public class OAObjectCSDelegate {
      * @param obj the object whose class is evaluated for workstation mode
      * @return {@code true} if not running as a server; otherwise {@code false}
      */
-    private static boolean isWorkstation(OAObject obj) {
+    public static boolean isWorkstation(OAObject obj) {
     	OAGraph g = getGraph(null, obj);
     	if (g == null) return false;
     	return g.objects().getOAObjectCSService().isWorkstation(obj);
@@ -116,7 +116,7 @@ public class OAObjectCSDelegate {
      *
      * @param obj the newly created object; ignored if {@code null}
      */
-    private static void objectCreated(OAObject obj) {
+    public static void objectCreated(OAObject obj) {
     	OAGraph g = getGraph(null, obj);
     	if (g == null) return;
     	g.objects().getOAObjectCSService().objectCreated(obj);
@@ -130,7 +130,7 @@ public class OAObjectCSDelegate {
      *
      * @param obj the object being finalized; ignored if {@code null}
      */
-    private static void objectFinalized(OAObject obj) {
+    public static void objectFinalized(OAObject obj) {
     	OAGraph g = getGraph(null, obj);
     	if (g == null) return;
     	g.objects().getOAObjectCSService().objectFinalized(obj.getGuid());
@@ -143,7 +143,7 @@ public class OAObjectCSDelegate {
      * @param obj the object used to trigger updates; ignored if {@code null}
      *            or if its GUID is invalid
      */
-    private static void updateObjectsWithoutHubs(OAObject obj) {
+    public static void updateObjectsWithoutHubs(OAObject obj) {
     	OAGraph g = getGraph(null, obj);
     	if (g == null) return;
     	g.objects().getOAObjectCSService().updateObjectsWithoutHubs(obj);
@@ -159,7 +159,7 @@ public class OAObjectCSDelegate {
      * @return the copied object created on the server, or {@code null} if
      *         no remote client is available
      */
-     private static OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
+     public static OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
     	//qqqqqqqqqq method was protected
      	OAGraph g = getGraph(null, oaObj);
      	if (g == null) return null;
@@ -174,7 +174,7 @@ public class OAObjectCSDelegate {
       * @return the GUID supplied by the server
       */
      /*qqqqqqq
-     private static long getGuidFromServer(OAObject obj) {
+     public static long getGuidFromServer(OAObject obj) {
       	OAGraph g = getGraph(null, obj);
       	if (g == null) return 0L;
       	return g.objects().getOAObjectCSService().getGuidFromServer(obj);
@@ -189,7 +189,7 @@ public class OAObjectCSDelegate {
       * @return the GUID supplied by the server
       */
      /*qqqqqqqqqq
-     private static long getGuidFromServer(Class clazz) {
+     public static long getGuidFromServer(Class clazz) {
  		OAGraph g = OARuntime.get().graph(clazz);
  		if (g == null) return 0l;
       	return g.objects().getOAObjectCSService().getGuidFromServer(clazz);
@@ -205,7 +205,7 @@ public class OAObjectCSDelegate {
       * @return {@code true} if the object was saved on the server;
       *         otherwise {@code false}
       */
-    private static boolean save(OAObject oaObj, int iCascadeRule) {
+    public static boolean save(OAObject oaObj, int iCascadeRule) {
     	//qqqqqqqqqq method was protected
       	OAGraph g = getGraph(null, oaObj);
       	if (g == null) return false;
@@ -221,7 +221,7 @@ public class OAObjectCSDelegate {
      * @return {@code true} if deletion should occur locally;
      *         {@code false} if performed on the server
      */
-    private static boolean delete(final OAObject obj) {
+    public static boolean delete(final OAObject obj) {
     	//qqqqqqqq method was protected
       	OAGraph g = getGraph(null, obj);
       	if (g == null) return false;
@@ -235,7 +235,7 @@ public class OAObjectCSDelegate {
      *
      * @param obj the object being deleted; ignored if {@code null}
      */
-    private static void sendDeleteToClients(OAObject obj) {
+    public static void sendDeleteToClients(OAObject obj) {
     	//qqqqqqq method was protected
       	OAGraph g = getGraph(null, obj);
       	if (g == null) return;
@@ -249,7 +249,7 @@ public class OAObjectCSDelegate {
      * @param key the object's key
      * @return the retrieved object, or {@code null} if no remote server exists
      */
-	private static OAObject getServerObject(Class clazz, OAObjectKey key) {
+	public static OAObject getServerObject(Class clazz, OAObjectKey key) {
 		//qqqqqq method was protected
  		OAGraph g = OARuntime.get().graph(clazz);
  		if (g == null) return null;
@@ -264,7 +264,7 @@ public class OAObjectCSDelegate {
 	 * @param linkPropertyName the link property name
 	 * @return the blob bytes if available; otherwise {@code null}
 	 */
-    private static byte[] getServerReferenceBlob(OAObject oaObj, String linkPropertyName) {
+    public static byte[] getServerReferenceBlob(OAObject oaObj, String linkPropertyName) {
 		//qqqqqq method was protected
       	OAGraph g = getGraph(null, oaObj);
       	if (g == null) return null;
@@ -279,7 +279,7 @@ public class OAObjectCSDelegate {
      * @param linkPropertyName the link property name
      * @return the reference value, or {@code null} if unavailable
      */
-    private static Object getServerReference(OAObject oaObj, String linkPropertyName) {
+    public static Object getServerReference(OAObject oaObj, String linkPropertyName) {
 		//qqqqqq method was protected
       	OAGraph g = getGraph(null, oaObj);
       	if (g == null) return null;
@@ -294,7 +294,7 @@ public class OAObjectCSDelegate {
      * @param linkPropertyName the link property name
      * @return the hub instance, or {@code null} if not found
      */
-	private static Hub getServerReferenceHub(OAObject oaObj, String linkPropertyName) {
+	public static Hub getServerReferenceHub(OAObject oaObj, String linkPropertyName) {
       	OAGraph g = getGraph(null, oaObj);
       	if (g == null) return null;
       	return g.objects().getOAObjectCSService().getServerReferenceHub(oaObj, linkPropertyName);
@@ -309,7 +309,7 @@ public class OAObjectCSDelegate {
 	 * @param select optional select used when loading data
 	 * @return {@code true} if executed on the server; otherwise {@code false}
 	 */
-	private static boolean loadReferenceHubDataOnServer(Hub thisHub, OASelect select) {
+	public static boolean loadReferenceHubDataOnServer(Hub thisHub, OASelect select) {
 		//qqqqqq method was protected
       	OAGraph g = getGraph(thisHub, null);
       	if (g == null) return false;
@@ -326,7 +326,7 @@ public class OAObjectCSDelegate {
 	 * @param oldValue the previous value
 	 * @param newValue the new value
 	 */
-    private static void fireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
+    public static void fireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
     	//qqqqqqqqqq method was protected
       	OAGraph g = getGraph(null, obj);
       	if (g == null) return;
@@ -344,7 +344,7 @@ public class OAObjectCSDelegate {
      * @param newValue the new value
      * @deprecated
      */
-    private static void fireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue) {
+    public static void fireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue) {
         // qqqqqqqqqqqqqqqqqqqqqqq  Important NOTE: dont send, it is now using beforePropertyChange
         if (true || false) return; //qqqqqqqqqqqqqq
 

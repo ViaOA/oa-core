@@ -55,7 +55,7 @@ import com.viaoa.xml.OAXMLWriter;
  */
 public class OAObjectXMLDelegate {
 
-	private static Logger LOG = Logger.getLogger(OAObjectXMLDelegate.class.getName());
+	public static Logger LOG = Logger.getLogger(OAObjectXMLDelegate.class.getName());
 
 	/*
 	OAGraph g = getGraph(null, oaObj);
@@ -85,7 +85,7 @@ public class OAObjectXMLDelegate {
 	 * @param bKeyOnly whether to write key-only references
 	 * @param cascade the cascade controller used for recursion checks
 	 */
-	private static void write(final OAObject oaObj, final OAXMLWriter ow, final String tagName, boolean bKeyOnly, final OACascade cascade) {
+	public static void write(final OAObject oaObj, final OAXMLWriter ow, final String tagName, boolean bKeyOnly, final OACascade cascade) {
 		write(oaObj, ow, tagName, bKeyOnly, cascade, false);
 		
 		OAGraph g = getGraph(null, oaObj);
@@ -114,7 +114,7 @@ public class OAObjectXMLDelegate {
 	 * @param cascade cascade controller for recursion and key-only decisions
 	 * @param bWriteClassName whether to include the class attribute
 	 */
-	private static void write(final OAObject oaObj, final OAXMLWriter ow, String tagName, boolean bKeyOnly, final OACascade cascade,
+	public static void write(final OAObject oaObj, final OAXMLWriter ow, String tagName, boolean bKeyOnly, final OACascade cascade,
 			final boolean bWriteClassName) {
 	}
 

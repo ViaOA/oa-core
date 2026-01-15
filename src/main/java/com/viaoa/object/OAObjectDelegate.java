@@ -89,7 +89,7 @@ import com.viaoa.util.OAString;
 
 public class OAObjectDelegate {
 
-	private static Logger LOG = Logger.getLogger(OAObjectDelegate.class.getName());
+	public static Logger LOG = Logger.getLogger(OAObjectDelegate.class.getName());
 
 	/**
 	 * Reserved property name representing an object's "new" lifecycle state.
