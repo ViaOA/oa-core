@@ -932,8 +932,8 @@ public class HubService {
 		if (dm == null || dm.getDetailToMasterLinkInfo() == null) {
 			return;
 		}
-		OAObject[] adds = HubAddRemoveDelegate.getAddedObjects(thisHub);
-		OAObject[] removes = HubAddRemoveDelegate.getRemovedObjects(thisHub);
+		OAObject[] adds = getHubAddRemoveService().getAddedObjects(thisHub);
+		OAObject[] removes = getHubAddRemoveService().getRemovedObjects(thisHub);
 
 		boolean b = false;
 		// cross update opposite hub vecAdd/Remove

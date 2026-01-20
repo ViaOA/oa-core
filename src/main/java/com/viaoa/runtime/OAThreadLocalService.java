@@ -3,6 +3,7 @@ package com.viaoa.runtime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -440,80 +441,101 @@ public class OAThreadLocalService {
 		}
 	}
 	
+
+	/**
+	 * qqqqqqqqqqq
+	 */
+	public OAObjectSerializer getCurrentObjectSerializer() {
+		List<OAObjectSerializer> al = getObjectSerializers();
+		if (al == null) return null;
+		int x = al.size();
+		if (x == 0) return null;
+		return al.get(x-1);
+	}
+	
 	
 	/**
+	 * qqqqqqqqqqq
 	 * Returns the current thread's object serializer, or null if serialization
 	 * stripping is not active.
 	 *
 	 * @return the serializer or null
 	 */
-	public OAObjectSerializer getObjectSerializer() {
-		OAObjectSerializer si;
+	public List<OAObjectSerializer> getObjectSerializers() {
+		List<OAObjectSerializer> al;
 		if (aiTotalObjectSerializer.get() == 0) {
-			si = null;
+			al = null;
 		} else {
-			si = getObjectSerializer(getThreadLocal(false));
+			al = getObjectSerializers(getThreadLocal(false));
 		}
-		return si;
+		return al;
 	}
 
 	/**
 	 * Returns the object serializer assigned to the specified thread-local
 	 * instance.
-	 *
+	 * qqqqqqqqqqqq
 	 * @param ti the thread-local instance
 	 * @return the serializer or null
 	 */
-	protected OAObjectSerializer getObjectSerializer(OAThreadLocal ti) {
-		if (ti == null) {
-			return null;
-		}
-		return ti.getObjectSerializer();
+	protected List<OAObjectSerializer> getObjectSerializers(OAThreadLocal ti) {
+		if (ti == null) return null;
+		return ti.getObjectSerializers();
 	}
 	
 	/**
 	 * Sets the object serializer for the current thread and updates global
 	 * serializer counters.
-	 *
+	 * qqqqqqqqqqqqqqqq
 	 * @param si the serializer to assign, or null to clear it
 	 */
-	public void setObjectSerializer(OAObjectSerializer si) {
-		// LOG.finer("OAObjectSerializer="+(si != null));
-		setObjectSerializer(getThreadLocal(si != null), si);
+	public void addObjectSerializer(OAObjectSerializer si) {
+		if (si == null) return;
+		addObjectSerializer(getThreadLocal(true), si);
 	}
 	
 	/**
 	 * Assigns the serializer to the specified thread-local instance and updates
 	 * the global serializer counter when transitioning to or from a null state.
-	 *
+	 * qqqqqqqqqqq
 	 * @param ti the thread-local instance
 	 * @param si the serializer to assign
 	 */
-	protected void setObjectSerializer(OAThreadLocal ti, OAObjectSerializer si) {
-		if (ti == null) {
+	protected void addObjectSerializer(OAThreadLocal ti, OAObjectSerializer si) {
+		if (ti == null || si == null) {
 			return;
 		}
-		if (ti.getObjectSerializer() == si) {
-			return;
-		}
-		OAObjectSerializer old = ti.getObjectSerializer();
-		if (si == old) {
-			return; // no change
-		}
-		ti.setObjectSerializer(si);
+		ti.addObjectSerializer(si);
 
-		if (old == null || si == null) { // dont update total if it has already been called for this ti
-			int x;
-			if (si != null) {
-				x = aiTotalObjectSerializer.incrementAndGet();
-			} else {
-				x = aiTotalObjectSerializer.decrementAndGet();
-			}
-			if (x > 25 || x < 0) {
-				msObjectSerializer = throttleLOG("TotalObjectSerializeInterface =" + x, msObjectSerializer);
-			}
+		int x = aiTotalObjectSerializer.incrementAndGet();
+		if (x > 50) {
+			msObjectSerializer = throttleLOG("TotalObjectSerializeInterface =" + x, msObjectSerializer);
 		}
 	}
+
+	/**
+	 * qqqqqqqqqqqqqqqq
+	 */
+	public void removeObjectSerializer(OAObjectSerializer si) {
+		if (si == null) return;
+		removeObjectSerializer(getThreadLocal(false), si);
+	}
+	
+	/**
+	 * qqqqqqqqqqq
+	 */
+	protected void removeObjectSerializer(OAThreadLocal ti, OAObjectSerializer si) {
+		if (ti == null || si == null) {
+			return;
+		}
+		ti.removeObjectSerializer(si);
+
+		int x = aiTotalObjectSerializer.decrementAndGet();
+		if (x < 0) {
+			msObjectSerializer = throttleLOG("TotalObjectSerializeInterface =" + x, msObjectSerializer);
+		}
+	}
+	
 	
 	/**
 	 * Returns whether the specified thread-local instance has message

@@ -4046,7 +4046,13 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	    }
 
 	    public void setGuid(OAObject obj, UUID guid) {
-	        obj.guid = guid;
+	    	if (guid != null) {
+	    		if (obj.guid != null) throw new RuntimeException("OAObject guid can not be changed once it's been assigned.");
+	    	}
+	    	else {
+	    		if (obj.weakhubs != null && obj.weakhubs.length > 0) throw new RuntimeException("OAObject guid can't be set to null if it's in Hub.");
+	    	}
+	    	obj.guid = guid;
 	    }
 
 	    public boolean isNew(OAObject obj) {

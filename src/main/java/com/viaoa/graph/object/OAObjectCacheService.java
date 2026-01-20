@@ -873,9 +873,8 @@ public class OAObjectCacheService {
 				}
 			}
 			else {
-				if (!bGuidFound) objectCache.removeObject(objFound);
-				objectCache.updateObject(obj, key, clazz);
 			}
+			bSendAddEvent = false;
 			bAddToSelectAll = false;
 		}
 

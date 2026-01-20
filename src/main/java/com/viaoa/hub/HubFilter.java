@@ -32,6 +32,8 @@ import com.viaoa.filter.OALikeFilter;
 import com.viaoa.filter.OANotEqualFilter;
 import com.viaoa.filter.OANotLikeFilter;
 import com.viaoa.filter.OATrueFilter;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.hub.HubAddRemoveService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFinder;
@@ -1060,7 +1062,9 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 					// clear needs to be called, so that each oaObj.weakHub[] will be updated correctly
 					bIgnoreSettingAO = true;
 
-					HubAddRemoveDelegate.clear(hub, false, false); // false:dont set AO to null,  false: dont send newList event
+					final OAGraph og = OARuntime.get().graph(hub);
+					final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+					srvcHubAddRemove.clear(hub, false, false); // false:dont set AO to null,  false: dont send newList event
 
 					objTemp = null;
 					bIgnoreSettingAO = false;
@@ -1193,7 +1197,9 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		}
 	    
 		// 20231109 faster way to add with calling contains
-		HubAddRemoveDelegate.add(hub, obj, bIsInitialzing);
+		final OAGraph og = OARuntime.get().graph(hub);
+		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		srvcHubAddRemove.add(hub, obj, bIsInitialzing);
 		// was:  hub.add(obj);
 		
 		if (bShareAO && hubMaster != null) {

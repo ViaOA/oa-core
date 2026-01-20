@@ -508,11 +508,11 @@ public class OARemoteMultiplexerServer {
             }
 
             try {
-                OARuntime.get().threadLocals().setObjectSerializer(session.oaObjectSerializer);
+                OARuntime.get().threadLocals().addObjectSerializer(session.oaObjectSerializer);
                 oos.writeObject(resp);
             }
             finally {
-                OARuntime.get().threadLocals().setObjectSerializer(null);
+                OARuntime.get().threadLocals().removeObjectSerializer(session.oaObjectSerializer);
             }
             oos.flush();
             oos.close(); // 20250318
@@ -838,11 +838,11 @@ public class OARemoteMultiplexerServer {
             oos.writeAsciiString(ri.methodInfo.methodNameSignature);
             
             try {
-                OARuntime.get().threadLocals().setObjectSerializer(session.oaObjectSerializer);
+                OARuntime.get().threadLocals().addObjectSerializer(session.oaObjectSerializer);
                 oos.writeObject(ri.args);
             }
             finally {
-                OARuntime.get().threadLocals().setObjectSerializer(null);
+                OARuntime.get().threadLocals().removeObjectSerializer(session.oaObjectSerializer);
             }
             oos.flush();
             oos.close(); // 20250318
@@ -2206,11 +2206,11 @@ public class OARemoteMultiplexerServer {
          */
         public void writeOnQueueSocket(final RequestInfo ri) throws Exception {
             try {
-                OARuntime.get().threadLocals().setObjectSerializer(oaObjectSerializer);
+                OARuntime.get().threadLocals().addObjectSerializer(oaObjectSerializer);
                 _writeOnQueueSocketX(ri);
             }
             finally {
-                OARuntime.get().threadLocals().setObjectSerializer(null);
+                OARuntime.get().threadLocals().removeObjectSerializer(oaObjectSerializer);
             }
         }
         
@@ -2331,11 +2331,11 @@ public class OARemoteMultiplexerServer {
             hmAsyncQueueSocket.put(asyncQueueName, vsi);
 
             try {
-                OARuntime.get().threadLocals().setObjectSerializer(oaObjectSerializer);
+                OARuntime.get().threadLocals().addObjectSerializer(oaObjectSerializer);
                 _writeQueueMessages(cque, vsi, startQuePos);
             }
             finally {
-                OARuntime.get().threadLocals().setObjectSerializer(null);
+                OARuntime.get().threadLocals().removeObjectSerializer(oaObjectSerializer);
                 cque.unregisterSession(connectionId);
                 releaseSocketForStoC(vsocket);
             }

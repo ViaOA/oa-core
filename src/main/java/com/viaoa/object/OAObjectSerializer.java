@@ -15,17 +15,14 @@
  */
 package com.viaoa.object;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.Deflater;
@@ -35,7 +32,6 @@ import java.util.zip.InflaterInputStream;
 
 import com.viaoa.comm.io.IODummy;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAObject.FriendAccess;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.runtime.OARuntime;
@@ -165,12 +161,6 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 */
 	private transient OAObjectSerializerCallback callback;
 
-	/**
-	 * Holds the previously active serializer assigned to thread-local
-	 * storage while this serializer temporarily becomes the active one.
-	 */
-	private transient OAObjectSerializer holdOAObjectSerializer; 
-	
 	/**
 	 * Global counter incremented for each write operation. Used only for
 	 * diagnostic logging to trace serialization activity.
@@ -513,15 +503,26 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * @param oaObj the object about to be serialized
 	 */
 	void beforeSerialize(OAObject oaObj) {
+		_beforeSerialize(oaObj, true, 0);
+	}
+	private void _beforeSerialize(OAObject oaObj, final boolean bCallOthers, final int cntx) {
 		/* test        
 		indent++;
 		String msg = "";
 		for (int i=0; i<indent; i++) msg += "  ";
 		System.out.println(msg+""+oaObj.getClass()+" "+oaObj.getObjectKey().getGuid());
 		 */
-		totalObjectsWritten++;
-		
-        if (holdOAObjectSerializer != null) holdOAObjectSerializer.beforeSerialize(oaObj);
+		if (bCallOthers) {
+			totalObjectsWritten++;
+			List<OAObjectSerializer> al = OARuntime.get().threadLocals().getObjectSerializers();
+			if (al != null) {
+				for (int i=al.size()-2; i >= 0; i--) {
+					OAObjectSerializer os = al.get(i);
+					if (os == this) continue;
+		        	os._beforeSerialize(oaObj, false, cntx+1);
+				}
+			}
+		}
 		
 		if (callback != null) {
 			// save and push current settings into stack
@@ -548,13 +549,24 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * @param obj the object that has just been serialized
 	 */
 	void afterSerialize(OAObject obj) {
+		_afterSerialize(obj, true, 0);
+	}
+	private void _afterSerialize(OAObject obj, final boolean bCallOthers, final int cntx) {
 		// indent--;
-	    
-        if (holdOAObjectSerializer != null) holdOAObjectSerializer.afterSerialize(obj);
-	    
+		if (bCallOthers) {
+			List<OAObjectSerializer> al = OARuntime.get().threadLocals().getObjectSerializers();
+			if (al != null) {
+				for (int i=al.size()-2; i >= 0; i--) {
+					OAObjectSerializer os = al.get(i);
+		        	os._afterSerialize(obj, false, cntx+1);
+				}
+			}
+		}
+        
 		if (callback != null) {
 			callback.afterSerialize(obj);
 		}
+
 		stackObject.pop();
 		if (callback != null) {
 			Tuple<String[], String[]> t = stack.pop();
@@ -823,10 +835,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * @throws IOException if the wrapper cannot be written
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-	    
-	    this.holdOAObjectSerializer = OARuntime.get().threadLocals().getObjectSerializer();
         try {
-            OARuntime.get().threadLocals().setObjectSerializer(this);
+            OARuntime.get().threadLocals().addObjectSerializer(this);
             _writeObject(stream);
         } 
         catch (Throwable e) {
@@ -835,8 +845,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
             throw new IOException("OAObjectSerializer.writeObject exception", e);
         }
         finally {
-            OARuntime.get().threadLocals().setObjectSerializer(this.holdOAObjectSerializer);
-            this.holdOAObjectSerializer = null;
+            OARuntime.get().threadLocals().removeObjectSerializer(this);
         }
 	}
 

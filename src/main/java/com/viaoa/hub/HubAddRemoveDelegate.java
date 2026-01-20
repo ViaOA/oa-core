@@ -40,7 +40,7 @@ import com.viaoa.util.OAString;
  */
 public class HubAddRemoveDelegate {
 
-	private static Logger LOG = Logger.getLogger(HubAddRemoveDelegate.class.getName());
+	public static Logger LOG = Logger.getLogger(HubAddRemoveDelegate.class.getName());
 
 	/*
 	OAGraph g = getGraph(hub, null);

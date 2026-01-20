@@ -16,6 +16,7 @@
 package com.viaoa.object;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.viaoa.hub.*;
 import com.viaoa.json.OAJson;
@@ -91,7 +92,7 @@ public class OAThreadLocal {
 	 * The serializer currently active on this thread. Used when serializing
 	 * objects for remote calls, sync messages, or internal wrappers.
 	 */
-	private OAObjectSerializer objectSerializer;
+	private List<OAObjectSerializer> alObjectSerializer;
 
 	// flag to know if hub events can be ignored, since hubMerger is doing an internal operation.
 	//      Otherwise, there would be a lot of extra unneeded events.
@@ -223,13 +224,20 @@ public class OAThreadLocal {
 		this.cacheAddMode = cacheAddMode;
 	}
 
-	public OAObjectSerializer getObjectSerializer() {
-		return objectSerializer;
+	public List<OAObjectSerializer> getObjectSerializers() {
+		return alObjectSerializer;
 	}
 
-	public void setObjectSerializer(OAObjectSerializer objectSerializer) {
-		this.objectSerializer = objectSerializer;
+	public void addObjectSerializer(OAObjectSerializer objectSerializer) {
+		if (alObjectSerializer == null) alObjectSerializer = new ArrayList();
+		alObjectSerializer.add(objectSerializer);
 	}
+	
+	public void removeObjectSerializer(OAObjectSerializer objectSerializer) {
+		if (alObjectSerializer == null) return;
+		alObjectSerializer.remove(objectSerializer);
+	}
+	
 
 	public int getSuppressCSMessages() {
 		return suppressCSMessages;

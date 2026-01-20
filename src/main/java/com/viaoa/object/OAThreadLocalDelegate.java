@@ -23,6 +23,7 @@ import com.viaoa.json.OAJson;
 import com.viaoa.process.OAProcess;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.transaction.OATransaction;
 
 /**
@@ -145,7 +146,11 @@ public class OAThreadLocalDelegate {
 	 * @return the serializer or null
 	 */
 	public static OAObjectSerializer getObjectSerializer() {
-		return OARuntime.get().threadLocalService().getObjectSerializer();
+		List<OAObjectSerializer> al = OARuntime.get().threadLocalService().getObjectSerializers();
+		if (al == null) return null;
+		int x = al.size();
+		if (x == 0) return null;
+		return al.get(x-1);
 	}
 
 	/**
@@ -155,8 +160,16 @@ public class OAThreadLocalDelegate {
 	 * @param si the serializer to assign, or null to clear it
 	 */
 	public static void setObjectSerializer(OAObjectSerializer si) {
-		// LOG.finer("OAObjectSerializer="+(si != null));
-		OARuntime.get().threadLocalService().setObjectSerializer(si);
+		if (si == null) {
+			OAThreadLocalService ts = OARuntime.get().threadLocalService();
+			List<OAObjectSerializer> al = ts.getObjectSerializers();
+			if (al == null) return;
+			int x = al.size();
+			if (x > 0) ts.removeObjectSerializer(al.get(x-1));
+		}
+		else {
+			OARuntime.get().threadLocalService().addObjectSerializer(si);
+		}
 	}
 
 	/**

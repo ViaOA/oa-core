@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.hub.HubAddRemoveService;
 import com.viaoa.graph.object.OAObjectCSService;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectDeleteService;
@@ -431,7 +432,9 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		final OAObjectCSService srvcObjectCS = OARuntime.get().graph(masterObjectClass).objects().getOAObjectCSService();
 		Hub<OAObject> hubNew = srvcObjectCS.getServerReferenceHub(obj, hubPropertyName);
 
-		HubAddRemoveDelegate.refresh(hub, hubNew);
+		final OAGraph og = OARuntime.get().graph(hub);
+		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		srvcHubAddRemove.refresh(hub, hubNew);
 	}
 
 	/**
