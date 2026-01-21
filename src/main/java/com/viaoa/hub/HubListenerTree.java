@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAMany;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectAnnotationService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
@@ -199,7 +200,8 @@ public class HubListenerTree {
 				// 20180531
 				if (tn.liReverse == null) {
 					Class c = tn.parent.hub.getObjectClass();
-		    		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+	        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
+		    		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 					OALinkInfo li = srvcObjectInfo.getLinkInfo(c, tn.property);
 					tn.liReverse = srvcObjectInfo.getReverseLinkInfo(li);
 				}
@@ -256,7 +258,8 @@ public class HubListenerTree {
 							if (lis[0].getCalculated()) {
 								objz = lis[0].getValue((OAObject) obja);
 							} else {
-								OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) obja).objects().getOAObjectPropertyService();
+				        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obja);
+								OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 								objz = srvcOAObjectProperty.getProperty((OAObject) obja, lis[0].getName());
 							}
 							if (OACompare.isEqual(obj, objz)) {
@@ -353,7 +356,8 @@ public class HubListenerTree {
 
 			if (liReverse == null) {
 				Class c = parent.hub.getObjectClass();
-	    		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
+	    		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OALinkInfo li = srvcObjectInfo.getLinkInfo(c, property);
 				liReverse = srvcObjectInfo.getReverseLinkInfo(li);
 			}
@@ -367,7 +371,8 @@ public class HubListenerTree {
 				String propName = null;
 				if (liReverse != null) {
 					propName = liReverse.getName();
-		    		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(oaObj).objects().getOAObjectInfoService();
+	        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+		    		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 					OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj);
 					m = srvcObjectInfo.getMethod(oi, "get" + propName, 0);
 				}
@@ -384,7 +389,8 @@ public class HubListenerTree {
 					// need to go up to parent to find all objects that have a reference to "obj"
 
 					for (Object objx : parent.hub) {
-						final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) objx).objects().getOAObjectReflectService();
+		        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) objx);
+						final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 						Object objz = srvcOAObjectReflect.getProperty((OAObject) objx, this.property);
 						if (objz == obj || lastRemoveObject == obj) {
 							// found a parent object that has a reference to child
@@ -511,7 +517,8 @@ public class HubListenerTree {
 		if (hl == null) {
 			return;
 		}
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(root.hub.getObjectClass()).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(root.hub);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(root.hub.getObjectClass());
 		String[] calcProps = null;
 		for (OACalcInfo ci : oi.getCalcInfos()) {
@@ -713,8 +720,8 @@ public class HubListenerTree {
 					if (Hub.class.equals(hubClass)) {
 						OAMany om = m.getAnnotation(OAMany.class);
 						if (om != null) {
-							OAGraph og = OARuntime.get().graph(hubClass);
-							final OAObjectAnnotationService srvcObjectAnnotation = og.objects().getOAObjectAnnotationService();
+			        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubClass);
+							final OAObjectAnnotationService srvcObjectAnnotation = og.getOAObjectService().getOAObjectAnnotationService();
 							hubClass = srvcObjectAnnotation.getHubObjectClass(om, m);
 						} else {
 							String s = ("getAnnotation OAMany=null for prop method=get" + property + ", hub=" + hub + ", prop="

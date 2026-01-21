@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.*;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -518,7 +519,8 @@ public class HubData implements java.io.Serializable {
             oi = hdx.objectInfo;
             if (oi != null) return oi;
         }
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(objClass).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objClass);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
         oi = srvcObjectInfo.getObjectInfo(objClass);
         if (objClass != null && hubDatax != null) hubDatax.objectInfo = oi;
         return oi;

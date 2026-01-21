@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
@@ -89,7 +90,8 @@ public class OATriggerMethodListener implements OATriggerListener {
         this.clazz = clazz;
         this.method = method;
         this.bOnlyUseLoadedData = bOnlyUseLoadedData;
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
         oi = srvcObjectInfo.getObjectInfo(clazz);
     }
     
@@ -125,8 +127,8 @@ public class OATriggerMethodListener implements OATriggerListener {
         };
         finder.setUseOnlyLoadedData(bOnlyUseLoadedData);
 
-    	final OAGraph og = OARuntime.get().graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
         
         Hub h = srvcObjectCache.getSelectAllHub(clazz);
         if (h != null && bOnlyUseLoadedData) {

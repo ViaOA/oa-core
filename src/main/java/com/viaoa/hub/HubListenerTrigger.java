@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFinder;
@@ -245,7 +246,8 @@ public class HubListenerTrigger<T> {
 
 		boolean bWasAdded = addListener(hl);
 
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(hub.getObjectClass()).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(hub.getObjectClass());
 		String[] calcProps = null;
 		for (OACalcInfo ci : oi.getCalcInfos()) {
@@ -471,7 +473,8 @@ public class HubListenerTrigger<T> {
 
 			if (lis.length == 0) {
 				// could be a calcProp
-				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(hub.getObjectClass()).objects().getOAObjectInfoService();
+        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAObjectInfo oi = srvcObjectInfo.getObjectInfo(hub.getObjectClass());
 				String[] calcProps = null;
 				for (OACalcInfo ci : oi.getCalcInfos()) {

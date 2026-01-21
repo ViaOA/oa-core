@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.hub.HubEvent;
@@ -1258,7 +1259,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @return recursive link definition, or null.
 	 */
 	public OALinkInfo getRecursiveLinkInfo(int type) {
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(thisClass).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(thisClass);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		return srvcObjectInfo.getRecursiveLinkInfo(this, type);
 	}
 
@@ -1379,7 +1381,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			OAPerformance.LOG.fine(s);
 		}
 
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(thisClass).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(thisClass);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		for (String triggerPropPath : trigger.propertyPaths) {
 			if (OAString.isEmpty(triggerPropPath)) {
 				continue;
@@ -1544,7 +1547,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			return;
 		}
 
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(thisClass).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(thisClass);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		for (String spp : trigger.propertyPaths) {
 			OAPropertyPath pp = new OAPropertyPath(thisClass, spp);
 
@@ -1827,7 +1831,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 					return;
 				}
 
-				final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(objRoot).objects().getOAObjectKeyService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(objRoot);
+				final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 				UUID g = srvcObjectKey.getKey(objRoot).getGuid();
 				if (hs.contains(g)) {
 					return;

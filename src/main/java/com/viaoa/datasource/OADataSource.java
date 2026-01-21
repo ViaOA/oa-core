@@ -17,6 +17,7 @@ package com.viaoa.datasource;
 
 import java.util.Vector;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.object.OAObject;
@@ -167,28 +168,32 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return matching object or null
 	 */
 	public static Object getObject(Class clazz, String id) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(clazz).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey key = srvcObjectKey.createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using an int ID value. */
 	public static Object getObject(Class clazz, int id) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(clazz).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey key = srvcObjectKey.createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using a long ID value. */
 	public static Object getObject(Class clazz, long id) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(clazz).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey key = srvcObjectKey.createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using an arbitrary ID value. */
 	public static Object getObject(Class clazz, Object id) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(clazz).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey key = srvcObjectKey.createObjectKey(clazz, id);
 		return getObject(clazz, key);
 	}
@@ -213,7 +218,8 @@ public abstract class OADataSource implements OADataSourceInterface {
 		if (clazz == null || key == null) {
 			return null;
 		}
-    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
 		OADataSource ds = getDataSource(clazz);
 		if (ds == null) {

@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 
@@ -29,9 +30,9 @@ public final class OARuntime {
 		this.remoteThreadService = new OARemoteThreadService(this);
 		this.dataSourceService = new OADataSourceService(this);
 		
-		graphDefault = new OAGraph(this, null);
+		graphDefault = new OAGraphImpl(this, null);
 		try {
-			graphDefault.init();
+			((OAGraphImpl)graphDefault).init();
 		}
 		catch (Exception e) {}
 	}
@@ -40,16 +41,19 @@ public final class OARuntime {
 		return runtime;
 	}
 
-	
-	
-	
-	public OAGraph createGraph(final Package pkg) {
+	public static OAGraph createGraph(final Package pkg) {
+		return runtime.createGraphInternal(pkg);
+	}
+	private OAGraph createGraphInternal(final Package pkg) {
 		if (pkg == null) return null;
 		final String pn = pkg.getName();
-		return createGraph(pn);
+		return createGraphInternal(pn);
 	}	
 	
-	public OAGraph createGraph(final String pkgName) {
+	public static OAGraph createGraph(final String pkgName) {
+		return runtime.createGraphInternal(pkgName);
+	}
+	private OAGraph createGraphInternal(final String pkgName) {
 		if (pkgName == null) return null;
 
 		OAGraph og = hmPackageGraph.get(pkgName);
@@ -58,42 +62,52 @@ public final class OARuntime {
 		RuntimeException exRt = hmRuntimeException.get(pkgName);
 		if (exRt != null) throw exRt;
 		
-		og = new OAGraph(this, pkgName);
+		og = new OAGraphImpl(this, pkgName);
 		hmPackageGraph.put(pkgName, og);
 		hmPackageGraph2.clear();
 			
 		try {
-			og.init();
+			((OAGraphImpl)og).init();
 		} catch (ClassNotFoundException | IOException e) {
 			RuntimeException ex = new RuntimeException("Could not initialize OAGraph, package name is " + pkgName, e);
-			hmPackageGraph.remove(pkgName, og);
+			hmPackageGraph.remove(pkgName);
 			hmRuntimeException.put(pkgName, ex);
 			throw ex;
 		}
 		return og;
 	}
 
-	
-	public OAGraph graph(final OAObject obj) {
+	public static OAGraph graph(final OAObject obj) {
+		return runtime.graphInternal(obj);
+	}	
+	private OAGraph graphInternal(final OAObject obj) {
 		Class c = obj == null ? null : obj.getClass();
-		return graph(c);
+		return graphInternal(c);
 	}
 
-	public OAGraph graph(final Hub hub) {
+	public static OAGraph graph(final Hub hub) {
+		return runtime.graphInternal(hub);
+	}
+	private OAGraph graphInternal(final Hub hub) {
 		Class c = hub == null ? null : hub.getObjectClass();
-		return graph(c);
+		return graphInternal(c);
 	}
 
-	public OAGraph graph(final Hub hub, final OAObject obj) {
+	public static OAGraph graph(final Hub hub, final OAObject obj) {
+		return runtime.graphInternal(hub, obj);
+	}
+	private OAGraph graphInternal(final Hub hub, final OAObject obj) {
 		Class c = hub == null ? null : hub.getObjectClass();
 		if (c == null && obj != null) {
 			c = obj.getClass();
 		}
-		return graph(c);
+		return graphInternal(c);
 	}
 	
-	
-	public OAGraph graph(final Class<?> clazz) {
+	public static OAGraph graph(final Class<?> clazz) {
+		return runtime.graphInternal(clazz);
+	}
+	private OAGraph graphInternal(final Class<?> clazz) {
 	    Class<?> classFound = clazz;
 
 	    Class<?> classSuper = (classFound == null) ? null : classFound.getSuperclass();
@@ -120,18 +134,25 @@ public final class OARuntime {
 	    }
 
 	    String pn = (classFound == null) ? null : classFound.getPackage().getName();
-	    return graph(pn);
+	    return graphInternal(pn);
 	}
 	
 	
 	
+	public static OAGraph graph(final Package pkg) {
+		return runtime.graphInternal(pkg);
+	}
 	
-	public OAGraph graph(final Package pkg) {
+	private OAGraph graphInternal(final Package pkg) {
 		String pn = pkg == null ? null : pkg.getName();
-		return graph(pn);
+		return graphInternal(pn);
 	}	
+
+	public static OAGraph graph(String pkgName) {
+		return runtime.graphInternal(pkgName);
+	}
 	
-	public OAGraph graph(String pkgName) {
+	private OAGraph graphInternal(String pkgName) {
 		if (pkgName == null) pkgName = "";
 
 		OAGraph og = hmPackageGraph.get(pkgName);
@@ -160,34 +181,61 @@ public final class OARuntime {
 
 		return graphDefault;
 	}	
+
+	public static void assignGraph(String pkgName, OAGraph graph) {
+		runtime.assignGraphInternal(pkgName, graph);
+	}
 	
-	public void assignGraph(String pkgName, OAGraph graph) {
+	private void assignGraphInternal(String pkgName, OAGraph graph) {
 		if (pkgName == null) pkgName = "";
 		
 		if (graph == null) hmPackageGraph.remove(pkgName);
 		else hmPackageGraph.put(pkgName, graph);
 		hmPackageGraph2.clear();
 	}
+
+	/**
+	 * qqqqqqqqqqqqq same as default graph
+	 */
+	public static OAGraph graph() {
+		return runtime.graphInternal("");
+	}
+
+	/**
+	 * qqqqqqqqqqqqq 
+	 */
+	public static OAGraph defaultGraph() {
+		return runtime.graphInternal("");
+	}
 	
-	public OAThreadLocalService threadLocalService() {
-		return threadLocalService;
+	/**
+	 * qqqqqqqqqqqqq 
+	 */
+	public static void setDefaultGraph(OAGraph graph) {
+		runtime.assignGraphInternal("", graph);
 	}
-	public OAThreadLocalService threadLocals() {
-		return threadLocalService;
+	
+	
+	
+	public static OAThreadLocalService threadLocalService() {
+		return runtime.threadLocalService;
+	}
+	public static OAThreadLocalService threadLocals() {
+		return runtime.threadLocalService;
 	}
 
-	public OARemoteThreadService remoteThreadService() {
-		return remoteThreadService;
+	public static OARemoteThreadService remoteThreadService() {
+		return runtime.remoteThreadService;
 	}
-	public OARemoteThreadService remoteThreads() {
-		return remoteThreadService;
+	public static OARemoteThreadService remoteThreads() {
+		return runtime.remoteThreadService;
 	}
 
-	public OADataSourceService dataSourceService() {
-		return dataSourceService;
+	public static OADataSourceService dataSourceService() {
+		return runtime.dataSourceService;
 	}
-	public OADataSourceService dataSources() {
-		return dataSourceService;
+	public static OADataSourceService dataSources() {
+		return runtime.dataSourceService;
 	}
 	
 	
@@ -228,21 +276,6 @@ public final class OARuntime {
 		}
 */		
 	}
-	
-	
-	
-	
-	
-	
-	
-// NEXT qqqqqqqqqqqqqqqqqq	
-	
-// OADataSource  (OADatasourceDelegate, OADatasourceDelegate)
-// Scheduling	
-	
-	
-	
-	
 	
 	
 }

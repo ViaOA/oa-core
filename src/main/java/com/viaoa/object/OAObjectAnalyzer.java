@@ -18,6 +18,7 @@ package com.viaoa.object;
 import java.util.HashSet;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectHubService;
 import com.viaoa.hub.Hub;
@@ -56,14 +57,15 @@ public class OAObjectAnalyzer {
      * maintained for summary inspection.</p>
      */
     public void load() {
-    	final OAGraph og = OARuntime.get().graph((Class) null);
-    	final OAObjectCacheService ocs = og.objects().getOAObjectCacheService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph();
+    	final OAObjectCacheService ocs = og.getOAObjectService().getOAObjectCacheService();
     	
     	
-        for (Class cs : og.objects().getOAObjectCacheService().getClasses()) {
+        for (Class cs : og.getOAObjectService().getOAObjectCacheService().getClasses()) {
             System.out.println("Starting class="+cs.getSimpleName()+", total="+ocs.getTotal(cs));
             
-			final OAObjectHubService srvcObjectHub = OARuntime.get().graph(cs).objects().getOAObjectHubService();
+    		og = (OAGraphImpl) OARuntime.get().graph(cs);
+    		final OAObjectHubService srvcObjectHub = og.getOAObjectService().getOAObjectHubService();
             OACallback cb = new OACallback() {
                 @Override
                 public boolean updateObject(Object object) {
@@ -82,7 +84,7 @@ public class OAObjectAnalyzer {
                     return true;
                 }
             };
-            og.objects().getOAObjectCacheService().callback(cs, cb);
+            og.getOAObjectService().getOAObjectCacheService().callback(cs, cb);
         }    
         int xx = hsHub.size();
         xx++;

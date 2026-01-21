@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OAGroupBy;
 import com.viaoa.object.OALinkInfo;
@@ -1478,7 +1479,8 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			b = true;
 		} else if (propertyPath.indexOf('.') < 0) {
 			// propertyPath could be a hub
-			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(classFrom).objects().getOAObjectInfoService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(classFrom);
+			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(classFrom);
 			OALinkInfo li = oi.getLinkInfo(propertyPath);
 			if (li == null || li.getType() == li.ONE) {

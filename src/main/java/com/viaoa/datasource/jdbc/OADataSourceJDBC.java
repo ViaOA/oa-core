@@ -40,6 +40,7 @@ import com.viaoa.datasource.jdbc.delegate.InsertDelegate;
 import com.viaoa.datasource.jdbc.delegate.SelectDelegate;
 import com.viaoa.datasource.jdbc.delegate.UpdateDelegate;
 import com.viaoa.datasource.jdbc.delegate.VerifyDelegate;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.object.OALinkInfo;
@@ -320,7 +321,8 @@ public class OADataSourceJDBC extends OADataSource {
 	 * @param excludeProperties properties to exclude
 	 */
 	protected void _update(OAObject object, String[] includeProperties, String[] excludeProperties) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(object).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey key = srvcObjectKey.getKey(object);
 		LOG.finer("object=" + object.getClass() + ", key=" + key);
 		UpdateDelegate.update(this, object, includeProperties, excludeProperties);
@@ -362,7 +364,8 @@ public class OADataSourceJDBC extends OADataSource {
 	 * @param object the object to insert
 	 */
 	protected void _insert(OAObject object) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(object).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey key = srvcObjectKey.getKey(object);
 		LOG.finer("object=" + object.getClass() + ", key=" + key + ", isNew=" + object.isNew());
 		InsertDelegate.insert(this, object);
@@ -376,7 +379,8 @@ public class OADataSourceJDBC extends OADataSource {
 	 * @param obj the object to insert without references
 	 */
 	public @Override void insertWithoutReferences(OAObject obj) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey key = srvcObjectKey.getKey(obj);
 		LOG.fine("object=" + obj.getClass() + ", key=" + key + ", isNew=" + obj.isNew());
 		InsertDelegate.insertWithoutReferences(this, obj);
@@ -389,7 +393,8 @@ public class OADataSourceJDBC extends OADataSource {
 	 * @param object the object to delete
 	 */
 	public @Override void delete(OAObject object) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(object).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey key = srvcObjectKey.getKey(object);
 		LOG.fine("object=" + object.getClass().getSimpleName() + ", key=" + key);
 		DeleteDelegate.delete(this, object);
@@ -420,7 +425,8 @@ public class OADataSourceJDBC extends OADataSource {
 	 * @param propFromMaster the property defining the relationship
 	 */
 	public @Override void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(masterObject).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(masterObject);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey key = srvcObjectKey.getKey(masterObject);
 		LOG.finer("object=" + masterObject.getClass().getSimpleName() + ", key=" + key);
 		UpdateDelegate.updateMany2ManyLinks(this, masterObject, adds, removes, propFromMaster);

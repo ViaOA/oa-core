@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDataDelegate;
@@ -151,7 +152,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         if (hub == null) throw new RuntimeException("hub can not be null");
         clazz = hub.getObjectClass();
         wrHub = new WeakReference<Hub<T>>(hub);
-    	final OAGraph og = OARuntime.get().graph(clazz);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
 
         final boolean bEmptyHub = (hub.getSize() == 0);
         
@@ -189,7 +190,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             }
         };        
 
-        og.objects().getOAObjectCacheService().addListener(clazz, cacheListener);
+        og.getOAObjectService().getOAObjectCacheService().addListener(clazz, cacheListener);
         
         if (bEmptyHub) {
             reselectAndRefresh();            
@@ -416,8 +417,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         if (bSetLoading) hub.setLoading(true);
         boolean b = HubDataDelegate.setLoadingAllData(hub, true);
         
-    	final OAGraph og = OARuntime.get().graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
     	
         try {
             // need to check loaded objects 
@@ -491,8 +492,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             OARemoteThreadDelegate.sendMessages(true);
         }
         
-    	final OAGraph og = OARuntime.get().graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
     	srvcObjectCache.visit(clazz, new OACallback() {
             @Override
             public boolean updateObject(Object obj) {
@@ -649,8 +650,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             trigger = null;
         }
         if (cacheListener == null) {
-        	final OAGraph og = OARuntime.get().graph(clazz);
-        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+        	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
         	        	
         	srvcObjectCache.removeListener(clazz, cacheListener);
             cacheListener = null;

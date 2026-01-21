@@ -25,6 +25,7 @@ import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.graph.object.OAObjectPropertyService;
@@ -196,7 +197,6 @@ public class UpdateDelegate {
 		Vector vecParam = null;
 		Column[] columns = table.getColumns();
 		StringBuffer sbSet = new StringBuffer(128);
-		;
 		StringBuffer sbWhere = new StringBuffer(128);
 		String value;
 		DBMetaData dbmd = ds.getDBMetaData();
@@ -236,11 +236,12 @@ public class UpdateDelegate {
 
 			// 20130318 check for blob
 			if (column.type == java.sql.Types.BLOB) {
-		    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(oaObj).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+		    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj);
 				OAPropertyInfo pi = oi.getPropertyInfo(column.propertyName);
 				if (pi != null && pi.isBlob()) {
-					OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(oaObj).objects().getOAObjectPropertyService();
+					OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 					Object obj = srvcOAObjectProperty.getProperty(oaObj, column.propertyName, true, true);
 					if (obj == OANotExist.instance) {
 						continue; // not loaded, no change to it
@@ -353,7 +354,8 @@ public class UpdateDelegate {
     				}
     			}
     
-    			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(oaObj).objects().getOAObjectReflectService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+    			final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
     			OAObjectKey key = srvcOAObjectReflect.getPropertyObjectKey(oaObj, links[i].propertyName);
     			Object[] ids;
     			if (key != null) {

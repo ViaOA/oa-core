@@ -24,6 +24,7 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.ManyToMany;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
@@ -117,10 +118,10 @@ public class OAPreLoader {
 		}
 		ArrayList al = null;
 		try {
-			OARuntime.get().threadLocals().setLoading(true);
+			OARuntime.threadLocals().setLoading(true);
 			al = _load(linkInfos);
 		} finally {
-			OARuntime.get().threadLocals().setLoading(false);
+			OARuntime.threadLocals().setLoading(false);
 		}
 		return al;
 	}
@@ -209,7 +210,8 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) objOne).objects().getOAObjectPropertyService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) objOne);
+			OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 			Object objOneHub = srvcOAObjectProperty.getProperty((OAObject) objOne, liMany.getName(), false, true);
 			if (objOneHub instanceof Hub) {
 				hub = (Hub) objOneHub;
@@ -259,10 +261,10 @@ public class OAPreLoader {
 			return;
 		}
 
-    	OAGraph og = OARuntime.get().graph(classA);
-    	final OAObjectCacheService srvcObjectCacheA = og.objects().getOAObjectCacheService();
-    	og = OARuntime.get().graph(classB);
-    	final OAObjectCacheService srvcObjectCacheB = og.objects().getOAObjectCacheService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(classA);
+    	final OAObjectCacheService srvcObjectCacheA = og.getOAObjectService().getOAObjectCacheService();
+    	og = (OAGraphImpl) OARuntime.graph(classB);
+    	final OAObjectCacheService srvcObjectCacheB = og.getOAObjectService().getOAObjectCacheService();
 		
 		for (ManyToMany mm : alManyToMany) {
 			Object objA = srvcObjectCacheA.get(classA, mm.ok1);
@@ -273,7 +275,8 @@ public class OAPreLoader {
 
 			if (!liA.getPrivateMethod()) {
 				Hub hub;
-				OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) objA).objects().getOAObjectPropertyService();
+				og = (OAGraphImpl) OARuntime.graph((OAObject) objA);
+				OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 				Object objx = srvcOAObjectProperty.getProperty((OAObject) objA, liA.getName(), false, true);
 				if (objx instanceof Hub) {
 					hub = (Hub) objx;
@@ -286,7 +289,8 @@ public class OAPreLoader {
 
 			if (!liB.getPrivateMethod()) {
 				Hub hub;
-				OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) objB).objects().getOAObjectPropertyService();
+				og = (OAGraphImpl) OARuntime.graph((OAObject) objB);
+				OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 				Object objx = srvcOAObjectProperty.getProperty((OAObject) objB, liB.getName(), false, true);
 				if (objx instanceof Hub) {
 					hub = (Hub) objx;
@@ -319,7 +323,8 @@ public class OAPreLoader {
 	 */
 	protected ArrayList load(Class clazz, final OALinkInfo linkInfo) {
 		OASelect sel = new OASelect<>(clazz);
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
 		OALinkInfo liRecursive = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
 
@@ -404,7 +409,8 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) fParent).objects().getOAObjectPropertyService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) fParent);
+			OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 			Object objx = srvcOAObjectProperty.getProperty((OAObject) fParent, liMany.getName(), false, true);
 			if (objx instanceof Hub) {
 				hub = (Hub) objx;

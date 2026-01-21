@@ -23,6 +23,7 @@ import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.hub.CustomHubFilter;
 import com.viaoa.hub.Hub;
@@ -319,7 +320,8 @@ public class OAPropertyPath<F> {
 		String pp = "";
 		for (int i = 0; i < linkInfos.length; i++) {
 			OALinkInfo li = linkInfos[i];
-			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(li.getToClass()).objects().getOAObjectInfoService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(li.getToClass());
+			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 			OALinkInfo liRev = srvcObjectInfo.getReverseLinkInfo(li);
 			if (!bAllowPrivateLinks && liRev.getPrivateMethod()) {
 				return null;
@@ -976,7 +978,8 @@ public class OAPropertyPath<F> {
 				clazz = substituteClass;
 			}
 
-			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
 			final OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, propertyName);
 			if (li != null) {
@@ -1238,7 +1241,8 @@ public class OAPropertyPath<F> {
 				if (li == null || !li.getRecursive()) {
 					continue;
 				}
-				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(li.getToClass()).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(li.getToClass());
+				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(li.getToClass());
 
 				OALinkInfo lix;

@@ -23,6 +23,7 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.objectcache.ObjectCacheIterator;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCSService;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectInfoService;
@@ -416,8 +417,8 @@ public class OADataSourceClient extends OADataSource {
 		}
 
 		if (filter != null) {
-        	final OAGraph og = OARuntime.get().graph(clazz);
-        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+        	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
         	if (srvcObjectCache.getSelectAllHub(clazz) != null) {
 				return true;
 			}
@@ -538,7 +539,8 @@ public class OADataSourceClient extends OADataSource {
 		OAObjectKey whereKey = null;
 		if (whereObject != null) {
 			whereClass = whereObject.getClass();
-	    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(whereObject).objects().getOAObjectKeyService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(whereObject);
+	    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 			whereKey = srvcObjectKey.getKey(whereObject);
 		}
 
@@ -630,8 +632,8 @@ public class OADataSourceClient extends OADataSource {
 			OAObject whereObject, String propertyFromWhereObject, String extraWhere,
 			int max, OAFilter filter, boolean bDirty) {
 		if (filter != null) {
-        	final OAGraph og = OARuntime.get().graph(selectClass);
-        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(selectClass);
+        	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 			
 			if (srvcObjectCache.getSelectAllHub(selectClass) != null) {
 				ObjectCacheIterator it = new ObjectCacheIterator(selectClass, filter);
@@ -644,7 +646,8 @@ public class OADataSourceClient extends OADataSource {
 		OAObjectKey whereKey = null;
 		if (whereObject != null) {
 			whereClass = whereObject.getClass();
-	    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(whereObject).objects().getOAObjectKeyService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(whereClass);
+	    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 			whereKey = srvcObjectKey.getKey(whereObject);
 		}
 
@@ -683,8 +686,8 @@ public class OADataSourceClient extends OADataSource {
 			int max, OAFilter filter, boolean bDirty) {
 		if (filter != null) {
 			
-        	final OAGraph og = OARuntime.get().graph(selectClass);
-        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(selectClass);
+        	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 			
 			if (srvcObjectCache.getSelectAllHub(selectClass) != null) {
 				ObjectCacheIterator it = new ObjectCacheIterator(selectClass, filter);
@@ -888,7 +891,8 @@ public class OADataSourceClient extends OADataSource {
 				if (obj == null) {
 					break;
 				}
-				OAObjectCSService srvcObjectCS = OARuntime.get().graph((OAObject) obj).objects().getOAObjectCSService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj.getClass());
+				OAObjectCSService srvcObjectCS = og.getOAObjectService().getOAObjectCSService();
 				srvcObjectCS.updateObjectsWithoutHubs((OAObject) obj);
                 hubReadAhead.add(obj);
 			}
@@ -912,8 +916,8 @@ public class OADataSourceClient extends OADataSource {
 			}
 			Object obj = null;
 			if (key != null) {
-	        	final OAGraph og = OARuntime.get().graph(clazz);
-	        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+	        	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 				obj = srvcObjectCache.get(clazz, key);
 				if (obj == null) {
 					// not on this system, need to get from server
@@ -995,7 +999,8 @@ public class OADataSourceClient extends OADataSource {
 	 * @param propertyNameFromMaster  the property representing the relationship
 	 */
 	public @Override void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propertyNameFromMaster) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(masterObject).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(masterObject);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		getRemoteClient().datasource(UPDATE_MANY2MANY_LINKS, new Object[] { masterObject.getClass(),
 				srvcObjectKey.getKey(masterObject), adds, removes, propertyNameFromMaster });
 	}
@@ -1010,7 +1015,8 @@ public class OADataSourceClient extends OADataSource {
 	 */
 	@Override
 	public byte[] getPropertyBlobValue(OAObject obj, String propertyName) {
-    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		Object objx = getRemoteClient().datasource(	GET_PROPERTY,
 													new Object[] { obj.getClass(), srvcObjectKey.getKey(obj), propertyName });
 		if (objx instanceof byte[]) {

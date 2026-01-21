@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -189,8 +190,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             }
         };        
 
-    	final OAGraph og = OARuntime.get().graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
         
     	srvcObjectCache.addListener(clazz, cacheListener);
         refresh();
@@ -289,8 +290,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     public void refresh() {
         // need to check loaded objects 
 
-    	final OAGraph og = OARuntime.get().graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
     	
     	srvcObjectCache.visit(clazz, new OACallback() {
             @SuppressWarnings("unchecked")
@@ -350,8 +351,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
                     };
                     finder.setUseOnlyLoadedData(false);
 
-                	final OAGraph og = OARuntime.get().graph(clazz);
-                	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+            		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+                	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
                     
                 	srvcObjectCache.visit(clazz, new OACallback() {
                         @SuppressWarnings("unchecked")
@@ -393,8 +394,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             trigger = null;
         }
         if (cacheListener == null) {
-        	final OAGraph og = OARuntime.get().graph(clazz);
-        	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+        	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
         	srvcObjectCache.removeListener(clazz, cacheListener);
             cacheListener = null;
         }

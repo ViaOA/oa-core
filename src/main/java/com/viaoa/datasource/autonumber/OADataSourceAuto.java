@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectLockService;
@@ -305,7 +306,8 @@ public class OADataSourceAuto extends OADataSource {
 				return nn;
 			}
 
-	    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+	    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 			final OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
 			final String[] props = oi.getIdProperties();
 
@@ -365,8 +367,8 @@ public class OADataSourceAuto extends OADataSource {
 				nn.setNext(id + 1);
 			}
 			// 20141201
-	    	final OAGraph og = OARuntime.get().graph(oaObj.getClass());
-	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+	    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 			Object test = srvcObjectCache.getObject(oaObj.getClass(), id);
 			//was: Object test = OAObjectReflectDelegate.getObject(oaObj.getClass(), id);
 			if (test == null) {

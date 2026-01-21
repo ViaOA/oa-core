@@ -47,7 +47,7 @@ import com.viaoa.runtime.OARuntime;
  * @see OAMethodInfo
  */
 public class OAAnnotationDelegate {
-	public static Logger LOG = Logger.getLogger(OAAnnotationDelegate.class.getName());
+	private static Logger LOG = Logger.getLogger(OAAnnotationDelegate.class.getName());
 
 	/**
 	 * Updates the specified {@link OAObjectInfo} by processing all OA-related
@@ -60,7 +60,7 @@ public class OAAnnotationDelegate {
 	 * @param oi    the metadata object to update
 	 * @param clazz the class whose annotations will be processed
 	 */
-	public static void update(OAObjectInfo oi, Class clazz) {
+	private static void update(OAObjectInfo oi, Class clazz) {
 		if (clazz == null) return;
 		OAGraph og = OARuntime.get().graph(clazz);
 		if (og == null) return;
@@ -75,7 +75,7 @@ public class OAAnnotationDelegate {
 	 * @param oi    the metadata object to update
 	 * @param clazz the class whose trigger annotations will be processed
 	 */
-	public static void update2(OAObjectInfo oi, Class clazz) {
+	private static void update2(OAObjectInfo oi, Class clazz) {
 		if (clazz == null) return;
 		OAGraph og = OARuntime.get().graph(clazz);
 		if (og == null) return;
@@ -94,7 +94,7 @@ public class OAAnnotationDelegate {
 	 * @param method     the accessor method returning a {@link Hub}
 	 * @return the class of objects stored in the hub, or {@code null} if unresolved
 	 */
-	public static Class getHubObjectClass(OAMany annotation, Method method) {
+	private static Class getHubObjectClass(OAMany annotation, Method method) {
 		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((Package) null).objects().getOAObjectReflectService();
 		Class cx = srvcOAObjectReflect.getHubObjectClass(method);
 		if (cx == null && annotation != null) {
@@ -117,7 +117,7 @@ public class OAAnnotationDelegate {
 	 * @param classes  the classes whose annotations define table and column structure
 	 * @throws Exception if required annotations are missing or inconsistent
 	 */
-	public static void update(Database database, Class[] classes) throws Exception {
+	private static void update(Database database, Class[] classes) throws Exception {
 		if (classes == null) {
 			return;
 		}
@@ -142,7 +142,7 @@ public class OAAnnotationDelegate {
 	 *
 	 * @param oi the metadata object whose import-match mappings will be populated
 	 */
-	public static void updateImportMatches(OAObjectInfo oi) {
+	private static void updateImportMatches(OAObjectInfo oi) {
 		if (oi == null) return;
 		Class c = oi.getForClass();
 		if (c == null) return;
@@ -161,7 +161,7 @@ public class OAAnnotationDelegate {
 	 * @param s the method name
 	 * @return the derived property name
 	 */
-	public static String getPropertyName(String s) {
+	private static String getPropertyName(String s) {
 		return getPropertyName(s, true);
 	}
 
@@ -175,7 +175,7 @@ public class OAAnnotationDelegate {
 	 * @param bToLower whether to lowercase the first character of the extracted name
 	 * @return the derived property name
 	 */
-	public static String getPropertyName(String s, boolean bToLower) {
+	private static String getPropertyName(String s, boolean bToLower) {
 		boolean b = true;
 		if (s.startsWith("get")) {
 			s = s.substring(3);
@@ -204,7 +204,7 @@ public class OAAnnotationDelegate {
 	 *
 	 * @param oi the metadata object whose link foreign-key information will be updated
 	 */
-	public static void updateLinkFkeys(final OAObjectInfo oi) {
+	private static void updateLinkFkeys(final OAObjectInfo oi) {
 		if (oi == null) return;
 		Class c = oi.getForClass();
 		if (c == null) return;

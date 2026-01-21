@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectEnumService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.*;
@@ -267,7 +268,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			c = hub.getObjectClass();
 			if (!hubMaster.getObjectClass().equals(c)) {
 				// find property to use
-				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
+				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(c);
 				List al = oi.getLinkInfos();
 				for (int i = 0; i < al.size(); i++) {
@@ -282,7 +284,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			}
 		}
 		if (property != null) {
-			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(hub.getObjectClass()).objects().getOAObjectInfoService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		    getMethod = srvcObjectInfo.getMethod(hub.getObjectClass(), "get" + property);
 			//was: getMethod = OAReflect.getMethod(hub.getObjectClass(), "get" + property);
 			if (getMethod == null) {
@@ -482,7 +485,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
 		Class cz = hub.getObjectClass();
 
-		final OAObjectEnumService srvcObjectEnum = OARuntime.get().graph(cz).objects().getOAObjectEnumService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(cz);
+		final OAObjectEnumService srvcObjectEnum = og.getOAObjectService().getOAObjectEnumService();
 		Hub<String> hubEnumValues = srvcObjectEnum.getDisplayNameValues(cz, property);
 		int max = hubEnumValues.size();
 		

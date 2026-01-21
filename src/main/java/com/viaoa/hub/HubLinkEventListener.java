@@ -15,6 +15,7 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectHubService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.*;
@@ -85,7 +86,8 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	    // 20130708
         OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(linkToHub);
         if (li != null && li.getPrivateMethod()) {
-    		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(li.getToClass()).objects().getOAObjectInfoService();
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(li.getToClass());
+    		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
             if (srvcObjectInfo.isMany2Many(li)) {
                 bUpdateWeakHub = true;
             }
@@ -132,7 +134,8 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	    if (bUpdateWeakHub) {
     	    for (Object objx : linkToHub) {
     	        OAObject oaObj = (OAObject) objx;
-				final OAObjectHubService srvcObjectHub = OARuntime.get().graph(oaObj).objects().getOAObjectHubService();
+        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+				final OAObjectHubService srvcObjectHub = og.getOAObjectService().getOAObjectHubService();
     	        if (!srvcObjectHub.addHub(oaObj, linkToHub, true)) {
     	            break;
     	        }

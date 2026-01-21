@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.hub.HubAddRemoveService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OACascade;
@@ -851,7 +852,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         OALinkInfo lastLinkInfo = null; // 20131009
 
         for (int i = 0;; i++) {
-			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
             OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
             OALinkInfo recursiveLinkInfo = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
             Node recursiveNode = null;
@@ -1887,8 +1889,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     if (OARuntime.get().threadLocals().isHubMergerChanging()) { // 20120102
                         // 20120612 dont send event, unless there is a recursive prop, which needs to
                         // have recursives nodes updated
-        				final OAGraph og = OARuntime.get().graph(hubCombined);
-        				final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+                		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubCombined);
+        				final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
                         srvcHubAddRemove.remove(hubCombined, obj, false, bIsRecusive, false, false, false, false);
                     } else {
                         if (hubCombined != null) {
@@ -1908,8 +1910,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (node == nodeRoot && bIncludeRootHub) {
                 if (!isUsed(obj)) {
                     if (OARuntime.get().threadLocals().isHubMergerChanging()) {
-        				final OAGraph og = OARuntime.get().graph(hubCombined);
-        				final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+                		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubCombined);
+        				final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
                         srvcHubAddRemove.remove(hubCombined, obj, false, bIsRecusive, false, false, false, false);
                     } else {
                         if (hubCombined != null) {
@@ -1963,8 +1965,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     if (ref != null) {
                         if (!isUsed(ref, child.node)) {
                             if (OARuntime.get().threadLocals().isHubMergerChanging()) { // 20120102
-                				final OAGraph og = OARuntime.get().graph(child.hub);
-                				final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+                        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(child.hub);
+                				final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
                 				srvcHubAddRemove.remove(child.hub, ref, false, false, false, false, false, false);
                             } else {
                                 child.hub.remove(ref);

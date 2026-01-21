@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.lang.reflect.*;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThreadDelegate;
@@ -277,7 +278,8 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         Class c = hub.getObjectClass();
         if (c == null) return;
         
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
         Method met = srvcObjectInfo.getMethod(c, "set" + propertyName);
         //was: Method met = OAReflect.getMethod(c, "set"+propertyName);
         if (met == null) {

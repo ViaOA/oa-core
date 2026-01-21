@@ -34,6 +34,7 @@ import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectHubService;
 import com.viaoa.graph.object.OAObjectInfoService;
@@ -406,7 +407,8 @@ public class OASyncClient {
 				// this will "ask" for additional data "around" the requested property
 				bGetSibs = true;
 				// send siblings to return back with same prop
-				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(masterObject.getClass()).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(masterObject);
+				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				li = srvcObjectInfo.getLinkInfo(masterObject.getClass(), propertyName);
 
 				int max;
@@ -426,8 +428,8 @@ public class OASyncClient {
 					max *= 3;
 				}
 
-				final OAGraph og = OARuntime.get().graph(masterObject);
-		    	final OAObjectSiblingService srvcObjectSibling = og.objects().getOAObjectSiblingService();
+		    	final OAObjectSiblingService srvcObjectSibling = og.getOAObjectService().getOAObjectSiblingService();
+				final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 				
 				siblingKeys = srvcObjectSibling.getSiblings(masterObject, propertyName, max, hmIgnoreSibling);
 
@@ -439,7 +441,6 @@ public class OASyncClient {
 				}
 				*/
 
-				final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(masterObject).objects().getOAObjectReflectService();
 				additionalMasterProperties = srvcOAObjectReflect.getUnloadedReferences(masterObject, false, propertyName, false);
 
 				try {
@@ -485,8 +486,8 @@ public class OASyncClient {
 						continue;
 					}
 
-					final OAGraph og = OARuntime.get().graph(masterObject.getClass());
-			    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(masterObject);
+			    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 					OAObject obj = srvcObjectCache.getObject(masterObject.getClass(), entry.getKey());
 					if (obj == null) {
 						continue;
@@ -494,7 +495,7 @@ public class OASyncClient {
 
 					if (value instanceof Hub) {
 						Hub hub = (Hub) value;
-						final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(masterObject.getClass()).objects().getOAObjectInfoService();
+						final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 						if (li == null) {
 							li = srvcObjectInfo.getLinkInfo(masterObject.getClass(), propertyName);
 						}
@@ -504,7 +505,7 @@ public class OASyncClient {
 							}
 						}
 					}
-	                final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(obj).objects().getOAObjectPropertyService();
+	                final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 	                srvcOAObjectProperty.setProperty(obj, propertyName, value); // this will also set the hub.masterObj+li
 				}
 			}
@@ -515,11 +516,13 @@ public class OASyncClient {
 
 		if (result instanceof Hub) {
 			Hub hub = (Hub) result;
-			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(masterObject.getClass()).objects().getOAObjectInfoService();
+			
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(masterObject);
+			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 			if (li == null) {
 				li = srvcObjectInfo.getLinkInfo(masterObject.getClass(), propertyName);
 			}
-            final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(masterObject).objects().getOAObjectPropertyService();
+            final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 			if (srvcObjectInfo.cacheHub(li, hub)) {
 				srvcOAObjectProperty.setProperty(masterObject, propertyName, new WeakReference(hub));
 			} else {
@@ -1027,7 +1030,8 @@ public class OASyncClient {
     public void objectCreated(OAObject obj) {
         if (obj == null) return;
         UUID guid = obj.getGuid();
-        if (OARuntime.get().graph(obj).objects().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+        if (og.getOAObjectService().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
         
         hmNewObjectsNotYetSent.put(guid, 0L);
         try {
@@ -1161,9 +1165,10 @@ public class OASyncClient {
 		if (obj == null) return;
         final UUID guid = obj.getGuid();
         
-        if (OARuntime.get().graph(obj).objects().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+        if (og.getOAObjectService().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
 	    
-		final OAObjectHubService srvcObjectHub = OARuntime.get().graph(obj).objects().getOAObjectHubService();
+		final OAObjectHubService srvcObjectHub = og.getOAObjectService().getOAObjectHubService();
         final boolean b = srvcObjectHub.isInHubWithMaster(obj);
         if (b) {
             if (hmObjectsWithoutHubs.get(guid) == null) return;
@@ -1209,7 +1214,8 @@ public class OASyncClient {
 							rsi = OASyncClient.this.getRemoteSession();
 						}
 						if (rsi != null) {
-							final OAObjectHubService srvcObjectHub = OARuntime.get().graph(obj).objects().getOAObjectHubService();
+							final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+							final OAObjectHubService srvcObjectHub = og.getOAObjectService().getOAObjectHubService();
 						    boolean b = srvcObjectHub.isInHubWithMaster(obj);
 						    rsi.updateObjectsWithoutHubs(obj.getClass(), obj.getObjectKey(), b);
 						}

@@ -26,6 +26,7 @@ import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectDSDelegate;
@@ -271,7 +272,8 @@ public class InsertDelegate {
     				continue; // one2many, or one2one (where Key is the fkey)
     			}
     
-    			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(oaObj).objects().getOAObjectReflectService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+    			final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
     			OAObjectKey key = srvcOAObjectReflect.getPropertyObjectKey(oaObj, links[i].propertyName);
     			if (key == null) {
     				continue; // null

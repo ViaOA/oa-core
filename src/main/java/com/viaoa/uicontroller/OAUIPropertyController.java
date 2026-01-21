@@ -15,6 +15,7 @@
  */
 package com.viaoa.uicontroller;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCallbackService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -111,7 +112,8 @@ public class OAUIPropertyController extends OAUIBaseController {
         if (!super.isEnabled()) return false;
         if (obj == null) return false;
         
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(obj).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
         OAObjectCallback eq = srvcObjectCallback.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getPropertyName());
         return eq.getAllowed();
     }
@@ -123,7 +125,8 @@ public class OAUIPropertyController extends OAUIBaseController {
     public boolean isVisible(OAObject obj) {
         if (!super.isVisible()) return false;
         
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(getHub(), obj).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(getHub(), obj);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
         OAObjectCallback eq = srvcObjectCallback.getAllowVisibleObjectCallback(getHub(), obj, getPropertyName());
         return eq.getAllowed();
     }
@@ -192,7 +195,8 @@ public class OAUIPropertyController extends OAUIBaseController {
             newValue = text;
         }        
 
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(getHub(), obj).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(getHub(), obj);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
         
         // 1: confirm
         cb = srvcObjectCallback.getConfirmPropertyChangeObjectCallback(obj, getPropertyName(), newValue, getConfirmMessage(), getTitle());

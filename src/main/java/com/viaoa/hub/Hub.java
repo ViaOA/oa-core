@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.hub.HubAddRemoveService;
 import com.viaoa.graph.object.OAObjectCSService;
 import com.viaoa.graph.object.OAObjectCallbackService;
@@ -575,7 +576,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 					for (int i = 0; i < x; i++) {
 						Object obj = vec.get(i);
 						if (obj instanceof OAObject) {
-							final OAObjectHubService srvcObjectHub = OARuntime.get().graph(this).objects().getOAObjectHubService();
+							OAGraphImpl ogi = (OAGraphImpl) OARuntime.get().graph(this);
+							final OAObjectHubService srvcObjectHub = ogi.getOAObjectService().getOAObjectHubService();
 							srvcObjectHub.removeHub((OAObject) obj, this, true);
 						}
 					}
@@ -985,8 +987,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	@Override
 	public boolean add(TYPE obj) {
 		Class c = obj == null ? null : obj.getClass();
-		OAGraph og = OARuntime.get().graph(c);
-		HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(c);
+		HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		return srvcHubAddRemove.add(this, obj);
 	}
 
@@ -1000,8 +1002,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (list == null) return;
 		Class c = this.getObjectClass();
 		if (c == null && list.size() > 0) c = list.get(0).getClass();
-		OAGraph og = OARuntime.get().graph(c);
-		HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(c);
+		HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		for (TYPE obj : list) {
 			srvcHubAddRemove.add(this, obj);
 		}
@@ -1027,8 +1029,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		*/
 		Class c = this.getObjectClass();
 		if (c == null) c = hub.getObjectClass();
-		final OAGraph og = OARuntime.get().graph(c);
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(c);
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		try {
 			for (TYPE obj : hub) {
 				srvcHubAddRemove.add(this, obj);
@@ -1053,7 +1055,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (data.isDisabled()) {
 			return false;
 		}
-		OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(this).objects().getOAObjectCallbackService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this);
+		OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		return srvcObjectCallback.getAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, this, null, null);
 	}
 
@@ -1074,8 +1077,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public void addElement(TYPE obj) {
 		if (obj == null) return;
-		final OAGraph og = OARuntime.get().graph(obj.getClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(obj.getClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		srvcHubAddRemove.add(this, obj);
 	}
 
@@ -1089,8 +1092,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void swap(int pos1, int pos2) {
 		Class c = this.getObjectClass();
 		if (c == null) return;
-		final OAGraph og = OARuntime.get().graph(c);
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(c);
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		srvcHubAddRemove.swap(this, pos1, pos2);
 	}
 
@@ -1115,8 +1118,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public boolean insert(TYPE obj, int pos) {
 		if (obj == null) return false;
-		final OAGraph og = OARuntime.get().graph(obj.getClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(obj.getClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		return srvcHubAddRemove.insert(this, obj, pos);
 	}
 
@@ -1128,8 +1131,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public boolean remove(Object obj) {
 		if (obj == null) return false;
-		final OAGraph og = OARuntime.get().graph(obj.getClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(obj.getClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		return srvcHubAddRemove.remove(this, obj);
 	}
 
@@ -1143,8 +1146,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	@Override
 	public TYPE remove(int pos) {
 		if (pos < 0) return null;
-		final OAGraph og = OARuntime.get().graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this.getObjectClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		return (TYPE) srvcHubAddRemove.remove(this, pos);
 	}
 
@@ -1207,8 +1210,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * hubRemove events.
 	 */
 	public void clear() {
-		final OAGraph og = OARuntime.get().graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this.getObjectClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		srvcHubAddRemove.clear(this);
 	}
 
@@ -2367,7 +2370,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return OAObjectInfo for the class
 	 */
 	public static OAObjectInfo getOAObjectInfo(Class c) {
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(c);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		return srvcObjectInfo.getOAObjectInfo(c);
 	}
 
@@ -2452,8 +2456,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if addition is allowed
 	 */
 	public boolean canAdd() {
-		final OAGraph og = OARuntime.get().graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this.getObjectClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		return srvcHubAddRemove.canAdd(this, null);
 	}
 
@@ -2466,8 +2470,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public boolean canAdd(Object obj) {
 		if (obj == null) return false;
-		final OAGraph og = OARuntime.get().graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this.getObjectClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		return srvcHubAddRemove.canAdd(this, obj);
 	}
 
@@ -2480,8 +2484,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public String getCanAddMessage(OAObject obj) {
 		if (obj == null) return null;
-		final OAGraph og = OARuntime.get().graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this.getObjectClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		return srvcHubAddRemove.canAddMsg(this, obj);
 	}
 
@@ -2492,8 +2496,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if adding is allowed
 	 */
 	public boolean getAllowAdd() {
-		final OAGraph og = OARuntime.get().graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this.getObjectClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		return srvcHubAddRemove.canAdd(this, null);
 	}
 
@@ -2506,8 +2510,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public boolean getAllowAdd(Object obj) {
 		if (obj == null) return false;
-		final OAGraph og = OARuntime.get().graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this.getObjectClass());
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		return srvcHubAddRemove.canAdd(this, obj);
 	}
 
@@ -2523,7 +2527,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(this).objects().getOAObjectCallbackService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this);
+		OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		return srvcObjectCallback.getAllowAdd(this, (OAObject) obj, checkType);
 	}
 
@@ -2539,7 +2544,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(this).objects().getOAObjectCallbackService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this);
+		OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		return srvcObjectCallback.getAllowRemove(this, (OAObject) obj, checkType);
 	}
 
@@ -2555,7 +2561,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(this).objects().getOAObjectCallbackService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this);
+		OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		return srvcObjectCallback.getVerifyRemove(this, (OAObject) obj, checkType);
 	}
 
@@ -2568,8 +2575,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if all objects can be removed
 	 */
 	public boolean getAllowRemoveAll(final boolean bCheckObjectCallback, final int checkType) {
-		final OAGraph og = OARuntime.get().graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(this);
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		String s = srvcHubAddRemove.getCantRemoveAllMessage(this, checkType);
 		return s == null;
 	}
@@ -3141,6 +3148,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		return friendAccess;
 	}
 
-
+	public OAGraph getGraph() {
+		return OARuntime.get().graph(this);
+	}
 
 }

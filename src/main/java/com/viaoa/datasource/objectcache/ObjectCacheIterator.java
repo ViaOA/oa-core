@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.runtime.OARuntime;
@@ -169,8 +170,8 @@ public class ObjectCacheIterator<T> implements OADataSourceIterator {
 			if (bFetchIsDone) {
 				return null;
 			}
-			final OAGraph og = OARuntime.get().graph(clazz);
-	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+	    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 			lastFetchObject = (T) srvcObjectCache.find(lastFetchObject, clazz, filter, false, false, 100, (ArrayList) alFetchObjects);
 			if (lastFetchObject == null) {
 				bFetchIsDone = true;

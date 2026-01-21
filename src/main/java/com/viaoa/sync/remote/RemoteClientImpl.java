@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.graph.object.OAObjectReflectService;
@@ -354,13 +355,13 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	@Override
 	public OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties) {
-    	final OAGraph og = OARuntime.get().graph(objectClass);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
 		if (obj == null) {
 			return null;
 		}
-		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(obj).objects().getOAObjectReflectService();
+		final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 		OAObject objx = srvcOAObjectReflect.createCopy(obj, excludeProperties);
 		return objx;
 	}
@@ -396,7 +397,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		if (h == null) {
 			// store null so that it can be an empty hub if needed (and wont have to get from server)
 			if (!OASyncDelegate.isServer(objectClass)) {
-                final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(objectClass).objects().getOAObjectPropertyService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+                final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
                 srvcOAObjectProperty.setPropertyCAS(obj, hubPropertyName, null, null, true, false);
 			}
 			return false;
@@ -418,8 +420,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 * @return the resolved object, or {@code null} if not found
 	 */
 	private OAObject getObject(Class objectClass, OAObjectKey origKey) {
-    	final OAGraph og = OARuntime.get().graph(objectClass);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, origKey);
 		if (obj == null && OASyncDelegate.isServer(objectClass)) {
 			obj = (OAObject) OADataSource.getObject(objectClass, origKey);
@@ -446,7 +448,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		if (obj == null) {
 			return null;
 		}
-		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(obj).objects().getOAObjectReflectService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+		final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 		boolean bWasLoaded = srvcOAObjectReflect.isReferenceHubLoaded(obj, hubPropertyName);
 		if (!bWasLoaded && !OASyncDelegate.isServer(obj.getClass())) {
 			return null;
@@ -480,8 +483,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey) {
-    	final OAGraph og = OARuntime.get().graph(objectClass);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh();
@@ -497,8 +500,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey, String propertyName) {
-    	final OAGraph og = OARuntime.get().graph(objectClass);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh(propertyName);

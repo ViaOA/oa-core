@@ -18,6 +18,7 @@ package com.viaoa.object;
 import java.lang.ref.WeakReference;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
@@ -68,8 +69,8 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
         clazz = hub.getObjectClass();
         wfHub = new WeakReference(hub);
 
-    	final OAGraph og = OARuntime.get().graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
                 
     	srvcObjectCache.addListener(clazz, this);
         
@@ -98,8 +99,8 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
      * </p>
      */
     public void close() {
-    	final OAGraph og = OARuntime.get().graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
     	srvcObjectCache.removeListener(clazz, this);
     }
 

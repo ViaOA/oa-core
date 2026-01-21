@@ -34,6 +34,7 @@ import com.viaoa.datasource.jdbc.db.ManyToMany;
 import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.datasource.jdbc.query.QueryConverter;
 import com.viaoa.datasource.jdbc.query.ResultSetIterator;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.object.OALinkInfo;
@@ -198,7 +199,8 @@ public class SelectDelegate {
 			//   the second query will then select the record using the pkey values in the where clause.
 			queries[0] = "SELECT " + ds.getDBMetaData().distinctKeyword + " " + qc.getPrimaryKeyColumns(clazz) + s + " " + queries[0];
 
-	    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+	    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
 			String[] ids = oi.getIdProperties();
 			params = new Object[ids.length];
@@ -384,7 +386,8 @@ public class SelectDelegate {
 				hmPreparedStatementSql.put(wos, query);
 			}
 		} else {
-	    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(whereObject).objects().getOAObjectKeyService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(whereObject);
+	    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 			OAObjectKey key = srvcObjectKey.getKey(whereObject);
 			params = key.getObjectIds();
 		}
@@ -433,7 +436,8 @@ public class SelectDelegate {
 				sqlx += " FROM " + table.name + " WHERE ";
 
 				// query columns must match same order as used by objKey properties
-		    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
 				boolean b = false;
 				String[] ss = oi.getKeyProperties();
@@ -458,7 +462,8 @@ public class SelectDelegate {
 				sqlNew += " FROM " + table.name + " WHERE ";
 
 				// query columns must match same order as used by objKey properties
-		    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
 				boolean b = false;
 				String[] ss = oi.getKeyProperties();
@@ -1058,7 +1063,8 @@ public class SelectDelegate {
 			st = ds.getStatement(query);
 			ResultSet rs = st.executeQuery(query);
 
-	    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(classFrom).objects().getOAObjectKeyService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(classFrom);
+	    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 			
 			al = new ArrayList<>();
 			while (rs.next()) {

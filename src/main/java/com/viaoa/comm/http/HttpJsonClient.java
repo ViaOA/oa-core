@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -509,7 +510,8 @@ public class HttpJsonClient {
 	 * @throws Exception if reflection or encoding fails
 	 */
 	public String urlEncode(OAObject obj) throws Exception {
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(obj.getClass()).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj.getClass());
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(obj.getClass());
 		Map<String, String> map = new HashMap<>();
 

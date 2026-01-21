@@ -33,6 +33,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
@@ -496,7 +497,8 @@ public class OAXMLReader {
 			}
 		}
 
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(toClass).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(toClass);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(toClass);
 
 		if (objNew == null) {
@@ -576,8 +578,7 @@ public class OAXMLReader {
 			} else {
 				if (ids != null && ids.length > 0) {
 					final OAObjectKey key = new OAObjectKey(values, iguid);
-					final OAGraph og = OARuntime.get().graph(toClass);
-			    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 					objNew = srvcObjectCache.get(toClass, key);
 				}
 			}
@@ -588,7 +589,7 @@ public class OAXMLReader {
 					objNew = createNewObject(toClass);
 //qqqqqqqqqqqqqq 20260111
 					if (objNew.getGuid() == null) {
-						OARuntime.get().graph(toClass).objects().getOAObjectGuidService().setGuid(objNew, iguid);
+						og.getOAObjectService().getOAObjectGuidService().setGuid(objNew, iguid);
 					}
 					
 					
@@ -603,7 +604,7 @@ public class OAXMLReader {
 					OARuntime.get().threadLocals().setLoading(false);
 				}
 //qqqqqqqqqqqqqq 20260111
-				OARuntime.get().graph(toClass).objects().getOAObjectInitializeService().initializeAfterLoading(objNew);
+				og.getOAObjectService().getOAObjectInitializeService().initializeAfterLoading(objNew);
 				
 				// 20181115
 //qqqqqq 20260111 was:	OAObjectCacheDelegate.add(objNew);
@@ -818,9 +819,9 @@ public class OAXMLReader {
 							if (object == null) {
 								return object;
 							}
-							final OAGraph og = OARuntime.get().graph(object.getClass());
-					    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
-							final OAObjectKeyService srvcObjectKey = og.objects().getOAObjectKeyService();
+							final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object.getClass());
+					    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
+							final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 					    	
 							OAObject obj = srvcObjectCache.getObject(object.getClass(), srvcObjectKey.getKey(object));
 							if (obj != null) {

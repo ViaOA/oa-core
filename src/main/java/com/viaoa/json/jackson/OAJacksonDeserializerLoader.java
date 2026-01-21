@@ -32,6 +32,7 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
@@ -188,7 +189,8 @@ public class OAJacksonDeserializerLoader {
 			clazz = (Class<T>) root.getClass();
 		}
 		OAJson.StackItem stackItem = new OAJson.StackItem();
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		stackItem.oi = srvcObjectInfo.getOAObjectInfo(clazz);
 		stackItem.obj = root;
 		stackItem.node = node;
@@ -268,7 +270,8 @@ public class OAJacksonDeserializerLoader {
 		debug2(stackItem, "createObject");
 
 		oajson.beforeReadCallback(stackItem.node);
-		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(clazz).objects().getOAObjectReflectService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 		stackItem.obj = (OAObject) srvcOAObjectReflect.createNewObject(clazz);
 
 		boolean bNeedsAssignedId = loadObjectIdProperties(stackItem);
@@ -313,7 +316,8 @@ public class OAJacksonDeserializerLoader {
 
 				JsonNode jn = stackItem.node.get(propertyName);
 
-				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(stackItem.oi.getForClass()).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(stackItem.oi.getForClass());
+				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAPropertyInfo pi = srvcObjectInfo.getPropertyInfo(stackItem.oi, propertyName);
 				if (pi == null) {
 					continue;
@@ -685,8 +689,8 @@ public class OAJacksonDeserializerLoader {
 			if (bHasNull) {
 				obj = null;
 			} else {
-    			final OAGraph og = OARuntime.get().graph(li.getToClass());
-    	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(li.getToClass());
+    	    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 				obj = (OAObject) srvcObjectCache.get(li.getToClass(), ok);
 				if (obj == null) {
 					obj = (OAObject) OADataSource.getObject(li.getToClass(), ok);
@@ -694,7 +698,8 @@ public class OAJacksonDeserializerLoader {
 			}
 			
 			if (obj == null && ok != null) {
-				OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(stackItem.obj).objects().getOAObjectPropertyService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(stackItem.obj);
+				OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 				srvcOAObjectProperty.setProperty(stackItem.obj, li.getName(), ok);
 			} else {
 				stackItem.obj.setProperty(li.getName(), obj);
@@ -797,15 +802,16 @@ public class OAJacksonDeserializerLoader {
 
 		OAObject obj = null;
 		if (ok != null) {
-			final OAGraph og = OARuntime.get().graph(li.getToClass());
-	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(li.getToClass());
+	    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 			obj = (OAObject) srvcObjectCache.get(li.getToClass(), ok);
 			if (obj == null) {
 				obj = (OAObject) OADataSource.getObject(li.getToClass(), ok);
 			}
 		}
 		if (obj == null && ok != null) {
-			OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(stackItem.obj).objects().getOAObjectPropertyService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(stackItem.obj);
+			OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 			srvcOAObjectProperty.setProperty(stackItem.obj, li.getName(), ok);
 		} else {
 			stackItem.obj.setProperty(li.getName(), obj);
@@ -865,8 +871,8 @@ public class OAJacksonDeserializerLoader {
 		OAFinder finder = new OAFinder();
 		OAQueryFilter filter = new OAQueryFilter(li.getToClass(), sql, values);
 		finder.addFilter(filter);
-		final OAGraph og = OARuntime.get().graph(li.getToClass());
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(li.getToClass());
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 		OAObject objNew = (OAObject) srvcObjectCache.find(li.getToClass(), finder);
 
 		if (objNew == null) {
@@ -945,8 +951,8 @@ public class OAJacksonDeserializerLoader {
 			OAFinder finder = new OAFinder();
 			OAQueryFilter filter = new OAQueryFilter(li.getToClass(), sql, values);
 			finder.addFilter(filter);
-			final OAGraph og = OARuntime.get().graph(li.getToClass());
-	    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(li.getToClass());
+	    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 			OAObject objNew = (OAObject) srvcObjectCache.find(li.getToClass(), finder);
 
 			if (objNew == null) {

@@ -494,7 +494,7 @@ public class OAObjectService {
 			}
 			String prop = li.getName();
 
-			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(oaObj).objects().getOAObjectReflectService();
+			final OAObjectReflectService srvcOAObjectReflect = getOAObjectReflectService();
 			Object obj = srvcOAObjectReflect.getProperty(oaObj, li.getName()); // select all
 			if (obj == null) {
 				continue;
@@ -714,7 +714,7 @@ public class OAObjectService {
 				if (li.getType() != li.ONE) {
 					continue;
 				}
-				final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(oaObj).objects().getOAObjectReflectService();
+				final OAObjectReflectService srvcOAObjectReflect = getOAObjectReflectService();
 				Object objx = srvcOAObjectReflect.getRawReference(oaObj, li.getName());
 				if (!(objx instanceof OAObject)) {
 					continue;

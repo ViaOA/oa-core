@@ -26,6 +26,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
@@ -1956,7 +1957,8 @@ public class OARestMethodInfo {
 			} else {
 				derivedUrlPath = "/" + OAString.mfcl(this.origReturnClass.getSimpleName());
 				derivedUrlPath += "/<%=$ID%>";
-				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(this.origReturnClass).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.origReturnClass);
+				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(this.origReturnClass);
 				int cnt = 0;
 				for (String s : oi.getKeyProperties()) {
@@ -2000,7 +2002,8 @@ public class OARestMethodInfo {
 					alErrors.add(msgPrefix + s);
 				}
 			} else {
-				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(this.returnClass).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.returnClass);
+				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(this.returnClass);
 				derivedUrlPath = "/" + OAString.mfcl(oi.getPluralName());
 			}
@@ -2227,7 +2230,8 @@ public class OARestMethodInfo {
 				pos++;
 				if (pi.paramType == ParamType.MethodReturnClass) {
 					if (args[pos] instanceof Class) {
-						final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph((Class) args[pos]).objects().getOAObjectInfoService();
+						final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((Class) args[pos]);
+						final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 						OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo((Class) args[pos]);
 						urlPathTemplate.setProperty("PluralClass", OAString.mfcl(oi.getPluralName()));
 					} else {

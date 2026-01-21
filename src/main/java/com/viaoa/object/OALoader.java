@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.concurrent.OAExecutorService;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.hub.*;
 import com.viaoa.runtime.OARuntime;
@@ -492,7 +493,8 @@ public class OALoader<F extends OAObject, T extends OAObject> {
             throw new RuntimeException("propertyPath " + strPropertyPath + " must end in an OAObject/Hub");
         }
 
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
         OAObjectInfo oi = srvcObjectInfo.getObjectInfo(c);
         liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 

@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.hub.HubAddRemoveService;
 import com.viaoa.graph.object.OAObjectCSService;
 import com.viaoa.graph.object.OAObjectCacheService;
@@ -116,7 +117,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			}
 			return false;
 		}
-		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) obj).objects().getOAObjectReflectService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
+		final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 		srvcOAObjectReflect.setProperty((OAObject) obj, propertyName, newValue, null);
 
 		// blob value does not get sent, so clear the property so that a getXxx will retrieve it from server
@@ -261,7 +263,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		Hub h = getHub(obj, hubPropertyName);
 		if (h == null) {
 			if (!OASyncDelegate.isServer(objectClass)) {
-                final OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph(obj).objects().getOAObjectPropertyService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+                final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
                 srvcOAObjectProperty.setProperty(obj, hubPropertyName, null);
 			}
 			return false;
@@ -344,8 +347,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (origKey == null) {
 			return null;
 		}
-    	final OAGraph og = OARuntime.get().graph(objectClass);
-    	final OAObjectCacheService srvcObjectCache = og.objects().getOAObjectCacheService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, origKey);
 
 		if (obj == null && OASyncDelegate.isServer(objectClass)) {
@@ -370,7 +373,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (obj == null) {
 			return null;
 		}
-		final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) obj).objects().getOAObjectReflectService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
+		final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 		boolean bWasLoaded = srvcOAObjectReflect.isReferenceHubLoaded(obj, hubPropertyName);
 		if (!bWasLoaded && !OASyncDelegate.isServer(obj.getClass())) {
 			return null;
@@ -429,11 +433,12 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			return;
 		}
 
-		final OAObjectCSService srvcObjectCS = OARuntime.get().graph(masterObjectClass).objects().getOAObjectCSService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(masterObjectClass);
+		final OAObjectCSService srvcObjectCS = og.getOAObjectService().getOAObjectCSService();
 		Hub<OAObject> hubNew = srvcObjectCS.getServerReferenceHub(obj, hubPropertyName);
 
-		final OAGraph og = OARuntime.get().graph(hub);
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		og = (OAGraphImpl) OARuntime.graph(hub);
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		srvcHubAddRemove.refresh(hub, hubNew);
 	}
 
@@ -450,7 +455,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
             return;
         }
         if (!OASync.isServer(obj)) return;
-		final OAObjectDeleteService srvcObjectDelete = OARuntime.get().graph(objectClass).objects().getOAObjectDeleteService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+		final OAObjectDeleteService srvcObjectDelete = og.getOAObjectService().getOAObjectDeleteService();
 		srvcObjectDelete.syncServerDelete(obj);
     }
 	
@@ -468,7 +474,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
             return;
         }
         if (!OASync.isClient(obj)) return;
-		final OAObjectDeleteService srvcObjectDelete = OARuntime.get().graph(objectClass).objects().getOAObjectDeleteService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+		final OAObjectDeleteService srvcObjectDelete = og.getOAObjectService().getOAObjectDeleteService();
 		srvcObjectDelete.syncClientDelete(obj);
     }
 

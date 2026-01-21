@@ -40,6 +40,7 @@ import com.viaoa.datasource.jdbc.db.Index;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectAnnotationService;
 import com.viaoa.graph.object.OAObjectHubService;
 import com.viaoa.graph.object.OAObjectInfoService;
@@ -98,8 +99,8 @@ public class OAAnnotationVerifier {
 	 */
 	public boolean verify(OAObjectInfo oi) throws Exception {
 		final Class clazz = oi.getForClass();
-		OAGraph og = OARuntime.get().graph(clazz);
-		final OAObjectAnnotationService srvcObjectAnnotation = og.objects().getOAObjectAnnotationService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		final OAObjectAnnotationService srvcObjectAnnotation = og.getOAObjectService().getOAObjectAnnotationService();
 		String s;
 
 		OAClass oaclass = (OAClass) clazz.getAnnotation(OAClass.class);
@@ -212,7 +213,8 @@ public class OAAnnotationVerifier {
 			}
 		}
 
-		final OAObjectInfoService srvcObjectHub = OARuntime.get().graph(clazz).objects().getOAObjectInfoService();
+		//final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		final OAObjectInfoService srvcObjectHub = og.getOAObjectService().getOAObjectInfoService();
 		
 		// Verify calcProperties
 		ArrayList<OACalcInfo> alCalc = oi.getCalcInfos();
@@ -395,8 +397,8 @@ public class OAAnnotationVerifier {
 		boolean[] bs = null;
 		int i;
 		String s;
-		OAGraph og = OARuntime.get().graph(clazz);
-		final OAObjectAnnotationService srvcObjectAnnotation = og.objects().getOAObjectAnnotationService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		final OAObjectAnnotationService srvcObjectAnnotation = og.getOAObjectService().getOAObjectAnnotationService();
 
 		Method[] methods = clazz.getDeclaredMethods(); // need to get all access types, since some could be private. qqqqqq does not get superclass methods
 

@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
@@ -136,7 +137,9 @@ public class OAObjectCSService {
 	 */
 	public void updateObjectsWithoutHubs(OAObject obj) {
 		if (obj == null) return;
-        if (OARuntime.get().graph(obj).objects().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
+		
+		OAGraphImpl og = (OAGraphImpl) (OARuntime.get().graph(obj));
+        if (og.getOAObjectService().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
 		OASyncClient sc = OASyncDelegate.getSyncClient(obj.getClass());
 		if (sc != null)
 			sc.updateObjectsWithoutHubs(obj);

@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.hub.*;
 import com.viaoa.model.oa.VString;
@@ -525,7 +526,8 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
      * @return the matching object, or null if not found
      */
     public T findObjectUsingId(String id) {
-		final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(classTo).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(classTo);
+		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
         final OAObjectKey ok = srvcObjectKey.createObjectKey(classTo, id);
         
         if (finder == null) {

@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.runtime.OARuntime;
 
@@ -200,7 +201,8 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean updateObject(final T obj) {
 		if (obj == null) return false;
-		final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(obj).objects().getOAObjectKeyService();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(obj);
+		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		final OAObjectKey ok = srvcObjectKey.createObjectKey((OAObject) obj);
 		final Class<T> clazz = (Class<T>) obj.getClass();
 		return updateObject(obj, ok, clazz);
@@ -253,7 +255,8 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean removeObject(final T obj) {
 		if (obj == null) return false;
-		final OAObjectKeyService srvcObjectKey = OARuntime.get().graph((OAObject) obj).objects().getOAObjectKeyService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph((OAObject) obj);
+		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		final OAObjectKey ok = srvcObjectKey.createObjectKey((OAObject) obj);
 		final Class<T> clazz = (Class<T>) obj.getClass();
 		
@@ -283,9 +286,9 @@ import com.viaoa.runtime.OARuntime;
 			if (hm != null) hm.remove(wr.key.getGuid());
 			objectIndex.removeFromIndex(wr.clazz, wr.key);
 			
-			OAGraph og = OARuntime.get().graph(wr.clazz);
-	        if (og != null && !og.objects().getOAObjectInfoService().getOAObjectInfo(wr.clazz).getLocalOnly()) {
-	        	og.objects().getOAObjectCSService().objectFinalized(wr.key.getGuid());
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(wr.clazz);
+	        if (og != null && !og.getOAObjectService().getOAObjectInfoService().getOAObjectInfo(wr.clazz).getLocalOnly()) {
+	        	og.getOAObjectService().getOAObjectCSService().objectFinalized(wr.key.getGuid());
 	        }
 		}
 	}

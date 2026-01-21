@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.context.OAContext;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.graph.OASyncService;
 import com.viaoa.object.OAFinder;
@@ -272,11 +273,11 @@ public class OAObjectInitializeService {
 	 */
 	public void setAsNewObject(final OAObject oaObj) {
 		if (oaObj == null) return;
-		OAGraph og = OARuntime.get().graph(oaObj);
+		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(oaObj);
 		if (og == null) return;
-		og.objects().getOAObjectGuidService().assignNewGuid(oaObj);
+		og.getOAObjectService().getOAObjectGuidService().assignNewGuid(oaObj);
 
-		UUID guid = og.objects().getOAObjectGuidService().getGuid(oaObj);
+		UUID guid = og.getOAObjectService().getOAObjectGuidService().getGuid(oaObj);
 		setAsNewObject(oaObj, guid);
 	}
 	

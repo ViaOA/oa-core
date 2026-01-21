@@ -33,6 +33,7 @@ import com.viaoa.filter.OANotEqualFilter;
 import com.viaoa.filter.OANotLikeFilter;
 import com.viaoa.filter.OATrueFilter;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.hub.HubAddRemoveService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OACalcInfo;
@@ -623,7 +624,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		if (calcDependentPropertyName == null) {
 			boolean b = (prop.indexOf(".") >= 0);
 			if (!b) {
-				final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(hubMaster.getObjectClass()).objects().getOAObjectInfoService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubMaster.getObjectClass());
+				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 				OAObjectInfo oi = srvcObjectInfo.getObjectInfo(hubMaster.getObjectClass());
 				String[] calcProps = null;
 				for (OACalcInfo ci : oi.getCalcInfos()) {
@@ -1062,8 +1064,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 					// clear needs to be called, so that each oaObj.weakHub[] will be updated correctly
 					bIgnoreSettingAO = true;
 
-					final OAGraph og = OARuntime.get().graph(hub);
-					final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+					final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 					srvcHubAddRemove.clear(hub, false, false); // false:dont set AO to null,  false: dont send newList event
 
 					objTemp = null;
@@ -1197,8 +1199,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		}
 	    
 		// 20231109 faster way to add with calling contains
-		final OAGraph og = OARuntime.get().graph(hub);
-		final HubAddRemoveService srvcHubAddRemove = og.hubs().getHubAddRemoveService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
 		srvcHubAddRemove.add(hub, obj, bIsInitialzing);
 		// was:  hub.add(obj);
 		

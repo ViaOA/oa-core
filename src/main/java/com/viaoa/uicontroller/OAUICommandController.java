@@ -17,6 +17,7 @@ package com.viaoa.uicontroller;
 
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCallbackService;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.*;
@@ -282,7 +283,8 @@ public class OAUICommandController extends OAUIController {
         final int pos = hub.getPos();
         OAObjectCallback cb = null; 
         
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub, obj).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub, obj);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 
         switch (command) {
         case OtherUsesHub:
@@ -391,7 +393,8 @@ public class OAUICommandController extends OAUIController {
         String s;
         boolean bUseNewObject = false;
         
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub, obj).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub, obj);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
         
         // Step 1: get or create newObject
         cb = null;
@@ -427,7 +430,7 @@ public class OAUICommandController extends OAUIController {
             break;
         case InsertNew:
         case AddNew:
-			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(hub).objects().getOAObjectReflectService();
+			final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
             newObject = (OAObject) srvcOAObjectReflect.createNewObject(hub.getObjectClass());
             bUseNewObject = true;
             break;

@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.object.OAObject;
@@ -55,7 +56,8 @@ public class DeleteDelegate {
 			return;
 		}
 		if (object.getNew()) {
-	    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph(object).objects().getOAObjectKeyService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
+	    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 			LOG.finer("delete called on a new object, class=" + object.getClass().getName() + ", key=" + srvcObjectKey.getKey(object));
 			return;
 		}

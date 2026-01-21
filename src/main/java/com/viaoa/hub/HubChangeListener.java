@@ -18,6 +18,7 @@ package com.viaoa.hub;
 import java.util.ArrayList;
 
 import com.viaoa.context.OAContext;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCallbackService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -516,7 +517,8 @@ public abstract class HubChangeListener {
 			return null;
 		}
 
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		OAFilter filter = new OAFilter() {
 			@Override
 			public boolean isUsed(Object obj) {
@@ -553,7 +555,8 @@ public abstract class HubChangeListener {
 			return null;
 		}
 
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		OAFilter filter = new OAFilter() {
 			@Override
 			public boolean isUsed(Object obj) {
@@ -591,7 +594,8 @@ public abstract class HubChangeListener {
 			return null;
 		}
 
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		OAFilter filter = new OAFilter() {
 			@Override
 			public boolean isUsed(Object obj) {
@@ -655,7 +659,8 @@ public abstract class HubChangeListener {
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
 			String propx = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
-			final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+			final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 			srvcObjectCallback.addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 		}
 		return hp;
@@ -690,7 +695,8 @@ public abstract class HubChangeListener {
 		}
 
 		addAoNotNull(hub);
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		OAFilter filter = new OAFilter() {
 			@Override
 			public boolean isUsed(Object obj) {
@@ -718,7 +724,8 @@ public abstract class HubChangeListener {
 			return null;
 		}
 
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		OAFilter filter = new OAFilter() {
 			@Override
 			public boolean isUsed(Object obj) {
@@ -757,7 +764,8 @@ public abstract class HubChangeListener {
 	 * @return the created HubProp instance
 	 */
 	public HubProp addObjectCallbackEnabled(Hub hub, String prop, boolean bAoOnly) {
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		srvcObjectCallback.addObjectCallbackChangeListeners(hub, hub.getObjectClass(), prop, null, this, true);
 		// include master
 		Hub hx = hub.getMasterHub();
@@ -786,7 +794,8 @@ public abstract class HubChangeListener {
 	 */
 	public HubProp addObjectCallbackEnabled(Hub hub, Class cz, String prop, String ppPrefix) {
 		// ?? not used
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		srvcObjectCallback.addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, this, true);
 		return add(hub, prop, true, Type.ObjectCallbackEnabled);
 	}
@@ -800,7 +809,8 @@ public abstract class HubChangeListener {
 	 * @return the created HubProp instance
 	 */
 	public HubProp addObjectCallbackVisible(Hub hub, String prop) {
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		srvcObjectCallback.addObjectCallbackChangeListeners(hub, hub.getObjectClass(), prop, null, this, false);
 		return add(hub, prop, true, Type.ObjectCallbackVisible);
 	}
@@ -816,7 +826,8 @@ public abstract class HubChangeListener {
 	 * @return the created HubProp instance
 	 */
 	public HubProp addObjectCallbackVisible(Hub hub, Class cz, String prop, String ppPrefix) {
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 		srvcObjectCallback.addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, this, false);
 
 		// include master
@@ -1549,7 +1560,8 @@ public abstract class HubChangeListener {
 						}
 					}
 
-					final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+					final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 					OAObjectCallback eq = srvcObjectCallback.getAllowEnabledObjectCallback(	OAObjectCallback.CHECK_ALL, hub,
 																									(OAObject) value, propertyPath);
 					b = eq.getAllowed();
@@ -1594,7 +1606,8 @@ public abstract class HubChangeListener {
 					return b;
 					*/
 				}
-				final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub).objects().getOAObjectCallbackService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+				final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 				OAObjectCallback eq = srvcObjectCallback.getAllowVisibleObjectCallback(hub, (OAObject) value, propertyPath);
 				boolean b = eq.getAllowed();
 				if (!b) {

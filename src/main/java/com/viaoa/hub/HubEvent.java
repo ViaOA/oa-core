@@ -17,6 +17,7 @@ package com.viaoa.hub;
 
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.OALinkInfo;
@@ -289,12 +290,14 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 		Object oldObj = super.getOldValue();
 		boolean bError = false;
 		if (oldObj instanceof OAObjectKey && object instanceof OAObject) {
-			final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph((OAObject) object).objects().getOAObjectInfoService();
+			OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object.getClass());
+			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo((OAObject) object);
 			if (oi != null) {
 				OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, getPropertyName());
 				if (li != null) {
-					final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(li.getToClass()).objects().getOAObjectReflectService();
+					og = (OAGraphImpl) OARuntime.graph(li.getToClass());
+					final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 					oldObj = srvcOAObjectReflect.getObject(li.getToClass(), (OAObjectKey) oldObj);
 					oldValue2 = oldObj;
 				} else {

@@ -15,6 +15,7 @@
  */
 package com.viaoa.uicontroller;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCallbackService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -93,7 +94,8 @@ public class OAUIMethodController extends OAUIBaseController {
         OAObject obj = (OAObject) hub.getAO();
         if (obj == null) return false;
         
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(obj).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
         OAObjectCallback eq = srvcObjectCallback.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getMethodName());
         return eq.getAllowed();
     }
@@ -110,7 +112,8 @@ public class OAUIMethodController extends OAUIBaseController {
     public boolean isVisible() {
         if (!super.isVisible()) return false;
         
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(getHub()).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(getHub());
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
         OAObjectCallback eq = srvcObjectCallback.getAllowVisibleObjectCallback(getHub(), (OAObject) hub.getAO(), getMethodName());
         return eq.getAllowed();
     }
@@ -178,7 +181,8 @@ public class OAUIMethodController extends OAUIBaseController {
         OAObjectCallback cb; 
         String s;
 
-		final OAObjectCallbackService srvcObjectCallback = OARuntime.get().graph(hub, obj).objects().getOAObjectCallbackService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub, obj);
+		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
         // 1: confirm
         cb = srvcObjectCallback.getConfirmCommandObjectCallback(obj, getMethodName(), getConfirmMessage(), getTitle());
         s = cb.getConfirmMessage();

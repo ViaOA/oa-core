@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.util.Collection;
 
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -793,8 +794,8 @@ public class OACompare {
         	else if (matchValue instanceof OAObject) c = matchValue.getClass();
         	else c = null;
         	
-        	final OAGraph og = OARuntime.get().graph(c);
-			final OAObjectKeyService srvcObjectKey = og.objects().getOAObjectKeyService();
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
+			final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
         	
         	OAObjectKey ka = srvcObjectKey.createObjectKey(value);
     	    OAObjectKey kb = srvcObjectKey.createObjectKey(matchValue);

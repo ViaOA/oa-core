@@ -32,6 +32,7 @@ import com.viaoa.datasource.jdbc.delegate.ConverterDelegate;
 import com.viaoa.datasource.query.OAQueryToken;
 import com.viaoa.datasource.query.OAQueryTokenType;
 import com.viaoa.datasource.query.OAQueryTokenizer;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.graph.object.OAObjectReflectService;
@@ -244,7 +245,8 @@ public class QueryConverter {
 
 		for (int ii = 0; classes != null && ii < classes.length; ii++) {
 			Class c = classes[ii];
-	    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
+	    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 			OAObjectInfo oi = srvcObjectInfo.getObjectInfo(c);
 
 			Table table = database.getTable(c);
@@ -667,17 +669,20 @@ public class QueryConverter {
 
 			OAObjectKey key;
 			if (toFkeys[0].primaryKey) {
-		    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph((OAObject) whereObject).objects().getOAObjectKeyService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) whereObject);
+		    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 				key = srvcObjectKey.getKey((OAObject) whereObject);
 			} else {
 				// 20090621
-    			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) whereObject).objects().getOAObjectReflectService();
+				OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) whereObject);
+    			final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 				Object obj = srvcOAObjectReflect.getRawReference((OAObject) whereObject, propertyFromWhereObject);
 				if (obj instanceof OAObjectKey) {
 					key = (OAObjectKey) obj;
 				} else {
 					if (obj instanceof OAObject) {
-				    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph((OAObject) obj).objects().getOAObjectKeyService();
+						og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
+				    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 						key = srvcObjectKey.getKey((OAObject) obj);
 					} else {
 						key = null;
@@ -766,17 +771,20 @@ public class QueryConverter {
 
 			OAObjectKey key;
 			if (toFkeys[0].primaryKey) {
-		    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph((OAObject) whereObject).objects().getOAObjectKeyService();
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) whereObject);
+		    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 				key = srvcObjectKey.getKey((OAObject) whereObject);
 			} else {
 				// 20090621
-    			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph((OAObject) whereObject).objects().getOAObjectReflectService();
+				OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) whereObject);
+    			final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 				Object obj = srvcOAObjectReflect.getRawReference((OAObject) whereObject, propertyFromWhereObject);
 				if (obj instanceof OAObjectKey) {
 					key = (OAObjectKey) obj;
 				} else {
 					if (obj instanceof OAObject) {
-				    	final OAObjectKeyService srvcObjectKey = OARuntime.get().graph((OAObject) obj).objects().getOAObjectKeyService();
+						og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
+				    	final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 						key = srvcObjectKey.getKey((OAObject) obj);
 					} else {
 						key = null;
@@ -2432,7 +2440,8 @@ public class QueryConverter {
 					links[i].bMany = true;
 				} else {
 					// MANY ?
-			    	final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(table.clazz).objects().getOAObjectInfoService();
+					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(table.clazz);
+			    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 					OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(table.clazz);
 					OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, tabLinks[i].propertyName);
 					if (li != null && li.getType() == li.MANY) {

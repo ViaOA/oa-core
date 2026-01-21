@@ -26,6 +26,7 @@ import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.graph.object.OAObjectSaveService;
 import com.viaoa.object.OAObject;
@@ -84,7 +85,8 @@ public class AutonumberDelegate {
 
 		try {
 			OAObjectDSDelegate.setAssigningId(object, true);
-			OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(object).objects().getOAObjectReflectService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
+			OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 			srvcOAObjectReflect.setProperty(object, column.propertyName, value, null);
 		} finally {
 			OAObjectDSDelegate.setAssigningId(object, false);

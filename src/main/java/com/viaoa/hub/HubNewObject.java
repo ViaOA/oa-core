@@ -15,6 +15,7 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectDSDelegate;
@@ -250,7 +251,8 @@ public class HubNewObject<F extends OAObject> {
 		try {
 			OARuntime.get().threadLocals().setLoading(true);
 			Class<F> clazz = hubMain.getObjectClass();
-			final OAObjectReflectService srvcOAObjectReflect = OARuntime.get().graph(clazz).objects().getOAObjectReflectService();
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+			final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 			obj = (F) srvcOAObjectReflect.createNewObject(clazz);
 		} finally {
 			OARuntime.get().threadLocals().setLoading(false);

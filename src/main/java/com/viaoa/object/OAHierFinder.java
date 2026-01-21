@@ -20,6 +20,7 @@ import com.viaoa.converter.OAConverterBoolean;
 import com.viaoa.filter.OAEmptyFilter;
 import com.viaoa.filter.OANotEmptyFilter;
 import com.viaoa.filter.OANotNullFilter;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
@@ -244,7 +245,8 @@ public class OAHierFinder<F extends OAObject> {
     private boolean findFirstValue(final OAObject obj, OAFilter filter, final int pos, final boolean bRecursiveCheckOnly, final int cntRecursive) {
         if (obj == null) return false;
         
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(obj).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
         boolean b = true;
         if (pos == 0) {
             if (!bIncludeFromObject) {

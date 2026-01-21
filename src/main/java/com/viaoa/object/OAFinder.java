@@ -20,6 +20,7 @@ import java.util.*;
 
 import com.viaoa.filter.*;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.graph.object.OAObjectSiblingService;
@@ -1032,7 +1033,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			cascades[i] = new OACascade();
 		}
 
-		final OAObjectInfoService srvcObjectInfo = OARuntime.get().graph(c).objects().getOAObjectInfoService();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
+		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
 		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(c);
 		liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 
@@ -1211,7 +1213,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 						if (linkInfos[pos].getCalculated()) {
 							objx = linkInfos[pos].getValue((OAObject) obj);
 						} else {
-							OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) obj).objects().getOAObjectPropertyService();
+							final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
+							OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 							objx = srvcOAObjectProperty.getProperty((OAObject) obj, linkInfos[pos].getName());
 						}
 						if (objx instanceof Hub) {
@@ -1260,7 +1263,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		if (li.getCalculated()) {
 			hx = (Hub) li.getValue((OAObject) obj);
 		} else {
-			OAObjectPropertyService srvcOAObjectProperty = OARuntime.get().graph((OAObject) obj).objects().getOAObjectPropertyService();
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
+			OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 			hx = (Hub) srvcOAObjectProperty.getProperty((OAObject) obj, li.name, false, true);
 		}
 		if (hx == null || (HubSortDelegate.getSortListener(hx) == null && HubDelegate.getAutoSequence(hx) == null)) {
