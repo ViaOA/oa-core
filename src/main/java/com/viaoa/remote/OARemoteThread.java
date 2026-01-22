@@ -17,7 +17,6 @@ package com.viaoa.remote;
 
 import java.util.logging.Logger;
 
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.runtime.OARuntime;
 

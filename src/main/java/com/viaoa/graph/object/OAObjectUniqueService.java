@@ -3,17 +3,15 @@ package com.viaoa.graph.object;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.util.OAString;
 
@@ -77,7 +75,8 @@ public class OAObjectUniqueService {
         
         // not found
         if (srvcSync.isClient()) {
-            OASyncClient sc = OASync.getSyncClient();
+    		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(clazz));
+            OASyncClient sc = og.getSyncService().getSyncClient();
             RemoteServerInterface rs;
             try {
                 rs = sc.getRemoteServer();

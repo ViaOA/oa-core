@@ -5,12 +5,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 
 public class HubDataService {
 	private final Logger LOG = Logger.getLogger(HubDataService.class.getName());
@@ -249,7 +248,7 @@ public class HubDataService {
             OARuntime.get().threadLocalService().unlock(thisHub);
         }
         if (!bIsRemovingAll) {
-            OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        	OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
         }
         return pos;
     }
@@ -268,7 +267,9 @@ public class HubDataService {
      * @return the position from which the object was removed, or -1
      */
     private int _remove2(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
-        int pos;
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+        
+    	int pos;
         if (bIsRemovingAll) {
             pos = -1;
         }
@@ -283,7 +284,7 @@ public class HubDataService {
 	        boolean b = (obj instanceof OAObject);	        
             if (b) {
                 b = (faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges());
-                if (!b && OASync.isServer()) {
+                if (!b && og.getSyncService().isServer()) {
                     if ( ((OAObject) obj).isChanged()) {
                         if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
                             // could be ServerRoot
@@ -345,7 +346,7 @@ public class HubDataService {
         finally {
             if (!bHasLock ) OARuntime.get().threadLocalService().unlock(thisHub);
         }
-        OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
         return b;
     }
     
@@ -418,7 +419,7 @@ public class HubDataService {
             if (!bIsLocked) OARuntime.get().threadLocalService().unlock(thisHub);
         }
         
-        OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
         return b;
     }
    
@@ -468,7 +469,7 @@ public class HubDataService {
 	public void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
 		//qqqqqqqq method was protected
         try {
-            OARuntime.get().threadLocalService().lock(thisHub);
+            OARuntime.threadLocalService().lock(thisHub);
             faHub.getHubData(thisHub).incrementChangeCount();
             
             Vector v = faHub.getHubData(thisHub).getVector();
@@ -478,7 +479,7 @@ public class HubDataService {
         finally {
             OARuntime.get().threadLocalService().unlock(thisHub);
         }
-        OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
 	}
 	
 	/**

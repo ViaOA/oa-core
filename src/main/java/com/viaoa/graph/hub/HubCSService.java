@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
@@ -11,14 +12,10 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.object.OAObjectSerializerCallback;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
-import com.viaoa.util.*;
 
 public class HubCSService {
 	private final Logger LOG = Logger.getLogger(HubCSService.class.getName());
@@ -45,13 +42,13 @@ public class HubCSService {
      * @param thisHub the hub whose remote counterparts should remove all items
      */
     public void removeAllFromHub(Hub thisHub) {
-        if (OASyncDelegate.isSingleUser(thisHub)) return;
-        
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+        if (og.getSyncService().isSingleUser()) return;
         
         
         if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) return;
         if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
-        if (!OARemoteThreadDelegate.shouldSendMessages()) {
+        if (!OARuntime.remoteThreadService().shouldSendMessages()) {
             return;
         }
 
@@ -59,14 +56,14 @@ public class HubCSService {
         if (li != null) {
             OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
             if (liRev != null && liRev.getCalculated()) {
-                if (!OASyncDelegate.isServer(thisHub) || !liRev.getServerSideCalc()) {
+                if (!og.getSyncService().isServer() || !liRev.getServerSideCalc()) {
                     return;
                 }
             }
         }
         
 
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(thisHub);
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
             rs.removeAllFromHub(
             		faHub.getHubDataMaster(thisHub).getMasterObject().getClass(), 
@@ -86,10 +83,11 @@ public class HubCSService {
      * @param pos     the position from which the object was removed
      */
 	public void removeFromHub(Hub thisHub, OAObject obj, int pos) {
-        if (OASyncDelegate.isSingleUser(thisHub)) return;
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+        if (og.getSyncService().isSingleUser()) return;
         if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) return;
         if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
-        if (!OARemoteThreadDelegate.shouldSendMessages()) {
+        if (!OARuntime.remoteThreadService().shouldSendMessages()) {
             return;
         }
 	    
@@ -100,7 +98,7 @@ public class HubCSService {
         if (li != null) {
             OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
             if (liRev != null && liRev.getCalculated()) {
-                if (!OASyncDelegate.isServer(thisHub) || !liRev.getServerSideCalc()) {
+                if (!og.getSyncService().isServer() || !liRev.getServerSideCalc()) {
                     return;
                 }
             }
@@ -110,7 +108,7 @@ public class HubCSService {
     	
         // must have a master object to be able to know which hub to add object to
         // send REMOVE message
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(thisHub);
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
             rs.removeFromHub(
             		faHub.getHubDataMaster(thisHub).getMasterObject().getClass(), 
@@ -129,8 +127,9 @@ public class HubCSService {
 	 * @param thisObj the object being added
 	 */
 	public void addToHub(final Hub thisHub, final OAObject thisObj) {
-        if (OASyncDelegate.isSingleUser(thisHub)) return;
-        if (!OARemoteThreadDelegate.shouldSendMessages()) return;
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+		if (og.getSyncService().isSingleUser()) return;
+        if (!OARuntime.remoteThreadService().shouldSendMessages()) return;
         if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
         
 	    OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisObj);
@@ -140,7 +139,7 @@ public class HubCSService {
         if (li != null) {
             OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
             if (liRev != null && liRev.getCalculated()) {
-                if (!OASyncDelegate.isServer(thisHub) || !liRev.getServerSideCalc()) {
+                if (!og.getSyncService().isServer() || !liRev.getServerSideCalc()) {
                     return;
                 }
             }
@@ -159,7 +158,7 @@ public class HubCSService {
 	    }
 	    */
 	    
-        final OASyncClient sc = OASyncDelegate.getSyncClient();
+        final OASyncClient sc = og.getSyncService().getSyncClient();
         if (sc != null) {
             if (!sc.isObjectOnServer(master)) return;
         }
@@ -168,16 +167,16 @@ public class HubCSService {
         final boolean bIsLoading = OARuntime.get().threadLocalService().isLoading(); 
         if (bIsLoading) {
             if (!srvcObject.getOAObjectHubService().isInHub(master)) {
-                if (OASyncDelegate.isServer(master)) {
+                if (og.getSyncService().isServer()) {
                     return; 
                 }
             }
         }
         
         // 20110323 note: must send object, other clients might not have it.        
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(thisHub);
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
-            if (OASync.isServer()) {
+            if (og.getSyncService().isServer()) {
                 // if server, then send extra references if obj is new, so that client will not have to ask for it
                 if (thisObj.isNew() && !srvcObject.getOAObjectHubService().isInHubWithMaster(thisObj, thisHub)) {
                     OAObjectSerializer oos = new OAObjectSerializer(thisObj, false, new OAObjectSerializerCallback() {
@@ -233,8 +232,9 @@ public class HubCSService {
 	 * @return {@code true} if a remote insert command was sent; otherwise {@code false}
 	 */
 	public boolean insertInHub(Hub thisHub, OAObject obj, int pos) {
-        if (OASyncDelegate.isSingleUser(thisHub)) return false;
-        if (!OARemoteThreadDelegate.shouldSendMessages()) return  false;
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+        if (og.getSyncService().isSingleUser()) return false;
+        if (!OARuntime.remoteThreadService().shouldSendMessages()) return  false;
         if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return false;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
@@ -244,7 +244,7 @@ public class HubCSService {
         if (li != null) {
             OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
             if (liRev != null && liRev.getCalculated()) {
-                if (!OASyncDelegate.isServer(thisHub) || !liRev.getServerSideCalc()) {
+                if (!og.getSyncService().isServer() || !liRev.getServerSideCalc()) {
                     return false;
                 }
             }
@@ -257,7 +257,7 @@ public class HubCSService {
         // send ADD message
 
         // 20110323 note: must send object, other clients might not have it.        
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(thisHub);
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
             rs.insertInHub(
                     faHub.getHubDataMaster(thisHub).getMasterObject().getClass(), 
@@ -278,8 +278,9 @@ public class HubCSService {
 	 * @param posTo   the destination index
 	 */
 	public void moveObjectInHub(Hub thisHub, int posFrom, int posTo) {
-        if (OASyncDelegate.isSingleUser(thisHub)) return;
-        if (!OARemoteThreadDelegate.shouldSendMessages()) return;
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+        if (og.getSyncService().isSingleUser()) return;
+        if (!OARuntime.remoteThreadService().shouldSendMessages()) return;
         if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
         
 	    OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
@@ -300,7 +301,7 @@ public class HubCSService {
         // must have a master object to be able to know which hub to use
         // send MOVE message
 	    
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(thisHub);
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
             rs.moveObjectInHub(objMaster.getClass(), 
                     objMaster.getObjectKey(), 
@@ -314,8 +315,9 @@ public class HubCSService {
 	 * @param h the hub to check
 	 * @return {@code true} if this is the server; otherwise {@code false}
 	 */
-	public boolean isServer(Hub h) {
-        return OASyncDelegate.isServer(h);
+	public boolean isServer(Hub thisHub) {
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+        return og.getSyncService().isServer();
 	}		
 
 	/**
@@ -325,7 +327,7 @@ public class HubCSService {
 	 * @return {@code true} if the thread is a remote thread; otherwise {@code false}
 	 */
 	public boolean isRemoteThread() {
-		return (OARemoteThreadDelegate.isRemoteThread());
+		return (OARuntime.remoteThreadService().isRemoteThread());
 	}		
 	
 	/**
@@ -339,8 +341,9 @@ public class HubCSService {
 	 * @param comp          optional comparator used for sorting
 	 */
 	public void sort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp) {
-        if (OASyncDelegate.isSingleUser(thisHub)) return;
-        if (!OARemoteThreadDelegate.shouldSendMessages()) return;
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+        if (og.getSyncService().isSingleUser()) return;
+        if (!OARuntime.remoteThreadService().shouldSendMessages()) return;
         if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
 
         OAObject objMaster = faHub.getHubDataMaster(thisHub).getMasterObject();
@@ -353,7 +356,7 @@ public class HubCSService {
             if (liRev != null && liRev.getCalculated()) return;
         }
 
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(thisHub);
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
             rs.sort(objMaster.getClass(), objMaster.getObjectKey(), 
             		srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub), 
@@ -371,10 +374,11 @@ public class HubCSService {
 	 * @return {@code true} if deletion is local; otherwise {@code false}
 	 */
     public boolean deleteAll(Hub thisHub) {
-        if (OASyncDelegate.isServer(thisHub)) return true;  // invoke on the server
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+        if (og.getSyncService().isServer()) return true;  // invoke on the server
         LOG.fine("hub="+thisHub);
         
-        if (!OARemoteThreadDelegate.shouldSendMessages()) return true;
+        if (!OARuntime.remoteThreadService().shouldSendMessages()) return true;
         if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return true;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
@@ -392,7 +396,7 @@ public class HubCSService {
         String prop = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
         if (prop == null) return true;
 
-        RemoteClientInterface rs = OASyncDelegate.getRemoteClient(thisHub);
+        RemoteClientInterface rs = og.getSyncService().getRemoteClient();
         if (rs == null) return true;
         
         rs.deleteAll(master.getClass(), master.getObjectKey(), prop);
@@ -410,9 +414,11 @@ public class HubCSService {
      */
     public boolean clearHubChanges(Hub thisHub) {
         if (thisHub == null) return false;
-        if (OASync.isSingleUser(thisHub)) return false;
-        if (!OASync.shouldSendMessages()) return  false;
-        if (OASync.getSuppressCSMessages()) return false;
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+
+        if (og.getSyncService().isSingleUser()) return false;
+        if (!og.getSyncService().shouldSendMessages()) return  false;
+        if (og.getSyncService().getSuppressCSMessages()) return false;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
         if (oi.getLocalOnly()) return false;
@@ -426,7 +432,7 @@ public class HubCSService {
         if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) return false;
         if (srvcObject.getOAObjectInfoService().getOAObjectInfo((OAObject)faHub.getHubDataMaster(thisHub).getMasterObject()).getLocalOnly()) return false;
 
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(thisHub);
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
             rs.clearHubChanges(
                 faHub.getHubDataMaster(thisHub).getMasterObject().getClass(), 
@@ -445,7 +451,8 @@ public class HubCSService {
      */
     public void sendRefresh(Hub thisHub) {
         if (thisHub == null) return;
-        RemoteSyncInterface rsi = OASyncDelegate.getRemoteSync();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+        RemoteSyncInterface rsi = og.getSyncService().getRemoteSync();
         if (rsi == null) return;
         OAObject obj = thisHub.getMasterObject();
         if (obj == null) return;

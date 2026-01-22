@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.OAFile;
 
 /**

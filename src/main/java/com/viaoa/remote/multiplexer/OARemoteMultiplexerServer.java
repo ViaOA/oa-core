@@ -35,7 +35,6 @@ import com.viaoa.comm.multiplexer.io.VirtualSocket;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThread;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.BindInfo;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
@@ -508,11 +507,11 @@ public class OARemoteMultiplexerServer {
             }
 
             try {
-                OARuntime.get().threadLocals().addObjectSerializer(session.oaObjectSerializer);
+                OARuntime.threadLocals().addObjectSerializer(session.oaObjectSerializer);
                 oos.writeObject(resp);
             }
             finally {
-                OARuntime.get().threadLocals().removeObjectSerializer(session.oaObjectSerializer);
+                OARuntime.threadLocals().removeObjectSerializer(session.oaObjectSerializer);
             }
             oos.flush();
             oos.close(); // 20250318
@@ -1575,10 +1574,11 @@ public class OARemoteMultiplexerServer {
         
         processCtoSArguments(ri, session);
         
+        boolean bWasSendMessages = false;
         try {
-            OARuntime.get().threadLocals().setRemoteRequestInfo(ri);
+            OARuntime.threadLocals().setRemoteRequestInfo(ri);
             if (!ri.bind.isBroadcast) {
-                OARemoteThreadDelegate.sendMessages(true);
+                bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
             }
 
             // 20180225 added code for threadlocal.oasynceventcount
@@ -1604,7 +1604,7 @@ public class OARemoteMultiplexerServer {
         }
         finally {
             if (!ri.bind.isBroadcast) {
-                OARemoteThreadDelegate.sendMessages(false);
+                if (bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
             }
         }
         OARuntime.get().threadLocals().setRemoteRequestInfo(null);

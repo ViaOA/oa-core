@@ -29,12 +29,8 @@ import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.remote.multiplexer.*;
 import com.viaoa.runtime.OARuntime;
@@ -392,9 +388,9 @@ public class OASyncCombinedClient {
                                     OAObjectKey k1 = objValue.getObjectKey();
                                     
                                     // need to change key 
-                			    	final OAObjectCacheService srvcObjectCache = ((OAGraphImpl) OARuntime.graph(objValue)).getOAObjectService().getOAObjectCacheService();
+                			    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
                 			    	srvcObjectCache.removeObject(objValue);
-                                    OAObjectDelegate.setAsNewObject(objValue, UUID.randomUUID());
+                                    og.getOAObjectService().getOAObjectInitializeService().setAsNewObject(objValue, UUID.randomUUID());
                                     
                                     // need to add it to mapper
                                     OAObjectKey k2 = objValue.getObjectKey();
@@ -857,7 +853,8 @@ public class OASyncCombinedClient {
         
         // if null create new obj for server
         if (keyServer == null) {
-            OAObjectDelegate.setAsNewObject(objClient);
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objClient);
+        	og.getOAObjectService().getOAObjectInitializeService().setAsNewObject(objClient);
             objServer = objClient;
 //qqqqq need to know when key is changed on server and then update the map            
             keyServer = objClient.getObjectKey();
@@ -866,7 +863,6 @@ public class OASyncCombinedClient {
             
             
             // qqqqqq remap all of the props that are objkeys
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objServer);
 			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
             final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
             OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(objServer.getClass());

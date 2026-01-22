@@ -19,7 +19,6 @@ import java.lang.reflect.*;
 
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 

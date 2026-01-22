@@ -14,7 +14,6 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.OAString;
 
 public class OAObjectInitializeService {
@@ -130,7 +129,8 @@ public class OAObjectInitializeService {
 		}
 		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 
-		boolean bInitializeWithCS = !oi.getLocalOnly() && OASync.isClient(oaObj.getClass());
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
+		boolean bInitializeWithCS = !oi.getLocalOnly() && og.getSyncService().isClient();
 
 		initialize(oaObj, oi, bInitializeNulls, bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
 	}

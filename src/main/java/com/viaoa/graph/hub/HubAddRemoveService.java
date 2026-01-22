@@ -16,7 +16,6 @@ import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.remote.OARemoteThread;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 
@@ -115,7 +114,7 @@ public class HubAddRemoveService {
 		if (!bIsRemovingAll && !thisHub.getEnabled()) {
 			throw new RuntimeException("Cant remove object, hub is disabled");
 		}
-		if (!bIsRemovingAll && !OARemoteThreadDelegate.isRemoteThread()) {
+		if (!bIsRemovingAll && !OARuntime.remoteThreadService().isRemoteThread()) {
 			if (!thisHub.getAllowRemove(OAObjectCallback.CHECK_CallbackMethod, obj)) {
 				//was: if (!canRemove(thisHub, obj)) {
 				if (!OARuntime.get().threadLocalService().isDeleting(obj)) {
@@ -136,7 +135,7 @@ public class HubAddRemoveService {
 				li = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
 				if (li != null && li.getType() == OALinkInfo.ONE) {
 					if (!OARuntime.get().threadLocalService().isDeleting(obj)) {
-						if (!OARemoteThreadDelegate.isRemoteThread()) {
+						if (!OARuntime.remoteThreadService().isRemoteThread()) {
 							throw new RuntimeException("Cant remove object from Hub that is based on a LinkInfo.ONE, hub=" + thisHub);
 						}
 					}
@@ -340,7 +339,7 @@ public class HubAddRemoveService {
 	 * @param bSendNewList  whether to fire a new-list event
 	 */
 	public void clear(final Hub thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
-		if (!OARemoteThreadDelegate.isRemoteThread() && bSendNewList) {
+		if (!OARuntime.remoteThreadService().isRemoteThread() && bSendNewList) {
 			OAObjectCallback eq = srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
 			if (!eq.getAllowed()) {
 				String s = eq.getResponse();
@@ -361,7 +360,7 @@ public class HubAddRemoveService {
 			OARuntime.get().threadLocalService().unlock(thisHub);
 		}
 		if (b) {
-			OARemoteThreadDelegate.startNextThread(); // if this is RemoteThread, then start the next one
+			OARuntime.remoteThreads().startNextThread(); // if this is RemoteThread, then start the next one
 			_afterClear(thisHub, bSetAOtoNull, bSendNewList);
 		}
 	}
@@ -441,7 +440,7 @@ public class HubAddRemoveService {
 			OARemoteThread rt = (OARemoteThread) thread;
 			rt.setStartedNextThread(false);
 		}
-		OARemoteThreadDelegate.startNextThread();
+		OARuntime.remoteThreadService().startNextThread();
 
 		// need to now have the object ref to hub removed.
 		if (!bIsDeleting) {
@@ -658,7 +657,7 @@ public class HubAddRemoveService {
 			return true;
 		}
 
-		if (!bIsLoading && !OARemoteThreadDelegate.isRemoteThread()) {
+		if (!bIsLoading && !OARuntime.remoteThreadService().isRemoteThread()) {
 			String s = canAddMsg(thisHub, obj);
 			if (s != null) {
 				throw new RuntimeException(
@@ -935,7 +934,7 @@ public class HubAddRemoveService {
 		}
 
 		if (!OARuntime.get().threadLocalService().isLoading()) {
-			if (!OARemoteThreadDelegate.isRemoteThread()) {
+			if (!OARuntime.remoteThreadService().isRemoteThread()) {
 				String s = canAddMsg(thisHub, obj);
 				if (s != null) {
 					throw new RuntimeException(

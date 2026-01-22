@@ -2,8 +2,6 @@ package com.viaoa.graph;
 
 import java.util.logging.Logger;
 
-import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncClient;
@@ -309,7 +307,7 @@ public class OASyncService {
 	 * @return {@code true} if sync messages will be sent
 	 */
 	public boolean sendMessages() {
-		return OARemoteThreadDelegate.sendMessages();
+		return OARuntime.remoteThreadService().sendMessages();
 	}
 
 	/**
@@ -320,7 +318,7 @@ public class OASyncService {
 	 * @return previous setting for message sending
 	 */
 	public boolean sendMessages(boolean b) {
-		return OARemoteThreadDelegate.sendMessages(b);
+		return OARuntime.remoteThreadService().sendMessages(b);
 	}
 
 	/**
@@ -330,7 +328,7 @@ public class OASyncService {
 	 * @return {@code true} if the current thread is remote-thread context
 	 */
 	public boolean isRemoteThread() {
-		return OARemoteThreadDelegate.isRemoteThread();
+		return OARuntime.remoteThreadService().isRemoteThread();
 	}
 
 	/**
@@ -342,7 +340,7 @@ public class OASyncService {
 	 * @return {@code true} if the current thread is a sync-processing thread
 	 */
 	public boolean isSyncThread() {
-		if (OARemoteThreadDelegate.isRemoteThread()) {
+		if (OARuntime.remoteThreadService().isRemoteThread()) {
 			return true;
 		}
 		return OARuntime.get().threadLocals().isSyncThread();
@@ -360,7 +358,7 @@ public class OASyncService {
 	 * @return {@code true} if messages should be sent
 	 */
 	public boolean shouldSendMessages() {
-		return OARemoteThreadDelegate.shouldSendMessages();
+		return OARuntime.remoteThreadService().shouldSendMessages();
 	}
 
 	/**
@@ -393,7 +391,7 @@ public class OASyncService {
 	 * @return the request info, or {@code null} if not in remote-thread context
 	 */
 	public RequestInfo getRequestInfo() {
-		return OARemoteThreadDelegate.getRequestInfo();
+		return OARuntime.remoteThreadService().getRequestInfo();
 	}
 
 	/**
@@ -404,7 +402,7 @@ public class OASyncService {
 	 * @return the current request's connection ID, or -1 if unavailable
 	 */
 	public int getRequestConnectionId() {
-		RequestInfo ri = OARemoteThreadDelegate.getRequestInfo();
+		RequestInfo ri = OARuntime.remoteThreadService().getRequestInfo();
 		if (ri == null) {
 			return -1;
 		}

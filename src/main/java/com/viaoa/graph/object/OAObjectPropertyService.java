@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
@@ -13,8 +14,7 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.remote.OARemoteThreadDelegate;
-import com.viaoa.sync.OASync;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OANotExist;
 
 public class OAObjectPropertyService {
@@ -760,7 +760,7 @@ public class OAObjectPropertyService {
 
 		hmLockedThread.put(threadThis, lock.thread);
 		try {
-			OARemoteThreadDelegate.startNextThread();
+			OARuntime.remoteThreadService().startNextThread();
 			synchronized (lock) {
 				if (lock.thread == Thread.currentThread()) {
 					return bCheckIfThisThread;
@@ -959,7 +959,8 @@ public class OAObjectPropertyService {
 		if (obj == null) {
 			return;
 		}
-		if (!OASync.isServer(obj.getClass())) {
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(obj));
+		if (!og.getSyncService().isServer()) {
 			return;
 		}
 		if (cascade != null && cascade.wasCascaded(obj, true)) {

@@ -7,7 +7,6 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectXMLDelegate;
 import com.viaoa.xml.OAXMLWriter;
 
 public class HubXMLService {

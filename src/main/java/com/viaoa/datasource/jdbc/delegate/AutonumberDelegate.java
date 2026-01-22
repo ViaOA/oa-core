@@ -30,8 +30,6 @@ import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.graph.object.OAObjectSaveService;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectDSDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.runtime.OARuntime;
 
 /**
@@ -83,13 +81,13 @@ public class AutonumberDelegate {
 			value = Integer.valueOf(id);
 		}
 
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
 		try {
-			OAObjectDSDelegate.setAssigningId(object, true);
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
+			og.getOAObjectService().getOAObjectDSService().setAssigningId(object, true);
 			OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 			srvcOAObjectReflect.setProperty(object, column.propertyName, value, null);
 		} finally {
-			OAObjectDSDelegate.setAssigningId(object, false);
+			og.getOAObjectService().getOAObjectDSService().setAssigningId(object, false);
 		}
 	}
 

@@ -44,7 +44,6 @@ import com.viaoa.graph.object.OAObjectSiblingService;
 import com.viaoa.graph.object.OAObjectXMLService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
 import com.viaoa.runtime.OARuntime;
@@ -305,8 +304,9 @@ public class OASyncClient {
 
         clientInfo.setConnectionId(getMultiplexerClient().getConnectionId());
 
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(packagex);
         if (bUpdateSyncDelegate) {
-            OASyncDelegate.setSyncClient(packagex, this);
+            og.getSyncService().setSyncClient(this);
         }
 
         LOG.fine("getting remote objects for OASyncClient");
@@ -397,7 +397,7 @@ public class OASyncClient {
 			// both Hub && pp are set by HubMerger, HubGroupBy
 			final boolean bHasSiblingHelper = OARuntime.get().threadLocals().hasSiblingHelpers();
 
-			if (OARemoteThreadDelegate.isRemoteThread()) {
+			if (OARuntime.remoteThreadService().isRemoteThread()) {
 				// use annotated version that does not use the msg queue
 				//qqqqq cntDup = OAObjectSerializeDelegate.cntDup;
 				//qqqqq cntNew = OAObjectSerializeDelegate.cntNew;
@@ -795,7 +795,8 @@ public class OASyncClient {
 		remoteMultiplexerClient = null;
 
 		if (bUpdateSyncDelegate) {
-			OASyncDelegate.setSyncClient(packagex, null);
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(packagex);
+			og.getSyncService().setSyncClient(null);
 			//qqqqqq not needed: OASyncDelegate.setRemoteServer(packagex, null);
 			//qqqqqq not needed: OASyncDelegate.setRemoteSync(packagex, null);
 			//qqqqqq not needed: OASyncDelegate.setRemoteSession(packagex, null);

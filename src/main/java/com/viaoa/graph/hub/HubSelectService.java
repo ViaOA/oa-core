@@ -14,7 +14,6 @@ import com.viaoa.hub.*;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;

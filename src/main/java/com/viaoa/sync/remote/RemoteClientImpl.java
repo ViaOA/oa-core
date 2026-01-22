@@ -27,13 +27,8 @@ import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASyncDelegate;
 /**
  * Base server-side implementation of {@link RemoteClientInterface}. Each
  * connected client has its own concrete instance, created by the server's
@@ -396,8 +391,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		Hub h = getHub(obj, hubPropertyName);
 		if (h == null) {
 			// store null so that it can be an empty hub if needed (and wont have to get from server)
-			if (!OASyncDelegate.isServer(objectClass)) {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+			if (!og.getSyncService().isServer()) {
                 final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
                 srvcOAObjectProperty.setPropertyCAS(obj, hubPropertyName, null, null, true, false);
 			}
@@ -423,11 +418,12 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 		OAObject obj = (OAObject) srvcObjectCache.get(objectClass, origKey);
-		if (obj == null && OASyncDelegate.isServer(objectClass)) {
+		if (obj == null && og.getSyncService().isServer()) {
 			obj = (OAObject) OADataSource.getObject(objectClass, origKey);
 			if (obj != null) {
 				// object must have been GCd, use the original guid
-				OAObjectDelegate.reassignGuid(obj, origKey);
+//qqqqqqqqqqqqqqqqqqqqqqqqq 20260121 WAS: 				
+//qq				og.getOAObjectService().getOAObjectGuidService().reassignGuid(obj, origKey);
 			}
 		}
 		return obj;
@@ -451,7 +447,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
 		final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 		boolean bWasLoaded = srvcOAObjectReflect.isReferenceHubLoaded(obj, hubPropertyName);
-		if (!bWasLoaded && !OASyncDelegate.isServer(obj.getClass())) {
+		if (!bWasLoaded && !og.getSyncService().isServer()) {
 			return null;
 		}
 		Object objx = srvcOAObjectReflect.getProperty(obj, hubPropertyName);

@@ -26,10 +26,7 @@ import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectLockService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDSDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
@@ -376,11 +373,12 @@ public class OADataSourceAuto extends OADataSource {
 			}
 		}
 
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
 		try {
-			OAObjectDSDelegate.setAssigningId(oaObj, true);
+			og.getOAObjectService().getOAObjectDSService().setAssigningId(oaObj, true);
 			oaObj.setProperty(prop, id);
 		} finally {
-			OAObjectDSDelegate.setAssigningId(oaObj, false);
+			og.getOAObjectService().getOAObjectDSService().setAssigningId(oaObj, false);
 		}
 	}
 

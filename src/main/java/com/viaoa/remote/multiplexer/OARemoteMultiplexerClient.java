@@ -36,9 +36,7 @@ import java.util.logging.Logger;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.comm.multiplexer.io.VirtualSocket;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.OARemoteThread;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.BindInfo;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
@@ -681,12 +679,12 @@ public class OARemoteMultiplexerClient {
 		}
 
 		// check if remoteThread, and if it has already processed it's msg before calling remote method
-		if (!OARemoteThreadDelegate.isSafeToCallRemoteMethod()) {
+		if (!OARuntime.remoteThreadService().isSafeToCallRemoteMethod()) {
 			if (errorCnt++ < 25 || (errorCnt % 100 == 0)) {
 				//Exception e = new Exception("isSafeToCallRemoteMethod is false");
 				//LOG.log(Level.WARNING, "note: isSafeToCallRemoteMethod is false, will continue, starting another OARemoteThread", e);
 			}
-			OARemoteThreadDelegate.startNextThread();
+			OARuntime.remoteThreadService().startNextThread();
 		}
 
 		// compress flagged arguments
@@ -1984,12 +1982,13 @@ public class OARemoteMultiplexerClient {
 			}
 		}
 
+		boolean bWasSendMessages = false;
 		try {
-			OARuntime.get().threadLocals().setRemoteRequestInfo(ri);
+			OARuntime.threadLocals().setRemoteRequestInfo(ri);
 
 			// 20141217
 			if (!ri.bind.isBroadcast) {
-				OARemoteThreadDelegate.sendMessages(true);
+				bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
 			}
 			ri.response = ri.method.invoke(ri.bind.getObject(), ri.args);
 		} catch (InvocationTargetException e) {
@@ -2006,10 +2005,10 @@ public class OARemoteMultiplexerClient {
 		} finally {
 			// 20141217
 			if (!ri.bind.isBroadcast) {
-				OARemoteThreadDelegate.sendMessages(false);
+				if (bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
 			}
 		}
-		OARuntime.get().threadLocals().setRemoteRequestInfo(null);
+		OARuntime.threadLocals().setRemoteRequestInfo(null);
 
 		if (ri.response != null && ri.methodInfo.remoteReturn != null) {
 			BindInfo bindx = getBindInfoForObject((Object) ri.response);

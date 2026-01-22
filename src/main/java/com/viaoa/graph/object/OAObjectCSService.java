@@ -15,10 +15,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
@@ -61,7 +59,7 @@ public class OAObjectCSService {
 	 *         otherwise {@code false}
 	 */
 	public static boolean isRemoteThread() {
-		return OARemoteThreadDelegate.isRemoteThread();
+		return OARuntime.remoteThreadService().isRemoteThread();
 	}
 
 	/**
@@ -77,12 +75,8 @@ public class OAObjectCSService {
 	 *         {@code false} if running as a client
 	 */
 	public boolean isServer(OAObject obj) {
-		Class c;
-		if (obj == null)
-			c = Object.class;
-		else
-			c = obj.getClass();
-		return OASyncDelegate.isServer(c);
+		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+		return og.getSyncService().isServer();
 	}
 
 	/**
@@ -97,12 +91,8 @@ public class OAObjectCSService {
 	 * @return {@code true} if not running as a server; otherwise {@code false}
 	 */
 	public boolean isWorkstation(OAObject obj) {
-		Class c;
-		if (obj == null)
-			c = Object.class;
-		else
-			c = obj.getClass();
-		return !OASyncDelegate.isServer(c);
+		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+		return !og.getSyncService().isServer();
 	}
 
 	/**
@@ -112,12 +102,10 @@ public class OAObjectCSService {
 	 * @param obj the newly created object; ignored if {@code null}
 	 */
 	public void objectCreated(OAObject obj) {
-		if (obj == null)
-			return;
-
-		OASyncClient sc = OASyncDelegate.getSyncClient(obj.getClass());
-		if (sc != null)
-			sc.objectCreated(obj);
+		if (obj == null) return;
+		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+		OASyncClient sc = og.getSyncService().getSyncClient();
+		if (sc != null) sc.objectCreated(obj);
 	}
 
 
@@ -137,12 +125,10 @@ public class OAObjectCSService {
 	 */
 	public void updateObjectsWithoutHubs(OAObject obj) {
 		if (obj == null) return;
-		
-		OAGraphImpl og = (OAGraphImpl) (OARuntime.get().graph(obj));
+		OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(obj));
         if (og.getOAObjectService().getOAObjectInfoService().getOAObjectInfo(obj).getLocalOnly()) return;
-		OASyncClient sc = OASyncDelegate.getSyncClient(obj.getClass());
-		if (sc != null)
-			sc.updateObjectsWithoutHubs(obj);
+		OASyncClient sc = og.getSyncService().getSyncClient();
+		if (sc != null) sc.updateObjectsWithoutHubs(obj);
 	}
 
 	/**
@@ -155,15 +141,12 @@ public class OAObjectCSService {
 	 *         client is available
 	 */
 	public OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
-		if (oaObj == null)
-			return null;
-		RemoteClientInterface ri = OASyncDelegate.getRemoteClient(oaObj.getClass());
-		if (ri != null) {
-			OAObject obj = ri.createCopy(oaObj.getClass(), oaObj.getObjectKey(), excludeProperties);
-			;
-			return obj;
-		}
-		return null;
+		if (oaObj == null) return null;
+		OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
+		RemoteClientInterface ri = og.getSyncService().getRemoteClient();
+		if (ri == null) return null;
+		OAObject obj = ri.createCopy(oaObj.getClass(), oaObj.getObjectKey(), excludeProperties);
+		return obj;
 	}
 
 	/**
@@ -210,13 +193,11 @@ public class OAObjectCSService {
 	 *         {@code false}
 	 */
 	public boolean save(OAObject oaObj, int iCascadeRule) {
-		if (oaObj == null)
-			return false;
-		RemoteServerInterface rs = OASyncDelegate.getRemoteServer(oaObj.getClass());
-		if (rs != null) {
-			return rs.save(oaObj.getClass(), oaObj.getObjectKey(), iCascadeRule);
-		}
-		return false;
+		if (oaObj == null) return false;
+		OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
+		RemoteServerInterface rs = og.getSyncService().getRemoteServer();
+		if (rs == null) return false;
+		return rs.save(oaObj.getClass(), oaObj.getObjectKey(), iCascadeRule);
 	}
 
     /**
@@ -229,29 +210,29 @@ public class OAObjectCSService {
      *         {@code false} if performed on the server
      */
     public boolean delete(final OAObject obj) {
-    	//qqqqqqqq method was protected
         if (obj == null) return false;
         LOG.finer("obj="+obj);
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(obj));
 
-        if (OASyncDelegate.isSingleUser()) {
+        if (og.getSyncService().isSingleUser()) {
             return true; // run delete
         }
 
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(obj.getClass());
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs == null) return true;
 
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return true; 
         
-        if (OASyncDelegate.isServer(obj.getClass())) { 
+        if (og.getSyncService().isServer()) { 
             // this will invoke on the server using OARemoteThread
             rs.serverDelete(obj.getClass(), obj.getObjectKey());
             return false;  
         }
 
         // this is running as OAClient
-        if (!OARemoteThreadDelegate.shouldSendMessages()) return true;
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return true;
+        if (!OARuntime.remoteThreadService().shouldSendMessages()) return true;
+        if (OARuntime.threadLocalService().isSuppressCSMessages()) return true;
         
         rs.serverDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
         
@@ -267,11 +248,12 @@ public class OAObjectCSService {
      */
     public void sendDeleteToClients(OAObject obj) {
         if (obj == null) return;
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(obj));
 
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(obj.getClass());
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs == null) return;
         
-        if (!OASyncDelegate.isServer(obj.getClass())) return;
+        if (!og.getSyncService().isServer()) return;
         // needs to send these to client if on RemoteThread        
         
         if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
@@ -291,7 +273,8 @@ public class OAObjectCSService {
      */
 	public OAObject getServerObject(Class clazz, OAObjectKey key) {
 	    if (clazz == null || key == null) return null;
-        RemoteServerInterface rs = OASyncDelegate.getRemoteServer(clazz);
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(clazz));
+        RemoteServerInterface rs = og.getSyncService().getRemoteServer();
         OAObject result;
         if (rs != null) {
             result = rs.getObject(clazz, key);
@@ -302,7 +285,8 @@ public class OAObjectCSService {
 
 	public OAObject getServerObjectUsingPkey(Class clazz, OAObjectKey key) {
 	    if (clazz == null || key == null) return null;
-        RemoteServerInterface rs = OASyncDelegate.getRemoteServer(clazz);
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(clazz));
+        RemoteServerInterface rs = og.getSyncService().getRemoteServer();
         OAObject result;
         if (rs != null) {
             result = rs.getObjectUsingPkey(clazz, key);
@@ -324,7 +308,8 @@ public class OAObjectCSService {
         if (oaObj == null || linkPropertyName == null) return null;
         Object obj = null;
         
-        OASyncClient sc = OASyncDelegate.getSyncClient(oaObj.getClass());
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
+        OASyncClient sc = og.getSyncService().getSyncClient();
         if (sc != null) {
             obj = sc.getDetail(oaObj, linkPropertyName);
         }
@@ -346,8 +331,9 @@ public class OAObjectCSService {
     public Object getServerReference(OAObject oaObj, String linkPropertyName) {
         LOG.finer("object="+oaObj+", linkProperyName="+linkPropertyName);
         if (oaObj == null || linkPropertyName == null) return null;
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
         Object value = null;
-        OASyncClient sc = OASyncDelegate.getSyncClient(oaObj.getClass());
+        OASyncClient sc = og.getSyncService().getSyncClient();
         if (sc != null) {
             value = sc.getDetail(oaObj, linkPropertyName);
         }
@@ -369,7 +355,8 @@ public class OAObjectCSService {
         LOG.finer("object="+oaObj+", linkProperyName="+linkPropertyName);
         if (oaObj == null || linkPropertyName == null) return null;
     	Hub hub = null;
-        OASyncClient sc = OASyncDelegate.getSyncClient(oaObj.getClass());
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
+        OASyncClient sc = og.getSyncService().getSyncClient();
         if (sc != null) {
             Object obj = sc.getDetail(oaObj, linkPropertyName);
             if (obj instanceof Hub) hub = (Hub) obj;
@@ -395,7 +382,8 @@ public class OAObjectCSService {
 	public boolean loadReferenceHubDataOnServer(Hub thisHub, OASelect select) {
         if (thisHub == null) return false;
         boolean bResult;
-        if (OASyncDelegate.isServer(thisHub)) {
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(thisHub));
+        if (og.getSyncService().isServer()) {
             //LOG.finest("hub="+hub);
 
             // 20140328 performance improvement 
@@ -406,11 +394,11 @@ public class OAObjectCSService {
             // load all data without sending messages
             // even though Hub.writeObject does this, this data could be used on server application
         	try {
-        		OARuntime.get().threadLocalService().setSuppressCSMessages(true);
+        		OARuntime.threadLocalService().setSuppressCSMessages(true);
         		srvcHub.getHubSelectService().loadAllData(thisHub, select);
         	}
         	finally {
-        		OARuntime.get().threadLocalService().setSuppressCSMessages(false);        	
+        		OARuntime.threadLocalService().setSuppressCSMessages(false);        	
         	}
         }
         else bResult = false;
@@ -429,14 +417,15 @@ public class OAObjectCSService {
 	 */
     public void fireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
         if (obj == null) return;
-        RemoteSyncInterface rs = OASyncDelegate.getRemoteSync(obj.getClass());
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(obj));
+        RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         
         if (rs == null) return;
         
-        if (!OARemoteThreadDelegate.shouldSendMessages()) return;
+        if (!OARuntime.remoteThreadService().shouldSendMessages()) return;
         
-        if (OARuntime.get().threadLocalService().isLoading()) return;
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
+        if (OARuntime.threadLocalService().isLoading()) return;
+        if (OARuntime.threadLocalService().isSuppressCSMessages()) return;
 
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
         if (oi.getLocalOnly()) return;

@@ -27,34 +27,23 @@ import com.viaoa.graph.hub.HubShareService;
 import com.viaoa.graph.hub.HubSortService;
 import com.viaoa.graph.hub.HubXMLService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAddRemoveDelegate;
 import com.viaoa.hub.HubAutoMatch;
 import com.viaoa.hub.HubAutoSequence;
 import com.viaoa.hub.HubCombined;
-import com.viaoa.hub.HubDSDelegate;
 import com.viaoa.hub.HubData;
-import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.hub.HubDataMaster;
 import com.viaoa.hub.HubDataUnique;
-import com.viaoa.hub.HubDetailDelegate;
-import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.hub.HubFilter;
 import com.viaoa.hub.HubInternalBridge;
-import com.viaoa.hub.HubLinkDelegate;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.hub.HubMerger;
-
-//qqqqqqqqqqqqqqqqqqqqqqq
-import com.viaoa.hub.HubDelegate.HubCurrentStateEnum;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OANullObject;
@@ -66,6 +55,7 @@ public class HubService {
 	private final Hub.FriendAccess faHub;
 	
 	private OAObjectService srvcObject;
+	private OASyncService srvcSync;
 	
 	private HubAddRemoveService srvcHubAddRemove;
 	private HubAOService srvcHubAO;
@@ -91,10 +81,11 @@ public class HubService {
     	this.faHub = faBridge.getHubFriendAccess();
 	}
 
-	public void initialize(OAObjectService srvcObject) {
+	public void initialize(OAObjectService srvcObject, OASyncService srvcSync) {
 		if (bInitialized) return;
 		this.srvcObject = srvcObject; 
 		if (srvcObject == null) return;
+		this.srvcSync = srvcSync;
 		bInitialized = true;
 		
     	srvcHubAddRemove = new HubAddRemoveService(srvcObject, this, faBridge.getHubFriendAccess());
@@ -114,6 +105,27 @@ public class HubService {
     	srvcHubShare = new HubShareService(srvcObject, this, faBridge.getHubFriendAccess());
     	srvcHubSort = new HubSortService(srvcObject, this, faBridge.getHubFriendAccess());
     	srvcHubXML = new HubXMLService(srvcObject, this, faBridge.getHubFriendAccess());
+	}
+	
+	/**
+	 * Enumeration describing the synchronization state of a hub during updates.
+	 *
+	 * <ul>
+	 *   <li>{@code InSync} – the hub is correctly aligned with its master or linked
+	 *       state.</li>
+	 *   <li>{@code DetailDisconectedFromMaster} – the detail hub does not match its
+	 *       expected master state.</li>
+	 *   <li>{@code DetailHubNotSameAsMasterObject} – the detail hub contains a
+	 *       different object than the master hub’s active object.</li>
+	 *   <li>{@code HubMergerNotUpdated} – a hub merger is not in sync with its
+	 *       source hubs.</li>
+	 * </ul>
+	 */
+	public static enum HubCurrentStateEnum {
+		InSync,
+		DetailDisconectedFromMaster,
+		DetailHubNotSameAsMasterObject, // caused when object/hubs are in flux (hub event that is calling listeners and changing linkages)
+		HubMergerNotUpdated
 	}
 	
 	
@@ -210,7 +222,8 @@ public class HubService {
 			return false;
 		}
 
-		if (HubDataDelegate.getChanged(thisHub)) {
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(thisHub));
+		if (srvcHubData.getChanged(thisHub)) {
 			return true;
 		}
 		if (iCascadeRule == OAObject.CASCADE_NONE) {
@@ -219,7 +232,7 @@ public class HubService {
 
 		if (thisHub.isOAObject()) {
 			for (int i = 0;; i++) {
-				Object object = HubDataDelegate.getObjectAt(thisHub, i);
+				Object object = srvcHubData.getObjectAt(thisHub, i);
 				if (object == null) {
 					break;
 				}
@@ -354,7 +367,7 @@ public class HubService {
 			if (objx != null) {
 				return objx;
 			}
-			object = HubDataDelegate.getObject(hub, object); // might not have loaded all data yet (fetchMore will be called)
+			object = srvcHubData.getObject(hub, object); // might not have loaded all data yet (fetchMore will be called)
 		}
 		return object;
 	}
@@ -422,7 +435,7 @@ public class HubService {
 		if (hub == null) {
 			return null;
 		}
-		HubDataMaster dm = HubDetailDelegate.getDataMaster(hub, true);
+		HubDataMaster dm = srvcHubDetail.getDataMaster(hub, true);
 		if (dm == null) {
 			return null;
 		}
@@ -441,7 +454,7 @@ public class HubService {
 		if (hub == null) {
 			return null;
 		}
-		HubDataMaster dm = HubDetailDelegate.getDataMaster(hub, true);
+		HubDataMaster dm = srvcHubDetail.getDataMaster(hub, true);
 		Object obj = dm.getMasterObject();
 		if (obj != null) {
 			return obj.getClass();
@@ -470,7 +483,7 @@ public class HubService {
 		Class cx = faBridge.getHubFriendAccess().getHubData(thisHub).getObjClass();
 		
 		if (cx != null && !cx.equals(objClass) && !cx.equals(OAObject.class)) {
-			if (HubDataDelegate.getCurrentSize(thisHub) > 0
+			if (srvcHubData.getCurrentSize(thisHub) > 0
 					|| (hdu.getVecHubDetail() != null && hdu.getVecHubDetail().size() > 0)) {
 				throw new RuntimeException("cant change object class if objects are in hub");
 			}
@@ -508,13 +521,13 @@ public class HubService {
 	 * @return {@code true} if the hub is valid; otherwise {@code false}
 	 */
 	public boolean isValid(final Hub thisHub) {
-		HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
+		HubDataMaster dm = srvcHubDetail.getDataMaster(thisHub, true);
 		if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
 			return false;
 		}
 
 		// 20181119 reworked to check other hubs for hubWithLink
-		Hub h = HubLinkDelegate.getHubWithLink(thisHub, true);
+		Hub h = srvcHubLink.getHubWithLink(thisHub, true);
 		if (h != null) {
 			Hub hx = faBridge.getHubFriendAccess().getHubDataUnique(h).getLinkToHub();
 			if (hx != null) {
@@ -600,7 +613,7 @@ public class HubService {
 		Hub hubMaster;
 		boolean bHasMaster = false;
 		for (int i = 0;; i++, hub = hubMaster) {
-			HubDataMaster dm = HubDetailDelegate.getDataMaster(hub, true);
+			HubDataMaster dm = srvcHubDetail.getDataMaster(hub, true);
 
 			hubMaster = dm.getMasterHub();
 			if (hubMaster == null) {
@@ -657,7 +670,7 @@ public class HubService {
 		HubCombined hubCombined = null;
 		HubFilter hubFilter = null;
 
-		HubListener[] hls = HubEventDelegate.getAllListeners(hub);
+		HubListener[] hls = srvcHubEvent.getAllListeners(hub);
 
 		if (hls != null) {
 			for (HubListener hl : hls) {
@@ -792,13 +805,13 @@ public class HubService {
      * @return the controlling hub
      */
 	public Hub getControllingHub(Hub thisHub) {
-		HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub, true);
+		HubDataMaster dm = srvcHubDetail.getDataMaster(thisHub, true);
 		if (dm.getMasterHub() != null) {
 			return dm.getMasterHub();
 		}
 
 		// 20181119 find shared hub with link
-		Hub hubWithLink = HubLinkDelegate.getHubWithLink(thisHub, true);
+		Hub hubWithLink = srvcHubLink.getHubWithLink(thisHub, true);
 		
 		if (hubWithLink != null) {
 			HubDataUnique hdu = faBridge.getHubFriendAccess().getHubDataUnique(hubWithLink);			
@@ -864,7 +877,7 @@ public class HubService {
 			final boolean bIsSaving) {
 		//qqqqqqqq method was protected
 		// removed Objects need to be saved if reference = null.
-		HubDataMaster dm = HubDetailDelegate.getDataMaster(thisHub);
+		HubDataMaster dm = srvcHubDetail.getDataMaster(thisHub);
 		
 		boolean bM2M = (dm != null && dm.getDetailToMasterLinkInfo() != null && dm.getDetailToMasterLinkInfo().getType() == OALinkInfo.MANY);
 		OALinkInfo liRev = null;
@@ -888,7 +901,7 @@ public class HubService {
 			}
 		}
 
-		Object[] objs = HubDataDelegate.getRemovedObjects(thisHub);
+		Object[] objs = srvcHubData.getRemovedObjects(thisHub);
 		if (objs == null) {
 			return;
 		}
@@ -912,7 +925,7 @@ public class HubService {
 					srvcObject.getOAObjectDSService().removeReference(obj, dm.getDetailToMasterLinkInfo());
 					//was: OAObjectSaveDelegate._saveObjectOnly(obj, cascade);
 				}
-			} else if (bIsSaving && dm != null && dm.getDetailToMasterLinkInfo() != null && !bHasMethod && OASync.isServer() && !obj.isDeleted()) {
+			} else if (bIsSaving && dm != null && dm.getDetailToMasterLinkInfo() != null && !bHasMethod && srvcSync.isServer() && !obj.isDeleted()) {
 				// 20181126 if it is a removed object from ServerRoot, need to save now
 				srvcObject.getOAObjectSaveService().save(obj, iCascadeRule, cascade);
 			}
@@ -944,7 +957,7 @@ public class HubService {
 			if (obj.getNew()) continue;
 			Object objx = srvcObject.getOAObjectReflectService().getRawReference(obj, dm.getDetailToMasterLinkInfo().getName());
 			if (objx instanceof Hub) {
-				HubDataDelegate.removeFromAddedList((Hub) objx, dm.getMasterObject());
+				srvcHubData.removeFromAddedList((Hub) objx, dm.getMasterObject());
 			}
 		}
 		for (int i = 0; removes != null && i < removes.length; i++) {
@@ -953,12 +966,12 @@ public class HubService {
 			OAObject obj = (OAObject) removes[i];
 			Object objx = srvcObject.getOAObjectReflectService().getRawReference(obj, dm.getDetailToMasterLinkInfo().getName());
 			if (objx instanceof Hub) {
-				HubDataDelegate.removeFromRemovedList((Hub) objx, dm.getMasterObject());
+				srvcHubData.removeFromRemovedList((Hub) objx, dm.getMasterObject());
 			}
 		}
 		if (b) {
 			String propFromMaster = srvcObject.getOAObjectInfoService().getReverseLinkInfo(dm.getDetailToMasterLinkInfo()).getName();
-			HubDSDelegate.updateMany2ManyLinks(dm.getMasterObject(), adds, removes, propFromMaster);
+			srvcHubDS.updateMany2ManyLinks(dm.getMasterObject(), adds, removes, propFromMaster);
 		}
 	}
 
@@ -1124,7 +1137,7 @@ public class HubService {
 	public int getSize(Hub thisHub) {
 		if (getHubSelectService().isMoreData(thisHub)) {
 			if (!getHubSelectService().isCounted(thisHub)) {
-				if (HubDataDelegate.getCurrentSize(thisHub) == 0) {
+				if (srvcHubData.getCurrentSize(thisHub) == 0) {
 					getHubSelectService().fetchMore(thisHub); // see if this will load it, before calling count on the select
 					if (!getHubSelectService().isMoreData(thisHub)) {
 						return getSize(thisHub);
@@ -1136,7 +1149,7 @@ public class HubService {
 				return x;
 			}
 		}
-		return HubDataDelegate.getCurrentSize(thisHub);
+		return srvcHubData.getCurrentSize(thisHub);
 	}
 
 	/**
@@ -1229,7 +1242,7 @@ public class HubService {
 		if (hub == null) {
 			return;
 		}
-		if (!OASyncDelegate.isServer(hub)) {
+		if (!srvcSync.isServer()) {
 			return;
 		}
 
@@ -1242,7 +1255,7 @@ public class HubService {
 		Object master = getMasterObject(hub);
 		if (master == null) return;
 
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = srvcHubDetail.getLinkInfoFromDetailToMaster(hub);
 		if (li == null) {
 			return;
 		}

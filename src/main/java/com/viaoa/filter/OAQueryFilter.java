@@ -26,7 +26,6 @@ import com.viaoa.datasource.query.OAQueryTokenizer;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;

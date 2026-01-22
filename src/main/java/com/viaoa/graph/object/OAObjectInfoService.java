@@ -16,6 +16,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAClass;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACalcInfo;
@@ -23,7 +24,7 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.sync.OASync;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
@@ -942,7 +943,8 @@ public class OAObjectInfoService {
 			return true;
 		}
 
-		boolean bIsServer = OASync.isServer(hub);
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(hub));
+		boolean bIsServer = og.getSyncService().isServer();
 		if (bIsServer) {
 			// dont cache on server if there is not storage
 			//   by returning false, it will not be stored as a weakRef

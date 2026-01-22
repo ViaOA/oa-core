@@ -7,11 +7,11 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -207,8 +207,9 @@ public class HubDetailService {
 		if (Hub.class.isAssignableFrom(method.getReturnType())) {
 			//if (detailObject instanceof OAObjectKey) return;
 
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
 			// 20140616 if hub is not loaded and isClient, then dont need to load
-			if (!OASyncDelegate.isServer(thisHub)) {
+			if (!og.getSyncService().isServer()) {
 				if (!srvcObject.getOAObjectReflectService().isReferenceHubLoaded((OAObject) detailObject, dm.getDetailToMasterLinkInfo().getName())) {
 					return;
 				}

@@ -25,14 +25,9 @@ import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.model.ClientInfo;
 
 /**
@@ -166,7 +161,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
 		if (obj == null) {
-			if (OASyncDelegate.isServer(objectClass)) {
+			if (og.getSyncService().isServer()) {
 				obj = (OAObject) OADataSource.getObject(objectClass, objectKey);
 			}
 		}
@@ -179,7 +174,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey.getObjectIds());
 		if (obj == null) {
-			if (OASyncDelegate.isServer(objectClass)) {
+			if (og.getSyncService().isServer()) {
 				obj = (OAObject) OADataSource.getObject(objectClass, objectKey);
 			}
 		}

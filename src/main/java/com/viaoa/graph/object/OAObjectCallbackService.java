@@ -9,12 +9,11 @@ import com.viaoa.context.OAContext;
 import com.viaoa.context.OAUserAccess;
 import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.hub.HubListener;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OACascade;
@@ -27,7 +26,6 @@ import com.viaoa.object.OAObjectModel;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAObjectCallback.Type;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OAUnknownObject;
@@ -1418,6 +1416,7 @@ public class OAObjectCallbackService {
 		final Object oldValue = objectCallback.getOldValue();
 		final Object value = objectCallback.getValue();
 		final int checkType = objectCallback.getCheckType();
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
 
 		final boolean bCheckProcessedCheck = (objectCallback.getCheckType() & OAObjectCallback.CHECK_Processed) != 0;
 		final boolean bCheckEnabledProperty = (objectCallback.getCheckType() & OAObjectCallback.CHECK_EnabledProperty) != 0;
@@ -1587,7 +1586,8 @@ public class OAObjectCallbackService {
 			if ((!bHadVisibleProperty || objectCallback.getAllowed()) && OAString.isNotEmpty(sx)) {
 				OAObject user = OAContext.getContextObject();
 				if (user == null) {
-					if (!OASync.isServer()) {
+					
+					if (!og.getSyncService().isServer()) {
 						objectCallback.setAllowed(false);
 					}
 				} else {
@@ -1780,6 +1780,8 @@ public class OAObjectCallbackService {
 			}
 		}
 
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+		
 		String pp;
 		boolean b;
 		Object valx;
@@ -1803,7 +1805,7 @@ public class OAObjectCallbackService {
 				b = oi.getContextVisibleValue();
 				OAObject user = OAContext.getContextObject();
 				if (user == null) {
-					if (!OASync.isServer()) {
+					if (!og.getSyncService().isServer()) {
 						bPassed = false;
 					}
 				} else {
@@ -1850,7 +1852,7 @@ public class OAObjectCallbackService {
 					b = li.getContextVisibleValue();
 					OAObject user = OAContext.getContextObject();
 					if (user == null) {
-						if (!OASync.isServer()) {
+						if (!og.getSyncService().isServer()) {
 							bPassed = false;
 						}
 					} else {

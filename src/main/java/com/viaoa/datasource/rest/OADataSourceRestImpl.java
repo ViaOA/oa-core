@@ -28,7 +28,6 @@ import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 

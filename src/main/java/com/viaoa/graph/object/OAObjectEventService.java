@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
@@ -19,11 +20,8 @@ import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.undo.OAUndoableEdit;
 import com.viaoa.util.OACompare;
@@ -125,18 +123,19 @@ public class OAObjectEventService {
 				return;
 			}
 		}
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
 
-		final boolean bIsLoading = OARuntime.get().threadLocalService().isLoading();
+		final boolean bIsLoading = OARuntime.threadLocalService().isLoading();
 		if (bIsLoading) {
 			if (!srvcObject.getOAObjectHubService().isInHub(oaObj)) { // 20110719: could be in the OAObjectCache.SelectAllHubs
 				// no listeners, need to load quick as possible
 				if (srvcSync.isServer()) { // 20150604 if client, then it needs to send prop change to server
 					return;
 				}
-				OASyncClient sc = OASync.getSyncClient(); 
+				OASyncClient sc = og.getSyncService().getSyncClient(); 
 				if (sc != null && !sc.isObjectOnServer(oaObj)) return;
 			}
-		} else if (!OARemoteThreadDelegate.isRemoteThread()) {
+		} else if (!OARuntime.remoteThreadService().isRemoteThread()) {
 			// 20180617 validate
 			boolean bSkip = false;
 			if (propertyName != null) {
@@ -284,7 +283,7 @@ public class OAObjectEventService {
 				&& linkInfo.getType() == OALinkInfo.ONE && !linkInfo.getCalculated()) {
 			OALinkInfo rev = linkInfo.getReverseLinkInfo();
 		    if (rev != null && rev.getOwner()) {		    
-    			if (!OARuntime.get().threadLocalService().isDeleting() && OASync.isServer()) {
+    			if (!OARuntime.get().threadLocalService().isDeleting() && og.getSyncService().isServer()) {
     				OAObjectInfo oix = srvcObject.getOAObjectInfoService().getOAObjectInfo((OAObject) oldObj);
     				if (!oix.getLookup() && !oix.getPreSelect()) {
     					cntSetOwnerNull++;
@@ -299,7 +298,7 @@ public class OAObjectEventService {
 		    }
 		}
 
-		if (linkInfo == null && !OARemoteThreadDelegate.isRemoteThread()) {
+		if (linkInfo == null && !OARuntime.remoteThreadService().isRemoteThread()) {
 			OAPropertyInfo propInfo = srvcObject.getOAObjectInfoService().getPropertyInfo(oi, propertyU);
 			if (!bIsLoading && propInfo != null && propInfo.getIsSubmit() && newObj != null) {
 				if (OAConv.toBoolean(newObj)) {
@@ -383,9 +382,9 @@ public class OAObjectEventService {
 
 		if (!bLocalOnly && !bIsLoading) {
 			// 20140314 if it is in newObjectCache (this computer only), then dont send prop changes
-		    boolean b = OASync.isServer();
+		    boolean b = og.getSyncService().isServer();
 		    if (!b) {
-	            OASyncClient sc = OASync.getSyncClient(); 
+	            OASyncClient sc = og.getSyncService().getSyncClient(); 
 	            b = (sc != null && sc.isObjectOnServer(oaObj));
 		    }
             if (b) {
@@ -570,7 +569,7 @@ public class OAObjectEventService {
 		if (!bIsLoading) {
 			if (!bLocalOnly) {
 				// prior to 20100406, this was always calling these methods
-				OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+				OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
 
 				//note: this next method will just return, since fireBeforePropChange is now doing this
 				// srvcObject.getOAObjectCSService().fireAfterPropertyChange(oaObj, origKey, propertyName, oldObj, newObj);
@@ -588,6 +587,7 @@ public class OAObjectEventService {
 				}
 			}
 		}
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
 
 		// 20151117 if one2one, and new value is null, then set prop to null in link prop
 		if (linkInfo != null && !bUnknownValues) {
@@ -595,7 +595,7 @@ public class OAObjectEventService {
 			if (revLinkInfo != null) {
 				if (revLinkInfo.getType() == OALinkInfo.ONE) {
 					if (oldObj instanceof OAObjectKey) {
-						if (OASync.isClient(oaObj)) { // 20151117 dont get from server if this is client
+						if (og.getSyncService().isClient()) { // 20151117 dont get from server if this is client
 							OAObject objx = srvcObject.getOAObjectCacheService().get(linkInfo.getToClass(), (OAObjectKey) oldObj);
 							srvcObject.getOAObjectPropertyService().setPropertyCAS(objx, revLinkInfo.getName(), null, oaObj);
 						}
@@ -853,13 +853,15 @@ public class OAObjectEventService {
 			return;
 		}
 
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
+		
 		if (revLinkInfo.getType() == OALinkInfo.ONE) {
 			try {
 				OAObjectInfo oiRev = srvcObject.getOAObjectInfoService().getOAObjectInfo(linkInfo.getToClass());
 				Method m = srvcObject.getOAObjectInfoService().getMethod(oiRev, "get" + revLinkInfo.getName(), 0); // make sure that the method exists
 				if (m != null) {
 					if (oldObj instanceof OAObjectKey) {
-						if (OASync.isClient(oaObj)) { // 20151117 dont get from server if this is client
+						if (og.getSyncService().isClient()) { // 20151117 dont get from server if this is client
 							oldObj = srvcObject.getOAObjectCacheService().get(linkInfo.getToClass(), (OAObjectKey) oldObj);
 						} else {
 							oldObj = srvcObject.getOAObjectReflectService().getObject(linkInfo.getToClass(), (OAObjectKey) oldObj);
@@ -869,7 +871,7 @@ public class OAObjectEventService {
 						// 20150820 if one2one, then dont load if null and isClient
 						//   this was discovered when deleting an IDL and function/gsmrFunction (1to1) kept going to server for other value
 						boolean b = true;
-						if (OASync.isClient(oaObj)) {
+						if (og.getSyncService().isClient()) {
 							obj = srvcObject.getOAObjectPropertyService().getProperty((OAObject) oldObj, revLinkInfo.getName());
 							if (obj == null) {
 								// dont get from server

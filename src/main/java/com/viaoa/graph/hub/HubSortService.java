@@ -10,9 +10,7 @@ import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.OAComparator;
 import com.viaoa.util.OAString;
 
@@ -109,7 +107,7 @@ public class HubSortService {
      * @return true if sorting parameters changed
      */
     private boolean _sort(Hub thisHub, String propertyPaths, final boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly) {
-        OARemoteThreadDelegate.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
 
         if (comp != null && !(comp instanceof Serializable)) {
             if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) { 

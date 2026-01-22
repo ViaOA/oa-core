@@ -6,11 +6,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.sync.OASync;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 
 public class HubShareService {
@@ -548,7 +549,8 @@ public class HubShareService {
 			*/
 			faHub.getHubDataActive(thisHub).setActiveObject(null);
 
-			if (thisHub.getSize() == 0 || thisHub.getLinkHub(true) != null || faHub.getHubDataUnique(thisHub).isNullOnRemove() || OASync.isRemoteThread()) {
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+			if (thisHub.getSize() == 0 || thisHub.getLinkHub(true) != null || faHub.getHubDataUnique(thisHub).isNullOnRemove() || og.getSyncService().isRemoteThread()) {
 				// 20120505 dont update a linked value that has already been set
 				srvcHub.getHubAOService().setActiveObject(thisHub, -1, false, true, false); // bUpdateLink, bForce, bCalledByShareHub
 				// was: srvcHub.getHubAOService().setActiveObject(thisHub, -1, true, true,false); // bUpdateLink,bForce,bCalledByShareHub

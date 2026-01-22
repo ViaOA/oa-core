@@ -21,6 +21,7 @@ import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAFilterDelegate;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubTemp;
@@ -33,7 +34,6 @@ import com.viaoa.object.OAObjectCacheListener;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -1445,8 +1445,9 @@ public class OAObjectCacheService {
 		}
 		LOG.fine("refreshing " + clazz.getSimpleName());
 
-		if (!OASyncDelegate.isServer(clazz)) {
-			OASyncDelegate.getRemoteServer(clazz).refreshCache(clazz);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		if (!og.getSyncService().isServer()) {
+			og.getSyncService().getRemoteServer().refreshCache(clazz);
 			LOG.fine("refreshing " + clazz.getSimpleName() + " will be ran on the server");
 			return;
 		}

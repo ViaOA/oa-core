@@ -14,10 +14,7 @@ import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInternalBridge;
-import com.viaoa.object.OAObjectEventDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OACompare;
 
@@ -77,6 +74,7 @@ public class OAObjectService {
 	 */
 	public static final String WORD_AutoAdd = "AutoAdd";
 
+//qqqqqqqq remove these 2 boolean	
 	/**
 	 * Shared Boolean constant used when firing lifecycle-related property-change
 	 * events.

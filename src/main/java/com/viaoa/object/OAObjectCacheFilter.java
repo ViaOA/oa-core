@@ -23,11 +23,8 @@ import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubEventDelegate;
 import com.viaoa.process.OAChangeRefresher;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
@@ -170,11 +167,11 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                 if (hub == null) return;
                 if (isUsed((T) obj)) {
                     if (bServerSideOnly) { 
-                        OARemoteThreadDelegate.sendMessages(true);
+                        OARuntime.remoteThreadService().sendMessages(true);
                     }
                     hub.add((T) obj);
                     if (bServerSideOnly) { 
-                        OARemoteThreadDelegate.sendMessages(false);
+                    	OARuntime.remoteThreadService().sendMessages(false);
                     }
                 }
             }
@@ -343,7 +340,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         // hub.clear();
         
         
-        boolean b = HubDataDelegate.setLoadingAllData(hub, true);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+        boolean b = og.getHubService().getHubDataService().setLoadingAllData(hub, true);
         try {
             hub.setLoading(true);
             if (changeRefresher != null && changeRefresher.hasChanged()) return;
@@ -353,7 +351,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         }
         finally {
             hub.setLoading(false);
-            if (!b) HubDataDelegate.setLoadingAllData(hub, false);
+            if (!b) og.getHubService().getHubDataService().setLoadingAllData(hub, false);
         }
     }
     
@@ -415,10 +413,10 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         }
         
         if (bSetLoading) hub.setLoading(true);
-        boolean b = HubDataDelegate.setLoadingAllData(hub, true);
-        
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
+        boolean b = og.getHubService().getHubDataService().setLoadingAllData(hub, true);
     	
         try {
             // need to check loaded objects 
@@ -439,8 +437,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         }
         finally {
             if (bSetLoading) hub.setLoading(false);
-            if (!b) HubDataDelegate.setLoadingAllData(hub, false);
-            HubEventDelegate.fireOnNewListEvent(hub, false);
+            if (!b) og.getHubService().getHubDataService().setLoadingAllData(hub, false);
+            og.getHubService().getHubEventService().fireOnNewListEvent(hub, false);
         }
     }
     
@@ -485,11 +483,13 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             return;
         }
         
+        
         setupTrigger();
 
         if (!bRefresh) return;
+        boolean bWasSendMessages = false;
         if (bServerSideOnly) { 
-            OARemoteThreadDelegate.sendMessages(true);
+        	bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
         }
         
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
@@ -503,7 +503,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             }
         });
         if (bServerSideOnly) { 
-            OARemoteThreadDelegate.sendMessages(false);
+            if (!bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
         }
     }
 
@@ -545,13 +545,14 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                                     changeRefresher = new OAChangeRefresher() {
                                         @Override
                                         protected void process() throws Exception {
+                                    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+                                            boolean bWasLoadingAllData = og.getHubService().getHubDataService().setLoadingAllData(hub, true);
                                             try {
-                                                HubDataDelegate.setLoadingAllData(hub, true);
                                                 reselectAndRefresh();
                                             }
                                             finally {
                                                 if (!hasChanged()) {
-                                                    HubDataDelegate.setLoadingAllData(hub, false);
+                                                    if (!bWasLoadingAllData) og.getHubService().getHubDataService().setLoadingAllData(hub, false);
                                                 }
                                             }
                                         }
@@ -561,7 +562,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                             }
                         }
                         // need to flag that all data will be loaded in another thread
-                        HubDataDelegate.setLoadingAllData(hub, true, changeRefresher.getThread());
+                		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+                        og.getHubService().getHubDataService().setLoadingAllData(hub, true, changeRefresher.getThread());
                         changeRefresher.refresh();
                     }
                     else {
@@ -607,13 +609,14 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                     */
                 }
                 else {
+            		boolean bWasSendMessages = false;
                     if (bServerSideOnly) { 
-                        OARemoteThreadDelegate.sendMessages(true);
+                    	bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
                     }
                     if (isUsed((T) rootObject)) hub.add((T) rootObject);
                     else hub.remove((T) rootObject);
                     if (bServerSideOnly) { 
-                        OARemoteThreadDelegate.sendMessages(false);
+                    	if (!bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
                     }
                 }
             }

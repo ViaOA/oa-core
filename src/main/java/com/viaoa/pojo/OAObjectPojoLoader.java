@@ -22,7 +22,6 @@ import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAPropertyPath;

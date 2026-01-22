@@ -7,6 +7,7 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
@@ -18,11 +19,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
@@ -152,7 +150,8 @@ public class OAObjectDeleteService {
 			return;
 		}
 		
-		final boolean bIsSyncClient = OASync.isClient(oaObj);
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
+		final boolean bIsSyncClient = og.getSyncService().isClient();
 
 		final Hub[] hubs = srvcObject.getOAObjectHubService().getHubReferences(oaObj);
 		if (!bIsSyncClient && hubs != null) {
@@ -404,7 +403,7 @@ public class OAObjectDeleteService {
 			}
 		}
 		
-		OARemoteThreadDelegate.startNextThread();
+		OARuntime.remoteThreadService().startNextThread();
 	}
 
 	/**
@@ -502,6 +501,7 @@ public class OAObjectDeleteService {
 	 * @param cascade the cascade tracker used to prevent reprocessing
 	 */
 	private void deleteChildren(OAObject oaObj, OACascade cascade) {
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
 		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
 		List al = oi.getLinkInfos();
 		boolean bIsNew = oaObj.isNew();
@@ -640,7 +640,7 @@ public class OAObjectDeleteService {
 							}
 						}
 					} else {
-						if (OASync.isServer()) {
+						if (og.getSyncService().isServer()) {
 							srvcHub.getHubCSService().removeAllFromHub(hub);
 						}
 					}

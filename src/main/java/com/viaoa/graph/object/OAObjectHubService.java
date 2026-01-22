@@ -12,8 +12,7 @@ import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.remote.OARemoteThreadDelegate;
-import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 
 public class OAObjectHubService {
@@ -193,7 +192,7 @@ public class OAObjectHubService {
                 // 20141201 add !bIsOnHubFinalize so that if it is from a Hub finalize, then dont 
                 //    use the finalizer thread to send msg to server.
                 if (!isInHubWithMaster(oaObj)) {
-                    if (OARemoteThreadDelegate.shouldSendMessages() && !oaObj.isDeleted()) {
+                    if (OARuntime.remoteThreadService().shouldSendMessages() && !oaObj.isDeleted()) {
                         // CACHE_NOTE: if it was on the Server.cache, it was removed when it was added
                         // to a hub. Need to add to cache now that it is no longer in a hub.
                         
@@ -420,7 +419,7 @@ public class OAObjectHubService {
         }
         if (bReused) aiReuseWeakRefArray.incrementAndGet();
 
-        if (bRemoveFromServerCache && srvcSync.isClient() && OARemoteThreadDelegate.shouldSendMessages()) {
+        if (bRemoveFromServerCache && srvcSync.isClient() && OARuntime.remoteThreadService().shouldSendMessages()) {
         	srvcObject.getOAObjectCSService().updateObjectsWithoutHubs(oaObj);
         }
         return true;

@@ -38,12 +38,8 @@ import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocalDelegate;
@@ -834,7 +830,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 						oaObject = (OAObject) srvcObjectCache.add(oaObject, false, true);
 					}
 
-					OAObjectDelegate.setNew(oaObject, false);
+					og.getOAObjectService().setNew(oaObject, false);
 					oaObject.setChanged(false);
 					bLoadedObject = true;
 					bSetChangedAndNew = true;
@@ -870,7 +866,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 			throw new RuntimeException(e);
 		} finally {
 			if (bLoadedObject && !bSetChangedAndNew && oaObject != null) {
-				OAObjectDelegate.setNew(oaObject, false);
+				og.getOAObjectService().setNew(oaObject, false);
 				oaObject.setChanged(false);
 			}
 			if (bDataSourceLoadingObject) {

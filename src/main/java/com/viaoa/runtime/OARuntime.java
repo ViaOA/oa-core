@@ -216,7 +216,7 @@ public final class OARuntime {
 	}
 	
 	
-	
+//qqqqqq need to hide this qqqqqqqqqqq	
 	public static OAThreadLocalService threadLocalService() {
 		return runtime.threadLocalService;
 	}
@@ -224,6 +224,7 @@ public final class OARuntime {
 		return runtime.threadLocalService;
 	}
 
+//qqqqqq need to hide this qqqqqqqqqqq	
 	public static OARemoteThreadService remoteThreadService() {
 		return runtime.remoteThreadService;
 	}
@@ -231,6 +232,7 @@ public final class OARuntime {
 		return runtime.remoteThreadService;
 	}
 
+//qqqqqq need to hide this qqqqqqqqqqq	
 	public static OADataSourceService dataSourceService() {
 		return runtime.dataSourceService;
 	}

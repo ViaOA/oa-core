@@ -7,7 +7,6 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectSaveDelegate;
 
 public class HubSaveService {
 	private final Logger LOG = Logger.getLogger(HubSaveService.class.getName());

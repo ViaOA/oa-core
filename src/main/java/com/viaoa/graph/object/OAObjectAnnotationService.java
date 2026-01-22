@@ -1069,8 +1069,7 @@ public class OAObjectAnnotationService {
 
 			// 20160625
 			OATriggerListener tl = new OATriggerMethodListener(clazz, method, bOnlyUseLoadedData);
-			OATriggerDelegate.createTrigger(method.getName(), clazz, tl, props, bOnlyUseLoadedData, bServerSideOnly, bBackgroundThread,
-											true);
+			OATriggerDelegate.createTrigger(method.getName(), clazz, tl, props, bOnlyUseLoadedData, bServerSideOnly, bBackgroundThread, true);
 		}
 	}
 

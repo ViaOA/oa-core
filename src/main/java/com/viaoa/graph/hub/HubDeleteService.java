@@ -7,13 +7,9 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAddRemoveDelegate;
-//import com.viaoa.hub.HubDataDelegate;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectDeleteDelegate;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
 
 public class HubDeleteService {
@@ -50,14 +46,15 @@ public class HubDeleteService {
             return; // sent to server to be done.
         }
 
+        boolean bWasSendMessages = false;
         try {
-            OARuntime.get().threadLocalService().setDeleting(thisHub, true);
-            OARemoteThreadDelegate.sendMessages(true);
+            OARuntime.threadLocalService().setDeleting(thisHub, true);
+            bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
             _runDeleteAll(thisHub);
         }
         finally {
-            OARemoteThreadDelegate.sendMessages(false);
-            OARuntime.get().threadLocalService().setDeleting(thisHub, false);
+            if (!bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
+            OARuntime.threadLocalService().setDeleting(thisHub, false);
         }
     }
 

@@ -16,7 +16,6 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocal;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OAPropertyPath;

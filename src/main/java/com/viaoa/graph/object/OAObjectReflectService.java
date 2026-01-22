@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
@@ -39,8 +40,6 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
@@ -693,9 +692,10 @@ public class OAObjectReflectService {
 			key = srvcObject.getOAObjectKeyService().createObjectKey(clazz, key);
 		}
 
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(clazz));
 		OAObject oaObj = (OAObject) srvcObject.getOAObjectCacheService().get(clazz, (OAObjectKey) key);
 		if (oaObj == null) {
-			if (OASync.isClient(clazz) && (oi == null || !oi.getLocalOnly())) {
+			if (og.getSyncService().isClient() && (oi == null || !oi.getLocalOnly())) {
 				oaObj = (OAObject) srvcObject.getOAObjectCSService().getServerObject(clazz, (OAObjectKey) key);
 			} else {
 				oaObj = (OAObject) srvcObject.getOAObjectDSService().getObject(clazz, (OAObjectKey) key);
@@ -772,7 +772,8 @@ public class OAObjectReflectService {
 				}
 			}
 
-			if (OASync.isServer(oaObj)) {
+			final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
+			if (og.getSyncService().isServer()) {
 				// 20150130 the same thread that is loading it could be accessing it again. (ex: matching and hubmerger during getReferenceHub(..))
 				if (srvcObject.getOAObjectPropertyService().isPropertyLocked(oaObj, linkPropertyName)) {
 					return hub;
@@ -1010,11 +1011,12 @@ public class OAObjectReflectService {
 		HashMap<OAObjectKey, Hub> hmSiblingHub = null;
 		final String matchProperty = linkInfo.getMatchProperty();
 
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
 		
 		if (hub != null) {
 			// no-op
 		} else if (!bThisIsServer && !oi.getLocalOnly() && (!bIsCalc || bIsServerSideCalc)
-				&& OASync.getSyncClient(oaObj).isObjectOnServer(oaObj)) {
+				&& og.getSyncService().getSyncClient().isObjectOnServer(oaObj)) {
 			// request from server
 			hub = srvcObject.getOAObjectCSService().getServerReferenceHub(oaObj, linkPropertyName);
 			if (hub == null) {
@@ -2546,11 +2548,12 @@ public class OAObjectReflectService {
 		}
 
 		if (ref == null && li.getAutoCreateNew() && !bIsCalc) {
+			final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
 			boolean b = srvcObject.getOAObjectInfoService().isOne2One(li);
 			if (b && oaObj.isDeleted() && !bIsServer) {
 				// 20151117 dont autocreate new if this is deleted
 			} else {
-				if (!bIsServer && OASync.getSyncClient(oaObj).isObjectOnServer(oaObj)) {
+				if (!bIsServer && og.getSyncService().getSyncClient().isObjectOnServer(oaObj)) {
 					ref = srvcObject.getOAObjectCSService().getServerReference(oaObj, linkPropertyName);
 				} else {
 					ref = createNewObject(li.getToClass());
@@ -3081,9 +3084,10 @@ public class OAObjectReflectService {
 		}
 
 		// run on server only - otherwise objects can not be updated, since setLoadingObject is true
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
 		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
 		if (!oi.getLocalOnly()) {
-			if (!OASyncDelegate.isServer(oaObj)) {
+			if (!og.getSyncService().isServer()) {
 				// 20130505 needs to be put in msg queue
 				newObject = srvcObject.getOAObjectCSService().createCopy(oaObj, excludeProperties);
 				return newObject;

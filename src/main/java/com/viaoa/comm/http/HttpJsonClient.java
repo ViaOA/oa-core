@@ -34,7 +34,6 @@ import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.Base64;

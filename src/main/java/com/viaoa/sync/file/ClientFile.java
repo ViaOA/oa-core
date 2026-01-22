@@ -28,7 +28,6 @@ import java.net.Socket;
 import java.util.logging.Logger;
 
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.OAString;
 
 /**

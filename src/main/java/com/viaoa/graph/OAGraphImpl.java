@@ -39,7 +39,7 @@ public class OAGraphImpl implements OAGraph {
 	    srvcSync = new OASyncService(pkgName);
 	    
 	    srvcObject.initialize(srvcHub, srvcSync);
-	    srvcHub.initialize(srvcObject);
+	    srvcHub.initialize(srvcObject, srvcSync);
 	    srvcSync.initialize();
 	}
 

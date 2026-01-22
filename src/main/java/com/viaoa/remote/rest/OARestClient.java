@@ -55,7 +55,6 @@ import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.remote.rest.annotation.OARestClass;
 import com.viaoa.remote.rest.annotation.OARestMethod;
 import com.viaoa.remote.rest.annotation.OARestMethod.MethodType;

@@ -29,9 +29,7 @@ import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectDSDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAString;
 
@@ -404,11 +402,12 @@ public class InsertDelegate {
 				if (rs.next()) {
 					Object val = rs.getObject(1);
 
+					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
 					try {
-						OAObjectDSDelegate.setAssigningId(oaObj, true);
+						og.getOAObjectService().getOAObjectDSService().setAssigningId(oaObj, true);
 						oaObj.setProperty(columnAutoGen.propertyName, val);
 					} finally {
-						OAObjectDSDelegate.setAssigningId(oaObj, false);
+						og.getOAObjectService().getOAObjectDSService().setAssigningId(oaObj, false);
 					}
 				}
 				rs.close();

@@ -7,12 +7,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.remote.*;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.*;
 
 public class HubEventService {
@@ -60,7 +60,7 @@ public class HubEventService {
 	 */
 	public void fireBeforeRemoveEvent(Hub thisHub, Object obj, int pos) {
 		// verify with objectCallback
-		if (!OARemoteThreadDelegate.isRemoteThread()) {
+		if (!OARuntime.remoteThreadService().isRemoteThread()) {
 			if (obj instanceof OAObject) {
 				OAObjectCallback em = srvcObject.getOAObjectCallbackService().getVerifyRemoveObjectCallback(	thisHub, (OAObject) obj,
 																								OAObjectCallback.CHECK_CallbackMethod);
@@ -108,7 +108,7 @@ public class HubEventService {
 		final int x = hl.length;
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-			if (OARemoteThreadDelegate.shouldEventsBeQueued()) {
+			if (OARuntime.remoteThreadService().shouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
@@ -122,7 +122,7 @@ public class HubEventService {
 						}
 					}
 				};
-				OARemoteThreadDelegate.queueEvent(r);
+				OARuntime.remoteThreadService().queueEvent(r);
 			} else {
 				try {
 					OARuntime.get().threadLocalService().addHubEvent(hubEvent);
@@ -169,7 +169,7 @@ public class HubEventService {
 	 */
 	public void fireBeforeRemoveAllEvent(Hub thisHub) {
 		// verify with objectCallback
-		if (!OARemoteThreadDelegate.isRemoteThread()) {
+		if (!OARuntime.remoteThreadService().isRemoteThread()) {
 			OAObjectCallback em = srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
 			if (!em.getAllowed()) {
 				String s = em.getResponse();
@@ -207,7 +207,7 @@ public class HubEventService {
 		final int x = hl.length;
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub);
-			if (OARemoteThreadDelegate.shouldEventsBeQueued()) {
+			if (OARuntime.remoteThreadService().shouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
@@ -221,7 +221,7 @@ public class HubEventService {
 						}
 					}
 				};
-				OARemoteThreadDelegate.queueEvent(r);
+				OARuntime.remoteThreadService().queueEvent(r);
 			} else {
 				try {
 					OARuntime.get().threadLocalService().addHubEvent(hubEvent);
@@ -267,7 +267,7 @@ public class HubEventService {
 	 */
 	public void fireBeforeAddEvent(Hub thisHub, Object obj, int pos) {
 		// verify with objectCallback
-		if (!OARemoteThreadDelegate.isRemoteThread()) {
+		if (!OARuntime.remoteThreadService().isRemoteThread()) {
 			if (obj instanceof OAObject) {
 				OAObjectCallback em = srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback(	thisHub, (OAObject) obj,
 																							OAObjectCallback.CHECK_CallbackMethod);
@@ -314,7 +314,7 @@ public class HubEventService {
 		final int x = hl.length;
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-			if (OARemoteThreadDelegate.shouldEventsBeQueued()) {
+			if (OARuntime.remoteThreadService().shouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
@@ -328,7 +328,7 @@ public class HubEventService {
 						}
 					}
 				};
-				OARemoteThreadDelegate.queueEvent(r);
+				OARuntime.remoteThreadService().queueEvent(r);
 			} else {
 				try {
 					OARuntime.get().threadLocalService().addHubEvent(hubEvent);
@@ -378,7 +378,7 @@ public class HubEventService {
 	 */
 	public void fireBeforeInsertEvent(Hub thisHub, Object obj, int pos) {
 		// verify with objectCallback
-		if (!OARemoteThreadDelegate.isRemoteThread()) {
+		if (!OARuntime.remoteThreadService().isRemoteThread()) {
 			if (obj instanceof OAObject) {
 				OAObjectCallback em = srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback(	thisHub, (OAObject) obj,
 																							OAObjectCallback.CHECK_CallbackMethod);
@@ -425,7 +425,7 @@ public class HubEventService {
 		final int x = hl.length;
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-			if (OARemoteThreadDelegate.shouldEventsBeQueued()) {
+			if (OARuntime.remoteThreadService().shouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
@@ -439,7 +439,7 @@ public class HubEventService {
 						}
 					}
 				};
-				OARemoteThreadDelegate.queueEvent(r);
+				OARuntime.remoteThreadService().queueEvent(r);
 			} else {
 				try {
 					OARuntime.get().threadLocalService().addHubEvent(hubEvent);
@@ -614,7 +614,7 @@ public class HubEventService {
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, obj);
 
-			if (OARemoteThreadDelegate.shouldEventsBeQueued()) {
+			if (OARuntime.remoteThreadService().shouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
@@ -628,7 +628,7 @@ public class HubEventService {
 						}
 					}
 				};
-				OARemoteThreadDelegate.queueEvent(r);
+				OARuntime.remoteThreadService().queueEvent(r);
 			} else {
 				try {
 					OARuntime.get().threadLocalService().addHubEvent(hubEvent);
@@ -829,7 +829,8 @@ public class HubEventService {
 			propertyChangeUpdateDetailHubs(thisHub, oaObj, propertyName);
 		}
 
-		if (!OASync.isRemoteThread()) {
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
+		if (!og.getSyncService().isRemoteThread()) {
 			String s = faHub.getHubData(thisHub).getUniqueProperty();
 			if (s == null) {
 				s = faHub.getHubDataMaster(thisHub).getUniqueProperty();
@@ -847,7 +848,7 @@ public class HubEventService {
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, oaObj, propertyName, oldValue, newValue);
 
-			if (OARemoteThreadDelegate.shouldEventsBeQueued()) {
+			if (OARuntime.remoteThreadService().shouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
@@ -861,7 +862,7 @@ public class HubEventService {
 						}
 					}
 				};
-				OARemoteThreadDelegate.queueEvent(r);
+				OARuntime.remoteThreadService().queueEvent(r);
 			} else {
 				try {
 					OARuntime.get().threadLocalService().addHubEvent(hubEvent);

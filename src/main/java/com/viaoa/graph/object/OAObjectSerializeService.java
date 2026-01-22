@@ -8,23 +8,20 @@ import java.util.logging.Logger;
 import com.viaoa.comm.io.IODummy;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.HubService;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAObjectService;
 import com.viaoa.graph.OASyncService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubDelegate;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
@@ -406,9 +403,10 @@ public class OAObjectSerializeService {
 			faObjectSerializer.beforeSerialize(oaObj, serializer);
 		}
 		
+		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
 		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getObjectInfo(oaObj.getClass());
-		final boolean bIsServer = OASyncDelegate.isServer(oaObj.getClass());
-		final boolean bIsObjectOnServer = bIsServer || OASync.getSyncClient().isObjectOnServer(oaObj);
+		final boolean bIsServer = og.getSyncService().isServer();
+		final boolean bIsObjectOnServer = bIsServer || og.getSyncService().getSyncClient().isObjectOnServer(oaObj);
 
 		
 		if (stream instanceof RemoteObjectOutputStream) {
@@ -449,7 +447,7 @@ public class OAObjectSerializeService {
 		stream.writeObject(srvcObject.FALSE); // end of property list
 
 		if (!bIsObjectOnServer) {
-	        OASync.getSyncClient().objectSentToServer(oaObj);
+	        og.getSyncService().getSyncClient().objectSentToServer(oaObj);
 		}
 
 		// 20141124

@@ -45,10 +45,8 @@ import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectDSDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
@@ -228,11 +226,12 @@ public class OADataSourceJDBC extends OADataSource {
 		if (!bAssignNumberOnCreate) {
 			return;
 		}
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
 		try {
-			OAObjectDSDelegate.setAssigningId(object, true);
+			og.getOAObjectService().getOAObjectDSService().setAssigningId(object, true);
 			_assignId(object);
 		} finally {
-			OAObjectDSDelegate.setAssigningId(object, false);
+			og.getOAObjectService().getOAObjectDSService().setAssigningId(object, false);
 		}
 	}
 

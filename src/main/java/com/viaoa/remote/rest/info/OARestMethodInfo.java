@@ -31,7 +31,6 @@ import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.remote.rest.OARestClientException;
 import com.viaoa.remote.rest.annotation.OARestMethod;

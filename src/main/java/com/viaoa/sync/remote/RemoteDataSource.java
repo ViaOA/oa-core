@@ -28,10 +28,7 @@ import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 
@@ -359,7 +356,8 @@ public abstract class RemoteDataSource {
 			if (ds != null) {
 				OAObject oa = (OAObject) whereObject;
 				ds.insertWithoutReferences((OAObject) oa);
-				OAObjectDelegate.setNew(oa, false);
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+				og.getOAObjectService().setNew(oa, false);
 			}
 			break;
 		case OADataSourceClient.GET_PROPERTY:
