@@ -10,6 +10,9 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 
 public class HubDataService {
 	private final Logger LOG = Logger.getLogger(HubDataService.class.getName());
@@ -239,16 +242,18 @@ public class HubDataService {
      */
     public int _remove(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
     	//qqqqqqqq method was protected
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         int pos = 0;
         try {
-            OARuntime.get().threadLocalService().lock(thisHub);
+            srvcOAThreadLocal.lock(thisHub);
             pos = _remove2(thisHub, obj, bDeleting, bIsRemovingAll);
         }
         finally {
-            OARuntime.get().threadLocalService().unlock(thisHub);
+            srvcOAThreadLocal.unlock(thisHub);
         }
         if (!bIsRemovingAll) {
-        	OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        	srvcOARemoteThread.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
         }
         return pos;
     }
@@ -338,15 +343,17 @@ public class HubDataService {
      */
     public boolean _add(Hub thisHub, Object obj, boolean bHasLock, boolean bCheckContains) {
     	//qqqqqqqq method was protected
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         boolean b = false;
         try {
-            if (!bHasLock) OARuntime.get().threadLocalService().lock(thisHub);
+            if (!bHasLock) srvcOAThreadLocal.lock(thisHub);
             b = _add2(thisHub, obj, bCheckContains);
         }
         finally {
-            if (!bHasLock ) OARuntime.get().threadLocalService().unlock(thisHub);
+            if (!bHasLock ) srvcOAThreadLocal.unlock(thisHub);
         }
-        OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        srvcOARemoteThread.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
         return b;
     }
     
@@ -374,7 +381,8 @@ public class HubDataService {
             }
         }
 
-        if (!OARuntime.get().threadLocalService().isLoading()) {
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        if (!srvcOAThreadLocal.isLoading()) {
         	
             if ((faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && (obj instanceof OAObject)) {
                 Vector v  = faHub.getHubData(thisHub).getVecRemove();
@@ -409,17 +417,19 @@ public class HubDataService {
      */
     public boolean _insert(Hub thisHub, Object obj, int pos, boolean bIsLocked) {
     	//qqqqqqqqq method was protected
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         boolean b = false;
         try {
-            if (!bIsLocked) OARuntime.get().threadLocalService().lock(thisHub);
+            if (!bIsLocked) srvcOAThreadLocal.lock(thisHub);
             //was b = _insert2(thisHub, key, obj, pos, bLock);
             b = _insert2(thisHub, obj, pos);
         }
         finally {
-            if (!bIsLocked) OARuntime.get().threadLocalService().unlock(thisHub);
+            if (!bIsLocked) srvcOAThreadLocal.unlock(thisHub);
         }
         
-        OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        srvcOARemoteThread.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
         return b;
     }
    
@@ -435,7 +445,8 @@ public class HubDataService {
      * @return {@code true} if the insert completed
      */
 	private boolean _insert2(Hub thisHub, Object obj, int pos) {
-        boolean b = OARuntime.get().threadLocalService().isLoading();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        boolean b = srvcOAThreadLocal.isLoading();
 
         faHub.getHubData(thisHub).getVector().insertElementAt(obj, pos);
     	if (!b) {
@@ -468,8 +479,10 @@ public class HubDataService {
 	 */
 	public void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
 		//qqqqqqqq method was protected
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            OARuntime.threadLocalService().lock(thisHub);
+            srvcOAThreadLocal.lock(thisHub);
             faHub.getHubData(thisHub).incrementChangeCount();
             
             Vector v = faHub.getHubData(thisHub).getVector();
@@ -477,9 +490,9 @@ public class HubDataService {
             v.insertElementAt(obj, posTo);
         }
         finally {
-            OARuntime.get().threadLocalService().unlock(thisHub);
+            srvcOAThreadLocal.unlock(thisHub);
         }
-        OARuntime.remoteThreadService().startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        srvcOARemoteThread.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
 	}
 	
 	/**

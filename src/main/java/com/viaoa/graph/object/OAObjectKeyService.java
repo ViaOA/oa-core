@@ -14,6 +14,9 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAConverter;
 
 public class OAObjectKeyService {
@@ -331,9 +334,10 @@ public class OAObjectKeyService {
 				bVerify = false;
 			}
 			if (bVerify) {
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 				if (srvcObject.getOAObjectDSService().isAssigningId(oaObj)) {
 					bVerify = false;
-				} else if (OARuntime.get().threadLocalService().isLoading()) {
+				} else if (srvcOAThreadLocal.isLoading()) {
 					bVerify = false;
 				}
 			}
@@ -433,8 +437,9 @@ public class OAObjectKeyService {
 		}
 
 		if (objInCache != oaObj) {
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 			if (objInCache != null) {
-				if (OARuntime.get().threadLocalService().getObjectCacheAddMode() == srvcObject.getOAObjectCacheService().NO_DUPS) {
+				if (srvcOAThreadLocal.getObjectCacheAddMode() == srvcObject.getOAObjectCacheService().NO_DUPS) {
 					// id already used
 
 					Object[] ids = newObjectKey.getObjectIds();
@@ -452,7 +457,7 @@ public class OAObjectKeyService {
 					return ("ObjectId \"" + s + "\" already used.");// by another object - "+oaObj.getClass());
 				}
 			} else {
-				if (!OARuntime.get().threadLocalService().isLoading()) {
+				if (!srvcOAThreadLocal.isLoading()) {
 					// make sure object does not already exist in datasource
 					if (oi == null) {
 						oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);

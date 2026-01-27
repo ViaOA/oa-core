@@ -18,8 +18,10 @@ package com.viaoa.uicontroller;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 
 /*qqqqqqqqqqq
@@ -326,9 +328,10 @@ public abstract class OAUITableController  {
             linkPropertyName = hub.getLinkPath(true);
         }
         else {
-            Hub hubx = HubDetailDelegate.getMasterHub(hub);
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+            Hub hubx = og.getHubService().getHubDetailService().getMasterHub(hub);
             if (hubx != null) {
-                OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterToDetail(hub);
+                OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromMasterToDetail(hub);
                 if (li != null && li.getType() == li.TYPE_ONE) {
                     hubLink = hubx;
                     linkPropertyName = li.getName();

@@ -44,6 +44,9 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OANullObject;
@@ -270,7 +273,8 @@ public class HubService {
 		}
 
 		if (object instanceof OAObject) {
-			if (OARuntime.get().threadLocalService().isLoading()) {
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			if (srvcOAThreadLocal.isLoading()) {
 				return true;
 			}
 		}
@@ -760,7 +764,8 @@ public class HubService {
 			HubCurrentStateEnum hcs = _getCurrentState(hubx, null, null, hmHub);
 
 			if (hcs == HubCurrentStateEnum.InSync) {
-				if (!OARuntime.get().threadLocalService().isHubMergerChanging() && !hubMerger.isLoadingCombinedHub()) {
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				if (!srvcOAThreadLocal.isHubMergerChanging() && !hubMerger.isLoadingCombinedHub()) {
 					return hcs;
 				}
 			}

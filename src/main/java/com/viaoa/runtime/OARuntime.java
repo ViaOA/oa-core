@@ -9,14 +9,12 @@ import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
+import com.viaoa.runtime.datasource.OADataSourceService;
 
 public final class OARuntime {
 	private static Logger LOG = Logger.getLogger(OARuntime.class.getName());
 
 	private static OARuntime runtime = new OARuntime();
-	private final OAThreadLocalService threadLocalService;
-	private final OARemoteThreadService remoteThreadService;
-	private final OADataSourceService dataSourceService;
 	
 	private final Map<String, OAGraph> hmPackageGraph = new ConcurrentHashMap<>();
 	private final Map<String, OAGraph> hmPackageGraph2 = new ConcurrentHashMap<>();
@@ -24,11 +22,19 @@ public final class OARuntime {
 	private final Map<Class<?>, Class<?>> hmClass = new ConcurrentHashMap<>();
 	
 	private final OAGraph graphDefault;
+
+	private final OAThread thread;
+	private final OADataSource dataSource;
+	private final OAContext context;
+	
 	
 	private OARuntime() {
-		this.threadLocalService = new OAThreadLocalService(this);
-		this.remoteThreadService = new OARemoteThreadService(this);
-		this.dataSourceService = new OADataSourceService(this);
+		this.thread = new OAThreadImpl();
+		this.dataSource = new OADataSourceImpl();
+		
+
+		this.context = new OAContextImpl();
+		
 		
 		graphDefault = new OAGraphImpl(this, null);
 		try {
@@ -216,29 +222,20 @@ public final class OARuntime {
 	}
 	
 	
-//qqqqqq need to hide this qqqqqqqqqqq	
-	public static OAThreadLocalService threadLocalService() {
-		return runtime.threadLocalService;
+	
+	public static OAThread thread() {
+		return runtime.thread;
 	}
-	public static OAThreadLocalService threadLocals() {
-		return runtime.threadLocalService;
-	}
-
-//qqqqqq need to hide this qqqqqqqqqqq	
-	public static OARemoteThreadService remoteThreadService() {
-		return runtime.remoteThreadService;
-	}
-	public static OARemoteThreadService remoteThreads() {
-		return runtime.remoteThreadService;
+	
+	public static OAContext context() {
+		return runtime.context;
 	}
 
-//qqqqqq need to hide this qqqqqqqqqqq	
-	public static OADataSourceService dataSourceService() {
-		return runtime.dataSourceService;
+	public static OADataSource datasources() {
+		return runtime.dataSource;
 	}
-	public static OADataSourceService dataSources() {
-		return runtime.dataSourceService;
-	}
+	
+	
 	
 	
 	/**

@@ -40,6 +40,9 @@ import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OACircularQueue;
 import com.viaoa.util.OACompressWrapper;
 import com.viaoa.util.OAReflect;
@@ -506,12 +509,13 @@ public class OARemoteMultiplexerServer {
                 resp = ri.response;
             }
 
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
             try {
-                OARuntime.threadLocals().addObjectSerializer(session.oaObjectSerializer);
+                srvcOAThreadLocal.addObjectSerializer(session.oaObjectSerializer);
                 oos.writeObject(resp);
             }
             finally {
-                OARuntime.threadLocals().removeObjectSerializer(session.oaObjectSerializer);
+                srvcOAThreadLocal.removeObjectSerializer(session.oaObjectSerializer);
             }
             oos.flush();
             oos.close(); // 20250318
@@ -836,12 +840,13 @@ public class OARemoteMultiplexerServer {
             oos.writeAsciiString(ri.bind.name);
             oos.writeAsciiString(ri.methodInfo.methodNameSignature);
             
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
             try {
-                OARuntime.get().threadLocals().addObjectSerializer(session.oaObjectSerializer);
+                srvcOAThreadLocal.addObjectSerializer(session.oaObjectSerializer);
                 oos.writeObject(ri.args);
             }
             finally {
-                OARuntime.get().threadLocals().removeObjectSerializer(session.oaObjectSerializer);
+                srvcOAThreadLocal.removeObjectSerializer(session.oaObjectSerializer);
             }
             oos.flush();
             oos.close(); // 20250318
@@ -1266,8 +1271,9 @@ public class OARemoteMultiplexerServer {
         ri.object = ri.bind.getObject();
 
         // 20180225
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         if (ri.bind.isOASync) {
-            OARuntime.get().threadLocals().incrOASyncEventCount();
+            srvcOAThreadLocal.incrOASyncEventCount();
         }
         
         if (ri.methodInfo == null) {
@@ -1281,7 +1287,7 @@ public class OARemoteMultiplexerServer {
                 }
                 else {
                     try {
-                        OARuntime.get().threadLocals().setRemoteRequestInfo(ri);
+                        srvcOAThreadLocal.setRemoteRequestInfo(ri);
                         ri.response = ri.method.invoke(stuntObject, ri.args);
                     }
                     catch (InvocationTargetException e) {
@@ -1296,7 +1302,7 @@ public class OARemoteMultiplexerServer {
                             ri.exception = ex;
                         }
                     }
-                    OARuntime.get().threadLocals().setRemoteRequestInfo(null);
+                    srvcOAThreadLocal.setRemoteRequestInfo(null);
                 }
             }
             else ri.exceptionMessage = "Method  not found";
@@ -1574,17 +1580,18 @@ public class OARemoteMultiplexerServer {
         
         processCtoSArguments(ri, session);
         
-        boolean bWasSendMessages = false;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            OARuntime.threadLocals().setRemoteRequestInfo(ri);
+            srvcOAThreadLocal.setRemoteRequestInfo(ri);
             if (!ri.bind.isBroadcast) {
-                bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
+                srvcOARemoteThread.sendMessages(true);
             }
 
             // 20180225 added code for threadlocal.oasynceventcount
-            int x = OARuntime.get().threadLocals().getOASyncEventCount();
+            int x = srvcOAThreadLocal.getOASyncEventCount();
             ri.response = ri.method.invoke(ri.bind.getObject(), ri.args);
-            int x2 = OARuntime.get().threadLocals().getOASyncEventCount();
+            int x2 = srvcOAThreadLocal.getOASyncEventCount();
             ri.bHadOASyncEvent = (x != x2);
         }
         catch (InvocationTargetException e) {
@@ -1604,10 +1611,10 @@ public class OARemoteMultiplexerServer {
         }
         finally {
             if (!ri.bind.isBroadcast) {
-                if (bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
+                srvcOARemoteThread.sendMessages(false);
             }
         }
-        OARuntime.get().threadLocals().setRemoteRequestInfo(null);
+        srvcOAThreadLocal.setRemoteRequestInfo(null);
         processCtoSReturnValue(ri, session);
         ri.nsEnd = System.nanoTime();
 
@@ -2205,12 +2212,13 @@ public class OARemoteMultiplexerServer {
          * @throws Exception if writing to the queue socket fails
          */
         public void writeOnQueueSocket(final RequestInfo ri) throws Exception {
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
             try {
-                OARuntime.get().threadLocals().addObjectSerializer(oaObjectSerializer);
+                srvcOAThreadLocal.addObjectSerializer(oaObjectSerializer);
                 _writeOnQueueSocketX(ri);
             }
             finally {
-                OARuntime.get().threadLocals().removeObjectSerializer(oaObjectSerializer);
+                srvcOAThreadLocal.removeObjectSerializer(oaObjectSerializer);
             }
         }
         
@@ -2330,12 +2338,13 @@ public class OARemoteMultiplexerServer {
             
             hmAsyncQueueSocket.put(asyncQueueName, vsi);
 
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
             try {
-                OARuntime.get().threadLocals().addObjectSerializer(oaObjectSerializer);
+                srvcOAThreadLocal.addObjectSerializer(oaObjectSerializer);
                 _writeQueueMessages(cque, vsi, startQuePos);
             }
             finally {
-                OARuntime.get().threadLocals().removeObjectSerializer(oaObjectSerializer);
+                srvcOAThreadLocal.removeObjectSerializer(oaObjectSerializer);
                 cque.unregisterSession(connectionId);
                 releaseSocketForStoC(vsocket);
             }

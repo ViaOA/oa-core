@@ -17,6 +17,8 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocal;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -64,7 +66,8 @@ public class OAObjectSiblingService {
 	 * @param linkPropertyName  the accessed link-property name
 	 */
 	public void onGetObjectReference(final OAObject obj, final String linkPropertyName) {
-		ArrayList<OASiblingHelper> al = OARuntime.get().threadLocalService().getSiblingHelpers();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		ArrayList<OASiblingHelper> al = srvcOAThreadLocal.getSiblingHelpers();
 		if (al == null) {
 			return;
 		}
@@ -102,7 +105,8 @@ public class OAObjectSiblingService {
 	public OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount,
 			ConcurrentHashMap<UUID, Boolean> hmIgnore) {
 		
-		OAThreadLocal tl = OARuntime.get().threadLocalService().getOAThreadLocal();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		OAThreadLocal tl = srvcOAThreadLocal.getOAThreadLocal();
 		
 		if (tl.cntGetSiblingCalled++ > 0) {
 			return new OAObjectKey[0];
@@ -201,8 +205,9 @@ public class OAObjectSiblingService {
 
 		OAPropertyPath ppGetDetailPropertyPath = null;
 
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		// 20180704
-		ArrayList<OASiblingHelper> al = OARuntime.get().threadLocalService().getSiblingHelpers();
+		ArrayList<OASiblingHelper> al = srvcOAThreadLocal.getSiblingHelpers();
 
 		// 20180807 find all pp to use, instead of just the first one.
 		ArrayList<DetailInfo> alDetailInfo = new ArrayList<>();

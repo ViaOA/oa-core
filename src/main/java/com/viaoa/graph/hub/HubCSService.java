@@ -13,6 +13,9 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.object.OAObjectSerializerCallback;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
@@ -45,10 +48,12 @@ public class HubCSService {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
         if (og.getSyncService().isSingleUser()) return;
         
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         
         if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) return;
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
-        if (!OARuntime.remoteThreadService().shouldSendMessages()) {
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return;
+        if (!srvcOARemoteThread.shouldSendMessages()) {
             return;
         }
 
@@ -86,8 +91,11 @@ public class HubCSService {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
         if (og.getSyncService().isSingleUser()) return;
         if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) return;
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
-        if (!OARuntime.remoteThreadService().shouldSendMessages()) {
+
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return;
+        if (!srvcOARemoteThread.shouldSendMessages()) {
             return;
         }
 	    
@@ -129,8 +137,10 @@ public class HubCSService {
 	public void addToHub(final Hub thisHub, final OAObject thisObj) {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
 		if (og.getSyncService().isSingleUser()) return;
-        if (!OARuntime.remoteThreadService().shouldSendMessages()) return;
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        if (!srvcOARemoteThread.shouldSendMessages()) return;
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return;
         
 	    OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisObj);
 	    if (oi.getLocalOnly()) return;
@@ -164,7 +174,7 @@ public class HubCSService {
         }
 
         // 20160630
-        final boolean bIsLoading = OARuntime.get().threadLocalService().isLoading(); 
+        final boolean bIsLoading = srvcOAThreadLocal.isLoading(); 
         if (bIsLoading) {
             if (!srvcObject.getOAObjectHubService().isInHub(master)) {
                 if (og.getSyncService().isServer()) {
@@ -234,8 +244,10 @@ public class HubCSService {
 	public boolean insertInHub(Hub thisHub, OAObject obj, int pos) {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
         if (og.getSyncService().isSingleUser()) return false;
-        if (!OARuntime.remoteThreadService().shouldSendMessages()) return  false;
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return false;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        if (!srvcOARemoteThread.shouldSendMessages()) return  false;
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return false;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
         if (oi.getLocalOnly()) return false;
@@ -280,8 +292,10 @@ public class HubCSService {
 	public void moveObjectInHub(Hub thisHub, int posFrom, int posTo) {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
         if (og.getSyncService().isSingleUser()) return;
-        if (!OARuntime.remoteThreadService().shouldSendMessages()) return;
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        if (!srvcOARemoteThread.shouldSendMessages()) return;
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return;
         
 	    OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
 	    if (oi.getLocalOnly()) return; 
@@ -327,7 +341,8 @@ public class HubCSService {
 	 * @return {@code true} if the thread is a remote thread; otherwise {@code false}
 	 */
 	public boolean isRemoteThread() {
-		return (OARuntime.remoteThreadService().isRemoteThread());
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		return (srvcOARemoteThread.isRemoteThread());
 	}		
 	
 	/**
@@ -343,8 +358,10 @@ public class HubCSService {
 	public void sort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp) {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
         if (og.getSyncService().isSingleUser()) return;
-        if (!OARuntime.remoteThreadService().shouldSendMessages()) return;
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        if (!srvcOARemoteThread.shouldSendMessages()) return;
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return;
 
         OAObject objMaster = faHub.getHubDataMaster(thisHub).getMasterObject();
         if (objMaster == null) return;
@@ -377,9 +394,12 @@ public class HubCSService {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
         if (og.getSyncService().isServer()) return true;  // invoke on the server
         LOG.fine("hub="+thisHub);
+
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         
-        if (!OARuntime.remoteThreadService().shouldSendMessages()) return true;
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return true;
+        if (!srvcOARemoteThread.shouldSendMessages()) return true;
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return true;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
         if (oi.getLocalOnly()) return true; 

@@ -41,10 +41,10 @@ import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
@@ -759,16 +759,17 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 				if (bClosed) {
 					return;
 				}
+				final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
 				try {
 					if (bServerSideOnly) {
-						OARemoteThreadDelegate.sendMessages(true);
+						srvcOARemoteThread.sendMessages(true);
 					}
 					if (hubMaster == null || !hubMaster.contains(e.getObject())) {
 						removeObject(getObject(e.getObject()));
 					}
 				} finally {
 					if (bServerSideOnly) {
-						OARemoteThreadDelegate.sendMessages(false);
+						srvcOARemoteThread.sendMessages(false);
 					}
 				}
 			}
@@ -878,7 +879,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 				if (objTemp != null) {
 					Object objx = hubLink.getAO();
 					if (objx != null) {
-						objx = HubLinkDelegate.getPropertyValueInLinkedToHub(hub, objx);
+						final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+						objx = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, objx);
 					}
 					if (objx != objTemp) {
 						objTemp = getObject((T) objTemp);
@@ -898,7 +900,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 				}
 				Object obj = hubLink.getAO();
 				if (objTemp == null && obj != null) {
-					obj = HubLinkDelegate.getPropertyValueInLinkedToHub(hub, obj);
+					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+					obj = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, obj);
 					if (obj != null) {
 						if (!hub.contains(obj)) {
 							try {
@@ -944,9 +947,10 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		if (aiClearing.get() != 0) {
 			return;
 		}
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
 		try {
 			if (bServerSideOnly) { // 20120425
-				OARemoteThreadDelegate.sendMessages(true); // so that events will go out, even if OAClientThread
+				srvcOARemoteThread.sendMessages(true); // so that events will go out, even if OAClientThread
 			}
 			aiUpdating.incrementAndGet();
 			obj = getObject(obj);
@@ -967,7 +971,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 						if (hubLink != null) {
 							Object objx = hubLink.getAO();
 							if (objx != null) {
-								objx = HubLinkDelegate.getPropertyValueInLinkedToHub(hub, objx);
+								final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+								objx = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, objx);
 								objx = getObject((T) objx);
 								if (obj == objx) {
 									if (obj != objTemp) {
@@ -994,7 +999,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		} finally {
 			aiUpdating.decrementAndGet();
 			if (bServerSideOnly) {
-				OARemoteThreadDelegate.sendMessages(false);
+				srvcOARemoteThread.sendMessages(false);
 			}
 		}
 	}
@@ -1049,8 +1054,10 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		if (hub == null || bClosed) {
 			return;
 		}
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		if (bServerSideOnly) {
-			OARemoteThreadDelegate.sendMessages(true); // so that events will go out, even if OAClientThread
+			srvcOARemoteThread.sendMessages(true); // so that events will go out, even if OAClientThread
 		}
 
 		final int cnt = aiInitializeCount.incrementAndGet();
@@ -1081,18 +1088,19 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 				final boolean bx = bServerSideOnly;
 				try {
 					if (!bx) {
-						OARuntime.get().threadLocals().setLoading(true);
+						srvcOAThreadLocal.setLoading(true);
 					}
 					bCompleted = _initialize(cnt);
 				} finally {
 					if (!bx) {
-						OARuntime.get().threadLocals().setLoading(false);
+						srvcOAThreadLocal.setLoading(false);
 					}
 				}
 				if (hub != null && bCompleted) {
 					bNewListFlag = true;
 					if (!bServerSideOnly) {
-						HubEventDelegate.fireOnNewListEvent(hub, true);
+						final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+						og.getHubService().getHubEventService().fireOnNewListEvent(hub, true);
 					}
 				}
 			} finally {
@@ -1102,7 +1110,7 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 			}
 		} finally {
 			if (bServerSideOnly) {
-				OARemoteThreadDelegate.sendMessages(false);
+				srvcOARemoteThread.sendMessages(false);
 			}
 		}
 		if (bCompleted) {
@@ -1144,7 +1152,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		if (hubLink != null) {
 			Object objx = hubLink.getAO();
 			if (objx != null) {
-				objx = HubLinkDelegate.getPropertyValueInLinkedToHub(hub, objx);
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+				objx = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, objx);
 				if (objx != null) {
 					objx = getObject((T) objx);
 					if (objx != null && !hub.contains(objx)) {
@@ -1228,7 +1237,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 			// check to see if it is still needed by linkHub.linkProp and stored as objTemp
 			Object objx = hubLink.getAO();
 			if (objx != null) {
-				objx = HubLinkDelegate.getPropertyValueInLinkedToHub(hub, objx);
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+				objx = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, objx);
 				if (objx == obj) {
 					objTemp = obj; // dont remove yet
 					return;
@@ -1286,7 +1296,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		// 20160904 dont allow it to reassign if it is masterObject does not match
 		Object objMaster = hubMaster.getMasterObject();
 		if (objMaster != null) {
-			OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hubMaster);
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj.getClass());
+			OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromDetailToMaster(hubMaster);
 			if (li != null) {
 				OALinkInfo rli = li.getReverseLinkInfo();
 				if (li != null) {

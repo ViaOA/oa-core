@@ -16,6 +16,9 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInternalBridge;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OACompare;
 
 public class OAObjectService {
@@ -701,8 +704,9 @@ public class OAObjectService {
 			return;
 		}
 
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocalService().setSuppressCSMessages(true);
+			srvcOAThreadLocal.setSuppressCSMessages(true);
 			// need to see if object should be put into linkOne/masterObject hub(s)
 			OAObjectInfo oi = getOAObjectInfoService().getOAObjectInfo(oaObj);
 			for (OALinkInfo li : oi.getLinkInfos()) {
@@ -738,7 +742,7 @@ public class OAObjectService {
 				}
 			}
 		} finally {
-			OARuntime.get().threadLocalService().setSuppressCSMessages(false);
+			srvcOAThreadLocal.setSuppressCSMessages(false);
 		}
 	}
 

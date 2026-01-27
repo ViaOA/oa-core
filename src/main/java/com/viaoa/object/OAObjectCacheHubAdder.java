@@ -69,7 +69,7 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
         clazz = hub.getObjectClass();
         wfHub = new WeakReference(hub);
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
                 
     	srvcObjectCache.addListener(clazz, this);
@@ -99,7 +99,7 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
      * </p>
      */
     public void close() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
     	srvcObjectCache.removeListener(clazz, this);
     }

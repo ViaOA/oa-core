@@ -1,44 +1,19 @@
-package com.viaoa.runtime;
+package com.viaoa.runtime.thread;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
-import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubEventDelegate;
-import com.viaoa.hub.HubShareDelegate;
-import com.viaoa.json.OAJson;
-import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OAThreadLocal;
-import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.object.OAThreadLocalHubMergerCallback;
-import com.viaoa.process.OAProcess;
 import com.viaoa.remote.OARemoteThread;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
-import com.viaoa.transaction.OATransaction;
-import com.viaoa.undo.OAUndoManager;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
-import com.viaoa.util.Tuple3;
-
+import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
 
 public class OARemoteThreadService {
 	private Logger LOG = Logger.getLogger(OARemoteThreadService.class.getName());
 
-	private final OARuntime runtime;
+	// private final OARuntime runtime;
 
-	OARemoteThreadService(OARuntime runtime) {
-		this.runtime = runtime;
+	public OARemoteThreadService() {
+		// this.runtime = runtime;
 	}
 
 	/**
@@ -97,7 +72,8 @@ public class OARemoteThreadService {
             if (rt.startedNextThread) return;
             rt.startNextThread();
         }
-        OARuntime.get().threadLocals().notifyWaitingThread();
+        OAThreadImpl ti = (OAThreadImpl) OARuntime.thread();
+        ti.getThreadLocalService().notifyWaitingThread();
     }
     
     /**
@@ -137,10 +113,11 @@ public class OARemoteThreadService {
      *
      * @return the previous send-messages state for the current thread
      */
+/*qqqqqqqqqqqqqq REMOVE THIS qqqqqqqqqqqqqqqqqqqqqqq ??    
     public boolean sendMessages() {
         return sendMessages(true);
     }
-    
+*/    
     /**
      * Updates whether messages should be sent from the current thread. If the
      * thread is not an {@link OARemoteThread}, messages are always considered
@@ -150,12 +127,10 @@ public class OARemoteThreadService {
      * @param b true to enable message sending, false to disable it
      * @return the previous send-messages state
      */
-    public boolean sendMessages(boolean b) {
+    public void sendMessages(boolean b) {
         Thread t = Thread.currentThread();
-        if (!(t instanceof OARemoteThread)) return true;
-        boolean bx = ((OARemoteThread) t).getSendMessages();
+        if (!(t instanceof OARemoteThread)) return;
         ((OARemoteThread) t).setSendMessages(b);
-        return bx;
     }
 
     /**

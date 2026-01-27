@@ -23,8 +23,9 @@ import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 
@@ -190,7 +191,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             }
         };        
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
         
     	srvcObjectCache.addListener(clazz, cacheListener);
@@ -290,7 +291,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     public void refresh() {
         // need to check loaded objects 
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
     	
     	srvcObjectCache.visit(clazz, new OACallback() {
@@ -351,7 +352,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
                     };
                     finder.setUseOnlyLoadedData(false);
 
-            		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+            		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
                 	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
                     
                 	srvcObjectCache.visit(clazz, new OACallback() {
@@ -394,7 +395,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             trigger = null;
         }
         if (cacheListener == null) {
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
         	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
         	srvcObjectCache.removeListener(clazz, cacheListener);
             cacheListener = null;
@@ -436,18 +437,18 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
      * @param obj the object to trigger on
      */
     private void callOnTrigger(T obj) {
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
         try {
             if (bServerSideOnly) { 
-                OARemoteThreadDelegate.sendMessages(true);
+            	srvcOARemoteThread.sendMessages(true);
             }
             onTrigger(obj);
         }
         finally {
             if (bServerSideOnly) {
-                OARemoteThreadDelegate.sendMessages(false);
+            	srvcOARemoteThread.sendMessages(false);
             }
         }
-        
     }
     
     /**

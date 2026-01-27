@@ -28,14 +28,10 @@ import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.graph.object.OAObjectXMLService;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubXMLDelegate;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectXMLDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OADateTime;
@@ -153,7 +149,8 @@ public class OAXMLWriter {
 		if (cascade == null) {
 			cascade = new OACascade();
 		}
-		HubXMLDelegate.write(hub, this, null, false, cascade);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		og.getHubService().getHubXMLService().write(hub, this, null, false, cascade);
 	}
 
 	/**

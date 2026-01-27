@@ -240,7 +240,7 @@ public class OADataSourceClient extends OADataSource {
 	 */
 	public OADataSourceClient(Package packagex) {
 		if (packagex == null) {
-			packagex = OASync.ObjectPackage;
+			//qqqqqqqqq ?? packagex = OASync.ObjectPackage;
 		}
 		this.packagex = packagex;
 	}
@@ -262,7 +262,8 @@ public class OADataSourceClient extends OADataSource {
 	 */
 	public RemoteClientInterface getRemoteClient() {
 		if (remoteClientSync == null) {
-			remoteClientSync = OASyncDelegate.getRemoteClient(packagex);
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(packagex);
+			remoteClientSync = og.getSyncService().getRemoteClient();
 		}
 		return remoteClientSync;
 	}
@@ -917,7 +918,7 @@ public class OADataSourceClient extends OADataSource {
 				obj = srvcObjectCache.get(clazz, key);
 				if (obj == null) {
 					// not on this system, need to get from server
-					OASyncDelegate.getRemoteServer(packagex).getObject(clazz, key);
+					og.getSyncService().getRemoteServer().getObject(clazz, key);
 				}
 				bKey = false;
 				return obj;

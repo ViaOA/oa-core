@@ -23,15 +23,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import com.viaoa.filter.OAQueryFilter;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAComparator;
 import com.viaoa.util.OAFilter;
@@ -1072,12 +1073,13 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		//qqqqqqq
 		// 20221209
 		if (!bDirty && !bDirtyWasSet) {
-			bDirty = OARuntime.get().threadLocals().isRefreshing();
+			bDirty = OARuntime.thread().isRefreshing();
 		}
 
 		if (hubSearch != null && finder == null) {
 			finder = new OAFinder(hubSearch, null);
-			OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterObjectToDetail(hubSearch);
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+			OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromMasterObjectToDetail(hubSearch);
 			if (li != null && !li.getRecursive()) {
 				finder.setAllowRecursiveRoot(false);
 			}
@@ -1251,14 +1253,15 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 
 			// 20190130
 			OASiblingHelper siblingHelper = query == null ? null : query.getSiblingHelper();
-			boolean bx = ((siblingHelper != null) && OARuntime.get().threadLocals().addSiblingHelper(siblingHelper));
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			boolean bx = ((siblingHelper != null) && srvcOAThreadLocal.addSiblingHelper(siblingHelper));
 			try {
 				if (oaFilter.isUsed(obj)) {
 					break;
 				}
 			} finally {
 				if (bx) {
-					OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
+					srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 				}
 			}
 		}

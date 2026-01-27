@@ -15,6 +15,9 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OANotExist;
 
 public class OAObjectPropertyService {
@@ -758,9 +761,10 @@ public class OAObjectPropertyService {
 			return true;
 		}
 
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
 		hmLockedThread.put(threadThis, lock.thread);
 		try {
-			OARuntime.remoteThreadService().startNextThread();
+			srvcOARemoteThread.startNextThread();
 			synchronized (lock) {
 				if (lock.thread == Thread.currentThread()) {
 					return bCheckIfThisThread;

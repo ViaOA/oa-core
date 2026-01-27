@@ -18,9 +18,11 @@ package com.viaoa.hub;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAString;
 
 /**
@@ -289,9 +291,10 @@ public class HubCombined<T> {
 
 			@Override
 			public void onNewList(HubEvent<T> e) {
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 				try {
 					bUpdatingMasterHub = true;
-					OARuntime.get().threadLocals().setLoading(true);
+					srvcOAThreadLocal.setLoading(true);
 					for (Object obj : hubMaster) {
 						boolean bUsed = false;
 						for (Hub<T> hx : alHub) {
@@ -309,9 +312,10 @@ public class HubCombined<T> {
 					}
 				} finally {
 					bUpdatingMasterHub = false;
-					OARuntime.get().threadLocals().setLoading(false);
+					srvcOAThreadLocal.setLoading(false);
 				}
-				HubEventDelegate.fireOnNewListEvent(hubMaster, true);
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+				og.getHubService().getHubEventService().fireOnNewListEvent(hubMaster, true);
 			}
 		};
 		hub.addHubListener(hl);

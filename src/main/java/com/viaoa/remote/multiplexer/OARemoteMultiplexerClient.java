@@ -42,6 +42,9 @@ import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OACompressWrapper;
 import com.viaoa.util.OAPool;
 import com.viaoa.util.OAReflect;
@@ -563,9 +566,10 @@ public class OARemoteMultiplexerClient {
 					}
 				} else {
 					// 20160122 queue thread will wait for OARemoteThreadDelegate.startNextThread()
-					//    to call OARuntime.get().threadLocals().notifyWaitingThread(), and wake up que thread waiting on ri lock
+					//    to call srvcOAThreadLocal.notifyWaitingThread(), and wake up que thread waiting on ri lock
 					if (ri.bind.isOASync) {
-						OARuntime.get().threadLocals().setNotifyObject(ri);
+						final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+						srvcOAThreadLocal.setNotifyObject(ri);
 					}
 				}
 			}
@@ -655,8 +659,9 @@ public class OARemoteMultiplexerClient {
 						ri.response = (ri.args[0] == ri.object);
 					}
 				} else {
+					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 					try {
-						OARuntime.get().threadLocals().setRemoteRequestInfo(ri);
+						srvcOAThreadLocal.setRemoteRequestInfo(ri);
 						ri.response = ri.method.invoke(stuntObject, ri.args);
 					} catch (InvocationTargetException e) {
 						Exception ex = e;
@@ -670,7 +675,7 @@ public class OARemoteMultiplexerClient {
 							ri.exception = ex;
 						}
 					}
-					OARuntime.get().threadLocals().setRemoteRequestInfo(null);
+					srvcOAThreadLocal.setRemoteRequestInfo(null);
 				}
 			} else {
 				ri.exceptionMessage = "Method not found in Methods";
@@ -679,12 +684,13 @@ public class OARemoteMultiplexerClient {
 		}
 
 		// check if remoteThread, and if it has already processed it's msg before calling remote method
-		if (!OARuntime.remoteThreadService().isSafeToCallRemoteMethod()) {
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		if (!srvcOARemoteThread.isSafeToCallRemoteMethod()) {
 			if (errorCnt++ < 25 || (errorCnt % 100 == 0)) {
 				//Exception e = new Exception("isSafeToCallRemoteMethod is false");
 				//LOG.log(Level.WARNING, "note: isSafeToCallRemoteMethod is false, will continue, starting another OARemoteThread", e);
 			}
-			OARuntime.remoteThreadService().startNextThread();
+			srvcOARemoteThread.startNextThread();
 		}
 
 		// compress flagged arguments
@@ -941,7 +947,7 @@ public class OARemoteMultiplexerClient {
 				int errorCnt = 0;
 				long msLastError = 0;
 				/* 20151103 on hold for OAsyncCombinedClient work
-				OARuntime.get().threadLocals().setRemoteMultiplexerClient(RemoteMultiplexerClient.this);
+				srvcOAThreadLocal.setRemoteMultiplexerClient(RemoteMultiplexerClient.this);
 				*/
 				RemoteObjectInputStream ois = null;
 				for (int i = 0;; i++) {
@@ -1089,7 +1095,7 @@ public class OARemoteMultiplexerClient {
 			@Override
 			public void run() {
 				/* 20151103 on hold for OAsyncCombinedClient work
-				OARuntime.get().threadLocals().setRemoteMultiplexerClient(RemoteMultiplexerClient.this);
+				srvcOAThreadLocal.setRemoteMultiplexerClient(RemoteMultiplexerClient.this);
 				*/
 				boolean bReset = true;
 				for (; !stopCalled;) {
@@ -1982,13 +1988,14 @@ public class OARemoteMultiplexerClient {
 			}
 		}
 
-		boolean bWasSendMessages = false;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.threadLocals().setRemoteRequestInfo(ri);
+			srvcOAThreadLocal.setRemoteRequestInfo(ri);
 
 			// 20141217
 			if (!ri.bind.isBroadcast) {
-				bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
+				srvcOARemoteThread.sendMessages(true);
 			}
 			ri.response = ri.method.invoke(ri.bind.getObject(), ri.args);
 		} catch (InvocationTargetException e) {
@@ -2005,10 +2012,10 @@ public class OARemoteMultiplexerClient {
 		} finally {
 			// 20141217
 			if (!ri.bind.isBroadcast) {
-				if (bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
+				srvcOARemoteThread.sendMessages(false);
 			}
 		}
-		OARuntime.threadLocals().setRemoteRequestInfo(null);
+		srvcOAThreadLocal.setRemoteRequestInfo(null);
 
 		if (ri.response != null && ri.methodInfo.remoteReturn != null) {
 			BindInfo bindx = getBindInfoForObject((Object) ri.response);

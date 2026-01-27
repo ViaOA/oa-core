@@ -57,14 +57,14 @@ public class OAObjectAnalyzer {
      * maintained for summary inspection.</p>
      */
     public void load() {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph();
+		OAGraphImpl og = (OAGraphImpl) OARuntime.graph();
     	final OAObjectCacheService ocs = og.getOAObjectService().getOAObjectCacheService();
     	
     	
         for (Class cs : og.getOAObjectService().getOAObjectCacheService().getClasses()) {
             System.out.println("Starting class="+cs.getSimpleName()+", total="+ocs.getTotal(cs));
             
-    		og = (OAGraphImpl) OARuntime.get().graph(cs);
+    		og = (OAGraphImpl) OARuntime.graph(cs);
     		final OAObjectHubService srvcObjectHub = og.getOAObjectService().getOAObjectHubService();
             OACallback cb = new OACallback() {
                 @Override

@@ -29,7 +29,6 @@ import com.viaoa.object.OAGroupBy;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OATrigger;
 import com.viaoa.object.OATriggerDelegate;
@@ -266,16 +265,17 @@ public class HubListenerTrigger<T> {
 		OATriggerListener triggerListener = new OATriggerListener() {
 			@Override
 			public void onTrigger(final OAObject rootObject, final HubEvent hubEvent, final String propertyPathFromRoot) throws Exception {
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(rootObject);
 				if (rootObject != null) {
 					if (HubListenerTrigger.this.hub.contains(rootObject)) {
-						HubEventDelegate.fireCalcPropertyChange(HubListenerTrigger.this.hub, rootObject, propertyName);
+						og.getHubService().getHubEventService().fireCalcPropertyChange(HubListenerTrigger.this.hub, rootObject, propertyName);
 					}
 					return;
 				}
 
 				// the reverse property could not be used to get objRoot - need to find root objs and send calc event
 				if (!hub.isOAObject()) {
-					HubEventDelegate.fireCalcPropertyChange(HubListenerTrigger.this.hub, rootObject, propertyName);
+					og.getHubService().getHubEventService().fireCalcPropertyChange(HubListenerTrigger.this.hub, rootObject, propertyName);
 					return;
 				}
 				if (hub.getSize() == 0) {
@@ -302,7 +302,7 @@ public class HubListenerTrigger<T> {
 				for (Object obj : hub) {
 					try {
 						if (finder.findFirst((OAObject) obj) != null) {
-							HubEventDelegate.fireCalcPropertyChange(HubListenerTrigger.this.hub, obj, propertyName);
+							og.getHubService().getHubEventService().fireCalcPropertyChange(HubListenerTrigger.this.hub, obj, propertyName);
 						}
 					} catch (Exception e) {
 						break;
@@ -411,8 +411,9 @@ public class HubListenerTrigger<T> {
 						return;
 					}
 
+					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
 					for (String s : al) {
-						HubEventDelegate.fireCalcPropertyChange(hub, e.getObject(), s);
+						og.getHubService().getHubEventService().fireCalcPropertyChange(hub, e.getObject(), s);
 					}
 				}
 			};

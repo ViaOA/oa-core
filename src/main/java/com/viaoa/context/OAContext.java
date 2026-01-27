@@ -18,11 +18,13 @@ package com.viaoa.context;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
+import com.viaoa.runtime.OAThread;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 
@@ -133,8 +135,7 @@ public class OAContext {
 	 * @return true if permitted; false otherwise
 	 */
 	public static boolean getAllowEditProcessed() {
-		Object context = OARuntime.get().threadLocals().getContext();
-		return getAllowEditProcessed(context);
+		return getAllowEditProcessed(OARuntime.thread().getContext());
 	}
 
 	/**
@@ -151,8 +152,10 @@ public class OAContext {
 
 		final OAObject oaObj = getContextObject(context);
 
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+		
 		// default for main server thread (context=null) is always true
-		if (context == NullContext && OASync.isServer()) {
+		if (context == NullContext && og.getSyncService().isServer()) {
 			if (oaObj == null) {
 				return true;
 			}
@@ -199,8 +202,7 @@ public class OAContext {
 	 * @return true if admin; false otherwise
 	 */
 	public static boolean isAdmin() {
-		Object context = OARuntime.get().threadLocals().getContext();
-		return isAdmin(context);
+		return isAdmin(OARuntime.thread().getContext());
 	}
 
 	/**
@@ -215,14 +217,15 @@ public class OAContext {
 			context = NullContext;
 		}
 
-		if (OARuntime.get().threadLocals().isAdmin()) {
+		if (OARuntime.thread().isAdmin()) {
 			return true;
 		}
 
 		final OAObject oaObj = getContextObject(context);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
 
 		// default for main server thread (context=null) is always true
-		if (context == NullContext && OASync.isServer()) {
+		if (context == NullContext && og.getSyncService().isServer()) {
 			if (oaObj == null) {
 				return true;
 			}
@@ -268,7 +271,7 @@ public class OAContext {
 	 * @return true if super-admin; false otherwise
 	 */
 	public static boolean isSuperAdmin() {
-		Object context = OARuntime.get().threadLocals().getContext();
+		Object context = OARuntime.thread().getContext();
 		return isSuperAdmin(context);
 	}
 
@@ -305,7 +308,7 @@ public class OAContext {
 	 * @return true if property equals bEqualTo; false otherwise
 	 */
 	public static boolean isEnabled(final String pp, final boolean bEqualTo) {
-		Object context = OARuntime.get().threadLocals().getContext();
+		Object context = OARuntime.thread().getContext();
 		return isEnabled(context, pp, bEqualTo);
 	}
 
@@ -324,9 +327,10 @@ public class OAContext {
 		}
 
 		final OAObject oaObj = getContextObject(context);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
 
 		// default for main server thread (context=null) is always true
-		if (context == NullContext && OASync.isServer()) {
+		if (context == NullContext && og.getSyncService().isServer()) {
 			if (oaObj == null) {
 				return true;
 			}
@@ -387,7 +391,7 @@ public class OAContext {
 	 * @return associated OAObject or null
 	 */
 	public static OAObject getContextObject() {
-		Object context = OARuntime.get().threadLocals().getContext();
+		Object context = OARuntime.thread().getContext();
 		return getContextObject(context);
 	}
 
@@ -468,7 +472,7 @@ public class OAContext {
 	 * @return associated Hub, or null
 	 */
 	public static Hub<? extends OAObject> getContextHub() {
-		Object context = OARuntime.get().threadLocals().getContext();
+		Object context = OARuntime.thread().getContext();
 		return getContextHub(context);
 	}
 
@@ -513,7 +517,7 @@ public class OAContext {
 	 * @return OAUserAccess or null
 	 */
 	public static OAUserAccess getContextUserAccess() {
-		Object context = OARuntime.get().threadLocals().getContext();
+		Object context = OARuntime.thread().getContext();
 		return getContextUserAccess(context);
 	}
 

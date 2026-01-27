@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
-import com.viaoa.runtime.OADataSourceService;
+import com.viaoa.runtime.OADataSourceImpl;
 import com.viaoa.runtime.OARuntime;
 
 public class OAJDBCDataSourceService {
@@ -16,7 +16,8 @@ public class OAJDBCDataSourceService {
 	}
 	
 	protected OADataSource[] getDataSources() {
-		return OARuntime.get().dataSources().getDataSources();
+		OADataSourceImpl ds = (OADataSourceImpl) OARuntime.datasources();
+		return ds.getDataSourceService().getDataSources();
 	}
 	
 	/**

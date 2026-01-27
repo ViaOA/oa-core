@@ -35,6 +35,8 @@ import com.viaoa.hub.Hub;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.Tuple;
 
 /**
@@ -514,7 +516,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		 */
 		if (bCallOthers) {
 			totalObjectsWritten++;
-			List<OAObjectSerializer> al = OARuntime.get().threadLocals().getObjectSerializers();
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			List<OAObjectSerializer> al = srvcOAThreadLocal.getObjectSerializers();
 			if (al != null) {
 				for (int i=al.size()-2; i >= 0; i--) {
 					OAObjectSerializer os = al.get(i);
@@ -554,7 +557,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	private void _afterSerialize(OAObject obj, final boolean bCallOthers, final int cntx) {
 		// indent--;
 		if (bCallOthers) {
-			List<OAObjectSerializer> al = OARuntime.get().threadLocals().getObjectSerializers();
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			List<OAObjectSerializer> al = srvcOAThreadLocal.getObjectSerializers();
 			if (al != null) {
 				for (int i=al.size()-2; i >= 0; i--) {
 					OAObjectSerializer os = al.get(i);
@@ -835,8 +839,9 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * @throws IOException if the wrapper cannot be written
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            OARuntime.get().threadLocals().addObjectSerializer(this);
+            srvcOAThreadLocal.addObjectSerializer(this);
             _writeObject(stream);
         } 
         catch (Throwable e) {
@@ -845,7 +850,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
             throw new IOException("OAObjectSerializer.writeObject exception", e);
         }
         finally {
-            OARuntime.get().threadLocals().removeObjectSerializer(this);
+            srvcOAThreadLocal.removeObjectSerializer(this);
         }
 	}
 

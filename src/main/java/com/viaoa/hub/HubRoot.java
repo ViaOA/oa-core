@@ -24,7 +24,6 @@ import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OALogger;
 
@@ -118,7 +117,7 @@ public class HubRoot {
 			return;
 		}
 
-		li = HubDetailDelegate.getLinkInfoFromDetailToMaster(hub);
+		li = og.getHubService().getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 		if (li != null) {
 			li = srvcObjectInfo.getReverseLinkInfo(li);
 		}
@@ -141,7 +140,7 @@ public class HubRoot {
 			return;
 		}
 
-		propertyFromMaster = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+		propertyFromMaster = og.getHubService().getHubDetailService().getPropertyFromMasterToDetail(hub);
 
 		hubListener = new HubListenerAdapter() {
 			@Override

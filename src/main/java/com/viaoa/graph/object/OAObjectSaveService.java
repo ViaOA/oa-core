@@ -10,6 +10,8 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 
 public class OAObjectSaveService {
 	private final Logger LOG = Logger.getLogger(OAObjectSaveService.class.getName());
@@ -57,7 +59,8 @@ public class OAObjectSaveService {
 			}
 			return;
 		}
-		if (OARuntime.get().threadLocalService().isDeleting(oaObj)) {
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		if (srvcOAThreadLocal.isDeleting(oaObj)) {
 			return;
 		}
 

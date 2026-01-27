@@ -11,6 +11,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.util.OAString;
@@ -104,12 +106,13 @@ public class OAObjectUniqueService {
             oaObj = getUnique(clazz, propertyName, uniqueKey, false);
             if (oaObj != null) return oaObj;
             oaObj = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(clazz);
+        	final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
             try {
-            	OARuntime.get().threadLocalService().setLoading(true);
+            	srvcOAThreadLocal.setLoading(true);
                 oaObj.setProperty(propertyName, uniqueKey);
             }
             finally {
-            	OARuntime.get().threadLocalService().setLoading(false);
+            	srvcOAThreadLocal.setLoading(false);
             }
         }
         

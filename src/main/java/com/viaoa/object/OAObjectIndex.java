@@ -63,7 +63,7 @@ public class OAObjectIndex {
 	 */
 	public boolean addToIndex(final OAObject obj) {
 		if (obj == null) return false;
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(obj);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
 		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey ok = srvcObjectKey.getKey(obj);
 		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());
@@ -163,7 +163,7 @@ public class OAObjectIndex {
 	public boolean removeFromIndex(OAObject obj) {
 		if (obj == null) return false;
 		Class<? extends OAObject> c = obj.getClass();
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(c);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
 		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		OAObjectKey ok = srvcObjectKey.createObjectKey(obj);
 		OAObjectIndexKey ik = new OAObjectIndexKey(ok.getObjectIds());

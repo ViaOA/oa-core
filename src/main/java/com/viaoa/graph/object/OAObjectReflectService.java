@@ -40,6 +40,9 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
@@ -330,7 +333,8 @@ public class OAObjectReflectService {
 			return;
 		}
 
-		final boolean bIsLoading = OARuntime.get().threadLocalService().isLoading();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final boolean bIsLoading = srvcOAThreadLocal.isLoading();
 
 		String propNameU = propName.toUpperCase();
 		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
@@ -740,6 +744,7 @@ public class OAObjectReflectService {
 		final OALinkInfo linkInfo = srvcObject.getOAObjectInfoService().getLinkInfo(oi, linkPropertyName);
 
 		Object obj = srvcObject.getOAObjectPropertyService().getProperty(oaObj, linkPropertyName, false, true);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 
 		if (obj instanceof Hub) {
 			// 20141215 could be server side, that deserialized the object+references without setting up.
@@ -790,7 +795,7 @@ public class OAObjectReflectService {
 									OAObjectInfo oix = srvcObject.getOAObjectInfoService().getOAObjectInfo(linkInfo.getToClass());
 									OALinkInfo linkInfox = srvcObject.getOAObjectInfoService().getLinkInfo(oix, matchProperty);
 									if (linkInfox != null) {
-										if (!OARuntime.get().threadLocalService().isDeleting()) {
+										if (!srvcOAThreadLocal.isDeleting()) {
 											hubMatch = new Hub(linkInfox.getToClass());
 											HubMerger hm = new HubMerger(oaObj, hubMatch, matchHubPropPath);
 											hm.setServerSideOnly(true);
@@ -941,6 +946,7 @@ public class OAObjectReflectService {
 			propertyValue = null;
 		}
 
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		if (propertyValue instanceof Hub) {
 			hub = (Hub) propertyValue;
 			Class c = hub.getObjectClass();
@@ -981,7 +987,7 @@ public class OAObjectReflectService {
 			Class linkClass = linkInfo.getToClass();
 			Hub hubNew = new Hub(linkClass, oaObj, srvcObject.getOAObjectInfoService().getReverseLinkInfo(linkInfo), false);
 			try {
-				OARuntime.get().threadLocalService().setSuppressCSMessages(true);
+				srvcOAThreadLocal.setSuppressCSMessages(true);
 				for (int i = 0;; i++) {
 					OAObjectKey key = (OAObjectKey) hub.elementAt(i);
 					if (key == null) {
@@ -995,7 +1001,7 @@ public class OAObjectReflectService {
 				hub = hubNew;
 				hub.setChanged(false);
 			} finally {
-				OARuntime.get().threadLocalService().setSuppressCSMessages(false);
+				srvcOAThreadLocal.setSuppressCSMessages(false);
 			}
 			if (srvcObject.getOAObjectInfoService().cacheHub(linkInfo, hub)) {
 				srvcObject.getOAObjectPropertyService().setProperty(oaObj, linkPropertyName, new WeakReference(hub));
@@ -1063,7 +1069,7 @@ public class OAObjectReflectService {
 						} else {
 							x = 25;
 						}
-						if (OARuntime.get().threadLocalService().isDeleting()) {
+						if (srvcOAThreadLocal.isDeleting()) {
 							siblingKeys = null;
 						} else {
 							siblingKeys = srvcObject.getOAObjectSiblingService().getSiblings(oaObj, linkPropertyName, x, hmIgnoreSibling);
@@ -1170,8 +1176,8 @@ public class OAObjectReflectService {
 			if (siblingKeys != null && siblingKeys.length > 0) {
 				OALinkInfo rli = linkInfo.getReverseLinkInfo();
 				try {
-					OARuntime.get().threadLocalService().setSuppressCSMessages(true);
-					OARuntime.get().threadLocalService().setLoading(true);
+					srvcOAThreadLocal.setSuppressCSMessages(true);
+					srvcOAThreadLocal.setLoading(true);
 					for (; select.hasMore();) {
 						OAObject objx = select.next();
 						// find masterObj to put it in
@@ -1195,8 +1201,8 @@ public class OAObjectReflectService {
 						}
 					}
 				} finally {
-					OARuntime.get().threadLocalService().setLoading(false);
-					OARuntime.get().threadLocalService().setSuppressCSMessages(false);
+					srvcOAThreadLocal.setLoading(false);
+					srvcOAThreadLocal.setSuppressCSMessages(false);
 				}
 			} else {
 				if (!srvcObject.getOAObjectCSService().loadReferenceHubDataOnServer(hub, select)) { // load all data before passing to client
@@ -1504,7 +1510,8 @@ public class OAObjectReflectService {
 	 */
 	public void loadAllReferences(Hub hub, boolean bIncludeCalc) {
 		OASiblingHelper siblingHelper = new OASiblingHelper(hub);
-		OARuntime.get().threadLocalService().addSiblingHelper(siblingHelper);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		try {
 			for (Object obj : hub) {
 				if (obj instanceof OAObject) {
@@ -1512,7 +1519,7 @@ public class OAObjectReflectService {
 				}
 			}
 		} finally {
-			OARuntime.get().threadLocalService().removeSiblingHelper(siblingHelper);
+			srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 		}
 	}
 
@@ -1918,12 +1925,13 @@ public class OAObjectReflectService {
 		int cnt = 0;
 
 		final OASiblingHelper siblingHelper = new OASiblingHelper(hub);
-		OARuntime.get().threadLocalService().addSiblingHelper(siblingHelper);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		try {
 			cnt = _loadAllReferences(	0, hub, levelsLoaded, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, cascade,
 										0);
 		} finally {
-			OARuntime.get().threadLocalService().removeSiblingHelper(siblingHelper);
+			srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 		}
 		return cnt;
 	}
@@ -1949,12 +1957,13 @@ public class OAObjectReflectService {
 		int cnt = 0;
 
 		final OASiblingHelper siblingHelper = new OASiblingHelper(hub);
-		OARuntime.get().threadLocalService().addSiblingHelper(siblingHelper);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		try {
 			cnt = _loadAllReferences(	0, hub, levelsLoaded, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, cascade,
 										maxRefsToLoad);
 		} finally {
-			OARuntime.get().threadLocalService().removeSiblingHelper(siblingHelper);
+			srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 		}
 		return cnt;
 	}
@@ -2222,7 +2231,8 @@ public class OAObjectReflectService {
 
 			if (objx instanceof Hub) {
 				final OASiblingHelper siblingHelper = new OASiblingHelper((Hub) objx);
-				OARuntime.get().threadLocalService().addSiblingHelper(siblingHelper);
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 				try {
 					for (Object objz : (Hub) objx) {
 						currentRefsLoaded = _loadAllReferences(	currentRefsLoaded, (OAObject) objz, levelsLoaded + 1, maxLevelsToLoad,
@@ -2233,7 +2243,7 @@ public class OAObjectReflectService {
 						}
 					}
 				} finally {
-					OARuntime.get().threadLocalService().removeSiblingHelper(siblingHelper);
+					srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 				}
 			} else if (objx instanceof OAObject) {
 				currentRefsLoaded = _loadAllReferences(	currentRefsLoaded, (OAObject) objx, levelsLoaded + 1, maxLevelsToLoad,
@@ -2484,7 +2494,8 @@ public class OAObjectReflectService {
 					ref = srvcObject.getOAObjectCSService().getServerReference(oaObj, linkPropertyName);
 				} else {
 					OAObjectKey[] siblingKeys;
-					if (OARuntime.get().threadLocalService().isDeleting()) {
+					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+					if (srvcOAThreadLocal.isDeleting()) {
 						siblingKeys = null;
 					} else {
 						siblingKeys = srvcObject.getOAObjectSiblingService().getSiblings(oaObj, linkPropertyName, 75, hmIgnoreSibling);
@@ -3094,9 +3105,10 @@ public class OAObjectReflectService {
 			}
 		}
 
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocalService().setLoading(true);
-			OARuntime.get().threadLocalService().setSuppressCSMessages(true);
+			srvcOAThreadLocal.setLoading(true);
+			srvcOAThreadLocal.setSuppressCSMessages(true);
 
 			newObject = (OAObject) createNewObject(oaObj.getClass());
 			srvcObject.getOAObjectInitializeService().initialize(newObject, oi, true, true, false, false, true);
@@ -3104,13 +3116,14 @@ public class OAObjectReflectService {
 			_copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 
 		} finally {
-			OARuntime.get().threadLocalService().setSuppressCSMessages(false);
-			OARuntime.get().threadLocalService().setLoading(false);
+			srvcOAThreadLocal.setSuppressCSMessages(false);
+			srvcOAThreadLocal.setLoading(false);
 		}
 		srvcObject.getOAObjectCacheService().add(newObject);
 		return newObject;
 	}
 
+	
 	/**
 	 * Copies the properties of the source OAObject into the supplied
 	 * destination object. Properties listed in excludeProperties are
@@ -3146,14 +3159,15 @@ public class OAObjectReflectService {
 	 */
 	public void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
 			HashMap<UUID, Object> hmNew) {
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocalService().setLoading(true);
-			OARuntime.get().threadLocalService().setSuppressCSMessages(true);
+			srvcOAThreadLocal.setLoading(true);
+			srvcOAThreadLocal.setSuppressCSMessages(true);
 
 			_copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 		} finally {
-			OARuntime.get().threadLocalService().setLoading(false);
-			OARuntime.get().threadLocalService().setSuppressCSMessages(false);
+			srvcOAThreadLocal.setLoading(false);
+			srvcOAThreadLocal.setSuppressCSMessages(false);
 		}
 	}
 

@@ -26,6 +26,8 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.process.OAChangeRefresher;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 
@@ -149,7 +151,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         if (hub == null) throw new RuntimeException("hub can not be null");
         clazz = hub.getObjectClass();
         wrHub = new WeakReference<Hub<T>>(hub);
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
 
         final boolean bEmptyHub = (hub.getSize() == 0);
         
@@ -166,12 +168,13 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                 final Hub<T> hub = wrHub.get();
                 if (hub == null) return;
                 if (isUsed((T) obj)) {
+        			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
                     if (bServerSideOnly) { 
-                        OARuntime.remoteThreadService().sendMessages(true);
+                        srvcOARemoteThread.sendMessages(true);
                     }
                     hub.add((T) obj);
                     if (bServerSideOnly) { 
-                    	OARuntime.remoteThreadService().sendMessages(false);
+                    	srvcOARemoteThread.sendMessages(false);
                     }
                 }
             }
@@ -487,12 +490,12 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         setupTrigger();
 
         if (!bRefresh) return;
-        boolean bWasSendMessages = false;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
         if (bServerSideOnly) { 
-        	bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
+        	srvcOARemoteThread.sendMessages(true);
         }
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
     	srvcObjectCache.visit(clazz, new OACallback() {
             @Override
@@ -503,7 +506,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             }
         });
         if (bServerSideOnly) { 
-            if (!bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
+            srvcOARemoteThread.sendMessages(false);
         }
     }
 
@@ -609,14 +612,14 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                     */
                 }
                 else {
-            		boolean bWasSendMessages = false;
+        			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
                     if (bServerSideOnly) { 
-                    	bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
+                    	srvcOARemoteThread.sendMessages(true);
                     }
                     if (isUsed((T) rootObject)) hub.add((T) rootObject);
                     else hub.remove((T) rootObject);
                     if (bServerSideOnly) { 
-                    	if (!bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
+                    	srvcOARemoteThread.sendMessages(false);
                     }
                 }
             }
@@ -653,7 +656,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             trigger = null;
         }
         if (cacheListener == null) {
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(clazz);
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
         	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
         	        	
         	srvcObjectCache.removeListener(clazz, cacheListener);

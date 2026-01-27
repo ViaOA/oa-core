@@ -28,6 +28,9 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.sync.model.ClientInfo;
 
 /**
@@ -120,19 +123,25 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule) {
-		boolean bPrev = OARuntime.get().threadLocals().setSendMessages(true);
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
     	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
+    	
 		boolean bResult;
-		if (obj != null) {
-			obj.save(iCascadeRule);
-			bResult = true;
-		} else {
-			bResult = false;
+		try {
+			srvcOARemoteThread.sendMessages(true);
+			OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
+			if (obj != null) {
+				obj.save(iCascadeRule);
+				bResult = true;
+			} else {
+				bResult = false;
+			}
 		}
-
-		OARuntime.get().threadLocals().setSendMessages(bPrev);
+		finally {
+			srvcOARemoteThread.sendMessages(false);
+		}
 		return bResult;
 	}
 
@@ -325,7 +334,8 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public String performThreadDump(String msg) {
-		String s = OARuntime.get().threadLocals().getAllStackTraces();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		String s = srvcOAThreadLocal.getAllStackTraces();
 		LOG.warning(msg + "\n" + s);
 		return s;
 	}

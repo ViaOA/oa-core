@@ -14,6 +14,9 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAString;
 
 public class OAObjectInitializeService {
@@ -75,7 +78,8 @@ public class OAObjectInitializeService {
 		
 		faObject.setNulls(oaObj, new byte[x]);
 
-		if (OARuntime.get().threadLocalService().isLoading()) {
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		if (srvcOAThreadLocal.isLoading()) {
 			return false; // dont initialize. Whatever is loading should call initialize below directly
 		}
 
@@ -176,7 +180,8 @@ public class OAObjectInitializeService {
 	        boolean bAddToCache,
 	        boolean bInitializeWithCS,
 	        boolean bSetChangedToFalse) {
-		final boolean bWasLoading = OARuntime.get().threadLocals().setLoading(true);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
 		try {
 			if (oi == null) {
 				oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
@@ -240,11 +245,11 @@ public class OAObjectInitializeService {
 			}
 			if (!bWasLoading && bInitializeWithDS) {
 				if (srvcObject.getOAObjectDSService().getAssignIdOnCreate(oaObj)) {
-					OARuntime.get().threadLocals().setLoading(false);
+					srvcOAThreadLocal.setLoading(false);
 					try {
 						srvcObject.getOAObjectDSService().assignId(oaObj);
 					} finally {
-						OARuntime.get().threadLocalService().setLoading(true);
+						srvcOAThreadLocal.setLoading(true);
 					}
 				}
 			}
@@ -253,7 +258,7 @@ public class OAObjectInitializeService {
 			}
 		} finally {
 			// note: this has to be false, not bWasLoading, since it also increments a counter in threadLocalDelegate
-			OARuntime.get().threadLocalService().setLoading(false);
+			srvcOAThreadLocal.setLoading(false);
 		}
 		if (!bWasLoading) {
 			srvcObject.getOAObjectCacheService().fireAfterLoadEvent(oaObj);
@@ -273,7 +278,7 @@ public class OAObjectInitializeService {
 	 */
 	public void setAsNewObject(final OAObject oaObj) {
 		if (oaObj == null) return;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(oaObj);
+		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
 		if (og == null) return;
 		og.getOAObjectService().getOAObjectGuidService().assignNewGuid(oaObj);
 
@@ -313,13 +318,14 @@ public class OAObjectInitializeService {
 			return;
 		}
 
-		OARuntime.get().threadLocals().setLoading(true);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.setLoading(true);
 		try {
 			for (String id : ids) {
 				srvcObject.getOAObjectReflectService().setProperty(oaObj, id, null, null);
 			}
 		} finally {
-			OARuntime.get().threadLocals().setLoading(false);
+			srvcOAThreadLocal.setLoading(false);
 		}
 		if (srvcObject.getOAObjectDSService().getAssignIdOnCreate(oaObj)) {
 			srvcObject.getOAObjectDSService().assignId(oaObj);

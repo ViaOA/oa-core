@@ -19,12 +19,11 @@ import java.util.ArrayList;
 
 import com.viaoa.context.OAContext;
 import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAObjectService;
 import com.viaoa.graph.object.OAObjectCallbackService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectCallbackDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAAnyValueObject;
 import com.viaoa.util.OAArray;
@@ -537,7 +536,7 @@ public abstract class HubChangeListener {
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
-			String propx = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+			String propx = og.getHubService().getHubDetailService().getPropertyFromMasterToDetail(hub);
 			srvcObjectCallback.addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 		}
 		return hp;
@@ -575,7 +574,7 @@ public abstract class HubChangeListener {
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
-			String propx = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+			String propx = og.getHubService().getHubDetailService().getPropertyFromMasterToDetail(hub);
 			srvcObjectCallback.addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 		}
 		return hp;
@@ -620,7 +619,7 @@ public abstract class HubChangeListener {
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
-			String propx = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+			String propx = og.getHubService().getHubDetailService().getPropertyFromMasterToDetail(hub);
 			srvcObjectCallback.addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 		}
 
@@ -658,8 +657,8 @@ public abstract class HubChangeListener {
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
-			String propx = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
 			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+			String propx = og.getHubService().getHubDetailService().getPropertyFromMasterToDetail(hub);
 			final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
 			srvcObjectCallback.addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 		}
@@ -678,7 +677,7 @@ public abstract class HubChangeListener {
 			return null;
 		}
 		addAoNotNull(hub);
-		HubProp hp = add(hub, OAObjectDelegate.WORD_Changed, true);
+		HubProp hp = add(hub, OAObjectService.WORD_Changed, true);
 		return hp;
 	}
 
@@ -770,9 +769,9 @@ public abstract class HubChangeListener {
 		// include master
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
-			OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterObjectToDetail(hub);
+			OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromMasterObjectToDetail(hub);
 			if (li != null && li.getOwner()) {
-				String propx = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+				String propx = og.getHubService().getHubDetailService().getPropertyFromMasterToDetail(hub);
 				srvcObjectCallback.addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 			}
 		}
@@ -833,9 +832,9 @@ public abstract class HubChangeListener {
 		// include master
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
-			OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterObjectToDetail(hub);
+			OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromMasterObjectToDetail(hub);
 			if (li != null && li.getOwner()) {
-				String propx = HubDetailDelegate.getPropertyFromMasterToDetail(hub);
+				String propx = og.getHubService().getHubDetailService().getPropertyFromMasterToDetail(hub);
 				srvcObjectCallback.addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, false);
 			}
 		}
@@ -1046,7 +1045,8 @@ public abstract class HubChangeListener {
 				continue;
 			}
 			if (hp.hub != hub) {
-				if (!HubShareDelegate.isUsingSameSharedHub(hp.hub, hub)) {
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+				if (!og.getHubService().getHubShareService().isUsingSameSharedHub(hp.hub, hub)) {
 					continue;
 				}
 			}

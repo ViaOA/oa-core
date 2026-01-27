@@ -16,14 +16,14 @@
 package com.viaoa.hub;
 
 import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.hub.HubSelectService;
+import com.viaoa.graph.object.OAObjectDSService;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectDSDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectReflectDelegate;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 
 /**
  * Manages the creation and staging of new {@link OAObject OAObjects} before they
@@ -147,8 +147,10 @@ public class HubNewObject<F extends OAObject> {
 			hubNewObject = new Hub(hubMain.getObjectClass());
 		}
 
-		hubNewObject.setSelectWhereHub(	HubSelectDelegate.getSelectWhereHub(hubMain),
-										HubSelectDelegate.getSelectWhereHubPropertyPath(hubMain));
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubMain);
+		final HubSelectService srvcHubSelect = og.getHubService().getHubSelectService();
+		hubNewObject.setSelectWhereHub(	srvcHubSelect.getSelectWhereHub(hubMain),
+				srvcHubSelect.getSelectWhereHubPropertyPath(hubMain));
 
 		// need to set up a filtered hub, so that hubNewObject can be associated with hubMain and it's masterObject/Hub, etc
 		Hub hubEmptyFiltered = new Hub(hubMain.getObjectClass());
@@ -198,8 +200,10 @@ public class HubNewObject<F extends OAObject> {
 			OAObjectKey ok = obj.getObjectKey();
 			if (obj.isNew() && !ok.hasValidObjectIds()) {
 				// obj.setObjectDefaults(); // 20240507 this should be called when object is created. 
-				if (OAObjectDSDelegate.getAssignIdOnCreate(obj)) {
-					OAObjectDSDelegate.assignId(obj);
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+				OAObjectDSService srvc = og.getOAObjectService().getOAObjectDSService();
+				if (srvc.getAssignIdOnCreate(obj)) {
+					srvc.assignId(obj);
 				}
 			}
 		}
@@ -248,16 +252,18 @@ public class HubNewObject<F extends OAObject> {
 	 */
 	public F createNewObject() {
 		F obj = null;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setLoading(true);
+			srvcOAThreadLocal.setLoading(true);
 			Class<F> clazz = hubMain.getObjectClass();
     		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
 			final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
 			obj = (F) srvcOAObjectReflect.createNewObject(clazz);
 		} finally {
-			OARuntime.get().threadLocals().setLoading(false);
+			srvcOAThreadLocal.setLoading(false);
 		}
-		OAObjectDelegate.initializeAfterLoading((OAObject) obj);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+		og.getOAObjectService().getOAObjectInitializeService().initializeAfterLoading((OAObject) obj);
 		return obj;
 	}
 

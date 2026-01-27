@@ -25,10 +25,10 @@ import com.viaoa.object.OAGroupBy;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
@@ -350,7 +350,8 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		if (hubDetail == null) {
 			String pp = "(" + classFrom.getName() + ") " + OAGroupBy.P_Hub;
 			hubDetail = getCombinedHub().getDetailHub(pp);
-			HubDelegate.setObjectClass(hubDetail, classFrom);
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubFrom);
+			og.getHubService().setObjectClass(hubDetail, classFrom);
 			hubDetail.addHubListener(new HubListenerAdapter() {
 				@Override
 				public void afterChangeActiveObject(HubEvent e) {
@@ -1507,15 +1508,16 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		// this will tell the OASyncClient.getDetail which hub objects are being used
 		final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(this.hubFrom);
 		siblingHelper.add(this.propertyPath);
-		OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		try {
-			OARuntime.get().threadLocals().setSuppressCSMessages(true);
+			srvcOAThreadLocal.setSuppressCSMessages(true);
 			for (F bx : hubFrom) {
 				add(bx);
 			}
 		} finally {
-			OARuntime.get().threadLocals().setSuppressCSMessages(false);
-			OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
+			srvcOAThreadLocal.setSuppressCSMessages(false);
+			srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 		}
 	}
 
@@ -2075,7 +2077,8 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		if (grpBy != null) {
 			gb.setGroupBy(grpBy);
 		}
-		HubDelegate.setObjectClass(gb.getHub(), classFrom);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubFrom);
+		og.getHubService().setObjectClass(gb.getHub(), classFrom);
 
 		// 20190418 if hubPropertyName!=null, then use a HubCopy
 		if (OAString.isNotEmpty(hubPropertyName)) {

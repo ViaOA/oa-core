@@ -15,6 +15,9 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.runtime.OARuntime;
+
 /**
  * Represents a {@link Hub} that shares the same data and object references
  * as another Hub, optionally sharing its active object (AO).
@@ -79,8 +82,9 @@ public class SharedHub<TYPE> extends Hub<TYPE> {
      */
     public SharedHub(Hub<TYPE> hub, boolean bShareActiveObject) {
         if (hub != null) {
-            HubDelegate.setObjectClass(this, hub.getObjectClass());
-        	HubShareDelegate.setSharedHub(this, hub, bShareActiveObject);
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+            og.getHubService().setObjectClass(this, hub.getObjectClass());
+            og.getHubService().getHubShareService().setSharedHub(this, hub, bShareActiveObject);
         }
     }
 

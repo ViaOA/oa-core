@@ -20,7 +20,6 @@ import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectCacheListener;
 import com.viaoa.runtime.OARuntime;
 

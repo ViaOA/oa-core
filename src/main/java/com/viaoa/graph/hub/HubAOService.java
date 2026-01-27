@@ -14,6 +14,9 @@ import com.viaoa.object.OAGroupBy;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.*;
 
 public class HubAOService {
@@ -263,10 +266,12 @@ public class HubAOService {
 			}
 		}
 
-		OARuntime.get().threadLocalService().lock(thisHub);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+
+		srvcOAThreadLocal.lock(thisHub);
 		Object origActiveObject = faHub.getHubDataActive(thisHub).getActiveObject();
 		faHub.getHubDataActive(thisHub).setActiveObject(object);
-		OARuntime.get().threadLocalService().unlock(thisHub);
+		srvcOAThreadLocal.unlock(thisHub);
 
 		faHub.getHubDataUnique(thisHub).setUpdatingActiveObject(true);
 

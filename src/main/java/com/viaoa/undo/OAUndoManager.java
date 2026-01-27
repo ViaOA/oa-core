@@ -25,10 +25,11 @@ import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
 
-import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.remote.OARemoteThreadDelegate;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 
 /**
  * OA-specific extension of {@link javax.swing.undo.UndoManager} providing
@@ -207,9 +208,10 @@ public class OAUndoManager extends UndoManager {
 	 * @param presentationName the name displayed for the compound undo operation
 	 */
 	public static void startCompoundEditForPropertyChanges(final String presentationName) {
-		OARuntime.get().threadLocals().startUndoable(presentationName);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.startUndoable(presentationName);
 		//startCompoundEdit(presentationName);
-		//OARuntime.get().threadLocals().setCreateUndoablePropertyChanges(true);
+		//OARuntime.threadLocals().setCreateUndoablePropertyChanges(true);
 	}
 
 	/**
@@ -219,9 +221,10 @@ public class OAUndoManager extends UndoManager {
 	 * {@link #startCompoundEditForPropertyChanges(String)}.
 	 */
 	public static void endCompoundEditForPropertyChanges() {
-		OARuntime.get().threadLocals().endUndoable();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.endUndoable();
 		//endCompoundEdit();
-		//OARuntime.get().threadLocals().setCreateUndoablePropertyChanges(false);
+		//OARuntime.threadLocals().setCreateUndoablePropertyChanges(false);
 	}
 
 	/**
@@ -482,8 +485,10 @@ public class OAUndoManager extends UndoManager {
 			return true;
 		}
 
-		if (!OASyncDelegate.isSingleUser()) {
-			if (OARemoteThreadDelegate.isRemoteThread()) {
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph();
+		if (!og.getSyncService().isSingleUser()) {
+			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+			if (srvcOARemoteThread.isRemoteThread()) {
 				return true;
 			}
 		}

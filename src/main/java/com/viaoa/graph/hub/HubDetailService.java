@@ -12,6 +12,9 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -138,7 +141,8 @@ public class HubDetailService {
 					//  if it does, then dont allow it to adjustMaster
 				}
 
-				if (OARuntime.get().threadLocalService().getCanAdjustHub(dm.getMasterHub())) {
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				if (srvcOAThreadLocal.getCanAdjustHub(dm.getMasterHub())) {
 					srvcHub.getHubAOService().setActiveObject(dm.getMasterHub(), obj, true, bUpdateLink, false); // adjustMaster, updateLink, force
 					result = true;
 				}
@@ -167,7 +171,7 @@ public class HubDetailService {
 
 		// 20160920 this needs to run even if loading.
 		///   ex: using copy, loading from xml, etc
-		// if (OARuntime.get().threadService().isLoading()) return;
+		// if (OARuntime.threadService().isLoading()) return;
 
 		HubDataMaster dm;
 		if (objMaster != null) {

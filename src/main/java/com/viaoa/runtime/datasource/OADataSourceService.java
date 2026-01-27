@@ -1,23 +1,22 @@
-package com.viaoa.runtime;
+package com.viaoa.runtime.datasource;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.runtime.datasource.OAJDBCDataSourceService;
 import com.viaoa.util.OAFilter;
 
 
 public class OADataSourceService {
 	private Logger LOG = Logger.getLogger(OADataSourceService.class.getName());
 
-	private final OARuntime runtime;
+	// private final OARuntime runtime;
 
 	private final OAJDBCDataSourceService srvcJdbc = new OAJDBCDataSourceService();
 	
-	OADataSourceService(OARuntime runtime) {
-		this.runtime = runtime;
+	public OADataSourceService() {
+		// this.runtime = runtime;
 	}
 
 	

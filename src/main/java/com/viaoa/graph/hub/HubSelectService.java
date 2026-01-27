@@ -15,6 +15,9 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -202,11 +205,13 @@ public class HubSelectService {
 						//LOG.config("resizing, from:"+size+", to:"+capacity+", hub:"+thisHub);
 						srvcHub.getHubDataService().ensureCapacity(thisHub, capacity);
 					}
+					
+					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 					try {
-						OARuntime.get().threadLocalService().setLoading(true);
+						srvcOAThreadLocal.setLoading(true);
 						srvcHub.getHubAddRemoveService().add(thisHub, obj);
 					} finally {
-						OARuntime.get().threadLocalService().setLoading(false);
+						srvcOAThreadLocal.setLoading(false);
 					}
 					size++;
 					cnt++;
@@ -839,12 +844,13 @@ public class HubSelectService {
 
 		boolean b = false;
 
-		OARuntime.get().threadLocalService().setRefreshing(true);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.setRefreshing(true);
 		try {
 			srvcHub.getHubEventService().fireBeforeRefreshEvent(thisHub);
 			b = _refresh(thisHub);
 		} finally {
-			OARuntime.get().threadLocalService().setRefreshing(false);
+			srvcOAThreadLocal.setRefreshing(false);
 		}
 
 		return b;

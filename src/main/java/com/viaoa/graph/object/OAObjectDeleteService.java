@@ -20,6 +20,9 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.sync.remote.RemoteServerInterface;
@@ -162,8 +165,11 @@ public class OAObjectDeleteService {
 				srvcHub.getHubEventService().fireBeforeDeleteEvent(h, oaObj);
 			}
 		}
+		
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		
 		try {
-			OARuntime.get().threadLocalService().setDeleting(oaObj, true);
+			srvcOAThreadLocal.setDeleting(oaObj, true);
 
 			if (!bIsSyncClient) {
 			    deleteChildren(oaObj, cascade); // delete children first
@@ -390,7 +396,7 @@ public class OAObjectDeleteService {
 			oaObj.setChanged(false);
 			srvcObject.setNew(oaObj, true);
 		} finally {
-			OARuntime.get().threadLocalService().setDeleting(oaObj, false);
+			srvcOAThreadLocal.setDeleting(oaObj, false);
 		}
 
         if (!bIsSyncClient) srvcObject.getOAObjectCSService().sendDeleteToClients(oaObj);
@@ -403,7 +409,8 @@ public class OAObjectDeleteService {
 			}
 		}
 		
-		OARuntime.remoteThreadService().startNextThread();
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		srvcOARemoteThread.startNextThread();
 	}
 
 	/**

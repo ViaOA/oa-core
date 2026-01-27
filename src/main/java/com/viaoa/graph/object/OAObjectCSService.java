@@ -16,6 +16,9 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.sync.remote.RemoteServerInterface;
@@ -59,7 +62,8 @@ public class OAObjectCSService {
 	 *         otherwise {@code false}
 	 */
 	public static boolean isRemoteThread() {
-		return OARuntime.remoteThreadService().isRemoteThread();
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		return srvcOARemoteThread.isRemoteThread();
 	}
 
 	/**
@@ -231,8 +235,10 @@ public class OAObjectCSService {
         }
 
         // this is running as OAClient
-        if (!OARuntime.remoteThreadService().shouldSendMessages()) return true;
-        if (OARuntime.threadLocalService().isSuppressCSMessages()) return true;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        if (!srvcOARemoteThread.shouldSendMessages()) return true;
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return true;
         
         rs.serverDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
         
@@ -256,7 +262,8 @@ public class OAObjectCSService {
         if (!og.getSyncService().isServer()) return;
         // needs to send these to client if on RemoteThread        
         
-        if (OARuntime.get().threadLocalService().isSuppressCSMessages()) return;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return;
         
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return; 
@@ -393,12 +400,13 @@ public class OAObjectCSService {
             bResult = true;
             // load all data without sending messages
             // even though Hub.writeObject does this, this data could be used on server application
+    		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         	try {
-        		OARuntime.threadLocalService().setSuppressCSMessages(true);
+        		srvcOAThreadLocal.setSuppressCSMessages(true);
         		srvcHub.getHubSelectService().loadAllData(thisHub, select);
         	}
         	finally {
-        		OARuntime.threadLocalService().setSuppressCSMessages(false);        	
+        		srvcOAThreadLocal.setSuppressCSMessages(false);        	
         	}
         }
         else bResult = false;
@@ -422,10 +430,12 @@ public class OAObjectCSService {
         
         if (rs == null) return;
         
-        if (!OARuntime.remoteThreadService().shouldSendMessages()) return;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        if (!srvcOARemoteThread.shouldSendMessages()) return;
         
-        if (OARuntime.threadLocalService().isLoading()) return;
-        if (OARuntime.threadLocalService().isSuppressCSMessages()) return;
+        if (srvcOAThreadLocal.isLoading()) return;
+        if (srvcOAThreadLocal.isSuppressCSMessages()) return;
 
         OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
         if (oi.getLocalOnly()) return;

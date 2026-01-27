@@ -35,27 +35,21 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectCSService;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectKeyService;
-import com.viaoa.graph.object.OAObjectLockService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCSDelegate;
-import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OACompare;
-import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
@@ -837,8 +831,9 @@ public class OAXMLReader1 extends DefaultHandler {
 				}
 
 				if (object == null) {
+					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 					try {
-						OARuntime.get().threadLocals().setLoading(true);
+						srvcOAThreadLocal.setLoading(true);
 						object = createNewObject(c);
 						// set property ids
 						if (matchProps == null || matchProps.length == 0) {
@@ -858,7 +853,7 @@ public class OAXMLReader1 extends DefaultHandler {
 					} catch (Exception e) {
 						throw new SAXException("cant create object for class " + c.getName() + " Error:" + e, e);
 					} finally {
-						OARuntime.get().threadLocals().setLoading(false);
+						srvcOAThreadLocal.setLoading(false);
 					}
 				} else {
 				}
@@ -1033,12 +1028,12 @@ public class OAXMLReader1 extends DefaultHandler {
 		try {
 			if (object.getNew()) {
 				bLoadingObject = true;
-				OARuntime.get().threadLocals().setLoading(true);
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 
 				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
 				final OAObjectCSService srvcObjectCS = og.getOAObjectService().getOAObjectCSService();
 				if (srvcObjectCS.isServer(object)) {
-					OARuntime.get().threadLocals().setSuppressCSMessages(true);
+					srvcOAThreadLocal.setSuppressCSMessages(true);
 					// no, needs to have OAObjectEventDelegate.firePropertyChange() process property changes
 					//   since it has already created the object w/o setLoading(true), which means that there are null primitive properties
 					//     that would not be "unset" if firePropertyChange() was not ran.
@@ -1194,11 +1189,12 @@ public class OAXMLReader1 extends DefaultHandler {
 				if (bResult) {
 					object.afterLoad();
 				}
-				OARuntime.get().threadLocals().setLoading(false);
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				srvcOAThreadLocal.setLoading(false);
 				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
 				final OAObjectCSService srvcObjectCS = og.getOAObjectService().getOAObjectCSService();
 				if (srvcObjectCS.isServer(object)) {
-					OARuntime.get().threadLocals().setSuppressCSMessages(false);
+					srvcOAThreadLocal.setSuppressCSMessages(false);
 				}
 			}
 		}

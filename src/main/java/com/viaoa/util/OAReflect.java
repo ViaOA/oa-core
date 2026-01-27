@@ -37,8 +37,6 @@ import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.runtime.OARuntime;
 
 /**

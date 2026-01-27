@@ -28,19 +28,16 @@ import com.viaoa.graph.object.OAObjectAnnotationService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.graph.object.OAObjectReflectService;
-import com.viaoa.object.OAAnnotationDelegate;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAPropertyPath;
@@ -574,16 +571,17 @@ public class HubListenerTree {
 		if (hl == null) {
 			return;
 		}
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setHubListenerTree(true);
+			srvcOAThreadLocal.setHubListenerTree(true);
 			addListener(hl, property, bActiveObjectOnly); // this will check for dependent calcProps
 			// now add the additional dependent properties
 			if (dependentPropertyPaths != null && dependentPropertyPaths.length > 0) {
 				addDependentListeners(property, hl, dependentPropertyPaths, bActiveObjectOnly, bAllowBackgroundThread);
 			}
 		} finally {
-			OARuntime.get().threadLocals().setHubListenerTree(false);
-			OARuntime.get().threadLocals().setIgnoreTreeListenerProperty(null);
+			srvcOAThreadLocal.setHubListenerTree(false);
+			srvcOAThreadLocal.setIgnoreTreeListenerProperty(null);
 		}
 	}
 
@@ -593,8 +591,9 @@ public class HubListenerTree {
 	 */
 	private void addListenerMain(HubListener hl, final String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly,
 			final boolean bAllowBackgroundThread) {
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setHubListenerTree(true);
+			srvcOAThreadLocal.setHubListenerTree(true);
 			this.addListener(hl);
 
 			if (dependentPropertyPaths != null && dependentPropertyPaths.length > 0) {
@@ -603,8 +602,8 @@ public class HubListenerTree {
 				}
 			}
 		} finally {
-			OARuntime.get().threadLocals().setHubListenerTree(false);
-			OARuntime.get().threadLocals().setIgnoreTreeListenerProperty(null);
+			srvcOAThreadLocal.setHubListenerTree(false);
+			srvcOAThreadLocal.setIgnoreTreeListenerProperty(null);
 		}
 	}
 
@@ -612,15 +611,16 @@ public class HubListenerTree {
 			final String[] dependentPropertyNames, final boolean bActiveObjectOnly, final boolean bAllowBackgroundThread) {
 		//LOG.finer("Hub="+root.hub+", property="+origPropertyName);
 
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		// 20120826 check for endless loops
-		if (OARuntime.get().threadLocals().getHubListenerTreeCount() > 25) {
+		if (srvcOAThreadLocal.getHubListenerTreeCount() > 25) {
 			// need to bail out, before stackoverflow
-			LOG.log(Level.WARNING, "OARuntime.get().threadLocals().getHubListenerTreeCount() > 25, will not continue to add listeners. PropertyName="
+			LOG.log(Level.WARNING, "srvcOAThreadLocal.getHubListenerTreeCount() > 25, will not continue to add listeners. PropertyName="
 					+ origPropertyName, new Exception("detected possible overflow, will continue"));
 			return;
 		}
 
-		String ignore = OARuntime.get().threadLocals().getIgnoreTreeListenerProperty();
+		String ignore = srvcOAThreadLocal.getIgnoreTreeListenerProperty();
 		for (int i = 0; i < dependentPropertyNames.length; i++) {
 			if (dependentPropertyNames[i] == null) {
 				continue;
@@ -638,7 +638,7 @@ public class HubListenerTree {
 				continue;
 			}
 			if (dependentPropertyNames[i].indexOf('.') > 0) {
-				OARuntime.get().threadLocals().setIgnoreTreeListenerProperty(dependentPropertyNames[i]);
+				srvcOAThreadLocal.setIgnoreTreeListenerProperty(dependentPropertyNames[i]);
 			}
 
 			HubListenerTreeNode node = root;
@@ -837,9 +837,10 @@ public class HubListenerTree {
 								}
 
 								private void onEvent(HubEvent e) {
+									final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(root.hub);
 									if (nodeThis == root) {
 										for (String s : newTreeNode.getCalcPropertyNames()) {
-											HubEventDelegate.fireCalcPropertyChange(root.hub, e.getHub().getMasterObject(), s);
+											og.getHubService().getHubEventService().fireCalcPropertyChange(root.hub, e.getHub().getMasterObject(), s);
 										}
 									} else {
 										if (bUseAll) {
@@ -847,7 +848,7 @@ public class HubListenerTree {
 											if (rootObjects != null && rootObjects.length > 0) {
 												for (Object obj : rootObjects) {
 													for (String s : newTreeNode.getCalcPropertyNames()) {
-														HubEventDelegate.fireCalcPropertyChange(root.hub, obj, s);
+														og.getHubService().getHubEventService().fireCalcPropertyChange(root.hub, obj, s);
 													}
 												}
 											}
@@ -857,7 +858,7 @@ public class HubListenerTree {
 												Object[] rootObjects = nodeThis.getRootValues(e.getHub().getMasterObject());
 												if (rootObjects != null && OAArray.containsExact(rootObjects, aObj)) {
 													for (String s : newTreeNode.getCalcPropertyNames()) {
-														HubEventDelegate.fireCalcPropertyChange(root.hub, aObj, s);
+														og.getHubService().getHubEventService().fireCalcPropertyChange(root.hub, aObj, s);
 													}
 												}
 											}
@@ -878,19 +879,21 @@ public class HubListenerTree {
 										if (bUseAll) {
 											Object[] rootObjects = newTreeNode.parent.getRootValues(e.getObject());
 											if (rootObjects != null && rootObjects.length > 0) {
+												final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(rootObjects[0].getClass());
 												for (Object obj : rootObjects) {
 													for (String s : newTreeNode.getCalcPropertyNames()) {
-														HubEventDelegate.fireCalcPropertyChange(root.hub, obj, s);
+														og.getHubService().getHubEventService().fireCalcPropertyChange(root.hub, obj, s);
 													}
 												}
 											}
 										} else {
 											Object aObj = root.hub.getAO();
 											if (aObj != null) {
+												final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(aObj.getClass());
 												Object[] rootObjects = newTreeNode.parent.getRootValues(e.getObject());
 												if (rootObjects != null && OAArray.containsExact(rootObjects, aObj)) {
 													for (String s : newTreeNode.getCalcPropertyNames()) {
-														HubEventDelegate.fireCalcPropertyChange(root.hub, aObj, s);
+														og.getHubService().getHubEventService().fireCalcPropertyChange(root.hub, aObj, s);
 													}
 												}
 											}
@@ -958,7 +961,7 @@ public class HubListenerTree {
 						hl = new HubListenerAdapter() {
 							@Override
 							public void afterAdd(HubEvent e) {
-								if (!OARuntime.get().threadLocals().isHubMergerChanging()) {
+								if (!srvcOAThreadLocal.isHubMergerChanging()) {
 									Hub h = HubListenerTree.this.root.hub;
 									if (bUseAll) {
 										onEvent(nodeThis.getRootValues(e.getObject()));
@@ -996,7 +999,7 @@ public class HubListenerTree {
 							@Override
 							public void afterRemove(HubEvent e) {
 								// ignore if masterHub is adding, removing (newList, clear)
-								if (!OARuntime.get().threadLocals().isHubMergerChanging()) {
+								if (!srvcOAThreadLocal.isHubMergerChanging()) {
 									if (bUseAll) {
 										onEvent(nodeThis.getRootValues(e.getObject()));
 									} else {
@@ -1013,8 +1016,9 @@ public class HubListenerTree {
 
 							@Override // 20140423
 							public void afterRemoveAll(HubEvent e) {
-								if (!OARuntime.get().threadLocals().isHubMergerChanging()) {
-									HubEventDelegate.fireCalcPropertyChange(root.hub, null, origPropertyName);
+								if (!srvcOAThreadLocal.isHubMergerChanging()) {
+									final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(root.hub);
+									og.getHubService().getHubEventService().fireCalcPropertyChange(root.hub, null, origPropertyName);
 								}
 							}
 
@@ -1022,9 +1026,10 @@ public class HubListenerTree {
 								if (rootObjects == null) {
 									return;
 								}
+								final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(root.hub);
 								for (Object obj : rootObjects) {
 									if (obj != null) {
-										HubEventDelegate.fireCalcPropertyChange(root.hub, obj, origPropertyName);
+										og.getHubService().getHubEventService().fireCalcPropertyChange(root.hub, obj, origPropertyName);
 									}
 								}
 							}
@@ -1064,16 +1069,18 @@ public class HubListenerTree {
 								if (bUseAll) {
 									Object[] rootObjects = nodeThis.getRootValues(e.getObject());
 									if (rootObjects != null) {
+										final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(root.hub);
 										for (Object obj : rootObjects) {
-											HubEventDelegate.fireCalcPropertyChange(root.hub, obj, origPropertyName);
+											og.getHubService().getHubEventService().fireCalcPropertyChange(root.hub, obj, origPropertyName);
 										}
 									}
 								} else {
 									Object aObj = root.hub.getAO();
 									if (aObj != null) {
 										Object[] rootObjects = nodeThis.getRootValues(e.getObject());
+										final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(root.hub);
 										if (rootObjects != null && OAArray.containsExact(rootObjects, aObj)) {
-											HubEventDelegate.fireCalcPropertyChange(root.hub, aObj, origPropertyName);
+											og.getHubService().getHubEventService().fireCalcPropertyChange(root.hub, aObj, origPropertyName);
 										}
 									}
 								}

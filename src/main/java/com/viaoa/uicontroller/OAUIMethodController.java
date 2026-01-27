@@ -20,7 +20,6 @@ import com.viaoa.graph.object.OAObjectCallbackService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAStr;

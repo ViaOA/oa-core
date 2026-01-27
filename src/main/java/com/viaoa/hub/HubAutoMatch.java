@@ -19,12 +19,15 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectEnumService;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.*;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAStr;
 
@@ -336,20 +339,24 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			}
 		}
 		
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		
 		if (!abUpdating.compareAndSet(false, true)) {
 			return; // already updating
 		}
         if (bServerSideOnly) {
-            OARemoteThreadDelegate.sendMessages(true);
+            srvcOARemoteThread.sendMessages(true);
         }
 
         try {
             if (bCheckInSync) {
-    			if (HubDelegate.getCurrentState(hub, null, null) != HubDelegate.HubCurrentStateEnum.InSync) {
+        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.hub);
+    			if (og.getHubService().getCurrentState(hub, null, null) != HubService.HubCurrentStateEnum.InSync) {
     				return;
     			}
-    			if (hubMaster != null && HubDelegate.getCurrentState(hubMaster, null, null) != HubDelegate.HubCurrentStateEnum.InSync) {
-    			    OARuntime.get().threadLocals().addHubMergerCallback(new OAThreadLocalHubMergerCallback() {
+    			if (hubMaster != null && og.getHubService().getCurrentState(hubMaster, null, null) != HubService.HubCurrentStateEnum.InSync) {
+    			    srvcOAThreadLocal.addHubMergerCallback(new OAThreadLocalHubMergerCallback() {
                         @Override
                         public void callback() {
                             _update(false);
@@ -367,7 +374,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		} finally {
 			abUpdating.set(false);
 			if (bServerSideOnly) {
-				OARemoteThreadDelegate.sendMessages(false);
+				srvcOARemoteThread.sendMessages(false);
 			}
 		}
 	}
@@ -379,15 +386,17 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 */
 	private void _update1() {
 		if (hub != null) {
-			if (OARuntime.get().threadLocals().isDeleting(hub.getMasterObject())) {
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			if (srvcOAThreadLocal.isDeleting(hub.getMasterObject())) {
 				return;
 			}
 		}
 
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.hub);
 		// Step 1: verify that both hubs are using the correct hub
 		//         (in case AO of master hub has been changed, and one of these hubs has not yet been adjusted).
-		Hub hubMasterx = HubDetailDelegate.getRealHub(hubMaster);
-		Hub hubx = HubDetailDelegate.getRealHub(hub); // in case it is a detailHub and has not been updated yet
+		Hub hubMasterx = og.getHubService().getHubDetailService().getRealHub(hubMaster);
+		Hub hubx = og.getHubService().getHubDetailService().getRealHub(hub); // in case it is a detailHub and has not been updated yet
 		if (hubx == null) {
 			return;
 		}
@@ -563,8 +572,9 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 * @param e the hub event associated with the insert
 	 */
 	public @Override void afterInsert(HubEvent e) {
-		if (!OARuntime.get().threadLocals().isLoading()) {
-			if (!OARuntime.get().threadLocals().isHubMergerChanging()) { // else wait for newList
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		if (!srvcOAThreadLocal.isLoading()) {
+			if (!srvcOAThreadLocal.isHubMergerChanging()) { // else wait for newList
 				update();
 			}
 		}
@@ -577,8 +587,9 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 * @param e the hub event associated with the add
 	 */
 	public @Override void afterAdd(HubEvent e) {
-		if (!OARuntime.get().threadLocals().isLoading()) {
-			if (!OARuntime.get().threadLocals().isHubMergerChanging()) { // else wait for newList
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		if (!srvcOAThreadLocal.isLoading()) {
+			if (!srvcOAThreadLocal.isHubMergerChanging()) { // else wait for newList
 				update();
 			}
 		}
@@ -591,10 +602,10 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 * @param e the hub event associated with the removal
 	 */
 	public @Override void afterRemove(HubEvent e) {
-		if (OARuntime.get().threadLocals().isHubMergerChanging()) {
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		if (srvcOAThreadLocal.isHubMergerChanging()) {
 			return; // else wait for newList
 		}
-
 		update();
 	}
 
@@ -605,7 +616,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 	 * @param e the hub event associated with the new list
 	 */
 	public @Override void onNewList(HubEvent e) {
-		if (OARuntime.get().threadLocals().isHubMergerChanging()) { // else wait for newList after merger is done
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		if (srvcOAThreadLocal.isHubMergerChanging()) { // else wait for newList after merger is done
 			return;
 		}
 		update();

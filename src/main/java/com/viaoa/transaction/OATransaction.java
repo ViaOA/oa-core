@@ -18,8 +18,9 @@ package com.viaoa.transaction;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 
 /**
  * Thread-local transaction mechanism used by OA datasources and other
@@ -167,7 +168,8 @@ public class OATransaction {
 	 * context for the calling thread.
 	 */
 	public void start() {
-		OARuntime.get().threadLocals().setTransaction(this);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.setTransaction(this);
 	}
 
 	/**
@@ -178,7 +180,8 @@ public class OATransaction {
 	 *         false.
 	 */
 	public boolean isStarted() {
-		return OARuntime.get().threadLocals().getTransaction() == this;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		return srvcOAThreadLocal.getTransaction() == this;
 	}
 
 	/**
@@ -192,7 +195,8 @@ public class OATransaction {
 				tl.rollback(this);
 			}
 		} finally {
-			OARuntime.get().threadLocals().setTransaction(null);
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			srvcOAThreadLocal.setTransaction(null);
 		}
 	}
 
@@ -202,12 +206,13 @@ public class OATransaction {
 	 * removed from thread-local storage.
 	 */
 	public void commit() {
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
 			for (OATransactionListener tl : al) {
 				tl.commit(this);
 			}
 		} finally {
-			OARuntime.get().threadLocals().setTransaction(null);
+			srvcOAThreadLocal.setTransaction(null);
 		}
 	}
 

@@ -15,6 +15,9 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.runtime.OARuntime;
+
 /**
  * Keeps the Active Object (AO) of two {@link Hub} instances synchronized.
  *
@@ -101,7 +104,8 @@ public class HubShareAO extends HubListenerAdapter {
 	 */
     @Override
     public void afterChangeActiveObject(HubEvent evt) {
-        if (HubShareDelegate.isUsingSameSharedAO(hub1, hub2)) {
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub1);
+        if (og.getHubService().getHubShareService().isUsingSameSharedAO(hub1, hub2)) {
             return;
         }
         Hub h = evt.getHub();

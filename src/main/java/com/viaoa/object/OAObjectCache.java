@@ -201,7 +201,7 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean updateObject(final T obj) {
 		if (obj == null) return false;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(obj);
+		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
 		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		final OAObjectKey ok = srvcObjectKey.createObjectKey((OAObject) obj);
 		final Class<T> clazz = (Class<T>) obj.getClass();
@@ -255,7 +255,7 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean removeObject(final T obj) {
 		if (obj == null) return false;
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph((OAObject) obj);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
 		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
 		final OAObjectKey ok = srvcObjectKey.createObjectKey((OAObject) obj);
 		final Class<T> clazz = (Class<T>) obj.getClass();
@@ -286,7 +286,7 @@ import com.viaoa.runtime.OARuntime;
 			if (hm != null) hm.remove(wr.key.getGuid());
 			objectIndex.removeFromIndex(wr.clazz, wr.key);
 			
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.get().graph(wr.clazz);
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(wr.clazz);
 	        if (og != null && !og.getOAObjectService().getOAObjectInfoService().getOAObjectInfo(wr.clazz).getLocalOnly()) {
 	        	og.getOAObjectService().getOAObjectCSService().objectFinalized(wr.key.getGuid());
 	        }

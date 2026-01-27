@@ -28,7 +28,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.jdbc.db.DBMetaData;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.transaction.OATransactionListener;
@@ -325,7 +324,7 @@ public class ConnectionPool implements Runnable {
 	 * @throws Exception if connection acquisition fails
 	 */
 	protected OAConnection getOAConnection(boolean bForStatement, boolean bExclusive) throws Exception {
-		final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
+		final OATransaction tran = OARuntime.thread().getTransaction();
 
 		OAConnection con = null;
 		if (tran != null) {
@@ -511,7 +510,7 @@ public class ConnectionPool implements Runnable {
 				return;
 			}
 			try {
-				// final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
+				// final OATransaction tran = OARuntime.threadLocals().getTransaction();
 				if (tran != null && tran.getUseBatch()) {
 					conx.executeOpenBatches();
 				}
@@ -536,7 +535,7 @@ public class ConnectionPool implements Runnable {
 			}
 
 			try {
-				// final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
+				// final OATransaction tran = OARuntime.threadLocals().getTransaction();
 				if (tran != null && tran.getUseBatch()) {
 					conx.clearOpenBatches();
 				}
@@ -560,7 +559,7 @@ public class ConnectionPool implements Runnable {
 				return;
 			}
 			try {
-				// final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
+				// final OATransaction tran = OARuntime.threadLocals().getTransaction();
 				if (tran != null && tran.getUseBatch()) {
 					conx.executeOpenBatches();
 				}

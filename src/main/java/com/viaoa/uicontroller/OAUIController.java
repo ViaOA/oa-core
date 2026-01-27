@@ -29,6 +29,8 @@ import com.viaoa.hub.HubChangeListener.HubProp;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.hub.HubTemp;
@@ -1790,7 +1792,8 @@ public abstract class OAUIController extends HubListenerAdapter {
     protected void _update() {
         if (bIgnoreUpdate) return;
 
-        final HubEvent he = OARuntime.get().threadLocals().getCurrentHubEvent();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        final HubEvent he = srvcOAThreadLocal.getCurrentHubEvent();
         if (heLastUpdate != null && (he == heLastUpdate)) {
             return;
         }

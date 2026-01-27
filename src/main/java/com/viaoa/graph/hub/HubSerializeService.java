@@ -9,6 +9,9 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 
 public class HubSerializeService {
 	private final Logger LOG = Logger.getLogger(HubSerializeService.class.getName());
@@ -31,11 +34,12 @@ public class HubSerializeService {
 	 */
 	public void _writeObject(Hub thisHub, java.io.ObjectOutputStream stream) throws IOException {
 		if (srvcHub.getHubSelectService().isMoreData(thisHub)) {
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 			try {
-				OARuntime.get().threadLocalService().setSuppressCSMessages(true);
+				srvcOAThreadLocal.setSuppressCSMessages(true);
 				srvcHub.getHubSelectService().loadAllData(thisHub); // otherwise, client will not have the correct datasource
 			} finally {
-				OARuntime.get().threadLocalService().setSuppressCSMessages(false);
+				srvcOAThreadLocal.setSuppressCSMessages(false);
 			}
 		}
 		stream.defaultWriteObject();

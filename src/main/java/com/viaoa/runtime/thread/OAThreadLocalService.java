@@ -1,4 +1,4 @@
-package com.viaoa.runtime;
+package com.viaoa.runtime.thread;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,12 +10,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubEventDelegate;
-import com.viaoa.hub.HubShareDelegate;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectSerializer;
@@ -24,12 +21,13 @@ import com.viaoa.object.OAThreadLocal;
 import com.viaoa.object.OAThreadLocalHubMergerCallback;
 import com.viaoa.process.OAProcess;
 import com.viaoa.remote.OARemoteThread;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAStr;
 import com.viaoa.util.OAString;
 import com.viaoa.util.Tuple3;
 
@@ -63,7 +61,7 @@ import com.viaoa.util.Tuple3;
 public class OAThreadLocalService {
 	private static Logger LOG = Logger.getLogger(OAThreadLocalService.class.getName());
 
-	private final OARuntime runtime;
+	// private final OARuntime runtimeX;
 
 	/**
 	 * Global counter used for diagnostics to track how many threads increment
@@ -227,8 +225,8 @@ public class OAThreadLocalService {
 	private final ThreadLocal<OAThreadLocal> threadLocal = new ThreadLocal<OAThreadLocal>();
 	
 	
-	OAThreadLocalService(OARuntime runtime) {
-		this.runtime = runtime;
+	public OAThreadLocalService() {
+		// this.runtimeX = runtime;
 	}
 
 	public OAThreadLocal getThreadLocal() {
@@ -527,11 +525,11 @@ public class OAThreadLocalService {
 		if (ti == null || si == null) {
 			return;
 		}
-		ti.removeObjectSerializer(si);
-
-		int x = aiTotalObjectSerializer.decrementAndGet();
-		if (x < 0) {
-			msObjectSerializer = throttleLOG("TotalObjectSerializeInterface =" + x, msObjectSerializer);
+		if (ti.removeObjectSerializer(si)) {
+			int x = aiTotalObjectSerializer.decrementAndGet();
+			if (x < 0) {
+				msObjectSerializer = throttleLOG("TotalObjectSerializeInterface =" + x, msObjectSerializer);
+			}
 		}
 	}
 	
@@ -1345,10 +1343,10 @@ public class OAThreadLocalService {
 		int x;
 
 		if (b) {
-			ti.setHubMergerChangingCount(ti.getHubMergerChangingCount() + 1);
+			ti.incHubMergerChangingCount();
 			x = aiTotalHubMergerChanging.getAndIncrement();
 		} else {
-			ti.setHubMergerChangingCount(ti.getHubMergerChangingCount() - 1);
+			ti.incHubMergerChangingCount();
 			x = aiTotalHubMergerChanging.decrementAndGet();
 			
 			if (ti.getHubMergerChangingCount() == 0) {
@@ -1687,7 +1685,9 @@ public class OAThreadLocalService {
 	 * @param msg the status message
 	 */
 	public void setStatus(String msg) {
-		getOAThreadLocal().setStatus(msg);
+		OAThreadLocal tl = getThreadLocal(false);
+		if (tl == null && OAStr.isEmpty(msg)) return;
+		tl.setStatus(msg);
 	}
 
 	/**
@@ -1696,7 +1696,9 @@ public class OAThreadLocalService {
 	 * @param ri the request information
 	 */
 	public void setRemoteRequestInfo(RequestInfo ri) {
-		getOAThreadLocal().setRequestInfo(ri);
+		OAThreadLocal tl = getThreadLocal(false);
+		if (tl == null && ri == null) return;
+		tl.setRequestInfo(ri);
 	}
 
 	/**
@@ -1705,20 +1707,12 @@ public class OAThreadLocalService {
 	 * @return the RequestInfo instance, or null if none exists
 	 */
 	public RequestInfo getRemoteRequestInfo() {
-		return getOAThreadLocal().getRequestInfo();
+		OAThreadLocal tl = getThreadLocal(false);
+		if (tl == null) return null;
+		return tl.getRequestInfo();
 	}
 
 	
-	/**
-	 * Enables or disables sending of messages from OARemoteThread instances.
-	 *
-	 * @param b true to enable sending, false to disable
-	 * @return the previous send-messages state
-	 */
-	public boolean setSendMessages(boolean b) {
-		return OARemoteThreadDelegate.sendMessages(b);
-	}
-
 	/**
 	 * Assigns or clears an object used to notify the current thread when
 	 * remote-thread operations need to resume.
@@ -1757,11 +1751,12 @@ public class OAThreadLocalService {
 		if (tl == null) {
 			return;
 		}
-		if (tl.getNotifyObject() == null) {
+		Object lockObj = tl.getNotifyObject();
+		if (lockObj == null) {
 			return;
 		}
-		synchronized (tl.getNotifyObject()) {
-			tl.getNotifyObject().notifyAll();
+		synchronized (lockObj) {
+			lockObj.notifyAll();
 		}
 		setNotifyObject(null);
 	}
@@ -1795,8 +1790,12 @@ public class OAThreadLocalService {
 	 *
 	 * @param x the trigger count to assign
 	 */
-	public void setRecursiveTriggerCount(int x) {
-		setRecursiveTriggerCount(getThreadLocal(true), x);
+	public int incRecursiveTriggerCount() {
+		return incRecursiveTriggerCount(getThreadLocal(true));
+	}
+
+	public int decRecursiveTriggerCount() {
+		return decRecursiveTriggerCount(getThreadLocal(true));
 	}
 	
 	/**
@@ -1805,13 +1804,20 @@ public class OAThreadLocalService {
 	 * @param ti the thread-local instance
 	 * @param x  the trigger count to assign
 	 */
-	protected void setRecursiveTriggerCount(OAThreadLocal ti, int x) {
+	protected int incRecursiveTriggerCount(OAThreadLocal ti) {
 		if (ti == null) {
-			return;
+			return 0;
 		}
-		ti.setRecursiveTriggerCount(x);
+		return ti.incRecursiveTriggerCount();
 	}
 
+	protected int decRecursiveTriggerCount(OAThreadLocal ti) {
+		if (ti == null) {
+			return 0;
+		}
+		return ti.decRecursiveTriggerCount();
+	}
+	
 	/**
 	 * Returns the hub-listener tree depth for the current thread. Returns zero
 	 * when no depth has been recorded.
@@ -1864,10 +1870,10 @@ public class OAThreadLocalService {
 		int x;
 
 		if (b) {
-			ti.setHubListenerTreeCount(ti.getHubListenerTreeCount() + 1);
+			ti.incHubListenerTreeCount();
 			x = aiTotalHubListenerTreeCount.getAndIncrement();
 		} else {
-			ti.setHubListenerTreeCount(ti.getHubListenerTreeCount() - 1);
+			ti.decHubListenerTreeCount();
 			x = aiTotalHubListenerTreeCount.decrementAndGet();
 		}
 		if (x > 20 || x < 0) {
@@ -2270,7 +2276,8 @@ public class OAThreadLocalService {
 		if (hub == null) {
 			return;
 		}
-		hub = HubShareDelegate.getMainSharedHub(hub);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		hub = og.getHubService().getHubShareService().getMainSharedHub(hub);
 		OAThreadLocal ti = getThreadLocal(true);
 		ti.dontAdjustHubs = (Hub[]) OAArray.add(Hub.class, ti.dontAdjustHubs, hub);
 		aiTotalDontAdjustHub.incrementAndGet();
@@ -2296,7 +2303,8 @@ public class OAThreadLocalService {
 		if (ti == null) {
 			return;
 		}
-		hub = HubShareDelegate.getMainSharedHub(hub);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		hub = og.getHubService().getHubShareService().getMainSharedHub(hub);
 		ti.dontAdjustHubs = (Hub[]) OAArray.removeValue(Hub.class, ti.dontAdjustHubs, hub);
 		aiTotalDontAdjustHub.decrementAndGet();
 	}
@@ -2309,7 +2317,8 @@ public class OAThreadLocalService {
 			return true;
 		}
 
-		hub = HubShareDelegate.getMainSharedHub(hub);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		hub = og.getHubService().getHubShareService().getMainSharedHub(hub);
 
 		OAThreadLocal ti = getThreadLocal(false);
 		if (ti == null) {
@@ -2323,7 +2332,7 @@ public class OAThreadLocalService {
 		for (Hub hubx : ti.dontAdjustHubs) {
 			Hub hubm = hubx.getMasterHub();
 			for (int i = 0; hubm != null && i < 10; i++, hubm = hubm.getMasterHub()) {
-				if (HubShareDelegate.getMainSharedHub(hubm) == hub) {
+				if (og.getHubService().getHubShareService().getMainSharedHub(hubm) == hub) {
 					return false;
 				}
 			}
@@ -2468,7 +2477,8 @@ public class OAThreadLocalService {
 		Hub hx = getFastLoadingHub();
 		if (hx == null) return false;
 		if (h == hx) return true;
-		return HubShareDelegate.isUsingSameSharedHub(h, hx);
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(h);
+		return og.getHubService().getHubShareService().isUsingSameSharedHub(h, hx);
 	}
 	
 	/**
@@ -2493,7 +2503,8 @@ public class OAThreadLocalService {
 			return ;
 		}
 		if (ti.fastLoadingHub != null) {
-			HubEventDelegate.fireOnNewListEvent(ti.fastLoadingHub, true);
+			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+			og.getHubService().getHubEventService().fireOnNewListEvent(ti.fastLoadingHub, true);
 		}
 		ti.fastLoadingHub = hub;
 	}

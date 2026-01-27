@@ -19,8 +19,11 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.*;
 
 /**
@@ -275,10 +278,11 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
     public @Override void onNewList(HubEvent e) {
         Hub h = (Hub) e.getSource();
         if (h == hub) {
+    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
             // 20101009 another thread could be making Hub changes, so this could fail - adding try..catch
             for (int i=0; i<3; i++) {
                 try {
-                    HubSortDelegate.resort(hub);
+                    og.getHubService().getHubSortService().resort(hub);
                     break;
                 }
                 catch (Exception ex) {
@@ -305,14 +309,16 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
         if (bCallingSortMove) return;
         String s = e.getPropertyName();
         if (s != null && s.equalsIgnoreCase(sortPropertyName)) {
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
             try {
                 bCallingSortMove = true;
-                OARuntime.get().threadLocals().setSuppressCSMessages(true);  // each client will handle it's own sorting
-                HubAddRemoveDelegate.sortMove(hub, e.getObject());
+                srvcOAThreadLocal.setSuppressCSMessages(true);  // each client will handle it's own sorting
+        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+                og.getHubService().getHubAddRemoveService().sortMove(hub, e.getObject());
             }
             finally {
                 bCallingSortMove = false;
-                OARuntime.get().threadLocals().setSuppressCSMessages(false);
+                srvcOAThreadLocal.setSuppressCSMessages(false);
             }
         }
     }

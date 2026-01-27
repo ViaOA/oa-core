@@ -23,8 +23,9 @@ import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAThreadLocalDelegate;
+import com.viaoa.runtime.OADataSourceImpl;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.datasource.OADataSourceService;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAFilter;
 
@@ -99,7 +100,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return array of DataSource instances
 	 */
 	public static OADataSource[] getDataSources() {
-		return OARuntime.get().dataSources().getDataSources();
+		return OARuntime.datasources().getDataSources();
 	}
 
 	/**
@@ -109,7 +110,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return supporting DataSource or null
 	 */
 	public static OADataSource getDataSource(Class clazz) {
-		return OARuntime.get().dataSources().getDataSource(clazz);
+		return OARuntime.datasources().getDataSource(clazz);
 	}
 
 	/**
@@ -121,7 +122,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return matching DataSource or null
 	 */
 	public static OADataSource getDataSource(Class clazz, OAFilter filter) {
-		return OARuntime.get().dataSources().getDataSource(clazz, filter);
+		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
+		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
+		return srvcOADataSource.getDataSource(clazz, filter);
 	}
 
 	/**
@@ -337,7 +340,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	public OADataSource(boolean bRegister) {
 		if (bRegister) {
-			OARuntime.get().dataSources().register(this);
+			OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
+			OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
+			srvcOADataSource.register(this);
 		}
 	}
 
@@ -347,7 +352,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * changes.
 	 */
 	public static int getChangeCounter() {
-		return OARuntime.get().dataSources().getChangeCounter();
+		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
+		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
+		return srvcOADataSource.getChangeCounter();
 	}
 
 	/**
@@ -360,7 +367,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 
 	/** Closes all registered data sources and clears the global list. */
 	public static void closeAll() {
-		OARuntime.get().dataSources().closeAll();
+		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
+		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
+		srvcOADataSource.closeAll();
 	}
 
 	/** Closes this DataSource and removes it from the global list. */
@@ -371,7 +380,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 
 	/** Removes this DataSource from the global registry. */
 	public void removeFromList() {
-		OARuntime.get().dataSources().removeFromList(this);
+		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
+		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
+		srvcOADataSource.removeFromList(this);
 	}
 
 	/**
@@ -381,7 +392,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	@Override
 	public void reopen(int pos) {
-		OARuntime.get().dataSources().reopen(pos, this);
+		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
+		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
+		srvcOADataSource.reopen(pos, this);
 	}
 
 	/**
@@ -403,7 +416,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @param pos target index
 	 */
 	public void setPosition(int pos) {
-		OARuntime.get().dataSources().setPosition(pos, this);
+		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
+		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
+		srvcOADataSource.setPosition(pos, this);
 	}
 
 	/**
@@ -412,7 +427,9 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return position or -1 if not registered
 	 */
 	public int getPosition() {
-		return OARuntime.get().dataSources().getPosition(this);
+		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
+		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
+		return srvcOADataSource.getPosition(this);
 	}
 
 	/** Sets the name of this DataSource. */
@@ -1254,7 +1271,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return true if batch updates are allowed
 	 */
 	public boolean isAllowingBatch() {
-		final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
+		final OATransaction tran = OARuntime.thread().getTransaction();
 		final boolean bIsForBatch = tran != null && tran.getUseBatch();
 		return bIsForBatch;
 	}
@@ -1266,7 +1283,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return true if in an active transaction
 	 */
 	public boolean isInTransaction() {
-		final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
+		final OATransaction tran = OARuntime.thread().getTransaction();
 		return (tran != null);
 	}
 
@@ -1308,7 +1325,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	public boolean getIgnoreWrites() {
 		if (bIgnoreWrites) {
-			final OATransaction tran = OARuntime.get().threadLocals().getTransaction();
+			final OATransaction tran = OARuntime.thread().getTransaction();
 			if (tran != null && tran.getAllowWritesIfDsIsReadonly()) {
 				return false;
 			}

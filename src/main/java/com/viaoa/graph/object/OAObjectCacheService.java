@@ -34,6 +34,9 @@ import com.viaoa.object.OAObjectCacheListener;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -857,9 +860,9 @@ public class OAObjectCacheService {
 			}
 		}
 		
-		
 		boolean bSendAddEvent = false;
-		final int mode = OARuntime.get().threadLocalService().getObjectCacheAddMode();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final int mode = srvcOAThreadLocal.getObjectCacheAddMode();
 		if (objFound == null) {
 			if (mode != IGNORE_ALL) {
 				objectCache.updateObject(obj, key, clazz);

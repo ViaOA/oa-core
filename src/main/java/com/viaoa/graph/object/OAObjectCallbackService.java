@@ -1883,7 +1883,7 @@ public class OAObjectCallbackService {
 				}
 			}
 		} else if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()) {
-			//was:  else if ( (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) && !(OASync.isServer() && OARuntime.get().threadService().getContext() == null)) {
+			//was:  else if ( (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) && !(OASync.isServer() && OARuntime.threadService().getContext() == null)) {
 
 			// final boolean bCheckProcessedCheck = (objectCallback.getCheckType() & OAObjectCallback.CHECK_Processed) != 0;
 			final boolean bCheckEnabledProperty = (objectCallback.getCheckType() & OAObjectCallback.CHECK_EnabledProperty) != 0;

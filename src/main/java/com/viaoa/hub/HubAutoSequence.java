@@ -23,8 +23,9 @@ import java.lang.reflect.*;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.object.OAObjectInfoService;
 import com.viaoa.object.*;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
 
 /**
  * Automatically maintains a numeric sequence property on every object in a {@link Hub},
@@ -172,7 +173,8 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
      * @param bServerSideOnly whether sequence updates are controlled exclusively by the server
      */
     public HubAutoSequence(Hub hub, String propertyName, int startNumber, boolean bKeepSeq, boolean bServerSideOnly) {
-        if (bServerSideOnly && !HubCSDelegate.isServer(hub)) {
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.hub);
+        if (bServerSideOnly && !og.getHubService().getHubCSService().isServer(hub)) {
             LOG.warning("bServerSideOnly should be false, since this is not the server");
         }
         this.startNumber = startNumber;
@@ -337,16 +339,16 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
             }
         }
 
-        boolean b = false;
+    	final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
         try {
             if (bServerSideOnly) {
-                b = OARemoteThreadDelegate.sendMessages(true); 
+                srvcOARemoteThread.sendMessages(true); 
             }
             _resequence(startPos);
         }
         finally {
             if (bServerSideOnly) {
-                OARemoteThreadDelegate.sendMessages(b); 
+            	srvcOARemoteThread.sendMessages(false); 
             }
             synchronized (hmUpdateSeq) {
                 hmUpdateSeq.remove(this);

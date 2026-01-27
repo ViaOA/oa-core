@@ -34,6 +34,8 @@ import com.viaoa.object.OAObjectSerializerCallback;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OANotExist;
 
 /**
@@ -182,7 +184,7 @@ public class ClientGetDetail {
 		Hub hubHold = new Hub(masterClass);
 		hubHold.add(masterObject);
 		if (siblingKeys != null) {
-	    	//final OAGraph og = OARuntime.get().graph(masterClass);
+	    	//final OAGraph og = OARuntime.graph(masterClass);
 	    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
 
 			for (OAObjectKey key : siblingKeys) {
@@ -194,12 +196,13 @@ public class ClientGetDetail {
 		}
 
 		final OASiblingHelper siblingHelper = new OASiblingHelper(hubHold);
-		OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		Object detailValue = null;
 		try {
 			detailValue = srvcOAObjectReflect.getProperty((OAObject) masterObject, property);
 		} finally {
-			OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
+			srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 		}
 		hubHold.clear();
 		hubHold = null;

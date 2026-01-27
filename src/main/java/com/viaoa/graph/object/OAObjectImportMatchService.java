@@ -14,6 +14,9 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -320,34 +323,29 @@ public class OAObjectImportMatchService {
 			objNext = (OAObject) srvcObject.getOAObjectCacheService().find(oiNext.getForClass(), finder);
 		}
 
+		
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		
+		
 		if (objNext == null) {
-			boolean b = OARuntime.get().threadLocalService().isLoading();
+			boolean b = srvcOAThreadLocal.isLoading();
 			if (b) {
-				OARuntime.get().threadLocalService().setLoading(false);
+				srvcOAThreadLocal.setLoading(false);
 			}
 
 			objNext = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(oiNext.getForClass());
 
 			if (b) {
-				OARuntime.get().threadLocalService().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			}
 
-			final OAJson oaj = OARuntime.get().threadLocalService().getOAJackson();
+			final OAJson oaj = srvcOAThreadLocal.getOAJackson();
 
 			createHierObjects(objNext, oiNext, propertyPathNext, value);
 		}
 		objThis.setProperty(liNext.getName(), objNext);
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	

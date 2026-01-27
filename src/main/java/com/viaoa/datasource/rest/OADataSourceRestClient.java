@@ -33,7 +33,6 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAFilter;
 
@@ -80,7 +79,7 @@ public class OADataSourceRestClient extends OADataSource {
 	 */
 	public OADataSourceRestClient(Package packagex, OADataSourceRestInterface restAPI) {
 		if (packagex == null) {
-			packagex = OASync.ObjectPackage;
+			// qqqqqq ?? packagex = OASync.ObjectPackage;
 		}
 		this.restAPI = restAPI;
 	}

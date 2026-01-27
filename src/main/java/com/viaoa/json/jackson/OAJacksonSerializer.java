@@ -32,12 +32,8 @@ import com.viaoa.json.OAJson.StackItem;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.pojo.Pojo;
 import com.viaoa.pojo.PojoImportMatch;
 import com.viaoa.pojo.PojoLink;
@@ -47,6 +43,8 @@ import com.viaoa.pojo.PojoLinkOneReference;
 import com.viaoa.pojo.PojoLinkUnique;
 import com.viaoa.pojo.PojoProperty;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADate;
@@ -78,7 +76,8 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 	@Override
 	public void serialize(final OAObject value, final JsonGenerator gen, final SerializerProvider serializers) throws IOException {
 
-		final OAJson oaj = OARuntime.get().threadLocals().getOAJackson();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAJson oaj = srvcOAThreadLocal.getOAJackson();
 
 		final OAObject oaObj = (OAObject) value;
 

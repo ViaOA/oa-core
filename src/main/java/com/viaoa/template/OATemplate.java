@@ -23,6 +23,8 @@ import com.viaoa.hub.Hub;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.*;
 
 /**
@@ -1033,15 +1035,16 @@ public class OATemplate<F extends OAObject> {
 	protected boolean generate(TreeNode node, OAObject obj, Hub hub, StringBuilder sb, OAProperties props, final int cntStop) {
 		boolean b = false;
 		OASiblingHelper siblingHelper = null;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
 			if (hub != null) {
 				siblingHelper = new OASiblingHelper(hub);
 			}
-			OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
+			srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 			b = _generate(node, obj, hub, sb, props, cntStop);
 		} finally {
 			if (siblingHelper != null) {
-				OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
+				srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 			}
 		}
 		return b;

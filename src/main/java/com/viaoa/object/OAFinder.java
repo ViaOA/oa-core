@@ -26,6 +26,8 @@ import com.viaoa.graph.object.OAObjectPropertyService;
 import com.viaoa.graph.object.OAObjectSiblingService;
 import com.viaoa.hub.*;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.*;
 
 /**
@@ -608,7 +610,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	public ArrayList<T> find(Hub<F> hubRoot, F objectLastUsed) {
 		if (!bEnableRecursiveRootWasCalled) {
 			if (hubRoot != null) {
-				OALinkInfo li = HubDetailDelegate.getLinkInfoFromMasterObjectToDetail(hubRoot);
+				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubRoot);
+				OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromMasterObjectToDetail(hubRoot);
 				if (li != null && li.getRecursive()) {
 					bEnableRecursiveRoot = true;
 				}
@@ -619,16 +622,17 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		ArrayList<T> al = null;
 
 		OASiblingHelper<F> siblingHelper = null;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		if (!bUseOnlyLoadedData) {
 			siblingHelper = new OASiblingHelper<F>(hubRoot);
 			siblingHelper.add(strPropertyPath);
-			OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
+			srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		}
 		try {
 			al = _find(hubRoot, objectLastUsed);
 		} finally {
 			if (siblingHelper != null) {
-				OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
+				srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 			}
 		}
 		return al;
@@ -1219,8 +1223,10 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 						}
 						if (objx instanceof Hub) {
 							Hub h = (Hub) objx;
-							if (HubSortDelegate.getSortListener(h) == null && HubDelegate.getAutoSequence(h) == null) {
-								OAThreadLocal tl = OARuntime.get().threadLocals().getThreadLocal(true);
+							final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(h);
+							if (og.getHubService().getHubSortService().getSortListener(h) == null && og.getHubService().getAutoSequence(h) == null) {
+								final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+								OAThreadLocal tl = srvcOAThreadLocal.getThreadLocal(true);
 								if (tl.cntGetSiblingCalled > 1) {
 									b = false;
 								}
@@ -1259,15 +1265,15 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			return false;
 		}
 
+		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
 		Hub hx;
 		if (li.getCalculated()) {
 			hx = (Hub) li.getValue((OAObject) obj);
 		} else {
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
 			OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
 			hx = (Hub) srvcOAObjectProperty.getProperty((OAObject) obj, li.name, false, true);
 		}
-		if (hx == null || (HubSortDelegate.getSortListener(hx) == null && HubDelegate.getAutoSequence(hx) == null)) {
+		if (hx == null || (og.getHubService().getHubSortService().getSortListener(hx) == null && og.getHubService().getAutoSequence(hx) == null)) {
 			return true;
 		}
 		return false;

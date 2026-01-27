@@ -19,6 +19,8 @@ import java.util.logging.Logger;
 
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 
 /**
  * A specialized thread used by OA's remote messaging framework to process
@@ -192,12 +194,13 @@ public class OARemoteThread extends Thread {
 	 *
 	 * @param b true to increase the send counter, false to decrease it
 	 */
-	public void setSendMessages(boolean b) {
+	public boolean setSendMessages(boolean b) {
 		if (b) {
 			sendMessageCount++;
 		} else {
 			sendMessageCount--;
 		}
+		return sendMessageCount > 1;
 	}
 
 	/**
@@ -252,8 +255,10 @@ public class OARemoteThread extends Thread {
 		watingOnLock = false;
 		msStartNextThread = 0l;
 
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		
 		// reset thread local
-		OARuntime.get().threadLocals().setContext(null);
-		OARuntime.get().threadLocals().setAdmin(false);
+		srvcOAThreadLocal.setContext(null);
+		srvcOAThreadLocal.setAdmin(false);
 	}
 }

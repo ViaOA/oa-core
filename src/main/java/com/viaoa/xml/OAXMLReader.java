@@ -40,15 +40,12 @@ import com.viaoa.graph.object.OAObjectKeyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectKeyDelegate;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAConv;
@@ -584,7 +581,8 @@ public class OAXMLReader {
 			}
 
 			if (objNew == null) {
-				OARuntime.get().threadLocals().setLoading(true);
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				srvcOAThreadLocal.setLoading(true);
 				try {
 					objNew = createNewObject(toClass);
 //qqqqqqqqqqqqqq 20260111
@@ -601,7 +599,7 @@ public class OAXMLReader {
 						}
 					}
 				} finally {
-					OARuntime.get().threadLocals().setLoading(false);
+					srvcOAThreadLocal.setLoading(false);
 				}
 //qqqqqqqqqqqqqq 20260111
 				og.getOAObjectService().getOAObjectInitializeService().initializeAfterLoading(objNew);
@@ -617,7 +615,8 @@ public class OAXMLReader {
 
 		final boolean bLoadingNew = objNew.getNew() && !bIsPreloading;
 		if (bLoadingNew) {
-			OARuntime.get().threadLocals().setLoading(true);
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			srvcOAThreadLocal.setLoading(true);
 		}
 
 		if (!bIsPreloading) {
@@ -681,6 +680,7 @@ public class OAXMLReader {
 				}
 			}
 
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 			if (v instanceof ArrayList) {
 				// load into Hub
 				Hub h;
@@ -699,12 +699,12 @@ public class OAXMLReader {
 					Object objx = null;
 					try {
 						if (bLoadingNew) {
-							OARuntime.get().threadLocals().setLoading(false);
+							srvcOAThreadLocal.setLoading(false);
 						}
 						objx = _processChildren(hmx, li == null ? OAObject.class : li.getToClass(), bIsPreloading, level + 1);
 					} finally {
 						if (bLoadingNew) {
-							OARuntime.get().threadLocals().setLoading(true);
+							srvcOAThreadLocal.setLoading(true);
 						}
 					}
 
@@ -721,11 +721,11 @@ public class OAXMLReader {
 				HashMap<String, Object> hmx = (HashMap<String, Object>) v;
 				Class c = li == null ? OAObject.class : li.getToClass();
 				if (bLoadingNew) {
-					OARuntime.get().threadLocals().setLoading(false);
+					srvcOAThreadLocal.setLoading(false);
 				}
 				Object objx = _processChildren(hmx, c, bIsPreloading, level + 1);
 				if (bLoadingNew) {
-					OARuntime.get().threadLocals().setLoading(true);
+					srvcOAThreadLocal.setLoading(true);
 				}
 				if (!bIsPreloading) {
 					objNew.setProperty(k, objx);
@@ -733,7 +733,8 @@ public class OAXMLReader {
 			}
 		}
 		if (bLoadingNew) {
-			OARuntime.get().threadLocals().setLoading(false);
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			srvcOAThreadLocal.setLoading(false);
 		}
 		if (!bIsPreloading) {
 			objNew = getRealObject(objNew);

@@ -44,14 +44,8 @@ import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.object.OAObjectReflectDelegate;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.pojo.PojoDelegate;
 import com.viaoa.pojo.PojoLink;
 import com.viaoa.pojo.PojoLinkOne;
@@ -59,6 +53,8 @@ import com.viaoa.pojo.PojoLinkOneDelegate;
 import com.viaoa.pojo.PojoLinkUnique;
 import com.viaoa.pojo.PojoProperty;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
@@ -276,12 +272,13 @@ public class OAJacksonDeserializerLoader {
 
 		boolean bNeedsAssignedId = loadObjectIdProperties(stackItem);
 
-		if (OARuntime.get().threadLocals().isLoading()) {
-			OARuntime.get().threadLocals().setLoading(false);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		if (srvcOAThreadLocal.isLoading()) {
+			 srvcOAThreadLocal.setLoading(false);
 			try {
-				OAObjectDelegate.initializeAfterLoading((OAObject) stackItem.obj, bNeedsAssignedId, false, false);
+				og.getOAObjectService().getOAObjectInitializeService().initializeAfterLoading((OAObject) stackItem.obj, bNeedsAssignedId, false, false);
 			} finally {
-				OARuntime.get().threadLocals().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			}
 		}
 	}

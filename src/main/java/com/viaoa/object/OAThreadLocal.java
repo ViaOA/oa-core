@@ -233,9 +233,9 @@ public class OAThreadLocal {
 		alObjectSerializer.add(objectSerializer);
 	}
 	
-	public void removeObjectSerializer(OAObjectSerializer objectSerializer) {
-		if (alObjectSerializer == null) return;
-		alObjectSerializer.remove(objectSerializer);
+	public boolean removeObjectSerializer(OAObjectSerializer objectSerializer) {
+		if (alObjectSerializer == null) return false;
+		return alObjectSerializer.remove(objectSerializer);
 	}
 	
 
@@ -291,10 +291,14 @@ public class OAThreadLocal {
 		return hubMergerChangingCount;
 	}
 
-	public void setHubMergerChangingCount(int hubMergerChangingCount) {
-		this.hubMergerChangingCount = hubMergerChangingCount;
+	public int incHubMergerChangingCount() {
+		return ++this.hubMergerChangingCount;
 	}
-
+	public int decHubMergerChangingCount() {
+		return --this.hubMergerChangingCount;
+	}
+	
+	
 	public String getCompoundUndoableName() {
 		return compoundUndoableName;
 	}
@@ -339,18 +343,27 @@ public class OAThreadLocal {
 		return recursiveTriggerCount;
 	}
 
-	public void setRecursiveTriggerCount(int recursiveTriggerCount) {
-		this.recursiveTriggerCount = recursiveTriggerCount;
+	public int incRecursiveTriggerCount() {
+		return ++this.recursiveTriggerCount;
 	}
 
+	public int decRecursiveTriggerCount() {
+		return --this.recursiveTriggerCount;
+	}
+
+	
 	public int getHubListenerTreeCount() {
 		return hubListenerTreeCount;
 	}
 
-	public void setHubListenerTreeCount(int hubListenerTreeCount) {
-		this.hubListenerTreeCount = hubListenerTreeCount;
+	public int incHubListenerTreeCount() {
+		return ++this.hubListenerTreeCount;
+	}
+	public int decHubListenerTreeCount() {
+		return --this.hubListenerTreeCount;
 	}
 
+	
 	public String getIgnoreTreeListenerProperty() {
 		return ignoreTreeListenerProperty;
 	}

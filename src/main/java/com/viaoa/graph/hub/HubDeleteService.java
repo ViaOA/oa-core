@@ -11,6 +11,9 @@ import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 
 public class HubDeleteService {
 	private final Logger LOG = Logger.getLogger(HubDeleteService.class.getName());
@@ -46,15 +49,16 @@ public class HubDeleteService {
             return; // sent to server to be done.
         }
 
-        boolean bWasSendMessages = false;
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            OARuntime.threadLocalService().setDeleting(thisHub, true);
-            bWasSendMessages = OARuntime.remoteThreadService().sendMessages(true);
+            srvcOAThreadLocal.setDeleting(thisHub, true);
+            srvcOARemoteThread.sendMessages(true);
             _runDeleteAll(thisHub);
         }
         finally {
-            if (!bWasSendMessages) OARuntime.remoteThreadService().sendMessages(false);
-            OARuntime.threadLocalService().setDeleting(thisHub, false);
+            srvcOARemoteThread.sendMessages(false);
+            srvcOAThreadLocal.setDeleting(thisHub, false);
         }
     }
 
@@ -93,7 +97,8 @@ public class HubDeleteService {
      * @return {@code true} if the hub is currently deleting all objects
      */
     public boolean isDeletingAll(Hub thisHub) {
-        return OARuntime.get().threadLocalService().isDeleting(thisHub);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        return srvcOAThreadLocal.isDeleting(thisHub);
     }
 
     /**
@@ -108,14 +113,15 @@ public class HubDeleteService {
     public void deleteAll(Hub thisHub, OACascade cascade) {
         if (thisHub.size() == 0) return;
         if (cascade.wasCascaded(thisHub, true)) return;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            OARuntime.get().threadLocalService().setDeleting(thisHub, true);
-            OARuntime.get().threadLocalService().lock(thisHub);
+            srvcOAThreadLocal.setDeleting(thisHub, true);
+            srvcOAThreadLocal.lock(thisHub);
             _deleteAll(thisHub, cascade);
         }
         finally {
-            OARuntime.get().threadLocalService().unlock(thisHub);
-            OARuntime.get().threadLocalService().setDeleting(thisHub, false);
+            srvcOAThreadLocal.unlock(thisHub);
+            srvcOAThreadLocal.setDeleting(thisHub, false);
         }
     }
 

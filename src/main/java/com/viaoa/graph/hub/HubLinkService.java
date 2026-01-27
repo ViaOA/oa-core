@@ -11,6 +11,9 @@ import com.viaoa.graph.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAReflect;
@@ -813,13 +816,14 @@ public class HubLinkService {
 			// see if this hub is linked to a master (bForce)
 
 			if (obj != null && faHub.getHubDataUnique(fromHub).getLinkFromGetMethod() == null) {
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 
 				// 20200121
-				OARuntime.get().threadLocalService().addDontAdjustHub(linkToHub);
+				srvcOAThreadLocal.addDontAdjustHub(linkToHub);
 				try {
 					srvcHub.getHubDataService().getPos(fromHub, obj, true, false); // adjust master, bUpdateLink
 				} finally {
-					OARuntime.get().threadLocalService().removeDontAdjustHub(linkToHub);
+					srvcOAThreadLocal.removeDontAdjustHub(linkToHub);
 				}
 			} else {
 				if (changedPropName == null) {

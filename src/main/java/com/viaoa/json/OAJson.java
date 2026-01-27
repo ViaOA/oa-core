@@ -51,13 +51,12 @@ import com.viaoa.json.jackson.OAJacksonModule;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
@@ -547,13 +546,14 @@ public class OAJson {
 		setStackItem(null);
 		this.cascade = null;
 		String json;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 
 			json = getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(obj);
 
 		} finally {
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 		}
 
 		return json;
@@ -599,13 +599,14 @@ public class OAJson {
 		setStackItem(null);
 		this.cascade = null;
 		String json;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 
 			getObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, obj);
 
 		} finally {
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 		}
 	}
 
@@ -623,13 +624,14 @@ public class OAJson {
 		setStackItem(null);
 		this.cascade = null;
 		String json;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 
 			getObjectMapper().writerWithDefaultPrettyPrinter().writeValue(stream, obj);
 
 		} finally {
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 		}
 	}
 
@@ -761,12 +763,13 @@ public class OAJson {
 		getGuidMap();
 
 		T obj;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(true);
+				srvcOAThreadLocal.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -779,11 +782,11 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcOAThreadLocal.setLoading(false);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(false);
+				srvcOAThreadLocal.setSyncThread(false);
 			}
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 			readObjectClass = null;
 		}
 
@@ -821,13 +824,14 @@ public class OAJson {
 		Map<UUID, OAObject> hmGuidMap = getGuidMap();
 
 		T obj;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(true);
+				srvcOAThreadLocal.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -840,11 +844,11 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcOAThreadLocal.setLoading(false);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(false);
+				srvcOAThreadLocal.setSyncThread(false);
 			}
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 			readObjectClass = null;
 		}
 
@@ -873,12 +877,13 @@ public class OAJson {
 		Map<UUID, OAObject> hmGuidMap = getGuidMap();
 
 		T obj;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(true);
+				srvcOAThreadLocal.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -891,11 +896,11 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcOAThreadLocal.setLoading(false);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(false);
+				srvcOAThreadLocal.setSyncThread(false);
 			}
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 			readObjectClass = null;
 		}
 
@@ -924,12 +929,13 @@ public class OAJson {
 		hmGuidObject = null;
 
 		Map<K, V> map;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(true);
+				srvcOAThreadLocal.setSyncThread(true);
 			}
 
 			Class c = clazzValue;
@@ -942,11 +948,11 @@ public class OAJson {
 			map = (Map<K, V>) om.readValue(json, mt);
 		} finally {
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcOAThreadLocal.setLoading(false);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(false);
+				srvcOAThreadLocal.setSyncThread(false);
 			}
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 			readObjectClass = null;
 		}
 
@@ -972,12 +978,13 @@ public class OAJson {
 		hmGuidObject = null;
 
 		List<T> list;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(true);
+				srvcOAThreadLocal.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -990,11 +997,11 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcOAThreadLocal.setLoading(false);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(false);
+				srvcOAThreadLocal.setSyncThread(false);
 			}
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 			readObjectClass = null;
 		}
 
@@ -1020,12 +1027,13 @@ public class OAJson {
 		hmGuidObject = null;
 
 		List<T> list;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(true);
+				srvcOAThreadLocal.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -1037,11 +1045,11 @@ public class OAJson {
 			list = (List<T>) om.readValue(file, ct);
 		} finally {
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcOAThreadLocal.setLoading(false);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(false);
+				srvcOAThreadLocal.setSyncThread(false);
 			}
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 			readObjectClass = null;
 		}
 
@@ -1067,12 +1075,13 @@ public class OAJson {
 		hmGuidObject = null;
 
 		List<T> list;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(true);
+				srvcOAThreadLocal.setSyncThread(true);
 			}
 
 			Class c = clazz;
@@ -1084,11 +1093,11 @@ public class OAJson {
 			list = (List<T>) om.readValue(stream, ct);
 		} finally {
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcOAThreadLocal.setLoading(false);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(false);
+				srvcOAThreadLocal.setSyncThread(false);
 			}
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 			readObjectClass = null;
 		}
 
@@ -1133,13 +1142,14 @@ public class OAJson {
 	public void write(final Hub<? extends OAObject> hub, File file) throws JsonProcessingException, IOException {
 		setStackItem(null);
 		this.cascade = null;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 
 			getObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, hub);
 
 		} finally {
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 		}
 	}
 
@@ -1154,12 +1164,13 @@ public class OAJson {
 		setStackItem(null);
 		this.cascade = null;
 		String json;
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 			final ObjectMapper objectMapper = getObjectMapper();
 			json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(hub);
 		} finally {
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 		}
 		return json;
 	}
@@ -1215,12 +1226,13 @@ public class OAJson {
 		hmGuidObject = null;
 		Map<UUID, OAObject> hmGuidMap = getGuidMap();
 
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(this);
+			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(true);
+				srvcOAThreadLocal.setLoading(true);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(true);
+				srvcOAThreadLocal.setSyncThread(true);
 			}
 
 			if (nodeRoot.isArray()) {
@@ -1272,11 +1284,11 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcOAThreadLocal.setLoading(false);
 			} else {
-				OARuntime.get().threadLocals().setSyncThread(false);
+				srvcOAThreadLocal.setSyncThread(false);
 			}
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 			readObjectClass = null;
 		}
 	}
@@ -1384,12 +1396,13 @@ public class OAJson {
 
 		final OAJson oaj = new OAJson();
 
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			OARuntime.get().threadLocals().setOAJackson(oaj);
+			srvcOAThreadLocal.setOAJackson(oaj);
 
 			return _convertMethodArgumentsToJson(oaj, method, argValues, lstIncludePropertyPathss, skipParams);
 		} finally {
-			OARuntime.get().threadLocals().setOAJackson(null);
+			srvcOAThreadLocal.setOAJackson(null);
 		}
 	}
 

@@ -42,8 +42,9 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.ClassModifier;
 import com.viaoa.util.OAConv;
@@ -613,12 +614,13 @@ public class ResultSetIterator implements OADataSourceIterator {
 			if (siblingHelper == null) {
 				siblingHelper = new OASiblingHelper(this.hubReadAhead);
 			}
-			boolean bx = OARuntime.get().threadLocals().addSiblingHelper(siblingHelper);
+			OAThreadLocalService srvcThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();
+			boolean bx = srvcThreadLocal.addSiblingHelper(siblingHelper);
 			try {
 				obj.afterLoad();
 			} finally {
 				if (bx) {
-					OARuntime.get().threadLocals().removeSiblingHelper(siblingHelper);
+					srvcThreadLocal.removeSiblingHelper(siblingHelper);
 				}
 			}
 		}
@@ -666,6 +668,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 		OAObject oaObject = null;
 		boolean bLoadedObject = false;
 		boolean bSetChangedAndNew = false;
+		final OAThreadLocalService srvcThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();
 		try {
 			ResultSet resultSet = rs;
 			if (query2 != null) { // need to do a seperate select to get data for each row
@@ -710,10 +713,10 @@ public class ResultSetIterator implements OADataSourceIterator {
 			}
 
 			// 20221219 so that validation checks are not done (ex: unique values)
-			OARuntime.get().threadLocals().setLoading(true);
+			srvcThreadLocal.setLoading(true);
 			/* was
 			if (!bDirty) {
-				OARuntime.get().threadLocals().setLoading(true);
+				OARuntime.threadLocals().setLoading(true);
 			} else {
 				bDataSourceLoadingObject = false;
 			}
@@ -840,7 +843,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 			++cnter;
 
 			if (bDataSourceLoadingObject) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcThreadLocal.setLoading(false);
 				bDataSourceLoadingObject = false;
 			}
 
@@ -870,7 +873,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 				oaObject.setChanged(false);
 			}
 			if (bDataSourceLoadingObject) {
-				OARuntime.get().threadLocals().setLoading(false);
+				srvcThreadLocal.setLoading(false);
 			}
 		}
 	}

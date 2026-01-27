@@ -24,8 +24,9 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 
 /**
  * Jackson {@link JsonDeserializer} that delegates JSON-to-{@link OAObject}
@@ -64,8 +65,8 @@ public class OAJacksonDeserializer extends JsonDeserializer<OAObject> {
 	 */
 	@Override
 	public OAObject deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JacksonException {
-
-		final OAJson oaj = OARuntime.get().threadLocals().getOAJackson();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAJson oaj = srvcOAThreadLocal.getOAJackson();
 		final Class clazz = oaj.getReadObjectClass();
 
 		OAJacksonDeserializerLoader deserializer = new OAJacksonDeserializerLoader(oaj);

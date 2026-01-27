@@ -21,6 +21,8 @@ import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.util.OANotExist;
@@ -93,7 +95,8 @@ public class OAObjectSerializeService {
 				OAObjectKey ok = (OAObjectKey) in.readObject();
 				srvcObject.getOAObjectGuidService().setGuid(oaObj, ok.getGuid());
 
-				final OAObjectSerializer serializer = OARuntime.get().threadLocalService().getCurrentObjectSerializer();
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				final OAObjectSerializer serializer = srvcOAThreadLocal.getCurrentObjectSerializer();
 				if (serializer != null) serializer.dupCount--;
 				return;
 			} else if (bx == 2) {
@@ -205,7 +208,8 @@ public class OAObjectSerializeService {
 			bDup = false;
 		}
 
-		final OAObjectSerializer serializer = OARuntime.get().threadLocalService().getCurrentObjectSerializer();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAObjectSerializer serializer = srvcOAThreadLocal.getCurrentObjectSerializer();
 		if (!bDup) {
 			if (serializer != null) serializer.newCount++;
 			return oaObjUse;
@@ -398,7 +402,8 @@ public class OAObjectSerializeService {
 		if (oaObj == null) {
 			return;
 		}
-		final OAObjectSerializer serializer = OARuntime.get().threadLocalService().getCurrentObjectSerializer();
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAObjectSerializer serializer = srvcOAThreadLocal.getCurrentObjectSerializer();
 		if (serializer != null) {
 			faObjectSerializer.beforeSerialize(oaObj, serializer);
 		}
