@@ -10,5 +10,6 @@ public interface OAObjectCacheOps {
 	public void setSelectAllHub(Hub hub);
 	public void removeSelectAllHub(Hub hub);
 	
-	
+	public <T extends OAObject> T getObject(Class<T> clazz, Object key);
+
 }

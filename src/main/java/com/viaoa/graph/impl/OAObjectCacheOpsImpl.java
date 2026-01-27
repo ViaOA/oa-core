@@ -4,6 +4,7 @@ import com.viaoa.graph.api.OAObjectCacheOps;
 import com.viaoa.graph.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
+import com.viaoa.object.OAObject;
 
 public class OAObjectCacheOpsImpl implements OAObjectCacheOps {
 	private OAObjectCacheService srvcOAObjectCache;
@@ -22,5 +23,9 @@ public class OAObjectCacheOpsImpl implements OAObjectCacheOps {
 		srvcOAObjectCache.removeSelectAllHub(hub);
 	}
 
+	@Override
+	public <T extends OAObject> T getObject(Class<T> clazz, Object key) {
+		return srvcOAObjectCache.getObject(clazz, key);
+	}
 
 }
