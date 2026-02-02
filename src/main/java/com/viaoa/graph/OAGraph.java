@@ -4,11 +4,13 @@ import com.viaoa.graph.api.*;
 
 public interface OAGraph {
     
-	public OAObjectOps objects();
+	public ObjectsOps objects();
 
-	public HubOps hubs();
+	public HubsOps hubs();
     
-	public OASyncOps sync();
+	public SyncOps sync();
+	
+	public String getPackageName();
 	
 }
 

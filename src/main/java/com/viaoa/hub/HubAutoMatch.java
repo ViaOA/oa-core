@@ -19,10 +19,10 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.viaoa.graph.HubService;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectEnumService;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.HubService;
+import com.viaoa.graph.service.object.OAObjectEnumService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;

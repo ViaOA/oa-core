@@ -22,7 +22,7 @@ import java.util.Collection;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectKeyService;
+import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;

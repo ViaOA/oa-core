@@ -21,7 +21,7 @@ import com.viaoa.filter.OAEmptyFilter;
 import com.viaoa.filter.OANotEmptyFilter;
 import com.viaoa.filter.OANotNullFilter;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 

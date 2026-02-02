@@ -22,9 +22,9 @@ import java.util.List;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
-import com.viaoa.graph.object.OAObjectPropertyService;
-import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectPropertyService;
+import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAString;
 

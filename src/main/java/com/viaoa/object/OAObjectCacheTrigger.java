@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectCacheService;
+import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.runtime.OARuntime;

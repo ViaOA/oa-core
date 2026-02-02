@@ -24,9 +24,9 @@ import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectCacheService;
-import com.viaoa.graph.object.OAObjectInfoService;
-import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.service.object.OAObjectCacheService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;

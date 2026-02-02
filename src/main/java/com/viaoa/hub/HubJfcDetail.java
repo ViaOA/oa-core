@@ -16,7 +16,7 @@
 package com.viaoa.hub;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 

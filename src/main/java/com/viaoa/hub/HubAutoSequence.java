@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 import java.lang.reflect.*;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;

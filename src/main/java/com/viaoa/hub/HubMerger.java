@@ -31,8 +31,8 @@ import javax.swing.SwingUtilities;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.hub.HubAddRemoveService;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.hub.HubAddRemoveService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;

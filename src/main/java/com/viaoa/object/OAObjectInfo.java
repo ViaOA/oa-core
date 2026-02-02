@@ -31,8 +31,8 @@ import javax.swing.SwingUtilities;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
-import com.viaoa.graph.object.OAObjectKeyService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.pojo.OAObjectPojoLoader;
 import com.viaoa.pojo.Pojo;

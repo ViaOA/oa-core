@@ -33,8 +33,8 @@ import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
-import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;

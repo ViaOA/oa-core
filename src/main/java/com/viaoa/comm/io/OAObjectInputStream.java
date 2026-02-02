@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectPropertyService;
+import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.Tuple;

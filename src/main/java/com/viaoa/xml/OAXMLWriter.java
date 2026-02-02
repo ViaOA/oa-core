@@ -23,10 +23,10 @@ import java.util.Stack;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectCacheService;
-import com.viaoa.graph.object.OAObjectInfoService;
-import com.viaoa.graph.object.OAObjectPropertyService;
-import com.viaoa.graph.object.OAObjectXMLService;
+import com.viaoa.graph.service.object.OAObjectCacheService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectPropertyService;
+import com.viaoa.graph.service.object.OAObjectXMLService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;

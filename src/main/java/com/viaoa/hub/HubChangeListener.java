@@ -19,8 +19,8 @@ import java.util.ArrayList;
 
 import com.viaoa.context.OAContext;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.OAObjectService;
-import com.viaoa.graph.object.OAObjectCallbackService;
+import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.service.object.OAObjectCallbackService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;

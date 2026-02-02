@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;

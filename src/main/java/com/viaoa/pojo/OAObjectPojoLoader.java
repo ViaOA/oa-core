@@ -18,7 +18,7 @@ package com.viaoa.pojo;
 import java.io.Serializable;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObjectInfo;

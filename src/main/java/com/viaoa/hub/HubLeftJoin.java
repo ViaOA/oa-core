@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.hub.HubAddRemoveService;
+import com.viaoa.graph.service.hub.HubAddRemoveService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;

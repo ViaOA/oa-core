@@ -50,7 +50,7 @@ import javax.net.ssl.X509TrustManager;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;

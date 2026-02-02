@@ -19,8 +19,8 @@ import java.util.HashSet;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectCacheService;
-import com.viaoa.graph.object.OAObjectHubService;
+import com.viaoa.graph.service.object.OAObjectCacheService;
+import com.viaoa.graph.service.object.OAObjectHubService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
 

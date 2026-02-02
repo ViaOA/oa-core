@@ -18,8 +18,8 @@ package com.viaoa.datasource;
 import java.util.Vector;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
-import com.viaoa.graph.object.OAObjectKeyService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;

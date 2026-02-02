@@ -27,7 +27,7 @@ import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;

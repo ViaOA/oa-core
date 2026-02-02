@@ -3,44 +3,42 @@ package com.viaoa.graph;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.api.HubOps;
-import com.viaoa.graph.api.OAObjectOps;
-import com.viaoa.graph.api.OASyncOps;
-import com.viaoa.graph.impl.HubOpsImpl;
-import com.viaoa.graph.impl.OAObjectOpsImpl;
-import com.viaoa.graph.impl.OASyncOpsImpl;
+import com.viaoa.graph.api.HubsOps;
+import com.viaoa.graph.api.ObjectsOps;
+import com.viaoa.graph.api.SyncOps;
+import com.viaoa.graph.api.internal.HubsInternalOps;
+import com.viaoa.graph.api.internal.ObjectsInternalOps;
+import com.viaoa.graph.api.internal.SyncInternalOps;
+import com.viaoa.graph.service.HubService;
+import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.service.OASyncService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAReflect;
 
-public class OAGraphImpl implements OAGraph {
+public class OAGraphImpl implements OAGraphInternal {
 	private static Logger LOG = Logger.getLogger(OAGraphImpl.class.getName());
 
 	private final OARuntime runtime;
 	private final String pkgName;
 	private volatile boolean bInit;
 
-	private final OAObjectService srvcObject;
+	private final OAObjectService srvcOAObject;
 	private final HubService srvcHub;
-    private final OASyncService srvcSync;
+    private final OASyncService srvcOASync;
 
-    private OAObjectOps opsOAObject;
-    private HubOps opsHub;
-    private OASyncOps opsOASync;
-    
-    
 	public OAGraphImpl(OARuntime rt, String pkgName) {
 		if (rt == null) throw new IllegalArgumentException("OARuntime can not be null");
 		this.runtime = rt;
 		this.pkgName = pkgName;
 		
-		srvcObject = new OAObjectService();
+		srvcOAObject = new OAObjectService();
 		srvcHub = new HubService();
-	    srvcSync = new OASyncService(pkgName);
+	    srvcOASync = new OASyncService(pkgName);
 	    
-	    srvcObject.initialize(srvcHub, srvcSync);
-	    srvcHub.initialize(srvcObject, srvcSync);
-	    srvcSync.initialize();
+	    srvcOAObject.initialize(srvcHub, srvcOASync);
+	    srvcHub.initialize(srvcOAObject, srvcOASync);
+	    srvcOASync.initialize();
 	}
 
     //qqqqqqqq must call init() to load
@@ -52,7 +50,7 @@ public class OAGraphImpl implements OAGraph {
 			for (String cn : classNames) {
 				Class<?> c = Class.forName(pkgName + "." + cn);
 				if (OAObject.class.isAssignableFrom(c)) {
-					srvcObject.getOAObjectInfoService().getObjectInfo(c);
+					srvcOAObject.getOAObjectInfoService().getObjectInfo(c);
 				}
 			}
 		}
@@ -71,54 +69,50 @@ public class OAGraphImpl implements OAGraph {
 	}
     
 
-//qqqqqqqqqqqqqqqq ============== internal facing qqqqqqqqqqqqqqqqq    
+	
+	public ObjectsOps objects() {
+		return srvcOAObject;
+	}
+
+	@Override
+	public HubsOps hubs() {
+		return srvcHub;
+	}
+	
+	@Override
+    public SyncOps sync() {
+    	return srvcOASync;
+    }
+
+	@Override
+	public ObjectsInternalOps objectsInternal() {
+		return srvcOAObject;
+	}
+
+	@Override
+	public HubsInternalOps hubsInternal() {
+		return srvcHub;
+	}
+	
+	@Override
+    public SyncInternalOps syncInternal() {
+    	return srvcOASync;
+    }
 	
 	
+/*qqqqqqqqqqqq	dont allow these to be leaked
 	public OAObjectService getOAObjectService() {
-		return srvcObject;
+		return srvcOAObject;
 	}
 
 	public HubService getHubService() {
 		return srvcHub;
 	}
 	
-    public OASyncService getSyncService() {
-    	return srvcSync;
+    public OASyncService getOASyncService() {
+    	return srvcOASync;
     }
-
-    
-//qqqqqqqqqqqqqqqq ============== public API facing qqqqqqqqqqqqqqqqq    
-    
-	
-	@Override
-	public OAObjectOps objects() {
-		if (opsOAObject == null) {
-			opsOAObject = new OAObjectOpsImpl(srvcObject);
-		}
-		return opsOAObject;
-	}
-
-	@Override
-	public HubOps hubs() {
-		if (opsHub == null) {
-			opsHub = new HubOpsImpl(getHubService());
-		}
-		return opsHub;
-	}
-	
-	@Override
-    public OASyncOps sync() {
-    	if (opsOASync == null) {
-    		opsOASync = new OASyncOpsImpl(getSyncService());
-    	}
-    	return opsOASync;
-    }
-    
-	
-	
-	
-	
-	
+*/    
 	
 }
 

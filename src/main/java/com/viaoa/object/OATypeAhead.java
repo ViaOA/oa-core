@@ -21,7 +21,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectKeyService;
+import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.hub.*;
 import com.viaoa.model.oa.VString;
 import com.viaoa.runtime.OARuntime;

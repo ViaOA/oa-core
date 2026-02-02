@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.OAGroupBy;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;

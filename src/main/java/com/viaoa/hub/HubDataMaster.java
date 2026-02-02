@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;

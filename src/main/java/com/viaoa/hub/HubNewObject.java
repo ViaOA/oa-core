@@ -16,9 +16,9 @@
 package com.viaoa.hub;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.hub.HubSelectService;
-import com.viaoa.graph.object.OAObjectDSService;
-import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.service.hub.HubSelectService;
+import com.viaoa.graph.service.object.OAObjectDSService;
+import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;

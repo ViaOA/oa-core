@@ -18,8 +18,8 @@ package com.viaoa.uicontroller;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectCallbackService;
-import com.viaoa.graph.object.OAObjectReflectService;
+import com.viaoa.graph.service.object.OAObjectCallbackService;
+import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;

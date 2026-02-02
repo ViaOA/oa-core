@@ -18,7 +18,7 @@ package com.viaoa.datasource.jdbc.db;
 import java.lang.reflect.*;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
 

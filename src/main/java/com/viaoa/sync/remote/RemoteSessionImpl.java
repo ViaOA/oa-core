@@ -22,9 +22,9 @@ import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectCacheService;
-import com.viaoa.graph.object.OAObjectReflectService;
-import com.viaoa.graph.object.OAObjectSaveService;
+import com.viaoa.graph.service.object.OAObjectCacheService;
+import com.viaoa.graph.service.object.OAObjectReflectService;
+import com.viaoa.graph.service.object.OAObjectSaveService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.model.ClientInfo;

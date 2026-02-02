@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectKeyService;
+import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 

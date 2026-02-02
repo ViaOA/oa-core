@@ -24,7 +24,7 @@ import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.object.OAObjectInfoService;
+import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.CustomHubFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACalcInfo;
