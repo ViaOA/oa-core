@@ -2,7 +2,7 @@ package com.viaoa.graph.service.object;
 
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OALogRecord;
@@ -12,23 +12,10 @@ import com.viaoa.util.OAString;
 import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLWriter;
 
-public class OAObjectLogService {
+public abstract class OAObjectLogService {
 	private static final Logger LOG = Logger.getLogger(OAObjectLogService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
-
-	public OAObjectLogService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
-		if (srvcObject == null)
-			throw new IllegalArgumentException("OAObjectService can not be null");
-		this.srvcObject = srvcObject;
-		if (oaObjectFriendAccess == null)
-			throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-		this.faObject = oaObjectFriendAccess;
-	}
-
-	public OAObjectService getObjectService() {
-		return srvcObject;
+	public OAObjectLogService() {
 	}
 
     /**
@@ -72,11 +59,11 @@ public class OAObjectLogService {
                     if (value instanceof OAObject) return OAXMLWriter.WRITE_KEYONLY;
                     if (!(value instanceof Hub)) return OAXMLWriter.WRITE_YES;
                     
-                    OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj.getClass());
-                    OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, propertyName);
+                    OAObjectInfo oi = getOAObjectInfo(obj.getClass());
+                    OALinkInfo li = callInfoGetLinkInfo(oi, propertyName);
                     if (li != null && li.getType() == OALinkInfo.MANY) {
-                        li = srvcObject.getOAObjectInfoService().getLinkInfo(oi, propertyName);
-                        li = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
+                        li = callInfoGetLinkInfo(oi, propertyName);
+                        li = callInfoGetReverseLinkInfo(li);
                         if (li != null && li.getType() == OALinkInfo.MANY) {
                             // M2M dont write any new object, since it does not exist when this file is restored.
                             //        the restore will update/complete the M2M link tables when the other object
@@ -166,4 +153,13 @@ public class OAObjectLogService {
         }
     }
 
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi); 
+	
 }

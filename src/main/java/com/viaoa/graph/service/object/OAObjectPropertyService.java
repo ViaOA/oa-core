@@ -2,41 +2,30 @@ package com.viaoa.graph.service.object;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OANotExist;
 
-public class OAObjectPropertyService {
+public abstract class OAObjectPropertyService {
 	private static final Logger LOG = Logger.getLogger(OAObjectPropertyService.class.getName());
 
-	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
 	
-    public OAObjectPropertyService(OAObjectService srvcObject, OAObject.FriendAccess faObject) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
+    public OAObjectPropertyService(OAObject.FriendAccess faObject) {
     	if (faObject == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = faObject;
     }
 	
-    public OAObjectService getObjectService() {
-    	return srvcObject;
-    }
-
 	/**
 	 * Returns whether the specified property has already been loaded for the
 	 * given object. A property is considered loaded when its stored value is
@@ -76,11 +65,11 @@ public class OAObjectPropertyService {
 					return false;
 				}
 			} else if (objx instanceof OAObjectKey) {
-				OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(oaObj.getClass(), name);
+				OALinkInfo li = callInfoGetLinkInfo(oaObj.getClass(), name);
 				if (li == null) {
 					return false;
 				}
-				Object objz = srvcObject.getOAObjectCacheService().get(li.getToClass(), (OAObjectKey) objx);
+				Object objz = callCacheGet(li.getToClass(), (OAObjectKey) objx);
 				return (objz != null);
 			}
 			return true; // real value is null (/does not exist)
@@ -243,7 +232,7 @@ public class OAObjectPropertyService {
 		if (objx instanceof Hub) {
 			Hub hub = (Hub) objx;
 			if (hub.getMasterObject() == null) {
-				srvcObject.getOAObjectHubService().setMasterObject((Hub) objx, oaObj, name);
+				callHubSetMasterObject((Hub) objx, oaObj, name);
 			}
 		}
 	}
@@ -403,7 +392,7 @@ public class OAObjectPropertyService {
 		if (objx instanceof Hub) {
 			Hub hub = (Hub) objx;
 			if (hub.getMasterObject() == null) {
-				srvcObject.getOAObjectHubService().setMasterObject((Hub) objx, oaObj, name);
+				callHubSetMasterObject((Hub) objx, oaObj, name);
 			}
 		}
 	}
@@ -480,7 +469,7 @@ public class OAObjectPropertyService {
 		if (objx instanceof Hub) {
 			Hub hub = (Hub) objx;
 			if (hub.getMasterObject() == null) {
-				srvcObject.getOAObjectHubService().setMasterObject((Hub) objx, oaObj, name);
+				callHubSetMasterObject((Hub) objx, oaObj, name);
 			}
 		}
 	}
@@ -571,8 +560,8 @@ public class OAObjectPropertyService {
 							if (!(matchValue instanceof OAObjectKey) || !(newValue instanceof OAObject)) {
 								return properties[i + 1];
 							}
-							OAObjectKey k = srvcObject.getOAObjectKeyService().getKey((OAObject) newValue);
-							if (!srvcObject.getOAObjectKeyService().isForSameOAObject(null, (OAObjectKey)matchValue, k)) {
+							OAObjectKey k = callKeyGetKey((OAObject) newValue);
+							if (!callKeyIsForSameOAObject(null, (OAObjectKey)matchValue, k)) {
 								return properties[i + 1];
 							}
 						}
@@ -617,7 +606,7 @@ public class OAObjectPropertyService {
 			if (objx instanceof Hub) {
 				Hub hub = (Hub) objx;
 				if (hub.getMasterObject() == null) {
-					srvcObject.getOAObjectHubService().setMasterObject((Hub) objx, oaObj, name);
+					callHubSetMasterObject((Hub) objx, oaObj, name);
 				}
 			}
 		}
@@ -751,7 +740,7 @@ public class OAObjectPropertyService {
 		if (oaObj == null || name == null) {
 			return false;
 		}
-		String key = srvcObject.getOAObjectGuidService().getGuid(oaObj) + "." + name.toUpperCase();
+		String key = callGuidGetGuid(oaObj) + "." + name.toUpperCase();
 		PropertyLock lock;
 		final Thread threadThis = Thread.currentThread();
 		
@@ -761,10 +750,9 @@ public class OAObjectPropertyService {
 			return true;
 		}
 
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
 		hmLockedThread.put(threadThis, lock.thread);
 		try {
-			srvcOARemoteThread.startNextThread();
+			callRemoteThreadStartNextThread();
 			synchronized (lock) {
 				if (lock.thread == Thread.currentThread()) {
 					return bCheckIfThisThread;
@@ -838,7 +826,7 @@ public class OAObjectPropertyService {
 		if (oaObj == null || name == null) {
 			return;
 		}
-		String key = srvcObject.getOAObjectGuidService().getGuid(oaObj) + "." + name.toUpperCase();
+		String key = callGuidGetGuid(oaObj) + "." + name.toUpperCase();
 		PropertyLock lock;
 		synchronized (oaObj) {
 			lock = hmLock.remove(key);
@@ -864,7 +852,7 @@ public class OAObjectPropertyService {
 		if (oaObj == null || name == null) {
 			return false;
 		}
-		String key = srvcObject.getOAObjectKeyService().getKey(oaObj).getGuid() + "." + name.toUpperCase();
+		String key = callKeyGetKey(oaObj).getGuid() + "." + name.toUpperCase();
 		return (hmLock.get(key) != null);
 	}
 	
@@ -963,16 +951,15 @@ public class OAObjectPropertyService {
 		if (obj == null) {
 			return;
 		}
-		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(obj));
-		if (!og.getSyncService().isServer()) {
+		if (!callSyncIsServer()) {
 			return;
 		}
 		if (cascade != null && cascade.wasCascaded(obj, true)) {
 			return;
 		}
 
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(obj);
-		if (!srvcObject.getOAObjectInfoService().isWeakReferenceable(oi)) {
+		OAObjectInfo oi = getOAObjectInfo(obj.getClass());
+		if (!callInfoIsWeakReferenceable(oi)) {
 			return;
 		}
 
@@ -998,7 +985,7 @@ public class OAObjectPropertyService {
 			if (liRev.getTransient()) {
 				continue;
 			}
-			if (!srvcObject.getOAObjectPropertyService().isPropertyLoaded(obj, li.getName())) {
+			if (!isPropertyLoaded(obj, li.getName())) {
 				continue;
 			}
 
@@ -1007,12 +994,12 @@ public class OAObjectPropertyService {
 				continue;
 			}
 
-			if (!srvcObject.getOAObjectPropertyService().isPropertyLoaded((OAObject) parent, liRev.getName())) {
+			if (!isPropertyLoaded((OAObject) parent, liRev.getName())) {
 				continue;
 			}
 
 			if (liRev.getCacheSize() > 0) {
-				Object objx = srvcObject.getOAObjectPropertyService().getProperty((OAObject) parent, liRev.getName(), true, false);
+				Object objx = callPropertyGetProperty((OAObject) parent, liRev.getName(), true, false);
 				if (objx instanceof OANotExist) {
 					continue;
 				}
@@ -1023,7 +1010,7 @@ public class OAObjectPropertyService {
 				if (!(objx instanceof Hub)) {
 					continue;
 				}
-				boolean b = srvcObject.getOAObjectPropertyService().setPropertyWeakRef((OAObject) parent, liRev.getName(), !bReferenceable, (Hub) objx);
+				boolean b = setPropertyWeakRef((OAObject) parent, liRev.getName(), !bReferenceable, (Hub) objx);
 				if (!b) {
 					break; // already changed, dont need to continue
 				}
@@ -1052,4 +1039,36 @@ public class OAObjectPropertyService {
 		}
 	}
 
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
+	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
+	public abstract UUID callGuidGetGuid(OAObject oaObj);
+		
+	@OAParentProvided (example = "srvcObject.getOAObjectHubService().setMasterObject")
+	public abstract void callHubSetMasterObject(Hub hub, OAObject oaObj, String nameFromMasterToDetail);
+		
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isWeakReferenceable")
+	public abstract boolean callInfoIsWeakReferenceable(OAObjectInfo oi);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	public abstract OALinkInfo callInfoGetLinkInfo(Class clazz, String propertyName);	
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
+	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
+	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
+	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
+
+	@OAParentProvided (example = "srvcSync.isServer()")
+	public abstract boolean callSyncIsServer();
+
+	@OAParentProvided (example = "srvcOARemoteThread.startNextThread")
+	public abstract void callRemoteThreadStartNextThread();
 }

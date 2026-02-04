@@ -3,41 +3,24 @@ package com.viaoa.graph.service.object;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.context.OAContext;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.OAObjectService;
-import com.viaoa.graph.service.OASyncService;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAString;
 
-public class OAObjectInitializeService {
+public abstract class OAObjectInitializeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectInitializeService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final OASyncService srvcSync;
 	private final OAObject.FriendAccess faObject;
 
-	public OAObjectInitializeService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OASyncService srvcSync) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
+	public OAObjectInitializeService(OAObject.FriendAccess oaObjectFriendAccess) {
     	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = oaObjectFriendAccess;
-    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
-    	this.srvcSync = srvcSync;
 	}
-
-    public OAObjectService getObjectService() {
-    	return srvcObject;
-    }
     
 	/**
 	 * Initializes the specified {@link OAObject} by assigning a GUID, allocating its
@@ -71,20 +54,19 @@ public class OAObjectInitializeService {
 		}
 		//20260108 was:  srvcObject.getOAObjectGuidService().assignGuid(oaObj);
 
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 
 		String[] ps = oi.getPrimitiveProperties();
 		int x = (ps == null) ? 0 : ((int) Math.ceil(ps.length / 8.0d));
 		
 		faObject.setNulls(oaObj, new byte[x]);
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		if (srvcOAThreadLocal.isLoading()) {
+		if (callThreadLocalIsLoading()) {
 			return false; // dont initialize. Whatever is loading should call initialize below directly
 		}
 
 		
-		boolean bInitializeWithCS = !oi.getLocalOnly() && srvcSync.isClient();
+		boolean bInitializeWithCS = !oi.getLocalOnly() && callSyncIsClient();
 		
 
 		// useDataSource needs to be true ... since other DS (ex: autonumber) might be used
@@ -131,10 +113,9 @@ public class OAObjectInitializeService {
 		if (oaObj == null) {
 			return;
 		}
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 
-		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
-		boolean bInitializeWithCS = !oi.getLocalOnly() && og.getSyncService().isClient();
+		boolean bInitializeWithCS = !oi.getLocalOnly() && callSyncIsClient();
 
 		initialize(oaObj, oi, bInitializeNulls, bAssignNewId, oi.getAddToCache(), bInitializeWithCS, bSetChangedToFalse);
 	}
@@ -180,16 +161,16 @@ public class OAObjectInitializeService {
 	        boolean bAddToCache,
 	        boolean bInitializeWithCS,
 	        boolean bSetChangedToFalse) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		final boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
+  
+		final boolean bWasLoading = callThreadLocalSetLoading(true);
 		try {
 			if (oi == null) {
-				oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
+				oi = getOAObjectInfo(oaObj.getClass());
 			}
 
 			// 20260108
-			if (srvcObject.getOAObjectGuidService().getGuid(oaObj) == null) {
-				srvcObject.getOAObjectGuidService().assignGuid(oaObj);
+			if (callGuidGetGuid(oaObj) == null) {
+				callGuidAssignGuid(oaObj);
 			}
 			
 			if (bInitializeNulls) {
@@ -225,31 +206,31 @@ public class OAObjectInitializeService {
 								OAFinder hf = new OAFinder(li.getDefaultContextPropertyPath());
 								objx = hf.findFirst(objx);
 							}
-							srvcObject.getOAObjectPropertyService().unsafeAddProperty(oaObj, li.getName(), objx);
+							callPropertyUnsafeAddProperty(oaObj, li.getName(), objx);
 						}
 					} else {
-						if (!srvcObject.getOAObjectInfoService().isOne2One(li)) {
-							srvcObject.getOAObjectPropertyService().unsafeAddProperty(oaObj, li.getName(), null);
+						if (!callInfoIsOne2One(li)) {
+							callPropertyUnsafeAddProperty(oaObj, li.getName(), null);
 						}
 					}
 				}
 			}
 
 			if (bAddToCache) { // needs to run before any property could be set, so that OACS changes will find this new object.
-				srvcObject.getOAObjectCacheService().add(oaObj, false, false); //  was true,true:  dont add to selectAllHub until after loadingObject is false
+				callCacheAdd(oaObj, false, false); //  was true,true:  dont add to selectAllHub until after loadingObject is false
 			}
 
 			if (bInitializeWithCS) {
 				// must be before DS init, since it could add to local client cache
-				srvcSync.getClient().objectCreated(oaObj);
+				callSyncClientObjectCreated(oaObj);
 			}
 			if (!bWasLoading && bInitializeWithDS) {
-				if (srvcObject.getOAObjectDSService().getAssignIdOnCreate(oaObj)) {
-					srvcOAThreadLocal.setLoading(false);
+				if (callDSGetAssignIdOnCreate(oaObj)) {
+					callThreadLocalSetLoading(false);
 					try {
-						srvcObject.getOAObjectDSService().assignId(oaObj);
+						callDSAssignId(oaObj);
 					} finally {
-						srvcOAThreadLocal.setLoading(true);
+						callThreadLocalSetLoading(true);
 					}
 				}
 			}
@@ -258,13 +239,13 @@ public class OAObjectInitializeService {
 			}
 		} finally {
 			// note: this has to be false, not bWasLoading, since it also increments a counter in threadLocalDelegate
-			srvcOAThreadLocal.setLoading(false);
+			callThreadLocalSetLoading(false);
 		}
 		if (!bWasLoading) {
-			srvcObject.getOAObjectCacheService().fireAfterLoadEvent(oaObj);
+			callCacheFireAfterLoadEvent(oaObj);
 		}
 		if (bAddToCache) { // needs to run after setLoadingObject(false), so that add event is handled correctly.
-			srvcObject.getOAObjectCacheService().addToSelectAllHubs(oaObj);
+			callCacheAddToSelectAllHubs(oaObj);
 		}
 	}
 
@@ -278,11 +259,9 @@ public class OAObjectInitializeService {
 	 */
 	public void setAsNewObject(final OAObject oaObj) {
 		if (oaObj == null) return;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
-		if (og == null) return;
-		og.getOAObjectService().getOAObjectGuidService().assignNewGuid(oaObj);
+		callGuidAssignNewGuid(oaObj);
 
-		UUID guid = og.getOAObjectService().getOAObjectGuidService().getGuid(oaObj);
+		UUID guid = callGuidGetGuid(oaObj);
 		setAsNewObject(oaObj, guid);
 	}
 	
@@ -312,23 +291,22 @@ public class OAObjectInitializeService {
 		faObject.setNew(oaObj, true);
 		faObject.setGuid(oaObj, guid); //qqqqqqq not a good idea (hashcode) ... will also need to update cache (key is guid
 
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 		String[] ids = oi.getIdProperties();
 		if (ids == null) {
 			return;
 		}
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		srvcOAThreadLocal.setLoading(true);
+		callThreadLocalSetLoading(true);
 		try {
 			for (String id : ids) {
-				srvcObject.getOAObjectReflectService().setProperty(oaObj, id, null, null);
+				callReflectSetProperty(oaObj, id, null, null);
 			}
 		} finally {
-			srvcOAThreadLocal.setLoading(false);
+			callThreadLocalSetLoading(false);
 		}
-		if (srvcObject.getOAObjectDSService().getAssignIdOnCreate(oaObj)) {
-			srvcObject.getOAObjectDSService().assignId(oaObj);
+		if (callDSGetAssignIdOnCreate(oaObj)) {
+			callDSAssignId(oaObj);
 		}
 		oaObj.getObjectKey();
 	}
@@ -351,27 +329,60 @@ public class OAObjectInitializeService {
 	 * @param origKey the key containing the original GUID to apply; must not be {@code null}.
 	 */
 	public void reassignGuid(OAObject oaObj, OAObjectKey origKey) {
-		//qqqqqqqqqqqqqqq this is might not be a good idea ... objectCache would need to be updated		
+		//qqqqqqqqqqqqqqq this is not be a good idea ... objectCache would need to be updated		
 		if (oaObj != null && origKey != null) {
 			faObject.setGuid(oaObj, origKey.getGuid()); // needs to re-cache
 		}
 	}
 
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().add")
+	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterLoadEvent")
+	public abstract <T extends OAObject> void callCacheFireAfterLoadEvent(T obj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().addToSelectAllHubs")
+	public abstract void callCacheAddToSelectAllHubs(OAObject obj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectDSService().assignId")
+	public abstract void callDSAssignId(OAObject oaObj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectDSService().getAssignIdOnCreate")
+	public abstract boolean callDSGetAssignIdOnCreate(OAObject oaObj);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
+	public abstract UUID callGuidGetGuid(OAObject oaObj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().assignNewGuid")
+	public abstract void callGuidAssignNewGuid(OAObject obj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().assignGuid")
+	public abstract void callGuidAssignGuid(OAObject obj);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isOne2One")
+	public abstract boolean callInfoIsOne2One(OALinkInfo thisLi);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeAddProperty")
+	public abstract void callPropertyUnsafeAddProperty(OAObject oaObj, String name, Object value); 
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().setProperty")
+	public abstract void callReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
 	
 	
+	@OAParentProvided (example = "srvcSync.isClient")
+	public abstract boolean callSyncIsClient();
+
+	@OAParentProvided (example = "srvcSync.getSyncClient().objectCreated")
+	public abstract void callSyncClientObjectCreated(OAObject obj);	
+
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	@OAParentProvided (example = "srvcOAThreadLocal.isLoading()")
+	public abstract boolean callThreadLocalIsLoading();
+
+	@OAParentProvided (example = "srvcOAThreadLocal.setLoading(..)")
+	public abstract boolean callThreadLocalSetLoading(boolean b);
 }
-
-
-
-
 

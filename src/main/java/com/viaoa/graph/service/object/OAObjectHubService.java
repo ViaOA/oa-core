@@ -4,41 +4,23 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
-import com.viaoa.graph.service.OASyncService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.object.OAObjectKey;
 import com.viaoa.util.OAArray;
 
 public abstract class OAObjectHubService {
 	private static final Logger LOG = Logger.getLogger(OAObjectHubService.class.getName());
 
-	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
-	private final HubService srvcHub;
-	private final OASyncService srvcSync;
 	
-    public OAObjectHubService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, HubService srvcHub, OASyncService srvcSync) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-    	this.faObject = oaObjectFriendAccess;
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-    	this.srvcHub = srvcHub;
-    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
-    	this.srvcSync = srvcSync;
-    }
-	
-    public OAObjectService getObjectService() {
-    	return srvcObject;
+    public OAObjectHubService(OAObject.FriendAccess faObject) {
+    	if (faObject == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
+    	this.faObject = faObject;
     }
 
     /**
@@ -53,22 +35,22 @@ public abstract class OAObjectHubService {
     public void fireMasterObjectHubChangeEvent(Hub thisHub, boolean bRefreshFlag) {
         if (thisHub == null) return;
 
-        OAObject objMaster = srvcHub.getMasterObject(thisHub);
+        OAObject objMaster = callHubGetMasterObject(thisHub);
         if (objMaster == null) return;
 
-        String prop = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
+        String prop = callHubDetailGetPropertyFromMasterToDetail(thisHub);
         if (prop == null) return;
         /*
          * if (bRefreshFlag || thisHub.getSize() < 2) { updateMasterObjectEmptyHubFlag(thisHub, prop,
          * (OAObject)objMaster, true); }
          */
-        srvcObject.getOAObjectEventService().sendHubPropertyChange((OAObject) objMaster, prop, thisHub, thisHub, null);
-        srvcObject.getOAObjectCacheService().fireAfterPropertyChange((OAObject) objMaster, 
-        		srvcObject.getOAObjectKeyService().getKey((OAObject) objMaster), 
+        
+        callEventSendHubPropertyChange((OAObject) objMaster, prop, thisHub, thisHub, null);
+        callCacheFireAfterPropertyChange((OAObject) objMaster, callKeyGetKey((OAObject) objMaster), 
         		prop, thisHub, thisHub, true, true);
     }
 
-    public boolean isInHub(OAObject oaObj) {
+	public boolean isInHub(OAObject oaObj) {
         if (oaObj == null) return false;
         WeakReference<Hub<?>>[] weakhubs = faObject.getWeakHubs(oaObj);
         if (weakhubs == null) return false;
@@ -187,7 +169,8 @@ public abstract class OAObjectHubService {
                 }
             }
 
-            if (!srvcSync.isClient()) return;
+            
+            if (!callSyncIsClient()) return;
             
             // could be a hub from hubMerger, that populates with One references
             // which means that the one reference keeps it from gc
@@ -195,23 +178,23 @@ public abstract class OAObjectHubService {
                 // 20141201 add !bIsOnHubFinalize so that if it is from a Hub finalize, then dont 
                 //    use the finalizer thread to send msg to server.
                 if (!isInHubWithMaster(oaObj)) {
-					final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-                    if (srvcOARemoteThread.shouldSendMessages() && !oaObj.isDeleted()) {
+					
+                    if (callRemoteThreadShouldSendMessages() && !oaObj.isDeleted()) {
                         // CACHE_NOTE: if it was on the Server.cache, it was removed when it was added
                         // to a hub. Need to add to cache now that it is no longer in a hub.
                         
                         // 20150827 dont cache if one2one and owned, and it is assigned to owner
                         // which means that the owner will "hold on to it"
                         boolean b = true;
-                        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
+                        OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
                         if (oi.isOwnedAndNoReverseMany()) {
                             OALinkInfo li = oi.getOwnedByOne();
-                            if (li != null && srvcObject.getOAObjectPropertyService().getProperty(oaObj, li.getName()) != null) {
+                            if (li != null && callPropertyGetProperty(oaObj, li.getName()) != null) {
                                 b = false;
                             }
                         }
                         
-                        if (b) srvcObject.getOAObjectCSService().updateObjectsWithoutHubs(oaObj);
+                        if (b) callCSUpdateObjectsWithoutHubs(oaObj);
                     }
                 }
             }
@@ -267,9 +250,9 @@ public abstract class OAObjectHubService {
         // 20120702 dont store hub if M2M&Private: reverse linkInfo does not have a method.
         // since this could have a lot of references (ex: VetJobs JobCategory has m2m Jobs)
         if (!bAlwaysAddIfM2M) {
-            OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
+            OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
             if (li != null && li.getPrivateMethod()) {
-                if (srvcObject.getOAObjectInfoService().isMany2Many(li)) {
+                if (callInfoIsMany2Many(li)) {
                     return false;
                 }
             }
@@ -423,10 +406,8 @@ public abstract class OAObjectHubService {
         }
         if (bReused) aiReuseWeakRefArray.incrementAndGet();
 
-        final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-
-        if (bRemoveFromServerCache && srvcSync.isClient() && srvcOARemoteThread.shouldSendMessages()) {
-        	srvcObject.getOAObjectCSService().updateObjectsWithoutHubs(oaObj);
+        if (bRemoveFromServerCache && callSyncIsClient() && callRemoteThreadShouldSendMessages()) {
+        	callCSUpdateObjectsWithoutHubs(oaObj);
         }
         return true;
     }
@@ -456,7 +437,7 @@ public abstract class OAObjectHubService {
             WeakReference<Hub<?>> ref = refs[i];
             if (ref == null) continue;
             Hub h = ref.get();
-            if (h != null && srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(h) == li) return true;
+            if (h != null && callHubDetailGetLinkInfoFromDetailToMaster(h) == li) return true;
         }
         return false;
     }
@@ -469,7 +450,7 @@ public abstract class OAObjectHubService {
             WeakReference<Hub<?>> ref = refs[i];
             if (ref == null) continue;
             Hub h = ref.get();
-            if (h != null && srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(h) == li) return h;
+            if (h != null && callHubDetailGetLinkInfoFromDetailToMaster(h) == li) return h;
         }
         return null;
     }
@@ -485,18 +466,18 @@ public abstract class OAObjectHubService {
 
         OALinkInfo li = null;
         Object master = hubFind.getMasterObject();
-        if (master != null) li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hubFind);        
+        if (master != null) li = callHubDetailGetLinkInfoFromDetailToMaster(hubFind);        
         if (li == null) {
             if (hubFind.isOAObject()) return false;
-            return srvcHub.getHubDataService().containsDirect(hubFind, oaObj);
+            return callHubDataContainsDirect(hubFind, oaObj);
         }
 
         // could be in the hub, but not in weakHubs, if M2M and private
         // ex: VJ jobCategories M2M Jobs, where jobCategory objects dont have weakhub for
         // all of the Job.jobCategories Hubs that exist
         if (li.getPrivateMethod()) { // if hub method is off
-            if (srvcObject.getOAObjectInfoService().isMany2Many(li)) { // m2m objects do not have Hub in weakRef[]
-                return srvcHub.getHubDataService().containsDirect(hubFind, oaObj);
+            if (callInfoIsMany2Many(li)) { // m2m objects do not have Hub in weakRef[]
+                return callHubDataContainsDirect(hubFind, oaObj);
             }
         }
         return false;
@@ -517,61 +498,103 @@ public abstract class OAObjectHubService {
 
     
     public boolean getChanged(Hub thisHub, int changedRule, OACascade cascade) {
-        return srvcHub.getChanged(thisHub, changedRule, cascade);
+        return callHubGetChanged(thisHub, changedRule, cascade);
     }
 
     public void saveAll(Hub hub, int iCascadeRule, OACascade cascade) {
-    	//qqqqqqqqqq method was protected
         if (hub == null) return; 
-        srvcHub.getHubSaveService().saveAll(hub, iCascadeRule, cascade); // cascade save and update M2M links
+        callHubSaveSaveAll(hub, iCascadeRule, cascade); // cascade save and update M2M links
     }
 
     public void deleteAll(Hub hub, OACascade cascade) {
-    	//qqqqqqqqqq method was protected
-    	srvcHub.getHubDeleteService().deleteAll(hub, cascade); // cascade delete and update M2M links
+        if (hub == null) return; 
+        callHubDeleteDeleteAll(hub, cascade); // cascade delete and update M2M links
     }
 
     public void setMasterObject(Hub hub, OAObject oaObj, OALinkInfo liDetailToMaster) {
-        if (srvcHub.getHubDetailService().getMasterObject(hub) == null) {
-        	srvcHub.getHubDetailService().setMasterObject(hub, oaObj, liDetailToMaster);
+        if (callHubDetailGetMasterObject(hub) == null) {
+        	callHubDetailSetMasterObject(hub, oaObj, liDetailToMaster);
         }
     }
 
     public void setMasterObject(Hub hub, OAObject oaObj, String nameFromMasterToDetail) {
         if (hub == null || oaObj == null || nameFromMasterToDetail == null) return;
-        Object objx = srvcHub.getHubDetailService().getMasterObject(hub);
+        Object objx = callHubDetailGetMasterObject(hub);
         if (objx != null && objx == oaObj) {
             return;  // already set
         }
 
-        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
+        OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
         
         OALinkInfo li = oi.getLinkInfo(nameFromMasterToDetail);
         if (li == null) return;
-        li = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
-        srvcHub.getHubDetailService().setMasterObject(hub, oaObj, li);
+        li = callInfoGetReverseLinkInfo(li);
+        callHubDetailSetMasterObject(hub, oaObj, li);
     }
 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectCSService().updateObjectsWithoutHubs(..)")
+	public abstract void callCSUpdateObjectsWithoutHubs(OAObject obj);
     
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterPropertyChange(..)")
+	public abstract void callCacheFireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue,
+			boolean bLocalOnly, boolean bSendEvent);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectEventService().sendHubPropertyChange(..)")
+	public abstract void callEventSendHubPropertyChange(final OAObject oaObj, final String propertyName, final Object oldObj, final Object newObj, final OALinkInfo linkInfo); 
+
+    @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
+	public abstract OAObjectInfo getOAObjectInfo(Class clazz);
+
+    @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many(..)")
+	public abstract boolean callInfoIsMany2Many(OALinkInfo thisLi);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo(li)")
+	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi);
     
+	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(..)")
+	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
     
-    
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty(..)")
+	public abstract Object callPropertyGetProperty(OAObject oaObj, String name);
 
-//qqqqqqqqqqqqqqq next    
-    /*	
-	@OAParentProvided (example = "")
-	public abstract 
 
-	@OAParentProvided (example = "")
-	public abstract
+	
+	
 
-	@OAParentProvided (example = "")
-	public abstract 
+	@OAParentProvided (example = "srvcHub.getChanged(..)")
+	public abstract boolean callHubGetChanged(Hub thisHub, int iCascadeRule, OACascade cascade);
 
-	@OAParentProvided (example = "")
-	public abstract
-*/	 
+	@OAParentProvided (example = "srvcHub.getMasterObject(..)")
+	public abstract OAObject callHubGetMasterObject(Hub hub);
+	
+	@OAParentProvided (example = "srvcHub.getHubDataService().containsDirect(..)")
+	public abstract boolean callHubDataContainsDirect(Hub hub, Object obj);
+	
+	@OAParentProvided (example = "srvcHub.getHubDeleteService().deleteAll(..)")
+	public abstract void callHubDeleteDeleteAll(Hub thisHub, OACascade cascade);
+	
+	@OAParentProvided (example = "srvcHub.getHubDetailService().setMasterObject(..)")
+	public abstract void callHubDetailSetMasterObject(Hub thisHub, OAObject masterObject, OALinkInfo liDetailToMaster);
+	
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail(..)")
+	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub thisHub);
 
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(..)")
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject(..)")
+	public abstract OAObject callHubDetailGetMasterObject(Hub thisHub);
+	
+	@OAParentProvided (example = "srvcHub.getHubSaveService().saveAll(..)")
+	public abstract void callHubSaveSaveAll(Hub thisHub, int iCascadeRule, OACascade cascade);
+
+	@OAParentProvided (example = "srvcSync.isClient(..)")
+	public abstract boolean callSyncIsClient();
+	
+	@OAParentProvided (example = "srvcOARemoteThread.shouldSendMessages() ")
+	public abstract boolean callRemoteThreadShouldSendMessages();
+	// OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();
 
 }
 

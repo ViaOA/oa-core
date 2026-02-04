@@ -1,43 +1,29 @@
 package com.viaoa.graph.service.object;
 
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.filter.OAQueryFilter;
-import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
-public class OAObjectImportMatchService {
+public abstract class OAObjectImportMatchService {
 	private static final Logger LOG = Logger.getLogger(OAObjectImportMatchService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
-	
-    public OAObjectImportMatchService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-    	this.faObject = oaObjectFriendAccess;
+    public OAObjectImportMatchService() {
     }
 	
-    public OAObjectService getObjectService() {
-    	return srvcObject;
-    }
-
 	/**
 	 * Defines a single import-match operation used during JSON/POJO import
 	 * when a target OAObject must be located or created without relying on
@@ -169,7 +155,7 @@ public class OAObjectImportMatchService {
 			return; // already exists
 		}
 
-		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(importMatch.fromObject);
+		final OAObjectInfo oi = getOAObjectInfo(importMatch.fromObject.getClass());
 
 		String sql = "";
 		Object[] params = new Object[] {};
@@ -261,15 +247,15 @@ public class OAObjectImportMatchService {
 				OAQueryFilter filter = new OAQueryFilter(importMatch.liTo.getToClass(), sql, params);
 				finder.addFilter(filter);
 
-				obj = (OAObject) srvcObject.getOAObjectCacheService().find(importMatch.liTo.getToClass(), finder);
+				obj = (OAObject) callCacheFind(importMatch.liTo.getToClass(), finder);
 			}
 		}
 
 		if (obj == null) {
-			obj = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(importMatch.liTo.getToClass());
+			obj = (OAObject) callReflectCreateNewObject(importMatch.liTo.getToClass());
 
 			for (ImportMatchDetail detail : importMatch.importMatchDetails) {
-				createHierObjects(obj, srvcObject.getOAObjectInfoService().getOAObjectInfo(obj), detail.propertyPath, detail.value);
+				createHierObjects(obj, getOAObjectInfo(obj.getClass()), detail.propertyPath, detail.value);
 			}
 
 			if (objOwner != null) {
@@ -320,34 +306,44 @@ public class OAObjectImportMatchService {
 			OAFinder finder = new OAFinder();
 			OAQueryFilter filter = new OAQueryFilter(oiNext.getForClass(), sql, params);
 			finder.addFilter(filter);
-			objNext = (OAObject) srvcObject.getOAObjectCacheService().find(oiNext.getForClass(), finder);
+			objNext = (OAObject) callCacheFind(oiNext.getForClass(), finder);
 		}
 
-		
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		
-		
 		if (objNext == null) {
-			boolean b = srvcOAThreadLocal.isLoading();
+			boolean b = callThreadLocalIsLoading();
 			if (b) {
-				srvcOAThreadLocal.setLoading(false);
+				callThreadLocalSetLoading(false);
 			}
 
-			objNext = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(oiNext.getForClass());
+			objNext = (OAObject) callReflectCreateNewObject(oiNext.getForClass());
 
 			if (b) {
-				srvcOAThreadLocal.setLoading(true);
+				callThreadLocalSetLoading(true);
 			}
 
-			final OAJson oaj = srvcOAThreadLocal.getOAJackson();
+			final OAJson oaj = callThreadLocalGetOAJackson();
 
 			createHierObjects(objNext, oiNext, propertyPathNext, value);
 		}
 		objThis.setProperty(liNext.getName(), objNext);
 	}
 
+    @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
+	public abstract OAObjectInfo getOAObjectInfo(Class clazz);
 	
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().find(..)")
+	public abstract Object callCacheFind(Class clazz, OAFinder finder); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().createNewObject(..)")
+	public abstract Object callReflectCreateNewObject(Class clazz);
 	
-	
+	@OAParentProvided (example = "srvcOAThreadLocal.isLoading")
+	public abstract boolean callThreadLocalIsLoading();
+
+	@OAParentProvided (example = "srvcOAThreadLocal.setLoading(..)")
+	public abstract boolean callThreadLocalSetLoading(boolean b);
+
+	@OAParentProvided (example = "srvcOAThreadLocal.getOAJackson()")
+	public abstract OAJson callThreadLocalGetOAJackson();
 }
 

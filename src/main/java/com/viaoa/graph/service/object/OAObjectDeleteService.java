@@ -721,7 +721,7 @@ public abstract class OAObjectDeleteService {
 	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().verifyKeyChange(..)")
 	public abstract String callKeyVerifyKeyChange(final OAObject oaObj, final OAObjectKey newObjectKey);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject(..)")
+	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
 	
 	

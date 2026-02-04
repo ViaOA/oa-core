@@ -3,32 +3,20 @@ package com.viaoa.graph.service.object;
 import java.util.*;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.graph.service.OASyncService;
 import com.viaoa.object.OALock;
 import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 
-public class OAObjectLockService {
+public abstract class OAObjectLockService {
 	private static final Logger LOG = Logger.getLogger(OAObjectLockService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
-	private final OASyncService srvcSync;
-
-	public OAObjectLockService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OASyncService srvcSync) {
-		if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-		this.srvcObject = srvcObject;
-		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-		this.faObject = oaObjectFriendAccess;
-		if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
-		this.srvcSync = srvcSync;
-	}
-
-	public OAObjectService getObjectService() {
-		return srvcObject;
+	public OAObjectLockService() {
 	}
 
 	/**
@@ -60,11 +48,10 @@ public class OAObjectLockService {
      */
 	public void lock(OAObject object) {
 	    if (object == null) throw new IllegalArgumentException("object can not be null");
-	
-		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(object));
-	    RemoteSessionInterface rc = og.getSyncService().getRemoteSession();
-	    if (rc != null) {
-	        rc.setLock(object.getClass(), object.getObjectKey(), true);
+
+	    if (callSyncIsServer() || callSyncIsClient()) {
+	    	// locks will be under RemoteSessionImpl.hashLock
+	    	callSyncSetLock(object.getClass(), object.getObjectKey(), true);
 	    	return;
 	    }
 	            
@@ -105,12 +92,11 @@ public class OAObjectLockService {
 	public void unlock(OAObject object) {
 	    if (object == null) return;
 
-		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(object));
-        RemoteSessionInterface rc = og.getSyncService().getRemoteSession();
-        if (rc != null) {
-            rc.setLock(object.getClass(), object.getObjectKey(), false);
-            return;
-        }
+	    if (callSyncIsServer() || callSyncIsClient()) {
+	    	// locks will be under RemoteSessionImpl.hashLock
+	    	callSyncSetLock(object.getClass(), object.getObjectKey(), false);
+	    	return;
+	    }
 	    
 	    synchronized (hmLock) {
 	    	hmLock.remove(object);
@@ -135,15 +121,26 @@ public class OAObjectLockService {
 	public boolean isLocked(OAObject object) {
 	    if (object == null) return false;
 
-		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(object));
-        RemoteSessionInterface rc = og.getSyncService().getRemoteSession();
-        if (rc != null) {
-            return rc.isLocked(object.getClass(), object.getObjectKey());
-        }
+	    if (callSyncIsServer() || callSyncIsClient()) {
+	    	// locks will be under RemoteSessionImpl.hashLock
+	    	return callSyncIsLocked(object.getClass(), object.getObjectKey());
+	    }
+	    
         synchronized (hmLock) {
             return (hmLock.get(object) != null);
         }
-        
 	}
-    
+
+	@OAParentProvided (example = "srvcSync.isClient")
+	public abstract boolean callSyncIsClient();
+	
+	@OAParentProvided (example = "srvcSync.isServer")
+	public abstract boolean callSyncIsServer();
+
+	@OAParentProvided (example = "srvcSync.setLock")
+	public abstract boolean callSyncSetLock(Class objectClass, OAObjectKey objectKey, boolean bLock);
+
+	@OAParentProvided (example = "srvcSync.setLock")
+	public abstract boolean callSyncIsLocked(Class objectClass, OAObjectKey objectKey);
+	
 }

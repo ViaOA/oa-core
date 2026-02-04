@@ -16,37 +16,28 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAClass;
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 
-public class OAObjectInfoService {
+public abstract class OAObjectInfoService {
 	private static final Logger LOG = Logger.getLogger(OAObjectInfoService.class.getName());
 
-	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
 	private final OAObjectInfo.FriendAccess faObjectInfo;
 	
-    public OAObjectInfoService(OAObjectService srvcObject, OAObject.FriendAccess faObject, OAObjectInfo.FriendAccess faObjectInfo) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService cant be null");
-    	this.srvcObject = srvcObject;
+    public OAObjectInfoService(OAObject.FriendAccess faObject, OAObjectInfo.FriendAccess faObjectInfo) {
     	if (faObject == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = faObject;
     	if (faObjectInfo == null) throw new IllegalArgumentException("OAObjectInfoFriendAccess can not be null");
     	this.faObjectInfo = faObjectInfo;
-    }
-	
-    public OAObjectService getObjectService() {
-    	return srvcObject;
     }
 
 	/**
@@ -185,7 +176,7 @@ public class OAObjectInfoService {
 		}
 
 		// must be ran after oi is created and stored (in hash), since it will create propPaths, which will load other ObjectInfos
-		srvcObject.getOAObjectAnnotationService().update2(oi, clazz);
+		callAnnotationUpdate2(oi, clazz);
 
 		// make sure that reverse linkInfos are created.
 		//   ex: ServerRoot.users, the User.class needs to have LinkInfo to serveRoot
@@ -193,7 +184,7 @@ public class OAObjectInfoService {
 			if (li.getType() != li.MANY) {
 				continue;
 			}
-			OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
+			OALinkInfo liRev = callInfoGetReverseLinkInfo(li);
 			if (liRev != null) {
 				continue;
 			}
@@ -215,10 +206,10 @@ public class OAObjectInfoService {
 		}
 
 		// 20220503 load importMatch propertyPaths
-		srvcObject.getOAObjectAnnotationService().updateImportMatches(oi);
+		callAnnotationUpdateImportMatches(oi);
 
 		// 20220918 load fkey
-		srvcObject.getOAObjectAnnotationService().updateLinkFkeys(oi);
+		callAnnotationUpdateLinkFkeys(oi);
 
 		return oi;
 	}
@@ -276,13 +267,13 @@ public class OAObjectInfoService {
 					oi.setForClass(clazz);
 				}
 
-				srvcObject.getOAObjectAnnotationService().update(oi, clazz);
+				callAnnotationUpdate(oi, clazz);
 
 				for (OALinkInfo li : oi.getLinkInfos()) {
 					if (li.getPrivateMethod()) {
 						continue;
 					}
-					Method method = srvcObject.getOAObjectInfoService().getMethod(oi, "get" + li.getName(), 0);
+					Method method = callInfoGetMethod(oi, "get" + li.getName(), 0);
 					if (method == null) {
 						li.setPrivateMethod(true);
 					}
@@ -943,12 +934,11 @@ public class OAObjectInfoService {
 			return true;
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(hub));
-		boolean bIsServer = og.getSyncService().isServer();
+		boolean bIsServer = callSyncIsServer();
 		if (bIsServer) {
 			// dont cache on server if there is not storage
 			//   by returning false, it will not be stored as a weakRef
-			if (!srvcObject.getOAObjectInfoService().getOAObjectInfo(li.getToClass()).getSupportsStorage()) {
+			if (!getOAObjectInfo(li.getToClass()).getSupportsStorage()) {
 				return false;
 			}
 		}
@@ -1307,7 +1297,7 @@ public class OAObjectInfoService {
 			}
 			String s = li.getName();
 
-			Object objx = srvcObject.getOAObjectReflectService().getRawReference(fromObject, s);
+			Object objx = callReflectGetRawReference(fromObject, s);
 			if (objx == hub) {
 				return li;
 			}
@@ -1444,7 +1434,7 @@ public class OAObjectInfoService {
 		if (ids == null) return new Object[0];
 		Object[] objs = new Object[ids.length];
 		for (int i = 0; i < ids.length; i++) {
-			objs[i] = srvcObject.getOAObjectReflectService().getProperty(oaObj, ids[i]);
+			objs[i] = callReflectGetProperty(oaObj, ids[i]);
 		}
 		return objs;
 	}
@@ -1476,7 +1466,7 @@ public class OAObjectInfoService {
 		if (clazz == null) {
 			return null;
 		}
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
+		OAObjectInfo oi = getOAObjectInfo(clazz);
 
 		String[] ss = oi.getPrimitiveProperties();
 		return Arrays.asList(ss);
@@ -1494,7 +1484,7 @@ public class OAObjectInfoService {
 		if (oaObj == null) {
 			return null;
 		}
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 
 		List<String> al = new ArrayList<>();
 
@@ -1547,7 +1537,7 @@ public class OAObjectInfoService {
 		if (oaObj == null || propertyName == null) {
 			return false;
 		}
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 
 		propertyName = propertyName.toUpperCase();
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
@@ -1596,7 +1586,7 @@ public class OAObjectInfoService {
 			return;
 		}
 
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 		propertyName = propertyName.toUpperCase();
 		String[] ss = oi.getPrimitiveProperties();
 		for (int i = 0; i < ss.length; i++) {
@@ -1665,11 +1655,11 @@ public class OAObjectInfoService {
 		for (int i = 0; st.hasMoreTokens(); i++) {
 			String value = st.nextToken();
 
-			OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
+			OAObjectInfo oi = getOAObjectInfo(clazz);
 
 			boolean bFound = false;
 			for (OALinkInfo li : oi.getLinkInfos()) {
-				OALinkInfo liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
+				OALinkInfo liRev = callInfoGetReverseLinkInfo(li);
 				if (liRev == null) continue;
 				if (value.equalsIgnoreCase(liRev.getName())) {
 					if (clazz.equals(liRev.getToClass())) {
@@ -1688,7 +1678,7 @@ public class OAObjectInfoService {
 			}
 
 			if (i == 0) { // could be a property, which is discarded
-				if (srvcObject.getOAObjectInfoService().getPropertyInfo(oi, value) != null) {
+				if (getPropertyInfo(oi, value) != null) {
 					continue;
 				}
 			}
@@ -1877,16 +1867,31 @@ public class OAObjectInfoService {
     public Map<Class, OAObjectInfo> getObjectInfoMap() {
     	return hmObjectInfo;
     }
+    
+	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update2")
+	public abstract void callAnnotationUpdate2(OAObjectInfo oi, Class clazz);
+    
+	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().updateImportMatches")
+	public abstract void callAnnotationUpdateImportMatches(OAObjectInfo oi); 
 
-    
-    
+	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().updateLinkFkeys")
+	public abstract void callAnnotationUpdateLinkFkeys(final OAObjectInfo oi);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update")
+	public abstract void callAnnotationUpdate(OAObjectInfo oi, Class clazz); 
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getMethod")
+	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getRawReference")
+	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
+	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
+	
+	@OAParentProvided (example = "srvcSync.isServer(..)")
+	public abstract boolean callSyncIsServer();
 }
-
-
-
-
-
-
-
-
-

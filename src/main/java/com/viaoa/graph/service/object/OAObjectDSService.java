@@ -121,6 +121,10 @@ public abstract class OAObjectDSService {
 		return OADataSource.getDataSource(obj.getClass());
 	}
 
+	public OADataSource getDataSource(Class c) {
+		return OADataSource.getDataSource(c);
+	}
+	
 	/**
 	 * Indicates whether a DataSource exists for the specified object's
 	 * class.
