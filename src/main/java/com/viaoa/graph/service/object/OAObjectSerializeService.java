@@ -3,15 +3,13 @@ package com.viaoa.graph.service.object;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.lang.ref.WeakReference;
+import java.util.UUID;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.comm.io.IODummy;
-import com.viaoa.datasource.OASelect;
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
-import com.viaoa.graph.service.OASyncService;
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubAutoMatch;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -23,32 +21,17 @@ import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;
 import com.viaoa.runtime.thread.OAThreadLocalService;
-import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
-import com.viaoa.util.OAString;
 
-public class OAObjectSerializeService {
+public abstract class OAObjectSerializeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectSerializeService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
 	private final OAObjectSerializer.FriendAccess faObjectSerializer;
-	private final HubService srvcHub;
-	private final OASyncService srvcSync;
 	
-    public OAObjectSerializeService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OAObjectSerializer.FriendAccess oaObjectSerializerFriendAccess, HubService srvcHub, OASyncService srvcSync) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-    	this.faObject = oaObjectFriendAccess;
-    	if (oaObjectSerializerFriendAccess == null) throw new IllegalArgumentException("OAObjectSerializerFriendAccess can not be null");
-    	this.faObjectSerializer = oaObjectSerializerFriendAccess;
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-    	this.srvcHub = srvcHub;
-    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
-    	this.srvcSync = srvcSync;
+    public OAObjectSerializeService(OAObjectSerializer.FriendAccess faObjectSerializer) {
+    	if (faObjectSerializer == null) throw new IllegalArgumentException("OAObjectSerializer.FriendAccess can not be null");
+    	this.faObjectSerializer = faObjectSerializer;
     }
 
 	/**
@@ -93,7 +76,7 @@ public class OAObjectSerializeService {
 			byte bx = in.readByte();
 			if (bx == 1) {
 				OAObjectKey ok = (OAObjectKey) in.readObject();
-				srvcObject.getOAObjectGuidService().setGuid(oaObj, ok.getGuid());
+				callGuidSetGuid(oaObj, ok.getGuid());
 
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 				final OAObjectSerializer serializer = srvcOAThreadLocal.getCurrentObjectSerializer();
@@ -104,8 +87,8 @@ public class OAObjectSerializeService {
 		}
 		in.defaultReadObject();
 		
-		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
-		final boolean bIsServer = srvcSync.isServer();
+		final OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		final boolean bIsServer = callCSIsServer();
 
 		// read properties
 		for (;;) {
@@ -149,7 +132,7 @@ public class OAObjectSerializeService {
 					continue;
 				}
 			}
-			srvcObject.getOAObjectPropertyService().unsafeSetPropertyIfEmpty(oaObj, key, value); // HubSerializeDelegate._readResolve could have set this first (as weakref)
+			callPropertyUnsafeSetPropertyIfEmpty(oaObj, key, value); // HubSerializeDelegate._readResolve could have set this first (as weakref)
 		}
 		//was:  srvcObject.getOAObjectGuidService().updateGuid(srvcObject.getOAObjectGuidService().getGuid(oaObj));
 	}
@@ -194,14 +177,14 @@ public class OAObjectSerializeService {
 		*/
 
 		boolean bDup;
-		if (srvcObject.getOAObjectGuidService().getGuid(oaObjRead) == null) {
+		if (callGuidGetGuid(oaObjRead) == null) {
 			LOG.warning("received object with guid=null, obj=" + oaObjRead + ", reassigning a new guid");
-			srvcObject.getOAObjectGuidService().assignGuid(oaObjRead);
+			callGuiAssignGuid(oaObjRead);
 		}
 
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObjRead);
+		OAObjectInfo oi = getOAObjectInfo(oaObjRead);
 		if (oi.getAddToCache()) {
-			oaObjUse = srvcObject.getOAObjectCacheService().add(oaObjRead, false, false, true);
+			oaObjUse = callCacheAdd(oaObjRead, false, false, true);
 			bDup = (oaObjRead != oaObjUse);
 		} else {
 			oaObjUse = oaObjRead;
@@ -216,7 +199,7 @@ public class OAObjectSerializeService {
 		}
 		if (serializer != null) serializer.dupCount++;
 
-		final Object[] objs = srvcObject.getProperties(oaObjRead);
+		final Object[] objs = callGetProperties(oaObjRead);
 
 		// check to see if references are needed or not
 		for (int i = 0; objs != null && i < objs.length; i += 2) {
@@ -226,14 +209,14 @@ public class OAObjectSerializeService {
 			}
 			Object value = objs[i + 1];
 
-			Object localValue = srvcObject.getOAObjectPropertyService().getProperty(oaObjUse, key, true, true);
+			Object localValue = callPropertyGetProperty(oaObjUse, key, true, true);
 
 			if (localValue != OANotExist.instance) {
 				if (localValue instanceof OAObjectKey && (value instanceof OAObject)) {
 					OAObjectKey k1 = (OAObjectKey) localValue;
-					OAObjectKey k2 = srvcObject.getOAObjectKeyService().getKey((OAObject) value);
-					if (srvcObject.getOAObjectKeyService().isForSameOAObject(null, k1, k2)) {
-						srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObjUse, key, value, localValue);
+					OAObjectKey k2 = callKeyGetKey((OAObject) value);
+					if (callKeyIsForSameOAObject(null, k1, k2)) {
+						callPropertySetPropertyCAS(oaObjUse, key, value, localValue);
 					}
 					continue;
 				} else if (localValue == null && value instanceof Hub) {
@@ -243,7 +226,7 @@ public class OAObjectSerializeService {
 				}
 			}
 
-			OALinkInfo linkInfo = srvcObject.getOAObjectInfoService().getLinkInfo(oi, key);
+			OALinkInfo linkInfo = callInfoGetLinkInfo(oi, key);
 
 			// need to replace any references to oaObjOrig with oaObjNew
 			boolean b = replaceReferences(oaObjRead, oaObjUse, linkInfo, value);
@@ -251,29 +234,28 @@ public class OAObjectSerializeService {
 				if (value == null && linkInfo.getType() == linkInfo.MANY) {
 					// 20150826 skip if prop is locked by another
 					try {
-						b = srvcObject.getOAObjectPropertyService().attemptPropertyLock(oaObjUse, key);
+						b = callPropertyAttemptPropertyLock(oaObjUse, key);
 						if (b) {
-							srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObjUse, key, value, localValue, (localValue == OANotExist.instance),
-																	false);
+							callPropertySetPropertyCAS(oaObjUse, key, value, localValue, (localValue == OANotExist.instance), false);
 						}
 					} finally {
 						if (b) {
-							srvcObject.getOAObjectPropertyService().releasePropertyLock(oaObjUse, linkInfo.getName());
+							callPropertyReleasePropertyLock(oaObjUse, linkInfo.getName());
 						}
 					}
 				} else {
 					if (value instanceof Hub && linkInfo.getCacheSize() > 0) {
 						Hub hub = (Hub) value;
-						if (srvcObject.getOAObjectInfoService().cacheHub(linkInfo, hub)) {
+						if (callInfoCacheHub(linkInfo, hub)) {
 							value = new WeakReference(hub);
 						}
 					}
-					srvcObject.getOAObjectPropertyService().setPropertyCAS(oaObjUse, key, value, localValue, (localValue == OANotExist.instance), false);
+					callPropertySetPropertyCAS(oaObjUse, key, value, localValue, (localValue == OANotExist.instance), false);
 				}
 			}
 		}
 		//qqqqqqqqqqqq make sure other code looks for guid=0, and ignore default cleanup (cached, etc)
-		srvcObject.getOAObjectGuidService().setGuid(oaObjRead, null);
+		callGuidSetGuid(oaObjRead, null);
 		//qqqqqqqq was: OAObjectDelegate.dontFinalize(oaObjRead);
 
 		return oaObjUse;
@@ -329,43 +311,43 @@ public class OAObjectSerializeService {
 		if (value instanceof Hub) {
 			// handles M-1, M-M
 			Hub hub = (Hub) value;
-			if (!srvcHub.getHubSerializeService().isResolved(hub)) {
+			if (!callHubSerializeIsResolved(hub)) {
 				// not fully loaded
 				return false;
 			}
 
 			// this will only replace if current masterObj = oaObjOrig
-			srvcHub.getHubSerializeService().replaceMasterObject((Hub) value, oaObjFrom, oaObjTo);
+			callHubSerializeReplaceMasterObject((Hub) value, oaObjFrom, oaObjTo);
 
 			for (int i = 0; revName != null; i++) {
 				OAObject objx = (OAObject) hub.getAt(i);
 				if (objx == null) {
 					break;
 				}
-				Object ref = srvcObject.getOAObjectPropertyService().getProperty(objx, revName, false, true);
+				Object ref = callPropertyGetProperty(objx, revName, false, true);
 				if (ref == null) {
 				} else if (ref == oaObjFrom || ref instanceof OAObjectKey) {
-					srvcObject.getOAObjectPropertyService().setPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
+					callPropertySetPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
 				} else if (ref instanceof Hub) {
-					srvcHub.getHubSerializeService().replaceObject((Hub) ref, oaObjFrom, oaObjTo);
+					callHubSerializeReplaceObject((Hub) ref, oaObjFrom, oaObjTo);
 				}
 			}
 		} else if (value instanceof OAObject && revName != null) {
 			// handles 1-1, 1-Many
 			OAObject objx = (OAObject) value;
 
-			Object ref = srvcObject.getOAObjectPropertyService().getProperty(objx, revName, false, true);
+			Object ref = callPropertyGetProperty(objx, revName, false, true);
 			if (ref == null) {
 				return true;
 			}
-			if (ref == oaObjFrom || ( (ref instanceof OAObjectKey) && srvcObject.getOAObjectKeyService().isForSameOAObject(null, (OAObjectKey)ref, srvcObject.getOAObjectKeyService().getKey(oaObjFrom))) )  {
-				srvcObject.getOAObjectPropertyService().setPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
+			if (ref == oaObjFrom || ( (ref instanceof OAObjectKey) && callKeyIsForSameOAObject(null, (OAObjectKey)ref, callKeyGetKey(oaObjFrom))) )  {
+				callPropertySetPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
 			} else {
 				if (ref instanceof WeakReference) {
 					ref = ((WeakReference) ref).get();
 				}
 				if (ref instanceof Hub) {
-					srvcHub.getHubSerializeService().replaceObject((Hub) ref, oaObjFrom, oaObjTo);
+					callHubSerializeReplaceObject((Hub) ref, oaObjFrom, oaObjTo);
 				}
 			}
 		}
@@ -408,16 +390,15 @@ public class OAObjectSerializeService {
 			faObjectSerializer.beforeSerialize(oaObj, serializer);
 		}
 		
-		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(oaObj));
-		final OAObjectInfo oi = srvcObject.getOAObjectInfoService().getObjectInfo(oaObj.getClass());
-		final boolean bIsServer = og.getSyncService().isServer();
-		final boolean bIsObjectOnServer = bIsServer || og.getSyncService().getSyncClient().isObjectOnServer(oaObj);
+		final OAObjectInfo oi = getOAObjectInfo(oaObj);
+		final boolean bIsServer = callCSIsServer();
+		final boolean bIsObjectOnServer = bIsServer || callSyncClientIsObjectOnServer(oaObj);
 
 		
 		if (stream instanceof RemoteObjectOutputStream) {
 			if (!bIsObjectOnServer) {
 				stream.writeByte((byte) 2);
-			} else if (!srvcSync.isServer()) {
+			} else if (!callCSIsServer()) {
 				// only need to send key to the server
 				stream.writeByte((byte) 1);
 				stream.writeObject(oaObj.getObjectKey());
@@ -449,10 +430,10 @@ public class OAObjectSerializeService {
 			}
 		}
 
-		stream.writeObject(srvcObject.FALSE); // end of property list
+		stream.writeObject(Boolean.FALSE); // end of property list
 
 		if (!bIsObjectOnServer) {
-	        og.getSyncService().getSyncClient().objectSentToServer(oaObj);
+			callSyncClientObjectSentToServer(oaObj);
 		}
 
 		// 20141124
@@ -503,7 +484,7 @@ public class OAObjectSerializeService {
 			return;
 		}
 		
-		Object[] objs = srvcObject.getProperties(oaObj);
+		Object[] objs = callGetProperties(oaObj);
 		if (objs == null) {
 			return;
 		}
@@ -567,7 +548,7 @@ public class OAObjectSerializeService {
 				if (obj instanceof OAObject) {
 					// always send OAObjectKey to reference objects
 					if (bIsServer) {
-						obj = srvcObject.getOAObjectKeyService().getKey((OAObject) obj);
+						obj = callKeyGetKey((OAObject) obj);
 					}
 					bShouldSerialize = true;
 				} else if (obj == null || obj instanceof OAObjectKey) {
@@ -589,7 +570,7 @@ public class OAObjectSerializeService {
 							// server. need to make sure that autoMatch (if needed) was set up.
 							String matchProperty = li.getMatchProperty();
 							if (matchProperty != null && matchProperty.length() > 0) {
-								if (srvcHub.getAutoMatch(hubx) != null) {
+								if (callHubGetAutoMatch(hubx) != null) {
 									obj = null;
 									bShouldSerialize = true;
 								}
@@ -614,5 +595,78 @@ public class OAObjectSerializeService {
 		}
 	}
 
-    
+	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().setGuid")
+	public abstract void callGuidSetGuid(OAObject oaObj, UUID guid);    
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo getOAObjectInfo(Class clazz);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeSetPropertyIfEmpty")
+	public abstract void callPropertyUnsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
+	public abstract UUID callGuidGetGuid(OAObject oaObj);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().assignGuid")
+	public abstract void callGuiAssignGuid(OAObject obj);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo getOAObjectInfo(OAObject obj); 
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().add")
+	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread);
+
+	@OAParentProvided (example = "srvcObject.getProperties")
+	public abstract Object[] callGetProperties(OAObject obj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
+	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
+	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
+	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setPropertyCAS")
+	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue); 
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().attemptPropertyLock")
+	public abstract boolean callPropertyAttemptPropertyLock(OAObject oaObj, String name);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setPropertyCAS")
+	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist, boolean bReturnNotExist); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().releasePropertyLock")
+	public abstract void callPropertyReleasePropertyLock(OAObject oaObj, String name);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().cacheHub")
+	public abstract boolean callInfoCacheHub(OALinkInfo li, final Hub hub);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectCSService().isServer")
+	public abstract boolean callCSIsServer();
+	
+	
+	@OAParentProvided (example = "srvcHub.getHubSerializeService().replaceObject")
+	public abstract int callHubSerializeReplaceObject(Hub thisHub, OAObject objFrom, OAObject objTo);
+	
+	@OAParentProvided (example = "srvcHub.getHubSerializeService().isResolved")
+	public abstract boolean callHubSerializeIsResolved(Hub thisHub); 
+
+	@OAParentProvided (example = "srvcHub.getHubSerializeService().replaceMasterObject")
+	public abstract void callHubSerializeReplaceMasterObject(Hub thisHub, OAObject objFrom, OAObject objTo);
+	
+	@OAParentProvided (example = "srvcHub.getAutoMatch")
+	public abstract HubAutoMatch callHubGetAutoMatch(Hub thisHub);
+	
+	
+	@OAParentProvided (example = "srvcSync.getSyncClient().isObjectOnServer(..)")
+	public abstract boolean callSyncClientIsObjectOnServer(OAObject obj);
+
+	@OAParentProvided (example = "srvcSync.getSyncClient().objectSentToServer")
+	public abstract void callSyncClientObjectSentToServer(OAObject obj);
+	
 }

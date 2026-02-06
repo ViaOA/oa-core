@@ -32,6 +32,7 @@ public abstract class OAObjectCSService {
 		return isServer();
 	}
 
+	
 	/**
 	 * Determines whether this runtime is operating in workstation (client) mode for
 	 * the class of the specified object.
@@ -47,6 +48,10 @@ public abstract class OAObjectCSService {
 		return !isServer();
 	}
 
+	public boolean isWorkstation() {
+		return !isServer();
+	}
+	
 	/**
 	 * Notifies the synchronization client that an object has been created on a
 	 * workstation. Invoked by {@code OAObjectDelegate.initialize()}.

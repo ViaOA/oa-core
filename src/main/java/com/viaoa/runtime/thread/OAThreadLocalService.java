@@ -2629,5 +2629,23 @@ public class OAThreadLocalService {
 		}
 		return new String(sb);
 	}
+
+
+	public int getGetSiblingCalledCount() {
+		OAThreadLocal tl = getThreadLocal();
+		if (tl == null) return 0;
+		return tl.cntGetSiblingCalled;
+	}
+	
+	public int getAndIncrementGetSiblingCalledCount() {
+		return getThreadLocal(true).cntGetSiblingCalled++;
+	}
+	
+	public void clearGetSiblingCalledCount() {
+		OAThreadLocal tl = getThreadLocal();
+		if (tl == null) return;
+		tl.cntGetSiblingCalled = 0;
+	}
+
 	
 }

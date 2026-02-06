@@ -4,30 +4,18 @@ package com.viaoa.graph.service.object;
 import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.object.*;
 import com.viaoa.scheduler.OAScheduler;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
-public class OAObjectSchedulerService {
+public abstract class OAObjectSchedulerService {
 	private final Logger LOG = Logger.getLogger(OAObjectSchedulerService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
 
-	public OAObjectSchedulerService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess) {
-		if (srvcObject == null)
-			throw new IllegalArgumentException("OAObjectService can not be null");
-		this.srvcObject = srvcObject;
-		if (oaObjectFriendAccess == null)
-			throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-		this.faObject = oaObjectFriendAccess;
-	}
-
-	public OAObjectService getObjectService() {
-		return srvcObject;
+	public OAObjectSchedulerService() {
 	}
 
 	/**
@@ -72,7 +60,7 @@ public class OAObjectSchedulerService {
     public OAScheduler getScheduler(OAObject objThis, String property, OAObject objSearch, OADate date) {
         if (objThis == null || OAString.isEmpty(property)) return null;
 
-        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getObjectInfo(objThis);
+        OAObjectInfo oi = getObjectInfo(objThis);
         if (oi == null) return null;
         OALinkInfo li = oi.getLinkInfo(property);
         if (li == null) {
@@ -118,7 +106,7 @@ public class OAObjectSchedulerService {
     public void invokeCallback(OAScheduler scheduler, OAObject objThis, String property) {
         if (scheduler == null || objThis == null || OAString.isEmpty(property)) return;
 
-        OAObjectInfo oi = srvcObject.getOAObjectInfoService().getObjectInfo(objThis);
+        OAObjectInfo oi = getObjectInfo(objThis);
         if (oi == null) return;
         OALinkInfo li = oi.getLinkInfo(property);
         if (li == null) return;
@@ -134,5 +122,8 @@ public class OAObjectSchedulerService {
         }
     }
 
+    
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getObjectInfo")
+	public abstract OAObjectInfo getObjectInfo(OAObject obj); 
 
 }

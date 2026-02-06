@@ -11,7 +11,7 @@ public interface ObjectsInternalOps extends ObjectsOps {
 	public OAObjectInfo getOAObjectInfo(OAObject obj);
 	
 
-//qqqqqqqq use Cache	
+//qqqqqqqq 
 	public void setSelectAllHub(Hub hub);
 	public void removeSelectAllHub(Hub hub);
 	

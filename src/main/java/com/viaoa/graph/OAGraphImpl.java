@@ -14,6 +14,9 @@ import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.graph.service.OASyncService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadImpl;
+import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAReflect;
 
 public class OAGraphImpl implements OAGraphInternal {
@@ -35,8 +38,10 @@ public class OAGraphImpl implements OAGraphInternal {
 		srvcOAObject = new OAObjectService();
 		srvcHub = new HubService();
 	    srvcOASync = new OASyncService(pkgName);
-	    
-	    srvcOAObject.initialize(srvcHub, srvcOASync);
+
+//	public void initialize(HubService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcOAThreadLocal, OARemoteThreadService srvcOARemoteThread) {
+	    OAThreadImpl tl = (OAThreadImpl) runtime.thread();
+	    srvcOAObject.initialize(srvcHub, srvcOASync, tl.getThreadLocalService(), tl.getRemoteThreadService());
 	    srvcHub.initialize(srvcOAObject, srvcOASync);
 	    srvcOASync.initialize();
 	}

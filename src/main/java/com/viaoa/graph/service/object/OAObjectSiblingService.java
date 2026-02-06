@@ -7,43 +7,24 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.object.OAThreadLocal;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OAThrottle;
 
-public class OAObjectSiblingService {
+public abstract class OAObjectSiblingService {
 	private static final Logger LOG = Logger.getLogger(OAObjectSiblingService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
-	private final HubService srvcHub;
 
-	public OAObjectSiblingService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, HubService srvcHub) {
-		if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-		this.srvcObject = srvcObject;
-		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-		this.faObject = oaObjectFriendAccess;
-		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-		this.srvcHub = srvcHub;
+	public OAObjectSiblingService() {
 	}
-
-	public OAObjectService getObjectService() {
-		return srvcObject;
-	}
-
 
 	/**
 	 * Maximum number of milliseconds allowed for sibling-search operations
@@ -66,8 +47,7 @@ public class OAObjectSiblingService {
 	 * @param linkPropertyName  the accessed link-property name
 	 */
 	public void onGetObjectReference(final OAObject obj, final String linkPropertyName) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		ArrayList<OASiblingHelper> al = srvcOAThreadLocal.getSiblingHelpers();
+		ArrayList<OASiblingHelper> al = callThreadLocalGetSiblingHelpers();
 		if (al == null) {
 			return;
 		}
@@ -105,10 +85,7 @@ public class OAObjectSiblingService {
 	public OAObjectKey[] getSiblings(final OAObject mainObject, final String property, final int maxAmount,
 			ConcurrentHashMap<UUID, Boolean> hmIgnore) {
 		
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		OAThreadLocal tl = srvcOAThreadLocal.getOAThreadLocal();
-		
-		if (tl.cntGetSiblingCalled++ > 0) {
+		if (callThreadLocalGetAndIncrementGetSiblingCalledCount() > 0) {
 			return new OAObjectKey[0];
 		}
 
@@ -126,7 +103,7 @@ public class OAObjectSiblingService {
 			// e.printStackTrace();// testing, can be removed
 			throw new RuntimeException("OAObjectSiblingDelegate error", e);
 		} finally {
-			tl.cntGetSiblingCalled = 0;
+			callThreadLocalClearGetSiblingCalledCount();
 		}
 
 		if (OAObject.getDebugMode()) {
@@ -196,7 +173,7 @@ public class OAObjectSiblingService {
 		if (hmIgnore == null) {
 			hmIgnore = new ConcurrentHashMap<>();
 		}
-		final OALinkInfo linkInfo = srvcObject.getOAObjectInfoService().getLinkInfo(mainObject.getClass(), property);
+		final OALinkInfo linkInfo = callInfoGetLinkInfo(mainObject.getClass(), property);
 
 		// set by Finder, HubMerger, HubGroupBy, LoadReferences, etc - where it will be loading from a Root Hub using a PropertyPath
 
@@ -205,9 +182,8 @@ public class OAObjectSiblingService {
 
 		OAPropertyPath ppGetDetailPropertyPath = null;
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		// 20180704
-		ArrayList<OASiblingHelper> al = srvcOAThreadLocal.getSiblingHelpers();
+		ArrayList<OASiblingHelper> al = callThreadLocalGetSiblingHelpers();
 
 		// 20180807 find all pp to use, instead of just the first one.
 		ArrayList<DetailInfo> alDetailInfo = new ArrayList<>();
@@ -260,7 +236,7 @@ public class OAObjectSiblingService {
 					if (b) {
 						// found mainObj, but the next prop in pp was not not a match, see if pp can be truncated
 						b = false;
-						OALinkInfo lix = srvcObject.getOAObjectInfoService().getLinkInfo(mainObject.getClass(), property);
+						OALinkInfo lix = callInfoGetLinkInfo(mainObject.getClass(), property);
 						if (lix != null) {
 							bValid = true;
 							break;
@@ -279,7 +255,7 @@ public class OAObjectSiblingService {
 					}
 				}
 				if (b) {
-					OALinkInfo lix = srvcObject.getOAObjectInfoService().getLinkInfo(mainObject.getClass(), property);
+					OALinkInfo lix = callInfoGetLinkInfo(mainObject.getClass(), property);
 					if (lix != null) {
 						bValid = true;
 					}
@@ -290,7 +266,7 @@ public class OAObjectSiblingService {
 					ppPrefix = null;
 					for (OALinkInfo li : ppGetDetailPropertyPath.getLinkInfos()) {
 						Class c = li.getToClass();
-						OALinkInfo lix = srvcObject.getOAObjectInfoService().getLinkInfo(c, mainObject.getClass());
+						OALinkInfo lix = callInfoGetLinkInfo(c, mainObject.getClass());
 						if (lix != null) {
 							if (!lix.getPrivateMethod()) {
 								bValid = true;
@@ -309,7 +285,7 @@ public class OAObjectSiblingService {
 			if (!bValid && getDetailHub != null && !getDetailHub.getObjectClass().equals(mainObject.getClass())) {
 				// need to get to mainObject.class
 				Class c = getDetailHub.getObjectClass();
-				OALinkInfo li = srvcObject.getOAObjectInfoService().getLinkInfo(c, mainObject.getClass());
+				OALinkInfo li = callInfoGetLinkInfo(c, mainObject.getClass());
 				if (li == null || li.getPrivateMethod()) {
 					getDetailHub = null;
 					ppPrefix = null;
@@ -353,7 +329,7 @@ public class OAObjectSiblingService {
 				hub = findBestSiblingHub(mainObject, lix);
 				bCalledFindBestSiblingHub = true;
 				ppPrefix = null;
-				if (hub == null || srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub) != lix) {
+				if (hub == null || callHubDetailGetLinkInfoFromDetailToMaster(hub) != lix) {
 					ppReverse = null;
 				}
 			} else if (getDetailHub != null) {
@@ -432,7 +408,7 @@ public class OAObjectSiblingService {
 
 					// find next hub to use
 
-					final OALinkInfo lix = srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail(hub);
+					final OALinkInfo lix = callHubDetailGetLinkInfoFromMasterHubToDetail(hub);
 					if (lix == null || lix.getToClass() == null) {
 						//bDone = true;
 						break; // could be using GroupBy as hub
@@ -455,7 +431,7 @@ public class OAObjectSiblingService {
 							hubx = findBestSiblingHub(objInHub, liz);
 							if (hubx == null) {
 								ppReverse = null;
-							} else if (srvcHub.getHubDetailService().getLinkInfoFromMasterToDetail(hubx) != liz.getReverseLinkInfo()) {
+							} else if (callHubDetailGetLinkInfoFromMasterToDetail(hubx) != liz.getReverseLinkInfo()) {
 								ppReverse = null;
 							}
 							hub = hubx;
@@ -536,7 +512,7 @@ public class OAObjectSiblingService {
 					return false;
 				}
 
-				Object propertyValue = srvcObject.getOAObjectPropertyService().getProperty(oaObject, property, true, true);
+				Object propertyValue = callPropertyGetProperty(oaObject, property, true, true);
 
 				if (bIsMany) {
 					if (propertyValue instanceof Hub) {
@@ -549,7 +525,7 @@ public class OAObjectSiblingService {
 						return false;
 					}
 					hmTypeOneObjKey.put((OAObjectKey) propertyValue, null);
-					if (srvcObject.getOAObjectCacheService().get(clazz, (OAObjectKey) propertyValue) != null) {
+					if (callCacheGet(clazz, (OAObjectKey) propertyValue) != null) {
 						return false;
 					}
 				} else if (linkInfo != null) {
@@ -603,7 +579,7 @@ public class OAObjectSiblingService {
 	 * @return the hub best suited for sibling evaluation, or null if none match
 	 */
 	public Hub findBestSiblingHub(OAObject masterObject, OALinkInfo liToMaster) {
-		Hub[] hubs = srvcObject.getOAObjectHubService().getHubReferences(masterObject);
+		Hub[] hubs = callHubGetHubReferences(masterObject);
 
 		int siblingHits = 0;
 		Hub siblingHub = null;
@@ -614,7 +590,7 @@ public class OAObjectSiblingService {
 				continue;
 			}
 
-			if (liToMaster != null && srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub) == liToMaster) {
+			if (liToMaster != null && callHubDetailGetLinkInfoFromDetailToMaster(hub) == liToMaster) {
 				siblingHub = hub;
 				break;
 			}
@@ -638,4 +614,38 @@ public class OAObjectSiblingService {
 		return siblingHub;
 	}
 
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	public abstract OALinkInfo callInfoGetLinkInfo(Class clazz, String propertyName);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	public abstract OALinkInfo callInfoGetLinkInfo(Class fromClass, Class toClass); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
+	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
+	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences")
+	public abstract Hub[] callHubGetHubReferences(OAObject oaObj); 
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail")
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub thisDetailHub);
+	
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterToDetail")
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub thisDetailHub);
+
+	
+	@OAParentProvided (example = "srvcOAThreadLocal.getSiblingHelpers")
+	public abstract ArrayList<OASiblingHelper> callThreadLocalGetSiblingHelpers();
+	
+	@OAParentProvided (example = "srvcOAThreadLocal.callThreadLocalGetAndIncrementGetSiblingCalledCount")
+	public abstract int callThreadLocalGetAndIncrementGetSiblingCalledCount();
+	
+	@OAParentProvided (example = "srvcOAThreadLocal.clearGetSiblingCalledCount")
+	public abstract void callThreadLocalClearGetSiblingCalledCount();
+	
 }

@@ -184,7 +184,7 @@ public abstract class OAObjectInfoService {
 			if (li.getType() != li.MANY) {
 				continue;
 			}
-			OALinkInfo liRev = callInfoGetReverseLinkInfo(li);
+			OALinkInfo liRev = getReverseLinkInfo(li);
 			if (liRev != null) {
 				continue;
 			}
@@ -273,7 +273,7 @@ public abstract class OAObjectInfoService {
 					if (li.getPrivateMethod()) {
 						continue;
 					}
-					Method method = callInfoGetMethod(oi, "get" + li.getName(), 0);
+					Method method = getMethod(oi, "get" + li.getName(), 0);
 					if (method == null) {
 						li.setPrivateMethod(true);
 					}
@@ -1659,7 +1659,7 @@ public abstract class OAObjectInfoService {
 
 			boolean bFound = false;
 			for (OALinkInfo li : oi.getLinkInfos()) {
-				OALinkInfo liRev = callInfoGetReverseLinkInfo(li);
+				OALinkInfo liRev = getReverseLinkInfo(li);
 				if (liRev == null) continue;
 				if (value.equalsIgnoreCase(liRev.getName())) {
 					if (clazz.equals(liRev.getToClass())) {
@@ -1880,12 +1880,6 @@ public abstract class OAObjectInfoService {
 	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update")
 	public abstract void callAnnotationUpdate(OAObjectInfo oi, Class clazz); 
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
-	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi);
-
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getMethod")
-	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);
-
 	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getRawReference")
 	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
 	

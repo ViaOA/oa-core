@@ -1,36 +1,21 @@
 package com.viaoa.graph.service.object;
 
-
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 
-public class OAObjectSaveService {
+public abstract class OAObjectSaveService {
 	private final Logger LOG = Logger.getLogger(OAObjectSaveService.class.getName());
 
-	private final OAObjectService srvcObject;
 	private final OAObject.FriendAccess faObject;
-	private final HubService srvcHub;
 
-	public OAObjectSaveService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, HubService srvcHub) {
-		if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-		this.srvcObject = srvcObject;
+	public OAObjectSaveService(OAObject.FriendAccess oaObjectFriendAccess) {
 		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
 		this.faObject = oaObjectFriendAccess;
-		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-		this.srvcHub = srvcHub;
-	}
-
-	public OAObjectService getObjectService() {
-		return srvcObject;
 	}
 
 	public void save(OAObject oaObj, int iCascadeRule) {
@@ -39,8 +24,8 @@ public class OAObjectSaveService {
 			return;
 		}
 
-		if (srvcObject.getOAObjectCSService().isWorkstation(oaObj)) {
-			srvcObject.getOAObjectCSService().save(oaObj, iCascadeRule);
+		if (callCSIsWorkstation()) {
+			callCSSave(oaObj, iCascadeRule);
 			return;
 		}
 
@@ -53,31 +38,32 @@ public class OAObjectSaveService {
 	}
 
 	private void save(OAObject oaObj, int iCascadeRule, OACascade cascade, boolean bIsFirst, boolean bCheckDepth) {
-		if (bCheckDepth && cascade.getDepth() > 50) {
-			if (!cascade.wasCascaded(oaObj, false)) {
-				cascade.addToOverflow(oaObj); // add to overflow, (tail recursion)
-			}
-			return;
-		}
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		if (srvcOAThreadLocal.isDeleting(oaObj)) {
+		if (callThreadLocalIsDeleting()) {
 			return;
 		}
 
 		if (cascade.wasCascaded(oaObj, true)) {
 			return;
 		}
+
+		if (bCheckDepth && cascade.getDepth() > 50) {
+			if (!cascade.wasCascaded(oaObj, false)) {
+				cascade.addToOverflow(oaObj); // add to overflow, (tail recursion)
+			}
+			return;
+		}
+		
 		cascade.depthAdd();
 
 		boolean b = (faObject.getNewFlag(oaObj) || faObject.getChangedFlag(oaObj) || bIsFirst);
 		_save(oaObj, true, iCascadeRule, cascade); // "ONE" relationships
 		// cascadeSave() will check hash to see if object has already been checked
 		if (b) {
-			Hub[] hubs = srvcObject.getOAObjectHubService().getHubReferences(oaObj);
+			Hub[] hubs = callHubGetHubReferences(oaObj);
 			if (hubs != null) {
 				for (Hub h : hubs) {
 					if (h != null) {
-						srvcHub.getHubEventService().fireBeforeSaveEvent(h, oaObj);
+						callHubEventFireBeforeSaveEvent(h, oaObj);
 					}
 				}
 			}
@@ -114,7 +100,7 @@ public class OAObjectSaveService {
 			if (hubs != null) {
 				for (Hub h : hubs) {
 					if (h != null) {
-						srvcHub.getHubEventService().fireAfterSaveEvent(h, oaObj);
+						callHubEventFireAfterSaveEvent(h, oaObj);
 					}
 				}
 			}
@@ -155,7 +141,7 @@ public class OAObjectSaveService {
 	 * @return null if all objects can be saved
 	 */
 	private void _save(OAObject oaObj, boolean bOne, int iCascadeRule, OACascade cascade) {
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
+		OAObjectInfo oi = getOAObjectInfo(oaObj);
 		List al = oi.getLinkInfos();
 		for (int i = 0; i < al.size(); i++) {
 			OALinkInfo li = (OALinkInfo) al.get(i);
@@ -181,7 +167,7 @@ public class OAObjectSaveService {
 				continue;
 			}
 
-			if (srvcObject.getOAObjectReflectService().isReferenceNullOrNotLoaded(oaObj, prop)) {
+			if (callReflectIsReferenceNullOrNotLoaded(oaObj, prop)) {
 				continue;
 			}
 
@@ -197,7 +183,7 @@ public class OAObjectSaveService {
 			// Note: if (iCascadeRule == OAObject.CASCADE_NONE) then only save ONE links that are new objects - so ref integrity is maintained.
 
 			if (li.getType() == OALinkInfo.ONE) {
-				Object obj = srvcObject.getOAObjectReflectService().getProperty(oaObj, li.getName());
+				Object obj = callReflectGetProperty(oaObj, li.getName());
 				if ((obj instanceof OAObject)) {
 					OAObject oaRef = (OAObject) obj;
 					if (oaRef.getNew()) {
@@ -226,14 +212,14 @@ public class OAObjectSaveService {
 
 							if (bSave) {
 								// have to save new reference object before oaObj can be saved.
-								OAObjectInfo oiRef = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaRef.getClass());
+								OAObjectInfo oiRef = getOAObjectInfo(oaRef.getClass());
 								Exception ex = null;
 								try {
-									srvcObject.getOAObjectDSService().saveWithoutReferences(oaRef);
+									callDSSaveWithoutReferences(oaRef);
 								} catch (Exception e) {
 									ex = e;
 								}
-								srvcObject.setNew(oaRef, false);
+								callSetNew(oaRef, false);
 								faObject.setChangedFlag(oaRef, true); // so that it will be save/updated
 
 								synchronized (hmSaveNewLock) {
@@ -265,14 +251,14 @@ public class OAObjectSaveService {
 					continue;
 				}
 				if (bValidCascade) {
-					Hub hub = (Hub) srvcObject.getOAObjectReflectService().getProperty(oaObj, li.getName()); // get/load "real" objects
-					srvcObject.getOAObjectHubService().saveAll(hub, iCascadeRule, cascade);
+					Hub hub = (Hub) callReflectGetProperty(oaObj, li.getName()); // get/load "real" objects
+					callHubSaveAll(hub, iCascadeRule, cascade);
 				} else {
 					// save all adds/removes from hub.
-					Hub hub = (Hub) srvcObject.getOAObjectReflectService().getRawReference(oaObj, prop); // could be Hub with OAObjectKey objects
+					Hub hub = (Hub) callReflectGetRawReference(oaObj, prop); // could be Hub with OAObjectKey objects
 					if (hub.isOAObject()) {
 						// update all links even if cascade is false
-						srvcObject.getOAObjectHubService().saveAll(hub, OAObject.CASCADE_NONE, cascade); // only save M2M link changes, not the actual objects in the Hub.
+						callHubSaveAll(hub, OAObject.CASCADE_NONE, cascade); // only save M2M link changes, not the actual objects in the Hub.
 					}
 				}
 			}
@@ -286,7 +272,7 @@ public class OAObjectSaveService {
 	*/
 	public boolean onSave(OAObject oaObj) {
     	//qqqqqqqqqq method was protected
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 
 		//LOG.fine(oaObj.getClass().getSimpleName()+", isNew="+oaObj.isNew());        
 		// if new, then need to hold a lock
@@ -332,10 +318,10 @@ public class OAObjectSaveService {
 			oaObj.setDeleted(false); // in case it was deleted, and then re-saved
 			oaObj.setChanged(false);
 
-			srvcObject.getOAObjectDSService().save(oaObj);
-			srvcObject.getOAObjectLogService().logToXmlFile(oaObj, true);
+			callDSSave(oaObj);
+			callLogLogToXmlFile(oaObj, true);
 			if (bIsNew) {
-				srvcObject.setNew(oaObj, false);
+				callSetNew(oaObj, false);
 			}
 		} finally {
 			if (bIsNew) {
@@ -349,4 +335,57 @@ public class OAObjectSaveService {
 		return true;
 	}
 
+	@OAParentProvided (example = "srvcObject.getOAObjectCSService().isWorkstation")
+	public abstract boolean callCSIsWorkstation(); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectCSService().save")
+	public abstract boolean callCSSave(OAObject oaObj, int iCascadeRule);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences")
+	public abstract Hub[] callHubGetHubReferences(OAObject oaObj); 
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo getOAObjectInfo(OAObject obj); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceNullOrNotLoaded")
+	public abstract boolean callReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String propertyName);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
+	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo getOAObjectInfo(Class clazz);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectDSService().saveWithoutReferences")
+	public abstract void callDSSaveWithoutReferences(OAObject oaObj);
+
+	@OAParentProvided (example = "srvcObject.setNew")
+	public abstract void callSetNew(final OAObject oaObj, final boolean b);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectHubService().saveAll")
+	public abstract void callHubSaveAll(Hub hub, int iCascadeRule, OACascade cascade);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getRawReference")
+	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectDSService().save")
+	public abstract void callDSSave(OAObject oaObj); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectLogService().logToXmlFile")
+	public abstract void callLogLogToXmlFile(OAObject oaObj, boolean bSave);
+
+	
+	
+	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeSaveEvent")
+	public abstract void callHubEventFireBeforeSaveEvent(Hub thisHub, OAObject obj);
+	
+	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterSaveEvent")
+	public abstract void callHubEventFireAfterSaveEvent(Hub thisHub, OAObject obj);
+	
+	@OAParentProvided (example = "srvcOAThreadLocal.isDeleting")
+	public abstract boolean callThreadLocalIsDeleting();
+	
+	
 }
+
+

@@ -3,35 +3,22 @@ package com.viaoa.graph.service.hub;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 
-public class HubDeleteService {
+public abstract class HubDeleteService {
 	private final Logger LOG = Logger.getLogger(HubDeleteService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 	
-	
-	public HubDeleteService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-    	this.srvcHub = srvcHub;
+	public HubDeleteService(Hub.FriendAccess faHub) {
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
 	}
-
 
 	/**
 	 * Deletes all objects in the hub. If running in client/server mode and the
@@ -45,22 +32,21 @@ public class HubDeleteService {
     public void deleteAll(Hub thisHub) {
         // 20150206 send to server
         if (thisHub.getSize() == 0) return;
-        if (!srvcHub.getHubCSService().deleteAll(thisHub)) {
+        if (!callHubCSDeleteAll(thisHub)) {
             return; // sent to server to be done.
         }
 
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            srvcOAThreadLocal.setDeleting(thisHub, true);
-            srvcOARemoteThread.sendMessages(true);
+            callThreadLocalSetDeleting(thisHub, true);
+            callRemoteThreadSendMessages(true);
             _runDeleteAll(thisHub);
         }
         finally {
-            srvcOARemoteThread.sendMessages(false);
-            srvcOAThreadLocal.setDeleting(thisHub, false);
+            callRemoteThreadSendMessages(false);
+            callThreadLocalSetDeleting(thisHub, false);
         }
     }
+
 
     /**
      * Server-side implementation that performs a complete deletion of all hub
@@ -75,16 +61,16 @@ public class HubDeleteService {
         if (thisHub.isOAObject()) objs = thisHub.toArray();
         else objs = null;
 
-        srvcHub.getHubAddRemoveService().clear(thisHub); // single event to remove all from hub (sent to clients)
-        srvcHub.getHubDataService().clearHubChanges(thisHub);
+        callHubAddRemoveClear(thisHub); // single event to remove all from hub (sent to clients)
+        callHubDataClearHubChanges(thisHub);
 
         if (objs != null) {
             OACascade cascade = new OACascade();
             for (Object obj : objs) {
-                srvcObject.getOAObjectDeleteService().delete((OAObject) obj, cascade);
+                callObjectDeleteDelete((OAObject) obj, cascade);
             }
             for (Object obj : objs) {
-                srvcHub.getHubAddRemoveService().remove(thisHub, obj, false, false, true, false, false, true);
+                callHubAddRemoveRemove(thisHub, obj, false, false, true, false, false, true);
             }
         }
     }
@@ -97,8 +83,7 @@ public class HubDeleteService {
      * @return {@code true} if the hub is currently deleting all objects
      */
     public boolean isDeletingAll(Hub thisHub) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-        return srvcOAThreadLocal.isDeleting(thisHub);
+        return callThreadLocalIsDeleting(thisHub);
     }
 
     /**
@@ -113,15 +98,14 @@ public class HubDeleteService {
     public void deleteAll(Hub thisHub, OACascade cascade) {
         if (thisHub.size() == 0) return;
         if (cascade.wasCascaded(thisHub, true)) return;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            srvcOAThreadLocal.setDeleting(thisHub, true);
-            srvcOAThreadLocal.lock(thisHub);
+            callThreadLocalSetDeleting(thisHub, true);
+            callThreadLocalLock(thisHub);
             _deleteAll(thisHub, cascade);
         }
         finally {
-            srvcOAThreadLocal.unlock(thisHub);
-            srvcOAThreadLocal.setDeleting(thisHub, false);
+            callThreadLocalUnlock(thisHub);
+            callThreadLocalSetDeleting(thisHub, false);
         }
     }
 
@@ -140,16 +124,16 @@ public class HubDeleteService {
         Object objLast = null;
 
         // 20121005 need to check to see if a link table was used for a 1toM, where createMethod for One is false
-        OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(thisHub);
+        OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(thisHub);
         OALinkInfo liRev = null;
         OAObject masterObj = null;
         OADataSource dataSource = null;
         if (bIsOa && li != null && li.getType() == li.ONE) {
             if (li.getPrivateMethod()) {
                 // uses a link table, need to delete from link table first
-                liRev = srvcObject.getOAObjectInfoService().getReverseLinkInfo(li);
+                liRev = callObjectInfoGetReverseLinkInfo(li);
 
-                masterObj = srvcHub.getHubDetailService().getMasterObject(thisHub);
+                masterObj = callHubDetailGetMasterObject(thisHub);
                 if (masterObj != null) dataSource = OADataSource.getDataSource(masterObj.getClass());
             }
         }
@@ -175,37 +159,89 @@ public class HubDeleteService {
                         }
                     }
                     if (!b) {
-                        if (vecRemove == null) vecRemove = srvcHub.getHubDataService().createVecRemove(thisHub);
+                        if (vecRemove == null) vecRemove = callHubDataCreateVecRemove(thisHub);
                         vecRemove.addElement(obj);
                     }
                 }
             }
-            srvcHub.getHubDataService().setChanged(thisHub,
+            callHubDataSetChanged(thisHub,
                 (faHub.getHubData(thisHub).getVecAdd() != null && faHub.getHubData(thisHub).getVecAdd().size() > 0) || (faHub.getHubData(thisHub).getVecRemove() != null && faHub.getHubData(thisHub).getVecRemove().size() > 0));
         }
         else {
-        	srvcHub.getHubDataService().setChanged(thisHub, true);
+        	callHubDataSetChanged(thisHub, true);
         }
 
         for (Object obj : objs) {
             // 20240125
             // since thisHub.data.vector.removeAllElements was called (above), need to call remove for thisHub
-            srvcHub.getHubAddRemoveService().remove(thisHub, obj, false, true, true, true, true, true);
+            callHubAddRemoveRemove(thisHub, obj, false, true, true, true, true, true);
 
             if (dataSource != null) {
                 dataSource.updateMany2ManyLinks(masterObj, null, new OAObject[] { (OAObject) obj }, liRev.getName());
             }
 
             if (bIsOa) {
-                srvcObject.getOAObjectDeleteService().delete((OAObject) obj, cascade);
+                callObjectDeleteDelete((OAObject) obj, cascade);
             }
 
         }
 
-        srvcHub._updateHubAddsAndRemoves(thisHub, -1, cascade, false);
+        callHub_updateHubAddsAndRemoves(thisHub, -1, cascade, false);
 
         thisHub.setChanged(false); // removes all vecAdd, vecRemove objects
     }
+
+	@OAParentProvided (example = "srvcObject.getOAObjectDeleteService().delete")
+	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);
+    
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+
+	@OAParentProvided (example = "srvcHub.getHubCSService().deleteAll")
+	public abstract boolean callHubCSDeleteAll(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().clear")
+	public abstract void callHubAddRemoveClear(final Hub thisHub);
+	
+	@OAParentProvided (example = "srvcHub.getHubDataService().clearHubChanges")
+	public abstract void callHubDataClearHubChanges(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().remove")
+	public abstract boolean callHubAddRemoveRemove(final Hub thisHub, Object obj, final boolean bForce,
+			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
+			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject")
+	public abstract OAObject callHubDetailGetMasterObject(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.getHubDataService().createVecRemove")
+	public abstract Vector callHubDataCreateVecRemove(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.getHubDataService().setChanged")
+	public abstract void callHubDataSetChanged(Hub thisHub, boolean bChanged);
+
+	@OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
+	public abstract void callHub_updateHubAddsAndRemoves(final Hub thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
+
+
+
+	@OAParentProvided (example = "srvcThreadLocal.setDeleting")
+	public abstract void callThreadLocalSetDeleting(Hub hub, boolean b);
+
+	@OAParentProvided (example = "srvcThreadLocal.isDeleting")
+	public abstract boolean callThreadLocalIsDeleting(Hub hub);
+
+	@OAParentProvided (example = "srvcThreadLocal.lock")
+	public abstract void callThreadLocalLock(Hub hub);
+
+	@OAParentProvided (example = "srvcThreadLocal.unlock")
+	public abstract void callThreadLocalUnlock(Hub hub);
+
+	@OAParentProvided (example = "srvcRemoteThread.sendMessages")
+	public abstract void callRemoteThreadSendMessages(boolean b);
 
 
 }

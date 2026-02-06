@@ -43,18 +43,19 @@ import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
+import com.viaoa.xml.OAXMLWriter;
 
 public class OAObjectService implements ObjectsInternalOps {
 	private static final Logger LOG = Logger.getLogger(OAObjectService.class.getName());
 
 	private HubService srvcHub;
 	private OASyncService srvcSync;
-	private OAThreadLocalService srvcOAThreadLocal;
-	private OARemoteThreadService srvcOARemoteThread;
+	private OAThreadLocalService srvcThreadLocal;
+	private OARemoteThreadService srvcRemoteThread;
+	private boolean bInitialized;
 	
 	private final OAObjectInternalBridge faBridge = new OAObjectInternalBridge();
 
-	
     private OAObjectAnnotationService srvcOAObjectAnnotation;
     private OAObjectCacheService srvcOAObjectCache;
     private OAObjectCallbackService srvcOAObjectCallback;
@@ -75,8 +76,6 @@ public class OAObjectService implements ObjectsInternalOps {
     private OAObjectLogService srvcOAObjectLog;
     private OAObjectPropertyService srvcOAObjectProperty;
     private OAObjectReflectService srvcOAObjectReflect;
-    
-    
     private OAObjectSaveService srvcOAObjectSave;
     private OAObjectSchedulerService srvcOAObjectScheduler;
     private OAObjectSerializeService srvcOAObjectSerialize;
@@ -124,15 +123,20 @@ public class OAObjectService implements ObjectsInternalOps {
     }
 	
 
-	private boolean bInitialized;
-	public void initialize(HubService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcOAThreadLocal, OARemoteThreadService srvcOARemoteThread) {
+	public synchronized void initialize(HubService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread) {
 		if (bInitialized) return;
+		
+    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
+    	if (srvcThreadLocal == null) throw new IllegalArgumentException("OAThreadLocalService can not be null");
+    	if (srvcRemoteThread == null) throw new IllegalArgumentException("OARemoteThreadService can not be null");
+
+		bInitialized = true;
+    	
 		this.srvcHub = srvcHub;
 		this.srvcSync = srvcSync;
-		if (srvcHub == null) return;
-		this.srvcOAThreadLocal = srvcOAThreadLocal;
-		this.srvcOARemoteThread = srvcOARemoteThread;
-		bInitialized = true;
+		this.srvcThreadLocal = srvcThreadLocal;
+		this.srvcRemoteThread = srvcRemoteThread;
 		
 		getOAObjectAnnotationService();
 		getOAObjectCacheService();
@@ -154,14 +158,12 @@ public class OAObjectService implements ObjectsInternalOps {
     	getOAObjectLogService();
     	getOAObjectPropertyService();
     	getOAObjectReflectService();
-    	
-    	
-    	srvcOAObjectSave = new OAObjectSaveService(this, faBridge.getObjectFriendAccess(), srvcHub);
-    	srvcOAObjectScheduler = new OAObjectSchedulerService(this, faBridge.getObjectFriendAccess());
-    	srvcOAObjectSerialize = new OAObjectSerializeService(this, faBridge.getObjectFriendAccess(), faBridge.getObjectSerializerFriendAccess(), srvcHub, srvcSync);
-    	srvcOAObjectSibling = new OAObjectSiblingService(this, faBridge.getObjectFriendAccess(), srvcHub);
-    	srvcOAObjectUnique = new OAObjectUniqueService(this, faBridge.getObjectFriendAccess(), srvcSync);
-    	srvcOAObjectXML = new OAObjectXMLService(this, faBridge.getObjectFriendAccess(), srvcHub);
+    	getOAObjectSaveService();
+    	getOAObjectSchedulerService();
+    	getOAObjectSerializeService();
+    	getOAObjectSiblingService();
+    	getOAObjectUniqueService();
+    	getOAObjectXMLService();
 	}
 
 	//qqqqqq remove, keep internal ?? qqqqq
@@ -233,7 +235,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public int getObjectCacheAddMode() {
-				return OAObjectService.this.srvcOAThreadLocal.getObjectCacheAddMode();
+				return OAObjectService.this.srvcThreadLocal.getObjectCacheAddMode();
 			}
 		};
     	return srvcOAObjectCache; 
@@ -351,20 +353,19 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public boolean shouldSendMessages() {
-				OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();
-				return srvcOARemoteThread.shouldSendMessages();
+				return OAObjectService.this.srvcRemoteThread.shouldSendMessages();
 			}
 			@Override
 			public boolean isSuppressCSMessages() {
-		        return srvcOAThreadLocal.isSuppressCSMessages();
+		        return srvcThreadLocal.isSuppressCSMessages();
 			}
 			@Override
 			public void setSuppressCSMessages(boolean b) {
-		        srvcOAThreadLocal.setSuppressCSMessages(b);
+		        srvcThreadLocal.setSuppressCSMessages(b);
 			}
 			@Override
 			public boolean isLoading() {
-		        return srvcOAThreadLocal.isLoading();
+		        return srvcThreadLocal.isLoading();
 			}
 			@Override
 			public OAObject getServerObject(Class clazz, OAObjectKey key) {
@@ -375,13 +376,15 @@ public class OAObjectService implements ObjectsInternalOps {
 			@Override
 			public boolean serverDelete(Class clazz, OAObjectKey key) {
 				RemoteSyncInterface rsi = OAObjectService.this.srvcSync.getRemoteSync();
-				if (rsi != null) rsi.serverDelete(clazz, key);
+				if (rsi == null) return false;
+				rsi.serverDelete(clazz, key);
 				return true;
 			}
 			@Override
 			public boolean clientDelete(Class clazz, OAObjectKey key) {
 				RemoteSyncInterface rsi = OAObjectService.this.srvcSync.getRemoteSync();
-				if (rsi != null) rsi.clientDelete(clazz, key);
+				if (rsi == null) return false;
+				rsi.clientDelete(clazz, key);
 				return true;
 			}
     	};
@@ -449,7 +452,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public void callLocalThreadSetDeleting(Object obj, boolean b) {
-				OAObjectService.this.srvcOAThreadLocal.setDeleting(obj, b);
+				OAObjectService.this.srvcThreadLocal.setDeleting(obj, b);
 			}
 			@Override
 			public boolean callSyncIsServer() {
@@ -501,7 +504,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public void callRemoteTheadStartNextThread() {
-				OAObjectService.this.srvcOARemoteThread.startNextThread();
+				OAObjectService.this.srvcRemoteThread.startNextThread();
 			}
 			@Override
 			public Object callReflectGetProperty(OAObject oaObj, String propPath) {
@@ -663,7 +666,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public void callRemoteThreadStartNextThread() {
-				OAObjectService.this.srvcOARemoteThread.startNextThread();
+				OAObjectService.this.srvcRemoteThread.startNextThread();
 			}
 			@Override
 			public void callReflectSetProperty(OAObject oaObj, String propName, Object value, String fmt) {
@@ -711,36 +714,36 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public void callLocalThreadSetSuppressCSMessages(boolean b) {
-				OAObjectService.this.srvcOAThreadLocal.setSuppressCSMessages(b);
+				OAObjectService.this.srvcThreadLocal.setSuppressCSMessages(b);
 			}
 			@Override
 			public void callLocalThreadSetDeleting(Object obj, boolean b) {
-				OAObjectService.this.srvcOAThreadLocal.setDeleting(obj, b);
+				OAObjectService.this.srvcThreadLocal.setDeleting(obj, b);
 			}
 			@Override
 			public void callLocalThreadRemoveHubEvent(HubEvent he) {
-				OAObjectService.this.srvcOAThreadLocal.removeHubEvent(he);
+				OAObjectService.this.srvcThreadLocal.removeHubEvent(he);
 			}
 			@Override
 			public boolean callLocalThreadIsLoading() {
 				// TODO Auto-generated method stub
-				return OAObjectService.this.srvcOAThreadLocal.isLoading();
+				return OAObjectService.this.srvcThreadLocal.isLoading();
 			}
 			@Override
 			public boolean callLocalThreadIsDeleting(OAObject obj) {
-				return OAObjectService.this.srvcOAThreadLocal.isDeleting(obj);
+				return OAObjectService.this.srvcThreadLocal.isDeleting(obj);
 			}
 			@Override
 			public boolean callLocalThreadIsDeleting() {
-				return OAObjectService.this.srvcOAThreadLocal.isDeleting();
+				return OAObjectService.this.srvcThreadLocal.isDeleting();
 			}
 			@Override
 			public boolean callLocalThreadGetCreateUndoablePropertyChanges() {
-				return OAObjectService.this.srvcOAThreadLocal.getCreateUndoablePropertyChanges();
+				return OAObjectService.this.srvcThreadLocal.getCreateUndoablePropertyChanges();
 			}
 			@Override
 			public void callLocalThreadAddHubEvent(HubEvent he) {
-				OAObjectService.this.srvcOAThreadLocal.addHubEvent(he);
+				OAObjectService.this.srvcThreadLocal.addHubEvent(he);
 			}
 			@Override
 			public String callKeyVerifyKeyChange(OAObject oaObj, OAObjectKey newObjectKey) {
@@ -764,7 +767,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public boolean callIsRemoteThread() {
-				return OAObjectService.this.srvcOARemoteThread.isRemoteThread();
+				return OAObjectService.this.srvcRemoteThread.isRemoteThread();
 			}
 			@Override
 			public Hub callInfoGetRootHub(OAObjectInfo oi) {
@@ -892,7 +895,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public boolean callRemoteThreadShouldSendMessages() {
-				return OAObjectService.this.srvcOARemoteThread.shouldSendMessages();
+				return OAObjectService.this.srvcRemoteThread.shouldSendMessages();
 			}
 			@Override
 			public Object callPropertyGetProperty(OAObject oaObj, String name) {
@@ -974,15 +977,15 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public boolean callThreadLocalSetLoading(boolean b) {
-				return OAObjectService.this.srvcOAThreadLocal.setLoading(b);
+				return OAObjectService.this.srvcThreadLocal.setLoading(b);
 			}
 			@Override
 			public boolean callThreadLocalIsLoading() {
-				return OAObjectService.this.srvcOAThreadLocal.isLoading();
+				return OAObjectService.this.srvcThreadLocal.isLoading();
 			}
 			@Override
 			public OAJson callThreadLocalGetOAJackson() {
-				return OAObjectService.this.srvcOAThreadLocal.getOAJackson();
+				return OAObjectService.this.srvcThreadLocal.getOAJackson();
 			}
 			@Override
 			public Object callReflectCreateNewObject(Class clazz) {
@@ -1013,14 +1016,6 @@ public class OAObjectService implements ObjectsInternalOps {
 				return getOAObjectReflectService().getProperty(oaObj, propPath);
 			}
 			@Override
-			public OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi) {
-				return OAObjectService.this.getOAObjectInfoService().getReverseLinkInfo(thisLi);
-			}
-			@Override
-			public Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount) {
-				return OAObjectService.this.getOAObjectInfoService().getMethod(oi, methodName, argumentCount);
-			}
-			@Override
 			public void callAnnotationUpdateLinkFkeys(OAObjectInfo oi) {
 				OAObjectService.this.getOAObjectAnnotationService().updateLinkFkeys(oi);
 			}
@@ -1034,7 +1029,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public void callAnnotationUpdate(OAObjectInfo oi, Class clazz) {
-				OAObjectService.this.getOAObjectAnnotationService().update2(oi, clazz);
+				OAObjectService.this.getOAObjectAnnotationService().update(oi, clazz);
 			}
 		}; 
     	return srvcOAObjectInfo;
@@ -1050,11 +1045,11 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public boolean callThreadLocalSetLoading(boolean b) {
-				return OAObjectService.this.srvcOAThreadLocal.setLoading(b);
+				return OAObjectService.this.srvcThreadLocal.setLoading(b);
 			}
 			@Override
 			public boolean callThreadLocalIsLoading() {
-				return OAObjectService.this.srvcOAThreadLocal.isLoading();
+				return OAObjectService.this.srvcThreadLocal.isLoading();
 			}
 			@Override
 			public boolean callSyncIsClient() {
@@ -1123,11 +1118,11 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public boolean callThreadLocalIsLoading() {
-				return OAObjectService.this.srvcOAThreadLocal.isLoading();
+				return OAObjectService.this.srvcThreadLocal.isLoading();
 			}
 			@Override
 			public int callThreadLocalGetObjectCacheAddMode() {
-				return OAObjectService.this.srvcOAThreadLocal.getObjectCacheAddMode();
+				return OAObjectService.this.srvcThreadLocal.getObjectCacheAddMode();
 			}
 			@Override
 			public boolean callReflectIsReferenceObjectLoadedAndNotEmpty(OAObject oaObj, String propertyName) {
@@ -1139,7 +1134,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public boolean callIsRemoteThread() {
-				return OAObjectService.this.srvcOARemoteThread.isRemoteThread();
+				return OAObjectService.this.srvcRemoteThread.isRemoteThread();
 			}
 			@Override
 			public boolean callInfoIsIdProperty(OAObjectInfo oi, String propertyName) {
@@ -1253,7 +1248,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public void callRemoteThreadStartNextThread() {
-				OAObjectService.this.srvcOARemoteThread.startNextThread();
+				OAObjectService.this.srvcRemoteThread.startNextThread();
 			}
 			@Override
 			public Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
@@ -1304,31 +1299,31 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public void callThreadLocalSetSuppressCSMessages(boolean b) {
-				OAObjectService.this.srvcOAThreadLocal.setSuppressCSMessages(b);
+				OAObjectService.this.srvcThreadLocal.setSuppressCSMessages(b);
 			}
 			@Override
 			public void callThreadLocalSetLoading(boolean b) {
-				OAObjectService.this.srvcOAThreadLocal.setLoading(b);
+				OAObjectService.this.srvcThreadLocal.setLoading(b);
 			}
 			@Override
 			public void callThreadLocalRemoveSiblingHelper(OASiblingHelper sh) {
-				OAObjectService.this.srvcOAThreadLocal.removeSiblingHelper(sh);;
+				OAObjectService.this.srvcThreadLocal.removeSiblingHelper(sh);;
 			}
 			@Override
 			public boolean callThreadLocalIsLoading() {
-				return OAObjectService.this.srvcOAThreadLocal.isLoading();
+				return OAObjectService.this.srvcThreadLocal.isLoading();
 			}
 			@Override
 			public boolean callThreadLocalIsDeleting() {
-				return OAObjectService.this.srvcOAThreadLocal.isDeleting();
+				return OAObjectService.this.srvcThreadLocal.isDeleting();
 			}
 			@Override
 			public int callThreadLocalGetObjectCacheAddMode() {
-				return OAObjectService.this.srvcOAThreadLocal.getObjectCacheAddMode();
+				return OAObjectService.this.srvcThreadLocal.getObjectCacheAddMode();
 			}
 			@Override
 			public boolean callThreadLocalAddSiblingHelper(OASiblingHelper sh) {
-				return OAObjectService.this.srvcOAThreadLocal.addSiblingHelper(sh);
+				return OAObjectService.this.srvcThreadLocal.addSiblingHelper(sh);
 			}
 			@Override
 			public boolean callSyncIsObjectOnServer(OAObject obj) {
@@ -1400,7 +1395,7 @@ public class OAObjectService implements ObjectsInternalOps {
 			}
 			@Override
 			public boolean callIsRemoteThread() {
-				return OAObjectService.this.srvcOARemoteThread.isRemoteThread();
+				return OAObjectService.this.srvcRemoteThread.isRemoteThread();
 			}
 			@Override
 			public void callInitializeInitialize(OAObject oaObj, OAObjectInfo oi, boolean bInitializeNulls, boolean bInitializeWithDS, boolean bAddToCache, boolean bInitializeWithCS, boolean bSetChangedToFalse) {
@@ -1597,51 +1592,354 @@ public class OAObjectService implements ObjectsInternalOps {
 		}; 
     	return srvcOAObjectReflect;
     }
-    
-//qqqqqqqqqqqqqqq next    
-/*	
-	@OAParentProvided (example = "")
-	public abstract 
-
-	@OAParentProvided (example = "")
-	public abstract
-
-	@OAParentProvided (example = "")
-	public abstract 
-
-	@OAParentProvided (example = "")
-	public abstract
-*/	 
-
-    
-    
-    
-
-
 
     public OAObjectSaveService getOAObjectSaveService() {
+    	if (srvcOAObjectSave != null) return srvcOAObjectSave;
+    	srvcOAObjectSave = new OAObjectSaveService(faBridge.getObjectFriendAccess()) {
+			@Override
+			public boolean callCSIsWorkstation() {
+				return OAObjectService.this.getOAObjectCSService().isWorkstation();
+			}
+			@Override
+			public boolean callCSSave(OAObject oaObj, int iCascadeRule) {
+				return OAObjectService.this.getOAObjectCSService().save(oaObj, iCascadeRule);
+			}
+			@Override
+			public Hub[] callHubGetHubReferences(OAObject oaObj) {
+				return OAObjectService.this.getOAObjectHubService().getHubReferences(oaObj);
+			}
+			@Override
+			public OAObjectInfo getOAObjectInfo(OAObject obj) {
+				return OAObjectService.this.getOAObjectInfoService().getOAObjectInfo(obj);
+			}
+			@Override
+			public boolean callReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String propertyName) {
+				return OAObjectService.this.getOAObjectReflectService().isReferenceNullOrNotLoaded(oaObj, propertyName);
+			}
+			@Override
+			public Object callReflectGetProperty(OAObject oaObj, String propPath) {
+				return OAObjectService.this.getOAObjectReflectService().getProperty(oaObj, propPath);
+			}
+			@Override
+			public OAObjectInfo getOAObjectInfo(Class clazz) {
+				return OAObjectService.this.getOAObjectInfoService().getOAObjectInfo(getClass());
+			}
+			@Override
+			public void callDSSaveWithoutReferences(OAObject oaObj) {
+				OAObjectService.this.getOAObjectDSService().saveWithoutReferences(oaObj);
+			}
+			@Override
+			public void callSetNew(OAObject oaObj, boolean b) {
+				OAObjectService.this.setNew(oaObj, b);
+			}
+			@Override
+			public void callHubSaveAll(Hub hub, int iCascadeRule, OACascade cascade) {
+				OAObjectService.this.getOAObjectHubService().saveAll(hub, iCascadeRule, cascade);
+			}
+			@Override
+			public Object callReflectGetRawReference(OAObject oaObj, String name) {
+				return OAObjectService.this.getOAObjectReflectService().getRawReference(oaObj, name);
+			}
+			@Override
+			public void callDSSave(OAObject oaObj) {
+				OAObjectService.this.getOAObjectDSService().save(oaObj);
+			}
+			@Override
+			public void callLogLogToXmlFile(OAObject oaObj, boolean bSave) {
+				OAObjectService.this.getOAObjectLogService().logToXmlFile(oaObj, bSave);
+			}
+			@Override
+			public void callHubEventFireBeforeSaveEvent(Hub thisHub, OAObject obj) {
+				OAObjectService.this.srvcHub.getHubEventService().fireBeforeSaveEvent(thisHub, obj);
+			}
+			@Override
+			public void callHubEventFireAfterSaveEvent(Hub thisHub, OAObject obj) {
+				OAObjectService.this.srvcHub.getHubEventService().fireAfterSaveEvent(thisHub, obj);
+			}
+			@Override
+			public boolean callThreadLocalIsDeleting() {
+				return OAObjectService.this.srvcThreadLocal.isDeleting();
+			}
+    	};
     	return srvcOAObjectSave;
     }
     
     public OAObjectSchedulerService getOAObjectSchedulerService() {
+    	if (srvcOAObjectScheduler != null) return srvcOAObjectScheduler;
+    	srvcOAObjectScheduler = new OAObjectSchedulerService() {
+			@Override
+			public OAObjectInfo getObjectInfo(OAObject obj) {
+				return OAObjectService.this.getOAObjectInfoService().getOAObjectInfo(obj);
+			}
+		};
     	return srvcOAObjectScheduler;
     }
-
-    public OAObjectUniqueService getOAObjectUniqueService() {
-    	return srvcOAObjectUnique;
-    }
+    
 
     public OAObjectSerializeService getOAObjectSerializeService() {
+    	if (srvcOAObjectSerialize != null) return srvcOAObjectSerialize;
+    	
+    	srvcOAObjectSerialize = new OAObjectSerializeService(faBridge.getObjectSerializerFriendAccess()) {
+			@Override
+			public void callGuidSetGuid(OAObject oaObj, UUID guid) {
+				OAObjectService.this.getOAObjectGuidService().setGuid(oaObj, guid);
+			}
+			@Override
+			public OAObjectInfo getOAObjectInfo(Class clazz) {
+				return OAObjectService.this.getOAObjectInfoService().getOAObjectInfo(clazz);
+			}
+			@Override
+			public void callPropertyUnsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value) {
+				OAObjectService.this.getOAObjectPropertyService().unsafeSetPropertyIfEmpty(oaObj, name, value);				
+			}
+			@Override
+			public UUID callGuidGetGuid(OAObject oaObj) {
+				return OAObjectService.this.getOAObjectGuidService().getGuid(oaObj);
+			}
+			@Override
+			public void callGuiAssignGuid(OAObject obj) {
+				OAObjectService.this.getOAObjectGuidService().assignGuid(obj);				
+			}
+			@Override
+			public OAObjectInfo getOAObjectInfo(OAObject obj) {
+				return OAObjectService.this.getOAObjectInfoService().getOAObjectInfo(obj);
+			}
+			@Override
+			public OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread) {
+				return OAObjectService.this.getOAObjectCacheService().add(obj, bErrorIfExists, bAddToSelectAll, bSendAddEventInAnotherThread);
+			}
+			@Override
+			public Object[] callGetProperties(OAObject obj) {
+				return OAObjectService.this.getProperties(obj);
+			}
+			@Override
+			public Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
+				return OAObjectService.this.getOAObjectPropertyService().getProperty(oaObj, name, bReturnNotExist, bConvertWeakRef);
+			}
+			@Override
+			public OAObjectKey callKeyGetKey(OAObject oaObj) {
+				return OAObjectService.this.getOAObjectKeyService().getKey(oaObj);
+			}
+			@Override
+			public boolean callKeyIsForSameOAObject(Class<? extends OAObject> clazz, OAObjectKey ok1, OAObjectKey ok2) {
+				return OAObjectService.this.getOAObjectKeyService().isForSameOAObject(clazz, ok1, ok2);
+			}
+			@Override
+			public Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue) {
+				return OAObjectService.this.getOAObjectPropertyService().setPropertyCAS(oaObj, name, newValue, matchValue);
+			}
+			@Override
+			public OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName) {
+				return OAObjectService.this.getOAObjectInfoService().getLinkInfo(oi, propertyName);
+			}
+			@Override
+			public boolean callPropertyAttemptPropertyLock(OAObject oaObj, String name) {
+				return OAObjectService.this.getOAObjectPropertyService().attemptPropertyLock(oaObj, name);
+			}
+			@Override
+			public Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist, boolean bReturnNotExist) {
+				return OAObjectService.this.getOAObjectPropertyService().setPropertyCAS(oaObj, name, newValue, matchValue, bMustNotExist, bReturnNotExist);
+			}
+			@Override
+			public void callPropertyReleasePropertyLock(OAObject oaObj, String name) {
+				OAObjectService.this.getOAObjectPropertyService().releasePropertyLock(oaObj, name);				
+			}
+			@Override
+			public boolean callInfoCacheHub(OALinkInfo li, Hub hub) {
+				return OAObjectService.this.srvcOAObjectInfo.cacheHub(li, hub);
+			}
+			@Override
+			public boolean callCSIsServer() {
+				return OAObjectService.this.srvcOAObjectCS.isServer();
+			}
+			@Override
+			public int callHubSerializeReplaceObject(Hub thisHub, OAObject objFrom, OAObject objTo) {
+				return OAObjectService.this.srvcOAObjectSerialize.callHubSerializeReplaceObject(thisHub, objFrom, objTo);
+			}
+			@Override
+			public boolean callHubSerializeIsResolved(Hub thisHub) {
+				return OAObjectService.this.srvcHub.getHubSerializeService().isResolved(thisHub);
+			}
+			@Override
+			public void callHubSerializeReplaceMasterObject(Hub thisHub, OAObject objFrom, OAObject objTo) {
+				OAObjectService.this.srvcHub.getHubSerializeService().replaceMasterObject(thisHub, objFrom, objTo);				
+			}
+			@Override
+			public HubAutoMatch callHubGetAutoMatch(Hub thisHub) {
+				return OAObjectService.this.srvcHub.getAutoMatch(thisHub);
+			}
+			@Override
+			public boolean callSyncClientIsObjectOnServer(OAObject obj) {
+				return OAObjectService.this.srvcSync.getSyncClient().isObjectOnServer(obj);
+			}
+			@Override
+			public void callSyncClientObjectSentToServer(OAObject obj) {
+				OAObjectService.this.srvcSync.getSyncClient().objectSentToServer(obj);				
+			}
+    	};
     	return srvcOAObjectSerialize;
     }
     
+    
     public OAObjectSiblingService getOAObjectSiblingService() {
+    	if (srvcOAObjectSibling != null) return srvcOAObjectSibling;
+    	
+    	srvcOAObjectSibling = new OAObjectSiblingService() {
+			@Override
+			public ArrayList<OASiblingHelper> callThreadLocalGetSiblingHelpers() {
+				return OAObjectService.this.srvcThreadLocal.getSiblingHelpers();
+			}
+			@Override
+			public int callThreadLocalGetAndIncrementGetSiblingCalledCount() {
+				return OAObjectService.this.srvcThreadLocal.getAndIncrementGetSiblingCalledCount();
+			}
+			@Override
+			public void callThreadLocalClearGetSiblingCalledCount() {
+				OAObjectService.this.srvcThreadLocal.clearGetSiblingCalledCount();
+			}
+			@Override
+			public Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
+				return OAObjectService.this.getOAObjectPropertyService().getProperty(oaObj, name, bReturnNotExist, bConvertWeakRef);
+			}
+			@Override
+			public OALinkInfo callInfoGetLinkInfo(Class fromClass, Class toClass) {
+				return OAObjectService.this.getOAObjectInfoService().getLinkInfo(fromClass, toClass);
+			}
+			@Override
+			public OALinkInfo callInfoGetLinkInfo(Class clazz, String propertyName) {
+				return OAObjectService.this.getOAObjectInfoService().getLinkInfo(clazz, propertyName);
+			}
+			@Override
+			public Hub[] callHubGetHubReferences(OAObject oaObj) {
+				return OAObjectService.this.getOAObjectHubService().getHubReferences(oaObj);
+			}
+			@Override
+			public OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub thisDetailHub) {
+				return OAObjectService.this.srvcHub.getHubDetailService().getLinkInfoFromMasterToDetail(thisDetailHub);
+			}
+			@Override
+			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub thisDetailHub) {
+				return OAObjectService.this.srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail(thisDetailHub);
+			}
+			@Override
+			public OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub) {
+				return OAObjectService.this.srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
+			}
+			@Override
+			public <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok) {
+				return OAObjectService.this.getOAObjectCacheService().get(clazz, ok);
+			}
+		}; 
     	return srvcOAObjectSibling;
     }
     
+    public OAObjectUniqueService getOAObjectUniqueService() {
+    	if (srvcOAObjectUnique != null) return srvcOAObjectUnique;
+    	srvcOAObjectUnique = new OAObjectUniqueService() {
+			@Override
+			public void callThreadLocalSetLoading(boolean b) {
+				OAObjectService.this.srvcThreadLocal.setLoading(b);				
+			}
+			@Override
+			public OAObject callSyncClientGetUnique(Class<? extends OAObject> clazz, String propertyName, Object uniqueKey, boolean bAutoCreate) {
+				OASyncClient sc = OAObjectService.this.srvcSync.getSyncClient();
+				RemoteServerInterface rsi;
+				try {
+					rsi = sc.getRemoteServer();
+				}
+				catch (Exception e) {
+					throw new RuntimeException("Could not get remote server ", e);
+				}
+				return rsi.getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
+			}
+			@Override
+			public Object callReflectCreateNewObject(Class clazz) {
+				return OAObjectService.this.getOAObjectReflectService().createNewObject(clazz);
+			}
+			@Override
+			public Object callCacheFind(Class clazz, String propertyPath, Object findObject) {
+				return OAObjectService.this.getOAObjectCacheService().find(clazz, propertyPath, findObject);
+			}
+			@Override
+			public boolean callCSIsClient() {
+				return OAObjectService.this.getOAObjectCSService().isClient();
+			}
+		};
+    	return srvcOAObjectUnique;
+    }
+    
     public OAObjectXMLService getOAObjectXMLService() {
+//  srvcOAObjectXML = new OAObjectXMLService(this, faBridge.getObjectFriendAccess(), srvcHub);
+    	if (srvcOAObjectXML != null) return srvcOAObjectXML;
+
+    	srvcOAObjectXML = new OAObjectXMLService() {
+			@Override
+			public OAObjectInfo getOAObjectInfo(OAObject obj) {
+				return OAObjectService.this.getOAObjectInfoService().getOAObjectInfo(obj);
+			}
+			@Override
+			public Object callReflectGetProperty(OAObject oaObj, String propPath) {
+				return OAObjectService.this.getOAObjectReflectService().getProperty(oaObj, propPath);
+			}
+			@Override
+			public String[] callPropertyGetPropertyNames(OAObject oaObj) {
+				return OAObjectService.this.getOAObjectPropertyService().getPropertyNames(oaObj);
+			}
+			@Override
+			public Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
+				return OAObjectService.this.getOAObjectPropertyService().getProperty(oaObj, name, bReturnNotExist, bConvertWeakRef);
+			}
+			@Override
+			public OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName) {
+				return OAObjectService.this.getOAObjectInfoService().getLinkInfo(oi, propertyName);
+			}
+			@Override
+			public void callHubXMLWrite(Hub thisHub, OAXMLWriter ow, String tagName, int writeType, OACascade cascade) {
+				srvcHub.getHubXMLService().write(thisHub, ow, tagName, bInitialized, cascade);
+			}
+			@Override
+			public UUID callGuidGetGuid(OAObject oaObj) {
+				return OAObjectService.this.getOAObjectGuidService().getGuid(oaObj);
+			}
+		};
     	return srvcOAObjectXML;
     }
+
+    
+    
+//qqqqqqqqqqqqqqq next    
+/*	
+
+    	@OAParentProvided (example = "")
+    	public abstract
+
+    	@OAParentProvided (example = "")
+    	public abstract 
+
+    	@OAParentProvided (example = "")
+    	public abstract
+
+    	@OAParentProvided (example = "")
+    	public abstract
+
+    	@OAParentProvided (example = "")
+    	public abstract 
+
+    	@OAParentProvided (example = "")
+    	public abstract
+
+    	@OAParentProvided (example = "")
+    	public abstract
+
+    	@OAParentProvided (example = "")
+    	public abstract 
+
+    	@OAParentProvided (example = "")
+    	public abstract
+    */	 
+
+    
+    
     
 	/**
 	 * Updates the {@code newFlag} of the specified {@link OAObject} and fires the
@@ -2107,9 +2405,8 @@ public class OAObjectService implements ObjectsInternalOps {
 			return;
 		}
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		try {
-			srvcOAThreadLocal.setSuppressCSMessages(true);
+			srvcThreadLocal.setSuppressCSMessages(true);
 			// need to see if object should be put into linkOne/masterObject hub(s)
 			OAObjectInfo oi = getOAObjectInfoService().getOAObjectInfo(oaObj);
 			for (OALinkInfo li : oi.getLinkInfos()) {
@@ -2145,7 +2442,7 @@ public class OAObjectService implements ObjectsInternalOps {
 				}
 			}
 		} finally {
-			srvcOAThreadLocal.setSuppressCSMessages(false);
+			srvcThreadLocal.setSuppressCSMessages(false);
 		}
 	}
 

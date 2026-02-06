@@ -3,10 +3,10 @@ package com.viaoa.graph.service.object;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
@@ -21,24 +21,10 @@ import com.viaoa.util.OAString;
 import com.viaoa.util.OATime;
 import com.viaoa.xml.OAXMLWriter;
 
-public class OAObjectXMLService {
+public abstract class OAObjectXMLService {
 	private static final Logger LOG = Logger.getLogger(OAObjectXMLService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
-	private final HubService srvcHub;
-	
-    public OAObjectXMLService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, HubService srvcHub) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-    	this.faObject = oaObjectFriendAccess;
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-    	this.srvcHub = srvcHub;
-    }
-    
-    public OAObjectService getObjectService() {
-    	return srvcObject;
+    public OAObjectXMLService() {
     }
 
 	/**
@@ -127,7 +113,7 @@ public class OAObjectXMLService {
 	private void _write(final OAObject oaObj, final OAXMLWriter ow, String tagName, boolean bKeyOnly, final OACascade cascade,
 			final boolean bWriteClassName) {
 		Class c = oaObj.getClass();
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(oaObj);
+		OAObjectInfo oi = getOAObjectInfo(oaObj);
 
 		// 20150909
 		if (!bKeyOnly) {
@@ -139,9 +125,9 @@ public class OAObjectXMLService {
 		}
 		String attrib = " ";
 		if (bKeyOnly) {
-			attrib += "idref=\"g" + srvcObject.getOAObjectGuidService().getGuid(oaObj) + "\"";
+			attrib += "idref=\"g" + callGuidGetGuid(oaObj) + "\"";
 		} else {
-			attrib += "id=\"g" + srvcObject.getOAObjectGuidService().getGuid(oaObj) + "\"";
+			attrib += "id=\"g" + callGuidGetGuid(oaObj) + "\"";
 		}
 
 		if ((bWriteClassName && !bKeyOnly) || tagName == null) {
@@ -174,7 +160,7 @@ public class OAObjectXMLService {
 			OAPropertyInfo pi = (OAPropertyInfo) alProp.get(i);
 
 			String propName = pi.getName();
-			Object value = srvcObject.getOAObjectReflectService().getProperty(oaObj, propName);
+			Object value = callReflectGetProperty(oaObj, propName);
 			if (value == null) {
 				continue;
 			}
@@ -238,7 +224,7 @@ public class OAObjectXMLService {
 
 			// Method m = oi.getPropertyMethod(c, "get"+li.getProperty());
 			// if (m == null) continue;
-			Object obj = srvcObject.getOAObjectReflectService().getProperty(oaObj, li.getName());
+			Object obj = callReflectGetProperty(oaObj, li.getName());
 			// Object obj = ClassModifier.getPropertyValue(this, m);
 			if (obj == null && !ow.getIncludeNullProperties()) {
 				continue;
@@ -256,19 +242,19 @@ public class OAObjectXMLService {
 				} else if (obj instanceof Hub) {
 					Hub h = (Hub) obj;
 					if (h.getSize() > 0 || ow.getIncludeEmptyHubs()) {
-						srvcHub.getHubXMLService().write(h, ow, li.getName(), x, cascade); // 2006/09/26
+						callHubXMLWrite(h, ow, li.getName(), x, cascade); // 2006/09/26
 					}
 				}
 			}
 		}
 		if (!bKeyOnly) {
-			String[] propNames = srvcObject.getOAObjectPropertyService().getPropertyNames(oaObj);
+			String[] propNames = callPropertyGetPropertyNames(oaObj);
 			for (int i = 0; propNames != null && i < propNames.length; i++) {
 				String key = propNames[i];
-				if (srvcObject.getOAObjectInfoService().getLinkInfo(oi, key) != null) {
+				if (callInfoGetLinkInfo(oi, key) != null) {
 					continue;
 				}
-				Object value = srvcObject.getOAObjectPropertyService().getProperty(oaObj, key, false, true);
+				Object value = callPropertyGetProperty(oaObj, key, false, true);
 				if (value == null) {
 					continue;
 				}
@@ -337,4 +323,24 @@ public class OAObjectXMLService {
 		return false;
 	}
 
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo getOAObjectInfo(OAObject obj);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
+	public abstract UUID callGuidGetGuid(OAObject oaObj); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
+	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getPropertyNames")
+	public abstract String[] callPropertyGetPropertyNames(OAObject oaObj);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName); 
+
+	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
+	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
+
+	@OAParentProvided (example = "srvcHub.getHubXMLService().write")
+	public abstract void callHubXMLWrite(Hub thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade);
 }

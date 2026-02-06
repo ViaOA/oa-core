@@ -2,38 +2,16 @@ package com.viaoa.graph.service.object;
 
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OASelect;
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.OAObjectService;
-import com.viaoa.graph.service.OASyncService;
-import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
-import com.viaoa.sync.OASyncClient;
-import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.util.OAString;
 
-public class OAObjectUniqueService {
+public abstract class OAObjectUniqueService {
 	private static final Logger LOG = Logger.getLogger(OAObjectUniqueService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final OAObject.FriendAccess faObject;
-	private final OASyncService srvcSync;
-	
-    public OAObjectUniqueService(OAObjectService srvcObject, OAObject.FriendAccess oaObjectFriendAccess, OASyncService srvcSync) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
-    	this.faObject = oaObjectFriendAccess;
-    	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
-    	this.srvcSync = srvcSync;
+    public OAObjectUniqueService() {
     }
-
-    
     
     private final Object Lock = new Object();
 
@@ -72,21 +50,16 @@ public class OAObjectUniqueService {
         if (uniqueKey == null) return null;
         if (OAString.isEmpty(propertyName)) return null;
         
-        OAObject oaObj = (OAObject) srvcObject.getOAObjectCacheService().find(clazz, propertyName, uniqueKey);
+        OAObject oaObj = (OAObject) callCacheFind(clazz, propertyName, uniqueKey);
         if (oaObj != null) return oaObj;
         
         // not found
-        if (srvcSync.isClient()) {
-    		final OAGraphImpl og = (OAGraphImpl) (OARuntime.graph(clazz));
-            OASyncClient sc = og.getSyncService().getSyncClient();
-            RemoteServerInterface rs;
+        if (callCSIsClient()) {
+        	
+        	
             try {
-                rs = sc.getRemoteServer();
-
-                if (rs != null) {
-                    oaObj = rs.getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
-                    return oaObj;
-                }
+            	oaObj = callSyncClientGetUnique(clazz, propertyName, uniqueKey, bAutoCreate);
+                return oaObj;
             }
             catch (Exception e) {
                 throw new RuntimeException("getUnique() getRemoteServer() exception", e);
@@ -105,18 +78,31 @@ public class OAObjectUniqueService {
         synchronized (Lock) {
             oaObj = getUnique(clazz, propertyName, uniqueKey, false);
             if (oaObj != null) return oaObj;
-            oaObj = (OAObject) srvcObject.getOAObjectReflectService().createNewObject(clazz);
-        	final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+            oaObj = (OAObject) callReflectCreateNewObject(clazz);
             try {
-            	srvcOAThreadLocal.setLoading(true);
+            	callThreadLocalSetLoading(true);
                 oaObj.setProperty(propertyName, uniqueKey);
             }
             finally {
-            	srvcOAThreadLocal.setLoading(false);
+            	callThreadLocalSetLoading(false);
             }
         }
         
         return oaObj;
     }
 
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().find")
+	public abstract Object callCacheFind(Class clazz, String propertyPath, Object findObject);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().createNewObject")
+	public abstract Object callReflectCreateNewObject(Class clazz); 
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectCSService().isClient)")
+	public abstract boolean callCSIsClient();
+
+	@OAParentProvided (example = "srvcSync.getSyncClient().getRemoteServer().getUnique")
+	public abstract OAObject callSyncClientGetUnique(Class<? extends OAObject> clazz, final String propertyName, Object uniqueKey, boolean bAutoCreate);
+
+	@OAParentProvided (example = "srvcOAThreadLocal.setLoading")
+	public abstract void callThreadLocalSetLoading(boolean b);
 }
