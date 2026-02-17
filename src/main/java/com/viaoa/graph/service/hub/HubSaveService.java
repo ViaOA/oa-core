@@ -2,26 +2,16 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OACascade;
+import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 
-public class HubSaveService {
+public abstract class HubSaveService {
 	private final Logger LOG = Logger.getLogger(HubSaveService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
-	private final Hub.FriendAccess faHub;
-	
-	public HubSaveService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-    	this.srvcHub = srvcHub;
-    	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
-    	this.faHub = faHub;
+	public HubSaveService() {
 	}
 
 	/**
@@ -35,7 +25,7 @@ public class HubSaveService {
 	 */
     public void saveAll(Hub thisHub, int cascadeRule) {
         OACascade cascade = new OACascade(); 
-        srvcHub.getHubSaveService().saveAll(thisHub, cascadeRule, cascade);
+        saveAll(thisHub, cascadeRule, cascade);
     }
 	
     /*
@@ -82,7 +72,7 @@ public class HubSaveService {
 	            Object obj = thisHub.elementAt(i);
 	            if (obj == null) break;
 	            if (b) {
-	            	srvcObject.getOAObjectSaveService().save((OAObject)obj, iCascadeRule, cascade);
+	            	callObjectSaveSave((OAObject)obj, iCascadeRule, cascade);
 	            }
 	            else {
 	            	// srvcObject.getOAObjectDSService().save(obj, true);  // true=insert.  Could be update?
@@ -92,29 +82,46 @@ public class HubSaveService {
         }
         else {
 	        // if Many2Many, then save all Added objects that are New, so that a valid DB record exists before calling updateHubAddsAndRemoves()
-			HubDataMaster dm = srvcHub.getHubDetailService().getDataMaster(thisHub);
-	        bM2M = dm.getDetailToMasterLinkInfo() != null && srvcObject.getOAObjectInfoService().isMany2Many(dm.getDetailToMasterLinkInfo());
+			HubDataMaster dm = callHubDetailGetDataMaster(thisHub);
+	        bM2M = dm.getDetailToMasterLinkInfo() != null && callObjectInfoIsMany2Many(dm.getDetailToMasterLinkInfo());
 	        
 	        if (bM2M) {
-		        OAObject[] objAdds = srvcHub.getHubDataService().getAddedObjects(thisHub);
+		        OAObject[] objAdds = callHubDataGetAddedObjects(thisHub);
 	        	for (int i=0; objAdds!=null && i<objAdds.length; i++) {
 	        		OAObject obj = objAdds[i];
 	        		if (obj != null && ((OAObject)obj).getNew()) {
-	        			srvcObject.getOAObjectSaveService()._saveObjectOnly((OAObject) obj, cascade);
+	        			callObjectSaveSaveObjectOnly((OAObject) obj, cascade);
 	        		}
 	        	}
 	        }
         }
         
-        srvcHub._updateHubAddsAndRemoves(thisHub, iCascadeRule, cascade, true);
+        callHub_updateHubAddsAndRemoves(thisHub, iCascadeRule, cascade, true);
     	thisHub.setChanged(false); // removes all vecAdd, vecRemove objects
     	
-    	srvcHub.setReferenceable(thisHub, false);
+    	callHubSetReferenceable(thisHub, false);
     }
 
+	@OAParentProvided (example = "srvcObject.getOAObjectSaveService().save")
+	public abstract void callObjectSaveSave(OAObject oaObj, int iCascadeRule, OACascade cascade);
 	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many")
+	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo thisLi);
 	
-	
+	@OAParentProvided (example = "srvcObject.getOAObjectSaveService()._saveObjectOnly")
+	public abstract void callObjectSaveSaveObjectOnly(OAObject oaObj, OACascade cascade);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getDataMaster")
+	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.getHubDataService().getAddedObjects")
+	public abstract OAObject[] callHubDataGetAddedObjects(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
+	public abstract void callHub_updateHubAddsAndRemoves(final Hub thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
+
+	@OAParentProvided (example = "srvcHub.setReferenceable")
+	public abstract void callHubSetReferenceable(Hub hub, boolean bReferenceable);
 }
 
 

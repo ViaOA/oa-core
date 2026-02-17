@@ -115,7 +115,7 @@ public class OrderNoteModel extends OAObjectModel {
         modelOrder.setAllowSearch(false);
         modelOrder.setAllowHubSearch(true);
         modelOrder.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelOrder.setCreateUI(li == null || !OrderNote.P_Order.equalsIgnoreCase(li.getName()) );
         modelOrder.setViewOnly(getViewOnly());
         // call OrderNote.orderModelCallback(OrderModel) to be able to customize this model

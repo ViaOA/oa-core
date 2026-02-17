@@ -40,9 +40,9 @@ public class OAObjectInfoDelegateTest extends OAUnitTest {
 		};
 
 		// setup
-		OAObjectInfo oiProgram = OAObjectInfoDelegate.getOAObjectInfo(Program.class);
-		OAObjectInfo oiLocation = OAObjectInfoDelegate.getOAObjectInfo(Location.class);
-		OAObjectInfo oiEmployee = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+		OAObjectInfo oiProgram = OAObjectInfoDelegate.callInfoGetObjectInfo(Program.class);
+		OAObjectInfo oiLocation = OAObjectInfoDelegate.callInfoGetObjectInfo(Location.class);
+		OAObjectInfo oiEmployee = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
 		OALinkInfo liProgramLocations = oiProgram.getLinkInfo(ProgramPP.locations().pp);
 		OALinkInfo liLocationEmployees = oiLocation.getLinkInfo(LocationPP.employees().pp);
@@ -163,7 +163,7 @@ public class OAObjectInfoDelegateTest extends OAUnitTest {
 
 	@Test
 	public void testRecursive() {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Location.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Location.class);
 
 		OAObjectInfoDelegate.getObjectInfoMap().clear();
 
@@ -186,7 +186,7 @@ public class OAObjectInfoDelegateTest extends OAUnitTest {
 	public void testLinkToOwner() {
 		OAObjectInfoDelegate.getObjectInfoMap().clear();
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Location.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Location.class);
 
 		OALinkInfo li = OAObjectInfoDelegate.getLinkToOwner(oi);
 
@@ -195,7 +195,7 @@ public class OAObjectInfoDelegateTest extends OAUnitTest {
 
 	//@Test
 	public void testNulls() {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(EmailType.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(EmailType.class);
 
 		//           7=128  6=64  5=32   4=16  3=8  2=4  1=2 0=1 
 		// bit[7]=aTestFlag, 6=id, 5=seq, 4=testflag, 5=type
@@ -255,7 +255,7 @@ public class OAObjectInfoDelegateTest extends OAUnitTest {
 
 	//@Test
 	public void testNulls2() {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(CurrencyType.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(CurrencyType.class);
 
 		String[] ss = oi.getPrimitiveProperties();
 		assertNotNull(ss);

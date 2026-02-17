@@ -14,7 +14,7 @@ public class OAAnnotationVerifierTest extends OAUnitTest {
         DataSource ds = new DataSource();
         ds.open();
         
-        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(Server.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Server.class);
         
         OAAnnotationVerifier v = new OAAnnotationVerifier();
         v.verify(oi);
@@ -45,7 +45,7 @@ public class OAAnnotationVerifierTest extends OAUnitTest {
         DataSource ds = new DataSource();
         ds.open();
         
-        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(Server.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Server.class);
         
         OAAnnotationVerifier v = new OAAnnotationVerifier();
         

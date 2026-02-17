@@ -38,7 +38,7 @@ public final class OARuntime {
 		
 		graphDefault = new OAGraphImpl(this, null);
 		try {
-			((OAGraphImpl)graphDefault).init();
+			((OAGraphImpl)graphDefault).initialize();
 		}
 		catch (Exception e) {}
 	}
@@ -73,7 +73,7 @@ public final class OARuntime {
 		hmPackageGraph2.clear();
 			
 		try {
-			((OAGraphImpl)og).init();
+			((OAGraphImpl)og).initialize();
 		} catch (ClassNotFoundException | IOException e) {
 			RuntimeException ex = new RuntimeException("Could not initialize OAGraph, package name is " + pkgName, e);
 			hmPackageGraph.remove(pkgName);

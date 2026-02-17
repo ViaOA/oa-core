@@ -18,7 +18,7 @@ package com.viaoa.context;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
@@ -52,7 +52,7 @@ import com.viaoa.util.OAString;
  * All context-based associations are stored in thread-safe maps using
  * {@link WeakReference} so entries automatically expire when the context is no
  * longer referenced. The special server thread (no context set) receives
- * elevated default permissions when {@link com.viaoa.sync.OASync#isServer()}
+ * elevated default permissions when {@link com.viaoa.sync.OASync#callSyncIsServer()}
  * is true.
  *
  * OAContext acts as the bridge between the OA object graph, thread-local
@@ -152,10 +152,10 @@ public class OAContext {
 
 		final OAObject oaObj = getContextObject(context);
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
 		
 		// default for main server thread (context=null) is always true
-		if (context == NullContext && og.getSyncService().isServer()) {
+		if (context == NullContext && og.syncInternal().isServer()) {
 			if (oaObj == null) {
 				return true;
 			}
@@ -222,10 +222,10 @@ public class OAContext {
 		}
 
 		final OAObject oaObj = getContextObject(context);
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
 
 		// default for main server thread (context=null) is always true
-		if (context == NullContext && og.getSyncService().isServer()) {
+		if (context == NullContext && og.syncInternal().isServer()) {
 			if (oaObj == null) {
 				return true;
 			}
@@ -327,10 +327,10 @@ public class OAContext {
 		}
 
 		final OAObject oaObj = getContextObject(context);
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
 
 		// default for main server thread (context=null) is always true
-		if (context == NullContext && og.getSyncService().isServer()) {
+		if (context == NullContext && og.syncInternal().isServer()) {
 			if (oaObj == null) {
 				return true;
 			}

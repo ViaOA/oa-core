@@ -139,7 +139,7 @@ public class AppUserLoginModel extends OAObjectModel {
 		modelAppUser.setAllowSearch(false);
 		modelAppUser.setAllowHubSearch(false);
 		modelAppUser.setAllowGotoEdit(false);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelAppUser.setCreateUI(li == null || !AppUserLogin.P_AppUser.equalsIgnoreCase(li.getName()));
 		modelAppUser.setViewOnly(getViewOnly());
 		// call AppUserLogin.appUserModelCallback(AppUserModel) to be able to customize this model

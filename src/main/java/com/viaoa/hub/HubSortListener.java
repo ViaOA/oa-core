@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;
@@ -55,7 +55,7 @@ import com.viaoa.util.*;
  *       of sorting is intentionally suppressed.</li>
  *   <li>Implements {@link java.io.Serializable} for Hub graph persistence.</li>
  *   <li>Thread-safe under OA’s single-threaded event model; employs
- *       {@link OAThreadLocalDelegate#setSuppressCSMessages(boolean)} to
+ *       {@link OAThreadLocalDelegate#callThreadLocalSetSuppressCSMessages(boolean)} to
  *       prevent cross-client event storms.</li>
  * </ul>
  */
@@ -278,11 +278,11 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
     public @Override void onNewList(HubEvent e) {
         Hub h = (Hub) e.getSource();
         if (h == hub) {
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
             // 20101009 another thread could be making Hub changes, so this could fail - adding try..catch
             for (int i=0; i<3; i++) {
                 try {
-                    og.getHubService().getHubSortService().resort(hub);
+                    og.hubsInternal().callHubSortResort(hub);
                     break;
                 }
                 catch (Exception ex) {
@@ -313,8 +313,8 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
             try {
                 bCallingSortMove = true;
                 srvcOAThreadLocal.setSuppressCSMessages(true);  // each client will handle it's own sorting
-        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-                og.getHubService().getHubAddRemoveService().sortMove(hub, e.getObject());
+        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+                og.hubsInternal().callHubAddRemoveSortMove(hub, e.getObject());
             }
             finally {
                 bCallingSortMove = false;

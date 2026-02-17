@@ -38,12 +38,12 @@ public class HubFilterTest extends OAUnitTest {
 		hf.addDependentProperty(Employee.P_FirstName);
 
 		// make sure that a hubMerger is not created
-		HubListener[] hls = HubEventDelegate.getAllListeners(hubMaster);
+		HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubMaster);
 		assertNotNull(hls);
 		assertEquals(1, hls.length);
 
 		hf.addDependentProperty(Employee.P_Location + "." + Location.P_Name);
-		HubListener[] hls2 = HubEventDelegate.getAllListeners(hubMaster);
+		HubListener[] hls2 = HubEventDelegate.callHubEventGetAllListeners(hubMaster);
 		assertNotNull(hls2);
 		assertTrue(hls2.length > 1);
 		assertEquals(hls[0], hls2[0]);

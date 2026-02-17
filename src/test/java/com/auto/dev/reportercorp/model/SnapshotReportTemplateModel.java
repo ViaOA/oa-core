@@ -109,7 +109,7 @@ public class SnapshotReportTemplateModel extends OAObjectModel {
 		modelSnapshotReport.setAllowSearch(false);
 		modelSnapshotReport.setAllowHubSearch(true);
 		modelSnapshotReport.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelSnapshotReport.setCreateUI(li == null || !SnapshotReportTemplate.P_SnapshotReport.equalsIgnoreCase(li.getName()));
 		modelSnapshotReport.setViewOnly(getViewOnly());
 		// call SnapshotReportTemplate.snapshotReportModelCallback(SnapshotReportModel) to be able to customize this model

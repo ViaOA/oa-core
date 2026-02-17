@@ -3,29 +3,23 @@ package com.viaoa.graph.service.hub;
 import java.util.*;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 
-public class HubDSService {
+public abstract class HubDSService {
 	private final Logger LOG = Logger.getLogger(HubDSService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
-	
-	public HubDSService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-    	this.srvcHub = srvcHub;
+
+	public HubDSService(Hub.FriendAccess faHub) {
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
 	}
 
-	
 	/**
 	 * Returns the {@link OADataSource} associated with the specified class.
 	 * Delegates directly to {@link OADataSource#getDataSource(Class)}.
@@ -48,7 +42,6 @@ public class HubDSService {
 	 * @param propFromMaster the name of the master-side property for the link
 	 */
 	public void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
-		//qqqqqqqqqq method was protected
 		OADataSource ds = OADataSource.getDataSource(masterObject.getClass());
 		if (ds != null) ds.updateMany2ManyLinks(masterObject, adds, removes, propFromMaster);
 	}
@@ -69,11 +62,11 @@ public class HubDSService {
         }
         OALinkInfo link = faHub.getHubDataMaster(hub).getDetailToMasterLinkInfo();
         if (link == null) return;
-        if (!srvcObject.getOAObjectInfoService().isMany2Many(link)) return;
+        if (!callObjectInfoIsMany2Many(link)) return;
         
-        String propFromMaster = srvcObject.getOAObjectInfoService().getReverseLinkInfo(link).getName();
+        String propFromMaster = callObjectInfoGetReverseLinkInfo(link).getName();
 
-        OAObject[] objs = srvcHub.getHubAddRemoveService().getRemovedObjects(hub);
+        OAObject[] objs = callHubAddRemoveGetRemovedObjects(hub);
         if (objs == null || objs.length == 0) return;
        
         OADataSource ds = OADataSource.getDataSource(objMaster.getClass());
@@ -82,7 +75,28 @@ public class HubDSService {
         ds.updateMany2ManyLinks((OAObject)objMaster, null, objs, propFromMaster);
     }
 
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many")
+	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo thisLi);
 
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+
+	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().getRemovedObjects")
+	public abstract OAObject[] callHubAddRemoveGetRemovedObjects(Hub thisHub);
+	
+    /*	
+	
+	
+	
+	@OAParentProvided (example = "")
+	public abstract ;
+	
+	@OAParentProvided (example = "")
+	public abstract ;
+	
+	@OAParentProvided (example = "")
+	public abstract ;
+*/	
 	
 }
 

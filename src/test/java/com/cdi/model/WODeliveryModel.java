@@ -143,7 +143,7 @@ public class WODeliveryModel extends OAObjectModel {
         modelWorkOrder.setAllowSearch(false);
         modelWorkOrder.setAllowHubSearch(true);
         modelWorkOrder.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelWorkOrder.setCreateUI(li == null || !WODelivery.P_WorkOrder.equalsIgnoreCase(li.getName()) );
         modelWorkOrder.setViewOnly(getViewOnly());
         // call WODelivery.workOrderModelCallback(WorkOrderModel) to be able to customize this model

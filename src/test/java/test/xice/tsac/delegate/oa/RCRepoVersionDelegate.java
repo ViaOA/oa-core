@@ -11,7 +11,7 @@ import test.xice.tsac.model.oa.*;
 public class RCRepoVersionDelegate {
 
     public static void run(final RCRepoVersion repoVersion) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _run(repoVersion);
         }
         else {
@@ -51,7 +51,7 @@ public class RCRepoVersionDelegate {
     
     
     public static void process(final RCRepoVersion repoVersion) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _process(repoVersion);
         }
         else {
@@ -167,7 +167,7 @@ public class RCRepoVersionDelegate {
     }
 
     public static void load(final RCRepoVersion repoVersion) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _load(repoVersion);
         }
         else {

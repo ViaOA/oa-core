@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
@@ -54,7 +54,7 @@ public class OATriggerMethodListener implements OATriggerListener {
 	 * Used to resolve the root object type on which the reflective
 	 * invocation will be performed.
 	 */
-    private final Class<?> clazz;
+    private final Class<? extends OAObject> clazz;
     
     /**
      * The reflective method to invoke when the trigger fires.
@@ -90,9 +90,8 @@ public class OATriggerMethodListener implements OATriggerListener {
         this.clazz = clazz;
         this.method = method;
         this.bOnlyUseLoadedData = bOnlyUseLoadedData;
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-        oi = srvcObjectInfo.getObjectInfo(clazz);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+        oi =  og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
     }
     
     /**
@@ -127,10 +126,9 @@ public class OATriggerMethodListener implements OATriggerListener {
         };
         finder.setUseOnlyLoadedData(bOnlyUseLoadedData);
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
         
-        Hub h = srvcObjectCache.getSelectAllHub(clazz);
+        Hub h = og.objectsInternal().callObjectCacheGetSelectAllHub(clazz);
         if (h != null && bOnlyUseLoadedData) {
             for (Object objx : h) {
                 if (finder.findFirst((OAObject) objx) == null) continue;
@@ -143,7 +141,7 @@ public class OATriggerMethodListener implements OATriggerListener {
         OADataSource ds = OADataSource.getDataSource(clazz);
         
         if (bOnlyUseLoadedData || ds == null || !ds.supportsStorage()) {
-        	srvcObjectCache.visit(clazz, new OACallback() {
+        	og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
                 @Override
                 public boolean updateObject(Object obj) {
                     if (finder.findFirst((OAObject) obj) == null) return true;

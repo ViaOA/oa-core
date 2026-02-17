@@ -441,7 +441,7 @@ public abstract class OAObjectAnnotationService {
 			}
 			hs.add("calc." + name);
 
-			OACalcInfo ci = getOACalcInfo(oi, name);
+			OACalcInfo ci = callInfoGetCalcInfo(oi, name);
 			if (ci == null) {
 				ci = new OACalcInfo(name, annotation.properties(), bHub);
 				oi.addCalcInfo(ci);
@@ -489,7 +489,7 @@ public abstract class OAObjectAnnotationService {
 			}
 			hs.add("link." + name);
 
-			OALinkInfo li = this.getLinkInfo(oi, name);
+			OALinkInfo li = this.callInfoGetLinkInfo(oi, name);
 			if (li == null) {
 				li = new OALinkInfo(name, m.getReturnType(), OALinkInfo.ONE);
 				oi.addLinkInfo(li);
@@ -576,7 +576,7 @@ public abstract class OAObjectAnnotationService {
 
 			String name = getPropertyName(m.getName(), false);
 
-			OALinkInfo li = getLinkInfo(oi, name);
+			OALinkInfo li = callInfoGetLinkInfo(oi, name);
 			OAMany annotation = (OAMany) m.getAnnotation(OAMany.class);
 			Class cx = getHubObjectClass(annotation, m);
 
@@ -1072,7 +1072,7 @@ public abstract class OAObjectAnnotationService {
 	 * @return the class of objects stored in the hub, or {@code null} if unresolved
 	 */
 	public Class getHubObjectClass(OAMany annotation, Method method) {
-		Class cx = this.getHubObjectClass(method);
+		Class cx = this.callReflectGetHubObjectClass(method);
 		if (cx == null && annotation != null) {
 			Class cz = annotation.toClass();
 			if (cz != null && !cz.equals(Object.class)) {
@@ -1285,21 +1285,21 @@ public abstract class OAObjectAnnotationService {
 		purpose="Resolve the Hub object class associated with a reflected Method (OAMany).", 
 		example = "srvcOAObjectReflect.getHubObjectClass(method)"
 	)
-	public abstract Class<?> getHubObjectClass(Method method);
+	public abstract Class<?> callReflectGetHubObjectClass(Method method);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcObjectInfo.getOACalcInfo(oi, name)"
 	)
-	public abstract OACalcInfo getOACalcInfo(OAObjectInfo thisOI, String name);
+	public abstract OACalcInfo callInfoGetCalcInfo(OAObjectInfo thisOI, String name);
 	
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcObjectInfo.getOALinkInfo(oi, name)"
 	)
-	public abstract OALinkInfo getLinkInfo(OAObjectInfo oi, String propertyName);
+	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
 	
 	
 }

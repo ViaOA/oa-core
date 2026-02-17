@@ -270,7 +270,7 @@ public class JsonObjectModel extends OAObjectModel {
         modelParentJsonObject.setAllowSearch(false);
         modelParentJsonObject.setAllowHubSearch(false);
         modelParentJsonObject.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelParentJsonObject.setCreateUI(li == null || !JsonObject.P_ParentJsonObject.equals(li.getName()) );
         modelParentJsonObject.setViewOnly(getViewOnly());
         // call JsonObject.parentJsonObjectModelCallback(JsonObjectModel) to be able to customize this model

@@ -4,27 +4,17 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
+import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 
-public class HubSerializeService {
+public abstract class HubSerializeService {
 	private final Logger LOG = Logger.getLogger(HubSerializeService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 
-	public HubSerializeService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-		this.srvcHub = srvcHub;
+	public HubSerializeService(Hub.FriendAccess faHub) {
 		if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
 		this.faHub = faHub;
 	}
@@ -33,13 +23,12 @@ public class HubSerializeService {
 	 * Used by serialization to store Hub.
 	 */
 	public void _writeObject(Hub thisHub, java.io.ObjectOutputStream stream) throws IOException {
-		if (srvcHub.getHubSelectService().isMoreData(thisHub)) {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		if (callHubSelectIsMoreData(thisHub)) {
 			try {
-				srvcOAThreadLocal.setSuppressCSMessages(true);
-				srvcHub.getHubSelectService().loadAllData(thisHub); // otherwise, client will not have the correct datasource
+				callThreadLocalSetSuppressCSMessages(true);
+				callHubSelectLoadAllData(thisHub); // otherwise, client will not have the correct datasource
 			} finally {
-				srvcOAThreadLocal.setSuppressCSMessages(false);
+				callThreadLocalSetSuppressCSMessages(false);
 			}
 		}
 		stream.defaultWriteObject();
@@ -78,24 +67,39 @@ public class HubSerializeService {
 	 * hub to OAObject.hubs, but only if it is not a duplicate (and is not needed)
 	 */
 	public Object _readResolve(Hub thisHub) throws ObjectStreamException {
+		if (thisHub == null || !thisHub.isOAObject()) return thisHub; 
 		for (int i = 0;; i++) {
 			Object obj = thisHub.getAt(i);
-			if (obj == null)
-				break;
+			if (obj == null) break;
 
 			if (i == 0) {
 				if (obj instanceof OAObject) {
 					// dont initialize this hub if the master object is a duplicate.
 					// check by looking to see if this object already belongs to a hub that has the
 					// same masterObject/linkinfo
-					if (srvcObject.getOAObjectHubService().isAlreadyInHub((OAObject) obj, faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo())) {
+					if (callObjectHubIsAlreadyInHub((OAObject) obj, faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo())) {
 						break; // this hub is a dup and wont be used
 					}
 				}
 			}
-			srvcObject.getOAObjectHubService().addHub((OAObject) obj, thisHub);
+			callObjectHubAddHub((OAObject) obj, thisHub);
 		}
 		return thisHub;
 	}
 
+	@OAParentProvided (example = "srvcObject.getOAObjectHubService().isAlreadyInHub")
+	public abstract boolean callObjectHubIsAlreadyInHub(OAObject oaObj, OALinkInfo li);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
+	public abstract boolean callObjectHubAddHub(OAObject oaObj, Hub hub);
+
+	@OAParentProvided (example = "srvcHub.getHubSelectService().isMoreData")
+	public abstract boolean callHubSelectIsMoreData(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
+	public abstract void callHubSelectLoadAllData(Hub thisHub);
+
+	@OAParentProvided (example = "srvcThreadLocal.setSuppressCSMessages")
+	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);
 }
+

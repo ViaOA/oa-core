@@ -31,7 +31,7 @@ public abstract class OAObjectKeyService {
 	 */
 	public OAObjectKey createObjectKey(OAObject obj) {
 		if (obj == null) return null;
-		OAObjectKey key = new OAObjectKey(callGetPropertyIdValues(obj), obj.getGuid());
+		OAObjectKey key = new OAObjectKey(callObjectGetPropertyIdValues(obj), obj.getGuid());
 		return key;
 	}
 
@@ -77,7 +77,7 @@ public abstract class OAObjectKeyService {
 				return getObjectKey((OAObject) ids[0]);
 			}
 		}
-		OAObjectInfo oi = c == null ? null : getOAObjectInfo(c);
+		OAObjectInfo oi = c == null ? null : callInfogetObjectInfo(c);
 		return createObjectKey(oi, ids, guid);
 	}
 	
@@ -262,7 +262,7 @@ public abstract class OAObjectKeyService {
 			return null;
 		}
 
-		OAObjectInfo oi = getOAObjectInfo(clazz);
+		OAObjectInfo oi = callInfogetObjectInfo(clazz);
 		String[] ids = oi.getKeyProperties();
 
 		Object[] objsCurrent = null;
@@ -334,7 +334,7 @@ public abstract class OAObjectKeyService {
 		callCachePropertyKeyValueChanged(oaObj);
 
 		// need to recalc keys for all children that have this object as part of their object key
-		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = callInfogetObjectInfo(oaObj.getClass());
 		List al = oi.getLinkInfos();
 		for (int i = 0; al != null && i < al.size(); i++) {
 			OALinkInfo li = (OALinkInfo) al.get(i);
@@ -352,7 +352,7 @@ public abstract class OAObjectKeyService {
 			if (revProp == null || revProp.length() == 0) {
 				continue;
 			}
-			OAObjectInfo oiRev = getOAObjectInfo(li.getToClass());
+			OAObjectInfo oiRev = callInfogetObjectInfo(li.getToClass());
 
 			if (!callInfoIsIdProperty(oiRev, revProp)) {
 				continue;
@@ -393,7 +393,7 @@ public abstract class OAObjectKeyService {
 		OAObjectInfo oi = null;
 		if (!oaObj.getNew() && !oaObj.getDeleted()) {
 			if (oi == null) {
-				oi = getOAObjectInfo(oaObj.getClass());
+				oi = callInfogetObjectInfo(oaObj.getClass());
 			}
 			if (!callDSAllowIdChange(oaObj.getClass())) {
 				return ("ID property can not be changed if " + oaObj.getClass().getSimpleName() + " has been saved");
@@ -403,7 +403,7 @@ public abstract class OAObjectKeyService {
 		OAObject objInCache = callCacheGet(oaObj.getClass(), newObjectKey.getObjectIds());
 		if ((objInCache == null || objInCache == oaObj)) {
 			if (oi == null) {
-				oi = getOAObjectInfo(oaObj.getClass());
+				oi = callInfogetObjectInfo(oaObj.getClass());
 			}
 			if (!oi.getLocalOnly() && callCSIsWorkstation(oaObj)) {
 				// check on server.  If server has same object as this, resolve() will return this object
@@ -439,7 +439,7 @@ public abstract class OAObjectKeyService {
 				if (!callThreadLocalIsLoading()) {
 					// make sure object does not already exist in datasource
 					if (oi == null) {
-						oi = getOAObjectInfo(oaObj.getClass());
+						oi = callInfogetObjectInfo(oaObj.getClass());
 					}
 					if (oi.getUseDataSource()) {
 						objInCache = (OAObject) callDSGetObject(oi, oaObj.getClass(), newObjectKey);
@@ -479,7 +479,7 @@ public abstract class OAObjectKeyService {
 			return null;
 		}
 
-		OAObjectInfo oi = getOAObjectInfo(clazz);
+		OAObjectInfo oi = callInfogetObjectInfo(clazz);
 		String[] ids = oi.getKeyProperties();
 		if (ids == null || ids.length == 0) {
 			return null;
@@ -526,7 +526,7 @@ public abstract class OAObjectKeyService {
 	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfogetObjectInfo(Class clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isIdProperty")
 	public abstract boolean callInfoIsIdProperty(OAObjectInfo oi, String propertyName);
@@ -536,7 +536,7 @@ public abstract class OAObjectKeyService {
 	
 	
 	@OAParentProvided (example = "srvcObject.getPropertyIdValues(obj)")
-	public abstract Object[] callGetPropertyIdValues(OAObject obj);
+	public abstract Object[] callObjectGetPropertyIdValues(OAObject obj);
 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceObjectLoadedAndNotEmpty")

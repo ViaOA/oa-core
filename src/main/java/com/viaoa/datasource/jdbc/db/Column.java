@@ -17,7 +17,7 @@ package com.viaoa.datasource.jdbc.db;
 
 import java.lang.reflect.Method;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.object.*;
@@ -253,9 +253,8 @@ public class Column { // need to select all with properyName!=null
 		if (methodGet == null && table != null) {
 			Class clazz = table.getSupportClass();
 			if (clazz != null && propertyName != null && propertyName.length() != 0) {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-			    methodGet = srvcObjectInfo.getMethod(clazz, "get" + propertyName);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			    methodGet = og.objectsInternal().callObjectInfoGetMethod(clazz, "get" + propertyName);
 				//was: methodGet = OAReflect.getMethod(clazz, "get" + propertyName);
 			}
 		}
@@ -273,9 +272,8 @@ public class Column { // need to select all with properyName!=null
 		if (methodSet == null && table != null) {
 			Class clazz = table.getSupportClass();
 			if (clazz != null && propertyName != null && propertyName.length() != 0) {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-			    methodSet = srvcObjectInfo.getMethod(clazz, "set" + propertyName);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			    methodSet = og.objectsInternal().callObjectInfoGetMethod(clazz, "set" + propertyName);
 				//was: methodSet = OAReflect.getMethod(clazz, "set" + propertyName);
 			}
 		}

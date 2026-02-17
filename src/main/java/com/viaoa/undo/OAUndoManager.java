@@ -25,7 +25,7 @@ import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;
 import com.viaoa.runtime.thread.OARemoteThreadService;
@@ -69,7 +69,7 @@ import com.viaoa.runtime.thread.OAThreadLocalService;
  *
  * <h2>Integration with Sync and Remote Threads</h2>
  * Remote sync threads are automatically ignored via
- * {@link com.viaoa.sync.OASyncDelegate#isSingleUser()} and
+ * {@link com.viaoa.sync.OASyncDelegate#callSyncIsSingleUser()} and
  * {@link com.viaoa.remote.OARemoteThreadDelegate#isRemoteThread()},
  * preventing remote updates from being recorded as undoable user actions.
  *
@@ -485,8 +485,8 @@ public class OAUndoManager extends UndoManager {
 			return true;
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph();
-		if (!og.getSyncService().isSingleUser()) {
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph();
+		if (!og.syncInternal().isSingleUser()) {
 			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
 			if (srvcOARemoteThread.isRemoteThread()) {
 				return true;

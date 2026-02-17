@@ -23,7 +23,7 @@ import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.CustomHubFilter;
 import com.viaoa.hub.Hub;
@@ -318,9 +318,8 @@ public class OAPropertyPath<F> {
 		String pp = "";
 		for (int i = 0; i < linkInfos.length; i++) {
 			OALinkInfo li = linkInfos[i];
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(li.getToClass());
-			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-			OALinkInfo liRev = srvcObjectInfo.getReverseLinkInfo(li);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
+			OALinkInfo liRev = og.objectsInternal().callObjectInfoGetReverseLinkInfo(li);
 			if (!bAllowPrivateLinks && liRev.getPrivateMethod()) {
 				return null;
 			}
@@ -976,21 +975,20 @@ public class OAPropertyPath<F> {
 				clazz = substituteClass;
 			}
 
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
-			final OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, propertyName);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
+			final OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, propertyName);
 			if (li != null) {
 				endLinkInfo = li;
 				endPropertyInfo = null;
 				endCalcInfo = null;
 				linkInfos = (OALinkInfo[]) OAArray.add(OALinkInfo.class, linkInfos, li);
 			} else {
-				endPropertyInfo = srvcObjectInfo.getPropertyInfo(oi, propertyName);
+				endPropertyInfo = og.objectsInternal().callObjectInfoGetPropertyInfo(oi, propertyName);
 				
 				if (endPropertyInfo != null) endCalcInfo = null;
 				else {
-					endCalcInfo = srvcObjectInfo.getOACalcInfo(oi, propertyName);
+					endCalcInfo = og.objectsInternal().callObjectInfoGetCalcInfo(oi, propertyName);
 				}
 				//was: endCalcInfo = endPropertyInfo != null ? null : OAObjectInfoDelegate.getOACalcInfo(oi, propertyName);
 				endLinkInfo = null;
@@ -1008,7 +1006,7 @@ public class OAPropertyPath<F> {
 			this.properties = (String[]) OAArray.add(String.class, this.properties, propertyName);
 
 			// 20240131
-            Method method = srvcObjectInfo.getMethod(oi, mname, 0);
+            Method method = og.objectsInternal().callObjectInfoGetMethod(oi, mname, 0);
             //was: Method method = OAReflect.getMethod(clazz, mname, 0);
 			
 			bLastMethodHasHubParam = false;
@@ -1053,7 +1051,7 @@ public class OAPropertyPath<F> {
 
 			if (clazz != null && clazz.equals(Hub.class) && castName == null) {
 				// try to find the ObjectClass for Hub
-				Class c = srvcObjectInfo.getHubPropertyClass(classLast, propertyName);
+				Class c = og.objectsInternal().callObjectInfoGetHubPropertyClass(classLast, propertyName);
 				if (c != null) {
 					clazz = c;
 				}
@@ -1239,15 +1237,14 @@ public class OAPropertyPath<F> {
 				if (li == null || !li.getRecursive()) {
 					continue;
 				}
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(li.getToClass());
-				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(li.getToClass());
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
+				OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(li.getToClass());
 
 				OALinkInfo lix;
 				if (li.getType() == OALinkInfo.MANY) {
-					lix = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
+					lix = og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(oi, OALinkInfo.MANY);
 				} else {
-					lix = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.ONE);
+					lix = og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(oi, OALinkInfo.ONE);
 				}
 				recursiveLinkInfos[j - 1] = lix;
 			}

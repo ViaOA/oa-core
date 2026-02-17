@@ -216,7 +216,7 @@ public class ColumnModel extends OAObjectModel {
         modelTable.setAllowSearch(true);
         modelTable.setAllowHubSearch(true);
         modelTable.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelTable.setCreateUI(li == null || !Column.P_Table.equals(li.getName()) );
         modelTable.setViewOnly(getViewOnly());
         // call Column.tableModelCallback(TableModel) to be able to customize this model

@@ -15,7 +15,7 @@
  */
 package com.viaoa.hub;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectHubService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.*;
@@ -82,13 +82,12 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	public HubLinkEventListener(Hub fromHub, Hub linkToHub) {
 	    this.fromHub = fromHub;
 	    this.linkToHub = linkToHub;  // hub that is linked to, that this HubListener is listening to.
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(fromHub);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromHub);
 	    
 	    // 20130708
-        OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromDetailToMaster(linkToHub);
+        OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromDetailToMaster(linkToHub);
         if (li != null && li.getPrivateMethod()) {
-    		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-            if (srvcObjectInfo.isMany2Many(li)) {
+            if (og.objectsInternal().callObjectInfoIsMany2Many(li)) {
                 bUpdateWeakHub = true;
             }
         }
@@ -101,8 +100,8 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	 * @param hubEvent the event containing the new active object
 	 */
 	public @Override void afterChangeActiveObject(HubEvent hubEvent) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(fromHub);
-		og.getHubService().getHubLinkService().updateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromHub);
+		og.hubsInternal().callHubLinkUpdateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), null);
 	}
 	
 	/**
@@ -116,8 +115,8 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	    if (hubEvent.getObject() == linkToHub.getActiveObject()) {
 	    	String prop = hubEvent.getPropertyName(); 
             if (prop != null && prop.equalsIgnoreCase(fromHub.datau.getLinkToPropertyName())) {
-        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(fromHub);
-            	og.getHubService().getHubLinkService().updateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), prop);
+        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromHub);
+            	og.hubsInternal().callHubLinkUpdateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), prop);
             }
 	    }
 	}
@@ -136,15 +135,14 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	    if (bUpdateWeakHub) {
     	    for (Object objx : linkToHub) {
     	        OAObject oaObj = (OAObject) objx;
-        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
-				final OAObjectHubService srvcObjectHub = og.getOAObjectService().getOAObjectHubService();
-    	        if (!srvcObjectHub.addHub(oaObj, linkToHub, true)) {
+        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+    	        if (!og.objectsInternal().callObjectHubAddHub(oaObj, linkToHub, true)) {
     	            break;
     	        }
             }
 	    }
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(fromHub);
-        og.getHubService().getHubLinkService().updateLinkedToHub(fromHub, linkToHub, linkToHub.getAO(), null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromHub);
+        og.hubsInternal().callHubLinkUpdateLinkedToHub(fromHub, linkToHub, linkToHub.getAO(), null);
 	}
 }
 

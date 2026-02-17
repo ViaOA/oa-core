@@ -41,6 +41,7 @@ import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectAnnotationService;
 import com.viaoa.graph.service.object.OAObjectHubService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
@@ -99,8 +100,8 @@ public class OAAnnotationVerifier {
 	 */
 	public boolean verify(OAObjectInfo oi) throws Exception {
 		final Class clazz = oi.getForClass();
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectAnnotationService srvcObjectAnnotation = og.getOAObjectService().getOAObjectAnnotationService();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+
 		String s;
 
 		OAClass oaclass = (OAClass) clazz.getAnnotation(OAClass.class);
@@ -137,8 +138,10 @@ public class OAAnnotationVerifier {
 			if (oaid == null) {
 				continue;
 			}
-			s = srvcObjectAnnotation.getPropertyName(m.getName());
+			s = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
 
+			
+			
 			int x = OAArray.indexOf(ids, s, true);
 			if (x >= 0) {
 				bs[x] = true;
@@ -166,7 +169,7 @@ public class OAAnnotationVerifier {
 			if (oaprop == null) {
 				continue;
 			}
-			String name = srvcObjectAnnotation.getPropertyName(m.getName());
+			String name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
 
 			int x = 0;
 			for (OAPropertyInfo pi : al) {
@@ -213,9 +216,6 @@ public class OAAnnotationVerifier {
 			}
 		}
 
-		//final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectInfoService srvcObjectHub = og.getOAObjectService().getOAObjectInfoService();
-		
 		// Verify calcProperties
 		ArrayList<OACalcInfo> alCalc = oi.getCalcInfos();
 		bs = new boolean[alCalc.size()];
@@ -225,9 +225,10 @@ public class OAAnnotationVerifier {
 				continue;
 			}
 
-			String name = srvcObjectAnnotation.getPropertyName(m.getName());
+			String name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
 
-			OACalcInfo ci = srvcObjectHub.getOACalcInfo(oi, name);
+			OACalcInfo ci = og.objectsInternal().callObjectInfoGetCalcInfo(oi, name);
+
 			if (ci == null) {
 				p("calcinfo not in objectInfo");
 				bResult = false;
@@ -280,9 +281,9 @@ public class OAAnnotationVerifier {
 				bResult = false;
 			}
 
-			String name = srvcObjectAnnotation.getPropertyName(m.getName());
+			String name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
 
-			OALinkInfo li = srvcObjectHub.getLinkInfo(oi, name);
+			OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, name);
 			if (li == null) {
 				p("link does not exist");
 				bResult = false;
@@ -334,9 +335,8 @@ public class OAAnnotationVerifier {
 				bResult = false;
 			}
 
-			String name = srvcObjectAnnotation.getPropertyName(m.getName());
-
-			OALinkInfo li = srvcObjectHub.getLinkInfo(oi, name);
+			String name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
+			OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, name);
 			if (li == null) {
 				p("link does not exist");
 				bResult = false;
@@ -397,8 +397,7 @@ public class OAAnnotationVerifier {
 		boolean[] bs = null;
 		int i;
 		String s;
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectAnnotationService srvcObjectAnnotation = og.getOAObjectService().getOAObjectAnnotationService();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 
 		Method[] methods = clazz.getDeclaredMethods(); // need to get all access types, since some could be private. qqqqqq does not get superclass methods
 
@@ -425,7 +424,7 @@ public class OAAnnotationVerifier {
 			if (col != null) {
 				String name = col.name();
 				if (name == null || name.length() == 0) {
-					name = srvcObjectAnnotation.getPropertyName(m.getName());
+					name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
 				}
 
 				boolean b = false;
@@ -438,7 +437,7 @@ public class OAAnnotationVerifier {
 							p("column sql type mismatch");
 							bResult = false;
 						}
-						s = srvcObjectAnnotation.getPropertyName(m.getName());
+						s = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
 						if (!s.equalsIgnoreCase(columns[i].propertyName)) {
 							p("column prop name mismatch");
 							bResult = false;

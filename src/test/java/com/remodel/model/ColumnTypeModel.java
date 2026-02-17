@@ -170,7 +170,7 @@ public class ColumnTypeModel extends OAObjectModel {
         modelDatabaseType.setAllowSearch(false);
         modelDatabaseType.setAllowHubSearch(false);
         modelDatabaseType.setAllowGotoEdit(false);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelDatabaseType.setCreateUI(li == null || !ColumnType.P_DatabaseType.equals(li.getName()) );
         modelDatabaseType.setViewOnly(getViewOnly());
         // call ColumnType.databaseTypeModelCallback(DatabaseTypeModel) to be able to customize this model

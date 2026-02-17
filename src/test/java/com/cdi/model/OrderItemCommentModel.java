@@ -93,7 +93,7 @@ public class OrderItemCommentModel extends OAObjectModel {
         modelOrderItem.setAllowSearch(false);
         modelOrderItem.setAllowHubSearch(true);
         modelOrderItem.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelOrderItem.setCreateUI(li == null || !OrderItemComment.P_OrderItem.equalsIgnoreCase(li.getName()) );
         modelOrderItem.setViewOnly(getViewOnly());
         // call OrderItemComment.orderItemModelCallback(OrderItemModel) to be able to customize this model

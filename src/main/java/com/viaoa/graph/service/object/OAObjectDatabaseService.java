@@ -144,7 +144,7 @@ public abstract class OAObjectDatabaseService {
 
 			String[] fkcols = new String[0];
 			if (oaone != null && oalt == null) {
-				OAObjectInfo oi = getOAObjectInfo(clazz);
+				OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 				for (OAFkey fk : oaone.fkeys()) {
 					OAPropertyInfo pi = oi.getPropertyInfo(fk.fromProperty());
 					if (pi == null) {
@@ -287,7 +287,7 @@ public abstract class OAObjectDatabaseService {
 					}
 					poss = OAArray.add(poss, i);
 				}
-				Class c = getHubObjectClass(oamany, m);
+				Class c = callAnnotationGetHubObjectClass(oamany, m);
 				Table tt = database.getTable(c);
 				if (tt != null) {
 					table.addLink(getPropertyName(m.getName()), tt, oamany.reverseName(), poss);
@@ -355,10 +355,10 @@ public abstract class OAObjectDatabaseService {
 	
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz);	
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz);	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().getHubObjectClass(oamany, m)")
-	public abstract Class getHubObjectClass(OAMany annotation, Method method);	
+	public abstract Class callAnnotationGetHubObjectClass(OAMany annotation, Method method);	
     
 }
 

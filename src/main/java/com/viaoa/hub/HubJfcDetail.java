@@ -15,7 +15,7 @@
  */
 package com.viaoa.hub;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
@@ -40,9 +40,8 @@ public class HubJfcDetail {
     }
 
     protected void setup() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubMaster);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-        OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(hubMaster.getObjectClass());
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubMaster);
+        OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(hubMaster.getObjectClass());
         this.li = oi.getLinkInfo(prop);
         this.li = this.li.getReverseLinkInfo();
         HubListener hl = new HubListenerAdapter() {

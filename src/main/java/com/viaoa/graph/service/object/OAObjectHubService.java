@@ -52,9 +52,9 @@ public abstract class OAObjectHubService {
 
 	public boolean isInHub(OAObject oaObj) {
         if (oaObj == null) return false;
-        WeakReference<Hub<?>>[] weakhubs = faObject.getWeakHubs(oaObj);
+        WeakReference<Hub<? extends OAObject>>[] weakhubs = faObject.getWeakHubs(oaObj);
         if (weakhubs == null) return false;
-        for (WeakReference<Hub<?>> ref : weakhubs) {
+        for (WeakReference<Hub<? extends OAObject>> ref : weakhubs) {
             if (ref != null) {
                 if (ref.get() != null) return true;
             }
@@ -70,9 +70,9 @@ public abstract class OAObjectHubService {
         if (oaObj == null) return false;
         
         synchronized (oaObj) {
-	        WeakReference<Hub<?>>[] refs = faObject.getWeakHubs(oaObj);
+	        WeakReference<Hub<? extends OAObject>>[] refs = faObject.getWeakHubs(oaObj);
 	        if (refs == null) return false;
-	        for (WeakReference<Hub<?>> ref : refs) {
+	        for (WeakReference<Hub<? extends OAObject>> ref : refs) {
 	            if (ref != null) {
 	                Hub h = ref.get();
 	                if (h == hubToIgnore) continue;
@@ -88,7 +88,7 @@ public abstract class OAObjectHubService {
      */
     public void removeHub(final OAObject oaObj, Hub hub, boolean bIsOnHubFinalize) {
         if (oaObj == null) return;
-        WeakReference<Hub<?>>[] weakhubs = faObject.getWeakHubs(oaObj);
+        WeakReference<Hub<? extends OAObject>>[] weakhubs = faObject.getWeakHubs(oaObj);
         if (weakhubs == null) return;
         
         Hub hubx = hub.getRealHub();
@@ -119,7 +119,7 @@ public abstract class OAObjectHubService {
                     	faObject.setWeakHubs(oaObj, weakhubs);
                     }
                     else {
-                    	weakhubs = (WeakReference<Hub<?>>[]) OAArray.removeAt(WeakReference.class, weakhubs, pos);
+                    	weakhubs = (WeakReference<Hub<? extends OAObject>>[]) OAArray.removeAt(WeakReference.class, weakhubs, pos);
                     	faObject.setWeakHubs(oaObj, weakhubs);
                     }
                     if (!bFound && weakhubs != null) {
@@ -152,7 +152,7 @@ public abstract class OAObjectHubService {
                         // resize array
                         int newSize = lastEndPos + (lastEndPos / 10) + 1;
                         newSize = Math.min(lastEndPos + 20, newSize);
-                        WeakReference<Hub<?>>[] newRefs = new WeakReference[newSize];
+                        WeakReference<Hub<? extends OAObject>>[] newRefs = new WeakReference[newSize];
                         System.arraycopy(weakhubs, 0, newRefs, 0, lastEndPos);
                         weakhubs = newRefs;
                         faObject.setWeakHubs(oaObj, weakhubs);
@@ -186,7 +186,7 @@ public abstract class OAObjectHubService {
                         // 20150827 dont cache if one2one and owned, and it is assigned to owner
                         // which means that the owner will "hold on to it"
                         boolean b = true;
-                        OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+                        OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
                         if (oi.isOwnedAndNoReverseMany()) {
                             OALinkInfo li = oi.getOwnedByOne();
                             if (li != null && callPropertyGetProperty(oaObj, li.getName()) != null) {
@@ -207,27 +207,27 @@ public abstract class OAObjectHubService {
     public Hub[] getHubReferences(OAObject oaObj) { // Note: this needs to be public
         if (oaObj == null) return null;
 
-        WeakReference<Hub<?>>[] refs = faObject.getWeakHubs(oaObj);
+        WeakReference<Hub<? extends OAObject>>[] refs = faObject.getWeakHubs(oaObj);
         if (refs == null) return null;
 
         Hub[] hubs = new Hub[refs.length];
 
         for (int i = 0; i < refs.length; i++) {
-            WeakReference<Hub<?>> ref = refs[i];
+            WeakReference<Hub<? extends OAObject>> ref = refs[i];
             if (ref == null) continue;
             hubs[i] = ref.get();
         }
         return hubs;
     }
 
-    public WeakReference<Hub<?>>[] getHubReferencesNoCopy(OAObject oaObj) {
+    public WeakReference<Hub<? extends OAObject>>[] getHubReferencesNoCopy(OAObject oaObj) {
         if (oaObj == null) return null;
         return faObject.getWeakHubs(oaObj);
     }
 
     public int getHubReferenceCount(OAObject oaObj) {
         if (oaObj == null) return 0;
-        WeakReference<Hub<?>>[] refs = faObject.getWeakHubs(oaObj);
+        WeakReference<Hub<? extends OAObject>>[] refs = faObject.getWeakHubs(oaObj);
         int cnt = 0;
         for (int i = 0; refs != null && i < refs.length; i++) {
             if (refs[i] != null && refs[i].get() != null) cnt++;
@@ -259,7 +259,7 @@ public abstract class OAObjectHubService {
         }
         boolean bRemoveFromServerCache = false;
         boolean bReused = false;
-        WeakReference<Hub<?>>[] weakhubs = faObject.getWeakHubs(oaObj);
+        WeakReference<Hub<? extends OAObject>>[] weakhubs = faObject.getWeakHubs(oaObj);
         		
         synchronized (oaObj) {
             int pos;
@@ -271,7 +271,7 @@ public abstract class OAObjectHubService {
                     OAObject objx = (OAObject) hub.getAt(i);
                     if (objx == null) break;
                     if (objx == oaObj) continue;
-                    WeakReference<Hub<?>>[] wrs = faObject.getWeakHubs(objx);
+                    WeakReference<Hub<? extends OAObject>>[] wrs = faObject.getWeakHubs(objx);
                     if (wrs != null && wrs.length == 1 && wrs[0] != null && wrs[0].get() == hub) {
                         weakhubs = wrs;
                         faObject.setWeakHubs(oaObj, weakhubs);
@@ -324,7 +324,7 @@ public abstract class OAObjectHubService {
                             OAObject objx = (OAObject) hub.getAt(i);
                             if (objx == null) break;
                             if (objx == oaObj) continue;
-                            WeakReference<Hub<?>>[] wrs = faObject.getWeakHubs(objx);
+                            WeakReference<Hub<? extends OAObject>>[] wrs = faObject.getWeakHubs(objx);
                             if (wrs == null) continue;
                             if (wrs.length != pos+1) continue;
                             
@@ -353,7 +353,7 @@ public abstract class OAObjectHubService {
                             newSize += (newSize / 10); 
                             newSize = Math.min(newSize, pos + 20);
                         }
-                        WeakReference<Hub<?>>[] refs = new WeakReference[newSize];
+                        WeakReference<Hub<? extends OAObject>>[] refs = new WeakReference[newSize];
     
                         int x = Math.min(weakhubs.length, refs.length);
                         System.arraycopy(weakhubs, 0, refs, 0, x);
@@ -366,7 +366,7 @@ public abstract class OAObjectHubService {
                 if (hub.getMasterObject() != null) {
                     bRemoveFromServerCache = true;
                     for (int i = 0; i < pos; i++) {
-                        WeakReference<Hub<?>> ref = weakhubs[i];
+                        WeakReference<Hub<? extends OAObject>> ref = weakhubs[i];
                         if (ref == null) continue;
                         Hub h = ref.get();
                         if (h != null && h.getMasterObject() != null) {
@@ -384,7 +384,7 @@ public abstract class OAObjectHubService {
                     OAObject objx = (OAObject) hub.getAt(i);
                     if (objx == null) break;
                     if (objx == oaObj) continue;
-                    WeakReference<Hub<?>>[] wrs = faObject.getWeakHubs(objx);
+                    WeakReference<Hub<? extends OAObject>>[] wrs = faObject.getWeakHubs(objx);
                     if (wrs == null) continue;
                     for (WeakReference wr : wrs) {
                         if (wr == null) break;
@@ -432,9 +432,9 @@ public abstract class OAObjectHubService {
     public boolean isAlreadyInHub(OAObject oaObj, OALinkInfo li) {
         if (oaObj == null || li == null) return false;
 
-        WeakReference<Hub<?>>[] refs = faObject.getWeakHubs(oaObj);
+        WeakReference<Hub<? extends OAObject>>[] refs = faObject.getWeakHubs(oaObj);
         for (int i = 0; refs != null && i < refs.length; i++) {
-            WeakReference<Hub<?>> ref = refs[i];
+            WeakReference<Hub<? extends OAObject>> ref = refs[i];
             if (ref == null) continue;
             Hub h = ref.get();
             if (h != null && callHubDetailGetLinkInfoFromDetailToMaster(h) == li) return true;
@@ -445,9 +445,9 @@ public abstract class OAObjectHubService {
     public Hub getHub(OAObject oaObj, OALinkInfo li) {
         if (oaObj == null || li == null) return null;
 
-        WeakReference<Hub<?>>[] refs = faObject.getWeakHubs(oaObj);
+        WeakReference<Hub<? extends OAObject>>[] refs = faObject.getWeakHubs(oaObj);
         for (int i = 0; refs != null && i < refs.length; i++) {
-            WeakReference<Hub<?>> ref = refs[i];
+            WeakReference<Hub<? extends OAObject>> ref = refs[i];
             if (ref == null) continue;
             Hub h = ref.get();
             if (h != null && callHubDetailGetLinkInfoFromDetailToMaster(h) == li) return h;
@@ -486,9 +486,9 @@ public abstract class OAObjectHubService {
     private boolean _isAlreadyInHub(OAObject oaObj, Hub hubFind) {
         if (oaObj == null) return false;
 
-        WeakReference<Hub<?>>[] refs = faObject.getWeakHubs(oaObj);
+        WeakReference<Hub<? extends OAObject>>[] refs = faObject.getWeakHubs(oaObj);
         for (int i = 0; refs != null && i < refs.length; i++) {
-            WeakReference<Hub<?>> ref = refs[i];
+            WeakReference<Hub<? extends OAObject>> ref = refs[i];
             if (ref == null) continue;
             Hub h = ref.get();
             if (h == hubFind) return true;
@@ -524,7 +524,7 @@ public abstract class OAObjectHubService {
             return;  // already set
         }
 
-        OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+        OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
         
         OALinkInfo li = oi.getLinkInfo(nameFromMasterToDetail);
         if (li == null) return;
@@ -544,7 +544,7 @@ public abstract class OAObjectHubService {
 	public abstract void callEventSendHubPropertyChange(final OAObject oaObj, final String propertyName, final Object oldObj, final Object newObj, final OALinkInfo linkInfo); 
 
     @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz);
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz);
 
     @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many(..)")
 	public abstract boolean callInfoIsMany2Many(OALinkInfo thisLi);
@@ -594,7 +594,7 @@ public abstract class OAObjectHubService {
 	
 	@OAParentProvided (example = "srvcOARemoteThread.shouldSendMessages() ")
 	public abstract boolean callRemoteThreadShouldSendMessages();
-	// OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();
+
 
 }
 

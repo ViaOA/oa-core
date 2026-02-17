@@ -8,10 +8,7 @@ import javax.swing.JLabel;
 import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.context.OAContext;
 import com.viaoa.context.OAUserAccess;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
 import com.viaoa.hub.HubEvent;
@@ -94,7 +91,7 @@ public abstract class OAObjectCallbackService {
 	 * @param name the property or link name, or {@code null}
 	 * @return {@code true} if visibility is allowed; otherwise {@code false}
 	 */
-	public boolean getAllowVisible(Hub hub, OAObject obj, String name) {
+	public <T extends OAObject> boolean getAllowVisible(Hub<T> hub, T obj, String name) {
 		return getAllowVisibleObjectCallback(hub, obj, name).getAllowed();
 	}
 
@@ -109,7 +106,7 @@ public abstract class OAObjectCallbackService {
 	 * @param name      the property, link, or method name, or {@code null}
 	 * @return {@code true} if the action is enabled; otherwise {@code false}
 	 */
-	public boolean getAllowEnabled(int checkType, Hub hub, OAObject obj, String name) {
+	public <T extends OAObject> boolean getAllowEnabled(int checkType, Hub<T> hub, T obj, String name) {
 		return getAllowEnabledObjectCallback(checkType, hub, obj, name).getAllowed();
 	}
 
@@ -136,7 +133,7 @@ public abstract class OAObjectCallbackService {
 	 * @param oaObj the source object to copy
 	 * @return the copied object, or {@code null} if copying is not allowed
 	 */
-	public OAObject getCopy(OAObject oaObj) {
+	public <T extends OAObject> T getCopy(T oaObj) {
 		if (oaObj == null) {
 			return null;
 		}
@@ -147,11 +144,11 @@ public abstract class OAObjectCallbackService {
 			if (!eq.getAllowed()) {
 				return null;
 			}
-			objx = oaObj.createCopy();
+			objx = (T) oaObj.createCopy();
 		}
 
-		getAfterCopyObjectCallback(oaObj, (OAObject) objx);
-		return (OAObject) objx;
+		getAfterCopyObjectCallback(oaObj, (T) objx);
+		return (T) objx;
 	}
 
     
@@ -180,7 +177,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if the add operation is allowed; otherwise {@code false}
 	 */
-	public boolean getAllowAdd(Hub hub, OAObject obj, int checkType) {
+	public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj, int checkType) {
 		return getAllowAddObjectCallback(hub, obj, checkType).getAllowed();
 	}
 
@@ -193,7 +190,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public boolean getVerifyAdd(Hub hub, OAObject obj, int checkType) {
+	public <T extends OAObject> boolean getVerifyAdd(Hub<T> hub, T obj, int checkType) {
 		return getVerifyAddObjectCallback(hub, obj, checkType).getAllowed();
 	}
 
@@ -206,7 +203,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if the remove operation is allowed; otherwise {@code false}
 	 */
-	public boolean getAllowRemove(Hub hub, OAObject obj, int checkType) {
+	public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj, int checkType) {
 		return getAllowRemoveObjectCallback(hub, obj, checkType).getAllowed();
 	}
     
@@ -219,7 +216,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public boolean getVerifyRemove(Hub hub, OAObject obj, int checkType) {
+	public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj, int checkType) {
 		return getVerifyRemoveObjectCallback(hub, obj, checkType).getAllowed();
 	}
 
@@ -231,7 +228,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if removing all objects is allowed; otherwise {@code false}
 	 */
-	public boolean getAllowRemoveAll(Hub hub, int checkType) {
+	public boolean getAllowRemoveAll(Hub<? extends OAObject> hub, int checkType) {
 		return getAllowRemoveAllObjectCallback(hub, checkType).getAllowed();
 	}
     
@@ -243,7 +240,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public boolean getVerifyRemoveAll(Hub hub, int checkType) {
+	public boolean getVerifyRemoveAll(Hub<? extends OAObject> hub, int checkType) {
 		return getVerifyRemoveAllObjectCallback(hub, checkType).getAllowed();
 	}
 
@@ -255,10 +252,9 @@ public abstract class OAObjectCallbackService {
 	 * @param obj the object to delete
 	 * @return {@code true} if deletion is allowed; otherwise {@code false}
 	 */
-	public boolean getAllowDelete(Hub hub, OAObject obj) {
+	public <T extends OAObject> boolean getAllowDelete(Hub<T> hub, T obj) {
 		return getAllowDeleteObjectCallback(hub, obj).getAllowed();
 	}
-
 	/**
 	 * Returns whether deleting the specified object passes verification by
 	 * evaluating the associated {@link OAObjectCallback}.
@@ -268,7 +264,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public boolean getVerifyDelete(Hub hub, OAObject obj, int checkType) {
+	public <T extends OAObject> boolean getVerifyDelete(Hub<T> hub, T obj, int checkType) {
 		return getVerifyDeleteObjectCallback(hub, obj, checkType).getAllowed();
 	}
 
@@ -340,7 +336,7 @@ public abstract class OAObjectCallbackService {
 		em.setObject(obj);
 		callObjectCallbackMethod(em, null, em);
 
-		final OAObjectInfo oi = getOAObjectInfo(obj.getClass());
+		final OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
 			if (OAString.isNotEmpty(pi.getEnumPropertyName())) continue;
 			Object val = obj.getProperty(pi.getName());
@@ -487,7 +483,7 @@ public abstract class OAObjectCallbackService {
 	 * @param hub the hub providing visibility context
 	 * @return the resulting callback
 	 */
-    public OAObjectCallback getAllowVisibleObjectCallback(Hub hub) {
+    public OAObjectCallback getAllowVisibleObjectCallback(Hub<? extends OAObject> hub) {
         return getAllowVisibleObjectCallback(hub, null, null);
     }
 
@@ -502,16 +498,17 @@ public abstract class OAObjectCallbackService {
      * @param name  the property or link name, or {@code null}
      * @return the resulting callback, or {@code null} if hub and object are both null
      */
-	public OAObjectCallback getAllowVisibleObjectCallback(Hub hub, OAObject oaObj, String name) {
+    @SuppressWarnings("unchecked")
+    public <T extends OAObject> OAObjectCallback getAllowVisibleObjectCallback(Hub<T> hub, T oaObj, String name) {
 		if (hub == null && oaObj == null) {
 			return null;
 		}
 		if (oaObj == null) {
 			if (name == null) {
-				name = getPropertyFromMasterToDetail(hub);
-				oaObj = hub.getMasterObject();
+				name = callHubDetailGetPropertyFromMasterToDetail(hub);
+				oaObj = (T) hub.getMasterObject();
 			} else {
-				oaObj = (OAObject) hub.getAO();
+				oaObj = (T) hub.getAO();
 			}
 		}
 		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowVisible, OAObjectCallback.CHECK_ALL, hub, null, oaObj, name, null);
@@ -531,16 +528,16 @@ public abstract class OAObjectCallbackService {
 	 * @param name      the property, link, or method name, or {@code null}
 	 * @return the resulting callback, or {@code null} if hub and object are both null
 	 */
-	public OAObjectCallback getAllowEnabledObjectCallback(final int checkType, final Hub hub, OAObject oaObj, String name) {
+	public <T extends OAObject> OAObjectCallback getAllowEnabledObjectCallback(final int checkType, final Hub<T> hub, T oaObj, String name) {
 		if (hub == null && oaObj == null) {
 			return null;
 		}
 		if (oaObj == null) {
 			if (name == null) {
-				name = getPropertyFromMasterToDetail(hub);
-				oaObj = hub.getMasterObject();
+				name = callHubDetailGetPropertyFromMasterToDetail(hub);
+				oaObj = (T) hub.getMasterObject();
 			} else {
-				oaObj = (OAObject) hub.getAO();
+				oaObj = (T) (OAObject) hub.getAO();
 			}
 		}
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowEnabled, checkType, hub, null, oaObj, name, null);
@@ -557,14 +554,14 @@ public abstract class OAObjectCallbackService {
 	 * @param hub the hub providing contextual rules
 	 * @return the resulting callback
 	 */
-	public OAObjectCallback getAllowEnabledObjectCallback(Hub hub) {
+	public OAObjectCallback getAllowEnabledObjectCallback(Hub<? extends OAObject> hub) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowEnabled);
 
 		OAObject objMaster = hub.getMasterObject();
 		if (objMaster == null) {
 			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
 		} else {
-			String propertyName = getPropertyFromMasterToDetail(hub);
+			String propertyName = callHubDetailGetPropertyFromMasterToDetail(hub);
 			objectCallback.setPropertyName(propertyName);
 			objectCallback.setObject(objMaster);
 			processObjectCallback(objectCallback);
@@ -609,7 +606,7 @@ public abstract class OAObjectCallbackService {
 	 * @param oaObjCopy the copied object
 	 * @return the resulting callback
 	 */
-	public OAObjectCallback getAfterCopyObjectCallback(final OAObject oaObj, final OAObject oaObjCopy) {
+	public <T extends OAObject> OAObjectCallback getAfterCopyObjectCallback(final T oaObj, final T oaObjCopy) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AfterCopy, OAObjectCallback.CHECK_ALL, null, null, oaObj, null,
 				oaObjCopy);
 		processObjectCallback(objectCallback);
@@ -682,12 +679,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public OAObjectCallback getAllowAddObjectCallback(final Hub hub, OAObject objAdd, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getAllowAddObjectCallback(final Hub<T> hub, T objAdd, final int checkType) {
 		if (hub == null) {
 			return null;
 		}
 
-		OALinkInfo li = getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -723,12 +720,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public OAObjectCallback getVerifyAddObjectCallback(final Hub hub, final OAObject oaObj, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final int checkType) {
 		if (hub == null) {
 			return null;
 		}
 
-		OALinkInfo li = getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 		OAObjectCallback objectCallback = null;
 
@@ -757,11 +754,11 @@ public abstract class OAObjectCallbackService {
 	 * @param clazz the class to evaluate
 	 * @return the resulting callback, or {@code null} if the class is {@code null}
 	 */
-	public OAObjectCallback getAllowNewObjectCallback(final Class clazz) {
+	public OAObjectCallback getAllowNewObjectCallback(final Class<? extends OAObject> clazz) {
 		if (clazz == null) {
 			return null;
 		}
-		final OAObjectInfo oi = getOAObjectInfo(clazz);
+		final OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 
 		int ct = (OAObjectCallback.CHECK_Processed | OAObjectCallback.CHECK_UserEnabledProperty);
 		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowNew, ct, null, clazz, null, null, null);
@@ -796,12 +793,12 @@ public abstract class OAObjectCallbackService {
 	 * @param hub the hub providing contextual rules
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public OAObjectCallback getAllowNewObjectCallback(final Hub hub) {
+	public OAObjectCallback getAllowNewObjectCallback(final Hub<? extends OAObject> hub) {
 		if (hub == null) {
 			return null;
 		}
 
-		OALinkInfo li = getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -833,12 +830,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public OAObjectCallback getAllowRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType) {
 		if (hub == null) {
 			return null;
 		}
 
-		OALinkInfo li = getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -874,12 +871,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public OAObjectCallback getVerifyRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType) {
 		if (hub == null) {
 			return null;
 		}
 
-		OALinkInfo li = getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -915,12 +912,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public OAObjectCallback getAllowRemoveAllObjectCallback(final Hub hub, final int checkType) {
+	public OAObjectCallback getAllowRemoveAllObjectCallback(final Hub<? extends OAObject> hub, final int checkType) {
 		if (hub == null) {
 			return null;
 		}
 
-		OALinkInfo li = getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -956,12 +953,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public OAObjectCallback getVerifyRemoveAllObjectCallback(final Hub hub, final int checkType) {
+	public OAObjectCallback getVerifyRemoveAllObjectCallback(final Hub<? extends OAObject> hub, final int checkType) {
 		if (hub == null) {
 			return null;
 		}
 
-		OALinkInfo li = getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -1034,7 +1031,7 @@ public abstract class OAObjectCallbackService {
 		if (clazz == null) {
 			return null;
 		}
-		final OAObjectInfo oi = getOAObjectInfo(clazz);
+		final OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 
 		int ct = (OAObjectCallback.CHECK_Processed | OAObjectCallback.CHECK_UserEnabledProperty);
 		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowDelete, ct, null, clazz, null, null, objDelete);
@@ -1071,12 +1068,12 @@ public abstract class OAObjectCallbackService {
 	 * @param objDelete the object to delete
 	 * @return the resulting callback, or {@code null} if the hub or object is {@code null}
 	 */
-	public OAObjectCallback getAllowDeleteObjectCallback(final Hub hub, final OAObject objDelete) {
+	public OAObjectCallback getAllowDeleteObjectCallback(final Hub<? extends OAObject> hub, final OAObject objDelete) {
 		if (hub == null || objDelete == null) {
 			return null;
 		}
 
-		OALinkInfo li = getLinkInfoFromDetailToMaster(hub);
+		OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 		OAObject objMaster = hub.getMasterObject();
 
 		OAObjectCallback objectCallback = null;
@@ -1109,10 +1106,10 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback
 	 */
-	public OAObjectCallback getVerifyDeleteObjectCallback(final Hub hub, final OAObject objDelete, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getVerifyDeleteObjectCallback(final Hub<T> hub, final T objDelete, final int checkType) {
 		OAObjectCallback objectCallback = null;
 		if (hub != null) {
-			OALinkInfo li = getLinkInfoFromDetailToMaster(hub);
+			OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 			OAObject objMaster = hub.getMasterObject();
 
 			if (li == null || (li.getPrivateMethod() && objMaster == null)) {
@@ -1258,12 +1255,12 @@ public abstract class OAObjectCallbackService {
 	 * @param confirmTitle   the confirmation title to assign
 	 * @return the resulting callback
 	 */
-	public OAObjectCallback getConfirmRemoveObjectCallback(final Hub hub, final OAObject oaObj, String confirmMessage,
+	public <T extends OAObject> OAObjectCallback getConfirmRemoveObjectCallback(final Hub<T> hub, final T oaObj, String confirmMessage,
 			String confirmTitle) {
 		OAObjectCallback objectCallback;
 		OAObject objMaster = hub.getMasterObject();
 		if (objMaster != null) {
-			String propertyName = getPropertyFromMasterToDetail(hub);
+			String propertyName = callHubDetailGetPropertyFromMasterToDetail(hub);
 			objectCallback = new OAObjectCallback(Type.SetConfirmForRemove, OAObjectCallback.CHECK_ALL, hub, null, oaObj, propertyName,
 					null);
 			objectCallback.setConfirmMessage(confirmMessage);
@@ -1288,12 +1285,12 @@ public abstract class OAObjectCallbackService {
 	 * @param confirmTitle   the confirmation title to assign
 	 * @return the resulting callback
 	 */
-    public OAObjectCallback getConfirmRemoveAllObjectCallback(final Hub hub, String confirmMessage,
+    public OAObjectCallback getConfirmRemoveAllObjectCallback(final Hub<? extends OAObject> hub, String confirmMessage,
             String confirmTitle) {
         OAObjectCallback objectCallback;
         OAObject objMaster = hub.getMasterObject();
         if (objMaster != null) {
-            String propertyName = getPropertyFromMasterToDetail(hub);
+            String propertyName = callHubDetailGetPropertyFromMasterToDetail(hub);
                 objectCallback = new OAObjectCallback(Type.SetConfirmForRemoveAll, OAObjectCallback.CHECK_ALL, 
                     hub, null, null, propertyName, null);
             objectCallback.setConfirmMessage(confirmMessage);
@@ -1320,12 +1317,12 @@ public abstract class OAObjectCallbackService {
      * @param confirmTitle   the confirmation title to assign
      * @return the resulting callback
      */
-	public OAObjectCallback getConfirmAddObjectCallback(final Hub hub, final OAObject oaObj, String confirmMessage,
+	public <T extends OAObject> OAObjectCallback getConfirmAddObjectCallback(final Hub<T> hub, final T oaObj, String confirmMessage,
 			String confirmTitle) {
 		OAObjectCallback objectCallback;
 		OAObject objMaster = hub.getMasterObject();
 		if (objMaster != null) {
-			String propertyName = getPropertyFromMasterToDetail(hub);
+			String propertyName = callHubDetailGetPropertyFromMasterToDetail(hub);
 			objectCallback = new OAObjectCallback(Type.SetConfirmForAdd, OAObjectCallback.CHECK_ALL, hub, null, oaObj, propertyName, null);
 			objectCallback.setConfirmMessage(confirmMessage);
 			objectCallback.setConfirmTitle(confirmTitle);
@@ -1400,7 +1397,7 @@ public abstract class OAObjectCallbackService {
 	 */
 	protected void _processObjectCallback(final OAObjectCallback objectCallback) {
 		final Hub hubThis = objectCallback.getHub();
-		final Class clazz = objectCallback.getCalcClass();
+		final Class<?> clazz = objectCallback.getCalcClass();
 		final OAObject oaObj = objectCallback.getObject();
 		final String propertyName = objectCallback.getPropertyName();
 		final Object oldValue = objectCallback.getOldValue();
@@ -1414,11 +1411,11 @@ public abstract class OAObjectCallbackService {
 		final boolean bCheckCallbackMethod = (objectCallback.getCheckType() & OAObjectCallback.CHECK_CallbackMethod) != 0;
 		final boolean bCheckIncludeMaster = (objectCallback.getCheckType() & OAObjectCallback.CHECK_IncludeMaster) != 0;
 
-		final OAObjectInfo oi = getOAObjectInfo(clazz);
+		final OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 
 		if (bCheckProcessedCheck) {
 			if (objectCallback.getType() == Type.AllowDelete && value != null && OAString.isEmpty(propertyName)) {
-				OAObjectInfo oix = getOAObjectInfo(value.getClass());
+				OAObjectInfo oix = callInfoGetObjectInfo(value.getClass());
 				if (oix.getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
@@ -1455,7 +1452,7 @@ public abstract class OAObjectCallbackService {
 		if (bCheckIncludeMaster && hubThis != null
 				&& (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()
 						|| objectCallback.getType() == Type.AllowVisible)) {
-			OALinkInfo li = getLinkInfoFromMasterHubToDetail(hubThis);
+			OALinkInfo li = callHubDetailGetLinkInfoFromMasterHubToDetail(hubThis);
 			if (li != null && !li.getOwner()) {
 				OAObject objx = hubThis.getMasterObject();
 				if (objx != null) {
@@ -1497,12 +1494,12 @@ public abstract class OAObjectCallbackService {
 				&& oi.getHasOneAndOnlyOneLink()) {
 			OALinkInfo li = oi.getLinkInfo(propertyName);
 			if (li != null && li.getOneAndOnlyOne()) {
-				if (getInternalProperty(oaObj, propertyName) == null) {
+				if (callPropertyGetProperty(oaObj, propertyName) == null) {
 					for (OALinkInfo lix : oi.getLinkInfos()) {
 						if (lix == li || !lix.getOneAndOnlyOne()) {
 							continue;
 						}
-						if (getInternalProperty(oaObj, lix.getName()) != null) {
+						if (callPropertyGetProperty(oaObj, lix.getName()) != null) {
 							objectCallback.setAllowed(false);
 						}
 					}
@@ -1539,7 +1536,7 @@ public abstract class OAObjectCallbackService {
 			}
 			final boolean bHadVisibleProperty = (oaObj != null && OAString.isNotEmpty(sx));
 			if (bHadVisibleProperty) {
-				Object valx = getReflectProperty(oaObj, sx);
+				Object valx = callReflectGetProperty(oaObj, sx);
 				objectCallback.setAllowed(bx == OAConv.toBoolean(valx));
 				if (!objectCallback.getAllowed() && OAString.isEmpty(objectCallback.getResponse())) {
 					objectCallback.setAllowed(false);
@@ -1577,11 +1574,11 @@ public abstract class OAObjectCallbackService {
 				OAObject user = OAContext.getContextObject();
 				if (user == null) {
 					
-					if (!isServer()) {
+					if (!callSyncIsServer()) {
 						objectCallback.setAllowed(false);
 					}
 				} else {
-					Object valx = getReflectProperty(user, sx);
+					Object valx = callReflectGetProperty(user, sx);
 					objectCallback.setAllowed(bx == OAConv.toBoolean(valx));
 				}
 				if (!objectCallback.getAllowed() && OAString.isEmpty(objectCallback.getResponse())) {
@@ -1632,7 +1629,7 @@ public abstract class OAObjectCallbackService {
 
 			final boolean bHadEnabledProperty = (objectCallback.getAllowed() && OAString.isNotEmpty(enabledName));
 			if (bHadEnabledProperty && bCheckEnabledProperty) {
-				Object valx = getReflectProperty(oaObj, enabledName);
+				Object valx = callReflectGetProperty(oaObj, enabledName);
 				objectCallback.setAllowed(enabledValue == OAConv.toBoolean(valx));
 				if (!objectCallback.getAllowed() && OAString.isEmpty(objectCallback.getResponse())) {
 					objectCallback.setAllowed(false);
@@ -1685,7 +1682,7 @@ public abstract class OAObjectCallbackService {
 		if (oaObj == null) {
 			return;
 		}
-		Hub[] hubs = getHubReferences(oaObj);
+		Hub[] hubs = callHubGetHubReferences(oaObj);
 
 		// call the callback method, this can override eq.allowed
 		if (OAString.isNotEmpty(propertyName) && objectCallback.getType().isCheckEnabledFirst()) {
@@ -1759,7 +1756,7 @@ public abstract class OAObjectCallbackService {
 			return;
 		}
 		// recursive, goto top owner first
-		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
 
 		OALinkInfo lix = oi.getOwnedByOne();
 		if (lix != null) {
@@ -1782,7 +1779,7 @@ public abstract class OAObjectCallbackService {
 			pp = oi.getVisibleProperty();
 			if (bPassed && OAString.isNotEmpty(pp)) {
 				b = oi.getVisibleValue();
-				valx = getReflectProperty(oaObj, pp);
+				valx = callReflectGetProperty(oaObj, pp);
 				bPassed = (b == OAConv.toBoolean(valx));
 				if (!bPassed) {
 					objectCallback.setAllowed(false);
@@ -1795,11 +1792,11 @@ public abstract class OAObjectCallbackService {
 				b = oi.getContextVisibleValue();
 				OAObject user = OAContext.getContextObject();
 				if (user == null) {
-					if (!isServer()) {
+					if (!callSyncIsServer()) {
 						bPassed = false;
 					}
 				} else {
-					valx = getReflectProperty(user, pp);
+					valx = callReflectGetProperty(user, pp);
 					bPassed = (b == OAConv.toBoolean(valx));
 				}
 				if (!bPassed) {
@@ -1826,7 +1823,7 @@ public abstract class OAObjectCallbackService {
 				pp = li.getVisibleProperty();
 				if (OAString.isNotEmpty(pp)) {
 					b = li.getVisibleValue();
-					valx = getReflectProperty(oaObj, pp);
+					valx = callReflectGetProperty(oaObj, pp);
 					bPassed = (b == OAConv.toBoolean(valx));
 					if (!bPassed) {
 						objectCallback.setAllowed(false);
@@ -1842,11 +1839,11 @@ public abstract class OAObjectCallbackService {
 					b = li.getContextVisibleValue();
 					OAObject user = OAContext.getContextObject();
 					if (user == null) {
-						if (!isServer()) {
+						if (!callSyncIsServer()) {
 							bPassed = false;
 						}
 					} else {
-						valx = getReflectProperty(user, pp);
+						valx = callReflectGetProperty(user, pp);
 						bPassed = (b == OAConv.toBoolean(valx));
 					}
 					if (!bPassed) {
@@ -1884,7 +1881,7 @@ public abstract class OAObjectCallbackService {
 				pp = oi.getEnabledProperty();
 				if (OAString.isNotEmpty(pp) && bCheckEnabledProperty) {
 					b = oi.getEnabledValue();
-					valx = getReflectProperty(oaObj, pp);
+					valx = callReflectGetProperty(oaObj, pp);
 					bPassed = (b == OAConv.toBoolean(valx));
 					if (!bPassed) {
 						objectCallback.setAllowed(false);
@@ -1927,7 +1924,7 @@ public abstract class OAObjectCallbackService {
 				pp = li.getEnabledProperty();
 				if (OAString.isNotEmpty(pp) && bCheckEnabledProperty) {
 					b = li.getEnabledValue();
-					valx = getReflectProperty(oaObj, pp);
+					valx = callReflectGetProperty(oaObj, pp);
 					bPassed = (b == OAConv.toBoolean(valx));
 					if (!bPassed) {
 						objectCallback.setAllowed(false);
@@ -1985,7 +1982,7 @@ public abstract class OAObjectCallbackService {
 	 * @param oldValue       the previous value for property-change callbacks
 	 * @param newValue       the new value for property-change callbacks
 	 */
-	protected void processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
+	protected <T extends OAObject> void processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub<T> hub, final T oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
 		if (objectCallback.getType().isCheckEnabledFirst()) {
 			OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled);
@@ -2011,10 +2008,10 @@ public abstract class OAObjectCallbackService {
 	 * @param oldValue       the previous property value
 	 * @param newValue       the new property value
 	 */
-	protected void _processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub hub, final OAObject oaObj,
+	protected <T extends OAObject> void _processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub<T> hub, final T oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
 		
-		HubListener[] hl = getAllListeners(hub);
+		HubListener[] hl = callHubEventGetAllListeners(hub);
 		if (hl == null) {
 			return;
 		}
@@ -2150,7 +2147,7 @@ public abstract class OAObjectCallbackService {
 		if (object == null) {
 			return;
 		}
-		OAObjectInfo oi = getOAObjectInfo(object.getClass());
+		OAObjectInfo oi = callInfoGetObjectInfo(object.getClass());
 
 		if (propertyName == null) {
 			propertyName = ""; // blank will be method for class level:   onObjectCallback(..)  or callback(OAObjectCallback)
@@ -2181,14 +2178,14 @@ public abstract class OAObjectCallbackService {
 	 * @param property the property name used to locate the callback method
 	 * @param model    the model instance passed to the callback
 	 */
-	public void onObjectCallbackModel(Class clazz, String property, OAObjectModel model) {
+	public void onObjectCallbackModel(Class<? extends OAObject> clazz, String property, OAObjectModel model) {
 		if (clazz == null || OAString.isEmpty(property) || model == null) {
 			return;
 		}
-		OAObjectInfo oi = getOAObjectInfo(clazz);
-		Method m = getMethod(oi, property + "ModelCallback", OAObjectModel.class);
+		OAObjectInfo oi = callInfoGetObjectInfo(clazz);
+		Method m = callInfoGetMethod(oi, property + "ModelCallback", OAObjectModel.class);
 		if (m == null) {
-			m = getMethod(oi, "onObjectCallback" + property + "Model", 1);
+			m = callInfoGetMethod(oi, "onObjectCallback" + property + "Model", 1);
 		}
 		if (m != null) {
 			Class[] cs = m.getParameterTypes();
@@ -2215,12 +2212,12 @@ public abstract class OAObjectCallbackService {
 	 * @param changeListener the listener to register dependencies with
 	 * @param bEnabled       true to use enabled dependencies; false for visible
 	 */
-	public void addObjectCallbackChangeListeners(final Hub hub, final Class cz, final String prop, String ppPrefix,
+	public <T extends OAObject> void addObjectCallbackChangeListeners(final Hub<T> hub, final Class<T> cz, final String prop, String ppPrefix,
 			final HubChangeListener changeListener, final boolean bEnabled) {
 		if (ppPrefix == null) {
 			ppPrefix = "";
 		}
-		OAObjectInfo oi = getOAObjectInfo(cz);
+		OAObjectInfo oi = callInfoGetObjectInfo(cz);
 		String s;
 
 		if (bEnabled) {
@@ -2358,7 +2355,7 @@ public abstract class OAObjectCallbackService {
 	 * @param bProcessed                true to include processed-dependent properties
 	 * @param changeListener            the listener that receives dependent paths
 	 */
-	protected void addDependentProps(Hub hub, String prefix, String[] viewDependentProperties, String[] contextDependentProperties,
+	protected void addDependentProps(Hub<? extends OAObject> hub, String prefix, String[] viewDependentProperties, String[] contextDependentProperties,
 			boolean bProcessed, HubChangeListener changeListener) {
 		if (viewDependentProperties != null) {
 			for (String s : viewDependentProperties) {
@@ -2389,14 +2386,14 @@ public abstract class OAObjectCallbackService {
 		purpose="", 
 		example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(class)"
 	)
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz);	
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName)"
 	)
-	public abstract Object getInternalProperty(OAObject oaObj, String propertyName);
+	public abstract Object callPropertyGetProperty(OAObject oaObj, String propertyName);
 
 
 	@OAParentProvided (
@@ -2404,14 +2401,14 @@ public abstract class OAObjectCallbackService {
 		purpose="", 
 		example = "srvcObject.getOAObjectReflectService().getProperty(oaObj, propPath)"
 	)
-	public abstract Object getReflectProperty(OAObject oaObj, String propPath);
+	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcObject.getOAObjectHubService().getHubReferences(obj)"
 	)
-	public abstract Hub[] getHubReferences(OAObject oaObj);	
+	public abstract Hub[] callHubGetHubReferences(OAObject oaObj);	
 
 	
 	@OAParentProvided (
@@ -2419,43 +2416,43 @@ public abstract class OAObjectCallbackService {
 		purpose="", 
 		example = "srvcObject.getOAObjectInfoService().getMethod(oi, name, clazz)"
 	)
-	public abstract Method getMethod(OAObjectInfo oi, String methodName, final Class classParam);	
+	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, final Class<?> classParam);	
 	
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcObject.getOAObjectInfoService().getMethod(oi, name, clazz, amt)"
 	)
-	public abstract Method getMethod(OAObjectInfo oi, String methodName, int argumentCount);	
+	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);	
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail(hub)"
 	)
-	public abstract String getPropertyFromMasterToDetail(Hub thisHub);	
+	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<? extends OAObject> thisHub);	
 
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
-		example = "getLinkInfoFromDetailToMaster(hub)"
+		example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub)"
 	)
-	public abstract OALinkInfo getLinkInfoFromDetailToMaster(Hub hub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<? extends OAObject> hub);
 	
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail(hub)"
 	)
-	public abstract OALinkInfo getLinkInfoFromMasterHubToDetail(Hub hub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<? extends OAObject> hub);
 	
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcHub.getHubEventService().getAllListeners(hub)"
 	)
-	public abstract HubListener[] getAllListeners(Hub hub);
+	public abstract HubListener[] callHubEventGetAllListeners(Hub<? extends OAObject> hub);
 
 
 	@OAParentProvided (
@@ -2463,15 +2460,7 @@ public abstract class OAObjectCallbackService {
 		purpose="", 
 		example = "getSyncService().isServer()"
 	)
-	public abstract boolean isServer();
-
+	public abstract boolean callSyncIsServer();
 
 }
-
-
-
-
-
-
-
 

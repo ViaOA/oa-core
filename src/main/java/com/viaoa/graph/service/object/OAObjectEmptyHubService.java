@@ -55,7 +55,7 @@ public abstract class OAObjectEmptyHubService {
         HashMap<Integer, String[]> hm = map.get(clazz.getName());
         if (hm == null) return;
         
-        OAObjectKey key = callGetKey(obj);
+        OAObjectKey key = callKeyGetKey(obj);
         if (key == null) return;
         
         Object[] keys = key.getObjectIds();
@@ -136,7 +136,7 @@ public abstract class OAObjectEmptyHubService {
                 }
                 if (ssNew == null) return true;
                 
-                OAObjectKey key = callGetKey((OAObject)obj);
+                OAObjectKey key = callKeyGetKey((OAObject)obj);
                 if (key == null) return true;
                 
                 Object[] keys = key.getObjectIds();
@@ -160,7 +160,7 @@ public abstract class OAObjectEmptyHubService {
     }
 
 	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(obj)")
-	public abstract OAObjectKey callGetKey(OAObject oaObj); 
+	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setProperty(..)")
 	public abstract void callPropertySetProperty(OAObject oaObj, String name, Object value); 

@@ -164,7 +164,7 @@ public class ReportVersionModel extends OAObjectModel {
 		modelReportTemplate.setAllowSearch(false);
 		modelReportTemplate.setAllowHubSearch(true);
 		modelReportTemplate.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelReportTemplate.setCreateUI(li == null || !ReportVersion.P_ReportTemplate.equalsIgnoreCase(li.getName()));
 		modelReportTemplate.setViewOnly(getViewOnly());
 		// call ReportVersion.reportTemplateModelCallback(ReportTemplateModel) to be able to customize this model

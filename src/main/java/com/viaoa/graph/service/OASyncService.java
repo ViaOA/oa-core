@@ -2,8 +2,11 @@ package com.viaoa.graph.service;
 
 import java.util.logging.Logger;
 
+import com.viaoa.graph.api.SyncOps;
 import com.viaoa.graph.api.internal.SyncInternalOps;
 import com.viaoa.object.OACascade;
+import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectKey;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;
@@ -12,9 +15,12 @@ import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.model.ClientInfo;
-import com.viaoa.sync.remote.*;
+import com.viaoa.sync.remote.RemoteClientInterface;
+import com.viaoa.sync.remote.RemoteServerInterface;
+import com.viaoa.sync.remote.RemoteSessionInterface;
+import com.viaoa.sync.remote.RemoteSyncInterface;
 
-public class OASyncService implements SyncInternalOps {
+public class OASyncService implements SyncOps, SyncInternalOps {
 	private static final Logger LOG = Logger.getLogger(OASyncService.class.getName());
 	
 	private final String pkgName;
@@ -57,9 +63,6 @@ public class OASyncService implements SyncInternalOps {
     	this.pkgName = pkgName;
 	}
 
-	public void initialize() {
-	}
-	
     public void createServer(int port) throws Exception {
     	stopServer();
     	Package packageThis = Package.getPackage(pkgName);
@@ -369,7 +372,7 @@ public class OASyncService implements SyncInternalOps {
 	/**
 	 * Determines whether sync changes made in the current thread should be
 	 * broadcast to other computers. Delegates to
-	 * {@link OARemoteThreadDelegate#shouldSendMessages()}.
+	 * {@link OARemoteThreadDelegate#callRemoteThreadShouldSendMessages()}.
 	 *
 	 * @return {@code true} if messages should be sent
 	 */
@@ -381,7 +384,7 @@ public class OASyncService implements SyncInternalOps {
 	/**
 	 * Enables or disables suppression of client–server (CS) sync messages for
 	 * the current thread. Delegates to
-	 * {@link OAThreadLocalDelegate#setSuppressCSMessages(boolean)}.
+	 * {@link OAThreadLocalDelegate#callThreadLocalSetSuppressCSMessages(boolean)}.
 	 *
 	 * @param b whether to suppress CS messages
 	 */
@@ -393,7 +396,7 @@ public class OASyncService implements SyncInternalOps {
 	/**
 	 * Returns whether CS sync messages are currently suppressed for the
 	 * current thread. Delegates to
-	 * {@link OAThreadLocalDelegate#isSuppressCSMessages()}.
+	 * {@link OAThreadLocalDelegate#callThreadLocalIsSuppressCSMessages()}.
 	 *
 	 * @return {@code true} if CS messages are suppressed
 	 */
@@ -497,6 +500,24 @@ public class OASyncService implements SyncInternalOps {
 	@Override
 	public void performDGC() {
 		getSyncServer().performDGC();
+	}
+
+	@Override
+	public boolean callSyncIsServer() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey, String linkPropertyName) {
+		// TODO Auto-generated method stub
+		
 	}
 
 

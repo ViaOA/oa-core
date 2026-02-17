@@ -6,30 +6,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
-import com.viaoa.remote.*;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.*;
 
-public class HubEventService {
+public abstract class HubEventService {
 	private final Logger LOG = Logger.getLogger(HubEventService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 	
-	public HubEventService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-    	this.srvcHub = srvcHub;
+	public HubEventService(Hub.FriendAccess faHub ) {
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
 
@@ -62,12 +49,10 @@ public class HubEventService {
 	 * @param pos     the position of the object within the Hub
 	 */
 	public void fireBeforeRemoveEvent(Hub thisHub, Object obj, int pos) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		// verify with objectCallback
-		if (!srvcOARemoteThread.isRemoteThread()) {
+		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
-				OAObjectCallback em = srvcObject.getOAObjectCallbackService().getVerifyRemoveObjectCallback(	thisHub, (OAObject) obj,
+				OAObjectCallback em = callObjectCallbackGetVerifyRemoveObjectCallback(	thisHub, (OAObject) obj,
 																								OAObjectCallback.CHECK_CallbackMethod);
 				if (!em.getAllowed()) {
 					String s = em.getResponse();
@@ -85,12 +70,12 @@ public class HubEventService {
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hls[i].beforeRemove(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -105,9 +90,7 @@ public class HubEventService {
 	 * @param pos     the position the object occupied
 	 */
 	public <T> void fireAfterRemoveEvent(Hub<T> thisHub, final T obj, int pos) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		if (srvcOAThreadLocal.isLoading()) {
+		if (callThreadLocalIsLoading()) {
 			return;
 		}
 
@@ -115,51 +98,51 @@ public class HubEventService {
 		final int x = hl.length;
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-			if (srvcOARemoteThread.shouldEventsBeQueued()) {
+			if (callRemoteThreadShouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
 						try {
-							srvcOAThreadLocal.addHubEvent(hubEvent);
+							callThreadLocalAddHubEvent(hubEvent);
 							for (int i = 0; i < x; i++) {
 								hl[i].afterRemove(hubEvent);
 							}
 						} finally {
-							srvcOAThreadLocal.removeHubEvent(hubEvent);
+							callThreadLocalRemoveHubEvent(hubEvent);
 						}
 					}
 				};
-				srvcOARemoteThread.queueEvent(r);
+				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					srvcOAThreadLocal.addHubEvent(hubEvent);
+					callThreadLocalAddHubEvent(hubEvent);
 					for (int i = 0; i < x; i++) {
 						hl[i].afterRemove(hubEvent);
 					}
 				} finally {
-					srvcOAThreadLocal.removeHubEvent(hubEvent);
+					callThreadLocalRemoveHubEvent(hubEvent);
 				}
 			}
 		}
 		if (obj instanceof OAObject) {
-			srvcObject.getOAObjectCacheService().fireAfterRemoveEvent( (Hub<OAObject>) thisHub, (OAObject) obj);
+			callObjectCacheFireAfterRemoveEvent( (Hub<OAObject>) thisHub, (OAObject) obj);
 		}
-		//srvcObject.getOAObjectCacheService().fireAfterRemoveEvent(thisHub, obj, pos);
+		//callObjectCacheFireAfterRemoveEvent(thisHub, obj, pos);
 		//fireMasterObjectChangeEvent(thisHub, false);
 
 		if (obj instanceof OAObject && !((OAObject) obj).isLoading()) {
 			OAObject objx = faHub.getHubDataMaster(thisHub).getMasterObject();
 			if (objx != null) {
-				String s = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
+				String s = callHubDetailGetPropertyFromMasterToDetail(thisHub);
 				if (s != null) {
-					OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(objx.getClass());
+					OAObjectInfo oi = callObjectInfoGetOAObjectInfo(objx.getClass());
 					if (oi.getHasTriggers()) {
 						final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 						try {
-							srvcOAThreadLocal.addHubEvent(hubEvent);
+							callThreadLocalAddHubEvent(hubEvent);
 							oi.onChange(thisHub.getMasterObject(), s, hubEvent);
 						} finally {
-							srvcOAThreadLocal.removeHubEvent(hubEvent);
+							callThreadLocalRemoveHubEvent(hubEvent);
 						}
 					}
 				}
@@ -176,10 +159,8 @@ public class HubEventService {
 	 */
 	public void fireBeforeRemoveAllEvent(Hub thisHub) {
 		// verify with objectCallback
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		if (!srvcOARemoteThread.isRemoteThread()) {
-			OAObjectCallback em = srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
+		if (!callRemoteThreadIsRemoteThread()) {
+			OAObjectCallback em = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
 			if (!em.getAllowed()) {
 				String s = em.getResponse();
 				if (OAString.isEmpty(s)) {
@@ -194,12 +175,12 @@ public class HubEventService {
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hls[i].beforeRemoveAll(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -214,33 +195,31 @@ public class HubEventService {
 	public void fireAfterRemoveAllEvent(Hub thisHub) {
 		final HubListener[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub);
-			if (srvcOARemoteThread.shouldEventsBeQueued()) {
+			if (callRemoteThreadShouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
 						try {
-							srvcOAThreadLocal.addHubEvent(hubEvent);
+							callThreadLocalAddHubEvent(hubEvent);
 							for (int i = 0; i < x; i++) {
 								hl[i].afterRemoveAll(hubEvent);
 							}
 						} finally {
-							srvcOAThreadLocal.removeHubEvent(hubEvent);
+							callThreadLocalRemoveHubEvent(hubEvent);
 						}
 					}
 				};
-				srvcOARemoteThread.queueEvent(r);
+				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					srvcOAThreadLocal.addHubEvent(hubEvent);
+					callThreadLocalAddHubEvent(hubEvent);
 					for (int i = 0; i < x; i++) {
 						hl[i].afterRemoveAll(hubEvent);
 					}
 				} finally {
-					srvcOAThreadLocal.removeHubEvent(hubEvent);
+					callThreadLocalRemoveHubEvent(hubEvent);
 				}
 			}
 		}
@@ -251,16 +230,16 @@ public class HubEventService {
 		final OAObject objx = faHub.getHubDataMaster(thisHub).getMasterObject();
 		// was: final OAObject objx = thisHub.getMasterObject();
 		if (objx != null) {
-			final String s = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
+			final String s = callHubDetailGetPropertyFromMasterToDetail(thisHub);
 			if (s != null) {
-				OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(objx.getClass());
+				OAObjectInfo oi = callObjectInfoGetOAObjectInfo(objx.getClass());
 				if (oi.getHasTriggers()) {
 					final HubEvent hubEvent = new HubEvent(thisHub);
 					try {
-						srvcOAThreadLocal.addHubEvent(hubEvent);
+						callThreadLocalAddHubEvent(hubEvent);
 						oi.onChange(objx, s, hubEvent);
 					} finally {
-						srvcOAThreadLocal.removeHubEvent(hubEvent);
+						callThreadLocalRemoveHubEvent(hubEvent);
 					}
 				}
 			}
@@ -278,11 +257,9 @@ public class HubEventService {
 	 */
 	public void fireBeforeAddEvent(Hub thisHub, Object obj, int pos) {
 		// verify with objectCallback
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		if (!srvcOARemoteThread.isRemoteThread()) {
+		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
-				OAObjectCallback em = srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback(	thisHub, (OAObject) obj,
+				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, (OAObject) obj,
 																							OAObjectCallback.CHECK_CallbackMethod);
 				if (!em.getAllowed()) {
 					String s = em.getResponse();
@@ -299,12 +276,12 @@ public class HubEventService {
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hls[i].beforeAdd(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -319,9 +296,7 @@ public class HubEventService {
 	 * @param pos     the position of the added object
 	 */
 	public <T> void fireAfterAddEvent(Hub<T> thisHub, final T obj, int pos) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		if (srvcOAThreadLocal.isLoading()) {
+		if (callThreadLocalIsLoading()) {
 			return;
 		}
 
@@ -329,52 +304,52 @@ public class HubEventService {
 		final int x = hl.length;
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-			if (srvcOARemoteThread.shouldEventsBeQueued()) {
+			if (callRemoteThreadShouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
 						try {
-							srvcOAThreadLocal.addHubEvent(hubEvent);
+							callThreadLocalAddHubEvent(hubEvent);
 							for (int i = 0; i < x; i++) {
 								hl[i].afterAdd(hubEvent);
 							}
 						} finally {
-							srvcOAThreadLocal.removeHubEvent(hubEvent);
+							callThreadLocalRemoveHubEvent(hubEvent);
 						}
 					}
 				};
-				srvcOARemoteThread.queueEvent(r);
+				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					srvcOAThreadLocal.addHubEvent(hubEvent);
+					callThreadLocalAddHubEvent(hubEvent);
 					for (int i = 0; i < x; i++) {
 						hl[i].afterAdd(hubEvent);
 					}
 				} finally {
-					srvcOAThreadLocal.removeHubEvent(hubEvent);
+					callThreadLocalRemoveHubEvent(hubEvent);
 				}
 			}
 		}
 		if (obj instanceof OAObject) {
-			srvcObject.getOAObjectCacheService().fireAfterAddEvent((Hub<OAObject>) thisHub, (OAObject) obj);
+			callObjectCacheFireAfterAddEvent((Hub<OAObject>) thisHub, (OAObject) obj);
 		}
-		//srvcObject.getOAObjectCacheService().fireAfterAddEvent(thisHub, obj, pos);
+		//callObjectCacheFireAfterAddEvent(thisHub, obj, pos);
 		//fireMasterObjectChangeEvent(thisHub, false);
 
 		// 20160304
 		if (obj instanceof OAObject) {
 			OAObject objx = faHub.getHubDataMaster(thisHub).getMasterObject();
 			if (objx != null) {
-				String s = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
+				String s = callHubDetailGetPropertyFromMasterToDetail(thisHub);
 				if (s != null) {
-					OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(objx.getClass());
+					OAObjectInfo oi = callObjectInfoGetOAObjectInfo(objx.getClass());
 					if (oi.getHasTriggers()) {
 						HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-						srvcOAThreadLocal.addHubEvent(hubEvent);
+						callThreadLocalAddHubEvent(hubEvent);
 						try {
 							oi.onChange(thisHub.getMasterObject(), s, hubEvent);
 						} finally {
-							srvcOAThreadLocal.removeHubEvent(hubEvent);
+							callThreadLocalRemoveHubEvent(hubEvent);
 						}
 					}
 				}
@@ -393,11 +368,9 @@ public class HubEventService {
 	 */
 	public void fireBeforeInsertEvent(Hub thisHub, Object obj, int pos) {
 		// verify with objectCallback
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		if (!srvcOARemoteThread.isRemoteThread()) {
+		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
-				OAObjectCallback em = srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback(	thisHub, (OAObject) obj,
+				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, (OAObject) obj,
 																							OAObjectCallback.CHECK_CallbackMethod);
 				if (!em.getAllowed()) {
 					String s = em.getResponse();
@@ -414,12 +387,12 @@ public class HubEventService {
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hls[i].beforeInsert(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -434,9 +407,7 @@ public class HubEventService {
 	 * @param pos     the position of the inserted object
 	 */
 	public <T> void fireAfterInsertEvent(Hub<T> thisHub, final T obj, int pos) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		if (srvcOAThreadLocal.isLoading()) {
+		if (callThreadLocalIsLoading()) {
 			return;
 		}
 
@@ -444,34 +415,34 @@ public class HubEventService {
 		final int x = hl.length;
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-			if (srvcOARemoteThread.shouldEventsBeQueued()) {
+			if (callRemoteThreadShouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
 						try {
-							srvcOAThreadLocal.addHubEvent(hubEvent);
+							callThreadLocalAddHubEvent(hubEvent);
 							for (int i = 0; i < x; i++) {
 								hl[i].afterInsert(hubEvent);
 							}
 						} finally {
-							srvcOAThreadLocal.removeHubEvent(hubEvent);
+							callThreadLocalRemoveHubEvent(hubEvent);
 						}
 					}
 				};
-				srvcOARemoteThread.queueEvent(r);
+				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					srvcOAThreadLocal.addHubEvent(hubEvent);
+					callThreadLocalAddHubEvent(hubEvent);
 					for (int i = 0; i < x; i++) {
 						hl[i].afterInsert(hubEvent);
 					}
 				} finally {
-					srvcOAThreadLocal.removeHubEvent(hubEvent);
+					callThreadLocalRemoveHubEvent(hubEvent);
 				}
 			}
 		}
 		if (obj instanceof OAObject) {
-			srvcObject.getOAObjectCacheService().fireAfterAddEvent((Hub<OAObject>) thisHub, (OAObject) obj);
+			callObjectCacheFireAfterAddEvent((Hub<OAObject>) thisHub, (OAObject) obj);
 		}
 
 		//srvcObject.getOAObjectCacheService().fireAfterInsertEvent(thisHub, obj, pos);
@@ -480,16 +451,16 @@ public class HubEventService {
 		if (obj instanceof OAObject) {
 			OAObject objx = faHub.getHubDataMaster(thisHub).getMasterObject();
 			if (objx != null) {
-				String s = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
+				String s = callHubDetailGetPropertyFromMasterToDetail(thisHub);
 				if (s != null) {
-					OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(objx.getClass());
+					OAObjectInfo oi = callObjectInfoGetOAObjectInfo(objx.getClass());
 					if (oi.getHasTriggers()) {
 						HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 						try {
-							srvcOAThreadLocal.addHubEvent(hubEvent);
+							callThreadLocalAddHubEvent(hubEvent);
 							oi.onChange(thisHub.getMasterObject(), s, hubEvent);
 						} finally {
-							srvcOAThreadLocal.removeHubEvent(hubEvent);
+							callThreadLocalRemoveHubEvent(hubEvent);
 						}
 					}
 				}
@@ -507,13 +478,12 @@ public class HubEventService {
 	 * @param bAllShared whether shared Hubs should also receive the event
 	 */
 	public void fireAfterChangeActiveObjectEvent(Hub thisHub, Object obj, int pos, boolean bAllShared) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hl = getAllListeners(thisHub, bAllShared ? 1 : 3);
 		int x = hl.length;
 		if (x > 0) {
 			Exception exception = null;
 			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-			srvcOAThreadLocal.addHubEvent(hubEvent);
+			callThreadLocalAddHubEvent(hubEvent);
 			for (int i = 0; i < x; i++) {
 				try {
 					hl[i].afterChangeActiveObject(hubEvent);
@@ -523,7 +493,7 @@ public class HubEventService {
 					}
 				}
 			}
-			srvcOAThreadLocal.removeHubEvent(hubEvent);
+			callThreadLocalRemoveHubEvent(hubEvent);
 			if (exception != null) {
 				throw new RuntimeException("Exception while calling fireAfterChangeActiveObjectEvent", exception);
 			}
@@ -537,18 +507,17 @@ public class HubEventService {
 	 * @param thisHub the Hub generating the event
 	 */
 	public void fireBeforeRefreshEvent(Hub thisHub) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub);
-			srvcOAThreadLocal.addHubEvent(hubEvent);
+			callThreadLocalAddHubEvent(hubEvent);
 			try {
 				for (int i = 0; i < x; i++) {
 					hl[i].beforeRefresh(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -560,18 +529,17 @@ public class HubEventService {
 	 * @param thisHub the Hub generating the event
 	 */
 	public void fireBeforeSelectEvent(Hub thisHub) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub);
-			srvcOAThreadLocal.addHubEvent(hubEvent);
+			callThreadLocalAddHubEvent(hubEvent);
 			try {
 				for (int i = 0; i < x; i++) {
 					hl[i].beforeSelect(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -583,18 +551,17 @@ public class HubEventService {
 	 * @param thisHub the Hub generating the event
 	 */
 	public void fireAfterSortEvent(Hub thisHub) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub);
-			srvcOAThreadLocal.addHubEvent(hubEvent);
+			callThreadLocalAddHubEvent(hubEvent);
 			try {
 				for (int i = 0; i < x; i++) {
 					hl[i].afterSort(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 		//fireMasterObjectChangeEvent(thisHub, false);
@@ -608,18 +575,17 @@ public class HubEventService {
 	 * @param obj     the object being deleted
 	 */
 	public void fireBeforeDeleteEvent(Hub thisHub, Object obj) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hls = getAllListeners(thisHub);
 		int x = hls.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, obj);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hls[i].beforeDelete(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -633,36 +599,34 @@ public class HubEventService {
 	 * @param obj     the deleted object
 	 */
 	public void fireAfterDeleteEvent(Hub thisHub, Object obj) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		final HubListener[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, obj);
 
-			if (srvcOARemoteThread.shouldEventsBeQueued()) {
+			if (callRemoteThreadShouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
 						try {
-							srvcOAThreadLocal.addHubEvent(hubEvent);
+							callThreadLocalAddHubEvent(hubEvent);
 							for (int i = 0; i < x; i++) {
 								hl[i].afterDelete(hubEvent);
 							}
 						} finally {
-							srvcOAThreadLocal.removeHubEvent(hubEvent);
+							callThreadLocalRemoveHubEvent(hubEvent);
 						}
 					}
 				};
-				srvcOARemoteThread.queueEvent(r);
+				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					srvcOAThreadLocal.addHubEvent(hubEvent);
+					callThreadLocalAddHubEvent(hubEvent);
 					for (int i = 0; i < x; i++) {
 						hl[i].afterDelete(hubEvent);
 					}
 				} finally {
-					srvcOAThreadLocal.removeHubEvent(hubEvent);
+					callThreadLocalRemoveHubEvent(hubEvent);
 				}
 			}
 		}
@@ -677,18 +641,17 @@ public class HubEventService {
 	 * @param obj     the object being saved
 	 */
 	public void fireBeforeSaveEvent(Hub thisHub, OAObject obj) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, obj);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hl[i].beforeSave(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -701,18 +664,17 @@ public class HubEventService {
 	 * @param obj     the object that was saved
 	 */
 	public void fireAfterSaveEvent(Hub thisHub, OAObject obj) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, obj);
-			srvcOAThreadLocal.addHubEvent(hubEvent);
+			callThreadLocalAddHubEvent(hubEvent);
 			try {
 				for (int i = 0; i < x; i++) {
 					hl[i].afterSave(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -725,18 +687,17 @@ public class HubEventService {
 	 * @param toPos   the destination position
 	 */
 	public void fireBeforeMoveEvent(Hub thisHub, int fromPos, int toPos) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, fromPos, toPos);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hl[i].beforeMove(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -750,18 +711,17 @@ public class HubEventService {
 	 * @param toPos   the new position
 	 */
 	public void fireAfterMoveEvent(Hub thisHub, int fromPos, int toPos) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, fromPos, toPos);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hl[i].afterMove(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 		//fireMasterObjectChangeEvent(thisHub, false);
@@ -777,32 +737,31 @@ public class HubEventService {
 	 * @param propertyName the name of the property that changed
 	 */
 	public void fireCalcPropertyChange(Hub thisHub, final Object object, final String propertyName) {
-		// 20180304
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		if (srvcOAThreadLocal.hasSentCalcPropertyChange(thisHub, (OAObject) object, propertyName)) {
-			return;
-		}
-
 		// 20210506 could be used by link
 		if (object instanceof OAObject) {
-			OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo((OAObject) object);
-			OALinkInfo linkInfo = srvcObject.getOAObjectInfoService().getLinkInfo(oi, propertyName);
+			// 20180304
+			if (callThreadLocalHasSentCalcPropertyChange(thisHub, (OAObject) object, propertyName)) {
+				return;
+			}
+			
+			OAObjectInfo oi = callObjectInfoGetOAObjectInfo((OAObject) object);
+			OALinkInfo linkInfo = callObjectInfoGetLinkInfo(oi, propertyName);
 			if (linkInfo != null) {
 				propertyChangeUpdateDetailHubs(thisHub, (OAObject) object, propertyName);
 			}
 		}
 
-		HubListener[] hl = srvcHub.getHubEventService().getAllListeners(thisHub);
+		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, object, propertyName, null, null);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hl[i].afterPropertyChange(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 
@@ -822,15 +781,14 @@ public class HubEventService {
 		HubListener[] hls = getAllListeners(thisHub);
 		int x = hls.length;
 		if (x > 0) {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 			HubEvent hubEvent = new HubEvent(thisHub, oaObj, propertyName, oldValue, newValue);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hls[i].beforePropertyChange(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -861,51 +819,47 @@ public class HubEventService {
 			propertyChangeUpdateDetailHubs(thisHub, oaObj, propertyName);
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
-		if (!og.getSyncService().isRemoteThread()) {
+		if (!callRemoteThreadIsRemoteThread()) {
 			String s = faHub.getHubData(thisHub).getUniqueProperty();
 			if (s == null) {
 				s = faHub.getHubDataMaster(thisHub).getUniqueProperty();
 			}
 
 			if (s != null && newValue != null && s.equalsIgnoreCase(propertyName)) {
-				if (!srvcHub.verifyUniqueProperty(thisHub, oaObj)) {
+				if (!callHubVerifyUniqueProperty(thisHub, oaObj)) {
 					throw new RuntimeException("Property " + s + " already exists in " + oaObj.getClass().getSimpleName());
 				}
 			}
 		}
 
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		
 		final HubListener[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
 		if (x > 0) {
 			final HubEvent hubEvent = new HubEvent(thisHub, oaObj, propertyName, oldValue, newValue);
 
-			if (srvcOARemoteThread.shouldEventsBeQueued()) {
+			if (callRemoteThreadShouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
 					public void run() {
 						try {
-							srvcOAThreadLocal.addHubEvent(hubEvent);
+							callThreadLocalAddHubEvent(hubEvent);
 							for (int i = 0; i < x; i++) {
 								hl[i].afterPropertyChange(hubEvent);
 							}
 						} finally {
-							srvcOAThreadLocal.removeHubEvent(hubEvent);
+							callThreadLocalRemoveHubEvent(hubEvent);
 						}
 					}
 				};
-				srvcOARemoteThread.queueEvent(r);
+				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					srvcOAThreadLocal.addHubEvent(hubEvent);
+					callThreadLocalAddHubEvent(hubEvent);
 					for (int i = 0; i < x; i++) {
 						hl[i].afterPropertyChange(hubEvent);
 					}
 				} finally {
-					srvcOAThreadLocal.removeHubEvent(hubEvent);
+					callThreadLocalRemoveHubEvent(hubEvent);
 				}
 			}
 		}
@@ -937,12 +891,12 @@ public class HubEventService {
 
 				Hub dHub = detail.getHubDetail();
 				if (dHub != null && detail.getMasterToDetailLinkInfo() != null && detail.getMasterToDetailLinkInfo().getName().equalsIgnoreCase(propertyName)) {
-					srvcHub.getHubDetailService().updateDetail(thisHub, detail, dHub, false); // ex: from activeObject.setDept(dept), dont updateLinkProperty
+					callHubDetailUpdateDetail(thisHub, detail, dHub, false); // ex: from activeObject.setDept(dept), dont updateLinkProperty
 				}
 			}
 		}
 
-		WeakReference<Hub>[] refs = srvcHub.getHubShareService().getSharedWeakHubs(thisHub);
+		WeakReference<Hub>[] refs = callHubShareGetSharedWeakHubs(thisHub);
 		for (i = 0; refs != null && i < refs.length; i++) {
 			WeakReference<Hub> ref = refs[i];
 			if (ref == null) {
@@ -968,32 +922,31 @@ public class HubEventService {
 		if (thisHub == null) {
 			return;
 		}
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		HubListener[] hl = getAllListeners(thisHub, (bAll ? 0 : 2));
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent hubEvent = new HubEvent(thisHub, null);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hl[i].onNewList(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 
 			hubEvent = new HubEvent(thisHub, null);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hl[i].afterNewList(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 		// 20160118 use this instead of newListCount
-		srvcHub.getHubDataService().incChangeCount(thisHub);
+		callHubDataIncChangeCount(thisHub);
 		//was:  thisHub.data.setNewListCount(thisHub.data.getNewListCount()+1);
 	}
 
@@ -1217,7 +1170,7 @@ public class HubEventService {
 	 */
 	public HubListener[] getAllListeners(final Hub thisHub, int type) {
 		if (thisHub == null) {
-			return null;
+			return new HubListener[0];
 		}
 		/* 0: get all
 		   1: get all that are duplicates (dataa == dataa)
@@ -1385,7 +1338,7 @@ public class HubEventService {
 			}
 		}
 
-		WeakReference<Hub>[] refs = srvcHub.getHubShareService().getSharedWeakHubs(thisHub);
+		WeakReference<Hub>[] refs = callHubShareGetSharedWeakHubs(thisHub);
 		for (int i = 0; refs != null && i < refs.length; i++) {
 			WeakReference<Hub> ref = refs[i];
 			if (ref == null) {
@@ -1412,15 +1365,14 @@ public class HubEventService {
 		int x = hl.length;
 		int i;
 		if (x > 0) {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 			HubEvent hubEvent = new HubEvent(thisHub, oaObj);
 			try {
-				srvcOAThreadLocal.addHubEvent(hubEvent);
+				callThreadLocalAddHubEvent(hubEvent);
 				for (i = 0; i < x; i++) {
 					hl[i].afterLoad(hubEvent);
 				}
 			} finally {
-				srvcOAThreadLocal.removeHubEvent(hubEvent);
+				callThreadLocalRemoveHubEvent(hubEvent);
 			}
 		}
 	}
@@ -1434,6 +1386,65 @@ public class HubEventService {
 	 * boolean canRemoveAll(Hub thisHub) { return srvcObject.getOAObjectCallbackService().getAllowRemoveAll(thisHub); }
 	 */
 
-}
+	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveObjectCallback")
+	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType);
 
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterRemoveEvent")
+	public abstract <T extends OAObject> void callObjectCacheFireAfterRemoveEvent(Hub<T> hub, T obj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(Class clazz);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject obj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback")
+	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub hub, final int checkType);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterAddEvent")
+	public abstract <T extends OAObject> void callObjectCacheFireAfterAddEvent(Hub<T> hub, T obj);
+
+	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback")
+	public abstract OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub hub, final OAObject oaObj, final int checkType);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
+	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.verifyUniqueProperty")
+	public abstract boolean callHubVerifyUniqueProperty(final Hub thisHub, final Object object);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().updateDetail")
+	public abstract void callHubDetailUpdateDetail(final Hub thisHub, final HubDetail detail, final Hub detailHub, final boolean bUpdateLink);
+
+	@OAParentProvided (example = "srvcHub.getHubShareService().getSharedWeakHubs")
+	public abstract WeakReference<Hub>[] callHubShareGetSharedWeakHubs(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.getHubDataService().incChangeCount")
+	public abstract void callHubDataIncChangeCount(Hub thisHub);
+
+	@OAParentProvided (example = "srvcRemoteThread.isRemoteThread")
+	public abstract boolean callRemoteThreadIsRemoteThread();
+
+	@OAParentProvided (example = "srvcThreadLocal.addHubEvent")
+	public abstract void callThreadLocalAddHubEvent(HubEvent he);
+
+	@OAParentProvided (example = "srvcThreadLocal.removeHubEvent")
+	public abstract void callThreadLocalRemoveHubEvent(HubEvent he);
+
+	@OAParentProvided (example = "srvcThreadLocal.isLoading")
+	public abstract boolean callThreadLocalIsLoading();		
+
+	@OAParentProvided (example = "srvcRemoteThread.shouldEventsBeQueued")
+	public abstract boolean callRemoteThreadShouldEventsBeQueued();
+
+	@OAParentProvided (example = "srvcRemoteThread.queueEvent")
+	public abstract boolean callRemoteThreadQueueEvent(Runnable r);
+
+	@OAParentProvided (example = "srvcThreadLocal.hasSentCalcPropertyChange")
+	public abstract boolean callThreadLocalHasSentCalcPropertyChange(Hub thisHub, OAObject thisObj, String propertyName);
+	
+}
 

@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.hub.*;
 import com.viaoa.model.oa.VString;
@@ -526,19 +526,18 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
      * @return the matching object, or null if not found
      */
     public T findObjectUsingId(String id) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(classTo);
-		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
-        final OAObjectKey ok = srvcObjectKey.createObjectKey(classTo, id);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(classTo);
+        final OAObjectKey ok = og.objectsInternal().callObjectKeyCreateObjectKey(classTo, id);
         
         if (finder == null) {
             if (hub != null) {
                 for (T obj : ((Hub<T>)hub)) {
-                    if (srvcObjectKey.isForSameOAObject(null, obj.getObjectKey(), ok)) return obj;
+                    if (og.objectsInternal().callObjectKeyIsForSameOAObject(null, obj.getObjectKey(), ok)) return obj;
                 }
             }
             else if (alTo != null) {
                 for (T obj : alTo) {
-                    if (srvcObjectKey.isForSameOAObject(null, obj.getObjectKey(), ok)) return obj;
+                    if (og.objectsInternal().callObjectKeyIsForSameOAObject(null, obj.getObjectKey(), ok)) return obj;
                 }
             }
         }
@@ -546,7 +545,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
             OAFinder<F, T> finder2 = new OAFinder<F,T>(this.finderPropertyPath) {
                 @Override
                 protected boolean isUsed(T obj) {
-                    return srvcObjectKey.isForSameOAObject(null, obj.getObjectKey(), ok);
+                    return og.objectsInternal().callObjectKeyIsForSameOAObject(null, obj.getObjectKey(), ok);
                 }
             };
                 

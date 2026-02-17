@@ -94,7 +94,7 @@ public class ResendBatchRequestModel extends OAObjectModel {
         modelStoreInfo.setAllowSearch(false);
         modelStoreInfo.setAllowHubSearch(false);
         modelStoreInfo.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelStoreInfo.setCreateUI(li == null || !ResendBatchRequest.P_StoreInfo.equalsIgnoreCase(li.getName()) );
         modelStoreInfo.setViewOnly(getViewOnly());
         // call ResendBatchRequest.storeInfoModelCallback(StoreInfoModel) to be able to customize this model

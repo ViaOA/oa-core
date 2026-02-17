@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.*;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -46,7 +46,7 @@ import com.viaoa.util.OANullObject;
  * Thread-safe for concurrent read/update of extended state; most mutators
  * short-circuit when no value is needed to avoid unnecessary object creation.
  */
-public class HubData implements java.io.Serializable {
+public class HubData<T> implements java.io.Serializable {
 	/**
 	 * Serialization identifier used to ensure compatibility when HubData
 	 * instances are serialized and deserialized.
@@ -59,13 +59,13 @@ public class HubData implements java.io.Serializable {
      * The class type of objects stored in the Hub. Used for validation,
      * metadata lookup, and optimized behavior when working with OAObjects.
      */
-    protected volatile Class objClass;
+    protected volatile Class<T> objClass;
     
     /**
      * Underlying ordered collection of Hub elements. Stores all objects
      * currently in the Hub and preserves their insertion order.
      */
-    protected transient Vector vector;
+    protected transient Vector<T> vector;
 
     /**
      * Counter incremented whenever the Hub’s structure changes (add, remove,
@@ -143,7 +143,7 @@ public class HubData implements java.io.Serializable {
     }
 
     //qqqqqq add javadoc
-    public Vector getVector() {
+    public Vector<T> getVector() {
         return vector;
     }
     
@@ -278,7 +278,7 @@ public class HubData implements java.io.Serializable {
      *
      * @return the OASelect instance, or {@code null}
      */
-    public OASelect getSelect() {
+    public OASelect<? extends OAObject> getSelect() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.select;
@@ -292,7 +292,7 @@ public class HubData implements java.io.Serializable {
      *
      * @param select the OASelect instance to assign, or {@code null}
      */
-    public void setSelect(OASelect select) {
+    public void setSelect(OASelect<?> select) {
         if (hubDatax != null || select != null) {
             getHubDatax().select = select;
             if (select == null) {
@@ -518,9 +518,8 @@ public class HubData implements java.io.Serializable {
             oi = hdx.objectInfo;
             if (oi != null) return oi;
         }
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objClass);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-        oi = srvcObjectInfo.getObjectInfo(objClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objClass);
+        oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(objClass);
         if (objClass != null && hubDatax != null) hubDatax.objectInfo = oi;
         return oi;
     }

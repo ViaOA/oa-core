@@ -92,7 +92,7 @@ public class ReporterCorpVerificationModel extends OAObjectModel {
 		modelEnvironmentVerification.setAllowSearch(false);
 		modelEnvironmentVerification.setAllowHubSearch(false);
 		modelEnvironmentVerification.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelEnvironmentVerification
 				.setCreateUI(li == null || !ReporterCorpVerification.P_EnvironmentVerification.equalsIgnoreCase(li.getName()));
 		modelEnvironmentVerification.setViewOnly(getViewOnly());

@@ -22,7 +22,7 @@ import test.xice.tsac.model.oa.propertypath.SiloPP;
 public class RCDownloadDelegate {
 
     public static void run(final RCDownload download) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _run(download);
         }
         else {
@@ -77,7 +77,7 @@ public class RCDownloadDelegate {
     
     
     public static void process(final RCDownload download) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _process(download);
         }
         else {
@@ -235,7 +235,7 @@ public class RCDownloadDelegate {
 
 
     public static void load(final RCDownload download) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _load(download);
         }
         else {

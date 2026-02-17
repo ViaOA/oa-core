@@ -285,7 +285,7 @@ public class TableModel extends OAObjectModel {
         modelDatabase.setAllowSearch(true);
         modelDatabase.setAllowHubSearch(true);
         modelDatabase.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelDatabase.setCreateUI(li == null || !Table.P_Database.equals(li.getName()) );
         modelDatabase.setViewOnly(getViewOnly());
         // call Table.databaseModelCallback(DatabaseModel) to be able to customize this model

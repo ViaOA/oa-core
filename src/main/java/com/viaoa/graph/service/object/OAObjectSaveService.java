@@ -141,7 +141,7 @@ public abstract class OAObjectSaveService {
 	 * @return null if all objects can be saved
 	 */
 	private void _save(OAObject oaObj, boolean bOne, int iCascadeRule, OACascade cascade) {
-		OAObjectInfo oi = getOAObjectInfo(oaObj);
+		OAObjectInfo oi = callInfoGetObjectInfo(oaObj);
 		List al = oi.getLinkInfos();
 		for (int i = 0; i < al.size(); i++) {
 			OALinkInfo li = (OALinkInfo) al.get(i);
@@ -212,14 +212,14 @@ public abstract class OAObjectSaveService {
 
 							if (bSave) {
 								// have to save new reference object before oaObj can be saved.
-								OAObjectInfo oiRef = getOAObjectInfo(oaRef.getClass());
+								OAObjectInfo oiRef = callInfoGetOAObjectInfo(oaRef.getClass());
 								Exception ex = null;
 								try {
 									callDSSaveWithoutReferences(oaRef);
 								} catch (Exception e) {
 									ex = e;
 								}
-								callSetNew(oaRef, false);
+								callObjectSetNew(oaRef, false);
 								faObject.setChangedFlag(oaRef, true); // so that it will be save/updated
 
 								synchronized (hmSaveNewLock) {
@@ -272,7 +272,7 @@ public abstract class OAObjectSaveService {
 	*/
 	public boolean onSave(OAObject oaObj) {
     	//qqqqqqqqqq method was protected
-		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = callInfoGetOAObjectInfo(oaObj.getClass());
 
 		//LOG.fine(oaObj.getClass().getSimpleName()+", isNew="+oaObj.isNew());        
 		// if new, then need to hold a lock
@@ -321,7 +321,7 @@ public abstract class OAObjectSaveService {
 			callDSSave(oaObj);
 			callLogLogToXmlFile(oaObj, true);
 			if (bIsNew) {
-				callSetNew(oaObj, false);
+				callObjectSetNew(oaObj, false);
 			}
 		} finally {
 			if (bIsNew) {
@@ -345,7 +345,7 @@ public abstract class OAObjectSaveService {
 	public abstract Hub[] callHubGetHubReferences(OAObject oaObj); 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo getOAObjectInfo(OAObject obj); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceNullOrNotLoaded")
 	public abstract boolean callReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String propertyName);
@@ -354,13 +354,13 @@ public abstract class OAObjectSaveService {
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz);
+	public abstract OAObjectInfo callInfoGetOAObjectInfo(Class clazz);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectDSService().saveWithoutReferences")
 	public abstract void callDSSaveWithoutReferences(OAObject oaObj);
 
 	@OAParentProvided (example = "srvcObject.setNew")
-	public abstract void callSetNew(final OAObject oaObj, final boolean b);
+	public abstract void callObjectSetNew(final OAObject oaObj, final boolean b);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().saveAll")
 	public abstract void callHubSaveAll(Hub hub, int iCascadeRule, OACascade cascade);

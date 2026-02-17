@@ -25,7 +25,7 @@ import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
@@ -233,13 +233,11 @@ public class UpdateDelegate {
 
 			// 20130318 check for blob
 			if (column.type == java.sql.Types.BLOB) {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
-		    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+				OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(oaObj);
 				OAPropertyInfo pi = oi.getPropertyInfo(column.propertyName);
 				if (pi != null && pi.isBlob()) {
-					OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-					Object obj = srvcOAObjectProperty.getProperty(oaObj, column.propertyName, true, true);
+					Object obj = og.objectsInternal().callObjectPropertyGetProperty(oaObj, column.propertyName, true, true);
 					if (obj == OANotExist.instance) {
 						continue; // not loaded, no change to it
 					}
@@ -351,9 +349,8 @@ public class UpdateDelegate {
     				}
     			}
     
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
-    			final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
-    			OAObjectKey key = srvcOAObjectReflect.getPropertyObjectKey(oaObj, links[i].propertyName);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+    			OAObjectKey key = og.objectsInternal().callObjectReflectGetPropertyObjectKey(oaObj, links[i].propertyName);
     			Object[] ids;
     			if (key != null) {
     				ids = key.getObjectIds();

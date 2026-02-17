@@ -83,7 +83,7 @@ public class OAJacksonDeserializerLoaderTest {
 		JsonNode node = oaj.readTree(is);
 
 		StackItem si = new StackItem();
-		si.oi = OAObjectInfoDelegate.getOAObjectInfo(ReporterCorp.class);
+		si.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReporterCorp.class);
 		si.node = node;
 
 		OAJacksonDeserializerLoader loader = new OAJacksonDeserializerLoader(oaj);
@@ -107,7 +107,7 @@ public class OAJacksonDeserializerLoaderTest {
 		JsonNode node = oaj.readTree(is);
 
 		StackItem si = new StackItem();
-		si.oi = OAObjectInfoDelegate.getOAObjectInfo(ReporterCorp.class);
+		si.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReporterCorp.class);
 		si.node = node;
 
 		OAJacksonDeserializerLoader loader = new OAJacksonDeserializerLoader(oaj);
@@ -130,7 +130,7 @@ public class OAJacksonDeserializerLoaderTest {
 		JsonNode node = oaj.readTree(is);
 
 		StackItem si = new StackItem();
-		si.oi = OAObjectInfoDelegate.getOAObjectInfo(ReporterCorp.class);
+		si.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReporterCorp.class);
 		si.node = node;
 
 		OAJacksonDeserializerLoader loader = new OAJacksonDeserializerLoader(oaj);
@@ -153,7 +153,7 @@ public class OAJacksonDeserializerLoaderTest {
 		JsonNode node = oaj.readTree(is);
 
 		StackItem si = new StackItem();
-		si.oi = OAObjectInfoDelegate.getOAObjectInfo(ReporterCorp.class);
+		si.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReporterCorp.class);
 		si.node = node;
 
 		OAJacksonDeserializerLoader loader = new OAJacksonDeserializerLoader(oaj);
@@ -243,7 +243,7 @@ public class OAJacksonDeserializerLoaderTest {
 		StackItem stackItem = new StackItem();
 		final StackItem stackItemRoot = stackItem;
 
-		stackItem.oi = OAObjectInfoDelegate.getOAObjectInfo(ReporterCorp.class);
+		stackItem.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReporterCorp.class);
 		stackItem.node = nodeRoot;
 
 		loader.findExistingObject(stackItem);
@@ -258,7 +258,7 @@ public class OAJacksonDeserializerLoaderTest {
 		StackItem stackItemChild = new StackItem();
 		stackItemChild.parent = stackItem;
 		stackItemChild.li = stackItem.oi.getLinkInfo(ReporterCorp.P_ReportInstanceProcessorInfo);
-		stackItemChild.oi = OAObjectInfoDelegate.getOAObjectInfo(stackItemChild.li.getToClass());
+		stackItemChild.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(stackItemChild.li.getToClass());
 		stackItemChild.node = stackItem.node.get(stackItemChild.li.getLowerName());
 		assertNotNull(stackItemChild.node);
 
@@ -271,7 +271,7 @@ public class OAJacksonDeserializerLoaderTest {
 		stackItemChild = new StackItem();
 		stackItemChild.parent = stackItem;
 		stackItemChild.li = stackItem.oi.getLinkInfo(ReportInstanceProcessorInfo.P_ReportInstanceProcesses);
-		stackItemChild.oi = OAObjectInfoDelegate.getOAObjectInfo(stackItemChild.li.getToClass());
+		stackItemChild.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(stackItemChild.li.getToClass());
 		stackItemChild.node = stackItem.node.get(stackItemChild.li.getLowerName()).get(0);
 
 		loader._findExistingObjectFromPojo(stackItemChild);
@@ -391,13 +391,13 @@ public class OAJacksonDeserializerLoaderTest {
 		StackItem stackItem = new StackItem();
 		final StackItem stackItemRoot = stackItem;
 		stackItemRoot.obj = rcx;
-		stackItem.oi = OAObjectInfoDelegate.getOAObjectInfo(ReporterCorp.class);
+		stackItem.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReporterCorp.class);
 		stackItem.node = nodeRoot;
 
 		StackItem stackItemChild = new StackItem();
 		stackItemChild.parent = stackItem;
 		stackItemChild.li = stackItem.oi.getLinkInfo(ReporterCorp.P_ReportInstanceProcessorInfo);
-		stackItemChild.oi = OAObjectInfoDelegate.getOAObjectInfo(stackItemChild.li.getToClass());
+		stackItemChild.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(stackItemChild.li.getToClass());
 		stackItemChild.node = stackItem.node.get(stackItemChild.li.getLowerName());
 		stackItemChild.obj = rcx.getReportInstanceProcessorInfo();
 
@@ -406,7 +406,7 @@ public class OAJacksonDeserializerLoaderTest {
 		stackItemChild = new StackItem();
 		stackItemChild.parent = stackItem;
 		stackItemChild.li = stackItem.oi.getLinkInfo(ReportInstanceProcessorInfo.P_ReportInstanceProcesses);
-		stackItemChild.oi = OAObjectInfoDelegate.getOAObjectInfo(stackItemChild.li.getToClass());
+		stackItemChild.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(stackItemChild.li.getToClass());
 		stackItemChild.node = stackItem.node.get(stackItemChild.li.getLowerName()).get(0);
 
 		EqualQueryForObject eq = loader.getEqualQueryForObject(stackItemChild);
@@ -435,13 +435,13 @@ public class OAJacksonDeserializerLoaderTest {
 		StackItem stackItem = new StackItem();
 		final StackItem stackItemRoot = stackItem;
 		stackItemRoot.obj = rcx;
-		stackItem.oi = OAObjectInfoDelegate.getOAObjectInfo(ReporterCorp.class);
+		stackItem.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReporterCorp.class);
 		stackItem.node = nodeRoot;
 
 		StackItem stackItemChild = new StackItem();
 		stackItemChild.parent = stackItem;
 		stackItemChild.li = stackItem.oi.getLinkInfo(ReporterCorp.P_StoreInfos);
-		stackItemChild.oi = OAObjectInfoDelegate.getOAObjectInfo(stackItemChild.li.getToClass());
+		stackItemChild.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(stackItemChild.li.getToClass());
 		// stackItemChild.node = stackItem.node.get(stackItemChild.li.getLowerName()).get(0);
 
 		EqualQueryForObject eq = loader.getEqualQueryForObject(stackItemChild);
@@ -473,13 +473,13 @@ public class OAJacksonDeserializerLoaderTest {
 		StackItem stackItem = new StackItem();
 		final StackItem stackItemRoot = stackItem;
 		stackItemRoot.obj = rcx;
-		stackItem.oi = OAObjectInfoDelegate.getOAObjectInfo(ReporterCorp.class);
+		stackItem.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReporterCorp.class);
 		stackItem.node = nodeRoot;
 
 		StackItem stackItemChild = new StackItem();
 		stackItemChild.parent = stackItem;
 		stackItemChild.li = stackItem.oi.getLinkInfo(ReporterCorp.P_ReportInstanceProcessorInfo);
-		stackItemChild.oi = OAObjectInfoDelegate.getOAObjectInfo(stackItemChild.li.getToClass());
+		stackItemChild.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(stackItemChild.li.getToClass());
 		stackItemChild.node = stackItem.node.get(stackItemChild.li.getLowerName());
 		stackItemChild.obj = rcx.getReportInstanceProcessorInfo();
 
@@ -488,7 +488,7 @@ public class OAJacksonDeserializerLoaderTest {
 		stackItemChild = new StackItem();
 		stackItemChild.parent = stackItem;
 		stackItemChild.li = stackItem.oi.getLinkInfo(ReportInstanceProcessorInfo.P_ReportInstanceProcesses);
-		stackItemChild.oi = OAObjectInfoDelegate.getOAObjectInfo(stackItemChild.li.getToClass());
+		stackItemChild.oi = OAObjectInfoDelegate.callInfoGetObjectInfo(stackItemChild.li.getToClass());
 		stackItemChild.node = stackItem.node.get(stackItemChild.li.getLowerName()).get(0);
 
 		EqualQueryForReference eq = loader.getEqualQueryForReference(	stackItemChild,

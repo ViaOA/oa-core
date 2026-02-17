@@ -1,34 +1,25 @@
 package com.viaoa.graph.service.hub;
 
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAComparator;
 import com.viaoa.util.OAString;
 
-public class HubSortService {
+public abstract class HubSortService {
 	private final Logger LOG = Logger.getLogger(HubSortService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 
-	public HubSortService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-		this.srvcHub = srvcHub;
+	public HubSortService(Hub.FriendAccess faHub) {
 		if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
 		this.faHub = faHub;
 	}
@@ -75,13 +66,12 @@ public class HubSortService {
     public void sort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly) {
         if (thisHub == null) return;
         boolean b = false;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            srvcOAThreadLocal.lock(thisHub);
+            callThreadLocalLock(thisHub);
             b = _sort(thisHub, propertyPaths, bAscending, comp, bAlreadySortedAndLocalOnly);
         }
         finally {
-            srvcOAThreadLocal.unlock(thisHub);
+            callThreadLocalUnlock(thisHub);
         }
         if (b) afterPerformSort(thisHub); // outside of lock
     }
@@ -111,8 +101,7 @@ public class HubSortService {
      * @return true if sorting parameters changed
      */
     private boolean _sort(Hub thisHub, String propertyPaths, final boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-        srvcOARemoteThread.startNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
+        callRemoteThreadStartNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
 
         if (comp != null && !(comp instanceof Serializable)) {
             if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) { 
@@ -166,7 +155,7 @@ public class HubSortService {
             if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
                 // 20171028 need to send if sort is cancelled
                 //was: if (propertyPaths != null || comp != null) { // otherwise it was a cancel
-            	srvcHub.getHubCSService().sort(thisHub, propertyPaths, bAscending, comp);
+            	callHubCSSort(thisHub, propertyPaths, bAscending, comp);
                 //}
             }
         }
@@ -192,13 +181,12 @@ public class HubSortService {
 	public void sort(Hub thisHub) {
         if (thisHub == null) return;
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            srvcOAThreadLocal.lock(thisHub);
+            callThreadLocalLock(thisHub);
             _performSort(thisHub);
         }
         finally {
-            srvcOAThreadLocal.unlock(thisHub);
+            callThreadLocalUnlock(thisHub);
         }
         afterPerformSort(thisHub); // outside of lock
 	}
@@ -222,13 +210,12 @@ public class HubSortService {
                 }
             }
         }        
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         try {
-            srvcOAThreadLocal.addSiblingHelper(siblingHelper);
+            callThreadLocalAddSiblingHelper(siblingHelper);
             _performSortX(thisHub);
         }
         finally {
-            srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
+            callThreadLocalRemoveSiblingHelper(siblingHelper);
         }
     }
 	
@@ -241,7 +228,7 @@ public class HubSortService {
      */
 	private void _performSortX(Hub thisHub) {
 		if (faHub.getHubData(thisHub).getSortListener() == null) return;
-		srvcHub.getHubSelectService().loadAllData(thisHub);
+		callHubSelectLoadAllData(thisHub);
 	    faHub.getHubData(thisHub).incrementChangeCount();
 	    
 	    for (int i=0; i<5; i++) {
@@ -260,7 +247,7 @@ public class HubSortService {
 	 * @param thisHub the Hub that was sorted
 	 */
     private void afterPerformSort(Hub thisHub) {
-    	srvcHub.getHubEventService().fireAfterSortEvent(thisHub);
+    	callHubEventFireAfterSortEvent(thisHub);
     }
 	
     /**
@@ -345,4 +332,31 @@ public class HubSortService {
         return s;
     }
 
+	@OAParentProvided (example = "srvcHub.getHubCSService().sort")
+	public abstract void callHubCSSort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp);
+
+	@OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
+	public abstract void callHubSelectLoadAllData(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterSortEvent")
+	public abstract void callHubEventFireAfterSortEvent(Hub thisHub);
+
+	@OAParentProvided (example = "srvcThreadLocal.lock")
+	public abstract void callThreadLocalLock(Object object);
+	
+	@OAParentProvided (example = "srvcThreadLocal.unlock")
+	public abstract void callThreadLocalUnlock(Object object);
+	
+	@OAParentProvided (example = "srvcRemoteThread.startNextThread")
+	public abstract void callRemoteThreadStartNextThread();
+
+	@OAParentProvided (example = "srvcThreadLocal.addSiblingHelper")
+	public abstract boolean callThreadLocalAddSiblingHelper(OASiblingHelper sh);
+
+	@OAParentProvided (example = "srvcThreadLocal.removeSiblingHelper")
+	public abstract void callThreadLocalRemoveSiblingHelper(OASiblingHelper sh);
+    
 }
+
+
+

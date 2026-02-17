@@ -20,7 +20,7 @@ import com.viaoa.converter.OAConverterBoolean;
 import com.viaoa.filter.OAEmptyFilter;
 import com.viaoa.filter.OANotEmptyFilter;
 import com.viaoa.filter.OANotNullFilter;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.*;
@@ -245,8 +245,7 @@ public class OAHierFinder<F extends OAObject> {
     private boolean findFirstValue(final OAObject obj, OAFilter filter, final int pos, final boolean bRecursiveCheckOnly, final int cntRecursive) {
         if (obj == null) return false;
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
         boolean b = true;
         if (pos == 0) {
             if (!bIncludeFromObject) {
@@ -254,7 +253,7 @@ public class OAHierFinder<F extends OAObject> {
                 b = false;
             }
             else {
-                OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(obj.getClass());
+                OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(obj.getClass());
                 OAPropertyInfo pi = oi.getPropertyInfo(property);
                 if (pi == null) {
                     OALinkInfo li = oi.getLinkInfo(property);
@@ -278,8 +277,8 @@ public class OAHierFinder<F extends OAObject> {
         }        
 
         // check recursive parent 
-        OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(obj.getClass());
-        OALinkInfo liRecursive = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.ONE);
+        OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(obj.getClass());
+        OALinkInfo liRecursive = og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(oi, OALinkInfo.ONE);
         
         if (liRecursive != null) {
             OALinkInfo[] lis  = propertyPath.getLinkInfos();

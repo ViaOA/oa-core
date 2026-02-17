@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -151,7 +151,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         if (hub == null) throw new RuntimeException("hub can not be null");
         clazz = hub.getObjectClass();
         wrHub = new WeakReference<Hub<T>>(hub);
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 
         final boolean bEmptyHub = (hub.getSize() == 0);
         
@@ -190,7 +190,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             }
         };        
 
-        og.getOAObjectService().getOAObjectCacheService().addListener(clazz, cacheListener);
+        og.objectsInternal().callObjectCacheAddListener(clazz, cacheListener);
         
         if (bEmptyHub) {
             reselectAndRefresh();            
@@ -343,8 +343,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         // hub.clear();
         
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-        boolean b = og.getHubService().getHubDataService().setLoadingAllData(hub, true);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+        boolean b = og.hubsInternal().callHubDataSetLoadingAllData(hub, true);
         try {
             hub.setLoading(true);
             if (changeRefresher != null && changeRefresher.hasChanged()) return;
@@ -354,7 +354,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         }
         finally {
             hub.setLoading(false);
-            if (!b) og.getHubService().getHubDataService().setLoadingAllData(hub, false);
+            if (!b) og.hubsInternal().callHubDataSetLoadingAllData(hub, false);
         }
     }
     
@@ -417,13 +417,12 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         
         if (bSetLoading) hub.setLoading(true);
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-        boolean b = og.getHubService().getHubDataService().setLoadingAllData(hub, true);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+        boolean b = og.hubsInternal().callHubDataSetLoadingAllData(hub, true);
     	
         try {
             // need to check loaded objects 
-        	srvcObjectCache.visit(clazz, new OACallback() {
+        	og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
                 @SuppressWarnings("unchecked")
                 @Override
                 public boolean updateObject(Object obj) {
@@ -440,8 +439,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         }
         finally {
             if (bSetLoading) hub.setLoading(false);
-            if (!b) og.getHubService().getHubDataService().setLoadingAllData(hub, false);
-            og.getHubService().getHubEventService().fireOnNewListEvent(hub, false);
+            if (!b) og.hubsInternal().callHubDataSetLoadingAllData(hub, false);
+            og.hubsInternal().callHubEventFireOnNewListEvent(hub, false);
         }
     }
     
@@ -495,9 +494,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         	srvcOARemoteThread.sendMessages(true);
         }
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-    	srvcObjectCache.visit(clazz, new OACallback() {
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
             @Override
             public boolean updateObject(Object obj) {
                 if (isUsed((T) obj)) hub.add((T) obj);
@@ -548,14 +546,14 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                                     changeRefresher = new OAChangeRefresher() {
                                         @Override
                                         protected void process() throws Exception {
-                                    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-                                            boolean bWasLoadingAllData = og.getHubService().getHubDataService().setLoadingAllData(hub, true);
+                                    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+                                            boolean bWasLoadingAllData = og.hubsInternal().callHubDataSetLoadingAllData(hub, true);
                                             try {
                                                 reselectAndRefresh();
                                             }
                                             finally {
                                                 if (!hasChanged()) {
-                                                    if (!bWasLoadingAllData) og.getHubService().getHubDataService().setLoadingAllData(hub, false);
+                                                    if (!bWasLoadingAllData) og.hubsInternal().callHubDataSetLoadingAllData(hub, false);
                                                 }
                                             }
                                         }
@@ -565,8 +563,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                             }
                         }
                         // need to flag that all data will be loaded in another thread
-                		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-                        og.getHubService().getHubDataService().setLoadingAllData(hub, true, changeRefresher.getThread());
+                		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+                        og.hubsInternal().callHubDataSetLoadingAllData(hub, true, changeRefresher.getThread());
                         changeRefresher.refresh();
                     }
                     else {
@@ -656,10 +654,9 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             trigger = null;
         }
         if (cacheListener == null) {
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-        	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
         	        	
-        	srvcObjectCache.removeListener(clazz, cacheListener);
+    		og.objectsInternal().callObjectCacheRemoveListener(clazz, cacheListener);
             cacheListener = null;
         }
     }

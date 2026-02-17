@@ -2,27 +2,16 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
 import com.viaoa.xml.OAXMLWriter;
 
-public class HubXMLService {
+public abstract class HubXMLService {
 	private final Logger LOG = Logger.getLogger(HubXMLService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
-	private final Hub.FriendAccess faHub;
-
-	public HubXMLService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-		this.srvcHub = srvcHub;
-		if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
-		this.faHub = faHub;
+	public HubXMLService() {
 	}
 
 	/**
@@ -105,7 +94,7 @@ public class HubXMLService {
 	        	if (((OAObject) obj).getNew()) continue;
 	        }
 	        String name = thisHub.getObjectClass().getSimpleName();
-	        if (obj instanceof OAObject) srvcObject.getOAObjectXMLService().write((OAObject)obj, ow, name, bKeyOnly, cascade);
+	        if (obj instanceof OAObject) callObjectXMLWrite((OAObject)obj, ow, name, bKeyOnly, cascade);
 	    }
 	    ow.indent--;
 	    ow.indent();
@@ -116,5 +105,7 @@ public class HubXMLService {
         else ow.println("</"+tagName+">");
     }
 
+	@OAParentProvided (example = "srvcObject.getOAObjectXMLService().write")
+	public abstract void callObjectXMLWrite(final OAObject oaObj, final OAXMLWriter ow, final String tagName, boolean bKeyOnly, final OACascade cascade);
 
 }

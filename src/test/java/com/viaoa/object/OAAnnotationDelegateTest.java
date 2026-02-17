@@ -48,7 +48,7 @@ public class OAAnnotationDelegateTest extends OAUnitTest {
 	@Test
 	public void testSimpleUpdate() {
 		final Class c = Server.class;
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(c);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(c);
 
 		// @OAProperty(maxLength = 55, displayLength = 12, columnLength = 10)
 		// @OAColumn(maxLength = 55)
@@ -67,7 +67,7 @@ public class OAAnnotationDelegateTest extends OAUnitTest {
 	}
 
 	protected void testUpdateClass(final Class clazz) {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(clazz);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(clazz);
 
 		OAClass oaclass = (OAClass) clazz.getAnnotation(OAClass.class);
 		assertNotNull(oaclass);

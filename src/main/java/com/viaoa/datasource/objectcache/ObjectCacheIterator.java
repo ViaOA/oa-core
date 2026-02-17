@@ -18,8 +18,9 @@ package com.viaoa.datasource.objectcache;
 import java.util.ArrayList;
 
 import com.viaoa.datasource.OADataSourceIterator;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
+import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 
@@ -41,7 +42,7 @@ import com.viaoa.util.OAFilter;
  *
  * @param <T> the OAObject type being iterated
  */
-public class ObjectCacheIterator<T> implements OADataSourceIterator {
+public class ObjectCacheIterator<T extends OAObject> implements OADataSourceIterator {
 	
 	/**
 	 * The class type of objects that this iterator will return. Used by the
@@ -168,9 +169,9 @@ public class ObjectCacheIterator<T> implements OADataSourceIterator {
 			if (bFetchIsDone) {
 				return null;
 			}
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-	    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-			lastFetchObject = (T) srvcObjectCache.find(lastFetchObject, clazz, filter, false, false, 100, (ArrayList) alFetchObjects);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			
+			lastFetchObject = (T) og.objectsInternal().callObjectCacheFind(lastFetchObject, clazz, filter, false, false, 100, (ArrayList) alFetchObjects);
 			if (lastFetchObject == null) {
 				bFetchIsDone = true;
 				if (alFetchObjects.size() == 0) {

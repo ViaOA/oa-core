@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAOne;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCallbackService;
 import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
@@ -550,8 +550,7 @@ public abstract class OAUIController extends HubListenerAdapter {
 
         if (bUseObjectCallback) {
             Class cz = hub.getObjectClass();
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(cz);
-    		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cz);
             String ppPrefix = "";
             int cnt = 0;
             for (String prop : properties) {
@@ -560,8 +559,8 @@ public abstract class OAUIController extends HubListenerAdapter {
                     addVisibleObjectCallbackCheck(hub, prop);
                 }
                 else {
-            		srvcObjectCallback.addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, getEnabledChangeListener(), true);
-            		srvcObjectCallback.addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, getVisibleChangeListener(), false);
+                	og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, getEnabledChangeListener(), true);
+                	og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, getVisibleChangeListener(), false);
                 }
                 ppPrefix += prop + ".";
                 cz = oaPropertyPath.getClasses()[cnt++];
@@ -857,13 +856,12 @@ public abstract class OAUIController extends HubListenerAdapter {
             return fromObject;
         }
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) fromObject);
-		final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) fromObject);
         if (fromParentClass == null || !fromParentClass.equals(fromObject.getClass())) {
             fromParentClass = fromObject.getClass();
-            fromParentPropertyPath = srvcOAObjectReflect.getPropertyPathFromMaster((OAObject) fromObject, getHub());
+            fromParentPropertyPath = og.objectsInternal().callObjectReflectGetPropertyPathFromMaster((OAObject) fromObject, getHub());
         }
-        return srvcOAObjectReflect.getProperty((OAObject) fromObject, fromParentPropertyPath);
+        return og.objectsInternal().callObjectReflectGetProperty((OAObject) fromObject, fromParentPropertyPath);
     }
 
     /**
@@ -885,9 +883,8 @@ public abstract class OAUIController extends HubListenerAdapter {
         }
 
         if (bIsHubCalc) {
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(getHub());
-    		final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
-            obj = srvcOAObjectReflect.getProperty(getHub(), propertyPath);
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(getHub());
+            obj = og.objectsInternal().callObjectReflectGetProperty(getHub(), propertyPath);
         }
         else {
             if (OAString.isEmpty(propertyPath)) {
@@ -1133,9 +1130,8 @@ public abstract class OAUIController extends HubListenerAdapter {
                 prop = propertyPath;
             }
             if (objx instanceof OAObject) {
-        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) objx);
-        		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-                OAObjectCallback em = srvcObjectCallback.getConfirmPropertyChangeObjectCallback((OAObject) objx, prop, newValue, confirmMessage, confirmTitle);
+        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objx);
+                OAObjectCallback em = og.objectsInternal().callObjectCallbackGetConfirmPropertyChangeObjectCallback((OAObject) objx, prop, newValue, confirmMessage, confirmTitle);
                 confirmMessage = em.getConfirmMessage();
                 confirmTitle = em.getConfirmTitle();
             }
@@ -1254,9 +1250,8 @@ public abstract class OAUIController extends HubListenerAdapter {
 
         String result = null;
         if (objx instanceof OAObject) {
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) objx);
-    		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-            OAObjectCallback em = srvcObjectCallback.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, (OAObject) objx, prop, null, newValue);
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objx);
+            OAObjectCallback em = og.objectsInternal().callObjectCallbackGetVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, (OAObject) objx, prop, null, newValue);
             if (!em.getAllowed()) {
                 result = em.getResponse();
                 Throwable t = em.getThrowable();
@@ -1321,9 +1316,8 @@ public abstract class OAUIController extends HubListenerAdapter {
                     objx = oaPropertyPath.getLastLinkValue(objx);
                 }
                 if (objx instanceof OAObject) {
-            		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) objx);
-            		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-                    return srvcObjectCallback.getFormat((OAObject) objx, endPropertyName, defaultFormat);
+            		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objx);
+                    return og.objectsInternal().callObjectCallbackGetFormat((OAObject) objx, endPropertyName, defaultFormat);
                 }
             }
         }
@@ -2266,9 +2260,8 @@ public abstract class OAUIController extends HubListenerAdapter {
                 objx = oaPropertyPath.getLastLinkValue(objx);
             }
             if (objx instanceof OAObject) {
-        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) objx);
-        		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-                ttDefault = srvcObjectCallback.getToolTip((OAObject) objx, endPropertyName, ttDefault);
+        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objx);
+                ttDefault = og.objectsInternal().callObjectCallbackGetToolTip((OAObject) objx, endPropertyName, ttDefault);
             }
         }
         else {

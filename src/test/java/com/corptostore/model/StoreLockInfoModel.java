@@ -163,7 +163,7 @@ public class StoreLockInfoModel extends OAObjectModel {
         modelStoreLockServiceInfo.setAllowSearch(false);
         modelStoreLockServiceInfo.setAllowHubSearch(false);
         modelStoreLockServiceInfo.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelStoreLockServiceInfo.setCreateUI(li == null || !StoreLockInfo.P_StoreLockServiceInfo.equalsIgnoreCase(li.getName()) );
         modelStoreLockServiceInfo.setViewOnly(getViewOnly());
         // call StoreLockInfo.storeLockServiceInfoModelCallback(StoreLockServiceInfoModel) to be able to customize this model

@@ -172,7 +172,7 @@ public class SalesOrderItemModel extends OAObjectModel {
         modelSalesOrder.setAllowSearch(false);
         modelSalesOrder.setAllowHubSearch(true);
         modelSalesOrder.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelSalesOrder.setCreateUI(li == null || !SalesOrderItem.P_SalesOrder.equalsIgnoreCase(li.getName()) );
         modelSalesOrder.setViewOnly(getViewOnly());
         // call SalesOrderItem.salesOrderModelCallback(SalesOrderModel) to be able to customize this model

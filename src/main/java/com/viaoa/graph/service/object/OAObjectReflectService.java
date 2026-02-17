@@ -4173,7 +4173,7 @@ public abstract class OAObjectReflectService {
 	public abstract void callThreadLocalSetLoading(boolean b);
 	
 	@OAParentProvided (example = "srvcOARemoteThread.isRemoteThread")
-	public abstract boolean callIsRemoteThread();
+	public abstract boolean callRemoteThreadIsRemoteThread();
 
 }
 

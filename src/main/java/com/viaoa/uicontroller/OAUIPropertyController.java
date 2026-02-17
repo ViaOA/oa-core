@@ -15,7 +15,7 @@
  */
 package com.viaoa.uicontroller;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCallbackService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -111,9 +111,8 @@ public class OAUIPropertyController extends OAUIBaseController {
         if (!super.isEnabled()) return false;
         if (obj == null) return false;
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
-		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-        OAObjectCallback eq = srvcObjectCallback.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getPropertyName());
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+        OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getPropertyName());
         return eq.getAllowed();
     }
         
@@ -124,9 +123,8 @@ public class OAUIPropertyController extends OAUIBaseController {
     public boolean isVisible(OAObject obj) {
         if (!super.isVisible()) return false;
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(getHub(), obj);
-		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-        OAObjectCallback eq = srvcObjectCallback.getAllowVisibleObjectCallback(getHub(), obj, getPropertyName());
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(getHub(), obj);
+        OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowVisibleObjectCallback(getHub(), obj, getPropertyName());
         return eq.getAllowed();
     }
     
@@ -194,11 +192,10 @@ public class OAUIPropertyController extends OAUIBaseController {
             newValue = text;
         }        
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(getHub(), obj);
-		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(getHub(), obj);
         
         // 1: confirm
-        cb = srvcObjectCallback.getConfirmPropertyChangeObjectCallback(obj, getPropertyName(), newValue, getConfirmMessage(), getTitle());
+        cb = og.objectsInternal().callObjectCallbackGetConfirmPropertyChangeObjectCallback(obj, getPropertyName(), newValue, getConfirmMessage(), getTitle());
         s = cb.getConfirmMessage();
         if (OAStr.isNotEmpty(s)) {
             if (!onConfirm(s, OAStr.notEmpty(cb.getConfirmTitle(), getTitle()) )) {
@@ -207,7 +204,7 @@ public class OAUIPropertyController extends OAUIBaseController {
         }
         
         // 2: verify
-        cb = srvcObjectCallback.getVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, obj, getPropertyName(), null, newValue); 
+        cb = og.objectsInternal().callObjectCallbackGetVerifyPropertyChangeObjectCallback(OAObjectCallback.CHECK_ALL, obj, getPropertyName(), null, newValue); 
         if (!cb.getAllowed()) {
             onError(cb.getResponse(), cb.getDisplayResponse());
             return false;

@@ -102,7 +102,7 @@ public class EnvironmentVerificationModel extends OAObjectModel {
 		modelVerification.setAllowSearch(false);
 		modelVerification.setAllowHubSearch(false);
 		modelVerification.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelVerification.setCreateUI(li == null || !EnvironmentVerification.P_Verification.equalsIgnoreCase(li.getName()));
 		modelVerification.setViewOnly(getViewOnly());
 		// call EnvironmentVerification.verificationModelCallback(VerificationModel) to be able to customize this model

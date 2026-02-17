@@ -17,7 +17,7 @@ public class RCCommandDelegate {
     public static void initialize(RCCommand cmd) {
         if (cmd == null) return;
         if (!OAString.isEmpty(cmd.getCommandLine())) return;
-        if (!OASyncDelegate.isServer()) return;
+        if (!OASyncDelegate.callSyncIsServer()) return;
         try {
             OARemoteThreadDelegate.sendMessages(true);
             _initialize(cmd);

@@ -161,7 +161,7 @@ public class TesterStoreModel extends OAObjectModel {
         modelTester.setAllowSearch(false);
         modelTester.setAllowHubSearch(true);
         modelTester.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelTester.setCreateUI(li == null || !TesterStore.P_Tester.equalsIgnoreCase(li.getName()) );
         modelTester.setViewOnly(getViewOnly());
         // call TesterStore.testerModelCallback(TesterModel) to be able to customize this model

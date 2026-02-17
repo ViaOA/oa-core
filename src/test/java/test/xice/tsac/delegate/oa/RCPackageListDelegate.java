@@ -19,7 +19,7 @@ import test.xice.tsac.model.oa.RCPackageListDetail;
 public class RCPackageListDelegate {
 
     public static void run(final RCPackageList packageList) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _run(packageList);
         }
         else {
@@ -56,7 +56,7 @@ public class RCPackageListDelegate {
     }
     
     public static void process(final RCPackageList packageList) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _process(packageList);
         }
         else {
@@ -141,7 +141,7 @@ public class RCPackageListDelegate {
     }
 
     public static void load(final RCPackageList packageList) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _load(packageList);
         }
         else {

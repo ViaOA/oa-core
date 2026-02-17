@@ -133,7 +133,7 @@ public class StoreImportTemplateModel extends OAObjectModel {
 		modelStoreImport.setAllowSearch(false);
 		modelStoreImport.setAllowHubSearch(false);
 		modelStoreImport.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelStoreImport.setCreateUI(li == null || !StoreImportTemplate.P_StoreImport.equalsIgnoreCase(li.getName()));
 		modelStoreImport.setViewOnly(getViewOnly());
 		// call StoreImportTemplate.storeImportModelCallback(StoreImportModel) to be able to customize this model

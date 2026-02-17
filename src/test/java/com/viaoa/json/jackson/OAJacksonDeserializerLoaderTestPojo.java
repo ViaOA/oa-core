@@ -138,15 +138,15 @@ public class OAJacksonDeserializerLoaderTestPojo {
 
 		assertEquals(3, OAObjectCacheDelegate.getTotal(com.auto.dev.reportercorp.model.oa.ReportInstanceProcess.class));
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(com.auto.dev.reportercorp.model.oa.ReportInstanceProcess.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(com.auto.dev.reportercorp.model.oa.ReportInstanceProcess.class);
 		Pojo pojo = oi.getPojo();
 		List<PojoProperty> al = PojoDelegate.getPojoPropertyKeys(pojo);
 
-		oi = OAObjectInfoDelegate.getObjectInfo(com.auto.dev.reportercorp.model.oa.ThreadInfo.class);
+		oi = OAObjectInfoDelegate.callInfoGetObjectInfo(com.auto.dev.reportercorp.model.oa.ThreadInfo.class);
 		pojo = oi.getPojo();
 		al = PojoDelegate.getPojoPropertyKeys(pojo);
 
-		oi = OAObjectInfoDelegate.getObjectInfo(com.auto.dev.reportercorp.model.oa.StatusInfoMessage.class);
+		oi = OAObjectInfoDelegate.callInfoGetObjectInfo(com.auto.dev.reportercorp.model.oa.StatusInfoMessage.class);
 		pojo = oi.getPojo();
 		al = PojoDelegate.getPojoPropertyKeys(pojo);
 

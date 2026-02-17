@@ -136,7 +136,7 @@ public class IndexColumnModel extends OAObjectModel {
         modelIndex.setAllowSearch(false);
         modelIndex.setAllowHubSearch(false);
         modelIndex.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelIndex.setCreateUI(li == null || !IndexColumn.P_Index.equals(li.getName()) );
         modelIndex.setViewOnly(getViewOnly());
         // call IndexColumn.indexModelCallback(IndexModel) to be able to customize this model

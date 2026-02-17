@@ -122,7 +122,7 @@ public class WebItemModel extends OAObjectModel {
         modelWebPart.setAllowSearch(false);
         modelWebPart.setAllowHubSearch(true);
         modelWebPart.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelWebPart.setCreateUI(li == null || !WebItem.P_WebPart.equalsIgnoreCase(li.getName()) );
         modelWebPart.setViewOnly(getViewOnly());
         // call WebItem.webPartModelCallback(WebPartModel) to be able to customize this model

@@ -113,7 +113,7 @@ public abstract class OAObjectXMLService {
 	private void _write(final OAObject oaObj, final OAXMLWriter ow, String tagName, boolean bKeyOnly, final OACascade cascade,
 			final boolean bWriteClassName) {
 		Class c = oaObj.getClass();
-		OAObjectInfo oi = getOAObjectInfo(oaObj);
+		OAObjectInfo oi = callInfoGetOAObjectInfo(oaObj);
 
 		// 20150909
 		if (!bKeyOnly) {
@@ -324,7 +324,7 @@ public abstract class OAObjectXMLService {
 	}
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo getOAObjectInfo(OAObject obj);
+	public abstract OAObjectInfo callInfoGetOAObjectInfo(OAObject obj);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
 	public abstract UUID callGuidGetGuid(OAObject oaObj); 

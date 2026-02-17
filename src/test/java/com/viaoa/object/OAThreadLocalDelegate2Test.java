@@ -66,11 +66,11 @@ public class OAThreadLocalDelegate2Test extends OAUnitTest {
             public void test() {
                 OAThreadLocalDelegate.setLoading(true);
                 delay();
-                assertTrue(OAThreadLocalDelegate.isLoading());
+                assertTrue(OAThreadLocalDelegate.callThreadLocalIsLoading());
 
                 OAThreadLocalDelegate.setLoading(false); 
                 delay();
-                assertFalse(OAThreadLocalDelegate.isLoading()); 
+                assertFalse(OAThreadLocalDelegate.callThreadLocalIsLoading()); 
             }
         };
     
@@ -92,12 +92,12 @@ public class OAThreadLocalDelegate2Test extends OAUnitTest {
         tests[pos++] = new Test("SuppressCSMessages") {
             @Override
             public void test() {
-                OAThreadLocalDelegate.setSuppressCSMessages(true); 
+                OAThreadLocalDelegate.callThreadLocalSetSuppressCSMessages(true); 
                 delay();
-                assertTrue(OAThreadLocalDelegate.isSuppressCSMessages());
-                OAThreadLocalDelegate.setSuppressCSMessages(false); 
+                assertTrue(OAThreadLocalDelegate.callThreadLocalIsSuppressCSMessages());
+                OAThreadLocalDelegate.callThreadLocalSetSuppressCSMessages(false); 
                 delay();
-                assertFalse(OAThreadLocalDelegate.isSuppressCSMessages()); 
+                assertFalse(OAThreadLocalDelegate.callThreadLocalIsSuppressCSMessages()); 
             }
         };
 

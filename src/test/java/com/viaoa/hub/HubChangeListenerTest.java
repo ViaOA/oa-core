@@ -18,7 +18,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         Hub<Employee> hubEmp = new Hub<Employee>(Employee.class);
         for (int i=0; i<5; i++) hubEmp.add(new Employee());
 
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -34,10 +34,10 @@ public class HubChangeListenerTest extends OAUnitTest {
         hubEmp.setPos(0);
         assertEquals(2, vint.value);
         
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 1);
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
     }
     
@@ -46,7 +46,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         Hub<Employee> hubEmp = new Hub<Employee>(Employee.class);
         for (int i=0; i<5; i++) hubEmp.add(new Employee());
 
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -62,7 +62,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         hubEmp.setPos(0);
         assertEquals(2, vint.value);
         
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 1);
 
         hubEmp.getAt(0).setLastName("aa");
@@ -75,7 +75,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         }
         
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
     }
     
@@ -84,7 +84,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         Hub<Employee> hubEmp = new Hub<Employee>(Employee.class);
         for (int i=0; i<5; i++) hubEmp.add(new Employee());
 
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -101,7 +101,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         hubEmp.setPos(0);
         assertEquals(2, vint.value);
         
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 1);
 
         hubEmp.getAt(0).setLastName("aa");
@@ -113,7 +113,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         }
         
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
     }
     
@@ -123,7 +123,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         for (int i=0; i<5; i++) hubEmp.add(new Employee());
         Hub<EmployeeAward> hubEA = hubEmp.getDetailHub(Employee.P_EmployeeAwards);
         
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -149,10 +149,10 @@ public class HubChangeListenerTest extends OAUnitTest {
         assertEquals(5, vint.value);
 
         
-        hls = HubEventDelegate.getAllListeners(hubEA);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEA);
         assertTrue(hls.length == 1);
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEA);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEA);
         assertTrue(hls.length == 0);
     }
     
@@ -160,7 +160,7 @@ public class HubChangeListenerTest extends OAUnitTest {
     public void testHubEmpty() {
         Hub<Employee> hubEmp = new Hub<Employee>(Employee.class);
         
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -186,10 +186,10 @@ public class HubChangeListenerTest extends OAUnitTest {
         assertEquals(7, vint.value);
         assertTrue(hcl.getValue());
         
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 1);
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
     }
 
@@ -197,7 +197,7 @@ public class HubChangeListenerTest extends OAUnitTest {
     public void testHubNotEmpty() {
         Hub<Employee> hubEmp = new Hub<Employee>(Employee.class);
         
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -223,10 +223,10 @@ public class HubChangeListenerTest extends OAUnitTest {
         assertEquals(7, vint.value);
         assertFalse(hcl.getValue());
         
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 1);
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
     }
 
@@ -235,7 +235,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         Hub<Employee> hubEmp = new Hub<Employee>(Employee.class);
         for (int i=0; i<5; i++) hubEmp.add(new Employee());
         
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -256,10 +256,10 @@ public class HubChangeListenerTest extends OAUnitTest {
         hubEmp.setPos(1);
         assertTrue(hcl.getValue());
         
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 1);
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
     }
 
@@ -269,7 +269,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         for (int i=0; i<5; i++) hubEmp.add(new Employee());
         Hub<EmployeeAward> hubEA = hubEmp.getDetailHub(Employee.P_EmployeeAwards);
         
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -296,10 +296,10 @@ public class HubChangeListenerTest extends OAUnitTest {
         hubEA.setPos(0);
         assertFalse(hcl.getValue());
         
-        hls = HubEventDelegate.getAllListeners(hubEA);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEA);
         assertTrue(hls.length == 1);
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEA);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEA);
         assertTrue(hls.length == 0);
     }
 
@@ -308,7 +308,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         Hub<Employee> hubEmp = new Hub<Employee>(Employee.class);
         for (int i=0; i<5; i++) hubEmp.add(new Employee());
         
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -329,10 +329,10 @@ public class HubChangeListenerTest extends OAUnitTest {
         hubEmp.setPos(1);
         assertTrue(hcl.getValue());
         
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 1);
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
     }
 
@@ -341,7 +341,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         Hub<Employee> hubEmp = new Hub<Employee>(Employee.class);
         for (int i=0; i<5; i++) hubEmp.add(new Employee());
         
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -381,10 +381,10 @@ public class HubChangeListenerTest extends OAUnitTest {
         assertEquals(5, vint.value);
         assertFalse(hcl.getValue());
         
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 1);
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
     }
     
@@ -393,7 +393,7 @@ public class HubChangeListenerTest extends OAUnitTest {
         Hub<Employee> hubEmp = new Hub<Employee>(Employee.class);
         for (int i=0; i<5; i++) hubEmp.add(new Employee());
         
-        HubListener[] hls = HubEventDelegate.getAllListeners(hubEmp);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
         
         VInteger vint = new VInteger();
@@ -433,10 +433,10 @@ public class HubChangeListenerTest extends OAUnitTest {
         assertEquals(5, vint.value);
         assertTrue(hcl.getValue());
         
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 1);
         hcl.close();
-        hls = HubEventDelegate.getAllListeners(hubEmp);
+        hls = HubEventDelegate.callHubEventGetAllListeners(hubEmp);
         assertTrue(hls.length == 0);
     }
     

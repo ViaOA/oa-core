@@ -21,7 +21,7 @@ import java.math.BigInteger;
 import java.util.Collection;
 
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -793,17 +793,16 @@ public class OACompare {
         	else if (matchValue instanceof OAObject) c = matchValue.getClass();
         	else c = null;
         	
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-			final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
         	
-        	OAObjectKey ka = srvcObjectKey.createObjectKey(value);
-    	    OAObjectKey kb = srvcObjectKey.createObjectKey(matchValue);
+        	OAObjectKey ka = og.objectsInternal().callObjectKeyCreateObjectKey(value);
+    	    OAObjectKey kb = og.objectsInternal().callObjectKeyCreateObjectKey(matchValue);
     	  
     	    if (ka == kb) return 0;
     	    if (ka == null) return -1;
     	    if (kb == null) return 1;
     	    
-    	    if (srvcObjectKey.isForSameOAObject(null, ka, kb)) return 0;
+    	    if (og.objectsInternal().callObjectKeyIsForSameOAObject(null, ka, kb)) return 0;
     	    return ka.compareTo(kb);
     	}        
         

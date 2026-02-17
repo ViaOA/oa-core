@@ -22,7 +22,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;
@@ -104,9 +104,8 @@ public class OATriggerDelegate {
 			return;
 		}
 		
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(trigger.rootClass);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(trigger.rootClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(trigger.rootClass);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(trigger.rootClass);
 		oi.createTrigger(trigger, bSkipFirstNonManyProperty);
 	}
 
@@ -122,9 +121,8 @@ public class OATriggerDelegate {
 			return false;
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(trigger.rootClass);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(trigger.rootClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(trigger.rootClass);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(trigger.rootClass);
 		oi.removeTrigger(trigger);
 
 		return true;

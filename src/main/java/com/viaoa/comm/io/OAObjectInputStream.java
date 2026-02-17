@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
@@ -138,9 +138,8 @@ public class OAObjectInputStream extends ObjectInputStream {
     protected Object resolveObject(Object obj) throws IOException {
         obj = super.resolveObject(obj);
         if (obj instanceof IODummy) {
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
-            final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-            srvcOAObjectProperty.clearProperties((OAObject) obj);
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
+    		og.objectsInternal().callObjectPropertyClearProperties((OAObject) obj);
         }
         return obj;
     }

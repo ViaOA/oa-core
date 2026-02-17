@@ -16,7 +16,7 @@ import test.xice.tsac.model.oa.propertypath.*;
 public class RCStageDelegate {
 
     public static void run(final RCStage stage) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _run(stage);
         }
         else {
@@ -70,7 +70,7 @@ public class RCStageDelegate {
     
     
     public static void process(final RCStage stage) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _process(stage);
         }
         else {
@@ -262,7 +262,7 @@ public class RCStageDelegate {
     }
 
     public static void load(final RCStage stage) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _load(stage);
         }
         else {

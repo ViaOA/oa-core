@@ -25,7 +25,7 @@ public class CorpToStoreDelegate {
 		if (bUpdatingInfo) {
 			return;
 		}
-		if (!OASync.isServer()) {
+		if (!OASync.callSyncIsServer()) {
 			return;
 		}
 

@@ -117,7 +117,7 @@ public class DashboardLineModel extends OAObjectModel {
         modelDashboard.setAllowSearch(false);
         modelDashboard.setAllowHubSearch(false);
         modelDashboard.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelDashboard.setCreateUI(li == null || !DashboardLine.P_Dashboard.equalsIgnoreCase(li.getName()) );
         modelDashboard.setViewOnly(getViewOnly());
         // call DashboardLine.dashboardModelCallback(DashboardModel) to be able to customize this model

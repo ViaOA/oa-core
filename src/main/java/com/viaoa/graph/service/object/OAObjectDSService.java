@@ -68,7 +68,7 @@ public abstract class OAObjectDSService {
 		if (obj == null) {
 			return;
 		}
-		UUID g = callGetGuid(obj);
+		UUID g = callGuidGetGuid(obj);
 		if (b) {
 			getAssigningIdMap().put(g, 0l);
 		} else {
@@ -86,7 +86,7 @@ public abstract class OAObjectDSService {
 	 */
 	public boolean isAssigningId(OAObject obj) {
 		if (obj == null) return false;
-		UUID g = callGetGuid(obj);
+		UUID g = callGuidGetGuid(obj);
 		return getAssigningIdMap().containsKey(g);
 	}
     
@@ -177,7 +177,7 @@ public abstract class OAObjectDSService {
 		OAObject oaObj = null;
 		if (ds != null) {
 			if (!(key instanceof OAObjectKey)) {
-				key = callCreateObjectKey(clazz, key);
+				key = callKeyCreateObjectKey(clazz, key);
 			}
 			oaObj = (OAObject) ds.getObject(clazz, key);
 		}
@@ -198,8 +198,8 @@ public abstract class OAObjectDSService {
 		Class clazz = obj.getClass();
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		if (ds != null) {
-			OAObjectKey key = callGetKey(obj);
-			OAObjectInfo oi = getOAObjectInfo(clazz);
+			OAObjectKey key = callKeyGetKey(obj);
+			OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 			ds.getObject(oi, clazz, key, true); // true=reload all props
 		}
 	}
@@ -368,21 +368,21 @@ public abstract class OAObjectDSService {
 	public Object getObject(OAObject oaObj) {
 		OADataSource ds = OADataSource.getDataSource(oaObj.getClass());
 		// todo, check if needed:  if (ds == null || ds.isAssigningId(oaObj)) return null;  // datasource could be assigning the Id to a unique value
-		return ds.getObject(oaObj.getClass(), callGetKey(oaObj));
+		return ds.getObject(oaObj.getClass(), callKeyGetKey(oaObj));
 	}
 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid(obj)")
-	public abstract UUID callGetGuid(OAObject oaObj);
+	public abstract UUID callGuidGetGuid(OAObject oaObj);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().createObjectKey(clazz, key)")
-	public abstract OAObjectKey callCreateObjectKey(final Class c, final Object ...ids);
+	public abstract OAObjectKey callKeyCreateObjectKey(final Class c, final Object ...ids);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(obj)")
-	public abstract OAObjectKey callGetKey(OAObject oaObj); 
+	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
 }
 
 

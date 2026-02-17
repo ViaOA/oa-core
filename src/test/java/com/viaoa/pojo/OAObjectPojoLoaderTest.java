@@ -27,7 +27,7 @@ public class OAObjectPojoLoaderTest {
 
 	@Test
 	public void reportInstanceProcessTest() throws Exception {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(ReportInstanceProcess.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReportInstanceProcess.class);
 		Pojo pojo = oi.getPojo();
 
 		assertFalse(oi.getNoPojo());
@@ -94,7 +94,7 @@ public class OAObjectPojoLoaderTest {
 
 	@Test
 	public void reporterCorpTest() throws Exception {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(ReporterCorp.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReporterCorp.class);
 		Pojo pojo = oi.getPojo();
 
 		assertFalse(oi.getNoPojo());
@@ -117,7 +117,7 @@ public class OAObjectPojoLoaderTest {
 
 	@Test
 	public void pypeReportMessageTest() throws Exception {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(PypeReportMessage.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(PypeReportMessage.class);
 		Pojo pojo = oi.getPojo();
 
 		assertFalse(oi.getNoPojo());
@@ -143,7 +143,7 @@ public class OAObjectPojoLoaderTest {
 
 	@Test
 	public void reportInfoTest() throws Exception {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(ReportInfo.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(ReportInfo.class);
 		Pojo pojo = oi.getPojo();
 
 		assertFalse(oi.getNoPojo());

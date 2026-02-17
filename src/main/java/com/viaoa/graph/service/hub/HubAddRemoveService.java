@@ -48,7 +48,7 @@ public abstract class HubAddRemoveService {
 	 * @param pos     the position of the object to remove
 	 * @return the removed object, or {@code null} if removal failed
 	 */
-	public Object remove(final Hub thisHub, final int pos) {
+	public <T> T remove(final Hub<T> thisHub, final int pos) {
 		return remove(thisHub, pos, false);
 	}
 
@@ -62,8 +62,8 @@ public abstract class HubAddRemoveService {
 	 * @param bForce  whether to force removal
 	 * @return the removed object, or {@code null} if removal failed
 	 */
-	public Object remove(final Hub thisHub, final int pos, final boolean bForce) {
-		Object obj = callHubDataGetObjectAt(thisHub, pos);
+	public <T> T remove(final Hub<T> thisHub, final int pos, final boolean bForce) {
+		T obj = callHubDataGetObjectAt(thisHub, pos);
 		if (!remove(thisHub, obj, bForce, true, false, true, true, false)) {
 			obj = null;
 		}
@@ -1314,10 +1314,10 @@ public abstract class HubAddRemoveService {
 
 	
 	@OAParentProvided (example = "srvcHub.getHubDataService().getObjectAt")
-	public abstract Object callHubDataGetObjectAt(Hub thisHub, int pos);
+	public abstract <T> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
 
 	@OAParentProvided (example = "srvcHub.getRealObject")
-	public abstract Object callHubGetRealObject(Hub hub, Object object);
+	public abstract <T> T callHubGetRealObject(Hub<T> hub, Object object);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().getPos")
 	public abstract int callHubDataGetPos(final Hub thisHub, Object object, final boolean adjustMaster, final boolean bUpdateLink);

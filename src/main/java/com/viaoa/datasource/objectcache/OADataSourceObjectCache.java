@@ -33,7 +33,7 @@ import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectGuidService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
@@ -192,9 +192,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 
         if (whereObject != null && OAStr.isNotEmpty(propertyFromWhereObject)) {
             // 20240123
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(whereObject);
-        	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-            OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(whereObject.getClass());
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(whereObject);
+            OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(whereObject.getClass());
             OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
 
             if (li == null) {
@@ -247,9 +246,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             
             
             // 20250407 use reference object from oaobj.properties[]
-			//final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(whereObject);
-			OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-            Object objx = srvcOAObjectProperty.getProperty(whereObject, propertyFromWhereObject);
+			//final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(whereObject);
+            Object objx = og.objectsInternal().callObjectPropertyGetProperty(whereObject, propertyFromWhereObject);
             final List al = new ArrayList();
             if (!(objx instanceof Hub)) {
                 if (objx instanceof OAObject && (filterx == null || filterx.isUsed(objx))) al.add(objx);
@@ -435,9 +433,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             return true;
         }
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-        if (srvcObjectCache.getSelectAllHub(clazz) != null) {
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+        if (og.objectsInternal().callObjectCacheGetSelectAllHub(clazz) != null) {
             return true;
         }
         return false;
@@ -619,13 +616,11 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             if (!OAObject.class.isAssignableFrom(c)) {
             	continue;
             }
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-        	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-        	final OAObjectGuidService srvcObjectGuid = og.getOAObjectService().getOAObjectGuidService();
-        	srvcObjectCache.callback(c, new OACallback() {
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+			og.objectsInternal().callObjectCacheCallback(c, new OACallback() {
                 @Override
                 public boolean updateObject(Object obj) {
-                	UUID guid = srvcObjectGuid.getGuid((OAObject) obj);
+                	UUID guid = og.objectsInternal().callObjectGuidGetGuid((OAObject) obj);
                     hs.add(obj);
                     return true;
                 }
@@ -739,9 +734,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 lock.writeLock().unlock();
             }
         }
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-    	srvcObjectCache.removeAllObjects(c);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+		og.objectsInternal().callObjectCacheRemoveAllObjects(c);
     }
 
 }

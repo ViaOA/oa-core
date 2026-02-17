@@ -17,7 +17,7 @@ package com.viaoa.uicontroller;
 
 import java.util.*;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.*;
 import com.viaoa.hub.HubChangeListener.Type;
 import com.viaoa.object.*;
@@ -155,10 +155,10 @@ public abstract class OAUITypeAheadController extends OAUIController {
             linkPropertyName = hub.getLinkPath(true);
         }
         else {
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-            Hub hubx = og.getHubService().getHubDetailService().getMasterHub(hub);
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+            Hub hubx = og.hubsInternal().callHubDetailGetMasterHub(hub);
             if (hubx != null) {
-                OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromMasterToDetail(hub);
+                OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromMasterToDetail(hub);
                 if (li != null && li.getType() == li.TYPE_ONE) {
                     hubLink = hubx;
                     linkPropertyName = li.getName();

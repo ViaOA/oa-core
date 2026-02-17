@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.object.OAObjectEnumService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
@@ -271,9 +271,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			c = hub.getObjectClass();
 			if (!hubMaster.getObjectClass().equals(c)) {
 				// find property to use
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(c);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+				OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
 				List al = oi.getLinkInfos();
 				for (int i = 0; i < al.size(); i++) {
 					OALinkInfo li = (OALinkInfo) al.get(i);
@@ -287,14 +286,13 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			}
 		}
 		if (property != null) {
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		    getMethod = srvcObjectInfo.getMethod(hub.getObjectClass(), "get" + property);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		    getMethod = og.objectsInternal().callObjectInfoGetMethod(hub.getObjectClass(), "get" + property);
 			//was: getMethod = OAReflect.getMethod(hub.getObjectClass(), "get" + property);
 			if (getMethod == null) {
 				throw new RuntimeException("getMethod for property \"" + property + "\" in class " + hub.getObjectClass());
 			}
-            setMethod = srvcObjectInfo.getMethod(hub.getObjectClass(), "set" + property);
+            setMethod = og.objectsInternal().callObjectInfoGetMethod(hub.getObjectClass(), "set" + property);
 			//was: setMethod = OAReflect.getMethod(hub.getObjectClass(), "set" + property);
 			if (setMethod == null) {
 				throw new RuntimeException("setMethod for property \"" + property + "\" in class " + hub.getObjectClass());
@@ -351,11 +349,11 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
         try {
             if (bCheckInSync) {
-        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.hub);
-    			if (og.getHubService().getCurrentState(hub, null, null) != HubService.HubCurrentStateEnum.InSync) {
+        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
+    			if (og.hubsInternal().callHubGetCurrentState(hub, null, null) != HubService.HubCurrentStateEnum.InSync) {
     				return;
     			}
-    			if (hubMaster != null && og.getHubService().getCurrentState(hubMaster, null, null) != HubService.HubCurrentStateEnum.InSync) {
+    			if (hubMaster != null && og.hubsInternal().callHubGetCurrentState(hubMaster, null, null) != HubService.HubCurrentStateEnum.InSync) {
     			    srvcOAThreadLocal.addHubMergerCallback(new OAThreadLocalHubMergerCallback() {
                         @Override
                         public void callback() {
@@ -392,11 +390,11 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 			}
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.hub);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
 		// Step 1: verify that both hubs are using the correct hub
 		//         (in case AO of master hub has been changed, and one of these hubs has not yet been adjusted).
-		Hub hubMasterx = og.getHubService().getHubDetailService().getRealHub(hubMaster);
-		Hub hubx = og.getHubService().getHubDetailService().getRealHub(hub); // in case it is a detailHub and has not been updated yet
+		Hub hubMasterx = og.hubsInternal().callHubDetailGetRealHub(hubMaster);
+		Hub hubx = og.hubsInternal().callHubDetailGetRealHub(hub); // in case it is a detailHub and has not been updated yet
 		if (hubx == null) {
 			return;
 		}
@@ -494,9 +492,8 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
 		Class cz = hub.getObjectClass();
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(cz);
-		final OAObjectEnumService srvcObjectEnum = og.getOAObjectService().getOAObjectEnumService();
-		Hub<String> hubEnumValues = srvcObjectEnum.getDisplayNameValues(cz, property);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cz);
+		Hub<String> hubEnumValues = og.objectsInternal().callObjectEnumGetDisplayNameValues(cz, property);
 		int max = hubEnumValues.size();
 		
 		

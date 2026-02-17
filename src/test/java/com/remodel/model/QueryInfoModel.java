@@ -131,7 +131,7 @@ public class QueryInfoModel extends OAObjectModel {
         modelRepository.setAllowSearch(true);
         modelRepository.setAllowHubSearch(true);
         modelRepository.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelRepository.setCreateUI(li == null || !QueryInfo.P_Repository.equals(li.getName()) );
         modelRepository.setViewOnly(getViewOnly());
         // call QueryInfo.repositoryModelCallback(RepositoryModel) to be able to customize this model

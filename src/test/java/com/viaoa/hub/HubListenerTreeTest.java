@@ -32,12 +32,12 @@ public class HubListenerTreeTest extends OAUnitTest {
         };
 
         h.addHubListener(hl);
-        HubListener[] hls = HubEventDelegate.getAllListeners(h);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(h);
         assertTrue(hls != null && hls.length == 1 && hls[0] == hl);
         
         h.removeHubListener(hl);
         
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         assertTrue(hls == null || hls.length == 0);
     }
 
@@ -55,23 +55,23 @@ public class HubListenerTreeTest extends OAUnitTest {
             EmployeePP.location().program().employees().pp
         };
         
-        HubListener[] hls = HubEventDelegate.getAllListeners(h);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(h);
         assertTrue(hls == null || hls.length == 0);
         
         h.addHubListener(hl, "test", ss);
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         assertTrue(hls != null && hls.length == 3 && hls[0] == hl);
         
         h.addHubListener(hl);
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         assertTrue(hls != null && hls.length == 3 && hls[0] == hl);
         
         h.removeHubListener(hl);
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         assertTrue(hls == null || hls.length == 0);
         
         h.removeHubListener(hl);
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         assertTrue(hls == null || hls.length == 0);
     }
     
@@ -86,7 +86,7 @@ public class HubListenerTreeTest extends OAUnitTest {
         };
 
         h.addHubListener(hl);
-        HubListener[] hls = HubEventDelegate.getAllListeners(h);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(h);
         assertTrue(hls != null && hls.length == 1 && hls[0] == hl);
         h.addHubListener(hl);
         h.removeHubListener(hl);
@@ -96,16 +96,16 @@ public class HubListenerTreeTest extends OAUnitTest {
         };
         
         h.addHubListener(hl, "prop", ss);
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         assertTrue(hls != null && hls.length == 3 && hls[0] == hl);
         
 
         h.addHubListener(hl, "prop2", ss);
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         //assertTrue(hls != null && hls.length == 2 && hls[0] == hl && hls[1] != hl);
         
         h.removeHubListener(hl);
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         //assertTrue(hls != null && hls.length == 0);
     }
     
@@ -122,7 +122,7 @@ public class HubListenerTreeTest extends OAUnitTest {
         };
 
         h.addHubListener(hl);
-        HubListener[] hls = HubEventDelegate.getAllListeners(h);
+        HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(h);
         //assertTrue(hls != null && hls.length == 1 && hls[0] == hl);
         assertEquals(0, ai.get());
 
@@ -153,7 +153,7 @@ public class HubListenerTreeTest extends OAUnitTest {
         h.addHubListener(hl, "testxx", ss);
         assertEquals(0, ai.get());
         
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         //assertTrue(hls != null && hls.length == 2 && hls[0] == hl);
         
         assertEquals(0, ai.get());
@@ -176,7 +176,7 @@ public class HubListenerTreeTest extends OAUnitTest {
         
         
         h.removeHubListener(hl);
-        hls = HubEventDelegate.getAllListeners(h);
+        hls = HubEventDelegate.callHubEventGetAllListeners(h);
         //assertTrue(hls == null || hls.length ==  0);
     }
 
@@ -221,11 +221,11 @@ public class HubListenerTreeTest extends OAUnitTest {
         Location loc = new Location();
         h.add(loc);
 
-        OAObjectInfo oiLoc = OAObjectInfoDelegate.getObjectInfo(Location.class);
+        OAObjectInfo oiLoc = OAObjectInfoDelegate.callInfoGetObjectInfo(Location.class);
         ArrayList<String> al = oiLoc.getTriggerPropertNames();
         //assertTrue(al != null && al.size() == 6);
                 
-        OAObjectInfo oiEmp = OAObjectInfoDelegate.getObjectInfo(Employee.class);
+        OAObjectInfo oiEmp = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         al = oiEmp.getTriggerPropertNames();
         assertTrue(al != null && (al.size() >= 2 || al.size() <= 4));
         ArrayList<OATrigger> alT = oiEmp.getTriggers("PROGRAM");

@@ -111,7 +111,7 @@ public class ContactModel extends OAObjectModel {
         modelCustomer.setAllowSearch(false);
         modelCustomer.setAllowHubSearch(true);
         modelCustomer.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelCustomer.setCreateUI(li == null || !Contact.P_Customer.equalsIgnoreCase(li.getName()) );
         modelCustomer.setViewOnly(getViewOnly());
         // call Contact.customerModelCallback(CustomerModel) to be able to customize this model

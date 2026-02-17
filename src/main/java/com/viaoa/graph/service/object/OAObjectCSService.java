@@ -29,7 +29,7 @@ public abstract class OAObjectCSService {
 	 *         {@code false} if running as a client
 	 */
 	public boolean isServer(OAObject obj) {
-		return isServer();
+		return callSyncIsServer();
 	}
 
 	
@@ -45,11 +45,11 @@ public abstract class OAObjectCSService {
 	 * @return {@code true} if not running as a server; otherwise {@code false}
 	 */
 	public boolean isWorkstation(OAObject obj) {
-		return !isServer();
+		return !callSyncIsServer();
 	}
 
 	public boolean isWorkstation() {
-		return !isServer();
+		return !callSyncIsServer();
 	}
 	
 	/**
@@ -60,16 +60,16 @@ public abstract class OAObjectCSService {
 	 */
 	public void objectCreated(OAObject obj) {
 		if (obj == null) return;
-		if (isClient()) {
-			callObjectCreated(obj);
+		if (callSyncIsClient()) {
+			callSyncClientObjectCreated(obj);
 		}
 	}
 
 
 	public void objectFinalized(UUID guid) {
 		if (guid == null) return;
-		if (isClient()) {
-			callObjectFinalized(guid);
+		if (callSyncIsClient()) {
+			callSyncClientObjectFinalized(guid);
 		}
 	}
 
@@ -83,8 +83,8 @@ public abstract class OAObjectCSService {
 	 */
 	public void updateObjectsWithoutHubs(OAObject obj) {
 		if (obj == null) return;
-		if (getOAObjectInfo(obj.getClass()).getLocalOnly()) return;
-		callUpdateObjectsWithoutHubs(obj);
+		if (callInfoGetObjectInfo(obj.getClass()).getLocalOnly()) return;
+		callSyncClientUpdateObjectsWithoutHubs(obj);
 	}
 
 	/**
@@ -98,7 +98,7 @@ public abstract class OAObjectCSService {
 	 */
 	public OAObject createCopy(OAObject oaObj, String[] excludeProperties) {
 		if (oaObj == null) return null;
-		OAObject obj = createCopy(oaObj.getClass(), oaObj.getObjectKey(), excludeProperties);
+		OAObject obj = callSyncClientCreateCopy(oaObj.getClass(), oaObj.getObjectKey(), excludeProperties);
 		return obj;
 	}
 
@@ -113,7 +113,7 @@ public abstract class OAObjectCSService {
 	 */
 	public boolean save(OAObject oaObj, int iCascadeRule) {
 		if (oaObj == null) return false;
-		return syncServerSave(oaObj.getClass(), oaObj.getObjectKey(), iCascadeRule);
+		return callSyncServerSave(oaObj.getClass(), oaObj.getObjectKey(), iCascadeRule);
 	}
 
     /**
@@ -129,19 +129,19 @@ public abstract class OAObjectCSService {
         if (obj == null) return false;
         LOG.finer("obj="+obj);
 
-        if (isSingleUser()) {
+        if (callSyncIsSingleUser()) {
             return true; // run delete
         }
 
-        OAObjectInfo oi = getOAObjectInfo(obj.getClass());
+        OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return true; 
         
-        if (isClient()) { 
-	        if (!shouldSendMessages()) return true;
-	        if (isSuppressCSMessages()) return true;
+        if (callSyncIsClient()) { 
+	        if (!callRemoteThreadShouldSendMessages()) return true;
+	        if (callThreadLocalIsSuppressCSMessages()) return true;
         }
         
-        serverDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
+        callSyncSyncServerDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
         
         return false;
     }
@@ -157,15 +157,15 @@ public abstract class OAObjectCSService {
     public void sendDeleteToClients(OAObject obj) {
         if (obj == null) return;
 
-        if (!isServer()) return;
+        if (!callSyncIsServer()) return;
         // needs to send these to client if on RemoteThread        
         
-        if (isSuppressCSMessages()) return;
+        if (callThreadLocalIsSuppressCSMessages()) return;
         
-        OAObjectInfo oi = getOAObjectInfo(obj.getClass());
+        OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return; 
         
-        clientDelete(obj.getClass(), obj.getObjectKey());
+        callSyncSyncClientDelete(obj.getClass(), obj.getObjectKey());
     }
 	
 
@@ -182,8 +182,8 @@ public abstract class OAObjectCSService {
         if (oaObj == null || propertyName == null) return null;
         Object obj = null;
         
-		if (isClient()) {
-            obj = getDetail(oaObj, propertyName);
+		if (callSyncIsClient()) {
+            obj = callSyncClientGetDetail(oaObj, propertyName);
 		}
 		else {
 			LOG.warning("This should only be called from clients, not server. Object="+oaObj+", linkPropertyName="+propertyName);
@@ -204,8 +204,8 @@ public abstract class OAObjectCSService {
         LOG.finer("object="+oaObj+", linkProperyName="+linkPropertyName);
         if (oaObj == null || linkPropertyName == null) return null;
         Object value = null;
-		if (isClient()) {
-            value = getDetail(oaObj, linkPropertyName);
+		if (callSyncIsClient()) {
+            value = callSyncClientGetDetail(oaObj, linkPropertyName);
 		}
         else {
             LOG.warning("This should only be called from clients, not server. Object="+oaObj+", linkPropertyName="+linkPropertyName);
@@ -226,8 +226,8 @@ public abstract class OAObjectCSService {
         if (oaObj == null || linkPropertyName == null) return null;
     	Hub hub = null;
 
-		if (isClient()) {
-            Object obj = getDetail(oaObj, linkPropertyName);
+		if (callSyncIsClient()) {
+            Object obj = callSyncClientGetDetail(oaObj, linkPropertyName);
             if (obj instanceof Hub) hub = (Hub) obj;
             if (hub == null) {
                 LOG.warning("OAObject.getDetail(\""+linkPropertyName+"\") not found on server for "+oaObj.getClass().getName());
@@ -251,7 +251,7 @@ public abstract class OAObjectCSService {
 	public boolean loadReferenceHubDataOnServer(Hub thisHub, OASelect select) {
         if (thisHub == null) return false;
         boolean bResult;
-        if (isServer()) {
+        if (callSyncIsServer()) {
             //LOG.finest("hub="+hub);
 
             // 20140328 performance improvement 
@@ -262,11 +262,11 @@ public abstract class OAObjectCSService {
             // load all data without sending messages
             // even though Hub.writeObject does this, this data could be used on server application
         	try {
-        		setSuppressCSMessages(true);
-        		loadAllData(thisHub, select);
+        		callThreadLocalSetSuppressCSMessages(true);
+        		callHubSelectLoadAllData(thisHub, select);
         	}
         	finally {
-        		setSuppressCSMessages(false);        	
+        		callThreadLocalSetSuppressCSMessages(false);        	
         	}
         }
         else bResult = false;
@@ -286,19 +286,19 @@ public abstract class OAObjectCSService {
     public void fireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
         if (obj == null) return;
 		
-		if (!isServer() && !isClient()) return;
+		if (!callSyncIsServer() && !callSyncIsClient()) return;
         
-        if (!shouldSendMessages()) return;
-        if (isLoading()) return;
-        if (isSuppressCSMessages()) return;
+        if (!callRemoteThreadShouldSendMessages()) return;
+        if (callThreadLocalIsLoading()) return;
+        if (callThreadLocalIsSuppressCSMessages()) return;
 
-        OAObjectInfo oi = getOAObjectInfo(obj.getClass());
+        OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return;
 
         // LOG.finer("properyName="+propertyName+", obj="+obj+", newValue="+newValue);
         
         // 20130319 dont send out calc prop changes
-        OALinkInfo li = getLinkInfo(oi, propertyName);
+        OALinkInfo li = callInfoGetLinkInfo(oi, propertyName);
         if (li != null && li.getCalculated()) return;
         // LOG.finer("object="+obj+", key="+origKey+", prop="+propertyName+", newValue="+newValue+", oldValue="+oldValue);
 
@@ -316,7 +316,7 @@ public abstract class OAObjectCSService {
             }
         }
         OAObjectKey key = obj.getObjectKey();
-        propertyChange(obj.getClass(), key, propertyName, newValue, bIsBlob);
+        callRemoteSyncPropertyChange(obj.getClass(), key, propertyName, newValue, bIsBlob);
 	}
 
 
@@ -326,56 +326,56 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "getOAObjectInfo(class)"
 	)
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz);	
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz);	
     
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.isSingleUser()"
 	)
-	public abstract boolean isSingleUser();
+	public abstract boolean callSyncIsSingleUser();
     
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.isServer()"
 	)
-	public abstract boolean isServer();
+	public abstract boolean callSyncIsServer();
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.isClient()"
 	)
-	public abstract boolean isClient();
+	public abstract boolean callSyncIsClient();
 	
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getSyncClient().getDetail(oaObj, linkPropertyName)"
 	)
-	public abstract Object getDetail(final OAObject masterObject, final String propertyName);	
+	public abstract Object callSyncClientGetDetail(final OAObject masterObject, final String propertyName);	
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteSync().propertyChange(c, ok, propertyName, val, b)"
 	)
-	public abstract boolean propertyChange(Class objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob);
+	public abstract boolean callRemoteSyncPropertyChange(Class objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "OAObjectService.this.srvcSync.getSyncClient().objectCreated"
 	)
-	public abstract void callObjectCreated(OAObject obj);	
+	public abstract void callSyncClientObjectCreated(OAObject obj);	
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "OAObjectService.this.srvcSync.getSyncClient().objectFinalized"
 	)
-	public abstract void callObjectFinalized(UUID guid);	
+	public abstract void callSyncClientObjectFinalized(UUID guid);	
 
 
 	@OAParentProvided (
@@ -383,7 +383,7 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcHub.getHubSelectService().loadAllData(thisHub, select)"
 	)
-	public abstract void loadAllData(Hub thisHub, OASelect select);
+	public abstract void callHubSelectLoadAllData(Hub thisHub, OASelect select);
 	
 	
 	@OAParentProvided (
@@ -391,7 +391,7 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcSync.getSyncClient().updateObjectsWithoutHubs(obj)"
 	)
-	public abstract void callUpdateObjectsWithoutHubs(OAObject obj);
+	public abstract void callSyncClientUpdateObjectsWithoutHubs(OAObject obj);
 
 
 	@OAParentProvided (
@@ -399,7 +399,7 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcSync.getRemoteClient().createCopy(c, ok, excludeProps)"
 	)
-	public abstract OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties);
+	public abstract OAObject callSyncClientCreateCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties);
 
 
 	@OAParentProvided (
@@ -407,21 +407,21 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "getSyncService().getRemoteServer().save(oaObj.getClass(), oaObj.getObjectKey(), iCascadeRule)"
 	)
-	public abstract boolean syncServerSave(Class objectClass, OAObjectKey objectKey, int iCascadeRule);
+	public abstract boolean callSyncServerSave(Class objectClass, OAObjectKey objectKey, int iCascadeRule);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcObjectInfo.getOALinkInfo(oi, name)"
 	)
-	public abstract OALinkInfo getLinkInfo(OAObjectInfo oi, String propertyName);
+	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
-		example = ""
+		example = "srvcRemoteThread.shouldSendMessages()"
 	)
-	public abstract boolean shouldSendMessages();
+	public abstract boolean callRemoteThreadShouldSendMessages();
 	
 	
 	@OAParentProvided (
@@ -429,14 +429,14 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcOAThreadLocal.isSuppressCSMessages()"
 	)
-	public abstract boolean isSuppressCSMessages();		
+	public abstract boolean callThreadLocalIsSuppressCSMessages();		
 	
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcOAThreadLocal.isLoading()"
 	)
-	public abstract boolean isLoading();		
+	public abstract boolean callThreadLocalIsLoading();		
 
 
 	
@@ -445,7 +445,7 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcOAThreadLocal.setSuppressCSMessages(b)"
 	)
-	public abstract void setSuppressCSMessages(boolean b);		
+	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);		
 
 	
 	@OAParentProvided (
@@ -453,21 +453,21 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcSync.getRemoteServer().getObject(clazz, key)"
 	)
-	public abstract OAObject getServerObject(Class clazz, OAObjectKey key);
+	public abstract OAObject callSyncServerGetObject(Class clazz, OAObjectKey key);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteSync().serverDelete(clazz, key)"
 	)
-	public abstract boolean serverDelete(Class clazz, OAObjectKey key);
+	public abstract boolean callSyncSyncServerDelete(Class clazz, OAObjectKey key);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteSync().clientDelete(clazz, key)"
 	)
-	public abstract boolean clientDelete(Class clazz, OAObjectKey key);
+	public abstract boolean callSyncSyncClientDelete(Class clazz, OAObjectKey key);
 
 }
 

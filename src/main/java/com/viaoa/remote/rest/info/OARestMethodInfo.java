@@ -26,7 +26,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
@@ -1956,9 +1956,8 @@ public class OARestMethodInfo {
 			} else {
 				derivedUrlPath = "/" + OAString.mfcl(this.origReturnClass.getSimpleName());
 				derivedUrlPath += "/<%=$ID%>";
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.origReturnClass);
-				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(this.origReturnClass);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.origReturnClass);
+				OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(this.origReturnClass);
 				int cnt = 0;
 				for (String s : oi.getKeyProperties()) {
 					cnt++;
@@ -2001,9 +2000,8 @@ public class OARestMethodInfo {
 					alErrors.add(msgPrefix + s);
 				}
 			} else {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.returnClass);
-				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-				OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(this.returnClass);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.returnClass);
+				OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(this.returnClass);
 				derivedUrlPath = "/" + OAString.mfcl(oi.getPluralName());
 			}
 		} else if (methodType == MethodType.OARemote) {
@@ -2229,9 +2227,8 @@ public class OARestMethodInfo {
 				pos++;
 				if (pi.paramType == ParamType.MethodReturnClass) {
 					if (args[pos] instanceof Class) {
-						final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((Class) args[pos]);
-						final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-						OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo((Class) args[pos]);
+						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((Class) args[pos]);
+						OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo((Class) args[pos]);
 						urlPathTemplate.setProperty("PluralClass", OAString.mfcl(oi.getPluralName()));
 					} else {
 						throw new OARestClientException(

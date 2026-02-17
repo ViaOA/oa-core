@@ -166,7 +166,7 @@ public class MessageTypeColumnModel extends OAObjectModel {
         modelMessageTypeRecord.setAllowSearch(true);
         modelMessageTypeRecord.setAllowHubSearch(true);
         modelMessageTypeRecord.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelMessageTypeRecord.setCreateUI(li == null || !MessageTypeColumn.P_MessageTypeRecord.equals(li.getName()) );
         modelMessageTypeRecord.setViewOnly(getViewOnly());
         // call MessageTypeColumn.messageTypeRecordModelCallback(MessageTypeRecordModel) to be able to customize this model

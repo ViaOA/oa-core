@@ -177,7 +177,7 @@ public class QueryColumnModel extends OAObjectModel {
         modelQueryTable.setAllowSearch(true);
         modelQueryTable.setAllowHubSearch(true);
         modelQueryTable.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelQueryTable.setCreateUI(li == null || !QueryColumn.P_QueryTable.equals(li.getName()) );
         modelQueryTable.setViewOnly(getViewOnly());
         // call QueryColumn.queryTableModelCallback(QueryTableModel) to be able to customize this model

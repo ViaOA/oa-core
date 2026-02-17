@@ -15,7 +15,7 @@ public class ReportDelegate {
         if (report == null) return null;
         
         ReportClass rc = null; 
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Report.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Report.class);
         for (OALinkInfo li : oi.getLinkInfos()) {
             if (li.getType() != OALinkInfo.TYPE_ONE) continue;
             if (!li.getOneAndOnlyOne()) continue;
@@ -38,7 +38,7 @@ public class ReportDelegate {
         ot.setTemplate(cdiScheduler);
         
         OAObject ref = null;
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Report.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Report.class);
         for (OALinkInfo li : oi.getLinkInfos()) {
             if (li.getType() != OALinkInfo.TYPE_ONE) continue;
             if (!li.getOneAndOnlyOne()) continue;

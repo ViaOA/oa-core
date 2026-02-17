@@ -34,20 +34,18 @@ public class OAGraphImpl implements OAGraphInternal {
 		if (rt == null) throw new IllegalArgumentException("OARuntime can not be null");
 		this.runtime = rt;
 		this.pkgName = pkgName;
-		
+
+	    OAThreadImpl tl = (OAThreadImpl) runtime.thread();
+
 		srvcOAObject = new OAObjectService();
 		srvcHub = new HubService();
 	    srvcOASync = new OASyncService(pkgName);
 
-//	public void initialize(HubService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcOAThreadLocal, OARemoteThreadService srvcOARemoteThread) {
-	    OAThreadImpl tl = (OAThreadImpl) runtime.thread();
-	    srvcOAObject.initialize(srvcHub, srvcOASync, tl.getThreadLocalService(), tl.getRemoteThreadService());
-	    srvcHub.initialize(srvcOAObject, srvcOASync);
-	    srvcOASync.initialize();
+		srvcOAObject.initialize(srvcHub, srvcOASync, tl.getThreadLocalService(), tl.getRemoteThreadService());
+		srvcHub.initialize(srvcOAObject, srvcOASync, tl.getThreadLocalService(), tl.getRemoteThreadService());
 	}
 
-    //qqqqqqqq must call init() to load
-	public void init() throws ClassNotFoundException, IOException {
+	public void initialize() throws ClassNotFoundException, IOException {
 		if (bInit) return;
 		bInit = true;
 		if (pkgName != null && !pkgName.isEmpty()) {
@@ -103,21 +101,6 @@ public class OAGraphImpl implements OAGraphInternal {
     public SyncInternalOps syncInternal() {
     	return srvcOASync;
     }
-	
-	
-/*qqqqqqqqqqqq	dont allow these to be leaked
-	public OAObjectService getOAObjectService() {
-		return srvcOAObject;
-	}
-
-	public HubService getHubService() {
-		return srvcHub;
-	}
-	
-    public OASyncService getOASyncService() {
-    	return srvcOASync;
-    }
-*/    
 	
 }
 

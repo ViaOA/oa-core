@@ -33,7 +33,7 @@ public abstract class HubAOService {
 	 * @param pos     the position of the object to make active
 	 * @return the object at the specified position, or {@code null} if none
 	 */
-	public Object setActiveObject(Hub thisHub, int pos) {
+	public <T> T setActiveObject(Hub<T> thisHub, int pos) {
 		return setActiveObject(thisHub, pos, true, false, false); //bUpdateLink,bForce,bCalledByShareHub
 	}
 
@@ -151,8 +151,8 @@ public abstract class HubAOService {
 	 * @param bCalledByShareHub whether this call originated from a shared hub
 	 * @return the object at the specified position, or {@code null} if none
 	 */
-	public Object setActiveObject(Hub thisHub, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub) {
-		Object ho;
+	public <T> T setActiveObject(Hub<T> thisHub, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub) {
+		T ho;
 		if (pos < 0) {
 			ho = null;
 		} else {
@@ -415,7 +415,7 @@ public abstract class HubAOService {
 	public abstract OAObject callHubDetailGetMasterObject(Hub thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().getObjectAt")
-	public abstract Object callHubDataGetObjectAt(Hub thisHub, int pos);
+	public abstract <T> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().updateAllDetail")
 	public abstract void callHubDetailUpdateAllDetail(Hub thisHub, boolean bUpdateLink);

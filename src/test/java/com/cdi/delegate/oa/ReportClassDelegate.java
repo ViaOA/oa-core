@@ -14,7 +14,7 @@ public class ReportClassDelegate {
     private static final Map<Class, ReportClass> hmClassReport = new HashMap<>();
     
     public static void createReportClasses() {
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Report.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Report.class);
         
         final Hub<ReportClass> hub = ModelDelegate.getReportClasses();
         
@@ -28,7 +28,7 @@ public class ReportClassDelegate {
             
             ReportClass rc = hub.find(ReportClass.P_ClassName, cn);
             if (rc == null) {
-                OAObjectInfo oiz = OAObjectInfoDelegate.getOAObjectInfo(cz);
+                OAObjectInfo oiz = OAObjectInfoDelegate.callInfoGetObjectInfo(cz);
                 rc = new ReportClass();
                 rc.setName(oiz.getDisplayName());
                 rc.setClassName(cn);

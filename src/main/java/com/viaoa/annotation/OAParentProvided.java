@@ -22,6 +22,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 
+//qqqqqqqqqqqqqqqqq explain that OA uses abstract methods to define boundaries and hierarchy of control
+
 /**
  * Indicates that an abstract method declares a required capability that is
  * provided by the owning parent/coordinator of this class.

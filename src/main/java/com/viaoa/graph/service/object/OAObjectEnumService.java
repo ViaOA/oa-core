@@ -24,7 +24,7 @@ public abstract class OAObjectEnumService {
 	 *         if the property does not define enumeration metadata
 	 */
 	public Hub<String> getNameValues(Class clazz, String propertyName) {
-		OAObjectInfo oi = getOAObjectInfo(clazz);
+		OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
 		if (pi == null) {
 			return null;
@@ -44,7 +44,7 @@ public abstract class OAObjectEnumService {
 	 *         if the property does not define enumeration metadata
 	 */
 	public Hub<String> getDisplayNameValues(Class clazz, String propertyName) {
-		OAObjectInfo oi = getOAObjectInfo(clazz);
+		OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
 		if (pi == null) {
 			return null;
@@ -53,6 +53,6 @@ public abstract class OAObjectEnumService {
 	}
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
 	
 }

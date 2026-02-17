@@ -93,7 +93,7 @@ public class PhoneModel extends OAObjectModel {
         modelContact.setAllowSearch(false);
         modelContact.setAllowHubSearch(true);
         modelContact.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelContact.setCreateUI(li == null || !Phone.P_Contact.equalsIgnoreCase(li.getName()) );
         modelContact.setViewOnly(getViewOnly());
         // call Phone.contactModelCallback(ContactModel) to be able to customize this model

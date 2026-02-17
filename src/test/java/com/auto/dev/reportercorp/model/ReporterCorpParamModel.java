@@ -117,7 +117,7 @@ public class ReporterCorpParamModel extends OAObjectModel {
 		modelReporterCorp.setAllowSearch(false);
 		modelReporterCorp.setAllowHubSearch(true);
 		modelReporterCorp.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelReporterCorp.setCreateUI(li == null || !ReporterCorpParam.P_ReporterCorp.equalsIgnoreCase(li.getName()));
 		modelReporterCorp.setViewOnly(getViewOnly());
 		// call ReporterCorpParam.reporterCorpModelCallback(ReporterCorpModel) to be able to customize this model

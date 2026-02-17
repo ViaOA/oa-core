@@ -9,7 +9,7 @@ public class OAObjectInfoTest extends OAUnitTest {
 
     @Test
     public void test() {
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         
         OAMethodInfo mi = oi.getMethodInfo("command");
         

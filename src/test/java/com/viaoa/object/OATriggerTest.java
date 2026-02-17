@@ -113,7 +113,7 @@ public class OATriggerTest extends OAUnitTest {
 
     @Test
     public void testTrigger() {
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Program.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Program.class);
         ArrayList<String> al = oi.getTriggerPropertNames();
         assertTrue(al.size() >= 4);
         
@@ -151,7 +151,7 @@ public class OATriggerTest extends OAUnitTest {
     @Test
     public void testWithCalcProp() {
 
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         ArrayList<String> al = oi.getTriggerPropertNames();
         // assertEquals(2, al.size());
         
@@ -220,7 +220,7 @@ public class OATriggerTest extends OAUnitTest {
     @Test
     public void testWithCalcProp2() {
 
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         ArrayList<String> al = oi.getTriggerPropertNames();
         //assertEquals(2, al.size());
         for (String s : al) {

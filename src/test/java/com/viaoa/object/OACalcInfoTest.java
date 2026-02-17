@@ -17,7 +17,7 @@ public class OACalcInfoTest extends OAUnitTest {
 
     @Test
     public void calcInfoTest() {
-        OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(Server.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Server.class);
         
         ArrayList<OACalcInfo> al = oi.getCalcInfos();
         assertEquals(1, al.size());

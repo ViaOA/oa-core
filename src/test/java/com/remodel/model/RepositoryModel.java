@@ -156,7 +156,7 @@ public class RepositoryModel extends OAObjectModel {
         modelProject.setAllowSearch(true);
         modelProject.setAllowHubSearch(true);
         modelProject.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelProject.setCreateUI(li == null || !Repository.P_Project.equals(li.getName()) );
         modelProject.setViewOnly(getViewOnly());
         // call Repository.projectModelCallback(ProjectModel) to be able to customize this model

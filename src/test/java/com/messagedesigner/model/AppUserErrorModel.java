@@ -94,7 +94,7 @@ public class AppUserErrorModel extends OAObjectModel {
         modelAppUserLogin.setAllowSearch(false);
         modelAppUserLogin.setAllowHubSearch(false);
         modelAppUserLogin.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelAppUserLogin.setCreateUI(li == null || !AppUserError.P_AppUserLogin.equals(li.getName()) );
         modelAppUserLogin.setViewOnly(getViewOnly());
         // call AppUserError.appUserLoginModelCallback(AppUserLoginModel) to be able to customize this model

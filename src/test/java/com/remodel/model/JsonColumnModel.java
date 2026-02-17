@@ -210,7 +210,7 @@ public class JsonColumnModel extends OAObjectModel {
         modelJsonObject.setAllowSearch(false);
         modelJsonObject.setAllowHubSearch(false);
         modelJsonObject.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelJsonObject.setCreateUI(li == null || !JsonColumn.P_JsonObject.equals(li.getName()) );
         modelJsonObject.setViewOnly(getViewOnly());
         // call JsonColumn.jsonObjectModelCallback(JsonObjectModel) to be able to customize this model

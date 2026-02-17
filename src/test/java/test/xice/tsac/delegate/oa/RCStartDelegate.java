@@ -13,7 +13,7 @@ import test.xice.tsac.model.oa.propertypath.*;
 public class RCStartDelegate {
 
     public static void run(final RCStart rcStart) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _run(rcStart);
         }
         else {
@@ -69,7 +69,7 @@ public class RCStartDelegate {
     
     
     public static void process(final RCStart rcStart) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _process(rcStart);
         }
         else {

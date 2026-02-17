@@ -15,7 +15,7 @@ import test.xice.tsac.model.oa.propertypath.RCVerifyDetailPP;
 public class RCVerifyDelegate {
 
     public static void run(final RCVerify verify) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _run(verify);
         }
         else {
@@ -59,7 +59,7 @@ public class RCVerifyDelegate {
     }
     
     public static void process(final RCVerify rcVerify) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _process(rcVerify);
         }
         else {

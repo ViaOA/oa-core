@@ -23,7 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
@@ -352,9 +352,8 @@ public class OASyncCombinedClient {
                         OAObjectKey clientKey = mapper.hmServerToClient.get(origServerKey);
                         if (clientKey == null) return false;
 
-        				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
-            			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-                        final OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(objectClass);
+        				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
+                        final OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(objectClass);
                         if (oi == null) return false;
                         
                         if (oi.isIdProperty(propertyName)) {
@@ -388,9 +387,8 @@ public class OASyncCombinedClient {
                                     OAObjectKey k1 = objValue.getObjectKey();
                                     
                                     // need to change key 
-                			    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-                			    	srvcObjectCache.removeObject(objValue);
-                                    og.getOAObjectService().getOAObjectInitializeService().setAsNewObject(objValue, UUID.randomUUID());
+                                    og.objectsInternal().callObjectCacheRemoveObject(objValue);
+                                    og.objectsInternal().callObjectInitializeSetAsNewObject(objValue, UUID.randomUUID());
                                     
                                     // need to add it to mapper
                                     OAObjectKey k2 = objValue.getObjectKey();
@@ -853,8 +851,8 @@ public class OASyncCombinedClient {
         
         // if null create new obj for server
         if (keyServer == null) {
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objClient);
-        	og.getOAObjectService().getOAObjectInitializeService().setAsNewObject(objClient);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objClient);
+        	og.objectsInternal().callObjectInitializeSetAsNewObject(objClient);
             objServer = objClient;
 //qqqqq need to know when key is changed on server and then update the map            
             keyServer = objClient.getObjectKey();
@@ -863,11 +861,9 @@ public class OASyncCombinedClient {
             
             
             // qqqqqq remap all of the props that are objkeys
-			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-            final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-            OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(objServer.getClass());
-            for (String prop : srvcOAObjectProperty.getPropertyNames(objServer)) {
-                Object objx = srvcOAObjectProperty.getProperty(objServer, prop);
+            OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(objServer.getClass());
+            for (String prop : og.objectsInternal().callObjectPropertyGetPropertyNames(objServer)) {
+                Object objx = og.objectsInternal().callObjectPropertyGetProperty(objServer, prop);
                 if (!(objx instanceof OAObjectKey)) continue;
                 OAObjectKey k = (OAObjectKey) objx;
                 OALinkInfo li = oi.getLinkInfo(prop);
@@ -882,16 +878,13 @@ public class OASyncCombinedClient {
                     mapper.hmServerToClient.put(k2, k);
 qqqqqqqqqqqqq */                    
                 }
-	            srvcOAObjectProperty.setProperty(objServer, prop, k2);
+                og.objectsInternal().callObjectPropertySetProperty(objServer, prop, k2);
             }
-            
-            
             
         }
         else {
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objClient);
-	    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-            objServer = srvcObjectCache.get(objClient.getClass(), keyServer);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objClient);
+            objServer = og.objectsInternal().callObjectCacheGet(objClient.getClass(), keyServer);
             if (objServer == null) {
                 // get from original server
 //qqqqqqqqq                

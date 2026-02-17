@@ -54,7 +54,7 @@ public abstract class OAObjectInitializeService {
 		}
 		//20260108 was:  srvcObject.getOAObjectGuidService().assignGuid(oaObj);
 
-		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
 
 		String[] ps = oi.getPrimitiveProperties();
 		int x = (ps == null) ? 0 : ((int) Math.ceil(ps.length / 8.0d));
@@ -113,7 +113,7 @@ public abstract class OAObjectInitializeService {
 		if (oaObj == null) {
 			return;
 		}
-		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
 
 		boolean bInitializeWithCS = !oi.getLocalOnly() && callSyncIsClient();
 
@@ -165,7 +165,7 @@ public abstract class OAObjectInitializeService {
 		final boolean bWasLoading = callThreadLocalSetLoading(true);
 		try {
 			if (oi == null) {
-				oi = getOAObjectInfo(oaObj.getClass());
+				oi = callInfoGetObjectInfo(oaObj.getClass());
 			}
 
 			// 20260108
@@ -291,7 +291,7 @@ public abstract class OAObjectInitializeService {
 		faObject.setNew(oaObj, true);
 		faObject.setGuid(oaObj, guid); //qqqqqqq not a good idea (hashcode) ... will also need to update cache (key is guid
 
-		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
 		String[] ids = oi.getIdProperties();
 		if (ids == null) {
 			return;
@@ -363,7 +363,7 @@ public abstract class OAObjectInitializeService {
 	public abstract boolean callInfoIsOne2One(OALinkInfo thisLi);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeAddProperty")
 	public abstract void callPropertyUnsafeAddProperty(OAObject oaObj, String name, Object value); 

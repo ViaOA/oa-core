@@ -94,8 +94,7 @@ public class OAUIMethodController extends OAUIBaseController {
         if (obj == null) return false;
         
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
-		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-        OAObjectCallback eq = srvcObjectCallback.getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getMethodName());
+        OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getMethodName());
         return eq.getAllowed();
     }
     
@@ -112,8 +111,7 @@ public class OAUIMethodController extends OAUIBaseController {
         if (!super.isVisible()) return false;
         
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(getHub());
-		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-        OAObjectCallback eq = srvcObjectCallback.getAllowVisibleObjectCallback(getHub(), (OAObject) hub.getAO(), getMethodName());
+        OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowVisibleObjectCallback(getHub(), (OAObject) hub.getAO(), getMethodName());
         return eq.getAllowed();
     }
 
@@ -181,9 +179,8 @@ public class OAUIMethodController extends OAUIBaseController {
         String s;
 
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub, obj);
-		final OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
         // 1: confirm
-        cb = srvcObjectCallback.getConfirmCommandObjectCallback(obj, getMethodName(), getConfirmMessage(), getTitle());
+        cb = og.objectsInternal().callObjectCallbackGetConfirmCommandObjectCallback(obj, getMethodName(), getConfirmMessage(), getTitle());
         s = cb.getConfirmMessage();
         if (OAStr.isNotEmpty(s)) {
             if (!onConfirm(s, OAStr.notEmpty(cb.getConfirmTitle(), getTitle()) )) {
@@ -192,7 +189,7 @@ public class OAUIMethodController extends OAUIBaseController {
         }
         
         // 2: verify
-        cb = srvcObjectCallback.getVerifyCommandObjectCallback(obj, getMethodName(), OAObjectCallback.CHECK_ALL);
+        cb = og.objectsInternal().callObjectCallbackGetVerifyCommandObjectCallback(obj, getMethodName(), OAObjectCallback.CHECK_ALL);
         if (!cb.getAllowed()) {
             onError(cb.getResponse(), cb.getDisplayResponse());
             resp.bCompleted = false;

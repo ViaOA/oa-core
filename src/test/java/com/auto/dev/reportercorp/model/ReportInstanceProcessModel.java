@@ -275,7 +275,7 @@ public class ReportInstanceProcessModel extends OAObjectModel {
 		modelReportInstanceProcessorInfo.setAllowSearch(false);
 		modelReportInstanceProcessorInfo.setAllowHubSearch(false);
 		modelReportInstanceProcessorInfo.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelReportInstanceProcessorInfo
 				.setCreateUI(li == null || !ReportInstanceProcess.P_ReportInstanceProcessorInfo.equalsIgnoreCase(li.getName()));
 		modelReportInstanceProcessorInfo.setViewOnly(getViewOnly());

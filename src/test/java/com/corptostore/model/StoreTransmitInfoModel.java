@@ -109,7 +109,7 @@ public class StoreTransmitInfoModel extends OAObjectModel {
         modelStoreInfo.setAllowSearch(false);
         modelStoreInfo.setAllowHubSearch(false);
         modelStoreInfo.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelStoreInfo.setCreateUI(li == null || !StoreTransmitInfo.P_StoreInfo.equalsIgnoreCase(li.getName()) );
         modelStoreInfo.setViewOnly(getViewOnly());
         // call StoreTransmitInfo.storeInfoModelCallback(StoreInfoModel) to be able to customize this model

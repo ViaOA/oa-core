@@ -21,6 +21,8 @@ import java.util.*;
 import com.viaoa.filter.*;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.graph.service.object.OAObjectSiblingService;
@@ -610,8 +612,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	public ArrayList<T> find(Hub<F> hubRoot, F objectLastUsed) {
 		if (!bEnableRecursiveRootWasCalled) {
 			if (hubRoot != null) {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubRoot);
-				OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromMasterObjectToDetail(hubRoot);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubRoot);
+				OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromMasterObjectToDetail(hubRoot);
 				if (li != null && li.getRecursive()) {
 					bEnableRecursiveRoot = true;
 				}
@@ -1037,9 +1039,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			cascades[i] = new OACascade();
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(c);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
 		liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 
 		if (liRecursiveRoot != null && linkInfos != null && linkInfos.length > 0) {
@@ -1213,18 +1214,16 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 				boolean b = linkInfos[pos].isLoaded(obj);
 				if (b && linkInfos[pos].getType() == OALinkInfo.TYPE_MANY) {
 					if (OAString.isNotEmpty(linkInfos[pos].getSortProperty())) {
+						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
 						Object objx;
 						if (linkInfos[pos].getCalculated()) {
 							objx = linkInfos[pos].getValue((OAObject) obj);
 						} else {
-							final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
-							OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-							objx = srvcOAObjectProperty.getProperty((OAObject) obj, linkInfos[pos].getName());
+							objx = og.objectsInternal().callObjectPropertyGetProperty((OAObject) obj, linkInfos[pos].getName());
 						}
 						if (objx instanceof Hub) {
 							Hub h = (Hub) objx;
-							final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(h);
-							if (og.getHubService().getHubSortService().getSortListener(h) == null && og.getHubService().getAutoSequence(h) == null) {
+							if (og.hubsInternal().callHubSortGetSortListener(h) == null && og.hubsInternal().callHubGetAutoSequence(h) == null) {
 								final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 								OAThreadLocal tl = srvcOAThreadLocal.getThreadLocal(true);
 								if (tl.cntGetSiblingCalled > 1) {
@@ -1265,15 +1264,14 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			return false;
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
 		Hub hx;
 		if (li.getCalculated()) {
 			hx = (Hub) li.getValue((OAObject) obj);
 		} else {
-			OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-			hx = (Hub) srvcOAObjectProperty.getProperty((OAObject) obj, li.name, false, true);
+			hx = (Hub) og.objectsInternal(). callObjectPropertyGetProperty((OAObject) obj, li.name, false, true);
 		}
-		if (hx == null || (og.getHubService().getHubSortService().getSortListener(hx) == null && og.getHubService().getAutoSequence(hx) == null)) {
+		if (hx == null || (og.hubsInternal().callHubSortGetSortListener(hx) == null && og.hubsInternal().callHubGetAutoSequence(hx) == null)) {
 			return true;
 		}
 		return false;

@@ -125,7 +125,7 @@ public class EnvironmentSnapshotModel extends OAObjectModel {
 		modelEnvironment.setAllowSearch(false);
 		modelEnvironment.setAllowHubSearch(false);
 		modelEnvironment.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelEnvironment.setCreateUI(li == null || !EnvironmentSnapshot.P_Environment.equalsIgnoreCase(li.getName()));
 		modelEnvironment.setViewOnly(getViewOnly());
 		// call EnvironmentSnapshot.environmentModelCallback(EnvironmentModel) to be able to customize this model

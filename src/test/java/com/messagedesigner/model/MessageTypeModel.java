@@ -218,7 +218,7 @@ public class MessageTypeModel extends OAObjectModel {
         modelMessageSource.setAllowSearch(true);
         modelMessageSource.setAllowHubSearch(true);
         modelMessageSource.setAllowGotoEdit(false);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelMessageSource.setCreateUI(li == null || !MessageType.P_MessageSource.equals(li.getName()) );
         modelMessageSource.setViewOnly(getViewOnly());
         // call MessageType.messageSourceModelCallback(MessageSourceModel) to be able to customize this model

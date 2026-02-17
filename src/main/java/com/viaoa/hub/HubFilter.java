@@ -33,7 +33,7 @@ import com.viaoa.filter.OANotEqualFilter;
 import com.viaoa.filter.OANotLikeFilter;
 import com.viaoa.filter.OATrueFilter;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.hub.HubAddRemoveService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.OACalcInfo;
@@ -624,9 +624,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		if (calcDependentPropertyName == null) {
 			boolean b = (prop.indexOf(".") >= 0);
 			if (!b) {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubMaster.getObjectClass());
-				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-				OAObjectInfo oi = srvcObjectInfo.getObjectInfo(hubMaster.getObjectClass());
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubMaster.getObjectClass());
+				OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(hubMaster.getObjectClass());
 				String[] calcProps = null;
 				for (OACalcInfo ci : oi.getCalcInfos()) {
 					if (ci.getName().equalsIgnoreCase(prop)) {
@@ -879,8 +878,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 				if (objTemp != null) {
 					Object objx = hubLink.getAO();
 					if (objx != null) {
-						final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-						objx = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, objx);
+						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+						objx = og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, objx);
 					}
 					if (objx != objTemp) {
 						objTemp = getObject((T) objTemp);
@@ -900,8 +899,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 				}
 				Object obj = hubLink.getAO();
 				if (objTemp == null && obj != null) {
-					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-					obj = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, obj);
+					final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+					obj = og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, obj);
 					if (obj != null) {
 						if (!hub.contains(obj)) {
 							try {
@@ -971,8 +970,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 						if (hubLink != null) {
 							Object objx = hubLink.getAO();
 							if (objx != null) {
-								final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-								objx = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, objx);
+								final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+								objx = og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, objx);
 								objx = getObject((T) objx);
 								if (obj == objx) {
 									if (obj != objTemp) {
@@ -1071,9 +1070,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 					// clear needs to be called, so that each oaObj.weakHub[] will be updated correctly
 					bIgnoreSettingAO = true;
 
-					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-					final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-					srvcHubAddRemove.clear(hub, false, false); // false:dont set AO to null,  false: dont send newList event
+					final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+					og.hubsInternal().callHubAddRemoveClear(hub, false, false); // false:dont set AO to null,  false: dont send newList event
 
 					objTemp = null;
 					bIgnoreSettingAO = false;
@@ -1099,8 +1097,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 				if (hub != null && bCompleted) {
 					bNewListFlag = true;
 					if (!bServerSideOnly) {
-						final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-						og.getHubService().getHubEventService().fireOnNewListEvent(hub, true);
+						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+						og.hubsInternal().callHubEventFireOnNewListEvent(hub, true);
 					}
 				}
 			} finally {
@@ -1152,8 +1150,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		if (hubLink != null) {
 			Object objx = hubLink.getAO();
 			if (objx != null) {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-				objx = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, objx);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+				objx = og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, objx);
 				if (objx != null) {
 					objx = getObject((T) objx);
 					if (objx != null && !hub.contains(objx)) {
@@ -1208,9 +1206,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		}
 	    
 		// 20231109 faster way to add with calling contains
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		srvcHubAddRemove.add(hub, obj, bIsInitialzing);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		og.hubsInternal().callHubAddRemoveAdd(hub, obj, bIsInitialzing);
 		// was:  hub.add(obj);
 		
 		if (bShareAO && hubMaster != null) {
@@ -1237,8 +1234,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 			// check to see if it is still needed by linkHub.linkProp and stored as objTemp
 			Object objx = hubLink.getAO();
 			if (objx != null) {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-				objx = og.getHubService().getHubLinkService().getPropertyValueInLinkedToHub(hub, objx);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+				objx = og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, objx);
 				if (objx == obj) {
 					objTemp = obj; // dont remove yet
 					return;
@@ -1296,8 +1293,8 @@ public class HubFilter<T> extends HubListenerAdapter<T> implements java.io.Seria
 		// 20160904 dont allow it to reassign if it is masterObject does not match
 		Object objMaster = hubMaster.getMasterObject();
 		if (objMaster != null) {
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj.getClass());
-			OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromDetailToMaster(hubMaster);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
+			OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromDetailToMaster(hubMaster);
 			if (li != null) {
 				OALinkInfo rli = li.getReverseLinkInfo();
 				if (li != null) {

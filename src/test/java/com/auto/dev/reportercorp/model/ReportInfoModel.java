@@ -167,7 +167,7 @@ public class ReportInfoModel extends OAObjectModel {
 		modelReportInstanceProcessorInfo.setAllowSearch(false);
 		modelReportInstanceProcessorInfo.setAllowHubSearch(false);
 		modelReportInstanceProcessorInfo.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelReportInstanceProcessorInfo
 				.setCreateUI(li == null || !ReportInfo.P_ReportInstanceProcessorInfo.equalsIgnoreCase(li.getName()));
 		modelReportInstanceProcessorInfo.setViewOnly(getViewOnly());

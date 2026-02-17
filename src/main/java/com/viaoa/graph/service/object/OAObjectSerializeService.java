@@ -87,7 +87,7 @@ public abstract class OAObjectSerializeService {
 		}
 		in.defaultReadObject();
 		
-		final OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		final OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
 		final boolean bIsServer = callCSIsServer();
 
 		// read properties
@@ -182,7 +182,7 @@ public abstract class OAObjectSerializeService {
 			callGuiAssignGuid(oaObjRead);
 		}
 
-		OAObjectInfo oi = getOAObjectInfo(oaObjRead);
+		OAObjectInfo oi = callInfoGetObjectInfo(oaObjRead);
 		if (oi.getAddToCache()) {
 			oaObjUse = callCacheAdd(oaObjRead, false, false, true);
 			bDup = (oaObjRead != oaObjUse);
@@ -390,7 +390,7 @@ public abstract class OAObjectSerializeService {
 			faObjectSerializer.beforeSerialize(oaObj, serializer);
 		}
 		
-		final OAObjectInfo oi = getOAObjectInfo(oaObj);
+		final OAObjectInfo oi = callInfoGetObjectInfo(oaObj);
 		final boolean bIsServer = callCSIsServer();
 		final boolean bIsObjectOnServer = bIsServer || callSyncClientIsObjectOnServer(oaObj);
 
@@ -599,7 +599,7 @@ public abstract class OAObjectSerializeService {
 	public abstract void callGuidSetGuid(OAObject oaObj, UUID guid);    
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz);
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeSetPropertyIfEmpty")
 	public abstract void callPropertyUnsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value);
@@ -611,7 +611,7 @@ public abstract class OAObjectSerializeService {
 	public abstract void callGuiAssignGuid(OAObject obj);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo getOAObjectInfo(OAObject obj); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().add")
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread);

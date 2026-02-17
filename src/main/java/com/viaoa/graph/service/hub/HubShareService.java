@@ -5,27 +5,18 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 
-public class HubShareService {
+public abstract class HubShareService {
 	private final Logger LOG = Logger.getLogger(HubShareService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 
-	public HubShareService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-		if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-		this.srvcHub = srvcHub;
+	public HubShareService(Hub.FriendAccess faHub) {
 		if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
 		this.faHub = faHub;
 	}
@@ -51,8 +42,8 @@ public class HubShareService {
 	 * @param bChildrenOnly  true to return only Hubs directly shared from thisHub
 	 * @return array of shared Hubs
 	 */
-	public Hub[] getAllSharedHubs(Hub thisHub, boolean bChildrenOnly) {
-		return getAllSharedHubs(thisHub, bChildrenOnly, null);
+	public Hub<?>[] getAllSharedHubs(Hub<?> hub, boolean bChildrenOnly) {
+		return getAllSharedHubs(hub, bChildrenOnly, null);
 	}
 
 	/**
@@ -94,7 +85,7 @@ public class HubShareService {
 			boolean bOnlyIfSharedAO) {
 
 		if (thisHub == null) {
-			return null;
+			return EmptyHubs;
 		}
 
 		Hub h = thisHub;
@@ -128,7 +119,7 @@ public class HubShareService {
 			alHub.add(hub);
 		}
 
-		WeakReference<Hub>[] refs = srvcHub.getHubShareService().getSharedWeakHubs(hub);
+		WeakReference<Hub>[] refs = getSharedWeakHubs(hub);
 		for (int i = 0; refs != null && i < refs.length; i++) {
 			WeakReference<Hub> ref = refs[i];
 			if (ref == null) {
@@ -138,7 +129,7 @@ public class HubShareService {
 			if (h2 == null) {
 				continue;
 			}
-			if (bOnlyIfSharedAO && !srvcHub.getHubShareService().isUsingSameSharedAO(findHub, h2)) {
+			if (bOnlyIfSharedAO && !isUsingSameSharedAO(findHub, h2)) {
 				continue;
 			}
 			_getAllSharedHubs(h2, findHub, alHub, filter, cnter + 1, bIncludeFilteredHubs, bOnlyIfSharedAO, bIncludeHubShareAO);
@@ -181,14 +172,14 @@ public class HubShareService {
 	 * @return the HubCopy instance, or null if none exists
 	 */
 	public HubCopy getHubCopy(Hub thisHub) {
-		Hub h = srvcHub.getHubShareService().getMainSharedHub(thisHub);
+		Hub h = getMainSharedHub(thisHub);
 		if (faHub.getHubDataMaster(h).getMasterObject() != null || faHub.getHubDataMaster(h).getMasterHub() != null) {
 			// filtered hubs will not have a master
 			return null;
 		}
 
 		// find a HubFilter in the listener list
-		HubListener[] hls = srvcHub.getHubEventService().getHubListeners(h);
+		HubListener[] hls = callHubEventGetHubListeners(h);
 		if (hls != null) {
 			for (HubListener hl : hls) {
 				if (hl instanceof HubCopy) {
@@ -206,14 +197,14 @@ public class HubShareService {
 	 * @return a HubFilter instance, or null if none is found
 	 */
 	public HubFilter getHubFilter(Hub thisHub) {
-		Hub h = srvcHub.getHubShareService().getMainSharedHub(thisHub);
+		Hub h = getMainSharedHub(thisHub);
 		if (faHub.getHubDataMaster(h).getMasterObject() != null || faHub.getHubDataMaster(h).getMasterHub() != null) {
 			// filtered hubs will not have a master
 			return null;
 		}
 
 		// find a HubFilter in the listener list
-		HubListener[] hls = srvcHub.getHubEventService().getHubListeners(h);
+		HubListener[] hls = callHubEventGetHubListeners(h);
 		if (hls != null) {
 			for (HubListener hl : hls) {
 				if (hl instanceof HubFilter) {
@@ -232,10 +223,10 @@ public class HubShareService {
 	 * @return HubShareAO listener or null
 	 */
 	public HubShareAO getHubShareAO(Hub thisHub) {
-		Hub h = srvcHub.getHubShareService().getMainSharedHub(thisHub);
+		Hub h = getMainSharedHub(thisHub);
 
 		// find a HubShareAO in the listener list
-		HubListener[] hls = srvcHub.getHubEventService().getHubListeners(h);
+		HubListener[] hls = callHubEventGetHubListeners(h);
 		if (hls == null || hls.length == 0) {
 			return null;
 		}
@@ -261,11 +252,12 @@ public class HubShareService {
 			return null;
 		}
 
-		if (faHub.getHubDataUnique(thisHub).getSharedHub() != null) {
-			if (bOnlyIfSharedAO && !srvcHub.getHubShareService().isUsingSameSharedAO(thisHub, faHub.getHubDataUnique(thisHub).getSharedHub())) {
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub); 
+		if (datau.getSharedHub() != null) {
+			if (bOnlyIfSharedAO && !isUsingSameSharedAO(thisHub, datau.getSharedHub())) {
 				return null;
 			}
-			return faHub.getHubDataUnique(thisHub).getSharedHub();
+			return datau.getSharedHub();
 		}
 		if (!bIncludeFilteredHubs) {
 			return null;
@@ -327,13 +319,13 @@ public class HubShareService {
 		}
 
 		// first try a quickcheck on the main shared hub
-		if (!bOnlyIfSharedAO || srvcHub.getHubShareService().isUsingSameSharedAO(findHub, thisHub)) {
+		if (!bOnlyIfSharedAO || isUsingSameSharedAO(findHub, thisHub)) {
 			if (filter.isUsed(thisHub)) {
 				return thisHub;
 			}
 		}
 
-		WeakReference<Hub>[] refs = srvcHub.getHubShareService().getSharedWeakHubs(thisHub);
+		WeakReference<Hub>[] refs = getSharedWeakHubs(thisHub);
 		for (int i = 0; refs != null && i < refs.length; i++) {
 			WeakReference<Hub> ref = refs[i];
 			if (ref == null) {
@@ -498,7 +490,7 @@ public class HubShareService {
 						//   20120505 note: it could have a detail that is linked, so bUpdateLink was added so that the linked to prop wont be changed
 						if (faHub.getHubDataUnique(hubs[i]).getLinkToHub() == null) {
 							// 20120505 added new arg for bUpdateDetail
-							srvcHub.getHubAOService().setActiveObject(hubs[i], null, false, bUpdateLink, false); // adjustMaster, bUpdateLink, bForce
+							callHubAOSetActiveObject(hubs[i], null, false, bUpdateLink, false); // adjustMaster, bUpdateLink, bForce
 							// was: hubs[i].setAO(null);
 						}
 					}
@@ -516,9 +508,9 @@ public class HubShareService {
 	public void setSharedHubsAfterRemoveAll(Hub thisHub) {
 		//qqqqqqqq method was protected
 		faHub.getHubDataActive(thisHub).setActiveObject(null);
-		srvcHub.getHubAOService().setActiveObject(thisHub, -1, false, false, false); // bUpdateLink, bForce, bCalledByShareHub
+		callHubAOSetActiveObject(thisHub, -1, false, false, false); // bUpdateLink, bForce, bCalledByShareHub
 
-		WeakReference<Hub>[] refs = srvcHub.getHubShareService().getSharedWeakHubs(thisHub);
+		WeakReference<Hub>[] refs = getSharedWeakHubs(thisHub);
 		for (int i = 0; refs != null && i < refs.length; i++) {
 			WeakReference<Hub> ref = refs[i];
 			if (ref == null) {
@@ -549,24 +541,23 @@ public class HubShareService {
 			*/
 			faHub.getHubDataActive(thisHub).setActiveObject(null);
 
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(thisHub);
-			if (thisHub.getSize() == 0 || thisHub.getLinkHub(true) != null || faHub.getHubDataUnique(thisHub).isNullOnRemove() || og.getSyncService().isRemoteThread()) {
+			if (thisHub.getSize() == 0 || thisHub.getLinkHub(true) != null || faHub.getHubDataUnique(thisHub).isNullOnRemove() || callRemoteThreadIsRemoteThread()) {
 				// 20120505 dont update a linked value that has already been set
-				srvcHub.getHubAOService().setActiveObject(thisHub, -1, false, true, false); // bUpdateLink, bForce, bCalledByShareHub
-				// was: srvcHub.getHubAOService().setActiveObject(thisHub, -1, true, true,false); // bUpdateLink,bForce,bCalledByShareHub
+				callHubAOSetActiveObject(thisHub, -1, false, true, false); // bUpdateLink, bForce, bCalledByShareHub
+				// was: callHubAOSetActiveObject(thisHub, -1, true, true,false); // bUpdateLink,bForce,bCalledByShareHub
 			} else {
 				// 20101228
 				if (thisHub.getSize() > posRemoved) {
-					srvcHub.getHubAOService().setActiveObject(thisHub, posRemoved, false, false, false);
+					callHubAOSetActiveObject(thisHub, posRemoved, false, false, false);
 				} else {
 					//was: if (faHub.getHubData(thisHub)a.activeObject == null && posRemoved > 0) {
-					srvcHub.getHubAOService().setActiveObject(thisHub, posRemoved - 1, false, false, false);
+					callHubAOSetActiveObject(thisHub, posRemoved - 1, false, false, false);
 				}
 			}
 		}
 
 		// 20120715
-		WeakReference<Hub>[] refs = srvcHub.getHubShareService().getSharedWeakHubs(thisHub);
+		WeakReference<Hub>[] refs = getSharedWeakHubs(thisHub);
 		for (int i = 0; refs != null && i < refs.length; i++) {
 			WeakReference<Hub> ref = refs[i];
 			if (ref == null) {
@@ -599,7 +590,7 @@ public class HubShareService {
 	 */
 	public Hub createSharedHub(Hub thisHub, boolean bShareActive) {
 		Hub sharedHub = new Hub(thisHub.getObjectClass());
-		srvcHub.getHubShareService().setSharedHub(sharedHub, thisHub, bShareActive);
+		setSharedHub(sharedHub, thisHub, bShareActive);
 		return sharedHub;
 	}
 
@@ -632,7 +623,7 @@ public class HubShareService {
 		//qqqqqqq method was protected
 		_setSharedHub(thisHub, sharedMasterHub, shareActiveObject, newLinkValue);
 		// 20181030 update temp listener cache
-		srvcHub.getHubEventService().clearGetAllListenerCache(thisHub);
+		callHubEventClearGetAllListenerCache(thisHub);
 
 		// 20211125 if thisHub is linked & AO != null, and sharedHub is recursive, might need to adjust thisHub
 		if (sharedMasterHub != null && thisHub.getAO() == null) {
@@ -640,7 +631,7 @@ public class HubShareService {
 			if (hx != null) {
 				if (sharedMasterHub.getOAObjectInfo().getRecursiveLinkInfo(OALinkInfo.ONE) != null) {
 					// fire a fake changeActiveObject
-					srvcHub.getHubEventService().fireAfterChangeActiveObjectEvent(hx, hx.getAO(), hx.getPos(), true);
+					callHubEventFireAfterChangeActiveObjectEvent(hx, hx.getAO(), hx.getPos(), true);
 				}
 			}
 		}
@@ -670,9 +661,9 @@ public class HubShareService {
 		// 20180328 check to see if thisHub has masterObject and no masterHub
 		if (OAObject.getDebugMode() && faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
 			if (faHub.getHubDataMaster(thisHub).getMasterHub() == null) {
-				OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(thisHub);
+				OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(thisHub);
 				if (li != null && !li.getCalculated()) {
-					li = srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail(thisHub);
+					li = callHubDetailGetLinkInfoFromMasterHubToDetail(thisHub);
 					if (li != null && li.getType() == OALinkInfo.ONE) {
 						LOG.log(Level.WARNING,
 								"thisHub should not be used for sharing, thisHub=" + thisHub + ", sharedMasterHub=" + sharedMasterHub,
@@ -683,8 +674,9 @@ public class HubShareService {
 			}
 		}
 
-		srvcHub.getHubDataService().incChangeCount(thisHub);
-		final Hub hubOrigSharedHub = faHub.getHubDataUnique(thisHub).getSharedHub();
+		callHubDataIncChangeCount(thisHub);
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub); 
+		final Hub hubOrigSharedHub = datau.getSharedHub();
 		if (hubOrigSharedHub == sharedMasterHub) {
 			if (sharedMasterHub == null) {
 				return;
@@ -701,7 +693,7 @@ public class HubShareService {
 
 				// 20130331 since the SharedHub is the same, do more checking to see if thisHub has changed or not
 				if (!shareActiveObject || (faHub.getHubDataActive(thisHub).getActiveObject() == faHub.getHubDataActive(sharedMasterHub).getActiveObject())) {
-					if (faHub.getHubDataUnique(thisHub).getLinkToHub() == null) {
+					if (datau.getLinkToHub() == null) {
 						if (!shareActiveObject) {
 							// 20180305
 							Object objx = thisHub.getAO();
@@ -715,9 +707,9 @@ public class HubShareService {
 
 					// see if this AO is already set correctly with the linkHub
 					try {
-						Object obj = faHub.getHubDataUnique(thisHub).getLinkToHub().getActiveObject();
+						Object obj = datau.getLinkToHub().getActiveObject();
 						if (obj != null) {
-							obj = faHub.getHubDataUnique(thisHub).getLinkToGetMethod().invoke(obj, (Object[]) null);
+							obj = datau.getLinkToGetMethod().invoke(obj, (Object[]) null);
 						}
 
 						// 20110110 the link value is in the process of being changed - see srvcHub.getHubDataService().getPos(...)
@@ -725,7 +717,7 @@ public class HubShareService {
 							return;
 						}
 
-						if (faHub.getHubDataUnique(thisHub).isLinkPos()) {
+						if (datau.isLinkPos()) {
 							int x = -1;
 							if (obj != null && obj instanceof Number) {
 								x = ((Number) obj).intValue();
@@ -759,9 +751,9 @@ public class HubShareService {
 		// make sure both hubs are compatible
 		if (sharedMasterHub != null) {
 			if (thisHub.getObjectClass() == null) {
-				srvcHub.setObjectClass(thisHub, sharedMasterHub.getObjectClass());
+				callHubSetObjectClass(thisHub, sharedMasterHub.getObjectClass());
 			} else if (sharedMasterHub.getObjectClass() == null) {
-				srvcHub.setObjectClass(sharedMasterHub, thisHub.getObjectClass());
+				callHubSetObjectClass(sharedMasterHub, thisHub.getObjectClass());
 			}
 			Class c = thisHub.getObjectClass();
 			if (c != null && !c.equals(sharedMasterHub.getObjectClass())) {
@@ -775,7 +767,7 @@ public class HubShareService {
 		HubDataActive originalDataa = faHub.getHubDataActive(thisHub);
 
 		// first unset any prev set sharedHub
-		Hub h = faHub.getHubDataUnique(thisHub).getSharedHub();
+		Hub h = datau.getSharedHub();
 		if (h != null) {
 			removeSharedHub(h, thisHub);
 			if (faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub)) {
@@ -784,7 +776,7 @@ public class HubShareService {
 		} else {
 			// 20171015 need to remove objects from it
 			for (Object obj : thisHub) {
-				srvcObject.getOAObjectHubService().removeHub((OAObject) obj, thisHub, false);
+				callObjectHubRemoveHub((OAObject) obj, thisHub, false);
 			}
 		}
 
@@ -807,10 +799,11 @@ public class HubShareService {
 				if (h == thisHub) {
 					h = sharedMasterHub;
 					for (;;) {
-						if (faHub.getHubDataUnique(h).getSharedHub() == null) {
+						HubDataUnique datauh = faHub.getHubDataUnique(h);
+						if (datauh.getSharedHub() == null) {
 							break;
 						}
-						h = faHub.getHubDataUnique(h).getSharedHub();
+						h = datauh.getSharedHub();
 					}
 					sharedMasterHub = h;
 					shareActiveObject2 = false;
@@ -849,7 +842,7 @@ public class HubShareService {
 			// sharedMasterHub.datau.addSharedHub(this); // adds to datau.vecSharedHub
 		}
 
-		faHub.getHubDataUnique(thisHub).setSharedHub(sharedMasterHub); // the master Hub that this hub is shared with
+		datau.setSharedHub(sharedMasterHub); // the master Hub that this hub is shared with
 
 		Hub[] hubShared = getAllSharedHubs(thisHub, true, null); // get shared hubs under this Hub
 		if (sharedMasterHub != null && shareActiveObject && shareActiveObject2) {
@@ -866,46 +859,49 @@ public class HubShareService {
 		// set active object in each shared hub, which will update detail hubs
 		for (int i = 0; i < hubShared.length; i++) {
 			h = hubShared[i];
-			if (faHub.getHubDataUnique(h).getLinkToHub() == null) {
+			final HubDataUnique datauh = faHub.getHubDataUnique(h);
+			if (datauh.getLinkToHub() == null) {
 				// if there is not a linkHub, then go to first object
 				int pos;
-				if (faHub.getHubDataUnique(h).getSharedHub() != null && faHub.getHubDataActive(h) == faHub.getHubDataActive(faHub.getHubDataUnique(h).getSharedHub())) {
+				if (datauh.getSharedHub() != null && faHub.getHubDataActive(h) == faHub.getHubDataActive(datauh.getSharedHub())) {
 					// shared hubs
-					pos = faHub.getHubDataUnique(h).getSharedHub().getPos();
+					pos = datauh.getSharedHub().getPos();
 				} else {
 					// 08/18/2001 - always set to null
 					// pos = size() > 0 ? 0 :-1;
-					pos = faHub.getHubDataUnique(h).getDefaultPos(); // default is -1
+					pos = datauh.getDefaultPos(); // default is -1
 				}
-				srvcHub.getHubAOService().setActiveObject(h, pos, false, true, true); // updateLink, bForce, bCalledByShareHub
+				callHubAOSetActiveObject(h, pos, false, true, true); // updateLink, bForce, bCalledByShareHub
 			} else {
 				// if linkHub & !bUpdateLink, then retrieve value from linked property
 				// and make that the activeObject in this Hub
 				try {
-					Object obj = faHub.getHubDataUnique(h).getLinkToHub().getActiveObject();
+					Object obj = datauh.getLinkToHub().getActiveObject();
 					if (obj != null) {
-						obj = faHub.getHubDataUnique(h).getLinkToGetMethod().invoke(obj, (Object[]) null);
+						obj = datauh.getLinkToGetMethod().invoke(obj, (Object[]) null);
 					}
 
+					
+					
 					// 20110110 the link value is in the process of being changed - see srvcHub.getHubDataService().getPos(...)
 					if (newLinkValue != null && newLinkValue != obj) {
 						continue;
 					}
 
-					if (faHub.getHubDataUnique(h).isLinkPos()) {
+					if (datauh.isLinkPos()) {
 						int x = -1;
 						if (obj != null && obj instanceof Number) {
 							x = ((Number) obj).intValue();
 						}
 						if (h.getPos() != x) {
-							srvcHub.getHubAOService().setActiveObject(h, h.elementAt(x), x, false, false, true);//bUpdateLink,bForce,bCalledByShareHub
+							callHubAOSetActiveObject(h, h.elementAt(x), x, false, false, true);//bUpdateLink,bForce,bCalledByShareHub
 						}
 					} else {
 						int pos = h.getPos(obj);
 						if (obj != null && pos < 0) {
 							obj = null;
 						}
-						srvcHub.getHubAOService().setActiveObject(h, obj, pos, false, false, true);//bUpdateLink,bForce,bCalledByShareHub
+						callHubAOSetActiveObject(h, obj, pos, false, false, true);//bUpdateLink,bForce,bCalledByShareHub
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -923,10 +919,10 @@ public class HubShareService {
 		}
 
 		// 20130317 added this to stop an infinite loop
-		if (faHub.getHubDataUnique(thisHub).getSharedHub() != hubOrigSharedHub) {
-			srvcHub.getHubEventService().fireOnNewListEvent(thisHub, false); // only for this shared hub
+		if (datau.getSharedHub() != hubOrigSharedHub) {
+			callHubEventFireOnNewListEvent(thisHub, false); // only for this shared hub
 		}
-		// was: srvcHub.getHubEventService().fireOnNewListEvent(thisHub, false); // only for this shared hub
+		// was: callHubEventFireOnNewListEvent(thisHub, false); // only for this shared hub
 
 		// 20101113 not sure why this is here, since it would resort the sharedMasterHub
 		// srvcHub.getHubSortService().sort(thisHub);
@@ -996,7 +992,7 @@ public class HubShareService {
 	public void addSharedHub(Hub thisHub, Hub hub) {
 		_addSharedHub(thisHub, hub);
 		// 20181030 update temp listener cache
-		srvcHub.getHubEventService().clearGetAllListenerCache(thisHub);
+		callHubEventClearGetAllListenerCache(thisHub);
 	}
 
 	/**
@@ -1013,19 +1009,20 @@ public class HubShareService {
 		}
 
 		int pos;
-		synchronized (faHub.getHubDataUnique(thisHub)) {
-			if (faHub.getHubDataUnique(thisHub).getWeakSharedHubs() == null) {
-				faHub.getHubDataUnique(thisHub).setWeakSharedHubs(new WeakReference[1]);
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub); 
+		synchronized (datau) {
+			if (datau.getWeakSharedHubs() == null) {
+				datau.setWeakSharedHubs(new WeakReference[1]);
 				pos = 0;
 			} else {
 				// check for empty slot at the end
-				int currentSize = faHub.getHubDataUnique(thisHub).getWeakSharedHubs().length;
+				int currentSize = datau.getWeakSharedHubs().length;
 				for (pos = currentSize - 1; pos >= 0; pos--) {
-					if (faHub.getHubDataUnique(thisHub).getWeakSharedHubs()[pos] == null) {
+					if (datau.getWeakSharedHubs()[pos] == null) {
 						continue;
 					}
-					if (faHub.getHubDataUnique(thisHub).getWeakSharedHubs()[pos].get() == null) {
-						faHub.getHubDataUnique(thisHub).getWeakSharedHubs()[pos] = null;
+					if (datau.getWeakSharedHubs()[pos].get() == null) {
+						datau.getWeakSharedHubs()[pos] = null;
 						continue;
 					}
 					// found last used slot
@@ -1039,8 +1036,8 @@ public class HubShareService {
 					newSize = Math.min(newSize, currentSize + 50);
 					WeakReference<Hub>[] refs = new WeakReference[newSize];
 
-					System.arraycopy(faHub.getHubDataUnique(thisHub).getWeakSharedHubs(), 0, refs, 0, currentSize);
-					faHub.getHubDataUnique(thisHub).setWeakSharedHubs(refs);
+					System.arraycopy(datau.getWeakSharedHubs(), 0, refs, 0, currentSize);
+					datau.setWeakSharedHubs(refs);
 					pos = currentSize;
 					break;
 				}
@@ -1048,10 +1045,10 @@ public class HubShareService {
 					pos = 0;
 				}
 			}
-			faHub.getHubDataUnique(thisHub).getWeakSharedHubs()[pos] = new WeakReference(hub);
+			datau.getWeakSharedHubs()[pos] = new WeakReference(hub);
 		}
 		if (pos > 99) {
-			if (pos + 1 % 25 == 0) {
+			if ( (pos + 1) % 25 == 0) {
 				LOG.warning("Hub has " + (pos + 1) + " sharedHubs, Hub=" + thisHub);
 			}
 		}
@@ -1070,7 +1067,7 @@ public class HubShareService {
 		_removeSharedHub(sharedHub, hub);
 		//qqqqqqqqq method was protected
 		// 20181030 update temp listener cache
-		srvcHub.getHubEventService().clearGetAllListenerCache(hub); // will clear both hubs
+		callHubEventClearGetAllListenerCache(hub); // will clear both hubs
 	}
 
 	/**
@@ -1083,39 +1080,42 @@ public class HubShareService {
 	 * @param hub       the Hub being removed
 	 */
 	public void _removeSharedHub(Hub sharedHub, Hub hub) {
-		if (faHub.getHubDataUnique(sharedHub).getWeakSharedHubs() == null) {
+		if (sharedHub == null) return;
+		
+		final HubDataUnique datauShared = faHub.getHubDataUnique(sharedHub);
+		if (datauShared.getWeakSharedHubs() == null) {
 			return;
 		}
 		boolean bFound = false;
-		synchronized (faHub.getHubDataUnique(sharedHub)) {
-			if (faHub.getHubDataUnique(sharedHub).getWeakSharedHubs() == null) {
+		synchronized (datauShared) {
+			if (datauShared.getWeakSharedHubs() == null) {
 				return;
 			}
-			int currentSize = faHub.getHubDataUnique(sharedHub).getWeakSharedHubs().length;
+			int currentSize = datauShared.getWeakSharedHubs().length;
 			int lastEndPos = currentSize - 1;
 			for (int pos = 0; !bFound && pos < currentSize; pos++) {
-				if (faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[pos] == null) {
+				if (datauShared.getWeakSharedHubs()[pos] == null) {
 					break; // the rest will be nulls
 				}
 
-				Hub hx = faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[pos].get();
+				Hub hx = datauShared.getWeakSharedHubs()[pos].get();
 				if (hx != null && hx != hub) {
 					continue;
 				}
 				bFound = (hx == hub);
-				faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[pos] = null;
+				datauShared.getWeakSharedHubs()[pos] = null;
 
 				// compress:  get last one, move it back to this slot
 				for (; lastEndPos > pos; lastEndPos--) {
-					if (faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[lastEndPos] == null) {
+					if (datauShared.getWeakSharedHubs()[lastEndPos] == null) {
 						continue;
 					}
-					if (faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[lastEndPos].get() == null) {
-						faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[lastEndPos] = null;
+					if (datauShared.getWeakSharedHubs()[lastEndPos].get() == null) {
+						datauShared.getWeakSharedHubs()[lastEndPos] = null;
 						continue;
 					}
-					faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[pos] = faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[lastEndPos];
-					faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[lastEndPos] = null;
+					datauShared.getWeakSharedHubs()[pos] = datauShared.getWeakSharedHubs()[lastEndPos];
+					datauShared.getWeakSharedHubs()[lastEndPos] = null;
 					break;
 				}
 				if (currentSize > 20 && ((currentSize - lastEndPos) > currentSize / 3)) {
@@ -1124,13 +1124,13 @@ public class HubShareService {
 					newSize = Math.min(lastEndPos + 20, newSize);
 					WeakReference<Hub>[] refs = new WeakReference[newSize];
 
-					System.arraycopy(faHub.getHubDataUnique(sharedHub).getWeakSharedHubs(), 0, refs, 0, lastEndPos);
-					faHub.getHubDataUnique(sharedHub).setWeakSharedHubs(refs);
+					System.arraycopy(datauShared.getWeakSharedHubs(), 0, refs, 0, lastEndPos);
+					datauShared.setWeakSharedHubs(refs);
 					currentSize = newSize;
 				}
 			}
-			if (faHub.getHubDataUnique(sharedHub).getWeakSharedHubs()[0] == null) {
-				faHub.getHubDataUnique(sharedHub).setWeakSharedHubs(null);
+			if (datauShared.getWeakSharedHubs()[0] == null) {
+				datauShared.setWeakSharedHubs(null);
 			}
 		}
 	}
@@ -1147,26 +1147,28 @@ public class HubShareService {
 	 * @deprecated use {@link #getAllSharedHubs} instead
 	 */
 	public Hub[] getSharedHubs(Hub thisHub) {
-		if (faHub.getHubDataUnique(thisHub).getWeakSharedHubs() == null) {
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub); 
+		if (datau.getWeakSharedHubs() == null) {
 			return EmptyHubs;
 		}
-		synchronized (faHub.getHubDataUnique(thisHub)) {
-			if (faHub.getHubDataUnique(thisHub).getWeakSharedHubs() == null) {
+		
+		synchronized (datau) {
+			if (datau.getWeakSharedHubs() == null) {
 				return EmptyHubs;
 			}
 
-			int x = faHub.getHubDataUnique(thisHub).getWeakSharedHubs().length;
+			int x = datau.getWeakSharedHubs().length;
 			for (int j = x - 1; j >= 0; j--) {
-				if (faHub.getHubDataUnique(thisHub).getWeakSharedHubs()[j] == null) {
+				if (datau.getWeakSharedHubs()[j] == null) {
 					continue;
 				}
-				if (faHub.getHubDataUnique(thisHub).getWeakSharedHubs()[j].get() == null) {
-					faHub.getHubDataUnique(thisHub).getWeakSharedHubs()[j] = null;
+				if (datau.getWeakSharedHubs()[j].get() == null) {
+					datau.getWeakSharedHubs()[j] = null;
 					continue;
 				}
 				Hub[] hubs = new Hub[j + 1];
 				for (int i = 0; i < hubs.length; i++) {
-					hubs[i] = faHub.getHubDataUnique(thisHub).getWeakSharedHubs()[i].get();
+					hubs[i] = datau.getWeakSharedHubs()[i].get();
 				}
 				// note: could be nulls in array
 				return hubs;
@@ -1187,7 +1189,8 @@ public class HubShareService {
 		if (thisHub == null) {
 			return null;
 		}
-		return faHub.getHubDataUnique(thisHub).getWeakSharedHubs();
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub); 
+		return datau.getWeakSharedHubs();
 	}
 
 	/**
@@ -1202,7 +1205,8 @@ public class HubShareService {
 		if (thisHub == null) {
 			return 0;
 		}
-		WeakReference<Hub>[] refs = faHub.getHubDataUnique(thisHub).getWeakSharedHubs();
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub); 
+		WeakReference<Hub>[] refs = datau.getWeakSharedHubs();
 		if (refs == null) {
 			return 0;
 		}
@@ -1215,5 +1219,41 @@ public class HubShareService {
 		return cnt;
 	}
 
+	@OAParentProvided (example = "srvcObject.getOAObjectHubService().removeHub")
+	public abstract void callObjectHubRemoveHub(final OAObject oaObj, Hub hub, boolean bIsOnHubFinalize);
+	
+	@OAParentProvided (example = "srvcHub.getHubEventService().getHubListeners")
+	public abstract HubListener[] callHubEventGetHubListeners(Hub thisHub);
 
+	@OAParentProvided (example = "srvcHub.getHubAOService().setActiveObject")
+	public abstract void callHubAOSetActiveObject(Hub thisHub, Object object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
+
+	@OAParentProvided (example = "srvcHub.getHubAOService().setActiveObject")
+	public abstract void callHubAOSetActiveObject(final Hub thisHub, Object object, int pos, boolean bUpdateLink, boolean bForce,
+			boolean bCalledByShareHub);
+	
+	@OAParentProvided (example = "srvcHub.getHubEventService().clearGetAllListenerCache")
+	public abstract void callHubEventClearGetAllListenerCache(Hub hub);
+
+	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterChangeActiveObjectEvent")
+	public abstract void callHubEventFireAfterChangeActiveObjectEvent(Hub thisHub, Object obj, int pos, boolean bAllShared);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail")
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub thisDetailHub);
+	
+	@OAParentProvided (example = "srvcHub.getHubDataService().incChangeCount")
+	public abstract void callHubDataIncChangeCount(Hub thisHub);
+
+	@OAParentProvided (example = "srvcHub.setObjectClass")
+	public abstract void callHubSetObjectClass(Hub thisHub, Class objClass);
+
+	@OAParentProvided (example = "srvcHub.getHubEventService().fireOnNewListEvent")
+	public abstract void callHubEventFireOnNewListEvent(Hub thisHub, boolean bAll);
+
+	
+	@OAParentProvided (example = "srvcRemoteThread.isRemoteThread")
+	public abstract boolean callRemoteThreadIsRemoteThread();
 }

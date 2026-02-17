@@ -111,7 +111,7 @@ public abstract class OAObjectEventService {
 		}
 
 
-		final boolean bIsLoading = callLocalThreadIsLoading();
+		final boolean bIsLoading = callThreadLocalIsLoading();
 		if (bIsLoading) {
 			if (!callHubIsInHub(oaObj)) { // 20110719: could be in the OAObjectCache.SelectAllHubs
 				// no listeners, need to load quick as possible
@@ -124,7 +124,7 @@ public abstract class OAObjectEventService {
 				if (sc != null && !sc.isObjectOnServer(oaObj)) return;
 */				
 			}
-		} else if (!callIsRemoteThread()) {
+		} else if (!callRemoteThreadIsRemoteThread()) {
 			// 20180617 validate
 			boolean bSkip = false;
 			if (propertyName != null) {
@@ -175,7 +175,7 @@ public abstract class OAObjectEventService {
 
 		// verify that change is permitted
 		// verify if recursive link that new parent is allowed
-		final OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		final OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
 		final String propertyU = propertyName.toUpperCase();
 		final OALinkInfo linkInfo = callInfoGetLinkInfo(oi, propertyU);
 		OALinkInfo toLinkInfo;
@@ -274,8 +274,8 @@ public abstract class OAObjectEventService {
 				&& linkInfo.getType() == OALinkInfo.ONE && !linkInfo.getCalculated()) {
 			OALinkInfo rev = linkInfo.getReverseLinkInfo();
 		    if (rev != null && rev.getOwner()) {		    
-    			if (!callLocalThreadIsDeleting() && callSyncIsServer()) {
-    				OAObjectInfo oix = getOAObjectInfo(oldObj.getClass());
+    			if (!callThreadLocalIsDeleting() && callSyncIsServer()) {
+    				OAObjectInfo oix = callInfoGetObjectInfo(oldObj.getClass());
     				if (!oix.getLookup() && !oix.getPreSelect()) {
     					cntSetOwnerNull++;
     					if (throttleSetOwnerNull.check()) {
@@ -289,7 +289,7 @@ public abstract class OAObjectEventService {
 		    }
 		}
 
-		if (linkInfo == null && !callIsRemoteThread()) {
+		if (linkInfo == null && !callRemoteThreadIsRemoteThread()) {
 			OAPropertyInfo propInfo = callInfoGetPropertyInfo(oi, propertyU);
 			if (!bIsLoading && propInfo != null && propInfo.getIsSubmit() && newObj != null) {
 				if (OAConv.toBoolean(newObj)) {
@@ -457,7 +457,7 @@ public abstract class OAObjectEventService {
 
 		String propertyU = propertyName.toUpperCase();
 
-		final OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		final OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
 
 		if (oldObj != null && !bUnknownValues) {
 			if (callReflectGetPrimitiveNull(oaObj, propertyU) || oldObj instanceof OANullObject) {
@@ -521,11 +521,11 @@ public abstract class OAObjectEventService {
 		if (linkInfo == null) {
 			propInfo = callInfoGetPropertyInfo(oi, propertyU);
 			if (propInfo == null) {
-				calcInfo = callInfoGetOACalcInfo(oi, propertyU);
+				calcInfo = callInfoGetCalcInfo(oi, propertyU);
 			}
 		}
 
-		final boolean bIsLoading = callLocalThreadIsLoading();
+		final boolean bIsLoading = callThreadLocalIsLoading();
 
 		OAObjectKey origKey;
 		if (propInfo != null && propInfo.getId()) {
@@ -571,7 +571,7 @@ public abstract class OAObjectEventService {
 		if (!bIsLoading) {
 			// 20110603 added support for creating undoable events if oaThreadLocal.createUndoablePropertyChanges=true
 			//      default=false, which means that the individual UI components are controlling this
-			if (callLocalThreadGetCreateUndoablePropertyChanges()) {
+			if (callThreadLocalGetCreateUndoablePropertyChanges()) {
 				if (!bIsChangeProp && OAUndoManager.getUndoManager() != null) {
 					OAUndoableEdit ue = OAUndoableEdit.createUndoablePropertyChange(null, oaObj, propertyName, oldObj, newObj,
 																					bChangeHold);
@@ -626,10 +626,10 @@ public abstract class OAObjectEventService {
 			if (!oaObj.isChanged()) {
 				if (linkInfo == null || !linkInfo.getCalculated()) { // 20120429
 					try {
-						callLocalThreadSetSuppressCSMessages(true); // the client will setChanged when it gets the propertyChange message
+						callThreadLocalSetSuppressCSMessages(true); // the client will setChanged when it gets the propertyChange message
 						oaObj.setChanged(true);
 					} finally {
-						callLocalThreadSetSuppressCSMessages(false);
+						callThreadLocalSetSuppressCSMessages(false);
 					}
 				}
 			}
@@ -644,10 +644,10 @@ public abstract class OAObjectEventService {
 			if (oi.getHasTriggers()) {
 				HubEvent hubEvent = new HubEvent(oaObj, propertyName, oldObj, newObj);
 				try {
-					callLocalThreadAddHubEvent(hubEvent);
+					callThreadLocalAddHubEvent(hubEvent);
 					oi.onChange(oaObj, propertyName, hubEvent);
 				} finally {
-					callLocalThreadRemoveHubEvent(hubEvent);
+					callThreadLocalRemoveHubEvent(hubEvent);
 				}
 			}
 		}
@@ -845,7 +845,7 @@ public abstract class OAObjectEventService {
 
 		if (revLinkInfo.getType() == OALinkInfo.ONE) {
 			try {
-				OAObjectInfo oiRev = getOAObjectInfo(linkInfo.getToClass());
+				OAObjectInfo oiRev = callInfoGetObjectInfo(linkInfo.getToClass());
 				Method m = callInfoGetMethod(oiRev, "get" + revLinkInfo.getName(), 0); // make sure that the method exists
 				if (m != null) {
 					if (oldObj instanceof OAObjectKey) {
@@ -1034,7 +1034,7 @@ public abstract class OAObjectEventService {
 							// if being set to null, then add to root hub.
 							// if it was removed from old hub, then dont add to root hub
 
-							boolean bAdd = !callLocalThreadIsDeleting(oaObj);
+							boolean bAdd = !callThreadLocalIsDeleting(oaObj);
 
 							if (bAdd && !bOldIsKeyOnly
 									&& callReflectIsReferenceHubLoadedAndNotEmpty((OAObject) oldObj, revLinkInfo.getName())) {
@@ -1133,7 +1133,7 @@ public abstract class OAObjectEventService {
 					hub = (Hub) callReflectGetProperty((OAObject) newObj, revLinkInfo.getName());
 
 					// 20130630 added autoAttach check
-					boolean bAutoAdd = callGetAutoAdd(oaObj);
+					boolean bAutoAdd = callObjectGetAutoAdd(oaObj);
 
 					if (bAutoAdd && hub != null) {
 						hub.add(oaObj);
@@ -1141,9 +1141,9 @@ public abstract class OAObjectEventService {
 						if (oaObj.isNew()) {
 							OAObject objMaster = hub.getMasterObject();
 							if (objMaster != null) {
-								if (!callGetAutoAdd(objMaster)) {
+								if (!callObjectGetAutoAdd(objMaster)) {
 									// turn off autoAdd for this object
-									callSetAutoAdd(oaObj, false);
+									callObjectSetAutoAdd(oaObj, false);
 								}
 							}
 						}
@@ -1196,10 +1196,10 @@ public abstract class OAObjectEventService {
 
 	
 	@OAParentProvided (example = "srvcObject.getAutoAdd(oaObj)")
-	public abstract boolean callGetAutoAdd(OAObject oaObj);
+	public abstract boolean callObjectGetAutoAdd(OAObject oaObj);
 	
 	@OAParentProvided (example = "srvcObject.setAutoAdd(oaObj, false)")
-	public abstract void callSetAutoAdd(final OAObject oaObj, boolean bEnabled);
+	public abstract void callObjectSetAutoAdd(final OAObject oaObj, boolean bEnabled);
 	
 	
 	
@@ -1241,7 +1241,7 @@ public abstract class OAObjectEventService {
 	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo(..)")
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
@@ -1256,7 +1256,7 @@ public abstract class OAObjectEventService {
 	public abstract OAPropertyInfo callInfoGetPropertyInfo(OAObjectInfo oi, String propertyName);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOACalcInfo(..)")
-	public abstract OACalcInfo callInfoGetOACalcInfo(OAObjectInfo thisOI, String name);
+	public abstract OACalcInfo callInfoGetCalcInfo(OAObjectInfo thisOI, String name);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getMethod(oi, name, 0)")
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);
@@ -1365,33 +1365,33 @@ public abstract class OAObjectEventService {
 	
 
 	@OAParentProvided (example = "srvcOAThreadLocal.isLoading()")
-	public abstract boolean callLocalThreadIsLoading();
+	public abstract boolean callThreadLocalIsLoading();
 	
 	@OAParentProvided (example = "srvcOAThreadLocal.isDeleting()")
-	public abstract boolean callLocalThreadIsDeleting();
+	public abstract boolean callThreadLocalIsDeleting();
 
 	@OAParentProvided (example = "srvcOAThreadLocal.isDeleting(obj)")
-	public abstract boolean callLocalThreadIsDeleting(OAObject obj);
+	public abstract boolean callThreadLocalIsDeleting(OAObject obj);
 	
 	@OAParentProvided (example = "srvcOAThreadLocal.getCreateUndoablePropertyChanges()")
-	public abstract boolean callLocalThreadGetCreateUndoablePropertyChanges();
+	public abstract boolean callThreadLocalGetCreateUndoablePropertyChanges();
 
 	@OAParentProvided (example = "srvcOAThreadLocal.setSuppressCSMessages(true)")
-	public abstract void callLocalThreadSetSuppressCSMessages(boolean b);
+	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);
 	
 	@OAParentProvided (example = "srvcOAThreadLocal.setDeleting(..)")
-	public abstract void callLocalThreadSetDeleting(Object obj, boolean b);
+	public abstract void callThreadLocalSetDeleting(Object obj, boolean b);
 
 	@OAParentProvided (example = "srvcOAThreadLocal.addHubEvent(hubEvent)")
-	public abstract void callLocalThreadAddHubEvent(HubEvent he);
+	public abstract void callThreadLocalAddHubEvent(HubEvent he);
 	
 	@OAParentProvided (example = "srvcOAThreadLocal.removeHubEvent(hubEvent)")
-	public abstract void callLocalThreadRemoveHubEvent(HubEvent he);
+	public abstract void callThreadLocalRemoveHubEvent(HubEvent he);
 	
 	
 	
 	@OAParentProvided (example = "srvcOARemoteThread.isRemoteThread()")
-	public abstract boolean callIsRemoteThread();
+	public abstract boolean callRemoteThreadIsRemoteThread();
 	
 	@OAParentProvided (example = "srvcOARemoteThread.startNextThread()")
 	public abstract void callRemoteThreadStartNextThread();

@@ -28,14 +28,14 @@ public class OAObjectTest extends OAUnitTest {
 	public void constructorTest() {
 		reset(false);
 
-		assertFalse(OAThreadLocalDelegate.isLoading());
+		assertFalse(OAThreadLocalDelegate.callThreadLocalIsLoading());
 		Server server = new Server();
 
-		assertFalse(OAThreadLocalDelegate.isLoading());
+		assertFalse(OAThreadLocalDelegate.callThreadLocalIsLoading());
 		assertTrue(server.isNew());
 		assertTrue(server.isChanged());
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Server.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Server.class);
 		String[] ps = oi.getPrimitiveProperties();
 		assertTrue(ps != null && ps.length == 4);
 		for (String s : ps) {
@@ -410,7 +410,7 @@ public class OAObjectTest extends OAUnitTest {
 
 	@Test
 	public void metaDataTest() {
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Server.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Server.class);
 		String[] ps = oi.getPrimitiveProperties();
 
 		//qqq links, etc

@@ -144,7 +144,7 @@ public class ThreadInfoModel extends OAObjectModel {
 		modelReporterCorp.setAllowSearch(false);
 		modelReporterCorp.setAllowHubSearch(true);
 		modelReporterCorp.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelReporterCorp.setCreateUI(li == null || !ThreadInfo.P_ReporterCorp.equalsIgnoreCase(li.getName()));
 		modelReporterCorp.setViewOnly(getViewOnly());
 		// call ThreadInfo.reporterCorpModelCallback(ReporterCorpModel) to be able to customize this model

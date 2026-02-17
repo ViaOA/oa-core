@@ -156,7 +156,7 @@ public class SnapshotReportModel extends OAObjectModel {
 		modelParentSnapshotReport.setAllowSearch(false);
 		modelParentSnapshotReport.setAllowHubSearch(true);
 		modelParentSnapshotReport.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelParentSnapshotReport.setCreateUI(li == null || !SnapshotReport.P_ParentSnapshotReport.equalsIgnoreCase(li.getName()));
 		modelParentSnapshotReport.setViewOnly(getViewOnly());
 		// call SnapshotReport.parentSnapshotReportModelCallback(SnapshotReportModel) to be able to customize this model

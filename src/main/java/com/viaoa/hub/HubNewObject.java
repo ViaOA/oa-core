@@ -15,7 +15,7 @@
  */
 package com.viaoa.hub;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.hub.HubSelectService;
 import com.viaoa.graph.service.object.OAObjectDSService;
 import com.viaoa.graph.service.object.OAObjectReflectService;
@@ -147,10 +147,9 @@ public class HubNewObject<F extends OAObject> {
 			hubNewObject = new Hub(hubMain.getObjectClass());
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubMain);
-		final HubSelectService srvcHubSelect = og.getHubService().getHubSelectService();
-		hubNewObject.setSelectWhereHub(	srvcHubSelect.getSelectWhereHub(hubMain),
-				srvcHubSelect.getSelectWhereHubPropertyPath(hubMain));
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubMain);
+		hubNewObject.setSelectWhereHub(	og.hubsInternal().callHubSelectGetSelectWhereHub(hubMain),
+				og.hubsInternal().callHubSelectGetSelectWhereHubPropertyPath(hubMain));
 
 		// need to set up a filtered hub, so that hubNewObject can be associated with hubMain and it's masterObject/Hub, etc
 		Hub hubEmptyFiltered = new Hub(hubMain.getObjectClass());
@@ -200,10 +199,9 @@ public class HubNewObject<F extends OAObject> {
 			OAObjectKey ok = obj.getObjectKey();
 			if (obj.isNew() && !ok.hasValidObjectIds()) {
 				// obj.setObjectDefaults(); // 20240507 this should be called when object is created. 
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
-				OAObjectDSService srvc = og.getOAObjectService().getOAObjectDSService();
-				if (srvc.getAssignIdOnCreate(obj)) {
-					srvc.assignId(obj);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+				if (og.objectsInternal().callObjectDSGetAssignIdOnCreate(obj)) {
+					og.objectsInternal().callObjectDSAssignId(obj);
 				}
 			}
 		}
@@ -256,14 +254,13 @@ public class HubNewObject<F extends OAObject> {
 		try {
 			srvcOAThreadLocal.setLoading(true);
 			Class<F> clazz = hubMain.getObjectClass();
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-			final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
-			obj = (F) srvcOAObjectReflect.createNewObject(clazz);
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			obj = (F) og.objectsInternal().callObjectReflectCreateNewObject(clazz);
 		} finally {
 			srvcOAThreadLocal.setLoading(false);
 		}
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
-		og.getOAObjectService().getOAObjectInitializeService().initializeAfterLoading((OAObject) obj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		og.objectsInternal().callObjectInitializeInitializeAfterLoading((OAObject) obj);
 		return obj;
 	}
 

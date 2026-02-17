@@ -123,7 +123,7 @@ public class MessageGroupModel extends OAObjectModel {
         modelMessageType.setAllowSearch(true);
         modelMessageType.setAllowHubSearch(true);
         modelMessageType.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelMessageType.setCreateUI(li == null || !MessageGroup.P_MessageType.equals(li.getName()) );
         modelMessageType.setViewOnly(getViewOnly());
         // call MessageGroup.messageTypeModelCallback(MessageTypeModel) to be able to customize this model

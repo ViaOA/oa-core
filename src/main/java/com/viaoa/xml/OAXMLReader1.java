@@ -35,7 +35,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCSService;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
@@ -532,13 +532,12 @@ public class OAXMLReader1 extends DefaultHandler {
 							Class cx = (Class) ((Hashtable) stack[i]).get(XML_CLASS);
 							// find className of property
 							String prop = (String) stack[i + 1];
-							final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(cx);
-							final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-							OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(cx);
-							cx = srvcObjectInfo.getPropertyClass(oi, prop);
+							final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cx);
+							OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(cx);
+							cx = og.objectsInternal().callObjectInfoGetPropertyClass(oi, prop);
 
 							if (Hub.class.equals(cx)) {
-								OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, prop);
+								OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, prop);
 								if (li != null) {
 									cx = li.getToClass();
 								}
@@ -572,13 +571,12 @@ public class OAXMLReader1 extends DefaultHandler {
 							Class cx = (Class) ((Hashtable) stack[i]).get(XML_CLASS);
 							// find className of property
 							String prop = (String) stack[i + 1];
-							final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(cx);
-							final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-							OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(cx);
-							cx = srvcObjectInfo.getPropertyClass(oi, prop);
+							final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cx);
+							OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(cx);
+							cx = og.objectsInternal().callObjectInfoGetPropertyClass(oi, prop);
 
 							if (Hub.class.equals(cx)) {
-								OALinkInfo li = srvcObjectInfo.getLinkInfo(oi, prop);
+								OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, prop);
 								if (li != null) {
 									cx = li.getToClass();
 								}
@@ -701,15 +699,14 @@ public class OAXMLReader1 extends DefaultHandler {
 			final String guid = (String) hash.remove(XML_GUID);
 
 			final Class c = (Class) hash.get(XML_CLASS);
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(c);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+			OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
 			String[] ids = oi.getIdProperties();
 			Object[] values = new Object[ids == null ? 0 : ids.length];
 
 			for (int i = 0; i < ids.length; i++) {
 				String id = ids[i].toUpperCase();
-				Class c2 = srvcObjectInfo.getPropertyClass(c, id);
+				Class c2 = og.objectsInternal().callObjectInfoGetPropertyClass(c, id);
 				values[i] = hash.get(id);
 				if (values[i] instanceof String) {
 					values[i] = OAConverter.convert(c2, values[i]);
@@ -726,7 +723,7 @@ public class OAXMLReader1 extends DefaultHandler {
 						continue;
 					}
 					String id = matchProps[i].toUpperCase();
-					Class c2 = srvcObjectInfo.getPropertyClass(c, id);
+					Class c2 = og.objectsInternal().callObjectInfoGetPropertyClass(c, id);
 					Object val = hash.get(id);
 					if (val instanceof String) {
 						val = OAConverter.convert(c2, val);
@@ -776,9 +773,8 @@ public class OAXMLReader1 extends DefaultHandler {
 				}
 			} else {
 				if (ids != null && ids.length > 0) {
-					// final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-			    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-					object = (OAObject) srvcObjectCache.get(c, key);
+					// final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+					object = (OAObject) og.objectsInternal().callObjectCacheGet(c, key);
 				}
 			}
 			if (object == null && guid != null) {
@@ -1030,9 +1026,8 @@ public class OAXMLReader1 extends DefaultHandler {
 				bLoadingObject = true;
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
-				final OAObjectCSService srvcObjectCS = og.getOAObjectService().getOAObjectCSService();
-				if (srvcObjectCS.isServer(object)) {
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object);
+				if (og.objectsInternal().callObjectCSIsServer(object)) {
 					srvcOAThreadLocal.setSuppressCSMessages(true);
 					// no, needs to have OAObjectEventDelegate.firePropertyChange() process property changes
 					//   since it has already created the object w/o setLoading(true), which means that there are null primitive properties
@@ -1040,9 +1035,8 @@ public class OAXMLReader1 extends DefaultHandler {
 				}
 			}
 			final Class c = (Class) hash.remove(XML_CLASS);
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-			OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(c);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+			OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
 			
 			Enumeration enumx = hash.keys();
 
@@ -1149,7 +1143,7 @@ public class OAXMLReader1 extends DefaultHandler {
 							}
 						}
 					}
-				} else if (srvcObjectInfo.isHubProperty(oi, (String) k)) {
+				} else if (og.objectsInternal().callObjectInfoIsHubProperty(oi, (String) k)) {
 					// empty hub, otherwise "v" would have been a Vector
 				} else if (v != null && (v instanceof String) && ((String) v).startsWith(XML_GUID)) {
 					String guid = ((String) v).substring(XML_GUID.length());
@@ -1163,10 +1157,9 @@ public class OAXMLReader1 extends DefaultHandler {
 					}
 				} else if (v instanceof OAObjectKey) {
 					// try to find "real" object
-					Class cx = srvcObjectInfo.getPropertyClass(c, (String) k);
-					final OAGraphImpl og2 = (OAGraphImpl) OARuntime.graph(cx);
-			    	final OAObjectCacheService srvcObjectCache = og2.getOAObjectService().getOAObjectCacheService();
-					v = srvcObjectCache.get(cx, (OAObjectKey) v);
+					Class cx = og.objectsInternal().callObjectInfoGetPropertyClass(c, (String) k);
+					final OAGraphInternal og2 = (OAGraphInternal) OARuntime.graph(cx);
+					v = og2.objectsInternal().callObjectCacheGet(cx, (OAObjectKey) v);
 					if (v == null) {
 						bResult = false;
 					} else {
@@ -1175,7 +1168,7 @@ public class OAXMLReader1 extends DefaultHandler {
 					}
 				} else {
 					if (v instanceof String) {
-						Class cx = srvcObjectInfo.getPropertyClass(c, (String) k);
+						Class cx = og.objectsInternal().callObjectInfoGetPropertyClass(c, (String) k);
 						if (cx != null && !cx.equals(String.class)) {
 							v = convertToObject((String) k, (String) v, cx);
 						}
@@ -1191,9 +1184,8 @@ public class OAXMLReader1 extends DefaultHandler {
 				}
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 				srvcOAThreadLocal.setLoading(false);
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object);
-				final OAObjectCSService srvcObjectCS = og.getOAObjectService().getOAObjectCSService();
-				if (srvcObjectCS.isServer(object)) {
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object);
+				if (og.objectsInternal().callObjectCSIsServer(object)) {
 					srvcOAThreadLocal.setSuppressCSMessages(false);
 				}
 			}
@@ -1321,10 +1313,8 @@ public class OAXMLReader1 extends DefaultHandler {
 	 * @return the resolved object instance
 	 */
 	protected Object getRealObject(OAObject object) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(object.getClass());
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
-		Object obj = srvcObjectCache.getObject(object.getClass(), srvcObjectKey.getKey(object));
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object.getClass());
+		Object obj = og.objectsInternal().callObjectCacheGetObject(object.getClass(), og.objectsInternal().callObjectKeyGetKey(object));
 		if (obj != null) {
 			return obj;
 		}

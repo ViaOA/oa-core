@@ -20,6 +20,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 
 /**
@@ -42,7 +43,7 @@ import com.viaoa.object.OAObjectInfo;
  * <p>Provides {@code isNeeded()} and {@code shouldSerialize()} predicates to
  * prune serialization footprint.</p>
  */
-public class HubDatax implements java.io.Serializable {
+public class HubDatax<T> implements java.io.Serializable {
 	static final long serialVersionUID = 1L; // used for object serialization
 
 	/**
@@ -163,7 +164,7 @@ public class HubDatax implements java.io.Serializable {
 	/**
 	 * Select query used to populate or filter objects loaded from a data source.
 	 */
-	protected transient OASelect select;
+	protected transient OASelect<? extends OAObject> select;
 
 	/**
 	 * Flag indicating whether active objects should always be refreshed
@@ -224,7 +225,7 @@ public class HubDatax implements java.io.Serializable {
 	 * Delegate ensuring the Hub contains an associated object for each
 	 * object found in another Hub.
 	 */
-	protected transient HubAutoMatch autoMatch;
+	protected transient HubAutoMatch<T, ?> autoMatch;
 
 	/**
 	 * Flag indicating whether add, insert, and remove operations should
@@ -236,7 +237,7 @@ public class HubDatax implements java.io.Serializable {
 	 * Hub used for OASelect.whereHub filtering when selecting objects
 	 * from a data source.
 	 */
-	protected transient Hub selectWhereHub;
+	protected transient Hub<T> selectWhereHub;
 
 	/**
 	 * Property path from the selectWhereHub to this Hub, defining how

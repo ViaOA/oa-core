@@ -125,7 +125,7 @@ public class ApplicationTypeDelegate {
     public static void initialize() {
         if (bInit) return;
         bInit = true;
-        if (!OASync.isServer()) return;
+        if (!OASync.callSyncIsServer()) return;
 
         // https://icespace.cpex.com/docs/DOC-24614
         

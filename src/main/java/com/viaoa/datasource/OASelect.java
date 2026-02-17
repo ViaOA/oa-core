@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import com.viaoa.filter.OAQueryFilter;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
@@ -1078,8 +1078,8 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 
 		if (hubSearch != null && finder == null) {
 			finder = new OAFinder(hubSearch, null);
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-			OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromMasterObjectToDetail(hubSearch);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromMasterObjectToDetail(hubSearch);
 			if (li != null && !li.getRecursive()) {
 				finder.setAllowRecursiveRoot(false);
 			}

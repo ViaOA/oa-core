@@ -47,7 +47,7 @@ public class HubSelectDelegateTest extends OAUnitTest {
 		assertTrue(sel.hasBeenStarted());
 		assertTrue(sel.hasMore());
 
-		HubSelectDelegate.loadAllData(hub, sel);
+		HubSelectDelegate.callHubSelectLoadAllData(hub, sel);
 		assertFalse(sel.hasMore());
 
 		hub = new Hub<Server>(Server.class);
@@ -129,7 +129,7 @@ public class HubSelectDelegateTest extends OAUnitTest {
 		HubSelectDelegate.select(hub, sel);
 		assertEquals(45, hub.getCurrentSize());
 
-		HubSelectDelegate.refreshSelect(hub);
+		HubSelectDelegate.callHubSelectRefreshSelect(hub);
 		assertEquals(50, hub.getCurrentSize());
 
 		assertNotNull(hub.data.hubDatax.select);

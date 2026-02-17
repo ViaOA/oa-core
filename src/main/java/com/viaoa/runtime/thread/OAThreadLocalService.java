@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.json.OAJson;
@@ -2276,8 +2276,8 @@ public class OAThreadLocalService {
 		if (hub == null) {
 			return;
 		}
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-		hub = og.getHubService().getHubShareService().getMainSharedHub(hub);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		hub = og.hubsInternal().callHubShareGetMainSharedHub(hub);
 		OAThreadLocal ti = getThreadLocal(true);
 		ti.dontAdjustHubs = (Hub[]) OAArray.add(Hub.class, ti.dontAdjustHubs, hub);
 		aiTotalDontAdjustHub.incrementAndGet();
@@ -2303,8 +2303,8 @@ public class OAThreadLocalService {
 		if (ti == null) {
 			return;
 		}
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-		hub = og.getHubService().getHubShareService().getMainSharedHub(hub);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		hub = og.hubsInternal().callHubShareGetMainSharedHub(hub);
 		ti.dontAdjustHubs = (Hub[]) OAArray.removeValue(Hub.class, ti.dontAdjustHubs, hub);
 		aiTotalDontAdjustHub.decrementAndGet();
 	}
@@ -2317,8 +2317,8 @@ public class OAThreadLocalService {
 			return true;
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-		hub = og.getHubService().getHubShareService().getMainSharedHub(hub);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		hub = og.hubsInternal().callHubShareGetMainSharedHub(hub);
 
 		OAThreadLocal ti = getThreadLocal(false);
 		if (ti == null) {
@@ -2332,7 +2332,7 @@ public class OAThreadLocalService {
 		for (Hub hubx : ti.dontAdjustHubs) {
 			Hub hubm = hubx.getMasterHub();
 			for (int i = 0; hubm != null && i < 10; i++, hubm = hubm.getMasterHub()) {
-				if (og.getHubService().getHubShareService().getMainSharedHub(hubm) == hub) {
+				if (og.hubsInternal().callHubShareGetMainSharedHub(hubm) == hub) {
 					return false;
 				}
 			}
@@ -2477,8 +2477,8 @@ public class OAThreadLocalService {
 		Hub hx = getFastLoadingHub();
 		if (hx == null) return false;
 		if (h == hx) return true;
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(h);
-		return og.getHubService().getHubShareService().isUsingSameSharedHub(h, hx);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(h);
+		return og.hubsInternal().callHubShareIsUsingSameSharedHub(h, hx);
 	}
 	
 	/**
@@ -2503,8 +2503,8 @@ public class OAThreadLocalService {
 			return ;
 		}
 		if (ti.fastLoadingHub != null) {
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-			og.getHubService().getHubEventService().fireOnNewListEvent(ti.fastLoadingHub, true);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+			og.hubsInternal().callHubEventFireOnNewListEvent(ti.fastLoadingHub, true);
 		}
 		ti.fastLoadingHub = hub;
 	}

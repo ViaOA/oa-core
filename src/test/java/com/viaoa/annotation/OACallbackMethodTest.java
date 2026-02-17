@@ -25,18 +25,18 @@ public class OACallbackMethodTest extends OAUnitTest {
     public void test() throws Exception {
         Employee emp = new Employee();
         
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
         ArrayList<String> al = oi.getTriggerPropertNames();
         assertTrue(al.size() >= 2);
         
-        OAObjectInfo oi2 = OAObjectInfoDelegate.getOAObjectInfo(Location.class);
+        OAObjectInfo oi2 = OAObjectInfoDelegate.callInfoGetObjectInfo(Location.class);
         al = oi2.getTriggerPropertNames();
         assertTrue(al.size() >= 6);
         
         emp.cntCallback = 0;
         
-        OAObjectInfo oi3 = OAObjectInfoDelegate.getOAObjectInfo(Program.class);
+        OAObjectInfo oi3 = OAObjectInfoDelegate.callInfoGetObjectInfo(Program.class);
         al = oi3.getTriggerPropertNames();
         assertEquals(4, al.size());
 
@@ -110,11 +110,11 @@ public class OACallbackMethodTest extends OAUnitTest {
     
     @Test
     public void test2() {
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
-        OAObjectInfo oi2 = OAObjectInfoDelegate.getOAObjectInfo(Location.class);
+        OAObjectInfo oi2 = OAObjectInfoDelegate.callInfoGetObjectInfo(Location.class);
         
-        OAObjectInfo oi3 = OAObjectInfoDelegate.getOAObjectInfo(Program.class);
+        OAObjectInfo oi3 = OAObjectInfoDelegate.callInfoGetObjectInfo(Program.class);
         ArrayList<String> al = oi3.getTriggerPropertNames();
         assertEquals(4, al.size());
 

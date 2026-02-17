@@ -62,7 +62,7 @@ if (rc == null) {
 
 
     public static void start(RemoteClient ri) throws Exception {
-        if (!OASyncDelegate.isServer()) {
+        if (!OASyncDelegate.callSyncIsServer()) {
             return;
         }
 

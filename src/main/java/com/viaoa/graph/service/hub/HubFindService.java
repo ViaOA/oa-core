@@ -3,25 +3,13 @@ package com.viaoa.graph.service.hub;
 import java.util.logging.Logger;
 
 import com.viaoa.filter.*;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 
 public class HubFindService {
 	private final Logger LOG = Logger.getLogger(HubFindService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
-	private final Hub.FriendAccess faHub;
-	
-	public HubFindService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-    	this.srvcHub = srvcHub;
-    	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
-    	this.faHub = faHub;
+	public HubFindService() {
 	}
 
 	/**
@@ -39,17 +27,18 @@ public class HubFindService {
 	 * @param lastFoundObject the last object found, used by {@link com.viaoa.object.OAFinder#findNext}
 	 * @return the first matching object, or {@code null} if none found
 	 */
-    public Object findFirst(Hub thisHub, String propertyPath, final Object findValue, final boolean bSetAO, OAObject lastFoundObject) {
+    public <T> T findFirst(Hub<T> thisHub, String propertyPath, final Object findValue, final boolean bSetAO, T lastFoundObject) {
         if (thisHub == null) return null;
         
         OAFinder finder = new OAFinder();
         finder.addFilter(new OALikeFilter(propertyPath, findValue));
-        Object foundObj = finder.findNext(thisHub, (OAObject) lastFoundObject);
+        T foundObj = (T) finder.findNext(thisHub, (OAObject) lastFoundObject);
         
         if (bSetAO) thisHub.setAO(foundObj);
         return foundObj;
 	}
 
+    
 }
 
 

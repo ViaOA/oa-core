@@ -13,7 +13,7 @@ import test.xice.tsac.model.oa.propertypath.*;
 public class RCInstallDelegate {
 
     public static void run(final RCInstall install) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _run(install);
         }
         else {
@@ -65,7 +65,7 @@ public class RCInstallDelegate {
     }
 
     public static void process(final RCInstall rcInstall) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _process(rcInstall);
         }
         else {
@@ -244,7 +244,7 @@ public class RCInstallDelegate {
     }
 
     public static void load(final RCInstall install) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _load(install);
         }
         else {

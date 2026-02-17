@@ -201,7 +201,7 @@ public class CorpToStoreModel extends OAObjectModel {
         modelEnvironment.setAllowSearch(false);
         modelEnvironment.setAllowHubSearch(false);
         modelEnvironment.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelEnvironment.setCreateUI(li == null || !CorpToStore.P_Environment.equalsIgnoreCase(li.getName()) );
         modelEnvironment.setViewOnly(getViewOnly());
         // call CorpToStore.environmentModelCallback(EnvironmentModel) to be able to customize this model

@@ -105,7 +105,7 @@ public class HubShareAO extends HubListenerAdapter {
     @Override
     public void afterChangeActiveObject(HubEvent evt) {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub1);
-        if (og.getHubService().getHubShareService().isUsingSameSharedAO(hub1, hub2)) {
+        if (og.hubsInternal().callHubShareIsUsingSameSharedAO(hub1, hub2)) {
             return;
         }
         Hub h = evt.getHub();

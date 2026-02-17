@@ -366,7 +366,7 @@ public class WebPartModel extends OAObjectModel {
         modelWebPage.setAllowSearch(false);
         modelWebPage.setAllowHubSearch(true);
         modelWebPage.setAllowGotoEdit(false);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelWebPage.setCreateUI(li == null || !WebPart.P_WebPage.equalsIgnoreCase(li.getName()) );
         modelWebPage.setViewOnly(getViewOnly());
         // call WebPart.webPageModelCallback(WebPageModel) to be able to customize this model

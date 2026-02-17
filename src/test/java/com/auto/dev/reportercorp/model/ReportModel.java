@@ -227,7 +227,7 @@ public class ReportModel extends OAObjectModel {
 		modelParentReport.setAllowSearch(false);
 		modelParentReport.setAllowHubSearch(true);
 		modelParentReport.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelParentReport.setCreateUI(li == null || !Report.P_ParentReport.equalsIgnoreCase(li.getName()));
 		modelParentReport.setViewOnly(getViewOnly());
 		// call Report.parentReportModelCallback(ReportModel) to be able to customize this model

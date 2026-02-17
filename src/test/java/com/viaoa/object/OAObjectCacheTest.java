@@ -342,7 +342,7 @@ public class OAObjectCacheTest extends OAUnitTest {
 		serverx = OAObjectCacheDelegate.get(Server.class, 0); 
 		assertNull(serverx);
 
-		OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Server.class);
+		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Server.class);
 		// dont update cache when Id is changed
 		oi.setAddToCache(false);
 		server.setId(7777);

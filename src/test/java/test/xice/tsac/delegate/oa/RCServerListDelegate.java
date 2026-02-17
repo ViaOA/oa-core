@@ -11,7 +11,7 @@ import test.xice.tsac.model.oa.*;
 public class RCServerListDelegate {
 
     public static void run(final RCServerList serverList) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _run(serverList);
         }
         else {
@@ -53,7 +53,7 @@ public class RCServerListDelegate {
     
     
     public static void process(final RCServerList serverList) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _process(serverList);
         }
         else {
@@ -156,7 +156,7 @@ public class RCServerListDelegate {
     }
 
     public static void load(final RCServerList serverList) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _load(serverList);
         }
         else {

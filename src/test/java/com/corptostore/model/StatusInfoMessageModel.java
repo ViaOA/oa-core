@@ -94,7 +94,7 @@ public class StatusInfoMessageModel extends OAObjectModel {
         modelStatusInfo.setAllowSearch(false);
         modelStatusInfo.setAllowHubSearch(false);
         modelStatusInfo.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelStatusInfo.setCreateUI(li == null || !StatusInfoMessage.P_StatusInfo.equalsIgnoreCase(li.getName()) );
         modelStatusInfo.setViewOnly(getViewOnly());
         // call StatusInfoMessage.statusInfoModelCallback(StatusInfoModel) to be able to customize this model

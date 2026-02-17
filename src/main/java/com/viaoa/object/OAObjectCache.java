@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.runtime.OARuntime;
 
@@ -62,8 +62,8 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	private final ConcurrentHashMap<
 	    Class<? extends OAObject>,
-	    ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>>> 
-	    hmOAObjectByGuid = new ConcurrentHashMap<>(151, 0.75F);	
+	    ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>>> hmOAObjectByGuid = new ConcurrentHashMap<>(151, 0.75F);	
+	
 	
 	/**
 	 * Reference queue used to detect when cached objects have been
@@ -96,7 +96,7 @@ import com.viaoa.runtime.OARuntime;
 	 *
 	 * @return an array of OAObject classes known to the cache
 	 */
-	public Class<?>[] getClasses() {
+	public Class<? extends OAObject>[] getClasses() {
 		return hmOAObjectByGuid.keySet().toArray(new Class[0]);
 	}
 
@@ -144,14 +144,14 @@ import com.viaoa.runtime.OARuntime;
 	 * @param guid  the GUID of the desired object
 	 * @return the cached object instance, or {@code null} if not found or reclaimed
 	 */
-	@SuppressWarnings("unchecked")
 	public <T extends OAObject> T getObject(Class<T> c, UUID guid) {
-		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(c);
+		ConcurrentHashMap<UUID, OAWeakRef<T>> hm = getObjectByGuidMap(c);
 		if (hm == null) return null;
-		OAWeakRef<? extends OAObject> wr = hm.get(guid);
+		
+		OAWeakRef<T> wr = hm.get(guid);
 		if ((++cntGetObject % 100) == 0) checkReferenceQueue();
 		if (wr == null) return null;
-		return (T) wr.get();
+		return wr.get();
 	}
 	
 	/**
@@ -201,9 +201,9 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean updateObject(final T obj) {
 		if (obj == null) return false;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
-		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
-		final OAObjectKey ok = srvcObjectKey.createObjectKey((OAObject) obj);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		final OAObjectKey ok = og.objectsInternal().callObjectKeyCreateObjectKey((OAObject) obj);
+		@SuppressWarnings("unchecked")		
 		final Class<T> clazz = (Class<T>) obj.getClass();
 		return updateObject(obj, ok, clazz);
 	}	
@@ -222,14 +222,13 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean updateObject(final T obj, final OAObjectKey ok, final Class<T> clazz) {
 		if (obj == null || ok == null) return false;
-		final ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
 		
 		boolean[] bsWasFound = new boolean[] {true};
-
-		OAWeakRef<? extends OAObject> wrOld = hm.computeIfAbsent(ok.getGuid(), k -> {
-			bsWasFound[0] = false;
-			return new OAWeakRef(obj, ok, refQueue);
-		});
+		final ConcurrentHashMap<UUID, OAWeakRef<T>> hm = getOrCreateObjectByGuidMap(clazz);
+		final OAWeakRef<T> wrOld = hm.computeIfAbsent(ok.getGuid(), k -> {
+		    bsWasFound[0] = false;
+		    return new OAWeakRef<>(obj, ok, refQueue);
+		});		
 		
 		if (bsWasFound[0]) {
 			OAObjectKey okOld = wrOld.key;
@@ -255,15 +254,16 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean removeObject(final T obj) {
 		if (obj == null) return false;
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
-		final OAObjectKeyService srvcObjectKey = og.getOAObjectService().getOAObjectKeyService();
-		final OAObjectKey ok = srvcObjectKey.createObjectKey((OAObject) obj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		final OAObjectKey ok = og.objectsInternal().callObjectKeyCreateObjectKey((OAObject) obj);
+		
+		@SuppressWarnings("unchecked")
 		final Class<T> clazz = (Class<T>) obj.getClass();
 		
-		final ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+		final ConcurrentHashMap<UUID, OAWeakRef<T>> hm = getObjectByGuidMap(clazz);
 		if (hm == null) return false;
 		
-		OAWeakRef<? extends OAObject> wrOld = hm.remove(ok.getGuid());
+		OAWeakRef<T> wrOld = hm.remove(ok.getGuid());
 		if (wrOld == null) return false;
 		
 		objectIndex.removeFromIndex(clazz, wrOld.key);
@@ -286,9 +286,9 @@ import com.viaoa.runtime.OARuntime;
 			if (hm != null) hm.remove(wr.key.getGuid());
 			objectIndex.removeFromIndex(wr.clazz, wr.key);
 			
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(wr.clazz);
-	        if (og != null && !og.getOAObjectService().getOAObjectInfoService().getOAObjectInfo(wr.clazz).getLocalOnly()) {
-	        	og.getOAObjectService().getOAObjectCSService().objectFinalized(wr.key.getGuid());
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(wr.clazz);
+	        if (og != null && !og.objectsInternal().callObjectInfoGetOAObjectInfo(wr.clazz).getLocalOnly()) {
+	        	og.objectsInternal().callObjectCSObjectFinalized(wr.key.getGuid());
 	        }
 		}
 	}
@@ -300,11 +300,13 @@ import com.viaoa.runtime.OARuntime;
 	 *
 	 * @param callback the callback invoked for each cached object
 	 */
-	public void visit(OACallback callback) {
+	/*qqqqqqq remove since generics wont work qqqqqqqqqqqqq
+	public void visit(OACallback<?> callback) {
 		for (Class<? extends OAObject> c : hmOAObjectByGuid.keySet()) {
 			visit(c, callback);
 		}
 	}
+	*/
 
 	/**
 	 * Visits all cached objects of the specified class by invoking the
@@ -314,11 +316,11 @@ import com.viaoa.runtime.OARuntime;
 	 * @param clazz    the OAObject class whose cached instances will be visited
 	 * @param callback the callback invoked for each object
 	 */
-	public void visit(Class<? extends OAObject> clazz, OACallback callback) {
-		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
+	public <T extends OAObject> void visit(Class<T> clazz, OACallback<T> callback) {
+		ConcurrentHashMap<UUID, OAWeakRef<T>> hm = getObjectByGuidMap(clazz);
 		if (hm == null) return;
-		for (OAWeakRef<? extends OAObject> wr : hm.values()) {
-			OAObject obj = wr.get();
+		for (OAWeakRef<T> wr : hm.values()) {
+			T obj = wr.get();
 			if (obj != null) callback.updateObject(obj);
 		}
 	}
@@ -343,16 +345,15 @@ import com.viaoa.runtime.OARuntime;
 	 * @return the first matching object if {@code alResults} is {@code null},
 	 *         otherwise {@code null} after result collection completes
 	 */
-	public Object find(final Object fromObject, final Class<? extends OAObject> clazz, final OAFinder finder,
-		boolean bSkipNew, int fetchAmount, final List<OAObject> alResults) 
+	public <T extends OAObject> T find(final T fromObject, final Class<T> clazz, final OAFinder<T,T> finder,
+		boolean bSkipNew, int fetchAmount, final List<T> alResults) 
 	{
-		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
-		if (hm == null) {
-			return null;
-		}
+		ConcurrentHashMap<UUID, OAWeakRef<T>> hm = getObjectByGuidMap(clazz);
+		if (hm == null) return null;
+
 		boolean bFoundFirst = fromObject == null;
-		for (OAWeakRef<? extends OAObject> wr : hm.values()) {
-			OAObject obj = wr.get();
+		for (OAWeakRef<T> wr : hm.values()) {
+			T obj = wr.get();
 			if (obj == null) continue;
 			if (!bFoundFirst) {
 				if (obj != fromObject) continue;
@@ -374,6 +375,16 @@ import com.viaoa.runtime.OARuntime;
 		return null;
 	}
 
+	@SuppressWarnings({"unchecked","rawtypes"})
+	private <T extends OAObject> ConcurrentHashMap<UUID, OAWeakRef<T>> getObjectByGuidMap(final Class<T> clazz) {
+	    return (ConcurrentHashMap) hmOAObjectByGuid.get(clazz);
+	}	
+	
+	@SuppressWarnings({"unchecked","rawtypes"})
+	private <T extends OAObject> ConcurrentHashMap<UUID, OAWeakRef<T>> getOrCreateObjectByGuidMap(final Class<T> clazz) {
+	    return (ConcurrentHashMap) hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
+	}
+	
 	public OAObject getRandom(Class<? extends OAObject> clazz, int max) {
 		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return null;
@@ -385,9 +396,9 @@ import com.viaoa.runtime.OARuntime;
 	    int pos = (int) (Math.random() * max);
 
 	    int i = 0;
-	    for (OAWeakRef wr : hm.values()) {
+	    for (OAWeakRef<? extends OAObject> wr : hm.values()) {
 	        if (i++ >= pos) {
-	        	OAObject objx = (OAObject) wr.get();
+	        	OAObject objx = wr.get();
 	        	if (objx != null) return objx;
 	        }
 	    }

@@ -129,7 +129,7 @@ public class MRADClientDelegate {
 
     public static void xmlExport(Hub<MRADClient> hub, String fileName) {
         if (hub == null || OAString.isEmpty(fileName)) return;
-        final OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(MRADClient.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(MRADClient.class);
 
         OAXMLWriter xmlWriter = new OAXMLWriter(fileName) {
             @Override

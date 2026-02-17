@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -191,10 +191,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             }
         };        
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-        
-    	srvcObjectCache.addListener(clazz, cacheListener);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		og.objectsInternal().callObjectCacheAddListener(clazz, cacheListener);
         refresh();
     }
 
@@ -291,10 +289,9 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     public void refresh() {
         // need to check loaded objects 
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
     	
-    	srvcObjectCache.visit(clazz, new OACallback() {
+		og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
             @SuppressWarnings("unchecked")
             @Override
             public boolean updateObject(Object obj) {
@@ -352,10 +349,9 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
                     };
                     finder.setUseOnlyLoadedData(false);
 
-            		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-                	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
+            		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
                     
-                	srvcObjectCache.visit(clazz, new OACallback() {
+            		og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
                         @SuppressWarnings("unchecked")
                         @Override
                         public boolean updateObject(Object obj) {
@@ -395,9 +391,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             trigger = null;
         }
         if (cacheListener == null) {
-    		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-        	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-        	srvcObjectCache.removeListener(clazz, cacheListener);
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+    		og.objectsInternal().callObjectCacheRemoveListener(clazz, cacheListener);
             cacheListener = null;
         }
     }

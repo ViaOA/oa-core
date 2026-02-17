@@ -49,7 +49,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
@@ -1238,9 +1238,8 @@ public class OARestClient {
 		ii.httpMethod = "GET";
 		ii.urlPath = defaultOARestUrl;
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
 		ii.urlPath += OAHttpUtil.updateSlashes(OAString.mfcl(oi.getPluralName()), true, false);
 
 		ii.urlQuery = "";
@@ -1311,9 +1310,8 @@ public class OARestClient {
 		ii.httpMethod = "GET";
 		ii.urlPath = defaultOARestUrl;
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
 		ii.urlPath += "/" + OAString.mfcl(clazz.getSimpleName());
 
 		ii.urlPath += "/" + OAConv.toString(id);

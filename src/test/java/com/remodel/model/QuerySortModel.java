@@ -122,7 +122,7 @@ public class QuerySortModel extends OAObjectModel {
         modelQueryInfo.setAllowSearch(true);
         modelQueryInfo.setAllowHubSearch(true);
         modelQueryInfo.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelQueryInfo.setCreateUI(li == null || !QuerySort.P_QueryInfo.equals(li.getName()) );
         modelQueryInfo.setViewOnly(getViewOnly());
         // call QuerySort.queryInfoModelCallback(QueryInfoModel) to be able to customize this model

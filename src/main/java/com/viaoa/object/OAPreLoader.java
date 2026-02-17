@@ -24,7 +24,7 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.ManyToMany;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
@@ -213,14 +213,13 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) objOne);
-			OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-			Object objOneHub = srvcOAObjectProperty.getProperty((OAObject) objOne, liMany.getName(), false, true);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objOne);
+			Object objOneHub = og.objectsInternal().callObjectPropertyGetProperty((OAObject) objOne, liMany.getName(), false, true);
 			if (objOneHub instanceof Hub) {
 				hub = (Hub) objOneHub;
 			} else {
 				hub = new Hub(liMany.getToClass());
-				srvcOAObjectProperty.setProperty((OAObject) objOne, liMany.getName(), hub);
+				og.objectsInternal().callObjectPropertySetProperty((OAObject) objOne, liMany.getName(), hub);
 			}
 			hub.add(objFromMany);
 		}
@@ -264,42 +263,38 @@ public class OAPreLoader {
 			return;
 		}
 
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(classA);
-    	final OAObjectCacheService srvcObjectCacheA = og.getOAObjectService().getOAObjectCacheService();
-    	og = (OAGraphImpl) OARuntime.graph(classB);
-    	final OAObjectCacheService srvcObjectCacheB = og.getOAObjectService().getOAObjectCacheService();
+		OAGraphInternal ogA = (OAGraphInternal) OARuntime.graph(classA);
+    	OAGraphInternal ogB = (OAGraphInternal) OARuntime.graph(classB);
 		
 		for (ManyToMany mm : alManyToMany) {
-			Object objA = srvcObjectCacheA.get(classA, mm.ok1);
-			Object objB = srvcObjectCacheB.get(classB, mm.ok2);
+			Object objA = ogA.objectsInternal().callObjectCacheGet(classA, mm.ok1);
+			Object objB = ogB.objectsInternal().callObjectCacheGet(classB, mm.ok2);
 			if (objA == null || objB == null) {
 				continue;
 			}
 
 			if (!liA.getPrivateMethod()) {
 				Hub hub;
-				og = (OAGraphImpl) OARuntime.graph((OAObject) objA);
-				OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-				Object objx = srvcOAObjectProperty.getProperty((OAObject) objA, liA.getName(), false, true);
+				OAGraphInternal ogX = (OAGraphInternal) OARuntime.graph((OAObject) objA);
+				Object objx = ogX.objectsInternal().callObjectPropertyGetProperty((OAObject) objA, liA.getName(), false, true);
 				if (objx instanceof Hub) {
 					hub = (Hub) objx;
 				} else {
 					hub = new Hub(classB);
-					srvcOAObjectProperty.setProperty((OAObject) objA, liA.getName(), hub);
+					ogX.objectsInternal().callObjectPropertySetProperty((OAObject) objA, liA.getName(), hub);
 				}
 				hub.add(objB);
 			}
 
 			if (!liB.getPrivateMethod()) {
 				Hub hub;
-				og = (OAGraphImpl) OARuntime.graph((OAObject) objB);
-				OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-				Object objx = srvcOAObjectProperty.getProperty((OAObject) objB, liB.getName(), false, true);
+				OAGraphInternal ogX = (OAGraphInternal) OARuntime.graph((OAObject) objB);
+				Object objx = ogX.objectsInternal().callObjectPropertyGetProperty((OAObject) objB, liB.getName(), false, true);
 				if (objx instanceof Hub) {
 					hub = (Hub) objx;
 				} else {
 					hub = new Hub(classA);
-					srvcOAObjectProperty.setProperty((OAObject) objB, liB.getName(), hub);
+					ogX.objectsInternal().callObjectPropertySetProperty((OAObject) objB, liB.getName(), hub);
 				}
 				hub.add(objA);
 			}
@@ -326,10 +321,9 @@ public class OAPreLoader {
 	 */
 	protected ArrayList load(Class clazz, final OALinkInfo linkInfo) {
 		OASelect sel = new OASelect<>(clazz);
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
-		OALinkInfo liRecursive = srvcObjectInfo.getRecursiveLinkInfo(oi, OALinkInfo.MANY);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
+		OALinkInfo liRecursive = og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(oi, OALinkInfo.MANY);
 
 		String sortOrder = null;
 		if (liRecursive != null) {
@@ -412,14 +406,13 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) fParent);
-			OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-			Object objx = srvcOAObjectProperty.getProperty((OAObject) fParent, liMany.getName(), false, true);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) fParent);
+			Object objx = og.objectsInternal().callObjectPropertyGetProperty((OAObject) fParent, liMany.getName(), false, true);
 			if (objx instanceof Hub) {
 				hub = (Hub) objx;
 			} else {
 				hub = new Hub(clazz);
-				srvcOAObjectProperty.setProperty((OAObject) fParent, liMany.getName(), hub);
+				og.objectsInternal().callObjectPropertySetProperty((OAObject) fParent, liMany.getName(), hub);
 			}
 			hub.add(f);
 		}

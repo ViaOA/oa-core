@@ -7,33 +7,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OASelect;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
-public class HubSelectService {
+public abstract class HubSelectService {
 	private final Logger LOG = Logger.getLogger(HubSelectService.class.getName());
 
-	private final OAObjectService srvcObject;
-	private final HubService srvcHub;
 	private final Hub.FriendAccess faHub;
 	
-	public HubSelectService(OAObjectService srvcObject, HubService srvcHub, Hub.FriendAccess faHub ) {
-    	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
-    	this.srvcObject = srvcObject;
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
-    	this.srvcHub = srvcHub;
+	public HubSelectService(Hub.FriendAccess faHub ) {
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
 	}
@@ -45,8 +34,8 @@ public class HubSelectService {
 	 * @param thisHub the Hub whose select results are being extended
 	 * @return number of objects loaded during this fetch
 	 */
-	public int fetchMore(Hub thisHub) {
-		int x = fetchMore(thisHub, srvcHub.getHubSelectService().getSelect(thisHub));
+	public int fetchMore(Hub<?> thisHub) {
+		int x = fetchMore(thisHub, getSelect(thisHub));
 		return x;
 	}
 
@@ -60,7 +49,7 @@ public class HubSelectService {
 	 * @param sel     the OASelect instance providing objects
 	 * @return number of objects fetched
 	 */
-	public int fetchMore(Hub thisHub, OASelect sel) {
+	public int fetchMore(Hub<?> thisHub, OASelect<?> sel) {
 		if (sel == null) {
 			return 0;
 		}
@@ -77,8 +66,8 @@ public class HubSelectService {
 	 * @param famt    number of objects to attempt retrieval
 	 * @return number of objects fetched
 	 */
-	public int fetchMore(Hub thisHub, int famt) {
-		int x = fetchMore(thisHub, srvcHub.getHubSelectService().getSelect(thisHub), famt);
+	public int fetchMore(Hub<?> thisHub, int famt) {
+		int x = fetchMore(thisHub, getSelect(thisHub), famt);
 		return x;
 	}
 
@@ -92,7 +81,7 @@ public class HubSelectService {
 	 * Tracks fetch locks per Hub to serialize concurrent fetchMore operations.
 	 * Ensures only one thread fetches data for a Hub at a time.
 	 */
-	private  ConcurrentHashMap<Hub, Integer> hmHubFetch = new ConcurrentHashMap<Hub, Integer>(11, .85f);
+	private  ConcurrentHashMap<Hub<?>, Integer> hmHubFetch = new ConcurrentHashMap<>(11, .85f);
 
 	/**
 	 * Core thread-safe implementation of fetchMore. Ensures only one thread
@@ -104,7 +93,7 @@ public class HubSelectService {
 	 * @param famt    fetch amount to use
 	 * @return number of objects fetched
 	 */
-	public int fetchMore(Hub thisHub, OASelect sel, int famt) {
+	public int fetchMore(Hub<?> thisHub, OASelect<?> sel, int famt) {
         if (sel == null) {
             return 0;
         }
@@ -118,7 +107,7 @@ public class HubSelectService {
 						break;
 					}
 					try {
-						hmHubFetch.put(thisHub, 1);
+						hmHubFetch.put(thisHub, 1); // 1 == waiters present (debug/diagnostic); cleared when fetch lock released elsewhere
 						Thread.yield();
 						//was: hmHubFetch.wait(1);
 					} catch (Exception e) {
@@ -151,14 +140,14 @@ public class HubSelectService {
 	 *
 	 * @return number of objects successfully added
 	 */
-	public int _fetchMore(Hub thisHub, OASelect sel, int famt) {
+	public int _fetchMore(Hub<?> thisHub, OASelect<?> sel, int famt) {
 		if (sel == null) {
 			return 0;
 		}
         if (sel.hasNextCompleted()) return 0;
 		int fa = sel.getFetchAmount(); // default amount to load
 
-		HubData hubData = faHub.getHubData(thisHub);
+		HubData<?> hubData = faHub.getHubData(thisHub);
 
 		boolean holdDataChanged = hubData.getChanged();
 
@@ -173,10 +162,10 @@ public class HubSelectService {
 
 			for (; cnt < fa || fa == 0;) {
 				Object obj;
-				if (!srvcHub.getHubSelectService().isMoreData(sel)) {
+				if (!isMoreData(sel)) {
 					boolean bRemoveSelectFromHub;
 					if (thisHub.getMasterObject() != null) {
-						OALinkInfo li = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(thisHub);
+						OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(thisHub);
 						if (li.getType() == OALinkInfo.ONE && li.getPrivateMethod()) {
 							bRemoveSelectFromHub = false;
 						} else {
@@ -197,21 +186,20 @@ public class HubSelectService {
 					if (size == (capacity - 1)) { // resize Vector according to select
 						/*
 						if (faHub.getHubData(thisHub).loadingAllData) {
-							capacity = srvcHub.getHubSelectService().getCount(thisHub);
+							capacity = getCount(thisHub);
 							if (capacity <= 0) capacity = size+1;
 						}
 						*/
 						capacity += (capacity > 250) ? 75 : capacity; // this will override the default behavior of how the Vector grows itself (which is to double in size)
 						//LOG.config("resizing, from:"+size+", to:"+capacity+", hub:"+thisHub);
-						srvcHub.getHubDataService().ensureCapacity(thisHub, capacity);
+						callHubDataEnsureCapacity(thisHub, capacity);
 					}
 					
-					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 					try {
-						srvcOAThreadLocal.setLoading(true);
-						srvcHub.getHubAddRemoveService().add(thisHub, obj);
+						callThreadLocalSetLoading(true);
+						callHubAddRemoveAdd(thisHub, obj);
 					} finally {
-						srvcOAThreadLocal.setLoading(false);
+						callThreadLocalSetLoading(false);
 					}
 					size++;
 					cnt++;
@@ -235,8 +223,8 @@ public class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return true if more data is available; false otherwise
 	 */
-	public boolean isMoreData(Hub thisHub) {
-		OASelect sel = getSelect(thisHub);
+	public boolean isMoreData(Hub<?> thisHub) {
+		OASelect<?> sel = getSelect(thisHub);
 		if (sel == null) {
 			return false;
 		}
@@ -253,7 +241,7 @@ public class HubSelectService {
 	 * @param sel the OASelect instance
 	 * @return true if more data is available; false otherwise
 	 */
-	public boolean isMoreData(OASelect sel) {
+	public boolean isMoreData(OASelect<?> sel) {
 		if (sel == null) {
 			return false;
 		}
@@ -283,7 +271,7 @@ public class HubSelectService {
 	 * @param thisHub the Hub being populated
 	 * @param select  the OASelect instance to load from
 	 */
-	public void loadAllData(Hub thisHub, OASelect select) {
+	public void loadAllData(Hub<?> thisHub, OASelect<?> select) {
 		if (thisHub == null) {
 			return;
 		}
@@ -343,7 +331,7 @@ public class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the Hub’s current OASelect, or null
 	 */
-	public OASelect getSelect(Hub thisHub) {
+	public OASelect<?> getSelect(Hub<?> thisHub) {
 		return getSelect(thisHub, false);
 	}
 
@@ -355,16 +343,20 @@ public class HubSelectService {
 	 * @param bCreateIfNull true to create a new OASelect when missing
 	 * @return the existing or newly created OASelect
 	 */
-	public OASelect getSelect(Hub thisHub, boolean bCreateIfNull) {
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public OASelect<?> getSelect(Hub<?> thisHub, boolean bCreateIfNull) {
 		if (thisHub == null) {
 			return null;
 		}
-		OASelect sel = faHub.getHubData(thisHub).getSelect();
+		OASelect<?> sel = faHub.getHubData(thisHub).getSelect();
 		if (sel != null || !bCreateIfNull) {
 			return sel;
 		}
 
-		sel = new OASelect(thisHub.getObjectClass());
+		if (!thisHub.isOAObject()) return null;
+		
+		Class<OAObject> classX = (Class) thisHub.getObjectClass();
+		sel = new OASelect(classX);
 		faHub.getHubData(thisHub).setSelect(sel);
 		return sel;
 	}
@@ -377,11 +369,12 @@ public class HubSelectService {
 	 * @param thisHub the Hub to populate
 	 * @param select  the select definition to run
 	 */
-	public void select(final Hub thisHub, OASelect select) { // This is the main select method for Hub that all of the other select methods call.
+	public void select(final Hub<?> thisHub, OASelect<?> select) { // This is the main select method for Hub that all of the other select methods call.
 		cancelSelect(thisHub, true);
 		if (select == null) {
 			return;
 		}
+		if (!thisHub.isOAObject()) return;
 
 		if (faHub.getHubDataUnique(thisHub).getSharedHub() != null) {
 			select(faHub.getHubDataUnique(thisHub).getSharedHub(), select);
@@ -407,7 +400,7 @@ public class HubSelectService {
 		}
 
 		select.setSelectClass(thisHub.getObjectClass());
-		OAObjectInfo oi = srvcObject.getOAObjectInfoService().getOAObjectInfo(thisHub.getObjectClass());
+		OAObjectInfo oi = callObjectInfoGetObjectInfo(thisHub.getObjectClass());
 
 		// 20200302
 		Hub hx = faHub.getHubData(thisHub).getSelectWhereHub();
@@ -418,7 +411,7 @@ public class HubSelectService {
 			}
 		}
 
-		srvcHub.getHubEventService().fireBeforeSelectEvent(thisHub);
+		callHubEventFireBeforeSelectEvent(thisHub);
 
 		boolean bRunSelect;
 		bRunSelect = oi.getUseDataSource() || select.getDataSource() != null;
@@ -427,26 +420,26 @@ public class HubSelectService {
 		bRunSelect = (bRunSelect && (select.getDataSource() != null || select.getFinder() != null));
 		//was: bRunSelect = (bRunSelect && select.getDataSource() != null);
 
-		srvcHub.getHubDataService().incChangeCount(thisHub);
+		callHubDataIncChangeCount(thisHub);
 
 		if (select.getAppend()) {
 			faHub.getHubData(thisHub).setSelect(select);
 		} else {
 			thisHub.setAO(null); // 20100507
 			if (thisHub.isOAObject()) {
-				int z = srvcHub.getHubDataService().getCurrentSize(thisHub);
+				int z = callHubDataGetCurrentSize(thisHub);
 				for (int i = 0; i < z; i++) {
-					OAObject oa = (OAObject) srvcHub.getHubDataService().getObjectAt(thisHub, i);
-					srvcObject.getOAObjectHubService().removeHub(oa, thisHub, false);
+					OAObject oa = (OAObject) callHubDataGetObjectAt(thisHub, i);
+					callObjectHubRemoveHub(oa, thisHub, false);
 				}
 			}
-			srvcHub.getHubDataService().clearAllAndReset(thisHub);
+			callHubDataClearAllAndReset(thisHub);
 			faHub.getHubData(thisHub).setSelect(select);
 
 			if (select.getRewind()) {
 
 				// 20120716
-				OAFilter<Hub> filter = new OAFilter<Hub>() {
+				OAFilter<Hub<?>> filter = new OAFilter<Hub<?>>() {
 					@Override
 					public boolean isUsed(Hub h) {
 						if (h != thisHub && faHub.getHubDataActive(h) != faHub.getHubDataActive(thisHub)) {
@@ -457,7 +450,7 @@ public class HubSelectService {
 						return false;
 					}
 				};
-				Hub[] hubs = srvcHub.getHubShareService().getAllSharedHubs(thisHub, filter);
+				Hub<?>[] hubs = callHubShareGetAllSharedHubs(thisHub, filter);
 
 				for (int i = 0; i < hubs.length; i++) {
 					if (hubs[i] != thisHub && faHub.getHubDataActive(hubs[i]) != faHub.getHubDataActive(thisHub)) {
@@ -476,14 +469,14 @@ public class HubSelectService {
 
 		if (select.isSelectAll()) {
 			faHub.getHubData(thisHub).setSelectAllHub(true);
-			srvcObject.getOAObjectCacheService().setSelectAllHub(thisHub);
+			callObjectCacheSetSelectAllHub(thisHub);
 		} else {
 			faHub.getHubData(thisHub).setSelectAllHub(false);
-			srvcObject.getOAObjectCacheService().removeSelectAllHub(thisHub);
+			callObjectCacheRemoveSelectAllHub(thisHub);
 		}
 
 		if (!select.getAppend()) {
-			srvcHub.getHubEventService().fireOnNewListEvent(thisHub, true);
+			callHubEventFireOnNewListEvent(thisHub, true);
 		}
 	}
 
@@ -495,7 +488,6 @@ public class HubSelectService {
 	 * @param bRemoveSelect true to clear the Hub’s select reference
 	 */
 	public void cancelSelect(Hub thisHub, boolean bRemoveSelect) {
-		//qqqqqqqqqqq method was protected
 		OASelect sel = faHub.getHubData(thisHub).getSelect();
 		boolean bHasMoreData;
 		if (sel != null) {
@@ -507,14 +499,14 @@ public class HubSelectService {
 			if (bRemoveSelect) {
 				faHub.getHubData(thisHub).setSelect(null);
 			}
-			srvcHub.getHubDataService().resizeToFit(thisHub);
+			callHubDataResizeToFit(thisHub);
 		} else {
 			bHasMoreData = false;
 		}
 
 		if (faHub.getHubData(thisHub).isSelectAllHub() && bHasMoreData) {
 			faHub.getHubData(thisHub).setSelectAllHub(false);
-			srvcObject.getOAObjectCacheService().removeSelectAllHub(thisHub);
+			callObjectCacheRemoveSelectAllHub(thisHub);
 		}
 	}
 
@@ -524,11 +516,12 @@ public class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the count value, or -1 if no select exists
 	 */
-	public int getCount(Hub thisHub) {
+	public int getCount(Hub<?> thisHub) {
 		if (thisHub == null) {
 			return -1;
 		}
-		OASelect sel = getSelect(thisHub);
+		if (!thisHub.isOAObject()) return thisHub.getSize();
+		OASelect<?> sel = getSelect(thisHub);
 		if (sel == null) {
 			return -1;
 		}
@@ -541,11 +534,12 @@ public class HubSelectService {
 	 * @param thisHub the Hub being checked
 	 * @return true if counted; false otherwise
 	 */
-	public boolean isCounted(Hub thisHub) {
+	public boolean isCounted(Hub<?> thisHub) {
 		if (thisHub == null) {
 			return false;
 		}
-		OASelect sel = getSelect(thisHub);
+		if (!thisHub.isOAObject()) return true;
+		OASelect<?> sel = getSelect(thisHub);
 		if (sel == null) {
 			return true;
 		}
@@ -558,9 +552,10 @@ public class HubSelectService {
 	 * @param thisHub the Hub whose select WHERE clause is modified
 	 * @param s       the WHERE clause string
 	 */
-	public void setSelectWhere(Hub thisHub, String s) {
-		OASelect sel = getSelect(thisHub);
+	public void setSelectWhere(Hub<?> thisHub, String s) {
+		OASelect<?> sel = getSelect(thisHub);
 		if (sel == null) {
+			if (!thisHub.isOAObject()) return;
 			sel = new OASelect(thisHub.getObjectClass());
 			faHub.getHubData(thisHub).setSelect(sel);
 		}
@@ -573,8 +568,8 @@ public class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the WHERE clause, or null if none exists
 	 */
-	public String getSelectWhere(Hub thisHub) {
-		OASelect sel = getSelect(thisHub);
+	public String getSelectWhere(Hub<?> thisHub) {
+		OASelect<?> sel = getSelect(thisHub);
 		if (sel == null) {
 			return null;
 		}
@@ -588,12 +583,17 @@ public class HubSelectService {
 	 * @param thisHub the Hub whose sort order is being modified
 	 * @param s       the ORDER BY clause string
 	 */
-	public void setSelectOrder(Hub thisHub, String s) {
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public void setSelectOrder(Hub<?> thisHub, String s) {
+		if (thisHub == null) return;
 		faHub.getHubData(thisHub).setSortProperty(s);
 
-		OASelect sel = getSelect(thisHub);
+		OASelect<?> sel = getSelect(thisHub);
 		if (!OAString.isEmpty(s) && sel == null) {
-			sel = new OASelect(thisHub.getObjectClass());
+			if (!thisHub.isOAObject()) return;
+			
+			Class<OAObject> classX = (Class) thisHub.getObjectClass();
+			sel = new OASelect(classX);
 			faHub.getHubData(thisHub).setSelect(sel);
 		}
 		sel.setOrder(s);
@@ -605,8 +605,8 @@ public class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the ORDER BY clause or null if none exists
 	 */
-	public String getSelectOrder(Hub thisHub) {
-		OASelect sel = getSelect(thisHub);
+	public String getSelectOrder(Hub<?> thisHub) {
+		OASelect<?> sel = getSelect(thisHub);
 		if (sel == null) {
 			return null;
 		}
@@ -620,11 +620,15 @@ public class HubSelectService {
 	 * @param thisHub     the Hub to populate
 	 * @param bAppendFlag true to append results; false to overwrite
 	 */
-	public void select(Hub thisHub, boolean bAppendFlag) {
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public void select(Hub<?> thisHub, boolean bAppendFlag) {
 		if (thisHub == null) {
 			return;
 		}
-		OASelect sel = new OASelect(thisHub.getObjectClass());
+		if (!thisHub.isOAObject()) return;
+		
+		Class<OAObject> classX = (Class) thisHub.getObjectClass();
+		OASelect<?> sel = new OASelect(classX);
 		sel.setAppend(bAppendFlag);
 		select(thisHub, sel);
 	}
@@ -640,9 +644,12 @@ public class HubSelectService {
 	 * @param orderByClause the sort expression
 	 * @param bAppendFlag  true to append results; false to overwrite
 	 */
-	public void select(Hub thisHub, OAObject whereObject, String whereClause,
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public void select(Hub<?> thisHub, OAObject whereObject, String whereClause,
 			Object[] whereParams, String orderByClause, boolean bAppendFlag) {
-		OASelect sel = new OASelect(thisHub.getObjectClass());
+		if (!thisHub.isOAObject()) return;
+		Class<OAObject> classX = (Class) thisHub.getObjectClass();
+		OASelect sel = new OASelect(classX);
 		sel.setWhereObject(whereObject);
 		sel.setParams(whereParams);
 		sel.setWhere(whereClause);
@@ -663,9 +670,12 @@ public class HubSelectService {
 	 * @param bAppendFlag true to append results
 	 * @param filter      filter applied to objects after select()
 	 */
-	public void select(Hub thisHub, OAObject whereObject, String whereClause,
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public void select(Hub<?> thisHub, OAObject whereObject, String whereClause,
 			Object[] whereParams, String orderByClause, boolean bAppendFlag, OAFilter filter) {
-		OASelect sel = new OASelect(thisHub.getObjectClass());
+		if (!thisHub.isOAObject()) return;
+		Class<OAObject> classX = (Class) thisHub.getObjectClass();
+		OASelect sel = new OASelect(classX);
 		sel.setWhereObject(whereObject);
 		sel.setParams(whereParams);
 		sel.setWhere(whereClause);
@@ -683,8 +693,11 @@ public class HubSelectService {
 	 * @param whereClause raw WHERE clause
 	 * @param orderClause raw ORDER BY clause
 	 */
-	public void selectPassthru(Hub thisHub, String whereClause, String orderClause) {
-		OASelect sel = new OASelect(thisHub.getObjectClass());
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public void selectPassthru(Hub<?> thisHub, String whereClause, String orderClause) {
+		if (!thisHub.isOAObject()) return;
+		Class<OAObject> classX = (Class) thisHub.getObjectClass();
+		OASelect<?> sel = new OASelect(classX);
 		sel.setPassthru(true);
 		sel.setWhere(whereClause);
 		sel.setOrder(orderClause);
@@ -699,8 +712,11 @@ public class HubSelectService {
 	 * @param orderClause raw ORDER BY clause
 	 * @param bAppend     whether to append instead of clearing the Hub first
 	 */
-	public void selectPassthru(Hub thisHub, String whereClause, String orderClause, boolean bAppend) {
-		OASelect sel = new OASelect(thisHub.getObjectClass());
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public void selectPassthru(Hub<?> thisHub, String whereClause, String orderClause, boolean bAppend) {
+		if (!thisHub.isOAObject()) return;
+		Class<OAObject> classX = (Class) thisHub.getObjectClass();
+		OASelect sel = new OASelect(classX);
 		sel.setPassthru(true);
 		sel.setAppend(bAppend);
 		sel.setWhere(whereClause);
@@ -714,7 +730,7 @@ public class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the whereHub controlling select filtering, or null
 	 */
-	public Hub getSelectWhereHub(Hub thisHub) {
+	public Hub getSelectWhereHub(Hub<?> thisHub) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -728,7 +744,7 @@ public class HubSelectService {
 	 * @param thisHub the Hub whose whereHub is being set
 	 * @param hub     the Hub to use for filtering
 	 */
-	public void setSelectWhereHub(Hub thisHub, Hub hub) {
+	public void setSelectWhereHub(Hub<?> thisHub, Hub hub) {
 		if (thisHub == null) {
 			return;
 		}
@@ -741,7 +757,7 @@ public class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the whereHub property path
 	 */
-	public String getSelectWhereHubPropertyPath(Hub thisHub) {
+	public String getSelectWhereHubPropertyPath(Hub<?> thisHub) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -755,7 +771,7 @@ public class HubSelectService {
 	 * @param thisHub the Hub being configured
 	 * @param pp      the property path to use for filtering
 	 */
-	public void setSelectWhereHubPropertyPath(Hub thisHub, String pp) {
+	public void setSelectWhereHubPropertyPath(Hub<?> thisHub, String pp) {
 		if (thisHub == null) {
 			return;
 		}
@@ -800,7 +816,7 @@ public class HubSelectService {
 	 * @param hubFrom  the Hub that may supply whereHub filtering rules
 	 * @return true if the whereHub was successfully adopted
 	 */
-	public boolean adoptWhereHub(final Hub thisHub, final String propName, final Hub hubFrom) {
+	public boolean adoptWhereHub(final Hub<?> thisHub, final String propName, final Hub<?> hubFrom) {
 		if (hubFrom == null) {
 			return false;
 		}
@@ -810,11 +826,11 @@ public class HubSelectService {
 		if (OAString.isEmpty(propName)) {
 			return false;
 		}
-		final Hub hubSelectWhere = srvcHub.getHubSelectService().getSelectWhereHub(hubFrom);
+		final Hub hubSelectWhere = getSelectWhereHub(hubFrom);
 		if (hubSelectWhere == null) {
 			return false;
 		}
-		final String pp = srvcHub.getHubSelectService().getSelectWhereHubPropertyPath(hubFrom);
+		final String pp = getSelectWhereHubPropertyPath(hubFrom);
 		if (OAString.isEmpty(pp)) {
 			return false;
 		}
@@ -840,17 +856,14 @@ public class HubSelectService {
 	 * @param thisHub the Hub to refresh
 	 * @return true if refresh occurred; false otherwise
 	 */
-	public boolean refresh(final Hub thisHub) {
-
+	public boolean refresh(final Hub<?> thisHub) {
 		boolean b = false;
-
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		srvcOAThreadLocal.setRefreshing(true);
+		callThreadLocalSetRefreshing(true);
 		try {
-			srvcHub.getHubEventService().fireBeforeRefreshEvent(thisHub);
+			callHubEventFireBeforeRefreshEvent(thisHub);
 			b = _refresh(thisHub);
 		} finally {
-			srvcOAThreadLocal.setRefreshing(false);
+			callThreadLocalSetRefreshing(false);
 		}
 
 		return b;
@@ -870,22 +883,24 @@ public class HubSelectService {
 	 * @param thisHub the Hub being refreshed
 	 * @return true if refresh succeeded, false otherwise
 	 */
-	public boolean _refresh(final Hub thisHub) {
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public <T> boolean _refresh(final Hub<T> thisHub) {
 		if (thisHub == null) {
 			return false;
 		}
 
-		OASelect sel = thisHub.getSelect();
+		OASelect<?> sel = thisHub.getSelect();
 		if (sel == null) {
-			OAObject obj = srvcHub.getHubDetailService().getMasterObject(thisHub);
+			OAObject obj = callHubDetailGetMasterObject(thisHub);
 			if (obj != null) {
-				String s = srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
+				String s = callHubDetailGetPropertyFromMasterToDetail(thisHub);
 				obj.refresh(s);
 				return true;
 			}
 			return false;
 		}
 
+		
 		cancelSelect(thisHub, false);
 		sel.reset(false);
 
@@ -894,16 +909,16 @@ public class HubSelectService {
 
 		sel.select();
 
-		List alNew = new ArrayList();
+		List<T> alNew = new ArrayList<>();
 		for (Object objx : sel) {
-			alNew.add(objx);
+			alNew.add((T) objx);
 			if (!thisHub.contains(objx)) {
-				thisHub.add(objx);
+				thisHub.add((T) objx);
 			}
 		}
 
-		List alRemove = new ArrayList();
-		for (Object objx : thisHub) {
+		List<T> alRemove = new ArrayList();
+		for (T objx : thisHub) {
 			if (!alNew.contains(objx)) {
 				alRemove.add(objx);
 			}
@@ -912,7 +927,7 @@ public class HubSelectService {
 			thisHub.remove(objx);
 		}
 		int i = 0;
-		for (Object objx : alNew) {
+		for (T objx : alNew) {
 			int pos = thisHub.getPos(objx);
 			if (i != pos) {
 				thisHub.move(pos, i);
@@ -939,23 +954,26 @@ public class HubSelectService {
 	 * @param thisHub the Hub to refresh
 	 * @return true if successful
 	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
 	public boolean refreshSelect(Hub thisHub) {
 		if (thisHub == null) {
 			return false;
 		}
 		Object objAO = thisHub.getAO();
-		OASelect sel = getSelect(thisHub);
+		OASelect<?> sel = getSelect(thisHub);
 
 		if (sel == null) {
 			OAObject obj = thisHub.getMasterObject();
 			if (obj == null) return false;
 
-			OALinkInfo linkInfo = srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(thisHub);
+			OALinkInfo linkInfo = callHubDetailGetLinkInfoFromDetailToMaster(thisHub);
 			if (linkInfo == null) {
 				return false;
 			}
-
-			sel = new OASelect(thisHub.getObjectClass());
+			if (!thisHub.isOAObject()) return false;
+ 
+			Class<OAObject> classX = (Class) thisHub.getObjectClass();
+			sel = new OASelect(classX);
 			sel.setWhereObject((OAObject) obj);
 			sel.setPropertyFromWhereObject(linkInfo.getReverseName());
 		} else {
@@ -989,6 +1007,64 @@ public class HubSelectService {
 		return true;
 	}
 
-}
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectHubService().removeHub")
+	public abstract void callObjectHubRemoveHub(final OAObject oaObj, Hub<?> hub, boolean bIsOnHubFinalize);
+	
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().setSelectAllHub")
+	public abstract void callObjectCacheSetSelectAllHub(Hub hub);
 
+	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().removeSelectAllHub")
+	public abstract void callObjectCacheRemoveSelectAllHub(Hub<?> hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDataService().ensureCapacity")
+	public abstract void callHubDataEnsureCapacity(Hub<?> hub, int size);
+
+	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().add")
+	public abstract boolean callHubAddRemoveAdd(final Hub<?> hub, final Object obj);
+
+	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeSelectEvent")
+	public abstract void callHubEventFireBeforeSelectEvent(Hub<?> hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDataService().incChangeCount")
+	public abstract void callHubDataIncChangeCount(Hub<?> hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDataService().getCurrentSize")
+	public abstract int callHubDataGetCurrentSize(Hub<?> hub);
+	
+	@OAParentProvided (example = "srvcHub.getHubDataService().getObjectAt")
+	public abstract Object callHubDataGetObjectAt(Hub<?> hub, int pos);
+
+	@OAParentProvided (example = "srvcHub.getHubDataService().clearAllAndReset")
+	public abstract void callHubDataClearAllAndReset(Hub<?> hub);
+	
+	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
+	public abstract Hub<?>[] callHubShareGetAllSharedHubs(Hub<?> hub, OAFilter<Hub<?>> filter);
+
+	@OAParentProvided (example = "srvcHub.getHubEventService().fireOnNewListEvent")
+	public abstract void callHubEventFireOnNewListEvent(Hub<?> hub, boolean bAll);
+
+	@OAParentProvided (example = "srvcHub.getHubDataService().resizeToFit")
+	public abstract void callHubDataResizeToFit(Hub<?> hub);
+
+	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeRefreshEvent")
+	public abstract void callHubEventFireBeforeRefreshEvent(Hub<?> hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject")
+	public abstract OAObject callHubDetailGetMasterObject(Hub<?> hub);
+
+	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
+	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> hub);
+	
+	@OAParentProvided (example = "srvcThreadLocal.setLoading")
+	public abstract boolean callThreadLocalSetLoading(boolean b);
+
+	@OAParentProvided (example = "srvcThreadLocal.setRefreshing")
+	public abstract void callThreadLocalSetRefreshing(boolean b);
+}
 

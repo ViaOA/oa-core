@@ -14,7 +14,7 @@ import test.xice.tsac.model.oa.propertypath.*;
 public class RCDeployDelegate {
 
     public static void initialize(final RCDeploy rcDeploy) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _initialize(rcDeploy);
         }
         else {
@@ -75,7 +75,7 @@ public class RCDeployDelegate {
             return;
         }
         
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _download(rcDeploy);
         }
         else {
@@ -97,7 +97,7 @@ public class RCDeployDelegate {
     }
     
     public static void stage(final RCDeploy rcDeploy) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _stage(rcDeploy);
         }
         else {
@@ -118,7 +118,7 @@ public class RCDeployDelegate {
         }
     }
     public static void install(final RCDeploy rcDeploy) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _install(rcDeploy);
         }
         else {
@@ -141,7 +141,7 @@ public class RCDeployDelegate {
     }
 
     public static void verify(final RCDeploy rcDeploy) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _verify(rcDeploy);
         }
         else {
@@ -164,7 +164,7 @@ public class RCDeployDelegate {
     
     
     public static void start(final RCDeploy rcDeploy) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _start(rcDeploy);
         }
         else {
@@ -186,7 +186,7 @@ public class RCDeployDelegate {
     }
 
     public static void stop(final RCDeploy rcDeploy) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _stop(rcDeploy);
         }
         else {

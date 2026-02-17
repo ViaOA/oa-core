@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFinder;
@@ -245,9 +245,8 @@ public class HubListenerTrigger<T> {
 
 		boolean bWasAdded = addListener(hl);
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(hub.getObjectClass());
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(hub.getObjectClass());
 		String[] calcProps = null;
 		for (OACalcInfo ci : oi.getCalcInfos()) {
 			if (ci.getName().equalsIgnoreCase(propertyName)) {
@@ -265,17 +264,17 @@ public class HubListenerTrigger<T> {
 		OATriggerListener triggerListener = new OATriggerListener() {
 			@Override
 			public void onTrigger(final OAObject rootObject, final HubEvent hubEvent, final String propertyPathFromRoot) throws Exception {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(rootObject);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(rootObject);
 				if (rootObject != null) {
 					if (HubListenerTrigger.this.hub.contains(rootObject)) {
-						og.getHubService().getHubEventService().fireCalcPropertyChange(HubListenerTrigger.this.hub, rootObject, propertyName);
+						og.hubsInternal().callHubEventFireCalcPropertyChange(HubListenerTrigger.this.hub, rootObject, propertyName);
 					}
 					return;
 				}
 
 				// the reverse property could not be used to get objRoot - need to find root objs and send calc event
 				if (!hub.isOAObject()) {
-					og.getHubService().getHubEventService().fireCalcPropertyChange(HubListenerTrigger.this.hub, rootObject, propertyName);
+					og.hubsInternal().callHubEventFireCalcPropertyChange(HubListenerTrigger.this.hub, rootObject, propertyName);
 					return;
 				}
 				if (hub.getSize() == 0) {
@@ -302,7 +301,7 @@ public class HubListenerTrigger<T> {
 				for (Object obj : hub) {
 					try {
 						if (finder.findFirst((OAObject) obj) != null) {
-							og.getHubService().getHubEventService().fireCalcPropertyChange(HubListenerTrigger.this.hub, obj, propertyName);
+							og.hubsInternal().callHubEventFireCalcPropertyChange(HubListenerTrigger.this.hub, obj, propertyName);
 						}
 					} catch (Exception e) {
 						break;
@@ -411,9 +410,9 @@ public class HubListenerTrigger<T> {
 						return;
 					}
 
-					final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+					final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
 					for (String s : al) {
-						og.getHubService().getHubEventService().fireCalcPropertyChange(hub, e.getObject(), s);
+						og.hubsInternal().callHubEventFireCalcPropertyChange(hub, e.getObject(), s);
 					}
 				}
 			};
@@ -474,9 +473,8 @@ public class HubListenerTrigger<T> {
 
 			if (lis.length == 0) {
 				// could be a calcProp
-        		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-				OAObjectInfo oi = srvcObjectInfo.getObjectInfo(hub.getObjectClass());
+        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+				OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(hub.getObjectClass());
 				String[] calcProps = null;
 				for (OACalcInfo ci : oi.getCalcInfos()) {
 					if (ci.getName().equalsIgnoreCase(props[0])) {

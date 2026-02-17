@@ -22,7 +22,7 @@ import java.util.Hashtable;
 import java.util.Stack;
 
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
@@ -139,9 +139,8 @@ public class OAXMLWriter {
 		if (cascade == null) {
 			cascade = new OACascade();
 		}
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
-    	final OAObjectXMLService srvcObjectCache = og.getOAObjectService().getOAObjectXMLService();
-    	srvcObjectCache.write(obj, this, null, false, cascade);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		og.objectsInternal().callObjectXMLWrite(obj, this, null, false, cascade);
 	}
 
 	/** saves Hub as XML */
@@ -149,8 +148,8 @@ public class OAXMLWriter {
 		if (cascade == null) {
 			cascade = new OACascade();
 		}
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
-		og.getHubService().getHubXMLService().write(hub, this, null, false, cascade);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		og.hubsInternal().callHubXMLWrite(hub, this, null, false, cascade);
 	}
 
 	/**
@@ -169,9 +168,8 @@ public class OAXMLWriter {
 	public int shouldWriteProperty(Object obj, String propertyName, Object value) {
 		if (bIncludeOnlyImportMatchProperties && obj instanceof OAObject) {
 			OAObject oaObj = (OAObject) obj;
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
-			final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-			OAObjectInfo io = srvcObjectInfo.getOAObjectInfo(oaObj);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+			OAObjectInfo io = og.objectsInternal().callObjectInfoGetOAObjectInfo(oaObj);
 			if (!io.hasImportMatchProperties()) {
 				return WRITE_NO;
 			}
@@ -204,16 +202,14 @@ public class OAXMLWriter {
 			return true;
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(oaObj);
 		OALinkInfo li = oi.getOwnedByOne();
 		if (li == null) {
 			return false;
 		}
 
-        final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-		Object objx = srvcOAObjectProperty.getProperty(oaObj, li.getName(), false, true);
+		Object objx = og.objectsInternal().callObjectPropertyGetProperty(oaObj, li.getName(), false, true);
 		if (objx == null) {
 			return false;
 		}
@@ -239,16 +235,14 @@ public class OAXMLWriter {
 			return false;
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(oaObj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(oaObj);
 		OALinkInfo li = oi.getOwnedByOne();
 		if (li == null) {
 			return false;
 		}
 
-        final OAObjectPropertyService srvcOAObjectProperty = og.getOAObjectService().getOAObjectPropertyService();
-		Object objx = srvcOAObjectProperty.getProperty(oaObj, li.getName(), false, true);
+		Object objx = og.objectsInternal().callObjectPropertyGetProperty(oaObj, li.getName(), false, true);
 		if (objx == null) {
 			return false;
 		}

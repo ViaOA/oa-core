@@ -32,7 +32,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
@@ -284,9 +284,8 @@ public class OAReflect {
 			clazz = method.getReturnType();
 			if (clazz != null && clazz.equals(Hub.class)) {
 				// try to find the ObjectClass for Hub
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(classLast);
-				final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-				Class c = srvcObjectInfo.getHubPropertyClass(classLast, name.substring(3));
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(classLast);
+				Class c = og.objectsInternal().callObjectInfoGetHubPropertyClass(classLast, name.substring(3));
 				if (c != null) {
 					// this needs to then get the activeObject out of the Hub object
 					method = OAReflect.getMethod(clazz, "getActiveObject", 0);
@@ -570,9 +569,8 @@ public class OAReflect {
 				} else if (s.startsWith("is")) {
 					s = s.substring(2);
 				}
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) object);
-	    		final OAObjectReflectService srvcOAObjectReflect = og.getOAObjectService().getOAObjectReflectService();
-				if (srvcOAObjectReflect.getPrimitiveNull((OAObject) object, s)) {
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) object);
+				if (og.objectsInternal().callObjectReflectGetPrimitiveNull((OAObject) object, s)) {
 					return null;
 				}
 			}

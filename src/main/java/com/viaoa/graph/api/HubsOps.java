@@ -5,6 +5,5 @@ import com.viaoa.object.OACascade;
 
 public interface HubsOps {
 
-	public void save(Hub hub, int iCascadeRule, OACascade cascade);
 
 }

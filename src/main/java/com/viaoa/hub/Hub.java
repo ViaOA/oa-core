@@ -32,11 +32,7 @@ import java.util.stream.Stream;
 
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.hub.HubAddRemoveService;
-import com.viaoa.graph.service.object.OAObjectCallbackService;
-import com.viaoa.graph.service.object.OAObjectHubService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -105,7 +101,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * Primary internal storage object containing the Hub's vector of objects
 	 * and associated state such as size, type information, and refresh settings.
 	 */
-	protected volatile HubData data;
+	protected volatile HubData<TYPE> data;
 
 	/**
 	 * Internal metadata object holding unique Hub configuration, including
@@ -199,8 +195,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public Hub(Hub masterHub) {
 		this(masterHub == null ? (Class) null : masterHub.getObjectClass(), 5);
 		if (masterHub != null) {
-			OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-			og.getHubService().getHubShareService().setSharedHub(this, masterHub, false);
+			OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+			og.hubsInternal().callHubShareSetSharedHub(this, masterHub, false);
 		}
 	}
 
@@ -213,18 +209,20 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param linkInfo      the link information defining the relationship
 	 * @param bCreateSelect true to create an associated SelectHub
 	 */
-	public Hub(Class clazz, OAObject masterObject, OALinkInfo linkInfo, boolean bCreateSelect) {
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public Hub(Class<TYPE> clazz, OAObject masterObject, OALinkInfo linkInfo, boolean bCreateSelect) {
 		this(clazz, 5);
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		if (linkInfo == null) {
-			og.getHubService().getHubDetailService().setMasterObject(this, masterObject);
+			og.hubsInternal().callHubDetailSetMasterObject(this, masterObject);
 		} else {
-			og.getHubService().getHubDetailService().setMasterObject(this, masterObject, linkInfo);
+			og.hubsInternal().callHubDetailSetMasterObject(this, masterObject, linkInfo);
 
-			if (bCreateSelect) {
+			if (bCreateSelect && this.isOAObject()) {
 				// create select, but dont call select.select(), since it could be
 				// coming from server. See: OAObjectReflectDelegate.getReferenceHub(..)
-				OASelect sel = og.getHubService().getHubSelectService().getSelect(this, true);
+				
+				OASelect sel = og.hubsInternal().callHubSelectGetSelect( (Hub<? extends OAObject>) this, true);
 				if (masterObject != null) {
 					sel.setWhereObject(masterObject);
 					sel.setPropertyFromWhereObject(linkInfo.getReverseName());
@@ -251,8 +249,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param size the required capacity
 	 */
 	public void ensureCapacity(int size) {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubDataService().ensureCapacity(this, size);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubDataEnsureCapacity(this, size);
 	}
 
 	/**
@@ -260,8 +258,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * objects in the Hub.
 	 */
 	public void resizeToFit() {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubDataService().resizeToFit(this);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubDataResizeToFit(this);
 	}
 
 	/**
@@ -272,8 +270,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @throws IOException if an error occurs during serialization
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSerializeService()._writeObject(this, stream);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSerializeWriteObject(this, stream);
 	}
 
 	/**
@@ -283,8 +281,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return the resolved Hub
 	 */
 	protected Object readResolve() throws ObjectStreamException {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubSerializeService()._readResolve(this);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubSerializeReadResolve(this);
 	}
 
 	/**
@@ -294,8 +292,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param obj  the value to assign
 	 */
 	public void setProperty(String name, Object obj) {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().setProperty(this, name, obj);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSetProperty(this, name, obj);
 	}
 
 	/**
@@ -305,8 +303,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return the stored value, or null if none exists
 	 */
 	public Object getProperty(String name) {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getProperty(this, name);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubGetProperty(this, name);
 	}
 
 	/**
@@ -315,8 +313,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param name the property to remove
 	 */
 	public void removeProperty(String name) {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().removeProperty(this, name);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubRemoveProperty(this, name);
 	}
 
 	/**
@@ -391,9 +389,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 			//}
 
 			
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 			
-			HubDataMaster dm = og.getHubService().getHubDetailService().getDataMaster(this);
+			HubDataMaster dm = og.hubsInternal().callHubDetailGetDataMaster(this);
 			if (dm.getMasterHub() != null) {
 				if (cnt > 5) {
 					if (alHub == null) {
@@ -439,8 +437,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 			return true;
 		}
 		OACascade cascade = new OACascade();
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getChanged(this, cascadeRule, cascade);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubGetChanged(this, cascadeRule, cascade);
 	}
 
 	/**
@@ -451,8 +449,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param b true to mark the Hub as changed, false to clear the flag
 	 */
 	public void setChanged(boolean b) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubDataService().setChanged(this, b);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubDataSetChanged(this, b);
 	}
 
 	/**
@@ -462,9 +460,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param anArray destination array to populate
 	 */
 	public void copyInto(TYPE[] anArray) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().loadAllData(this);
-		og.getHubService().getHubDataService().copyInto(this, anArray);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectLoadAllData(this);
+		og.hubsInternal().callHubDataCopyInto(this, anArray);
 	}
 
 	/**
@@ -474,9 +472,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return array of the Hub's objects
 	 */
 	public TYPE[] toArray() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().loadAllData(this);
-		return (TYPE[]) og.getHubService().getHubDataService().toArray(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectLoadAllData(this);
+		return (TYPE[]) og.hubsInternal().callHubDataToArray(this);
 	}
 
 	/**
@@ -489,8 +487,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	@Override
 	public <TYPE> TYPE[] toArray(TYPE[] anArray) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().loadAllData(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectLoadAllData(this);
 		int x1 = anArray.length;
 		int x2 = getSize();
 		if (x1 != x2) {
@@ -513,8 +511,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return List of objects from this Hub
 	 */
     public List<TYPE> toList() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-        og.getHubService().getHubSelectService().loadAllData(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+        og.hubsInternal().callHubSelectLoadAllData(this);
         List<TYPE> al = new ArrayList<>();
         for (TYPE obj : this) {
             al.add(obj);
@@ -578,11 +576,11 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 			hx = null;
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		if (hx != null) {
-			og.getHubService().getHubShareService().removeSharedHub(hx, this);
+			og.hubsInternal().callHubShareRemoveSharedHub(hx, this);
 		} else {
-			og.getHubService().getHubSelectService().cancelSelect(this, true);
+			og.hubsInternal().callHubSelectCancelSelect(this, true);
 			Vector vec = data.vector;
 			if (vec != null) {
 				try {
@@ -590,9 +588,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 					for (int i = 0; i < x; i++) {
 						Object obj = vec.get(i);
 						if (obj instanceof OAObject) {
-							OAGraphImpl ogi = (OAGraphImpl) OARuntime.graph(this);
-							final OAObjectHubService srvcObjectHub = ogi.getOAObjectService().getOAObjectHubService();
-							srvcObjectHub.removeHub((OAObject) obj, this, true);
+							OAGraphInternal ogi = (OAGraphInternal) OARuntime.graph(this);
+							ogi.objectsInternal().callObjectHubRemoveHub((OAObject) obj, (Hub<OAObject>) this, true);
 						}
 					}
 				} catch (Exception e) {
@@ -610,16 +607,16 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if more data can be loaded
 	 */
 	public boolean isMoreData() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubSelectService().isMoreData(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubSelectIsMoreData(this);
 	}
 
 	/**
 	 * Loads all remaining data from the underlying OASelect into this Hub.
 	 */
 	public void loadAllData() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().loadAllData(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectLoadAllData(this);
 	}
 
 	/**
@@ -629,8 +626,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return count of loaded objects
 	 */
 	public int getCurrentSize() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDataService().getCurrentSize(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDataGetCurrentSize(this);
 	}
 
 	/**
@@ -640,8 +637,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return total number of objects
 	 */
 	public int getSize() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getSize(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubGetSize(this);
 	}
 
 	/**
@@ -650,8 +647,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return size of Hub
 	 */
 	public int size() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getSize(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubGetSize(this);
 	}
 
 	/**
@@ -661,8 +658,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return loaded size
 	 */
 	public int getLoadedSize() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getLoadedSize(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubGetLoadedSize(this);
 	}
 
 	/**
@@ -673,16 +670,16 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 		boolean b = srvcOAThreadLocal.setAdmin(true);
 		try {
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-			og.getHubService().getHubSaveService().saveAll(this, OAObject.CASCADE_LINK_RULES);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+			og.hubsInternal().callHubSaveSaveAll(this, OAObject.CASCADE_LINK_RULES);
 		} finally {
 			if (!b) srvcOAThreadLocal.setAdmin(b);
 		}
 	}
 
 	public void saveAll(int iCascadeRule) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSaveService().saveAll(this, iCascadeRule);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSaveSaveAll(this, iCascadeRule);
 	}
 
 	/**
@@ -690,8 +687,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * objects fail to delete.
 	 */
 	public void deleteAll() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubDeleteService().deleteAll(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubDeleteDeleteAll(this);
 	}
 
 	/**
@@ -700,8 +697,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return deletion-in-progress flag
 	 */
 	public boolean isDeletingAll() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDeleteService().isDeletingAll(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDeleteIsDeletingAll(this);
 	}
 
 	/**
@@ -714,10 +711,10 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public Object clone() throws CloneNotSupportedException {
 		super.clone();
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().loadAllData(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectLoadAllData(this);
 		Hub h = new Hub(this.getObjectClass());
-		og.getHubService().getHubDataService()._clone(this, h);
+		og.hubsInternal().callHubDataClone(this, h);
 		return h;
 	}
 
@@ -729,8 +726,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return matching object, or null if not found
 	 */
 	public TYPE getObject(Object key) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubDataService().getObject(this, key);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubDataGetObject(this, key);
 	}
 
 	/**
@@ -741,8 +738,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return object at position or null
 	 */
 	public TYPE getObjectAt(int pos) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubDataService().getObjectAt(this, pos);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubDataGetObjectAt(this, pos);
 	}
 
 	/**
@@ -752,8 +749,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return object at position or null
 	 */
 	public TYPE getAt(int pos) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubDataService().getObjectAt(this, pos);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubDataGetObjectAt(this, pos);
 	}
 
 	/**
@@ -762,12 +759,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return last object or null
 	 */
 	public TYPE getLast() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		int pos = getSize() - 1;
 		if (pos < 0) {
 			return null;
 		}
-		return (TYPE) og.getHubService().getHubDataService().getObjectAt(this, pos);
+		return (TYPE) og.hubsInternal().callHubDataGetObjectAt(this, pos);
 	}
 
 	/**
@@ -777,8 +774,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if the object is present
 	 */
 	public boolean contains(Object obj) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDataService().contains(this, obj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDataContains(this, obj);
 	}
 
 	/**
@@ -789,8 +786,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return position or -1
 	 */
 	public int indexOf(Object obj) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDataService().getPos(this, obj, false, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDataGetPos(this, obj, false, false);
 	}
 
 	/**
@@ -800,8 +797,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return object at position or null
 	 */
 	public TYPE elementAt(int pos) { // mimic Vector
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubDataService().getObjectAt(this, pos);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubDataGetObjectAt(this, pos);
 	}
 
 	/**
@@ -830,8 +827,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return newly active object or null
 	 */
 	public TYPE setActiveObject(int pos) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubAOService().setActiveObject(this, pos);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubAOSetActiveObject(this, pos);
 	}
 
 	/**
@@ -841,8 +838,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return new active object or null
 	 */
 	public Object setAO(int pos) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubAOService().setActiveObject(this, pos);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubAOSetActiveObject(this, pos);
 	}
 
 	/**
@@ -852,8 +849,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param object object to activate
 	 */
 	public void setActiveObject(Object object) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubAOService().setActiveObject(this, object);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubAOSetActiveObject(this, object);
 	}
 
 	/**
@@ -862,16 +859,16 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param object object to activate
 	 */
 	public void setAO(Object object) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubAOService().setActiveObject(this, object);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubAOSetActiveObject(this, object);
 	}
 
 	/**
 	 * Reapplies the current active object to force update propagation.
 	 */
 	public void resetAO() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubAOService().setActiveObjectForce(this, getAO());
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubAOSetActiveObjectForce(this, getAO());
 	}
 
 	/**
@@ -881,16 +878,16 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return root Hub or null
 	 */
 	public Hub getRootHub() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubRootService().getRootHub(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubRootGetRootHub(this);
 	}
 
 	/**
 	 * Marks this Hub as a root Hub within recursive Hub structures.
 	 */
 	public void setRootHub() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubRootService().setRootHub(this, true);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubRootSetRootHub(this, true);
 	}
 
 	/**
@@ -937,8 +934,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if this Hub has a master owner
 	 */
 	public boolean isOwned() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().isOwned(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailIsOwned(this);
 	}
 
 	/**
@@ -948,8 +945,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param propertyName name of property to enforce uniqueness on
 	 */
 	public void setUniqueProperty(String propertyName) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().setUniqueProperty(this, propertyName);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSetUniqueProperty(this, propertyName);
 	}
 
 	/**
@@ -1003,9 +1000,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public int getPos(Object object) {
 		// 20150203 changed to not update master/detail if object is not in this hub
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDataService().getPos(this, object, false, false);
-		//was: return og.getHubService().getHubDataService().getPos(this, object, true, true);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDataGetPos(this, object, false, false);
+		//was: return og.hubsInternal().callHubDataGetPos(this, object, true, true);
 	}
 
 	/**
@@ -1017,8 +1014,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return position or -1
 	 */
 	public int getPos(Object object, boolean bAdjustMaster) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDataService().getPos(this, object, bAdjustMaster, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDataGetPos(this, object, bAdjustMaster, false);
 	}
 
 	/**
@@ -1031,9 +1028,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	@Override
 	public boolean add(TYPE obj) {
 		Class c = obj == null ? null : obj.getClass();
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-		HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		return srvcHubAddRemove.add(this, obj);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+		return og.hubsInternal().callHubAddRemoveAdd(this, obj);
 	}
 
 	/**
@@ -1046,10 +1042,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (list == null) return;
 		Class c = this.getObjectClass();
 		if (c == null && list.size() > 0) c = list.get(0).getClass();
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-		HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
 		for (TYPE obj : list) {
-			srvcHubAddRemove.add(this, obj);
+			og.hubsInternal().callHubAddRemoveAdd(this, obj);
 		}
 	}
 
@@ -1073,17 +1068,16 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		*/
 		Class c = this.getObjectClass();
 		if (c == null) c = hub.getObjectClass();
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
 		try {
 			for (TYPE obj : hub) {
-				srvcHubAddRemove.add(this, obj);
+				og.hubsInternal().callHubAddRemoveAdd(this, obj);
 			}
 		} finally {
 			/*
 			if (b) {
 				OARuntime.threadLocals().setLoading(false);
-				og.getHubService().getHubEventService().fireOnNewListEvent(this, true);
+				og.hubsInternal().callHubEventFireOnNewListEvent(this, true);
 			}
 			*/
 		}
@@ -1099,9 +1093,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (data.isDisabled()) {
 			return false;
 		}
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-		return srvcObjectCallback.getAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, this, null, null);
+		if (!this.isOAObject()) return true;
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.objectsInternal().callObjectCallbackGetAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, (Hub<OAObject>) this, null, null);
 	}
 
 	/**
@@ -1121,9 +1115,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public void addElement(TYPE obj) {
 		if (obj == null) return;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj.getClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		srvcHubAddRemove.add(this, obj);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
+		og.hubsInternal().callHubAddRemoveAdd(this, obj);
 	}
 
 	/**
@@ -1136,9 +1129,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void swap(int pos1, int pos2) {
 		Class c = this.getObjectClass();
 		if (c == null) return;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		srvcHubAddRemove.swap(this, pos1, pos2);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+		og.hubsInternal().callHubAddRemoveSwap(this, pos1, pos2);
 	}
 
 	/**
@@ -1149,8 +1141,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param posTo   destination position
 	 */
 	public void move(int posFrom, int posTo) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubAddRemoveService().move(this, posFrom, posTo);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubAddRemoveMove(this, posFrom, posTo);
 	}
 
 	/**
@@ -1163,9 +1155,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public boolean insert(TYPE obj, int pos) {
 		if (obj == null) return false;
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj.getClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		return srvcHubAddRemove.insert(this, obj, pos);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
+		return og.hubsInternal().callHubAddRemoveInsert(this, obj, pos);
 	}
 
 	/**
@@ -1176,9 +1167,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public boolean remove(Object obj) {
 		if (obj == null) return false;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj.getClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		return srvcHubAddRemove.remove(this, obj);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
+		return og.hubsInternal().callHubAddRemoveRemove(this, obj);
 	}
 
 	/**
@@ -1191,9 +1181,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	@Override
 	public TYPE remove(int pos) {
 		if (pos < 0) return null;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		return (TYPE) srvcHubAddRemove.remove(this, pos);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
+		return (TYPE) og.hubsInternal().callHubAddRemoveRemove(this, pos);
 	}
 
 	/**
@@ -1255,9 +1244,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * hubRemove events.
 	 */
 	public void clear() {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		srvcHubAddRemove.clear(this);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
+		og.hubsInternal().callHubAddRemoveClear(this);
 	}
 
 	/**
@@ -1275,8 +1263,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return newly created shared Hub
 	 */
 	public Hub<TYPE> createSharedHub() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubShareService().createSharedHub(this, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubShareCreateSharedHub(this, false);
 	}
 
 	/**
@@ -1287,8 +1275,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return newly created shared Hub
 	 */
 	public Hub<TYPE> createSharedHub(boolean bShareAO) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubShareService().createSharedHub(this, bShareAO);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubShareCreateSharedHub(this, bShareAO);
 	}
 
 	/**
@@ -1299,8 +1287,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bShareAO  true to share active object
 	 */
 	public void setSharedHub(Hub<TYPE> masterHub, boolean bShareAO) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubShareService().setSharedHub(this, masterHub, bShareAO);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubShareSetSharedHub(this, masterHub, bShareAO);
 	}
 
 	/**
@@ -1310,8 +1298,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param masterHub Hub to share data from
 	 */
 	public void setSharedHub(Hub<TYPE> masterHub) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubShareService().setSharedHub(this, masterHub, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubShareSetSharedHub(this, masterHub, false);
 	}
 
 	/**
@@ -1335,8 +1323,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(String path, boolean bShareActive, String selectOrder) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, path, bShareActive, selectOrder);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, path, bShareActive, selectOrder);
 	}
 
 	/**
@@ -1348,8 +1336,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(String path, boolean bShareActive) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, path, bShareActive);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, path, bShareActive);
 	}
 
 	/**
@@ -1361,8 +1349,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(String path, String selectOrder) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, path, selectOrder);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, path, selectOrder);
 	}
 
 	/**
@@ -1373,8 +1361,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(String path) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		Hub h = og.getHubService().getHubDetailService().getDetailHub(this, path);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		Hub h = og.hubsInternal().callHubDetailGetDetailHub(this, path);
 		return h;
 	}
 
@@ -1388,8 +1376,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(String path, Class objectClass, boolean bShareActive) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, path, objectClass, bShareActive);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, path, objectClass, bShareActive);
 	}
 
 	/**
@@ -1401,8 +1389,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(String path, Class objectClass) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, path, objectClass, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, path, objectClass, false);
 	}
 
 	/**
@@ -1415,8 +1403,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(Class clazz, boolean bShareActive, String selectOrder) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, clazz, bShareActive, selectOrder);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, clazz, bShareActive, selectOrder);
 	}
 
 	/**
@@ -1428,8 +1416,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(Class clazz, boolean bShareActive) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, clazz, bShareActive, null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, clazz, bShareActive, null);
 	}
 
 	/**
@@ -1441,8 +1429,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(Class clazz, String selectOrder) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, clazz, false, selectOrder);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, clazz, false, selectOrder);
 	}
 
 	/**
@@ -1452,8 +1440,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub
 	 */
 	public Hub getDetailHub(Class clazz) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, clazz, false, null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, clazz, false, null);
 	}
 
 	/**
@@ -1464,8 +1452,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return detail Hub or null
 	 */
 	public Hub getDetailHub(Class[] classes) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getDetailHub(this, classes);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetDetailHub(this, classes);
 	}
 
 	/**
@@ -1475,8 +1463,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param masterHub master Hub to associate with
 	 */
 	public void setMasterHub(Hub masterHub) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubDetailService().setMasterHub(this, masterHub, null, false, null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, null, false, null);
 	}
 
 	/**
@@ -1487,8 +1475,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bShared   true to share the active object
 	 */
 	public void setMasterHub(Hub masterHub, boolean bShared) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubDetailService().setMasterHub(this, masterHub, null, bShared, null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, null, bShared, null);
 	}
 
 	/**
@@ -1499,8 +1487,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param path      property path from master to this Hub
 	 */
 	public void setMasterHub(Hub masterHub, String path) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubDetailService().setMasterHub(this, masterHub, path, false, null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, false, null);
 	}
 
 	/**
@@ -1512,8 +1500,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bShared   whether to share active object
 	 */
 	public void setMasterHub(Hub masterHub, String path, boolean bShared) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubDetailService().setMasterHub(this, masterHub, path, false, null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, false, null);
 	}
 
 	/**
@@ -1527,8 +1515,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param selectOrder order-by clause for select
 	 */
 	public void setMasterHub(Hub masterHub, Class clazz, String path, boolean bShared, String selectOrder) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubDetailService().setMasterHub(this, masterHub, path, false, selectOrder);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, false, selectOrder);
 	}
 
 	/**
@@ -1541,9 +1529,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		
 //qqqqqqqqqqqqq Important note: this is different then just using datam.masterHub, it will check shared hubs.
 		//  use datam.masterHub to get thisHub's value
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		
-		return og.getHubService().getHubDetailService().getMasterHub(this);
+		return og.hubsInternal().callHubDetailGetMasterHub(this);
 	}
 
 	/**
@@ -1552,13 +1540,13 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return master object
 	 */
 	public OAObject getMasterObject() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 
 //qqqqqqqqqqqqq Important note: this is different then just using datam.masterHub, it will check shared hubs.
   	//  use datam.masterHub to get thisHub's value
 				
 		
-		return og.getHubService().getHubDetailService().getMasterObject(this);
+		return og.hubsInternal().callHubDetailGetMasterObject(this);
 	}
 
 	/**
@@ -1567,8 +1555,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return master object class
 	 */
 	public Class getMasterClass() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().getMasterClass(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailGetMasterClass(this);
 	}
 
 	/**
@@ -1588,8 +1576,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if the Hub was removed
 	 */
 	public boolean removeDetailHub(Hub hub) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubDetailService().removeDetailHub(this, hub);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubDetailRemoveDetailHub(this, hub);
 	}
 
 	/**
@@ -1600,8 +1588,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param property property to listen for
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().addHubListener(this, hl, property);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventAddHubListener(this, hl, property);
 	}
 
 	/**
@@ -1613,8 +1601,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bActiveObjectOnly  true to receive events only for active object
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property, boolean bActiveObjectOnly) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().addHubListener(this, hl, property, bActiveObjectOnly);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventAddHubListener(this, hl, property, bActiveObjectOnly);
 	}
 
 	/**
@@ -1625,8 +1613,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bActiveObjectOnly true to restrict events to active object
 	 */
 	public void addHubListener(HubListener<TYPE> hl, boolean bActiveObjectOnly) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().addHubListener(this, hl, bActiveObjectOnly);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventAddHubListener(this, hl, bActiveObjectOnly);
 	}
 
 	/**
@@ -1638,8 +1626,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param dependentPropertyPaths array of dependent properties
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPropertyPaths) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().addHubListener(this, hl, property, dependentPropertyPaths);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventAddHubListener(this, hl, property, dependentPropertyPaths);
 	}
 
 	/**
@@ -1650,14 +1638,14 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param dependentPropertyPath dependent property that triggers updates
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property, String dependentPropertyPath) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		String[] ss;
 		if (dependentPropertyPath != null && dependentPropertyPath.length() > 0) {
 			ss = new String[] { dependentPropertyPath };
 		} else {
 			ss = null;
 		}
-		og.getHubService().getHubEventService().addHubListener(this, hl, property, ss);
+		og.hubsInternal().callHubEventAddHubListener(this, hl, property, ss);
 	}
 
 	/**
@@ -1670,14 +1658,14 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bActiveObjectOnly     true to restrict events to active object
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property, String dependentPropertyPath, boolean bActiveObjectOnly) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		String[] ss;
 		if (dependentPropertyPath != null && dependentPropertyPath.length() > 0) {
 			ss = new String[] { dependentPropertyPath };
 		} else {
 			ss = null;
 		}
-		og.getHubService().getHubEventService().addHubListener(this, hl, property, ss, bActiveObjectOnly);
+		og.hubsInternal().callHubEventAddHubListener(this, hl, property, ss, bActiveObjectOnly);
 	}
 
 	/**
@@ -1691,8 +1679,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bActiveObjectOnly      restrict to active object if true
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().addHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventAddHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly);
 	}
 
 	/**
@@ -1707,8 +1695,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly,
 			boolean bUseBackgroundThread) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().addHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly, bUseBackgroundThread);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventAddHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly, bUseBackgroundThread);
 	}
 
 	/**
@@ -1723,8 +1711,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		OATriggerListener tl = new OATriggerListener() {
 			@Override
 			public void onTrigger(OAObject obj, HubEvent hubEvent, String propertyPath) throws Exception {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(Hub.this);
-				og.getHubService().getHubEventService().fireCalcPropertyChange(Hub.this, obj, property);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Hub.this);
+				og.hubsInternal().callHubEventFireCalcPropertyChange(Hub.this, obj, property);
 			}
 		};
 		OATrigger trigger = OATriggerDelegate.createTrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false,
@@ -1744,8 +1732,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		OATriggerListener tl = new OATriggerListener() {
 			@Override
 			public void onTrigger(OAObject obj, HubEvent hubEvent, String propertyPath) throws Exception {
-				final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(Hub.this);
-				og.getHubService().getHubEventService().fireCalcPropertyChange(Hub.this, obj, property);
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Hub.this);
+				og.hubsInternal().callHubEventFireCalcPropertyChange(Hub.this, obj, property);
 			}
 		};
 		OATrigger trigger = OATriggerDelegate.createTrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false,
@@ -1758,8 +1746,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param hl listener to add
 	 */
 	public void addHubListener(HubListener<TYPE> hl) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().addHubListener(this, hl);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventAddHubListener(this, hl);
 	}
 
 	/**
@@ -1768,8 +1756,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param hl listener to add
 	 */
 	public void addListener(HubListener<TYPE> hl) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().addHubListener(this, hl);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventAddHubListener(this, hl);
 	}
 
 	/**
@@ -1778,8 +1766,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param hl listener to remove
 	 */
 	public void removeHubListener(HubListener<TYPE> hl) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().removeHubListener(this, hl);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventRemoveHubListener(this, hl);
 	}
 
 	/**
@@ -1788,8 +1776,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param hl listener to remove
 	 */
 	public void removeListener(HubListener<TYPE> hl) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubEventService().removeHubListener(this, hl);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubEventRemoveHubListener(this, hl);
 	}
 
 	/**
@@ -1810,8 +1798,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param startNumber initial sequence value
 	 */
 	public void setAutoSequence(String property, int startNumber) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().setAutoSequence(this, property, startNumber, true);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSetAutoSequence(this, property, startNumber, true);
 	}
 
 	/**
@@ -1819,8 +1807,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * according to current auto-sequence settings.
 	 */
 	public void resequence() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().resequence(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubResequence(this);
 	}
 
 	/**
@@ -1832,8 +1820,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bKeepSeq    true to preserve sequence values after removal
 	 */
 	public void setAutoSequence(String property, int startNumber, boolean bKeepSeq) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().setAutoSequence(this, property, startNumber, bKeepSeq);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSetAutoSequence(this, property, startNumber, bKeepSeq);
 	}
 
 	/**
@@ -1844,8 +1832,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param hubMaster  master Hub to match against
 	 */
 	public void setAutoMatch(String property, Hub hubMaster) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().setAutoMatch(this, property, hubMaster, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSetAutoMatch(this, property, hubMaster, false);
 	}
 
 	/**
@@ -1857,8 +1845,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bServerSideOnly true to restrict to server-side only
 	 */
 	public void setAutoMatch(String property, Hub hubMaster, boolean bServerSideOnly) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().setAutoMatch(this, property, hubMaster, bServerSideOnly);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSetAutoMatch(this, property, hubMaster, bServerSideOnly);
 	}
 
 	/**
@@ -1871,9 +1859,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param objStop         stopping object
 	 * @param stopProperty    property used to detect stop condition
 	 */
-	public void setAutoMatch(String property, Hub hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().setAutoMatch(this, property, hubMaster, bServerSideOnly, objStop, stopProperty);
+	public void setAutoMatch(String property, Hub<TYPE> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSetAutoMatch(this, property, hubMaster, bServerSideOnly, objStop, stopProperty);
 	}
 	
 	/**
@@ -1883,8 +1871,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param hubMaster master Hub
 	 */
 	public void setAutoMatch(Hub hubMaster) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().setAutoMatch(this, null, hubMaster, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSetAutoMatch(this, null, hubMaster, false);
 	}
 
 	/**
@@ -1895,8 +1883,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bServerSideonly true to restrict to server-side only
 	 */
 	public void setAutoMatch(Hub hubMaster, boolean bServerSideonly) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().setAutoMatch(this, null, hubMaster, bServerSideonly);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSetAutoMatch(this, null, hubMaster, bServerSideonly);
 	}
 
 	/**
@@ -1906,8 +1894,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param comp comparator used for sorting
 	 */
 	public void sort(Comparator comp) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSortService().sort(this, null, true, comp);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSortSort(this, null, true, comp);
 	}
 
 	/**
@@ -1917,7 +1905,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param propertyPaths list of property paths
 	 */
 	public void sort(String... propertyPaths) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		String s = "";
 		for (int i = 0; propertyPaths != null && i < propertyPaths.length; i++) {
 			if (propertyPaths[i] == null) {
@@ -1928,7 +1916,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 			}
 			s += propertyPaths[i];
 		}
-		og.getHubService().getHubSortService().sort(this, s, true, null);
+		og.hubsInternal().callHubSortSort(this, s, true, null);
 	}
 
 	/**
@@ -1939,8 +1927,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bAscending    true for ascending, false for descending
 	 */
 	public void sort(String propertyPaths, boolean bAscending) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSortService().sort(this, propertyPaths, bAscending, null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSortSort(this, propertyPaths, bAscending, null);
 	}
 
 	/**
@@ -1952,8 +1940,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param comp          optional comparator
 	 */
 	public void sort(String propertyPaths, boolean bAscending, Comparator comp) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSortService().sort(this, propertyPaths, bAscending, comp);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSortSort(this, propertyPaths, bAscending, comp);
 	}
 
 	/**
@@ -1963,8 +1951,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if sorted
 	 */
 	public boolean isSorted() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubSortService().isSorted(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubSortIsSorted(this);
 	}
 
 	/**
@@ -1972,8 +1960,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * this Hub.
 	 */
 	public void cancelSort() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSortService().cancelSort(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSortCancelSort(this);
 	}
 
 	/**
@@ -1981,8 +1969,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * operation or select call.
 	 */
 	public void sort() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSortService().sort(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSortSort(this);
 	}
 
 	/**
@@ -1990,8 +1978,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * select operation. Same as sort().
 	 */
 	public void resort() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSortService().sort(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSortSort(this);
 	}
 
 	/**
@@ -2003,8 +1991,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return first matching object or null
 	 */
 	public TYPE find(String propertyPath, Object findValue) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubFindService().findFirst(this, propertyPath, findValue, false, null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, false, null);
 	}
 
 	/**
@@ -2017,8 +2005,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return matching object or null
 	 */
 	public TYPE find(String propertyPath, Object findValue, boolean bSetAO) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubFindService().findFirst(this, propertyPath, findValue, bSetAO, null);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, bSetAO, null);
 	}
 
 	/**
@@ -2032,8 +2020,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return matching object or null
 	 */
 	public TYPE find(TYPE fromObject, String propertyPath, Object findValue) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubFindService().findFirst(this, propertyPath, findValue, false, (OAObject) fromObject);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, false, fromObject);
 	}
 
 	/**
@@ -2047,8 +2035,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return matching object or null
 	 */
 	public TYPE find(TYPE fromObject, String propertyPath, Object findValue, boolean bSetAO) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubFindService().findFirst(this, propertyPath, findValue, bSetAO, (OAObject) fromObject);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, bSetAO, fromObject);
 	}
 
 	/**
@@ -2061,8 +2049,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return next matching object or null
 	 */
 	public TYPE findNext(TYPE fromObject, String propertyPath, Object findValue) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubFindService().findFirst(this, propertyPath, findValue, false, (OAObject) fromObject);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, false, fromObject);
 	}
 
 	/**
@@ -2076,8 +2064,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return next matching object or null
 	 */
 	public TYPE findNext(TYPE fromObject, String propertyPath, Object findValue, boolean bSetAO) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return (TYPE) og.getHubService().getHubFindService().findFirst(this, propertyPath, findValue, bSetAO, (OAObject) fromObject);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, bSetAO, fromObject);
 	}
 
 	/**
@@ -2086,8 +2074,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param s WHERE clause
 	 */
 	public void setSelectWhere(String s) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().setSelectWhere(this, s);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSetSelectWhere(this, s);
 	}
 
 	/**
@@ -2096,8 +2084,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return WHERE clause or null
 	 */
 	public String getSelectWhere() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubSelectService().getSelectWhere(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubSelectGetSelectWhere(this);
 	}
 
 	/**
@@ -2106,8 +2094,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param s ORDER BY clause
 	 */
 	public void setSelectOrder(String s) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().setSelectOrder(this, s);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSetSelectOrder(this, s);
 	}
 
 	/**
@@ -2119,9 +2107,9 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param ppFromHub   property path from this Hub's objects to fromHub
 	 */
 	public void setSelectWhereHub(Hub fromHub, String ppFromHub) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().setSelectWhereHub(this, fromHub);
-		og.getHubService().getHubSelectService().setSelectWhereHubPropertyPath(this, ppFromHub);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSetSelectWhereHub(this, fromHub);
+		og.hubsInternal().callHubSelectSetSelectWhereHubPropertyPath(this, ppFromHub);
 	}
 
 	/**
@@ -2131,8 +2119,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return ORDER BY clause
 	 */
 	public String getSelectOrder(Hub thisHub) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubSelectService().getSelectOrder(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubSelectGetSelectOrder(this);
 	}
 
 	/**
@@ -2144,8 +2132,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param orderByClause sort ordering
 	 */
 	public void select(OAObject whereObject, String orderByClause) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().select(this, whereObject, null, null, orderByClause, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSelect(this, whereObject, null, null, orderByClause, false);
 	}
 
 	/**
@@ -2153,8 +2141,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * exists, selects objects related to it.
 	 */
 	public void select() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().select(this, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSelect(this, false);
 	}
 
 	/**
@@ -2164,8 +2152,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param whereClause WHERE clause used for selection
 	 */
 	public void select(String whereClause) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().select(this, null, whereClause, null, null, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSelect(this, null, whereClause, null, null, false);
 	}
 
 	/**
@@ -2175,8 +2163,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param params      parameter values
 	 */
 	public void select(String whereClause, Object[] params) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().select(this, null, whereClause, params, null, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSelect(this, null, whereClause, params, null, false);
 	}
 
 	/**
@@ -2186,8 +2174,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param orderBy     ORDER BY clause
 	 */
 	public void select(String whereClause, String orderBy) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().select(this, null, whereClause, null, orderBy, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSelect(this, null, whereClause, null, orderBy, false);
 	}
 
 	/**
@@ -2199,8 +2187,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param filter      additional object filter
 	 */
 	public void select(String whereClause, String orderBy, OAFilter filter) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().select(this, null, whereClause, null, orderBy, false, filter);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSelect(this, null, whereClause, null, orderBy, false, filter);
 	}
 
 	/**
@@ -2213,8 +2201,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param filter      additional filter
 	 */
 	public void select(String whereClause, Object[] whereParams, String orderBy, OAFilter filter) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().select(this, null, whereClause, whereParams, orderBy, false, filter);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSelect(this, null, whereClause, whereParams, orderBy, false, filter);
 	}
 
 	/**
@@ -2225,8 +2213,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param orderBy     ORDER BY clause
 	 */
 	public void select(String whereClause, Object[] whereParams, String orderBy) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().select(this, null, whereClause, whereParams, orderBy, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSelect(this, null, whereClause, whereParams, orderBy, false);
 	}
 
 	/**
@@ -2238,12 +2226,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param orderBy     ORDER BY clause
 	 */
 	public void select(String whereClause, Object whereParam, String orderBy) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		Object[] params = null;
 		if (whereParam != null) {
 			params = new Object[] { whereParam };
 		}
-		og.getHubService().getHubSelectService().select(this, null, whereClause, params, orderBy, false);
+		og.hubsInternal().callHubSelectSelect(this, null, whereClause, params, orderBy, false);
 	}
 
 	/**
@@ -2256,12 +2244,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param filter      additional filter
 	 */
 	public void select(String whereClause, Object whereParam, String orderBy, OAFilter filter) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		Object[] params = null;
 		if (whereParam != null) {
 			params = new Object[] { whereParam };
 		}
-		og.getHubService().getHubSelectService().select(this, null, whereClause, params, orderBy, false, filter);
+		og.hubsInternal().callHubSelectSelect(this, null, whereClause, params, orderBy, false, filter);
 	}
 
 	/**
@@ -2269,11 +2257,14 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 *
 	 * @param select OASelect object used for loading objects
 	 */
-	public void select(OASelect select) { // This is the main select method for
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		// Hub that all of the other select
-		// methods call.
-		og.getHubService().getHubSelectService().select(this, select);
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public void select(OASelect<? extends OAObject> select) { // This is the main select method for
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		
+		Hub<OAObject> hubX = (Hub) this;
+	    OASelect selX = (OASelect) select;
+		
+		og.hubsInternal().callHubSelectSelect(hubX, selX);
 	}
 
 	/**
@@ -2284,8 +2275,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param orderClause native ORDER BY clause
 	 */
 	public void selectPassthru(String whereClause, String orderClause) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().selectPassthru(this, whereClause, orderClause);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectSelectPassthru(this, whereClause, orderClause);
 	}
 
 	/**
@@ -2294,9 +2285,10 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 *
 	 * @return OASelect instance or null
 	 */
-	public OASelect getSelect() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubSelectService().getSelect(this);
+	public OASelect<? extends OAObject> getSelect() {
+		if (!this.isOAObject()) return null;
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubSelectGetSelect((Hub<? extends OAObject>) this);
 	}
 
 	/**
@@ -2306,9 +2298,10 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bCreateIfNull true to create if not present
 	 * @return OASelect instance
 	 */
-	public OASelect getSelect(boolean bCreateIfNull) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		OASelect sel = og.getHubService().getHubSelectService().getSelect(this, true);
+	public OASelect<? extends OAObject> getSelect(boolean bCreateIfNull) {
+		if (!this.isOAObject()) return null;
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		OASelect sel = og.hubsInternal().callHubSelectGetSelect((Hub<? extends OAObject>) this, true);
 		return sel;
 	}
 
@@ -2318,10 +2311,10 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * this Hub.
 	 */
 	public void cancelSelect() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		boolean bRemoveSelectFromHub;
 		if (getMasterObject() != null) {
-			OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromDetailToMaster(this);
+			OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromDetailToMaster(this);
 			if (li != null && li.getType() == OALinkInfo.ONE && li.getPrivateMethod()) {
 				bRemoveSelectFromHub = false;
 			} else {
@@ -2330,7 +2323,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		} else {
 			bRemoveSelectFromHub = false; // dont remove, so that it can be refreshed
 		}
-		og.getHubService().getHubSelectService().cancelSelect(this, bRemoveSelectFromHub);
+		og.hubsInternal().callHubSelectCancelSelect(this, bRemoveSelectFromHub);
 	}
 
 	/**
@@ -2340,12 +2333,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param bSearchOtherHubs true to search shared/copy/filter Hubs
 	 * @return linked Hub or null
 	 */
-	public Hub getLinkHub(boolean bSearchOtherHubs) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
+	public Hub<? extends OAObject> getLinkHub(boolean bSearchOtherHubs) {
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		if (!bSearchOtherHubs) {
 			return this.datau.getLinkToHub();
 		}
-		Hub hx = og.getHubService().getHubLinkService().getHubWithLink(this, true);
+		Hub hx = og.hubsInternal().callHubLinkGetHubWithLink(this, true);
 		if (hx == null) {
 			return null;
 		}
@@ -2373,8 +2366,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void setLinkHub(Hub linkHub, String property) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubLinkService().setLinkHub(this, null, linkHub, property, false, false, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, property, false, false, false);
 	}
 
 	/**
@@ -2386,8 +2379,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void setLinkHub(Hub linkHub) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubLinkService().setLinkHub(this, null, linkHub, null, false, false, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, null, false, false, false);
 	}
 
 	/**
@@ -2401,8 +2394,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void setLinkHub(String fromProperty, Hub linkHub, String toProperty) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubLinkService().setLinkHub(this, fromProperty, linkHub, toProperty, false, false, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubLinkSetLinkHub(this, fromProperty, linkHub, toProperty, false, false, false);
 	}
 
 	/**
@@ -2411,8 +2404,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void removeLinkHub() {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubLinkService().setLinkHub(this, null, null, null, false, false, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubLinkSetLinkHub(this, null, null, null, false, false, false);
 	}
 
 	/**
@@ -2426,8 +2419,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void setLinkHub(Hub linkHub, boolean bAutoCreate, boolean bAutoCreateAllowDups) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubLinkService().setLinkHub(this, null, linkHub, null, false, bAutoCreate, bAutoCreateAllowDups);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, null, false, bAutoCreate, bAutoCreateAllowDups);
 	}
 
 	/**
@@ -2440,22 +2433,22 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public void setLinkHub(Hub linkHub, boolean bAutoCreate) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubLinkService().setLinkHub(this, null, linkHub, null, false, bAutoCreate, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, null, false, bAutoCreate, false);
 	}
 
 	public void setLinkHub(Hub linkHub, String property, boolean bAutoCreate, boolean bAutoCreateAllowDups) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubLinkService().setLinkHub(this, null, linkHub, property, false, bAutoCreate, bAutoCreateAllowDups);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, property, false, bAutoCreate, bAutoCreateAllowDups);
 	}
 
 	public void setLinkHub(Hub linkHub, String property, boolean bAutoCreate) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubLinkService().setLinkHub(this, null, linkHub, property, false, bAutoCreate, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, property, false, bAutoCreate, false);
 	}
 
 	
@@ -2472,8 +2465,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	protected void setLinkHub(String propertyFrom, Hub linkHub, String propertyTo, boolean linkPosFlag) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubLinkService().setLinkHub(this, propertyFrom, linkHub, propertyTo, linkPosFlag, false, false);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubLinkSetLinkHub(this, propertyFrom, linkHub, propertyTo, linkPosFlag, false, false);
 	}
 
 	/**
@@ -2483,8 +2476,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if valid
 	 */
 	public boolean isValid() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().isValid(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubIsValid(this);
 	}
 
 	/**
@@ -2495,26 +2488,25 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return link path
 	 */
 	public String getLinkPath(boolean bSearchOtherHubs) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getHubService().getHubLinkService().getLinkHubPath(this, bSearchOtherHubs);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.hubsInternal().callHubLinkGetLinkHubPath(this, bSearchOtherHubs);
 	}
 
 	/**
 	 * Returns OAObjectInfo for the supplied class by delegating to
-	 * {@link OAObjectInfoDelegate#getOAObjectInfo(Class)}.
+	 * {@link OAObjectInfoDelegate#callInfoGetObjectInfo(Class)}.
 	 *
 	 * @param c class to lookup
 	 * @return OAObjectInfo for the class
 	 */
 	public static OAObjectInfo getOAObjectInfo(Class c) {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		return srvcObjectInfo.getOAObjectInfo(c);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+		return og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
 	}
 
 	/**
 	 * Returns OAObjectInfo for this Hub’s object class using
-	 * {@link OAObjectInfoDelegate#getOAObjectInfo(Class)}.
+	 * {@link OAObjectInfoDelegate#callInfoGetObjectInfo(Class)}.
 	 *
 	 * @return OAObjectInfo for this Hub’s object class
 	 */
@@ -2550,12 +2542,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param value value to apply to the linked property
 	 */
 	public void updateLinkProperty(Object obj, Object value) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		Hub h = og.getHubService().getHubLinkService().getHubWithLink(this, true);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		Hub h = og.hubsInternal().callHubLinkGetHubWithLink(this, true);
 		if (h == null) {
 			return;
 		}
-		og.getHubService().getHubLinkService().updateLinkedToHub(h, h.getLinkHub(false), value);
+		og.hubsInternal().callHubLinkUpdateLinkedToHub(h, h.getLinkHub(false), value);
 	}
 
 	/**
@@ -2584,8 +2576,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if server-side
 	 */
 	public boolean isServer() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		return og.getSyncService().isServer();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.syncInternal().callSyncIsServer();
 	}
 
 	/**
@@ -2595,9 +2587,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return true if addition is allowed
 	 */
 	public boolean canAdd() {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		return srvcHubAddRemove.canAdd(this, null);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
+		return og.hubsInternal().callHubAddRemoveCanAdd(this, null);
 	}
 
 	/**
@@ -2607,11 +2598,10 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param obj object to test
 	 * @return true if the object can be added
 	 */
-	public boolean canAdd(Object obj) {
+	public boolean canAdd(TYPE obj) {
 		if (obj == null) return false;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		return srvcHubAddRemove.canAdd(this, obj);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
+		return og.hubsInternal().callHubAddRemoveCanAdd(this, obj);
 	}
 
 	/**
@@ -2621,37 +2611,34 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param obj object to evaluate
 	 * @return message describing add restriction, or null
 	 */
-	public String getCanAddMessage(OAObject obj) {
+	public String getCanAddMessage(TYPE obj) {
 		if (obj == null) return null;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		return srvcHubAddRemove.canAddMsg(this, obj);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
+		return og.hubsInternal().callHubAddRemoveCanAddMsg(this, obj);
 	}
 
 	/**
 	 * Returns whether adding is allowed by delegating to
-	 * og.getHubService().getHubAddRemoveService().canAdd(this, null).
+	 * og.hubsInternal().callHubAddRemoveCanAdd(this, null).
 	 *
 	 * @return true if adding is allowed
 	 */
 	public boolean getAllowAdd() {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		return srvcHubAddRemove.canAdd(this, null);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
+		return og.hubsInternal().callHubAddRemoveCanAdd(this, null);
 	}
 
 	/**
 	 * Returns whether the specified object can be added by delegating to
-	 * og.getHubService().getHubAddRemoveService().canAdd(this, obj).
+	 * og.hubsInternal().callHubAddRemoveCanAdd(this, obj).
 	 *
 	 * @param obj the object to evaluate
 	 * @return true if the object can be added
 	 */
-	public boolean getAllowAdd(Object obj) {
+	public boolean getAllowAdd(TYPE obj) {
 		if (obj == null) return false;
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.getObjectClass());
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		return srvcHubAddRemove.canAdd(this, obj);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
+		return og.hubsInternal().callHubAddRemoveCanAdd(this, obj);
 	}
 
 	/**
@@ -2662,13 +2649,18 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param obj       object to evaluate
 	 * @return true if adding is permitted
 	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
 	public boolean getAllowAdd(int checkType, TYPE obj) {
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-		return srvcObjectCallback.getAllowAdd(this, (OAObject) obj, checkType);
+		if (!this.isOAObject()) return true;
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		
+		Hub<OAObject> hub = (Hub) this;
+	    OAObject oaObj = (OAObject) obj;
+	    
+		return og.objectsInternal().callObjectCallbackGetAllowAdd(hub, oaObj, checkType);
 	}
 
 	/**
@@ -2683,9 +2675,13 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-		return srvcObjectCallback.getAllowRemove(this, (OAObject) obj, checkType);
+		if (!this.isOAObject()) return true;
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		
+		Hub<OAObject> hub = (Hub) this;
+	    OAObject oaObj = (OAObject) obj;
+		
+		return og.objectsInternal().callObjectCallbackGetAllowRemove(hub, oaObj, checkType);
 	}
 
 	/**
@@ -2700,23 +2696,24 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		OAObjectCallbackService srvcObjectCallback = og.getOAObjectService().getOAObjectCallbackService();
-		return srvcObjectCallback.getVerifyRemove(this, (OAObject) obj, checkType);
+		if (!this.isOAObject()) return true;
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		Hub<OAObject> hub = (Hub) this;
+	    OAObject oaObj = (OAObject) obj;
+		return og.objectsInternal().callObjectCallbackGetVerifyRemove(hub, oaObj, checkType);
 	}
 
 	/**
 	 * Determines whether all objects can be removed by checking for a
-	 * non-null message from og.getHubService().getHubAddRemoveService().getCantRemoveAllMessage.
+	 * non-null message from og.hubsInternal().callHubAddRemoveGetCantRemoveAllMessage.
 	 *
 	 * @param bCheckObjectCallback flag indicating whether to check callbacks
 	 * @param checkType            callback check type
 	 * @return true if all objects can be removed
 	 */
 	public boolean getAllowRemoveAll(final boolean bCheckObjectCallback, final int checkType) {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		final HubAddRemoveService srvcHubAddRemove = og.getHubService().getHubAddRemoveService();
-		String s = srvcHubAddRemove.getCantRemoveAllMessage(this, checkType);
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		String s = og.hubsInternal().callHubAddRemoveGetCantRemoveAllMessage(this, checkType);
 		return s == null;
 	}
 	
@@ -2746,8 +2743,8 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * delegating to HubCSDelegate.sendRefresh.
 	 */
 	public void sendRefresh() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubCSService().sendRefresh(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubCSSendRefresh(this);
 	}
 
 	/**
@@ -3250,18 +3247,18 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 
 	/**
 	 * Refreshes this Hub by reselecting its data from the data source.
-	 * Delegates the operation to og.getHubService().getHubSelectService().refresh(this).
+	 * Delegates the operation to og.hubsInternal().callHubSelectRefresh(this).
 	 */
 	public void refresh() {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this);
-		og.getHubService().getHubSelectService().refresh(this);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.hubsInternal().callHubSelectRefresh(this);
 	}
 
 
 	public static final class FriendAccess {
 		private FriendAccess() {
 		}
-		public HubData getHubData(Hub hub) {
+		public HubData<?> getHubData(Hub hub) {
 			return hub.data;
 		}
 		public void setHubData(Hub hub, HubData data) {
@@ -3294,5 +3291,4 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public OAGraph getGraph() {
 		return OARuntime.graph(this);
 	}
-
 }

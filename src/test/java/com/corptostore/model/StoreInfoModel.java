@@ -155,7 +155,7 @@ public class StoreInfoModel extends OAObjectModel {
         modelCorpToStore.setAllowSearch(false);
         modelCorpToStore.setAllowHubSearch(false);
         modelCorpToStore.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelCorpToStore.setCreateUI(li == null || !StoreInfo.P_CorpToStore.equalsIgnoreCase(li.getName()) );
         modelCorpToStore.setViewOnly(getViewOnly());
         // call StoreInfo.corpToStoreModelCallback(CorpToStoreModel) to be able to customize this model

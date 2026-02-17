@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectLockService;
@@ -303,9 +303,8 @@ public class OADataSourceAuto extends OADataSource {
 				return nn;
 			}
 
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-	    	final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-			final OAObjectInfo oi = srvcObjectInfo.getOAObjectInfo(clazz);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			final OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
 			final String[] props = oi.getIdProperties();
 
 			if (NextNumber.class.equals(clazz)) {
@@ -364,21 +363,20 @@ public class OADataSourceAuto extends OADataSource {
 				nn.setNext(id + 1);
 			}
 			// 20141201
-			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
-	    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-			Object test = srvcObjectCache.getObject(oaObj.getClass(), id);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+			Object test = og.objectsInternal().callObjectCacheGetObject(oaObj.getClass(), id);
 			//was: Object test = OAObjectReflectDelegate.getObject(oaObj.getClass(), id);
 			if (test == null) {
 				break;
 			}
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
 		try {
-			og.getOAObjectService().getOAObjectDSService().setAssigningId(oaObj, true);
+			og.objectsInternal().callObjectDSSetAssigningId(oaObj, true);
 			oaObj.setProperty(prop, id);
 		} finally {
-			og.getOAObjectService().getOAObjectDSService().setAssigningId(oaObj, false);
+			og.objectsInternal().callObjectDSSetAssigningId(oaObj, false);
 		}
 	}
 

@@ -68,7 +68,7 @@ public class HubListenerTest extends OAUnitTest {
 		Hub<Server> hub = new Hub<Server>(Server.class);
 		hub.addHubListener(hl);
 
-		HubListener[] hls = HubEventDelegate.getAllListeners(hub);
+		HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 1 && hls[0] == hl);
 
 		Server server = new Server();
@@ -174,7 +174,7 @@ public class HubListenerTest extends OAUnitTest {
 		}
 
 		hub.removeHubListener(hl);
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls == null || hls.length == 0);
 
 		reset();
@@ -219,22 +219,22 @@ public class HubListenerTest extends OAUnitTest {
 		data.createSampleData();
 
 		Hub<Server> hub = new Hub<Server>(Server.class);
-		HubListener[] hls = HubEventDelegate.getAllListeners(hub);
+		HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls == null || hls.length == 0);
 
 		HubMerger<Site, Server> hm = new HubMerger<Site, Server>(modelTsac.getSites(), hub, SitePP.environments().silos().servers().pp,
 				true);
 
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 1); // HubMerger: no op, just want to know that hubCombined uses a HubMerger
 
 		hub.addHubListener(hl);
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 2 && hls[1] == hl);
 
 		//---
 		hub.removeHubListener(hl);
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 1); // HubMerger: no op, just want to know that hubCombined uses a HubMerger
 
 		//(Hub thisHub, HubListener hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly) {
@@ -244,7 +244,7 @@ public class HubListenerTest extends OAUnitTest {
 				ServerPP.silo().servers().name()
 		}, false);
 
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertEquals(4, hls.length);
 
 		int cChange2 = 0;
@@ -267,12 +267,12 @@ public class HubListenerTest extends OAUnitTest {
 
 		//---
 		hub.removeHubListener(hl);
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 1); // HubMerger: no op, just want to know that hubCombined uses a HubMerger
 
 		//(Hub thisHub, HubListener hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly) {
 		hub.addHubListener(hl, "name");
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 2);
 
 		server = hub.getAt(4);
@@ -284,19 +284,19 @@ public class HubListenerTest extends OAUnitTest {
 
 		//---
 		hub.addHubListener(hl);
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 2);
 
 		hub.removeHubListener(hl);
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 1); // HubMerger: no op, just want to know that hubCombined uses a HubMerger
 
 		hub.removeHubListener(hl);
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 1); // HubMerger: no op, just want to know that hubCombined uses a HubMerger
 
 		hm.close();
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls == null || hls.length == 0);
 
 		reset();
@@ -343,12 +343,12 @@ public class HubListenerTest extends OAUnitTest {
 		Hub<Site> hub = modelTsac.getSites();
 
 		hub.addHubListener(hl);
-		HubListener[] hls = HubEventDelegate.getAllListeners(hub);
+		HubListener[] hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 1 && hls[0] == hl);
 
 		//---
 		hub.removeHubListener(hl);
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls == null || hls.length == 0);
 
 		hub.addHubListener(hl, "xxx", new String[] {
@@ -357,7 +357,7 @@ public class HubListenerTest extends OAUnitTest {
 				SitePP.environments().name()
 		}, false);
 
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls != null && hls.length == 2);
 
 		hub.getAt(1).getEnvironments().getAt(1).getSilos().getAt(1).getServers().getAt(0).setName("xx4");
@@ -371,7 +371,7 @@ public class HubListenerTest extends OAUnitTest {
 
 		//---
 		hub.removeHubListener(hl);
-		hls = HubEventDelegate.getAllListeners(hub);
+		hls = HubEventDelegate.callHubEventGetAllListeners(hub);
 		assertTrue(hls == null || hls.length == 0);
 
 		hub.addHubListener(hl, "xxx", new String[] {
@@ -472,10 +472,10 @@ public class HubListenerTest extends OAUnitTest {
 		}
 
 		int x = aiListenerCount.get();
-		assertTrue(HubEventDelegate.getAllListeners(hub1).length < 2);
-		assertTrue(HubEventDelegate.getAllListeners(hub2).length < 2);
-		assertTrue(HubEventDelegate.getAllListeners(hub3).length < 2);
-		assertTrue(HubEventDelegate.getAllListeners(hub4).length < 2);
+		assertTrue(HubEventDelegate.callHubEventGetAllListeners(hub1).length < 2);
+		assertTrue(HubEventDelegate.callHubEventGetAllListeners(hub2).length < 2);
+		assertTrue(HubEventDelegate.callHubEventGetAllListeners(hub3).length < 2);
+		assertTrue(HubEventDelegate.callHubEventGetAllListeners(hub4).length < 2);
 
 		for (int i = 0; i < 1; i++) {
 			hub1.removeHubListener(hl);
@@ -484,10 +484,10 @@ public class HubListenerTest extends OAUnitTest {
 			hub4.removeHubListener(hl);
 		}
 
-		assertEquals(0, HubEventDelegate.getAllListeners(hub1).length);
-		assertEquals(0, HubEventDelegate.getAllListeners(hub2).length);
-		assertEquals(0, HubEventDelegate.getAllListeners(hub3).length);
-		assertEquals(0, HubEventDelegate.getAllListeners(hub4).length);
+		assertEquals(0, HubEventDelegate.callHubEventGetAllListeners(hub1).length);
+		assertEquals(0, HubEventDelegate.callHubEventGetAllListeners(hub2).length);
+		assertEquals(0, HubEventDelegate.callHubEventGetAllListeners(hub3).length);
+		assertEquals(0, HubEventDelegate.callHubEventGetAllListeners(hub4).length);
 
 	}
 

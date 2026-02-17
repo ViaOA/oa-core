@@ -182,7 +182,7 @@ public class ReporterCorpModel extends OAObjectModel {
 		modelEnvironment.setAllowSearch(false);
 		modelEnvironment.setAllowHubSearch(false);
 		modelEnvironment.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
 		modelEnvironment.setCreateUI(li == null || !ReporterCorp.P_Environment.equalsIgnoreCase(li.getName()));
 		modelEnvironment.setViewOnly(getViewOnly());
 		// call ReporterCorp.environmentModelCallback(EnvironmentModel) to be able to customize this model

@@ -19,6 +19,7 @@ import java.util.HashSet;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectHubService;
 import com.viaoa.hub.Hub;
@@ -36,7 +37,7 @@ import com.viaoa.runtime.OARuntime;
  *   <li>Iterates over all registered classes in
  *       {@link OAObjectCacheDelegate#getClasses()}.</li>
  *   <li>For each object, collects the set of all Hubs referencing it using
- *       {@link OAObjectHubDelegate#getHubReferences(OAObject)}.</li>
+ *       {@link OAObjectHubDelegate#callHubGetHubReferences(OAObject)}.</li>
  *   <li>Prints summary output for objects associated with many Hubs.</li>
  * </ul>
  */
@@ -57,20 +58,18 @@ public class OAObjectAnalyzer {
      * maintained for summary inspection.</p>
      */
     public void load() {
-		OAGraphImpl og = (OAGraphImpl) OARuntime.graph();
-    	final OAObjectCacheService ocs = og.getOAObjectService().getOAObjectCacheService();
+		OAGraphInternal ogx = (OAGraphInternal) OARuntime.graph();
     	
-    	
-        for (Class cs : og.getOAObjectService().getOAObjectCacheService().getClasses()) {
-            System.out.println("Starting class="+cs.getSimpleName()+", total="+ocs.getTotal(cs));
+        for (Class cs : ogx.objectsInternal().callObjectCacheGetClasses()) {
+        	OAGraphInternal og = (OAGraphImpl) OARuntime.graph(cs);
+
+    		System.out.println("Starting class="+cs.getSimpleName()+", total="+og.objectsInternal().callObjectCacheGetTotal(cs));
             
-    		og = (OAGraphImpl) OARuntime.graph(cs);
-    		final OAObjectHubService srvcObjectHub = og.getOAObjectService().getOAObjectHubService();
             OACallback cb = new OACallback() {
                 @Override
                 public boolean updateObject(Object object) {
                     OAObject obj = (OAObject) object;
-                    Hub[] hubs = srvcObjectHub.getHubReferences(obj);
+                    Hub[] hubs = og.objectsInternal().callObjectHubGetHubReferences(obj);
                     if (hubs == null) return true;
                     int cnt = 0;
                     for (Hub h : hubs) {
@@ -84,7 +83,7 @@ public class OAObjectAnalyzer {
                     return true;
                 }
             };
-            og.getOAObjectService().getOAObjectCacheService().callback(cs, cb);
+            og.objectsInternal().callObjectCacheCallback(cs, cb);
         }    
         int xx = hsHub.size();
         xx++;

@@ -251,7 +251,7 @@ public class WorkOrderModel extends OAObjectModel {
         modelOrder.setAllowSearch(false);
         modelOrder.setAllowHubSearch(true);
         modelOrder.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelOrder.setCreateUI(li == null || !WorkOrder.P_Order.equalsIgnoreCase(li.getName()) );
         modelOrder.setViewOnly(getViewOnly());
         // call WorkOrder.orderModelCallback(OrderModel) to be able to customize this model

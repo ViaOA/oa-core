@@ -15,7 +15,7 @@
  */
 package com.viaoa.uicontroller;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
@@ -323,14 +323,14 @@ public abstract class OAUISelectController  {
     
         hubLink = hub.getLinkHub(true);
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
         if (hubLink != null) {
             linkPropertyName = hub.getLinkPath(true);
         }
         else {
-            Hub hubx = og.getHubService().getHubDetailService().getMasterHub(hub);
+            Hub hubx = og.hubsInternal().callHubDetailGetMasterHub(hub);
             if (hubx != null) {
-                OALinkInfo li = og.getHubService().getHubDetailService().getLinkInfoFromMasterToDetail(hub);
+                OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromMasterToDetail(hub);
                 if (li != null && li.getType() == li.TYPE_ONE) {
                     hubLink = hubx;
                     linkPropertyName = li.getName();
@@ -339,7 +339,7 @@ public abstract class OAUISelectController  {
         }
 
         if (hubLink == null) return null;
-        linkOnPos = og.getHubService().getHubLinkService().getLinkedOnPos(hub);
+        linkOnPos = og.hubsInternal().callHubLinkGetLinkedOnPos(hub);
         
         controlLinkHub = new OAUIController(hubLink, null, linkPropertyName, true, HubChangeListener.Type.AoNotNull) {
             @Override

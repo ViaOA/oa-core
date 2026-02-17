@@ -364,7 +364,7 @@ public abstract class OAObjectDeleteService {
             }
 			
 			oaObj.setChanged(false);
-			callSetNew(oaObj, true);
+			callObjectSetNew(oaObj, true);
 		} finally {
 			callLocalThreadSetDeleting(oaObj, false);
 		}
@@ -652,7 +652,7 @@ public abstract class OAObjectDeleteService {
 	
 	
 	@OAParentProvided (example = "srvcObject.setNew(oaObj, true)")
-	public abstract void callSetNew(final OAObject oaObj, final boolean b);
+	public abstract void callObjectSetNew(final OAObject oaObj, final boolean b);
 
 	
 	

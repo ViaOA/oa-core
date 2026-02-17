@@ -70,7 +70,7 @@ public class MRADServerCommandDelegate {
     public static void runOnServer(MRADServerCommand cmd) throws Exception {
         if (cmd == null) return;
         
-        if (!OASyncDelegate.isServer()) {
+        if (!OASyncDelegate.callSyncIsServer()) {
             // send to server
             RemoteDelegate.getRemoteModel().mradServerCommand_runOnServer(cmd);
             return;

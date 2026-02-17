@@ -36,7 +36,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     
     @Test
     public void test() throws Exception {
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         String s = oi.getEnabledProperty();
         assertTrue("InactiveDate".equalsIgnoreCase(s));
         
@@ -88,7 +88,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     // Employee[enabledProp].employeeAwards [owned]
     @Test
     public void test1() throws Exception {
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
         Employee emp = new Employee();
         emp.setInactiveDate(new OADate());
@@ -106,7 +106,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     // Employee.employeeAwards [enabledProp]
     @Test
     public void test2() throws Exception {
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         OALinkInfo li = oi.getLinkInfo(Employee.P_EmployeeAwards);
         
         li.setEnabledProperty(Employee.P_TopLevelManager);
@@ -135,7 +135,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     // Employee.employeeAwards  [userContext]
     @Test
     public void test3() throws Exception {
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         OALinkInfo li = oi.getLinkInfo(Employee.P_EmployeeAwards);
         li.setContextEnabledProperty(User.P_Admin);
         li.setContextEnabledValue(true);
@@ -167,7 +167,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     // property permissions
     @Test
     public void test4() throws Exception {
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
         Employee emp = new Employee();
         
@@ -200,7 +200,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     // Processed
     @Test
     public void test5() throws Exception {
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         oi.setProcessed(true);
         Employee emp = new Employee();
         
@@ -216,7 +216,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     
     @Test
     public void test6() throws Exception {
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         oi.setProcessed(true);
         Employee emp = new Employee();
         
@@ -235,7 +235,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
    
     @Test
     public void testa() throws Exception {
-        OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         String s = oi.getEnabledProperty();
         assertTrue("InactiveDate".equalsIgnoreCase(s));
         
@@ -499,7 +499,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
 
     @Test
     public void getAllowVisibleTest() {
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
         oi.setProcessed(true);
         
         Employee emp = new Employee();
@@ -582,7 +582,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
 
     @Test
     public void getAllowEnabledTest() {
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
         User user = (User) OAContext.getContextObject();
         user.setAdmin(false);
@@ -940,7 +940,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     
     @Test
     public void getAllowCopyTest() throws Exception {
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
         User user = (User) OAContext.getContextObject();
         user.setAdmin(false);
@@ -964,7 +964,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     
     @Test
     public void getCopyTest() throws Exception {
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
         User user = (User) OAContext.getContextObject();
         user.setAdmin(false);
@@ -984,7 +984,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     
     @Test
     public void verifyPropertyChangeTest() {
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
         User user = (User) OAContext.getContextObject();
         user.setAdmin(false);
@@ -1043,7 +1043,7 @@ public class OAObjectCallbackTest extends OAUnitTest {
     
     @Test
     public void getAllowAddEditQueryTest() {
-        final OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(Employee.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Employee.class);
 
         User user = (User) OAContext.getContextObject();
         user.setAdmin(false);

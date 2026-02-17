@@ -958,7 +958,7 @@ public abstract class OAObjectPropertyService {
 			return;
 		}
 
-		OAObjectInfo oi = getOAObjectInfo(obj.getClass());
+		OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
 		if (!callInfoIsWeakReferenceable(oi)) {
 			return;
 		}
@@ -999,7 +999,7 @@ public abstract class OAObjectPropertyService {
 			}
 
 			if (liRev.getCacheSize() > 0) {
-				Object objx = callPropertyGetProperty((OAObject) parent, liRev.getName(), true, false);
+				Object objx = getProperty((OAObject) parent, liRev.getName(), true, false);
 				if (objx instanceof OANotExist) {
 					continue;
 				}
@@ -1049,7 +1049,7 @@ public abstract class OAObjectPropertyService {
 	public abstract void callHubSetMasterObject(Hub hub, OAObject oaObj, String nameFromMasterToDetail);
 		
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isWeakReferenceable")
 	public abstract boolean callInfoIsWeakReferenceable(OAObjectInfo oi);
@@ -1063,9 +1063,6 @@ public abstract class OAObjectPropertyService {
 	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
-	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
-
 	@OAParentProvided (example = "srvcSync.isServer()")
 	public abstract boolean callSyncIsServer();
 

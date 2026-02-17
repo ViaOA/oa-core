@@ -176,12 +176,12 @@ public abstract class HubDataService {
      * @param thisHub the hub whose elements are being converted to an array
      * @return an array containing the Hub’s elements
      */
-	public Object[] toArray(Hub thisHub) {
+	public <T> T[] toArray(Hub<T> thisHub) {
 	    thisHub.getSize(); // call before sync, in case it needs to load
-        Object[] objs;
+        T[] objs;
         for (int i=0;;i++) {
             synchronized (faHub.getHubData(thisHub)) {
-                objs = new Object[thisHub.getSize()];
+                objs = (T[]) new Object[thisHub.getSize()];
                 try {
                 	faHub.getHubData(thisHub).getVector().copyInto(objs);
                     break;
@@ -590,14 +590,14 @@ public abstract class HubDataService {
 	 * @param key the key or object used to identify the desired element
 	 * @return the matching object, or {@code null} if not found
 	 */
-	public Object getObject(final Hub thisHub, Object key) {
+	public <T> T getObject(final Hub<T> thisHub, Object key) {
 		if (thisHub == null || key == null) return null;
 	    if (!(key instanceof OAObjectKey)) {
 	    	if (key instanceof OAObject) key = callObjectKeyGetKey((OAObject) key);
 	    	else key = callObjectKeyCreateObjectKey(thisHub.getObjectClass(), key);
 	    }
 		for (int i=0; ; i++) {
-			Object obj = getObjectAt(thisHub, i);
+			T obj = getObjectAt(thisHub, i);
 			if (obj == null) break;
 			if (obj == key) return obj;
 			if (obj instanceof OAObject) {
@@ -620,15 +620,15 @@ public abstract class HubDataService {
 	 * @param pos the index to retrieve
 	 * @return the object at the position, or {@code null} if not available
 	 */
-	public Object getObjectAt(Hub thisHub, int pos) {
-	    Object ho;
+	public <T> T getObjectAt(Hub<T> thisHub, int pos) {
+	    T ho;
 	    if (pos < 0) return null;
 	    
-	    final Vector v = faHub.getHubData(thisHub).getVector();
+	    final Vector<T> v = (Vector<T>) faHub.getHubData(thisHub).getVector();
 	    
 	    int size = v.size();
 	    if (pos < size) {
-	        Object obj = null;
+	        T obj = null;
 	        try {
 	        	obj = v.elementAt(pos);
 	        }
@@ -636,7 +636,7 @@ public abstract class HubDataService {
 	        	obj = null;  // hub could have changed, and pos is not valid anymore
 	        }
 	        if (obj instanceof OAObjectKey && thisHub.isOAObject()) {
-            	obj = callObjectReflectGetObject(thisHub.getObjectClass(), obj);
+            	obj = (T) callObjectReflectGetObject(thisHub.getObjectClass(), obj);
                 if (obj != null) {
                 	callObjectHubAddHub((OAObject)obj, thisHub);
 	                v.setElementAt(obj, pos);

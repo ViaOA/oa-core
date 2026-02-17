@@ -393,7 +393,7 @@ public class OAObjectHubDelegateTest extends OAUnitTest {
         hub.remove(emp);
         assertEquals(0, OAObjectHubDelegate.getHubReferenceCount(emp));
 
-        assertNull(OAObjectHubDelegate.getHubReferences(emp));
+        assertNull(OAObjectHubDelegate.callHubGetHubReferences(emp));
     }
     
     @Test
@@ -495,7 +495,7 @@ public class OAObjectHubDelegateTest extends OAUnitTest {
         }
 
         for (Employee empz : alEmp) {
-            Hub[] hubs = OAObjectHubDelegate.getHubReferences(empz);
+            Hub[] hubs = OAObjectHubDelegate.callHubGetHubReferences(empz);
             x = 6;
             assertEquals(x, hubs.length);
             

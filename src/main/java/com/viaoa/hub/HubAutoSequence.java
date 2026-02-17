@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.lang.reflect.*;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
@@ -173,8 +173,8 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
      * @param bServerSideOnly whether sequence updates are controlled exclusively by the server
      */
     public HubAutoSequence(Hub hub, String propertyName, int startNumber, boolean bKeepSeq, boolean bServerSideOnly) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(this.hub);
-        if (bServerSideOnly && !og.getHubService().getHubCSService().isServer(hub)) {
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
+        if (bServerSideOnly && !og.hubsInternal().callHubCSIsServer(hub)) {
             LOG.warning("bServerSideOnly should be false, since this is not the server");
         }
         this.startNumber = startNumber;
@@ -280,9 +280,8 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         Class c = hub.getObjectClass();
         if (c == null) return;
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(c);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-        Method met = srvcObjectInfo.getMethod(c, "set" + propertyName);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+        Method met = og.objectsInternal().callObjectInfoGetMethod(c, "set" + propertyName);
         //was: Method met = OAReflect.getMethod(c, "set"+propertyName);
         if (met == null) {
             throw new RuntimeException("setter method not found for property "+propertyName+", class="+c);

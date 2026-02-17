@@ -130,7 +130,7 @@ public class StoreBatchModel extends OAObjectModel {
         modelStoreTransmitBatch.setAllowSearch(false);
         modelStoreTransmitBatch.setAllowHubSearch(true);
         modelStoreTransmitBatch.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelStoreTransmitBatch.setCreateUI(li == null || !StoreBatch.P_StoreTransmitBatch.equalsIgnoreCase(li.getName()) );
         modelStoreTransmitBatch.setViewOnly(getViewOnly());
         // call StoreBatch.storeTransmitBatchModelCallback(StoreTransmitBatchModel) to be able to customize this model

@@ -18,7 +18,7 @@ import test.xice.tsac.model.oa.propertypath.SiloPP;
 public class RCInstalledVersionDelegate {
 
     public static void run(final RCInstalledVersion installedVersion) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _run(installedVersion);
         }
         else {
@@ -92,7 +92,7 @@ public class RCInstalledVersionDelegate {
     
     
     public static void process(final RCInstalledVersion installedVersion) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _process(installedVersion);
         }
         else {
@@ -236,7 +236,7 @@ public class RCInstalledVersionDelegate {
     }
 
     public static void load(final RCInstalledVersion installedVersion) throws Exception {
-        if (OASyncDelegate.isServer()) {
+        if (OASyncDelegate.callSyncIsServer()) {
             _load(installedVersion);
         }
         else {

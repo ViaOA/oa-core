@@ -155,7 +155,7 @@ public abstract class OAObjectImportMatchService {
 			return; // already exists
 		}
 
-		final OAObjectInfo oi = getOAObjectInfo(importMatch.fromObject.getClass());
+		final OAObjectInfo oi = callInfogetObjectInfo(importMatch.fromObject.getClass());
 
 		String sql = "";
 		Object[] params = new Object[] {};
@@ -255,7 +255,7 @@ public abstract class OAObjectImportMatchService {
 			obj = (OAObject) callReflectCreateNewObject(importMatch.liTo.getToClass());
 
 			for (ImportMatchDetail detail : importMatch.importMatchDetails) {
-				createHierObjects(obj, getOAObjectInfo(obj.getClass()), detail.propertyPath, detail.value);
+				createHierObjects(obj, callInfogetObjectInfo(obj.getClass()), detail.propertyPath, detail.value);
 			}
 
 			if (objOwner != null) {
@@ -329,7 +329,7 @@ public abstract class OAObjectImportMatchService {
 	}
 
     @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz);
+	public abstract OAObjectInfo callInfogetObjectInfo(Class clazz);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().find(..)")
 	public abstract Object callCacheFind(Class clazz, OAFinder finder); 

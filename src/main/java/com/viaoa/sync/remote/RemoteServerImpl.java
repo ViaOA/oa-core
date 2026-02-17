@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
@@ -125,13 +125,12 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	public boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule) {
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
 		
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
     	
 		boolean bResult;
 		try {
 			srvcOARemoteThread.sendMessages(true);
-			OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
+			OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey);
 			if (obj != null) {
 				obj.save(iCascadeRule);
 				bResult = true;
@@ -166,11 +165,10 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public OAObject getObject(Class objectClass, OAObjectKey objectKey) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
+		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey);
 		if (obj == null) {
-			if (og.getSyncService().isServer()) {
+			if (og.syncInternal().isServer()) {
 				obj = (OAObject) OADataSource.getObject(objectClass, objectKey);
 			}
 		}
@@ -179,11 +177,10 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 
 	@Override
 	public OAObject getObjectUsingPkey(Class objectClass, OAObjectKey objectKey) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
-    	final OAObjectCacheService srvcObjectCache = og.getOAObjectService().getOAObjectCacheService();
-		OAObject obj = (OAObject) srvcObjectCache.getObject(objectClass, objectKey.getObjectIds());
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
+		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey.getObjectIds());
 		if (obj == null) {
-			if (og.getSyncService().isServer()) {
+			if (og.syncInternal().isServer()) {
 				obj = (OAObject) OADataSource.getObject(objectClass, objectKey);
 			}
 		}
@@ -206,15 +203,14 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		if (obj == null) {
 			throw new RuntimeException("Object could not be found, class=" + clazz + ", objKey=" + objKey);
 		}
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(clazz);
 
 		int x = 0;
 		if (args != null && args.length > 0) {
 			x += args.length;
 		}
-		Method method = srvcObjectInfo.getMethod(oi, methodName, x);
+		Method method = og.objectsInternal().callObjectInfoGetMethod(oi, methodName, x);
 
 		if (method == null) {
 			throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());
@@ -242,15 +238,14 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
     @Override
     public Object runRemoteMethod2(OAObject obj, String methodName, Object[] args) {
         Class clazz = obj.getClass();
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-        OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+        OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(clazz);
 
         int x = 0;
         if (args != null && args.length > 0) {
             x += args.length;
         }
-        Method method = srvcObjectInfo.getMethod(oi, methodName, x);
+        Method method = og.objectsInternal().callObjectInfoGetMethod(oi, methodName, x);
 
         if (method == null) {
             throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());
@@ -280,15 +275,14 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 			return null;
 		}
 		Class clazz = hub.getObjectClass();
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
-		final OAObjectInfoService srvcObjectInfo = og.getOAObjectService().getOAObjectInfoService();
-		OAObjectInfo oi = srvcObjectInfo.getObjectInfo(clazz);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(clazz);
 
 		int x = 1;
 		if (args != null && args.length > 0) {
 			x += args.length;
 		}
-		Method method = srvcObjectInfo.getMethod(oi, methodName, x);
+		Method method = og.objectsInternal().callObjectInfoGetMethod(oi, methodName, x);
 
 		if (method == null) {
 			throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());

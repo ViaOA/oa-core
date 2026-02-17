@@ -124,7 +124,7 @@ public class ForeignTableModel extends OAObjectModel {
         modelTable.setAllowSearch(true);
         modelTable.setAllowHubSearch(true);
         modelTable.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelTable.setCreateUI(li == null || !ForeignTable.P_Table.equals(li.getName()) );
         modelTable.setViewOnly(getViewOnly());
         // call ForeignTable.tableModelCallback(TableModel) to be able to customize this model

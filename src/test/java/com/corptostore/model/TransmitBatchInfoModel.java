@@ -124,7 +124,7 @@ public class TransmitBatchInfoModel extends OAObjectModel {
         modelTransmitBatchServiceInfo.setAllowSearch(false);
         modelTransmitBatchServiceInfo.setAllowHubSearch(false);
         modelTransmitBatchServiceInfo.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelTransmitBatchServiceInfo.setCreateUI(li == null || !TransmitBatchInfo.P_TransmitBatchServiceInfo.equalsIgnoreCase(li.getName()) );
         modelTransmitBatchServiceInfo.setViewOnly(getViewOnly());
         // call TransmitBatchInfo.transmitBatchServiceInfoModelCallback(TransmitBatchServiceInfoModel) to be able to customize this model

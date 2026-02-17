@@ -59,7 +59,7 @@ public abstract class OAObjectLogService {
                     if (value instanceof OAObject) return OAXMLWriter.WRITE_KEYONLY;
                     if (!(value instanceof Hub)) return OAXMLWriter.WRITE_YES;
                     
-                    OAObjectInfo oi = getOAObjectInfo(obj.getClass());
+                    OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
                     OALinkInfo li = callInfoGetLinkInfo(oi, propertyName);
                     if (li != null && li.getType() == OALinkInfo.MANY) {
                         li = callInfoGetLinkInfo(oi, propertyName);
@@ -154,7 +154,7 @@ public abstract class OAObjectLogService {
     }
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);

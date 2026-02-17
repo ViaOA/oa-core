@@ -123,7 +123,7 @@ public class ChatMessageModel extends OAObjectModel {
         modelChatSession.setAllowSearch(false);
         modelChatSession.setAllowHubSearch(false);
         modelChatSession.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
         modelChatSession.setCreateUI(li == null || !ChatMessage.P_ChatSession.equalsIgnoreCase(li.getName()) );
         modelChatSession.setViewOnly(getViewOnly());
         // call ChatMessage.chatSessionModelCallback(ChatSessionModel) to be able to customize this model
