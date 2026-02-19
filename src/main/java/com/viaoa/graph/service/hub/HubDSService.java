@@ -1,12 +1,9 @@
 package com.viaoa.graph.service.hub;
 
-import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 
@@ -53,26 +50,23 @@ public abstract class HubDSService {
 	 *
 	 * @param hub the hub whose removed objects should have link records deleted
 	 */
-    public void removeMany2ManyLinks(Hub hub) {
+    public <T extends OAObject> void removeMany2ManyLinks(Hub<T> hub) {
         if (hub == null) return;
-        Object objMaster = hub.getMasterObject();
+        OAObject objMaster = hub.getMasterObject();
         if (objMaster == null) return;
-        if (!OAObject.class.isAssignableFrom(hub.getObjectClass())) {
-            return;
-        }
         OALinkInfo link = faHub.getHubDataMaster(hub).getDetailToMasterLinkInfo();
         if (link == null) return;
         if (!callObjectInfoIsMany2Many(link)) return;
         
         String propFromMaster = callObjectInfoGetReverseLinkInfo(link).getName();
 
-        OAObject[] objs = callHubAddRemoveGetRemovedObjects(hub);
+        T[] objs = callHubAddRemoveGetRemovedObjects(hub);
         if (objs == null || objs.length == 0) return;
        
         OADataSource ds = OADataSource.getDataSource(objMaster.getClass());
         if (ds == null) return;
         
-        ds.updateMany2ManyLinks((OAObject)objMaster, null, objs, propFromMaster);
+        ds.updateMany2ManyLinks(objMaster, null, objs, propFromMaster);
     }
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many")
@@ -82,21 +76,7 @@ public abstract class HubDSService {
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
 
 	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().getRemovedObjects")
-	public abstract OAObject[] callHubAddRemoveGetRemovedObjects(Hub thisHub);
-	
-    /*	
-	
-	
-	
-	@OAParentProvided (example = "")
-	public abstract ;
-	
-	@OAParentProvided (example = "")
-	public abstract ;
-	
-	@OAParentProvided (example = "")
-	public abstract ;
-*/	
+	public abstract <T extends OAObject> T[] callHubAddRemoveGetRemovedObjects(Hub<T> thisHub);
 	
 }
 

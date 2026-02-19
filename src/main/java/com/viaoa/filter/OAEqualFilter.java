@@ -244,7 +244,7 @@ public class OAEqualFilter implements OAFilter {
             }
         }
         
-        obj = getPropertyValue(obj);
+		if (obj instanceof OAObject) obj = getPropertyValue((OAObject) obj);
 
         //  check to see if object is in a hub
         if (obj instanceof Hub) {
@@ -270,7 +270,7 @@ public class OAEqualFilter implements OAFilter {
      * @param obj the source object
      * @return the extracted property value or the original object
      */
-    protected Object getPropertyValue(Object obj) {
+    protected Object getPropertyValue(OAObject obj) {
         Object objx = obj;
         if (pp != null) {
             objx = pp.getValue(obj);

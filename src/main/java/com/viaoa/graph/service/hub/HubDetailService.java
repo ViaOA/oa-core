@@ -37,9 +37,9 @@ public abstract class HubDetailService {
 	 * @param bShared     whether the detail hub should share underlying data
 	 * @param selectOrder the select order to assign to the detail hub
 	 */
-	public void setMasterHub(Hub thisHub, Hub masterHub, String path, boolean bShared, String selectOrder) {
-		final HubDataMaster hdm = faHub.getHubDataMaster(thisHub);
-		final HubDataUnique hdu = faHub.getHubDataUnique(thisHub);
+	public void setMasterHub(Hub<?> thisHub, Hub<?> masterHub, String path, boolean bShared, String selectOrder) {
+		final HubDataMaster<?> hdm = faHub.getHubDataMaster(thisHub);
+		final HubDataUnique<?> hdu = faHub.getHubDataUnique(thisHub);
 		
 		if (hdu.getSharedHub() != null) {
 			if (masterHub == null) {
@@ -65,16 +65,16 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub to test
 	 * @return true if the relationship is recursive, otherwise false
 	 */
-	public boolean isRecursiveMasterDetail(Hub thisHub) {
+	public boolean isRecursiveMasterDetail(Hub<?> thisHub) {
 		if (thisHub == null) {
 			return false;
 		}
 
-		final HubDataMaster hdm = faHub.getHubDataMaster(thisHub);
+		final HubDataMaster<?> hdm = faHub.getHubDataMaster(thisHub);
 		
 		OALinkInfo li = hdm.getDetailToMasterLinkInfo();
 		if (li == null) {
-			HubDataMaster dm = getDataMaster(thisHub);
+			HubDataMaster<?> dm = getDataMaster(thisHub);
 			if (dm == null) {
 				return false;
 			}
@@ -101,7 +101,7 @@ public abstract class HubDetailService {
 	 * @param bUpdateLink  whether linked hubs should update link properties
 	 * @return true if the master hub's active object was adjusted, otherwise false
 	 */
-	public boolean setMasterHubActiveObject(Hub thisHub, Object detailObject, boolean bUpdateLink) {
+	public <T extends OAObject> boolean setMasterHubActiveObject(Hub<T> thisHub, T detailObject, boolean bUpdateLink) {
 		//qqqqqqqqqq method was protected
 		// make sure none of these have a linkHub
 		// and find the sharedHub that has a masterHub
@@ -118,7 +118,7 @@ public abstract class HubDetailService {
 					return true;
 				}
 			}
-			Object obj = callObjectReflectGetProperty((OAObject) detailObject, dm.getDetailToMasterLinkInfo().getName());
+			Object obj = callObjectReflectGetProperty(detailObject, dm.getDetailToMasterLinkInfo().getName());
 			// 20121010 if obj==null then dont adjust:  ex: hi5  employeeAward.awardType that was from program.awardTypes, and now the list is in location.awardTpes
 			if (obj != null && dm.getMasterHub().getActiveObject() != obj && !(obj instanceof Hub)) {
 				//was: if (dm.masterHub.getActiveObject() != obj) {
@@ -130,7 +130,7 @@ public abstract class HubDetailService {
 				}
 
 				if (callThreadLocalGetCanAdjustHub(dm.getMasterHub())) {
-					callHubAOSetActiveObject(dm.getMasterHub(), obj, true, bUpdateLink, false); // adjustMaster, updateLink, force
+					callHubAOSetActiveObject(dm.getMasterHub(), (OAObject) obj, true, bUpdateLink, false); // adjustMaster, updateLink, force
 					result = true;
 				}
 			}
@@ -147,7 +147,7 @@ public abstract class HubDetailService {
 	 * @param detailObject the detail object to update
 	 * @param objMaster    the master object used for reference assignment
 	 */
-	public void setPropertyToMasterHub(Hub thisHub, Object detailObject, Object objMaster) {
+	public <T extends OAObject> void setPropertyToMasterHub(Hub<T> thisHub, T detailObject, OAObject objMaster) {
 		//qqqqqqqqq method was protected
 		if (thisHub == null || detailObject == null) {
 			return;
@@ -270,15 +270,14 @@ public abstract class HubDetailService {
 	 * @param thisHub     the hub whose detail hubs should be updated
 	 * @param bUpdateLink whether link-based updates should be propagated
 	 */
-	public void updateAllDetail(Hub thisHub, boolean bUpdateLink) {
-		//qqqqqqqqq method was protected
-		final HubDataUnique hdu = faHub.getHubDataUnique(thisHub);
+	public void updateAllDetail(Hub<?> thisHub, boolean bUpdateLink) {
+		final HubDataUnique<?> hdu = faHub.getHubDataUnique(thisHub);
 		int x = hdu.getVecHubDetail() == null ? 0 : hdu.getVecHubDetail().size();
 		// get objects that go with detail hub
 		for (int i = 0; i < x; i++) {
 			HubDetail hd = (HubDetail) hdu.getVecHubDetail().elementAt(i);
 			
-			Hub h = hd.getDetailHub();
+			Hub<?> h = hd.getDetailHub();
 			if (h == null) {
 				hdu.getVecHubDetail().removeElementAt(i);
 				x--;
@@ -297,7 +296,7 @@ public abstract class HubDetailService {
 	 * @param thisHub the master hub
 	 * @param pos     the index of the master object whose detail data is preloaded
 	 */
-	public void preloadDetailData(final Hub thisHub, final int pos) {
+	public void preloadDetailData(final Hub<?> thisHub, final int pos) {
 		if (thisHub == null || pos < 0) {
 			return;
 		}
@@ -312,7 +311,7 @@ public abstract class HubDetailService {
 		// get objects that go with detail hub
 		for (int i = 0; i < x; i++) {
 			HubDetail hd = (HubDetail) hdu.getVecHubDetail().elementAt(i);
-			Hub h = hd.getDetailHub();
+			Hub<?> h = hd.getDetailHub();
 			if (h == null) {
 				hdu.getVecHubDetail().removeElementAt(i);
 				x--;
@@ -335,7 +334,7 @@ public abstract class HubDetailService {
 	 * @param detailHub   the hub being updated
 	 * @param bUpdateLink whether link-based updates should be propagated
 	 */
-	public void updateDetail(final Hub thisHub, final HubDetail detail, final Hub detailHub, final boolean bUpdateLink) {
+	public <T extends OAObject, U extends OAObject> void updateDetail(final Hub<T> thisHub, final HubDetail detail, final Hub<U> detailHub, final boolean bUpdateLink) {
 		/* get Hub, Object, OAObject or Array value from property
 		   ex:  Emp
 		          String name;
@@ -355,7 +354,7 @@ public abstract class HubDetailService {
 			if (faHub.getHubDataMaster(detailHub).getMasterObject() == (OAObject) faHub.getHubDataActive(thisHub).getActiveObject()) {
 				// 20160204
 				if (faHub.getHubDataMaster(detailHub).getMasterHub() != thisHub) {
-					Hub hx = faHub.getHubDataUnique(detailHub).getSharedHub();
+					Hub<?> hx = faHub.getHubDataUnique(detailHub).getSharedHub();
 					boolean b = (hx != null && faHub.getHubDataMaster(hx) == faHub.getHubDataMaster(detailHub)); // this happens by setting sharedHub - when it was sharing with a child hub
 					if (b) {
 						// this will reconnect detailHub to the masterHub (thisHub)
@@ -417,15 +416,14 @@ public abstract class HubDetailService {
 				return;
 			}
 
-			if (detailHub.isOAObject()) {
-				for (int i = 0;; i++) {
-					Object objx = callHubDataGetObjectAt(detailHub, i);
-					if (objx == null) {
-						break;
-					}
-					callObjectHubRemoveHub((OAObject) objx, detailHub, true); // 20160713 changed to true so that it wont add to server cache
+			for (int i = 0;; i++) {
+				Object objx = callHubDataGetObjectAt(detailHub, i);
+				if (objx == null) {
+					break;
 				}
+				callObjectHubRemoveHub((OAObject) objx, (Hub<OAObject>) detailHub, true); // 20160713 changed to true so that it wont add to server cache
 			}
+
 			faHub.getHubData(detailHub).getVector().removeAllElements();
 		}
 
@@ -448,7 +446,7 @@ public abstract class HubDetailService {
 			// dont share listeners and links ("datau")
 			// dont share activeObject ("dataa")
 			//     unless DetailHub.bShareActiveObject is true then set it after events
-			Hub h = (Hub) obj;
+			Hub<?> h = (Hub) obj;
 
 			if (callHubSortIsSorted(detailHub)) {
 				String s = callHubSortGetSortProperty(detailHub);
@@ -463,15 +461,15 @@ public abstract class HubDetailService {
 
 			// need to select before assigning to detail hub so that add events wont
 			//            be sent to detail hubs listeners
-			faHub.setHubData(detailHub, faHub.getHubData(h));
+			faHub.setHubData((Hub<T>) detailHub, faHub.getHubData((Hub<T>) h));
 			faHub.getHubDataUnique(detailHub).setSharedHub(h);
-			callHubShareAddSharedHub(h, detailHub);
+			callHubShareAddSharedHub((Hub<OAObject>) h, (Hub<OAObject>) detailHub);
 
 			// 20120926 "h" could be a shared/calc Hub.
 			// 20160204 this can happen for recursive, where the detailHub is pointing/shared to a childHub.
 			//     this will reconnect it to the parent
 			if (faHub.getHubDataMaster(detailHub).getMasterObject() != (OAObject) faHub.getHubDataMaster(h).getMasterObject()) {
-				Hub hx = faHub.getHubDataUnique(detailHub).getSharedHub();
+				Hub<?> hx = faHub.getHubDataUnique(detailHub).getSharedHub();
 				if (hx != null && faHub.getHubDataMaster(hx) == faHub.getHubDataMaster(detailHub)) {
 					faHub.setHubDataMaster(detailHub, new HubDataMaster());
 				}
@@ -493,14 +491,14 @@ public abstract class HubDetailService {
 				setMasterObject(h, faHub.getHubDataMaster(detailHub).getMasterObject(), faHub.getHubDataMaster(detailHub).getDetailToMasterLinkInfo());
 			}
 		} else if (detail.getType() == HubDetail.OAOBJECT || detail.getType() == HubDetail.OBJECT) {
-			callHubAddRemoveInternalAdd(detailHub, (OAObject) obj, false, true);
+			callHubAddRemoveInternalAdd(detailHub, (U) obj, false, true);
 			faHub.getHubData(detailHub).setDupAllowAddRemove(false);
 		} else {
 			// HubDetail.OBJECTARRAY || HubDetail.OAOBJECTARRAY
 			int j = Array.getLength(obj);
 			for (int k = 0; k < j; k++) {
 				Object objx = Array.get(obj, k);
-				callHubAddRemoveInternalAdd(detailHub, objx, false, true);
+				callHubAddRemoveInternalAdd(detailHub, (U) objx, false, true);
 			}
 			faHub.getHubData(detailHub).setDupAllowAddRemove(false);
 		}
@@ -532,11 +530,12 @@ public abstract class HubDetailService {
 	 * @param bUpdateLink       whether linked hubs should update link properties
 	 * @param bShareActiveObject whether the hubs share active-object state
 	 */
-	public void updateDetailActiveObject(final Hub thisHub, final Hub hubDetailHub, final boolean bUpdateLink,
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public <T extends OAObject> void updateDetailActiveObject(final Hub<T> thisHub, final Hub<?> hubDetailHub, final boolean bUpdateLink,
 			final boolean bShareActiveObject) {
 		boolean bUseCurrent = (bShareActiveObject && faHub.getHubDataActive(thisHub) == faHub.getHubDataActive(hubDetailHub)); // if hubs are sharing active object then dont change it.
 		if (!bUseCurrent || (thisHub == hubDetailHub)) {
-			Hub hubWithLink = callHubLinkGetHubWithLink(thisHub, true);
+			Hub<?> hubWithLink = callHubLinkGetHubWithLink(thisHub, true);
 
 			if (hubWithLink == null) {
 				// if there is not a linkHub, then go to default object
@@ -578,13 +577,13 @@ public abstract class HubDetailService {
 						} else {
 							objx = null;
 						}
-						callHubAOSetActiveObject(thisHub, objx, bUpdateLink, false, false);
+						callHubAOSetActiveObject(thisHub, (T) objx, bUpdateLink, false, false);
 					} else {
 						int pos = thisHub.getPos(obj);
 						if (obj != null && pos < 0) {
 							obj = null;
 						}
-						callHubAOSetActiveObject(thisHub, obj, pos, bUpdateLink, false, false);//bUpdateLink,bForce,bCalledByShareHub
+						callHubAOSetActiveObject(thisHub, (T) obj, pos, bUpdateLink, false, false);//bUpdateLink,bForce,bCalledByShareHub
 					}
 				} catch (Exception e) {
 					throw new RuntimeException(faHub.getHubDataUnique(thisHub).getLinkToGetMethod().getName(), e); // wrap orig exception
@@ -593,13 +592,13 @@ public abstract class HubDetailService {
 		}
 
 		// 20120715
-		WeakReference<Hub>[] refs = callHubShareGetSharedWeakHubs(thisHub);
+		WeakReference<Hub<T>>[] refs = callHubShareGetSharedWeakHubs(thisHub);
 		for (int i = 0; refs != null && i < refs.length; i++) {
-			WeakReference<Hub> ref = refs[i];
+			WeakReference<Hub<T>> ref = refs[i];
 			if (ref == null) {
 				continue;
 			}
-			Hub h2 = ref.get();
+			Hub<?> h2 = ref.get();
 			if (h2 == null) {
 				continue;
 			}
@@ -631,8 +630,7 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub whose master data is resolved
 	 * @return the master-data descriptor
 	 */
-	public HubDataMaster getDataMaster(final Hub thisHub) {
-		//qqqqqqq method was protected
+	public HubDataMaster<?> getDataMaster(final Hub<?> thisHub) {
 		return getDataMaster(thisHub, null, false);
 	}
 
@@ -644,8 +642,7 @@ public abstract class HubDetailService {
 	 * @param bIncludedFilteredHub  whether filtered shared hubs should be considered
 	 * @return the resolved {@code HubDataMaster}
 	 */
-	public HubDataMaster getDataMaster(final Hub thisHub, boolean bIncludedFilteredHub) {
-		//qqqqqqq method was protected
+	public HubDataMaster getDataMaster(final Hub<?> thisHub, boolean bIncludedFilteredHub) {
 		return getDataMaster(thisHub, null, bIncludedFilteredHub);
 	}
 
@@ -658,7 +655,7 @@ public abstract class HubDetailService {
 	 * @param bIncludedFilteredHub whether filtered hubs are eligible
 	 * @return the resolved {@code HubDataMaster}, or null if not found
 	 */
-	private HubDataMaster getDataMaster(final Hub thisHub, final Class masterClass, boolean bIncludedFilteredHub) {
+	private <TA extends OAObject> HubDataMaster<TA> getDataMaster(final Hub<?> thisHub, final Class<TA> masterClass, boolean bIncludedFilteredHub) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -678,7 +675,7 @@ public abstract class HubDetailService {
 				return false;
 			}
 		};
-		Hub hubx = callHubShareGetFirstSharedHub(thisHub, filter, bIncludedFilteredHub, false);
+		Hub<?> hubx = callHubShareGetFirstSharedHub(thisHub, filter, bIncludedFilteredHub, false);
 		if (hubx != null) {
 			return faHub.getHubDataMaster(hubx);
 		}
@@ -692,7 +689,7 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub to inspect
 	 * @return a hub with a master hub, or null if none exists
 	 */
-	public Hub getHubWithMasterHub(final Hub thisHub) {
+	public <T extends OAObject> Hub<T> getHubWithMasterHub(final Hub<T> thisHub) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -700,7 +697,7 @@ public abstract class HubDetailService {
 			return thisHub;
 		}
 
-		OAFilter<Hub> filter = new OAFilter<Hub>() {
+		OAFilter<Hub> filter = new OAFilter<>() {
 			@Override
 			public boolean isUsed(Hub h) {
 				if (faHub.getHubDataMaster(h).getMasterHub() != null) {
@@ -712,7 +709,7 @@ public abstract class HubDetailService {
 				return false;
 			}
 		};
-		Hub hubx = callHubShareGetFirstSharedHub(thisHub, filter, true, false);
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, filter, true, false);
 		return hubx;
 	}
 
@@ -723,7 +720,7 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub to inspect
 	 * @return a hub with a master object, or null if none exists
 	 */
-	public Hub getHubWithMasterObject(final Hub thisHub) {
+	public <T extends OAObject> Hub<T> getHubWithMasterObject(final Hub<T> thisHub) {
 		if (faHub.getHubDataMaster(thisHub) == null) {
 			return null; // could be deserializing and not fully loaded
 		}
@@ -731,7 +728,7 @@ public abstract class HubDetailService {
 			return thisHub;
 		}
 
-		OAFilter<Hub> filter = new OAFilter<Hub>() {
+		OAFilter<Hub> filter = new OAFilter<>() {
 			@Override
 			public boolean isUsed(Hub h) {
 				if (faHub.getHubDataMaster(h).getMasterHub() != null) {
@@ -745,7 +742,7 @@ public abstract class HubDetailService {
 				return false;
 			}
 		};
-		Hub hubx = callHubShareGetFirstSharedHub(thisHub, filter, true, false);
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, filter, true, false);
 		return hubx;
 	}
 
@@ -756,8 +753,8 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub whose master hub is requested
 	 * @return the master hub, or null if none exists
 	 */
-	public Hub getMasterHub(Hub thisHub) {
-		Hub h = getHubWithMasterHub(thisHub);
+	public Hub<?> getMasterHub(Hub<?> thisHub) {
+		Hub<?> h = getHubWithMasterHub(thisHub);
 		if (h != null) {
 			h = faHub.getHubDataMaster(h).getMasterHub();
 		}
@@ -770,7 +767,7 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub whose master object is requested
 	 * @return the master object, or null if not defined
 	 */
-	public OAObject getMasterObject(Hub thisHub) {
+	public OAObject getMasterObject(Hub<?> thisHub) {
 		thisHub = getHubWithMasterObject(thisHub);
 		if (thisHub == null) {
 			return null;
@@ -785,14 +782,14 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub whose master class is requested
 	 * @return the master class, or null if unavailable
 	 */
-	public Class getMasterClass(Hub thisHub) {
+	public Class<? extends OAObject> getMasterClass(Hub<?> thisHub) {
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
 			return faHub.getHubDataMaster(thisHub).getMasterObject().getClass();
 		}
 		if (faHub.getHubDataMaster(thisHub).getMasterHub() != null) {
 			return faHub.getHubDataMaster(thisHub).getMasterHub().getObjectClass();
 		}
-		Hub h = getHubWithMasterObject(thisHub);
+		Hub<?> h = getHubWithMasterObject(thisHub);
 		if (h != null) {
 			return h.getObjectClass();
 		}
@@ -812,7 +809,7 @@ public abstract class HubDetailService {
 	 * @param clazz   the class path used to derive the property path
 	 * @return the resolved or newly created detail hub
 	 */
-	public Hub getDetailHub(Hub thisHub, Class[] clazz) {
+	public Hub<?> getDetailHub(Hub<?> thisHub, Class[] clazz) {
 		return getDetailHub(thisHub, null, clazz, null, null, false, null);
 	}
 
@@ -826,7 +823,7 @@ public abstract class HubDetailService {
 	 * @param selectOrder  optional select-order string
 	 * @return the resolved or created detail hub
 	 */
-	public Hub getDetailHub(Hub thisHub, Class clazz, boolean bShareActive, String selectOrder) {
+	public Hub<?> getDetailHub(Hub<?> thisHub, Class<? extends OAObject> clazz, boolean bShareActive, String selectOrder) {
 		return getDetailHub(thisHub, null, new Class[] { clazz }, null, null, bShareActive, selectOrder);
 	}
 
@@ -840,7 +837,7 @@ public abstract class HubDetailService {
 	 * @param bShareActive whether the detail hub shares active-object state
 	 * @return the resolved or created detail hub
 	 */
-	public Hub getDetailHub(Hub thisHub, String path, Class objectClass, boolean bShareActive) {
+	public Hub<?> getDetailHub(Hub<?> thisHub, String path, Class<? extends OAObject> objectClass, boolean bShareActive) {
 		return getDetailHub(thisHub, path, null, objectClass, null, bShareActive, null);
 	}
 
@@ -852,7 +849,7 @@ public abstract class HubDetailService {
 	 * @param path    the property path
 	 * @return the resolved or created detail hub
 	 */
-	public Hub getDetailHub(Hub thisHub, String path) {
+	public Hub<?> getDetailHub(Hub<?> thisHub, String path) {
 		return getDetailHub(thisHub, path, null, null, null, false, null);
 	}
 
@@ -865,7 +862,7 @@ public abstract class HubDetailService {
 	 * @param selectOrder optional select-order for the detail hub
 	 * @return the resolved or created detail hub
 	 */
-	public Hub getDetailHub(Hub thisHub, String path, String selectOrder) {
+	public Hub<?> getDetailHub(Hub<?> thisHub, String path, String selectOrder) {
 		return getDetailHub(thisHub, path, null, null, null, false, selectOrder);
 	}
 
@@ -878,7 +875,7 @@ public abstract class HubDetailService {
 	 * @param bShareActive whether the detail hub shares active-object state
 	 * @return the resolved or created detail hub
 	 */
-	public Hub getDetailHub(Hub thisHub, String path, boolean bShareActive) {
+	public Hub<?> getDetailHub(Hub<?> thisHub, String path, boolean bShareActive) {
 		return getDetailHub(thisHub, path, null, null, null, bShareActive, null);
 	}
 
@@ -892,7 +889,7 @@ public abstract class HubDetailService {
 	 * @param selectOrder  optional select-order for the detail hub
 	 * @return the resolved or created detail hub
 	 */
-	public Hub getDetailHub(Hub thisHub, String path, boolean bShareActive, String selectOrder) {
+	public Hub<?> getDetailHub(Hub<?> thisHub, String path, boolean bShareActive, String selectOrder) {
 		return getDetailHub(thisHub, path, null, null, null, bShareActive, selectOrder);
 	}
 
@@ -911,7 +908,7 @@ public abstract class HubDetailService {
 	 * @param selectOrder  optional select-order for the detail hub
 	 * @return the resolved or newly created detail hub
 	 */
-	public Hub getDetailHub(final Hub thisHub, String path, Class[] classes, Class lastClass, Hub detailHub, boolean bShareActive,
+	public Hub<?> getDetailHub(final Hub<?> thisHub, String path, Class<? extends OAObject>[] classes, Class<? extends OAObject> lastClass, Hub<?> detailHub, boolean bShareActive,
 			String selectOrder) {
 		// linkHub is Hub that is the detail hub, it is supplied by setMaster()
 		// lastClass can be the class to use for the last class in the path
@@ -937,7 +934,7 @@ public abstract class HubDetailService {
 		}
 
 		// support for using HubMerger if property path has more then one ending object/hub
-		Class clazz = thisHub.getObjectClass();
+		Class<? extends OAObject> clazz = thisHub.getObjectClass();
 
 		final OAPropertyPath ppx = new OAPropertyPath(clazz, path);
 		OALinkInfo[] lis = ppx.getLinkInfos();
@@ -1033,7 +1030,7 @@ public abstract class HubDetailService {
 		}
 
 		//  see if HubDetail is already created
-		Hub hub = null;
+		Hub<?> hub = null;
 		HubDetail hd = null;
 		int x = faHub.getHubDataUnique(thisHub).getVecHubDetail() == null ? 0 : faHub.getHubDataUnique(thisHub).getVecHubDetail().size();
 		for (int i = 0; i < x; i++) {
@@ -1121,7 +1118,7 @@ public abstract class HubDetailService {
 	 * @param masterObject     the new master object
 	 * @param liDetailToMaster the link information from detail to master
 	 */
-	public void setMasterObject(Hub thisHub, OAObject masterObject, OALinkInfo liDetailToMaster) {
+	public void setMasterObject(Hub<?> thisHub, OAObject masterObject, OALinkInfo liDetailToMaster) {
 		// OAObject needs to know which hubs are under it
 		if (faHub.getHubDataMaster(thisHub) == null) {
 			return; // could be deserializing and not fully loaded
@@ -1140,7 +1137,7 @@ public abstract class HubDetailService {
 	 * @param thisHub      the hub whose master object is assigned
 	 * @param masterObject the master object to set
 	 */
-	public void setMasterObject(Hub thisHub, OAObject masterObject) {
+	public void setMasterObject(Hub<?> thisHub, OAObject masterObject) {
 		setMasterObject(thisHub, masterObject, faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo());
 	}
 
@@ -1151,7 +1148,7 @@ public abstract class HubDetailService {
 	 * @param hub the detail hub
 	 * @return the detail-to-master link information, or null if not found
 	 */
-	public OALinkInfo getLinkInfoFromDetailToMaster(Hub hub) {
+	public OALinkInfo getLinkInfoFromDetailToMaster(Hub<?> hub) {
 		if (hub == null) {
 			return null;
 		}
@@ -1173,13 +1170,13 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub to evaluate
 	 * @return true if a master active object is new, otherwise false
 	 */
-	public boolean isMasterNew(Hub thisHub) {
+	public boolean isMasterNew(Hub<?> thisHub) {
 		thisHub = getHubWithMasterObject(thisHub);
 		if (thisHub == null) {
 			return false;
 		}
 
-		Hub h = thisHub;
+		Hub<?> h = thisHub;
 		for (; h != null;) {
 			HubDataMaster dm = getDataMaster(h, true);
 
@@ -1216,7 +1213,7 @@ public abstract class HubDetailService {
 	 * @param hubDetail the detail hub to remove
 	 * @return true if the hub was removed entirely, otherwise false
 	 */
-	public boolean removeDetailHub(Hub thisHub, Hub hubDetail) {
+	public boolean removeDetailHub(Hub<?> thisHub, Hub<?> hubDetail) {
 		// remove HubDetail if it does not have any more listeners or links
 		if (hubDetail == thisHub) {
 			return false;
@@ -1225,7 +1222,7 @@ public abstract class HubDetailService {
 		int x = faHub.getHubDataUnique(thisHub).getVecHubDetail() == null ? 0 : faHub.getHubDataUnique(thisHub).getVecHubDetail().size();
 		for (int i = 0; i < x; i++) {
 			HubDetail hd = (HubDetail) faHub.getHubDataUnique(thisHub).getVecHubDetail().elementAt(i);
-			Hub h = hd.getHubDetail();
+			Hub<?> h = hd.getHubDetail();
 			if (h == hubDetail) {
 				hd.decrementReferenceCount();
 				if (hd.getReferenceCount() <= 0) {
@@ -1262,8 +1259,8 @@ public abstract class HubDetailService {
 	 * @param thisHub the detail hub
 	 * @return the master-to-detail property name, or null if unavailable
 	 */
-	public String getPropertyFromMasterToDetail(Hub thisHub) {
-		Hub h = getHubWithMasterHub(thisHub);
+	public <T extends OAObject> String getPropertyFromMasterToDetail(Hub<T> thisHub) {
+		Hub<T> h = getHubWithMasterHub(thisHub);
 		if (h == null) {
 			h = getHubWithMasterObject(thisHub);
 			if (h == null) {
@@ -1288,7 +1285,7 @@ public abstract class HubDetailService {
 		}
 
 		// see if it can be found using detailHub info
-		Hub hubMaster = faHub.getHubDataMaster(thisHub).getMasterHub();
+		Hub<?> hubMaster = faHub.getHubDataMaster(thisHub).getMasterHub();
 		if (hubMaster != null) {
 			int x = faHub.getHubDataUnique(hubMaster).getVecHubDetail() == null ? 0 : faHub.getHubDataUnique(hubMaster).getVecHubDetail().size();
 			for (int i = 0; i < x; i++) {
@@ -1322,7 +1319,7 @@ public abstract class HubDetailService {
 	 * @param hub the hub to evaluate
 	 * @return true if the recursive structure is valid, otherwise false
 	 */
-	public boolean getIsValidRecursive(final Hub hub) {
+	public boolean getIsValidRecursive(final Hub<?> hub) {
 		if (hub == null) {
 			return true;
 		}
@@ -1394,13 +1391,13 @@ public abstract class HubDetailService {
 	 * @param hub2 the second hub
 	 * @return true if both hubs share the same master link info, otherwise false
 	 */
-	public boolean getIsFromSameMasterHub(Hub hub1, Hub hub2) {
+	public <T extends OAObject> boolean getIsFromSameMasterHub(Hub<T> hub1, Hub<T> hub2) {
 		// if (getLinkInfoFromMasterToDetail(getOriginalHub().getMasterHub()) == getLinkInfoFromMasterToDetail(getPlatformCampaigns())) {
 		if (hub1 == null || hub2 == null) {
 			return false;
 		}
 
-		Hub h1 = hub1.getMasterHub();
+		Hub<?> h1 = hub1.getMasterHub();
 		if (h1 == null) {
 			return false;
 		}
@@ -1425,11 +1422,11 @@ public abstract class HubDetailService {
 	 * @param thisDetailHub the detail hub
 	 * @return the master-to-detail link information, or null if not found
 	 */
-	public OALinkInfo getLinkInfoFromMasterToDetail(Hub thisDetailHub) {
+	public OALinkInfo getLinkInfoFromMasterToDetail(Hub<?> thisDetailHub) {
 		if (thisDetailHub == null) {
 			return null;
 		}
-		Hub h = callHubShareGetMainSharedHub(thisDetailHub);
+		Hub<?> h = callHubShareGetMainSharedHub(thisDetailHub);
 
 		if (h == null) {
 			h = getHubWithMasterObject(thisDetailHub);
@@ -1440,7 +1437,7 @@ public abstract class HubDetailService {
 
 		thisDetailHub = h;
 
-		Hub hubMaster = faHub.getHubDataMaster(thisDetailHub).getMasterHub();
+		Hub<?> hubMaster = faHub.getHubDataMaster(thisDetailHub).getMasterHub();
 		OAObject master = faHub.getHubDataMaster(thisDetailHub).getMasterObject();
 
 		if (faHub.getHubDataMaster(thisDetailHub).getDetailToMasterLinkInfo() != null) {
@@ -1490,10 +1487,10 @@ public abstract class HubDetailService {
 	 * @param thisDetailHub the detail hub
 	 * @return the link info from master object to detail, or null if not found
 	 */
-	public OALinkInfo getLinkInfoFromMasterObjectToDetail(Hub thisDetailHub) {
+	public OALinkInfo getLinkInfoFromMasterObjectToDetail(Hub<?> thisDetailHub) {
 
 		// 20181231 needs to also check copied hubs
-		Hub h = getHubWithMasterHub(thisDetailHub);
+		Hub<?> h = getHubWithMasterHub(thisDetailHub);
 
 		if (h == null) {
 			h = callHubShareGetMainSharedHub(thisDetailHub);
@@ -1523,7 +1520,7 @@ public abstract class HubDetailService {
 			}
 		}
 
-		Hub hubMaster = faHub.getHubDataMaster(thisDetailHub).getMasterHub();
+		Hub<?> hubMaster = faHub.getHubDataMaster(thisDetailHub).getMasterHub();
 
 		// see if it can be found using detailHub info
 		if (hubMaster == null) {
@@ -1551,13 +1548,13 @@ public abstract class HubDetailService {
 	 * @param thisHub the starting hub
 	 * @return the property path to all masters, or an empty string if none
 	 */
-	public String getPropertyPathToMasters(Hub thisHub) {
+	public String getPropertyPathToMasters(Hub<?> thisHub) {
 		if (thisHub == null) {
 			return null;
 		}
 
 		String pp = "";
-		Hub h = thisHub;
+		Hub<?> h = thisHub;
 
 		for (;;) {
 			String s = getPropertyFromDetailToMaster(h);
@@ -1580,8 +1577,8 @@ public abstract class HubDetailService {
 	 * @param thisHub the detail hub
 	 * @return the detail-to-master property name, or null if unavailable
 	 */
-	public String getPropertyFromDetailToMaster(Hub thisHub) {
-		Hub h = getHubWithMasterHub(thisHub);
+	public String getPropertyFromDetailToMaster(Hub<?> thisHub) {
+		Hub<?> h = getHubWithMasterHub(thisHub);
 		if (h == null) {
 			h = getHubWithMasterObject(thisHub);
 			if (h == null) {
@@ -1603,7 +1600,7 @@ public abstract class HubDetailService {
 	 * @return true if the detail objects are owned by the master, otherwise false
 	 */
 	public boolean isOwned(Hub thisHub) {
-		Hub h = getHubWithMasterHub(thisHub);
+		Hub<?> h = getHubWithMasterHub(thisHub);
 		if (h == null) {
 			h = getHubWithMasterObject(thisHub);
 			if (h == null) {
@@ -1629,16 +1626,16 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub to resolve
 	 * @return the appropriate hub instance
 	 */
-	public Hub getRealHub(Hub thisHub) {
-		Hub hubMaster = getMasterHub(thisHub);
+	public <T extends OAObject> Hub<T> getRealHub(Hub<T> thisHub) {
+		Hub<?> hubMaster = getMasterHub(thisHub);
 		if (hubMaster == null) {
 			return thisHub;
 		}
 
-		Hub h = thisHub;
+		Hub<T> h = thisHub;
 		OAObject o = getMasterObject(thisHub);
 		if (o != null && o != hubMaster.getAO()) {
-			h = (Hub) callObjectReflectGetProperty(o, getPropertyFromMasterToDetail(hubMaster));
+			h = (Hub<T>) callObjectReflectGetProperty(o, getPropertyFromMasterToDetail(hubMaster));
 			if (h == null) {
 				h = thisHub; // should not happen
 			}
@@ -1652,7 +1649,7 @@ public abstract class HubDetailService {
 	 * @param thisHub the hub to inspect
 	 * @return true if detail hubs are present, otherwise false
 	 */
-	public boolean hasDetailHubs(Hub thisHub) {
+	public boolean hasDetailHubs(Hub<?> thisHub) {
 		if (thisHub == null || faHub.getHubDataUnique(thisHub) == null) {
 			return false;
 		}
@@ -1683,16 +1680,16 @@ public abstract class HubDetailService {
 	public abstract boolean callObjectReflectIsReferenceHubLoaded(OAObject oaObj, String propertyName);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().removeHub")
-	public abstract void callObjectHubRemoveHub(final OAObject oaObj, Hub hub, boolean bIsOnHubFinalize);
+	public abstract <T extends OAObject> void callObjectHubRemoveHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
-	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, OAObject fromObject, Hub hub);
+	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, OAObject fromObject, Hub<?> hub);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(Class clazz);
+	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(Class<? extends OAObject> clazz);
 
 
 	@OAParentProvided (example = "srvcSync.isServer")
@@ -1700,67 +1697,67 @@ public abstract class HubDetailService {
 	
 
 	@OAParentProvided (example = "srvcThreadLocal.getCanAdjustHub")
-	public abstract boolean callThreadLocalGetCanAdjustHub(Hub hub);
+	public abstract boolean callThreadLocalGetCanAdjustHub(Hub<?> hub);
 	
 	
 	@OAParentProvided (example = "srvcHub.getHubAOService().setActiveObject")
-	public abstract Object callHubAOSetActiveObject(Hub thisHub, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub);
+	public abstract <T extends OAObject> T callHubAOSetActiveObject(Hub<T> thisHub, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub);
 	
 	@OAParentProvided (example = "srvcHub.getHubAOService().setActiveObject")
-	public abstract void callHubAOSetActiveObject(final Hub thisHub, Object object, int pos, boolean bUpdateLink, boolean bForce,
+	public abstract <T extends OAObject> void callHubAOSetActiveObject(final Hub<T> thisHub, T object, int pos, boolean bUpdateLink, boolean bForce,
 			boolean bCalledByShareHub);
 
 	@OAParentProvided (example = "srvcHub.getHubAOService().setActiveObject")
-	public abstract void callHubAOSetActiveObject(Hub thisHub, Object object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
+	public abstract <T extends OAObject> void callHubAOSetActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
 	
 	@OAParentProvided (example = "srvcHub.getHubShareService().getSharedWeakHubs")
-	public abstract WeakReference<Hub>[] callHubShareGetSharedWeakHubs(Hub thisHub);
+	public abstract <T extends OAObject> WeakReference<Hub<T>>[] callHubShareGetSharedWeakHubs(Hub<T> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getFirstSharedHub")
-	public abstract Hub callHubShareGetFirstSharedHub(Hub thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO);
+	public abstract <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO);
 
 	@OAParentProvided (example = "srvcHub.getPropertyPathforClasses")
-	public abstract String callHubGetPropertyPathforClasses(Hub hub, Class[] classes);
+	public abstract String callHubGetPropertyPathforClasses(Hub<?> hub, Class<? extends OAObject>[] classes);
 
 	@OAParentProvided (example = "srvcHub.setObjectClass")
-	public abstract void callHubGetObjectClass(Hub thisHub, Class objClass);
+	public abstract <T extends OAObject> void callHubGetObjectClass(Hub<T> thisHub, Class<T> objClass);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getMainSharedHub")
-	public abstract Hub callHubShareGetMainSharedHub(Hub hub);
+	public abstract <T extends OAObject> Hub<T> callHubShareGetMainSharedHub(Hub<T> hub);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().syncSharedHubs")
-	public abstract void callHubShareSyncSharedHubs(Hub thisHub, boolean bShareActiveObject, HubDataActive daOld, HubDataActive daNew,
+	public abstract void callHubShareSyncSharedHubs(Hub<?> thisHub, boolean bShareActiveObject, HubDataActive daOld, HubDataActive daNew,
 			boolean bUpdateLink);
 	
 	@OAParentProvided (example = "srvcHub.getHubShareService().removeSharedHub")
-	public abstract void callHubShareRemoveSharedHub(Hub sharedHub, Hub hub);
+	public abstract <T extends OAObject> void callHubShareRemoveSharedHub(Hub<T> sharedHub, Hub<T> hub);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireOnNewListEvent")
-	public abstract void callHubEventFireOnNewListEvent(Hub thisHub, boolean bAll);
+	public abstract void callHubEventFireOnNewListEvent(Hub<?> thisHub, boolean bAll);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().getObjectAt")
-	public abstract Object callHubDataGetObjectAt(Hub thisHub, int pos);
+	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
 
 	@OAParentProvided (example = "srvcHub.getHubSortService().isSorted")
-	public abstract boolean callHubSortIsSorted(Hub thisHub);
+	public abstract boolean callHubSortIsSorted(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubSortService().getSortProperty")
-	public abstract String callHubSortGetSortProperty(Hub thisHub);
+	public abstract String callHubSortGetSortProperty(Hub<?> thisHub);
 	
 	@OAParentProvided (example = "srvcHub.getHubSortService().getSortAsc")
-	public abstract boolean callHubSortGetSortAsc(Hub thisHub);
+	public abstract boolean callHubSortGetSortAsc(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().addSharedHub")
-	public abstract void callHubShareAddSharedHub(Hub thisHub, Hub hub);
+	public abstract <T extends OAObject> void callHubShareAddSharedHub(Hub<T> thisHub, Hub<T> hub);
 	
 	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().internalAdd")
-	public abstract boolean callHubAddRemoveInternalAdd(final Hub thisHub, final Object obj, final boolean bHasLock, final boolean bCheckContains);
+	public abstract <T extends OAObject> boolean callHubAddRemoveInternalAdd(final Hub<T> thisHub, final T obj, final boolean bHasLock, final boolean bCheckContains);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().incChangeCount")
-	public abstract void callHubDataIncChangeCount(Hub thisHub);
+	public abstract void callHubDataIncChangeCount(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubLinkService().getHubWithLink")
-	public abstract Hub callHubLinkGetHubWithLink(final Hub thisHub, boolean bIncludeCopiedHubs);
+	public abstract <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
 
 }
 

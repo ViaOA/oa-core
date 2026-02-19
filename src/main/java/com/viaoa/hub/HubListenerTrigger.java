@@ -41,7 +41,7 @@ import com.viaoa.util.OAPropertyPath;
  * June/July 2016 Not currently used. This was going to replace HubListenerTree. This has been tested to replace HubListenerTree. It will
  * create/use triggers for dependent propertyPaths, which seems unnecessary for most cases.
  */
-public class HubListenerTrigger<T> {
+public class HubListenerTrigger<TYPE extends OAObject> {
 	private static Logger LOG = Logger.getLogger(HubListenerTrigger.class.getName());
 
 	/**
@@ -135,7 +135,7 @@ public class HubListenerTrigger<T> {
 	 * Maps uppercase property paths to their corresponding OATrigger instances,
 	 * allowing reuse and cleanup when listeners are removed.
 	 */
-	public HubListenerTrigger(Hub<T> hub) {
+	public HubListenerTrigger(Hub<TYPE> hub) {
 		this.hub = hub;
 	}
 	/**
@@ -145,7 +145,7 @@ public class HubListenerTrigger<T> {
 	 * @return array of HubListener instances or null if none exist
 	 */
 
-	public HubListener<T>[] getHubListeners() {
+	public HubListener<TYPE>[] getHubListeners() {
 		return this.listeners;
 	}
 
@@ -156,7 +156,7 @@ public class HubListenerTrigger<T> {
 	 * @param hl the listener to add
 	 * @return true if the listener was added; false if already registered
 	 */
-	public boolean addListener(HubListener<T> hl) {
+	public boolean addListener(HubListener<TYPE> hl) {
 		if (hl == null) {
 			return false;
 		}
@@ -273,10 +273,12 @@ public class HubListenerTrigger<T> {
 				}
 
 				// the reverse property could not be used to get objRoot - need to find root objs and send calc event
+				/*qqqqqqq
 				if (!hub.isOAObject()) {
 					og.hubsInternal().callHubEventFireCalcPropertyChange(HubListenerTrigger.this.hub, rootObject, propertyName);
 					return;
 				}
+				*/
 				if (hub.getSize() == 0) {
 					return;
 				}
@@ -335,7 +337,7 @@ public class HubListenerTrigger<T> {
 	 * @param dependentPropertyPaths dependent paths requiring listeners/triggers
 	 * @return true if any dependent listeners or triggers were created
 	 */
-	private boolean addDependentListeners(OATriggerListener triggerListener, final HubListener<T> hl, final String propertyName,
+	private boolean addDependentListeners(OATriggerListener triggerListener, final HubListener<TYPE> hl, final String propertyName,
 			final String[] dependentPropertyPaths) {
 		if (dependentPropertyPaths == null || dependentPropertyPaths.length == 0) {
 			return false;
@@ -356,7 +358,7 @@ public class HubListenerTrigger<T> {
 	 * @param dependentPropertyPaths property paths for dependency tracking
 	 * @return true if new listeners/triggers were added
 	 */
-	private boolean _addDependentListeners(final OATriggerListener triggerListener, final HubListener<T> hl, final String propertyName,
+	private boolean _addDependentListeners(final OATriggerListener triggerListener, final HubListener<TYPE> hl, final String propertyName,
 			final String[] dependentPropertyPaths) {
 		ListenerInfo li = null;
 

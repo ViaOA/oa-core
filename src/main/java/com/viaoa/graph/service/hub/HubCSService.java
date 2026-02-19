@@ -30,7 +30,7 @@ public abstract class HubCSService {
      *
      * @param thisHub the hub whose remote counterparts should remove all items
      */
-    public void removeAllFromHub(Hub thisHub) {
+    public void removeAllFromHub(Hub<?> thisHub) {
         if (callSyncIsSingleUser()) return;
         
         if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) return;
@@ -65,7 +65,7 @@ public abstract class HubCSService {
      * @param obj     the object being removed
      * @param pos     the position from which the object was removed
      */
-	public void removeFromHub(Hub thisHub, OAObject obj, int pos) {
+	public <T extends OAObject> void removeFromHub(Hub<T> thisHub, T obj, int pos) {
 //qqqqq?? pos is not used		
         if (callSyncIsSingleUser()) return;
         if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) return;
@@ -108,7 +108,7 @@ public abstract class HubCSService {
 	 * @param thisHub the hub originating the add operation
 	 * @param thisObj the object being added
 	 */
-	public void addToHub(final Hub thisHub, final OAObject thisObj) {
+	public <T extends OAObject> void addToHub(final Hub<T> thisHub, final T thisObj) {
 		if (callSyncIsSingleUser()) return;
         if (!callRemoteThreadShouldSendMessages()) return;
         if (callThreadLocalIsSuppressCSMessages()) return;
@@ -205,7 +205,7 @@ public abstract class HubCSService {
 	 * @param pos     the target index
 	 * @return {@code true} if a remote insert command was sent; otherwise {@code false}
 	 */
-	public boolean insertInHub(Hub thisHub, OAObject obj, int pos) {
+	public <T extends OAObject> boolean insertInHub(Hub<T> thisHub, T obj, int pos) {
         if (callSyncIsSingleUser()) return false;
         if (!callRemoteThreadShouldSendMessages()) return  false;
         if (callThreadLocalIsSuppressCSMessages()) return false;
@@ -247,7 +247,7 @@ public abstract class HubCSService {
 	 * @param posFrom the starting index
 	 * @param posTo   the destination index
 	 */
-	public void moveObjectInHub(Hub thisHub, int posFrom, int posTo) {
+	public void moveObjectInHub(Hub<?> thisHub, int posFrom, int posTo) {
         if (callSyncIsSingleUser()) return;
         if (!callRemoteThreadShouldSendMessages()) return;
         if (callThreadLocalIsSuppressCSMessages()) return;
@@ -281,7 +281,7 @@ public abstract class HubCSService {
 	 * @param h the hub to check
 	 * @return {@code true} if this is the server; otherwise {@code false}
 	 */
-	public boolean isServer(Hub thisHub) {
+	public boolean isServer(Hub<?> thisHub) {
         return callSyncIsServer();
 	}		
 
@@ -305,7 +305,7 @@ public abstract class HubCSService {
 	 * @param bAscending    whether sorting is ascending
 	 * @param comp          optional comparator used for sorting
 	 */
-	public void sort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp) {
+	public void sort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator comp) {
         if (callSyncIsSingleUser()) return;
         if (!callRemoteThreadShouldSendMessages()) return;
         if (callThreadLocalIsSuppressCSMessages()) return;
@@ -334,7 +334,7 @@ public abstract class HubCSService {
 	 * @param thisHub the hub whose contents should be deleted
 	 * @return {@code true} if deletion is local; otherwise {@code false}
 	 */
-    public boolean deleteAll(Hub thisHub) {
+    public boolean deleteAll(Hub<?> thisHub) {
         if (callSyncIsServer()) return true;  // invoke on the server
         LOG.fine("hub="+thisHub);
 
@@ -369,7 +369,7 @@ public abstract class HubCSService {
      * @param thisHub the hub whose change state should be cleared remotely
      * @return {@code true} if a clear request was sent; otherwise {@code false}
      */
-    public boolean clearHubChanges(Hub thisHub) {
+    public boolean clearHubChanges(Hub<?> thisHub) {
         if (thisHub == null) return false;
 
         if (callSyncIsSingleUser()) return false;
@@ -402,7 +402,7 @@ public abstract class HubCSService {
      *
      * @param thisHub the hub requesting refresh
      */
-    public void sendRefresh(Hub thisHub) {
+    public void sendRefresh(Hub<?> thisHub) {
         if (thisHub == null) return;
         if (callSyncIsSingleUser()) return;
 
@@ -420,7 +420,7 @@ public abstract class HubCSService {
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(OAObject obj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class c);
+	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<? extends OAObject> c);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().isInHub")
 	public abstract boolean callObjectHubIsInHub(OAObject oaObj);
@@ -429,15 +429,15 @@ public abstract class HubCSService {
 	public abstract boolean callHubIsInHubWithMaster(OAObject oaObj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().isInHubWithMaster")
-	public abstract boolean callHubIsInHubWithMaster(OAObject oaObj, Hub hubIgnore);
+	public abstract <T extends OAObject> boolean callHubIsInHubWithMaster(T oaObj, Hub<T> hubIgnore);
 
 
 	
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
-	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub thisHub);
+	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterObjectToDetail")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterObjectToDetail(Hub thisDetailHub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterObjectToDetail(Hub<?> thisDetailHub);
 
 
 	
@@ -452,14 +452,14 @@ public abstract class HubCSService {
 	
 
 	@OAParentProvided (example = "srvcSync.getRemoteSync().removeAllFromHub")
-	public abstract boolean callSyncRemoteSyncRemoveAllFromHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName);
+	public abstract boolean callSyncRemoteSyncRemoveAllFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName);
 	/*
     RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
     if (rs != null) rs.removeAllFromHub(..)
     */        
 
 	@OAParentProvided (example = "srvcSync.getRemoteSync().removeFromHub")
-	public abstract boolean callSyncRemoteSyncRemoveFromHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName, Class objectClassX, OAObjectKey objectKeyX);	
+	public abstract boolean callSyncRemoteSyncRemoveFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, Class<? extends OAObject> objectClassX, OAObjectKey objectKeyX);	
 	/*
     RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
     if (rs != null) rs.removeFromHub(..)
@@ -476,7 +476,7 @@ public abstract class HubCSService {
 	
 
 	@OAParentProvided (example = "srvcSync.getRemoteSync().insertInHub")
-	public abstract boolean callSyncSyncInsertInHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj, int pos);
+	public abstract boolean callSyncSyncInsertInHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj, int pos);
 	/*
         RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
@@ -490,7 +490,7 @@ public abstract class HubCSService {
 	*/
 	
 	@OAParentProvided (example = "srvcSync.getRemoteSync().moveObjectInHub")
-	public abstract boolean callSyncSyncMoveObjectInHub(Class objectClass, OAObjectKey objectKey, String hubPropertyName,  int posFrom, int posTo);
+	public abstract boolean callSyncSyncMoveObjectInHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName,  int posFrom, int posTo);
 	/*
         RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
@@ -501,7 +501,7 @@ public abstract class HubCSService {
 	*/
 
 	@OAParentProvided (example = "srvcSync.getRemoteSync().sort")
-	public abstract boolean callSyncSyncSort(Class objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator comp);
+	public abstract boolean callSyncSyncSort(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator comp);
 	/*
         RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
@@ -513,7 +513,7 @@ public abstract class HubCSService {
 	*/
 
 	@OAParentProvided (example = "srvcSync.getRemoteClient().deleteAll")
-	public abstract boolean callSyncClientDeleteAll(Class objectClass, OAObjectKey objectKey, String hubPropertyName);
+	public abstract boolean callSyncClientDeleteAll(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName);
 	/*
         RemoteClientInterface rs = og.getSyncService().getRemoteClient();
         if (rs == null) return true;
@@ -531,7 +531,7 @@ public abstract class HubCSService {
 
 
 	@OAParentProvided (example = "srvcSync.getRemoteSync().clearHubChanges")
-	public abstract void callSyncSyncClearHubChanges(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName);
+	public abstract void callSyncSyncClearHubChanges(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName);
 	/*
         RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
         if (rs != null) {
@@ -545,7 +545,7 @@ public abstract class HubCSService {
 	*/
 
 	@OAParentProvided (example = "srvcSync.getRemoteSync().refresh")
-	public abstract void callSyncSyncRefresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName);
+	public abstract void callSyncSyncRefresh(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName);
 	/*
         RemoteSyncInterface rsi = og.getSyncService().getRemoteSync();
         if (rsi == null) return;
@@ -558,7 +558,7 @@ public abstract class HubCSService {
 	*/
 	
 	@OAParentProvided (example = "srvcSync.getRemoteSync().addNewToHub")
-	public abstract boolean callSyncSyncAddNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj);
+	public abstract boolean callSyncSyncAddNewToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj);
 	/*	
 	RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
 	                    rs.addNewToHub(
@@ -568,7 +568,7 @@ public abstract class HubCSService {
 	*/
 
 	@OAParentProvided (example = "srvcSync.getRemoteSync().addToHub")
-	public abstract boolean callSyncSyncAddToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj);
+	public abstract boolean callSyncSyncAddToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj);
 	
 
 	

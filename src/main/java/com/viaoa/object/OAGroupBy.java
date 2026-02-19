@@ -109,7 +109,7 @@ public class OAGroupBy<F extends OAObject, G extends OAObject> extends OAObject 
     @OAMany
     public Hub<F> getHub() {
         if (hub == null) {
-            hub = getHub(PROPERTY_Hub);
+            hub = (Hub<F>) getHub(PROPERTY_Hub);
         }
         return hub;
     }

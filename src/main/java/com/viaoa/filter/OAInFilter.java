@@ -390,7 +390,8 @@ public class OAInFilter implements OAFilter {
 			if (ppReverse == null) {
 				ppReverse = new OAPropertyPath(obj.getClass(), strReversePropPath);
 			}
-			objFind = ppReverse.getValue(obj);
+			if (obj instanceof OAObject) objFind = ppReverse.getValue((OAObject) obj);
+			else objFind = obj;
 			if (objFind == null) {
 				return false;
 			}

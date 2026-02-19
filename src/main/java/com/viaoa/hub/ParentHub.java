@@ -15,6 +15,8 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.object.OAObject;
+
 /**
  * Specialized {@link DetailHub} used to navigate *upward* in a recursive
  * or bidirectional relationship to represent a parent reference.
@@ -43,7 +45,7 @@ package com.viaoa.hub;
  *       reverse navigation is required.</li>
  * </ul>
  */
-public class ParentHub<TYPE> extends DetailHub<TYPE> {
+public class ParentHub<TYPE extends OAObject> extends DetailHub<TYPE> {
 
 	/**
 	 * Constructs a ParentHub that navigates from the active object of the

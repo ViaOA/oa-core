@@ -17,6 +17,7 @@ package com.viaoa.hub;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.viaoa.object.OAObject;
 import com.viaoa.util.OAPropertyPath;
 
 /**
@@ -32,7 +33,7 @@ import com.viaoa.util.OAPropertyPath;
  *
  * <p>Used to prevent duplicate keys or perform fast lookups by business identifier.</p>
  */
-public class HubUniqueIndex<TYPE> {
+public class HubUniqueIndex<TYPE extends OAObject> {
     
 	/**
 	 * The Hub instance whose objects are tracked and indexed. All add/remove

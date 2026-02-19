@@ -468,8 +468,7 @@ public abstract class OAObjectHubService {
         Object master = hubFind.getMasterObject();
         if (master != null) li = callHubDetailGetLinkInfoFromDetailToMaster(hubFind);        
         if (li == null) {
-            if (hubFind.isOAObject()) return false;
-            return callHubDataContainsDirect(hubFind, oaObj);
+            return false;
         }
 
         // could be in the hub, but not in weakHubs, if M2M and private

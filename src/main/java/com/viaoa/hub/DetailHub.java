@@ -15,6 +15,8 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.object.OAObject;
+
 /**
  * Represents a Hub that automatically mirrors a property collection from the
  * active object of another (master) Hub, implementing OA’s master-detail pattern.
@@ -46,7 +48,7 @@ package com.viaoa.hub;
  *       is unnecessary.</li>
  * </ul>
  */
-public class DetailHub<TYPE> extends Hub<TYPE> {
+public class DetailHub<TYPE extends OAObject> extends Hub<TYPE> {
 
 	/**
 	 * Constructs a DetailHub that mirrors the collection identified by the

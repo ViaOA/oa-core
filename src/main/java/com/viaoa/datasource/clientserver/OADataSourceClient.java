@@ -763,7 +763,7 @@ public class OADataSourceClient extends OADataSource {
 		 * Local buffer containing the most recently fetched batch of results
 		 * from the remote datasource. Used by {@link #hasNext()} and {@link #next()}.
 		 */
-		Object[] cache;
+		OAObject[] cache;
 		
 		/**
 		 * Current read position within the {@link #cache} array.
@@ -786,7 +786,7 @@ public class OADataSourceClient extends OADataSource {
 		 * Hub used for read-ahead support when receiving batches of objects from
 		 * the remote datasource.
 		 */
-		private Hub hubReadAhead;
+		private Hub<OAObject> hubReadAhead;
 
 		/**
 		 * Constructs a new iterator operating in remote-batch mode.
@@ -866,7 +866,7 @@ public class OADataSourceClient extends OADataSource {
 		 */
 		protected synchronized void getMoreFromServer() {
 			cachePos = 0;
-			cache = (Object[]) getRemoteClient().datasource(IT_NEXT, new Object[] { id });
+			cache = (OAObject[]) getRemoteClient().datasource(IT_NEXT, new Object[] { id });
 			if (cache == null || cache.length == 0) {
 				cache = null;
 				//20190130
@@ -879,7 +879,7 @@ public class OADataSourceClient extends OADataSource {
 				siblingHelper = new OASiblingHelper(this.hubReadAhead);
 			}
 
-			for (Object obj : cache) {
+			for (OAObject obj : cache) {
 				if (obj == null) {
 					break;
 				}

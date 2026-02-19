@@ -17,6 +17,8 @@ package com.viaoa.hub;
 
 import java.util.EventListener;
 
+import com.viaoa.object.OAObject;
+
 /**
  * Core listener interface for receiving {@link HubEvent} notifications from
  * {@link Hub}, {@link com.viaoa.object.OAObject}, and the OA object cache.
@@ -29,7 +31,7 @@ import java.util.EventListener;
  * Listener ordering can be controlled via {@link InsertLocation} and the
  * {@link #setLocation(InsertLocation)} / {@link #getLocation()} contract.
  */
-public interface HubListener<T> extends EventListener {
+public interface HubListener<T extends OAObject> extends EventListener {
 
 	/**
 	 * Called before a property is changed on a Hub or OAObject.

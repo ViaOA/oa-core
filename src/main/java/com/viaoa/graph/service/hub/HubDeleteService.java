@@ -29,7 +29,7 @@ public abstract class HubDeleteService {
 	 *
 	 * @param thisHub the hub whose contents will be deleted
 	 */
-    public void deleteAll(Hub thisHub) {
+    public void deleteAll(Hub<?> thisHub) {
         // 20150206 send to server
         if (thisHub.getSize() == 0) return;
         if (!callHubCSDeleteAll(thisHub)) {
@@ -56,10 +56,8 @@ public abstract class HubDeleteService {
      *
      * @param thisHub the hub whose contents are being deleted
      */
-    private void _runDeleteAll(Hub thisHub) {
-        Object[] objs;
-        if (thisHub.isOAObject()) objs = thisHub.toArray();
-        else objs = null;
+    private <T extends OAObject> void _runDeleteAll(Hub<T> thisHub) {
+        T[] objs = thisHub.toArray();
 
         callHubAddRemoveClear(thisHub); // single event to remove all from hub (sent to clients)
         callHubDataClearHubChanges(thisHub);
@@ -69,7 +67,7 @@ public abstract class HubDeleteService {
             for (Object obj : objs) {
                 callObjectDeleteDelete((OAObject) obj, cascade);
             }
-            for (Object obj : objs) {
+            for (T obj : objs) {
                 callHubAddRemoveRemove(thisHub, obj, false, false, true, false, false, true);
             }
         }
@@ -82,7 +80,7 @@ public abstract class HubDeleteService {
      * @param thisHub the hub being checked
      * @return {@code true} if the hub is currently deleting all objects
      */
-    public boolean isDeletingAll(Hub thisHub) {
+    public boolean isDeletingAll(Hub<?> thisHub) {
         return callThreadLocalIsDeleting(thisHub);
     }
 
@@ -95,7 +93,7 @@ public abstract class HubDeleteService {
      * @param thisHub the hub whose contents will be deleted
      * @param cascade the cascade tracker used to avoid repeated processing
      */
-    public void deleteAll(Hub thisHub, OACascade cascade) {
+    public void deleteAll(Hub<?> thisHub, OACascade cascade) {
         if (thisHub.size() == 0) return;
         if (cascade.wasCascaded(thisHub, true)) return;
         try {
@@ -119,8 +117,7 @@ public abstract class HubDeleteService {
      * @param thisHub the hub being cleared
      * @param cascade the cascade used for recursive delete operations
      */
-    private void _deleteAll(Hub thisHub, OACascade cascade) {
-        final boolean bIsOa = thisHub.isOAObject();
+    private <T extends OAObject> void _deleteAll(Hub<T> thisHub, OACascade cascade) {
         Object objLast = null;
 
         // 20121005 need to check to see if a link table was used for a 1toM, where createMethod for One is false
@@ -128,7 +125,7 @@ public abstract class HubDeleteService {
         OALinkInfo liRev = null;
         OAObject masterObj = null;
         OADataSource dataSource = null;
-        if (bIsOa && li != null && li.getType() == li.ONE) {
+        if (li != null && li.getType() == li.ONE) {
             if (li.getPrivateMethod()) {
                 // uses a link table, need to delete from link table first
                 liRev = callObjectInfoGetReverseLinkInfo(li);
@@ -139,11 +136,11 @@ public abstract class HubDeleteService {
         }
 
         // 20160615
-        final Object[] objs = thisHub.toArray();
+        final T[] objs = thisHub.toArray();
         
         faHub.getHubData(thisHub).getVector().removeAllElements();
 
-        if ((faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges()) && thisHub.isOAObject()) {
+        if ((faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges())) {
             Vector vecRemove = faHub.getHubData(thisHub).getVecRemove();
             int x = vecRemove == null ? 0 : vecRemove.size();
             for (Object obj : objs) {
@@ -171,7 +168,7 @@ public abstract class HubDeleteService {
         	callHubDataSetChanged(thisHub, true);
         }
 
-        for (Object obj : objs) {
+        for (T obj : objs) {
             // 20240125
             // since thisHub.data.vector.removeAllElements was called (above), need to call remove for thisHub
             callHubAddRemoveRemove(thisHub, obj, false, true, true, true, true, true);
@@ -180,10 +177,7 @@ public abstract class HubDeleteService {
                 dataSource.updateMany2ManyLinks(masterObj, null, new OAObject[] { (OAObject) obj }, liRev.getName());
             }
 
-            if (bIsOa) {
-                callObjectDeleteDelete((OAObject) obj, cascade);
-            }
-
+            callObjectDeleteDelete((OAObject) obj, cascade);
         }
 
         callHub_updateHubAddsAndRemoves(thisHub, -1, cascade, false);
@@ -198,47 +192,47 @@ public abstract class HubDeleteService {
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
 
 	@OAParentProvided (example = "srvcHub.getHubCSService().deleteAll")
-	public abstract boolean callHubCSDeleteAll(Hub thisHub);
+	public abstract boolean callHubCSDeleteAll(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().clear")
-	public abstract void callHubAddRemoveClear(final Hub thisHub);
+	public abstract void callHubAddRemoveClear(final Hub<?> thisHub);
 	
 	@OAParentProvided (example = "srvcHub.getHubDataService().clearHubChanges")
-	public abstract void callHubDataClearHubChanges(Hub thisHub);
+	public abstract void callHubDataClearHubChanges(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().remove")
-	public abstract boolean callHubAddRemoveRemove(final Hub thisHub, Object obj, final boolean bForce,
+	public abstract <T extends OAObject> boolean callHubAddRemoveRemove(final Hub<T> thisHub, T obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject")
-	public abstract OAObject callHubDetailGetMasterObject(Hub thisHub);
+	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().createVecRemove")
-	public abstract Vector callHubDataCreateVecRemove(Hub thisHub);
+	public abstract <T extends OAObject> Vector<T> callHubDataCreateVecRemove(Hub<T> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().setChanged")
-	public abstract void callHubDataSetChanged(Hub thisHub, boolean bChanged);
+	public abstract void callHubDataSetChanged(Hub<?> thisHub, boolean bChanged);
 
 	@OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
-	public abstract void callHub_updateHubAddsAndRemoves(final Hub thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
+	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
 
 
 
 	@OAParentProvided (example = "srvcThreadLocal.setDeleting")
-	public abstract void callThreadLocalSetDeleting(Hub hub, boolean b);
+	public abstract void callThreadLocalSetDeleting(Hub<?> hub, boolean b);
 
 	@OAParentProvided (example = "srvcThreadLocal.isDeleting")
-	public abstract boolean callThreadLocalIsDeleting(Hub hub);
+	public abstract boolean callThreadLocalIsDeleting(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcThreadLocal.lock")
-	public abstract void callThreadLocalLock(Hub hub);
+	public abstract void callThreadLocalLock(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcThreadLocal.unlock")
-	public abstract void callThreadLocalUnlock(Hub hub);
+	public abstract void callThreadLocalUnlock(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcRemoteThread.sendMessages")
 	public abstract void callRemoteThreadSendMessages(boolean b);

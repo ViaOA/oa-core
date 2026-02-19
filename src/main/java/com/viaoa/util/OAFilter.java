@@ -18,6 +18,7 @@ package com.viaoa.util;
 import java.io.Serializable;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.object.OAObject;
 
 /**
  * Functional filtering interface used throughout OA to evaluate whether an
@@ -75,10 +76,10 @@ import com.viaoa.datasource.OASelect;
  * reusable, and testable.
  * </p>
  *
- * @param <T> the type of object being evaluated by this filter
+ * @param <TYPE> the type of object being evaluated by this filter
  */
 @FunctionalInterface
-public interface OAFilter<T> extends Serializable {
+public interface OAFilter<TYPE> extends Serializable {
 	
 	/**
 	 * Determines whether the given object should be included.
@@ -86,7 +87,7 @@ public interface OAFilter<T> extends Serializable {
 	 * @param obj the object to evaluate
 	 * @return true if the object is accepted by this filter
 	 */
-	boolean isUsed(T obj);
+	boolean isUsed(TYPE obj);
 
 	/**
 	 * Callback, that allows a Filter to be called by Select before it is performed, so that the filter can be done by the datasource that
@@ -96,7 +97,7 @@ public interface OAFilter<T> extends Serializable {
 	 * @param select oaselect that is using this select, before it runs the query on the datasource.
 	 * @return true (default) if this filter should still be used from the select results.
 	 */
-	default boolean updateSelect(OASelect select) {
+	default boolean updateSelect(OASelect<? extends OAObject> select) {
 		return true;
 	}
 }

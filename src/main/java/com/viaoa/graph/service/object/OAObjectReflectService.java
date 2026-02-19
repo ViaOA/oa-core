@@ -639,8 +639,8 @@ public abstract class OAObjectReflectService {
 				value = getObject(c, value);
 			}
 		}
-		if (value != null && hub.getObject(value) == null) {
-			hub.add(value);
+		if (value instanceof OAObject && value != null && hub.getObject(value) == null) {
+			hub.add((OAObject) value);
 		}
 	}
 
@@ -931,59 +931,25 @@ public abstract class OAObjectReflectService {
 		if (propertyValue instanceof Hub) {
 			hub = (Hub) propertyValue;
 			Class c = hub.getObjectClass();
-			if (!OAObjectKey.class.equals(c)) {
-				if (!bThisIsServer) {
-					boolean bAsc = true;
-					String s = callHubSortGetSortProperty(hub); // use sort order from orig hub
-					if (OAString.isEmpty(s)) {
-						s = sortOrder;
-					} else {
-						bAsc = callHubSortGetSortAsc(hub);
-					}
-					if (!bSequence && !OAString.isEmpty(s) && !callHubSortIsSorted(hub)) {
-						// client recvd hub that has sorted property, without sortListener, etc.
-						// note: serialized hubs do not have sortListener created - must be manually done
-						//      this is done here (after checking first), for cases where references are serialized in a CS call.
-						//      - or during below, when it is directly called.
-						callHubSortSort(hub, s, bAsc, null, true);// dont sort, or send out sort msg
-						OAPropertyInfo pi = oi.getPropertyInfo(s);
-						if (pi == null || String.class.equals(pi.getClassType())) {
-							hub.resort(); // this will not send out event
-						}
-					}
-				}
-				if (callInfoCacheHub(linkInfo, hub)) {
-					callPropertySetProperty(oaObj, linkPropertyName, new WeakReference(hub));
+			if (!bThisIsServer) {
+				boolean bAsc = true;
+				String s = callHubSortGetSortProperty(hub); // use sort order from orig hub
+				if (OAString.isEmpty(s)) {
+					s = sortOrder;
 				} else {
-					callPropertySetProperty(oaObj, linkPropertyName, hub);
+					bAsc = callHubSortGetSortAsc(hub);
 				}
-				return hub;
-			}
-
-			// objects are stored as OAObjectKeys
-			// Hub with OAObjectKeys exists, need to convert to "real" objects
-			if (linkInfo == null) {
-				return null;
-			}
-			Class linkClass = linkInfo.getToClass();
-			Hub hubNew = new Hub(linkClass, oaObj, callInfoGetReverseLinkInfo(linkInfo), false);
-			try {
-				
-				callThreadLocalSetSuppressCSMessages(true);
-				for (int i = 0;; i++) {
-					OAObjectKey key = (OAObjectKey) hub.elementAt(i);
-					if (key == null) {
-						break;
-					}
-					Object objx = getObject(linkClass, key);
-					if (propertyValue != null) {
-						hubNew.add(objx);
+				if (!bSequence && !OAString.isEmpty(s) && !callHubSortIsSorted(hub)) {
+					// client recvd hub that has sorted property, without sortListener, etc.
+					// note: serialized hubs do not have sortListener created - must be manually done
+					//      this is done here (after checking first), for cases where references are serialized in a CS call.
+					//      - or during below, when it is directly called.
+					callHubSortSort(hub, s, bAsc, null, true);// dont sort, or send out sort msg
+					OAPropertyInfo pi = oi.getPropertyInfo(s);
+					if (pi == null || String.class.equals(pi.getClassType())) {
+						hub.resort(); // this will not send out event
 					}
 				}
-				hub = hubNew;
-				hub.setChanged(false);
-			} finally {
-				callThreadLocalSetSuppressCSMessages(false);
 			}
 			if (callInfoCacheHub(linkInfo, hub)) {
 				callPropertySetProperty(oaObj, linkPropertyName, new WeakReference(hub));
@@ -3041,7 +3007,7 @@ public abstract class OAObjectReflectService {
 	 * @return the newly created copied object
 	 */
 	public OAObject createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback) {
-		HashMap<UUID, Object> hmNew = new HashMap();
+		HashMap<UUID, OAObject> hmNew = new HashMap();
 		OAObject obj = _createCopy(oaObj, excludeProperties, copyCallback, hmNew);
 		return obj;
 	}
@@ -3060,7 +3026,7 @@ public abstract class OAObjectReflectService {
 	 * @return the newly created copied object
 	 */
 	public OAObject _createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
-			Map<UUID, Object> hmNew) {
+			Map<UUID, OAObject> hmNew) {
 		if (oaObj == null) {
 			return null;
 		}
@@ -3112,7 +3078,7 @@ public abstract class OAObjectReflectService {
 	 * @param copyCallback     optional callback to customize copy behavior
 	 */
 	public void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback) {
-		HashMap<UUID, Object> hmNew = new HashMap();
+		HashMap<UUID, OAObject> hmNew = new HashMap();
 		copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 	}
 
@@ -3132,7 +3098,7 @@ public abstract class OAObjectReflectService {
 	 * @param hmNew            map tracking objects already copied
 	 */
 	public void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback,
-			HashMap<UUID, Object> hmNew) {
+			HashMap<UUID, OAObject> hmNew) {
 		try {
 			callThreadLocalSetLoading(true);
 			callThreadLocalSetSuppressCSMessages(true);
@@ -3160,7 +3126,7 @@ public abstract class OAObjectReflectService {
 	 * @param hmNew            map tracking already-copied objects
 	 */
 	public void _copyInto(final OAObject oaObj, final OAObject newObject, final String[] excludeProperties,
-			final OACopyCallback copyCallback, final Map<UUID, Object> hmNew) {
+			final OACopyCallback copyCallback, final Map<UUID, OAObject> hmNew) {
 		if (oaObj == null || newObject == null) {
 			return;
 		}
@@ -3241,7 +3207,7 @@ public abstract class OAObjectReflectService {
 					continue;
 				}
 
-				Object objx = hmNew.get(callGuidGetGuid((OAObject) obj));
+				OAObject objx = hmNew.get(callGuidGetGuid((OAObject) obj));
 
 				if (objx == null) {
 					if (copyCallback != null) {
@@ -3328,7 +3294,7 @@ public abstract class OAObjectReflectService {
 					if (obj == objFromCallback && obj instanceof OAObject) {
 						obj = objFromCallback;
 						if (shouldMakeACopy((OAObject) obj, excludeProperties, copyCallback, hmNew, 0, null)) {
-							Object objx = _createCopy((OAObject) obj, excludeProperties, copyCallback, hmNew);
+							OAObject objx = _createCopy((OAObject) obj, excludeProperties, copyCallback, hmNew);
 							if (objx != obj && objx != null) {
 								hmNew.put(callGuidGetGuid((OAObject) obj), objx);
 								obj = objx;
@@ -3359,7 +3325,7 @@ public abstract class OAObjectReflectService {
 	 * @return true if a new copy should be created, false otherwise
 	 */
 	private boolean shouldMakeACopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
-			Map<UUID, Object> hmNew, int cnt, Set<UUID> hsVisitor) {
+			Map<UUID, OAObject> hmNew, int cnt, Set<UUID> hsVisitor) {
 		if (oaObj == null) {
 			return false;
 		}

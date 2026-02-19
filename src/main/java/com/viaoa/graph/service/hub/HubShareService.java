@@ -30,7 +30,7 @@ public abstract class HubShareService {
 	 * @param thisHub the Hub whose shared group is requested
 	 * @return array of shared Hubs (possibly size 0), including {@code thisHub}
 	 */
-	public Hub[] getAllSharedHubs(Hub thisHub) {
+	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub) {
 		return getAllSharedHubs(thisHub, false, null);
 	}
 
@@ -42,7 +42,7 @@ public abstract class HubShareService {
 	 * @param bChildrenOnly  true to return only Hubs directly shared from thisHub
 	 * @return array of shared Hubs
 	 */
-	public Hub<?>[] getAllSharedHubs(Hub<?> hub, boolean bChildrenOnly) {
+	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> hub, boolean bChildrenOnly) {
 		return getAllSharedHubs(hub, bChildrenOnly, null);
 	}
 
@@ -53,7 +53,7 @@ public abstract class HubShareService {
 	 * @param filter  an OAFilter determining which Hubs to include
 	 * @return array of filtered shared Hubs
 	 */
-	public Hub[] getAllSharedHubs(Hub thisHub, OAFilter<Hub> filter) {
+	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter) {
 		return getAllSharedHubs(thisHub, false, filter);
 	}
 
@@ -66,7 +66,7 @@ public abstract class HubShareService {
 	 * @param filter        optional filter to select which Hubs to return
 	 * @return array of shared Hubs
 	 */
-	public Hub[] getAllSharedHubs(Hub thisHub, boolean bChildrenOnly, OAFilter<Hub> filter) {
+	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub, boolean bChildrenOnly, OAFilter<Hub<T>> filter) {
 		return getAllSharedHubs(thisHub, bChildrenOnly, filter, false, false);
 	}
 
@@ -81,7 +81,7 @@ public abstract class HubShareService {
 	 * @param bOnlyIfSharedAO      true to include only Hubs sharing the AO source
 	 * @return array of discovered shared Hubs
 	 */
-	public Hub[] getAllSharedHubs(Hub thisHub, boolean bChildrenOnly, OAFilter<Hub> filter, boolean bIncludeFilteredHubs,
+	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub, boolean bChildrenOnly, OAFilter<Hub<T>> filter, boolean bIncludeFilteredHubs,
 			boolean bOnlyIfSharedAO) {
 
 		if (thisHub == null) {
@@ -92,7 +92,7 @@ public abstract class HubShareService {
 		if (!bChildrenOnly) {
 			h = getMainSharedHub(h);
 		}
-		ArrayList<Hub> alHub = new ArrayList<Hub>(10);
+		ArrayList<Hub<T>> alHub = new ArrayList<Hub>(10);
 		_getAllSharedHubs(h, thisHub, alHub, filter, 0, bIncludeFilteredHubs, bOnlyIfSharedAO, bIncludeFilteredHubs);
 		Hub[] hubs = new Hub[alHub.size()];
 		alHub.toArray(hubs);
@@ -112,7 +112,7 @@ public abstract class HubShareService {
 	 * @param bOnlyIfSharedAO      restrict traversal to AO-sharing Hubs
 	 * @param bIncludeHubShareAO   include HubShareAO-linked Hubs
 	 */
-	private void _getAllSharedHubs(final Hub hub, final Hub findHub, final ArrayList<Hub> alHub, final OAFilter<Hub> filter,
+	private <T extends OAObject> void _getAllSharedHubs(final Hub<T> hub, final Hub<T> findHub, final ArrayList<Hub<T>> alHub, final OAFilter<Hub<T>> filter,
 			final int cnter, final boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO, boolean bIncludeHubShareAO) {
 
 		if (filter == null || filter.isUsed(hub)) {
@@ -171,7 +171,7 @@ public abstract class HubShareService {
 	 * @param thisHub the Hub to examine
 	 * @return the HubCopy instance, or null if none exists
 	 */
-	public HubCopy getHubCopy(Hub thisHub) {
+	public <T extends OAObject> HubCopy<T> getHubCopy(Hub<T> thisHub) {
 		Hub h = getMainSharedHub(thisHub);
 		if (faHub.getHubDataMaster(h).getMasterObject() != null || faHub.getHubDataMaster(h).getMasterHub() != null) {
 			// filtered hubs will not have a master
@@ -196,7 +196,7 @@ public abstract class HubShareService {
 	 * @param thisHub the Hub to examine
 	 * @return a HubFilter instance, or null if none is found
 	 */
-	public HubFilter getHubFilter(Hub thisHub) {
+	public <T extends OAObject> HubFilter<T> getHubFilter(Hub<T> thisHub) {
 		Hub h = getMainSharedHub(thisHub);
 		if (faHub.getHubDataMaster(h).getMasterObject() != null || faHub.getHubDataMaster(h).getMasterHub() != null) {
 			// filtered hubs will not have a master
@@ -222,7 +222,7 @@ public abstract class HubShareService {
 	 * @param thisHub the Hub to inspect
 	 * @return HubShareAO listener or null
 	 */
-	public HubShareAO getHubShareAO(Hub thisHub) {
+	public HubShareAO getHubShareAO(Hub<?> thisHub) {
 		Hub h = getMainSharedHub(thisHub);
 
 		// find a HubShareAO in the listener list
@@ -247,7 +247,7 @@ public abstract class HubShareService {
 	 * @param bOnlyIfSharedAO     restrict results to AO-sharing cases
 	 * @return the shared Hub or null
 	 */
-	public Hub getSharedHub(final Hub thisHub, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
+	public <T extends OAObject> Hub<T> getSharedHub(final Hub<T> thisHub, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -291,7 +291,7 @@ public abstract class HubShareService {
 	 * @param bOnlyIfSharedAO      restrict traversal to AO-sharing Hubs
 	 * @return the first matching Hub, or null if none found
 	 */
-	public Hub getFirstSharedHub(Hub thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
+	public <T extends OAObject> Hub<T> getFirstSharedHub(Hub<T> thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
 		Hub h = getMainSharedHub(thisHub);
 		return _getFirstSharedHub(h, thisHub, filter, bIncludeFilteredHubs, 0, bOnlyIfSharedAO, bIncludeFilteredHubs);
 	}
@@ -309,8 +309,8 @@ public abstract class HubShareService {
 	 * @param bIncludeHubShareAO include HubShareAO-linked Hubs
 	 * @return a matching Hub or null
 	 */
-	private Hub _getFirstSharedHub(
-			final Hub thisHub, final Hub findHub,
+	private <T extends OAObject> Hub<T> _getFirstSharedHub(
+			final Hub<T> thisHub, final Hub<T> findHub,
 			final OAFilter<Hub> filter, final boolean bIncludeFilteredHubs,
 			final int cnter, boolean bOnlyIfSharedAO, boolean bIncludeHubShareAO) {
 
@@ -325,9 +325,9 @@ public abstract class HubShareService {
 			}
 		}
 
-		WeakReference<Hub>[] refs = getSharedWeakHubs(thisHub);
+		WeakReference<Hub<T>>[] refs = getSharedWeakHubs(thisHub);
 		for (int i = 0; refs != null && i < refs.length; i++) {
-			WeakReference<Hub> ref = refs[i];
+			WeakReference<Hub<T>> ref = refs[i];
 			if (ref == null) {
 				continue;
 			}
@@ -346,13 +346,13 @@ public abstract class HubShareService {
 		}
 
 		// not found, check to see if there is a HubCopy that is shared
-		HubFilter hf = getHubFilter(thisHub);
+		HubFilter<T> hf = getHubFilter(thisHub);
 		if (hf != null) {
 			if (!bOnlyIfSharedAO || hf.isSharingAO()) {
-				Hub mh = hf.getMasterHub();
-				Hub h = getMainSharedHub(mh);
+				Hub<?> mh = hf.getMasterHub();
+				Hub<?> h = getMainSharedHub(mh);
 				// note: use "mh" instead of findHub, since this is going thru a hubFilter
-				Hub hx = _getFirstSharedHub(h, mh, filter, bIncludeFilteredHubs, 0, bOnlyIfSharedAO, bIncludeHubShareAO);
+				Hub<?> hx = _getFirstSharedHub(h, mh, filter, bIncludeFilteredHubs, 0, bOnlyIfSharedAO, bIncludeHubShareAO);
 				if (hx != null) {
 					return hx;
 				}
@@ -1185,7 +1185,7 @@ public abstract class HubShareService {
 	 * @param thisHub the Hub whose shared structure is requested
 	 * @return weak-reference array, or null if none exist
 	 */
-	public WeakReference<Hub>[] getSharedWeakHubs(Hub thisHub) {
+	public <T extends OAObject> WeakReference<Hub<T>>[] getSharedWeakHubs(Hub<T> thisHub) {
 		if (thisHub == null) {
 			return null;
 		}

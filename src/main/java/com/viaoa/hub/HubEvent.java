@@ -18,8 +18,6 @@ package com.viaoa.hub;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -28,6 +26,8 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OALogger;
 
 /**
+ * qqqqqqqqqqqqqqqqqqqqqqqqqqqq dropped "extends PropertyChangeEvent"
+ * 
  * Single event type used by {@link Hub} and {@link com.viaoa.object.OAObject} to
  * represent structural and property-change activity throughout the OA graph.
  * <p>
@@ -42,15 +42,32 @@ import com.viaoa.util.OALogger;
  * Typical producers: Hub add/remove/move/AO changes, OAObject property updates.
  * Typical consumers: {@link HubListener} implementations across UI, caching, and sync.
  */
-public class HubEvent<T> extends java.beans.PropertyChangeEvent {
+public class HubEvent<TYPE extends OAObject> {
 	private static final Logger LOG = OALogger.getLogger(HubEvent.class);
+	
+	Hub<TYPE> hub;
 	
 	/**
 	 * The object associated with this event, such as the added,
 	 * removed, moved, or property-changed object.
 	 */
-	T object;
+	TYPE object;
+
+	TYPE object2;
 	
+	private Object oldValue;
+	
+	/**
+	 * Cached resolved old-value object used when translating an
+	 * {@link OAObjectKey} into its corresponding {@link OAObject}
+	 * instance for reverse-link property changes.
+	 */
+	private Object oldValue2;
+
+	private Object newValue;
+	
+	private String propertyName;
+
 	/**
 	 * Positional indices used for add/insert/remove and move events.
 	 * {@code pos} is the original or associated position;
@@ -70,12 +87,6 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	 */
 	String response;
 
-	/**
-	 * Cached resolved old-value object used when translating an
-	 * {@link OAObjectKey} into its corresponding {@link OAObject}
-	 * instance for reverse-link property changes.
-	 */
-	private Object oldValue2;
 	
 	
 	/**
@@ -84,18 +95,40 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	 */
 	static int cnt = 0;
 
+	
 	/**
-	 * Internal debug helper that prints an event trace message every tenth
-	 * invocation. Used for monitoring event activity during development.
+	 * Creates a HubEvent with the given Hub as its source and no associated
+	 * object or position information.
 	 *
-	 * @param s the message to print
+	 * @param source the Hub generating the event
 	 */
-	void p(String s) {
-		if ((cnt % 10) == 0) {
-			System.out.println("Event =========> " + (++cnt) + " " + s);
-		}
+	public HubEvent(Hub<TYPE> hub) {
+		this.hub = hub;
+	}
+	
+	
+	/**
+	 * Creates a HubEvent for an add event where an object is added to a Hub.
+	 *
+	 * @param hub the Hub generating the event
+	 * @param obj the object added
+	 */
+	public HubEvent(Hub<TYPE> hub, TYPE obj) {
+		this.hub = hub;
+		this.object = obj;
 	}
 
+	/**
+	 * Creates a HubEvent associated directly with an object that is not
+	 * tied to a positional Hub operation.
+	 *
+	 * @param obj the object associated with the event
+	 */
+	public HubEvent(TYPE obj) {
+		this.object = obj;
+	}
+	
+	
 	/**
 	 * Creates a HubEvent for a property-change originating from a Hub.
 	 *
@@ -105,12 +138,15 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	 * @param oldValue      the previous property value
 	 * @param newValue      the new property value
 	 */
-	public HubEvent(Hub source, T obj, String propertyName, Object oldValue, Object newValue) {
-		super(source, propertyName, oldValue, newValue);
-		//p("1: propChange "+obj+" "+propertyName );
+	public HubEvent(Hub<TYPE> hub, TYPE obj, String propertyName, Object oldValue, Object newValue) {
+		this.hub = hub;
 		this.object = obj;
+		this.propertyName = propertyName;
+		this.oldValue = oldValue;
+		this.newValue = newValue;
 	}
-
+	
+	
 	/**
 	 * Creates a HubEvent for a property-change originating directly from
 	 * an object rather than a Hub.
@@ -120,24 +156,8 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	 * @param oldValue      the previous property value
 	 * @param newValue      the new property value
 	 */
-	public HubEvent(T obj, String propertyName, Object oldValue, Object newValue) {
-		super(obj, propertyName, oldValue, newValue);
-		//p("2: propChange "+obj+" "+propertyName );
-		this.object = obj;
-	}
-
-	/**
-	 * Returns the Hub that generated this event, or null if the source is
-	 * not a Hub.
-	 *
-	 * @return the Hub source, or null
-	 */
-	public Hub<T> getHub() {
-		Object obj = getSource();
-		if (obj instanceof Hub) {
-			return (Hub<T>) obj;
-		}
-		return null;
+	public HubEvent(TYPE obj, String propertyName, Object oldValue, Object newValue) {
+		this(null, obj, propertyName, oldValue, newValue);
 	}
 
 	/**
@@ -148,12 +168,19 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	 * @param oldValue the object being replaced
 	 * @param newValue the replacement object
 	 */
-	public HubEvent(Hub<T> source, T oldValue, T newValue) {
-		super(source, null, oldValue, newValue);
-		//p("3: replace "+source.getObjectClass() );
-		object = newValue;
+	public HubEvent(Hub<TYPE> hub, TYPE object, TYPE object2) {
+		this.hub = hub;
+		this.object = object;
+		this.object2 = object2;
 	}
 
+	public HubEvent(Hub<TYPE> hub, TYPE obj, String propertyName) {
+		this.hub = hub;
+		this.object = obj;
+		this.propertyName = propertyName;
+	}
+	
+	
 	/**
 	 * Creates a HubEvent representing a move operation where an object is
 	 * moved from one position to another within the Hub.
@@ -162,9 +189,8 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	 * @param posFrom the original position
 	 * @param posTo   the new position
 	 */
-	public HubEvent(Hub<T> source, int posFrom, int posTo) {
-		super(source, null, null, null);
-		//p("4: move "+source.getObjectClass() );//qqqqqqqqqqq
+	public HubEvent(Hub<TYPE> hub, int posFrom, int posTo) {
+		this.hub = hub;
 		this.pos = posFrom;
 		this.toPos = posTo;
 	}
@@ -177,53 +203,81 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	 * @param obj    the object inserted or affected
 	 * @param pos    the position associated with the event
 	 */
-	public HubEvent(Hub<T> source, T obj, int pos) {
-		super(source, null, null, null);
-		//p("5: add/insert/remove "+source.getObjectClass()+" "+obj );//qqqqqqqqqqq
+	public HubEvent(Hub<TYPE> hub, TYPE obj, int pos) {
+		this.hub = hub;
 		this.object = obj;
 		this.pos = pos;
 	}
 
-	/**
-	 * Creates a HubEvent for an add event where an object is added to a Hub.
-	 *
-	 * @param source the Hub generating the event
-	 * @param obj    the object added
-	 */
-	public HubEvent(Hub<T> source, T obj) {
-		this(source, obj, -1);
-	}
 
-	/**
-	 * Creates a HubEvent associated directly with an object that is not
-	 * tied to a positional Hub operation.
-	 *
-	 * @param obj the object associated with the event
-	 */
-	public HubEvent(T obj) {
-		super(obj, null, null, null);
-		this.object = obj;
+	
+	
+	public Hub<TYPE> getHub() {
+		return hub;
 	}
-
-	/**
-	 * Creates a HubEvent with the given Hub as its source and no associated
-	 * object or position information.
-	 *
-	 * @param source the Hub generating the event
-	 */
-	public HubEvent(Hub<T> source) {
-		this(source, null, -1);
-	}
+	
 
 	/**
 	 * Returns the object associated with this event.
 	 *
 	 * @return the event object
 	 */
-	public T getObject() {
-		return (T) object;
+	public TYPE getObject() {
+		return object;
 	}
 
+	public TYPE getObject2() {
+		return object2;
+	}
+	
+	public String getPropertyName() {
+		return propertyName;
+	}
+	
+	public Object getNewValue() {
+		return newValue;
+	}
+	
+	
+	/**
+	 * Returns the old value associated with this event. If the old value is
+	 * an {@link OAObjectKey} and the event object is an {@link OAObject},
+	 * attempts to resolve the key to its corresponding object instance using
+	 * link metadata.
+	 *
+	 * @return the resolved old value
+	 */
+	@SuppressWarnings("unchecked")
+	public Object getOldValue() {
+		if (oldValue2 != null) {
+			return oldValue2;
+		}
+		Object oldObj = oldValue;
+		boolean bError = false;
+		if (oldObj instanceof OAObjectKey && object instanceof OAObject) {
+			OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object);
+			OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(object);
+			if (oi != null) {
+				OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, getPropertyName());
+				if (li != null) {
+					og = (OAGraphInternal) OARuntime.graph(li.getToClass());
+					oldObj = og.objectsInternal().callObjectReflectGetObject((Class<TYPE>) li.getToClass(), (OAObjectKey) oldObj);
+					oldValue2 = oldObj;
+				} else {
+					bError = true;
+				}
+			} else {
+				bError = true;
+			}
+		}
+		if (bError) {
+			LOG.warning("HubEvent.getOldValue() not finding Object for OAObjectKey: " + oldObj + ", object=" + object + ", prop="+ getPropertyName());
+		}
+		return oldObj;
+	}
+	
+	
+	
 	/**
 	 * Returns the position associated with this event. Used for add,
 	 * insert, remove, and active-object events.
@@ -272,45 +326,6 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 	}
 
 
-	/**
-	 * Returns the old value associated with this event. If the old value is
-	 * an {@link OAObjectKey} and the event object is an {@link OAObject},
-	 * attempts to resolve the key to its corresponding object instance using
-	 * link metadata.
-	 *
-	 * @return the resolved old value
-	 */
-	@Override
-	public Object getOldValue() {
-		if (oldValue2 != null) {
-			return oldValue2;
-		}
-		Object oldObj = super.getOldValue();
-		boolean bError = false;
-		if (oldObj instanceof OAObjectKey && object instanceof OAObject) {
-			OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object.getClass());
-			OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo((OAObject) object);
-			if (oi != null) {
-				OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, getPropertyName());
-				if (li != null) {
-					og = (OAGraphInternal) OARuntime.graph(li.getToClass());
-					oldObj = og.objectsInternal().callObjectReflectGetObject(li.getToClass(), (OAObjectKey) oldObj);
-					oldValue2 = oldObj;
-				} else {
-					bError = true;// else error qqqqqqq
-				}
-			} else {
-				bError = true;// else error qqqqqqq
-			}
-		}
-		//qqqqqqqqqqq
-		if (bError) {
-			LOG.warning("HubEvent.getOldValue() not finding Object for OAObjectKey: " + oldObj + ", object=" + object + ", prop="
-					+ getPropertyName());
-		}
-
-		return oldObj;
-	}
 
 	/**
 	 * Sets the response string for this event. Can be used by listeners to
@@ -344,4 +359,17 @@ public class HubEvent<T> extends java.beans.PropertyChangeEvent {
 		}
 		return name.equalsIgnoreCase(getPropertyName());
 	}
+	
+	/**
+	 * Internal debug helper that prints an event trace message every tenth
+	 * invocation. Used for monitoring event activity during development.
+	 *
+	 * @param s the message to print
+	 */
+	void p(String s) {
+		if ((cnt % 10) == 0) {
+			System.out.println("Event =========> " + (++cnt) + " " + s);
+		}
+	}
+	
 }

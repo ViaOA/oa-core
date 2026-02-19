@@ -568,7 +568,7 @@ public class OADataSourceRestClient extends OADataSource {
 		 * Batched results retrieved from the remote server. Each element is an object
 		 * instance until a null entry is encountered, signaling the end of batch.
 		 */
-		Object[] cache;
+		OAObject[] cache;
 		
 		/**
 		 * The current read position within the result cache array.
@@ -589,7 +589,7 @@ public class OADataSourceRestClient extends OADataSource {
 		 * Hub used to store objects loaded during read-ahead, enabling
 		 * sibling-based navigation across retrieved objects.
 		 */
-		private Hub hubReadAhead;
+		private Hub<OAObject> hubReadAhead;
 
 		/**
 		 * Constructs the iterator for a remote select session. Initializes fields
@@ -652,18 +652,18 @@ public class OADataSourceRestClient extends OADataSource {
 		 */
 		protected synchronized void getMoreFromServer() {
 			cachePos = 0;
-			cache = (Object[]) getRestAPI().next(selectId, clazz);
+			cache = (OAObject[]) getRestAPI().next(selectId, clazz);
 			if (cache == null || cache.length == 0) {
 				cache = null;
 				close();
 				return;
 			}
 			if (siblingHelper == null) {
-				this.hubReadAhead = new Hub();
+				this.hubReadAhead = new Hub<>();
 				siblingHelper = new OASiblingHelper(this.hubReadAhead);
 			}
 
-			for (Object obj : cache) {
+			for (OAObject obj : cache) {
 				if (obj == null) {
 					break;
 				}

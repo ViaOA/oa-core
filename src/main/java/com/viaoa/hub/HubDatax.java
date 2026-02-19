@@ -43,7 +43,7 @@ import com.viaoa.object.OAObjectInfo;
  * <p>Provides {@code isNeeded()} and {@code shouldSerialize()} predicates to
  * prune serialization footprint.</p>
  */
-public class HubDatax<T> implements java.io.Serializable {
+public class HubDatax<TYPE extends OAObject> implements java.io.Serializable {
 	static final long serialVersionUID = 1L; // used for object serialization
 
 	/**
@@ -189,11 +189,6 @@ public class HubDatax<T> implements java.io.Serializable {
 	protected transient boolean disabled;
 
 	/**
-	 * Identifies whether this Hub stores OAObject instances.
-	 */
-	protected boolean oaObjectFlag;
-
-	/**
 	 * Determines whether objects can be added or removed; becomes false
 	 * when detail Hubs originate from arrays or non-Hub sources.
 	 */
@@ -225,7 +220,7 @@ public class HubDatax<T> implements java.io.Serializable {
 	 * Delegate ensuring the Hub contains an associated object for each
 	 * object found in another Hub.
 	 */
-	protected transient HubAutoMatch<T, ?> autoMatch;
+	protected transient HubAutoMatch<TYPE, ?> autoMatch;
 
 	/**
 	 * Flag indicating whether add, insert, and remove operations should
@@ -237,7 +232,7 @@ public class HubDatax<T> implements java.io.Serializable {
 	 * Hub used for OASelect.whereHub filtering when selecting objects
 	 * from a data source.
 	 */
-	protected transient Hub<T> selectWhereHub;
+	protected transient Hub<TYPE> selectWhereHub;
 
 	/**
 	 * Property path from the selectWhereHub to this Hub, defining how

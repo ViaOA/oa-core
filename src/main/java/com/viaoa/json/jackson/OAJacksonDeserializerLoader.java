@@ -40,6 +40,7 @@ import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.json.OAJson.StackItem;
+import com.viaoa.model.oa.VString;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
@@ -1362,7 +1363,8 @@ public class OAJacksonDeserializerLoader {
 				if (objx != null) {
 				    boolean bFound = false;
 					for (int i = 0; i < pi.getNameValues().size(); i++) {
-						if (((String) objx).equalsIgnoreCase(pi.getNameValues().get(i))) {
+						String sx = ((VString) objx).getValue();
+						if (sx != null && sx.equalsIgnoreCase(pi.getNameValues().get(i).getValue())) {
 							objx = i;
 							bFound = true;
 							break;

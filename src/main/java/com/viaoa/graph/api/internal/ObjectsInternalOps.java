@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
+import com.viaoa.model.oa.VString;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OACascade;
@@ -131,8 +132,8 @@ public interface ObjectsInternalOps {
 
 	
 	// Enum
-	public Hub<String> callObjectEnumGetNameValues(Class<? extends OAObject> clazz, String propertyName);
-	public Hub<String> callObjectEnumGetDisplayNameValues(Class<? extends OAObject> clazz, String propertyName);
+	public Hub<VString> callObjectEnumGetNameValues(Class<? extends OAObject> clazz, String propertyName);
+	public Hub<VString> callObjectEnumGetDisplayNameValues(Class<? extends OAObject> clazz, String propertyName);
 	
 	// Event
 	public void callObjectEventFireBeforePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged);

@@ -2011,7 +2011,7 @@ public abstract class OAObjectCallbackService {
 	protected <T extends OAObject> void _processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub<T> hub, final T oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
 		
-		HubListener[] hl = callHubEventGetAllListeners(hub);
+		HubListener<T>[] hl = callHubEventGetAllListeners(hub);
 		if (hl == null) {
 			return;
 		}
@@ -2021,7 +2021,7 @@ public abstract class OAObjectCallbackService {
 		}
 		final boolean bBefore = objectCallback.getAllowed();
 
-		HubEvent hubEvent = null;
+		HubEvent<T> hubEvent = null;
 		try {
 			for (int i = 0; i < x; i++) {
 				boolean b = objectCallback.getAllowed();
@@ -2029,13 +2029,13 @@ public abstract class OAObjectCallbackService {
 				switch (objectCallback.getType()) {
 				case AllowEnabled:
 					if (hubEvent == null) {
-						hubEvent = new HubEvent(hub, oaObj, propertyName);
+						hubEvent = new HubEvent<T>(hub, oaObj, propertyName);
 					}
 					b = hl[i].getAllowEnabled(hubEvent, b);
 					break;
 				case AllowVisible:
 					if (hubEvent == null) {
-						hubEvent = new HubEvent(hub, oaObj, propertyName);
+						hubEvent = new HubEvent<T>(hub, oaObj, propertyName);
 					}
 					b = hl[i].getAllowVisible(hubEvent, b);
 					break;
@@ -2056,7 +2056,7 @@ public abstract class OAObjectCallbackService {
 					break;
 				case VerifyAdd:
 					if (hubEvent == null) {
-						hubEvent = new HubEvent(hub, newValue);
+						hubEvent = new HubEvent(hub, oaObj);
 					}
 					b = hl[i].isValidAdd(hubEvent, b);
 					break;
@@ -2068,7 +2068,7 @@ public abstract class OAObjectCallbackService {
 					break;
 				case VerifyRemove:
 					if (hubEvent == null) {
-						hubEvent = new HubEvent(hub, newValue);
+						hubEvent = new HubEvent(hub, oaObj);
 					}
 					b = hl[i].isValidRemove(hubEvent, b);
 					break;
@@ -2080,7 +2080,7 @@ public abstract class OAObjectCallbackService {
 					break;
 				case VerifyRemoveAll:
 					if (hubEvent == null) {
-						hubEvent = new HubEvent(hub, newValue);
+						hubEvent = new HubEvent(hub);
 					}
 					b = hl[i].isValidRemoveAll(hubEvent, b);
 					break;
@@ -2092,9 +2092,11 @@ public abstract class OAObjectCallbackService {
 					break;
 				case VerifyDelete:
 					if (hubEvent == null) {
-						hubEvent = new HubEvent(hub, newValue);
+						hubEvent = new HubEvent(hub, oaObj);
 					}
 					b = hl[i].isValidDelete(hubEvent, b);
+					break;
+				default:
 					break;
 				}
 

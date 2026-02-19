@@ -256,10 +256,8 @@ public abstract class OAObjectSaveService {
 				} else {
 					// save all adds/removes from hub.
 					Hub hub = (Hub) callReflectGetRawReference(oaObj, prop); // could be Hub with OAObjectKey objects
-					if (hub.isOAObject()) {
-						// update all links even if cascade is false
-						callHubSaveAll(hub, OAObject.CASCADE_NONE, cascade); // only save M2M link changes, not the actual objects in the Hub.
-					}
+					// update all links even if cascade is false
+					callHubSaveAll(hub, OAObject.CASCADE_NONE, cascade); // only save M2M link changes, not the actual objects in the Hub.
 				}
 			}
 		}

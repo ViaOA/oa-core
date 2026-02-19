@@ -33,6 +33,7 @@ import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
+import com.viaoa.model.oa.VString;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;
 import com.viaoa.runtime.thread.OARemoteThreadService;
@@ -2150,7 +2151,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the resolved {@link Hub}, or {@code null} if the property does not
 	 *         represent a Hub reference or the Hub has not been initialized
 	 */
-	protected Hub getHub(String linkPropertyName) {
+	protected Hub<?> getHub(String linkPropertyName) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		return og.objectsInternal().callObjectReflectGetReferenceHub(this, linkPropertyName, null, false, null);
 	}
@@ -3977,12 +3978,12 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (dsi == null) {
 			return;
 		}
-		List alNew = new ArrayList();
+		List<OAObject> alNew = new ArrayList();
 		for (; dsi.hasNext();) {
 			objx = dsi.next();
-			alNew.add(objx);
+			alNew.add((OAObject) objx);
 			if (!hub.contains(objx)) {
-				hub.add(objx);
+				hub.add((OAObject) objx);
 			}
 		}
 
@@ -4018,7 +4019,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param propertyName the name of the property whose enumeration values are requested
 	 * @return a Hub of enumeration values, or {@code null} if the property has no enum metadata
 	 */
-	public Hub<String> getNameValues(String propertyName) {
+	public Hub<VString> getNameValues(String propertyName) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		return og.objectsInternal().callObjectEnumGetNameValues(this.getClass(), propertyName);
 	}
@@ -4036,7 +4037,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param propertyName the name of the enum-style property
 	 * @return a Hub of display-name strings for the property; never null
 	 */
-	public Hub<String> getDisplayNameValues(String propertyName) {
+	public Hub<VString> getDisplayNameValues(String propertyName) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		return og.objectsInternal().callObjectEnumGetDisplayNameValues(this.getClass(), propertyName);
 	}

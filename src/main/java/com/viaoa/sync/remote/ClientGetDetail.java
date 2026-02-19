@@ -305,20 +305,18 @@ public class ClientGetDetail {
 		if (detailObject instanceof Hub) {
 			dHub = (Hub) detailObject;
 			tot = dHub.size();
-			if (dHub.isOAObject()) {
-				for (Object obj : dHub) {
-					if (System.currentTimeMillis() > (msStart + 40)) {
-						break;
-					}
-					if (wasFullySentToClient(obj)) {
-						continue;
-					}
-					final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
-					if (og.objectsInternal().callObjectReflectAreAllReferencesLoaded((OAObject) obj, false)) {
-						continue;
-					}
-					og.objectsInternal().callObjectReflectLoadAllReferences((OAObject) obj, 1, 0, false, 2, msStart + 40);
+			for (Object obj : dHub) {
+				if (System.currentTimeMillis() > (msStart + 40)) {
+					break;
 				}
+				if (wasFullySentToClient(obj)) {
+					continue;
+				}
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
+				if (og.objectsInternal().callObjectReflectAreAllReferencesLoaded((OAObject) obj, false)) {
+					continue;
+				}
+				og.objectsInternal().callObjectReflectLoadAllReferences((OAObject) obj, 1, 0, false, 2, msStart + 40);
 			}
 		} else if ((detailObject instanceof OAObject) && !wasFullySentToClient(detailObject)) {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) detailObject);

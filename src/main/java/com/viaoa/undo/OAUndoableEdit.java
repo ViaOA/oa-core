@@ -530,7 +530,7 @@ public class OAUndoableEdit implements UndoableEdit {
 			hub.remove(object);
 			break;
 		case REMOVE:
-			hub.insert(object, prevPos);
+			hub.insert((OAObject) object, prevPos);
 			break;
 		case MOVE:
 			hub.move(newPos, prevPos);
@@ -564,7 +564,7 @@ public class OAUndoableEdit implements UndoableEdit {
 		case HOLDER:
 			break;
 		case ADD:
-			hub.add(object);
+			hub.add((OAObject) object);
 			break;
 		case REMOVE:
 			hub.remove(object);
@@ -573,7 +573,7 @@ public class OAUndoableEdit implements UndoableEdit {
 			hub.move(prevPos, newPos);
 			break;
 		case INSERT:
-			hub.insert(object, newPos);
+			hub.insert((OAObject) object, newPos);
 			break;
 		case CHANGEAO:
 			hub.setAO(newValue);

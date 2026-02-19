@@ -15,6 +15,8 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.object.OAObject;
+
 /**
  * No-op adapter for {@link HubListener}, allowing implementers to override only
  * the callbacks they need. Supports optional metadata (listener object, name,
@@ -23,7 +25,7 @@ package com.viaoa.hub;
  * All methods default to empty implementations; use this in UI/controllers to
  * avoid boilerplate when subscribing to a subset of events.
  */
-public class HubListenerAdapter<T> implements HubListener<T> {
+public class HubListenerAdapter<T extends OAObject> implements HubListener<T> {
 
 	/**
 	 * Optional reference to an associated listener or owner object.

@@ -361,14 +361,12 @@ public abstract class OAObjectKeyService {
 			Object obj = callReflectGetProperty(oaObj, li.getName());
 			if (obj instanceof Hub) {
 				Hub h = (Hub) obj;
-				if (h.isOAObject()) {
-					for (int ii = 0;; ii++) {
-						OAObject oa = (OAObject) h.elementAt(ii);
-						if (oa == null) {
-							break;
-						}
-						callCachePropertyKeyValueChanged(oa);
+				for (int ii = 0;; ii++) {
+					OAObject oa = (OAObject) h.elementAt(ii);
+					if (oa == null) {
+						break;
 					}
+					callCachePropertyKeyValueChanged(oa);
 				}
 			} else if (obj instanceof OAObject) {
 				callCachePropertyKeyValueChanged((OAObject) obj);

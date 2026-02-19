@@ -800,7 +800,8 @@ public class OAXMLReader1 extends DefaultHandler {
 						h.add(object);
 					} else {
 						// note: should not ever need a Holder
-						h.add(key);
+//qqqqqqqqqqqqqqqqqqqqqq removing for 4.0						
+//						h.add(key);
 					}
 				} else if (indent > 3) {
 					// use this value when updating property
@@ -1134,7 +1135,7 @@ public class OAXMLReader1 extends DefaultHandler {
 							}
 
 							if (h.getObject(o) == null) {
-								h.add(o);
+								h.add((OAObject)o);
 							}
 							// position objects in Hub to match order of objects in Vector
 							int pos = h.getPos(o);

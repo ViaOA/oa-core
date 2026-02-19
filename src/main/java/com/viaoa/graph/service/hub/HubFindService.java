@@ -27,7 +27,7 @@ public class HubFindService {
 	 * @param lastFoundObject the last object found, used by {@link com.viaoa.object.OAFinder#findNext}
 	 * @return the first matching object, or {@code null} if none found
 	 */
-    public <T> T findFirst(Hub<T> thisHub, String propertyPath, final Object findValue, final boolean bSetAO, T lastFoundObject) {
+    public <T extends OAObject> T findFirst(Hub<T> thisHub, String propertyPath, final Object findValue, final boolean bSetAO, T lastFoundObject) {
         if (thisHub == null) return null;
         
         OAFinder finder = new OAFinder();

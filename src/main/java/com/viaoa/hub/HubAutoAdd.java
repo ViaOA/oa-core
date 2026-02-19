@@ -15,6 +15,8 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.object.OAObject;
+
 /**
  * Variant of {@link HubAutoMatch} that adds matching objects but never removes them.
  * <p>
@@ -27,7 +29,7 @@ package com.viaoa.hub;
  *   <li>Supports linking by property name and optional manual-trigger flag.</li>
  * </ul>
  */
-public class HubAutoAdd<TYPE, PROPTYPE> extends HubAutoMatch<TYPE, PROPTYPE> {
+public class HubAutoAdd<TYPE extends OAObject, PROPTYPE extends OAObject> extends HubAutoMatch<TYPE, PROPTYPE> {
 
 	/**
 	 * Creates a HubAutoAdd instance that synchronizes additions from the master hub

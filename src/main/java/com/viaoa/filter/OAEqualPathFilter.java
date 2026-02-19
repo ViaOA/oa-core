@@ -318,7 +318,8 @@ public class OAEqualPathFilter implements OAFilter {
 
 		}
 
-		Object objx = ppTo.getValue(obj);
+		
+		Object objx = (obj instanceof OAObject) ? ppTo.getValue((OAObject) obj) : obj;;
 		
 		boolean b;
 		if (objx instanceof Hub) {

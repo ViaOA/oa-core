@@ -15,6 +15,8 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.object.OAObject;
+
 /**
  * Convenience subclass of {@link HubListenerAdapter}.
  * <p>
@@ -30,6 +32,6 @@ package com.viaoa.hub;
  * });
  * }</pre>
  */
-public class HLA<T> extends HubListenerAdapter<T> {
+public class HLA<T extends OAObject> extends HubListenerAdapter<T> {
 
 }

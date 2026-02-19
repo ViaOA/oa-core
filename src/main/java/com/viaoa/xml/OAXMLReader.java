@@ -436,13 +436,13 @@ public class OAXMLReader {
 			if (v instanceof HashMap) {
 				Object objx = _processChildren((HashMap) v, toClass, bIsPreloading, 0);
 				if (!bIsPreloading && objx != null) {
-					hub.add(objx);
+					hub.add((OAObject) objx);
 				}
 			} else if (v instanceof ArrayList) {
 				for (HashMap<String, Object> hmx : (ArrayList<HashMap<String, Object>>) v) {
 					Object objx = _processChildren(hmx, toClass, bIsPreloading, 0);
 					if (!bIsPreloading && objx != null) {
-						hub.add(objx);
+						hub.add((OAObject) objx);
 					}
 				}
 			}
@@ -707,7 +707,7 @@ public class OAXMLReader {
 					}
 
 					if (!bIsPreloading) {
-						h.add(objx);
+						h.add((OAObject) objx);
 					}
 				}
 

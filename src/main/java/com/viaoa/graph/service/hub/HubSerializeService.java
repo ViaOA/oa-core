@@ -67,7 +67,7 @@ public abstract class HubSerializeService {
 	 * hub to OAObject.hubs, but only if it is not a duplicate (and is not needed)
 	 */
 	public Object _readResolve(Hub thisHub) throws ObjectStreamException {
-		if (thisHub == null || !thisHub.isOAObject()) return thisHub; 
+		if (thisHub == null) return thisHub; 
 		for (int i = 0;; i++) {
 			Object obj = thisHub.getAt(i);
 			if (obj == null) break;

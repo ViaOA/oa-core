@@ -804,7 +804,7 @@ public class HubListenerTree {
 								protected void beforeRemoveRealHub(HubEvent e) {
 									// get the parent reference object from the Hub.masterObject, since the
 									//    reference in the object could be null once the remove is done
-									Hub h = (Hub) e.getSource();
+									Hub h = e.getHub();
 									newTreeNode.lastRemoveObject = e.getObject();
 									newTreeNode.lastRemoveMasterObject = h.getMasterObject();
 									super.beforeRemoveRealHub(e);
@@ -981,7 +981,7 @@ public class HubListenerTree {
 								Hub h = HubListenerTree.this.root.hub;
 								// get the parent reference object from the Hub.masterObject, since the
 								//    reference in the object could be null
-								Hub hubx = (Hub) e.getSource();
+								Hub hubx = e.getHub();
 								Object objx = hubx.getMasterObject();
 								if (objx != null) {
 									nodeThis.lastRemoveObject = e.getObject();

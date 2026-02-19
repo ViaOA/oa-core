@@ -19,6 +19,8 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import com.viaoa.object.OAObject;
+
 
 /**
  * Extended unique-state container referenced by {@link HubDataUnique}.
@@ -34,7 +36,7 @@ import java.util.*;
  * <p>Used internally by Hub wiring and event propagation logic; never accessed
  * directly from public APIs.</p>
  */
-class HubDataUniquex implements java.io.Serializable {
+class HubDataUniquex<T extends OAObject> implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
 	
 
@@ -89,7 +91,7 @@ class HubDataUniquex implements java.io.Serializable {
 	 * The Hub to which this Hub is linked, defining the master side of
 	 * an active-object linkage relationship.
 	 */
-	protected transient Hub linkToHub;
+	protected transient Hub<?> linkToHub;
 	
 	/**
 	 * Indicates whether the link relationship uses positional linking
@@ -136,7 +138,7 @@ class HubDataUniquex implements java.io.Serializable {
      * Hub with which this Hub shares its data list; active object may be
      * shared depending on configuration.
      */
-	protected transient Hub sharedHub;
+	protected transient Hub<T> sharedHub;
 	
 	
 	/**
@@ -151,14 +153,14 @@ class HubDataUniquex implements java.io.Serializable {
 	 * Weak-reference array tracking Hubs that share the same underlying
 	 * data list as this Hub.
 	 */
-	protected transient volatile WeakReference<Hub>[] weakSharedHubs;	
+	protected transient volatile WeakReference<Hub<T>>[] weakSharedHubs;	
 	
 	
 	/**
 	 * Hub that receives the active object whenever this Hub's active object
 	 * is changed, typically used for pick-list style behavior.
 	 */
-	protected transient Hub addHub;
+	protected transient Hub<T> addHub;
 
 	/**
 	 * Indicates whether a new object should be automatically created in

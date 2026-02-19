@@ -66,18 +66,11 @@ public abstract class HubSaveService {
 
         boolean bM2M = false;
         if (iCascadeRule != OAObject.CASCADE_NONE) {
-	        boolean b = thisHub.isOAObject();
 	        int x = thisHub.getCurrentSize(); // only check the objects that are loaded
 	        for (int i=0; i<x ; i++) {
 	            Object obj = thisHub.elementAt(i);
 	            if (obj == null) break;
-	            if (b) {
-	            	callObjectSaveSave((OAObject)obj, iCascadeRule, cascade);
-	            }
-	            else {
-	            	// srvcObject.getOAObjectDSService().save(obj, true);  // true=insert.  Could be update?
-	            	//todo: qqqqqqqq 
-	            }
+            	callObjectSaveSave((OAObject)obj, iCascadeRule, cascade);
 	        }
         }
         else {

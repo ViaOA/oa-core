@@ -15,6 +15,7 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.object.OAObject;
 import com.viaoa.util.OAFilter;
 
 /**
@@ -44,7 +45,7 @@ import com.viaoa.util.OAFilter;
  * });
  * }</pre>
  */
-public interface CustomHubFilter<TYPE> extends OAFilter<TYPE> {
+public interface CustomHubFilter<TYPE extends OAObject> extends OAFilter<TYPE> {
 	
 	/**
 	 * Returns the {@link HubFilter} associated with this filter, allowing access

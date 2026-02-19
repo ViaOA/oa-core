@@ -90,7 +90,7 @@ import com.viaoa.runtime.OARuntime;
  * @see com.viaoa.filter.OAFilter
  * @see OAPropertyPathInfo
  */
-public class OAPropertyPath<F> {
+public class OAPropertyPath<F extends OAObject> {
 
 	/**
 	 * The starting class used to resolve the property path.

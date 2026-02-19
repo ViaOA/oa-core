@@ -2778,7 +2778,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
                     boolean bx = srvcOAThreadLocal.addSiblingHelper(sh);
                     try {
-                        node.child.data.hub.add(ref);
+                        node.child.data.hub.add((OAObject) ref);
                     } finally {
                         if (bx) {
                             srvcOAThreadLocal.removeSiblingHelper(sh);

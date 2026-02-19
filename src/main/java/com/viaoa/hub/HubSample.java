@@ -15,6 +15,8 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.object.OAObject;
+
 /**
  * Maintains a {@link Hub} containing the first N elements of another Hub.
  *
@@ -52,7 +54,7 @@ package com.viaoa.hub;
  *       to {@code afterSort} events.</li>
  * </ul>
  */
-public class HubSample<T> {
+public class HubSample<T extends OAObject> {
     
 	/**
 	 * The source Hub whose first N elements will be mirrored into the sample Hub.

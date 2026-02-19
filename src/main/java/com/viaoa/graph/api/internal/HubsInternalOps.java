@@ -169,7 +169,7 @@ public interface HubsInternalOps {
 	public String callHubLinkGetLinkHubPath(Hub<?> hub, boolean bIncludeCopiedHubs);
 	public void callHubLinkUpdateLinkedToHub(Hub<?> hub, Hub<?> linkToHub, Object obj);
 	public void callHubLinkUpdateLinkedToHub(Hub<?> hub, Hub<?> linkToHub, Object obj, String changedPropName);
-	public Object callHubLinkGetPropertyValueInLinkedToHub(Hub<?> hub, Object linkObject);
+	public OAObject callHubLinkGetPropertyValueInLinkedToHub(Hub<?> hub, OAObject linkObject);
 	public boolean callHubLinkGetLinkedOnPos(Hub<?> hub);
 	public String callHubLinkGetLinkToProperty(Hub<?> hub);
 

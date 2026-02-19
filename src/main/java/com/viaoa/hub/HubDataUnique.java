@@ -39,7 +39,7 @@ import com.viaoa.object.*;
  * <p>Each Hub has one {@link HubDataUnique}; shared Hubs maintain independent
  * instances for AO, listener, and linkage tracking.</p>
  */
-public class HubDataUnique implements java.io.Serializable {
+public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializable {
     static final long serialVersionUID = 1L;  // used for object serialization
 	private static Logger LOG = Logger.getLogger(HubDataUnique.class.getName());
 
@@ -54,7 +54,7 @@ public class HubDataUnique implements java.io.Serializable {
 	 *
 	 * @return the {@link HubDataUniquex} instance associated with this Hub
 	 */
-    private HubDataUniquex getHubDataUniquex() {
+    private HubDataUniquex<TYPE> getHubDataUniquex() {
         if (hubDataUniquex == null) {
             synchronized (this) {
                 if (hubDataUniquex == null) {
@@ -179,7 +179,7 @@ public class HubDataUnique implements java.io.Serializable {
      *
      * @return the linked Hub, or {@code null} if not set
      */
-    public Hub getLinkToHub() {
+    public Hub<?> getLinkToHub() {
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.linkToHub;
     }
@@ -189,7 +189,7 @@ public class HubDataUnique implements java.io.Serializable {
      *
      * @param linkToHub the Hub to link to
      */
-    public void setLinkToHub(Hub linkToHub) {
+    public void setLinkToHub(Hub<?> linkToHub) {
         if (hubDataUniquex != null || linkToHub != null) {
             getHubDataUniquex().linkToHub = linkToHub;
         }
@@ -347,7 +347,7 @@ public class HubDataUnique implements java.io.Serializable {
      *
      * @return the shared Hub, or {@code null} if none
      */
-    public Hub getSharedHub() {
+    public Hub<TYPE> getSharedHub() {
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.sharedHub;
     }
@@ -357,7 +357,7 @@ public class HubDataUnique implements java.io.Serializable {
      *
      * @param sharedHub the Hub to share data with
      */
-    public void setSharedHub(Hub sharedHub) {
+    public void setSharedHub(Hub<TYPE> sharedHub) {
         if (hubDataUniquex != null || sharedHub != null) {
             getHubDataUniquex().sharedHub = sharedHub;
         }
@@ -368,7 +368,7 @@ public class HubDataUnique implements java.io.Serializable {
      *
      * @return an array of {@link WeakReference} objects, or {@code null} if not set
      */
-    public WeakReference<Hub>[] getWeakSharedHubs() {
+    public WeakReference<Hub<TYPE>>[] getWeakSharedHubs() {
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.weakSharedHubs;
     }
@@ -378,7 +378,7 @@ public class HubDataUnique implements java.io.Serializable {
      *
      * @param weakSharedHubs the array of weak Hub references
      */
-    public void setWeakSharedHubs(WeakReference<Hub>[] weakSharedHubs) {
+    public void setWeakSharedHubs(WeakReference<Hub<TYPE>>[] weakSharedHubs) {
         if (hubDataUniquex != null || (weakSharedHubs != null && weakSharedHubs.length > 0)) {
             getHubDataUniquex().weakSharedHubs = weakSharedHubs;
         }
@@ -389,7 +389,7 @@ public class HubDataUnique implements java.io.Serializable {
      *
      * @return the add Hub, or {@code null} if not defined
      */
-    public Hub getAddHub() {
+    public Hub<TYPE> getAddHub() {
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.addHub;
     }
@@ -399,7 +399,7 @@ public class HubDataUnique implements java.io.Serializable {
      *
      * @param addHub the Hub to assign for add operations
      */
-    public void setAddHub(Hub addHub) {
+    public void setAddHub(Hub<TYPE> addHub) {
         if (hubDataUniquex != null || addHub != null) {
             getHubDataUniquex().addHub = addHub;
         }

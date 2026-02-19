@@ -23,6 +23,7 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.object.OAObjectEnumService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
+import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;
@@ -60,7 +61,7 @@ import com.viaoa.util.OAStr;
  * @param <TYPE>      The target Hub object type
  * @param <PROPTYPE>  The master Hub object type
  */
-public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements java.io.Serializable {
+public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> extends HubListenerAdapter implements java.io.Serializable {
 	static final long serialVersionUID = 1L;
 
 	/**
@@ -401,7 +402,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 
 		// Step 2: see if every object in hubMasterx exists in hubx
 		for (int i = 0;; i++) {
-			Object obj = hubMasterx.elementAt(i);
+			OAObject obj = hubMasterx.elementAt(i);
 			if (obj == null) {
 				break;
 			}
@@ -444,7 +445,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		}
 		// Step 3: remove objects not in hubMasterx
 		for (int i = 0;; i++) {
-			Object obj = hubx.elementAt(i);
+			OAObject obj = hubx.elementAt(i);
 			if (obj == null) {
 				break;
 			}
@@ -493,7 +494,7 @@ public class HubAutoMatch<TYPE, PROPTYPE> extends HubListenerAdapter implements 
 		Class cz = hub.getObjectClass();
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cz);
-		Hub<String> hubEnumValues = og.objectsInternal().callObjectEnumGetDisplayNameValues(cz, property);
+		Hub<VString> hubEnumValues = og.objectsInternal().callObjectEnumGetDisplayNameValues(cz, property);
 		int max = hubEnumValues.size();
 		
 		

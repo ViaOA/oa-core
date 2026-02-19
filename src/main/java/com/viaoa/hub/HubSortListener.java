@@ -276,7 +276,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
      * @param e event describing the list replacement
      */
     public @Override void onNewList(HubEvent e) {
-        Hub h = (Hub) e.getSource();
+        Hub h = e.getHub();
         if (h == hub) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
             // 20101009 another thread could be making Hub changes, so this could fail - adding try..catch

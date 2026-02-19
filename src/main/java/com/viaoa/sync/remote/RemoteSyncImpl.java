@@ -144,7 +144,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			// OAObjectPropertyDelegate.removePropertyIfNull((OAObject)obj, hubPropertyName, false); // if hub is null (empty), then need to get from server
 			return false;
 		}
-		h.add(objAdd);
+		h.add((OAObject) objAdd);
 		return true;
 	}
 
@@ -185,7 +185,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			// OAObjectPropertyDelegate.removePropertyIfNull((OAObject)obj, hubPropertyName, false);
 			return false;
 		}
-		h.insert(objInsert, pos);
+		h.insert((OAObject) objInsert, pos);
 		return true;
 	}
 

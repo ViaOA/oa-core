@@ -35,7 +35,7 @@ public abstract class HubEventService {
 	 * @param thisHub       the Hub whose master object would be reported
 	 * @param bRefreshFlag  whether the change is associated with a refresh
 	 */
-	public void fireMasterObjectChangeEvent(Hub thisHub, boolean bRefreshFlag) {
+	public void fireMasterObjectChangeEvent(Hub<?> thisHub, boolean bRefreshFlag) {
 		// srvcObject.getOAObjectHubService().fireMasterObjectHubChangeEvent(thisHub, bRefreshFlag);
 	}
 
@@ -48,12 +48,11 @@ public abstract class HubEventService {
 	 * @param obj     the object being removed
 	 * @param pos     the position of the object within the Hub
 	 */
-	public void fireBeforeRemoveEvent(Hub thisHub, Object obj, int pos) {
+	public <T extends OAObject> void fireBeforeRemoveEvent(Hub<T> thisHub, T obj, int pos) {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
-				OAObjectCallback em = callObjectCallbackGetVerifyRemoveObjectCallback(	thisHub, (OAObject) obj,
-																								OAObjectCallback.CHECK_CallbackMethod);
+				OAObjectCallback em = callObjectCallbackGetVerifyRemoveObjectCallback(	thisHub, obj, OAObjectCallback.CHECK_CallbackMethod);
 				if (!em.getAllowed()) {
 					String s = em.getResponse();
 					if (OAString.isEmpty(s)) {
@@ -65,10 +64,10 @@ public abstract class HubEventService {
 		}
 
 		// call listeners
-		HubListener[] hls = getAllListeners(thisHub);
+		HubListener<T>[] hls = getAllListeners(thisHub);
 		int x = hls.length;
 		if (x > 0) {
-			HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
+			HubEvent<T> hubEvent = new HubEvent<T>(thisHub, obj, pos);
 			try {
 				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
@@ -89,15 +88,15 @@ public abstract class HubEventService {
 	 * @param obj     the removed object
 	 * @param pos     the position the object occupied
 	 */
-	public <T> void fireAfterRemoveEvent(Hub<T> thisHub, final T obj, int pos) {
+	public <T extends OAObject> void fireAfterRemoveEvent(Hub<T> thisHub, final T obj, int pos) {
 		if (callThreadLocalIsLoading()) {
 			return;
 		}
 
-		final HubListener[] hl = getAllListeners(thisHub);
+		final HubListener<T>[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
 		if (x > 0) {
-			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
+			final HubEvent<T> hubEvent = new HubEvent<T>(thisHub, obj, pos);
 			if (callRemoteThreadShouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
@@ -125,7 +124,7 @@ public abstract class HubEventService {
 			}
 		}
 		if (obj instanceof OAObject) {
-			callObjectCacheFireAfterRemoveEvent( (Hub<OAObject>) thisHub, (OAObject) obj);
+			callObjectCacheFireAfterRemoveEvent(thisHub, obj);
 		}
 		//callObjectCacheFireAfterRemoveEvent(thisHub, obj, pos);
 		//fireMasterObjectChangeEvent(thisHub, false);
@@ -157,7 +156,7 @@ public abstract class HubEventService {
 	 *
 	 * @param thisHub the Hub generating the event
 	 */
-	public void fireBeforeRemoveAllEvent(Hub thisHub) {
+	public void fireBeforeRemoveAllEvent(Hub<?> thisHub) {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
 			OAObjectCallback em = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
@@ -192,7 +191,7 @@ public abstract class HubEventService {
 	 *
 	 * @param thisHub the Hub generating the event
 	 */
-	public void fireAfterRemoveAllEvent(Hub thisHub) {
+	public void fireAfterRemoveAllEvent(Hub<?> thisHub) {
 		final HubListener[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
 		if (x > 0) {
@@ -255,7 +254,7 @@ public abstract class HubEventService {
 	 * @param obj     the object being added
 	 * @param pos     the position at which the object will be added
 	 */
-	public void fireBeforeAddEvent(Hub thisHub, Object obj, int pos) {
+	public <T extends OAObject> void fireBeforeAddEvent(Hub<T> thisHub, T obj, int pos) {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
@@ -295,15 +294,15 @@ public abstract class HubEventService {
 	 * @param obj     the added object
 	 * @param pos     the position of the added object
 	 */
-	public <T> void fireAfterAddEvent(Hub<T> thisHub, final T obj, int pos) {
+	public <T extends OAObject> void fireAfterAddEvent(Hub<T> thisHub, final T obj, int pos) {
 		if (callThreadLocalIsLoading()) {
 			return;
 		}
 
-		final HubListener[] hl = getAllListeners(thisHub);
+		final HubListener<T>[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
 		if (x > 0) {
-			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
+			final HubEvent<T> hubEvent = new HubEvent(thisHub, obj, pos);
 			if (callRemoteThreadShouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
@@ -366,7 +365,7 @@ public abstract class HubEventService {
 	 * @param obj     the object being inserted
 	 * @param pos     the target insertion position
 	 */
-	public void fireBeforeInsertEvent(Hub thisHub, Object obj, int pos) {
+	public <T extends OAObject> void fireBeforeInsertEvent(Hub<T> thisHub, T obj, int pos) {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
@@ -406,15 +405,15 @@ public abstract class HubEventService {
 	 * @param obj     the inserted object
 	 * @param pos     the position of the inserted object
 	 */
-	public <T> void fireAfterInsertEvent(Hub<T> thisHub, final T obj, int pos) {
+	public <T extends OAObject> void fireAfterInsertEvent(Hub<T> thisHub, final T obj, int pos) {
 		if (callThreadLocalIsLoading()) {
 			return;
 		}
 
-		final HubListener[] hl = getAllListeners(thisHub);
+		final HubListener<T>[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
 		if (x > 0) {
-			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
+			final HubEvent<T> hubEvent = new HubEvent<T>(thisHub, obj, pos);
 			if (callRemoteThreadShouldEventsBeQueued()) {
 				Runnable r = new Runnable() {
 					@Override
@@ -477,7 +476,7 @@ public abstract class HubEventService {
 	 * @param pos        the position associated with the change
 	 * @param bAllShared whether shared Hubs should also receive the event
 	 */
-	public void fireAfterChangeActiveObjectEvent(Hub thisHub, Object obj, int pos, boolean bAllShared) {
+	public <T extends OAObject> void fireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared) {
 		HubListener[] hl = getAllListeners(thisHub, bAllShared ? 1 : 3);
 		int x = hl.length;
 		if (x > 0) {
@@ -506,7 +505,7 @@ public abstract class HubEventService {
 	 *
 	 * @param thisHub the Hub generating the event
 	 */
-	public void fireBeforeRefreshEvent(Hub thisHub) {
+	public void fireBeforeRefreshEvent(Hub<?> thisHub) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
@@ -528,7 +527,7 @@ public abstract class HubEventService {
 	 *
 	 * @param thisHub the Hub generating the event
 	 */
-	public void fireBeforeSelectEvent(Hub thisHub) {
+	public void fireBeforeSelectEvent(Hub<?> thisHub) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
@@ -550,7 +549,7 @@ public abstract class HubEventService {
 	 *
 	 * @param thisHub the Hub generating the event
 	 */
-	public void fireAfterSortEvent(Hub thisHub) {
+	public void fireAfterSortEvent(Hub<?> thisHub) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
@@ -574,7 +573,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub generating the event
 	 * @param obj     the object being deleted
 	 */
-	public void fireBeforeDeleteEvent(Hub thisHub, Object obj) {
+	public <T extends OAObject> void fireBeforeDeleteEvent(Hub<T> thisHub, T obj) {
 		HubListener[] hls = getAllListeners(thisHub);
 		int x = hls.length;
 		if (x > 0) {
@@ -598,7 +597,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub generating the event
 	 * @param obj     the deleted object
 	 */
-	public void fireAfterDeleteEvent(Hub thisHub, Object obj) {
+	public <T extends OAObject> void fireAfterDeleteEvent(Hub<T> thisHub, T obj) {
 		final HubListener[] hl = getAllListeners(thisHub);
 		final int x = hl.length;
 		if (x > 0) {
@@ -640,7 +639,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub generating the event
 	 * @param obj     the object being saved
 	 */
-	public void fireBeforeSaveEvent(Hub thisHub, OAObject obj) {
+	public void fireBeforeSaveEvent(Hub<?> thisHub, OAObject obj) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
@@ -663,7 +662,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub generating the event
 	 * @param obj     the object that was saved
 	 */
-	public void fireAfterSaveEvent(Hub thisHub, OAObject obj) {
+	public void fireAfterSaveEvent(Hub<?> thisHub, OAObject obj) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
@@ -686,7 +685,7 @@ public abstract class HubEventService {
 	 * @param fromPos the original position
 	 * @param toPos   the destination position
 	 */
-	public void fireBeforeMoveEvent(Hub thisHub, int fromPos, int toPos) {
+	public void fireBeforeMoveEvent(Hub<?> thisHub, int fromPos, int toPos) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
@@ -710,7 +709,7 @@ public abstract class HubEventService {
 	 * @param fromPos the original position
 	 * @param toPos   the new position
 	 */
-	public void fireAfterMoveEvent(Hub thisHub, int fromPos, int toPos) {
+	public void fireAfterMoveEvent(Hub<?> thisHub, int fromPos, int toPos) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		if (x > 0) {
@@ -736,18 +735,18 @@ public abstract class HubEventService {
 	 * @param object       the object whose property changed
 	 * @param propertyName the name of the property that changed
 	 */
-	public void fireCalcPropertyChange(Hub thisHub, final Object object, final String propertyName) {
+	public <T extends OAObject> void fireCalcPropertyChange(Hub<T> thisHub, final T object, final String propertyName) {
 		// 20210506 could be used by link
 		if (object instanceof OAObject) {
 			// 20180304
-			if (callThreadLocalHasSentCalcPropertyChange(thisHub, (OAObject) object, propertyName)) {
+			if (callThreadLocalHasSentCalcPropertyChange(thisHub, object, propertyName)) {
 				return;
 			}
 			
 			OAObjectInfo oi = callObjectInfoGetOAObjectInfo((OAObject) object);
 			OALinkInfo linkInfo = callObjectInfoGetLinkInfo(oi, propertyName);
 			if (linkInfo != null) {
-				propertyChangeUpdateDetailHubs(thisHub, (OAObject) object, propertyName);
+				propertyChangeUpdateDetailHubs(thisHub, object, propertyName);
 			}
 		}
 
@@ -777,7 +776,7 @@ public abstract class HubEventService {
 	 * @param oldValue     the previous value
 	 * @param newValue     the new value
 	 */
-	public void fireBeforePropertyChange(Hub thisHub, OAObject oaObj, String propertyName, Object oldValue, Object newValue) {
+	public void fireBeforePropertyChange(Hub<?> thisHub, OAObject oaObj, String propertyName, Object oldValue, Object newValue) {
 		HubListener[] hls = getAllListeners(thisHub);
 		int x = hls.length;
 		if (x > 0) {
@@ -807,7 +806,7 @@ public abstract class HubEventService {
 	 * @param newValue     the new value
 	 * @param linkInfo     link metadata for the property, or null
 	 */
-	public void fireAfterPropertyChange(final Hub thisHub, final OAObject oaObj, final String propertyName, final Object oldValue,
+	public <T extends OAObject> void fireAfterPropertyChange(final Hub<T> thisHub, final T oaObj, final String propertyName, final Object oldValue,
 			final Object newValue, final OALinkInfo linkInfo) {
 		// 2007/01/03 need to call propertyChangeDupChain() first, since propertyChange
 		//            could need to change a detail hub(s), before a HubLinkEventListener is called, which
@@ -881,7 +880,7 @@ public abstract class HubEventService {
 	 * @param object       the object whose property changed
 	 * @param propertyName the name of the changed property
 	 */
-	private void propertyChangeUpdateDetailHubs(Hub thisHub, OAObject object, String propertyName) {
+	private <T extends OAObject> void propertyChangeUpdateDetailHubs(Hub<T> thisHub, T object, String propertyName) {
 		int i, x;
 
 		if (object == faHub.getHubDataActive(thisHub).getActiveObject()) {
@@ -896,9 +895,9 @@ public abstract class HubEventService {
 			}
 		}
 
-		WeakReference<Hub>[] refs = callHubShareGetSharedWeakHubs(thisHub);
+		WeakReference<Hub<T>>[] refs = callHubShareGetSharedWeakHubs(thisHub);
 		for (i = 0; refs != null && i < refs.length; i++) {
-			WeakReference<Hub> ref = refs[i];
+			WeakReference<Hub<T>> ref = refs[i];
 			if (ref == null) {
 				continue;
 			}
@@ -918,7 +917,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub generating the event
 	 * @param bAll    whether to notify all listeners or a subset
 	 */
-	public void fireOnNewListEvent(Hub thisHub, boolean bAll) {
+	public void fireOnNewListEvent(Hub<?> thisHub, boolean bAll) {
 		if (thisHub == null) {
 			return;
 		}
@@ -957,7 +956,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub whose listener tree is requested
 	 * @return the HubListenerTree instance, or null if Hub is null
 	 */
-	private HubListenerTree getHubListenerTree(Hub thisHub) {
+	private HubListenerTree getHubListenerTree(Hub<?> thisHub) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -980,7 +979,7 @@ public abstract class HubEventService {
 	 * @param property                the property name
 	 * @param dependentPropertyPaths  dependent properties to monitor
 	 */
-	public void addHubListener(Hub thisHub, HubListener hl, String property, String[] dependentPropertyPaths) {
+	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, String[] dependentPropertyPaths) {
 		if (property != null && property.indexOf('.') >= 0) {
 			throw new RuntimeException(
 					"dont use a property path for listener, use addHubListener(h,hl,propertyName, String[path]) instead");
@@ -1000,7 +999,7 @@ public abstract class HubEventService {
 	 * @param dependentPropertyPaths  dependent properties to monitor
 	 * @param bActiveObjectOnly       true to notify only for active-object events
 	 */
-	public void addHubListener(Hub thisHub, HubListener hl, String property, String[] dependentPropertyPaths,
+	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, String[] dependentPropertyPaths,
 			boolean bActiveObjectOnly) {
 		if (property != null && property.indexOf('.') >= 0) {
 			throw new RuntimeException(
@@ -1022,7 +1021,7 @@ public abstract class HubEventService {
 	 * @param bActiveObjectOnly       true for active-object-only events
 	 * @param bUseBackgroundThread    true to dispatch events in a background thread
 	 */
-	public void addHubListener(Hub thisHub, HubListener hl, String property, String[] dependentPropertyPaths,
+	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, String[] dependentPropertyPaths,
 			boolean bActiveObjectOnly, boolean bUseBackgroundThread) {
 		if (property != null && property.indexOf('.') >= 0) {
 			throw new RuntimeException(
@@ -1040,7 +1039,7 @@ public abstract class HubEventService {
 	 * @param hl      the listener to add
 	 * @param property the property name
 	 */
-	public void addHubListener(Hub thisHub, HubListener hl, String property) {
+	public void addHubListener(Hub<?> thisHub, HubListener hl, String property) {
 		getHubListenerTree(thisHub).addListener(hl, property);
 		clearGetAllListenerCache(thisHub);
 	}
@@ -1054,7 +1053,7 @@ public abstract class HubEventService {
 	 * @param property          the property name
 	 * @param bActiveObjectOnly true to restrict events to active-object changes
 	 */
-	public void addHubListener(Hub thisHub, HubListener hl, String property, boolean bActiveObjectOnly) {
+	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, boolean bActiveObjectOnly) {
 		getHubListenerTree(thisHub).addListener(hl, property, bActiveObjectOnly);
 		clearGetAllListenerCache(thisHub);
 	}
@@ -1067,7 +1066,7 @@ public abstract class HubEventService {
 	 * @param hl                the listener to add
 	 * @param bActiveObjectOnly true to restrict notifications
 	 */
-	public void addHubListener(Hub thisHub, HubListener hl, boolean bActiveObjectOnly) {
+	public void addHubListener(Hub<?> thisHub, HubListener hl, boolean bActiveObjectOnly) {
 		getHubListenerTree(thisHub).addListener(hl, bActiveObjectOnly);
 		clearGetAllListenerCache(thisHub);
 	}
@@ -1079,7 +1078,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub to attach the listener to
 	 * @param hl      the listener to add
 	 */
-	public void addHubListener(Hub thisHub, HubListener hl) {
+	public void addHubListener(Hub<?> thisHub, HubListener hl) {
 		getHubListenerTree(thisHub).addListener(hl);
 		clearGetAllListenerCache(thisHub);
 	}
@@ -1093,7 +1092,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub to remove the listener from
 	 * @param l       the listener to remove
 	 */
-	public void removeHubListener(Hub thisHub, HubListener l) {
+	public void removeHubListener(Hub<?> thisHub, HubListener l) {
 		if (thisHub == null || l == null) {
 			return;
 		}
@@ -1114,7 +1113,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub whose direct listeners are requested
 	 * @return an array of HubListeners
 	 */
-	public HubListener[] getHubListeners(Hub thisHub) {
+	public HubListener[] getHubListeners(Hub<?> thisHub) {
 		if (faHub.getHubDataUnique(thisHub).getListenerTree() == null) {
 			return hlEmpty;
 		}
@@ -1132,7 +1131,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub to inspect
 	 * @return the total listener count
 	 */
-	public int getListenerCount(Hub thisHub) {
+	public int getListenerCount(Hub<?> thisHub) {
 		return getAllListeners(thisHub).length;
 	}
 
@@ -1143,7 +1142,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub to inspect
 	 * @return all listeners associated with the Hub
 	 */
-	public HubListener[] getAllListeners(Hub thisHub) {
+	public <T extends OAObject> HubListener<T>[] getAllListeners(Hub<T> thisHub) {
 		return getAllListeners(thisHub, 0);
 	}
 
@@ -1151,7 +1150,7 @@ public abstract class HubEventService {
 	static final int maxCacheGetAllListeners = 12;
 
 	private static class CacheGetAllListeners {
-		Hub hub;
+		Hub<?> hub;
 		HubListener[] hl;
 	}
 
@@ -1168,7 +1167,7 @@ public abstract class HubEventService {
 	 * @param type    lookup type selector
 	 * @return an array of listeners matching the lookup criteria
 	 */
-	public HubListener[] getAllListeners(final Hub thisHub, int type) {
+	public HubListener[] getAllListeners(final Hub<?> thisHub, int type) {
 		if (thisHub == null) {
 			return new HubListener[0];
 		}
@@ -1226,7 +1225,7 @@ public abstract class HubEventService {
 	 *
 	 * @param hub the Hub whose cache entries should be invalidated
 	 */
-	public void clearGetAllListenerCache(Hub hub) {
+	public void clearGetAllListenerCache(Hub<?> hub) {
 		try {
 			rwCacheGetAllListeners.writeLock().lock();
 			for (int i = 0; i < maxCacheGetAllListeners; i++) {
@@ -1262,10 +1261,10 @@ public abstract class HubEventService {
 	 * @param type    lookup type selector
 	 * @return an array of collected listeners
 	 */
-	public HubListener[] getAllListenersRecursive(Hub thisHub, Hub hub, int type) {
-		ArrayList<HubListener> al = _getAllListenersRecursive(thisHub, null, hub, type, false, false);
+	public <T extends OAObject> HubListener<T>[] getAllListenersRecursive(Hub<T> thisHub, Hub<T> hub, int type) {
+		ArrayList<HubListener<T>> al = _getAllListenersRecursive(thisHub, null, hub, type, false, false);
 
-		HubListener[] hl = new HubListener[al == null ? 0 : al.size()];
+		HubListener<T>[] hl = new HubListener[al == null ? 0 : al.size()];
 		if (al != null) {
 			al.toArray(hl);
 		}
@@ -1284,14 +1283,14 @@ public abstract class HubEventService {
 	 * @param bHasLast        internal state flag for ordering
 	 * @return the updated listener list
 	 */
-	private ArrayList<HubListener> _getAllListenersRecursive(Hub thisHub, ArrayList<HubListener> al, Hub hub, int type,
+	private <T extends OAObject> ArrayList<HubListener<T>> _getAllListenersRecursive(Hub<T> thisHub, ArrayList<HubListener<T>> al, Hub<T> hub, int type,
 			boolean bHasLastChecked, boolean bHasLast) {
 		if (type == 0 || type == 2 || faHub.getHubDataActive(thisHub) == faHub.getHubDataActive(hub)) {
 			HubListener[] hls = getHubListeners(thisHub);
 			if (hls != null && hls.length > 0) {
 				int x;
 				if (al == null) {
-					al = new ArrayList<HubListener>(Math.max(hls.length * 2, 10));
+					al = new ArrayList<HubListener<T>>(Math.max(hls.length * 2, 10));
 					x = 0;
 				} else {
 					x = al.size();
@@ -1338,9 +1337,9 @@ public abstract class HubEventService {
 			}
 		}
 
-		WeakReference<Hub>[] refs = callHubShareGetSharedWeakHubs(thisHub);
+		WeakReference<Hub<T>>[] refs = callHubShareGetSharedWeakHubs(thisHub);
 		for (int i = 0; refs != null && i < refs.length; i++) {
-			WeakReference<Hub> ref = refs[i];
+			WeakReference<Hub<T>> ref = refs[i];
 			if (ref == null) {
 				continue;
 			}
@@ -1360,7 +1359,7 @@ public abstract class HubEventService {
 	 * @param thisHub the Hub generating the event
 	 * @param oaObj   the loaded object
 	 */
-	public void fireAfterLoadEvent(Hub thisHub, OAObject oaObj) {
+	public void fireAfterLoadEvent(Hub<?> thisHub, OAObject oaObj) {
 		HubListener[] hl = getAllListeners(thisHub);
 		int x = hl.length;
 		int i;
@@ -1378,16 +1377,16 @@ public abstract class HubEventService {
 	}
 
 	/**
-	 * qqqqq these are in Hub public boolean canAdd(Hub thisHub) { return canAdd(thisHub, null); } public boolean canAdd(Hub
+	 * qqqqq these are in Hub public boolean canAdd(Hub<?> thisHub) { return canAdd(thisHub, null); } public boolean canAdd(Hub
 	 * thisHub, OAObject obj) { if (obj == null) return srvcObject.getOAObjectCallbackService().getAllowAdd(thisHub); return
-	 * srvcObject.getOAObjectCallbackService().getVerifyAdd(thisHub, obj); } public boolean canRemove(Hub thisHub) { return canRemove(thisHub,
-	 * null); } public boolean canRemove(Hub thisHub, OAObject obj) { if (obj == null) return
+	 * srvcObject.getOAObjectCallbackService().getVerifyAdd(thisHub, obj); } public boolean canRemove(Hub<?> thisHub) { return canRemove(thisHub,
+	 * null); } public boolean canRemove(Hub<?> thisHub, OAObject obj) { if (obj == null) return
 	 * srvcObject.getOAObjectCallbackService().getAllowRemove(thisHub); return srvcObject.getOAObjectCallbackService().getVerifyRemove(thisHub, obj); } public static
-	 * boolean canRemoveAll(Hub thisHub) { return srvcObject.getOAObjectCallbackService().getAllowRemoveAll(thisHub); }
+	 * boolean canRemoveAll(Hub<?> thisHub) { return srvcObject.getOAObjectCallbackService().getAllowRemoveAll(thisHub); }
 	 */
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveObjectCallback")
-	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub hub, final OAObject objRemove, final int checkType);
+	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterRemoveEvent")
 	public abstract <T extends OAObject> void callObjectCacheFireAfterRemoveEvent(Hub<T> hub, T obj);
@@ -1399,31 +1398,31 @@ public abstract class HubEventService {
 	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject obj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback")
-	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub hub, final int checkType);
+	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final int checkType);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterAddEvent")
 	public abstract <T extends OAObject> void callObjectCacheFireAfterAddEvent(Hub<T> hub, T obj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback")
-	public abstract OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub hub, final OAObject oaObj, final int checkType);
+	public abstract OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<?> hub, final OAObject oaObj, final int checkType);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
-	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub thisHub);
+	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.verifyUniqueProperty")
-	public abstract boolean callHubVerifyUniqueProperty(final Hub thisHub, final Object object);
+	public abstract boolean callHubVerifyUniqueProperty(final Hub<?> thisHub, final Object object);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().updateDetail")
-	public abstract void callHubDetailUpdateDetail(final Hub thisHub, final HubDetail detail, final Hub detailHub, final boolean bUpdateLink);
+	public abstract void callHubDetailUpdateDetail(final Hub<?> thisHub, final HubDetail detail, final Hub detailHub, final boolean bUpdateLink);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getSharedWeakHubs")
-	public abstract WeakReference<Hub>[] callHubShareGetSharedWeakHubs(Hub thisHub);
+	public abstract <T extends OAObject> WeakReference<Hub<T>>[] callHubShareGetSharedWeakHubs(Hub<T> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().incChangeCount")
-	public abstract void callHubDataIncChangeCount(Hub thisHub);
+	public abstract void callHubDataIncChangeCount(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcRemoteThread.isRemoteThread")
 	public abstract boolean callRemoteThreadIsRemoteThread();
@@ -1432,7 +1431,7 @@ public abstract class HubEventService {
 	public abstract void callThreadLocalAddHubEvent(HubEvent he);
 
 	@OAParentProvided (example = "srvcThreadLocal.removeHubEvent")
-	public abstract void callThreadLocalRemoveHubEvent(HubEvent he);
+	public abstract void callThreadLocalRemoveHubEvent(HubEvent<?> he);
 
 	@OAParentProvided (example = "srvcThreadLocal.isLoading")
 	public abstract boolean callThreadLocalIsLoading();		
@@ -1444,7 +1443,7 @@ public abstract class HubEventService {
 	public abstract boolean callRemoteThreadQueueEvent(Runnable r);
 
 	@OAParentProvided (example = "srvcThreadLocal.hasSentCalcPropertyChange")
-	public abstract boolean callThreadLocalHasSentCalcPropertyChange(Hub thisHub, OAObject thisObj, String propertyName);
+	public abstract <T extends OAObject> boolean callThreadLocalHasSentCalcPropertyChange(Hub<T> thisHub, T thisObj, String propertyName);
 	
 }
 

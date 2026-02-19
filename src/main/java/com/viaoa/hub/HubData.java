@@ -46,7 +46,7 @@ import com.viaoa.util.OANullObject;
  * Thread-safe for concurrent read/update of extended state; most mutators
  * short-circuit when no value is needed to avoid unnecessary object creation.
  */
-public class HubData<T> implements java.io.Serializable {
+public class HubData<T extends OAObject> implements java.io.Serializable {
 	/**
 	 * Serialization identifier used to ensure compatibility when HubData
 	 * instances are serialized and deserialized.
@@ -278,7 +278,7 @@ public class HubData<T> implements java.io.Serializable {
      *
      * @return the OASelect instance, or {@code null}
      */
-    public OASelect<? extends OAObject> getSelect() {
+    public OASelect<T> getSelect() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.select;
@@ -292,7 +292,7 @@ public class HubData<T> implements java.io.Serializable {
      *
      * @param select the OASelect instance to assign, or {@code null}
      */
-    public void setSelect(OASelect<?> select) {
+    public void setSelect(OASelect<T> select) {
         if (hubDatax != null || select != null) {
             getHubDatax().select = select;
             if (select == null) {
@@ -585,32 +585,6 @@ public class HubData<T> implements java.io.Serializable {
         }
     }
 
-    /**
-     * Returns whether the hub's object type is an OAObject. Cached
-     * in HubDatax when available.
-     *
-     * @return {@code true} if the hub contains OAObject instances
-     */
-    public boolean isOAObjectFlag() {
-        HubDatax hdx = hubDatax;
-        if (hdx != null) {
-            if (hdx.oaObjectFlag) return true;
-            boolean b = objClass != null && OAObject.class.isAssignableFrom(objClass);
-            hdx.oaObjectFlag = b;
-            return b;
-        }
-        return objClass != null && OAObject.class.isAssignableFrom(objClass);
-    }
-
-    /**
-     * Sets the cached flag indicating whether the hub contains OAObject
-     * instances. Has no effect unless HubDatax exists.
-     *
-     * @param oaObjectFlag the value to assign
-     */
-    public void setOAObjectFlag(boolean oaObjectFlag) {
-        if (hubDatax != null) hubDatax.oaObjectFlag = oaObjectFlag; 
-    }
 
     /**
      * Returns whether duplicate add/remove operations are allowed.

@@ -32,14 +32,14 @@ import com.viaoa.object.OAObject;
  *
  * <p><b>Notes:</b> Retains its own AO/order; composes cleanly with sorting and grouping delegates.
  */
-public abstract class FilteredHub<T> extends Hub<T> {
+public abstract class FilteredHub<TYPE extends OAObject> extends Hub<TYPE> {
     
 	/**
 	 * Internal HubFilter instance bound to the master Hub. It drives the
 	 * inclusion logic for this FilteredHub by delegating its isUsed evaluation
 	 * to the subclass-defined predicate.
 	 */
-    private HubFilter<T> filter;
+    private HubFilter<TYPE> filter;
 
     /**
      * Constructs a FilteredHub backed by the specified master Hub. Creates an
@@ -48,12 +48,12 @@ public abstract class FilteredHub<T> extends Hub<T> {
      *
      * @param hubMaster the source Hub whose objects are evaluated by this filter.
      */
-    public FilteredHub(Hub<T> hubMaster) {
+    public FilteredHub(Hub<TYPE> hubMaster) {
         super(hubMaster.getObjectClass());
     
-        filter = new HubFilter<T>(hubMaster, this) {
+        filter = new HubFilter<TYPE>(hubMaster, this) {
             @Override
-            public boolean isUsed(T object) {
+            public boolean isUsed(TYPE object) {
                 return FilteredHub.this.isUsed(object);
             }
         };
@@ -65,7 +65,7 @@ public abstract class FilteredHub<T> extends Hub<T> {
      *
      * @return the HubFilter associated with this FilteredHub.
      */
-    public HubFilter<T> getFilter() {
+    public HubFilter<TYPE> getFilter() {
         return filter;
     }
     
@@ -129,6 +129,6 @@ public abstract class FilteredHub<T> extends Hub<T> {
      * @param obj the object to evaluate.
      * @return true if the object is included in the filtered Hub; false otherwise.
      */
-    protected abstract boolean isUsed(T obj);
+    protected abstract boolean isUsed(TYPE obj);
 }
 

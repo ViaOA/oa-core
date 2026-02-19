@@ -270,7 +270,7 @@ public abstract class HubLinkService {
 	 * @param fromObject the source object whose value is being applied
 	 * @param pos        location index when linking by position
 	 */
-	public void updateLinkProperty(Hub thisHub, Object fromObject, int pos) {
+	public <T extends OAObject> void updateLinkProperty(Hub<T> thisHub, T fromObject, int pos) {
 		Hub h = faHub.getHubDataUnique(thisHub).getLinkToHub();
 		if (h == null || faHub.getHubDataUnique(h).isUpdatingActiveObject()) {
 			return;
@@ -291,8 +291,8 @@ public abstract class HubLinkService {
 	 * @param pos        positional index when applicable
 	 * @throws Exception if reflection or setter invocation fails
 	 */
-	private void _updateLinkProperty(Hub thisHub, Object fromObject, int pos) throws Exception {
-		Object linkToObject = null;
+	private <T extends OAObject> void _updateLinkProperty(Hub<T> thisHub, T fromObject, int pos) throws Exception {
+		OAObject linkToObject = null;
 		if (faHub.getHubDataUnique(thisHub).isAutoCreate()) {
 			boolean bOne = false; // is there only supposed to be one object in hub
 			HubDataMaster dm = callHubDetailGetDataMaster(thisHub);
@@ -328,7 +328,7 @@ public abstract class HubLinkService {
 				// create new object and link to it
 				Class c = faHub.getHubDataUnique(thisHub).getLinkToHub().getObjectClass();
 				Constructor constructor = c.getConstructor(new Class[] {});
-				linkToObject = constructor.newInstance(new Object[] {});
+				linkToObject = (OAObject) constructor.newInstance(new Object[] {});
 
 				if (fromObject == null && faHub.getHubDataUnique(thisHub).getLinkToSetMethod().getParameterTypes()[0].isPrimitive()) {
 					((OAObject) linkToObject).setNull(faHub.getHubDataUnique(thisHub).getLinkToPropertyName());
@@ -367,7 +367,7 @@ public abstract class HubLinkService {
 			} else {
 				if (fromObject != null && faHub.getHubDataUnique(thisHub).getLinkFromGetMethod() != null) {
 					// if linking a property to another property
-					fromObject = faHub.getHubDataUnique(thisHub).getLinkFromGetMethod().invoke(fromObject, null);
+					fromObject = (T) faHub.getHubDataUnique(thisHub).getLinkFromGetMethod().invoke(fromObject, null);
 				}
 
 				if (obj != null || fromObject != null) {

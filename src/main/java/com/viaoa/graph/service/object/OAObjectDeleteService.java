@@ -596,7 +596,7 @@ public abstract class OAObjectDeleteService {
 			}
 
 			if (!li.getCascadeDelete() && !li.getOwner()) { // remove reference in any object to this object
-				if (hub.isOAObject() && hub.getSize() > 0) {
+				if (hub.getSize() > 0) {
 					boolean b;
 					if (liRev.getPrivateMethod()) {
 						// might have a link table

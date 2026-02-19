@@ -90,7 +90,7 @@ import com.viaoa.util.OAString;
  * This class is central to OA’s “object-automation” pattern, enabling reactive,
  * declarative binding between model, view, and persistence layers.
  */
-public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparable<TYPE>, Iterable<TYPE> {
+public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Cloneable, Comparable<Hub<TYPE>>, Iterable<TYPE> {
 	/**
 	 * Serialization version identifier used to validate compatibility when
 	 * Hub instances are serialized and deserialized.
@@ -107,7 +107,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * Internal metadata object holding unique Hub configuration, including
 	 * link-hub references, shared-hub pointer, default position, and detail lists.
 	 */
-	protected HubDataUnique datau;
+	protected HubDataUnique<TYPE> datau;
 
 	/**
 	 * Internal structure storing active-object state, including the current
@@ -218,7 +218,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		} else {
 			og.hubsInternal().callHubDetailSetMasterObject(this, masterObject, linkInfo);
 
-			if (bCreateSelect && this.isOAObject()) {
+			if (bCreateSelect) {
 				// create select, but dont call select.select(), since it could be
 				// coming from server. See: OAObjectReflectDelegate.getReferenceHub(..)
 				
@@ -527,12 +527,12 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
      *
      * @param h Hub to copy objects into
      */
-	public void copyInto(Hub h) {
+	public void copyInto(Hub<TYPE> h) {
 		if (h == null) {
 			return;
 		}
 		for (int i = 0;; i++) {
-			Object obj = this.elementAt(i);
+			TYPE obj = this.elementAt(i);
 			if (obj == null) {
 				break;
 			}
@@ -540,15 +540,6 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 				h.add(obj);
 			}
 		}
-	}
-
-	/**
-	 * Returns whether the objects stored by this Hub are subclasses of OAObject.
-	 *
-	 * @return true if object type is OAObject-based
-	 */
-	public boolean isOAObject() {
-		return data.isOAObjectFlag();
 	}
 
 	/**
@@ -1093,7 +1084,6 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (data.isDisabled()) {
 			return false;
 		}
-		if (!this.isOAObject()) return true;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		return og.objectsInternal().callObjectCallbackGetAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, (Hub<OAObject>) this, null, null);
 	}
@@ -2286,7 +2276,6 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return OASelect instance or null
 	 */
 	public OASelect<? extends OAObject> getSelect() {
-		if (!this.isOAObject()) return null;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		return og.hubsInternal().callHubSelectGetSelect((Hub<? extends OAObject>) this);
 	}
@@ -2299,7 +2288,6 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @return OASelect instance
 	 */
 	public OASelect<? extends OAObject> getSelect(boolean bCreateIfNull) {
-		if (!this.isOAObject()) return null;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		OASelect sel = og.hubsInternal().callHubSelectGetSelect((Hub<? extends OAObject>) this, true);
 		return sel;
@@ -2556,7 +2544,7 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	 * @param obj object to compare
 	 * @return comparison result: 1, 0, or -1
 	 */
-	public int compareTo(Object obj) {
+	public int compareTo(Hub<TYPE> obj) {
 		if (obj == null) {
 			return 1;
 		}
@@ -2654,7 +2642,6 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		if (!this.isOAObject()) return true;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		
 		Hub<OAObject> hub = (Hub) this;
@@ -2675,7 +2662,6 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		if (!this.isOAObject()) return true;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		
 		Hub<OAObject> hub = (Hub) this;
@@ -2696,7 +2682,6 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
-		if (!this.isOAObject()) return true;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		Hub<OAObject> hub = (Hub) this;
 	    OAObject oaObj = (OAObject) obj;
@@ -3258,10 +3243,10 @@ public class Hub<TYPE> implements Serializable, List<TYPE>, Cloneable, Comparabl
 	public static final class FriendAccess {
 		private FriendAccess() {
 		}
-		public HubData<?> getHubData(Hub hub) {
+		public <T extends OAObject> HubData<T> getHubData(Hub<T> hub) {
 			return hub.data;
 		}
-		public void setHubData(Hub hub, HubData data) {
+		public <T extends OAObject> void setHubData(Hub<T> hub, HubData<T> data) {
 			hub.data = data;
 		}
 

@@ -186,7 +186,7 @@ public class OAIndexOfFilter implements OAFilter {
                 return obj != null;
             }
         }
-        obj = getPropertyValue(obj);
+		if (obj instanceof OAObject) obj = getPropertyValue((OAObject) obj);
         
         String s1 = OAString.toString(obj);
         String s2 = OAString.toString(value);
@@ -207,7 +207,7 @@ public class OAIndexOfFilter implements OAFilter {
      * @param obj the source object
      * @return the extracted value or the original object
      */
-    protected Object getPropertyValue(Object obj) {
+    protected Object getPropertyValue(OAObject obj) {
         Object objx = obj;
         if (pp != null) {
             objx = pp.getValue(obj);

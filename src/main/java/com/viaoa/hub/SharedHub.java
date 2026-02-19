@@ -16,6 +16,7 @@
 package com.viaoa.hub;
 
 import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
 /**
@@ -59,7 +60,7 @@ import com.viaoa.runtime.OARuntime;
  *       invoking {@code hub.createSharedHub(...)}.</li>
  * </ul>
  */
-public class SharedHub<TYPE> extends Hub<TYPE> {
+public class SharedHub<TYPE extends OAObject> extends Hub<TYPE> {
     
 	/**
 	 * Creates a SharedHub that mirrors the data and object references of the

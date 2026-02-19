@@ -40,7 +40,7 @@ import com.viaoa.util.OAString;
  *   <li>Supports optional active-object propagation to keep selection consistent.</li>
  * </ul>
  */
-public class HubCombined<T> {
+public class HubCombined<TYPE extends OAObject> {
 	private static Logger LOG = Logger.getLogger(HubCombined.class.getName());
 	private static final long serialVersionUID = 1L;
 
@@ -48,31 +48,31 @@ public class HubCombined<T> {
 	 * The master hub that receives and maintains the combined contents
 	 * of all tracked source hubs.
 	 */
-	protected final Hub<T> hubMaster;
+	protected final Hub<TYPE> hubMaster;
 
 	/**
 	 * Collection of source hubs whose objects are merged into the
 	 * master hub.
 	 */
-	protected final ArrayList<Hub<T>> alHub = new ArrayList<>();
+	protected final ArrayList<Hub<TYPE>> alHub = new ArrayList<>();
 	
 	/**
 	 * List of listeners attached to each tracked source hub to relay
 	 * changes to the master hub.
 	 */
-	protected ArrayList<HubListener<T>> alHubListener;
+	protected ArrayList<HubListener<TYPE>> alHubListener;
 	
 	/**
 	 * Listener attached to the master hub to propagate its changes
 	 * back to source hubs when appropriate.
 	 */
-	protected final HubListener<T> hlMaster;
+	protected final HubListener<TYPE> hlMaster;
 	
 	/**
 	 * Holds the first hub added to the combined collection, used for
 	 * handling add-back behavior and active-object propagation logic.
 	 */
-	protected Hub<T> hubFirst;
+	protected Hub<TYPE> hubFirst;
 	
 	/**
 	 * Flag indicating whether the master hub is currently being
@@ -88,7 +88,7 @@ public class HubCombined<T> {
 	 * @param hubMaster the master hub receiving the combined contents
 	 * @param hubs      optional list of source hubs whose objects form the union
 	 */
-	public HubCombined(final Hub<T> hubMaster, final Hub<T>... hubs) {
+	public HubCombined(final Hub<TYPE> hubMaster, final Hub<TYPE>... hubs) {
 		this.hubMaster = hubMaster;
 
 		if (hubs != null) {
@@ -97,13 +97,13 @@ public class HubCombined<T> {
 			}
 		}
 
-		hlMaster = new HubListenerAdapter<T>(this, "HubCombined.hubMaster", "") {
+		hlMaster = new HubListenerAdapter<TYPE>(this, "HubCombined.hubMaster", "") {
 			@Override
-			public void afterAdd(HubEvent<T> e) {
+			public void afterAdd(HubEvent<TYPE> e) {
 				if (bUpdatingMasterHub) {
 					return;
 				}
-				T objx = e.getObject();
+				TYPE objx = e.getObject();
 				boolean bUsed = true;
 				for (Hub h : hubs) {
 					if (h.contains(objx)) {
@@ -122,28 +122,28 @@ public class HubCombined<T> {
 			}
 
 			@Override
-			public void afterInsert(HubEvent<T> e) {
+			public void afterInsert(HubEvent<TYPE> e) {
 				afterAdd(e);
 			}
 
 			@Override
-			public void afterRemove(HubEvent<T> e) {
+			public void afterRemove(HubEvent<TYPE> e) {
 				if (bUpdatingMasterHub) {
 					return;
 				}
-				T obj = e.getObject();
-				for (Hub<T> h : alHub) {
+				TYPE obj = e.getObject();
+				for (Hub<TYPE> h : alHub) {
 					h.remove(obj);
 				}
 			}
 
 			@Override
-			public void beforeRemoveAll(HubEvent<T> e) {
+			public void beforeRemoveAll(HubEvent<TYPE> e) {
 				if (bUpdatingMasterHub) {
 					return;
 				}
-				for (T obj : hubMaster) {
-					for (Hub<T> h : alHub) {
+				for (TYPE obj : hubMaster) {
+					for (Hub<TYPE> h : alHub) {
 						h.remove(obj);
 					}
 				}
@@ -157,7 +157,7 @@ public class HubCombined<T> {
 	 *
 	 * @return the master hub
 	 */
-	public Hub<T> getMasterHub() {
+	public Hub<TYPE> getMasterHub() {
 		return hubMaster;
 	}
 
@@ -184,7 +184,7 @@ public class HubCombined<T> {
 	 *
 	 * @return list of tracked hubs
 	 */
-	public ArrayList<Hub<T>> getHubs() {
+	public ArrayList<Hub<TYPE>> getHubs() {
 		return alHub;
 	}
 
@@ -196,7 +196,7 @@ public class HubCombined<T> {
 	 * @param object   the object whose property should be tracked
 	 * @param property the property name whose value is added to the combined hub
 	 */
-	public void add(final OAObject object, final String property) {
+	public void add(final TYPE object, final String property) {
 		if (object == null) {
 			return;
 		}
@@ -204,14 +204,14 @@ public class HubCombined<T> {
 			return;
 		}
 
-		final Hub<T> hubNew = new Hub();
-		T obj = (T) object.getProperty(property);
+		final Hub<TYPE> hubNew = new Hub<TYPE>();
+		TYPE obj = (TYPE) object.getProperty(property);
 		if (obj != null) {
 			hubNew.add(obj);
 		}
 		add(hubNew);
 
-		final Hub hub = new Hub();
+		final Hub<TYPE> hub = new Hub();
 		hub.add(object);
 
 		HubListener hl = new HubListenerAdapter(this, "HubCombined.object", "") {
@@ -220,7 +220,7 @@ public class HubCombined<T> {
 				if (!property.equalsIgnoreCase(e.getPropertyName())) {
 					return;
 				}
-				Object objn = e.getNewValue();
+				TYPE objn = (TYPE) e.getNewValue();
 				Object objo = e.getOldValue();
 				if (objn == objo) {
 					return;
@@ -242,15 +242,15 @@ public class HubCombined<T> {
 	 *
 	 * @param hub the hub to add to the combined collection
 	 */
-	public void add(Hub<T> hub) {
+	public void add(Hub<TYPE> hub) {
 		if (alHub.size() == 0) {
 			hubFirst = hub;
 		}
 		alHub.add(hub);
 
-		HubListener hl = new HubListenerAdapter<T>() {
+		HubListener hl = new HubListenerAdapter<TYPE>() {
 			@Override
-			public void afterAdd(HubEvent<T> e) {
+			public void afterAdd(HubEvent<TYPE> e) {
 				try {
 					bUpdatingMasterHub = true;
 					hubMaster.add(e.getObject());
@@ -260,15 +260,15 @@ public class HubCombined<T> {
 			}
 
 			@Override
-			public void afterInsert(HubEvent<T> e) {
+			public void afterInsert(HubEvent<TYPE> e) {
 				afterAdd(e);
 			}
 
 			@Override
-			public void afterRemove(HubEvent<T> e) {
-				T obj = e.getObject();
+			public void afterRemove(HubEvent<TYPE> e) {
+				TYPE obj = e.getObject();
 				boolean bUsed = false;
-				for (Hub<T> hx : alHub) {
+				for (Hub<TYPE> hx : alHub) {
 					if (hx.contains(obj)) {
 						bUsed = true;
 						break;
@@ -285,19 +285,19 @@ public class HubCombined<T> {
 			}
 
 			@Override
-			public void afterRemoveAll(HubEvent<T> e) {
+			public void afterRemoveAll(HubEvent<TYPE> e) {
 				onNewList(e);
 			}
 
 			@Override
-			public void onNewList(HubEvent<T> e) {
+			public void onNewList(HubEvent<TYPE> e) {
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 				try {
 					bUpdatingMasterHub = true;
 					srvcOAThreadLocal.setLoading(true);
 					for (Object obj : hubMaster) {
 						boolean bUsed = false;
-						for (Hub<T> hx : alHub) {
+						for (Hub<TYPE> hx : alHub) {
 							if (hx.contains(obj)) {
 								bUsed = true;
 								break;
@@ -307,7 +307,7 @@ public class HubCombined<T> {
 							hubMaster.remove(obj);
 						}
 					}
-					for (T obj : e.getHub()) {
+					for (TYPE obj : e.getHub()) {
 						hubMaster.add(obj);
 					}
 				} finally {
@@ -320,11 +320,11 @@ public class HubCombined<T> {
 		};
 		hub.addHubListener(hl);
 		if (alHubListener == null) {
-			alHubListener = new ArrayList<HubListener<T>>();
+			alHubListener = new ArrayList<HubListener<TYPE>>();
 		}
 		alHubListener.add(hl);
 
-		for (T obj : hub) {
+		for (TYPE obj : hub) {
 			hubMaster.add(obj);
 		}
 	}
@@ -337,7 +337,7 @@ public class HubCombined<T> {
 	public void refresh() {
 		for (Object obj : hubMaster) {
 			boolean bUsed = false;
-			for (Hub<T> hx : alHub) {
+			for (Hub<TYPE> hx : alHub) {
 				if (hx.contains(obj)) {
 					bUsed = true;
 					break;
@@ -347,8 +347,8 @@ public class HubCombined<T> {
 				hubMaster.remove(obj);
 			}
 		}
-		for (Hub<T> hx : alHub) {
-			for (T obj : hx) {
+		for (Hub<TYPE> hx : alHub) {
+			for (TYPE obj : hx) {
 				hubMaster.add(obj);
 			}
 		}

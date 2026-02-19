@@ -143,7 +143,7 @@ public class OABetweenFilter<T> implements OAFilter {
 				return obj != null;
 			}
 		}
-		obj = getPropertyValue(obj);
+		if (obj instanceof OAObject) obj = getPropertyValue((OAObject) obj);
 		return OACompare.isBetween(obj, value1, value2);
 	}
 
@@ -154,7 +154,7 @@ public class OABetweenFilter<T> implements OAFilter {
 	 * @param obj the object from which to extract a value
 	 * @return the extracted value, or the original object if no path is defined
 	 */
-	protected Object getPropertyValue(Object obj) {
+	protected Object getPropertyValue(OAObject obj) {
 		Object objx = obj;
 		if (pp != null) {
 			objx = pp.getValue(obj);

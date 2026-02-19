@@ -221,7 +221,7 @@ public class OAPreLoader {
 				hub = new Hub(liMany.getToClass());
 				og.objectsInternal().callObjectPropertySetProperty((OAObject) objOne, liMany.getName(), hub);
 			}
-			hub.add(objFromMany);
+			hub.add((OAObject) objFromMany);
 		}
 	}
 
@@ -283,7 +283,7 @@ public class OAPreLoader {
 					hub = new Hub(classB);
 					ogX.objectsInternal().callObjectPropertySetProperty((OAObject) objA, liA.getName(), hub);
 				}
-				hub.add(objB);
+				hub.add((OAObject) objB);
 			}
 
 			if (!liB.getPrivateMethod()) {
@@ -296,7 +296,7 @@ public class OAPreLoader {
 					hub = new Hub(classA);
 					ogX.objectsInternal().callObjectPropertySetProperty((OAObject) objB, liB.getName(), hub);
 				}
-				hub.add(objA);
+				hub.add((OAObject) objA);
 			}
 		}
 	}
@@ -414,7 +414,7 @@ public class OAPreLoader {
 				hub = new Hub(clazz);
 				og.objectsInternal().callObjectPropertySetProperty((OAObject) fParent, liMany.getName(), hub);
 			}
-			hub.add(f);
+			hub.add((OAObject) f);
 		}
 	}
 

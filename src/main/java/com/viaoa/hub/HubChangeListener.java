@@ -18,6 +18,7 @@ package com.viaoa.hub;
 import java.util.ArrayList;
 
 import com.viaoa.context.OAContext;
+import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.graph.service.object.OAObjectCallbackService;
@@ -548,7 +549,8 @@ public abstract class HubChangeListener {
 	 * @param hub the hub to evaluate
 	 * @return the created HubProp instance
 	 */
-	public HubProp addNewEnabled(final Hub hub) {
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public HubProp addNewEnabled(final Hub<?> hub) {
 		if (hub == null) {
 			return null;
 		}
@@ -567,7 +569,9 @@ public abstract class HubChangeListener {
 		};
 		HubProp hp = add(hub, null, false, null, filter, false, "ObjectCallback.AllowNew");
 
-		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hub, hub.getObjectClass(), null, null, this, true);
+		Hub<OAObject> hubX = (Hub) hub;
+		Class classX = hubX.getObjectClass();
+		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hubX, classX, null, null, this, true);
 
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
@@ -586,7 +590,8 @@ public abstract class HubChangeListener {
 	 * @param bAoOnly true to limit checks to the active object
 	 * @return the created HubProp instance
 	 */
-	public HubProp addDeleteEnabled(final Hub hub, boolean bAoOnly) {
+	@SuppressWarnings({"unchecked","rawtypes"})
+	public HubProp addDeleteEnabled(final Hub<?> hub, boolean bAoOnly) {
 		if (hub == null) {
 			return null;
 		}
@@ -598,7 +603,10 @@ public abstract class HubChangeListener {
 				if (!(obj instanceof OAObject)) {
 					return false;
 				}
-				OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowDeleteObjectCallback(hub, (OAObject) obj);
+
+				Hub<OAObject> hubX = (Hub) hub;
+				
+				OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowDeleteObjectCallback(hubX, (OAObject) obj);
 				boolean b = eq.getAllowed();
 				if (!b) {
 					failureReason = eq.getDisplayResponse();
@@ -611,13 +619,18 @@ public abstract class HubChangeListener {
 		};
 		HubProp hp = add(hub, null, false, null, filter, bAoOnly, "ObjectCallback.AllowDelete");
 
-		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hub, hub.getObjectClass(), null, null, this, true);
+		Hub<OAObject> hubX = (Hub) hub;
+		Class classX = hubX.getObjectClass();
+		
+		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hubX, classX, null, null, this, true);
 
-		Hub hx = hub.getMasterHub();
+		Hub<?> hx = hub.getMasterHub();
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
 			String propx = og.hubsInternal().callHubDetailGetPropertyFromMasterToDetail(hub);
-			og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
+			hubX = (Hub) hx;
+			classX = hubX.getObjectClass();
+			og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hubX, classX, propx, null, this, true);
 		}
 
 		return hp;
@@ -640,7 +653,9 @@ public abstract class HubChangeListener {
 			@Override
 			public boolean isUsed(Object obj) {
 				// 20191214
-				boolean b = hub.getAllowRemove(OAObjectCallback.CHECK_ALL, obj);
+				if (!(obj instanceof OAObject)) return false;
+
+				boolean b = hub.getAllowRemove(OAObjectCallback.CHECK_ALL, (OAObject) obj);
 				/*was
 				boolean b;
 				if (obj instanceof OAObject) b = hub.canRemove((OAObject) obj);
@@ -694,6 +709,7 @@ public abstract class HubChangeListener {
 		OAFilter filter = new OAFilter() {
 			@Override
 			public boolean isUsed(Object obj) {
+				if (!(obj instanceof OAObject)) return false;
 				OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowCopyObjectCallback((OAObject) obj);
 				boolean b = eq.getAllowed();
 				if (!b) {

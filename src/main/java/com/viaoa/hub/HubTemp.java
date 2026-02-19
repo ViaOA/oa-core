@@ -16,6 +16,9 @@
 package com.viaoa.hub;
 
 import java.util.*;
+
+import com.viaoa.object.OAObject;
+
 import java.lang.ref.*; 
 
 /**
@@ -60,19 +63,19 @@ import java.lang.ref.*;
  *       operations requiring a Hub context.</li>
  * </ul>
  */
-public class HubTemp {
+public class HubTemp<TYPE extends OAObject> {
 	
 	/**
 	 * The temporary Hub instance associated with a single object. Created on
 	 * demand and used to provide a Hub context for operations requiring one.
 	 */
-    Hub hub;
+    Hub<TYPE> hub;
     
     /**
      * The underlying object represented by this temporary Hub. Used as the key
      * for cached lookup and identity validation.
      */
-    Object object;
+    TYPE object;
     
     /**
      * Reference count indicating how many callers currently require this
@@ -120,7 +123,7 @@ public class HubTemp {
      * @param hubObject the object requiring a temporary Hub
      * @return the associated Hub, or null if {@code hubObject} is null
      */
-    public static Hub createHub(Object hubObject) {
+    public static Hub createHub(OAObject hubObject) {
         if (hubObject == null) return null;
         
         Map<Object, WeakReference<HubTemp>> hm = getMap(hubObject.getClass());

@@ -135,7 +135,7 @@ public class OALessFilter implements OAFilter {
                 return obj != null;
             }
         }
-        obj = getPropertyValue(obj);
+		if (obj instanceof OAObject) obj = getPropertyValue((OAObject) obj);
         return OACompare.isLess(obj, value);
     }
 
@@ -147,7 +147,7 @@ public class OALessFilter implements OAFilter {
      * @param obj the source object
      * @return the extracted property value or the original object
      */
-    protected Object getPropertyValue(Object obj) {
+    protected Object getPropertyValue(OAObject obj) {
         Object objx = obj;
         if (pp != null) {
             objx = pp.getValue(obj);

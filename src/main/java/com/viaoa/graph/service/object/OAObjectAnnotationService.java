@@ -24,6 +24,7 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATriggerMethod;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
+import com.viaoa.model.oa.VString;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
@@ -328,8 +329,8 @@ public abstract class OAObjectAnnotationService {
 
 			if (oaprop.isNameValue()) {
 				// 20220803, 20220917 populate hubs
-				Hub<String> h = pi.getNameValues();
-				Hub<String> h2 = pi.getDisplayNameValues();
+				Hub<VString> h = pi.getNameValues();
+				Hub<VString> h2 = pi.getDisplayNameValues();
 				try {
 				    Method mx = OAReflect.getMethod(clazz, "get" + pi.getName()+"Enum");
 				    Class cz;
@@ -346,7 +347,10 @@ public abstract class OAObjectAnnotationService {
 					    if (i == 0 && h.size() > 0) break;
 						Object objz = Array.get(objzs, i);
 
-						h.add(objz.toString());
+						VString vs = new VString();
+						vs.setValue(objz.toString());
+						h.add(vs);
+						
 						if (displayMethod == null && !bDisplayMethod) {
 							bDisplayMethod = true;
 							try {
@@ -356,9 +360,13 @@ public abstract class OAObjectAnnotationService {
 						}
 						if (displayMethod != null) {
 							Object objxs = displayMethod.invoke(objz, (Object[]) null);
-							h2.add(objxs.toString());
+							vs = new VString();
+							vs.setValue(objxs.toString());
+							h2.add(vs);
 						} else {
-							h2.add(objz.toString());
+							vs = new VString();
+							vs.setValue(objz.toString());
+							h2.add(vs);
 						}
 					}
 				} catch (Exception e) {

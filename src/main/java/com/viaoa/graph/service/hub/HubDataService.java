@@ -27,7 +27,7 @@ public abstract class HubDataService {
      *
      * @param thisHub the hub whose internal state is being reset
      */
-	public void clearAllAndReset(Hub thisHub) {
+	public void clearAllAndReset(Hub<?> thisHub) {
 		//qqqqqqqq method was protected
     	synchronized (faHub.getHubData(thisHub)) {
     		Vector v = faHub.getHubData(thisHub).getVecAdd();
@@ -54,7 +54,7 @@ public abstract class HubDataService {
 	 * @param thisHub the hub whose vector capacity is being checked
 	 * @param size    the minimum capacity required
 	 */
-	public void ensureCapacity(Hub thisHub, int size) {
+	public void ensureCapacity(Hub<?> thisHub, int size) {
 		//qqqqqq method was protected
 		faHub.getHubData(thisHub).getVector().ensureCapacity(size);
 	}
@@ -65,7 +65,7 @@ public abstract class HubDataService {
 	 *
 	 * @param thisHub the hub whose vector should be trimmed
 	 */
-	public void resizeToFit(Hub thisHub) {
+	public void resizeToFit(Hub<?> thisHub) {
 		Vector v = faHub.getHubData(thisHub).getVector();
 		if (v == null) return; // could be called during serialization
 		v.trimToSize();
@@ -80,7 +80,7 @@ public abstract class HubDataService {
 	 * @param thisHub   the hub whose changed state is being updated
 	 * @param bChanged  the new changed value
 	 */
-	public void setChanged(Hub thisHub, boolean bChanged) {
+	public void setChanged(Hub<?> thisHub, boolean bChanged) {
 		//qqqqqqq method was proteced
 	    if (thisHub == null) return;
         boolean old = faHub.getHubData(thisHub).getChanged();
@@ -114,7 +114,7 @@ public abstract class HubDataService {
 	 *
 	 * @param thisHub the hub whose change tracking is being cleared
 	 */
-	public void clearHubChanges(Hub thisHub) {
+	public void clearHubChanges(Hub<?> thisHub) {
 	    if (thisHub == null) return;
         boolean bSendEvent = false;
         synchronized (faHub.getHubData(thisHub)) {
@@ -161,7 +161,7 @@ public abstract class HubDataService {
 	 * @param thisHub the hub whose elements are being copied
 	 * @param anArray the destination array
 	 */
-    public void copyInto(Hub thisHub, Object anArray[]) {
+    public <T extends OAObject> void copyInto(Hub<T> thisHub, T anArray[]) {
     	//qqqqqqqq method was protected
         synchronized (faHub.getHubData(thisHub)) {
         	faHub.getHubData(thisHub).getVector().copyInto(anArray);
@@ -176,7 +176,7 @@ public abstract class HubDataService {
      * @param thisHub the hub whose elements are being converted to an array
      * @return an array containing the Hub’s elements
      */
-	public <T> T[] toArray(Hub<T> thisHub) {
+	public <T extends OAObject> T[] toArray(Hub<T> thisHub) {
 	    thisHub.getSize(); // call before sync, in case it needs to load
         T[] objs;
         for (int i=0;;i++) {
@@ -200,7 +200,7 @@ public abstract class HubDataService {
 	 * @param thisHub the hub whose size is being retrieved
 	 * @return the number of elements in the Hub
 	 */
-    public int getCurrentSize(Hub thisHub) {
+    public int getCurrentSize(Hub<?> thisHub) {
         return faHub.getHubData(thisHub).getVector().size();
     }
 	
@@ -212,7 +212,7 @@ public abstract class HubDataService {
      * @param thisHub the source hub
      * @param newHub  the destination hub
      */
-    public void _clone(Hub thisHub, Hub newHub) {
+    public <T extends OAObject> void _clone(Hub<T> thisHub, Hub<T> newHub) {
     	Vector v = (Vector) faHub.getHubData(thisHub).getVector().clone();
         faHub.getHubData(newHub).setVector(v);
     }
@@ -228,7 +228,7 @@ public abstract class HubDataService {
      * @param bIsRemovingAll whether the entire Hub is being cleared
      * @return the position from which the object was removed, or -1
      */
-    public int _remove(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
+    public <T extends OAObject> int _remove(Hub<T> thisHub, T obj, boolean bDeleting, boolean bIsRemovingAll) {
     	//qqqqqqqq method was protected
         int pos = 0;
         try {
@@ -257,7 +257,7 @@ public abstract class HubDataService {
      * @param bIsRemovingAll whether the entire Hub is being cleared
      * @return the position from which the object was removed, or -1
      */
-    private int _remove2(Hub thisHub, Object obj, boolean bDeleting, boolean bIsRemovingAll) {
+    private <T extends OAObject> int _remove2(Hub<T> thisHub, T obj, boolean bDeleting, boolean bIsRemovingAll) {
         
     	int pos;
         if (bIsRemovingAll) {
@@ -326,7 +326,7 @@ public abstract class HubDataService {
      * @param bCheckContains whether to skip the add if the object is already present
      * @return {@code true} if the object was added; otherwise {@code false}
      */
-    public boolean _add(Hub thisHub, Object obj, boolean bHasLock, boolean bCheckContains) {
+    public <T extends OAObject> boolean _add(Hub<T> thisHub, T obj, boolean bHasLock, boolean bCheckContains) {
         boolean b = false;
         try {
             if (!bHasLock) callThreadLocalLock(thisHub);
@@ -351,7 +351,7 @@ public abstract class HubDataService {
      * @param bCheckContains whether to skip if the object already exists
      * @return {@code true} if the object was added; otherwise {@code false}
      */
-    private boolean _add2(Hub thisHub, Object obj, final boolean bCheckContains) {
+    private <T extends OAObject> boolean _add2(Hub<T> thisHub, T obj, final boolean bCheckContains) {
         if (bCheckContains && thisHub.contains(obj)) return false;
         faHub.getHubData(thisHub).getVector().addElement(obj);
         
@@ -396,7 +396,7 @@ public abstract class HubDataService {
      * @param bIsLocked whether the calling thread already holds the lock
      * @return {@code true} if the object was inserted
      */
-    public boolean _insert(Hub thisHub, Object obj, int pos, boolean bIsLocked) {
+    public <T extends OAObject> boolean _insert(Hub<T> thisHub, T obj, int pos, boolean bIsLocked) {
     	//qqqqqqqqq method was protected
         boolean b = false;
         try {
@@ -423,7 +423,7 @@ public abstract class HubDataService {
      * @param pos     the position at which to insert the object
      * @return {@code true} if the insert completed
      */
-	private boolean _insert2(Hub thisHub, Object obj, int pos) {
+	private <T extends OAObject> boolean _insert2(Hub<T> thisHub, T obj, int pos) {
         boolean b = callThreadLocalIsLoading();
 
         faHub.getHubData(thisHub).getVector().insertElementAt(obj, pos);
@@ -455,7 +455,7 @@ public abstract class HubDataService {
 	 * @param posFrom the original index
 	 * @param posTo   the destination index
 	 */
-	public void _move(Hub thisHub, Object obj, int posFrom, int posTo) {
+	public <T extends OAObject> void _move(Hub<T> thisHub, T obj, int posFrom, int posTo) {
         try {
             callThreadLocalLock(thisHub);
             faHub.getHubData(thisHub).incrementChangeCount();
@@ -476,7 +476,7 @@ public abstract class HubDataService {
 	 *
 	 * @param thisHub the hub whose contents are being tracked as added
 	 */
-	public void addAllToAddVector(Hub thisHub) {
+	public void addAllToAddVector(Hub<?> thisHub) {
 	    if (thisHub == null) return;
         createVecAdd(thisHub);
 	    for (Object objx :  thisHub) {
@@ -491,7 +491,7 @@ public abstract class HubDataService {
 	 * @param thisHub the hub whose add-tracking vector is being created
 	 * @return the add-tracking vector
 	 */
-	public Vector createVecAdd(Hub thisHub) {
+	public <T extends OAObject> Vector<T> createVecAdd(Hub<T> thisHub) {
 		//qqqqqqqq method was protected
         if (faHub.getHubData(thisHub).getVecAdd() == null) {
 	        synchronized (faHub.getHubData(thisHub)) {
@@ -510,7 +510,7 @@ public abstract class HubDataService {
 	 * @param thisHub the hub whose remove-tracking vector is being created
 	 * @return the remove-tracking vector
 	 */
-	public Vector createVecRemove(Hub thisHub) {
+	public <T extends OAObject> Vector<T> createVecRemove(Hub<T> thisHub) {
 		//qqqqqqqqq method was protected
         if (faHub.getHubData(thisHub).getVecRemove() == null) {
 	        synchronized (faHub.getHubData(thisHub)) {
@@ -533,18 +533,27 @@ public abstract class HubDataService {
 	 * @return an array of added {@link OAObject} instances, or {@code null} if none
 	 *         have been recorded
 	 */
-	public OAObject[] getAddedObjects(Hub thisHub) {
-        Vector v = faHub.getHubData(thisHub).getVecAdd();
-        if (v == null || v.size() == 0) return null;
-        synchronized (faHub.getHubData(thisHub)) {
-     		OAObject[] objs;
-			int x = (v == null) ? 0 : v.size();
-			objs = new OAObject[x];
+	public <T extends OAObject> T[] getAddedObjects(Hub<T> thisHub) {
+        final Object hd = faHub.getHubData(thisHub);        
+        synchronized (hd) {
+            @SuppressWarnings("rawtypes")
+            final Vector v = faHub.getHubData(thisHub).getVecAdd();
+            if (v == null || v.isEmpty()) return null;
+        
+            @SuppressWarnings("unchecked")
+            final Class<T> cx = (Class<T>) thisHub.getObjectClass(); // or other hub API you have
+
+            int x = v.size();
+            @SuppressWarnings("unchecked")
+            final T[] objs = (T[]) java.lang.reflect.Array.newInstance(cx, x);
+        	
+        	
 			if (x > 0) v.copyInto(objs);
 			return objs;
         }
 	}
-
+	
+	
 	/**
 	 * Returns an array of objects that have been removed from the Hub but not yet
 	 * cleared from the Hub’s change-tracking “removed” list.
@@ -557,13 +566,21 @@ public abstract class HubDataService {
 	 * @return an array of removed {@link OAObject} instances, or {@code null} if
 	 *         none have been recorded
 	 */
-	public OAObject[] getRemovedObjects(Hub thisHub) {
-        Vector v = faHub.getHubData(thisHub).getVecRemove();
-        if (v == null || v.size() == 0) return null;
-        synchronized (faHub.getHubData(thisHub)) {
-			OAObject[] objs;
-			int x = (v == null) ? 0 : v.size();
-			objs = new OAObject[x];
+	public <T extends OAObject> T[] getRemovedObjects(Hub<T> thisHub) {
+        final Object hd = faHub.getHubData(thisHub);        
+        synchronized (hd) {
+            @SuppressWarnings("rawtypes")
+            final Vector v = faHub.getHubData(thisHub).getVecRemove();
+            if (v == null || v.isEmpty()) return null;
+        
+            @SuppressWarnings("unchecked")
+            final Class<T> cx = (Class<T>) thisHub.getObjectClass(); // or other hub API you have
+
+            int x = v.size();
+            @SuppressWarnings("unchecked")
+            final T[] objs = (T[]) java.lang.reflect.Array.newInstance(cx, x);
+        	
+        	
 			if (x > 0) v.copyInto(objs);
 			return objs;
         }
@@ -575,7 +592,7 @@ public abstract class HubDataService {
 	 * @param thisHub the Hub to check
 	 * @return {@code true} if the Hub is marked as changed, otherwise {@code false}
 	 */
-	public boolean getChanged(Hub thisHub) {
+	public boolean getChanged(Hub<?> thisHub) {
 		return faHub.getHubData(thisHub).getChanged();
 	}
 	
@@ -590,7 +607,7 @@ public abstract class HubDataService {
 	 * @param key the key or object used to identify the desired element
 	 * @return the matching object, or {@code null} if not found
 	 */
-	public <T> T getObject(final Hub<T> thisHub, Object key) {
+	public <T extends OAObject> T getObject(final Hub<T> thisHub, Object key) {
 		if (thisHub == null || key == null) return null;
 	    if (!(key instanceof OAObjectKey)) {
 	    	if (key instanceof OAObject) key = callObjectKeyGetKey((OAObject) key);
@@ -620,7 +637,7 @@ public abstract class HubDataService {
 	 * @param pos the index to retrieve
 	 * @return the object at the position, or {@code null} if not available
 	 */
-	public <T> T getObjectAt(Hub<T> thisHub, int pos) {
+	public <T extends OAObject> T getObjectAt(Hub<T> thisHub, int pos) {
 	    T ho;
 	    if (pos < 0) return null;
 	    
@@ -634,17 +651,6 @@ public abstract class HubDataService {
 	        }
 	        catch (Exception e) {
 	        	obj = null;  // hub could have changed, and pos is not valid anymore
-	        }
-	        if (obj instanceof OAObjectKey && thisHub.isOAObject()) {
-            	obj = (T) callObjectReflectGetObject(thisHub.getObjectClass(), obj);
-                if (obj != null) {
-                	callObjectHubAddHub((OAObject)obj, thisHub);
-	                v.setElementAt(obj, pos);
-	                if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
-		                // need to set property to MasterHub
-	                	callHubdetailSetPropertyToMasterHub(thisHub, obj, faHub.getHubDataMaster(thisHub).getMasterObject());
-	                }
-                }
 	        }
 	        if (obj != null) return obj;
 	    }
@@ -673,7 +679,7 @@ public abstract class HubDataService {
 	 * @param bUpdateLink whether to update link relationships during the search
 	 * @return the position of the object, or {@code -1} if not found
 	 */
-	public int getPos(final Hub thisHub, Object object, final boolean adjustMaster, final boolean bUpdateLink) {
+	public <T extends OAObject> int getPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink) {
 	    int pos;
 	    if (object == null || thisHub == null) return -1;
 
@@ -802,7 +808,7 @@ public abstract class HubDataService {
      * @param thisHub the Hub whose added list is modified
      * @param obj the object to remove from the added list
      */
-	public void removeFromAddedList(Hub thisHub, Object obj) {
+	public <T extends OAObject> void removeFromAddedList(Hub<T> thisHub, T obj) {
 	    synchronized (faHub.getHubData(thisHub)) {
             if (faHub.getHubData(thisHub).getHubDatax() == null) return;
 	    	Vector v = faHub.getHubData(thisHub).getVecAdd();
@@ -838,7 +844,7 @@ public abstract class HubDataService {
 	 * @param thisHub the Hub whose removed list is modified
 	 * @param obj the object to remove from the removed list
 	 */
-	public void removeFromRemovedList(Hub thisHub, Object obj) {
+	public <T extends OAObject> void removeFromRemovedList(Hub<T> thisHub, T obj) {
         if (faHub.getHubData(thisHub).getHubDatax() == null) return;
 	    synchronized (faHub.getHubData(thisHub)) {
 	    	Vector v = faHub.getHubData(thisHub).getVecRemove();
@@ -880,7 +886,7 @@ public abstract class HubDataService {
 	 *
 	 * @param thisHub the Hub whose counter is incremented
 	 */
-	public void incChangeCount(Hub thisHub) {
+	public void incChangeCount(Hub<?> thisHub) {
     	faHub.getHubData(thisHub).incrementChangeCount();
 	}
 
@@ -894,7 +900,7 @@ public abstract class HubDataService {
 	 * @param obj the object to look for
 	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
 	 */
-	public boolean contains(Hub hub, Object obj) {
+	public <T extends OAObject> boolean contains(Hub<T> hub, T obj) {
 		return contains(hub, obj, false);
 	}
 	
@@ -910,7 +916,7 @@ public abstract class HubDataService {
 	 * @param bJustAdded if {@code true}, only checks the most recently added items
 	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
 	 */
-	public boolean contains(Hub hub, Object obj, final boolean bJustAdded) {
+	public <T extends OAObject> boolean contains(Hub<T> hub, T obj, final boolean bJustAdded) {
         if (hub == null || obj == null) return false;
         
         final int size = faHub.getHubData(hub).getVector().size();
@@ -932,19 +938,12 @@ public abstract class HubDataService {
         }
         
         if (!(obj instanceof OAObject)) {
-            if (!faHub.getHubData(hub).isOAObjectFlag()) {
-                return containsDirect(hub, obj);
-            }
             // oaObjectKey, or Id value
             obj = callObjectCacheGet(hub.getObjectClass(), obj);
             if (obj == null) return false;
         }        
         
-        if (!faHub.getHubData(hub).isOAObjectFlag()) {
-            return containsDirect(hub, obj);
-        }
-        
-        boolean b = callObjectHubIsAlreadyInHub((OAObject) obj, hub);
+        boolean b = callObjectHubIsAlreadyInHub(obj, hub);
         return b;
     }
 	
@@ -957,7 +956,7 @@ public abstract class HubDataService {
 	 * @param obj the object to check for
 	 * @return {@code true} if the object is present, otherwise {@code false}
 	 */
-    public boolean containsDirect(Hub hub, Object obj) {
+    public <T extends OAObject> boolean containsDirect(Hub<T> hub, T obj) {
         if (hub == null || obj == null) return false;
         int x = faHub.getHubData(hub).getVector().size();
         if (x == 0) return false;
@@ -980,7 +979,7 @@ public abstract class HubDataService {
      * @param obj the object to check
      * @return status code indicating match, mismatch, or invalid conditions
      */
-    private int findUsingQuickSort(final Hub thisHub, final Object obj) {
+    private <T extends OAObject> int findUsingQuickSort(final Hub<T> thisHub, final T obj) {
         if (thisHub == null || obj == null) return -1;
         
         HubSortListener hsl = faHub.getHubData(thisHub).getSortListener(); 
@@ -1038,7 +1037,7 @@ public abstract class HubDataService {
      * @param thisHub the Hub to check
      * @return {@code true} if this Hub is used recursively, otherwise {@code false}
      */
-    public boolean isHubBeingUsedAsRecursive(Hub thisHub) {
+    public boolean isHubBeingUsedAsRecursive(Hub<?> thisHub) {
         if (thisHub == null) return false;
 
         OALinkInfo li = faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo();
@@ -1054,7 +1053,7 @@ public abstract class HubDataService {
      * @param thisHub the Hub to update
      * @param b the new track-changes state
      */
-    public void setTrackChanges(Hub thisHub, boolean b) {
+    public void setTrackChanges(Hub<?> thisHub, boolean b) {
     	faHub.getHubData(thisHub).setTrackChanges(b);        
     }
 
@@ -1064,7 +1063,7 @@ public abstract class HubDataService {
      * @param thisHub the Hub to query
      * @return {@code true} if track changes is enabled, otherwise {@code false}
      */
-    public boolean getTrackChanges(Hub thisHub) {
+    public boolean getTrackChanges(Hub<?> thisHub) {
     	return faHub.getHubData(thisHub).getTrackChanges();        
     }
     
@@ -1074,7 +1073,7 @@ public abstract class HubDataService {
      * @param thisHub the Hub to check
      * @return {@code true} if loading all data, otherwise {@code false}
      */
-    public boolean isLoadingAllData(Hub thisHub) {
+    public boolean isLoadingAllData(Hub<?> thisHub) {
         if (thisHub == null) return false;
         boolean b;
         synchronized (faHub.getHubData(thisHub)) {
@@ -1090,7 +1089,7 @@ public abstract class HubDataService {
      * @param b the new load-all-data state
      * @return the previous state
      */
-    public boolean setLoadingAllData(Hub thisHub, boolean b) {
+    public boolean setLoadingAllData(Hub<?> thisHub, boolean b) {
         boolean bx = false;
         if (thisHub != null) {
             synchronized (faHub.getHubData(thisHub)) {
@@ -1108,7 +1107,7 @@ public abstract class HubDataService {
      * @param thread the thread to associate with the load-all flag
      * @return the previous state
      */
-    public boolean setLoadingAllData(Hub thisHub, boolean b, Thread thread) {
+    public boolean setLoadingAllData(Hub<?> thisHub, boolean b, Thread thread) {
         boolean bx = false;
         if (thisHub != null) {
             synchronized (faHub.getHubData(thisHub)) {
@@ -1128,7 +1127,7 @@ public abstract class HubDataService {
 	public abstract OAObject callObjectReflectGetObject(Class clazz, Object key);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
-	public abstract boolean callObjectHubAddHub(OAObject oaObj, Hub hub);
+	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRecursiveLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
@@ -1143,7 +1142,7 @@ public abstract class HubDataService {
 	public abstract <T extends OAObject> T callObjectCacheGet(Class<T> clazz, Object key);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().isAlreadyInHub")
-	public abstract boolean callObjectHubIsAlreadyInHub(OAObject oaObj, Hub hubFind);
+	public abstract <T extends OAObject> boolean callObjectHubIsAlreadyInHub(T oaObj, Hub<T> hubFind);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().createObjectKey")
 	public abstract OAObjectKey callObjectKeyCreateObjectKey(final Class c, final Object ...ids);
@@ -1151,31 +1150,31 @@ public abstract class HubDataService {
 	
 	
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub thisDetailHub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub);
 	
 	@OAParentProvided (example = "srvcHub.getHubCSService().clearHubChanges")
-	public abstract boolean callHubCSClearHubChanges(Hub thisHub);
+	public abstract boolean callHubCSClearHubChanges(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().setPropertyToMasterHub")
-	public abstract void callHubdetailSetPropertyToMasterHub(Hub thisHub, Object detailObject, Object objMaster);
+	public abstract <T extends OAObject> void callHubDetailSetPropertyToMasterHub(Hub<T> thisHub, T detailObject, OAObject objMaster);
 
 	@OAParentProvided (example = "srvcHub.getHubSelectService().isMoreData")
-	public abstract boolean callHubSelectIsMoreData(Hub thisHub);
+	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubSelectService().fetchMore")
-	public abstract int callHubSelectFetchMore(Hub thisHub);
+	public abstract int callHubSelectFetchMore(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getRealObject")
-	public abstract Object callHubGetRealObject(Hub hub, Object object);
+	public abstract <T extends OAObject> T callHubGetRealObject(Hub<T> hub, T object);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().setSharedHub")
-	public abstract void callHubShareSetSharedHub(Hub thisHub, Hub sharedMasterHub, boolean shareActiveObject);
+	public abstract <T extends OAObject> void callHubShareSetSharedHub(Hub<T> thisHub, Hub<T> sharedMasterHub, boolean shareActiveObject);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().setSharedHub")
-	public abstract void callHubShareSetSharedHub(Hub thisHub, Hub sharedMasterHub, boolean shareActiveObject, Object newLinkValue);
+	public abstract <T extends OAObject> void callHubShareSetSharedHub(Hub<T> thisHub, Hub<T> sharedMasterHub, boolean shareActiveObject, Object newLinkValue);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().setMasterHubActiveObject")
-	public abstract boolean callHubDetailSetMasterHubActiveObject(Hub thisHub, Object detailObject, boolean bUpdateLink);
+	public abstract <T extends OAObject> boolean callHubDetailSetMasterHubActiveObject(Hub<T> thisHub, T detailObject, boolean bUpdateLink);
 
 	
 	@OAParentProvided (example = "srvcThreadLocal.lock")

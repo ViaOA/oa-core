@@ -331,7 +331,7 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the Hub’s current OASelect, or null
 	 */
-	public OASelect<?> getSelect(Hub<?> thisHub) {
+	public <T extends OAObject> OASelect<T> getSelect(Hub<T> thisHub) {
 		return getSelect(thisHub, false);
 	}
 
@@ -344,17 +344,15 @@ public abstract class HubSelectService {
 	 * @return the existing or newly created OASelect
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public OASelect<?> getSelect(Hub<?> thisHub, boolean bCreateIfNull) {
+	public <T extends OAObject> OASelect<T> getSelect(Hub<T> thisHub, boolean bCreateIfNull) {
 		if (thisHub == null) {
 			return null;
 		}
-		OASelect<?> sel = faHub.getHubData(thisHub).getSelect();
+		OASelect<T> sel = faHub.getHubData(thisHub).getSelect();
 		if (sel != null || !bCreateIfNull) {
 			return sel;
 		}
 
-		if (!thisHub.isOAObject()) return null;
-		
 		Class<OAObject> classX = (Class) thisHub.getObjectClass();
 		sel = new OASelect(classX);
 		faHub.getHubData(thisHub).setSelect(sel);
@@ -369,12 +367,11 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub to populate
 	 * @param select  the select definition to run
 	 */
-	public void select(final Hub<?> thisHub, OASelect<?> select) { // This is the main select method for Hub that all of the other select methods call.
+	public <T extends OAObject> void select(final Hub<T> thisHub, OASelect<T> select) { // This is the main select method for Hub that all of the other select methods call.
 		cancelSelect(thisHub, true);
 		if (select == null) {
 			return;
 		}
-		if (!thisHub.isOAObject()) return;
 
 		if (faHub.getHubDataUnique(thisHub).getSharedHub() != null) {
 			select(faHub.getHubDataUnique(thisHub).getSharedHub(), select);
@@ -426,12 +423,10 @@ public abstract class HubSelectService {
 			faHub.getHubData(thisHub).setSelect(select);
 		} else {
 			thisHub.setAO(null); // 20100507
-			if (thisHub.isOAObject()) {
-				int z = callHubDataGetCurrentSize(thisHub);
-				for (int i = 0; i < z; i++) {
-					OAObject oa = (OAObject) callHubDataGetObjectAt(thisHub, i);
-					callObjectHubRemoveHub(oa, thisHub, false);
-				}
+			int z = callHubDataGetCurrentSize(thisHub);
+			for (int i = 0; i < z; i++) {
+				OAObject oa = (OAObject) callHubDataGetObjectAt(thisHub, i);
+				callObjectHubRemoveHub(oa, thisHub, false);
 			}
 			callHubDataClearAllAndReset(thisHub);
 			faHub.getHubData(thisHub).setSelect(select);
@@ -520,7 +515,6 @@ public abstract class HubSelectService {
 		if (thisHub == null) {
 			return -1;
 		}
-		if (!thisHub.isOAObject()) return thisHub.getSize();
 		OASelect<?> sel = getSelect(thisHub);
 		if (sel == null) {
 			return -1;
@@ -538,7 +532,6 @@ public abstract class HubSelectService {
 		if (thisHub == null) {
 			return false;
 		}
-		if (!thisHub.isOAObject()) return true;
 		OASelect<?> sel = getSelect(thisHub);
 		if (sel == null) {
 			return true;
@@ -552,10 +545,9 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub whose select WHERE clause is modified
 	 * @param s       the WHERE clause string
 	 */
-	public void setSelectWhere(Hub<?> thisHub, String s) {
-		OASelect<?> sel = getSelect(thisHub);
+	public <T extends OAObject> void setSelectWhere(Hub<T> thisHub, String s) {
+		OASelect<T> sel = getSelect(thisHub);
 		if (sel == null) {
-			if (!thisHub.isOAObject()) return;
 			sel = new OASelect(thisHub.getObjectClass());
 			faHub.getHubData(thisHub).setSelect(sel);
 		}
@@ -584,14 +576,12 @@ public abstract class HubSelectService {
 	 * @param s       the ORDER BY clause string
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public void setSelectOrder(Hub<?> thisHub, String s) {
+	public <T extends OAObject> void setSelectOrder(Hub<T> thisHub, String s) {
 		if (thisHub == null) return;
 		faHub.getHubData(thisHub).setSortProperty(s);
 
-		OASelect<?> sel = getSelect(thisHub);
+		OASelect<T> sel = getSelect(thisHub);
 		if (!OAString.isEmpty(s) && sel == null) {
-			if (!thisHub.isOAObject()) return;
-			
 			Class<OAObject> classX = (Class) thisHub.getObjectClass();
 			sel = new OASelect(classX);
 			faHub.getHubData(thisHub).setSelect(sel);
@@ -621,14 +611,12 @@ public abstract class HubSelectService {
 	 * @param bAppendFlag true to append results; false to overwrite
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public void select(Hub<?> thisHub, boolean bAppendFlag) {
+	public <T extends OAObject> void select(Hub<T> thisHub, boolean bAppendFlag) {
 		if (thisHub == null) {
 			return;
 		}
-		if (!thisHub.isOAObject()) return;
-		
-		Class<OAObject> classX = (Class) thisHub.getObjectClass();
-		OASelect<?> sel = new OASelect(classX);
+		Class<T> classX = thisHub.getObjectClass();
+		OASelect<T> sel = new OASelect(classX);
 		sel.setAppend(bAppendFlag);
 		select(thisHub, sel);
 	}
@@ -645,11 +633,10 @@ public abstract class HubSelectService {
 	 * @param bAppendFlag  true to append results; false to overwrite
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public void select(Hub<?> thisHub, OAObject whereObject, String whereClause,
+	public <T extends OAObject> void select(Hub<T> thisHub, OAObject whereObject, String whereClause,
 			Object[] whereParams, String orderByClause, boolean bAppendFlag) {
-		if (!thisHub.isOAObject()) return;
-		Class<OAObject> classX = (Class) thisHub.getObjectClass();
-		OASelect sel = new OASelect(classX);
+		Class<T> classX = thisHub.getObjectClass();
+		OASelect<T> sel = new OASelect(classX);
 		sel.setWhereObject(whereObject);
 		sel.setParams(whereParams);
 		sel.setWhere(whereClause);
@@ -673,7 +660,6 @@ public abstract class HubSelectService {
 	@SuppressWarnings({"unchecked","rawtypes"})
 	public void select(Hub<?> thisHub, OAObject whereObject, String whereClause,
 			Object[] whereParams, String orderByClause, boolean bAppendFlag, OAFilter filter) {
-		if (!thisHub.isOAObject()) return;
 		Class<OAObject> classX = (Class) thisHub.getObjectClass();
 		OASelect sel = new OASelect(classX);
 		sel.setWhereObject(whereObject);
@@ -694,10 +680,9 @@ public abstract class HubSelectService {
 	 * @param orderClause raw ORDER BY clause
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public void selectPassthru(Hub<?> thisHub, String whereClause, String orderClause) {
-		if (!thisHub.isOAObject()) return;
-		Class<OAObject> classX = (Class) thisHub.getObjectClass();
-		OASelect<?> sel = new OASelect(classX);
+	public <T extends OAObject> void selectPassthru(Hub<T> thisHub, String whereClause, String orderClause) {
+		Class<T> classX = (Class) thisHub.getObjectClass();
+		OASelect<T> sel = new OASelect(classX);
 		sel.setPassthru(true);
 		sel.setWhere(whereClause);
 		sel.setOrder(orderClause);
@@ -713,10 +698,9 @@ public abstract class HubSelectService {
 	 * @param bAppend     whether to append instead of clearing the Hub first
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public void selectPassthru(Hub<?> thisHub, String whereClause, String orderClause, boolean bAppend) {
-		if (!thisHub.isOAObject()) return;
-		Class<OAObject> classX = (Class) thisHub.getObjectClass();
-		OASelect sel = new OASelect(classX);
+	public <T extends OAObject> void selectPassthru(Hub<T> thisHub, String whereClause, String orderClause, boolean bAppend) {
+		Class<T> classX = (Class) thisHub.getObjectClass();
+		OASelect<T> sel = new OASelect(classX);
 		sel.setPassthru(true);
 		sel.setAppend(bAppend);
 		sel.setWhere(whereClause);
@@ -730,7 +714,7 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the whereHub controlling select filtering, or null
 	 */
-	public Hub getSelectWhereHub(Hub<?> thisHub) {
+	public <T extends OAObject> Hub<T> getSelectWhereHub(Hub<T> thisHub) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -884,7 +868,7 @@ public abstract class HubSelectService {
 	 * @return true if refresh succeeded, false otherwise
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public <T> boolean _refresh(final Hub<T> thisHub) {
+	public <T extends OAObject> boolean _refresh(final Hub<T> thisHub) {
 		if (thisHub == null) {
 			return false;
 		}
@@ -955,12 +939,12 @@ public abstract class HubSelectService {
 	 * @return true if successful
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public boolean refreshSelect(Hub thisHub) {
+	public <T extends OAObject> boolean refreshSelect(Hub<T> thisHub) {
 		if (thisHub == null) {
 			return false;
 		}
-		Object objAO = thisHub.getAO();
-		OASelect<?> sel = getSelect(thisHub);
+		T objAO = thisHub.getAO();
+		OASelect<T> sel = getSelect(thisHub);
 
 		if (sel == null) {
 			OAObject obj = thisHub.getMasterObject();
@@ -970,9 +954,7 @@ public abstract class HubSelectService {
 			if (linkInfo == null) {
 				return false;
 			}
-			if (!thisHub.isOAObject()) return false;
- 
-			Class<OAObject> classX = (Class) thisHub.getObjectClass();
+			Class<T> classX = (Class) thisHub.getObjectClass();
 			sel = new OASelect(classX);
 			sel.setWhereObject((OAObject) obj);
 			sel.setPropertyFromWhereObject(linkInfo.getReverseName());
@@ -986,9 +968,9 @@ public abstract class HubSelectService {
 			sel.setDirty(true);
 		}
 		sel.select();
-		HashSet<Object> hs = new HashSet<Object>();
+		HashSet<T> hs = new HashSet();
 		for (; sel.hasMore();) {
-			Object objx = sel.next();
+			T objx = sel.next();
 			hs.add(objx);
 			thisHub.add(objx);
 		}

@@ -458,7 +458,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	private void setupSplit() {
 		// A: hubGroup1 (hgb1) left part of pp, using hubB as the root
 		// A.1: listen to hgb1 add/removes and update this.hubCombined
-		hubGB1.addHubListener(new HubListenerAdapter() {
+		hubGB1.addHubListener(new HubListenerAdapter<OAGroupBy>() {
 			@Override
 			public void afterInsert(HubEvent e) {
 				afterAdd(e);
@@ -497,7 +497,8 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 						gbNewFound = createGroupBy(null);
 						HubGroupBy.this.getCombinedHub().add(gbNewFound);
 					}
-					for (Object gb1B : gb1.getHub()) {
+					Hub<OAObject> hubX = gb1.getHub();
+					for (OAObject gb1B : hubX) {
 						gbNewFound.getHub().add(gb1B);
 					}
 					return;
@@ -517,7 +518,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 						HubGroupBy.this.getCombinedHub().add(gbNewFound);
 					}
 					for (Object gb1B : gb1.getHub()) {
-						gbNewFound.getHub().add(gb1B);
+						gbNewFound.getHub().add((OAObject) gb1B);
 					}
 				}
 				// remove from gbNew.A=null hubB
@@ -640,7 +641,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 						gbNewFound = createGroupBy(null);
 						HubGroupBy.this.getCombinedHub().add(gbNewFound);
 					}
-					gbNewFound.getHub().add(gb1B);
+					gbNewFound.getHub().add((OAObject) gb1B);
 				}
 			}
 		});
@@ -655,7 +656,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			@Override
 			protected void afterAddRealHub(HubEvent e) {
-				OAGroupBy gb = (OAGroupBy) ((Hub) e.getSource()).getMasterObject();
+				OAGroupBy gb = (OAGroupBy) (e.getHub()).getMasterObject();
 				final OAObject gb1A = gb.getGroupBy();
 				Object gb1B = e.getObject(); // object added
 
@@ -685,7 +686,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 						gbNewFound = createGroupBy(null);
 						HubGroupBy.this.getCombinedHub().add(gbNewFound);
 					}
-					gbNewFound.getHub().add(gb1B);
+					gbNewFound.getHub().add((OAObject) gb1B);
 					return;
 				}
 
@@ -702,7 +703,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 						gbNewFound = createGroupBy((G) objGB2b);
 						HubGroupBy.this.getCombinedHub().add(gbNewFound);
 					}
-					gbNewFound.getHub().add(gb1B);
+					gbNewFound.getHub().add((OAObject) gb1B);
 				}
 				//remove from null hub
 				if (!bCreateNullList) {
@@ -721,7 +722,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			@Override
 			protected void beforeRemoveAllRealHub(HubEvent e) {
-				removeAllObjects = ((Hub) e.getSource()).toArray();
+				removeAllObjects = e.getHub().toArray();
 			}
 
 			@Override
@@ -729,7 +730,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 				if (removeAllObjects == null) {
 					return;
 				}
-				OAGroupBy gb1 = (OAGroupBy) ((Hub) e.getSource()).getMasterObject();
+				OAGroupBy gb1 = (OAGroupBy) e.getHub().getMasterObject();
 				for (Object obj : removeAllObjects) {
 					remove(gb1, (OAGroupBy) obj);
 				}
@@ -738,7 +739,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			@Override
 			protected void afterRemoveRealHub(HubEvent e) {
-				OAGroupBy gb1 = (OAGroupBy) ((Hub) e.getSource()).getMasterObject();
+				OAGroupBy gb1 = (OAGroupBy) e.getHub().getMasterObject();
 				Object gb1B = e.getObject();
 				remove(gb1, gb1B);
 			}
@@ -818,7 +819,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 						gbNewFound = createGroupBy(null);
 						HubGroupBy.this.getCombinedHub().add(gbNewFound);
 					}
-					gbNewFound.getHub().add(gb1B);
+					gbNewFound.getHub().add((OAObject) gb1B);
 				}
 			}
 		};
@@ -878,7 +879,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 					}
 
 					for (Object gb1B : gb1Found.getHub()) {
-						gbNewFound.getHub().add(gb1B);
+						gbNewFound.getHub().add((OAObject) gb1B);
 					}
 
 					// might have been in gbNew.A=null gbNew.hubB
@@ -998,7 +999,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 						HubGroupBy.this.getCombinedHub().add(gbNewFound);
 					}
 					for (Object gb1B : gb1Found.getHub()) {
-						gbNewFound.getHub().add(gb1B);
+						gbNewFound.getHub().add((OAObject) gb1B);
 					}
 				}
 			}
@@ -1014,7 +1015,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			@Override
 			protected void afterAddRealHub(HubEvent e) {
-				OAGroupBy gb2 = (OAGroupBy) ((Hub) e.getSource()).getMasterObject();
+				OAGroupBy gb2 = (OAGroupBy) e.getHub().getMasterObject();
 				final Object gb2A = gb2.getGroupBy();
 				Object gb2B = e.getObject(); // object added
 
@@ -1066,7 +1067,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 					return;
 				}
 				for (Object gb1B : gb1Found.getHub()) {
-					gbNewFound.getHub().add(gb1B);
+					gbNewFound.getHub().add((OAObject) gb1B);
 
 					// remove from null hub
 					if (gbNewNullFound != null) {
@@ -1079,7 +1080,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			@Override
 			protected void beforeRemoveAllRealHub(HubEvent e) {
-				removeAllObjects = ((Hub) e.getSource()).toArray();
+				removeAllObjects = e.getHub().toArray();
 			}
 
 			@Override
@@ -1087,7 +1088,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 				if (removeAllObjects == null) {
 					return;
 				}
-				OAGroupBy gb2 = (OAGroupBy) ((Hub) e.getSource()).getMasterObject();
+				OAGroupBy gb2 = (OAGroupBy) e.getHub().getMasterObject();
 				for (Object obj : removeAllObjects) {
 					remove(gb2, (OAGroupBy) obj);
 				}
@@ -1096,7 +1097,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			@Override
 			protected void afterRemoveRealHub(HubEvent e) {
-				OAGroupBy gb2 = (OAGroupBy) ((Hub) e.getSource()).getMasterObject();
+				OAGroupBy gb2 = (OAGroupBy) e.getHub().getMasterObject();
 				Object gb2B = e.getObject();
 				remove(gb2, gb2B);
 			}
@@ -1181,7 +1182,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 						HubGroupBy.this.getCombinedHub().add(gbNewFound);
 					}
 					for (Object gb1B : gb1Found.getHub()) {
-						gbNewFound.getHub().add(gb1B);
+						gbNewFound.getHub().add((OAObject) gb1B);
 					}
 				}
 			}
@@ -1216,7 +1217,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 					HubGroupBy.this.getCombinedHub().add(gbNewFound);
 				}
 				for (Object gb1B : gb1.getHub()) {
-					gbNewFound.getHub().add(gb1B);
+					gbNewFound.getHub().add((OAObject) gb1B);
 				}
 				continue;
 			}
@@ -1235,7 +1236,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 					HubGroupBy.this.getCombinedHub().add(gbNewFound);
 				}
 				for (Object gb1B : gb1.getHub()) {
-					gbNewFound.getHub().add(gb1B);
+					gbNewFound.getHub().add((OAObject) gb1B);
 				}
 			}
 		}
@@ -1919,7 +1920,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			@Override
 			protected void beforeRemoveAllRealHub(HubEvent e) {
-				removeAllObjects = ((Hub) e.getSource()).toArray();
+				removeAllObjects = e.getHub().toArray();
 			}
 
 			@Override
@@ -1927,7 +1928,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 				if (removeAllObjects == null) {
 					return;
 				}
-				OAGroupBy gb1 = (OAGroupBy) ((Hub) e.getSource()).getMasterObject();
+				OAGroupBy gb1 = (OAGroupBy) e.getHub().getMasterObject();
 				for (Object obj : removeAllObjects) {
 					remove(gb1, (F) obj);
 				}
@@ -2017,7 +2018,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			@Override
 			protected void beforeRemoveAllRealHub(HubEvent e) {
-				removeAllObjects = ((Hub) e.getSource()).toArray();
+				removeAllObjects = e.getHub().toArray();
 			}
 
 			@Override
@@ -2025,7 +2026,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 				if (removeAllObjects == null) {
 					return;
 				}
-				OAGroupBy gb1 = (OAGroupBy) ((Hub) e.getSource()).getMasterObject();
+				OAGroupBy gb1 = (OAGroupBy) e.getHub().getMasterObject();
 				for (Object obj : removeAllObjects) {
 					remove(gb1, (F) obj);
 				}

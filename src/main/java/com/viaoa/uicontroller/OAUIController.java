@@ -138,7 +138,7 @@ public abstract class OAUIController extends HubListenerAdapter {
      * Optional single object used when the controller is bound to a standalone
      * object rather than a Hub. Stored in a temporary Hub when necessary.
      */
-    protected Object hubObject; // single object, that will be put in temp hub
+    protected OAObject hubObject; // single object, that will be put in temp hub
     
     /**
      * Temporary Hub created when the controller is initialized with a standalone
@@ -396,7 +396,7 @@ public abstract class OAUIController extends HubListenerAdapter {
      * @param bAoOnly true to listen only to the active object; false to listen to all.
      * @param type the HubChangeListener type to register for.
      */
-    public OAUIController(Hub hub, Object object, 
+    public OAUIController(Hub hub, OAObject object, 
         String propertyPath,
         boolean bAoOnly, 
         HubChangeListener.Type type) 
@@ -1124,7 +1124,7 @@ public abstract class OAUIController extends HubListenerAdapter {
             String prop;
             if (oaPropertyPath != null && oaPropertyPath.hasLinks()) {
                 prop = endPropertyName;
-                objx = oaPropertyPath.getLastLinkValue(obj);
+                objx = oaPropertyPath.getLastLinkValue((OAObject) obj);
             }
             else {
                 prop = propertyPath;
@@ -1242,7 +1242,7 @@ public abstract class OAUIController extends HubListenerAdapter {
         String prop;
         if (oaPropertyPath != null && oaPropertyPath.hasLinks()) {
             prop = endPropertyName;
-            objx = oaPropertyPath.getLastLinkValue(obj);
+            objx = oaPropertyPath.getLastLinkValue((OAObject) obj);
         }
         else {
             prop = propertyPath;
@@ -1313,7 +1313,7 @@ public abstract class OAUIController extends HubListenerAdapter {
             if (objx instanceof OAObject) {
                 String prop;
                 if (oaPropertyPath != null && oaPropertyPath.hasLinks()) {
-                    objx = oaPropertyPath.getLastLinkValue(objx);
+                    objx = oaPropertyPath.getLastLinkValue((OAObject) objx);
                 }
                 if (objx instanceof OAObject) {
             		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objx);
@@ -2257,7 +2257,7 @@ public abstract class OAUIController extends HubListenerAdapter {
 
             String prop;
             if (oaPropertyPath != null && oaPropertyPath.hasLinks()) {
-                objx = oaPropertyPath.getLastLinkValue(objx);
+                objx = oaPropertyPath.getLastLinkValue((OAObject) objx);
             }
             if (objx instanceof OAObject) {
         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objx);

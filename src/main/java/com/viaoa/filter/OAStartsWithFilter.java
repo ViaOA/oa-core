@@ -244,7 +244,7 @@ public class OAStartsWithFilter implements OAFilter {
                 return obj != null;
             }
         }
-        obj = getPropertyValue(obj);
+		if (obj instanceof OAObject) obj = getPropertyValue((OAObject) obj);
         
         String s1 = OAString.toString(obj);
         String s2 = OAString.toString(value);
@@ -271,7 +271,7 @@ public class OAStartsWithFilter implements OAFilter {
      * @return the value obtained by applying the configured property path to the
      *         supplied object, or the object itself when no path is configured
      */
-    protected Object getPropertyValue(Object obj) {
+    protected Object getPropertyValue(OAObject obj) {
         Object objx = obj;
         if (pp != null) {
             objx = pp.getValue(obj);

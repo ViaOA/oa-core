@@ -62,7 +62,7 @@ import com.viaoa.object.OAObject;
  *   <li>Type-safe generic API ensures compile-time domain consistency.</li>
  * </ul>
  */
-public class MergedHub<TYPE> extends Hub<TYPE> {
+public class MergedHub<TYPE extends OAObject> extends Hub<TYPE> {
     
 	/**
 	 * The HubMerger instance that populates and maintains this MergedHub.

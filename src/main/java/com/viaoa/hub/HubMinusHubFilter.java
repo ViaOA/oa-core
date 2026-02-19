@@ -15,6 +15,8 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.object.OAObject;
+
 /**
  * Produces a live {@link Hub} that contains all objects from one source Hub
  * minus the objects present in another Hub.
@@ -74,7 +76,7 @@ public class HubMinusHubFilter {
         for (int i=0; ;i++) {
             Object obj = hubMaster.elementAt(i);
             if (obj == null) break;
-            if (!hubMinus.contains(obj)) hub.add(obj);
+            if (!hubMinus.contains(obj)) hub.add((OAObject) obj);
         }
     }
     
@@ -95,7 +97,7 @@ public class HubMinusHubFilter {
     protected void init() {
         hubMaster.addHubListener( new HubListenerAdapter() {
             public @Override void afterAdd(HubEvent e) {
-                Object obj = e.getObject();
+                OAObject obj = e.getObject();
                 if (obj != null && !hubMinus.contains(obj)) hub.add(obj);
             }
             public @Override void afterInsert(HubEvent e) {
@@ -118,7 +120,7 @@ public class HubMinusHubFilter {
                 afterAdd(e);
             }
             public @Override void afterRemove(HubEvent e) {
-                Object obj = e.getObject();
+                OAObject obj = e.getObject();
                 if (hubMaster.contains(obj)) hub.add(obj);
             }
             public @Override void onNewList(HubEvent e) {
