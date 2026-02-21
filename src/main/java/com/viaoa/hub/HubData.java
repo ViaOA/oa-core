@@ -46,7 +46,7 @@ import com.viaoa.util.OANullObject;
  * Thread-safe for concurrent read/update of extended state; most mutators
  * short-circuit when no value is needed to avoid unnecessary object creation.
  */
-public class HubData<T extends OAObject> implements java.io.Serializable {
+public class HubData<TYPE extends OAObject> implements java.io.Serializable {
 	/**
 	 * Serialization identifier used to ensure compatibility when HubData
 	 * instances are serialized and deserialized.
@@ -59,13 +59,13 @@ public class HubData<T extends OAObject> implements java.io.Serializable {
      * The class type of objects stored in the Hub. Used for validation,
      * metadata lookup, and optimized behavior when working with OAObjects.
      */
-    protected volatile Class<T> objClass;
+    protected volatile Class<TYPE> objClass;
     
     /**
      * Underlying ordered collection of Hub elements. Stores all objects
      * currently in the Hub and preserves their insertion order.
      */
-    protected transient Vector<T> vector;
+    protected transient Vector<TYPE> vector;
 
     /**
      * Counter incremented whenever the Hub’s structure changes (add, remove,
@@ -93,7 +93,7 @@ public class HubData<T extends OAObject> implements java.io.Serializable {
      * @param objClass the class of objects stored in the hub
      * @param size     the initial capacity of the underlying vector
      */
-	public HubData(Class objClass, int size) {
+	public HubData(Class<TYPE> objClass, int size) {
 	    int x = size * 2;
 	    x = Math.max(5, x);
 	    x = Math.min(25, x);
@@ -143,7 +143,7 @@ public class HubData<T extends OAObject> implements java.io.Serializable {
     }
 
     //qqqqqq add javadoc
-    public Vector<T> getVector() {
+    public Vector<TYPE> getVector() {
         return vector;
     }
     
@@ -278,7 +278,7 @@ public class HubData<T extends OAObject> implements java.io.Serializable {
      *
      * @return the OASelect instance, or {@code null}
      */
-    public OASelect<T> getSelect() {
+    public OASelect<TYPE> getSelect() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.select;
@@ -292,7 +292,7 @@ public class HubData<T extends OAObject> implements java.io.Serializable {
      *
      * @param select the OASelect instance to assign, or {@code null}
      */
-    public void setSelect(OASelect<T> select) {
+    public void setSelect(OASelect<TYPE> select) {
         if (hubDatax != null || select != null) {
             getHubDatax().select = select;
             if (select == null) {

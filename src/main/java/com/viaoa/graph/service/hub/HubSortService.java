@@ -333,13 +333,13 @@ public abstract class HubSortService {
     }
 
 	@OAParentProvided (example = "srvcHub.getHubCSService().sort")
-	public abstract void callHubCSSort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp);
+	public abstract void callHubCSSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator comp);
 
 	@OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
-	public abstract void callHubSelectLoadAllData(Hub thisHub);
+	public abstract void callHubSelectLoadAllData(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterSortEvent")
-	public abstract void callHubEventFireAfterSortEvent(Hub thisHub);
+	public abstract void callHubEventFireAfterSortEvent(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcThreadLocal.lock")
 	public abstract void callThreadLocalLock(Object object);
@@ -351,10 +351,10 @@ public abstract class HubSortService {
 	public abstract void callRemoteThreadStartNextThread();
 
 	@OAParentProvided (example = "srvcThreadLocal.addSiblingHelper")
-	public abstract boolean callThreadLocalAddSiblingHelper(OASiblingHelper sh);
+	public abstract boolean callThreadLocalAddSiblingHelper(OASiblingHelper<?> sh);
 
 	@OAParentProvided (example = "srvcThreadLocal.removeSiblingHelper")
-	public abstract void callThreadLocalRemoveSiblingHelper(OASiblingHelper sh);
+	public abstract void callThreadLocalRemoveSiblingHelper(OASiblingHelper<?> sh);
     
 }
 

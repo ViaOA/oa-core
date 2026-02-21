@@ -679,7 +679,7 @@ public abstract class HubDataService {
 	 * @param bUpdateLink whether to update link relationships during the search
 	 * @return the position of the object, or {@code -1} if not found
 	 */
-	public <T extends OAObject> int getPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink) {
+	public <T extends OAObject> int getPos(final Hub<T> thisHub, Object object, final boolean adjustMaster, final boolean bUpdateLink) {
 	    int pos;
 	    if (object == null || thisHub == null) return -1;
 
@@ -787,7 +787,7 @@ public abstract class HubDataService {
         
 
         if (pos < 0 && adjustMaster) {
-            if (callHubDetailSetMasterHubActiveObject(thisHub, object, bUpdateLink)) {
+            if (callHubDetailSetMasterHubActiveObject(thisHub, (T) object, bUpdateLink)) {
                 pos = getPos(thisHub, object, false, false);
             }
         }
@@ -900,7 +900,7 @@ public abstract class HubDataService {
 	 * @param obj the object to look for
 	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
 	 */
-	public <T extends OAObject> boolean contains(Hub<T> hub, T obj) {
+	public boolean contains(Hub<?> hub, Object obj) {
 		return contains(hub, obj, false);
 	}
 	
@@ -916,7 +916,7 @@ public abstract class HubDataService {
 	 * @param bJustAdded if {@code true}, only checks the most recently added items
 	 * @return {@code true} if the Hub contains the object, otherwise {@code false}
 	 */
-	public <T extends OAObject> boolean contains(Hub<T> hub, T obj, final boolean bJustAdded) {
+	public <T extends OAObject> boolean contains(Hub<T> hub, Object obj, final boolean bJustAdded) {
         if (hub == null || obj == null) return false;
         
         final int size = faHub.getHubData(hub).getVector().size();
@@ -943,7 +943,7 @@ public abstract class HubDataService {
             if (obj == null) return false;
         }        
         
-        boolean b = callObjectHubIsAlreadyInHub(obj, hub);
+        boolean b = callObjectHubIsAlreadyInHub((T) obj, hub);
         return b;
     }
 	
@@ -956,7 +956,7 @@ public abstract class HubDataService {
 	 * @param obj the object to check for
 	 * @return {@code true} if the object is present, otherwise {@code false}
 	 */
-    public <T extends OAObject> boolean containsDirect(Hub<T> hub, T obj) {
+    public <T extends OAObject> boolean containsDirect(Hub<T> hub, Object obj) {
         if (hub == null || obj == null) return false;
         int x = faHub.getHubData(hub).getVector().size();
         if (x == 0) return false;
@@ -979,7 +979,7 @@ public abstract class HubDataService {
      * @param obj the object to check
      * @return status code indicating match, mismatch, or invalid conditions
      */
-    private <T extends OAObject> int findUsingQuickSort(final Hub<T> thisHub, final T obj) {
+    private int findUsingQuickSort(final Hub<?> thisHub, final Object obj) {
         if (thisHub == null || obj == null) return -1;
         
         HubSortListener hsl = faHub.getHubData(thisHub).getSortListener(); 
@@ -1165,7 +1165,7 @@ public abstract class HubDataService {
 	public abstract int callHubSelectFetchMore(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getRealObject")
-	public abstract <T extends OAObject> T callHubGetRealObject(Hub<T> hub, T object);
+	public abstract <T extends OAObject> T callHubGetRealObject(Hub<T> hub, Object object);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().setSharedHub")
 	public abstract <T extends OAObject> void callHubShareSetSharedHub(Hub<T> thisHub, Hub<T> sharedMasterHub, boolean shareActiveObject);

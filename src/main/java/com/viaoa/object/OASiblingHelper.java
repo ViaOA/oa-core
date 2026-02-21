@@ -48,7 +48,7 @@ import com.viaoa.util.OAString;
  * It stores only link metadata (no strong references to live objects) and
  * never forces lazy loading.</p>
  *
- * @param <F> the OAObject type contained by the root Hub
+ * @param <TYPE> the OAObject type contained by the root Hub
  *
  * @see Hub
  * @see OAObject
@@ -56,14 +56,14 @@ import com.viaoa.util.OAString;
  * @see OAObjectInfo
  * @see OALinkInfo
  */
-public class OASiblingHelper<F extends OAObject> {
+public class OASiblingHelper<TYPE extends OAObject> {
 
 	/**
 	 * The root Hub from which all sibling property-path learning begins.
 	 * All discovered or added paths originate from the objects contained
 	 * in this Hub.
 	 */
-	private Hub<F> hub;
+	private Hub<TYPE> hub;
 	
 	/**
 	 * The root node of the learned property-path tree. Represents the
@@ -85,7 +85,7 @@ public class OASiblingHelper<F extends OAObject> {
 	 *
 	 * @param hub the root Hub used for sibling resolution
 	 */
-	public OASiblingHelper(Hub<F> hub) {
+	public OASiblingHelper(Hub<TYPE> hub) {
 		this.hub = hub;
 		nodeRoot = new Node(null);
 		nodeRoot.oi = hub.getOAObjectInfo();
@@ -129,7 +129,7 @@ public class OASiblingHelper<F extends OAObject> {
 	/**
 	 * Returns the root Hub used by this helper.
 	 */
-	public Hub<F> getHub() {
+	public Hub<TYPE> getHub() {
 		return hub;
 	}
 
@@ -170,7 +170,7 @@ public class OASiblingHelper<F extends OAObject> {
 	 * @param cnt       recursion depth for dependency expansion
 	 */
 	private void add(final String ppFromHub, final int cnt) {
-		OAPropertyPath<F> pp = new OAPropertyPath<F>(hub.getObjectClass(), ppFromHub);
+		OAPropertyPath<TYPE> pp = new OAPropertyPath<TYPE>(hub.getObjectClass(), ppFromHub);
 		OALinkInfo[] lis = pp.getLinkInfos();
 
 		if (lis != null) {

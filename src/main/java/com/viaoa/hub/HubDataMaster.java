@@ -32,28 +32,27 @@ import com.viaoa.runtime.OARuntime;
  * Example: a Hub of Employee Objects can "come" from a Department Object by calling department.getEmployees() method. For this, the
  * masterObject for the employee Hub will be set to the Department Object.
  */
-public class HubDataMaster<T extends OAObject> implements java.io.Serializable {
-	//qqqqqqqqq calss was package protected
+public class HubDataMaster implements java.io.Serializable {
 	static final long serialVersionUID = 2L; // used for object serialization
 
 	/**
 	 * The master Hub associated with this detail Hub; used only when
 	 * the Hub originates from a detail relationship.
 	 */
-	private transient volatile Hub<T> masterHub;
+	private transient volatile Hub<?> masterHub;
 
 	/**
 	 * The object that owns this Hub, representing the source object
 	 * from which the Hub was obtained.
 	 */
-	private transient volatile T masterObject;
+	private transient volatile OAObject masterObject;
 
 	/**
 	 * Returns the master Hub for this detail Hub.
 	 *
 	 * @return the master Hub, or {@code null} if none is assigned
 	 */
-	public Hub<T> getMasterHub() {
+	public Hub<?> getMasterHub() {
 		return this.masterHub;
 	}
 
@@ -62,7 +61,7 @@ public class HubDataMaster<T extends OAObject> implements java.io.Serializable {
 	 *
 	 * @param h the Hub to assign as master
 	 */
-	public void setMasterHub(Hub<T> h) {
+	public void setMasterHub(Hub<?> h) {
 		this.masterHub = h;
 	}
 
@@ -71,7 +70,7 @@ public class HubDataMaster<T extends OAObject> implements java.io.Serializable {
 	 *
 	 * @param obj the object that owns this Hub
 	 */
-	public void setMasterObject(T obj) {
+	public void setMasterObject(OAObject obj) {
 		this.masterObject = obj;
 	}
 
@@ -80,7 +79,7 @@ public class HubDataMaster<T extends OAObject> implements java.io.Serializable {
 	 *
 	 * @return the master object, or {@code null} if none is assigned
 	 */
-	public T getMasterObject() {
+	public OAObject getMasterObject() {
 		return this.masterObject;
 	}
 

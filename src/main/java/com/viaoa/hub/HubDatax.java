@@ -164,7 +164,7 @@ public class HubDatax<TYPE extends OAObject> implements java.io.Serializable {
 	/**
 	 * Select query used to populate or filter objects loaded from a data source.
 	 */
-	protected transient OASelect<? extends OAObject> select;
+	protected transient OASelect<TYPE> select;
 
 	/**
 	 * Flag indicating whether active objects should always be refreshed

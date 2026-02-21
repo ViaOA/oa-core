@@ -22,7 +22,7 @@ public abstract class HubSerializeService {
 	/**
 	 * Used by serialization to store Hub.
 	 */
-	public void _writeObject(Hub thisHub, java.io.ObjectOutputStream stream) throws IOException {
+	public void _writeObject(Hub<?> thisHub, java.io.ObjectOutputStream stream) throws IOException {
 		if (callHubSelectIsMoreData(thisHub)) {
 			try {
 				callThreadLocalSetSuppressCSMessages(true);
@@ -34,7 +34,7 @@ public abstract class HubSerializeService {
 		stream.defaultWriteObject();
 	}
 
-	public int replaceObject(Hub thisHub, OAObject objFrom, OAObject objTo) {
+	public <T extends OAObject> int replaceObject(Hub<T> thisHub, T objFrom, T objTo) {
 		if (thisHub == null)
 			return -1;
 		if (faHub.getHubData(thisHub) == null)
@@ -58,7 +58,7 @@ public abstract class HubSerializeService {
 	/**
 	 * Used by OAObjectSerializeDelegate
 	 */
-	public boolean isResolved(Hub thisHub) {
+	public boolean isResolved(Hub<?> thisHub) {
 		return (thisHub != null && faHub.getHubData(thisHub) != null && faHub.getHubData(thisHub).getVector() != null);
 	}
 
@@ -66,23 +66,21 @@ public abstract class HubSerializeService {
 	 * Used by serialization when reading objects from stream. This needs to add the
 	 * hub to OAObject.hubs, but only if it is not a duplicate (and is not needed)
 	 */
-	public Object _readResolve(Hub thisHub) throws ObjectStreamException {
+	public <T extends OAObject> Object _readResolve(Hub<T> thisHub) throws ObjectStreamException {
 		if (thisHub == null) return thisHub; 
 		for (int i = 0;; i++) {
-			Object obj = thisHub.getAt(i);
+			T obj = thisHub.getAt(i);
 			if (obj == null) break;
 
 			if (i == 0) {
-				if (obj instanceof OAObject) {
-					// dont initialize this hub if the master object is a duplicate.
-					// check by looking to see if this object already belongs to a hub that has the
-					// same masterObject/linkinfo
-					if (callObjectHubIsAlreadyInHub((OAObject) obj, faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo())) {
-						break; // this hub is a dup and wont be used
-					}
+				// dont initialize this hub if the master object is a duplicate.
+				// check by looking to see if this object already belongs to a hub that has the
+				// same masterObject/linkinfo
+				if (callObjectHubIsAlreadyInHub((OAObject) obj, faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo())) {
+					break; // this hub is a dup and wont be used
 				}
 			}
-			callObjectHubAddHub((OAObject) obj, thisHub);
+			callObjectHubAddHub(obj, thisHub);
 		}
 		return thisHub;
 	}
@@ -91,13 +89,13 @@ public abstract class HubSerializeService {
 	public abstract boolean callObjectHubIsAlreadyInHub(OAObject oaObj, OALinkInfo li);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
-	public abstract boolean callObjectHubAddHub(OAObject oaObj, Hub hub);
+	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
 
 	@OAParentProvided (example = "srvcHub.getHubSelectService().isMoreData")
-	public abstract boolean callHubSelectIsMoreData(Hub thisHub);
+	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
-	public abstract void callHubSelectLoadAllData(Hub thisHub);
+	public abstract void callHubSelectLoadAllData(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcThreadLocal.setSuppressCSMessages")
 	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);

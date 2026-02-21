@@ -23,7 +23,7 @@ public abstract class HubSaveService {
 	 * @param thisHub      the Hub whose contents are to be saved
 	 * @param cascadeRule  the cascade behavior to apply during persistence
 	 */
-    public void saveAll(Hub thisHub, int cascadeRule) {
+    public void saveAll(Hub<?> thisHub, int cascadeRule) {
         OACascade cascade = new OACascade(); 
         saveAll(thisHub, cascadeRule, cascade);
     }
@@ -60,7 +60,7 @@ public abstract class HubSaveService {
      * @param iCascadeRule the cascade rule controlling persistence behavior
      * @param cascade      the cascade tracker preventing repeat processing
      */
-    public void saveAll(Hub thisHub, int iCascadeRule, OACascade cascade) {
+    public void saveAll(Hub<?> thisHub, int iCascadeRule, OACascade cascade) {
         if (thisHub == null) return; //qq need to log this
         if (cascade.wasCascaded(thisHub, true)) return;
 
@@ -105,16 +105,16 @@ public abstract class HubSaveService {
 	public abstract void callObjectSaveSaveObjectOnly(OAObject oaObj, OACascade cascade);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getDataMaster")
-	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub thisHub);
+	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().getAddedObjects")
-	public abstract OAObject[] callHubDataGetAddedObjects(Hub thisHub);
+	public abstract <T extends OAObject> T[] callHubDataGetAddedObjects(Hub<T> thisHub);
 
 	@OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
-	public abstract void callHub_updateHubAddsAndRemoves(final Hub thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
+	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
 
 	@OAParentProvided (example = "srvcHub.setReferenceable")
-	public abstract void callHubSetReferenceable(Hub hub, boolean bReferenceable);
+	public abstract void callHubSetReferenceable(Hub<?> hub, boolean bReferenceable);
 }
 
 

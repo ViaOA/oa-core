@@ -29,7 +29,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	public static final Boolean TRUE = Boolean.valueOf(true);
 	public static final Boolean FALSE = Boolean.valueOf(false);
 	
-	// Hub
+	// Hub =========================
 	@Override
 	public HubAutoSequence callHubGetAutoSequence(Hub<?> hub) {
 	    return getAutoSequence(hub);
@@ -56,12 +56,12 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public <T> HubCurrentStateEnum callHubGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew) {
+	public <T extends OAObject> HubCurrentStateEnum callHubGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew) {
 	    return getCurrentState(thisHub, hubNew, alNew);
 	}
 
 	@Override
-	public void callHubSetObjectClass(Hub<?> hubDetail, Class<?> clazz) {
+	public <T extends OAObject> void callHubSetObjectClass(Hub<T> hubDetail, Class<T> clazz) {
 	    setObjectClass(hubDetail, clazz);
 	}
 
@@ -105,13 +105,18 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    setUniqueProperty(hub, propertyName);
 	}
 
-	// AddRemove
+	// AddRemove =========================
 
 	@Override
-	public <T> boolean callHubAddRemoveAdd(Hub<T> hub, T obj) {
+	public <T extends OAObject> boolean callHubAddRemoveAdd(Hub<T> hub, T obj) {
 	    return getHubAddRemoveService().add(hub, obj);
 	}
 
+	@Override
+	public <T extends OAObject> boolean callHubAddRemoveRemove(Hub<T> hub, Object obj) {
+	    return getHubAddRemoveService().remove(hub, obj);
+	}
+	
 	@Override
 	public void callHubAddRemoveSwap(Hub<?> hub, int pos1, int pos2) {
 	    getHubAddRemoveService().swap(hub, pos1, pos2);
@@ -123,17 +128,17 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public <T> boolean callHubAddRemoveInsert(Hub<T> hub, T obj, int pos) {
+	public <T extends OAObject> boolean callHubAddRemoveInsert(Hub<T> hub, T obj, int pos) {
 	    return getHubAddRemoveService().insert(hub, obj, pos);
 	}
 
 	@Override
-	public boolean callHubAddRemoveRemove(Hub<?> hub, Object obj) {
+	public <T extends OAObject> boolean callHubAddRemoveRemove(Hub<T> hub, T obj) {
 	    return getHubAddRemoveService().remove(hub, obj);
 	}
 
 	@Override
-	public <T> T callHubAddRemoveRemove(Hub<T> hub, int pos) {
+	public <T extends OAObject> T callHubAddRemoveRemove(Hub<T> hub, int pos) {
 	    return getHubAddRemoveService().remove(hub, pos);
 	}
 
@@ -143,12 +148,12 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public <T> boolean callHubAddRemoveCanAdd(Hub<T> hub, T object) {
+	public <T extends OAObject> boolean callHubAddRemoveCanAdd(Hub<T> hub, T object) {
 	    return getHubAddRemoveService().canAdd(hub, object);
 	}
 
 	@Override
-	public <T> String callHubAddRemoveCanAddMsg(Hub<T> hub, T obj) {
+	public <T extends OAObject> String callHubAddRemoveCanAddMsg(Hub<T> hub, T obj) {
 	    return getHubAddRemoveService().canAddMsg(hub, obj);
 	}
 
@@ -158,7 +163,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public <T> void callHubAddRemoveAdd(Hub<T> hub, T obj, boolean bAlreadyCalledContains) {
+	public <T extends OAObject> void callHubAddRemoveAdd(Hub<T> hub, T obj, boolean bAlreadyCalledContains) {
 	    getHubAddRemoveService().add(hub, obj, bAlreadyCalledContains);
 	}
 
@@ -168,38 +173,44 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public void callHubAddRemoveRemove(Hub<?> thisHub, Object obj, boolean bForce, boolean bSendEvent, boolean bDeleting, boolean bSetAO, boolean bSetPropToMaster, boolean bIsRemovingAll) {
+	public <T extends OAObject> void callHubAddRemoveRemove(Hub<T> thisHub, T obj, boolean bForce, boolean bSendEvent, boolean bDeleting, boolean bSetAO, boolean bSetPropToMaster, boolean bIsRemovingAll) {
 	    getHubAddRemoveService().remove(thisHub, obj, bForce, bSendEvent, bDeleting, bSetAO, bSetPropToMaster, bIsRemovingAll);
 	}
 
 	@Override
-	public <T> void callHubAddRemoveSortMove(Hub<T> hub, T object) {
+	public <T extends OAObject> void callHubAddRemoveSortMove(Hub<T> hub, T object) {
 	    getHubAddRemoveService().sortMove(hub, object);
 	}
 
 	@Override
-	public <T> void callHubAddRemoveRefresh(Hub<T> hub, Hub<T> hubNew) {
+	public <T extends OAObject> void callHubAddRemoveRefresh(Hub<T> hub, Hub<T> hubNew) {
 	    getHubAddRemoveService().refresh(hub, hubNew);
 	}
 
-	// AO
-
+	// AO =========================
 	@Override
-	public <T> T callHubAOSetActiveObject(Hub<T> hub, int pos) {
+	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, int pos) {
 	    return getHubAOService().setActiveObject(hub, pos);
 	}
 
 	@Override
-	public void callHubAOSetActiveObject(Hub<?> hub, Object obj) {
+	public <T extends OAObject> void callHubAOSetActiveObject(Hub<T> hub, T obj) {
 	    getHubAOService().setActiveObject(hub, obj);
 	}
 
 	@Override
-	public void callHubAOSetActiveObjectForce(Hub<?> hub, Object obj) {
+	public <T extends OAObject> void callHubAOSetActiveObjectForce(Hub<T> hub, T obj) {
 	    getHubAOService().setActiveObjectForce(hub, obj);
 	}
 
-	// CS
+	@Override
+	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, Object obj) {
+	    return getHubAOService().setActiveObject(hub, obj);
+	}
+	
+	
+	
+	// CS =========================
 
 	@Override
 	public void callHubCSSendRefresh(Hub<?> hub) {
@@ -211,7 +222,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubCSService().isServer(hub);
 	}
 
-	// Data
+	// Data =========================
 
 	@Override
 	public void callHubDataEnsureCapacity(Hub<?> hub, int size) {
@@ -229,12 +240,12 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public <T> void callHubDataCopyInto(Hub<T> hub, T[] anArray) {
+	public <T extends OAObject> void callHubDataCopyInto(Hub<T> hub, T[] anArray) {
 	    getHubDataService().copyInto(hub, anArray);
 	}
 
 	@Override
-	public <T> T[] callHubDataToArray(Hub<T> hub) {
+	public <T extends OAObject> T[] callHubDataToArray(Hub<T> hub) {
 	    return getHubDataService().toArray(hub);
 	}
 
@@ -244,17 +255,17 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public void callHubDataClone(Hub<?> hub, Hub<?> hubNew) {
+	public <T extends OAObject> void callHubDataClone(Hub<T> hub, Hub<T> hubNew) {
 	    getHubDataService()._clone(hub, hubNew);
 	}
 
 	@Override
-	public <T> T callHubDataGetObject(Hub<T> hub, Object key) {
+	public <T extends OAObject> T callHubDataGetObject(Hub<T> hub, Object key) {
 	    return getHubDataService().getObject(hub, key);
 	}
 
 	@Override
-	public <T> T callHubDataGetObjectAt(Hub<T> hub, int pos) {
+	public <T extends OAObject> T callHubDataGetObjectAt(Hub<T> hub, int pos) {
 	    return getHubDataService().getObjectAt(hub, pos);
 	}
 
@@ -283,7 +294,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    getHubDataService().clearHubChanges(hub);
 	}
 
-	// Delete
+	// Delete =========================
 
 	@Override
 	public void callHubDeleteDeleteAll(Hub<?> hub) {
@@ -295,7 +306,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubDeleteService().isDeletingAll(hub);
 	}
 
-	// Detail
+	// Detail =========================
 
 	@Override
 	public OALinkInfo callHubDetailGetLinkInfoFromMasterObjectToDetail(Hub<?> hub) {
@@ -328,22 +339,22 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, String path) {
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path) {
 	    return getHubDetailService().getDetailHub(hub, path);
 	}
 
 	@Override
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive, String selectOrder) {
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive, String selectOrder) {
 	    return getHubDetailService().getDetailHub(hub, path, bShareActive, selectOrder);
 	}
 
 	@Override
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive) {
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive) {
 	    return getHubDetailService().getDetailHub(hub, path, bShareActive);
 	}
 
 	@Override
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, String path, String selectOrder) {
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path, String selectOrder) {
 	    return getHubDetailService().getDetailHub(hub, path, selectOrder);
 	}
 
@@ -358,17 +369,17 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, Class<? extends OAObject>[] classes) {
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, Class<? extends OAObject>[] classes) {
 	    return getHubDetailService().getDetailHub(hub, classes);
 	}
 
 	@Override
-	public void callHubDetailSetMasterHub(Hub<?> thisHub, Hub<? extends OAObject> masterHub, String path, boolean bShared, String selectOrder) {
+	public void callHubDetailSetMasterHub(Hub<?> thisHub, Hub<?> masterHub, String path, boolean bShared, String selectOrder) {
 	    getHubDetailService().setMasterHub(thisHub, masterHub, path, bShared, selectOrder);
 	}
 
 	@Override
-	public Hub<? extends OAObject> callHubDetailGetMasterHub(Hub<?> hub) {
+	public Hub<?> callHubDetailGetMasterHub(Hub<?> hub) {
 	    return getHubDetailService().getMasterHub(hub);
 	}
 
@@ -383,7 +394,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public boolean callHubDetailRemoveDetailHub(Hub<?> hub, Hub<? extends OAObject> hubDetail) {
+	public boolean callHubDetailRemoveDetailHub(Hub<?> hub, Hub<?> hubDetail) {
 	    return getHubDetailService().removeDetailHub(hub, hubDetail);
 	}
 
@@ -393,7 +404,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public Hub<?> callHubDetailGetRealHub(Hub<?> hub) {
+	public <T extends OAObject> Hub<T> callHubDetailGetRealHub(Hub<T> hub) {
 	    return getHubDetailService().getRealHub(hub);
 	}
 
@@ -412,7 +423,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubDetailService().getLinkInfoFromMasterToDetail(hub);
 	}
 
-	// Event
+	// Event =========================
 
 	@Override
 	public void callHubEventFireOnNewListEvent(Hub<?> hub, boolean bAll) {
@@ -420,66 +431,61 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property) {
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property) {
 	    getHubEventService().addHubListener(hub, hl, property);
 	}
 
 	@Override
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property, boolean bActiveObjectOnly) {
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property, boolean bActiveObjectOnly) {
 	    getHubEventService().addHubListener(hub, hl, property, bActiveObjectOnly);
 	}
 
 	@Override
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, boolean bActiveObjectOnly) {
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, boolean bActiveObjectOnly) {
 	    getHubEventService().addHubListener(hub, hl, bActiveObjectOnly);
 	}
 
 	@Override
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property, String[] dependentPropertyPaths) {
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPropertyPaths) {
 	    getHubEventService().addHubListener(hub, hl, property, dependentPropertyPaths);
 	}
 
 	@Override
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly) {
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly) {
 	    getHubEventService().addHubListener(hub, hl, property, dependentPropertyPaths, bActiveObjectOnly);
 	}
 
 	@Override
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly, boolean bUseBackgroundThread) {
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly, boolean bUseBackgroundThread) {
 	    getHubEventService().addHubListener(hub, hl, property, dependentPropertyPaths, bActiveObjectOnly, bUseBackgroundThread);
 	}
 
 	@Override
-	public void callHubEventFireCalcPropertyChange(Hub<?> hub, OAObject obj, String property) {
-	    getHubEventService().fireCalcPropertyChange(hub, obj, property);
-	}
-
-	@Override
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl) {
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl) {
 	    getHubEventService().addHubListener(hub, hl);
 	}
 
 	@Override
-	public void callHubEventRemoveHubListener(Hub<?> hub, HubListener<?> hl) {
+	public <T extends OAObject> void callHubEventRemoveHubListener(Hub<T> hub, HubListener<T> hl) {
 	    getHubEventService().removeHubListener(hub, hl);
 	}
 
 	@Override
-	public void callHubEventFireCalcPropertyChange(Hub<?> hub, Object obj, String propertyName) {
+	public <T extends OAObject> void callHubEventFireCalcPropertyChange(Hub<T> hub, T obj, String propertyName) {
 	    getHubEventService().fireCalcPropertyChange(hub, obj, propertyName);
 	}
 
-	// Find
+	// Find =========================
 
 	@Override
-	public <T> T callHubFindFindFirst(Hub<T> hub, String propertyPath, Object findValue, boolean bSetAO, T lastFoundObject) {
+	public <T extends OAObject> T callHubFindFindFirst(Hub<T> hub, String propertyPath, Object findValue, boolean bSetAO, T lastFoundObject) {
 	    return getHubFindService().findFirst(hub, propertyPath, findValue, bSetAO, lastFoundObject);
 	}
 
-	// Link
+	// Link =========================
 
 	@Override
-	public Hub<?> callHubLinkGetHubWithLink(Hub<?> hub, boolean bIncludeCopiedHubs) {
+	public <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(Hub<T> hub, boolean bIncludeCopiedHubs) {
 	    return getHubLinkService().getHubWithLink(hub, bIncludeCopiedHubs);
 	}
 
@@ -494,17 +500,18 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public void callHubLinkUpdateLinkedToHub(Hub<?> hub, Hub<?> linkToHub, Object obj) {
+	public <T extends OAObject> void callHubLinkUpdateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj) {
 	    getHubLinkService().updateLinkedToHub(hub, linkToHub, obj);
 	}
 
 	@Override
-	public void callHubLinkUpdateLinkedToHub(Hub<?> hub, Hub<?> linkToHub, Object obj, String changedPropName) {
+	public <T extends OAObject> void callHubLinkUpdateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj, String changedPropName) {
 	    getHubLinkService().updateLinkedToHub(hub, linkToHub, obj, changedPropName);
 	}
 
 	@Override
-	public Object callHubLinkGetPropertyValueInLinkedToHub(Hub<?> hub, Object linkObject) {
+	public <T extends OAObject, U extends OAObject> Object callHubLinkGetPropertyValueInLinkedToHub(Hub<T> hub, U linkObject) { 
+		// ex: hub=hubDepartment linked to hubEmp,  linkObject=employee
 	    return getHubLinkService().getPropertyValueInLinkedToHub(hub, linkObject);
 	}
 
@@ -518,10 +525,10 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubLinkService().getLinkToProperty(hub);
 	}
 
-	// Root
+	// Root =========================
 
 	@Override
-	public Hub<?> callHubRootGetRootHub(Hub<?> hub) {
+	public <T extends OAObject> Hub<T> callHubRootGetRootHub(Hub<T> hub) {
 	    return getHubRootService().getRootHub(hub);
 	}
 
@@ -530,17 +537,17 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    getHubRootService().setRootHub(hub, bIsRoot);
 	}
 
-	// Save
+	// Save =========================
 
 	@Override
 	public void callHubSaveSaveAll(Hub<?> hub, int cascadeRule) {
 	    getHubSaveService().saveAll(hub, cascadeRule);
 	}
 
-	// Select
+	// Select =========================
 
 	@Override
-	public OASelect<? extends OAObject> callHubSelectGetSelect(Hub<?> hub, boolean bCreateIfNull) {
+	public <T extends OAObject> OASelect<T> callHubSelectGetSelect(Hub<T> hub, boolean bCreateIfNull) {
 	    return getHubSelectService().getSelect(hub, bCreateIfNull);
 	}
 
@@ -575,7 +582,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public void callHubSelectSetSelectWhereHub(Hub<?> hub, Hub<?> hubSelect) {
+	public <T extends OAObject> void callHubSelectSetSelectWhereHub(Hub<T> hub, Hub<T> hubSelect) {
 	    getHubSelectService().setSelectWhereHub(hub, hubSelect);
 	}
 
@@ -600,12 +607,12 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public void callHubSelectSelect(Hub<?> hub, OAObject whereObject, String whereClause, Object[] whereParams, String orderBy, boolean bAppendFlag, OAFilter filter) {
-	    getHubSelectService().select(hub, whereObject, whereClause, whereParams, orderBy, bAppendFlag, filter);
+	public <T extends OAObject> void callHubSelectSelect(Hub<T> hub, OAObject whereObject, String whereClause, Object[] whereParams, String orderBy, boolean bAppendFlag, OAFilter<T> filter) {
+		getHubSelectService().select(hub, whereObject, whereClause, whereParams, orderBy, bAppendFlag, filter);
 	}
 
 	@Override
-	public void callHubSelectSelect(Hub<?> hub, OASelect<? extends OAObject> select) {
+	public <T extends OAObject> void callHubSelectSelect(Hub<T> hub, OASelect<T> select) {
 	    getHubSelectService().select(hub, select);
 	}
 
@@ -615,7 +622,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public OASelect<? extends OAObject> callHubSelectGetSelect(Hub<?> hub) {
+	public <T extends OAObject> OASelect<T> callHubSelectGetSelect(Hub<T> hub) {
 	    return getHubSelectService().getSelect(hub);
 	}
 
@@ -625,7 +632,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public Hub<?> callHubSelectGetSelectWhereHub(Hub<?> hub) {
+	public <T extends OAObject> Hub<T> callHubSelectGetSelectWhereHub(Hub<T> hub) {
 	    return getHubSelectService().getSelectWhereHub(hub);
 	}
 
@@ -634,7 +641,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubSelectService().getSelectWhereHubPropertyPath(hub);
 	}
 
-	// Serialize
+	// Serialize =========================
 
 	@Override
 	public void callHubSerializeWriteObject(Hub<?> hub, ObjectOutputStream stream) throws IOException {
@@ -646,19 +653,19 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubSerializeService()._readResolve(hub);
 	}
 
-	// Share
+	// Share =========================
 	@Override
-	public void callHubShareSetSharedHub(Hub<?> hub, Hub<?> sharedMasterHub, boolean shareActiveObject) {
+	public <T extends OAObject> void callHubShareSetSharedHub(Hub<T> hub, Hub<T> sharedMasterHub, boolean shareActiveObject) {
 	    getHubShareService().setSharedHub(hub, sharedMasterHub, shareActiveObject);
 	}
 
 	@Override
-	public void callHubShareRemoveSharedHub(Hub<?> hub, Hub<?> hubToRemove) {
+	public <T extends OAObject> void callHubShareRemoveSharedHub(Hub<T> hub, Hub<T> hubToRemove) {
 	    getHubShareService().removeSharedHub(hub, hubToRemove);
 	}
 
 	@Override
-	public <T> Hub<T> callHubShareCreateSharedHub(Hub<T> hub, boolean shareActiveObject) {		
+	public <T extends OAObject> Hub<T> callHubShareCreateSharedHub(Hub<T> hub, boolean shareActiveObject) {		
 	    return getHubShareService().createSharedHub(hub, shareActiveObject);
 	}
 
@@ -673,11 +680,11 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public Hub<?> callHubShareGetMainSharedHub(Hub<?> hub) {
+	public <T extends OAObject> Hub<T> callHubShareGetMainSharedHub(Hub<T> hub) {
 	    return getHubShareService().getMainSharedHub(hub);
 	}
 
-	// Sort
+	// Sort =========================
 	@Override
 	public HubSortListener callHubSortGetSortListener(Hub<?> hub) {
 	    return getHubSortService().getSortListener(hub);
@@ -708,9 +715,13 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    getHubSortService().resort(hub);
 	}
 
-	// XML
+	// XML =========================
 	@Override
 	public void callHubXMLWrite(Hub<?> hub, OAXMLWriter ow, String tagName, boolean bKeyOnly, OACascade cascade) {
 	    getHubXMLService().write(hub, ow, tagName, bKeyOnly, cascade);
 	}
+	
+	
+
+
 }

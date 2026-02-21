@@ -27,49 +27,31 @@ public abstract class HubAddRemoveService {
     	this.faHub = faHub;
 	}
 
-	/**
-	 * Removes the specified object from the hub using default options for force,
-	 * event sending, deletion mode, active-object updates, master-reference updates,
-	 * and remove-all behavior. Delegates to the full remove implementation.
-	 *
-	 * @param thisHub the hub from which the object will be removed
-	 * @param obj     the object to remove
-	 * @return {@code true} if the object was removed, otherwise {@code false}
-	 */
-	public <T extends OAObject> boolean remove(final Hub<T> thisHub, final T obj) {
-		return remove(thisHub, obj, false, true, false, true, true, false);
-	}
 
-	/**
-	 * Removes the object at the specified position using default force behavior.
-	 * Delegates to the internal positional remove method.
-	 *
-	 * @param thisHub the hub containing the object
-	 * @param pos     the position of the object to remove
-	 * @return the removed object, or {@code null} if removal failed
-	 */
+	
 	public <T extends OAObject> T remove(final Hub<T> thisHub, final int pos) {
 		return remove(thisHub, pos, false);
 	}
-
-	/**
-	 * Removes the object at the specified position. Retrieves the object and
-	 * delegates to the main remove implementation. Returns {@code null} if the
-	 * object could not be removed.
-	 *
-	 * @param thisHub the hub containing the object
-	 * @param pos     the position of the object
-	 * @param bForce  whether to force removal
-	 * @return the removed object, or {@code null} if removal failed
-	 */
-	public <T extends OAObject> T remove(final Hub<T> thisHub, final int pos, final boolean bForce) {
+	public <T extends OAObject> T remove(Hub<T> thisHub, int pos, boolean bForce) {
 		T obj = callHubDataGetObjectAt(thisHub, pos);
-		if (!remove(thisHub, obj, bForce, true, false, true, true, false)) {
-			obj = null;
-		}
+		if (obj == null) return null;
+		remove(thisHub, obj, bForce, true, false, true, true, false);
 		return obj;
 	}
 
+	/**
+	 * @param obj can be an OAObjet, OAObjectKey, pkey value  
+	 */
+	public <T extends OAObject> boolean remove(Hub<T> hub, Object obj) {
+		T t = remove(hub, obj, false, true, false, true, true, false);
+ 		return t != null;
+	}
+	
+	public <T extends OAObject> boolean remove(Hub<T> thisHub, T obj) {
+ 		T t = remove(thisHub, obj, false, true, false, true, true, false);
+ 		return t != null;
+	}
+	
 	/**
 	 * Removes an object from the hub with full control over removal behavior.
 	 * Performs validation, event notifications, server messaging, vector updates,
@@ -85,22 +67,25 @@ public abstract class HubAddRemoveService {
 	 * @param bIsRemovingAll  whether this is part of a bulk remove/all operation
 	 * @return {@code true} if the object was removed, otherwise {@code false}
 	 */
-	public <T extends OAObject> boolean remove(final Hub<T> thisHub, T obj, final boolean bForce,
+	public <T extends OAObject> T remove(final Hub<T> thisHub, final Object objOrig, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll) {
 
-		if (obj == null || thisHub == null) {
-			return false;
+		if (objOrig == null || thisHub == null) {
+			return null;
 		}
 
 		Hub<T> hubx = faHub.getHubDataUnique(thisHub).getSharedHub();
 		if (hubx != null) {
-			remove(hubx, obj, bForce, bSendEvent, bDeleting, bSetAO, true, bIsRemovingAll);
-			return false;
+			remove(hubx, objOrig, bForce, bSendEvent, bDeleting, bSetAO, true, bIsRemovingAll);
+			return null;
 		}
-
+		
+		T obj = callHubGetRealObject(thisHub, objOrig);
+		if (obj == null) return null;
+		
 		if (!bIsRemovingAll && !thisHub.contains(obj)) {
-			return false;
+			return null;
 		}
 
 		if (!bIsRemovingAll && !thisHub.getEnabled()) {
@@ -116,11 +101,6 @@ public abstract class HubAddRemoveService {
 			}
 		}
 		if (!bIsRemovingAll) {
-			obj = callHubGetRealObject(thisHub, obj);
-			if (obj == null) {
-				return false;
-			}
-
 			// check to see if this hub is a detail with LinkInfo.Type.ONE
 			OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(thisHub);
 			
@@ -157,7 +137,7 @@ public abstract class HubAddRemoveService {
 		pos = callHubData_remove(thisHub, obj, bDeleting, bIsRemovingAll);
 		if (!bIsRemovingAll && pos < 0) {
 			LOG.finer("object not removed, obj=" + obj);
-			return false;
+			return null;
 		}
 
 		if (bSetAO) {
@@ -199,9 +179,14 @@ public abstract class HubAddRemoveService {
 			callHubEventFireAfterRemoveEvent(thisHub, obj, pos);
 		}
 		callHubSetReferenceable(thisHub, true);
-		return true;
+		return obj;
 	}
 
+	
+	
+	
+	
+	
 	/**
 	 * Determines whether the specified object can be removed from the hub and
 	 * returns a descriptive message if removal is not allowed.
@@ -1294,7 +1279,7 @@ public abstract class HubAddRemoveService {
 	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
 
 	@OAParentProvided (example = "srvcHub.getRealObject")
-	public abstract <T extends OAObject> T callHubGetRealObject(Hub<T> hub, T object);
+	public abstract <T extends OAObject> T callHubGetRealObject(Hub<T> hub, Object object); //qqqqqqq Object can be T, OAObjectKey, pkey value
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().getPos")
 	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);

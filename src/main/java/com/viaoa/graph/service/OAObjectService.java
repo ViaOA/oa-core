@@ -17,6 +17,7 @@ import com.viaoa.graph.api.internal.ObjectsInternalOps;
 import com.viaoa.graph.service.object.*;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
+import com.viaoa.model.oa.VString;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OACascade;
@@ -405,12 +406,12 @@ public class OAObjectService extends OAObjectParentService implements ObjectsOps
 
 	// EnumService ======
 	@Override
-	public Hub<String> callObjectEnumGetNameValues(Class<? extends OAObject> clazz, String propertyName) {
+	public Hub<VString> callObjectEnumGetNameValues(Class<? extends OAObject> clazz, String propertyName) {
 	    return getOAObjectEnumService().getNameValues(clazz, propertyName);
 	}
 
 	@Override
-	public Hub<String> callObjectEnumGetDisplayNameValues(Class<? extends OAObject> clazz, String propertyName) {
+	public Hub<VString> callObjectEnumGetDisplayNameValues(Class<? extends OAObject> clazz, String propertyName) {
 	    return getOAObjectEnumService().getDisplayNameValues(clazz, propertyName);
 	}
 
@@ -761,11 +762,13 @@ public class OAObjectService extends OAObjectParentService implements ObjectsOps
 	}
 
 	@Override
+	@SuppressWarnings({"unchecked"})
 	public <T extends OAObject> T callObjectReflectGetObject(Class<T> clazz, Object keyValue) {
 	    return (T) getOAObjectReflectService().getObject(clazz, keyValue);
 	}
 
 	@Override
+	@SuppressWarnings({"unchecked"})
 	public <T extends OAObject> T callObjectReflectCreateNewObject(Class<T> clazz) {
 	    return (T) getOAObjectReflectService().createNewObject(clazz);
 	}

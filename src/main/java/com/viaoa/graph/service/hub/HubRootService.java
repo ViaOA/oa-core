@@ -35,7 +35,7 @@ public abstract class HubRootService {
 	 * @param thisHub the Hub whose recursive root is being requested
 	 * @return the root Hub for this recursive Hub, or {@code null} if not recursive
 	 */
-	public Hub getRootHub(final Hub thisHub) {
+	public <T extends OAObject> Hub<T> getRootHub(final Hub<T> thisHub) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -46,7 +46,7 @@ public abstract class HubRootService {
 		}
 
 		// 2: check for root hub
-		Hub h = callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo());
+		Hub h = callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo(), thisHub);
 		if (h != null) {
 			return h;
 		}
@@ -80,10 +80,10 @@ public abstract class HubRootService {
 
 		// 20120304 added other cases on how to find the root hub
 		if (dm.getDetailToMasterLinkInfo() == null) {
-			return callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo());
+			return callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo(), thisHub);
 		}
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() == null && faHub.getHubDataMaster(thisHub).getMasterHub() == null) {
-			return callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo());
+			return callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo(), thisHub);
 		}
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) {
 			if (faHub.getHubDataMaster(thisHub).getMasterHub() != null) {
@@ -102,7 +102,7 @@ public abstract class HubRootService {
 					}
 				}
 			}
-			return callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo());
+			return callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo(), thisHub);
 		}
 		// End 20120304
 
@@ -136,7 +136,7 @@ public abstract class HubRootService {
 			// the linkInfo for the parent is not the owner or a recursive parent
 			// The root hub needs to be manually set by calling Hub.setRootHub,
 			//     since the recursive hub does not have an owner object
-			return callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo());
+			return callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo(), thisHub);
 		}
 
 		// 6: dm.masterObject is the same as this class - recursive parent hub
@@ -186,7 +186,7 @@ public abstract class HubRootService {
 	public abstract OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRootHub")
-	public abstract Hub callObjectInfoGetRootHub(OAObjectInfo thisOI);
+	public abstract <T extends OAObject> Hub<T> callObjectInfoGetRootHub(OAObjectInfo thisOI, Hub<T> hub);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
@@ -198,9 +198,9 @@ public abstract class HubRootService {
 	public abstract OALinkInfo callObjectInfoGetLinkToOwner(OAObjectInfo thisOI);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().setRootHub")
-	public abstract void callObjectInfoSetRootHub(OAObjectInfo thisOI, Hub h);
+	public abstract void callObjectInfoSetRootHub(OAObjectInfo thisOI, Hub<?> h);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
-	public abstract Hub[] callHubShareGetAllSharedHubs(Hub thisHub, OAFilter<Hub> filter);
+	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub> filter);
 
 }

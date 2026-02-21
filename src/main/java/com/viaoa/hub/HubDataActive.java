@@ -15,6 +15,7 @@
  */
 package com.viaoa.hub;
 
+import com.viaoa.object.OAObject;
 
 /**
  * Lightweight structure holding the current Active Object (AO) for a Hub.
@@ -23,7 +24,7 @@ package com.viaoa.hub;
  * <p>Cleared when a Hub is detached or a shared Hub that does not share
  * its AO resets to null.</p>
  */
-public class HubDataActive implements java.io.Serializable {
+public class HubDataActive<TYPE extends OAObject> implements java.io.Serializable {
 //qqqqqqqq class was package protected	
 	/**
 	 * Serialization identifier used to maintain version compatibility when
@@ -35,7 +36,8 @@ public class HubDataActive implements java.io.Serializable {
      * The current Active Object (AO) for the owning Hub. Shared Hubs share
      * this value if configured to use the same active-object state.
      */
-	protected transient volatile Object activeObject;
+	protected transient volatile TYPE activeObject;
+	
 	
 	/**
 	 * Clears the current active object by setting it to {@code null}.
@@ -54,10 +56,10 @@ public class HubDataActive implements java.io.Serializable {
         activeObject = null;
     }
 
-	public Object getActiveObject() {
+	public TYPE getActiveObject() {
 		return activeObject;
 	}
-	public void setActiveObject(Object obj) {
+	public void setActiveObject(TYPE obj) {
 		activeObject = obj;
 	}
 	

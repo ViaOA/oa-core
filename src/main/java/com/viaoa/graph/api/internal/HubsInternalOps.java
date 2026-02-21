@@ -34,8 +34,8 @@ public interface HubsInternalOps {
 	public int callHubGetLoadedSize(Hub<?> hub);
 	public void callHubSetAutoSequence(Hub<?> hub, String property, int startNumber, boolean bKeepSeq);
 	public void callHubResequence(Hub<?> hub);
-	public <T> HubCurrentStateEnum callHubGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew);
-	public void callHubSetObjectClass(Hub<?> hubDetail, Class<?> clazz);
+	public <T extends OAObject> HubCurrentStateEnum callHubGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew);
+	public <T extends OAObject> void callHubSetObjectClass(Hub<T> hubDetail, Class<T> clazz);
 	public void callHubSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly);
 	public void callHubSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty);
 	public boolean callHubIsValid(Hub<?> hub);
@@ -67,29 +67,31 @@ public interface HubsInternalOps {
 	}
 	
  	// AddRemove
-	public <T> boolean callHubAddRemoveAdd(Hub<T> hub, T obj);
+	public <T extends OAObject> boolean callHubAddRemoveAdd(Hub<T> hub, T obj);
 	public void callHubAddRemoveSwap(Hub<?> hub, int pos1, int pos2);
 	public void callHubAddRemoveMove(Hub<?> hub, int posFrom, int posTo);
-	public <T> boolean callHubAddRemoveInsert(Hub<T> hub, T obj, int pos);
+	public <T extends OAObject> boolean callHubAddRemoveInsert(Hub<T> hub, T obj, int pos);
 	public void callHubAddRemoveClear(Hub<?> hub);
-	public <T> boolean callHubAddRemoveCanAdd(Hub<T> hub, T object);
-	public <T> String callHubAddRemoveCanAddMsg(Hub<T> hub, T obj);
+	public <T extends OAObject> boolean callHubAddRemoveCanAdd(Hub<T> hub, T object);
+	public <T extends OAObject> String callHubAddRemoveCanAddMsg(Hub<T> hub, T obj);
 	public String callHubAddRemoveGetCantRemoveAllMessage(Hub<?> hub, int checkType);
-	public <T> void callHubAddRemoveAdd(Hub<T> hub, T obj, boolean bAlreadyCalledContains);
+	public <T extends OAObject> void callHubAddRemoveAdd(Hub<T> hub, T obj, boolean bAlreadyCalledContains);
 	public void callHubAddRemoveClear(Hub<?> thisHub, boolean bSetAOtoNull, boolean bSendNewList);
+//qqqqqqqqqqqq remove methods	
+	public <T extends OAObject> boolean callHubAddRemoveRemove(Hub<T> hub, T obj);
+	public <T extends OAObject> T callHubAddRemoveRemove(Hub<T> hub, int pos);
+	public <T extends OAObject> boolean callHubAddRemoveRemove(Hub<T> hub, Object obj);
+	public <T extends OAObject> void callHubAddRemoveRemove(Hub<T> thisHub, T obj, boolean bForce, boolean bSendEvent, boolean bDeleting, boolean bSetAO, boolean bSetPropToMaster, boolean bIsRemovingAll);
 	
-	public boolean callHubAddRemoveRemove(Hub<?> hub, Object obj);
-	public <T> T callHubAddRemoveRemove(Hub<T> hub, int pos);
-	public void callHubAddRemoveRemove(Hub<?> thisHub, Object obj, boolean bForce, boolean bSendEvent, boolean bDeleting, boolean bSetAO, boolean bSetPropToMaster, boolean bIsRemovingAll);
-	
-	public <T> void callHubAddRemoveSortMove(Hub<T> hub, T object);
-	public <T> void callHubAddRemoveRefresh(Hub<T> hub, Hub<T> hubNew);
+	public <T extends OAObject> void callHubAddRemoveSortMove(Hub<T> hub, T object);
+	public <T extends OAObject> void callHubAddRemoveRefresh(Hub<T> hub, Hub<T> hubNew);
 
  	
 	// AO
-	public <T> T callHubAOSetActiveObject(Hub<T> hub, int pos);
-	public void callHubAOSetActiveObject(Hub<?> hub, Object obj);
-	public void callHubAOSetActiveObjectForce(Hub<?> hub, Object obj);
+	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, int pos);
+	public <T extends OAObject> void callHubAOSetActiveObject(Hub<T> hub, T obj);
+	public <T extends OAObject> void callHubAOSetActiveObjectForce(Hub<T> hub, T obj);
+	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, Object obj);
 
 	// CS
 	public void callHubCSSendRefresh(Hub<?> hub);
@@ -100,12 +102,12 @@ public interface HubsInternalOps {
 	public void callHubDataEnsureCapacity(Hub<?> hub, int size);
 	public void callHubDataResizeToFit(Hub<?> hub);
 	public void callHubDataSetChanged(Hub<?> hub, boolean bIsChanged);
-	public <T> void callHubDataCopyInto(Hub<T> hub, T[] anArray);
-	public <T> T[] callHubDataToArray(Hub<T> hub);
+	public <T extends OAObject> void callHubDataCopyInto(Hub<T> hub, T[] anArray);
+	public <T extends OAObject> T[] callHubDataToArray(Hub<T> hub);
 	public int callHubDataGetCurrentSize(Hub<?> hub);
-	public void callHubDataClone(Hub<?> hub, Hub<?> hubNew);
-	public <T> T callHubDataGetObject(Hub<T> hub, Object key);
-	public <T> T callHubDataGetObjectAt(Hub<T> hub, int pos);
+	public <T extends OAObject> void callHubDataClone(Hub<T> hub, Hub<T> hubNew);
+	public <T extends OAObject> T callHubDataGetObject(Hub<T> hub, Object key);
+	public <T extends OAObject> T callHubDataGetObjectAt(Hub<T> hub, int pos);
 	public boolean callHubDataContains(Hub<?> hub, Object obj);
 	public int callHubDataGetPos(final Hub<?> hub, Object object, final boolean adjustMaster, final boolean bUpdateLink);
 	public boolean callHubDataSetLoadingAllData(Hub<?> hub, boolean bIsLoading);
@@ -125,22 +127,22 @@ public interface HubsInternalOps {
 	public boolean callHubDetailIsOwned(Hub<?> hub);
 	
 	
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, String path);
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive, String selectOrder);
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive);
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, String path, String selectOrder);
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path);
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive, String selectOrder);
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive);
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path, String selectOrder);
 	public <T extends OAObject> Hub<T> callHubDetailGetDetailHub(Hub<?> hub, String path, Class<T> objectClass, boolean bShareActive);
 	public <T extends OAObject> Hub<T> callHubDetailGetDetailHub(Hub<?> hub, Class<T> clazz, boolean bShareActive, String selectOrder);
-	public Hub<? extends OAObject> callHubDetailGetDetailHub(Hub<?> hub, Class<? extends OAObject>[] classes);
+	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, Class<? extends OAObject>[] classes);
 	
 	
-	public void callHubDetailSetMasterHub(Hub<?> thisHub, Hub<? extends OAObject> masterHub, String path, boolean bShared, String selectOrder);
+	public void callHubDetailSetMasterHub(Hub<?> thisHub, Hub<?> masterHub, String path, boolean bShared, String selectOrder);
 	public Hub<? extends OAObject> callHubDetailGetMasterHub(Hub<?> hub);
 	public OAObject callHubDetailGetMasterObject(Hub<?> hub);
 	public Class<? extends OAObject> callHubDetailGetMasterClass(Hub<?> hub);
-	public boolean callHubDetailRemoveDetailHub(Hub<?> hub, Hub<? extends OAObject> hubDetail);
+	public boolean callHubDetailRemoveDetailHub(Hub<?> hub, Hub<?> hubDetail);
 	public OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
-	public Hub<?> callHubDetailGetRealHub(Hub<?> hub);
+	public <T extends OAObject> Hub<T> callHubDetailGetRealHub(Hub<T> hub);
 	public String callHubDetailGetPropertyFromMasterToDetail(Hub<?> hub);
 	public String callHubDetailGetPropertyFromDetailToMaster(Hub<?> hub);
 	public OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub<?> hub);
@@ -148,57 +150,56 @@ public interface HubsInternalOps {
 
  	// Event
 	public void callHubEventFireOnNewListEvent(Hub<?> hub, boolean bAll);
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property);
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property, boolean bActiveObjectOnly);
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, boolean bActiveObjectOnly);
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property, String[] dependentPropertyPaths);
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly);
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly, boolean bUseBackgroundThread);
-	public void callHubEventFireCalcPropertyChange(Hub<?> hub, OAObject obj, String property);
-	public void callHubEventAddHubListener(Hub<?> hub, HubListener<?> hl);
-	public void callHubEventRemoveHubListener(Hub<?> hub, HubListener<?> hl);
-	public void callHubEventFireCalcPropertyChange(Hub<?> hub, Object obj, String propertyName);
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property);
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property, boolean bActiveObjectOnly);
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, boolean bActiveObjectOnly);
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPropertyPaths);
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly);
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly, boolean bUseBackgroundThread);
+	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl);
+	public <T extends OAObject> void callHubEventRemoveHubListener(Hub<T> hub, HubListener<T> hl);
+	public <T extends OAObject> void callHubEventFireCalcPropertyChange(Hub<T> hub, T obj, String propertyName);
 
 	
 	// Find
-	public <T> T callHubFindFindFirst(Hub<T> hub, String propertyPath, Object findValue, boolean bSetAO, T lastFoundObject);
+	public <T extends OAObject> T callHubFindFindFirst(Hub<T> hub, String propertyPath, Object findValue, boolean bSetAO, T lastFoundObject);
 	
 	// Link
-	public Hub<?> callHubLinkGetHubWithLink(Hub<?> hub, boolean bIncludeCopiedHubs);
+	public <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(Hub<T> hub, boolean bIncludeCopiedHubs);
 	public void callHubLinkSetLinkHub(Hub<?> thisHub, String propertyFrom, Hub<?> linkToHub, String propertyTo, boolean linkPosFlag, boolean bAutoCreate, boolean bAutoCreateAllowDups);
 	public String callHubLinkGetLinkHubPath(Hub<?> hub, boolean bIncludeCopiedHubs);
-	public void callHubLinkUpdateLinkedToHub(Hub<?> hub, Hub<?> linkToHub, Object obj);
-	public void callHubLinkUpdateLinkedToHub(Hub<?> hub, Hub<?> linkToHub, Object obj, String changedPropName);
-	public OAObject callHubLinkGetPropertyValueInLinkedToHub(Hub<?> hub, OAObject linkObject);
+	public <T extends OAObject> void callHubLinkUpdateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj);
+	public <T extends OAObject> void callHubLinkUpdateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj, String changedPropName);
+	public <T extends OAObject, U extends OAObject> Object callHubLinkGetPropertyValueInLinkedToHub(Hub<T> hub, U linkObject); // returns OAOject, null, or int (position)
 	public boolean callHubLinkGetLinkedOnPos(Hub<?> hub);
 	public String callHubLinkGetLinkToProperty(Hub<?> hub);
 
 	// Root
-	public Hub<?> callHubRootGetRootHub(Hub<?> hub);
+	public <T extends OAObject> Hub<T> callHubRootGetRootHub(Hub<T> hub);
 	public void callHubRootSetRootHub(Hub<?> hub, boolean bIsRoot);
 	
 	// Save
 	public void callHubSaveSaveAll(Hub<?> hub, int cascadeRule);
 	
 	// Select
-	public OASelect<? extends OAObject> callHubSelectGetSelect(Hub<?> hub, boolean bCreateIfNull);
+	public <T extends OAObject> OASelect<T> callHubSelectGetSelect(Hub<T> hub, boolean bCreateIfNull);
 	public void callHubSelectLoadAllData(Hub<?> hub);
 	public void callHubSelectCancelSelect(Hub<?> hub, boolean bRemoveSelect);
 	public boolean callHubSelectIsMoreData(Hub<?> hub);
 	public void callHubSelectSetSelectWhere(Hub<?> hub, String whereClause);
 	public String callHubSelectGetSelectWhere(Hub<?> hub);
 	public void callHubSelectSetSelectOrder(Hub<?> hub, String orderClause);
-	public void callHubSelectSetSelectWhereHub(Hub<?> hub, Hub<?> hubSelect);
+	public <T extends OAObject> void callHubSelectSetSelectWhereHub(Hub<T> hub, Hub<T> hubSelect);
 	public void callHubSelectSetSelectWhereHubPropertyPath(Hub<?> hub, String ppFromHub);
 	public String callHubSelectGetSelectOrder(Hub<?> hub);
 	public void callHubSelectSelect(Hub<?> hub, OAObject whereObject, String whereClause, Object[] whereParams, String orderByClause, boolean bAppendFlag);
 	public void callHubSelectSelect(Hub<?> hub, boolean bAppendFlag);
-	public void callHubSelectSelect(Hub<?> hub, OAObject whereObject, String whereClause, Object[] whereParams, String orderBy, boolean bAppendFlag, OAFilter filter);
-	public void callHubSelectSelect(Hub<?> hub, OASelect<? extends OAObject> select);
+	public <T extends OAObject>  void callHubSelectSelect(Hub<T> hub, OAObject whereObject, String whereClause, Object[] whereParams, String orderBy, boolean bAppendFlag, OAFilter<T> filter);
+	public <T extends OAObject> void callHubSelectSelect(Hub<T> hub, OASelect<T> select);
 	public void callHubSelectSelectPassthru(Hub<?> hub, String whereClause, String orderClause);
-	public OASelect<? extends OAObject> callHubSelectGetSelect(Hub<?> hub);
+	public <T extends OAObject> OASelect<T> callHubSelectGetSelect(Hub<T> hub);
 	public void callHubSelectRefresh(Hub<?> hub);
-	public Hub<?> callHubSelectGetSelectWhereHub(Hub<?> hub);
+	public <T extends OAObject> Hub<T> callHubSelectGetSelectWhereHub(Hub<T> hub);
 	public String callHubSelectGetSelectWhereHubPropertyPath(Hub<?> hub);
 	
 	
@@ -208,12 +209,12 @@ public interface HubsInternalOps {
 	public Object callHubSerializeReadResolve(Hub<?> hub) throws ObjectStreamException;
 	
 	// Share
-	public void callHubShareSetSharedHub(Hub<?> hub, Hub<?> sharedMasterHub, boolean shareActiveObject);
-	public void callHubShareRemoveSharedHub(Hub<?> hub, Hub<?> hubToRemove);
-	public <T> Hub<T> callHubShareCreateSharedHub(Hub<T> hub, boolean shareActiveObject);
+	public <T extends OAObject> void callHubShareSetSharedHub(Hub<T> hub, Hub<T> sharedMasterHub, boolean shareActiveObject);
+	public <T extends OAObject> void callHubShareRemoveSharedHub(Hub<T> hub, Hub<T> hubToRemove);
+	public <T extends OAObject> Hub<T> callHubShareCreateSharedHub(Hub<T> hub, boolean shareActiveObject);
 	public boolean callHubShareIsUsingSameSharedHub(Hub<?> hub, Hub<?> hub2);
 	public boolean callHubShareIsUsingSameSharedAO(Hub<?> hub, Hub<?> hub2);
-	public Hub<?> callHubShareGetMainSharedHub(Hub<?> hub);
+	public <T extends OAObject> Hub<T> callHubShareGetMainSharedHub(Hub<T> hub);
 	
 	// Sort
  	public HubSortListener callHubSortGetSortListener(Hub<?> hub);

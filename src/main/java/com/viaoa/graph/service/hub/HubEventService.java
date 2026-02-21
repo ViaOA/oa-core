@@ -134,7 +134,7 @@ public abstract class HubEventService {
 			if (objx != null) {
 				String s = callHubDetailGetPropertyFromMasterToDetail(thisHub);
 				if (s != null) {
-					OAObjectInfo oi = callObjectInfoGetOAObjectInfo(objx.getClass());
+					OAObjectInfo oi = callObjectInfoGetObjectInfo(objx.getClass());
 					if (oi.getHasTriggers()) {
 						final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 						try {
@@ -231,7 +231,7 @@ public abstract class HubEventService {
 		if (objx != null) {
 			final String s = callHubDetailGetPropertyFromMasterToDetail(thisHub);
 			if (s != null) {
-				OAObjectInfo oi = callObjectInfoGetOAObjectInfo(objx.getClass());
+				OAObjectInfo oi = callObjectInfoGetObjectInfo(objx.getClass());
 				if (oi.getHasTriggers()) {
 					final HubEvent hubEvent = new HubEvent(thisHub);
 					try {
@@ -258,7 +258,7 @@ public abstract class HubEventService {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
-				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, (OAObject) obj,
+				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, obj,
 																							OAObjectCallback.CHECK_CallbackMethod);
 				if (!em.getAllowed()) {
 					String s = em.getResponse();
@@ -341,7 +341,7 @@ public abstract class HubEventService {
 			if (objx != null) {
 				String s = callHubDetailGetPropertyFromMasterToDetail(thisHub);
 				if (s != null) {
-					OAObjectInfo oi = callObjectInfoGetOAObjectInfo(objx.getClass());
+					OAObjectInfo oi = callObjectInfoGetObjectInfo(objx.getClass());
 					if (oi.getHasTriggers()) {
 						HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 						callThreadLocalAddHubEvent(hubEvent);
@@ -369,8 +369,7 @@ public abstract class HubEventService {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
-				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, (OAObject) obj,
-																							OAObjectCallback.CHECK_CallbackMethod);
+				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, obj, OAObjectCallback.CHECK_CallbackMethod);
 				if (!em.getAllowed()) {
 					String s = em.getResponse();
 					if (OAString.isEmpty(s)) {
@@ -452,7 +451,7 @@ public abstract class HubEventService {
 			if (objx != null) {
 				String s = callHubDetailGetPropertyFromMasterToDetail(thisHub);
 				if (s != null) {
-					OAObjectInfo oi = callObjectInfoGetOAObjectInfo(objx.getClass());
+					OAObjectInfo oi = callObjectInfoGetObjectInfo(objx.getClass());
 					if (oi.getHasTriggers()) {
 						HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 						try {
@@ -743,7 +742,7 @@ public abstract class HubEventService {
 				return;
 			}
 			
-			OAObjectInfo oi = callObjectInfoGetOAObjectInfo((OAObject) object);
+			OAObjectInfo oi = callObjectInfoGetObjectInfo((OAObject) object);
 			OALinkInfo linkInfo = callObjectInfoGetLinkInfo(oi, propertyName);
 			if (linkInfo != null) {
 				propertyChangeUpdateDetailHubs(thisHub, object, propertyName);
@@ -1392,10 +1391,10 @@ public abstract class HubEventService {
 	public abstract <T extends OAObject> void callObjectCacheFireAfterRemoveEvent(Hub<T> hub, T obj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(Class clazz);
+	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class clazz);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject obj);
+	public abstract OAObjectInfo callObjectInfoGetObjectInfo(OAObject obj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback")
 	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final int checkType);
@@ -1404,7 +1403,7 @@ public abstract class HubEventService {
 	public abstract <T extends OAObject> void callObjectCacheFireAfterAddEvent(Hub<T> hub, T obj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback")
-	public abstract OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<?> hub, final OAObject oaObj, final int checkType);
+	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final int checkType);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, String propertyName);

@@ -16,6 +16,7 @@
 package com.viaoa.hub;
 
 import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
 /**
@@ -55,19 +56,19 @@ import com.viaoa.runtime.OARuntime;
  *   <li>Implements {@link HubListenerAdapter} for minimal callback overhead.</li>
  * </ul>
  */
-public class HubShareAO extends HubListenerAdapter {
+public class HubShareAO<TYPE extends OAObject> extends HubListenerAdapter<TYPE> {
 	/**
 	 * The first Hub participating in Active Object synchronization.
 	 * Changes to this Hub’s Active Object may propagate to {@code hub2}.
 	 */
-	private Hub hub1;
+	private Hub<TYPE> hub1;
 	
 	/**
 	 * The second Hub participating in Active Object synchronization.
 	 * Changes to this Hub’s Active Object may propagate to {@code hub1},
 	 * unless operating in one-way-only mode.
 	 */
-	private Hub hub2;
+	private Hub<TYPE> hub2;
 
 	/**
 	 * Creates a HubShareAO that synchronizes Active Object changes between
@@ -78,7 +79,7 @@ public class HubShareAO extends HubListenerAdapter {
 	 * @param bOneWayOnly if true, only AO changes in {@code hub1} update {@code hub2};
 	 *                    if false, updates propagate both ways
 	 */
-    public HubShareAO(Hub hub1, Hub hub2, boolean bOneWayOnly) {
+    public HubShareAO(Hub<TYPE> hub1, Hub<TYPE> hub2, boolean bOneWayOnly) {
         this.hub1 = hub1;
         this.hub2 = hub2;
 
@@ -92,7 +93,7 @@ public class HubShareAO extends HubListenerAdapter {
      * @param hub1 the first Hub to synchronize
      * @param hub2 the second Hub to synchronize
      */
-	public HubShareAO(Hub hub1, Hub hub2) {
+	public HubShareAO(Hub<TYPE> hub1, Hub<TYPE> hub2) {
 	    this(hub1, hub2, false);
 	}
 
@@ -103,7 +104,7 @@ public class HubShareAO extends HubListenerAdapter {
 	 * @param evt the HubEvent describing the AO change
 	 */
     @Override
-    public void afterChangeActiveObject(HubEvent evt) {
+    public void afterChangeActiveObject(HubEvent<TYPE> evt) {
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub1);
         if (og.hubsInternal().callHubShareIsUsingSameSharedAO(hub1, hub2)) {
             return;
@@ -128,7 +129,7 @@ public class HubShareAO extends HubListenerAdapter {
 	 *
 	 * @return the first Hub
 	 */
-	public Hub getHub1() {
+	public Hub<TYPE> getHub1() {
 	    return hub1;
 	}
 
@@ -137,7 +138,7 @@ public class HubShareAO extends HubListenerAdapter {
 	 *
 	 * @return the second Hub
 	 */
-	public Hub getHub2() {
+	public Hub<TYPE> getHub2() {
         return hub2;
     }
 }

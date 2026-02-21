@@ -46,15 +46,6 @@ public abstract class HubAOService {
 	 * @param object  the object to make active, or {@code null} to clear
 	 */
 	public <T extends OAObject> void setActiveObject(Hub<T> thisHub, T object) {
-		if (object != null) {
-			/* not needed, used for debugging 20150920
-			if (object instanceof Hub) {
-			    LOG.warning("trying to set active object using a AO=hub, thisHub="+thisHub+", AO="+object);
-			    return;
-			}
-			*/
-			object = callHubGetRealObject(thisHub, object);
-		}
 		setActiveObject(thisHub, object, true, true, false);
 	}
 
@@ -66,9 +57,6 @@ public abstract class HubAOService {
 	 * @param object  the object to force as active, or {@code null} to clear
 	 */
 	public <T extends OAObject> void setActiveObjectForce(Hub<T> thisHub, T object) {
-		if (object != null) {
-			object = callHubGetRealObject(thisHub, object);
-		}
 		setActiveObject(thisHub, object, true, true, true);
 	}
 
@@ -82,12 +70,25 @@ public abstract class HubAOService {
 	 * @param adjustMaster whether to adjust the master hub if the object is not found
 	 */
 	public <T extends OAObject> void setActiveObject(Hub<T> thisHub, T object, boolean adjustMaster) {
-		if (object != null) {
-			object = callHubGetRealObject(thisHub, object);
-		}
 		setActiveObject(thisHub, object, adjustMaster, true, false); // adjMaster, updateLink, force
 	}
 
+	public <T extends OAObject> T setActiveObject(Hub<T> thisHub, Object object) {
+		return setActiveObject(thisHub, object, true);
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	public <T extends OAObject> T setActiveObject(Hub<T> thisHub, Object object, boolean adjustMaster) {
+		if (object != null) {
+			object = callHubGetRealObject(thisHub, object);
+		}
+		T t = (T) object;
+		setActiveObject(thisHub, t, adjustMaster, true, false); // adjMaster, updateLink, force
+		return t;
+	}
+	
+	
+	
 	/**
 	 * Sets the active object with control over master adjustment, link updates, and
 	 * force behavior. Resolves proxies before updating, adjusts master if required,
@@ -269,7 +270,7 @@ public abstract class HubAOService {
 		faHub.getHubDataUnique(thisHub).setUpdatingActiveObject(false);
 
 		// Now call for all sharedHubs with same "dataa"
-		OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
+		OAFilter<Hub> filter = new OAFilter<Hub>() {
 			@Override
 			public boolean isUsed(Hub h) {
 				return faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub); 
@@ -324,7 +325,7 @@ public abstract class HubAOService {
 		}
 
 		// Now call for all sharedHubs with same "dataa"
-		OAFilter<Hub<T>> filter = new OAFilter<>() {
+		OAFilter<Hub> filter = new OAFilter<>() {
 			@Override
 			public boolean isUsed(Hub h) {
 				return faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub); 
@@ -406,7 +407,7 @@ public abstract class HubAOService {
 	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);
 
 	@OAParentProvided (example = "srvcHub.getRealObject")
-	public abstract <T extends OAObject> T callHubGetRealObject(Hub<T> hub, T object);
+	public abstract <T extends OAObject> T callHubGetRealObject(Hub<T> hub, Object object);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterObjectToDetail")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterObjectToDetail(Hub<?> thisDetailHub);
@@ -424,7 +425,7 @@ public abstract class HubAOService {
 	public abstract <T extends OAObject> void callHubLinkUpdateLinkProperty(Hub<T> thisHub, T fromObject, int pos);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
-	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter);
+	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub> filter);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterChangeActiveObjectEvent")
 	public abstract <T extends OAObject> void callHubEventFireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared);

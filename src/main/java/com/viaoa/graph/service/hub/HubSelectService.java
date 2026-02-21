@@ -34,7 +34,7 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub whose select results are being extended
 	 * @return number of objects loaded during this fetch
 	 */
-	public int fetchMore(Hub<?> thisHub) {
+	public <T extends OAObject> int fetchMore(Hub<T> thisHub) {
 		int x = fetchMore(thisHub, getSelect(thisHub));
 		return x;
 	}
@@ -49,7 +49,7 @@ public abstract class HubSelectService {
 	 * @param sel     the OASelect instance providing objects
 	 * @return number of objects fetched
 	 */
-	public int fetchMore(Hub<?> thisHub, OASelect<?> sel) {
+	public <T extends OAObject> int fetchMore(Hub<T> thisHub, OASelect<T> sel) {
 		if (sel == null) {
 			return 0;
 		}
@@ -66,7 +66,7 @@ public abstract class HubSelectService {
 	 * @param famt    number of objects to attempt retrieval
 	 * @return number of objects fetched
 	 */
-	public int fetchMore(Hub<?> thisHub, int famt) {
+	public <T extends OAObject> int fetchMore(Hub<T> thisHub, int famt) {
 		int x = fetchMore(thisHub, getSelect(thisHub), famt);
 		return x;
 	}
@@ -93,7 +93,7 @@ public abstract class HubSelectService {
 	 * @param famt    fetch amount to use
 	 * @return number of objects fetched
 	 */
-	public int fetchMore(Hub<?> thisHub, OASelect<?> sel, int famt) {
+	public <T extends OAObject> int fetchMore(Hub<T> thisHub, OASelect<T> sel, int famt) {
         if (sel == null) {
             return 0;
         }
@@ -140,7 +140,7 @@ public abstract class HubSelectService {
 	 *
 	 * @return number of objects successfully added
 	 */
-	public int _fetchMore(Hub<?> thisHub, OASelect<?> sel, int famt) {
+	public <T extends OAObject> int _fetchMore(Hub<T> thisHub, OASelect<T> sel, int famt) {
 		if (sel == null) {
 			return 0;
 		}
@@ -161,7 +161,7 @@ public abstract class HubSelectService {
 			int size = hubData.getVector().size(); // number of elements
 
 			for (; cnt < fa || fa == 0;) {
-				Object obj;
+				T obj;
 				if (!isMoreData(sel)) {
 					boolean bRemoveSelectFromHub;
 					if (thisHub.getMasterObject() != null) {
@@ -258,7 +258,7 @@ public abstract class HubSelectService {
 	 *
 	 * @param thisHub the Hub whose select results should be fully loaded
 	 */
-	public void loadAllData(Hub thisHub) {
+	public <T extends OAObject> void loadAllData(Hub<T> thisHub) {
 		loadAllData(thisHub, thisHub.getSelect());
 	}
 
@@ -271,7 +271,7 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub being populated
 	 * @param select  the OASelect instance to load from
 	 */
-	public void loadAllData(Hub<?> thisHub, OASelect<?> select) {
+	public <T extends OAObject> void loadAllData(Hub<T> thisHub, OASelect<T> select) {
 		if (thisHub == null) {
 			return;
 		}
@@ -400,7 +400,7 @@ public abstract class HubSelectService {
 		OAObjectInfo oi = callObjectInfoGetObjectInfo(thisHub.getObjectClass());
 
 		// 20200302
-		Hub hx = faHub.getHubData(thisHub).getSelectWhereHub();
+		Hub<T> hx = faHub.getHubData(thisHub).getSelectWhereHub();
 		if (hx != null) {
 			String s = faHub.getHubData(thisHub).getSelectWhereHubPropertyPath();
 			if (OAString.isNotEmpty(s)) {
@@ -425,7 +425,7 @@ public abstract class HubSelectService {
 			thisHub.setAO(null); // 20100507
 			int z = callHubDataGetCurrentSize(thisHub);
 			for (int i = 0; i < z; i++) {
-				OAObject oa = (OAObject) callHubDataGetObjectAt(thisHub, i);
+				T oa = callHubDataGetObjectAt(thisHub, i);
 				callObjectHubRemoveHub(oa, thisHub, false);
 			}
 			callHubDataClearAllAndReset(thisHub);
@@ -434,7 +434,7 @@ public abstract class HubSelectService {
 			if (select.getRewind()) {
 
 				// 20120716
-				OAFilter<Hub<?>> filter = new OAFilter<Hub<?>>() {
+				OAFilter<Hub> filter = new OAFilter<Hub>() {
 					@Override
 					public boolean isUsed(Hub h) {
 						if (h != thisHub && faHub.getHubDataActive(h) != faHub.getHubDataActive(thisHub)) {
@@ -445,7 +445,7 @@ public abstract class HubSelectService {
 						return false;
 					}
 				};
-				Hub<?>[] hubs = callHubShareGetAllSharedHubs(thisHub, filter);
+				Hub<T>[] hubs = callHubShareGetAllSharedHubs(thisHub, filter);
 
 				for (int i = 0; i < hubs.length; i++) {
 					if (hubs[i] != thisHub && faHub.getHubDataActive(hubs[i]) != faHub.getHubDataActive(thisHub)) {
@@ -482,8 +482,8 @@ public abstract class HubSelectService {
 	 * @param thisHub       the Hub whose select is being canceled
 	 * @param bRemoveSelect true to clear the Hub’s select reference
 	 */
-	public void cancelSelect(Hub thisHub, boolean bRemoveSelect) {
-		OASelect sel = faHub.getHubData(thisHub).getSelect();
+	public <T extends OAObject> void cancelSelect(Hub<T> thisHub, boolean bRemoveSelect) {
+		OASelect<T> sel = faHub.getHubData(thisHub).getSelect();
 		boolean bHasMoreData;
 		if (sel != null) {
 			boolean b = sel.hasBeenStarted();
@@ -511,11 +511,11 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the count value, or -1 if no select exists
 	 */
-	public int getCount(Hub<?> thisHub) {
+	public <T extends OAObject> int getCount(Hub<T> thisHub) {
 		if (thisHub == null) {
 			return -1;
 		}
-		OASelect<?> sel = getSelect(thisHub);
+		OASelect<T> sel = getSelect(thisHub);
 		if (sel == null) {
 			return -1;
 		}
@@ -528,11 +528,11 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub being checked
 	 * @return true if counted; false otherwise
 	 */
-	public boolean isCounted(Hub<?> thisHub) {
+	public <T extends OAObject> boolean isCounted(Hub<T> thisHub) {
 		if (thisHub == null) {
 			return false;
 		}
-		OASelect<?> sel = getSelect(thisHub);
+		OASelect<T> sel = getSelect(thisHub);
 		if (sel == null) {
 			return true;
 		}
@@ -560,8 +560,8 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the WHERE clause, or null if none exists
 	 */
-	public String getSelectWhere(Hub<?> thisHub) {
-		OASelect<?> sel = getSelect(thisHub);
+	public <T extends OAObject> String getSelectWhere(Hub<T> thisHub) {
+		OASelect<T> sel = getSelect(thisHub);
 		if (sel == null) {
 			return null;
 		}
@@ -595,8 +595,8 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the ORDER BY clause or null if none exists
 	 */
-	public String getSelectOrder(Hub<?> thisHub) {
-		OASelect<?> sel = getSelect(thisHub);
+	public <T extends OAObject> String getSelectOrder(Hub<T> thisHub) {
+		OASelect<T> sel = getSelect(thisHub);
 		if (sel == null) {
 			return null;
 		}
@@ -658,10 +658,10 @@ public abstract class HubSelectService {
 	 * @param filter      filter applied to objects after select()
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public void select(Hub<?> thisHub, OAObject whereObject, String whereClause,
+	public <T extends OAObject> void select(Hub<T> thisHub, OAObject whereObject, String whereClause,
 			Object[] whereParams, String orderByClause, boolean bAppendFlag, OAFilter filter) {
-		Class<OAObject> classX = (Class) thisHub.getObjectClass();
-		OASelect sel = new OASelect(classX);
+		Class<T> classX = thisHub.getObjectClass();
+		OASelect<T> sel = new OASelect(classX);
 		sel.setWhereObject(whereObject);
 		sel.setParams(whereParams);
 		sel.setWhere(whereClause);
@@ -728,7 +728,7 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub whose whereHub is being set
 	 * @param hub     the Hub to use for filtering
 	 */
-	public void setSelectWhereHub(Hub<?> thisHub, Hub hub) {
+	public <T extends OAObject> void setSelectWhereHub(Hub<T> thisHub, Hub<?> hub) {
 		if (thisHub == null) {
 			return;
 		}
@@ -800,7 +800,7 @@ public abstract class HubSelectService {
 	 * @param hubFrom  the Hub that may supply whereHub filtering rules
 	 * @return true if the whereHub was successfully adopted
 	 */
-	public boolean adoptWhereHub(final Hub<?> thisHub, final String propName, final Hub<?> hubFrom) {
+	public <T extends OAObject> boolean adoptWhereHub(final Hub<T> thisHub, final String propName, final Hub<T> hubFrom) {
 		if (hubFrom == null) {
 			return false;
 		}
@@ -810,7 +810,7 @@ public abstract class HubSelectService {
 		if (OAString.isEmpty(propName)) {
 			return false;
 		}
-		final Hub hubSelectWhere = getSelectWhereHub(hubFrom);
+		final Hub<T> hubSelectWhere = getSelectWhereHub(hubFrom);
 		if (hubSelectWhere == null) {
 			return false;
 		}
@@ -818,7 +818,7 @@ public abstract class HubSelectService {
 		if (OAString.isEmpty(pp)) {
 			return false;
 		}
-		OAPropertyPath propPath = new OAPropertyPath(hubSelectWhere.getObjectClass(), pp, true);
+		OAPropertyPath<T> propPath = new OAPropertyPath(hubSelectWhere.getObjectClass(), pp, true);
 		OAPropertyPath ppRev = propPath.getReversePropertyPath();
 
 		String s = ppRev.getFirstPropertyName();
@@ -993,10 +993,10 @@ public abstract class HubSelectService {
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().removeHub")
-	public abstract void callObjectHubRemoveHub(final OAObject oaObj, Hub<?> hub, boolean bIsOnHubFinalize);
+	public abstract <T extends OAObject> void callObjectHubRemoveHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().setSelectAllHub")
-	public abstract void callObjectCacheSetSelectAllHub(Hub hub);
+	public abstract void callObjectCacheSetSelectAllHub(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().removeSelectAllHub")
 	public abstract void callObjectCacheRemoveSelectAllHub(Hub<?> hub);
@@ -1008,7 +1008,7 @@ public abstract class HubSelectService {
 	public abstract void callHubDataEnsureCapacity(Hub<?> hub, int size);
 
 	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().add")
-	public abstract boolean callHubAddRemoveAdd(final Hub<?> hub, final Object obj);
+	public abstract <T extends OAObject> boolean callHubAddRemoveAdd(final Hub<T> hub, final T obj);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeSelectEvent")
 	public abstract void callHubEventFireBeforeSelectEvent(Hub<?> hub);
@@ -1020,13 +1020,13 @@ public abstract class HubSelectService {
 	public abstract int callHubDataGetCurrentSize(Hub<?> hub);
 	
 	@OAParentProvided (example = "srvcHub.getHubDataService().getObjectAt")
-	public abstract Object callHubDataGetObjectAt(Hub<?> hub, int pos);
+	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> hub, int pos);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().clearAllAndReset")
 	public abstract void callHubDataClearAllAndReset(Hub<?> hub);
 	
 	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
-	public abstract Hub<?>[] callHubShareGetAllSharedHubs(Hub<?> hub, OAFilter<Hub<?>> filter);
+	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> hub, OAFilter<Hub> filter);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireOnNewListEvent")
 	public abstract void callHubEventFireOnNewListEvent(Hub<?> hub, boolean bAll);
